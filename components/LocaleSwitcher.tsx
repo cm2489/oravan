@@ -14,7 +14,7 @@ export function LocaleSwitcher() {
     <Link
       href={pathname}
       locale={other}
-      className="inline-flex items-center gap-1.5 rounded-control border border-paper/30 px-3 py-1.5 text-sm font-medium text-paper hover:bg-white/10"
+      className="inline-flex items-center gap-1.5 rounded-control border border-paper/30 px-3.5 py-2.5 text-sm font-medium text-paper hover:bg-white/10"
     >
       <Languages className="h-4 w-4" aria-hidden />
       {t('switchLocale')}

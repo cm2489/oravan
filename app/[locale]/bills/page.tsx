@@ -22,7 +22,7 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
     <div className="mx-auto max-w-5xl px-4 py-12">
       <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
       <p className="mt-2 max-w-prose text-ink-soft">{t('sub')}</p>
-      <BillsBrowser bills={getTeasers()} />
+      <BillsBrowser bills={getTeasers(locale)} />
     </div>
   );
 }

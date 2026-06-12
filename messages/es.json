@@ -15,7 +15,14 @@
       "privacy": "Privacidad",
       "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos."
     },
-    "switchLocale": "In English"
+    "switchLocale": "In English",
+    "loading": "Cargando…",
+    "navShort": {
+      "home": "Inicio",
+      "bills": "Leyes",
+      "reps": "Reps",
+      "impact": "Impacto"
+    }
   },
   "home": {
     "heroTitle": "El Congreso cuenta las llamadas.",
@@ -24,9 +31,9 @@
     "zipPlaceholder": "p. ej. 20002",
     "zipCta": "Encontrar a mis representantes",
     "zipHelp": "Se queda en tu dispositivo. Nunca lo vemos ni lo guardamos.",
-    "zipInvalid": "Eso no parece un código postal de EE. UU. — prueba con 5 dígitos.",
+    "zipInvalid": "Eso no parece un código postal de EE. UU. Prueba con 5 dígitos.",
     "topTitle": "Vale la pena llamar esta semana",
-    "topSub": "Los proyectos de ley que avanzan ahora mismo, explicados en lenguaje claro.",
+    "topSub": "Los proyectos de ley que avanzan ahora mismo, explicados en lenguaje claro por IA.",
     "seeAll": "Ver los {count} proyectos de ley activos",
     "howTitle": "Cómo funciona",
     "how1Title": "Encuentra a tus tres",
@@ -65,15 +72,15 @@
       "Independent": "Independiente"
     },
     "delegate": "Delegado/a",
-    "delegateNote": "{state} elige un/a delegado/a a la Cámara en lugar de un representante con voto, y no tiene senadores federales. Los delegados pueden hablar en los comités, presentar proyectos de ley y abogar por ti — tu llamada sigue contando."
+    "delegateNote": "{state} elige un/a delegado/a a la Cámara en lugar de un representante con voto, y no tiene senadores federales. Los delegados pueden hablar en los comités, presentar proyectos de ley y abogar por ti. Tu llamada sigue contando."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
-    "sub": "Cada proyecto de ley que avanza ahora en el Congreso, traducido a lenguaje claro. Filtra por lo que te importa.",
+    "sub": "Cada proyecto de ley que avanza ahora en el Congreso, traducido a lenguaje claro por IA. Filtra por lo que te importa.",
     "searchLabel": "Buscar proyectos de ley",
     "searchPlaceholder": "Busca por tema, palabra clave o número…",
     "all": "Todos los temas",
-    "noResults": "Ningún proyecto coincide — prueba quitando un filtro.",
+    "noResults": "Ningún proyecto coincide. Prueba quitando un filtro.",
     "showingCount": "{shown} de {total} proyectos",
     "band": {
       "now": "Actúa ya",
@@ -81,7 +88,7 @@
       "radar": "En el radar"
     },
     "bandSub": {
-      "now": "Se esperan votaciones o acción en el pleno — aquí las llamadas pesan más.",
+      "now": "Se esperan votaciones o acción en el pleno. Aquí las llamadas pesan más.",
       "moving": "Avanzando por los comités y hacia el calendario.",
       "radar": "Etapas tempranas — vale la pena seguirlos, con menos prisa."
     },
@@ -94,7 +101,9 @@
     },
     "decodedPending": "Todavía estamos traduciendo este proyecto a lenguaje claro.",
     "updated": "Última acción: {date}",
-    "showAll": "Ver los {count}"
+    "showAll": "Ver los {count}",
+    "clearSearch": "Borrar búsqueda",
+    "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor."
   },
   "bill": {
     "decoded": "En claro",
@@ -124,7 +133,7 @@
     "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
     "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje es una forma totalmente válida de ser contado. Menciona tu código postal para que sepan que eres su constituyente.",
-    "staffNote": "Contesta un miembro del personal (muchas veces un pasante), anota tu posición y sigue adelante. Sin debate y sin examen — menos de un minuto.",
+    "staffNote": "Contesta un miembro del personal (muchas veces un pasante), anota tu posición y sigue adelante. Sin debate y sin examen. Menos de un minuto.",
     "copy": "Copiar número",
     "copied": "Copiado",
     "outcomeQ": "¿Cómo te fue?",
@@ -133,7 +142,7 @@
       "voicemail": "Dejé un mensaje de voz",
       "unavailable": "No pude comunicarme"
     },
-    "outcomeLogged": "Registrado — guardado solo en este dispositivo. Gracias por llamar.",
+    "outcomeLogged": "Registrado, y guardado solo en este dispositivo. Gracias por llamar.",
     "viewImpact": "Ver tu impacto",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
@@ -141,7 +150,12 @@
     "closeBig": "Cerrar",
     "hearFirstTitle": "Qué escucharás primero",
     "hearFirstBody": "Normalmente uno o dos timbres, y luego alguien del personal dice el nombre de la oficina — o un menú corto, o el buzón de voz. Las tres opciones sirven: di tu guion, o déjalo como mensaje.",
-    "outcomeChange": "Toca otra opción para cambiarla."
+    "outcomeChange": "Toca otra opción para cambiarla.",
+    "generatingHint": "Suele tardar unos diez segundos.",
+    "retry": "Intentar de nuevo",
+    "repsError": "No pudimos cargar a tus representantes en este momento.",
+    "whyLink": "¿Tu primera llamada? Dos minutos sobre por qué funciona",
+    "callWhoOne": "Tu delegado/a es tu voz en la Cámara. Una llamada a su oficina cuenta."
   },
   "why": {
     "title": "Por qué llamar funciona",
@@ -161,9 +175,9 @@
   "impact": {
     "title": "Tu impacto",
     "sub": "Guardado solo en este navegador. Cabina no tiene servidores que sepan quién eres.",
-    "calls": "Llamadas hechas",
-    "contacts": "Conversaciones",
-    "voicemails": "Mensajes de voz",
+    "calls": "{count, plural, one {Llamada hecha} other {Llamadas hechas}}",
+    "contacts": "{count, plural, one {Conversación} other {Conversaciones}}",
+    "voicemails": "{count, plural, one {Mensaje de voz} other {Mensajes de voz}}",
     "emptyTitle": "Aún no has registrado llamadas",
     "emptyBody": "Cuando registres una llamada desde la página de un proyecto de ley, tu historial aparecerá aquí — visible solo para ti.",
     "emptyCta": "Encuentra un proyecto para llamar",
@@ -173,7 +187,9 @@
     "erase": "Borrar todos mis datos",
     "eraseConfirm": "¿Borrar tu código postal, tus intereses y tu historial de llamadas de este dispositivo? Esto no se puede deshacer.",
     "erased": "Todos los datos locales fueron borrados.",
-    "deleteRecord": "Borrar este registro"
+    "deleteRecord": "Borrar este registro",
+    "confirmErase": "Sí, borrar todo",
+    "cancel": "Cancelar"
   },
   "privacy": {
     "title": "Privacidad, en lenguaje claro",

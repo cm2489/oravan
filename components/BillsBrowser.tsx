@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { CATEGORIES, urgencyBand, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
@@ -18,6 +18,20 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" focuses search from anywhere on the page (accelerator, invisible to novices)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   // Saved interests double as the starting filter; toggles persist back.
   const { interests } = usePrefs();
   const active = useMemo(() => interests ?? [], [interests]);
@@ -55,13 +69,37 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
         <div className="relative max-w-xl">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-faint" aria-hidden />
           <input
+            ref={searchRef}
             id="bill-search"
             type="search"
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-control border-2 border-ink/15 bg-white py-3 pl-12 pr-4 focus:border-ink"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setQuery('');
+                e.currentTarget.blur();
+              }
+            }}
+            className="w-full rounded-control border-2 border-ink/15 bg-white py-3 pl-12 pr-12 focus:border-ink"
           />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label={t('bills.clearSearch')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-control p-2.5 text-ink-faint hover:text-ink"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          ) : (
+            <kbd
+              aria-hidden
+              className="absolute right-4 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-paper px-1.5 py-0.5 font-mono text-xs text-ink-faint md:block"
+            >
+              /
+            </kbd>
+          )}
         </div>
       </div>
 
@@ -99,6 +137,8 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
           </button>
         ))}
       </div>
+
+      <p className="mt-2 text-xs text-ink-faint">{t('bills.interestsNote')}</p>
 
       <p className="mt-4 text-sm text-ink-faint" aria-live="polite">
         {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
