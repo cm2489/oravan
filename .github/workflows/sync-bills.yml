@@ -1,0 +1,42 @@
+name: Nightly bill sync
+
+on:
+  schedule:
+    - cron: '30 7 * * *' # 07:30 UTC = 3:30am ET, after Congress.gov's own update cycle
+  workflow_dispatch:
+    inputs:
+      max_new_decodes:
+        description: 'Max new bills to AI-decode this run'
+        default: '40'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Sync bills
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '40' }}
+        run: node scripts/sync-bills.mjs
+      - name: Commit data
+        run: |
+          git config user.name "cabina-sync[bot]"
+          git config user.email "noreply@github.com"
+          git add data/
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "chore(data): nightly bill sync $(date -u +%F)"
+          git push

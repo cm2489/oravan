@@ -13,7 +13,8 @@
     "footer": {
       "mission": "Cabina is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
       "privacy": "Privacy",
-      "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them."
+      "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them.",
+      "terms": "Terms"
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -218,5 +219,13 @@
     "ai_technology": "AI & technology",
     "housing": "Housing",
     "rights_liberties": "Rights & liberties"
+  },
+  "terms": {
+    "title": "Terms, in plain language",
+    "p1": "Cabina is a free, nonpartisan civic tool. It helps you find your members of Congress, understand active bills, and call about them. It is not affiliated with Congress, any government agency, party, or campaign.",
+    "p2": "Bill summaries, headlines, and call scripts are drafted by AI and are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
+    "p3": "Cabina is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
+    "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
+    "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
   }
 }

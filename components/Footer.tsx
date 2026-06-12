@@ -10,9 +10,12 @@ export function Footer() {
       <div className="mx-auto max-w-5xl px-4 pt-10 pb-28 md:pb-10 text-sm text-ink-soft space-y-3">
         <p className="max-w-prose">{t('footer.mission')}</p>
         <p className="max-w-prose">{t('footer.aiNote')}</p>
-        <nav aria-label="Footer" className="flex gap-5 pt-2">
+        <nav aria-label="Footer" className="flex flex-wrap gap-5 pt-2">
           <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
             {t('footer.privacy')}
+          </Link>
+          <Link href="/terms" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.terms')}
           </Link>
           <Link href="/why-call" className="underline underline-offset-2 hover:text-ink">
             {t('nav.whyCall')}

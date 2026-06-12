@@ -1,0 +1,29 @@
+name: Weekly legislators refresh
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Mondays 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh legislators + district offices + ZIP map
+        run: python3 scripts/process-data.py --download
+      - name: Commit data
+        run: |
+          git config user.name "cabina-sync[bot]"
+          git config user.email "noreply@github.com"
+          git add data/
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "chore(data): weekly legislators refresh $(date -u +%F)"
+          git push
