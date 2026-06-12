@@ -189,7 +189,11 @@
     "loggedTenth": "Diez llamadas. Lo que empezó con nervios ya es un hábito.",
     "generating1": "Leyendo el proyecto de ley para que tú no tengas que hacerlo…",
     "generating2": "Poniéndolo en tus palabras…",
-    "generating3": "Recortándolo a treinta segundos…"
+    "generating3": "Recortándolo a treinta segundos…",
+    "startCall": "Empezar la llamada",
+    "editScript": "Editar guion",
+    "firstCallTitle": "¿Tu primera llamada?",
+    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo."
   },
   "why": {
     "title": "Por qué llamar funciona",

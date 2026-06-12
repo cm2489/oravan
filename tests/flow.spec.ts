@@ -45,15 +45,17 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await expect(page.getByText('No calls logged yet')).toBeVisible();
 });
 
-test('big-type mode shows script and dial buttons, Escape closes', async ({ page }) => {
+test('call mode shows nudge, script, and dial buttons; Escape closes', async ({ page }) => {
   await mockScriptApi(page);
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
   await page.getByRole('button', { name: 'I support it' }).click();
-  await page.getByRole('button', { name: 'Read big' }).click();
+  await page.getByRole('button', { name: 'Start the call' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
+  // Fresh profile: the first-call after-hours nudge shows
+  await expect(dialog.getByText('Your first call?')).toBeVisible();
   await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
   expect(await dialog.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
   await page.keyboard.press('Escape');

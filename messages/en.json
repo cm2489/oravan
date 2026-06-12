@@ -189,7 +189,11 @@
     "loggedTenth": "Ten calls. What started as nerves is now a habit.",
     "generating1": "Reading the bill so you don't have to…",
     "generating2": "Putting it in your words…",
-    "generating3": "Trimming it to thirty seconds…"
+    "generating3": "Trimming it to thirty seconds…",
+    "startCall": "Start the call",
+    "editScript": "Edit script",
+    "firstCallTitle": "Your first call?",
+    "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now."
   },
   "why": {
     "title": "Why calling works",
