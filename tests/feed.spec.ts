@@ -13,8 +13,15 @@ test('feed renders capped bands with show-all expansion', async ({ page }) => {
 test('search filters and clears', async ({ page }) => {
   await page.goto('/bills');
   const search = page.getByRole('searchbox');
+  // The count line is prerendered in static HTML, so it can't prove React is
+  // awake. A nonsense query producing the empty state can: it only renders
+  // after hydration. Retry until that happens, then test the real flow.
+  await expect(async () => {
+    await search.fill('zzzzqqq');
+    await expect(page.getByText(/No bills match/)).toBeVisible({ timeout: 300 });
+  }).toPass();
   await search.fill('veterans');
-  await expect(page.getByText(/\d+ of \d+ bills/)).toBeVisible();
+  await expect(page.getByText(/No bills match/)).toBeHidden();
   await search.press('Escape');
   await expect(search).toHaveValue('');
 });

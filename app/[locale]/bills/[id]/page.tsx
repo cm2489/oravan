@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
+import { DecodedSections } from '@/components/DecodedSections';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
 
@@ -64,13 +65,9 @@ export default async function BillPage({
         <h2 id="decoded" className="font-display text-2xl font-bold">
           {t('bill.decoded')}
         </h2>
-        {bill.ai_summary ? (
+        {bill.ai_summary || bill.ai_sections ? (
           <>
-            <div className="mt-3 max-w-prose space-y-3 leading-relaxed">
-              {bill.ai_summary.split('\n').filter(Boolean).map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
+            <DecodedSections bill={bill} />
             <p className="mt-5 text-xs font-medium text-ink-soft">{t('bill.aiDisclaimer')}</p>
           </>
         ) : (

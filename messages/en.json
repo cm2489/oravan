@@ -156,7 +156,27 @@
     "retry": "Try again",
     "repsError": "We couldn't load your representatives just now.",
     "whyLink": "First call ever? Two minutes on why it works",
-    "callWhoOne": "Your delegate is your voice in the House. One call to their office counts."
+    "callWhoOne": "Your delegate is your voice in the House. One call to their office counts.",
+    "sec": {
+      "what": "What it does",
+      "who": "Who it affects",
+      "why": "Why it matters",
+      "cost": "What it costs, and who pays",
+      "journey": "Where it is on the path to law"
+    },
+    "journey": {
+      "introducedIn": "Introduced in the {chamber}",
+      "committee": "{chamber} committee review",
+      "vote": "{chamber} floor vote",
+      "otherChamber": "{chamber} committee and vote (changes send it back)",
+      "conference": "Both chambers reconcile their versions",
+      "president": "President signs it into law",
+      "law": "Now law",
+      "vetoed": "Vetoed by the President — Congress can override with two-thirds of both chambers",
+      "youAreHere": "You are here",
+      "house": "House",
+      "senate": "Senate"
+    }
   },
   "why": {
     "title": "Why calling works",

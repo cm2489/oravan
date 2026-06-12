@@ -131,6 +131,29 @@ async function fetchBillText(type, number) {
   return null;
 }
 
+const DECODE_TAGS = [
+  'HEADLINE_EN', 'HEADLINE_ES',
+  'TLDR', 'WHAT', 'WHO', 'WHY', 'COST',
+  'ES_TLDR', 'ES_WHAT', 'ES_WHO', 'ES_WHY', 'ES_COST', 'ES_SUMMARY',
+];
+
+function parseTagged(text) {
+  const out = {};
+  for (let i = 0; i < DECODE_TAGS.length; i++) {
+    const tag = DECODE_TAGS[i];
+    const start = text.indexOf(`[${tag}]`);
+    if (start === -1) throw new Error(`missing [${tag}]`);
+    const next = DECODE_TAGS.slice(i + 1)
+      .map((t) => text.indexOf(`[${t}]`))
+      .filter((x) => x > start);
+    const end = next.length ? Math.min(...next) : text.length;
+    out[tag] = text.slice(start + tag.length + 2, end).trim();
+  }
+  return out;
+}
+
+const normCost = (s) => (s === 'NONE' || !s ? null : s);
+
 async function decode(bill, text) {
   const sum = await anthropic.messages.create({
     model: MODEL, max_tokens: 700,
@@ -144,31 +167,50 @@ ${text ?? bill.title}` }],
   const ai_summary = sum.content[0].text.trim();
 
   const rest = await anthropic.messages.create({
-    model: MODEL, max_tokens: 900,
-    messages: [{ role: 'user', content: `From this plain-language bill summary, produce three things.
+    model: MODEL, max_tokens: 2500,
+    messages: [{ role: 'user', content: `From this plain-language bill summary, produce headlines, scannable sections, and a Spanish translation.
 
+Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number}
 Summary:
 ${ai_summary}
 
-1. An English headline: 45-90 chars, sentence case, factual news-desk style, name the specific agency/rule/program, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress".
-2. A Spanish headline: same rules, a natural headline in its own right.
-3. A Spanish translation of the full summary: natural Latin American Spanish, 8th-grade level, keep citations/numbers exact, US agency names in English with a short Spanish gloss when helpful.
+STRICT RULES:
+- Use ONLY facts present in the summary. Never invent numbers, costs, or claims.
+- Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, what it costs, or where it stands.
+- TLDR: one sentence, max 160 chars, the single most decision-relevant fact.
+- WHAT: 1-3 sentences. WHO: 1-2. WHY: 1-2 sentences of neutral consequence, never benefits-framing.
+- COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST NONE too).
+- Spanish: natural Latin American Spanish, 8th-grade level; citations/numbers exact; agency names in English with a short gloss when helpful. ES_SUMMARY is the full summary translation.
+- Plain text, no markdown.
 
-Output exactly:
-line 1: English headline
-line 2: Spanish headline
-line 3: ===
-then the Spanish summary.` }],
+Output exactly this tagged format, each tag on its own line followed by its content:
+[HEADLINE_EN]
+[HEADLINE_ES]
+[TLDR]
+[WHAT]
+[WHO]
+[WHY]
+[COST]
+[ES_TLDR]
+[ES_WHAT]
+[ES_WHO]
+[ES_WHY]
+[ES_COST]
+[ES_SUMMARY]` }],
   });
-  const out = rest.content[0].text.trim();
-  const [head, body] = out.split('===');
-  const lines = head.trim().split('\n').map((l) => l.trim()).filter(Boolean);
-  if (lines.length < 2 || !body?.trim()) throw new Error('bad decode shape');
+  const p = parseTagged(rest.content[0].text.trim());
+  if (!p.HEADLINE_EN || !p.TLDR || !p.WHAT || !p.WHO || !p.WHY || !p.ES_SUMMARY) {
+    throw new Error('bad decode shape');
+  }
   return {
     ai_summary,
-    ai_headline: lines[0].slice(0, 110),
-    es_headline: lines[1].slice(0, 110),
-    es_summary: body.trim(),
+    ai_headline: p.HEADLINE_EN.slice(0, 110),
+    ai_sections: { tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY, cost: normCost(p.COST) },
+    es_headline: p.HEADLINE_ES.slice(0, 110),
+    es_summary: p.ES_SUMMARY,
+    es_sections: {
+      tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY, cost: normCost(p.ES_COST),
+    },
   };
 }
 
@@ -231,7 +273,8 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
       const dec = await decode(bill, text);
       bill.ai_summary = dec.ai_summary;
       bill.ai_headline = dec.ai_headline;
-      es[slug] = { headline: dec.es_headline, summary: dec.es_summary };
+      bill.ai_sections = dec.ai_sections;
+      es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
       bills.push(bill);
       bySlug.set(slug, bill);
       added++;

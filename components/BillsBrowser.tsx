@@ -20,11 +20,19 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // "/" focuses search from anywhere on the page (accelerator, invisible to novices)
+  // "/" focuses search from anywhere; Escape clears it while it's focused.
+  // Both live on one window listener - element-level Escape proved unreliable
+  // across engines for type=search inputs.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const el = document.activeElement;
+      if (e.key === 'Escape' && el === searchRef.current) {
+        setQuery('');
+        searchRef.current?.blur();
+        return;
+      }
+      if (e.key !== '/') return;
       if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
       e.preventDefault();
       searchRef.current?.focus();
@@ -75,12 +83,6 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setQuery('');
-                e.currentTarget.blur();
-              }
-            }}
             className="w-full rounded-control border-2 border-ink/15 bg-white py-3 pl-12 pr-12 focus:border-ink"
           />
           {query ? (

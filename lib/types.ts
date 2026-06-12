@@ -1,4 +1,21 @@
-export type BillStatus = 'committee' | 'markup' | 'floor_vote' | 'passed_chamber' | 'signed';
+export type BillStatus =
+  | 'committee'
+  | 'markup'
+  | 'floor_vote'
+  | 'passed_chamber'
+  | 'conference'
+  | 'signed'
+  | 'vetoed'
+  | 'introduced';
+
+/** A-plus decoded structure. `cost` is null when the bill has no cost dimension. */
+export interface DecodedSections {
+  tldr: string;
+  what: string;
+  who: string;
+  why: string;
+  cost: string | null;
+}
 
 export interface Bill {
   full_identifier: string;
@@ -9,6 +26,7 @@ export interface Bill {
   short_title: string | null;
   ai_summary: string | null;
   ai_headline: string | null;
+  ai_sections?: DecodedSections | null;
   sponsor_bioguide_id: string | null;
   introduced_date: string | null;
   last_action_date: string | null;
