@@ -156,7 +156,27 @@
     "retry": "Intentar de nuevo",
     "repsError": "No pudimos cargar a tus representantes en este momento.",
     "whyLink": "¿Tu primera llamada? Dos minutos sobre por qué funciona",
-    "callWhoOne": "Tu delegado/a es tu voz en la Cámara. Una llamada a su oficina cuenta."
+    "callWhoOne": "Tu delegado/a es tu voz en la Cámara. Una llamada a su oficina cuenta.",
+    "sec": {
+      "what": "Qué hace",
+      "who": "A quién afecta",
+      "why": "Por qué importa",
+      "cost": "Cuánto cuesta y quién paga",
+      "journey": "Dónde está en el camino a ser ley"
+    },
+    "journey": {
+      "introducedIn": "Presentado en {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}",
+      "committee": "Revisión en comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
+      "vote": "Votación en el pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
+      "otherChamber": "Comité y votación {chamber, select, House {de la Cámara} Senate {del Senado} other {del Senado}} (si hay cambios, regresa)",
+      "conference": "Ambas cámaras concilian sus versiones",
+      "president": "El Presidente la firma como ley",
+      "law": "Ya es ley",
+      "vetoed": "Vetada por el Presidente — el Congreso puede anular el veto con dos tercios de ambas cámaras",
+      "youAreHere": "Estás aquí",
+      "house": "Cámara",
+      "senate": "Senado"
+    }
   },
   "why": {
     "title": "Por qué llamar funciona",

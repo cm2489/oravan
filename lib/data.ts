@@ -7,7 +7,10 @@ import { formatCitation } from './format';
 import type { Bill, BillTeaser, District, Legislator } from './types';
 
 const BILLS = bills as Bill[];
-const ES = billsEs as Record<string, { headline: string | null; summary: string }>;
+const ES = billsEs as Record<
+  string,
+  { headline: string | null; summary: string; sections?: import('./types').DecodedSections }
+>;
 const LEGISLATORS = legislators as Legislator[];
 const ZIPS = zipDistricts as Record<string, District[]>;
 
@@ -16,7 +19,12 @@ export function localizeBill(b: Bill, locale: string): Bill {
   if (locale !== 'es') return b;
   const tr = ES[billSlug(b)];
   if (!tr) return b;
-  return { ...b, ai_headline: tr.headline ?? b.ai_headline, ai_summary: tr.summary };
+  return {
+    ...b,
+    ai_headline: tr.headline ?? b.ai_headline,
+    ai_summary: tr.summary,
+    ai_sections: tr.sections ?? b.ai_sections,
+  };
 }
 
 export function billSlug(b: Pick<Bill, 'bill_type' | 'bill_number' | 'congress_number'>): string {
