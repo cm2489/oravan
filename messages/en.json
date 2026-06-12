@@ -180,7 +180,8 @@
       "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
       "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
       "youAreHere": "You are here",
-      "law": "Now law"
+      "law": "Now law",
+      "nowIntroduced": "it was just introduced and is headed to committee."
     },
     "tldrMeta": "{seconds}-second read · {count} questions answered below",
     "loggedFirst": "That was your first call. Most people never make one. You just did.",

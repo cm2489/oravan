@@ -180,7 +180,8 @@
       "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
       "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
       "youAreHere": "Estás aquí",
-      "law": "Ya es ley"
+      "law": "Ya es ley",
+      "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
     },
     "tldrMeta": "Lectura de {seconds} segundos · {count} preguntas respondidas abajo",
     "loggedFirst": "Esa fue tu primera llamada. La mayoría de la gente nunca hace ninguna. Tú acabas de hacerla.",

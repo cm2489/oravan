@@ -31,6 +31,8 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await expect(
     page.getByRole('button', { name: 'Left a voicemail' }).first()
   ).toHaveAttribute('aria-pressed', 'true');
+  // First-call milestone fires inline, adjacent to the tapped chip
+  await expect(page.getByText(/your first call/i)).toBeVisible();
   await page.getByRole('button', { name: 'Spoke to someone' }).first().click();
   const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.calls') ?? '[]'));
   expect(calls).toHaveLength(1);

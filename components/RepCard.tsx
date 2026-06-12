@@ -34,7 +34,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
           className="h-22 w-18 shrink-0 rounded-lg object-cover bg-paper-deep"
         />
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="text-xs font-semibold tracking-wide text-ink-faint">
             {role} · {party} · {rep.state}
           </p>
           <h3 className="mt-1 font-display text-xl font-bold leading-tight">{rep.name}</h3>

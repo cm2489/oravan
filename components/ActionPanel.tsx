@@ -120,9 +120,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
   function logOutcome(rep: Legislator, outcome: CallOutcome) {
     if (!stance) return;
+    // Headlines often already name the bill; don't repeat the citation.
+    const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
+    const billLabel = norm(title).includes(norm(identifier)) ? title : `${identifier} · ${title}`;
     upsertCall({
       billSlug: slug,
-      billLabel: `${identifier} — ${title}`,
+      billLabel,
       repBioguide: rep.bioguide,
       repName: rep.name,
       stance,
@@ -132,7 +135,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setLoggedOutcomes((prev) => ({ ...prev, [rep.bioguide]: outcome }));
   }
 
-  const anyLogged = Object.keys(loggedOutcomes).length > 0;
 
   return (
     <section aria-labelledby="act" className="mt-12 rounded-card border-2 border-ink bg-white p-6 md:p-8 shadow-lift">
@@ -167,13 +169,13 @@ export function ActionPanel({ slug, identifier, title }: Props) {
       {/* Step 2 - script */}
       {loading && (
         <div className="mt-6" role="status">
-          <p className="inline-flex items-center gap-2 text-ink-soft">
-            <Sparkles className="h-4 w-4 animate-pulse" aria-hidden />
+          <p className="flex items-center gap-2 text-ink-soft">
+            <Sparkles className="h-4 w-4 flex-none animate-pulse" aria-hidden />
             {t(`generating${genLine}`)}
-            <span className="text-ink-faint">{t('generatingHint')}</span>
           </p>
+          <p className="mt-0.5 text-sm text-ink-faint">{t('generatingHint')}</p>
           <div className="mt-2 h-1 max-w-md overflow-hidden rounded-full bg-paper-deep">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-booth" />
+            <div className="shimmer h-full w-1/3 rounded-full bg-booth" />
           </div>
         </div>
       )}
@@ -392,42 +394,42 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                         </button>
                       ))}
                     </div>
+
+                    {/* The payoff lands where the tap happened, not below the fold */}
+                    {logged && (
+                      <div className="mt-3 flex items-start gap-3 rounded-control bg-moss-soft px-4 py-3" role="status">
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="draw-check mt-0.5 h-6 w-6 flex-none text-moss"
+                        >
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m8.5 12.5 2.5 2.5 5-6" />
+                        </svg>
+                        <p className="font-medium">
+                          {callCount === 1
+                            ? t('loggedFirst')
+                            : callCount === 5
+                              ? t('loggedFifth')
+                              : callCount === 10
+                                ? t('loggedTenth')
+                                : t('outcomeLogged')}{' '}
+                          <Link href="/impact" className="underline underline-offset-2">
+                            {t('viewImpact')}
+                          </Link>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </li>
               );
             })}
           </ul>
-
-          {anyLogged && (
-            <div className="mt-4 flex items-start gap-3 rounded-control bg-moss-soft px-4 py-3" role="status">
-              {/* Drawn checkmark - the moment deserves more than a banner */}
-              <svg
-                aria-hidden
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="draw-check mt-0.5 h-6 w-6 flex-none text-moss"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="m8.5 12.5 2.5 2.5 5-6" />
-              </svg>
-              <p className="font-medium">
-                {callCount === 1
-                  ? t('loggedFirst')
-                  : callCount === 5
-                    ? t('loggedFifth')
-                    : callCount === 10
-                      ? t('loggedTenth')
-                      : t('outcomeLogged')}{' '}
-                <Link href="/impact" className="underline underline-offset-2">
-                  {t('viewImpact')}
-                </Link>
-              </p>
-            </div>
-          )}
         </div>
       )}
     </section>
