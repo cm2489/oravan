@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PhoneCall, MessageCircle, Voicemail, Trash2, ArrowRight } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { eraseAll, useCalls } from '@/lib/local';
+import { eraseAll, removeCall, useCalls } from '@/lib/local';
 
 export default function ImpactPage() {
   const t = useTranslations('impact');
@@ -61,15 +61,26 @@ export default function ImpactPage() {
             {t('historyTitle')}
           </h2>
           <ul className="mt-4 space-y-3">
-            {calls.map((c, i) => (
-              <li key={i} className="rounded-card border border-line bg-white p-4 shadow-lift">
-                <Link href={`/bills/${c.billSlug}`} className="font-semibold hover:underline underline-offset-2">
-                  {c.billLabel}
-                </Link>
-                <p className="mt-1 text-sm text-ink-soft">
-                  {c.repName} · {tBill(`outcome.${c.outcome}`)} ·{' '}
-                  {format.dateTime(new Date(c.at), { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
+            {calls.map((c) => (
+              <li key={c.at} className="flex items-start justify-between gap-3 rounded-card border border-line bg-white p-4 shadow-lift">
+                <div>
+                  <Link href={`/bills/${c.billSlug}`} className="font-semibold hover:underline underline-offset-2">
+                    {c.billLabel}
+                  </Link>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    {c.repName} · {tBill(`outcome.${c.outcome}`)} ·{' '}
+                    {format.dateTime(new Date(c.at), { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeCall(c.at)}
+                  aria-label={t('deleteRecord')}
+                  title={t('deleteRecord')}
+                  className="shrink-0 rounded-control p-2.5 text-ink-faint hover:bg-clay-soft hover:text-clay"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </button>
               </li>
             ))}
           </ul>

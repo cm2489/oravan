@@ -89,7 +89,18 @@ export function useCalls(): CallRecord[] {
 }
 
 export const setPrefs = (p: Partial<Prefs>) => write(PREFS_KEY, { ...prefsSnapshot(), ...p });
-export const addCall = (c: CallRecord) => write(CALLS_KEY, [c, ...callsSnapshot()]);
+
+/** One record per (bill, rep): re-logging updates the outcome instead of appending a duplicate. */
+export function upsertCall(c: CallRecord) {
+  const rest = callsSnapshot().filter(
+    (r) => !(r.billSlug === c.billSlug && r.repBioguide === c.repBioguide)
+  );
+  write(CALLS_KEY, [c, ...rest]);
+}
+
+export function removeCall(at: string) {
+  write(CALLS_KEY, callsSnapshot().filter((r) => r.at !== at));
+}
 
 export function eraseAll() {
   try {

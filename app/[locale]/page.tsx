@@ -114,6 +114,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <ShieldCheck className="h-6 w-6 text-moss" aria-hidden />
           <h2 className="mt-3 font-display text-2xl font-bold">{t('privacyTitle')}</h2>
           <p className="mt-2 text-ink-soft">{t('privacyBody')}</p>
+          <Link
+            href="/privacy"
+            className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4"
+          >
+            {t('privacyCta')}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
         </div>
       </section>
     </div>

@@ -10,9 +10,14 @@ import { BillCard } from './BillCard';
 
 const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
 
+/* Curated-first: each band leads with its most urgent bills; the full
+   directory stays one "Show all" away (also keeps the page light). */
+const BAND_CAP = 6;
+
 export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
+  const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
   // Saved interests double as the starting filter; toggles persist back.
   const { interests } = usePrefs();
   const active = useMemo(() => interests ?? [], [interests]);
@@ -60,12 +65,17 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t('bills.all')}>
+      {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}
+      <div
+        className="mt-4 flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible"
+        role="group"
+        aria-label={t('bills.all')}
+      >
         <button
           type="button"
           onClick={() => setPrefs({ interests: [] })}
           aria-pressed={active.length === 0}
-          className={`rounded-full px-3.5 py-2 text-sm font-medium border ${
+          className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium border ${
             active.length === 0
               ? 'bg-ink text-paper border-ink'
               : 'bg-white border-line text-ink-soft hover:border-ink/40'
@@ -79,7 +89,7 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
             type="button"
             onClick={() => toggle(cat)}
             aria-pressed={active.includes(cat)}
-            className={`rounded-full px-3.5 py-2 text-sm font-medium border ${
+            className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium border ${
               active.includes(cat)
                 ? 'bg-ink text-paper border-ink'
                 : 'bg-white border-line text-ink-soft hover:border-ink/40'
@@ -96,21 +106,34 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
 
       {filtered.length === 0 && <p className="mt-8 text-ink-soft">{t('bills.noResults')}</p>}
 
-      {BANDS.map((band) =>
-        byBand[band].length === 0 ? null : (
+      {BANDS.map((band) => {
+        const all = byBand[band];
+        if (all.length === 0) return null;
+        const isOpen = !!expanded[band];
+        const visible = isOpen ? all : all.slice(0, BAND_CAP);
+        return (
           <section key={band} className="mt-10" aria-labelledby={`band-${band}`}>
             <h2 id={`band-${band}`} className="font-display text-2xl font-bold">
               {t(`bills.band.${band}`)}
             </h2>
             <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {byBand[band].map((b) => (
+              {visible.map((b) => (
                 <BillCard key={b.slug} bill={b} />
               ))}
             </div>
+            {!isOpen && all.length > BAND_CAP && (
+              <button
+                type="button"
+                onClick={() => setExpanded((e) => ({ ...e, [band]: true }))}
+                className="mt-4 w-full rounded-control border-2 border-ink/15 bg-white px-4 py-3 font-semibold hover:border-ink/40"
+              >
+                {t('bills.showAll', { count: all.length })}
+              </button>
+            )}
           </section>
-        )
-      )}
+        );
+      })}
     </div>
   );
 }

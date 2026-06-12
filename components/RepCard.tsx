@@ -8,9 +8,17 @@ function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
 
+/** Jurisdictions whose House member is a non-voting delegate (resident commissioner for PR). */
+const DELEGATE_JURISDICTIONS = new Set(['DC', 'PR', 'GU', 'VI', 'AS', 'MP']);
+
 export function RepCard({ rep }: { rep: Legislator }) {
   const t = useTranslations('reps');
-  const role = rep.type === 'sen' ? t('senator') : t('representative');
+  const role =
+    rep.type === 'sen'
+      ? t('senator')
+      : DELEGATE_JURISDICTIONS.has(rep.state)
+        ? t('delegate')
+        : t('representative');
   const party = rep.party && ['Democrat', 'Republican', 'Independent'].includes(rep.party)
     ? t(`party.${rep.party as 'Democrat' | 'Republican' | 'Independent'}`)
     : rep.party;
@@ -58,7 +66,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
           </a>
         )}
         {rep.offices.length > 0 && (
-          <details className="rounded-control border border-line bg-paper px-4 py-3">
+          <details className="border-t border-line px-1 pt-3">
             <summary className="cursor-pointer font-semibold text-sm select-none">
               {t('localOffices')} ({rep.offices.length})
             </summary>

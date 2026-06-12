@@ -60,6 +60,7 @@ export default async function RepsPage({
 
       {districts.map((d) => {
         const reps = repsForDistrict(d);
+        const noSenators = reps.every((r) => r.type !== 'sen');
         return (
           <section key={`${d.state}-${d.district}`} className="mt-10" aria-label={`${d.state} ${d.district}`}>
             <h2 className="font-display text-2xl font-bold">
@@ -67,6 +68,12 @@ export default async function RepsPage({
                 ? t('atLargeHeading', { state: d.state })
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
+            {noSenators && (
+              <p className="mt-3 flex max-w-prose gap-2 rounded-card border border-booth/40 bg-booth-soft p-4 text-sm">
+                <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
+                {t('delegateNote', { state: d.state })}
+              </p>
+            )}
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />

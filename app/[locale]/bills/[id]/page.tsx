@@ -65,14 +65,12 @@ export default async function BillPage({
         </h2>
         {bill.ai_summary ? (
           <>
-            <div className="mt-3 space-y-3 leading-relaxed">
+            <div className="mt-3 max-w-prose space-y-3 leading-relaxed">
               {bill.ai_summary.split('\n').filter(Boolean).map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
-            <p className="mt-5 text-xs font-medium uppercase tracking-wide text-ink-faint">
-              {t('bill.aiDisclaimer')}
-            </p>
+            <p className="mt-5 text-xs font-medium text-ink-soft">{t('bill.aiDisclaimer')}</p>
           </>
         ) : (
           <p className="mt-3 text-ink-soft">{t('bills.decodedPending')}</p>
@@ -84,7 +82,7 @@ export default async function BillPage({
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
           {t('bill.officialTitle')}
         </h2>
-        <p className="italic text-ink-soft leading-relaxed">{bill.title}</p>
+        <p className="max-w-prose italic text-ink-soft leading-relaxed">{bill.title}</p>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-2">
           {bill.introduced_date && (
             <div className="flex gap-2">
@@ -99,7 +97,7 @@ export default async function BillPage({
             </div>
           )}
         </dl>
-        {bill.last_action_text && <p className="text-ink-soft">{bill.last_action_text}</p>}
+        {bill.last_action_text && <p className="max-w-prose text-ink-soft">{bill.last_action_text}</p>}
         {bill.congress_gov_url && (
           <a
             href={bill.congress_gov_url}
@@ -116,7 +114,7 @@ export default async function BillPage({
       <ActionPanel
         slug={id}
         identifier={formatCitation(bill.bill_type, bill.bill_number)}
-        title={bill.short_title ?? bill.title}
+        title={bill.ai_headline ?? bill.short_title ?? bill.title}
       />
     </article>
   );

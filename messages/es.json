@@ -41,7 +41,8 @@
     "whyBody": "Sí — y mejor que los correos, las peticiones o las redes. El personal del Congreso cuenta las llamadas a diario y reporta los números al congresista.",
     "whyCta": "Lee por qué llamar funciona",
     "privacyTitle": "Pensado para tu seguridad",
-    "privacyBody": "Sin registro, sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor. Todo lo personal vive en tu navegador y puedes borrarlo con un toque."
+    "privacyBody": "Sin registro, sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor. Todo lo personal vive en tu navegador y puedes borrarlo con un toque.",
+    "privacyCta": "Lee nuestra promesa de privacidad"
   },
   "reps": {
     "title": "Tus representantes",
@@ -62,7 +63,9 @@
       "Democrat": "Demócrata",
       "Republican": "Republicano/a",
       "Independent": "Independiente"
-    }
+    },
+    "delegate": "Delegado/a",
+    "delegateNote": "{state} elige un/a delegado/a a la Cámara en lugar de un representante con voto, y no tiene senadores federales. Los delegados pueden hablar en los comités, presentar proyectos de ley y abogar por ti — tu llamada sigue contando."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
@@ -90,7 +93,8 @@
       "signed": "Promulgado como ley"
     },
     "decodedPending": "Todavía estamos traduciendo este proyecto a lenguaje claro.",
-    "updated": "Última acción: {date}"
+    "updated": "Última acción: {date}",
+    "showAll": "Ver los {count}"
   },
   "bill": {
     "decoded": "En claro",
@@ -130,7 +134,14 @@
       "unavailable": "No pude comunicarme"
     },
     "outcomeLogged": "Registrado — guardado solo en este dispositivo. Gracias por llamar.",
-    "viewImpact": "Ver tu impacto"
+    "viewImpact": "Ver tu impacto",
+    "copyScript": "Copiar guion",
+    "scriptCopied": "Guion copiado",
+    "bigType": "Ver en grande",
+    "closeBig": "Cerrar",
+    "hearFirstTitle": "Qué escucharás primero",
+    "hearFirstBody": "Normalmente uno o dos timbres, y luego alguien del personal dice el nombre de la oficina — o un menú corto, o el buzón de voz. Las tres opciones sirven: di tu guion, o déjalo como mensaje.",
+    "outcomeChange": "Toca otra opción para cambiarla."
   },
   "why": {
     "title": "Por qué llamar funciona",
@@ -161,7 +172,8 @@
     "eraseBody": "Todo lo que Cabina sabe de ti vive en este navegador. Bórralo cuando quieras.",
     "erase": "Borrar todos mis datos",
     "eraseConfirm": "¿Borrar tu código postal, tus intereses y tu historial de llamadas de este dispositivo? Esto no se puede deshacer.",
-    "erased": "Todos los datos locales fueron borrados."
+    "erased": "Todos los datos locales fueron borrados.",
+    "deleteRecord": "Borrar este registro"
   },
   "privacy": {
     "title": "Privacidad, en lenguaje claro",

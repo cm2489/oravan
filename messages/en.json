@@ -41,7 +41,8 @@
     "whyBody": "Yes — and better than email, petitions, or posts. Congressional staff tally calls daily and report the counts to the member.",
     "whyCta": "Read why calling works",
     "privacyTitle": "Built for your safety",
-    "privacyBody": "No sign-up, no cookies that follow you, no political profile stored on any server. Everything personal lives in your browser, and you can erase it with one tap."
+    "privacyBody": "No sign-up, no cookies that follow you, no political profile stored on any server. Everything personal lives in your browser, and you can erase it with one tap.",
+    "privacyCta": "Read our privacy promise"
   },
   "reps": {
     "title": "Your representatives",
@@ -62,7 +63,9 @@
       "Democrat": "Democrat",
       "Republican": "Republican",
       "Independent": "Independent"
-    }
+    },
+    "delegate": "Delegate",
+    "delegateNote": "{state} elects a delegate to the House instead of a voting representative, and has no U.S. senators. Delegates can speak in committees, introduce bills, and advocate for you — your call still counts."
   },
   "bills": {
     "title": "Active bills, decoded",
@@ -90,7 +93,8 @@
       "signed": "Signed into law"
     },
     "decodedPending": "We're still translating this one into plain language.",
-    "updated": "Last action {date}"
+    "updated": "Last action {date}",
+    "showAll": "Show all {count}"
   },
   "bill": {
     "decoded": "Decoded",
@@ -130,7 +134,14 @@
       "unavailable": "Couldn't get through"
     },
     "outcomeLogged": "Logged — saved only on this device. Thank you for calling.",
-    "viewImpact": "See your impact"
+    "viewImpact": "See your impact",
+    "copyScript": "Copy script",
+    "scriptCopied": "Script copied",
+    "bigType": "Read big",
+    "closeBig": "Close",
+    "hearFirstTitle": "What you'll hear first",
+    "hearFirstBody": "Usually one or two rings, then a staffer says the office name — or a short menu, or voicemail. All three are fine: say your script, or leave it as the message.",
+    "outcomeChange": "Tap another option to change it."
   },
   "why": {
     "title": "Why calling works",
@@ -161,7 +172,8 @@
     "eraseBody": "Everything Cabina knows about you lives in this browser. Erase it any time.",
     "erase": "Erase all my data",
     "eraseConfirm": "Erase your ZIP, interests, and call history from this device? This can't be undone.",
-    "erased": "All local data erased."
+    "erased": "All local data erased.",
+    "deleteRecord": "Delete this record"
   },
   "privacy": {
     "title": "Privacy, in plain language",
