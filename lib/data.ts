@@ -2,6 +2,7 @@ import 'server-only';
 import bills from '@/data/bills.json';
 import legislators from '@/data/legislators.json';
 import zipDistricts from '@/data/zip-districts.json';
+import { formatCitation } from './format';
 import type { Bill, BillTeaser, District, Legislator } from './types';
 
 const BILLS = bills as Bill[];
@@ -25,7 +26,7 @@ export function getTeasers(): BillTeaser[] {
     .sort((a, b) => b.urgency_score - a.urgency_score || (b.last_action_date ?? '').localeCompare(a.last_action_date ?? ''))
     .map((b) => ({
       slug: billSlug(b),
-      identifier: b.full_identifier,
+      identifier: formatCitation(b.bill_type, b.bill_number),
       headline: b.ai_headline,
       title: b.short_title ?? b.title,
       status: b.status,

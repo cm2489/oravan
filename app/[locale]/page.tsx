@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { ZipForm } from '@/components/ZipForm';
 import { BillCard } from '@/components/BillCard';
 import { billSlug, getAllBills, getTopActions } from '@/lib/data';
+import { formatCitation } from '@/lib/format';
 
 const STEPS = [
   { icon: MapPin, key: 1 },
@@ -59,7 +60,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               key={billSlug(b)}
               bill={{
                 slug: billSlug(b),
-                identifier: b.full_identifier,
+                identifier: formatCitation(b.bill_type, b.bill_number),
                 headline: b.ai_headline,
                 title: b.short_title ?? b.title,
                 status: b.status,

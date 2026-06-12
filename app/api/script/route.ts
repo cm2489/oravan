@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { getBill } from '@/lib/data';
+import { formatCitation } from '@/lib/format';
 import type { Stance } from '@/lib/types';
 
 /*
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
   const bill = getBill(slug);
   if (!bill) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
+  const citation = formatCitation(bill.bill_type, bill.bill_number);
   const key = `${slug}:${stance}:${lang}`;
   const cached = cache.get(key);
   if (cached) return NextResponse.json({ script: cached, cached: true });
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   const prompt = `Write a 30-second phone script for a constituent calling a member of Congress about this bill.
 
-Bill: ${bill.full_identifier} — ${bill.short_title ?? bill.title}
+Bill: ${citation} — ${bill.short_title ?? bill.title}
 Plain-language summary: ${bill.ai_summary ?? bill.title}
 Current status: ${bill.status}
 
@@ -81,7 +83,7 @@ ${langLine}
 Rules:
 - 60-90 words. It must be comfortably readable aloud in 30 seconds.
 - Structure: greeting + name placeholder + constituent location placeholder, the bill by its number, the position, ONE concrete reason grounded in the summary, a clear ask, thanks.
-- Refer to the bill exactly as "${bill.full_identifier}" - do not alter, translate, or extend that citation.
+- Refer to the bill exactly as "${citation}" - do not alter, translate, or extend that citation.
 - Works equally well read to a live staffer or left as a voicemail.
 - Strictly nonpartisan tone: no party language, no attacks, no alarmism, no advocacy-group jargon.
 - Do not invent facts beyond the summary provided.

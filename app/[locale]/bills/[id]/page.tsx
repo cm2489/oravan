@@ -5,6 +5,7 @@ import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/serve
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
 import { billSlug, getAllBills, getBill } from '@/lib/data';
+import { formatCitation } from '@/lib/format';
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const bill = getBill(id);
   if (!bill) return {};
   return {
-    title: `${bill.full_identifier} — ${bill.ai_headline ?? bill.short_title ?? bill.title}`,
+    title: `${formatCitation(bill.bill_type, bill.bill_number)} — ${bill.ai_headline ?? bill.short_title ?? bill.title}`,
     description: bill.ai_summary?.slice(0, 160),
   };
 }
@@ -43,7 +44,7 @@ export default async function BillPage({
   return (
     <article className="mx-auto max-w-3xl px-4 py-12">
       <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-faint">
-        <span className="font-mono">{bill.full_identifier}</span>
+        <span className="font-mono">{formatCitation(bill.bill_type, bill.bill_number)}</span>
         <span aria-hidden>·</span>
         <span>{t(`bills.status.${bill.status}`)}</span>
         {(bill.issue_tags ?? []).slice(0, 2).map((tag) => (
@@ -114,7 +115,7 @@ export default async function BillPage({
 
       <ActionPanel
         slug={id}
-        identifier={bill.full_identifier}
+        identifier={formatCitation(bill.bill_type, bill.bill_number)}
         title={bill.short_title ?? bill.title}
       />
     </article>
