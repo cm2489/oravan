@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
-import { billSlug, getAllBills, getBill } from '@/lib/data';
+import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
 
 export function generateStaticParams() {
@@ -34,8 +34,9 @@ export default async function BillPage({
 }) {
   const { locale, id } = await params;
   setRequestLocale(locale);
-  const bill = getBill(id);
-  if (!bill) notFound();
+  const raw = getBill(id);
+  if (!raw) notFound();
+  const bill = localizeBill(raw, locale);
 
   const t = await getTranslations();
   const format = await getFormatter();

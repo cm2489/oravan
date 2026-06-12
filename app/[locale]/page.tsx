@@ -17,7 +17,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
-  const top = getTopActions(4);
+  const top = getTopActions(4, locale);
   const total = getAllBills().length;
 
   return (
@@ -25,13 +25,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Hero */}
       <section className="bg-night text-paper">
         <div className="mx-auto max-w-5xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-[3fr_2fr] md:items-center">
-          <div>
+          <div className="min-w-0">
             <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
               {t('heroTitle')}
             </h1>
             <p className="mt-5 max-w-prose text-lg text-paper/85">{t('heroSub')}</p>
           </div>
-          <div className="rounded-card bg-paper p-6 text-ink shadow-lift">
+          <div className="min-w-0 rounded-card bg-paper p-6 text-ink shadow-lift">
             <ZipForm />
           </div>
         </div>
@@ -96,21 +96,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Why call + privacy */}
-      <section className="mx-auto max-w-5xl px-4 py-14 grid gap-6 md:grid-cols-2">
-        <div className="rounded-card border border-line bg-white p-7 shadow-lift">
-          <PhoneCall className="h-6 w-6 text-booth" aria-hidden />
-          <h2 className="mt-3 font-display text-2xl font-bold">{t('whyTitle')}</h2>
-          <p className="mt-2 text-ink-soft">{t('whyBody')}</p>
+      {/* Why call: the persuasion moment gets the card; privacy reads as a quiet pledge */}
+      <section className="mx-auto max-w-5xl px-4 py-14 grid gap-10 md:grid-cols-[3fr_2fr] md:items-start">
+        <div className="rounded-card bg-night p-8 text-paper shadow-lift">
+          <PhoneCall className="h-6 w-6 text-booth-bright" aria-hidden />
+          <h2 className="mt-3 font-display text-3xl font-bold">{t('whyTitle')}</h2>
+          <p className="mt-2 text-paper/85">{t('whyBody')}</p>
           <Link
             href="/why-call"
-            className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-booth px-5 py-3 font-semibold text-night hover:bg-booth-bright"
           >
             {t('whyCta')}
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
-        <div className="rounded-card border border-line bg-white p-7 shadow-lift">
+        <div className="border-t-2 border-moss pt-5 md:border-t-0 md:border-l-0 md:pt-1">
           <ShieldCheck className="h-6 w-6 text-moss" aria-hidden />
           <h2 className="mt-3 font-display text-2xl font-bold">{t('privacyTitle')}</h2>
           <p className="mt-2 text-ink-soft">{t('privacyBody')}</p>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Ear, Expand, Moon, Phone, Sparkles, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BookOpen, Check, Copy, Ear, Expand, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { upsertCall, usePrefs } from '@/lib/local';
@@ -26,10 +26,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const locale = useLocale();
 
   const [stance, setStance] = useState<Stance | null>(null);
-  const [script, setScript] = useState('');
+  // One draft per stance: switching stances never destroys the user's edits.
+  const [drafts, setDrafts] = useState<Partial<Record<Stance, string>>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<'generic' | 'rate' | null>(null);
   const [reps, setReps] = useState<Legislator[]>([]);
+  const [repsError, setRepsError] = useState(false);
   const zip = usePrefs().zip ?? null;
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
@@ -37,19 +39,23 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
   const closeBigRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
+  const script = stance ? (drafts[stance] ?? '') : '';
+  const setScript = (text: string) => {
+    if (stance) setDrafts((d) => ({ ...d, [stance]: text }));
+  };
+
+  const fetchReps = useCallback(() => {
     if (!zip) return;
-    let cancelled = false;
     fetch(`/api/reps?zip=${zip}`)
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        if (d && !cancelled) setReps(d.reps);
+        setReps(d.reps);
+        setRepsError(false);
       })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => setRepsError(true));
   }, [zip]);
+
+  useEffect(fetchReps, [fetchReps]);
 
   // Big-type mode: Esc closes, focus moves to the close button.
   useEffect(() => {
@@ -62,8 +68,8 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
   async function generate(s: Stance) {
     setStance(s);
-    setScript('');
     setError(null);
+    if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
     setLoading(true);
     try {
       const res = await fetch('/api/script', {
@@ -80,7 +86,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         return;
       }
       const data = await res.json();
-      setScript(data.script);
+      setDrafts((d) => ({ ...d, [s]: data.script }));
     } catch {
       setError('generic');
     } finally {
@@ -150,15 +156,31 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
       {/* Step 2 - script */}
       {loading && (
-        <p className="mt-6 inline-flex items-center gap-2 text-ink-soft" role="status">
-          <Sparkles className="h-4 w-4 animate-pulse" aria-hidden />
-          {t('generating')}
-        </p>
+        <div className="mt-6" role="status">
+          <p className="inline-flex items-center gap-2 text-ink-soft">
+            <Sparkles className="h-4 w-4 animate-pulse" aria-hidden />
+            {t('generating')}
+            <span className="text-ink-faint">{t('generatingHint')}</span>
+          </p>
+          <div className="mt-2 h-1 max-w-md overflow-hidden rounded-full bg-paper-deep">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-booth" />
+          </div>
+        </div>
       )}
       {error && (
-        <p className="mt-6 rounded-control bg-clay-soft px-4 py-3 text-sm font-medium" role="alert">
-          {error === 'rate' ? t('rateLimited') : t('scriptError')}
-        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-control bg-clay-soft px-4 py-3 text-sm" role="alert">
+          <span className="font-medium">{error === 'rate' ? t('rateLimited') : t('scriptError')}</span>
+          {error !== 'rate' && stance && (
+            <button
+              type="button"
+              onClick={() => generate(stance)}
+              className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-white px-3 py-1.5 font-semibold hover:border-ink/60"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              {t('retry')}
+            </button>
+          )}
+        </div>
       )}
       {script && (
         <div className="mt-6">
@@ -217,6 +239,24 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           <p className="mx-auto mt-12 max-w-2xl whitespace-pre-wrap font-display text-2xl md:text-4xl font-semibold leading-snug md:leading-snug">
             {script}
           </p>
+          {/* The number lives with the script so the call can start from here */}
+          {reps.length > 0 && (
+            <div className="mx-auto mt-10 flex max-w-2xl flex-wrap gap-2 pb-12">
+              {reps.map(
+                (rep) =>
+                  rep.phone && (
+                    <a
+                      key={rep.bioguide}
+                      href={telHref(rep.phone)}
+                      className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-3 font-semibold text-paper hover:bg-night"
+                    >
+                      <Phone className="h-4 w-4" aria-hidden />
+                      {rep.last} · {rep.phone}
+                    </a>
+                  )
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -242,6 +282,27 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             </div>
           </div>
           <p className="mt-3 text-sm text-ink-soft">{t('staffNote')}</p>
+          <Link
+            href="/why-call"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-4"
+          >
+            <BookOpen className="h-4 w-4" aria-hidden />
+            {t('whyLink')}
+          </Link>
+
+          {repsError && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-control bg-clay-soft px-4 py-3 text-sm" role="alert">
+              <span className="font-medium">{t('repsError')}</span>
+              <button
+                type="button"
+                onClick={fetchReps}
+                className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-white px-3 py-1.5 font-semibold hover:border-ink/60"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                {t('retry')}
+              </button>
+            </div>
+          )}
 
           {!zip && (
             <div className="mt-4 rounded-control border border-line bg-paper p-4">
@@ -250,7 +311,11 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             </div>
           )}
 
-          {reps.length > 0 && <p className="mt-4 font-medium">{t('callWho')}</p>}
+          {reps.length > 0 && (
+            <p className="mt-4 font-medium">
+              {reps.some((r) => r.type === 'sen') ? t('callWho') : t('callWhoOne')}
+            </p>
+          )}
           <ul className="mt-3 space-y-3">
             {reps.map((rep) => {
               const logged = loggedOutcomes[rep.bioguide];

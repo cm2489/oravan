@@ -31,11 +31,12 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
       <label htmlFor="zip" className="text-sm font-semibold">
         {t('zipLabel')}
       </label>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           id="zip"
           name="zip"
           inputMode="numeric"
+          maxLength={5}
           autoComplete="postal-code"
           autoFocus={autoFocus}
           placeholder={t('zipPlaceholder')}
