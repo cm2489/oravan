@@ -133,8 +133,8 @@ async function fetchBillText(type, number) {
 
 const DECODE_TAGS = [
   'HEADLINE_EN', 'HEADLINE_ES',
-  'TLDR', 'WHAT', 'WHO', 'WHY', 'COST',
-  'ES_TLDR', 'ES_WHAT', 'ES_WHO', 'ES_WHY', 'ES_COST', 'ES_SUMMARY',
+  'TLDR', 'WHAT', 'WHO', 'WHY', 'COST', 'COST_CHIPS',
+  'ES_TLDR', 'ES_WHAT', 'ES_WHO', 'ES_WHY', 'ES_COST', 'ES_COST_CHIPS', 'ES_SUMMARY',
 ];
 
 function parseTagged(text) {
@@ -153,6 +153,13 @@ function parseTagged(text) {
 }
 
 const normCost = (s) => (s === 'NONE' || !s ? null : s);
+
+function normChips(s) {
+  if (s === 'NONE' || !s) return null;
+  const chips = s.split('|').map((c) => c.trim()).filter(Boolean);
+  if (chips.length < 1 || chips.length > 3 || chips.some((c) => c.length > 48)) return null;
+  return chips;
+}
 
 async function decode(bill, text) {
   const sum = await anthropic.messages.create({
@@ -179,7 +186,8 @@ STRICT RULES:
 - Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, what it costs, or where it stands.
 - TLDR: one sentence, max 160 chars, the single most decision-relevant fact.
 - WHAT: 1-3 sentences. WHO: 1-2. WHY: 1-2 sentences of neutral consequence, never benefits-framing.
-- COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST NONE too).
+- COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST, COST_CHIPS, ES_COST_CHIPS all NONE too).
+- COST_CHIPS: when COST exists, compress it to 2-3 chips separated by " | ", each a standalone fact fragment max 45 chars, sentence case, no period. Same count and order in ES_COST_CHIPS. If a fact can't fit 45 chars, output NONE for both chip tags (prose is the fallback).
 - Spanish: natural Latin American Spanish, 8th-grade level; citations/numbers exact; agency names in English with a short gloss when helpful. ES_SUMMARY is the full summary translation.
 - Plain text, no markdown.
 
@@ -191,11 +199,13 @@ Output exactly this tagged format, each tag on its own line followed by its cont
 [WHO]
 [WHY]
 [COST]
+[COST_CHIPS]
 [ES_TLDR]
 [ES_WHAT]
 [ES_WHO]
 [ES_WHY]
 [ES_COST]
+[ES_COST_CHIPS]
 [ES_SUMMARY]` }],
   });
   const p = parseTagged(rest.content[0].text.trim());
@@ -205,11 +215,15 @@ Output exactly this tagged format, each tag on its own line followed by its cont
   return {
     ai_summary,
     ai_headline: p.HEADLINE_EN.slice(0, 110),
-    ai_sections: { tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY, cost: normCost(p.COST) },
+    ai_sections: {
+      tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY,
+      cost: normCost(p.COST), costChips: normChips(p.COST_CHIPS),
+    },
     es_headline: p.HEADLINE_ES.slice(0, 110),
     es_summary: p.ES_SUMMARY,
     es_sections: {
-      tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY, cost: normCost(p.ES_COST),
+      tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY,
+      cost: normCost(p.ES_COST), costChips: normChips(p.ES_COST_CHIPS),
     },
   };
 }

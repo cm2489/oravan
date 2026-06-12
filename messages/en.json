@@ -158,25 +158,30 @@
     "whyLink": "First call ever? Two minutes on why it works",
     "callWhoOne": "Your delegate is your voice in the House. One call to their office counts.",
     "sec": {
-      "what": "What it does",
-      "who": "Who it affects",
-      "why": "Why it matters",
-      "cost": "What it costs, and who pays",
-      "journey": "Where it is on the path to law"
+      "what": "What does this do?",
+      "who": "Who does it affect?",
+      "why": "Why does it matter?",
+      "cost": "What does it cost, and who pays?",
+      "journey": "Where does it stand?"
     },
     "journey": {
-      "introducedIn": "Introduced in the {chamber}",
-      "committee": "{chamber} committee review",
-      "vote": "{chamber} floor vote",
-      "otherChamber": "{chamber} committee and vote (changes send it back)",
-      "conference": "Both chambers reconcile their versions",
-      "president": "President signs it into law",
-      "law": "Now law",
-      "vetoed": "Vetoed by the President — Congress can override with two-thirds of both chambers",
+      "stepIntroduced": "Introduced",
+      "stepCommittee": "{chamber, select, House {House} Senate {Senate} other {House}} committee",
+      "stepVote": "{chamber, select, House {House} Senate {Senate} other {House}} vote",
+      "stepOther": "{chamber, select, House {House} Senate {Senate} other {Senate}}",
+      "stepPresident": "President's desk",
+      "now": "Right now:",
+      "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
+      "nowFloor": "it's headed for a {chamber, select, House {House} Senate {Senate} other {House}} floor vote.",
+      "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
+      "nowConference": "both chambers are reconciling their versions.",
+      "nowSigned": "the President signed it. It's law.",
+      "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
+      "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
       "youAreHere": "You are here",
-      "house": "House",
-      "senate": "Senate"
-    }
+      "law": "Now law"
+    },
+    "tldrMeta": "{seconds}-second read · {count} questions answered below"
   },
   "why": {
     "title": "Why calling works",

@@ -158,25 +158,30 @@
     "whyLink": "¿Tu primera llamada? Dos minutos sobre por qué funciona",
     "callWhoOne": "Tu delegado/a es tu voz en la Cámara. Una llamada a su oficina cuenta.",
     "sec": {
-      "what": "Qué hace",
-      "who": "A quién afecta",
-      "why": "Por qué importa",
-      "cost": "Cuánto cuesta y quién paga",
-      "journey": "Dónde está en el camino a ser ley"
+      "what": "¿Qué hace esto?",
+      "who": "¿A quién afecta?",
+      "why": "¿Por qué importa?",
+      "cost": "¿Cuánto cuesta y quién paga?",
+      "journey": "¿Dónde está ahora?"
     },
     "journey": {
-      "introducedIn": "Presentado en {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}",
-      "committee": "Revisión en comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
-      "vote": "Votación en el pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
-      "otherChamber": "Comité y votación {chamber, select, House {de la Cámara} Senate {del Senado} other {del Senado}} (si hay cambios, regresa)",
-      "conference": "Ambas cámaras concilian sus versiones",
-      "president": "El Presidente la firma como ley",
-      "law": "Ya es ley",
-      "vetoed": "Vetada por el Presidente — el Congreso puede anular el veto con dos tercios de ambas cámaras",
+      "stepIntroduced": "Presentado",
+      "stepCommittee": "Comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
+      "stepVote": "Voto {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
+      "stepOther": "{chamber, select, House {Cámara} Senate {Senado} other {Senado}}",
+      "stepPresident": "Escritorio del Presidente",
+      "now": "Ahora mismo:",
+      "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
+      "nowFloor": "va rumbo a una votación en el pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
+      "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
+      "nowConference": "ambas cámaras están conciliando sus versiones.",
+      "nowSigned": "el Presidente lo firmó. Ya es ley.",
+      "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
+      "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
       "youAreHere": "Estás aquí",
-      "house": "Cámara",
-      "senate": "Senado"
-    }
+      "law": "Ya es ley"
+    },
+    "tldrMeta": "Lectura de {seconds} segundos · {count} preguntas respondidas abajo"
   },
   "why": {
     "title": "Por qué llamar funciona",

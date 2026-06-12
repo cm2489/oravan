@@ -8,13 +8,15 @@ export type BillStatus =
   | 'vetoed'
   | 'introduced';
 
-/** A-plus decoded structure. `cost` is null when the bill has no cost dimension. */
+/** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {
   tldr: string;
   what: string;
   who: string;
   why: string;
   cost: string | null;
+  /** Short fact chips derived from `cost`; prose `cost` is the fallback. */
+  costChips?: string[] | null;
 }
 
 export interface Bill {
