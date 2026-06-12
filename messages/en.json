@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Cabina",
+    "appName": "Rostra",
     "tagline": "Your line to Congress",
     "skipToContent": "Skip to main content",
     "nav": {
@@ -11,7 +11,7 @@
       "whyCall": "Why call?"
     },
     "footer": {
-      "mission": "Cabina is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
+      "mission": "Rostra is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
       "privacy": "Privacy",
       "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them.",
       "terms": "Terms"
@@ -200,7 +200,7 @@
   },
   "impact": {
     "title": "Your impact",
-    "sub": "Stored only in this browser. Cabina has no servers that know who you are.",
+    "sub": "Stored only in this browser. Rostra has no servers that know who you are.",
     "calls": "{count, plural, one {Call made} other {Calls made}}",
     "contacts": "{count, plural, one {Conversation} other {Conversations}}",
     "voicemails": "{count, plural, one {Voicemail} other {Voicemails}}",
@@ -209,7 +209,7 @@
     "emptyCta": "Find a bill to call about",
     "historyTitle": "Call history",
     "eraseTitle": "Your data, your call",
-    "eraseBody": "Everything Cabina knows about you lives in this browser. Erase it any time.",
+    "eraseBody": "Everything Rostra knows about you lives in this browser. Erase it any time.",
     "erase": "Erase all my data",
     "eraseConfirm": "Erase your ZIP, interests, and call history from this device? This can't be undone.",
     "erased": "All local data erased.",
@@ -219,7 +219,7 @@
   },
   "privacy": {
     "title": "Privacy, in plain language",
-    "p1": "Cabina has no user accounts. We never ask for your name, email, address, or anything that identifies you.",
+    "p1": "Rostra has no user accounts. We never ask for your name, email, address, or anything that identifies you.",
     "p2": "Your ZIP code, your issue interests, and your call history are stored only in your browser's local storage, on your device. They are never transmitted to, or stored on, our servers. The Impact page has a one-tap button that erases all of it.",
     "p3": "When you ask for a call script, your chosen stance and the bill are sent to our server to draft the text, processed in memory, and not linked to any identity. We rate-limit by network address to prevent abuse; we don't keep a log tying addresses to political positions.",
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
@@ -247,9 +247,9 @@
   },
   "terms": {
     "title": "Terms, in plain language",
-    "p1": "Cabina is a free, nonpartisan civic tool. It helps you find your members of Congress, understand active bills, and call about them. It is not affiliated with Congress, any government agency, party, or campaign.",
+    "p1": "Rostra is a free, nonpartisan civic tool. It helps you find your members of Congress, understand active bills, and call about them. It is not affiliated with Congress, any government agency, party, or campaign.",
     "p2": "Bill summaries, headlines, and call scripts are drafted by AI and are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
-    "p3": "Cabina is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
+    "p3": "Rostra is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
     "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
   }

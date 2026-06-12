@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Cabina",
+    "appName": "Rostra",
     "tagline": "Tu línea con el Congreso",
     "skipToContent": "Saltar al contenido principal",
     "nav": {
@@ -11,7 +11,7 @@
       "whyCall": "¿Por qué llamar?"
     },
     "footer": {
-      "mission": "Cabina es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
+      "mission": "Rostra es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
       "privacy": "Privacidad",
       "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos.",
       "terms": "Términos"
@@ -200,7 +200,7 @@
   },
   "impact": {
     "title": "Tu impacto",
-    "sub": "Guardado solo en este navegador. Cabina no tiene servidores que sepan quién eres.",
+    "sub": "Guardado solo en este navegador. Rostra no tiene servidores que sepan quién eres.",
     "calls": "{count, plural, one {Llamada hecha} other {Llamadas hechas}}",
     "contacts": "{count, plural, one {Conversación} other {Conversaciones}}",
     "voicemails": "{count, plural, one {Mensaje de voz} other {Mensajes de voz}}",
@@ -209,7 +209,7 @@
     "emptyCta": "Encuentra un proyecto para llamar",
     "historyTitle": "Historial de llamadas",
     "eraseTitle": "Tus datos, tú decides",
-    "eraseBody": "Todo lo que Cabina sabe de ti vive en este navegador. Bórralo cuando quieras.",
+    "eraseBody": "Todo lo que Rostra sabe de ti vive en este navegador. Bórralo cuando quieras.",
     "erase": "Borrar todos mis datos",
     "eraseConfirm": "¿Borrar tu código postal, tus intereses y tu historial de llamadas de este dispositivo? Esto no se puede deshacer.",
     "erased": "Todos los datos locales fueron borrados.",
@@ -219,7 +219,7 @@
   },
   "privacy": {
     "title": "Privacidad, en lenguaje claro",
-    "p1": "Cabina no tiene cuentas de usuario. Nunca pedimos tu nombre, correo, dirección ni nada que te identifique.",
+    "p1": "Rostra no tiene cuentas de usuario. Nunca pedimos tu nombre, correo, dirección ni nada que te identifique.",
     "p2": "Tu código postal, tus temas de interés y tu historial de llamadas se guardan solo en el almacenamiento local de tu navegador — en tu dispositivo. Nunca se transmiten a nuestros servidores ni se guardan en ellos. La página de impacto tiene un botón que lo borra todo con un toque.",
     "p3": "Cuando pides un guion de llamada, tu postura y el proyecto de ley se envían a nuestro servidor para redactar el texto, se procesan en memoria y no se vinculan a ninguna identidad. Limitamos la frecuencia por dirección de red para prevenir abusos; no guardamos registros que liguen direcciones con posiciones políticas.",
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
@@ -247,9 +247,9 @@
   },
   "terms": {
     "title": "Términos, en lenguaje claro",
-    "p1": "Cabina es una herramienta cívica gratuita y no partidista. Te ayuda a encontrar a tus miembros del Congreso, entender los proyectos de ley activos y llamar para opinar sobre ellos. No está afiliada al Congreso, a ninguna agencia de gobierno, partido ni campaña.",
+    "p1": "Rostra es una herramienta cívica gratuita y no partidista. Te ayuda a encontrar a tus miembros del Congreso, entender los proyectos de ley activos y llamar para opinar sobre ellos. No está afiliada al Congreso, a ninguna agencia de gobierno, partido ni campaña.",
     "p2": "Los resúmenes, titulares y guiones son borradores generados por IA y están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
-    "p3": "Cabina se ofrece tal cual, sin garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario; verifica lo que importe.",
+    "p3": "Rostra se ofrece tal cual, sin garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario; verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
     "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
   }

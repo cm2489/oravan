@@ -32,7 +32,7 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
     page.getByRole('button', { name: 'Left a voicemail' }).first()
   ).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Spoke to someone' }).first().click();
-  const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('cabina.calls') ?? '[]'));
+  const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.calls') ?? '[]'));
   expect(calls).toHaveLength(1);
   expect(calls[0].outcome).toBe('contact');
 

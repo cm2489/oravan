@@ -12,13 +12,13 @@ U.S. residents who want Congress to hear them but have never called a congressio
 
 ## Product Purpose
 
-Cabina ("phone booth" / "voting booth" in Spanish) is free, nonpartisan civic infrastructure: find your three members of Congress by ZIP, read any active bill in plain language, get a 30-second editable call script in your language, and make the call — or leave an after-hours voicemail, which counts identically. Zero accounts: all personal data lives in the visitor's browser. Success is a nervous first-timer completing a call in under 5 minutes and feeling like it counted.
+Rostra (the speakers’ platform of the Roman Forum, where a citizen’s voice addressed power) is free, nonpartisan civic infrastructure: find your three members of Congress by ZIP, read any active bill in plain language, get a 30-second editable call script in your language, and make the call — or leave an after-hours voicemail, which counts identically. Zero accounts: all personal data lives in the visitor's browser. Success is a nervous first-timer completing a call in under 5 minutes and feeling like it counted.
 
 ## Brand Personality
 
-**The lit phone booth at night.** Warm light in a dark civic landscape: a small, trustworthy, public utility that's always on. Three words: welcoming, plain-spoken, steady.
+**The lit platform at night.** A public place to stand and be heard, warmly lit against a dark civic landscape — trustworthy, always open. Three words: welcoming, plain-spoken, steady.
 
-- Night-navy ink and header (#11182E), warm paper surfaces, one amber "booth light" accent (#E8A317) reserved for orientation and warmth, never alarm.
+- Night-navy ink and header (#11182E), warm paper surfaces, one amber "floor light" accent (#E8A317) reserved for orientation and warmth, never alarm.
 - Plain language is the product. 8th-grade reading level. The decoded translation always beats the official text for prominence.
 - Calm confidence, never urgency-theater. Anxiety is met with reassurance (voicemail is legitimate, staffers don't debate you).
 

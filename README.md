@@ -1,10 +1,10 @@
-# Cabina
+# Rostra
 
 **Your line to Congress · Tu línea con el Congreso**
 
-Cabina is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language (English and Spanish), get a 30-second call script, and make the call — in under 5 minutes, with no account.
+Rostra is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language (English and Spanish), get a 30-second call script, and make the call — in under 5 minutes, with no account.
 
-The name is the Spanish word for *booth*: **cabina telefónica** (phone booth), **cabina de votación** (voting booth).
+The name is the **Rostra**: the platform in the Roman Forum where citizens stood to address the public and the powerful — the original place a voice met power. Latin roots are the shared ancestry of English and Spanish alike.
 
 ## Design principles
 

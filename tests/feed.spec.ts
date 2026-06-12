@@ -11,6 +11,7 @@ test('feed renders capped bands with show-all expansion', async ({ page }) => {
 });
 
 test('search filters and clears', async ({ page }) => {
+  test.slow(); // hydration-gated; needs runway under full parallel load
   await page.goto('/bills');
   const search = page.getByRole('searchbox');
   // The count line is prerendered in static HTML, so it can't prove React is
@@ -30,7 +31,7 @@ test('topic chip filters the feed and persists', async ({ page }) => {
   await page.goto('/bills');
   await page.getByRole('button', { name: 'Health care' }).click();
   await expect(page.getByRole('button', { name: 'Health care' })).toHaveAttribute('aria-pressed', 'true');
-  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('cabina.prefs') ?? '{}'));
+  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.prefs') ?? '{}'));
   expect(prefs.interests).toContain('health');
 });
 

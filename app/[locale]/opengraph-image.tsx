@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Cabina';
+export const alt = 'Rostra';
 
 const TAGLINES: Record<string, { tag: string; sub: string }> = {
   en: { tag: 'Your line to Congress', sub: 'Find your reps. Understand the bills. Make the call.' },
@@ -43,7 +43,7 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           >
             📞
           </div>
-          <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>Cabina</div>
+          <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>Rostra</div>
         </div>
         <div style={{ marginTop: 36, fontSize: 48, color: '#F2B33D', fontWeight: 600 }}>{tag}</div>
         <div style={{ marginTop: 16, fontSize: 32, color: 'rgba(250,246,238,0.85)' }}>{sub}</div>
