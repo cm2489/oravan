@@ -2,12 +2,11 @@ import { useTranslations } from 'next-intl';
 import type { BillStatus } from '@/lib/types';
 
 /*
- * The path-to-law list, computed entirely from data (bill type -> origin
+ * The path-to-law stepper, computed entirely from data (bill type -> origin
  * chamber, status -> current position). Never AI-generated, so it cannot
  * hallucinate procedure. A single stored status can't distinguish which
  * chamber a floor calendar belongs to, so positions are deliberately
- * conservative: floor_vote pins to the origin-chamber vote step unless the
- * bill has already passed a chamber.
+ * conservative: floor_vote pins to the origin-chamber vote step.
  */
 
 const POSITION: Record<BillStatus, number> = {
@@ -21,58 +20,81 @@ const POSITION: Record<BillStatus, number> = {
   vetoed: 4,
 };
 
+const NOW_KEY: Record<BillStatus, string> = {
+  introduced: 'nowCommittee',
+  committee: 'nowCommittee',
+  markup: 'nowCommittee',
+  floor_vote: 'nowFloor',
+  passed_chamber: 'nowPassed',
+  conference: 'nowConference',
+  signed: 'nowSigned',
+  vetoed: 'nowVetoed',
+};
+
+/** Statuses where the "changes send it back" trailer is still ahead. */
+const TRAILER_STATUSES = new Set<BillStatus>(['introduced', 'committee', 'markup', 'floor_vote', 'passed_chamber']);
+
 export function BillJourney({ billType, status }: { billType: string; status: BillStatus }) {
   const t = useTranslations('bill.journey');
-  const origin = billType.startsWith('h') ? 'House' : 'Senate';
-  const other = origin === 'House' ? 'Senate' : 'House';
+  const chamber = billType.startsWith('h') ? 'House' : 'Senate';
+  const other = chamber === 'House' ? 'Senate' : 'House';
 
-  const steps = [
-    { key: 'introducedIn', chamber: origin },
-    { key: 'committee', chamber: origin },
-    { key: 'vote', chamber: origin },
-    { key: 'otherChamber', chamber: other },
-    { key: 'president', chamber: origin },
-  ] as const;
-
+  const labels = [
+    t('stepIntroduced'),
+    t('stepCommittee', { chamber }),
+    t('stepVote', { chamber }),
+    t('stepOther', { chamber: other }),
+    t('stepPresident'),
+  ];
   const here = POSITION[status] ?? 1;
   const isLaw = status === 'signed';
   const isVetoed = status === 'vetoed';
 
   return (
-    <div>
-      <ol className="mt-1 space-y-0.5">
-        {steps.map((s, i) => {
+    <div className="mt-2 rounded-card border border-line bg-white p-4">
+      <ol className="grid grid-cols-5">
+        {labels.map((label, i) => {
           const done = isLaw || i < here;
           const current = !isLaw && !isVetoed && i === here;
           return (
-            <li
-              key={s.key}
-              className={`relative pl-7 py-0.5 text-sm md:text-base ${
-                current ? 'font-bold text-ink' : done ? 'text-ink-soft' : 'text-ink-faint'
-              }`}
-            >
+            <li key={i} className="relative pt-6 text-center">
+              {/* connector */}
+              {i > 0 && (
+                <span
+                  aria-hidden
+                  className={`absolute left-[-50%] top-[0.55rem] h-0.5 w-full ${
+                    done || current ? 'bg-moss' : 'bg-line'
+                  }`}
+                />
+              )}
+              {/* dot */}
               <span
                 aria-hidden
-                className={`absolute left-1 top-1.5 h-2.5 w-2.5 rounded-full ${
+                className={`absolute left-1/2 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full ${
                   current ? 'bg-booth ring-4 ring-booth-soft' : done ? 'bg-moss' : 'bg-line'
                 }`}
               />
-              {t(s.key, { chamber: s.chamber })}
-              {current && (
-                <span className="ml-2 align-middle text-xs font-bold uppercase tracking-wide text-booth">
-                  {t('youAreHere')}
-                </span>
-              )}
-              {s.key === 'president' && isLaw && (
-                <span className="ml-2 rounded-full bg-moss-soft px-2 py-0.5 text-xs font-semibold text-ink">
-                  {t('law')}
-                </span>
-              )}
+              <span
+                className={`block px-0.5 text-xs leading-tight ${
+                  current ? 'font-bold text-ink' : done ? 'font-medium text-ink-soft' : 'text-ink-faint'
+                }`}
+              >
+                {label}
+                {current && <span className="sr-only"> — {t('youAreHere')}</span>}
+              </span>
             </li>
           );
         })}
       </ol>
-      {isVetoed && <p className="mt-2 text-sm text-ink-soft">{t('vetoed')}</p>}
+      <p className="mt-4 text-sm text-ink-soft">
+        <strong className="text-ink">{t('now')}</strong> {t(NOW_KEY[status] ?? 'nowCommittee', { chamber, other })}
+        {TRAILER_STATUSES.has(status) && <> {t('backTrailer', { chamber, other })}</>}
+        {isLaw && (
+          <span className="ml-2 rounded-full bg-moss-soft px-2 py-0.5 text-xs font-semibold text-ink">
+            {t('law')}
+          </span>
+        )}
+      </p>
     </div>
   );
 }
