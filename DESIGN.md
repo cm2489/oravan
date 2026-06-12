@@ -12,7 +12,7 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 | `ink-soft` | #4A5168 | secondary text |
 | `ink-faint` | #5C6276 | meta text (AA on both papers) |
 | `night` | #11182E | header/hero band, button hover |
-| `booth` | #E8A317 | the amber booth light: logo chip, step numerals, active tab, focus ring |
+| `booth` | #E8A317 | the amber accent (token keeps its legacy name from the Cabina era): logo chip, step numerals, active tab, focus ring |
 | `booth-bright` | #F2B33D | amber on dark (mobile active tab) |
 | `booth-soft` | #FBEED2 | tag pills, info panels |
 | `line` | #E2D9C6 | hairlines, borders |

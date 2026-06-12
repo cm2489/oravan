@@ -1,4 +1,4 @@
-# CLAUDE.md — Cabina
+# CLAUDE.md — Rostra
 
 Read README.md first; its **Design principles** section is the product constitution.
 

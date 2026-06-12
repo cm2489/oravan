@@ -5,7 +5,7 @@ import { formatCitation } from '@/lib/format';
 import type { Stance } from '@/lib/types';
 
 /*
- * The only dynamic endpoint in Cabina. Stateless by design: nothing about
+ * The only dynamic endpoint in Rostra. Stateless by design: nothing about
  * the caller is stored. Scripts are cached per (bill, stance, locale) -
  * shared across all visitors - so popular bills cost one generation total.
  */
