@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Cabina design tokens.
+ * Metaphor: the lit phone booth at night - warm paper, deep night-navy ink,
+ * and one amber "booth light" accent. High contrast by default (WCAG AA+).
+ */
+@theme {
+  --color-paper: #FAF6EE;
+  --color-paper-deep: #F2EBDC;
+  --color-ink: #18203A;
+  --color-ink-soft: #4A5168;
+  --color-ink-faint: #6B7186;
+  --color-night: #11182E;
+  --color-booth: #E8A317;
+  --color-booth-bright: #F2B33D;
+  --color-booth-soft: #FBEED2;
+  --color-line: #E2D9C6;
+  --color-moss: #3E6B4F;
+  --color-moss-soft: #E4EEE7;
+  --color-clay: #A14D3A;
+  --color-clay-soft: #F6E5DF;
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+
+  --radius-card: 1rem;
+  --radius-control: 0.5rem;
+
+  --shadow-lift: 0 1px 2px rgb(17 24 46 / 0.06), 0 8px 24px -12px rgb(17 24 46 / 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  scroll-behavior: smooth;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-booth-soft);
+}
+
+/* Visible focus everywhere, never removed */
+:focus-visible {
+  outline: 3px solid var(--color-booth);
+  outline-offset: 2px;
+  border-radius: 2px;
 }

@@ -1,0 +1,194 @@
+{
+  "common": {
+    "appName": "Cabina",
+    "tagline": "Tu línea con el Congreso",
+    "skipToContent": "Saltar al contenido principal",
+    "nav": {
+      "home": "Inicio",
+      "bills": "Proyectos de ley",
+      "reps": "Mis representantes",
+      "impact": "Mi impacto",
+      "whyCall": "¿Por qué llamar?"
+    },
+    "footer": {
+      "mission": "Cabina es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
+      "privacy": "Privacidad",
+      "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos."
+    },
+    "switchLocale": "In English"
+  },
+  "home": {
+    "heroTitle": "El Congreso cuenta las llamadas.",
+    "heroSub": "Haz que la tuya cuente en menos de 5 minutos. Encuentra a tus representantes, entiende los proyectos de ley que afectan tu vida — en lenguaje claro — y haz oír tu voz. Sin cuenta. Sin app. Solo tú y el teléfono.",
+    "zipLabel": "Tu código postal",
+    "zipPlaceholder": "p. ej. 20002",
+    "zipCta": "Encontrar a mis representantes",
+    "zipHelp": "Se queda en tu dispositivo. Nunca lo vemos ni lo guardamos.",
+    "zipInvalid": "Eso no parece un código postal de EE. UU. — prueba con 5 dígitos.",
+    "topTitle": "Vale la pena llamar esta semana",
+    "topSub": "Los proyectos de ley que avanzan ahora mismo, explicados en lenguaje claro.",
+    "seeAll": "Ver los {count} proyectos de ley activos",
+    "howTitle": "Cómo funciona",
+    "how1Title": "Encuentra a tus tres",
+    "how1Body": "Tu código postal encuentra a tu representante en la Cámara y a tus dos senadores — con sus números en Washington y en tu zona.",
+    "how2Title": "Elige un proyecto y léelo en claro",
+    "how2Body": "Cada proyecto de ley activo está traducido del lenguaje legal a palabras que usaría un vecino.",
+    "how3Title": "Recibe tu guion",
+    "how3Body": "Dinos tu postura y recibe un guion de 30 segundos. Edítalo hasta que suene como tú.",
+    "how4Title": "Llama — o deja un mensaje de voz",
+    "how4Body": "Las oficinas cuentan los mensajes de voz igual que las llamadas en vivo. Fuera de horario también funciona. Después registra cómo te fue.",
+    "whyTitle": "¿De verdad funciona llamar?",
+    "whyBody": "Sí — y mejor que los correos, las peticiones o las redes. El personal del Congreso cuenta las llamadas a diario y reporta los números al congresista.",
+    "whyCta": "Lee por qué llamar funciona",
+    "privacyTitle": "Pensado para tu seguridad",
+    "privacyBody": "Sin registro, sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor. Todo lo personal vive en tu navegador y puedes borrarlo con un toque."
+  },
+  "reps": {
+    "title": "Tus representantes",
+    "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos los números para alcanzarlos.",
+    "noZip": "Escribe tu código postal para encontrar a tus tres miembros del Congreso.",
+    "multiDistrict": "Tu código postal abarca más de un distrito congresional. Abajo se muestran los distritos y sus representantes — tu dirección exacta determina cuál es el tuyo. Si tienes dudas, tus senadores son los mismos en cualquier caso.",
+    "districtHeading": "{state}, distrito {district}",
+    "atLargeHeading": "{state}, distrito único",
+    "senator": "Senador/a",
+    "representative": "Representante",
+    "dcOffice": "Oficina en Washington",
+    "localOffices": "Oficinas locales",
+    "website": "Sitio web oficial",
+    "call": "Llamar",
+    "changeZip": "Cambiar código postal",
+    "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Verifícalo, o busca a tu representante directamente en house.gov.",
+    "party": {
+      "Democrat": "Demócrata",
+      "Republican": "Republicano/a",
+      "Independent": "Independiente"
+    }
+  },
+  "bills": {
+    "title": "Proyectos de ley activos, en claro",
+    "sub": "Cada proyecto de ley que avanza ahora en el Congreso, traducido a lenguaje claro. Filtra por lo que te importa.",
+    "searchLabel": "Buscar proyectos de ley",
+    "searchPlaceholder": "Busca por tema, palabra clave o número…",
+    "all": "Todos los temas",
+    "noResults": "Ningún proyecto coincide — prueba quitando un filtro.",
+    "showingCount": "{shown} de {total} proyectos",
+    "band": {
+      "now": "Actúa ya",
+      "moving": "En movimiento",
+      "radar": "En el radar"
+    },
+    "bandSub": {
+      "now": "Se esperan votaciones o acción en el pleno — aquí las llamadas pesan más.",
+      "moving": "Avanzando por los comités y hacia el calendario.",
+      "radar": "Etapas tempranas — vale la pena seguirlos, con menos prisa."
+    },
+    "status": {
+      "committee": "En comité",
+      "markup": "En revisión",
+      "floor_vote": "Rumbo a votación",
+      "passed_chamber": "Aprobado por una cámara",
+      "signed": "Promulgado como ley"
+    },
+    "decodedPending": "Todavía estamos traduciendo este proyecto a lenguaje claro.",
+    "updated": "Última acción: {date}"
+  },
+  "bill": {
+    "decoded": "En claro",
+    "aiDisclaimer": "Resumen generado por IA. Verifica los detalles contra el texto oficial antes de actuar.",
+    "officialTitle": "Título oficial",
+    "statusLabel": "Estado",
+    "lastAction": "Última acción",
+    "introduced": "Presentado",
+    "viewOfficial": "Lee el proyecto oficial en Congress.gov",
+    "actTitle": "Haz la llamada",
+    "actSub": "Tres pasos: tu postura, tu guion, la llamada.",
+    "stanceQ": "¿Cuál es tu postura?",
+    "stance": {
+      "support": "Lo apoyo",
+      "oppose": "Me opongo",
+      "undecided": "Tengo preguntas"
+    },
+    "getScript": "Escribir mi guion",
+    "generating": "Redactando tu guion…",
+    "scriptTitle": "Tu guion",
+    "scriptHint": "Edita lo que quieras — funciona mejor cuando suena como tú. Los [corchetes] son para que los llenes.",
+    "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",
+    "scriptError": "No pudimos redactar un guion ahora. Inténtalo en un minuto.",
+    "rateLimited": "Has pedido varios guiones en poco tiempo. Respira y vuelve a intentarlo pronto.",
+    "callTitle": "Haz tu llamada",
+    "needZip": "Escribe tu código postal para ver los números de tus representantes.",
+    "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
+    "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
+    "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje es una forma totalmente válida de ser contado. Menciona tu código postal para que sepan que eres su constituyente.",
+    "staffNote": "Contesta un miembro del personal (muchas veces un pasante), anota tu posición y sigue adelante. Sin debate y sin examen — menos de un minuto.",
+    "copy": "Copiar número",
+    "copied": "Copiado",
+    "outcomeQ": "¿Cómo te fue?",
+    "outcome": {
+      "contact": "Hablé con alguien",
+      "voicemail": "Dejé un mensaje de voz",
+      "unavailable": "No pude comunicarme"
+    },
+    "outcomeLogged": "Registrado — guardado solo en este dispositivo. Gracias por llamar.",
+    "viewImpact": "Ver tu impacto"
+  },
+  "why": {
+    "title": "Por qué llamar funciona",
+    "intro": "Se siente demasiado pequeño para importar. No lo es. Esto es lo que pasa de verdad cuando llamas a una oficina del Congreso — y por qué una llamada pesa más que cien publicaciones.",
+    "tallyTitle": "Las llamadas se cuentan, a diario",
+    "tallyBody": "Las oficinas del Congreso llevan un conteo continuo de las posiciones de sus constituyentes sobre los temas activos. Esos conteos llegan al escritorio del congresista mientras el voto sigue abierto. La prensa ha documentado oficinas genuinamente desbordadas — y congresistas cambiando de posición — bajo un volumen sostenido de llamadas.",
+    "emailTitle": "¿Por qué no correos o peticiones?",
+    "emailBody": "El Congreso recibe decenas de millones de correos al año; las cartas de plantilla y las firmas de peticiones se descuentan mucho, y las oleadas de correo generado por IA se descuentan aún más. Una llamada es esfuerzo escaso y verificable de un constituyente real — exactamente por eso pesa más.",
+    "voicemailTitle": "El mensaje de voz cuenta igual",
+    "voicemailBody": "Las oficinas revisan el buzón de voz todos los días y cuentan los mensajes igual que las llamadas en vivo. Si hablar con una persona no es lo tuyo, el mensaje fuera de horario es una alternativa totalmente efectiva — no un premio de consolación.",
+    "scriptTitle": "¿Y qué digo exactamente?",
+    "scriptBody": "Tu nombre, tu código postal o ciudad (para que sepan que eres constituyente), el proyecto de ley, tu posición y una oración explicando por qué. Eso es todo. La llamada completa toma menos de un minuto, y el personal solo anota tu posición — no hay debate.",
+    "respectTitle": "Una cosa más",
+    "respectBody": "Quien contesta suele ser un joven del personal en un día largo. Ser breve y amable no diluye tu mensaje — hace que llegue.",
+    "cta": "Encuentra un proyecto que merezca tu llamada"
+  },
+  "impact": {
+    "title": "Tu impacto",
+    "sub": "Guardado solo en este navegador. Cabina no tiene servidores que sepan quién eres.",
+    "calls": "Llamadas hechas",
+    "contacts": "Conversaciones",
+    "voicemails": "Mensajes de voz",
+    "emptyTitle": "Aún no has registrado llamadas",
+    "emptyBody": "Cuando registres una llamada desde la página de un proyecto de ley, tu historial aparecerá aquí — visible solo para ti.",
+    "emptyCta": "Encuentra un proyecto para llamar",
+    "historyTitle": "Historial de llamadas",
+    "eraseTitle": "Tus datos, tú decides",
+    "eraseBody": "Todo lo que Cabina sabe de ti vive en este navegador. Bórralo cuando quieras.",
+    "erase": "Borrar todos mis datos",
+    "eraseConfirm": "¿Borrar tu código postal, tus intereses y tu historial de llamadas de este dispositivo? Esto no se puede deshacer.",
+    "erased": "Todos los datos locales fueron borrados."
+  },
+  "privacy": {
+    "title": "Privacidad, en lenguaje claro",
+    "p1": "Cabina no tiene cuentas de usuario. Nunca pedimos tu nombre, correo, dirección ni nada que te identifique.",
+    "p2": "Tu código postal, tus temas de interés y tu historial de llamadas se guardan solo en el almacenamiento local de tu navegador — en tu dispositivo. Nunca se transmiten a nuestros servidores ni se guardan en ellos. La página de impacto tiene un botón que lo borra todo con un toque.",
+    "p3": "Cuando pides un guion de llamada, tu postura y el proyecto de ley se envían a nuestro servidor para redactar el texto, se procesan en memoria y no se vinculan a ninguna identidad. Limitamos la frecuencia por dirección de red para prevenir abusos; no guardamos registros que liguen direcciones con posiciones políticas.",
+    "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
+    "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
+    "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable."
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "body": "Esa página no existe — pero tus representantes sí.",
+    "cta": "Ir al inicio"
+  },
+  "categories": {
+    "jobs_economy": "Empleo y economía",
+    "health": "Salud",
+    "national_security": "Seguridad y asuntos exteriores",
+    "environment_energy": "Medio ambiente y energía",
+    "government_democracy": "Gobierno y democracia",
+    "crime_justice": "Crimen y justicia",
+    "family_community": "Familia y comunidad",
+    "education": "Educación",
+    "immigration": "Inmigración",
+    "ai_technology": "IA y tecnología",
+    "housing": "Vivienda",
+    "rights_liberties": "Derechos y libertades"
+  }
+}

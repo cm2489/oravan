@@ -1,7 +1,15 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      // Public-domain congressional portraits (unitedstates project)
+      { protocol: 'https', hostname: 'unitedstates.github.io', pathname: '/images/congress/**' },
+    ],
+  },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

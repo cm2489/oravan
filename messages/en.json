@@ -1,0 +1,194 @@
+{
+  "common": {
+    "appName": "Cabina",
+    "tagline": "Your line to Congress",
+    "skipToContent": "Skip to main content",
+    "nav": {
+      "home": "Home",
+      "bills": "Bills",
+      "reps": "My reps",
+      "impact": "My impact",
+      "whyCall": "Why call?"
+    },
+    "footer": {
+      "mission": "Cabina is free, nonpartisan civic infrastructure. No accounts, no tracking — your data never leaves your device.",
+      "privacy": "Privacy",
+      "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them."
+    },
+    "switchLocale": "En español"
+  },
+  "home": {
+    "heroTitle": "Congress counts calls.",
+    "heroSub": "Make yours count in under 5 minutes. Find your representatives, understand the bills that touch your life — in plain language — and say your piece. No account. No app. Just you and the phone.",
+    "zipLabel": "Your ZIP code",
+    "zipPlaceholder": "e.g. 20002",
+    "zipCta": "Find my representatives",
+    "zipHelp": "Stays on your device. We never see or store it.",
+    "zipInvalid": "That doesn't look like a US ZIP code — try 5 digits.",
+    "topTitle": "Worth a call this week",
+    "topSub": "The bills moving right now, decoded into plain language.",
+    "seeAll": "Browse all {count} active bills",
+    "howTitle": "How it works",
+    "how1Title": "Find your three",
+    "how1Body": "Your ZIP code finds your House representative and two senators — with their DC and local office numbers.",
+    "how2Title": "Pick a bill, get the plain version",
+    "how2Body": "Every active bill is decoded from legal language into words a neighbor would use.",
+    "how3Title": "Get your script",
+    "how3Body": "Tell us where you stand and get a 30-second script. Edit it until it sounds like you.",
+    "how4Title": "Call — or leave a voicemail",
+    "how4Body": "Offices tally voicemails the same as live calls. After hours works too. Then log how it went.",
+    "whyTitle": "Does calling actually work?",
+    "whyBody": "Yes — and better than email, petitions, or posts. Congressional staff tally calls daily and report the counts to the member.",
+    "whyCta": "Read why calling works",
+    "privacyTitle": "Built for your safety",
+    "privacyBody": "No sign-up, no cookies that follow you, no political profile stored on any server. Everything personal lives in your browser, and you can erase it with one tap."
+  },
+  "reps": {
+    "title": "Your representatives",
+    "sub": "Every US resident has one House representative and two senators. Here are yours, with every number that reaches them.",
+    "noZip": "Enter your ZIP code to find your three members of Congress.",
+    "multiDistrict": "Your ZIP code spans more than one congressional district. Districts and their representatives are shown below — your street address determines which is yours. If unsure, your senators are the same either way.",
+    "districtHeading": "{state} district {district}",
+    "atLargeHeading": "{state} at-large",
+    "senator": "Senator",
+    "representative": "Representative",
+    "dcOffice": "DC office",
+    "localOffices": "Local offices",
+    "website": "Official website",
+    "call": "Call",
+    "changeZip": "Change ZIP code",
+    "zipNotFound": "We couldn't match that ZIP code to a congressional district. Double-check it, or look up your member directly at house.gov.",
+    "party": {
+      "Democrat": "Democrat",
+      "Republican": "Republican",
+      "Independent": "Independent"
+    }
+  },
+  "bills": {
+    "title": "Active bills, decoded",
+    "sub": "Every bill moving through Congress right now, translated into plain language. Filter by what matters to you.",
+    "searchLabel": "Search bills",
+    "searchPlaceholder": "Search by topic, keyword, or bill number…",
+    "all": "All topics",
+    "noResults": "No bills match — try clearing a filter.",
+    "showingCount": "{shown} of {total} bills",
+    "band": {
+      "now": "Act now",
+      "moving": "Moving",
+      "radar": "On the radar"
+    },
+    "bandSub": {
+      "now": "Votes or floor action expected — calls matter most here.",
+      "moving": "Advancing through committees and onto the calendar.",
+      "radar": "Earlier stages — worth watching, less time pressure."
+    },
+    "status": {
+      "committee": "In committee",
+      "markup": "In markup",
+      "floor_vote": "Heading to a vote",
+      "passed_chamber": "Passed one chamber",
+      "signed": "Signed into law"
+    },
+    "decodedPending": "We're still translating this one into plain language.",
+    "updated": "Last action {date}"
+  },
+  "bill": {
+    "decoded": "Decoded",
+    "aiDisclaimer": "AI-drafted summary. Verify against the official text before acting on details.",
+    "officialTitle": "Official title",
+    "statusLabel": "Status",
+    "lastAction": "Latest action",
+    "introduced": "Introduced",
+    "viewOfficial": "Read the official bill on Congress.gov",
+    "actTitle": "Make the call",
+    "actSub": "Three steps: where you stand, your script, the call.",
+    "stanceQ": "Where do you stand?",
+    "stance": {
+      "support": "I support it",
+      "oppose": "I oppose it",
+      "undecided": "I have questions"
+    },
+    "getScript": "Write my script",
+    "generating": "Drafting your script…",
+    "scriptTitle": "Your script",
+    "scriptHint": "Edit anything — it works best when it sounds like you. The [brackets] are yours to fill in.",
+    "scriptDisclaimer": "AI-drafted. Review and edit before you call.",
+    "scriptError": "Couldn't draft a script right now. Try again in a minute.",
+    "rateLimited": "You've requested several scripts in a short time. Take a breath and try again soon.",
+    "callTitle": "Place your call",
+    "needZip": "Enter your ZIP code to see your representatives' numbers.",
+    "callWho": "Call any of your three — or all of them. One call per office is plenty.",
+    "afterHoursTitle": "Nervous? Call after hours.",
+    "afterHoursBody": "Voicemails are tallied exactly like live calls. Calling evenings or weekends and leaving a message is a fully legitimate way to be counted. Mention your ZIP code so they know you're a constituent.",
+    "staffNote": "A staffer (often an intern) answers, tallies your position, and moves on. No debate, no quiz — under a minute.",
+    "copy": "Copy number",
+    "copied": "Copied",
+    "outcomeQ": "How did it go?",
+    "outcome": {
+      "contact": "Spoke to someone",
+      "voicemail": "Left a voicemail",
+      "unavailable": "Couldn't get through"
+    },
+    "outcomeLogged": "Logged — saved only on this device. Thank you for calling.",
+    "viewImpact": "See your impact"
+  },
+  "why": {
+    "title": "Why calling works",
+    "intro": "It feels too small to matter. It isn't. Here's what actually happens when you call a congressional office — and why one phone call outweighs a hundred posts.",
+    "tallyTitle": "Calls are tallied, daily",
+    "tallyBody": "Congressional offices keep a running count of constituent positions on active issues. Those tallies reach the member's desk while a vote is still undecided. Reporting has documented offices being genuinely disrupted — and members' positions shifting — under sustained call volume.",
+    "emailTitle": "Why not email or petitions?",
+    "emailBody": "Congress receives tens of millions of emails a year; form letters and petition signatures are heavily discounted, and AI-generated mail floods are discounted further. A phone call is scarce, verifiable effort from a real constituent — that's exactly why it's weighted more.",
+    "voicemailTitle": "Voicemail counts the same",
+    "voicemailBody": "Offices check voicemail every day and tally messages identically to live calls. If talking to a person isn't for you, after-hours voicemail is a fully effective alternative — not a consolation prize.",
+    "scriptTitle": "What do I actually say?",
+    "scriptBody": "Your name, your ZIP or town (so they know you're a constituent), the bill, your position, one sentence why. That's it. The whole call takes under a minute, and the staffer is just writing down your position — there's no debate.",
+    "respectTitle": "One more thing",
+    "respectBody": "The person answering is usually a young staffer having a long day. Being brief and kind doesn't dilute your message — it makes it land.",
+    "cta": "Find a bill worth calling about"
+  },
+  "impact": {
+    "title": "Your impact",
+    "sub": "Stored only in this browser. Cabina has no servers that know who you are.",
+    "calls": "Calls made",
+    "contacts": "Conversations",
+    "voicemails": "Voicemails",
+    "emptyTitle": "No calls logged yet",
+    "emptyBody": "When you log a call from a bill page, your history shows up here — visible to you alone.",
+    "emptyCta": "Find a bill to call about",
+    "historyTitle": "Call history",
+    "eraseTitle": "Your data, your call",
+    "eraseBody": "Everything Cabina knows about you lives in this browser. Erase it any time.",
+    "erase": "Erase all my data",
+    "eraseConfirm": "Erase your ZIP, interests, and call history from this device? This can't be undone.",
+    "erased": "All local data erased."
+  },
+  "privacy": {
+    "title": "Privacy, in plain language",
+    "p1": "Cabina has no user accounts. We never ask for your name, email, address, or anything that identifies you.",
+    "p2": "Your ZIP code, your issue interests, and your call history are stored only in your browser's local storage — on your device. They are never transmitted to, or stored on, our servers. The Impact page has a one-tap button that erases all of it.",
+    "p3": "When you ask for a call script, your chosen stance and the bill are sent to our server to draft the text, processed in memory, and not linked to any identity. We rate-limit by network address to prevent abuse; we don't keep a log tying addresses to political positions.",
+    "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
+    "p5": "This matters because political beliefs are sensitive data. The safest database is the one that doesn't exist — so we didn't build one.",
+    "contact": "Questions? The project is open about how it works — every line of code is inspectable."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "That page doesn't exist — but your representatives do.",
+    "cta": "Go home"
+  },
+  "categories": {
+    "jobs_economy": "Jobs & the economy",
+    "health": "Health care",
+    "national_security": "Security & foreign affairs",
+    "environment_energy": "Environment & energy",
+    "government_democracy": "Government & democracy",
+    "crime_justice": "Crime & justice",
+    "family_community": "Family & community",
+    "education": "Education",
+    "immigration": "Immigration",
+    "ai_technology": "AI & technology",
+    "housing": "Housing",
+    "rights_liberties": "Rights & liberties"
+  }
+}

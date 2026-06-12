@@ -1,0 +1,102 @@
+'use client';
+
+/*
+ * All personal data lives HERE, in the visitor's browser. Cabina has no
+ * accounts and no server-side user storage - nothing to breach, nothing
+ * to subpoena. Clearing browser data (or the Impact page's delete button)
+ * erases everything.
+ */
+
+import { useSyncExternalStore } from 'react';
+import type { CallOutcome, Stance } from './types';
+
+export interface Prefs {
+  zip?: string;
+  interests?: string[];
+}
+
+export interface CallRecord {
+  billSlug: string;
+  billLabel: string;
+  repBioguide: string;
+  repName: string;
+  stance: Stance;
+  outcome: CallOutcome;
+  at: string; // ISO timestamp
+}
+
+const PREFS_KEY = 'cabina.prefs';
+const CALLS_KEY = 'cabina.calls';
+
+const listeners = new Set<() => void>();
+
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  window.addEventListener('storage', cb);
+  return () => {
+    listeners.delete(cb);
+    window.removeEventListener('storage', cb);
+  };
+}
+
+function notify() {
+  for (const cb of listeners) cb();
+}
+
+function write(key: string, value: unknown) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage full or blocked (private mode) - degrade silently.
+  }
+  notify();
+}
+
+/** Snapshot cache so useSyncExternalStore gets referentially-stable values. */
+function makeSnapshot<T>(key: string, fallback: T) {
+  let cache: { raw: string | null; value: T } | null = null;
+  return () => {
+    let raw: string | null = null;
+    try {
+      raw = window.localStorage.getItem(key);
+    } catch {
+      /* blocked */
+    }
+    if (!cache || cache.raw !== raw) {
+      let value = fallback;
+      try {
+        value = raw ? (JSON.parse(raw) as T) : fallback;
+      } catch {
+        /* corrupted entry */
+      }
+      cache = { raw, value };
+    }
+    return cache.value;
+  };
+}
+
+const EMPTY_PREFS: Prefs = {};
+const EMPTY_CALLS: CallRecord[] = [];
+const prefsSnapshot = makeSnapshot<Prefs>(PREFS_KEY, EMPTY_PREFS);
+const callsSnapshot = makeSnapshot<CallRecord[]>(CALLS_KEY, EMPTY_CALLS);
+
+export function usePrefs(): Prefs {
+  return useSyncExternalStore(subscribe, prefsSnapshot, () => EMPTY_PREFS);
+}
+
+export function useCalls(): CallRecord[] {
+  return useSyncExternalStore(subscribe, callsSnapshot, () => EMPTY_CALLS);
+}
+
+export const setPrefs = (p: Partial<Prefs>) => write(PREFS_KEY, { ...prefsSnapshot(), ...p });
+export const addCall = (c: CallRecord) => write(CALLS_KEY, [c, ...callsSnapshot()]);
+
+export function eraseAll() {
+  try {
+    window.localStorage.removeItem(PREFS_KEY);
+    window.localStorage.removeItem(CALLS_KEY);
+  } catch {
+    /* nothing to erase */
+  }
+  notify();
+}

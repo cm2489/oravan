@@ -1,0 +1,23 @@
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+
+export function Footer() {
+  const t = useTranslations('common');
+
+  return (
+    <footer className="mt-16 border-t border-line bg-paper-deep">
+      <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-ink-soft space-y-3">
+        <p className="max-w-prose">{t('footer.mission')}</p>
+        <p className="max-w-prose">{t('footer.aiNote')}</p>
+        <nav aria-label="Footer" className="flex gap-5 pt-2">
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.privacy')}
+          </Link>
+          <Link href="/why-call" className="underline underline-offset-2 hover:text-ink">
+            {t('nav.whyCall')}
+          </Link>
+        </nav>
+      </div>
+    </footer>
+  );
+}
