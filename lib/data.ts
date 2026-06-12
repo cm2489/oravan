@@ -3,6 +3,7 @@ import bills from '@/data/bills.json';
 import billsEs from '@/data/bills-es.json';
 import legislators from '@/data/legislators.json';
 import zipDistricts from '@/data/zip-districts.json';
+import heartbeats from '@/data/heartbeats.json';
 import { formatCitation } from './format';
 import type { Bill, BillTeaser, District, Legislator } from './types';
 
@@ -13,6 +14,7 @@ const ES = billsEs as Record<
 >;
 const LEGISLATORS = legislators as Legislator[];
 const ZIPS = zipDistricts as Record<string, District[]>;
+const PULSES = heartbeats as Record<string, number>;
 
 /** Overlay the Spanish decoded content when it exists; English is the fallback. */
 export function localizeBill(b: Bill, locale: string): Bill {
@@ -67,9 +69,15 @@ export function getAllBills(): Bill[] {
   return BILLS;
 }
 
+/** Community signal: a 7-day pulse lifts visibility, log-scaled and capped. */
+function pulseBoost(slug: string): number {
+  const pulse = PULSES[slug] ?? 0;
+  return pulse > 0 ? Math.min(0.15, Math.log10(1 + pulse) * 0.075) : 0;
+}
+
 export function getTeasers(locale = 'en'): BillTeaser[] {
   return BILLS
-    .map((raw) => ({ raw, eff: effectiveUrgency(raw.status, raw.last_action_date) }))
+    .map((raw) => ({ raw, eff: effectiveUrgency(raw.status, raw.last_action_date) + pulseBoost(billSlug(raw)) }))
     .sort((a, b) => b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
     .map(({ raw, eff }) => {
       const b = localizeBill(raw, locale);
@@ -90,7 +98,7 @@ export function getTeasers(locale = 'en'): BillTeaser[] {
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
   return BILLS
     .filter((b) => b.ai_headline && b.status !== 'signed')
-    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) }))
+    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) + pulseBoost(billSlug(b)) }))
     .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
     .slice(0, n)
     .map(({ b }) => localizeBill(b, locale));

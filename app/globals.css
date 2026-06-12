@@ -75,6 +75,12 @@ body {
   animation: pop 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+.ekg path {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: draw-stroke var(--beat, 1.8s) linear infinite;
+}
+
 @keyframes shimmer-slide {
   from { transform: translateX(-100%); }
   to { transform: translateX(300%); }

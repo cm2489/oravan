@@ -193,7 +193,11 @@
     "startCall": "Empezar la llamada",
     "editScript": "Editar guion",
     "firstCallTitle": "¿Tu primera llamada?",
-    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo."
+    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
+    "tallyCta": "Suma tu llamada al conteo de este proyecto",
+    "tallyNote": "Solo un número. Anónimo, nunca rastreado.",
+    "tallyDone": "Contada. Tu llamada se suma a {count, plural, one {# llamada} other {# llamadas}} esta semana en este proyecto.",
+    "pulseLabel": "{count, plural, one {# llamada contada esta semana} other {# llamadas contadas esta semana}}"
   },
   "why": {
     "title": "Por qué llamar funciona",
@@ -236,7 +240,8 @@
     "p3": "Cuando pides un guion de llamada, tu postura y el proyecto de ley se envían a nuestro servidor para redactar el texto, se procesan en memoria y no se vinculan a ninguna identidad. Limitamos la frecuencia por dirección de red para prevenir abusos; no guardamos registros que liguen direcciones con posiciones políticas.",
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
-    "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable."
+    "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable.",
+    "p6": "El único número que sí guardamos: cada proyecto de ley tiene un conteo anónimo de llamadas que la gente decidió sumar. Añadir la tuya guarda un solo número asociado al proyecto. No quién eres, no dónde vives, no qué dijiste. Para prevenir abusos, contamos brevemente cuántas sumas llegan de una dirección de red cada día, sin registrar qué proyectos tocaron."
   },
   "notFound": {
     "title": "Página no encontrada",

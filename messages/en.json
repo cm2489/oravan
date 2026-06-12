@@ -193,7 +193,11 @@
     "startCall": "Start the call",
     "editScript": "Edit script",
     "firstCallTitle": "Your first call?",
-    "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now."
+    "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now.",
+    "tallyCta": "Add your call to this bill’s tally",
+    "tallyNote": "Just a number. Anonymous, never tracked.",
+    "tallyDone": "Counted. Your call joins {count, plural, one {# call} other {# calls}} this week on this bill.",
+    "pulseLabel": "{count, plural, one {# call tallied this week} other {# calls tallied this week}}"
   },
   "why": {
     "title": "Why calling works",
@@ -236,7 +240,8 @@
     "p3": "When you ask for a call script, your chosen stance and the bill are sent to our server to draft the text, processed in memory, and not linked to any identity. We rate-limit by network address to prevent abuse; we don't keep a log tying addresses to political positions.",
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
     "p5": "This matters because political beliefs are sensitive data. The safest database is the one that doesn't exist, so we didn't build one.",
-    "contact": "Questions? The project is open about how it works: every line of code is inspectable."
+    "contact": "Questions? The project is open about how it works: every line of code is inspectable.",
+    "p6": "The one number we do keep: each bill has an anonymous tally of calls people chose to count. Adding yours stores a single number against the bill. Not who you are, not where you live, not what you said. To prevent abuse we briefly count how many tallies come from a network address each day, without recording which bills they touched."
   },
   "notFound": {
     "title": "Page not found",

@@ -20,7 +20,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
     <article className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
       <div className="mt-6 space-y-5 leading-relaxed max-w-prose">
-        {(['p1', 'p2', 'p3', 'p4', 'p5'] as const).map((p) => (
+        {(['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const).map((p) => (
           <p key={p} className={p === 'p5' ? 'font-semibold' : undefined}>
             {t(p)}
           </p>

@@ -33,6 +33,15 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   ).toHaveAttribute('aria-pressed', 'true');
   // First-call milestone fires inline, adjacent to the tapped chip
   await expect(page.getByText(/your first call/i)).toBeVisible();
+
+  // The movement tally: opt-in button -> counted confirmation, one per device
+  await page.route('**/api/heartbeat', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, pulse7: 4, total: 9 }) })
+  );
+  await page.getByRole('button', { name: /add your call to this bill/i }).click();
+  await expect(page.getByText(/your call joins 4 calls this week/i)).toBeVisible();
+  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.prefs') ?? '{}'));
+  expect(prefs.tallied).toContain('sjres-99-119');
   await page.getByRole('button', { name: 'Spoke to someone' }).first().click();
   const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.calls') ?? '[]'));
   expect(calls).toHaveLength(1);
@@ -75,6 +84,20 @@ test('script failure shows a retry that recovers', async ({ page }) => {
   await expect(page.getByRole('alert').filter({ hasText: /try again/i })).toBeVisible();
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('textbox', { name: 'Your script' })).toHaveValue('RECOVERED SCRIPT');
+});
+
+test('heartbeat pulse renders at threshold, hides below it', async ({ page }) => {
+  await page.route('**/api/heartbeat?slug=*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ pulse7: 7, total: 12 }) })
+  );
+  await page.goto(BILL);
+  await expect(page.getByText('7 calls tallied this week')).toBeVisible();
+  await page.unroute('**/api/heartbeat?slug=*');
+  await page.route('**/api/heartbeat?slug=*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ pulse7: 1, total: 2 }) })
+  );
+  await page.reload();
+  await expect(page.getByText(/tallied this week/)).toHaveCount(0);
 });
 
 test('spanish bill page serves translated decoded content', async ({ page }) => {
