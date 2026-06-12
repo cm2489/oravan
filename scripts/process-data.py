@@ -1,5 +1,22 @@
-import json, csv
+"""Build data/legislators.json and data/zip-districts.json.
+
+With --download, fetches the public-domain sources first (CI mode);
+otherwise expects the raw files already present in data/.
+"""
+import json, csv, sys, urllib.request
 from collections import defaultdict
+
+DOWNLOAD = '--download' in sys.argv
+SOURCES = {
+    'data/legislators-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-current.json',
+    'data/district-offices-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-district-offices.json',
+    'data/zccd.csv': 'https://raw.githubusercontent.com/OpenSourceActivismTech/us_zipcodes_congress/master/zccd.csv',
+}
+
+if DOWNLOAD:
+    for path, url in SOURCES.items():
+        print(f'downloading {url}')
+        urllib.request.urlretrieve(url, path)
 
 legs = json.load(open('data/legislators-raw.json'))
 offices_raw = json.load(open('data/district-offices-raw.json'))
@@ -8,8 +25,6 @@ office_map = {o['id']['bioguide']: o['offices'] for o in offices_raw}
 out = []
 for l in legs:
     t = l['terms'][-1]
-    if t.get('end', '9999') < '2026-06-12':
-        continue
     bid = l['id']['bioguide']
     offs = [
         {'city': o.get('city'), 'state': o.get('state'), 'phone': o.get('phone')}
@@ -22,7 +37,7 @@ for l in legs:
         'last': l['name']['last'],
         'type': t['type'],  # sen | rep
         'state': t['state'],
-        'district': t.get('district'),  # None for senators
+        'district': t.get('district'),
         'party': t.get('party'),
         'phone': t.get('phone'),
         'url': t.get('url'),
@@ -38,5 +53,9 @@ with open('data/zccd.csv') as f:
         if pair not in zips[row['zcta']]:
             zips[row['zcta']].append(pair)
 json.dump(dict(zips), open('data/zip-districts.json', 'w'))
-multi = sum(1 for v in zips.values() if len(v) > 1)
-print('zip-districts.json:', len(zips), 'ZIPs,', multi, 'span multiple districts')
+print('zip-districts.json:', len(zips), 'ZIPs')
+
+if DOWNLOAD:
+    import os
+    for path in SOURCES:
+        os.remove(path)

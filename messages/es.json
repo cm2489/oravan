@@ -13,7 +13,8 @@
     "footer": {
       "mission": "Cabina es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
       "privacy": "Privacidad",
-      "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos."
+      "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos.",
+      "terms": "Términos"
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
@@ -218,5 +219,13 @@
     "ai_technology": "IA y tecnología",
     "housing": "Vivienda",
     "rights_liberties": "Derechos y libertades"
+  },
+  "terms": {
+    "title": "Términos, en lenguaje claro",
+    "p1": "Cabina es una herramienta cívica gratuita y no partidista. Te ayuda a encontrar a tus miembros del Congreso, entender los proyectos de ley activos y llamar para opinar sobre ellos. No está afiliada al Congreso, a ninguna agencia de gobierno, partido ni campaña.",
+    "p2": "Los resúmenes, titulares y guiones son borradores generados por IA y están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
+    "p3": "Cabina se ofrece tal cual, sin garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario; verifica lo que importe.",
+    "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
+    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
   }
 }
