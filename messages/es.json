@@ -14,7 +14,8 @@
       "mission": "Rostra es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
       "privacy": "Privacidad",
       "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos.",
-      "terms": "Términos"
+      "terms": "Términos",
+      "lore": "La Rostra era la tribuna del Foro Romano donde cualquier ciudadano podía dirigirse al poder. Súbete."
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
@@ -181,7 +182,13 @@
       "youAreHere": "Estás aquí",
       "law": "Ya es ley"
     },
-    "tldrMeta": "Lectura de {seconds} segundos · {count} preguntas respondidas abajo"
+    "tldrMeta": "Lectura de {seconds} segundos · {count} preguntas respondidas abajo",
+    "loggedFirst": "Esa fue tu primera llamada. La mayoría de la gente nunca hace ninguna. Tú acabas de hacerla.",
+    "loggedFifth": "Cinco llamadas registradas. En las oficinas ya empiezan a conocer tu código postal.",
+    "loggedTenth": "Diez llamadas. Lo que empezó con nervios ya es un hábito.",
+    "generating1": "Leyendo el proyecto de ley para que tú no tengas que hacerlo…",
+    "generating2": "Poniéndolo en tus palabras…",
+    "generating3": "Recortándolo a treinta segundos…"
   },
   "why": {
     "title": "Por qué llamar funciona",

@@ -56,7 +56,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
         {rep.phone && (
           <a
             href={telHref(rep.phone)}
-            className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3 font-semibold text-paper hover:bg-night"
+            className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
           >
             <span className="inline-flex items-center gap-2">
               <Phone className="h-4 w-4" aria-hidden />

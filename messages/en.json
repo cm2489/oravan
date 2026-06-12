@@ -14,7 +14,8 @@
       "mission": "Rostra is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
       "privacy": "Privacy",
       "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them.",
-      "terms": "Terms"
+      "terms": "Terms",
+      "lore": "The Rostra was the platform in the Roman Forum where any citizen could address the powerful. Step up."
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -181,7 +182,13 @@
       "youAreHere": "You are here",
       "law": "Now law"
     },
-    "tldrMeta": "{seconds}-second read · {count} questions answered below"
+    "tldrMeta": "{seconds}-second read · {count} questions answered below",
+    "loggedFirst": "That was your first call. Most people never make one. You just did.",
+    "loggedFifth": "Five calls logged. The offices are starting to know your ZIP code.",
+    "loggedTenth": "Ten calls. What started as nerves is now a habit.",
+    "generating1": "Reading the bill so you don't have to…",
+    "generating2": "Putting it in your words…",
+    "generating3": "Trimming it to thirty seconds…"
   },
   "why": {
     "title": "Why calling works",

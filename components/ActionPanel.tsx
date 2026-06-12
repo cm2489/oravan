@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, Copy, Ear, Expand, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { upsertCall, usePrefs } from '@/lib/local';
+import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { ZipForm } from './ZipForm';
 
@@ -38,6 +38,16 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const [bigType, setBigType] = useState(false);
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
   const closeBigRef = useRef<HTMLButtonElement>(null);
+  const callCount = useCalls().length;
+
+  // The drafting wait gets product-specific rotating lines, not a frozen spinner.
+  const [genLine, setGenLine] = useState<1 | 2 | 3>(1);
+  useEffect(() => {
+    if (!loading) return;
+    setGenLine(1);
+    const id = setInterval(() => setGenLine((g) => (g === 3 ? 1 : ((g + 1) as 1 | 2 | 3))), 3200);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const script = stance ? (drafts[stance] ?? '') : '';
   const setScript = (text: string) => {
@@ -142,7 +152,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               onClick={() => generate(s)}
               aria-pressed={stance === s}
               disabled={loading}
-              className={`rounded-control border-2 px-4 py-3 font-semibold disabled:opacity-50 ${
+              className={`rounded-control border-2 px-4 py-3 font-semibold transition-transform disabled:opacity-50 active:translate-y-px ${
                 stance === s
                   ? 'border-ink bg-ink text-paper'
                   : 'border-ink/20 bg-white hover:border-ink/50'
@@ -159,7 +169,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         <div className="mt-6" role="status">
           <p className="inline-flex items-center gap-2 text-ink-soft">
             <Sparkles className="h-4 w-4 animate-pulse" aria-hidden />
-            {t('generating')}
+            {t(`generating${genLine}`)}
             <span className="text-ink-faint">{t('generatingHint')}</span>
           </p>
           <div className="mt-2 h-1 max-w-md overflow-hidden rounded-full bg-paper-deep">
@@ -248,7 +258,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                     <a
                       key={rep.bioguide}
                       href={telHref(rep.phone)}
-                      className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-3 font-semibold text-paper hover:bg-night"
+                      className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-3 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
                     >
                       <Phone className="h-4 w-4" aria-hidden />
                       {rep.last} · {rep.phone}
@@ -327,7 +337,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                       <>
                         <a
                           href={telHref(rep.phone)}
-                          className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-2.5 font-semibold text-paper hover:bg-night"
+                          className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-2.5 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
                         >
                           <Phone className="h-4 w-4" aria-hidden />
                           {rep.phone}
@@ -373,7 +383,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           aria-pressed={logged === o}
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-medium ${
                             logged === o
-                              ? 'border-moss bg-moss-soft text-ink'
+                              ? 'pop border-moss bg-moss-soft text-ink'
                               : 'border-ink/20 hover:bg-paper-deep'
                           }`}
                         >
@@ -389,12 +399,34 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           </ul>
 
           {anyLogged && (
-            <p className="mt-4 rounded-control bg-moss-soft px-4 py-3 font-medium" role="status">
-              {t('outcomeLogged')}{' '}
-              <Link href="/impact" className="underline underline-offset-2">
-                {t('viewImpact')}
-              </Link>
-            </p>
+            <div className="mt-4 flex items-start gap-3 rounded-control bg-moss-soft px-4 py-3" role="status">
+              {/* Drawn checkmark - the moment deserves more than a banner */}
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="draw-check mt-0.5 h-6 w-6 flex-none text-moss"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="m8.5 12.5 2.5 2.5 5-6" />
+              </svg>
+              <p className="font-medium">
+                {callCount === 1
+                  ? t('loggedFirst')
+                  : callCount === 5
+                    ? t('loggedFifth')
+                    : callCount === 10
+                      ? t('loggedTenth')
+                      : t('outcomeLogged')}{' '}
+                <Link href="/impact" className="underline underline-offset-2">
+                  {t('viewImpact')}
+                </Link>
+              </p>
+            </div>
           )}
         </div>
       )}

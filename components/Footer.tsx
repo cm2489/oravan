@@ -8,6 +8,7 @@ export function Footer() {
     <footer className="mt-16 border-t border-line bg-paper-deep">
       {/* pb clears the fixed mobile tab bar so footer links stay tappable */}
       <div className="mx-auto max-w-5xl px-4 pt-10 pb-28 md:pb-10 text-sm text-ink-soft space-y-3">
+        <p className="max-w-prose italic text-ink-faint">{t('footer.lore')}</p>
         <p className="max-w-prose">{t('footer.mission')}</p>
         <p className="max-w-prose">{t('footer.aiNote')}</p>
         <nav aria-label="Footer" className="flex flex-wrap gap-5 pt-2">
