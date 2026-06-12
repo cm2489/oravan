@@ -25,6 +25,9 @@ export async function generateMetadata({
   return {
     title: { default: `${t('appName')} — ${t('tagline')}`, template: `%s — ${t('appName')}` },
     description: t('footer.mission'),
+    // LAUNCH GATE: remove once the name/domain is locked - keeps the unbranded
+    // test deployment out of search indexes during the feedback phase.
+    robots: { index: false, follow: false },
   };
 }
 
