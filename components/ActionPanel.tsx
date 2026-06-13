@@ -70,7 +70,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const [genLine, setGenLine] = useState<1 | 2 | 3>(1);
   useEffect(() => {
     if (!loading) return;
-    setGenLine(1);
     const id = setInterval(() => setGenLine((g) => (g === 3 ? 1 : ((g + 1) as 1 | 2 | 3))), 3200);
     return () => clearInterval(id);
   }, [loading]);
@@ -106,6 +105,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setStance(s);
     setError(null);
     if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
+    setGenLine(1); // restart the rotating lines for this generation
     setLoading(true);
     try {
       const res = await fetch('/api/script', {

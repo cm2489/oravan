@@ -62,7 +62,7 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
         b.tags.some((tag) => t(`categories.${tag}`).toLowerCase().includes(q))
       );
     });
-  }, [bills, query, active]);
+  }, [bills, query, active, t]);
 
   const byBand = useMemo(() => {
     const groups: Record<UrgencyBand, BillTeaser[]> = { now: [], moving: [], radar: [] };
