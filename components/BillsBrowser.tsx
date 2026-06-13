@@ -57,10 +57,12 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
       return (
         b.title.toLowerCase().includes(q) ||
         (b.headline ?? '').toLowerCase().includes(q) ||
-        b.identifier.toLowerCase().includes(q)
+        b.identifier.toLowerCase().includes(q) ||
+        // The placeholder promises topic search - match localized tag names
+        b.tags.some((tag) => t(`categories.${tag}`).toLowerCase().includes(q))
       );
     });
-  }, [bills, query, active]);
+  }, [bills, query, active, t]);
 
   const byBand = useMemo(() => {
     const groups: Record<UrgencyBand, BillTeaser[]> = { now: [], moving: [], radar: [] };

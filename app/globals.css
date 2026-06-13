@@ -64,3 +64,41 @@ body {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* Delight moments - all killed by the prefers-reduced-motion block above */
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: pop 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.ekg path {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: draw-stroke var(--beat, 1.8s) linear infinite;
+}
+
+@keyframes shimmer-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.shimmer {
+  animation: shimmer-slide 1.4s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+@keyframes draw-stroke {
+  to { stroke-dashoffset: 0; }
+}
+.draw-check circle {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: draw-stroke 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.draw-check path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: draw-stroke 0.35s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+}

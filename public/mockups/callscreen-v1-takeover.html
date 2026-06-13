@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call screen V1 — Takeover mode</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css">
+<style>
+body{background:var(--paper);min-height:100dvh;display:flex;flex-direction:column}
+header{background:var(--night);color:var(--paper);padding:2.2rem 1rem .9rem}
+header .top{display:flex;justify-content:space-between;align-items:center}
+header .who{font-size:.8rem;font-weight:600;color:var(--booth-bright);text-transform:none}
+header .exit{font-size:.85rem;font-weight:700;color:var(--paper);border:1px solid rgba(250,246,238,.35);border-radius:.5rem;padding:.4rem .8rem;background:none}
+.reps{display:flex;gap:.5rem;margin-top:.7rem;overflow-x:auto}
+.reps button{flex:none;border-radius:999px;padding:.45rem .9rem;font-size:.82rem;font-weight:700;border:1px solid rgba(250,246,238,.3);background:none;color:var(--paper)}
+.reps button.on{background:var(--booth);color:var(--night);border-color:var(--booth)}
+main{flex:1;overflow-y:auto;padding:1.4rem 1.15rem 9rem}
+.script{font-family:'Bricolage Grotesque',sans-serif;font-size:1.55rem;line-height:1.45;font-weight:600;max-width:34rem}
+.script .blank{background:var(--booth-soft);border-radius:.3rem;padding:0 .3rem}
+.edit{display:inline-block;margin-top:1.1rem;font-size:.9rem;font-weight:700;color:var(--ink-soft);text-decoration:underline;text-underline-offset:4px}
+.dock{position:fixed;bottom:0;left:0;right:0;background:var(--night);padding:.9rem 1rem calc(.9rem + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgb(17 24 46 / .18)}
+.dock .dial{display:flex;width:100%;justify-content:center;align-items:center;gap:.6rem;background:var(--booth);color:var(--night);font-size:1.1rem;font-weight:800;border:none;border-radius:.75rem;padding:1rem}
+.dock .meta{margin-top:.5rem;display:flex;justify-content:space-between;font-size:.78rem;color:rgba(250,246,238,.8)}
+</style>
+</head>
+<body>
+<div class="banner">CALL SCREEN V1 — full takeover after "Start your call"</div>
+<header>
+  <div class="top"><span class="who">Calling about H.R. 5582</span><button class="exit">Done</button></div>
+  <div class="reps">
+    <button class="on">De La Cruz · House</button>
+    <button>Cornyn · Senate</button>
+    <button>Cruz · Senate</button>
+  </div>
+</header>
+<main>
+  <p class="script">Hi, my name is <span class="blank">[YOUR NAME]</span> and I'm a constituent from <span class="blank">[McAllen]</span>. I'm calling about H.R. 5582. I support it, and I'm asking the Representative to vote yes. Patients should see real prices before they get care, and insurers shouldn't bill more than their own estimate. Please pass along my support. Thank you for your time.</p>
+  <a class="edit" href="#">Edit script</a>
+</main>
+<div class="dock">
+  <button class="dial">📞&ensp;Call De La Cruz · 202-225-9901</button>
+  <div class="meta"><span>Local: McAllen · 956-682-5545</span><span>How did it go? appears after</span></div>
+</div>
+</body></html>

@@ -21,7 +21,7 @@ const POSITION: Record<BillStatus, number> = {
 };
 
 const NOW_KEY: Record<BillStatus, string> = {
-  introduced: 'nowCommittee',
+  introduced: 'nowIntroduced',
   committee: 'nowCommittee',
   markup: 'nowCommittee',
   floor_vote: 'nowFloor',
@@ -51,7 +51,7 @@ export function BillJourney({ billType, status }: { billType: string; status: Bi
   const isVetoed = status === 'vetoed';
 
   return (
-    <div className="mt-2 rounded-card border border-line bg-white p-4">
+    <div className="mt-3 border-t border-line pt-4">
       <ol className="grid grid-cols-5">
         {labels.map((label, i) => {
           const done = isLaw || i < here;

@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BookOpen, Check, Copy, Ear, Expand, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
+import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { upsertCall, usePrefs } from '@/lib/local';
+import { setPrefs, upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { ZipForm } from './ZipForm';
 
@@ -32,12 +32,47 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const [error, setError] = useState<'generic' | 'rate' | null>(null);
   const [reps, setReps] = useState<Legislator[]>([]);
   const [repsError, setRepsError] = useState(false);
-  const zip = usePrefs().zip ?? null;
+  const prefs = usePrefs();
+  const zip = prefs.zip ?? null;
+  const alreadyTallied = (prefs.tallied ?? []).includes(slug);
+  const [tally, setTally] = useState<{ state: 'idle' | 'sending' | 'done' | 'hidden'; count: number }>({
+    state: 'idle',
+    count: 0,
+  });
+
+  async function addToTally() {
+    setTally({ state: 'sending', count: 0 });
+    try {
+      const res = await fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) {
+        setTally({ state: 'hidden', count: 0 });
+        return;
+      }
+      const d = await res.json();
+      setPrefs({ tallied: [...(prefs.tallied ?? []), slug] });
+      setTally({ state: 'done', count: d.pulse7 ?? 1 });
+    } catch {
+      setTally({ state: 'hidden', count: 0 });
+    }
+  }
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
   const [bigType, setBigType] = useState(false);
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
   const closeBigRef = useRef<HTMLButtonElement>(null);
+  const callCount = useCalls().length;
+
+  // The drafting wait gets product-specific rotating lines, not a frozen spinner.
+  const [genLine, setGenLine] = useState<1 | 2 | 3>(1);
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => setGenLine((g) => (g === 3 ? 1 : ((g + 1) as 1 | 2 | 3))), 3200);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const script = stance ? (drafts[stance] ?? '') : '';
   const setScript = (text: string) => {
@@ -70,6 +105,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setStance(s);
     setError(null);
     if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
+    setGenLine(1); // restart the rotating lines for this generation
     setLoading(true);
     try {
       const res = await fetch('/api/script', {
@@ -110,9 +146,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
   function logOutcome(rep: Legislator, outcome: CallOutcome) {
     if (!stance) return;
+    // Headlines often already name the bill; don't repeat the citation.
+    const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
+    const billLabel = norm(title).includes(norm(identifier)) ? title : `${identifier} · ${title}`;
     upsertCall({
       billSlug: slug,
-      billLabel: `${identifier} — ${title}`,
+      billLabel,
       repBioguide: rep.bioguide,
       repName: rep.name,
       stance,
@@ -122,7 +161,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setLoggedOutcomes((prev) => ({ ...prev, [rep.bioguide]: outcome }));
   }
 
-  const anyLogged = Object.keys(loggedOutcomes).length > 0;
 
   return (
     <section aria-labelledby="act" className="mt-12 rounded-card border-2 border-ink bg-white p-6 md:p-8 shadow-lift">
@@ -142,7 +180,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               onClick={() => generate(s)}
               aria-pressed={stance === s}
               disabled={loading}
-              className={`rounded-control border-2 px-4 py-3 font-semibold disabled:opacity-50 ${
+              className={`rounded-control border-2 px-4 py-3 font-semibold transition-transform disabled:opacity-50 active:translate-y-px ${
                 stance === s
                   ? 'border-ink bg-ink text-paper'
                   : 'border-ink/20 bg-white hover:border-ink/50'
@@ -157,13 +195,13 @@ export function ActionPanel({ slug, identifier, title }: Props) {
       {/* Step 2 - script */}
       {loading && (
         <div className="mt-6" role="status">
-          <p className="inline-flex items-center gap-2 text-ink-soft">
-            <Sparkles className="h-4 w-4 animate-pulse" aria-hidden />
-            {t('generating')}
-            <span className="text-ink-faint">{t('generatingHint')}</span>
+          <p className="flex items-center gap-2 text-ink-soft">
+            <Sparkles className="h-4 w-4 flex-none animate-pulse" aria-hidden />
+            {t(`generating${genLine}`)}
           </p>
+          <p className="mt-0.5 text-sm text-ink-faint">{t('generatingHint')}</p>
           <div className="mt-2 h-1 max-w-md overflow-hidden rounded-full bg-paper-deep">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-booth" />
+            <div className="shimmer h-full w-1/3 rounded-full bg-booth" />
           </div>
         </div>
       )}
@@ -210,53 +248,85 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             <button
               type="button"
               onClick={() => setBigType(true)}
-              className="inline-flex items-center gap-1.5 rounded-control border border-ink/20 px-3.5 py-2.5 text-sm font-medium hover:border-ink/50"
+              className="inline-flex items-center gap-2 rounded-control bg-booth px-4 py-2.5 font-semibold text-night transition-transform hover:bg-booth-bright active:translate-y-px"
             >
-              <Expand className="h-4 w-4" aria-hidden />
-              {t('bigType')}
+              <Phone className="h-4 w-4" aria-hidden />
+              {t('startCall')}
             </button>
           </div>
         </div>
       )}
 
-      {/* Big-type "hold this up" reading mode */}
+      {/* Call mode: the V2 composition in a focused overlay. A deliberate
+          modal - the call is a mode in real life too; nothing else matters
+          while the phone is ringing. */}
       {bigType && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('scriptTitle')}
-          className="fixed inset-0 z-50 overflow-y-auto bg-paper p-6 md:p-12"
+          className="fixed inset-0 z-50 overflow-y-auto bg-night/70 p-3 md:p-8"
+          onClick={(e) => e.target === e.currentTarget && setBigType(false)}
         >
-          <button
-            ref={closeBigRef}
-            type="button"
-            onClick={() => setBigType(false)}
-            className="fixed top-4 right-4 inline-flex items-center gap-1.5 rounded-control bg-ink px-4 py-2.5 font-semibold text-paper"
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('callTitle')}
+            className="mx-auto my-4 max-w-2xl rounded-card bg-white p-5 shadow-lift md:p-7"
           >
-            <X className="h-4 w-4" aria-hidden />
-            {t('closeBig')}
-          </button>
-          <p className="mx-auto mt-12 max-w-2xl whitespace-pre-wrap font-display text-2xl md:text-4xl font-semibold leading-snug md:leading-snug">
-            {script}
-          </p>
-          {/* The number lives with the script so the call can start from here */}
-          {reps.length > 0 && (
-            <div className="mx-auto mt-10 flex max-w-2xl flex-wrap gap-2 pb-12">
-              {reps.map(
-                (rep) =>
-                  rep.phone && (
-                    <a
-                      key={rep.bioguide}
-                      href={telHref(rep.phone)}
-                      className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-3 font-semibold text-paper hover:bg-night"
-                    >
-                      <Phone className="h-4 w-4" aria-hidden />
-                      {rep.last} · {rep.phone}
-                    </a>
-                  )
-              )}
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="font-display text-2xl font-bold">{t('callTitle')}</h3>
+              <button
+                ref={closeBigRef}
+                type="button"
+                onClick={() => setBigType(false)}
+                className="inline-flex items-center gap-1.5 rounded-control border border-ink/25 px-3 py-2 text-sm font-semibold hover:border-ink/60"
+              >
+                <X className="h-4 w-4" aria-hidden />
+                {t('closeBig')}
+              </button>
             </div>
-          )}
+
+            {/* First-call nudge: gentle, only for someone who has never logged a call */}
+            {callCount === 0 && (
+              <div className="mt-4 flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
+                <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
+                <div>
+                  <p className="font-semibold">{t('firstCallTitle')}</p>
+                  <p className="mt-0.5 text-ink-soft">{t('firstCallBody')}</p>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-5 whitespace-pre-wrap rounded-control bg-paper p-4 font-display text-xl font-semibold leading-relaxed md:text-2xl">
+              {script}
+            </p>
+            <button
+              type="button"
+              onClick={() => setBigType(false)}
+              className="mt-2 text-sm font-semibold text-ink-soft underline underline-offset-4"
+            >
+              {t('editScript')}
+            </button>
+
+            {reps.length > 0 && (
+              <div className="mt-5 space-y-2">
+                {reps.map(
+                  (rep) =>
+                    rep.phone && (
+                      <a
+                        key={rep.bioguide}
+                        href={telHref(rep.phone)}
+                        className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3.5 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <Phone className="h-4 w-4" aria-hidden />
+                          {rep.name}
+                        </span>
+                        <span className="font-mono text-sm text-booth-bright">{rep.phone}</span>
+                      </a>
+                    )
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -327,7 +397,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                       <>
                         <a
                           href={telHref(rep.phone)}
-                          className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-2.5 font-semibold text-paper hover:bg-night"
+                          className="inline-flex items-center gap-2 rounded-control bg-ink px-4 py-2.5 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
                         >
                           <Phone className="h-4 w-4" aria-hidden />
                           {rep.phone}
@@ -373,7 +443,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           aria-pressed={logged === o}
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-medium ${
                             logged === o
-                              ? 'border-moss bg-moss-soft text-ink'
+                              ? 'pop border-moss bg-moss-soft text-ink'
                               : 'border-ink/20 hover:bg-paper-deep'
                           }`}
                         >
@@ -382,20 +452,61 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                         </button>
                       ))}
                     </div>
+
+                    {/* The payoff lands where the tap happened, not below the fold */}
+                    {logged && (
+                      <div className="mt-3 flex items-start gap-3 rounded-control bg-moss-soft px-4 py-3" role="status">
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="draw-check mt-0.5 h-6 w-6 flex-none text-moss"
+                        >
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m8.5 12.5 2.5 2.5 5-6" />
+                        </svg>
+                        <p className="font-medium">
+                          {callCount === 1
+                            ? t('loggedFirst')
+                            : callCount === 5
+                              ? t('loggedFifth')
+                              : callCount === 10
+                                ? t('loggedTenth')
+                                : t('outcomeLogged')}{' '}
+                          <Link href="/impact" className="underline underline-offset-2">
+                            {t('viewImpact')}
+                          </Link>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* The movement tally: opt-in, anonymous, one tap per bill per device */}
+                    {logged && !alreadyTallied && tally.state === 'idle' && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={addToTally}
+                          className="inline-flex items-center gap-2 rounded-control border-2 border-moss px-3.5 py-2.5 text-sm font-semibold text-moss transition-transform hover:bg-moss-soft active:translate-y-px"
+                        >
+                          {t('tallyCta')}
+                        </button>
+                        <p className="mt-1 text-xs text-ink-faint">{t('tallyNote')}</p>
+                      </div>
+                    )}
+                    {logged && tally.state === 'done' && (
+                      <p className="mt-2 text-sm font-semibold text-moss" role="status">
+                        {t('tallyDone', { count: tally.count })}
+                      </p>
+                    )}
                   </div>
                 </li>
               );
             })}
           </ul>
-
-          {anyLogged && (
-            <p className="mt-4 rounded-control bg-moss-soft px-4 py-3 font-medium" role="status">
-              {t('outcomeLogged')}{' '}
-              <Link href="/impact" className="underline underline-offset-2">
-                {t('viewImpact')}
-              </Link>
-            </p>
-          )}
         </div>
       )}
     </section>

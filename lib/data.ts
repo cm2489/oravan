@@ -3,6 +3,7 @@ import bills from '@/data/bills.json';
 import billsEs from '@/data/bills-es.json';
 import legislators from '@/data/legislators.json';
 import zipDistricts from '@/data/zip-districts.json';
+import heartbeats from '@/data/heartbeats.json';
 import { formatCitation } from './format';
 import type { Bill, BillTeaser, District, Legislator } from './types';
 
@@ -13,6 +14,7 @@ const ES = billsEs as Record<
 >;
 const LEGISLATORS = legislators as Legislator[];
 const ZIPS = zipDistricts as Record<string, District[]>;
+const PULSES = heartbeats as Record<string, number>;
 
 /** Overlay the Spanish decoded content when it exists; English is the fallback. */
 export function localizeBill(b: Bill, locale: string): Bill {
@@ -31,6 +33,34 @@ export function billSlug(b: Pick<Bill, 'bill_type' | 'bill_number' | 'congress_n
   return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 }
 
+/*
+ * Read-time urgency. Stored scores freeze the freshness bonus at sync time,
+ * so a bill calendared six weeks ago keeps outranking everything (the
+ * stale-CFPB-on-top bug). Recompute from status + last action date with a
+ * staleness decay: no penalty for two weeks, then a linear slide that drops
+ * a stale floor placement below an active committee fight.
+ */
+const STATUS_BASE: Record<string, number> = {
+  floor_vote: 0.9,
+  passed_chamber: 0.75,
+  conference: 0.75,
+  markup: 0.65,
+  committee: 0.45,
+  signed: 0.3,
+  vetoed: 0.3,
+  introduced: 0.2,
+};
+
+export function effectiveUrgency(status: string, lastActionDate: string | null): number {
+  const base = STATUS_BASE[status] ?? 0.2;
+  if (!lastActionDate) return base;
+  const days = (Date.now() - new Date(lastActionDate).getTime()) / 86_400_000;
+  if (!Number.isFinite(days) || days < 0) return base;
+  const bonus = days < 3 ? 0.1 : days < 7 ? 0.05 : 0;
+  const decay = days <= 14 ? 0 : Math.min(0.45, (days - 14) * 0.015);
+  return Math.round(Math.max(0.05, Math.min(1, base + bonus - decay)) * 1000) / 1000;
+}
+
 export function getBill(slug: string): Bill | undefined {
   return BILLS.find((b) => billSlug(b) === slug);
 }
@@ -39,10 +69,17 @@ export function getAllBills(): Bill[] {
   return BILLS;
 }
 
+/** Community signal: a 7-day pulse lifts visibility, log-scaled and capped. */
+function pulseBoost(slug: string): number {
+  const pulse = PULSES[slug] ?? 0;
+  return pulse > 0 ? Math.min(0.15, Math.log10(1 + pulse) * 0.075) : 0;
+}
+
 export function getTeasers(locale = 'en'): BillTeaser[] {
-  return [...BILLS]
-    .sort((a, b) => b.urgency_score - a.urgency_score || (b.last_action_date ?? '').localeCompare(a.last_action_date ?? ''))
-    .map((raw) => {
+  return BILLS
+    .map((raw) => ({ raw, eff: effectiveUrgency(raw.status, raw.last_action_date) + pulseBoost(billSlug(raw)) }))
+    .sort((a, b) => b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
+    .map(({ raw, eff }) => {
       const b = localizeBill(raw, locale);
       return {
         slug: billSlug(b),
@@ -51,7 +88,7 @@ export function getTeasers(locale = 'en'): BillTeaser[] {
         title: b.short_title ?? b.title,
         status: b.status,
         tags: b.issue_tags ?? [],
-        urgency: b.urgency_score,
+        urgency: eff,
         lastActionDate: b.last_action_date,
       };
     });
@@ -59,11 +96,12 @@ export function getTeasers(locale = 'en'): BillTeaser[] {
 
 /** Top N most urgent bills that have a decoded summary - the "this week" shortlist. */
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
-  return [...BILLS]
+  return BILLS
     .filter((b) => b.ai_headline && b.status !== 'signed')
-    .sort((a, b) => b.urgency_score - a.urgency_score || (b.last_action_date ?? '').localeCompare(a.last_action_date ?? ''))
+    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) + pulseBoost(billSlug(b)) }))
+    .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
     .slice(0, n)
-    .map((b) => localizeBill(b, locale));
+    .map(({ b }) => localizeBill(b, locale));
 }
 
 export function districtsForZip(zip: string): District[] {

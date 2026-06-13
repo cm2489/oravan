@@ -46,6 +46,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${display.variable} ${body.variable}`}>
       <body className="min-h-dvh flex flex-col">
+        {/* For the curious who open devtools: the no-trackers claim, verifiable */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `console.log("%cRostra","font-size:16px;font-weight:bold","— the platform where citizens addressed power. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/rostra");`,
+          }}
+        />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-ink focus:text-paper focus:px-4 focus:py-2 focus:rounded-control"

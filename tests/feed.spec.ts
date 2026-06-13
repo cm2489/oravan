@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 test('feed renders capped bands with show-all expansion', async ({ page }) => {
   await page.goto('/bills');
-  await expect(page.getByRole('heading', { name: 'Act now' })).toBeVisible();
+  // Bands are populated by honest, decayed urgency - assert the first
+  // rendered band rather than hardcoding which one qualifies today.
+  await expect(page.locator('section[aria-labelledby^=band-] h2').first()).toBeVisible();
   const before = await page.locator('a[href*="/bills/"]').count();
   const showAll = page.getByRole('button', { name: /show all/i }).first();
   await showAll.click();

@@ -34,7 +34,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
           className="h-22 w-18 shrink-0 rounded-lg object-cover bg-paper-deep"
         />
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="text-xs font-semibold tracking-wide text-ink-faint">
             {role} · {party} · {rep.state}
           </p>
           <h3 className="mt-1 font-display text-xl font-bold leading-tight">{rep.name}</h3>
@@ -56,7 +56,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
         {rep.phone && (
           <a
             href={telHref(rep.phone)}
-            className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3 font-semibold text-paper hover:bg-night"
+            className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
           >
             <span className="inline-flex items-center gap-2">
               <Phone className="h-4 w-4" aria-hidden />

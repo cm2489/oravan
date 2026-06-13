@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Bill } from '@/lib/types';
 
 /*
@@ -9,6 +9,7 @@ import type { Bill } from '@/lib/types';
 
 export function TldrStrip({ bill }: { bill: Bill }) {
   const t = useTranslations('bill');
+  const locale = useLocale();
   const s = bill.ai_sections;
   if (!s) return null;
 
@@ -16,8 +17,9 @@ export function TldrStrip({ bill }: { bill: Bill }) {
     .join(' ')
     .split(/\s+/)
     .filter(Boolean).length;
-  // ~220 wpm, rounded up to a friendly 5s step, floor 15s
-  const seconds = Math.max(15, Math.ceil((words / 220) * 60 / 5) * 5);
+  // Per-language reading speed, rounded up to a friendly 5s step, floor 15s
+  const wpm = locale === 'es' ? 190 : 220;
+  const seconds = Math.max(15, Math.ceil((words / wpm) * 60 / 5) * 5);
   const count = s.cost ? 5 : 4;
 
   return (
