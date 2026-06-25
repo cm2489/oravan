@@ -1,5 +1,5 @@
 {
-  "lastSync": "2026-06-01T00:00:00Z",
-  "lastRun": "2026-06-24T10:30:36.452Z",
+  "lastSync": "2026-06-04",
+  "lastRun": "2026-06-25T09:57:08.063Z",
   "note": "lastSync starts at 2026-06-01 because the exported corpus statuses predate the disabled upstream cron; the first runs catch up in MAX_UPDATES windows."
 }
