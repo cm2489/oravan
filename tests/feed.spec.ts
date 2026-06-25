@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { waitForFeedHydrated } from './helpers';
 
 test('feed renders capped bands with show-all expansion', async ({ page }) => {
   await page.goto('/bills');
+  await waitForFeedHydrated(page);
   // Bands are populated by honest, decayed urgency - assert the first
   // rendered band rather than hardcoding which one qualifies today.
   await expect(page.locator('section[aria-labelledby^=band-] h2').first()).toBeVisible();
@@ -13,16 +15,11 @@ test('feed renders capped bands with show-all expansion', async ({ page }) => {
 });
 
 test('search filters and clears', async ({ page }) => {
-  test.slow(); // hydration-gated; needs runway under full parallel load
   await page.goto('/bills');
+  await waitForFeedHydrated(page);
   const search = page.getByRole('searchbox');
-  // The count line is prerendered in static HTML, so it can't prove React is
-  // awake. A nonsense query producing the empty state can: it only renders
-  // after hydration. Retry until that happens, then test the real flow.
-  await expect(async () => {
-    await search.fill('zzzzqqq');
-    await expect(page.getByText(/No bills match/)).toBeVisible({ timeout: 300 });
-  }).toPass();
+  await search.fill('zzzzqqq');
+  await expect(page.getByText(/No bills match/)).toBeVisible();
   await search.fill('veterans');
   await expect(page.getByText(/No bills match/)).toBeHidden();
   await search.press('Escape');
@@ -31,6 +28,7 @@ test('search filters and clears', async ({ page }) => {
 
 test('topic chip filters the feed and persists', async ({ page }) => {
   await page.goto('/bills');
+  await waitForFeedHydrated(page);
   await page.getByRole('button', { name: 'Health care' }).click();
   await expect(page.getByRole('button', { name: 'Health care' })).toHaveAttribute('aria-pressed', 'true');
   const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.prefs') ?? '{}'));
