@@ -203,6 +203,18 @@
     "tallyDone": "Counted. Your call joins {count, plural, one {# call} other {# calls}} this week on this bill.",
     "pulseLabel": "{count, plural, one {# call tallied this week} other {# calls tallied this week}}"
   },
+  "coverage": {
+    "heading": "How it's being covered",
+    "subhead": "Real reporting on this bill, labeled by each outlet's political lean.",
+    "leanNote": "Lean labels describe the news outlet, not this bill or any party. Ratings by AllSides.",
+    "lean": {
+      "left": "Leans left",
+      "center": "Center",
+      "right": "Leans right"
+    },
+    "preview": "Preview",
+    "openArticle": "Open this article at {source}"
+  },
   "why": {
     "title": "Why calling works",
     "intro": "It feels too small to matter. It isn't. Here's what actually happens when you call a congressional office, and why one phone call outweighs a hundred posts.",

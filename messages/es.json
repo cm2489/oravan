@@ -203,6 +203,18 @@
     "tallyDone": "Contada. Tu llamada se suma a {count, plural, one {# llamada} other {# llamadas}} esta semana en este proyecto.",
     "pulseLabel": "{count, plural, one {# llamada contada esta semana} other {# llamadas contadas esta semana}}"
   },
+  "coverage": {
+    "heading": "Cómo lo están cubriendo",
+    "subhead": "Reportajes reales sobre este proyecto de ley, etiquetados según la tendencia política de cada medio.",
+    "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
+    "lean": {
+      "left": "Tiende a la izquierda",
+      "center": "Centro",
+      "right": "Tiende a la derecha"
+    },
+    "preview": "Vista previa",
+    "openArticle": "Abrir este artículo en {source}"
+  },
   "why": {
     "title": "Por qué llamar funciona",
     "intro": "Se siente demasiado pequeño para importar. No lo es. Esto es lo que pasa de verdad cuando llamas a una oficina del Congreso — y por qué una llamada pesa más que cien publicaciones.",

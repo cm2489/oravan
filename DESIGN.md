@@ -22,6 +22,8 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 
 Strategy: restrained-plus — navy carries the shell, amber is the single accent (~5-10%), warm `surface` cards on warm paper.
 
+**Outlet-lean is never color-coded (hard rule).** The "Read" section labels each article by its outlet's lean (Left / Center / Right). Lean is conveyed by **text label + a neutral 3-segment position glyph only** — `ink` for the active segment, `line` for the rest. Never red/blue or any party color, and never the `booth` amber (reserved for AI/brand). This keeps the feature nonpartisan and avoids party-coding, in line with `CLAUDE.md`.
+
 ## Type
 
 - Display: **Bricolage Grotesque** (`font-display`) — headings, wordmark, stat numerals.
@@ -41,4 +43,4 @@ Strategy: restrained-plus — navy carries the shell, amber is the single accent
 
 ## Components
 
-`Header` (night band + bottom tabs), `Footer`, `ZipForm`, `BillCard` (teaser), `BillsBrowser` (search + chip filters + urgency bands), `RepCard` (portrait + DC line + collapsible local offices), `ActionPanel` (stance → script → call → outcome), `LocaleSwitcher`.
+`Header` (night band + bottom tabs), `Footer`, `ZipForm`, `BillCard` (teaser), `BillsBrowser` (search + chip filters + urgency bands), `RepCard` (portrait + DC line + collapsible local offices), `ActionPanel` (stance → script → call → outcome), `CoverageSection` (the "Read" section: third-party articles + neutral lean chips + hover/tap snippet preview), `LocaleSwitcher`.

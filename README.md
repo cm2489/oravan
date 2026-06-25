@@ -22,14 +22,21 @@ The name is the **Rostra**: the platform in the Roman Forum where citizens stood
 | `data/bills.json` | Decoded bill corpus (Congress.gov bills + AI plain-language summaries) | Manual export for now; steady-state pipeline TBD |
 | `data/legislators.json` | [unitedstates/congress-legislators](https://github.com/unitedstates/congress-legislators) (public domain) + district offices | `scripts/process-data.py` |
 | `data/zip-districts.json` | [OpenSourceActivismTech/us_zipcodes_congress](https://github.com/OpenSourceActivismTech/us_zipcodes_congress) | same |
+| `data/coverage.json` | Real news articles about top-band bills via [TheNewsAPI](https://www.thenewsapi.com/), AI-relevance-filtered (Haiku) | `scripts/sync-coverage.mjs` (nightly, gated on `NEWS_API_KEY`) |
+| `data/media-bias.json` | Outlet political-lean ratings by [AllSides](https://www.allsides.com/media-bias/ratings), used under CC BY-NC with attribution | Vendored snapshot |
 
 Portraits are served from the public-domain [unitedstates/images](https://github.com/unitedstates/images) project.
+
+### The "Read" section (outlet-bias coverage)
+
+Each top bill's page shows real third-party articles about it, labeled by the **outlet's** political lean (Left / Center / Right) — reusing AllSides' publication-level ratings, never a Rostra-invented one. Rostra takes no stance and authors no partisan text: the only AI use is a cheap relevance gate (is this article about this bill?). The ingestion runs nightly in CI and bakes results to JSON, so the site still makes **zero runtime third-party calls**. Without `NEWS_API_KEY` the sync is a no-op and the section renders nothing; a small hand-built real sample (`data/coverage.json`) keeps it demoable. Lean is shown by **text label + position only — never party colors** (a hard rule; see `DESIGN.md`).
 
 ## Develop
 
 ```bash
 npm install
-echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local   # only secret; script generation
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local   # script generation + decode/relevance
+echo "NEWS_API_KEY=..." >> .env.local               # optional; enables the "Read" coverage sync
 npm run dev
 ```
 
@@ -41,3 +48,4 @@ npm run dev
 - Script cache and rate limits are in-memory per serverless instance — fine at demo scale, should move to a shared store before heavy traffic.
 - Spanish bill *summaries* are not yet pre-translated (UI and scripts are fully bilingual).
 - Bill corpus is a snapshot; no live sync yet.
+- "Read" coverage exists only for top-band bills (the long tail shows nothing); the ES locale shows the same English articles with localized chrome; outlets absent from `data/media-bias.json` appear without a lean chip.
