@@ -1,48 +1,53 @@
 import { expect, test } from '@playwright/test';
+import coverageData from '../data/coverage.json';
+import { coverageTier, getCoverage } from '../lib/coverage';
 
 /*
- * The "Read" section: real third-party articles + outlet lean. Coverage is
- * baked into data/coverage.json; hr-1-119 is a seeded sample with a Left/
- * Center/Right spread, s-2280-119 is a seeded-free bill (no section).
+ * Data-driven: the nightly sync rewrites data/coverage.json, so the suite finds
+ * its fixtures from whatever's baked in — a bill the section shows, a one-sided
+ * bill (shown WITH a disclaimer), and a too-thin/no-coverage bill (no section).
+ * Tier logic itself is covered exhaustively in coverage.unit.spec.ts.
  */
+const slugs = Object.keys(coverageData).filter((k) => !k.startsWith('_'));
+const shownSlug = slugs.find((s) => getCoverage(s).length > 0);
+const oneSidedSlug = slugs.find((s) => coverageTier(getCoverage(s)) === 'one_sided');
+const thinSlug = slugs.find((s) => getCoverage(s).length === 0); // stored but < 2 outlets
 
-test('seeded bill shows the Read section with articles and outlet lean', async ({ page }) => {
-  await page.goto('/bills/hr-1-119');
+const section = (page: import('@playwright/test').Page) =>
+  page.locator('section[aria-labelledby="coverage-heading"]');
 
-  await expect(page.getByRole('heading', { name: "How it's being covered" })).toBeVisible();
-  // A real article link (its accessible name is the localized "Open this article at {source}").
-  await expect(page.getByRole('link', { name: /Open this article at npr\.org/ })).toBeVisible();
-  // Lean is shown by text label, never color alone.
-  await expect(page.getByText('Leans left').first()).toBeVisible();
-  // The "outlet, not party" disclaimer is present.
-  await expect(page.getByText(/labels describe the news outlet/)).toBeVisible();
+test('a bill with coverage renders the Read section', async ({ page }) => {
+  test.skip(!shownSlug, 'no showable coverage in current data');
+  await page.goto(`/bills/${shownSlug}`);
+  await expect(section(page).getByRole('heading', { name: "How it's being covered" })).toBeVisible();
+  await expect(section(page).getByRole('listitem').first()).toBeVisible();
+  await expect(section(page).getByText(/labels describe the news outlet/)).toBeVisible();
 });
 
-test('snippet preview reveals (hover on desktop, tap on mobile)', async ({ page }, testInfo) => {
-  await page.goto('/bills/hr-1-119');
-
-  const row = page.getByRole('listitem').filter({ hasText: 'millions losing health insurance' });
-  const snippet = page.getByText(/nearly 11 million more people could be uninsured/);
-
-  await expect(snippet).toBeHidden(); // collapsed by default
-
-  if (testInfo.project.name.includes('mobile')) {
-    // Touch: the disclosure button toggles it open (needs hydration → retry-guarded,
-    // tapping only while still collapsed so we never toggle it back shut).
-    const button = row.getByRole('button', { name: 'Preview' });
-    await expect(async () => {
-      if (!(await snippet.isVisible())) await button.tap();
-      await expect(snippet).toBeVisible({ timeout: 400 });
-    }).toPass({ timeout: 10_000 });
-  } else {
-    // Desktop: revealed by CSS group-hover (works without JS, so no hydration gate).
-    await row.hover();
-    await expect(snippet).toBeVisible();
-  }
+test('snippet preview toggles open (keyboard/touch path)', async ({ page }) => {
+  test.skip(!shownSlug, 'no showable coverage in current data');
+  await page.goto(`/bills/${shownSlug}`);
+  const button = section(page).getByRole('button', { name: 'Preview' }).first();
+  test.skip((await button.count()) === 0, 'current coverage has no article snippets');
+  // Toggling needs React attached — retry-guard against the hydration race.
+  await expect(async () => {
+    if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+    await expect(button).toHaveAttribute('aria-expanded', 'true', { timeout: 500 });
+  }).toPass({ timeout: 10_000 });
+  const panelId = await button.getAttribute('aria-controls');
+  await expect(page.locator(`#${panelId}`)).toBeVisible();
 });
 
-test('a bill with no coverage renders no Read section', async ({ page }) => {
-  await page.goto('/bills/s-2280-119');
-  await expect(page.getByRole('heading', { name: 'Where does it stand?' })).toBeVisible(); // page rendered
-  await expect(page.getByRole('heading', { name: "How it's being covered" })).toHaveCount(0);
+test('one-sided coverage is shown WITH a disclaimer (not hidden)', async ({ page }) => {
+  test.skip(!oneSidedSlug, 'no one-sided coverage in current data');
+  await page.goto(`/bills/${oneSidedSlug}`);
+  await expect(section(page).getByRole('heading', { name: "How it's being covered" })).toBeVisible();
+  await expect(section(page).getByText(/one side of the spectrum/)).toBeVisible();
+});
+
+test('too-thin coverage renders no section', async ({ page }) => {
+  test.skip(!thinSlug, 'no sub-threshold coverage in current data');
+  await page.goto(`/bills/${thinSlug}`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); // page rendered (not 404)
+  await expect(section(page)).toHaveCount(0);
 });

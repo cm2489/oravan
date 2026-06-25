@@ -213,7 +213,8 @@
       "right": "Tiende a la derecha"
     },
     "preview": "Vista previa",
-    "openArticle": "Abrir este artículo en {source}"
+    "openArticle": "Abrir este artículo en {source}",
+    "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla."
   },
   "why": {
     "title": "Por qué llamar funciona",

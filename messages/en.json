@@ -213,7 +213,8 @@
       "right": "Leans right"
     },
     "preview": "Preview",
-    "openArticle": "Open this article at {source}"
+    "openArticle": "Open this article at {source}",
+    "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind."
   },
   "why": {
     "title": "Why calling works",

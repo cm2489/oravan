@@ -8,7 +8,7 @@ import { CoverageSection } from '@/components/CoverageSection';
 import { DecodedSections } from '@/components/DecodedSections';
 import { TldrStrip } from '@/components/TldrStrip';
 import { Heartbeat } from '@/components/Heartbeat';
-import { getCoverage } from '@/lib/coverage';
+import { coverageTier, getCoverage } from '@/lib/coverage';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
 
@@ -86,7 +86,7 @@ export default async function BillPage({
       </section>
 
       {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
-      <CoverageSection articles={coverage} />
+      <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
 
       {/* Official record */}
       <section className="mt-8 space-y-3 text-sm">

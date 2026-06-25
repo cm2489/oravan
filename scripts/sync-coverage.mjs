@@ -22,10 +22,16 @@ if (!NEWS_API_KEY) {
   process.exit(0);
 }
 
-const TOP_N = Number(process.env.COVERAGE_TOP_N ?? 20);
+// Cover every eligible bill by default (the news API's daily quota is the real
+// ceiling; the run stops early and commits what it has if quota is hit). 25
+// candidates/bill is TheNewsAPI's Basic-tier per-request max.
+const TOP_N = Number(process.env.COVERAGE_TOP_N ?? Infinity);
 const PER_BILL = Number(process.env.COVERAGE_PER_BILL ?? 5);
-const MAX_CANDIDATES = Number(process.env.COVERAGE_MAX_CANDIDATES ?? 10);
+const MAX_CANDIDATES = Number(process.env.COVERAGE_MAX_CANDIDATES ?? 25);
 const NEWS_API = 'https://api.thenewsapi.com/v1/news/all';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let rlRemaining = Infinity; // X-RateLimit-Remaining from the last response
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -80,10 +86,15 @@ async function fetchArticles(query) {
   url.searchParams.set('sort', 'relevance_score');
 
   let lastErr;
-  for (let attempt = 0; attempt <= 4; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
+  for (let attempt = 0; attempt <= 6; attempt++) {
+    // Proactive throttle: if this 60s window's budget is spent, wait it out
+    // rather than firing a request we know will 429.
+    if (rlRemaining <= 0) { console.log('  rate budget spent — waiting 60s for the window to reset'); await sleep(60_000); rlRemaining = Infinity; }
+    else if (attempt > 0) await sleep(2000 * attempt);
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+      const rem = Number(res.headers.get('x-ratelimit-remaining'));
+      if (Number.isFinite(rem)) rlRemaining = rem;
       if (res.ok) {
         const data = await res.json();
         return (data.data ?? []).map((a) => ({
@@ -94,10 +105,17 @@ async function fetchArticles(query) {
           publishedAt: a.published_at ? a.published_at.slice(0, 10) : null,
         }));
       }
-      if (res.status === 402 || res.status === 429) {
-        console.error(`TheNewsAPI ${res.status} (quota/rate limit) — stopping early`);
-        return null;
+      if (res.status === 429) {
+        // 60s-window rate limit vs daily quota: only the latter should stop us.
+        const body = await res.json().catch(() => ({}));
+        const code = `${body?.error?.code ?? body?.error ?? ''}`.toLowerCase();
+        if (/usage|daily|quota|plan|limit_reached_today/.test(code)) {
+          console.error('TheNewsAPI daily quota exhausted — stopping early'); return null;
+        }
+        console.log('  rate limited (429) — waiting 60s and retrying'); await sleep(60_000); rlRemaining = Infinity;
+        continue;
       }
+      if (res.status === 402) { console.error('TheNewsAPI 402 (quota) — stopping early'); return null; }
       lastErr = new Error(`TheNewsAPI ${res.status}`);
     } catch (e) {
       lastErr = e; // network error / timeout — retry
@@ -144,11 +162,12 @@ let anyFetchOk = false;
 let withCoverage = 0;
 let totalArticles = 0;
 
+let processed = 0;
 for (const b of topBills) {
   const slug = slugOf(b);
   try {
     const candidates = await fetchArticles(queryFor(b));
-    if (candidates === null) break; // quota/rate hit: stop and commit what we have
+    if (candidates === null) break; // daily quota hit: stop and commit what we have
     anyFetchOk = true;
     const kept = await filterRelevant(b, candidates);
     if (kept.length) {
@@ -160,6 +179,8 @@ for (const b of topBills) {
   } catch (e) {
     console.error(`FAIL ${slug}: ${e.message}`);
   }
+  // Checkpoint periodically so a long, rate-limited run never loses progress.
+  if (++processed % 25 === 0) writeFileSync('data/coverage.json', JSON.stringify(out));
 }
 
 // Never clobber the existing file when the API never responded — preserve the
