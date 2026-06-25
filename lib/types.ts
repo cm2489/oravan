@@ -111,3 +111,11 @@ export interface CoverageArticleRaw {
 export interface CoverageArticle extends CoverageArticleRaw {
   lean: Lean | null;
 }
+
+/**
+ * How a bill's coverage spreads across the press:
+ *  'cross' = left and right both present · 'neutral' = 2+ center/unrated only ·
+ *  'one_sided' = 2+ outlets all leaning one partisan way (shown, but disclaimed) ·
+ *  'none' = too thin to surface.
+ */
+export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';

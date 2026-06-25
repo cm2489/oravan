@@ -10,7 +10,7 @@
  */
 import coverageData from '../data/coverage.json';
 import mediaBias from '../data/media-bias.json';
-import type { CoverageArticle, CoverageArticleRaw, Lean } from './types';
+import type { CoverageArticle, CoverageArticleRaw, CoverageTier, Lean } from './types';
 
 /** AllSides lean keyed by bare outlet domain. */
 const LEAN_BY_DOMAIN = mediaBias.outlets as unknown as Record<string, Lean>;
@@ -37,11 +37,27 @@ export function leanFor(source: string): Lean | null {
 }
 
 /**
- * Articles covering a bill, each enriched with its outlet's lean. Returns an
- * empty array when the bill has no coverage (the section then renders nothing).
+ * Classify a bill's coverage by how it spreads across the press. One-sided
+ * coverage is still shown (with a disclaimer) and never coverage-boosted in the
+ * feed — consequence (urgency), not partisan attention, decides prominence.
+ */
+export function coverageTier(articles: CoverageArticle[]): CoverageTier {
+  const outlets = new Set(articles.map((a) => normalizeSource(a.source)));
+  if (outlets.size < 2) return 'none'; // a single outlet isn't "how it's being covered"
+  const partisan = new Set(articles.map((a) => a.lean).filter((l) => l === 'left' || l === 'right'));
+  if (partisan.size >= 2) return 'cross';
+  if (partisan.size === 1) return 'one_sided';
+  return 'neutral';
+}
+
+/**
+ * Articles covering a bill, each enriched with its outlet's lean. Empty when
+ * coverage is too thin to surface (tier 'none'); otherwise the full list, and
+ * the page renders the section (disclaimed when one-sided).
  */
 export function getCoverage(slug: string): CoverageArticle[] {
   const raw = COVERAGE[slug];
   if (!Array.isArray(raw)) return [];
-  return raw.map((a) => ({ ...a, lean: leanFor(a.source) }));
+  const articles = raw.map((a) => ({ ...a, lean: leanFor(a.source) }));
+  return coverageTier(articles) === 'none' ? [] : articles;
 }

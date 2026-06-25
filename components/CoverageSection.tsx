@@ -1,9 +1,9 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { ChevronDown, ExternalLink } from 'lucide-react';
+import { ChevronDown, ExternalLink, Info } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import type { CoverageArticle, Lean } from '@/lib/types';
+import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
 /*
  * The "Read" section: real third-party articles about a bill, each tagged with
@@ -16,7 +16,7 @@ import type { CoverageArticle, Lean } from '@/lib/types';
 
 const LEAN_POSITION: Record<Lean, 0 | 1 | 2> = { left: 0, center: 1, right: 2 };
 
-export function CoverageSection({ articles }: { articles: CoverageArticle[] }) {
+export function CoverageSection({ articles, tier }: { articles: CoverageArticle[]; tier: CoverageTier }) {
   const t = useTranslations('coverage');
   // No coverage -> render nothing (the graceful-empty path).
   if (articles.length === 0) return null;
@@ -30,6 +30,13 @@ export function CoverageSection({ articles }: { articles: CoverageArticle[] }) {
         {t('heading')}
       </h2>
       <p className="mt-1 max-w-prose text-ink-soft">{t('subhead')}</p>
+
+      {tier === 'one_sided' && (
+        <p className="mt-4 flex items-start gap-2 rounded-control bg-booth-soft p-3 text-sm text-ink">
+          <Info className="mt-0.5 h-4 w-4 flex-none text-ink-soft" aria-hidden />
+          <span>{t('oneSidedNote')}</span>
+        </p>
+      )}
 
       <ul className="mt-5 border-t border-line">
         {articles.map((article, i) => (
