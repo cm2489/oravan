@@ -216,6 +216,11 @@
     "openArticle": "Open this article at {source}",
     "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind."
   },
+  "news": {
+    "heading": "In the news",
+    "subhead": "Bills drawing real coverage across the press right now.",
+    "sources": "{count, plural, one {# outlet} other {# outlets}}"
+  },
   "why": {
     "title": "Why calling works",
     "intro": "It feels too small to matter. It isn't. Here's what actually happens when you call a congressional office, and why one phone call outweighs a hundred posts.",

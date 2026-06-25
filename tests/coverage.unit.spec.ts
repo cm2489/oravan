@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 // Relative import (not '@/'): lib/coverage.ts is plain (no 'server-only') and
 // imports its JSON relatively, so the matcher resolves under the test runner.
-import { coverageTier, leanFor, normalizeSource } from '../lib/coverage';
-import type { CoverageArticle, Lean } from '../lib/types';
+import { coverageTier, leanFor, normalizeSource, rankNews } from '../lib/coverage';
+import type { CoverageArticle, CoverageTier, Lean } from '../lib/types';
 
 const article = (source: string, lean: Lean | null = null): CoverageArticle => ({
   title: 't',
@@ -55,5 +55,23 @@ test.describe('coverageTier', () => {
   test("'neutral' when 2+ outlets are all center/unrated", () => {
     expect(coverageTier([article('nextgov.com', null), article('cyberscoop.com', null)])).toBe('neutral');
     expect(coverageTier([article('reuters.com', 'center'), article('apnews.com', 'center')])).toBe('neutral');
+  });
+});
+
+test.describe('rankNews (the "In the news" lens order)', () => {
+  const item = (tier: CoverageTier, sources: number, urgency = 0.5) => ({ tier, sources, urgency });
+
+  test('drops one-sided and none — only cross/neutral surface', () => {
+    const r = rankNews([item('cross', 2), item('one_sided', 9), item('none', 5), item('neutral', 2)], 10);
+    expect(r.map((x) => x.tier)).toEqual(['cross', 'neutral']);
+  });
+
+  test('orders cross before neutral, then by #sources, then urgency', () => {
+    const r = rankNews([item('neutral', 9), item('cross', 2), item('cross', 4)], 10);
+    expect(r.map((x) => [x.tier, x.sources])).toEqual([['cross', 4], ['cross', 2], ['neutral', 9]]);
+  });
+
+  test('caps at n', () => {
+    expect(rankNews([item('cross', 1), item('cross', 2), item('neutral', 1)], 1)).toHaveLength(1);
   });
 });

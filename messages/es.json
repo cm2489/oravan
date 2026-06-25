@@ -216,6 +216,11 @@
     "openArticle": "Abrir este artículo en {source}",
     "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla."
   },
+  "news": {
+    "heading": "En las noticias",
+    "subhead": "Proyectos de ley con cobertura real de la prensa en este momento.",
+    "sources": "{count, plural, one {# medio} other {# medios}}"
+  },
   "why": {
     "title": "Por qué llamar funciona",
     "intro": "Se siente demasiado pequeño para importar. No lo es. Esto es lo que pasa de verdad cuando llamas a una oficina del Congreso — y por qué una llamada pesa más que cien publicaciones.",
