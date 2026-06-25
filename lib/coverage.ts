@@ -61,3 +61,21 @@ export function getCoverage(slug: string): CoverageArticle[] {
   const articles = raw.map((a) => ({ ...a, lean: leanFor(a.source) }));
   return coverageTier(articles) === 'none' ? [] : articles;
 }
+
+/**
+ * Rank bills for the "In the news" discovery lens: cross-spectrum first, then
+ * neutral, then by # of outlets, then urgency. One-sided (and none) are dropped
+ * — coverage never boosts a partisan-only bill into discovery. Pure, so the
+ * ordering is unit-testable; getNewsBills feeds it real bills.
+ */
+const NEWS_TIER_RANK: Record<string, number> = { cross: 0, neutral: 1 };
+
+export function rankNews<T extends { tier: CoverageTier; sources: number; urgency: number }>(
+  items: T[],
+  n: number,
+): T[] {
+  return items
+    .filter((i) => i.tier === 'cross' || i.tier === 'neutral')
+    .sort((a, b) => NEWS_TIER_RANK[a.tier] - NEWS_TIER_RANK[b.tier] || b.sources - a.sources || b.urgency - a.urgency)
+    .slice(0, n);
+}

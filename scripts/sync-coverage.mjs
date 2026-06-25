@@ -29,6 +29,7 @@ const TOP_N = Number(process.env.COVERAGE_TOP_N ?? Infinity);
 const PER_BILL = Number(process.env.COVERAGE_PER_BILL ?? 5);
 const MAX_CANDIDATES = Number(process.env.COVERAGE_MAX_CANDIDATES ?? 25);
 const NEWS_API = 'https://api.thenewsapi.com/v1/news/all';
+const CONGRESS_START = '2025-01-03'; // 119th Congress convened; coverage can't predate a bill
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let rlRemaining = Infinity; // X-RateLimit-Remaining from the last response
@@ -71,19 +72,37 @@ const topBills = bills
 
 console.log(`coverage sync for top ${topBills.length} bills (PER_BILL=${PER_BILL})`);
 
+/* Drop syndicated duplicates: the same wire story republished by many outlets
+   shares a title (and would otherwise count as many separate "sources"). */
+function dedupeArticles(arts) {
+  const seenTitle = new Set();
+  const seenUrl = new Set();
+  const out = [];
+  for (const a of arts) {
+    const t = (a.title ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if ((t && seenTitle.has(t)) || (a.url && seenUrl.has(a.url))) continue;
+    if (t) seenTitle.add(t);
+    if (a.url) seenUrl.add(a.url);
+    out.push(a);
+  }
+  return out;
+}
+
 /*
  * TheNewsAPI adapter — the ONLY provider-specific code. To swap providers,
  * reimplement this to return the same {title,url,source,snippet,publishedAt}
  * shape (source = bare outlet domain, e.g. "cnn.com"). Returns null on a
  * quota/rate signal so the caller can stop early and commit what it has.
  */
-async function fetchArticles(query) {
+async function fetchArticles(query, publishedAfter) {
   const url = new URL(NEWS_API);
   url.searchParams.set('api_token', NEWS_API_KEY);
   url.searchParams.set('search', query);
   url.searchParams.set('language', 'en');
+  url.searchParams.set('locale', 'us'); // US outlets only - US bills, AllSides-rated world
   url.searchParams.set('limit', String(MAX_CANDIDATES));
   url.searchParams.set('sort', 'relevance_score');
+  if (publishedAfter) url.searchParams.set('published_after', publishedAfter); // coverage can't predate the bill
 
   let lastErr;
   for (let attempt = 0; attempt <= 6; attempt++) {
@@ -97,13 +116,13 @@ async function fetchArticles(query) {
       if (Number.isFinite(rem)) rlRemaining = rem;
       if (res.ok) {
         const data = await res.json();
-        return (data.data ?? []).map((a) => ({
+        return dedupeArticles((data.data ?? []).map((a) => ({
           title: a.title,
           url: a.url,
           source: a.source, // TheNewsAPI returns the bare domain
           snippet: a.description ?? a.snippet ?? null,
           publishedAt: a.published_at ? a.published_at.slice(0, 10) : null,
-        }));
+        })));
       }
       if (res.status === 429) {
         // 60s-window rate limit vs daily quota: only the latter should stop us.
@@ -166,7 +185,7 @@ let processed = 0;
 for (const b of topBills) {
   const slug = slugOf(b);
   try {
-    const candidates = await fetchArticles(queryFor(b));
+    const candidates = await fetchArticles(queryFor(b), b.introduced_date ?? CONGRESS_START);
     if (candidates === null) break; // daily quota hit: stop and commit what we have
     anyFetchOk = true;
     const kept = await filterRelevant(b, candidates);

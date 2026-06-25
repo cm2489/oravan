@@ -3,7 +3,8 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ZipForm } from '@/components/ZipForm';
 import { BillCard } from '@/components/BillCard';
-import { billSlug, getAllBills, getTopActions } from '@/lib/data';
+import { NewsLens } from '@/components/NewsLens';
+import { billSlug, getAllBills, getNewsBills, getTopActions } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
 
 const STEPS = [
@@ -18,6 +19,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   setRequestLocale(locale);
   const t = await getTranslations('home');
   const top = getTopActions(4, locale);
+  const news = getNewsBills(locale, 6);
   const total = getAllBills().length;
 
   return (
@@ -36,6 +38,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      {/* In the news - coverage-led discovery leads the first impression */}
+      {news.length > 0 && (
+        <section className="mx-auto max-w-5xl px-4 pt-14">
+          <NewsLens bills={news} />
+        </section>
+      )}
 
       {/* Top actions */}
       <section className="mx-auto max-w-5xl px-4 py-14" aria-labelledby="top-actions">

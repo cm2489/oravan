@@ -6,7 +6,8 @@ import zipDistricts from '@/data/zip-districts.json';
 import heartbeats from '@/data/heartbeats.json';
 import { formatCitation } from './format';
 import { bandFloors, bandForEff } from './taxonomy';
-import type { Bill, District, FeedTeaser, Legislator } from './types';
+import { coverageTier, getCoverage, normalizeSource, rankNews } from './coverage';
+import type { Bill, District, FeedTeaser, Legislator, NewsBill } from './types';
 
 const BILLS = bills as Bill[];
 const ES = billsEs as Record<
@@ -125,6 +126,38 @@ export function getTopActions(n = 5, locale = 'en'): Bill[] {
     .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
     .slice(0, n)
     .map(({ b }) => localizeBill(b, locale));
+}
+
+/*
+ * The "In the news" discovery lens — feeds rankNews real bills with their
+ * coverage tier, outlet count, and urgency. The ranking/exclusion policy
+ * (cross > neutral, one-sided dropped) lives in lib/coverage so it stays
+ * unit-testable; consequence, not partisan attention, decides prominence.
+ */
+export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
+  const items = BILLS.map((raw) => {
+    const articles = getCoverage(billSlug(raw));
+    return {
+      raw,
+      tier: coverageTier(articles),
+      sources: new Set(articles.map((a) => normalizeSource(a.source))).size,
+      urgency: effectiveUrgency(raw.status, raw.last_action_date),
+    };
+  });
+  return rankNews(items, n).map(({ raw, tier, sources }) => {
+    const b = localizeBill(raw, locale);
+    return {
+      slug: billSlug(b),
+      identifier: formatCitation(b.bill_type, b.bill_number),
+      headline: b.ai_headline,
+      title: b.short_title ?? b.title,
+      status: b.status,
+      tags: b.issue_tags ?? [],
+      lastActionDate: b.last_action_date,
+      coverageTier: tier as 'cross' | 'neutral',
+      sourceCount: sources,
+    };
+  });
 }
 
 export function districtsForZip(zip: string): District[] {

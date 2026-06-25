@@ -2,7 +2,7 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { BillTeaser } from '@/lib/types';
 
-export function BillCard({ bill }: { bill: BillTeaser }) {
+export function BillCard({ bill, coverageCount }: { bill: BillTeaser; coverageCount?: number }) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -15,6 +15,12 @@ export function BillCard({ bill }: { bill: BillTeaser }) {
         <span className="font-mono normal-case">{bill.identifier}</span>
         <span aria-hidden>·</span>
         <span>{t(`bills.status.${bill.status}`)}</span>
+        {coverageCount != null && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="text-booth">{t('news.sources', { count: coverageCount })}</span>
+          </>
+        )}
       </div>
       <h3 className="mt-2 font-display text-lg font-semibold leading-snug group-hover:underline underline-offset-2">
         {bill.headline ?? bill.title}

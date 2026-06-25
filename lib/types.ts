@@ -119,3 +119,9 @@ export interface CoverageArticle extends CoverageArticleRaw {
  *  'none' = too thin to surface.
  */
 export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';
+
+/** A bill featured in the coverage-led "In the news" lens (cross/neutral only). */
+export interface NewsBill extends BillTeaser {
+  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'>;
+  sourceCount: number;
+}
