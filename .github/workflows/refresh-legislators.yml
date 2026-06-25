@@ -16,7 +16,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Refresh legislators + district offices + ZIP map
         run: python3 scripts/process-data.py --download
       - name: Commit data
