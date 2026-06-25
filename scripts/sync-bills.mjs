@@ -41,12 +41,20 @@ async function cg(path, params = {}) {
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   url.searchParams.set('api_key', KEY);
   url.searchParams.set('format', 'json');
-  for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url);
-    if (res.ok) return res.json();
-    if (attempt >= 4) throw new Error(`Congress.gov ${res.status} for ${path}`);
-    await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+  let lastErr;
+  for (let attempt = 0; attempt <= 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
+    try {
+      // 30s per-request ceiling: a hung socket fails fast and retries instead
+      // of hanging on undici's ~5min headers timeout (the 2026-06-13 crash).
+      const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+      if (res.ok) return res.json();
+      lastErr = new Error(`Congress.gov ${res.status} for ${path}`);
+    } catch (e) {
+      lastErr = e; // network error / timeout - retry rather than kill the run
+    }
   }
+  throw lastErr;
 }
 
 // ---- status mapping (ported from the reference implementation) ----
@@ -247,9 +255,18 @@ for (;;) {
 console.log(`${updated.length} updated bills (capped at ${MAX_UPDATES})`);
 
 let refreshed = 0, added = 0, queued = 0, failed = 0;
+// High-water mark: advance the cursor over every bill we fully handle, and
+// freeze it the instant we hit one that still needs work (decode budget
+// exhausted, or a new bill whose decode failed). A transient *refresh* failure
+// on a bill already in the corpus is idempotent and self-heals on its next
+// update, so it doesn't freeze us - the old all-or-nothing freeze is what
+// pinned lastSync for weeks and turned every run into a full window re-scan.
+let cursor = since;
+let frozen = false;
 for (const u of updated.slice(0, MAX_UPDATES)) {
   const type = u.type.toLowerCase();
   const slug = `${type}-${u.number}-${CONGRESS}`;
+  let needsWork = false;
   try {
     const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
     const status = mapStatus(d.latestAction?.text);
@@ -293,17 +310,24 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
       bySlug.set(slug, bill);
       added++;
     } else {
-      queued++; // decode budget exhausted; picked up next run (lastSync won't advance past failures - see below)
+      queued++; // decode budget exhausted; revisit next run
+      needsWork = true;
     }
   } catch (e) {
     failed++;
     console.error(`FAIL ${slug}: ${e.message}`);
+    // A new bill that failed to decode must be retried; a failed refresh of a
+    // known bill is idempotent and re-touches on its next update.
+    if (!bySlug.has(slug)) needsWork = true;
   }
+  if (needsWork) frozen = true;
+  else if (!frozen && u.updateDate) cursor = u.updateDate;
 }
 
-// Advance the cursor only when nothing was left behind; otherwise re-scan
-// the same window next run (refresh is idempotent, decode is skip-if-known).
-state.lastSync = queued || failed ? state.lastSync : runStart;
+// Clean run (nothing left behind) advances to runStart; otherwise advance to
+// the high-water mark so we still make forward progress instead of re-scanning
+// the same window forever.
+state.lastSync = frozen ? cursor : runStart;
 state.lastRun = runStart;
 
 writeFileSync('data/bills.json', JSON.stringify(bills));
