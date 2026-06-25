@@ -4,9 +4,11 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
+import { CoverageSection } from '@/components/CoverageSection';
 import { DecodedSections } from '@/components/DecodedSections';
 import { TldrStrip } from '@/components/TldrStrip';
 import { Heartbeat } from '@/components/Heartbeat';
+import { getCoverage } from '@/lib/coverage';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
 
@@ -40,6 +42,8 @@ export default async function BillPage({
   const raw = getBill(id);
   if (!raw) notFound();
   const bill = localizeBill(raw, locale);
+  // Coverage is the same articles regardless of locale (chrome is localized).
+  const coverage = getCoverage(id);
 
   const t = await getTranslations();
   const format = await getFormatter();
@@ -80,6 +84,9 @@ export default async function BillPage({
           <p className="mt-3 text-ink-soft">{t('bills.decodedPending')}</p>
         )}
       </section>
+
+      {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
+      <CoverageSection articles={coverage} />
 
       {/* Official record */}
       <section className="mt-8 space-y-3 text-sm">

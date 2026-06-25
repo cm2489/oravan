@@ -9,7 +9,7 @@ Read README.md first; its **Design principles** section is the product constitut
 - **Nonpartisan by construction.** No party-coded colors, no advocacy language, in either language.
 - **AI content is always labeled and human-reviewed** before it drives a call.
 - **Accessibility is not optional:** semantic HTML, visible focus, AA contrast, 44px touch targets.
-- Never log or expose `ANTHROPIC_API_KEY` (the only secret).
+- Never log or expose secrets. `ANTHROPIC_API_KEY` is the only *runtime* secret; `CONGRESS_API_KEY` and the optional `NEWS_API_KEY` are build-time only (nightly sync scripts), never shipped to the client.
 - Claude opens PRs but **never merges** — Colby merges.
 
 ## Architecture in one breath

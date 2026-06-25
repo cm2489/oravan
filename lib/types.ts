@@ -85,3 +85,29 @@ export interface District {
 
 export type Stance = 'support' | 'oppose' | 'undecided';
 export type CallOutcome = 'contact' | 'voicemail' | 'unavailable';
+
+/** Outlet political lean (third-party rating), collapsed to 3 points. */
+export type Lean = 'left' | 'center' | 'right';
+
+/**
+ * One news article about a bill, as written to data/coverage.json by the
+ * nightly sync. Raw publisher fields only — no lean, no AI-authored text.
+ */
+export interface CoverageArticleRaw {
+  title: string;
+  url: string;
+  /** Outlet as returned by the news API, e.g. "cnn.com". */
+  source: string;
+  /** Publisher-provided description; null when the API omits it. */
+  snippet: string | null;
+  /** ISO date string; null when unknown. */
+  publishedAt: string | null;
+}
+
+/**
+ * Render-time shape: a raw article plus the outlet lean joined from the
+ * vendored AllSides table. `lean` is null for unrated outlets (no chip).
+ */
+export interface CoverageArticle extends CoverageArticleRaw {
+  lean: Lean | null;
+}
