@@ -90,21 +90,25 @@
       "radar": "On the radar"
     },
     "bandSub": {
-      "now": "Votes or floor action expected. Calls matter most here.",
+      "now": "The most active bills in Congress right now. A call lands hardest here.",
       "moving": "Advancing through committees and onto the calendar.",
       "radar": "Earlier stages: worth watching, less time pressure."
     },
     "status": {
+      "introduced": "Just introduced",
       "committee": "In committee",
       "markup": "In markup",
       "floor_vote": "Heading to a vote",
       "passed_chamber": "Passed one chamber",
-      "signed": "Signed into law"
+      "conference": "In conference",
+      "signed": "Signed into law",
+      "vetoed": "Vetoed"
     },
     "decodedPending": "We're still translating this one into plain language.",
     "updated": "Last action {date}",
     "showAll": "Show all {count}",
     "clearSearch": "Clear search",
+    "clearFilters": "Clear all filters",
     "interestsNote": "Topic picks are saved only on this device, never on a server."
   },
   "bill": {

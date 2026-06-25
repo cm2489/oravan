@@ -3,18 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { CATEGORIES, urgencyBand, type UrgencyBand } from '@/lib/taxonomy';
+import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
-import type { BillTeaser } from '@/lib/types';
+import type { FeedTeaser } from '@/lib/types';
 import { BillCard } from './BillCard';
 
 const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
 
-/* Curated-first: each band leads with its most urgent bills; the full
-   directory stays one "Show all" away (also keeps the page light). */
-const BAND_CAP = 6;
+/* Curated-first: each band initially shows at most a "now" band's worth of
+   cards - so the lead "Act now" band always renders whole - and the rest
+   stays one "Show all" away. Derived from BAND_SIZES so the two can't drift. */
+const BAND_CAP = BAND_SIZES.now;
 
-export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
+export function BillsBrowser({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
@@ -65,10 +66,19 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
   }, [bills, query, active, t]);
 
   const byBand = useMemo(() => {
-    const groups: Record<UrgencyBand, BillTeaser[]> = { now: [], moving: [], radar: [] };
-    for (const b of filtered) groups[urgencyBand(b.urgency)].push(b);
+    const groups: Record<UrgencyBand, FeedTeaser[]> = { now: [], moving: [], radar: [] };
+    for (const b of filtered) groups[b.band].push(b);
     return groups;
   }, [filtered]);
+
+  // Lead the chip rail with the topics that actually have bills, so a tap
+  // rarely lands on an empty filter. Ranked across the full corpus, so the
+  // order stays put as the user filters instead of reshuffling underfoot.
+  const orderedCategories = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const b of bills) for (const tag of b.tags) count.set(tag, (count.get(tag) ?? 0) + 1);
+    return [...CATEGORIES].sort((a, b) => (count.get(b) ?? 0) - (count.get(a) ?? 0));
+  }, [bills]);
 
   return (
     <div>
@@ -85,14 +95,14 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-control border-2 border-ink/15 bg-white py-3 pl-12 pr-12 focus:border-ink"
+            className="w-full rounded-control border-2 border-ink/15 bg-surface py-3 pl-12 pr-12 focus:border-ink"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label={t('bills.clearSearch')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-control p-2.5 text-ink-faint hover:text-ink"
+              className="absolute right-1.5 top-1/2 inline-flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-control text-ink-faint hover:text-ink"
             >
               <X className="h-4 w-4" aria-hidden />
             </button>
@@ -117,24 +127,24 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
           type="button"
           onClick={() => setPrefs({ interests: [] })}
           aria-pressed={active.length === 0}
-          className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium border ${
+          className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-medium border ${
             active.length === 0
               ? 'bg-ink text-paper border-ink'
-              : 'bg-white border-line text-ink-soft hover:border-ink/40'
+              : 'bg-surface border-line text-ink-soft hover:border-ink/40'
           }`}
         >
           {t('bills.all')}
         </button>
-        {CATEGORIES.map((cat) => (
+        {orderedCategories.map((cat) => (
           <button
             key={cat}
             type="button"
             onClick={() => toggle(cat)}
             aria-pressed={active.includes(cat)}
-            className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium border ${
+            className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-medium border ${
               active.includes(cat)
                 ? 'bg-ink text-paper border-ink'
-                : 'bg-white border-line text-ink-soft hover:border-ink/40'
+                : 'bg-surface border-line text-ink-soft hover:border-ink/40'
             }`}
           >
             {t(`categories.${cat}`)}
@@ -148,7 +158,23 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
         {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
       </p>
 
-      {filtered.length === 0 && <p className="mt-8 text-ink-soft">{t('bills.noResults')}</p>}
+      {filtered.length === 0 && (
+        <div className="mt-8">
+          <p className="text-ink-soft">{t('bills.noResults')}</p>
+          {(query.trim() !== '' || active.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                setPrefs({ interests: [] });
+              }}
+              className="mt-4 inline-flex min-h-[44px] items-center rounded-control border-2 border-ink/15 bg-surface px-4 font-semibold hover:border-ink/40"
+            >
+              {t('bills.clearFilters')}
+            </button>
+          )}
+        </div>
+      )}
 
       {BANDS.map((band) => {
         const all = byBand[band];
@@ -170,7 +196,7 @@ export function BillsBrowser({ bills }: { bills: BillTeaser[] }) {
               <button
                 type="button"
                 onClick={() => setExpanded((e) => ({ ...e, [band]: true }))}
-                className="mt-4 w-full rounded-control border-2 border-ink/15 bg-white px-4 py-3 font-semibold hover:border-ink/40"
+                className="mt-4 w-full rounded-control border-2 border-ink/15 bg-surface px-4 py-3 font-semibold hover:border-ink/40"
               >
                 {t('bills.showAll', { count: all.length })}
               </button>

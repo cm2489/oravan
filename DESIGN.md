@@ -8,6 +8,7 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 |---|---|---|
 | `paper` | #FAF6EE | page background |
 | `paper-deep` | #F2EBDC | recessed surfaces (footer, decoded card, how-it-works band) |
+| `surface` | #FFFCF6 | raised card surface: a warm near-white that lifts off paper without going clinical `#fff` |
 | `ink` | #18203A | primary text, solid buttons |
 | `ink-soft` | #4A5168 | secondary text |
 | `ink-faint` | #5C6276 | meta text (AA on both papers) |
@@ -19,7 +20,7 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 | `moss` / `moss-soft` | #3E6B4F / #E4EEE7 | success |
 | `clay` / `clay-soft` | #A14D3A / #F6E5DF | errors, destructive |
 
-Strategy: restrained-plus — navy carries the shell, amber is the single accent (~5-10%), white cards on warm paper.
+Strategy: restrained-plus — navy carries the shell, amber is the single accent (~5-10%), warm `surface` cards on warm paper.
 
 ## Type
 

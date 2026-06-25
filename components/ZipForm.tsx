@@ -44,7 +44,7 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
           onChange={(e) => setTyped(e.target.value)}
           aria-invalid={!!error}
           aria-describedby={error ? 'zip-error' : 'zip-help'}
-          className="w-36 rounded-control border-2 border-ink/20 bg-white px-4 py-3 text-lg tracking-wide focus:border-ink"
+          className="w-36 rounded-control border-2 border-ink/20 bg-surface px-4 py-3 text-lg tracking-wide focus:border-ink"
         />
         <button
           type="submit"

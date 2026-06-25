@@ -36,7 +36,7 @@ export default async function RepsPage({
       <p className="mt-2 max-w-prose text-ink-soft">{t('sub')}</p>
 
       {!zip && (
-        <div className="mt-8 rounded-card border border-line bg-white p-6 shadow-lift max-w-xl">
+        <div className="mt-8 rounded-card border border-line bg-surface p-6 shadow-lift max-w-xl">
           <p className="mb-4 font-medium">{t('noZip')}</p>
           <ZipForm autoFocus />
         </div>

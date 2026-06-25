@@ -65,7 +65,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 title: b.short_title ?? b.title,
                 status: b.status,
                 tags: b.issue_tags ?? [],
-                urgency: b.urgency_score,
                 lastActionDate: b.last_action_date,
               }}
             />

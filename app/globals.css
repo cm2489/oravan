@@ -8,6 +8,7 @@
 @theme {
   --color-paper: #FAF6EE;
   --color-paper-deep: #F2EBDC;
+  --color-surface: #FFFCF6; /* card surface: a warm near-white that lifts off paper without going clinical #fff */
   --color-ink: #18203A;
   --color-ink-soft: #4A5168;
   --color-ink-faint: #5C6276; /* AA on both paper (5.6:1) and paper-deep (5.1:1) */
