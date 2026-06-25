@@ -9,7 +9,7 @@ export function BillCard({ bill }: { bill: BillTeaser }) {
   return (
     <Link
       href={`/bills/${bill.slug}`}
-      className="group block rounded-card border border-line bg-white p-5 shadow-lift transition-transform hover:-translate-y-0.5"
+      className="group block rounded-card border border-line bg-surface p-5 shadow-lift transition-transform hover:-translate-y-0.5"
     >
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
         <span className="font-mono normal-case">{bill.identifier}</span>

@@ -24,7 +24,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
     : rep.party;
 
   return (
-    <article className="rounded-card border border-line bg-white p-5 shadow-lift">
+    <article className="rounded-card border border-line bg-surface p-5 shadow-lift">
       <div className="flex gap-4">
         <Image
           src={portraitUrl(rep.bioguide)}

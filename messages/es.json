@@ -90,21 +90,25 @@
       "radar": "En el radar"
     },
     "bandSub": {
-      "now": "Se esperan votaciones o acción en el pleno. Aquí las llamadas pesan más.",
+      "now": "Los proyectos más activos en el Congreso ahora mismo. Aquí una llamada pesa más.",
       "moving": "Avanzando por los comités y hacia el calendario.",
-      "radar": "Etapas tempranas — vale la pena seguirlos, con menos prisa."
+      "radar": "Etapas tempranas: vale la pena seguirlos, con menos prisa."
     },
     "status": {
+      "introduced": "Recién presentado",
       "committee": "En comité",
       "markup": "En revisión",
       "floor_vote": "Rumbo a votación",
       "passed_chamber": "Aprobado por una cámara",
-      "signed": "Promulgado como ley"
+      "conference": "En comisión mixta",
+      "signed": "Promulgado como ley",
+      "vetoed": "Vetado"
     },
     "decodedPending": "Todavía estamos traduciendo este proyecto a lenguaje claro.",
     "updated": "Última acción: {date}",
     "showAll": "Ver los {count}",
     "clearSearch": "Borrar búsqueda",
+    "clearFilters": "Borrar todos los filtros",
     "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor."
   },
   "bill": {

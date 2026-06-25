@@ -45,7 +45,7 @@ export function DecodedSections({ bill }: { bill: Bill }) {
               {s.costChips.map((chip) => (
                 <li
                   key={chip}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-semibold"
+                  className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-semibold"
                 >
                   {chip}
                 </li>

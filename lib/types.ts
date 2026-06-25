@@ -1,3 +1,5 @@
+import type { UrgencyBand } from './taxonomy';
+
 export type BillStatus =
   | 'committee'
   | 'markup'
@@ -40,7 +42,7 @@ export interface Bill {
   congress_gov_url: string | null;
 }
 
-/** Trimmed shape sent to the client for the feed (no full summaries). */
+/** What a bill card needs to render (no full summaries). */
 export interface BillTeaser {
   slug: string;
   identifier: string;
@@ -48,8 +50,12 @@ export interface BillTeaser {
   title: string;
   status: BillStatus;
   tags: string[];
-  urgency: number;
   lastActionDate: string | null;
+}
+
+/** A teaser placed in the urgency feed: a card plus its rank-based band. */
+export interface FeedTeaser extends BillTeaser {
+  band: UrgencyBand;
 }
 
 export interface DistrictOffice {

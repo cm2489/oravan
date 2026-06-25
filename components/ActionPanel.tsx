@@ -163,7 +163,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
 
   return (
-    <section aria-labelledby="act" className="mt-12 rounded-card border-2 border-ink bg-white p-6 md:p-8 shadow-lift">
+    <section aria-labelledby="act" className="mt-12 rounded-card border-2 border-ink bg-surface p-6 md:p-8 shadow-lift">
       <h2 id="act" className="font-display text-3xl font-bold">
         {t('actTitle')}
       </h2>
@@ -183,7 +183,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               className={`rounded-control border-2 px-4 py-3 font-semibold transition-transform disabled:opacity-50 active:translate-y-px ${
                 stance === s
                   ? 'border-ink bg-ink text-paper'
-                  : 'border-ink/20 bg-white hover:border-ink/50'
+                  : 'border-ink/20 bg-surface hover:border-ink/50'
               }`}
             >
               {t(`stance.${s}`)}
@@ -212,7 +212,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             <button
               type="button"
               onClick={() => generate(stance)}
-              className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-white px-3 py-1.5 font-semibold hover:border-ink/60"
+              className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-surface px-3 py-1.5 font-semibold hover:border-ink/60"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
               {t('retry')}
@@ -269,7 +269,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={t('callTitle')}
-            className="mx-auto my-4 max-w-2xl rounded-card bg-white p-5 shadow-lift md:p-7"
+            className="mx-auto my-4 max-w-2xl rounded-card bg-surface p-5 shadow-lift md:p-7"
           >
             <div className="flex items-start justify-between gap-3">
               <h3 className="font-display text-2xl font-bold">{t('callTitle')}</h3>
@@ -366,7 +366,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               <button
                 type="button"
                 onClick={fetchReps}
-                className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-white px-3 py-1.5 font-semibold hover:border-ink/60"
+                className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-surface px-3 py-1.5 font-semibold hover:border-ink/60"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden />
                 {t('retry')}

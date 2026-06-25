@@ -37,7 +37,7 @@ export default function ImpactPage() {
           { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
           { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
         ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-card border border-line bg-white p-4 text-center shadow-lift">
+          <div key={label} className="rounded-card border border-line bg-surface p-4 text-center shadow-lift">
             <Icon className="mx-auto h-5 w-5 text-booth" aria-hidden />
             <dd className="mt-1 font-display text-3xl font-bold">{value}</dd>
             <dt className="text-xs font-medium text-ink-soft">{label}</dt>
@@ -47,7 +47,7 @@ export default function ImpactPage() {
       )}
 
       {calls.length === 0 && !erased && (
-        <div className="mt-10 rounded-card border border-line bg-white p-8 text-center shadow-lift">
+        <div className="mt-10 rounded-card border border-line bg-surface p-8 text-center shadow-lift">
           <h2 className="font-display text-xl font-bold">{t('emptyTitle')}</h2>
           <p className="mt-2 text-ink-soft">{t('emptyBody')}</p>
           <Link
@@ -67,7 +67,7 @@ export default function ImpactPage() {
           </h2>
           <ul className="mt-4 space-y-3">
             {calls.map((c) => (
-              <li key={c.at} className="flex items-start justify-between gap-3 rounded-card border border-line bg-white p-4 shadow-lift">
+              <li key={c.at} className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface p-4 shadow-lift">
                 <div>
                   <Link href={`/bills/${c.billSlug}`} className="font-semibold hover:underline underline-offset-2">
                     {c.billLabel}
@@ -100,7 +100,7 @@ export default function ImpactPage() {
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-control border-2 border-clay px-4 py-2.5 font-semibold text-clay hover:bg-clay hover:text-white"
+              className="mt-4 inline-flex items-center gap-2 rounded-control border-2 border-clay px-4 py-2.5 font-semibold text-clay hover:bg-clay hover:text-paper"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
               {t('erase')}
@@ -112,7 +112,7 @@ export default function ImpactPage() {
                 <button
                   type="button"
                   onClick={onErase}
-                  className="inline-flex items-center gap-2 rounded-control bg-clay px-4 py-2.5 font-semibold text-white hover:opacity-90"
+                  className="inline-flex items-center gap-2 rounded-control bg-clay px-4 py-2.5 font-semibold text-paper hover:opacity-90"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                   {t('confirmErase')}

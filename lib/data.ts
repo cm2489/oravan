@@ -5,7 +5,8 @@ import legislators from '@/data/legislators.json';
 import zipDistricts from '@/data/zip-districts.json';
 import heartbeats from '@/data/heartbeats.json';
 import { formatCitation } from './format';
-import type { Bill, BillTeaser, District, Legislator } from './types';
+import { bandFloors, bandForEff } from './taxonomy';
+import type { Bill, District, FeedTeaser, Legislator } from './types';
 
 const BILLS = bills as Bill[];
 const ES = billsEs as Record<
@@ -75,29 +76,51 @@ function pulseBoost(slug: string): number {
   return pulse > 0 ? Math.min(0.15, Math.log10(1 + pulse) * 0.075) : 0;
 }
 
-export function getTeasers(locale = 'en'): BillTeaser[] {
-  return BILLS
-    .map((raw) => ({ raw, eff: effectiveUrgency(raw.status, raw.last_action_date) + pulseBoost(billSlug(raw)) }))
-    .sort((a, b) => b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
-    .map(({ raw, eff }) => {
-      const b = localizeBill(raw, locale);
-      return {
-        slug: billSlug(b),
-        identifier: formatCitation(b.bill_type, b.bill_number),
-        headline: b.ai_headline,
-        title: b.short_title ?? b.title,
-        status: b.status,
-        tags: b.issue_tags ?? [],
-        urgency: eff,
-        lastActionDate: b.last_action_date,
-      };
-    });
+/*
+ * Enacted or rejected bills are past the call window: a signed law can't be
+ * un-signed by a phone call, and a vetoed bill is settled. They must never
+ * rank into now/moving no matter how fresh or how much community pulse they
+ * carry. (A veto can in theory face an override vote, but the status model
+ * has no such state, so vetoed reads as terminal here.)
+ */
+const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['signed', 'vetoed']);
+
+export function getTeasers(locale = 'en'): FeedTeaser[] {
+  const scored = BILLS.map((raw) => ({
+    raw,
+    eff: effectiveUrgency(raw.status, raw.last_action_date) + pulseBoost(billSlug(raw)),
+    terminal: TERMINAL_STATUSES.has(raw.status),
+  }));
+  const byUrgency = (a: (typeof scored)[number], b: (typeof scored)[number]) =>
+    b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? '');
+
+  // Active bills claim the now/moving bands by rank; terminal bills are
+  // appended and pinned to radar, so they can never displace an actionable
+  // bill. Floors come from the active bills alone, so a settled law can't
+  // even raise the bar.
+  const activeBills = scored.filter((s) => !s.terminal).sort(byUrgency);
+  const settledBills = scored.filter((s) => s.terminal).sort(byUrgency);
+  const floors = bandFloors(activeBills.map((s) => s.eff));
+
+  return [...activeBills, ...settledBills].map(({ raw, eff, terminal }) => {
+    const b = localizeBill(raw, locale);
+    return {
+      slug: billSlug(b),
+      identifier: formatCitation(b.bill_type, b.bill_number),
+      headline: b.ai_headline,
+      title: b.short_title ?? b.title,
+      status: b.status,
+      tags: b.issue_tags ?? [],
+      band: terminal ? 'radar' : bandForEff(eff, floors),
+      lastActionDate: b.last_action_date,
+    };
+  });
 }
 
 /** Top N most urgent bills that have a decoded summary - the "this week" shortlist. */
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
   return BILLS
-    .filter((b) => b.ai_headline && b.status !== 'signed')
+    .filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status))
     .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) + pulseBoost(billSlug(b)) }))
     .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
     .slice(0, n)
