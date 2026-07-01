@@ -36,6 +36,14 @@ function slugOf(b) {
   return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 }
 
+// Congress.gov's bill-list `updateDate` field is date-only (e.g. "2026-06-04"),
+// not a full timestamp. Persisting it as-is breaks the next run's fromDateTime
+// query, which Congress.gov 400s on - the 2026-06-25/07-01 outage. Always
+// normalize to a full ISO-8601 datetime before it becomes the next cursor.
+function toISODateTime(d) {
+  return /T/.test(d) ? d : `${d}T00:00:00Z`;
+}
+
 async function cg(path, params = {}) {
   const url = new URL(`${API}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
@@ -321,7 +329,7 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
     if (!bySlug.has(slug)) needsWork = true;
   }
   if (needsWork) frozen = true;
-  else if (!frozen && u.updateDate) cursor = u.updateDate;
+  else if (!frozen && u.updateDate) cursor = toISODateTime(u.updateDate);
 }
 
 // Clean run (nothing left behind) advances to runStart; otherwise advance to
