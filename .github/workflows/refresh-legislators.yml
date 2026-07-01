@@ -26,4 +26,16 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "no changes" && exit 0
           git commit -m "chore(data): weekly legislators refresh $(date -u +%F)"
-          git push
+          # The scheduled run's checked-out base can be stale by the time this
+          # job starts (queued behind sync-bills.yml in the shared data-sync
+          # concurrency group, whose push lands after our SHA was resolved -
+          # the 2026-06-22 failure). Rebase onto the latest main and retry;
+          # safe because this workflow only ever touches legislators.json /
+          # zip-districts.json, disjoint from sync-bills.yml's files.
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "push rejected, rebasing onto latest main (attempt $i)"
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
