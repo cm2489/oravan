@@ -20,11 +20,17 @@ jobs:
       - name: Refresh legislators + district offices + ZIP map
         run: python3 scripts/process-data.py --download
       - name: Commit data
+        id: commit
         run: |
           git config user.name "cabina-sync[bot]"
           git config user.email "noreply@github.com"
           git add data/
-          git diff --cached --quiet && echo "no changes" && exit 0
+          if git diff --cached --quiet; then
+            echo "no changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): weekly legislators refresh $(date -u +%F)"
           # The scheduled run's checked-out base can be stale by the time this
           # job starts (queued behind sync-bills.yml in the shared data-sync
@@ -39,3 +45,11 @@ jobs:
             git rebase origin/main
           done
           exit 1
+      - name: Trigger Vercel deploy
+        # Commits authored by this bot have no linked Vercel account, so
+        # Vercel's GitHub integration silently BLOCKs the auto-deploy it would
+        # normally trigger on push (every nightly/weekly sync commit did this,
+        # unnoticed, until a later human-merged PR happened to rebuild main
+        # and drag the data along). Deploy hooks aren't identity-gated.
+        if: steps.commit.outputs.changed == 'true'
+        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
