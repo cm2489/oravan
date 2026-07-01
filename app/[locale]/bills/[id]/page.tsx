@@ -4,7 +4,9 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
+import { CallPrompt } from '@/components/CallPrompt';
 import { CoverageSection } from '@/components/CoverageSection';
+import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
 import { TldrStrip } from '@/components/TldrStrip';
 import { Heartbeat } from '@/components/Heartbeat';
@@ -49,8 +51,12 @@ export default async function BillPage({
   const format = await getFormatter();
   const fmtDate = (d: string) => format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric' });
 
-  return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
+  // The inline call prompt reuses the action panel's own copy — no new strings.
+  const callLabel = t('bill.actTitle');
+  const callSub = t('bill.actSub');
+
+  const header = (
+    <>
       <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-faint">
         <span className="font-mono">{formatCitation(bill.bill_type, bill.bill_number)}</span>
         <span aria-hidden>·</span>
@@ -69,64 +75,91 @@ export default async function BillPage({
       <Heartbeat slug={id} />
 
       <TldrStrip bill={bill} />
+    </>
+  );
 
-      {/* Decoded - the plain-language translation is the hero */}
-      <section aria-labelledby="decoded" className="mt-8 rounded-card bg-paper-deep border border-line p-6 md:p-8">
-        <h2 id="decoded" className="font-display text-2xl font-bold">
-          {t('bill.decoded')}
-        </h2>
-        {bill.ai_summary || bill.ai_sections ? (
-          <>
-            <DecodedSections bill={bill} />
-            <p className="mt-5 text-xs font-medium text-ink-soft">{t('bill.aiDisclaimer')}</p>
-          </>
-        ) : (
-          <p className="mt-3 text-ink-soft">{t('bills.decodedPending')}</p>
+  const decodedBlock = (
+    // Decoded - the plain-language translation is the hero
+    <section aria-labelledby="decoded" className="mt-8 rounded-card bg-paper-deep border border-line p-6 md:p-8">
+      <h2 id="decoded" className="font-display text-2xl font-bold">
+        {t('bill.decoded')}
+      </h2>
+      {bill.ai_summary || bill.ai_sections ? (
+        <>
+          <DecodedSections bill={bill} />
+          <p className="mt-5 text-xs font-medium text-ink-soft">{t('bill.aiDisclaimer')}</p>
+        </>
+      ) : (
+        <p className="mt-3 text-ink-soft">{t('bills.decodedPending')}</p>
+      )}
+    </section>
+  );
+
+  const officialBlock = (
+    // Official record
+    <section className="mt-8 space-y-3 text-sm">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+        {t('bill.officialTitle')}
+      </h2>
+      <p className="max-w-prose italic text-ink-soft leading-relaxed">{bill.title}</p>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-2">
+        {bill.introduced_date && (
+          <div className="flex gap-2">
+            <dt className="font-semibold">{t('bill.introduced')}:</dt>
+            <dd className="text-ink-soft">{fmtDate(bill.introduced_date)}</dd>
+          </div>
         )}
-      </section>
+        {bill.last_action_date && (
+          <div className="flex gap-2">
+            <dt className="font-semibold">{t('bill.lastAction')}:</dt>
+            <dd className="text-ink-soft">{fmtDate(bill.last_action_date)}</dd>
+          </div>
+        )}
+      </dl>
+      {bill.last_action_text && <p className="max-w-prose text-ink-soft">{bill.last_action_text}</p>}
+      {bill.congress_gov_url && (
+        <a
+          href={bill.congress_gov_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4"
+        >
+          {t('bill.viewOfficial')}
+          <ExternalLink className="h-4 w-4" aria-hidden />
+        </a>
+      )}
+    </section>
+  );
 
+  const content = (
+    <>
+      {decodedBlock}
+      {/* Surface the call at the moment of comprehension, right after Decoded */}
+      <CallPrompt label={callLabel} sub={callSub} />
       {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
       <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
+      {officialBlock}
+    </>
+  );
 
-      {/* Official record */}
-      <section className="mt-8 space-y-3 text-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          {t('bill.officialTitle')}
-        </h2>
-        <p className="max-w-prose italic text-ink-soft leading-relaxed">{bill.title}</p>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-2">
-          {bill.introduced_date && (
-            <div className="flex gap-2">
-              <dt className="font-semibold">{t('bill.introduced')}:</dt>
-              <dd className="text-ink-soft">{fmtDate(bill.introduced_date)}</dd>
-            </div>
-          )}
-          {bill.last_action_date && (
-            <div className="flex gap-2">
-              <dt className="font-semibold">{t('bill.lastAction')}:</dt>
-              <dd className="text-ink-soft">{fmtDate(bill.last_action_date)}</dd>
-            </div>
-          )}
-        </dl>
-        {bill.last_action_text && <p className="max-w-prose text-ink-soft">{bill.last_action_text}</p>}
-        {bill.congress_gov_url && (
-          <a
-            href={bill.congress_gov_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4"
-          >
-            {t('bill.viewOfficial')}
-            <ExternalLink className="h-4 w-4" aria-hidden />
-          </a>
-        )}
-      </section>
+  const action = (
+    <ActionPanel
+      slug={id}
+      identifier={formatCitation(bill.bill_type, bill.bill_number)}
+      title={bill.ai_headline ?? bill.short_title ?? bill.title}
+    />
+  );
 
-      <ActionPanel
-        slug={id}
-        identifier={formatCitation(bill.bill_type, bill.bill_number)}
-        title={bill.ai_headline ?? bill.short_title ?? bill.title}
-      />
-    </article>
+  return (
+    <>
+      <article className="mx-auto max-w-3xl px-4 py-12">
+        {header}
+        {content}
+        {action}
+      </article>
+
+      {/* Keeps the call reachable while reading; yields when another call CTA is on screen */}
+      <FloatingCallButton />
+    </>
   );
 }

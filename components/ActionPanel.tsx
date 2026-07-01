@@ -163,7 +163,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
 
 
   return (
-    <section aria-labelledby="act" className="mt-12 rounded-card border-2 border-ink bg-surface p-6 md:p-8 shadow-lift">
+    <section aria-labelledby="act" data-call-cta className="mt-12 rounded-card border-2 border-ink bg-surface p-6 md:p-8 shadow-lift">
       <h2 id="act" className="font-display text-3xl font-bold">
         {t('actTitle')}
       </h2>
