@@ -1,0 +1,71 @@
+{
+  "result": {
+    "input": {
+      "address": {
+        "address": "200 W 24th St, Cheyenne, WY 82001"
+      },
+      "vintage": {
+        "isDefault": true,
+        "id": "4",
+        "vintageName": "Current_Current",
+        "vintageDescription": "Current Vintage - Current Benchmark"
+      },
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      }
+    },
+    "addressMatches": [
+      {
+        "tigerLine": {
+          "side": "R",
+          "tigerLineId": "160149258"
+        },
+        "geographies": {
+          "119th Congressional Districts": [
+            {
+              "GEOID": "5600",
+              "CENTLAT": "+42.9960999",
+              "CDSESSN": "119",
+              "AREAWATER": "1868032440",
+              "BASENAME": "Congressional District (at Large)",
+              "STATE": "56",
+              "OID": "2119035963375329",
+              "LSADC": "C1",
+              "FUNCSTAT": "N",
+              "INTPTLAT": "+42.9738766",
+              "NAME": "Congressional District (at Large)",
+              "OBJECTID": 236,
+              "CENTLON": "-107.5514568",
+              "CD119": "00",
+              "AREALAND": "251458183340",
+              "INTPTLON": "-107.5290542",
+              "MTFCC": "G5200"
+            }
+          ]
+        },
+        "coordinates": {
+          "x": -104.820004491261,
+          "y": 41.139847757091
+        },
+        "addressComponents": {
+          "zip": "82001",
+          "streetName": "24TH",
+          "preType": "",
+          "city": "CHEYENNE",
+          "preDirection": "W",
+          "suffixDirection": "",
+          "fromAddress": "200",
+          "state": "WY",
+          "suffixType": "ST",
+          "toAddress": "298",
+          "suffixQualifier": "",
+          "preQualifier": ""
+        },
+        "matchedAddress": "200 W 24TH ST, CHEYENNE, WY, 82001"
+      }
+    ]
+  }
+}
