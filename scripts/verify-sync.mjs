@@ -94,6 +94,34 @@ if (Array.isArray(bills) && bills.length > 0 && es && typeof es === 'object') {
   }
 }
 
+// --- coverage: a partial run must never shrink the coverage file ------------
+// Gradual shrink is normal (articles age out, bills go terminal). An
+// overnight cliff means a quota-stopped or crashed coverage run replaced the
+// file with a partial result. sync-coverage carries unprocessed bills forward
+// precisely to prevent that — this is the backstop if that logic regresses.
+const coverage = parse('data/coverage.json', readFileSync('data/coverage.json', 'utf8'));
+if (coverage && typeof coverage === 'object' && !Array.isArray(coverage)) {
+  const covCount = Object.keys(coverage).filter((k) => !k.startsWith('_')).length;
+  try {
+    const before = JSON.parse(
+      execSync('git show HEAD:data/coverage.json', {
+        encoding: 'utf8',
+        maxBuffer: 512 * 1024 * 1024,
+      })
+    );
+    const beforeCount = Object.keys(before).filter((k) => !k.startsWith('_')).length;
+    if (beforeCount >= 20 && covCount < beforeCount * 0.5) {
+      fail(`coverage.json shrank ${beforeCount} -> ${covCount} bills (>50% overnight) — partial coverage run replaced the file`);
+    } else if (beforeCount >= 20 && covCount < beforeCount * 0.8) {
+      warn(`coverage.json shrank ${beforeCount} -> ${covCount} bills (>20% overnight) — worth a look`);
+    } else {
+      console.log(`coverage: ${beforeCount} -> ${covCount} bills`);
+    }
+  } catch {
+    warn('could not read HEAD:data/coverage.json for the coverage comparison');
+  }
+}
+
 // --- sync-state: did tonight's run actually run? ----------------------------
 const state = parse('data/sync-state.json', readFileSync('data/sync-state.json', 'utf8'));
 if (state) {
