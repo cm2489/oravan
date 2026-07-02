@@ -15,6 +15,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -43,28 +44,10 @@ function slugOf(b) {
   return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 }
 
-/*
- * Read-time urgency — a copy of lib/data.ts so this script and the live site
- * agree on which bills are "top band". Keep in sync if lib/data.ts changes.
- */
-const STATUS_BASE = {
-  floor_vote: 0.9, passed_chamber: 0.75, conference: 0.75, markup: 0.65,
-  committee: 0.45, signed: 0.3, vetoed: 0.3, introduced: 0.2,
-};
-const TERMINAL = new Set(['signed', 'vetoed']);
-
-function effectiveUrgency(status, lastActionDate) {
-  const base = STATUS_BASE[status] ?? 0.2;
-  if (!lastActionDate) return base;
-  const days = (Date.now() - new Date(lastActionDate).getTime()) / 86_400_000;
-  if (!Number.isFinite(days) || days < 0) return base;
-  const bonus = days < 3 ? 0.1 : days < 7 ? 0.05 : 0;
-  const decay = days <= 14 ? 0 : Math.min(0.45, (days - 14) * 0.015);
-  return Math.max(0.05, Math.min(1, base + bonus - decay));
-}
-
+// Urgency comes from lib/urgency.mjs — the same module the live site ranks
+// with — so this script and the site always agree on which bills are "top band".
 const topBills = bills
-  .filter((b) => b.ai_headline && !TERMINAL.has(b.status))
+  .filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status))
   .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) }))
   .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
   .slice(0, TOP_N)
