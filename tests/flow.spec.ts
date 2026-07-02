@@ -71,7 +71,7 @@ test('script failure shows a retry that recovers', async ({ page }) => {
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ script: 'RECOVERED SCRIPT', cached: false }) });
   });
   await page.goto(BILL);
-  await page.getByRole('button', { name: 'I have questions' }).click();
+  await page.getByRole('button', { name: "I'm concerned" }).click();
   // Next.js's route announcer is also role=alert - filter to ours
   await expect(page.getByRole('alert').filter({ hasText: /try again/i })).toBeVisible();
   await page.getByRole('button', { name: 'Try again' }).click();

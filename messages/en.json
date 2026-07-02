@@ -138,8 +138,9 @@
     "stance": {
       "support": "I support it",
       "oppose": "I oppose it",
-      "undecided": "I have questions"
+      "undecided": "I'm concerned"
     },
+    "concernNote": "Your concern gets logged right alongside the yes and no calls. Staffers usually won't debate policy on the spot — and they don't need to for your call to count.",
     "scriptTitle": "Your script",
     "scriptHint": "Edit anything. It works best when it sounds like you, and the [brackets] are yours to fill in.",
     "scriptDisclaimer": "AI-drafted. Review and edit before you call.",

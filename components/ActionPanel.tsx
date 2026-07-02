@@ -165,6 +165,11 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             </button>
           ))}
         </div>
+        {/* Honest expectations: a concern is logged, not debated - keeps the
+            "no debate, no quiz" promise true for this stance too. */}
+        {stance === 'undecided' && (
+          <p className="mt-3 max-w-prose text-sm text-ink-soft">{t('concernNote')}</p>
+        )}
       </fieldset>
 
       {/* Step 2 - script */}

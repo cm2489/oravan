@@ -138,8 +138,9 @@
     "stance": {
       "support": "Lo apoyo",
       "oppose": "Me opongo",
-      "undecided": "Tengo preguntas"
+      "undecided": "Me preocupa"
     },
+    "concernNote": "Tu preocupación se registra junto a las llamadas a favor y en contra. El personal no suele debatir el tema en el momento — y no hace falta para que tu llamada cuente.",
     "scriptTitle": "Tu guion",
     "scriptHint": "Edita lo que quieras — funciona mejor cuando suena como tú. Los [corchetes] son para que los llenes.",
     "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",

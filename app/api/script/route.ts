@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     support: 'The caller SUPPORTS this bill and urges the member to vote for it.',
     oppose: 'The caller OPPOSES this bill and urges the member to vote against it.',
     undecided:
-      'The caller is UNDECIDED: they want to register concern, ask where the member stands, and ask what the member is doing about it.',
+      "The caller is CONCERNED about this bill and has not settled on support or opposition. The script must register that concern, name the ONE thing that worries them (grounded in the summary), and ask that their concern be noted for the member along with where the member stands - phrased as something for the office to record, never as live questions to the staffer. The staffer only tallies positions; the script must not expect answers or a conversation.",
   }[stance];
 
   const langLine =
