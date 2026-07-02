@@ -74,7 +74,20 @@
       "Independent": "Independiente"
     },
     "delegate": "Delegado/a",
-    "delegateNote": "{state} elige un/a delegado/a a la Cámara en lugar de un representante con voto, y no tiene senadores federales. Los delegados pueden hablar en los comités, presentar proyectos de ley y abogar por ti. Tu llamada sigue contando."
+    "delegateNote": "{state} elige un/a delegado/a a la Cámara en lugar de un representante con voto, y no tiene senadores federales. Los delegados pueden hablar en los comités, presentar proyectos de ley y abogar por ti. Tu llamada sigue contando.",
+    "refineTitle": "Opcional: encuentra tu distrito exacto",
+    "refinePrivacy": "Tu dirección se usa una sola vez para encontrar tu distrito. No se envía a ningún otro lado y nunca se guarda.",
+    "addressLabel": "Dirección (calle y número)",
+    "addressPlaceholder": "p. ej. 421 8th Ave",
+    "refineCta": "Encontrar mi distrito",
+    "refineChecking": "Revisando tu dirección…",
+    "addressInvalid": "Eso parece muy corto para ser una dirección. Prueba algo como 421 8th Ave.",
+    "addressNotFound": "No pudimos encontrar esa dirección. Revisa el número y la ortografía, o sigue usando la lista completa de abajo.",
+    "refineUnavailable": "No pudimos revisar tu dirección en este momento. Todos los distritos posibles siguen abajo, así que no falta nada. Inténtalo más tarde si quieres.",
+    "refineRateLimited": "Has revisado varias direcciones en poco tiempo. Respira y vuelve a intentarlo pronto.",
+    "refinedNote": "Este es tu distrito, encontrado con la dirección que escribiste. La dirección se usó una sola vez y nunca se guardó. Tus senadores son los mismos para todo el estado.",
+    "refinedOutsideZip": "Tu dirección cae en un distrito que nuestro mapa de códigos postales no esperaba para {zip}. Una dirección es más precisa que un mapa de códigos postales, así que este es el correcto.",
+    "showAllDistricts": "Ver todos los distritos del código postal {zip}"
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
@@ -263,7 +276,8 @@
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
     "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable.",
-    "p6": "El único número que sí guardamos: cada proyecto de ley tiene un conteo anónimo de llamadas que la gente decidió sumar. Añadir la tuya guarda un solo número asociado al proyecto. No quién eres, no dónde vives, no qué dijiste. Para prevenir abusos, contamos brevemente cuántas sumas llegan de una dirección de red cada día, sin registrar qué proyectos tocaron."
+    "p6": "El único número que sí guardamos: cada proyecto de ley tiene un conteo anónimo de llamadas que la gente decidió sumar. Añadir la tuya guarda un solo número asociado al proyecto. No quién eres, no dónde vives, no qué dijiste. Para prevenir abusos, contamos brevemente cuántas sumas llegan de una dirección de red cada día, sin registrar qué proyectos tocaron.",
+    "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
   },
   "notFound": {
     "title": "Página no encontrada",

@@ -74,7 +74,20 @@
       "Independent": "Independent"
     },
     "delegate": "Delegate",
-    "delegateNote": "{state} elects a delegate to the House instead of a voting representative, and has no U.S. senators. Delegates can speak in committees, introduce bills, and advocate for you. Your call still counts."
+    "delegateNote": "{state} elects a delegate to the House instead of a voting representative, and has no U.S. senators. Delegates can speak in committees, introduce bills, and advocate for you. Your call still counts.",
+    "refineTitle": "Optional: narrow it to your exact district",
+    "refinePrivacy": "Your street address is used once to find your district, sent nowhere else, and never stored.",
+    "addressLabel": "Street address",
+    "addressPlaceholder": "e.g. 421 8th Ave",
+    "refineCta": "Find my district",
+    "refineChecking": "Checking your address…",
+    "addressInvalid": "That looks too short to be a street address. Try something like 421 8th Ave.",
+    "addressNotFound": "We couldn't find that address. Check the street number and spelling, or keep using the full list below.",
+    "refineUnavailable": "We couldn't check your address right now. Every possible district is still shown below, so nothing is missing. Try again later if you'd like.",
+    "refineRateLimited": "You've checked several addresses in a short time. Take a breath and try again soon.",
+    "refinedNote": "This is your district, found from the street address you entered. The address was used once and never stored. Your senators are the same for the whole state.",
+    "refinedOutsideZip": "Your address falls in a district our ZIP map didn't expect for {zip}. A street address is more precise than a ZIP map, so this is the one to trust.",
+    "showAllDistricts": "Show all districts for ZIP {zip}"
   },
   "bills": {
     "title": "Active bills, decoded",
@@ -263,7 +276,8 @@
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
     "p5": "This matters because political beliefs are sensitive data. The safest database is the one that doesn't exist, so we didn't build one.",
     "contact": "Questions? The project is open about how it works: every line of code is inspectable.",
-    "p6": "The one number we do keep: each bill has an anonymous tally of calls people chose to count. Adding yours stores a single number against the bill. Not who you are, not where you live, not what you said. To prevent abuse we briefly count how many tallies come from a network address each day, without recording which bills they touched."
+    "p6": "The one number we do keep: each bill has an anonymous tally of calls people chose to count. Adding yours stores a single number against the bill. Not who you are, not where you live, not what you said. To prevent abuse we briefly count how many tallies come from a network address each day, without recording which bills they touched.",
+    "p7": "One optional exception to \"we never ask\": if your ZIP code covers more than one congressional district, you can type your street address to pin down yours. It goes to our server once, is passed straight to the U.S. Census Bureau's public geocoder (so your device never contacts census.gov directly), and is never stored or written to any log. Only the district number comes back."
   },
   "notFound": {
     "title": "Page not found",
