@@ -1,0 +1,71 @@
+{
+  "result": {
+    "input": {
+      "address": {
+        "address": "421 8th Ave, New York, NY 10001"
+      },
+      "vintage": {
+        "isDefault": true,
+        "id": "4",
+        "vintageName": "Current_Current",
+        "vintageDescription": "Current Vintage - Current Benchmark"
+      },
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      }
+    },
+    "addressMatches": [
+      {
+        "tigerLine": {
+          "side": "L",
+          "tigerLineId": "59653375"
+        },
+        "geographies": {
+          "119th Congressional Districts": [
+            {
+              "GEOID": "3612",
+              "CENTLAT": "+40.7661589",
+              "CDSESSN": "119",
+              "AREAWATER": "10382846",
+              "BASENAME": "12",
+              "STATE": "36",
+              "OID": "2119035952746636",
+              "LSADC": "C2",
+              "FUNCSTAT": "N",
+              "INTPTLAT": "+40.7648052",
+              "NAME": "Congressional District 12",
+              "OBJECTID": 142,
+              "CENTLON": "-073.9756672",
+              "CD119": "12",
+              "AREALAND": "24784552",
+              "INTPTLON": "-073.9751822",
+              "MTFCC": "G5200"
+            }
+          ]
+        },
+        "coordinates": {
+          "x": -73.994946871146,
+          "y": 40.750268409951
+        },
+        "addressComponents": {
+          "zip": "10001",
+          "streetName": "8TH",
+          "preType": "",
+          "city": "NEW YORK",
+          "preDirection": "",
+          "suffixDirection": "",
+          "fromAddress": "403",
+          "state": "NY",
+          "suffixType": "AVE",
+          "toAddress": "421",
+          "suffixQualifier": "",
+          "preQualifier": ""
+        },
+        "matchedAddress": "421 8TH AVE, NEW YORK, NY, 10001"
+      }
+    ]
+  }
+}

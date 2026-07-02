@@ -14,7 +14,7 @@ Read README.md first; its **Design principles** section is the product constitut
 
 ## Architecture in one breath
 
-Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database; ~1,000 SSG pages; the only dynamic routes are `app/api/script` (Anthropic, cached + rate-limited) and `app/api/reps` (pure lookup). `proxy.ts` does locale negotiation only.
+Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database; ~1,000 SSG pages; the only dynamic routes are `app/api/script` (Anthropic, cached + rate-limited), `app/api/reps` (pure lookup), `app/api/district` (stateless Census-geocoder proxy for split-ZIP address refinement — address never stored or logged), and `app/api/heartbeat` (anonymous tally). `proxy.ts` does locale negotiation only.
 
 ## This is build #3 of 3
 
