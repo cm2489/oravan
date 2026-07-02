@@ -10,6 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Launch-gate reminder (noindex is active)
+        # Never fails - it just refuses to let the gate be forgotten. The
+        # noindex is kept deliberately (per Colby, 2026-07-01); remove the
+        # gate in app/[locale]/layout.tsx AND this step at launch.
+        run: |
+          if grep -q 'index: false' 'app/[locale]/layout.tsx'; then
+            echo "::warning title=noindex launch gate is active::Production is not indexable (robots noindex in app/[locale]/layout.tsx). Kept per Colby, 2026-07-01 - revisit at launch."
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: 24
