@@ -53,9 +53,16 @@ jobs:
         run: node scripts/verify-sync.mjs
       - name: Commit data
         id: commit
+        # The author email must map to the Vercel-linked GitHub account
+        # (cm2489): Vercel BLOCKs auto-deploys for commits from unlinked
+        # authors, and — proven by the 2026-07-02 nightly run — deploy hooks
+        # do NOT bypass that check; the hook's deployment of the same commit
+        # was BLOCKED identically. Authoring as the linked account lets the
+        # normal git-integration deploy proceed.
+        # See docs/solutions/vercel-bot-push-blocked-deploys.md.
         run: |
-          git config user.name "cabina-sync[bot]"
-          git config user.email "noreply@github.com"
+          git config user.name "rostra-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
           git add data/
           if git diff --cached --quiet; then
             echo "no changes"
@@ -81,18 +88,12 @@ jobs:
             git rebase origin/main
           done
           exit 1
-      - name: Trigger Vercel deploy
-        # Commits authored by this bot have no linked Vercel account, so
-        # Vercel's GitHub integration silently BLOCKs the auto-deploy it would
-        # normally trigger on push (every nightly/weekly sync commit did this,
-        # unnoticed, until a later human-merged PR happened to rebuild main
-        # and drag the data along). Deploy hooks aren't identity-gated.
-        if: steps.commit.outputs.changed == 'true'
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
       - name: Verify the deploy landed
-        # The hook fires blind (PR #18's root cause hid for weeks behind green
-        # checkmarks) - poll production until it serves the SHA we just pushed.
-        # Skips with a notice until the PROD_URL repo variable is configured.
+        # The push above triggers Vercel's git-integration deploy (the commit
+        # author is linked, so it is no longer BLOCKED). Deploys can still fail
+        # or be dropped silently (PR #18's root cause hid for weeks behind
+        # green checkmarks) - poll production until it serves the SHA we just
+        # pushed. Skips with a notice until the PROD_URL repo variable is set.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
