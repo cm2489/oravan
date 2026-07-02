@@ -13,8 +13,6 @@ import type { CallOutcome, Stance } from './types';
 export interface Prefs {
   zip?: string;
   interests?: string[];
-  /** Bills this device has already added to the public tally (one tap each). */
-  tallied?: string[];
 }
 
 export interface CallRecord {

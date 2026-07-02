@@ -38,11 +38,6 @@ jobs:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/sync-coverage.mjs
-      - name: Pull heartbeat pulses
-        env:
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-        run: node scripts/pull-heartbeats.mjs
       - name: Commit data
         id: commit
         run: |
