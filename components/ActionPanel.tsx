@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { setPrefs, upsertCall, useCalls, usePrefs } from '@/lib/local';
+import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { ZipForm } from './ZipForm';
 
@@ -34,31 +34,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const [repsError, setRepsError] = useState(false);
   const prefs = usePrefs();
   const zip = prefs.zip ?? null;
-  const alreadyTallied = (prefs.tallied ?? []).includes(slug);
-  const [tally, setTally] = useState<{ state: 'idle' | 'sending' | 'done' | 'hidden'; count: number }>({
-    state: 'idle',
-    count: 0,
-  });
-
-  async function addToTally() {
-    setTally({ state: 'sending', count: 0 });
-    try {
-      const res = await fetch('/api/heartbeat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug }),
-      });
-      if (!res.ok) {
-        setTally({ state: 'hidden', count: 0 });
-        return;
-      }
-      const d = await res.json();
-      setPrefs({ tallied: [...(prefs.tallied ?? []), slug] });
-      setTally({ state: 'done', count: d.pulse7 ?? 1 });
-    } catch {
-      setTally({ state: 'hidden', count: 0 });
-    }
-  }
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
   const [bigType, setBigType] = useState(false);
@@ -190,6 +165,11 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             </button>
           ))}
         </div>
+        {/* Honest expectations: a concern is logged, not debated - keeps the
+            "no debate, no quiz" promise true for this stance too. */}
+        {stance === 'undecided' && (
+          <p className="mt-3 max-w-prose text-sm text-ink-soft">{t('concernNote')}</p>
+        )}
       </fieldset>
 
       {/* Step 2 - script */}
@@ -482,25 +462,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           </Link>
                         </p>
                       </div>
-                    )}
-
-                    {/* The movement tally: opt-in, anonymous, one tap per bill per device */}
-                    {logged && !alreadyTallied && tally.state === 'idle' && (
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          onClick={addToTally}
-                          className="inline-flex items-center gap-2 rounded-control border-2 border-moss px-3.5 py-2.5 text-sm font-semibold text-moss transition-transform hover:bg-moss-soft active:translate-y-px"
-                        >
-                          {t('tallyCta')}
-                        </button>
-                        <p className="mt-1 text-xs text-ink-faint">{t('tallyNote')}</p>
-                      </div>
-                    )}
-                    {logged && tally.state === 'done' && (
-                      <p className="mt-2 text-sm font-semibold text-moss" role="status">
-                        {t('tallyDone', { count: tally.count })}
-                      </p>
                     )}
                   </div>
                 </li>

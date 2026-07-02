@@ -138,10 +138,9 @@
     "stance": {
       "support": "Lo apoyo",
       "oppose": "Me opongo",
-      "undecided": "Tengo preguntas"
+      "undecided": "Me preocupa"
     },
-    "getScript": "Escribir mi guion",
-    "generating": "Redactando tu guion…",
+    "concernNote": "Tu preocupación se registra junto a las llamadas a favor y en contra. El personal no suele debatir el tema en el momento — y no hace falta para que tu llamada cuente.",
     "scriptTitle": "Tu guion",
     "scriptHint": "Edita lo que quieras — funciona mejor cuando suena como tú. Los [corchetes] son para que los llenes.",
     "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",
@@ -165,7 +164,6 @@
     "viewImpact": "Ver tu impacto",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
-    "bigType": "Ver en grande",
     "closeBig": "Cerrar",
     "hearFirstTitle": "Qué escucharás primero",
     "hearFirstBody": "Normalmente uno o dos timbres, y luego alguien del personal dice el nombre de la oficina — o un menú corto, o el buzón de voz. Las tres opciones sirven: di tu guion, o déjalo como mensaje.",
@@ -210,11 +208,7 @@
     "startCall": "Empezar la llamada",
     "editScript": "Editar guion",
     "firstCallTitle": "¿Tu primera llamada?",
-    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
-    "tallyCta": "Suma tu llamada al conteo de este proyecto",
-    "tallyNote": "Solo un número. Anónimo, nunca rastreado.",
-    "tallyDone": "Contada. Tu llamada se suma a {count, plural, one {# llamada} other {# llamadas}} esta semana en este proyecto.",
-    "pulseLabel": "{count, plural, one {# llamada contada esta semana} other {# llamadas contadas esta semana}}"
+    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo."
   },
   "coverage": {
     "heading": "Cómo lo están cubriendo",
@@ -276,7 +270,6 @@
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
     "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable.",
-    "p6": "El único número que sí guardamos: cada proyecto de ley tiene un conteo anónimo de llamadas que la gente decidió sumar. Añadir la tuya guarda un solo número asociado al proyecto. No quién eres, no dónde vives, no qué dijiste. Para prevenir abusos, contamos brevemente cuántas sumas llegan de una dirección de red cada día, sin registrar qué proyectos tocaron.",
     "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
   },
   "notFound": {

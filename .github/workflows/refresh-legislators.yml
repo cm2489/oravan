@@ -39,7 +39,10 @@ jobs:
           # safe because this workflow only ever touches legislators.json /
           # zip-districts.json, disjoint from sync-bills.yml's files.
           for i in 1 2 3 4 5; do
-            git push && exit 0
+            if git push; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
             git fetch origin main
             git rebase origin/main
@@ -53,3 +56,13 @@ jobs:
         # and drag the data along). Deploy hooks aren't identity-gated.
         if: steps.commit.outputs.changed == 'true'
         run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+      - name: Verify the deploy landed
+        # The hook fires blind (PR #18's root cause hid for weeks behind green
+        # checkmarks) - poll production until it serves the SHA we just pushed.
+        # Skips with a notice until the PROD_URL repo variable is configured.
+        # Stdlib-only script: needs no npm ci, the runner's node suffices.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          EXPECT_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/verify-deploy.mjs

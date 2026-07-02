@@ -25,9 +25,15 @@ export async function generateMetadata({
   return {
     title: { default: `${t('appName')} — ${t('tagline')}`, template: `%s — ${t('appName')}` },
     description: t('footer.mission'),
-    // LAUNCH GATE: remove once the name/domain is locked - keeps the unbranded
-    // test deployment out of search indexes during the feedback phase.
+    // LAUNCH GATE: robots noindex keeps the unbranded test deployment out of
+    // search indexes during the feedback phase. KEPT per Colby, 2026-07-01 -
+    // revisit at launch. CI emits a ::warning on every run while this gate
+    // exists (ci.yml "Launch-gate reminder") so it can't silently persist.
     robots: { index: false, follow: false },
+    // Build identity for post-deploy verification: the data-sync workflows
+    // poll production for the SHA they just pushed (scripts/verify-deploy.mjs).
+    // Vercel sets VERCEL_GIT_COMMIT_SHA at build time, deploy-hook builds included.
+    other: { 'rostra-build': process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev' },
   };
 }
 

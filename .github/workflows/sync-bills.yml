@@ -26,6 +26,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Mark run start
+        # Consumed by the post-sync verifier: sync-state.json's lastRun must
+        # advance past this timestamp or the night's run didn't do its job.
+        id: runstart
+        run: echo "ts=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
       - name: Sync bills
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
@@ -38,11 +43,14 @@ jobs:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/sync-coverage.mjs
-      - name: Pull heartbeat pulses
+      - name: Verify the sync did its job (dead-man's-switch)
+        # Fails loudly BEFORE anything is committed: corpus parses, EN/ES
+        # parity holds, the bill count didn't drop, and sync-state advanced
+        # tonight. Warns (never fails) on corpus staleness while the decode
+        # backlog drains. See scripts/verify-sync.mjs and docs/solutions/.
         env:
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-        run: node scripts/pull-heartbeats.mjs
+          RUN_STARTED_AT: ${{ steps.runstart.outputs.ts }}
+        run: node scripts/verify-sync.mjs
       - name: Commit data
         id: commit
         run: |
@@ -64,7 +72,10 @@ jobs:
           # only touches bills.json/bills-es.json/sync-state.json, disjoint
           # from refresh-legislators.yml's files.
           for i in 1 2 3 4 5; do
-            git push && exit 0
+            if git push; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
             git fetch origin main
             git rebase origin/main
@@ -78,3 +89,12 @@ jobs:
         # and drag the data along). Deploy hooks aren't identity-gated.
         if: steps.commit.outputs.changed == 'true'
         run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+      - name: Verify the deploy landed
+        # The hook fires blind (PR #18's root cause hid for weeks behind green
+        # checkmarks) - poll production until it serves the SHA we just pushed.
+        # Skips with a notice until the PROD_URL repo variable is configured.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          EXPECT_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/verify-deploy.mjs

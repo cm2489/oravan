@@ -9,7 +9,6 @@ import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
 import { TldrStrip } from '@/components/TldrStrip';
-import { Heartbeat } from '@/components/Heartbeat';
 import { coverageTier, getCoverage } from '@/lib/coverage';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
@@ -71,8 +70,6 @@ export default async function BillPage({
       <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">
         {bill.ai_headline ?? bill.short_title ?? bill.title}
       </h1>
-
-      <Heartbeat slug={id} />
 
       <TldrStrip bill={bill} />
     </>

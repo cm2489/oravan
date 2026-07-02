@@ -15,6 +15,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { STATUS_BASE } from '../lib/urgency.mjs';
 
 const CONGRESS = 119;
 const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
@@ -87,11 +88,11 @@ function mapStatus(actionText) {
   return 'committee';
 }
 
+// Stored sync-time score (freshness bonus, no decay) - the FEED never ranks
+// by this; read-time effectiveUrgency in lib/urgency.mjs does the ranking.
+// The base table is shared so the two curves can't drift apart.
 function urgencyScore(status, lastActionDate) {
-  const base = {
-    floor_vote: 0.9, passed_chamber: 0.75, conference: 0.75, markup: 0.65,
-    committee: 0.45, signed: 0.3, vetoed: 0.3, introduced: 0.2,
-  }[status] ?? 0.2;
+  const base = STATUS_BASE[status] ?? 0.2;
   let bonus = 0;
   if (lastActionDate) {
     const days = (Date.now() - new Date(lastActionDate).getTime()) / 86_400_000;
