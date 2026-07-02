@@ -19,13 +19,15 @@ The name is the **Rostra**: the platform in the Roman Forum where citizens stood
 
 | File | Source | Refresh |
 |---|---|---|
-| `data/bills.json` | Decoded bill corpus (Congress.gov bills + AI plain-language summaries) | Manual export for now; steady-state pipeline TBD |
+| `data/bills.json` + `data/bills-es.json` | Decoded bill corpus (Congress.gov bills + AI plain-language summaries, English and Spanish) | Nightly sync (`scripts/sync-bills.mjs` via `sync-bills.yml`): statuses refresh freely; new bills are decode-before-publish, entering the corpus only once their EN **and** ES summaries exist |
 | `data/legislators.json` | [unitedstates/congress-legislators](https://github.com/unitedstates/congress-legislators) (public domain) + district offices | `scripts/process-data.py` |
 | `data/zip-districts.json` | [OpenSourceActivismTech/us_zipcodes_congress](https://github.com/OpenSourceActivismTech/us_zipcodes_congress) | same |
 | `data/coverage.json` | Real news articles about top-band bills via [TheNewsAPI](https://www.thenewsapi.com/), AI-relevance-filtered (Haiku) | `scripts/sync-coverage.mjs` (nightly, gated on `NEWS_API_KEY`) |
 | `data/media-bias.json` | Outlet political-lean ratings by [AllSides](https://www.allsides.com/media-bias/ratings), used under CC BY-NC with attribution | Vendored snapshot |
 
 Portraits are served from the public-domain [unitedstates/images](https://github.com/unitedstates/images) project.
+
+Solved pipeline incidents (root cause + the CI gates that prevent recurrence) are documented in `docs/solutions/`.
 
 ### The "Read" section (outlet-bias coverage)
 
@@ -46,6 +48,5 @@ npm run dev
 
 - ZIP→district mapping is ZCTA-based; a split ZIP shows all candidate districts by default (senators are unaffected). Entering a street address — optional, sent once by POST, never stored or logged — narrows it to the actual district via a server-proxied Census-geocoder lookup; the all-candidates view remains the graceful fallback whenever the geocoder can't help. The geocoder request pins the "119th Congressional Districts" layer, which needs a bump when the Census rolls the vintage to the 120th.
 - Script cache and rate limits are in-memory per serverless instance — fine at demo scale, should move to a shared store before heavy traffic.
-- Spanish bill *summaries* are not yet pre-translated (UI and scripts are fully bilingual).
-- Bill corpus is a snapshot; no live sync yet.
+- New bills can lag behind Congress.gov: the nightly sync decodes at most `MAX_NEW_DECODES` new bills per run (cost ceiling), so after a missed window the corpus catches up over several nights (decode-before-publish; the backlog drains oldest-first).
 - "Read" coverage exists only for top-band bills (the long tail shows nothing); the ES locale shows the same English articles with localized chrome; outlets absent from `data/media-bias.json` appear without a lean chip.
