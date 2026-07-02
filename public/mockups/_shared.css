@@ -1,5 +1,0 @@
-:root{--paper:#FAF6EE;--paper-deep:#F2EBDC;--ink:#18203A;--ink-soft:#4A5168;--ink-faint:#5C6276;--night:#11182E;--booth:#E8A317;--booth-bright:#F2B33D;--booth-soft:#FBEED2;--line:#E2D9C6;--moss:#3E6B4F;--moss-soft:#E4EEE7}
-*{box-sizing:border-box;margin:0}
-body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,sans-serif;line-height:1.6}
-.display{font-family:'Bricolage Grotesque',sans-serif}
-.banner{position:fixed;top:0;left:0;right:0;background:var(--booth);color:var(--night);text-align:center;padding:.4rem;font-size:.78rem;font-weight:700;z-index:99}

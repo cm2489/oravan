@@ -140,8 +140,6 @@
       "oppose": "I oppose it",
       "undecided": "I have questions"
     },
-    "getScript": "Write my script",
-    "generating": "Drafting your script…",
     "scriptTitle": "Your script",
     "scriptHint": "Edit anything. It works best when it sounds like you, and the [brackets] are yours to fill in.",
     "scriptDisclaimer": "AI-drafted. Review and edit before you call.",
@@ -165,7 +163,6 @@
     "viewImpact": "See your impact",
     "copyScript": "Copy script",
     "scriptCopied": "Script copied",
-    "bigType": "Read big",
     "closeBig": "Close",
     "hearFirstTitle": "What you'll hear first",
     "hearFirstBody": "Usually one or two rings, then a staffer says the office name. Or a short menu, or voicemail. All three are fine: say your script, or leave it as the message.",

@@ -140,8 +140,6 @@
       "oppose": "Me opongo",
       "undecided": "Tengo preguntas"
     },
-    "getScript": "Escribir mi guion",
-    "generating": "Redactando tu guion…",
     "scriptTitle": "Tu guion",
     "scriptHint": "Edita lo que quieras — funciona mejor cuando suena como tú. Los [corchetes] son para que los llenes.",
     "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",
@@ -165,7 +163,6 @@
     "viewImpact": "Ver tu impacto",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
-    "bigType": "Ver en grande",
     "closeBig": "Cerrar",
     "hearFirstTitle": "Qué escucharás primero",
     "hearFirstBody": "Normalmente uno o dos timbres, y luego alguien del personal dice el nombre de la oficina — o un menú corto, o el buzón de voz. Las tres opciones sirven: di tu guion, o déjalo como mensaje.",

@@ -17,6 +17,8 @@ jobs:
       - run: npm ci
       - name: EN/ES message-key parity (bilingual hard rule)
         run: node scripts/check-messages-parity.mjs
+      - name: public/ ships only allowlisted files
+        run: node scripts/check-public-allowlist.mjs
       - run: npm run lint
       - name: Install Playwright WebKit
         run: npx playwright install --with-deps webkit
