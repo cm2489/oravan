@@ -16,6 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { STATUS_BASE } from '../lib/urgency.mjs';
+import { generateSearchInputs } from './search-inputs.mjs';
 
 const CONGRESS = 119;
 const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
@@ -314,6 +315,15 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
       bill.ai_summary = dec.ai_summary;
       bill.ai_headline = dec.ai_headline;
       bill.ai_sections = dec.ai_sections;
+      // Search handles for the coverage sync (press names + subject query).
+      // Non-fatal: the backfill script sweeps up any misses.
+      try {
+        const si = await generateSearchInputs(anthropic, bill);
+        bill.press_names = si.press_names;
+        bill.news_query = si.news_query;
+      } catch (e) {
+        console.error(`  search-inputs failed for ${slug}: ${e.message}`);
+      }
       es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
       bills.push(bill);
       bySlug.set(slug, bill);

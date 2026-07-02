@@ -1,7 +1,7 @@
 /**
- * Nightly coverage sync. For the top-urgency band of bills, fetch real news
- * articles (TheNewsAPI), keep only the ones genuinely about the bill (a Haiku
- * relevance gate — the ONLY AI use here, and it authors nothing), and write
+ * Nightly coverage sync. For every eligible bill (decoded, non-terminal),
+ * fetch real news articles (TheNewsAPI), keep only the ones genuinely about
+ * the bill (a Haiku relevance gate — it authors nothing), and write
  * them to data/coverage.json keyed by bill slug. The render path joins each
  * article's source to an outlet lean from data/media-bias.json (AllSides).
  *
@@ -16,6 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
+import { queryFor } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -126,13 +127,8 @@ async function fetchArticles(query, publishedAfter) {
   throw lastErr ?? new Error('TheNewsAPI: exhausted retries');
 }
 
-/* Search query from a bill: phrase-match its name (most precise) OR the citation. */
-function queryFor(b) {
-  const ident = `${b.bill_type.toUpperCase()} ${b.bill_number}`; // e.g. "HR 5582"
-  const name = (b.short_title ?? b.title ?? '').trim();
-  const usableName = name && name.length <= 80 && !/^an act|^a bill|^to /i.test(name);
-  return usableName ? `"${name}" | "${ident}"` : `"${ident}"`;
-}
+/* Search query construction lives in scripts/coverage-query.mjs (shared with
+   the eval harness and pinned by tests/coverage-query.unit.spec.ts). */
 
 /* Haiku relevance gate: keep only articles specifically about THIS bill. */
 async function filterRelevant(b, candidates) {
