@@ -9,7 +9,7 @@ The name is the **Rostra**: the platform in the Roman Forum where citizens stood
 ## Design principles
 
 1. **Zero accounts.** ZIP code, interests, and call history live in `localStorage` on the visitor's device. No server-side user data exists — nothing to breach, leak, or subpoena. This is the core privacy posture for at-risk users, not a missing feature.
-2. **Static-first.** Bills, legislators, district offices, and ZIP→district mappings are static JSON in `data/`, baked into ~1,000 statically generated pages. Fast, nearly free to host, resilient under load. The only dynamic endpoints are `/api/script` (AI script generation, cached per bill+stance+language, IP rate-limited) and `/api/reps` (pure lookup).
+2. **Static-first.** Bills, legislators, district offices, and ZIP→district mappings are static JSON in `data/`, baked into ~1,000 statically generated pages. Fast, nearly free to host, resilient under load. The only dynamic endpoints are `/api/script` (AI script generation, cached per bill+stance+language, IP rate-limited), `/api/reps` (pure lookup), `/api/district` (stateless split-ZIP address refinement: proxies the Census geocoder so the visitor's IP never reaches census.gov; the address is never stored or logged), and `/api/heartbeat` (the anonymous call tally).
 3. **Bilingual as a first-class feature.** Full EN/ES UI via `next-intl`; scripts are generated in the user's language.
 4. **The call moment is the product.** Voicemail is legitimized (offices tally it identically), after-hours calling is encouraged, district offices are listed alongside DC, and outcomes (spoke / voicemail / couldn't reach) are logged locally.
 5. **Honest about AI.** Every generated summary and script is labeled, editable, and reviewed by the human before any call.
@@ -44,7 +44,7 @@ npm run dev
 
 ## Known v1 caveats
 
-- ZIP→district mapping is ZCTA-based; split-ZIP addresses see all candidate districts (senators are unaffected). A street-address fallback is a v2 candidate.
+- ZIP→district mapping is ZCTA-based; a split ZIP shows all candidate districts by default (senators are unaffected). Entering a street address — optional, sent once by POST, never stored or logged — narrows it to the actual district via a server-proxied Census-geocoder lookup; the all-candidates view remains the graceful fallback whenever the geocoder can't help. The geocoder request pins the "119th Congressional Districts" layer, which needs a bump when the Census rolls the vintage to the 120th.
 - Script cache and rate limits are in-memory per serverless instance — fine at demo scale, should move to a shared store before heavy traffic.
 - Spanish bill *summaries* are not yet pre-translated (UI and scripts are fully bilingual).
 - Bill corpus is a snapshot; no live sync yet.
