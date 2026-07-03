@@ -48,23 +48,28 @@ function citationClause(b) {
 /**
  * Build the TheNewsAPI search query for a bill.
  * Precedence: press names (what journalists print) > subject query (how
- * unnamed bills are covered) > press-style citation alone (last resort for
- * bills the backfill hasn't reached).
+ * unnamed bills are covered) > the bill's own usable title (so a bill whose
+ * search inputs don't exist yet is never queried WORSE than the pre-#22
+ * builder did — dropping the title arm from the fallback cost 57 bills their
+ * coverage on the first partial-backfill night, 2026-07-03) > press-style
+ * citation.
  */
 /* A bare citation is not a press name — the builder handles citations itself,
    in press style. Defense against the generator echoing "HR 7086" as a name. */
 const CITATION_SHAPED = /^(h\.?\s?r\.?|s\.?|[hs]\.?\s?j\.?\s?res\.?|[hs]\.?\s?con\.?\s?res\.?|[hs]\.?\s?res\.?)\s*\.?\s*\d+$/i;
 
+/* Phrase match is apostrophe-EXACT and news CMSes emit typographic quotes:
+   "Kayleigh's Law" (straight) missed the real article titled "Kayleigh’s
+   Law" (curly). Emit both variants for any phrase containing either. */
+const apostropheVariants = (n) => (/['’]/.test(n)
+  ? [n.replace(/['’]/g, '’'), n.replace(/['’]/g, "'")]
+  : [n]);
+
 export function queryFor(b) {
   const names = (b.press_names ?? [])
     .map((n) => (n ?? '').trim())
     .filter((n) => n && n.length <= 60 && !CITATION_SHAPED.test(n))
-    // Phrase match is apostrophe-EXACT and news CMSes emit typographic
-    // quotes: "Kayleigh's Law" (straight) missed the real article titled
-    // "Kayleigh’s Law" (curly). Emit both variants for any name with either.
-    .flatMap((n) => (/['’]/.test(n)
-      ? [n.replace(/['’]/g, '’'), n.replace(/['’]/g, "'")]
-      : [n]))
+    .flatMap(apostropheVariants)
     .filter((n, i, arr) => arr.indexOf(n) === i)
     .slice(0, 4);
   const clauses = names.map((n) => `"${n}"`);
@@ -72,6 +77,16 @@ export function queryFor(b) {
   if (clauses.length === 0 && b.news_query) {
     // Subject query: raw terms, may embed its own quoted phrase.
     clauses.push(`(${b.news_query.trim()})`);
+  }
+
+  if (clauses.length === 0) {
+    // No generated inputs (backfill hasn't reached this bill, or decode-time
+    // generation failed): fall back to the bill's own title when usable —
+    // the pre-#22 heuristic. Many titles ARE the press name ("SCAM Act").
+    const title = (b.short_title ?? b.title ?? '').trim();
+    if (title && title.length <= 80 && !/^an act|^a bill|^to |^a joint resolution/i.test(title)) {
+      clauses.push(...apostropheVariants(title).map((t) => `"${t}"`));
+    }
   }
 
   clauses.push(citationClause(b));

@@ -72,3 +72,22 @@ test.describe('apostrophe variants (phrase match is apostrophe-exact)', () => {
     expect(q).toContain('"Kayleigh\'s Law Act"');
   });
 });
+
+test.describe('unbackfilled fallback keeps the title arm (2026-07-03 regression)', () => {
+  test('a usable title is searched when no generated inputs exist', () => {
+    const q = queryFor(bill({ bill_type: 's', bill_number: 3674, title: 'SCAM Act' }));
+    expect(q).toBe('"SCAM Act" | ("S. 3674" + (senate | congress))');
+  });
+  test('formal long titles still fall through to citation only', () => {
+    expect(queryFor(bill({ title: 'To establish governmentwide requirements for pre-payment fraud prevention' }))).toBe('"H.R. 8463"');
+    expect(queryFor(bill({ bill_type: 'sjres', bill_number: 188, title: 'A joint resolution providing for congressional disapproval…' }))).toBe('("S.J. Res. 188" + (senate | congress))');
+  });
+  test('title fallback gets apostrophe variants too', () => {
+    const q = queryFor(bill({ title: "Kayleigh's Law Act of 2026" }));
+    expect(q).toContain('"Kayleigh’s Law Act of 2026"');
+    expect(q).toContain('"Kayleigh\'s Law Act of 2026"');
+  });
+  test('generated inputs still take precedence over the title', () => {
+    expect(queryFor(bill({ press_names: ['GEO Act'], title: 'Geothermal Energy Orderly Decisions Act of 2025' }))).toBe('"GEO Act" | "H.R. 8463"');
+  });
+});
