@@ -39,12 +39,12 @@ jobs:
         run: node scripts/sync-bills.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
-        # generation existed (~1,090 at introduction, ≈5 nights at this
-        # budget), then becomes a fast no-op that sweeps any decode-time
+        # generation existed (~1,090 at introduction; 835 left after night one,
+        # ≈2 nights at this budget), then becomes a fast no-op sweeping decode-time
         # misses. Runs BEFORE the coverage sync so tonight's queries benefit.
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          BACKFILL_LIMIT: 250
+          BACKFILL_LIMIT: 450
         run: node scripts/backfill-search-inputs.mjs
       - name: Sync coverage
         # No-op unless NEWS_API_KEY is set, so this is safe before the secret exists.
