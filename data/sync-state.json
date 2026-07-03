@@ -1,5 +1,5 @@
 {
-  "lastSync": "2026-06-05T00:00:00Z",
-  "lastRun": "2026-07-03T10:13:30.330Z",
+  "lastSync": "2026-06-10T00:00:00Z",
+  "lastRun": "2026-07-03T19:05:27.707Z",
   "note": "lastSync was corrupted to a bare date (\"2026-06-04\") by the 2026-06-25 run, which 400'd every nightly sync through 2026-07-01 - Congress.gov rejects fromDateTime without a time component. Repaired to the same high-water mark, now a valid full timestamp."
 }
