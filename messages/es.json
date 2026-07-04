@@ -132,6 +132,13 @@
     "lastAction": "Última acción",
     "introduced": "Presentado",
     "viewOfficial": "Lee el proyecto oficial en Congress.gov",
+    "share": {
+      "label": "Comparte este proyecto de ley",
+      "share": "Compartir",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "whatsapp": "Compartir por WhatsApp"
+    },
     "actTitle": "Haz la llamada",
     "actSub": "Tres pasos: tu postura, tu guion, la llamada.",
     "stanceQ": "¿Cuál es tu postura?",

@@ -132,6 +132,13 @@
     "lastAction": "Latest action",
     "introduced": "Introduced",
     "viewOfficial": "Read the official bill on Congress.gov",
+    "share": {
+      "label": "Share this bill",
+      "share": "Share",
+      "copyLink": "Copy link",
+      "copied": "Link copied",
+      "whatsapp": "Share on WhatsApp"
+    },
     "actTitle": "Make the call",
     "actSub": "Three steps: where you stand, your script, the call.",
     "stanceQ": "Where do you stand?",
