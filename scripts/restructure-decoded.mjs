@@ -15,7 +15,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 const CONCURRENCY = 5;
 
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
@@ -75,7 +75,8 @@ Output exactly this tagged format, each tag on its own line followed by the cont
 
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1400,
+    max_tokens: 1820,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
   const t = parseTagged(msg.content[0].text);

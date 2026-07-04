@@ -8,7 +8,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 const CONCURRENCY = 5;
 
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
@@ -31,7 +31,8 @@ async function chip(b) {
   const esCost = es[slug]?.sections?.cost ?? '';
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 300,
+    max_tokens: 390,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: `Compress this bill-cost text into 2-3 short fact chips, in English and Spanish.
 
 English cost text: ${b.ai_sections.cost}

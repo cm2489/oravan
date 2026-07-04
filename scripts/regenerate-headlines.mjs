@@ -40,8 +40,9 @@ line 1: the English headline
 line 2: the Spanish headline`;
 
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 200,
+    model: 'claude-sonnet-5',
+    max_tokens: 260,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
   const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';

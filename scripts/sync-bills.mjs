@@ -27,7 +27,11 @@ const KEY = process.env.CONGRESS_API_KEY;
 if (!KEY) throw new Error('CONGRESS_API_KEY missing');
 
 const anthropic = new Anthropic({ maxRetries: 8 });
-const MODEL = 'claude-sonnet-4-6';
+// Sonnet 5's tokenizer runs ~30% more tokens than 4.6 for the same text, so
+// max_tokens caps on its calls are sized up accordingly; thinking is disabled
+// explicitly because Sonnet 5 defaults it ON when the field is omitted, which
+// would add unbounded thinking spend to batch calls.
+const MODEL = 'claude-sonnet-5';
 
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const es = JSON.parse(readFileSync('data/bills-es.json', 'utf8'));
@@ -184,7 +188,7 @@ function normChips(s) {
 
 async function decode(bill, text) {
   const sum = await anthropic.messages.create({
-    model: MODEL, max_tokens: 700,
+    model: MODEL, max_tokens: 900, thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: `Explain this congressional bill in plain language for an everyday US resident (8th-grade reading level). 2-3 short paragraphs: what it actually does, and who it affects. Strictly nonpartisan, no advocacy, no preamble, no markdown.
 
 Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}
@@ -195,7 +199,7 @@ ${text ?? bill.title}` }],
   const ai_summary = sum.content[0].text.trim();
 
   const rest = await anthropic.messages.create({
-    model: MODEL, max_tokens: 2500,
+    model: MODEL, max_tokens: 3250, thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: `From this plain-language bill summary, produce headlines, scannable sections, and a Spanish translation.
 
 Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number}
