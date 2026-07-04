@@ -3,15 +3,18 @@ import { notFound } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
+import { getPathname } from '@/i18n/navigation';
 import { ActionPanel } from '@/components/ActionPanel';
 import { CallPrompt } from '@/components/CallPrompt';
 import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
+import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { coverageTier, getCoverage } from '@/lib/coverage';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
+import { SITE_ORIGIN } from '@/lib/site';
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -54,6 +57,18 @@ export default async function BillPage({
   const callLabel = t('bill.actTitle');
   const callSub = t('bill.actSub');
 
+  const citation = formatCitation(bill.bill_type, bill.bill_number);
+  const displayTitle = bill.ai_headline ?? bill.short_title ?? bill.title;
+  // Headlines often already name the bill; don't repeat the citation (same
+  // rule the action panel uses for call-log labels).
+  const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
+  const shareText = norm(displayTitle).includes(norm(citation))
+    ? displayTitle
+    : `${citation} — ${displayTitle}`;
+  // Canonical, slug-only share URL: no query params, no stance, no
+  // locale-tracking params. The origin lives in lib/site.ts (rename in flight).
+  const shareUrl = `${SITE_ORIGIN}${getPathname({ locale, href: `/bills/${id}` })}`;
+
   const header = (
     <>
       <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-faint">
@@ -72,6 +87,9 @@ export default async function BillPage({
       </h1>
 
       <TldrStrip bill={bill} />
+
+      {/* Pass the page along - a quiet utility, not a hero */}
+      <SharePanel url={shareUrl} text={shareText} />
     </>
   );
 
