@@ -217,6 +217,48 @@
     "firstCallTitle": "¿Tu primera llamada?",
     "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo."
   },
+  "walkthrough": {
+    "label": "Cómo funciona una llamada — demostración en cinco pasos",
+    "play": "Reproducir la demostración",
+    "pause": "Pausar la demostración",
+    "stepOf": "Paso {step} de {total}",
+    "stepDot": "Paso {step} de {total}: {title}",
+    "sampleNote": "Se muestra con un proyecto de ley real: H.R. 1787, la Ley de la Moneda Conmemorativa de Roberto Clemente.",
+    "scenes": {
+      "decode": {
+        "title": "Un proyecto de ley, en claro",
+        "body": "Rostra traduce cada proyecto de ley a lenguaje claro — siempre marcado como redactado por IA, con el texto oficial a un toque de distancia."
+      },
+      "stance": {
+        "title": "Di cuál es tu postura",
+        "body": "Apoyar, oponerte o expresar preocupación — las tres cuentan igual. La demostración toca una opción para continuar; la decisión siempre es tuya."
+      },
+      "script": {
+        "title": "Tu guion de 30 segundos",
+        "body": "Aparece un guion listo para leer. Es un borrador de IA y está marcado como tal — revísalo y edítalo hasta que suene como tú antes de llamar."
+      },
+      "call": {
+        "title": "Haz la llamada",
+        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso. Alguien del personal contesta, anota tu posición y listo — un trato amable, unos 30 segundos."
+      },
+      "logged": {
+        "title": "Registrada — solo en este dispositivo",
+        "body": "Anota cómo te fue. Tu historial de llamadas vive en tu navegador, nunca en un servidor. Ese es todo el ciclo."
+      }
+    },
+    "phone": {
+      "billId": "H.R. 1787",
+      "decodedChip": "Descifrado con IA",
+      "billHeadline": "Monedas de oro y plata honrarían a Roberto Clemente",
+      "billTldr": "Tres monedas conmemorativas en 2027 — los recargos irían a su fundación, sin costo para los contribuyentes.",
+      "scriptSnippet": "Hola, me llamo [TU NOMBRE] y soy constituyente del código postal [TU ZIP]. Llamo sobre la H.R. 1787, la Ley de la Moneda Conmemorativa de Roberto Clemente…",
+      "callee": "La oficina de tu representante",
+      "dialing": "Llamando…",
+      "connected": "Conectado — contesta alguien del personal",
+      "loggedTitle": "Llamada registrada",
+      "savedLocal": "Guardado solo en este dispositivo."
+    }
+  },
   "coverage": {
     "heading": "Cómo lo están cubriendo",
     "subhead": "Reportajes reales sobre este proyecto de ley, etiquetados según la tendencia política de cada medio.",

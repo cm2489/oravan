@@ -217,6 +217,48 @@
     "firstCallTitle": "Your first call?",
     "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now."
   },
+  "walkthrough": {
+    "label": "How a call works — a five-step demo",
+    "play": "Play walkthrough",
+    "pause": "Pause walkthrough",
+    "stepOf": "Step {step} of {total}",
+    "stepDot": "Step {step} of {total}: {title}",
+    "sampleNote": "Shown with a real bill: H.R. 1787, the Roberto Clemente Commemorative Coin Act.",
+    "scenes": {
+      "decode": {
+        "title": "A bill, decoded",
+        "body": "Rostra turns every bill into plain language — always labeled as AI-drafted, with the official text one tap away."
+      },
+      "stance": {
+        "title": "Say where you stand",
+        "body": "Support, oppose, or concerned — all three count the same. The demo taps one to keep the tour moving; the choice is always yours."
+      },
+      "script": {
+        "title": "Your 30-second script",
+        "body": "A ready-to-read script appears. It's AI-drafted and labeled as such — review and edit it until it sounds like you before you call."
+      },
+      "call": {
+        "title": "Make the call",
+        "body": "Dial any of your three members' offices. A staffer answers, tallies your position, and that's it — staffers are friendly, and it takes about 30 seconds."
+      },
+      "logged": {
+        "title": "Logged — on this device only",
+        "body": "Mark how it went. Your call history lives in your browser, never on a server. That's the whole loop."
+      }
+    },
+    "phone": {
+      "billId": "H.R. 1787",
+      "decodedChip": "AI-decoded",
+      "billHeadline": "U.S. Mint would strike Roberto Clemente coins in 2027",
+      "billTldr": "Three commemorative coins in 2027 — surcharges go to his foundation, at no cost to taxpayers.",
+      "scriptSnippet": "Hi, my name is [YOUR NAME], and I'm a constituent from [YOUR ZIP]. I'm calling about H.R. 1787, the Roberto Clemente Commemorative Coin Act…",
+      "callee": "Your representative's office",
+      "dialing": "Calling…",
+      "connected": "Connected — a staffer picks up",
+      "loggedTitle": "Call logged",
+      "savedLocal": "Saved only on this device."
+    }
+  },
   "coverage": {
     "heading": "How it's being covered",
     "subhead": "Real reporting on this bill, labeled by each outlet's political lean.",
