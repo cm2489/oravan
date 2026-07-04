@@ -305,5 +305,25 @@
     "p3": "Rostra se ofrece tal cual, sin garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario; verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
     "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
+  },
+  "feedback": {
+    "trigger": "Comentarios de la beta",
+    "title": "Comentarios de la beta",
+    "intro": "Rostra está en beta. Cuéntanos qué está roto, qué confunde o qué falta.",
+    "categoryLegend": "¿Qué tipo de comentario?",
+    "categoryBug": "Algo no funciona",
+    "categoryFeature": "Una idea o sugerencia",
+    "categoryOther": "Otra cosa",
+    "messageLabel": "Tu comentario",
+    "pagePrefix": "Página: ",
+    "notice": "No incluyas datos personales. Los comentarios se guardan como texto en un registro privado; no podemos responder.",
+    "send": "Enviar comentario",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "success": "Recibido, gracias. Cada nota durante la beta define qué se arregla primero.",
+    "errorIncomplete": "Primero elige una categoría y escribe un mensaje.",
+    "errorRateLimited": "Muchos comentarios a la vez. Inténtalo de nuevo en unos minutos.",
+    "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto."
   }
 }

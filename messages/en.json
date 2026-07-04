@@ -305,5 +305,25 @@
     "p3": "Rostra is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
     "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
+  },
+  "feedback": {
+    "trigger": "Beta feedback",
+    "title": "Beta feedback",
+    "intro": "Rostra is in beta. Tell us what's broken, confusing, or missing.",
+    "categoryLegend": "What kind of feedback?",
+    "categoryBug": "Something's broken",
+    "categoryFeature": "An idea or request",
+    "categoryOther": "Something else",
+    "messageLabel": "Your feedback",
+    "pagePrefix": "Page: ",
+    "notice": "Don't include personal details. Feedback is stored as text in a private tracker; we can't reply.",
+    "send": "Send feedback",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "success": "Got it — thank you. Every note during the beta shapes what gets fixed first.",
+    "errorIncomplete": "Pick a category and write a message first.",
+    "errorRateLimited": "That's a lot of feedback at once. Please try again in a few minutes.",
+    "errorGeneric": "That didn't go through. Please try again in a minute."
   }
 }
