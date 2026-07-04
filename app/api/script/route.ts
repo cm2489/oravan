@@ -92,8 +92,9 @@ Rules:
 
   try {
     const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 400,
+      model: 'claude-sonnet-5',
+      max_tokens: 520,
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     });
     const script = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
