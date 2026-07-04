@@ -27,12 +27,34 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const bill = getBill(id);
-  if (!bill) return {};
+  const { locale, id } = await params;
+  const raw = getBill(id);
+  if (!raw) return {};
+  const bill = localizeBill(raw, locale);
+  const title = `${formatCitation(bill.bill_type, bill.bill_number)} — ${bill.ai_headline ?? bill.short_title ?? bill.title}`;
+  const description = bill.ai_summary?.slice(0, 160);
+  // Canonical, slug-only URLs (no query params, no stance — same rule as
+  // SharePanel): the absolute origin lives in lib/site.ts, nowhere else.
+  const urlFor = (l: string) => `${SITE_ORIGIN}${getPathname({ locale: l, href: `/bills/${id}` })}`;
   return {
-    title: `${formatCitation(bill.bill_type, bill.bill_number)} — ${bill.ai_headline ?? bill.short_title ?? bill.title}`,
-    description: bill.ai_summary?.slice(0, 160),
+    title,
+    description,
+    alternates: {
+      canonical: urlFor(locale),
+      languages: Object.fromEntries(routing.locales.map((l) => [l, urlFor(l)])),
+    },
+    openGraph: {
+      title,
+      description,
+      url: urlFor(locale),
+      siteName: 'Rostra',
+      type: 'website',
+      locale: locale === 'es' ? 'es_ES' : 'en_US',
+      alternateLocale: locale === 'es' ? 'en_US' : 'es_ES',
+      // og:image comes from the file convention (./opengraph-image.tsx),
+      // which overrides anything set here — don't duplicate it.
+    },
+    twitter: { card: 'summary_large_image' },
   };
 }
 

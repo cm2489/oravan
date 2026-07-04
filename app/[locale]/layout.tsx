@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
+import { SITE_ORIGIN } from '@/lib/site';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import '../globals.css';
@@ -23,6 +24,9 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'common' });
   return {
+    // Absolute base for social-crawler URLs (og:image and friends): link
+    // previews fetch from the wild, so relative URLs are useless to them.
+    metadataBase: new URL(SITE_ORIGIN),
     title: { default: `${t('appName')} — ${t('tagline')}`, template: `%s — ${t('appName')}` },
     description: t('footer.mission'),
     // LAUNCH GATE: robots noindex keeps the unbranded test deployment out of
