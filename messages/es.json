@@ -37,6 +37,8 @@
     "topTitle": "Vale la pena llamar esta semana",
     "topSub": "Los proyectos de ley que avanzan ahora mismo, explicados en lenguaje claro por IA.",
     "seeAll": "Ver los {count} proyectos de ley activos",
+    "walkthroughTitle": "Así funciona una llamada",
+    "walkthroughSub": "Qué pasa realmente, paso a paso — del lenguaje claro a una llamada de 30 segundos.",
     "howTitle": "Cómo funciona",
     "how1Title": "Encuentra a tus tres",
     "how1Body": "Tu código postal encuentra a tu representante en la Cámara y a tus dos senadores — con sus números en Washington y en tu zona.",
@@ -219,6 +221,7 @@
   },
   "walkthrough": {
     "label": "Cómo funciona una llamada — demostración en cinco pasos",
+    "disclosure": "Mira cómo funciona una llamada",
     "play": "Reproducir la demostración",
     "pause": "Pausar la demostración",
     "stepOf": "Paso {step} de {total}",

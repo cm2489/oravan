@@ -4,13 +4,16 @@ import { expect, test, type Page } from '@playwright/test';
  * CallWalkthrough behavior: reduced-motion starts paused, labeled step dots
  * navigate, auto-advance runs (and pauses on hover) otherwise.
  *
- * The component ships unmounted in its own PR (integration lands separately),
- * so each test self-skips until the walkthrough appears on the homepage.
- * The full suite was verified green against a temporary scratch mount before
- * the component PR landed — see that PR's description.
+ * The walkthrough is mounted on the homepage (the integration PR), so these
+ * run for real now. The self-skip guard below predates the mount and stays:
+ * it detects presence, not behavior, so it can never mask a real failure —
+ * only an unmount, which the integration's own specs would surface.
+ *
+ * Bill pages get the same walkthrough behind a collapsed <details>
+ * disclosure; its spec is at the bottom.
  */
 
-// Where the integration PR will mount it. Update if it lands elsewhere.
+// Where the walkthrough is mounted (homepage, "See how a call works").
 const PAGE_PATH = '/';
 // Longer than the longest per-scene hold (6.8s), to prove "no auto-advance".
 const LONGEST_SCENE_MS = 7500;
@@ -79,4 +82,23 @@ test('hovering pauses auto-advance', async ({ page, isMobile }) => {
   const step = await root.locator('h3').textContent();
   await page.waitForTimeout(LONGEST_SCENE_MS);
   await expect(root.locator('h3')).toHaveText(step ?? '');
+});
+
+test('bill page: disclosure is collapsed by default and reveals the walkthrough', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/bills/hr-5582-119'); // same known-good slug decoded.spec.ts relies on
+
+  const disclosure = page.locator('[data-walkthrough-disclosure]');
+  await expect(disclosure).toBeVisible();
+  // Collapsed by default — and the walkthrough isn't even mounted yet
+  // (it's lazy-loaded on open, so collapsed pages carry no extra weight).
+  await expect(disclosure).toHaveJSProperty('open', false);
+  await expect(page.locator('[data-walkthrough]')).toHaveCount(0);
+
+  await disclosure.locator('summary').click();
+  await expect(disclosure).toHaveJSProperty('open', true);
+  await expect(page.locator('[data-walkthrough]')).toBeVisible();
+  // The revealed walkthrough behaves like the homepage one: reduced motion ⇒ paused.
+  await expect(disclosure.getByRole('button', { name: 'Play walkthrough' })).toBeVisible();
+  await expect(disclosure.getByText('Step 1 of 5')).toBeVisible();
 });

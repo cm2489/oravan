@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ZipForm } from '@/components/ZipForm';
 import { BillCard } from '@/components/BillCard';
+import { CallWalkthrough } from '@/components/call-walkthrough/CallWalkthrough';
 import { NewsLens } from '@/components/NewsLens';
 import { billSlug, getAllBills, getNewsBills, getTopActions } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
@@ -78,6 +79,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               }}
             />
           ))}
+        </div>
+      </section>
+
+      {/* See how a call works - the bills above lead here; the demo de-risks
+          the ask before the informational sections make the fuller case */}
+      <section className="mx-auto max-w-5xl px-4 pb-14" aria-labelledby="walkthrough-title">
+        <h2 id="walkthrough-title" className="font-display text-3xl font-bold">
+          {t('walkthroughTitle')}
+        </h2>
+        <p className="mt-1 max-w-prose text-ink-soft">{t('walkthroughSub')}</p>
+        <div className="mt-8">
+          <CallWalkthrough />
         </div>
       </section>
 
