@@ -11,6 +11,7 @@ import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
+import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { coverageTier, getCoverage } from '@/lib/coverage';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
@@ -173,6 +174,9 @@ export default async function BillPage({
       {decodedBlock}
       {/* Surface the call at the moment of comprehension, right after Decoded */}
       <CallPrompt label={callLabel} sub={callSub} />
+      {/* For the hesitant: what a call actually looks like, on demand, right
+          where the ask lands - collapsed so it never displaces the CTA */}
+      <WalkthroughDisclosure />
       {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
       <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
       {officialBlock}
