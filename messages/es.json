@@ -367,5 +367,9 @@
     "errorIncomplete": "Primero elige una categoría y escribe un mensaje.",
     "errorRateLimited": "Muchos comentarios a la vez. Inténtalo de nuevo en unos minutos.",
     "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto."
+  },
+  "og": {
+    "aiDecoded": "Descifrado con IA",
+    "dataAsOf": "Datos al {date}"
   }
 }

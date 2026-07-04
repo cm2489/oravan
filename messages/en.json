@@ -367,5 +367,9 @@
     "errorIncomplete": "Pick a category and write a message first.",
     "errorRateLimited": "That's a lot of feedback at once. Please try again in a few minutes.",
     "errorGeneric": "That didn't go through. Please try again in a minute."
+  },
+  "og": {
+    "aiDecoded": "AI-decoded",
+    "dataAsOf": "Data as of {date}"
   }
 }
