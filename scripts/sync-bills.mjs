@@ -58,7 +58,10 @@ async function cg(path, params = {}) {
       // 30s per-request ceiling: a hung socket fails fast and retries instead
       // of hanging on undici's ~5min headers timeout (the 2026-06-13 crash).
       const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-      if (res.ok) return res.json();
+      // await inside the try: the 30s abort can fire mid-body-read, and an
+      // un-awaited res.json() rejection would escape the catch and kill the
+      // run uncaught instead of retrying (the 2026-07-04 crash).
+      if (res.ok) return await res.json();
       lastErr = new Error(`Congress.gov ${res.status} for ${path}`);
     } catch (e) {
       lastErr = e; // network error / timeout - retry rather than kill the run
