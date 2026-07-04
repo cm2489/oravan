@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 
 export function Footer() {
   const t = useTranslations('common');
@@ -22,6 +23,9 @@ export function Footer() {
             {t('nav.whyCall')}
           </Link>
         </nav>
+        <div className="pt-2">
+          <FeedbackDialog />
+        </div>
       </div>
     </footer>
   );
