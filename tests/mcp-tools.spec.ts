@@ -19,7 +19,23 @@ import { callTool } from './helpers';
 const BILL_SLUG = 'hr-2701-119';
 const SPONSOR_BIOGUIDE = 'W000797';
 
-function expectMeta(meta: Record<string, unknown>, canonicalPath: string, aiContent: boolean) {
+/*
+ * `locale` defaults to 'en' so every pre-existing English call site below is
+ * unchanged; ES call sites pass it explicitly. Post-#46 fix: the envelope's
+ * prose (source/ai_label/license) is now a real locale pair, not the same
+ * English text with only canonical_url swapped - the license-text
+ * assertion below is the one that actually distinguishes the two ("public
+ * domain" only appears in the English string; "dominio público" only in
+ * the Spanish one). "Congress.gov" and "CC BY" stay untranslated by design
+ * (a proper noun and a license identifier), so those two assertions hold
+ * for both locales unchanged.
+ */
+function expectMeta(
+  meta: Record<string, unknown>,
+  canonicalPath: string,
+  aiContent: boolean,
+  locale: 'en' | 'es' = 'en'
+) {
   expect(typeof meta.as_of).toBe('string');
   expect(new Date(meta.as_of as string).toString()).not.toBe('Invalid Date');
   expect(meta.source).toContain('Congress.gov');
@@ -30,9 +46,10 @@ function expectMeta(meta: Record<string, unknown>, canonicalPath: string, aiCont
   if (aiContent) {
     expect(meta.ai_label).toBeTruthy();
     expect(meta.license).toMatch(/CC BY/);
+    if (locale === 'es') expect(meta.ai_label).toMatch(/generad[oa] por IA/i);
   } else {
     expect(meta.ai_label).toBeNull();
-    expect(meta.license).toMatch(/public domain/i);
+    expect(meta.license).toMatch(locale === 'es' ? /dominio público/i : /public domain/i);
   }
 }
 
@@ -57,7 +74,7 @@ test.describe('lookup_representatives', () => {
   test('single-district ZIP, Spanish envelope + locale-prefixed canonical_url', async ({ request }) => {
     const result = await callTool(request, 'lookup_representatives', { zip: '78501', locale: 'es' });
     const data = result.structuredContent!;
-    expectMeta(data.meta as Record<string, unknown>, '/es/reps', false);
+    expectMeta(data.meta as Record<string, unknown>, '/es/reps', false, 'es');
     expect(data.reps_url).toContain('/es/reps?zip=78501');
   });
 
@@ -72,9 +89,28 @@ test.describe('lookup_representatives', () => {
     expect((data.districts as unknown[]).length).toBeGreaterThan(1);
   });
 
+  // Same class of gap as the citation envelope (found alongside it, fixed in
+  // the same PR): refine_hint is user-relayable prose that used to ignore
+  // `locale` entirely.
+  test('split ZIP, Spanish: refine_hint is Spanish prose with the /es reps URL', async ({ request }) => {
+    const result = await callTool(request, 'lookup_representatives', { zip: '10001', locale: 'es' });
+    const data = result.structuredContent!;
+    expect(data.needs_address).toBe(true);
+    expect(data.refine_hint).toContain('/es/reps?zip=10001');
+    expect(data.refine_hint).toMatch(/nunca guarda ni registra/i);
+  });
+
   test('bad ZIP: clean tool error, not a crash', async ({ request }) => {
     const result = await callTool(request, 'lookup_representatives', { zip: '00000', locale: 'en' });
     expect(result.isError).toBe(true);
+  });
+
+  // Same class of gap as refine_hint/the envelope: toolError() messages are
+  // relayable prose too, and used to ignore `locale` (fixed in the same PR).
+  test('bad ZIP, Spanish: the clean tool error is Spanish prose, not English', async ({ request }) => {
+    const result = await callTool(request, 'lookup_representatives', { zip: '00000', locale: 'es' });
+    expect(result.isError).toBe(true);
+    expect(result.content?.[0]?.text).toMatch(/No se encontraron datos/i);
   });
 
   // S24 groundwork (docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)):
@@ -123,7 +159,7 @@ test.describe('get_bill', () => {
     const result = await callTool(request, 'get_bill', { slug: BILL_SLUG, locale: 'es' });
     const bill = result.structuredContent!.bill as Record<string, unknown>;
     expect(bill.headline).toContain('judías');
-    expectMeta(result.structuredContent!.meta as Record<string, unknown>, `/es/bills/${BILL_SLUG}`, true);
+    expectMeta(result.structuredContent!.meta as Record<string, unknown>, `/es/bills/${BILL_SLUG}`, true, 'es');
   });
 
   test('resolves by citation, most-recent-Congress tie-break', async ({ request }) => {
@@ -140,6 +176,12 @@ test.describe('get_bill', () => {
     const result = await callTool(request, 'get_bill', { slug: 'hr-99999999-119' });
     expect(result.isError).toBe(true);
   });
+
+  test('unknown slug, Spanish: the clean error is Spanish prose', async ({ request }) => {
+    const result = await callTool(request, 'get_bill', { slug: 'hr-99999999-119', locale: 'es' });
+    expect(result.isError).toBe(true);
+    expect(result.content?.[0]?.text).toMatch(/No se encontró ningún proyecto de ley/i);
+  });
 });
 
 test.describe('search_bills', () => {
@@ -154,7 +196,7 @@ test.describe('search_bills', () => {
       // Some AI-decoded results present -> envelope discloses it; a search
       // across an undecoded corner would not force a false label.
       const hasAi = results.some((r) => r.ai_generated);
-      expectMeta(data.meta as Record<string, unknown>, locale === 'es' ? '/es/bills' : '/bills', hasAi);
+      expectMeta(data.meta as Record<string, unknown>, locale === 'es' ? '/es/bills' : '/bills', hasAi, locale);
     }
   });
 
@@ -198,7 +240,7 @@ test.describe('whats_moving', () => {
     const data = result.structuredContent!;
     expect(data.bills).toEqual([]);
     expect(data.topic).toBe('housing');
-    expect((data.meta as { canonical_url: string }).canonical_url).toBe(`${SITE_ORIGIN}/es`);
+    expectMeta(data.meta as Record<string, unknown>, '/es', false, 'es');
   });
 });
 
@@ -218,16 +260,30 @@ test.describe('get_representative', () => {
     expectMeta(result.structuredContent!.meta as Record<string, unknown>, '/reps', hasAi);
   });
 
-  test('Spanish locale localizes sponsored-bill headlines', async ({ request }) => {
+  test('Spanish locale localizes sponsored-bill headlines and carries the Spanish envelope', async ({
+    request,
+  }) => {
     const result = await callTool(request, 'get_representative', { bioguide: SPONSOR_BIOGUIDE, locale: 'es' });
     const rep = result.structuredContent!.representative as Record<string, unknown>;
-    const sponsored = rep.recent_sponsored as Array<{ slug: string; headline: string | null }>;
+    const sponsored = rep.recent_sponsored as Array<{
+      slug: string;
+      headline: string | null;
+      ai_generated: boolean;
+    }>;
     const match = sponsored.find((b) => b.slug === BILL_SLUG);
     expect(match?.headline).toContain('judías');
+    const hasAi = sponsored.some((b) => b.ai_generated);
+    expectMeta(result.structuredContent!.meta as Record<string, unknown>, '/es/reps', hasAi, 'es');
   });
 
   test('unknown bioguide: clean error', async ({ request }) => {
     const result = await callTool(request, 'get_representative', { bioguide: 'Z999999' });
     expect(result.isError).toBe(true);
+  });
+
+  test('unknown bioguide, Spanish: the clean error is Spanish prose', async ({ request }) => {
+    const result = await callTool(request, 'get_representative', { bioguide: 'Z999999', locale: 'es' });
+    expect(result.isError).toBe(true);
+    expect(result.content?.[0]?.text).toMatch(/No se encontró ningún representante/i);
   });
 });

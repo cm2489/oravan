@@ -77,7 +77,7 @@ test('the correction-path link resolves to the existing feedback intake, not a p
   await expect(feedbackButton).toBeInViewport();
 });
 
-test("the page quotes the live MCP envelope's source/ai_label text verbatim, in both locales", async ({
+test("the page quotes the live MCP envelope's localized source/ai_label text verbatim, per locale, on both locale routes", async ({
   page,
   request,
 }) => {
@@ -87,17 +87,27 @@ test("the page quotes the live MCP envelope's source/ai_label text verbatim, in 
   // plain Node test runner). This is also the more honest check: it proves
   // the /citations copy matches what an agent actually receives right now,
   // not a compile-time copy of the same constant.
-  const result = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'es' });
-  const meta = result.structuredContent!.meta as { source: string; ai_label: string };
-  expect(meta.source).toBeTruthy();
-  expect(meta.ai_label).toBeTruthy();
+  const resultEn = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'en' });
+  const resultEs = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'es' });
+  const metaEn = resultEn.structuredContent!.meta as { source: string; ai_label: string };
+  const metaEs = resultEs.structuredContent!.meta as { source: string; ai_label: string };
+  expect(metaEn.source).toBeTruthy();
+  expect(metaEn.ai_label).toBeTruthy();
+  expect(metaEs.source).toBeTruthy();
+  expect(metaEs.ai_label).toBeTruthy();
+  // The gap PR #46 pinned, now closed: an ES-locale query gets ES prose, not
+  // the same English text an EN-locale query gets.
+  expect(metaEs.source).not.toBe(metaEn.source);
+  expect(metaEs.ai_label).not.toBe(metaEn.ai_label);
 
   for (const prefix of ['', '/es']) {
     await page.goto(`${prefix}/citations`);
-    // Pins the documented (and honestly-flagged-as-a-gap) fact that these
-    // two envelope fields are English-only regardless of locale today - the
-    // ES page renders the same English strings, not a translated copy.
-    await expect(page.getByText(meta.source)).toBeVisible();
-    await expect(page.getByText(meta.ai_label)).toBeVisible();
+    // Bilingual trust page: both the EN-locale and ES-locale envelope text
+    // are shown on either locale route, so a reporter reading in either
+    // language can verify what BOTH locales' MCP queries actually receive.
+    await expect(page.getByText(metaEn.source)).toBeVisible();
+    await expect(page.getByText(metaEs.source)).toBeVisible();
+    await expect(page.getByText(metaEn.ai_label)).toBeVisible();
+    await expect(page.getByText(metaEs.ai_label)).toBeVisible();
   }
 });

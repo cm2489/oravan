@@ -18,9 +18,50 @@ import { AI_LABEL_TEXT, LICENSE_AI_CONTENT, LICENSE_PUBLIC_DOMAIN, SOURCE } from
  * agent's MCP `meta` envelope carries (lib/core/mcp.ts), and the "as of"
  * date is the same dataAsOfString() every bill page renders (lib/freshness).
  * A reporter reading this page sees exactly what the data actually says.
+ *
+ * Post-#46 fix: those four constants are now locale pairs (the envelope
+ * itself used to emit English text regardless of the request's locale - a
+ * bilingual-parity gap this PR closes). This page quotes BOTH language
+ * variants of each, unconditionally of which locale route you're on -
+ * a reporter using either language should be able to verify what an
+ * EN-locale *and* an ES-locale MCP query actually receive, on the same page.
  */
 
 const EXAMPLE_SLUG = 'hr-1787-119'; // the same demo bill the walkthrough + ES spot-check use
+
+/**
+ * Renders one envelope-derived string in both of its locale variants, each
+ * marked with its own `lang` attribute (accessibility: a screen reader
+ * should switch pronunciation between the two, same as any other bilingual
+ * quote on this page). `langEnglish`/`langSpanish` are translated labels
+ * from the `citations` namespace, not hardcoded - CLAUDE.md's bilingual
+ * hard rule applies to a label naming a language exactly the same as any
+ * other UI string.
+ */
+function BilingualQuote({
+  en,
+  es,
+  langEnglish,
+  langSpanish,
+}: {
+  en: string;
+  es: string;
+  langEnglish: string;
+  langSpanish: string;
+}) {
+  return (
+    <div className="mt-2 max-w-prose space-y-2 rounded-control border border-line bg-paper-deep px-3 py-2 text-sm">
+      <p lang="en">
+        <span className="font-semibold text-ink-soft">{langEnglish}: </span>
+        {en}
+      </p>
+      <p lang="es">
+        <span className="font-semibold text-ink-soft">{langSpanish}: </span>
+        {es}
+      </p>
+    </div>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -65,28 +106,50 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('sourceTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('sourceBody')}</p>
-        <p className="mt-2 max-w-prose font-mono text-sm text-ink-soft">&ldquo;{SOURCE}&rdquo;</p>
+        <BilingualQuote
+          en={SOURCE.en}
+          es={SOURCE.es}
+          langEnglish={t('langEnglish')}
+          langSpanish={t('langSpanish')}
+        />
       </section>
 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('aiTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('aiBody')}</p>
-        <p className="mt-2 max-w-prose rounded-control border border-line bg-paper-deep px-3 py-2 text-sm">
-          {AI_LABEL_TEXT}
-        </p>
+        <BilingualQuote
+          en={AI_LABEL_TEXT.en}
+          es={AI_LABEL_TEXT.es}
+          langEnglish={t('langEnglish')}
+          langSpanish={t('langSpanish')}
+        />
         <p className="mt-4 max-w-prose leading-relaxed">{t('aiCallScript')}</p>
       </section>
 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('licenseTitle')}</h2>
-        <dl className="mt-2 max-w-prose space-y-3 text-sm leading-relaxed">
+        <dl className="mt-2 max-w-prose space-y-4 text-sm leading-relaxed">
           <div>
             <dt className="font-semibold text-ink-soft">{t('licenseOfficialLabel')}</dt>
-            <dd className="mt-0.5">{LICENSE_PUBLIC_DOMAIN}</dd>
+            <dd className="mt-0.5">
+              <BilingualQuote
+                en={LICENSE_PUBLIC_DOMAIN.en}
+                es={LICENSE_PUBLIC_DOMAIN.es}
+                langEnglish={t('langEnglish')}
+                langSpanish={t('langSpanish')}
+              />
+            </dd>
           </div>
           <div>
             <dt className="font-semibold text-ink-soft">{t('licenseAiLabel')}</dt>
-            <dd className="mt-0.5">{LICENSE_AI_CONTENT}</dd>
+            <dd className="mt-0.5">
+              <BilingualQuote
+                en={LICENSE_AI_CONTENT.en}
+                es={LICENSE_AI_CONTENT.es}
+                langEnglish={t('langEnglish')}
+                langSpanish={t('langSpanish')}
+              />
+            </dd>
           </div>
         </dl>
         <p className="mt-4 max-w-prose text-sm leading-relaxed text-ink-soft">{t('licenseCoverage')}</p>
