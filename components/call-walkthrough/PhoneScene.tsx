@@ -1,5 +1,6 @@
 import { Check, Phone, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { OravanWordmark } from '@/components/brand/OravanWordmark';
 import styles from './walkthrough.module.css';
 import type { SceneKey } from './CallWalkthrough';
 
@@ -169,12 +170,11 @@ export function PhoneScene({ scene }: { scene: SceneKey }) {
 
 /** Shared light-screen chrome: a whisper of app header, then the scene. */
 function Screen({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const t = useTranslations();
   return (
     <div className="flex h-full flex-col p-3 pt-6">
-      <p className="flex items-center gap-1 pb-2 text-[9px] font-bold text-ink-soft">
+      <p className="flex items-center gap-1 pb-2 text-ink-soft">
         <span className="h-1.5 w-1.5 rounded-full bg-brass" />
-        {t('common.appName')}
+        <OravanWordmark className="h-2.5 w-auto" />
       </p>
       <div className={`flex min-h-0 flex-1 flex-col ${className}`}>{children}</div>
     </div>

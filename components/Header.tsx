@@ -1,8 +1,10 @@
 'use client';
 
-import { Home, ScrollText, Users, Activity, PhoneCall } from 'lucide-react';
+import { Home, ScrollText, Users, Activity } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
+import { OravanMark } from './brand/OravanMark';
+import { OravanWordmark } from './brand/OravanWordmark';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 const TABS = [
@@ -24,11 +26,9 @@ export function Header() {
     <>
       <header className="bg-night text-paper">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold tracking-tight">
-            <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-control bg-brass text-paper">
-              <PhoneCall className="h-4.5 w-4.5" strokeWidth={2.5} />
-            </span>
-            {t('appName')}
+          <Link href="/" className="flex items-center gap-2">
+            <OravanMark className="h-8 w-8 text-brass-bright" />
+            <OravanWordmark className="h-6 w-auto" />
           </Link>
           <nav aria-label="Primary" className="hidden md:flex items-center gap-1">
             {TABS.map(({ href, key }) => (
