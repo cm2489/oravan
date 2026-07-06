@@ -24,6 +24,18 @@ const CENSUS_URL = 'https://geocoding.geo.census.gov/geocoder/geographies/onelin
 // Public_AR_Current + Current_Current exposes "119th Congressional Districts".
 // The layer name tracks the sitting Congress; the parser matches it by
 // pattern, but this request string needs a bump when the vintage rolls over.
+//
+// Two-clock model (S24, docs/solutions/two-clock-district-boundaries.md):
+// this literal answers "who represents you now," which stays correct through
+// Jan 3, 2027 regardless of the 2025-26 mid-decade redistricting wave (House
+// terms run Jan 3 -> Jan 3; a new state map does not unseat a sitting
+// member). NO SWAP IS NEEDED before then. The mandatory bump to "120th
+// Congressional Districts" IS required before Jan 3, 2027 though, and is
+// tripwired so it can't be forgotten: scripts/check-rollover-tripwire.mjs
+// (lib/rollover-tripwire.mjs), run weekly from refresh-legislators.yml,
+// starts a loud ::warning on/after 2026-12-01. Ballot-facing/next-term
+// district content (a second, Nov-2026-map-based dataset) is a separate
+// clock this route does not serve and is not currently a Rostra feature.
 const CENSUS_QUERY = {
   benchmark: 'Public_AR_Current',
   vintage: 'Current_Current',
