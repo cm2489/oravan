@@ -61,6 +61,31 @@ test('split ZIP: shows both candidate districts plus a link-out, never an addres
   await expect(page.getByText('Jerrold Nadler')).toBeVisible();
 });
 
+/*
+ * S24 groundwork's vacant-seat pattern (tests/reps.spec.ts's FL-20 fixture):
+ * /api/reps now answers a `vacancies` array alongside `reps`, and the main
+ * /reps page shows an explicit vacant notice rather than silently rendering
+ * fewer cards. The embed widget reads the same endpoint, so it needs to
+ * carry the same honesty rather than quietly regressing behind it.
+ */
+test('vacant seat (FL-20): explicit notice, senators still shown, no invented election claim', async ({
+  page,
+}) => {
+  await page.goto('/embed/rep-lookup?locale=en&zip=33313');
+  await expect(page.getByText(en.reps.vacantSeat, { exact: true })).toBeVisible();
+  await expect(page.getByText(en.reps.vacantSeatBody)).toBeVisible();
+  await expect(page.getByRole('link', { name: en.reps.vacantSeatLink })).toHaveAttribute(
+    'href',
+    'https://www.house.gov/representatives/find-your-representative'
+  );
+  // Senators for the state are unaffected by a House vacancy.
+  await expect(page.getByText('Rick Scott')).toBeVisible();
+  await expect(page.getByText('Ashley Moody')).toBeVisible();
+  // Never show the departed member, never speculate about a special election.
+  await expect(page.getByText('Cherfilus-McCormick')).toHaveCount(0);
+  await expect(page.getByText(/special election/i)).toHaveCount(0);
+});
+
 test('unknown ZIP gets a recoverable, localized error', async ({ page }) => {
   await page.goto('/embed/rep-lookup?locale=en');
   await page.getByLabel(en.home.zipLabel).fill('00000');

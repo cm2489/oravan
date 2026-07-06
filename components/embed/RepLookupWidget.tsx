@@ -6,6 +6,8 @@ import es from '@/messages/es.json';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator } from '@/lib/types';
 
+const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-representative';
+
 /*
  * The rep-lookup embed widget (S13): ZIP in, representatives out. Deliberately
  * NOT next-intl - this page lives outside app/[locale] (no URL locale
@@ -36,7 +38,15 @@ function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
 
+/** next-intl-style `{token}` interpolation, without pulling in next-intl. */
+function format(template: string, vars: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in vars ? String(vars[key]) : match
+  );
+}
+
 type Status = 'idle' | 'loading' | 'notFound' | 'error';
+type Vacancy = { state: string; district: number };
 
 export function RepLookupWidget({
   initialLocale,
@@ -50,6 +60,7 @@ export function RepLookupWidget({
   const [zip, setZip] = useState<string | null>(null);
   const [reps, setReps] = useState<Legislator[] | null>(null);
   const [multiDistrict, setMultiDistrict] = useState(false);
+  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [status, setStatus] = useState<Status>('idle');
   const rootRef = useRef<HTMLElement>(null);
 
@@ -71,16 +82,23 @@ export function RepLookupWidget({
         setStatus('error');
         return;
       }
-      const data = (await res.json()) as { reps: Legislator[]; multiDistrict: boolean };
-      if (data.reps.length === 0) {
+      const data = (await res.json()) as {
+        reps: Legislator[];
+        multiDistrict: boolean;
+        vacancies?: Vacancy[];
+      };
+      if (data.reps.length === 0 && (data.vacancies ?? []).length === 0) {
         // /api/reps always answers 200 - an unmatched ZIP is an empty list,
-        // not an HTTP error (same contract the main /reps page reads).
+        // not an HTTP error (same contract the main /reps page reads). A
+        // vacant-but-real district still has senators/a named seat to show,
+        // so that alone isn't "not found".
         setReps(null);
         setStatus('notFound');
         return;
       }
       setReps(data.reps);
       setMultiDistrict(data.multiDistrict);
+      setVacancies(data.vacancies ?? []);
       setStatus('idle');
     } catch {
       setReps(null);
@@ -276,6 +294,24 @@ export function RepLookupWidget({
             </article>
           );
         })}
+
+      {status === 'idle' &&
+        vacancies.map((v) => (
+          <article key={`vacant-${v.state}-${v.district}`} className="re-card">
+            <p className="re-meta">
+              {v.district === 0
+                ? format(t.reps.atLargeHeading, { state: v.state })
+                : format(t.reps.districtHeading, { state: v.state, district: v.district })}
+            </p>
+            <p className="re-name">{t.reps.vacantSeat}</p>
+            <p style={{ margin: '2px 0 0' }}>{t.reps.vacantSeatBody}</p>
+            <p style={{ margin: '8px 0 0' }}>
+              <a className="re-link" href={HOUSE_FIND_REP_URL} target="_blank" rel="noopener noreferrer">
+                {t.reps.vacantSeatLink} ↗
+              </a>
+            </p>
+          </article>
+        ))}
 
       {status === 'idle' && !zip && <p className="re-note">{t.reps.noZip}</p>}
 
