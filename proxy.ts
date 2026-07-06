@@ -11,6 +11,12 @@ export default createProxy(routing);
 // /embed/* would try to locale-redirect a path structure that doesn't have
 // one, and would risk setting next-intl's locale cookie on a route whose
 // whole privacy claim is zero cookies, ever.
+//
+// The exclusion is `embed/|embed$` - the exact /embed segment - NOT the bare
+// prefix `embed`: a prefix silently swallows every future route that merely
+// STARTS with those letters. S16's /embeds configurator page (a normal
+// [locale] page that needs this middleware) is how that trap was found: with
+// the old prefix form, /embeds never got locale-rewritten and 404'd.
 export const config = {
-  matcher: '/((?!api|_next|_vercel|embed|.*\\..*).*)',
+  matcher: '/((?!api|_next|_vercel|embed/|embed$|.*\\..*).*)',
 };
