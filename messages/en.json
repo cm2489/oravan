@@ -372,7 +372,14 @@
     "errorGeneric": "That didn't go through. Please try again in a minute."
   },
   "og": {
-    "aiDecoded": "AI-decoded",
-    "dataAsOf": "Data as of {date}"
+    "aiDecoded": "AI-decoded"
+  },
+  "freshness": {
+    "dataAsOf": "Data as of {date}",
+    "quietWeekTitle": "Quiet week",
+    "quietWeekBody": "No bill has cleared the bar for an urgent call right now. Check back soon, or browse everything moving through Congress.",
+    "dataStaleTitle": "Data check needed",
+    "dataStaleBody": "We can't confirm what's most urgent right now — our last successful data check was {date}. This isn't a quiet week, it's a stale one.",
+    "staleNote": "Our last successful data check was {date} — newer activity in Congress may not be shown yet."
   }
 }

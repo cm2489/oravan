@@ -13,8 +13,10 @@ import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { coverageTier, getCoverage } from '@/lib/coverage';
+import { StalenessNote } from '@/components/StalenessNote';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
+import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { SITE_ORIGIN } from '@/lib/site';
 
 export function generateStaticParams() {
@@ -75,6 +77,9 @@ export default async function BillPage({
   const t = await getTranslations();
   const format = await getFormatter();
   const fmtDate = (d: string) => format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric' });
+  // KTD-1: the one accessor (and one phrasing helper) behind every "as of"
+  // claim - no surface reads data/sync-state.json or assembles the stamp.
+  const dataAsOf = await dataAsOfString(locale);
 
   // The inline call prompt reuses the action panel's own copy — no new strings.
   const callLabel = t('bill.actTitle');
@@ -108,6 +113,9 @@ export default async function BillPage({
       <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">
         {bill.ai_headline ?? bill.short_title ?? bill.title}
       </h1>
+      <p className="mt-1.5 text-xs text-ink-faint">{dataAsOf}</p>
+      {/* R2: this page urges a call — surface staleness here too, client-side */}
+      <StalenessNote checkedAt={getFreshness().checkedAt} />
 
       <TldrStrip bill={bill} />
 

@@ -7,6 +7,7 @@ import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
 import type { FeedTeaser } from '@/lib/types';
 import { BillCard } from './BillCard';
+import { UrgencyEmptyState } from './UrgencyEmptyState';
 
 const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
 
@@ -15,7 +16,7 @@ const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
    stays one "Show all" away. Derived from BAND_SIZES so the two can't drift. */
 const BAND_CAP = BAND_SIZES.now;
 
-export function BillsBrowser({ bills }: { bills: FeedTeaser[] }) {
+export function BillsBrowser({ bills, checkedAt }: { bills: FeedTeaser[]; checkedAt: string }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
@@ -178,7 +179,27 @@ export function BillsBrowser({ bills }: { bills: FeedTeaser[] }) {
 
       {BANDS.map((band) => {
         const all = byBand[band];
-        if (all.length === 0) return null;
+        if (all.length === 0) {
+          // Only "Act now" gets an honest empty message, and only when the
+          // visitor is looking at the real, unfiltered feed — a search or
+          // topic filter emptying this band is ordinary filtering, not a
+          // quiet-week/data-stale claim (KTD-2, AE3). An entirely empty
+          // corpus is a data problem, not a quiet week — no claim there
+          // either (the generic noResults block already covers it).
+          const unfiltered = query.trim() === '' && active.length === 0 && bills.length > 0;
+          if (band !== 'now' || !unfiltered) return null;
+          return (
+            <section key={band} className="mt-10" aria-labelledby={`band-${band}`}>
+              <h2 id={`band-${band}`} className="font-display text-2xl font-bold">
+                {t(`bills.band.${band}`)}
+              </h2>
+              <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
+              <div className="mt-4">
+                <UrgencyEmptyState checkedAt={checkedAt} />
+              </div>
+            </section>
+          );
+        }
         const isOpen = !!expanded[band];
         const visible = isOpen ? all : all.slice(0, BAND_CAP);
         return (

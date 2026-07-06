@@ -5,8 +5,11 @@ import { ZipForm } from '@/components/ZipForm';
 import { BillCard } from '@/components/BillCard';
 import { CallWalkthrough } from '@/components/call-walkthrough/CallWalkthrough';
 import { NewsLens } from '@/components/NewsLens';
-import { billSlug, getAllBills, getNewsBills, getTopActions } from '@/lib/data';
+import { StalenessNote } from '@/components/StalenessNote';
+import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
+import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
+import { dataAsOfString, getFreshness } from '@/lib/freshness';
 
 const STEPS = [
   { icon: MapPin, key: 1 },
@@ -22,6 +25,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const top = getTopActions(4, locale);
   const news = getNewsBills(locale, 6);
   const total = getAllBills().length;
+  const freshness = getFreshness();
+  const dataAsOf = await dataAsOfString(locale);
+  // AE3: the quiet-week claim keys on the floor alone. In the rare state
+  // where a bill clears the floor but isn't decoded yet, the shortlist is
+  // empty AND the week is not quiet — render neither cards nor a false
+  // claim; /bills (linked in this section) shows it under "Act now".
+  const quiet = !hasActNow();
 
   return (
     <div>
@@ -55,6 +65,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('topTitle')}
             </h2>
             <p className="mt-1 text-ink-soft">{t('topSub')}</p>
+            <p className="mt-1 text-xs text-ink-faint">{dataAsOf}</p>
+            {/* R2: client-side stale caveat — renders nothing while fresh */}
+            <StalenessNote checkedAt={freshness.checkedAt} />
           </div>
           <Link
             href="/bills"
@@ -64,22 +77,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {top.map((b) => (
-            <BillCard
-              key={billSlug(b)}
-              bill={{
-                slug: billSlug(b),
-                identifier: formatCitation(b.bill_type, b.bill_number),
-                headline: b.ai_headline,
-                title: b.short_title ?? b.title,
-                status: b.status,
-                tags: b.issue_tags ?? [],
-                lastActionDate: b.last_action_date,
-              }}
-            />
-          ))}
-        </div>
+        {top.length > 0 ? (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {top.map((b) => (
+              <BillCard
+                key={billSlug(b)}
+                bill={{
+                  slug: billSlug(b),
+                  identifier: formatCitation(b.bill_type, b.bill_number),
+                  headline: b.ai_headline,
+                  title: b.short_title ?? b.title,
+                  status: b.status,
+                  tags: b.issue_tags ?? [],
+                  lastActionDate: b.last_action_date,
+                }}
+              />
+            ))}
+          </div>
+        ) : quiet ? (
+          <div className="mt-6">
+            <UrgencyEmptyState checkedAt={freshness.checkedAt} />
+          </div>
+        ) : null}
       </section>
 
       {/* See how a call works - the bills above lead here; the demo de-risks
