@@ -32,6 +32,7 @@ const STATIC_PATHS = [
   '/why-call',
   '/impact',
   '/citations',
+  '/embeds',
 ] as const;
 
 function languagesFor(href: string): Record<string, string> {

@@ -64,7 +64,16 @@ const nextConfig: NextConfig = {
         // framing only. X-Frame-Options rides alongside CSP's
         // frame-ancestors for the pre-CSP3 browser floor; both say the same
         // thing.
-        source: '/((?!embed).*)',
+        //
+        // The exclusion is `embed/|embed$` - the exact /embed segment (bare
+        // /embed stays excluded too, because the carve-out's
+        // `/embed/:path*` also matches it, and both blocks landing on one
+        // path would re-narrow the carve-out via CSP intersection) - NOT
+        // the bare prefix `embed`. The original prefix form also swallowed
+        // S16's /embeds configurator page, leaving a normal [locale] route
+        // with NO frame-ancestors header at all; tests/frame-posture.
+        // spec.ts's tree-discovery guard is what caught it.
+        source: '/((?!embed/|embed$).*)',
         headers: [
           { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },

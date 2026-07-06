@@ -10,7 +10,7 @@ import { getAllBills } from '../lib/core';
  */
 
 const SITE_ORIGIN = 'https://cabina-nine.vercel.app';
-const STATIC_PATH_COUNT = 9; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations'
+const STATIC_PATH_COUNT = 10; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
