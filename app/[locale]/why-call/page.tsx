@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { hreflangAlternates } from '@/lib/hreflang';
 
 const SECTIONS = ['tally', 'email', 'voicemail', 'script', 'respect'] as const;
 
@@ -12,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'why' });
-  return { title: t('title') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/why-call') };
 }
 
 export default async function WhyCallPage({ params }: { params: Promise<{ locale: string }> }) {

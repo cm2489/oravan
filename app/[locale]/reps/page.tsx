@@ -1,16 +1,27 @@
 import type { Metadata } from 'next';
 import { ArrowRight, Info } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
+import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { BillCard } from '@/components/BillCard';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { Link } from '@/i18n/navigation';
-import { billSlug, districtsForZip, getAllBills, getTopActions, repsForDistrict } from '@/lib/core';
+import {
+  billSlug,
+  districtsForZip,
+  getAllBills,
+  getTopActions,
+  repsForDistrict,
+  vacancyForDistrict,
+} from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
+import { hreflangAlternates } from '@/lib/hreflang';
+import { buildOrganizationJsonLd } from '@/lib/jsonld';
 
 export async function generateMetadata({
   params,
@@ -19,7 +30,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'reps' });
-  return { title: t('title') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/reps') };
 }
 
 export default async function RepsPage({
@@ -56,9 +67,11 @@ export default async function RepsPage({
   const topActions = getTopActions(2, locale);
   const totalBills = getAllBills().length;
   const freshness = getFreshness();
+  const orgJsonLd = buildOrganizationJsonLd();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
+      <JsonLd id="org-jsonld" data={orgJsonLd} />
       <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
       <p className="mt-2 max-w-prose text-ink-soft">{t('sub')}</p>
 
@@ -108,6 +121,7 @@ export default async function RepsPage({
       {districts.map((d) => {
         const reps = repsForDistrict(d);
         const noSenators = reps.every((r) => r.type !== 'sen');
+        const vacancy = vacancyForDistrict(d);
         return (
           <section key={`${d.state}-${d.district}`} className="mt-10" aria-label={`${d.state} ${d.district}`}>
             <h2 className="font-display text-2xl font-bold">
@@ -125,6 +139,7 @@ export default async function RepsPage({
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}
+              {vacancy && <VacantSeatCard />}
             </div>
           </section>
         );

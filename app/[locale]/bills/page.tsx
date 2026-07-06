@@ -5,6 +5,7 @@ import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { getNewsBills, getTeasers } from '@/lib/core';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
+import { hreflangAlternates } from '@/lib/hreflang';
 
 export async function generateMetadata({
   params,
@@ -13,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'bills' });
-  return { title: t('title') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/bills') };
 }
 
 export default async function BillsPage({ params }: { params: Promise<{ locale: string }> }) {

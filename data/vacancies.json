@@ -1,0 +1,22 @@
+[
+  {
+    "state": "CA",
+    "district": 14,
+    "since": "2026-07-05"
+  },
+  {
+    "state": "FL",
+    "district": 20,
+    "since": "2026-07-05"
+  },
+  {
+    "state": "GA",
+    "district": 13,
+    "since": "2026-07-05"
+  },
+  {
+    "state": "TX",
+    "district": 23,
+    "since": "2026-07-05"
+  }
+]

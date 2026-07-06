@@ -28,7 +28,7 @@ import {
   getTopActions,
   localizeBill,
 } from './bills';
-import { districtsForZip, getLegislator, portraitUrl, repsForDistrict } from './reps';
+import { districtsForZip, getLegislator, portraitUrl, repsForDistrict, vacancyForDistrict } from './reps';
 
 export type Locale = 'en' | 'es';
 
@@ -204,6 +204,16 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     .flatMap((d) => repsForDistrict(d))
     .filter((r) => (seen.has(r.bioguide) ? false : (seen.add(r.bioguide), true)))
     .map((r) => ({ ...r, portrait_url: portraitUrl(r.bioguide) }));
+  // A vacant House seat (S24 groundwork, docs/ideation/2026-07-05-build-gtm-
+  // strategy.md §9.1(f)) is named explicitly here rather than left as "one
+  // fewer representative than expected" - an agent reading this response has
+  // no other way to distinguish a vacancy from, say, a data gap. Fact only
+  // (state + district); `since` is pipeline bookkeeping, not surfaced here
+  // so an agent never repeats it to a user as a confirmed resignation date.
+  const vacancies = districts
+    .map((d) => vacancyForDistrict(d))
+    .filter((v): v is NonNullable<typeof v> => Boolean(v))
+    .map((v) => ({ state: v.state, district: v.district }));
   const needsAddress = districts.length > 1;
   const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;
 
@@ -211,6 +221,7 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     zip,
     districts,
     representatives,
+    vacancies,
     needs_address: needsAddress,
     refine_hint: needsAddress
       ? `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`
