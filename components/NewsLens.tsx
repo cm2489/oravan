@@ -16,7 +16,7 @@ export async function NewsLens({ bills }: { bills: NewsBill[] }) {
   return (
     <section aria-labelledby="news">
       <div className="flex items-center gap-2">
-        <Newspaper className="h-5 w-5 text-booth" aria-hidden />
+        <Newspaper className="h-5 w-5 text-brass" aria-hidden />
         <h2 id="news" className="font-display text-3xl font-bold">
           {t('heading')}
         </h2>

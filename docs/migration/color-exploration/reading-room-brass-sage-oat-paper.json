@@ -1,0 +1,28 @@
+{
+  "seedName": "Reading Room: Brass, Sage & Oat Paper",
+  "thesis": "This palette is lifted from the physical vocabulary of a well-kept public library reading room, not from a screen: oat-paper walls and index-card stock for the light grounds, oxidized-brass wayfinding plaques for the one interactive color, the green glass of an Emeralite banker's lamp for confirmation states, a terracotta date-stamp ink for caution, and the near-black hush of the closed stacks at closing time for the dark bands and callouts. Every hue is pulled warm and slightly desaturated on purpose — nothing here is a saturated primary, because primaries read as either partisan (red/blue) or as a screen-native SaaS/game color; brass, sage and oat are colors that exist on walls and hardware, not on phone-app icons, which is exactly the \"calm institutional warmth\" and cross-generational, cross-political neutrality the brief asks for.",
+  "palette": {
+    "paper": "#F7F1E6",
+    "paperDeep": "#EDE2D0",
+    "surface": "#FCFAF5",
+    "ink": "#2A2118",
+    "inkSoft": "#493F30",
+    "inkFaint": "#665A48",
+    "night": "#1C1712",
+    "accent": "#82611F",
+    "accentBright": "#D9A94A",
+    "accentSoft": "#F1E4C4",
+    "line": "#E1D3B8",
+    "success": "#3A6B48",
+    "successSoft": "#DEE8DA",
+    "warn": "#96501F",
+    "warnSoft": "#F3DFC9"
+  },
+  "ctaText": "#FFFDF8",
+  "fonts": {
+    "display": "Source Serif 4",
+    "body": "Libre Franklin",
+    "note": "Both are variable Google Fonts with full Latin Extended coverage (ñ, á, é, í, ó, ú, ü, ¿, ¡) for EN/ES parity — load with next/font/google, subsets ['latin','latin-ext']. Body: 400 for paragraph copy, 500/600 for nav labels, buttons, and uppercase metadata. If a static (non-variable) build is required, ship Source Serif 4 at 600/700 and Libre Franklin at 400/500/600/700 only — no other weights are used."
+  },
+  "rationale": "Reading the four screens as a library floor plan: the black hero band on home.jpg and the top nav bar repeated on every screen are the \"closed stacks at dusk\" — I made `night` (#1C1712) a warm near-black (walnut/espresso undertone, not cool charcoal) rather than true black or navy, so it reads as wood-shadow, never as a political-blue \"official seal\" navy. `paper` (#F7F1E6) is the oat/ivory wall paint behind the \"In the news\" cards and the reps-page ZIP form — warmer and less clinical than white, so the page never tips into \"cold bureaucratic government site.\" `surface` (#FCFAF5) is reserved for things that float and need to feel handled — the ZIP-code card on the dark hero, the news cards, the embed widget's radio-option cards and live-preview panel — a fresh index-card white, lighter than the wall behind it. `paperDeep` (#EDE2D0) is the deeper oat wash for the reps-page footer band (the Roman-forum origin story) and any section that needs to sit a half-step back from `paper` without going gray. `ink` is dark espresso-brown for primary headings/body (never pure black), `inkSoft` a lighter cocoa-brown for secondary copy like the \"Data as of July 6, 2026\" byline or \"Stays on your device\" helper text, and `inkFaint` the faintest tone that still clears AA for tertiary labels like the outlet count.\n\n`accent` (#82611F) is oxidized brass — the plaque-and-lamp-base metal of library signage — and carries every duty on the list at once: the uppercase \"H.R. 2616 · PASSED ONE CHAMBER\" metadata on the news cards, the focus ring on the ZIP input (reps.jpg shows a bold focus outline already), the filled \"Find my representatives\" / \"Make the call\" CTA backgrounds, and the active nav pill (\"Bills\" on bill-detail.jpg, \"My reps\" on reps.jpg) — all in one material so the whole UI feels signed with the same brass stencil. `ctaText` (#FFFDF8) is the warm near-white engraved lettering that sits on that brass. `accentBright` (#D9A94A) is the amber glow the same brass throws under lamp-light, used for accent text/links against the `night` band. `accentSoft` (#F1E4C4) is a pale brass-gold wash for the selected radio card on the embeds page and any selection chip, visibly warmer/more golden than the neutral `paperDeep` around it. `success` (#3A6B48) is the green glass of the reading lamp itself — calm, mossy, never mistaken for a party color or a neon \"gamified\" green — for a completed-call state. `warn` (#96501F) is date-stamp terracotta, the ink used on library due-date cards, standing in for caution without ever touching red. `line` (#E1D3B8) is the faint rule printed on an index card — the hairline under news cards and around the ZIP input.\n\nEvery pair was checked against WCAG's relative-luminance formula rather than eyeballed (script run against final hex values): ink/paper 14.05:1, inkSoft/paper 9.17:1, inkFaint/paper 5.99:1, paper-text/night 15.82:1, accent-small-text/surface 5.47:1, ctaText/accent 5.62:1, accentBright/night 8.24:1, success/paper 5.53:1, warn/paper 5.39:1 — every hard floor cleared with real margin, not a hair over the line."
+}

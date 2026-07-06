@@ -76,6 +76,20 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   (`cm2489/be-the-change` is public and out of scope — separate product
   history; the "be the change" gate entry screens ported material only.)
 
+## Sprint 1 — M4 color direction, decided 2026-07-06
+
+- **M4 — Color direction: "FIELD NOTEBOOK" (candidate G).** Tarnished-brass
+  accent #82632A on aged-cream paper #F3ECDD, iron-gall ink #2A2318, Fraunces
+  display + Source Sans 3 body. Chosen from a six-candidate standalone slate in
+  which every candidate was designed palette-blind (no exposure to the Oravan
+  or Rostra palettes) and rendered with the real Oravan mark/wordmark; scored
+  by an anonymized 7-persona panel. Founder rejected two earlier rounds that
+  were anchored on the June Oravan kit — process record in
+  `docs/migration/color-exploration/`. Consequences: the June kit's forest ink
+  is retired; the `booth*` tokens are renamed `brass*` in PR-1 (no Cabina-era
+  token names survive); S2 ports the mark/wordmark (color-agnostic
+  `currentColor` assets) onto the new ground.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

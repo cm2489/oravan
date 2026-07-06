@@ -6,28 +6,29 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 
 | Token | Value | Role |
 |---|---|---|
-| `paper` | #FAF6EE | page background |
-| `paper-deep` | #F2EBDC | recessed surfaces (footer, decoded card, how-it-works band) |
-| `surface` | #FFFCF6 | raised card surface: a warm near-white that lifts off paper without going clinical `#fff` |
-| `ink` | #18203A | primary text, solid buttons |
-| `ink-soft` | #4A5168 | secondary text |
-| `ink-faint` | #5C6276 | meta text (AA on both papers) |
-| `night` | #11182E | header/hero band, button hover |
-| `booth` | #E8A317 | the amber accent (token keeps its legacy name from the Cabina era): logo chip, step numerals, active tab, focus ring |
-| `booth-bright` | #F2B33D | amber on dark (mobile active tab) |
-| `booth-soft` | #FBEED2 | tag pills, info panels |
-| `line` | #E2D9C6 | hairlines, borders |
-| `moss` / `moss-soft` | #3E6B4F / #E4EEE7 | success |
-| `clay` / `clay-soft` | #A14D3A / #F6E5DF | errors, destructive |
+| `paper` | #F3ECDD | page background (aged cream page stock) |
+| `paper-deep` | #E4D9C0 | recessed surfaces (footer, decoded card, how-it-works band) |
+| `surface` | #FBF8F0 | raised card surface: brighter page stock that lifts off paper without going clinical `#fff` |
+| `ink` | #2A2318 | primary text (iron-gall ink) |
+| `ink-soft` | #51473A | secondary text |
+| `ink-faint` | #6B6152 | meta text (AA on both papers) |
+| `night` | #1B1611 | header/hero band, solid dark buttons |
+| `brass` | #82632A | the tarnished-brass accent (renamed from the Cabina-era `booth` in the Oravan migration, PR-1): step numerals, active tab, focus ring, filled CTAs (with `paper` text) |
+| `brass-bright` | #D9B65C | brass on dark grounds (mobile active tab, OG tag lines) |
+| `brass-deep` | #6B5223 | pressed/hover state for brass-filled controls |
+| `brass-soft` | #F1E7C9 | tag pills, info panels |
+| `line` | #DDD2BB | hairlines, borders |
+| `moss` / `moss-soft` | #3E6B4C / #E1EBDD | success |
+| `clay` / `clay-soft` | #8C4C2A / #F1E1D3 | errors, destructive |
 
-Strategy: restrained-plus — navy carries the shell, amber is the single accent (~5-10%), warm `surface` cards on warm paper.
+Strategy: restrained-plus — warm near-black carries the shell, brass is the single accent (~5-10%), warm `surface` cards on warm paper. Brass-filled controls carry `paper` text (5.3:1) and darken on hover (`brass-deep`), never brighten.
 
-**Outlet-lean is never color-coded (hard rule).** The "Read" section labels each article by its outlet's lean (Left / Center / Right). Lean is conveyed by **text label + a neutral 3-segment position glyph only** — `ink` for the active segment, `line` for the rest. Never red/blue or any party color, and never the `booth` amber (reserved for AI/brand). This keeps the feature nonpartisan and avoids party-coding, in line with `CLAUDE.md`.
+**Outlet-lean is never color-coded (hard rule).** The "Read" section labels each article by its outlet's lean (Left / Center / Right). Lean is conveyed by **text label + a neutral 3-segment position glyph only** — `ink` for the active segment, `line` for the rest. Never red/blue or any party color, and never the `brass` accent (reserved for AI/brand). This keeps the feature nonpartisan and avoids party-coding, in line with `CLAUDE.md`.
 
 ## Type
 
-- Display: **Bricolage Grotesque** (`font-display`) — headings, wordmark, stat numerals.
-- Body: **Public Sans** (`font-sans`).
+- Display: **Fraunces** (`font-display`) — headings, wordmark, stat numerals.
+- Body: **Source Sans 3** (`font-sans`).
 - Body measure capped with `max-w-prose`.
 
 ## Shape & elevation

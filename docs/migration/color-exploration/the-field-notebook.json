@@ -1,0 +1,28 @@
+{
+  "seedName": "The Field Notebook",
+  "thesis": "Rostra's palette is built as if the app were a well-thumbed civic almanac — the kind of pocket reference a poll worker or ranger keeps: aged cream page stock, iron-gall ink gone warm-brown with age, a brass instrument (compass, surveyor's level) worn smooth from handling, and quiet plant-and-clay status inks for the marginal notes. Nothing is glossy or saturated; every hue reads as a physical pigment or metal rather than a screen glow, which is exactly what keeps it out of SaaS-blue and campaign-red/blue territory while still feeling warm, literate, and built to be trusted for decades.",
+  "palette": {
+    "paper": "#F3ECDD",
+    "paperDeep": "#E4D9C0",
+    "surface": "#FBF8F0",
+    "ink": "#2A2318",
+    "inkSoft": "#51473A",
+    "inkFaint": "#6B6152",
+    "night": "#1B1611",
+    "accent": "#82632A",
+    "accentBright": "#D9B65C",
+    "accentSoft": "#F1E7C9",
+    "line": "#DDD2BB",
+    "success": "#3E6B4C",
+    "successSoft": "#E1EBDD",
+    "warn": "#8C4C2A",
+    "warnSoft": "#F1E1D3"
+  },
+  "ctaText": "#FBF8F0",
+  "fonts": {
+    "display": "Fraunces",
+    "body": "Source Sans 3",
+    "note": "Fraunces is a Google Fonts variable serif with real ink-trap/almanac texture at display size (loadable via next/font/google as Fraunces with weight [\"600\",\"700\"]); Source Sans 3 is a workhorse humanist sans, loadable at weight [\"400\",\"600\"], chosen over generic system sans because its Spanish diacritics (á é í ó ú ñ ¿ ¡) render with the same warmth as the English cut — no font-swap seam between locales."
+  },
+  "rationale": "Layout reading: the four screenshots show one recurring dark band (nav + hero in home.jpg/bill-detail.jpg/reps.jpg/embeds.jpg) sitting above a light page that itself has two tiers — a light-gray/cream section wash (the \"In the news\" strip, the reps-page footer) and pure white cards floating on it (the bill cards, the ZIP-code panel, the live-preview panel in embeds.jpg). I mapped that directly: night is the almanac's leather-bound cover (the recurring dark band, darkest of all — 1B1611), ink is the iron-gall ink used for running text and for the one darker inline callout box in bill-detail.jpg (a hair lighter than night at 2A2318, so the two dark surfaces read as related but distinct materials, not one flat black). paper is the aged page itself (F3ECDD) that sits behind the cards; paperDeep is where the page has yellowed further at a fold or in the deep footer wash (E4D9C0, confirmed darker than paper); surface is the brighter, less-handled card stock (FBF8F0) the ZIP form and bill cards sit on — confirmed lighter than paper by luminance. inkSoft/inkFaint step down for secondary captions like \"Data as of\" and \"5 outlets,\" both comfortably above 4.5:1 even against the whitest surface. The accent (82632A) is the field guide's one piece of hardware — a tarnished brass compass rim or surveyor's level, chosen instead of green-as-primary specifically so it never fights with success, and instead of blue/teal so it can't be misread as either party color or generic SaaS chrome; it's dark enough to hold 5.25:1 as small caps metadata on white cards, 5.25:1 reversed as the CTA button fill under cream ctaText, and clears the focus-ring/active-nav-pill duty at 4.74:1. accentBright (D9B65C) is that same brass caught in raking light — used only where the ground goes dark, at 9.23:1. accentSoft (F1E7C9) is the pale wash a brass stamp leaves on paper, for chip/selection backgrounds. success (3E6B4C, a pressed-leaf sage rather than a leaflet-green) and warn (8C4C2A, a fired-clay terracotta, not red) are the two other \"natural pigments\" in the field kit — both read as calm marginalia, not alert lights, and both clear 4.5:1 as text on paper or surface with real margin. line (DDD2BB) is the faint foxing/rule-line at the edge of a card, deliberately low-contrast (1.27:1) since it's a hairline, not text."
+}

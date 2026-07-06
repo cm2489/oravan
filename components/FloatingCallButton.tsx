@@ -40,7 +40,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
       aria-label={label}
       aria-hidden={hidden}
       tabIndex={hidden ? -1 : 0}
-      className={`fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex items-center gap-2 rounded-full border-2 border-ink bg-booth px-5 py-4 font-semibold text-night shadow-lift transition-all duration-300 md:bottom-6 ${
+      className={`fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex items-center gap-2 rounded-full border-2 border-ink bg-brass px-5 py-4 font-semibold text-paper shadow-lift transition-all duration-300 md:bottom-6 ${
         hidden ? 'pointer-events-none translate-y-3 opacity-0' : 'opacity-100'
       }`}
     >

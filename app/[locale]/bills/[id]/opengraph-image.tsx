@@ -8,7 +8,7 @@ import { dataAsOfString } from '@/lib/freshness';
 /*
  * Per-bill share card (WhatsApp/iMessage/Slack previews). Same brand idiom as
  * the locale-level card (app/[locale]/opengraph-image.tsx): ink-navy ground,
- * booth-gold accents, system sans.
+ * brass-gold accents, system sans.
  *
  * Hard rules for this surface: a forwarded card is a redistribution surface,
  * so it never carries AllSides/lean labels (settled decision) and no advocacy
@@ -63,8 +63,8 @@ export default async function OgImage({
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: '#11182E',
-          color: '#FAF6EE',
+          background: '#1B1611',
+          color: '#F3ECDD',
           fontFamily: 'sans-serif',
         }}
       >
@@ -74,7 +74,7 @@ export default async function OgImage({
               width: 60,
               height: 60,
               borderRadius: 14,
-              background: '#E8A317',
+              background: '#82632A',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -89,11 +89,11 @@ export default async function OgImage({
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {bill && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontSize: 34 }}>
-              <span style={{ color: '#F2B33D', fontWeight: 700 }}>
+              <span style={{ color: '#D9B65C', fontWeight: 700 }}>
                 {formatCitation(bill.bill_type, bill.bill_number)}
               </span>
-              <span style={{ color: 'rgba(250,246,238,0.5)' }}>·</span>
-              <span style={{ color: 'rgba(250,246,238,0.88)', fontWeight: 600 }}>
+              <span style={{ color: 'rgba(243,236,221,0.5)' }}>·</span>
+              <span style={{ color: 'rgba(243,236,221,0.88)', fontWeight: 600 }}>
                 {tAll(`bills.status.${bill.status}`)}
               </span>
             </div>
@@ -114,8 +114,8 @@ export default async function OgImage({
               <div
                 style={{
                   display: 'flex',
-                  border: '3px solid #F2B33D',
-                  color: '#F2B33D',
+                  border: '3px solid #D9B65C',
+                  color: '#D9B65C',
                   borderRadius: 999,
                   padding: '10px 26px',
                   fontSize: 27,
@@ -128,7 +128,7 @@ export default async function OgImage({
           )}
         </div>
 
-        <div style={{ display: 'flex', fontSize: 26, color: 'rgba(250,246,238,0.7)' }}>{asOf}</div>
+        <div style={{ display: 'flex', fontSize: 26, color: 'rgba(243,236,221,0.7)' }}>{asOf}</div>
       </div>
     ),
     size

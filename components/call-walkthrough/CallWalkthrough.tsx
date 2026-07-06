@@ -128,7 +128,7 @@ export function CallWalkthrough() {
               >
                 <span
                   className={`h-2.5 w-2.5 rounded-full transition-all ${
-                    i === scene ? 'bg-booth ring-4 ring-booth-soft' : 'bg-line group-hover:bg-ink-faint'
+                    i === scene ? 'bg-brass ring-4 ring-brass-soft' : 'bg-line group-hover:bg-ink-faint'
                   }`}
                 />
               </button>

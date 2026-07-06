@@ -92,7 +92,7 @@ export default async function RepsPage({
       )}
 
       {refined && zip && (
-        <div className="mt-6 max-w-prose rounded-card border border-booth/40 bg-booth-soft p-4 text-sm">
+        <div className="mt-6 max-w-prose rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
           <p className="flex gap-2">
             <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
             <span>
@@ -110,7 +110,7 @@ export default async function RepsPage({
 
       {!refined && districts.length > 1 && zip && (
         <>
-          <p className="mt-6 flex max-w-prose gap-2 rounded-card border border-booth/40 bg-booth-soft p-4 text-sm">
+          <p className="mt-6 flex max-w-prose gap-2 rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
             <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
             {t('multiDistrict')}
           </p>
@@ -130,7 +130,7 @@ export default async function RepsPage({
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
             {noSenators && (
-              <p className="mt-3 flex max-w-prose gap-2 rounded-card border border-booth/40 bg-booth-soft p-4 text-sm">
+              <p className="mt-3 flex max-w-prose gap-2 rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
                 <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
                 {t('delegateNote', { state: d.state })}
               </p>

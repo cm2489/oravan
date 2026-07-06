@@ -23,8 +23,8 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 80,
-          background: '#11182E',
-          color: '#FAF6EE',
+          background: '#1B1611',
+          color: '#F3ECDD',
           fontFamily: 'sans-serif',
         }}
       >
@@ -34,7 +34,7 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
               width: 88,
               height: 88,
               borderRadius: 20,
-              background: '#E8A317',
+              background: '#82632A',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -45,8 +45,8 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           </div>
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>Rostra</div>
         </div>
-        <div style={{ marginTop: 36, fontSize: 48, color: '#F2B33D', fontWeight: 600 }}>{tag}</div>
-        <div style={{ marginTop: 16, fontSize: 32, color: 'rgba(250,246,238,0.85)' }}>{sub}</div>
+        <div style={{ marginTop: 36, fontSize: 48, color: '#D9B65C', fontWeight: 600 }}>{tag}</div>
+        <div style={{ marginTop: 16, fontSize: 32, color: 'rgba(243,236,221,0.85)' }}>{sub}</div>
       </div>
     ),
     size

@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
 /*
- * Cabina design tokens.
- * Metaphor: the lit phone booth at night - warm paper, deep night-navy ink,
- * and one amber "booth light" accent. High contrast by default (WCAG AA+).
+ * Oravan design tokens ("Field Notebook").
+ * Metaphor: a well-thumbed civic almanac - aged cream page stock, iron-gall
+ * ink, and one tarnished-brass instrument accent. High contrast by default
+ * (WCAG AA+): ink/paper 13.2:1, brass small-text on surface 5.3:1, CTA text
+ * on brass 5.3:1, brass-bright on night 9.2:1, brass focus ring on paper 4.7:1.
  */
 @theme {
-  --color-paper: #FAF6EE;
-  --color-paper-deep: #F2EBDC;
-  --color-surface: #FFFCF6; /* card surface: a warm near-white that lifts off paper without going clinical #fff */
-  --color-ink: #18203A;
-  --color-ink-soft: #4A5168;
-  --color-ink-faint: #5C6276; /* AA on both paper (5.6:1) and paper-deep (5.1:1) */
-  --color-night: #11182E;
-  --color-booth: #E8A317;
-  --color-booth-bright: #F2B33D;
-  --color-booth-soft: #FBEED2;
-  --color-line: #E2D9C6;
-  --color-moss: #3E6B4F;
-  --color-moss-soft: #E4EEE7;
-  --color-clay: #A14D3A;
-  --color-clay-soft: #F6E5DF;
+  --color-paper: #F3ECDD;
+  --color-paper-deep: #E4D9C0;
+  --color-surface: #FBF8F0; /* card surface: brighter page stock that lifts off paper without going clinical #fff */
+  --color-ink: #2A2318;
+  --color-ink-soft: #51473A;
+  --color-ink-faint: #6B6152; /* AA on both paper (5.2:1) and surface (5.7:1) */
+  --color-night: #1B1611;
+  --color-brass: #82632A;
+  --color-brass-bright: #D9B65C; /* brass in raking light: accent text on dark grounds */
+  --color-brass-deep: #6B5223; /* pressed/hover state for brass-filled controls */
+  --color-brass-soft: #F1E7C9;
+  --color-line: #DDD2BB;
+  --color-moss: #3E6B4C;
+  --color-moss-soft: #E1EBDD;
+  --color-clay: #8C4C2A;
+  --color-clay-soft: #F1E1D3;
 
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
@@ -28,7 +31,7 @@
   --radius-card: 1rem;
   --radius-control: 0.5rem;
 
-  --shadow-lift: 0 1px 2px rgb(17 24 46 / 0.06), 0 8px 24px -12px rgb(17 24 46 / 0.18);
+  --shadow-lift: 0 1px 2px rgb(27 22 17 / 0.06), 0 8px 24px -12px rgb(27 22 17 / 0.18);
 }
 
 html {
@@ -56,12 +59,12 @@ body {
 }
 
 ::selection {
-  background: var(--color-booth-soft);
+  background: var(--color-brass-soft);
 }
 
 /* Visible focus everywhere, never removed */
 :focus-visible {
-  outline: 3px solid var(--color-booth);
+  outline: 3px solid var(--color-brass);
   outline-offset: 2px;
   border-radius: 2px;
 }

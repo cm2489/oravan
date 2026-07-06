@@ -24,10 +24,10 @@ export function TldrStrip({ bill }: { bill: Bill }) {
 
   return (
     <div className="mt-6 flex items-start gap-3 rounded-card bg-night p-4 text-paper md:p-5">
-      <span aria-hidden className="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-booth" />
+      <span aria-hidden className="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-brass" />
       <p className="font-semibold leading-snug md:text-lg">
         {s.tldr}
-        <span className="mt-1 block text-sm font-medium text-booth-bright">
+        <span className="mt-1 block text-sm font-medium text-brass-bright">
           {t('tldrMeta', { seconds, count })}
         </span>
       </p>

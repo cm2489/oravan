@@ -1,0 +1,186 @@
+{
+  "panel": [
+    {
+      "A": {
+        "uiux": 87,
+        "copyFit": 89,
+        "brand": 92,
+        "resonance": 90,
+        "note": "Bill-detail headline ('Bill would find Jewish WWI and WWII graves mismarked with crosses') sets in Instrument Serif exactly like a real newspaper headline, and the 'In the news' section carries an actual newspaper-icon glyph — that's the first candidate that reads as something I'd let sit next to our own front page instead of looking like a bolted-on widget. The eyebrow metadata (H.R. 2701, tags) stays in a clean sans/letterspaced treatment so the serif is used only where editorial voice belongs, not on numerals where it could look fussy."
+      },
+      "B": {
+        "uiux": 73,
+        "copyFit": 68,
+        "brand": 60,
+        "resonance": 63,
+        "note": "The amber 'AI-decoded' pill and amber accent running through bill tags and the floating 'Make the call' button, paired with all-grotesque-sans headlines, reads closer to a civic-tech startup pitch deck than a newsroom's own headline treatment — I've had three of those pitched to me this year and they all use this exact gold-on-dark-green palette. Nothing here signals 'we made an editorial decision,' it signals 'we used the default civic-app palette.'"
+      },
+      "C": {
+        "uiux": 78,
+        "copyFit": 74,
+        "brand": 80,
+        "resonance": 77,
+        "note": "Swapping amber for the deeper copper noticeably changes the feel on the same bill-detail and embeds pages — the copper 'Make the call' button and 'AI-decoded' pill read like burnished letterpress ink rather than caution-gold, and the white text sits on the button cleanly instead of looking washed out. It's the most credible sans-only option, but the headlines are still set in bold Bricolage Grotesque, so it never fully shakes the 'well-designed app' register the way a serif headline would."
+      },
+      "persona": "Elena, 41, editor at a regional Spanish-language news outlet, evaluating Rostra purely as a widget she'd embed on her outlet's pages",
+      "pick": "A",
+      "rationale": "All three share the same forest-and-paper ground and the same layout, so the decision comes down to whether the accent-and-type system reads as newsroom-grade editorial or as civic-tech-startup. A is the only one where the bill-detail headline is literally typeset like a newspaper headline (Instrument Serif) instead of a UI heading — that is the single biggest thing that would make me comfortable putting my outlet's name next to this widget, because my readers' first signal of trust is 'does this look like journalism.' The vivid orange accent stays safely outside red/blue coding and reads warmer and more crafted than B's amber (which leans toward generic civic-app gold) or C's copper (which is a real improvement over B on contrast and warmth, but is still delivered entirely in sans-serif UI type, so it still reads as 'well-made product' rather than 'news object'). My one reservation about A is that a full serif+sans system is a bigger typographic commitment to get right across an embed that will render inside many different host pages — but on the evidence in these six screens (including the two OG cards, where the serif barely appears and the sans/mono metadata carries the weight), it's handled with enough restraint that I'd sign off on it over B or C."
+    },
+    {
+      "persona": "Rosa, 54 — Spanish-dominant, wants to call about healthcare bills; needs warmth and clarity; must not feel like a cold government site or an alarmist campaign page",
+      "A": {
+        "uiux": 78,
+        "copyFit": 81,
+        "brand": 87,
+        "resonance": 74,
+        "note": "The serif 'Congress counts calls.' headline (with that swashed cap C) reads like a respected newspaper's front page — dignified, not bureaucratic, which I like. But on the bill-detail page the vivid orange-red 'Make the call' pill sits closer to a warning label than an invitation; next to a bill about mismarked veterans' graves, that heat reads a little urgent/alarmist for what should feel like a calm, supportive nudge to pick up the phone."
+      },
+      "B": {
+        "uiux": 69,
+        "copyFit": 74,
+        "brand": 73,
+        "resonance": 67,
+        "note": "The amber 'Make the call' pill on bill-detail glows warm against the dark green like a porch light — cozy, I like that feeling. But the same amber shows up as small-caps tag text ('5 OUTLETS') on the white news cards and it's noticeably harder to read at a glance than the other two versions; if I'm scanning quickly between calls with tired eyes, that's the element I'd have to squint at twice."
+      },
+      "C": {
+        "uiux": 85,
+        "copyFit": 78,
+        "brand": 82,
+        "resonance": 86,
+        "note": "Same friendly, approachable headlines as B, but the copper 'Make the call' pill and the copper '5 OUTLETS' tags on the news cards are solid and easy to read without effort — like a well-made metal plaque, not a screen straining my eyes. That matters most on the one button whose entire job is getting me to actually dial the number."
+      },
+      "pick": "C",
+      "rationale": "C keeps the same warm, unpretentious typography as B (not the more distant newspaper-serif of A) but fixes the one thing that actually affects whether I finish the task: the accent color is legible where it counts. Every 'Make the call' button and every status tag has to be read fast and without strain, especially on a bill about something as heavy as a healthcare fight — A's vivid orange skews urgent/alarmist for that moment, and B's amber looks cozy but goes weak and hard to read on the tags and small text. Copper gets the warmth of the forest-and-lantern palette without either of those costs, so it's the one I'd trust to actually walk me to the phone call."
+    },
+    {
+      "A": {
+        "uiux": 81,
+        "copyFit": 79,
+        "brand": 84,
+        "resonance": 73,
+        "note": "The Instrument Serif display headline on bill-detail.jpg ('Bill would find Jewish WWI and WWII graves mismarked with crosses') gives the plain-language explainer real editorial gravitas — it reads like a foundation's annual report, which I could screenshot into a grant deck without hesitation. But the saturated signal-orange on the 'Home' nav pill and the 'Make the call' button on og-bill.png runs hotter than I want on something my org's name goes next to — it reads closer to a media startup's accent than a calm, trustworthy civic utility, and a full type-system swap (serif + Inter Tight) is a bigger, harder-to-explain line item to justify to my board than a token tweak."
+      },
+      "B": {
+        "uiux": 74,
+        "copyFit": 73,
+        "brand": 60,
+        "resonance": 55,
+        "note": "The amber 'Make the call' pill in bill-detail.jpg and the amber '5 OUTLETS' tags on home.jpg are the exact accent-on-paper combination the brief flags at 2:1 contrast — I can't put a tool in front of libraries and newsrooms, or cite it in a grant application, if it doesn't clear basic accessibility, and Public Sans (the same body font as USWDS federal sites) also pulls this toward the 'cold bureaucratic gov site' anti-reference rather than away from it, which undercuts the whole 'not generic, not gov-cold' brief."
+      },
+      "C": {
+        "uiux": 83,
+        "copyFit": 76,
+        "brand": 76,
+        "resonance": 80,
+        "note": "Same layout and same Bricolage Grotesque/Public Sans system as B, but the copper 'Make the call' button in bill-detail.jpg carries clean, legible paper-colored text where B's amber version would wash out — that's a real, demonstrable accessibility fix I can point to in a funder conversation, and the deeper copper reads like letterpress/copperplate seriousness rather than a lantern-glow accent, which sits well next to plain-language bill copy without the cost or risk of touching the type system at all."
+      },
+      "persona": "Priya, 47 — program director at a national civic nonprofit, the budget holder evaluating paid org licensing. She needs the product to be board-presentable and grant-credible: professional, nonpartisan beyond question, accessible enough to defend to funders, and warm without tipping into consumer gimmick.",
+      "pick": "C",
+      "rationale": "A is the most beautiful and most 'editorial' of the three — the serif headline treatment genuinely elevates the plain-language bill copy — but its vivid signal-orange and full type-system change read as a bigger, flashier bet than a risk-averse budget holder wants to defend to a board, and it edges toward feeling like a media brand rather than neutral civic infrastructure. B is the weakest: the amber accent's documented 2:1 contrast shortfall on paper is a real, screenshot-visible accessibility liability (the 'Make the call' button and 'OUTLETS' tags), and pairing it with Public Sans — the U.S. government's own federal typeface — cuts against the brief's explicit anti-reference to cold bureaucratic gov sites. C keeps every bit of B's low-risk continuity (same fonts, same layout, no rebrand to explain) while fixing the one thing that would actually stop me from putting this in a grant application: the copper accent hits 5.1:1 contrast, reads mature and dignified rather than gimmicky, and lets me say 'we made one targeted, accessibility-motivated token change' instead of 'we redesigned the brand.' That's the sentence I can defend to my board."
+    },
+    {
+      "A": {
+        "uiux": 76,
+        "copyFit": 84,
+        "brand": 85,
+        "resonance": 74,
+        "note": "The Instrument Serif headline 'Congress counts calls.' plus the little newspaper icon over 'In the news' genuinely reads like a masthead, not a SaaS landing page — this is the only one of the three that actually delivers on 'editorial.' But the saturated signal-orange on the persistent 'Make the call' floating button (bill-detail) is loud enough on repeat scrolling that it starts to feel like a conversion-optimized CTA color, and it's warm/saturated enough that my red-flag reflex twitches for half a second before I register it's orange, not red."
+      },
+      "B": {
+        "uiux": 66,
+        "copyFit": 66,
+        "brand": 58,
+        "resonance": 55,
+        "note": "The '5 OUTLETS' labels and category pills (home, bill-detail) render in a gold that looks visibly washed out against the paper background — a real legibility miss, not just a style choice. And gold-on-dark-green plus the heavy grotesque headline reads less like calm civic infrastructure and more like an achievement-badge palette — the amber floating 'Make the call' button in particular looks closer to a caution light or a rewards-app streak counter than a phone-call prompt, which is exactly the gamified vibe I'd expect this project to avoid."
+      },
+      "C": {
+        "uiux": 83,
+        "copyFit": 71,
+        "brand": 80,
+        "resonance": 79,
+        "note": "The copper 'Make the call' pill and the 'Security & foreign affairs' badge (bill-detail) both sit clearly and calmly against the paper background — it reads like a stamped seal, not a marketing button, and I don't feel nagged by it on scroll the way I do with A's brighter orange or B's gold. It doesn't hit A's full editorial-masthead high (same plain grotesque headline as B, so it's still closer to 'well-built tool' than 'publication'), but it's the one accent color here that never once made me second-guess whether someone was trying to sell or spin me something."
+      },
+      "persona": "Jake, 38 — English-dominant, politically unaffiliated, deeply skeptical of political websites; scans for partisan red/blue coding, astroturf polish, and gamification/dark-pattern tells before he'll trust a civic tool.",
+      "pick": "C",
+      "rationale": "None of the three trips my red/blue alarm — orange, amber, and copper are all safely outside partisan territory — so the real decision comes down to which accent feels least like it's working me. A's vivid signal-orange is the most beautiful of the three (the serif masthead genuinely reads editorial, not template-SaaS), but on a persistent element like the call-to-action floater, that much saturation starts to feel like a growth-hacked CTA color, which is the opposite of what a skeptic wants from a civic tool. B's amber is worse: it's measurably harder to read against the paper background and it drifts into achievement-badge/rewards-app territory, which is close to the 'social-gamification' anti-reference this product is explicitly trying to avoid. C keeps the same forest-and-paper calm as B but swaps in a copper that's muted enough to never feel salesy and high-contrast enough to never feel like an accessibility afterthought — it reads like a stamped seal, not a banner ad. It gives up a little of A's literary polish, but for someone who assumes a good-looking political site is probably hiding something, 'calm and legible' beats 'gorgeous and loud.'"
+    },
+    {
+      "persona": "Devon, 29 — developer at a partner org evaluating whether to integrate Rostra's white-label embeds. Judging the embeds/configurator surface, theming coherence, and whether the token system looks disciplined enough to trust inside someone else's product.",
+      "A": {
+        "uiux": 74,
+        "copyFit": 62,
+        "brand": 80,
+        "resonance": 71,
+        "note": "The vivid signal-orange gives the strongest 'somebody actually designed this' first impression — the Instrument Serif headline on home.jpg is the only one of the three that doesn't look like a Figma community kit. But the same hue is doing every job at once: the active 'Home' nav pill, the '5 OUTLETS' metadata badge, the bill-detail bullet dot, and the floating 'Make the call' CTA on bill-detail.jpg. That CTA in particular — a saturated orange pill screaming for a tap — reads closer to a petition-site 'take action now' button than a calm utility action, which is exactly the activist energy the brief says to avoid."
+      },
+      "B": {
+        "uiux": 58,
+        "copyFit": 76,
+        "brand": 55,
+        "resonance": 50,
+        "note": "Keeping the amber is the low-risk choice, but it visibly can't carry its own weight: the '5 OUTLETS' / '5 outlets' metadata labels on the home.jpg news cards nearly wash out against the white cards, and the same low-contrast accent drives the 'Make the call' button on bill-detail.jpg. If I'm embedding this into a partner site that has its own accessibility sign-off, that's a concrete flag I'd raise before shipping — and paired with the big Bricolage Grotesque headline, the home screen reads like a generic startup landing page rather than the warm-editorial target."
+      },
+      "C": {
+        "uiux": 79,
+        "copyFit": 78,
+        "brand": 76,
+        "resonance": 82,
+        "note": "Same layout and type as B, but the copper actually holds up under real conditions: '45-second read' and the 'Make the call' pill on bill-detail.jpg stay crisp against both the dark summary box and the paper background, and the tagline on og-home.png reads clean without A's activist-orange edge or B's washed-out badges. It's the one token set I'd feel comfortable pointing my own org's accessibility reviewer at before we paste the embed snippet into our CMS."
+      },
+      "pick": "C",
+      "rationale": "My job is to decide whether this token system is safe to drop into someone else's product, and that comes down to two things the screenshots make concrete: does the accent hold contrast everywhere it's used, and does the overall system look considered rather than improvised. B fails the first test outright — its amber goes soft on white cards and buttons, which is a real liability I'd have to disclose to my own compliance reviewer. A passes the 'considered brand' test better than either (the serif headline is genuinely distinctive) but its accent is overloaded across nav state, metadata, and CTA, and the CTA specifically reads more activist-urgent than the nonpartisan brief wants — plus the literary serif voice is ahead of the current plain-utility copy, so home.jpg and bill-detail.jpg feel like two different projects bolted together. C keeps B's honest, unpretentious type system (so the current copy never feels mismatched) while fixing the one thing that actually matters for embedding: the copper accent is legible everywhere at real contrast ratios, on paper and on ink, in badges and in buttons. That's the boring, verifiable kind of 'disciplined' I actually need before I tell my team to trust a third party's widget on our site."
+    },
+    {
+      "persona": "Marcus, 55 — public librarian running civic-information programming. Needs the site to read as approachable, non-intimidating, and safe to put in front of patrons of every age and political stripe at a public institution.",
+      "A": {
+        "uiux": 78,
+        "copyFit": 88,
+        "brand": 84,
+        "resonance": 80,
+        "note": "The 'In the news' bill cards set headlines like 'Bill would find Jewish WWI and WWII graves mismarked with crosses' in Instrument Serif — it reads exactly like a real newspaper front page, not an app screen. Only soft spot: that same display serif carries all the way down to page titles like 'Your representatives,' and at hero size its thin/thick stroke contrast is a hair less forgiving for older or low-vision patrons than a bold sans would be — worth a legibility check, though body copy stays in the very readable Inter Tight."
+      },
+      "B": {
+        "uiux": 70,
+        "copyFit": 65,
+        "brand": 58,
+        "resonance": 62,
+        "note": "The amber 'Home' pill and bold Bricolage Grotesque 'Congress counts calls.' read like a fintech dashboard headline more than civic journalism, and pairing that with Public Sans — literally the U.S. federal government's own typeface — risks tipping into the 'cold bureaucratic gov site' anti-reference the brief explicitly warns against, even with the forest/paper warmth underneath. The flagged 2:1 amber-on-paper contrast weakness on accent buttons is also a real liability for something a public institution is putting its name behind."
+      },
+      "C": {
+        "uiux": 83,
+        "copyFit": 70,
+        "brand": 74,
+        "resonance": 79,
+        "note": "The copper 'Make the call' button on the bill-detail page carries crisp white text that's visibly easy to read against the rust-brown fill — a concrete, checkable accessibility win over B's amber. Copper reads more like a civic plaque or letterpress seal than a SaaS accent, which suits 'trustworthy,' but it still rides the same Bricolage Grotesque/Public Sans system as B, so it doesn't get A's editorial lift from typography — the distinction here is carried by color alone."
+      },
+      "pick": "A",
+      "rationale": "As a librarian deciding what's safe to put on a library homepage next to real newspapers and reference material, the serif headline treatment in A is doing the most brand work of the three: it makes AI-summarized bill copy ('Bill would find Jewish WWI and WWII graves mismarked with crosses') read as legitimate journalism rather than app copy, which is exactly the register that earns trust across the political spectrum without looking partisan or gimmicky. It also sidesteps a risk I don't love in B and C — Public Sans is literally the U.S. government's own web typeface, so leaning on it (even over warm forest/paper) nudges toward the 'cold bureaucratic gov site' anti-reference the brief is trying to avoid. A's vivid orange is the boldest accent of the three, which I'd want to spot-check for contrast/legibility on the serif display sizes, but that's a fixable detail, not a brand-direction problem. If the accessibility question on B's amber buttons can't be resolved, C is my clear fallback — its copper CTA is visibly the most accessible execution here — but on warmth, editorial trust, and staying clear of both 'generic SaaS' and 'cold bureaucratic gov site,' A is the one I'd point patrons to."
+    },
+    {
+      "persona": "Amara, 33 — low-vision reader, browses at 150-200% zoom with OS high-contrast/dark-mode preferences on. I judge screens by whether text and controls hold up when I can only take in a few words at a time: does the accent color still read where it actually appears (small tags, focus rings, meta labels on white cards), not just in the hero.",
+      "A": {
+        "uiux": 72,
+        "copyFit": 63,
+        "brand": 84,
+        "resonance": 70,
+        "note": "The Instrument Serif headline ('Congress counts calls.' in home.jpg) is gorgeous but its thin strokes and swashy g/u descenders are exactly the kind of display serif that degrades at zoom/high-contrast; more concretely, the small orange meta text — '45-second read', '5 OUTLETS' — sits on the dark ink callout box and on white cards in low-saturation orange that's noticeably harder to pick out at a glance than the same labels in candidate C."
+      },
+      "B": {
+        "uiux": 64,
+        "copyFit": 78,
+        "brand": 68,
+        "resonance": 58,
+        "note": "The Bricolage/Public Sans headline is the most legible of the three at a glance, but the amber accent visibly washes out wherever it sits on paper — the '5 OUTLETS' label on the white bill cards in home.jpg and the amber focus ring around the ZIP field in reps.jpg both read faint against the cream/white ground, which is the first thing I check and the first thing that fails here."
+      },
+      "C": {
+        "uiux": 81,
+        "copyFit": 80,
+        "brand": 80,
+        "resonance": 85,
+        "note": "Same accessible Bricolage/Public Sans type as B, but the copper accent actually survives on light ground — '5 OUTLETS' and the 'Make the call' button text in bill-detail.jpg and the copper focus ring in reps.jpg all stay crisp against paper, which matters far more to me than the hero banner since that's where I actually have to find things while scanning a page."
+      },
+      "pick": "C",
+      "rationale": "Most of this app's real surface area is small accent-colored text and controls sitting on the paper/white ground — status tags, 'X OUTLETS' counts, focus rings, CTA labels — not the dark hero. Candidate C is the only one of the three whose accent color was deliberately built to hold contrast in exactly that context (5.1:1 vs amber's ~2:1, per spec, and visibly true across home.jpg, bill-detail.jpg and reps.jpg), while keeping B's more legible grotesque sans instead of A's decorative serif. A wins on distinctive editorial voice and B wins on headline punch, but C is the only one I'd trust not to make me squint every time I glance at a card."
+    }
+  ]
+}
