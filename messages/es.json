@@ -166,6 +166,9 @@
     "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
     "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje es una forma totalmente válida de ser contado. Menciona tu código postal para que sepan que eres su constituyente.",
+    "officeHoursTitle": "Horario habitual de las oficinas",
+    "officeHoursOpenBody": "Las oficinas del Congreso suelen tener horario de oficina entre semana, aproximadamente de 9am a 5:30pm hora del Este — ahora mismo cae dentro de ese horario, así que alguien podría contestar en vivo. Si de todos modos te sale el buzón de voz, se cuenta exactamente igual.",
+    "officeHoursClosedBody": "Ahora mismo está fuera del horario habitual (entre semana, aproximadamente de 9am a 5:30pm hora del Este) — lo más probable es que te salga el buzón de voz, y eso está bien: deja tu nombre y código postal, y cuenta exactamente igual que una llamada en vivo.",
     "staffNote": "Contesta un miembro del personal (muchas veces un pasante), anota tu posición y sigue adelante. Sin debate y sin examen. Menos de un minuto.",
     "copy": "Copiar número",
     "copied": "Copiado",
@@ -223,7 +226,9 @@
     "startCall": "Empezar la llamada",
     "editScript": "Editar guion",
     "firstCallTitle": "¿Tu primera llamada?",
-    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo."
+    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
+    "preDialTitle": "Antes de marcar",
+    "preDialBody": "El personal atiende llamadas como esta todo el día, y no es un debate: unos treinta segundos y ya. Que conteste alguien en vivo o te salga el buzón de voz, ambos cuentan igual — cualquiera de los dos es un buen resultado."
   },
   "walkthrough": {
     "label": "Cómo funciona una llamada — demostración en cinco pasos",

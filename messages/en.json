@@ -166,6 +166,9 @@
     "callWho": "Call any of your three, or all of them. One call per office is plenty.",
     "afterHoursTitle": "Nervous? Call after hours.",
     "afterHoursBody": "Voicemails are tallied exactly like live calls. Calling evenings or weekends and leaving a message is a fully legitimate way to be counted. Mention your ZIP code so they know you're a constituent.",
+    "officeHoursTitle": "Typical office hours",
+    "officeHoursOpenBody": "Congressional offices generally keep weekday business hours, roughly 9am–5:30pm Eastern — it's inside that window right now, so a live staffer may answer. If you land on voicemail anyway, it's tallied exactly the same.",
+    "officeHoursClosedBody": "It's outside typical business hours right now (weekdays, roughly 9am–5:30pm Eastern) — voicemail is the likely outcome, and that's a fine place to start: leave your name and ZIP, and it counts exactly like a live call.",
     "staffNote": "A staffer (often an intern) answers, tallies your position, and moves on. No debate, no quiz. Under a minute.",
     "copy": "Copy number",
     "copied": "Copied",
@@ -223,7 +226,9 @@
     "startCall": "Start the call",
     "editScript": "Edit script",
     "firstCallTitle": "Your first call?",
-    "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now."
+    "firstCallBody": "Talking to a Senate staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now.",
+    "preDialTitle": "Before you dial",
+    "preDialBody": "Staffers field calls like this all day, and it's not a debate — about thirty seconds and you're done. A live pickup or a voicemail count exactly the same, so either one is a good outcome."
   },
   "walkthrough": {
     "label": "How a call works — a five-step demo",

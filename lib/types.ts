@@ -1,14 +1,23 @@
 import type { UrgencyBand } from './taxonomy';
 
-export type BillStatus =
-  | 'committee'
-  | 'markup'
-  | 'floor_vote'
-  | 'passed_chamber'
-  | 'conference'
-  | 'signed'
-  | 'vetoed'
-  | 'introduced';
+/**
+ * Every status a bill can carry. The runtime array is the source of truth;
+ * `BillStatus` is derived from it so a schema that needs to enumerate the
+ * same values at runtime (the MCP `search_bills` tool's zod schema) reads
+ * off this array instead of hand-duplicating the union (lib/core/mcp.ts).
+ */
+export const BILL_STATUSES = [
+  'committee',
+  'markup',
+  'floor_vote',
+  'passed_chamber',
+  'conference',
+  'signed',
+  'vetoed',
+  'introduced',
+] as const;
+
+export type BillStatus = (typeof BILL_STATUSES)[number];
 
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {

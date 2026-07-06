@@ -146,6 +146,11 @@ test.describe('3-stance × 2-locale matrix', () => {
       'staffNote',
       'firstCallTitle',
       'firstCallBody',
+      'preDialTitle',
+      'preDialBody',
+      'officeHoursTitle',
+      'officeHoursOpenBody',
+      'officeHoursClosedBody',
     ] as const;
     for (const key of scriptFlowKeys) {
       const enValue = en.bill[key];
