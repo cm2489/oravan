@@ -64,6 +64,18 @@ export async function readJsonRpc(res: APIResponse): Promise<JsonRpcResponse> {
   return JSON.parse(dataLine ? dataLine.slice('data: '.length) : body);
 }
 
+// Each JSON-RPC call below presents itself as a distinct caller: as of S11
+// the MCP route enforces real anonymous rate limits (60/min per caller), and
+// this suite's ~50 calls across two projects would trip them from one shared
+// address. The limiter itself is pinned separately (tests/ratelimit.unit.
+// spec.ts) plus a dedicated same-caller 429 e2e in tests/mcp.spec.ts —
+// every other test here states its own caller and tests its own concern.
+let mcpCallerCounter = 0;
+function nextMcpCallerIp(): string {
+  mcpCallerCounter = (mcpCallerCounter % 254) + 1;
+  return `198.51.100.${mcpCallerCounter}`; // RFC 5737 TEST-NET-2
+}
+
 /** POST one JSON-RPC request at the live MCP route and unwrap the response. */
 export async function mcpRpc(
   request: APIRequestContext,
@@ -72,7 +84,11 @@ export async function mcpRpc(
   id: number | string = 1
 ): Promise<JsonRpcResponse> {
   const res = await request.post(MCP_ENDPOINT, {
-    headers: { 'content-type': 'application/json', accept: MCP_ACCEPT },
+    headers: {
+      'content-type': 'application/json',
+      accept: MCP_ACCEPT,
+      'x-forwarded-for': nextMcpCallerIp(),
+    },
     data: { jsonrpc: '2.0', id, method, params },
   });
   return readJsonRpc(res);

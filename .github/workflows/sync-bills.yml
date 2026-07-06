@@ -60,6 +60,16 @@ jobs:
         env:
           RUN_STARTED_AT: ${{ steps.runstart.outputs.ts }}
         run: node scripts/verify-sync.mjs
+      - name: Verify rate-limit salt age (dead-man's-switch)
+        # Loud failure if the counters database's hashing salt outlived its
+        # 24h TTL, lost its TTL, or got corrupted - silent rotation failure
+        # would turn short-lived rate-limit counters into stable identifiers
+        # (S11/F5). Skips with a ::warning until the two counter secrets are
+        # added to Actions; see scripts/verify-salt.mjs.
+        env:
+          UPSTASH_COUNTERS_REST_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
+          UPSTASH_COUNTERS_REST_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
+        run: node scripts/verify-salt.mjs
       - name: Commit data
         id: commit
         # The author email must map to the Vercel-linked GitHub account

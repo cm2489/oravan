@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
 
 /*
  * Beta feedback intake -> one GitHub issue in this repo (private tracker).
@@ -28,22 +29,13 @@ const MAX_MESSAGE_CHARS = 2000;
 const MAX_PAGE_CHARS = 200;
 const TITLE_CHARS = 60;
 
-// Light per-IP rate limit (in-memory, per instance), following app/api/script:
-// 8 requests / 10 min. The IP is compared and discarded, never stored beyond
-// this window and never forwarded anywhere.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 8;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) return true;
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear(); // crude memory cap
-  return false;
-}
+// Rate limit: 8 requests / 10 min per caller, following app/api/script — the
+// same limit as always. As of S11 this is enforced with short-lived
+// rate-limit counters in the Upstash counters database (sha256(ip + rotating
+// salt), durable across instances), degrading to the per-instance in-memory
+// window when unconfigured or unreachable — see lib/ratelimit.ts. The IP is
+// hashed and discarded; the feedback text never gets near the counters.
+const limiter = createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 });
 
 function createIssue(
   token: string,
@@ -64,8 +56,10 @@ function createIssue(
 }
 
 export async function POST(req: NextRequest) {
-  const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim();
-  if (rateLimited(ip)) {
+  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+
+  const ip = callerIp(req.headers);
+  if (await limiter.isLimited(ip)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 

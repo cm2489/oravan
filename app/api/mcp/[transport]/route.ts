@@ -1,5 +1,7 @@
 import { createMcpHandler } from 'mcp-handler';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
 import { CATEGORIES } from '@/lib/taxonomy';
 import { BILL_STATUSES } from '@/lib/types';
 import {
@@ -229,4 +231,36 @@ const handler = createMcpHandler(
   }
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+/*
+ * Anonymous (keyless) rate limits per the S11 spec: 60 requests/min and
+ * 1,000/day per caller, enforced with the same short-lived rate-limit
+ * counters as the rest of the API surface (lib/ratelimit.ts — hashed
+ * caller only; a tool name never reaches a counter key, by construction:
+ * the limiter API only accepts a caller IP and a closed route label).
+ * Only POST carries JSON-RPC work, so only POST is limited; GET/DELETE
+ * are the transport's cheap 405s. Degrades to per-instance in-memory
+ * counters when Upstash is unconfigured or unreachable, like every route.
+ */
+const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 60 });
+const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
+
+async function limitedPost(req: Request): Promise<Response> {
+  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+
+  const ip = callerIp(req.headers);
+  if (await minuteLimiter.isLimited(ip)) {
+    return NextResponse.json(
+      { error: 'rate_limited' },
+      { status: 429, headers: { 'retry-after': '60' } }
+    );
+  }
+  if (await dayLimiter.isLimited(ip)) {
+    return NextResponse.json(
+      { error: 'rate_limited' },
+      { status: 429, headers: { 'retry-after': '3600' } }
+    );
+  }
+  return handler(req);
+}
+
+export { handler as GET, limitedPost as POST, handler as DELETE };
