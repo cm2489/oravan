@@ -5,12 +5,12 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-05 (late evening)
+**Last updated:** 2026-07-06 (on PR #43 branch, orchestrator)
 
 ## Now / Next / Blocked
 
-- **Now:** Wave 3 — S13 (embed rep-lookup) building; S11 (Upstash) launched. Awaiting review: #39 (S22), #40 (resilience).
-- **Next:** S14 (bill-card widget, after S13), S15 (privacy CI gates). Chore PR committing the guiding docs (this file + strategy + plan + solutions) — IN FLIGHT; once merged, agents update STATUS.md in their own PRs and read the strategy from any worktree.
+- **Now:** Awaiting review: #42 (S13 embed widget), #43 (S11 Upstash). Merged this cycle: #39, #40, #41.
+- **Next:** S14 (bill-card widget, after S13), S15 (privacy CI gates). Chore #41 merged — guiding docs are tracked; agents now update STATUS.md inside their own PRs and read the strategy from any worktree.
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
 ## Sprint tracker
@@ -33,9 +33,9 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S8 — Buffer + LAUNCH gate (calendar-anchored ~Aug 25; needs rename landed)
 - [x] S9 — Data core + MCP scaffold — PR #34, merged Jul 5 · *Issues:* merge conflicts vs #35 (moved the functions #35 modified) → resolved by rebase agent, "location follows branch, content follows main"; #35 logic verified function-by-function into `lib/core/`
 - [x] S10 — Five MCP tools + envelope — PR #37, merged Jul 6 · ZIP-only lookup w/ refine_hint (privacy-conservative cut); quiet-week tested on real corpus; PW_PORT rider ended the port-race class. Lockfile name-sync accepted here (ends 4-agent churn class)
-- [ ] S11 — Upstash two-DB rate limiting + CI privacy gate — **IN FLIGHT** (launched Jul 5 late; env names UPSTASH_COUNTERS_/UPSTASH_CACHE_; $0 free tier, surfaced & approved)
+- [ ] S11 — Upstash two-DB rate limiting + CI privacy gate — PR #43 **OPEN**, awaiting review · plain-fetch clients (no SDK), salt 128-bit/24h w/ nightly dead-man's-switch, cache keys gain content-version hash, graceful in-memory fallback, self-testing key-namespace CI gate. *Issues:* agent initially refused on unverifiable authorization (docs were untracked — fixed by #41) + correctly declined nested CLAUDE.md edit (amendment orchestrator-authored instead). *Owner post-merge:* add the two counter secrets to GitHub Actions so the salt verifier arms (PR checklist)
 - [ ] S12 — MCP registry + directory submissions — **RENAME-GATED** (DNS-bound verification)
-- [ ] S13 — Embed rep-lookup widget + loader — **IN FLIGHT** (wave 3)
+- [ ] S13 — Embed rep-lookup widget + loader — PR #42 **OPEN**, awaiting review · 3.6KB loader (origin-derived, subdomain-migration-ready), embed route outside locale middleware (no cookies ever), embed-scoped CSP, portraits deferred to S15 (no third-party hotlink). Adopted #40's vacancy signal mid-flight
 - [ ] S14 — Bill-card widget + theming
 - [ ] S15 — Embed privacy hardening + CI gates (F3)
 - [ ] S16 — Configurator + docs + launch kit (→ KTD-8 outreach sends week of Oct 26, post-S16)
@@ -44,13 +44,13 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S19 — Action panel paid tier + shared rate-limit arch
 - [ ] S20 — Impression counts (F6)
 - [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build)
-- [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39 **OPEN**, awaiting review · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
+- [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39, merged Jul 6 · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
 - [ ] S23 — Citability/correction page + ES redistribution spot-check
 - [ ] S24 — Federal boundary-source hardening (RDH adoption; two-clock model)
 - [ ] S25 — Curated-triage state-architecture spec (spec-only)
 
 Off-plan riders (pulled forward, rename-independent):
-- [ ] Data resilience: vacancy-diff + vacant UI state (§9.1(f) items 1–2 + KTD-10 tax) — PR #40 **OPEN**, awaiting review · seat-set derivation (never `terms[-1]`), seeded with the 4 real current vacancies (CA-14, FL-20, GA-13, TX-23), two-channel loud failure (≤5 vacancies → labeled issue each; >5 → exit 1 pre-commit), vacant-seat card EN/ES with no invented election claims. *Issues:* one suite run poisoned by a mid-run server death from concurrent agent load — clean isolated re-run counted, disclosed in PR. Live cron path statically validated only (crons still paused)
+- [x] Data resilience: vacancy-diff + vacant UI state (§9.1(f) items 1–2 + KTD-10 tax) — PR #40, merged Jul 6 · seat-set derivation (never `terms[-1]`), seeded with the 4 real current vacancies (CA-14, FL-20, GA-13, TX-23), two-channel loud failure (≤5 vacancies → labeled issue each; >5 → exit 1 pre-commit), vacant-seat card EN/ES with no invented election claims. *Issues:* one suite run poisoned by a mid-run server death from concurrent agent load — clean isolated re-run counted, disclosed in PR. Live cron path statically validated only (crons still paused)
 - [ ] RDH map-monitoring polling (§9.1(f) item 3) — follow-up after the above
 
 ## Decision log (chronological)
