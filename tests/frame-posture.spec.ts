@@ -101,6 +101,7 @@ test.describe(
     const LOCALE_ROUTES: Record<string, string> = {
       about: '/about',
       bills: '/bills/sjres-99-119',
+      citations: '/citations',
       impact: '/impact',
       privacy: '/privacy',
       reps: '/reps',
