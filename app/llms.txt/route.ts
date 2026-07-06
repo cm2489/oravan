@@ -37,6 +37,7 @@ Rostra publishes a plain-language, AI-drafted and human-reviewed decoded summary
 - [About](${SITE_ORIGIN}/about): what Rostra is and isn't
 - [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
+- [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed
 
 ## Spanish
 

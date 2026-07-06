@@ -43,6 +43,11 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
           <Link href="/citations" className="underline underline-offset-2 hover:text-ink">
             {t('footer.citations')}
           </Link>
+          {/* S16: the embeds configurator + docs - footer-only, same tier as
+              Citations above (a builder/reporter surface, not primary nav). */}
+          <Link href="/embeds" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.embeds')}
+          </Link>
           {/* §6: quiet, persistent, never a banner or modal - link only, dark
               until HCB onboarding completes (DONATE_URL flips from null). */}
           {donateUrl && (
