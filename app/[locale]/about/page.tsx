@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { DonateSupport } from '@/components/DonateSupport';
+import { hreflangAlternates } from '@/lib/hreflang';
 import { DONATE_URL } from '@/lib/site';
 
 export async function generateMetadata({
@@ -10,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'about' });
-  return { title: t('title') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/about') };
 }
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
