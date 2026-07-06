@@ -43,7 +43,7 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S18 — Stripe + tenancy tokens ($ decision: surface before build)
 - [ ] S19 — Action panel paid tier + shared rate-limit arch
 - [ ] S20 — Impression counts (F6)
-- [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build)
+- [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build) — **pregen slice PR-OPEN, built dark** (top-10 x 3 stances x 2 locales via the Anthropic Message Batches API, writes straight into the S11 cache DB with build-time secrets, gated $0 on the `PREGEN_ENABLED` repo variable — see the PR's Arming checklist); feed + admin CLI + ToS remain out of scope here, S18-gated (Stripe tenancy) · *Issues:* the brief and the strategy doc's own §9.1(d) both assumed `backfill-search-inputs.mjs` already used the batch API pattern — it doesn't (plain sequential `messages.create` loop, verified by reading it); this PR is the repo's first real Batch API usage, built fresh, not reused
 - [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39, merged Jul 6 · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
 - [ ] S23 — Citability/correction page + ES redistribution spot-check
 - [ ] S24 — Federal boundary-source hardening (RDH adoption; two-clock model)
