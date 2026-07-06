@@ -1,12 +1,13 @@
-import { expect, test, type APIResponse } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { MCP_ACCEPT, MCP_ENDPOINT, mcpRpc, readJsonRpc } from './helpers';
 
 /*
- * S9 scope: the MCP route is a bare scaffold — zero tools registered. These
- * tests pin exactly what that scaffold promises: a real MCP handshake works,
- * and anything else (an unrecognized method, a disallowed HTTP verb) is
- * rejected cleanly - a proper JSON-RPC error, never a crash or a silent
- * tool that shouldn't exist yet. Tool-surface behavior (the 5 tools, the
- * citation envelope) is S10's test surface, not this file's.
+ * Protocol-level scaffold checks (S9, still true after S10 lands the 5
+ * tools): a real MCP handshake works, and anything else (an unrecognized
+ * method, a disallowed HTTP verb, an unregistered tool name) is rejected
+ * cleanly - a proper JSON-RPC/tool error, never a crash or a silent extra
+ * tool. Per-tool behavior (the 5 tools' data + the citation envelope) is
+ * tests/mcp-tools.spec.ts's job, not this file's.
  *
  * Hits the actual built server over HTTP (the `request` fixture), the same
  * way an MCP client would - no direct import of route.ts, since it pulls in
@@ -15,25 +16,8 @@ import { expect, test, type APIResponse } from '@playwright/test';
  * dependency-alias resolution concerns (see feedback.unit.spec.ts).
  */
 
-const ENDPOINT = '/api/mcp/mcp';
-// Streamable HTTP requires the client to accept both shapes; the SDK
-// rejects anything narrower with 406 (verified against the live handler).
-const MCP_ACCEPT = 'application/json, text/event-stream';
-
-/** The handler replies as one SSE `event: message` frame; unwrap its JSON. */
-async function readJsonRpc(res: APIResponse): Promise<{
-  jsonrpc: string;
-  id: unknown;
-  result?: Record<string, unknown>;
-  error?: { code: number; message: string };
-}> {
-  const body = await res.text();
-  const dataLine = body.split('\n').find((l) => l.startsWith('data: '));
-  return JSON.parse(dataLine ? dataLine.slice('data: '.length) : body);
-}
-
 test('initialize handshake succeeds and identifies the server', async ({ request }) => {
-  const res = await request.post(ENDPOINT, {
+  const res = await request.post(MCP_ENDPOINT, {
     headers: { 'content-type': 'application/json', accept: MCP_ACCEPT },
     data: {
       jsonrpc: '2.0',
@@ -59,33 +43,54 @@ test('initialize handshake succeeds and identifies the server', async ({ request
 test('an unrecognized method is rejected as a clean JSON-RPC error, not a crash', async ({
   request,
 }) => {
-  const res = await request.post(ENDPOINT, {
-    headers: { 'content-type': 'application/json', accept: MCP_ACCEPT },
-    data: { jsonrpc: '2.0', id: 2, method: 'definitely/not-a-real-method', params: {} },
-  });
-  expect(res.status()).toBeLessThan(500);
-  const rpc = await readJsonRpc(res);
+  const rpc = await mcpRpc(request, 'definitely/not-a-real-method', {}, 2);
   expect(rpc.result).toBeUndefined();
   expect(rpc.error?.code).toBe(-32601); // JSON-RPC "Method not found"
 });
 
-test('zero tools registered: tools/list is refused the same clean way (S10 adds the surface, not this scaffold)', async ({
+test("tools/list shows exactly the 5 spec'd tools, each read-only and closed-world", async ({
   request,
 }) => {
-  const res = await request.post(ENDPOINT, {
-    headers: { 'content-type': 'application/json', accept: MCP_ACCEPT },
-    data: { jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} },
-  });
-  expect(res.status()).toBeLessThan(500);
-  const rpc = await readJsonRpc(res);
-  expect(rpc.result).toBeUndefined();
-  expect(rpc.error?.code).toBe(-32601);
+  const rpc = await mcpRpc(request, 'tools/list', {}, 3);
+  expect(rpc.error).toBeUndefined();
+  const tools = rpc.result?.tools as Array<{ name: string; annotations?: Record<string, unknown> }>;
+  const names = tools.map((t) => t.name).sort();
+  expect(names).toEqual(
+    ['get_bill', 'get_representative', 'lookup_representatives', 'search_bills', 'whats_moving'].sort()
+  );
+  // get_bill_coverage is cut (KTD-6) and draft_call_script was never in
+  // scope - neither should ever silently reappear here.
+  expect(names).not.toContain('get_bill_coverage');
+  expect(names).not.toContain('draft_call_script');
+  for (const tool of tools) {
+    expect(tool.annotations?.readOnlyHint, `${tool.name} must be readOnlyHint:true`).toBe(true);
+    expect(tool.annotations?.openWorldHint, `${tool.name} must be openWorldHint:false`).toBe(false);
+  }
+});
+
+test('calling an unregistered tool name is a clean error, not a silent 6th tool', async ({
+  request,
+}) => {
+  const rpc = await mcpRpc(
+    request,
+    'tools/call',
+    { name: 'get_bill_coverage', arguments: { slug: 'hr-2701-119' } },
+    4
+  );
+  // Either shape counts as "clean": a protocol-level JSON-RPC error, or a
+  // tool-result-level isError - as long as it's never a 5xx crash and the
+  // tool never silently runs.
+  if (rpc.error) {
+    expect(rpc.error.code).toBeLessThan(0);
+  } else {
+    expect(rpc.result?.isError).toBe(true);
+  }
 });
 
 test('GET is not a valid Streamable HTTP verb here: rejected with a clean 405, not silently accepted', async ({
   request,
 }) => {
-  const res = await request.get(ENDPOINT, { headers: { accept: MCP_ACCEPT } });
+  const res = await request.get(MCP_ENDPOINT, { headers: { accept: MCP_ACCEPT } });
   expect(res.status()).toBe(405);
   expect(res.headers()['set-cookie']).toBeUndefined();
   const body = JSON.parse(await res.text());
@@ -96,7 +101,7 @@ test('GET is not a valid Streamable HTTP verb here: rejected with a clean 405, n
 test('DELETE is likewise rejected cleanly (stateless: there is no session to end)', async ({
   request,
 }) => {
-  const res = await request.delete(ENDPOINT, { headers: { accept: MCP_ACCEPT } });
+  const res = await request.delete(MCP_ENDPOINT, { headers: { accept: MCP_ACCEPT } });
   expect(res.status()).toBe(405);
   const body = JSON.parse(await res.text());
   expect(body.jsonrpc).toBe('2.0');
