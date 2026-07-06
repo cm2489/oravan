@@ -5,11 +5,11 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-06 (on PR #43 branch, orchestrator)
+**Last updated:** 2026-07-06 (on PR #44 branch, orchestrator)
 
 ## Now / Next / Blocked
 
-- **Now:** Awaiting review: #42 (S13 embed widget), #43 (S11 Upstash). Merged this cycle: #39, #40, #41.
+- **Now:** Awaiting review: #42 (S13 embed widget), #43 (S11 Upstash), #44 (S24 federal boundary-source hardening). Merged this cycle: #39, #40, #41.
 - **Next:** S14 (bill-card widget, after S13), S15 (privacy CI gates). Chore #41 merged — guiding docs are tracked; agents now update STATUS.md inside their own PRs and read the strategy from any worktree.
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
@@ -46,12 +46,12 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build)
 - [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39, merged Jul 6 · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
 - [ ] S23 — Citability/correction page + ES redistribution spot-check
-- [ ] S24 — Federal boundary-source hardening (RDH adoption; two-clock model)
+- [ ] S24 — Federal boundary-source hardening — PR #44 **OPEN**, awaiting review · scoped honestly as monitoring + guards, not a boundary-data migration: RDH's "What's New" page has no RSS/JSON/API (verified live) — polls RDH's own WordPress state-sitemap.xml `<lastmod>` per tracked state instead (real, scoped, machine-parseable), diffed against `data/redistricting-watch.json` and opening a `redistricting-watch`-labeled issue on change (KTD-10 tax: author-identity/rebase-retry/SHA-verify + `data-sync` concurrency + disjoint files, all inherited from `refresh-legislators.yml`). Two-clock model recorded in `docs/solutions/two-clock-district-boundaries.md` + a dated, non-blocking `::warning` tripwire (`lib/rollover-tripwire.mjs`, fires ~Dec 1, 2026) for the mandatory 119th→120th literal/dataset bump before Jan 3, 2027. *Issues:* the seeded 10-state list's LA entry was already stale vs. the strategy doc by seed time (doc said "likely, litigation delayed"; a replacement map had actually passed 2026-05-29 and was itself under fresh litigation) — corrected with sources in the seed data. Also found and fixed a latent gap in #40: the `data-vacancy` GitHub label its issue-creation step references was never created, so that step would have failed the first time a real vacancy fired — created it alongside the new `redistricting-watch` label.
 - [ ] S25 — Curated-triage state-architecture spec (spec-only)
 
 Off-plan riders (pulled forward, rename-independent):
 - [x] Data resilience: vacancy-diff + vacant UI state (§9.1(f) items 1–2 + KTD-10 tax) — PR #40, merged Jul 6 · seat-set derivation (never `terms[-1]`), seeded with the 4 real current vacancies (CA-14, FL-20, GA-13, TX-23), two-channel loud failure (≤5 vacancies → labeled issue each; >5 → exit 1 pre-commit), vacant-seat card EN/ES with no invented election claims. *Issues:* one suite run poisoned by a mid-run server death from concurrent agent load — clean isolated re-run counted, disclosed in PR. Live cron path statically validated only (crons still paused)
-- [ ] RDH map-monitoring polling (§9.1(f) item 3) — follow-up after the above
+- [ ] RDH map-monitoring polling (§9.1(f) item 3) — folded into PR #44 (S24) above
 
 ## Decision log (chronological)
 
@@ -70,6 +70,7 @@ Off-plan riders (pulled forward, rename-independent):
 - **Merge-ref blindness**: green-in-isolation branches can break combined; CI tests the merge ref, local suites don't. Fix: pre-open rule — merge latest main + full suite before `gh pr create`.
 - **Worktree hygiene**: agents must never cd into the main checkout (1 incident, disclosed + cleaned).
 - **Stale-fetch premises**: agents must `git fetch` before reasoning about repo state (1 agent argued from a 4-day-old view).
+- **Workflow-referenced GitHub labels aren't auto-created**: `gh issue create --label X` fails if `X` doesn't already exist in the repo. #40 shipped `--label data-vacancy` without ever creating that label — found while building S24's `redistricting-watch` label. Both now exist; future `gh issue create --label` additions should create the label in the same PR.
 
 ## Definition-of-done addendum (every future PR)
 
