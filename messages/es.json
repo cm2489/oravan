@@ -438,6 +438,7 @@
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
     "multiDistrictBody": "Este widget incrustado no puede recibir una dirección — eso se mantiene solo en el sitio principal de Rostra. Ambos distritos candidatos se muestran abajo; tus senadores son los mismos en cualquier caso.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Rostra",
-    "poweredBy": "Desarrollado por Rostra"
+    "poweredBy": "Desarrollado por Rostra",
+    "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos."
   }
 }

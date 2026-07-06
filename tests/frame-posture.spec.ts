@@ -117,6 +117,7 @@ test.describe(
     };
     const EMBED_ROUTES: Record<string, string> = {
       'rep-lookup': '/embed/rep-lookup?locale=en',
+      'bill-card': '/embed/bill-card?locale=en&slug=hr-5582-119',
     };
 
     test('coverage maps match the actual app/ tree - no undecided segment slipped in', () => {
