@@ -15,7 +15,7 @@ rebuilt `main` and dragged the pending data along.
 
 **Root cause.** Vercel's GitHub integration only auto-deploys a push when the
 commit author has a Vercel account linked to their GitHub identity. The sync
-workflows commit as `cabina-sync[bot]`, which GitHub reports to Vercel as
+workflows commit as `rostra-sync`, which GitHub reports to Vercel as
 `web-flow` — unlinked — so Vercel marked each of those production deployments
 `BLOCKED` before a build even started. No error surfaced anywhere.
 
