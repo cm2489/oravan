@@ -46,6 +46,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
           <div className="min-w-0 rounded-card bg-paper p-6 text-ink shadow-lift">
             <ZipForm />
+            {/* The funnel's other entry point: someone who already knows why
+                they're here shouldn't have to scroll past the ZIP card to
+                find it. Same page, no navigation - just a jump to the
+                callable bills below. */}
+            <a
+              href="#top-actions"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft underline underline-offset-4 hover:text-ink"
+            >
+              {t('heroJump')}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </a>
           </div>
         </div>
       </section>

@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
-import { Info } from 'lucide-react';
+import { ArrowRight, Info } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ZipForm } from '@/components/ZipForm';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
+import { BillCard } from '@/components/BillCard';
+import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { Link } from '@/i18n/navigation';
-import { districtsForZip, repsForDistrict } from '@/lib/core';
+import { billSlug, districtsForZip, getAllBills, getTopActions, repsForDistrict } from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
+import { formatCitation } from '@/lib/format';
+import { getFreshness } from '@/lib/freshness';
 
 export async function generateMetadata({
   params,
@@ -45,6 +49,13 @@ export default async function RepsPage({
     !candidates.some((c) => c.state === refined.state && c.district === refined.district);
 
   const districts = refined ? [refined] : candidates;
+
+  // Continuation: after a ZIP lookup, a rep card is not the end of the
+  // path - the same callable bills that lead the homepage funnel surface
+  // here too, so a visitor never dead-ends on "here are your reps."
+  const topActions = getTopActions(2, locale);
+  const totalBills = getAllBills().length;
+  const freshness = getFreshness();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -118,6 +129,50 @@ export default async function RepsPage({
           </section>
         );
       })}
+
+      {/* The obvious next step: a rep card is a phone number, not a
+          destination. Point straight at what's actually callable this week
+          so the ZIP-first path never dead-ends here. */}
+      {zip && districts.length > 0 && (
+        <section
+          className="mt-12 rounded-card border-2 border-ink bg-surface p-6 shadow-lift md:p-8"
+          aria-labelledby="reps-next"
+        >
+          <h2 id="reps-next" className="font-display text-2xl font-bold">
+            {t('nextTitle')}
+          </h2>
+          <p className="mt-1 max-w-prose text-ink-soft">{t('nextSub')}</p>
+          {topActions.length > 0 ? (
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {topActions.map((b) => (
+                <BillCard
+                  key={billSlug(b)}
+                  bill={{
+                    slug: billSlug(b),
+                    identifier: formatCitation(b.bill_type, b.bill_number),
+                    headline: b.ai_headline,
+                    title: b.short_title ?? b.title,
+                    status: b.status,
+                    tags: b.issue_tags ?? [],
+                    lastActionDate: b.last_action_date,
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <UrgencyEmptyState checkedAt={freshness.checkedAt} />
+            </div>
+          )}
+          <Link
+            href="/bills"
+            className="mt-5 inline-flex items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:text-night"
+          >
+            {t('nextSeeAll', { count: totalBills })}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </section>
+      )}
 
       {zip && districts.length > 0 && (
         <p className="mt-10 text-sm text-ink-faint">

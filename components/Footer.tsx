@@ -1,8 +1,19 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { DONATE_URL } from '@/lib/site';
 
-export function Footer() {
+/*
+ * donateUrl defaults to the real DONATE_URL constant - every real call site
+ * (there's exactly one, in the root layout) renders unchanged. The prop
+ * exists as forward-compatible test infrastructure for injecting a fixture
+ * value, since this project's Playwright setup can't currently render a
+ * Rostra component directly (its .tsx JSX transform is hijacked for
+ * Playwright's own component-testing runtime - see tests/donate.unit.spec.ts
+ * for what that test actually verifies instead: the source-level wiring,
+ * not a live "lit" render).
+ */
+export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null } = {}) {
   const t = useTranslations('common');
 
   return (
@@ -22,6 +33,21 @@ export function Footer() {
           <Link href="/why-call" className="underline underline-offset-2 hover:text-ink">
             {t('nav.whyCall')}
           </Link>
+          <Link href="/about" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.about')}
+          </Link>
+          {/* §6: quiet, persistent, never a banner or modal - link only, dark
+              until HCB onboarding completes (DONATE_URL flips from null). */}
+          {donateUrl && (
+            <a
+              href={donateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-ink"
+            >
+              {t('footer.donate')}
+            </a>
+          )}
         </nav>
         <div className="pt-2">
           <FeedbackDialog />
