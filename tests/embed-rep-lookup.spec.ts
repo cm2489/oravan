@@ -115,6 +115,52 @@ test('a11y basics: labeled input, 44px targets, visible focus', async ({ page })
   await expect(input).toBeFocused();
 });
 
+/*
+ * S15 - portraits without third-party hotlinks. data/portrait-manifest.json
+ * ships empty (no Vercel Blob store provisioned yet - see the PR's Owner
+ * enable checklist), so every rep card falls back to the CSS-only initials
+ * avatar and NO <img> pointed at a portrait exists anywhere on this page -
+ * the zero-third-party network trace in tests/embed-loader.spec.ts already
+ * covers "no extra requests fire"; this pins the visible fallback state
+ * itself, plus the forward-guarding invariant that whenever a portrait DOES
+ * render (once the owner completes the enable checklist and
+ * scripts/mirror-portraits.mjs has run), its src stays same-origin.
+ */
+test('no Blob store provisioned yet: every rep renders an initials avatar, never a portrait <img>', async ({
+  page,
+}) => {
+  await page.goto('/embed/rep-lookup?locale=en');
+  await page.getByLabel(en.home.zipLabel).fill('78501');
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+
+  const avatarImages = page.locator('img.re-avatar-img');
+  expect(await avatarImages.count()).toBe(0);
+
+  const initialsAvatars = page.locator('.re-avatar-initials');
+  expect(await initialsAvatars.count()).toBeGreaterThan(0);
+  await expect(initialsAvatars.first()).toHaveAttribute('aria-hidden', 'true');
+});
+
+test('invariant: any portrait <img> that does render is always same-origin, never a direct third-party or Blob URL', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('/embed/rep-lookup?locale=en');
+  await page.getByLabel(en.home.zipLabel).fill('78501');
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+
+  const srcs = await page.locator('img.re-avatar-img').evaluateAll((els) =>
+    els.map((el) => (el as HTMLImageElement).src)
+  );
+  for (const src of srcs) {
+    expect(new URL(src).origin).toBe(new URL(baseURL!).origin);
+    expect(src).not.toContain('unitedstates.github.io');
+    expect(src).not.toContain('blob.vercel-storage.com');
+  }
+});
+
 test('zero cookies on the embed response', async ({ page }) => {
   const res = await page.goto('/embed/rep-lookup?locale=en');
   expect(res?.headers()['set-cookie']).toBeUndefined();
