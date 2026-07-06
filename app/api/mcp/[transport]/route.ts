@@ -5,10 +5,14 @@ import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
 import { CATEGORIES } from '@/lib/taxonomy';
 import { BILL_STATUSES } from '@/lib/types';
 import {
+  billNotFoundError,
   getBillDetail,
   getRepresentativeDetail,
   lookupRepresentatives,
+  missingBillIdentifierError,
+  noDistrictDataError,
   normalizeLocale,
+  representativeNotFoundError,
   searchBills,
   whatsMoving,
 } from '@/lib/core/mcp';
@@ -55,6 +59,18 @@ import {
  *    key (a ZIP, a slug, a bioguide, a search string) - nothing here writes
  *    it anywhere; it's read once, used to look up baked JSON, and discarded
  *    when the response is returned.
+ *
+ * Bilingual-parity scope note (the fix that closed the envelope/refine_hint/
+ * tool-error gap PR #46 pinned): the `title`/`description` on each
+ * registerTool call below, and every zod `.describe()` schema string
+ * (including localeSchema's own "en (default) or es" line), stay
+ * English-only, deliberately. Those strings are tool/schema metadata the
+ * calling agent's model reads to decide how to call the tool - they are
+ * never returned in a response payload and never relayed to the end user
+ * verbatim, unlike `meta`'s envelope fields or a toolError() message. Every
+ * string that IS returned to a caller - the citation envelope
+ * (lib/core/mcp.ts), lookup_representatives' `refine_hint`, and every
+ * toolError() message below - is now locale-paired.
  */
 export const dynamic = 'force-dynamic';
 
@@ -106,8 +122,9 @@ const handler = createMcpHandler(
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
       async ({ zip, locale }) => {
-        const result = lookupRepresentatives(zip, normalizeLocale(locale));
-        if (!result) return toolError(`No congressional district data found for ZIP ${zip}.`);
+        const loc = normalizeLocale(locale);
+        const result = lookupRepresentatives(zip, loc);
+        if (!result) return toolError(noDistrictDataError(zip, loc));
         return toolResult(result);
       }
     );
@@ -138,13 +155,10 @@ const handler = createMcpHandler(
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
       async ({ slug, citation, locale }) => {
-        if (!slug && !citation) return toolError('Provide either "slug" or "citation".');
-        const result = getBillDetail({ slug, citation }, normalizeLocale(locale));
-        if (!result) {
-          return toolError(
-            `No bill found for ${slug ? `slug "${slug}"` : `citation "${citation}"`}.`
-          );
-        }
+        const loc = normalizeLocale(locale);
+        if (!slug && !citation) return toolError(missingBillIdentifierError(loc));
+        const result = getBillDetail({ slug, citation }, loc);
+        if (!result) return toolError(billNotFoundError({ slug, citation }, loc));
         return toolResult(result);
       }
     );
@@ -215,8 +229,9 @@ const handler = createMcpHandler(
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
       async ({ bioguide, locale }) => {
-        const result = getRepresentativeDetail(bioguide, normalizeLocale(locale));
-        if (!result) return toolError(`No representative found for bioguide "${bioguide}".`);
+        const loc = normalizeLocale(locale);
+        const result = getRepresentativeDetail(bioguide, loc);
+        if (!result) return toolError(representativeNotFoundError(bioguide, loc));
         return toolResult(result);
       }
     );

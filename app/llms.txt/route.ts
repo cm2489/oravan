@@ -36,6 +36,7 @@ Rostra publishes a plain-language, AI-drafted and human-reviewed decoded summary
 - [Why call](${SITE_ORIGIN}/why-call): why calling Congress works, and how a call is counted
 - [About](${SITE_ORIGIN}/about): what Rostra is and isn't
 - [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
+- [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 
 ## Spanish
 

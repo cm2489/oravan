@@ -1,9 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { getBill } from '@/lib/core';
-import { formatCitation } from '@/lib/format';
 import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
 import { contentVersion, createScriptCache } from '@/lib/scriptcache';
+import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import type { Stance } from '@/lib/types';
 
 /*
@@ -29,8 +29,6 @@ const cache = createScriptCache();
 
 const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
 
-const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
-
 export async function POST(req: NextRequest) {
   readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
@@ -55,49 +53,22 @@ export async function POST(req: NextRequest) {
   const bill = getBill(slug);
   if (!bill) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const citation = formatCitation(bill.bill_type, bill.bill_number);
   // Content-version key component (§9.1(d)): a corrected ai_summary changes
   // the version, so a stale script can never be served against it.
   const version = contentVersion(bill.ai_summary ?? bill.title);
   const cached = await cache.get({ slug, stance, lang, version });
   if (cached) return NextResponse.json({ script: cached, cached: true });
 
-  const stanceLine = {
-    support: 'The caller SUPPORTS this bill and urges the member to vote for it.',
-    oppose: 'The caller OPPOSES this bill and urges the member to vote against it.',
-    undecided:
-      "The caller is CONCERNED about this bill and has not settled on support or opposition. The script must register that concern, name the ONE thing that worries them (grounded in the summary), and ask that their concern be noted for the member along with where the member stands - phrased as something for the office to record, never as live questions to the staffer. The staffer only tallies positions; the script must not expect answers or a conversation.",
-  }[stance];
-
-  const langLine =
-    lang === 'es'
-      ? 'Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL].'
-      : 'Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].';
-
-  const prompt = `Write a 30-second phone script for a constituent calling a member of Congress about this bill.
-
-Bill: ${citation} — ${bill.short_title ?? bill.title}
-Plain-language summary: ${bill.ai_summary ?? bill.title}
-Current status: ${bill.status}
-
-${stanceLine}
-
-${langLine}
-
-Rules:
-- 60-90 words. It must be comfortably readable aloud in 30 seconds.
-- Structure: greeting + name placeholder + constituent location placeholder, the bill by its number, the position, ONE concrete reason grounded in the summary, a clear ask, thanks.
-- Refer to the bill exactly as "${citation}" - do not alter, translate, or extend that citation.
-- Works equally well read to a live staffer or left as a voicemail.
-- Strictly nonpartisan tone: no party language, no attacks, no alarmism, no advocacy-group jargon.
-- Do not invent facts beyond the summary provided.
-- Plain text only: no markdown, no asterisks, no bullet points, no headers.
-- Output ONLY the script text, no commentary.`;
+  // Prompt builder lives in lib/scriptprompt (shared by other trusted
+  // server-side callers of this exact bill/stance/locale shape) so there
+  // is only ever one script prompt in the codebase, never a second copy
+  // drifting out of sync with this one.
+  const prompt = buildScriptPrompt({ bill, stance, lang });
 
   try {
     const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 520,
+      model: SCRIPT_MODEL,
+      max_tokens: SCRIPT_MAX_TOKENS,
       thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     });
