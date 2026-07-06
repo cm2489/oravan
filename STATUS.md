@@ -5,11 +5,11 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-06 (fix50 branch, orchestrator — merge-conflict resolution sweep)
+**Last updated:** 2026-07-06 (fix49 branch, orchestrator — merge-conflict resolution sweep)
 
 ## Now / Next / Blocked
 
-- **Now:** Merged: #44 (S24 federal boundary-source hardening), #45 (S17 frame-ancestors split posture), #46 (S23 citability/correction page), #47 (S14 bill-card widget). Merge train order: #50 (this PR — fix: MCP envelope/refine_hint/tool-error ES localization, off-plan rider closing a gap #46 pinned) → #49 (S21 pregen dark) → #48 (S25 triage spec).
+- **Now:** Merged: #44 (S24 federal boundary-source hardening), #45 (S17 frame-ancestors split posture), #46 (S23 citability/correction page), #47 (S14 bill-card widget), #50 (fix: MCP envelope/refine_hint/tool-error ES localization, off-plan rider closing a gap #46 pinned). Merge train order: #49 (this PR — S21 pregen dark) → #48 (S25 triage spec).
 - **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit) — both building now, PRs held behind the merge train above.
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
