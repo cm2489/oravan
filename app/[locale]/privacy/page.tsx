@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { hreflangAlternates } from '@/lib/hreflang';
 
 export async function generateMetadata({
   params,
@@ -8,7 +9,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'privacy' });
-  return { title: t('title') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/privacy') };
 }
 
 export default async function PrivacyPage({ params }: { params: Promise<{ locale: string }> }) {

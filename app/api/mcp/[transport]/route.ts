@@ -93,7 +93,9 @@ const handler = createMcpHandler(
           'congressional district (needs_address: true, all candidate districts returned); this tool ' +
           'does not perform address-level refinement itself in this release - point the person to the ' +
           "response's reps_url, where a stateless, unlogged Census-geocoder proxy narrows it to a " +
-          'single district from a street address that Rostra never stores.',
+          'single district from a street address that Rostra never stores. When a House seat currently ' +
+          'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
+          'departed member is never returned as if still serving, and no election timeline is implied.',
         inputSchema: {
           zip: z
             .string()

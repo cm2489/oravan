@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { PhoneCall, MapPin, FileText, MessageSquareText, Voicemail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
 import { BillCard } from '@/components/BillCard';
 import { CallWalkthrough } from '@/components/call-walkthrough/CallWalkthrough';
@@ -10,6 +12,8 @@ import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
+import { hreflangAlternates } from '@/lib/hreflang';
+import { buildSiteJsonLd } from '@/lib/jsonld';
 
 const STEPS = [
   { icon: MapPin, key: 1 },
@@ -17,6 +21,20 @@ const STEPS = [
   { icon: MessageSquareText, key: 3 },
   { icon: Voicemail, key: 4 },
 ] as const;
+
+// Homepage had zero metadata override before this pass — no canonical, no
+// hreflang alternates — so every locale's title/description fell through to
+// the root layout's generic default, silently, and only the bill detail page
+// (PR #30) had any alternates at all. Returning only `alternates` here lets
+// the layout's title/description keep flowing through unchanged.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: hreflangAlternates(locale, '/') };
+}
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -32,9 +50,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // empty AND the week is not quiet — render neither cards nor a false
   // claim; /bills (linked in this section) shows it under "Act now".
   const quiet = !hasActNow();
+  const jsonLd = await buildSiteJsonLd(locale);
 
   return (
     <div>
+      <JsonLd id="site-jsonld" data={jsonLd} />
       {/* Hero */}
       <section className="bg-night text-paper">
         <div className="mx-auto max-w-5xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-[3fr_2fr] md:items-center">
