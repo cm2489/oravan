@@ -4,10 +4,18 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ZipForm } from '@/components/ZipForm';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
+import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { BillCard } from '@/components/BillCard';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { Link } from '@/i18n/navigation';
-import { billSlug, districtsForZip, getAllBills, getTopActions, repsForDistrict } from '@/lib/core';
+import {
+  billSlug,
+  districtsForZip,
+  getAllBills,
+  getTopActions,
+  repsForDistrict,
+  vacancyForDistrict,
+} from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
@@ -108,6 +116,7 @@ export default async function RepsPage({
       {districts.map((d) => {
         const reps = repsForDistrict(d);
         const noSenators = reps.every((r) => r.type !== 'sen');
+        const vacancy = vacancyForDistrict(d);
         return (
           <section key={`${d.state}-${d.district}`} className="mt-10" aria-label={`${d.state} ${d.district}`}>
             <h2 className="font-display text-2xl font-bold">
@@ -125,6 +134,7 @@ export default async function RepsPage({
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}
+              {vacancy && <VacantSeatCard />}
             </div>
           </section>
         );
