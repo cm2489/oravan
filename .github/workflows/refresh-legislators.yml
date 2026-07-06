@@ -7,12 +7,13 @@ on:
 
 permissions:
   contents: write
-  # Needed only for the "newly detected vacancy" issue below (gh issue
-  # create with the workflow's own automatic GITHUB_TOKEN) - a normal,
-  # expected vacancy must never commit silently, so this opens a labeled
-  # issue instead of failing the run. No new secret, no scope change to
-  # GITHUB_FEEDBACK_TOKEN (that PAT stays issues-only for the beta-feedback
-  # route and is unrelated to this).
+  # Needed for the "newly detected vacancy" issue below AND the
+  # redistricting-watch issue (gh issue create with the workflow's own
+  # automatic GITHUB_TOKEN) - a normal, expected vacancy or map-page change
+  # must never commit/pass silently, so these open labeled issues instead of
+  # failing the run. No new secret, no scope change to GITHUB_FEEDBACK_TOKEN
+  # (that PAT stays issues-only for the beta-feedback route and is unrelated
+  # to this).
   issues: write
 
 concurrency:
@@ -24,6 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        # Only for the redistricting-watch + rollover-tripwire steps below
+        # (scripts/check-redistricting-watch.mjs, scripts/check-rollover-
+        # tripwire.mjs). Both are stdlib-only (Node 18+'s global fetch, no
+        # npm package), so no `npm ci` here - same "the runner's node
+        # suffices" posture as scripts/verify-deploy.mjs.
+        with:
+          node-version: 24
       - name: Refresh legislators + district offices + ZIP map (vacancy-diff included)
         id: refresh
         # scripts/process-data.py now also derives data/vacancies.json - see
@@ -67,6 +76,52 @@ jobs:
               --label data-vacancy \
               --body "The weekly legislators refresh found no current representative for ${state} district ${district} in this week's pull. This is never silently backfilled from the departed member's stale record - rep-lookup surfaces (reps page, /api/reps, MCP lookup_representatives) now show an explicit vacant-seat state for this district instead. Close this once a successor is sworn in and data/vacancies.json no longer lists the seat (it heals automatically on the next refresh once the new member appears in the upstream feed)."
           done
+      - name: Poll Redistricting Data Hub for tracked-state map changes
+        id: redistricting_watch
+        # S24, §9.1(f) item 3 - see lib/redistricting-watch.mjs and
+        # docs/solutions/two-clock-district-boundaries.md for the full
+        # design record. RDH publishes no RSS/JSON/API for its "What's New"
+        # page (verified live 2026-07-06) - this polls the per-state
+        # <lastmod> in RDH's own WordPress XML sitemap instead: real,
+        # scoped to exactly the tracked states, machine-parseable, and
+        # explicitly a TRIPWIRE (not a status feed) - a lastmod change means
+        # "a human should go read what changed," never an automated status
+        # update. Loud-failure posture matches vacancy_diff.py: fails (exit
+        # 1, no baseline update) only if every tracked state comes back
+        # missing (RDH restructured the sitemap, or the fetch itself broke)
+        # - not real news.
+        run: node scripts/check-redistricting-watch.mjs
+      - name: Open an issue for each changed redistricting-watch state
+        # Only for the non-anomalous case (the step above already failed and
+        # skipped everything downstream if every tracked state came back
+        # missing). One issue per changed state, matching the vacancy-issue
+        # pattern above - the committed rdh_lastmod baseline has already
+        # advanced (inside check-redistricting-watch.mjs), so an
+        # already-flagged change is never re-filed on a later run.
+        if: steps.redistricting_watch.outputs.anomalous == 'false' && steps.redistricting_watch.outputs.changed_states != '[]'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED: ${{ steps.redistricting_watch.outputs.changed_states }}
+        run: |
+          echo "$CHANGED" | jq -c '.[]' | while read -r c; do
+            state=$(echo "$c" | jq -r '.state')
+            url=$(echo "$c" | jq -r '.url')
+            prev=$(echo "$c" | jq -r '.prevLastmod')
+            new=$(echo "$c" | jq -r '.newLastmod')
+            gh issue create \
+              --repo cm2489/rostra \
+              --title "Redistricting watch: ${state} map page changed on RDH" \
+              --label redistricting-watch \
+              --body "Redistricting Data Hub's page for ${state} (${url}) changed - lastmod moved from ${prev} to ${new}. This is a tripwire, not an automated status read: open the page, see what actually changed, and update data/redistricting-watch.json's status/note for ${state} accordingly. (The baseline lastmod in that file has already advanced this run, so this same change will not re-fire next week.)"
+          done
+      - name: 119th -> 120th Congress rollover tripwire
+        # S24, two-clock model (docs/solutions/two-clock-district-
+        # boundaries.md). Non-blocking by design: the mandatory literal +
+        # dataset bump isn't due until Jan 3, 2027, so this only starts a
+        # loud ::warning once real lead time is needed (~2026-12-01) rather
+        # than failing the pipeline for a month first. See
+        # lib/rollover-tripwire.mjs.
+        run: node scripts/check-rollover-tripwire.mjs
       - name: Commit data
         id: commit
         # The author email must map to the Vercel-linked GitHub account
@@ -92,8 +147,8 @@ jobs:
           # concurrency group, whose push lands after our SHA was resolved -
           # the 2026-06-22 failure). Rebase onto the latest main and retry;
           # safe because this workflow only ever touches legislators.json /
-          # zip-districts.json / vacancies.json, disjoint from sync-bills.yml's
-          # files.
+          # zip-districts.json / vacancies.json / redistricting-watch.json,
+          # disjoint from sync-bills.yml's files.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

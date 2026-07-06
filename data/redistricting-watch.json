@@ -1,0 +1,72 @@
+{
+  "TX": {
+    "status": "locked",
+    "note": "2025 GOP-drawn map (5 additional GOP-leaning seats sought). SCOTUS overruled the lower court 6-3 on 2026-04-27; map is in place through at least the 2030 cycle. No live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/texas/",
+    "rdh_lastmod": "2026-04-02T19:29:36+00:00",
+    "verified": "2026-07-06"
+  },
+  "CA": {
+    "status": "locked",
+    "note": "Prop 50 Democratic counter-map, voter-approved Nov 2025 (~5 additional Dem-leaning seats). SCOTUS denied Republicans' appeal, clearing it for the 2026 cycle. No live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/california/",
+    "rdh_lastmod": "2025-12-24T22:40:41+00:00",
+    "verified": "2026-07-06"
+  },
+  "MO": {
+    "status": "locked",
+    "note": "New congressional map enacted for the 2026 cycle. No live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/missouri/",
+    "rdh_lastmod": "2026-04-06T18:14:55+00:00",
+    "verified": "2026-07-06"
+  },
+  "NC": {
+    "status": "locked",
+    "note": "New congressional map enacted for the 2026 cycle. No live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/north-carolina/",
+    "rdh_lastmod": "2026-04-02T16:34:57+00:00",
+    "verified": "2026-07-06"
+  },
+  "OH": {
+    "status": "locked",
+    "note": "Ohio Redistricting Commission approved a new map 2025-10-31 (shifts from 10-5 to a 12-3 GOP-leaning split) after the legislature missed its deadline. In place for 2026; no live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/ohio/",
+    "rdh_lastmod": "2026-04-02T19:28:04+00:00",
+    "verified": "2026-07-06"
+  },
+  "UT": {
+    "status": "locked",
+    "note": "Court-ordered new map from prior litigation, in place for 2026. No live dispute found as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/utah/",
+    "rdh_lastmod": "2025-12-24T22:52:42+00:00",
+    "verified": "2026-07-06"
+  },
+  "FL": {
+    "status": "locked",
+    "note": "New map (signed 2026-05-04) eliminates FL-20 outright - see data/vacancies.json (Cherfilus-McCormick resigned 2026-04-21; no special election committed for a district that won't exist after Jan 2027). No live dispute found blocking the map's 2026 use as of verification.",
+    "rdh_url": "https://redistrictingdatahub.org/state/florida/",
+    "rdh_lastmod": "2026-05-27T15:10:07+00:00",
+    "verified": "2026-07-06"
+  },
+  "TN": {
+    "status": "locked",
+    "note": "Legislature repealed its own mid-decade-redistricting ban and passed a new map 2026-05-07 (Memphis/Shelby County split across CD 5/8/9). A state-court challenge (NAACP/Democratic lawmakers) was rejected; plaintiffs vowed appeal, and a separate federal 3-judge-panel preliminary-injunction motion is pending, but neither currently blocks the map for 2026.",
+    "rdh_url": "https://redistrictingdatahub.org/state/tennessee/",
+    "rdh_lastmod": "2026-05-26T19:34:57+00:00",
+    "verified": "2026-07-06"
+  },
+  "LA": {
+    "status": "new-map-litigated",
+    "note": "CORRECTED from the strategy doc's 'likely, litigation delayed' framing (stale by the time of this seed): SCOTUS's Louisiana v. Callais ruling (2026-04-29) struck the prior map's second majority-Black district as an unconstitutional racial gerrymander. The legislature passed a REPLACEMENT map on 2026-05-29 (28-10 state Senate vote; keeps only one majority-Black district of six seats). That replacement map is itself now under fresh litigation from multiple sides - conservative plaintiffs re-suing over the remaining Black-opportunity district, and the Legislative Black Caucus weighing its own suit. Not settled either direction - do not treat as final without re-checking.",
+    "rdh_url": "https://redistrictingdatahub.org/state/louisiana/",
+    "rdh_lastmod": "2026-06-04T14:57:34+00:00",
+    "verified": "2026-07-06"
+  },
+  "AL": {
+    "status": "settled",
+    "note": "Confirms the strategy doc's account: a 3-judge panel blocked Alabama's 2023 map 2026-05-26 (intentional-discrimination finding); SCOTUS reinstated that 2023 map 2026-06-02, relying on the narrowed VRA standard from Louisiana v. Callais. Gov. Ivey's Aug 11, 2026 special primary (CD 1/2/6/7) and the Nov 3 general both run under the reinstated 2023 map. The underlying Milligan v. Allen challenge continues in the background but does not currently block the map.",
+    "rdh_url": "https://redistrictingdatahub.org/state/alabama/",
+    "rdh_lastmod": "2026-06-03T15:57:36+00:00",
+    "verified": "2026-07-06"
+  }
+}

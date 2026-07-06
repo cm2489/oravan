@@ -23,12 +23,17 @@ const nextConfig: NextConfig = {
         // third-party request from inside the widget is blocked by the
         // browser itself, not just caught after the fact by CI.
         //
-        // This is NOT the site-wide frame-ancestors lock: that's S17
-        // (docs/ideation/2026-07-05-build-gtm-strategy.md, ledger item F1),
-        // deliberately deferred - the rest of the site sets no clickjacking
-        // header yet, and shipping the lock here-and-only-here risks it
-        // quietly becoming "done" without the app/embed/* carve-out review
-        // S17 is scoped to do properly.
+        // This is the SOLE carve-out from the site-wide lock below (S17,
+        // ledger item F1). The two `source` patterns are mutually exclusive
+        // by construction - this one matches only /embed/*, the site-wide
+        // block's negative-lookahead regex matches everything BUT /embed/*
+        // - so exactly one block's headers land on any given path. That
+        // matters because browsers enforce multiple CSP headers as an
+        // intersection: if both blocks ever matched the same path, the
+        // site-wide 'self' would silently re-narrow this carve-out and
+        // break every host page's iframe with no visible error in this
+        // app's own code. Verified against a built server, not assumed from
+        // reading path-to-regexp docs - see tests/frame-posture.spec.ts.
         source: '/embed/:path*',
         headers: [
           {
@@ -47,6 +52,22 @@ const nextConfig: NextConfig = {
           },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
+      {
+        // Site-wide frame lock (S17, ledger item F1). Next.js sets no
+        // clickjacking header by default, so absent this, the entire site
+        // (call modal, stance selection) is silently frameable by anyone.
+        // `app/embed/*` is the SOLE carve-out - matched and answered by the
+        // block above - everything else (every [locale] page, every
+        // app/api/* route, static/meta files) gets locked to same-origin
+        // framing only. X-Frame-Options rides alongside CSP's
+        // frame-ancestors for the pre-CSP3 browser floor; both say the same
+        // thing.
+        source: '/((?!embed).*)',
+        headers: [
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         ],
       },
     ];
