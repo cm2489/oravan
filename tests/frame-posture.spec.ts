@@ -118,6 +118,12 @@ test.describe(
     const EMBED_ROUTES: Record<string, string> = {
       'rep-lookup': '/embed/rep-lookup?locale=en',
       'bill-card': '/embed/bill-card?locale=en&slug=hr-5582-119',
+      // S15: same-origin portrait proxy. 404s in the shipped (no Blob store
+      // yet) state - see tests/embed-portrait.unit.spec.ts for that behavior
+      // and the Owner enable checklist for what lights it up. Still under
+      // /embed/:path*, so next.config.ts's embed CSP block applies
+      // regardless of the response's status code.
+      portrait: '/embed/portrait/C000127',
     };
 
     test('coverage maps match the actual app/ tree - no undecided segment slipped in', () => {
