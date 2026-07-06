@@ -76,6 +76,27 @@ test.describe('lookup_representatives', () => {
     const result = await callTool(request, 'lookup_representatives', { zip: '00000', locale: 'en' });
     expect(result.isError).toBe(true);
   });
+
+  // S24 groundwork (docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)):
+  // FL-20 is a real, currently-vacant seat baked into data/legislators.json;
+  // ZIP 33313 maps to it alone. An agent reading this response must see the
+  // vacancy explicitly, not infer it from a shorter-than-expected list.
+  test('vacant seat: FL-20 is named explicitly, not silently omitted', async ({ request }) => {
+    const result = await callTool(request, 'lookup_representatives', { zip: '33313', locale: 'en' });
+    const data = result.structuredContent!;
+    expect(data.vacancies).toEqual([{ state: 'FL', district: 20 }]);
+    // The two senators are unaffected and still returned normally.
+    const names = (data.representatives as Array<{ name: string }>).map((r) => r.name);
+    expect(names).toEqual(expect.arrayContaining(['Rick Scott', 'Ashley Moody']));
+    // The departed member is never returned as if still serving.
+    expect(names.some((n) => n.includes('Cherfilus'))).toBe(false);
+  });
+
+  test('occupied district: vacancies is an empty array, not omitted', async ({ request }) => {
+    const result = await callTool(request, 'lookup_representatives', { zip: '78501', locale: 'en' });
+    const data = result.structuredContent!;
+    expect(data.vacancies).toEqual([]);
+  });
 });
 
 test.describe('get_bill', () => {

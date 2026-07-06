@@ -92,6 +92,23 @@ export interface District {
   district: number;
 }
 
+/**
+ * A House seat with no current occupant (S24 groundwork,
+ * docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)). Derived purely
+ * from seat sets by scripts/vacancy_diff.py - never from a departed
+ * member's own stale term data, so this type has no room for a name or
+ * bioguide to leak in by accident. `since` is when the weekly refresh first
+ * observed the seat empty (bootstrap runs use the seeding date, not a
+ * verified resignation date) - it's pipeline bookkeeping for de-duplicating
+ * alerts across runs, not asserted to callers as an authoritative event
+ * date.
+ */
+export interface Vacancy {
+  state: string;
+  district: number;
+  since: string;
+}
+
 export type Stance = 'support' | 'oppose' | 'undecided';
 export type CallOutcome = 'contact' | 'voicemail' | 'unavailable';
 

@@ -22,6 +22,7 @@ The name is the **Rostra**: the platform in the Roman Forum where citizens stood
 | `data/bills.json` + `data/bills-es.json` | Decoded bill corpus (Congress.gov bills + AI plain-language summaries, English and Spanish) | Nightly sync (`scripts/sync-bills.mjs` via `sync-bills.yml`): statuses refresh freely; new bills are decode-before-publish, entering the corpus only once their EN **and** ES summaries exist |
 | `data/legislators.json` | [unitedstates/congress-legislators](https://github.com/unitedstates/congress-legislators) (public domain) + district offices | `scripts/process-data.py` |
 | `data/zip-districts.json` | [OpenSourceActivismTech/us_zipcodes_congress](https://github.com/OpenSourceActivismTech/us_zipcodes_congress) | same |
+| `data/vacancies.json` | Derived, not fetched: `scripts/vacancy_diff.py` diffs seat sets against the currently-committed data every run, so a departed member with no successor surfaces as an explicit vacancy (reps page, `/api/reps`, MCP `lookup_representatives`) instead of silently disappearing or being backfilled from a stale term record | `scripts/process-data.py` (same run as legislators.json) |
 | `data/coverage.json` | Real news articles about top-band bills via [TheNewsAPI](https://www.thenewsapi.com/), AI-relevance-filtered (Haiku) | `scripts/sync-coverage.mjs` (nightly, gated on `NEWS_API_KEY`) |
 | `data/media-bias.json` | Outlet political-lean ratings by [AllSides](https://www.allsides.com/media-bias/ratings), used under CC BY-NC with attribution | Vendored snapshot |
 
