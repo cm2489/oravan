@@ -229,3 +229,69 @@ body {
     border-color: rgba(242, 235, 220, 0.18);
   }
 }
+
+/*
+ * Bill-card widget (S14). --rostra-accent/--rostra-radius/--rostra-font are
+ * the ONLY tenant-facing theming surface (lib/embed-theme.ts validates every
+ * value before it reaches a style prop) - every rule below reads them via
+ * var() with a safe literal fallback, never anything else host-supplied.
+ */
+.bc-root {
+  font-family: var(--rostra-font, inherit);
+}
+
+.bc-citation {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.bc-card {
+  border: 1px solid rgba(24, 32, 58, 0.15);
+  border-radius: var(--rostra-radius, 10px);
+  padding: 16px;
+  margin-top: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bc-card {
+    border-color: rgba(242, 235, 220, 0.2);
+  }
+}
+
+.bc-status {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+}
+
+.bc-headline {
+  margin: 6px 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bc-chip-ai {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 10px;
+  border-radius: var(--rostra-radius, 999px);
+  background: var(--rostra-accent, #e8a317);
+  color: #18203a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bc-freshness {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}

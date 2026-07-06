@@ -5,12 +5,12 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-06 (on PR #43 branch, orchestrator)
+**Last updated:** 2026-07-06 (on PR #45 branch, orchestrator)
 
 ## Now / Next / Blocked
 
-- **Now:** Awaiting review: #42 (S13 embed widget), #43 (S11 Upstash). Merged this cycle: #39, #40, #41.
-- **Next:** S14 (bill-card widget, after S13), S15 (privacy CI gates). Chore #41 merged — guiding docs are tracked; agents now update STATUS.md inside their own PRs and read the strategy from any worktree.
+- **Now:** Awaiting review: #45 (S14 bill-card widget). Merged this cycle: #42 (S13), #43 (S11).
+- **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit).
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
 ## Sprint tracker
@@ -33,10 +33,10 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S8 — Buffer + LAUNCH gate (calendar-anchored ~Aug 25; needs rename landed)
 - [x] S9 — Data core + MCP scaffold — PR #34, merged Jul 5 · *Issues:* merge conflicts vs #35 (moved the functions #35 modified) → resolved by rebase agent, "location follows branch, content follows main"; #35 logic verified function-by-function into `lib/core/`
 - [x] S10 — Five MCP tools + envelope — PR #37, merged Jul 6 · ZIP-only lookup w/ refine_hint (privacy-conservative cut); quiet-week tested on real corpus; PW_PORT rider ended the port-race class. Lockfile name-sync accepted here (ends 4-agent churn class)
-- [ ] S11 — Upstash two-DB rate limiting + CI privacy gate — PR #43 **OPEN**, awaiting review · plain-fetch clients (no SDK), salt 128-bit/24h w/ nightly dead-man's-switch, cache keys gain content-version hash, graceful in-memory fallback, self-testing key-namespace CI gate. *Issues:* agent initially refused on unverifiable authorization (docs were untracked — fixed by #41) + correctly declined nested CLAUDE.md edit (amendment orchestrator-authored instead). *Owner post-merge:* add the two counter secrets to GitHub Actions so the salt verifier arms (PR checklist)
+- [x] S11 — Upstash two-DB rate limiting + CI privacy gate — PR #43, merged Jul 6 · plain-fetch clients (no SDK), salt 128-bit/24h w/ nightly dead-man's-switch, cache keys gain content-version hash, graceful in-memory fallback, self-testing key-namespace CI gate. *Issues:* agent initially refused on unverifiable authorization (docs were untracked — fixed by #41) + correctly declined nested CLAUDE.md edit (amendment orchestrator-authored instead). *Owner post-merge:* add the two counter secrets to GitHub Actions so the salt verifier arms (PR checklist)
 - [ ] S12 — MCP registry + directory submissions — **RENAME-GATED** (DNS-bound verification)
-- [ ] S13 — Embed rep-lookup widget + loader — PR #42 **OPEN**, awaiting review · 3.6KB loader (origin-derived, subdomain-migration-ready), embed route outside locale middleware (no cookies ever), embed-scoped CSP, portraits deferred to S15 (no third-party hotlink). Adopted #40's vacancy signal mid-flight
-- [ ] S14 — Bill-card widget + theming
+- [x] S13 — Embed rep-lookup widget + loader — PR #42, merged Jul 6 · 3.6KB loader (origin-derived, subdomain-migration-ready), embed route outside locale middleware (no cookies ever), embed-scoped CSP, portraits deferred to S15 (no third-party hotlink). Adopted #40's vacancy signal mid-flight
+- [ ] S14 — Bill-card widget + theming — PR #45 **OPEN** · bill-card embed (citation, AI-decoded headline with the label traveling in-widget — never shown without a real `ai_headline`, official-title fallback otherwise), plain-language status, freshness stamp from `lib/freshness`, canonical slug-only link-out. Theming is CSS-custom-properties-only (`--rostra-accent`/`-radius`/`-font`), every value allowlist-validated in `lib/embed-theme.ts` before it reaches a style prop (hex regex for accent, closed enums mapped to hardcoded values for radius/font) — injection fixtures assert malformed values are discarded outright, never partially honored. Loader extended for widget-type + slug + theme params, still 4.7KB (well under the 5KB budget). *Issues:* none.
 - [ ] S15 — Embed privacy hardening + CI gates (F3)
 - [ ] S16 — Configurator + docs + launch kit (→ KTD-8 outreach sends week of Oct 26, post-S16)
 - [ ] S17 — frame-ancestors split posture (F1, F2)

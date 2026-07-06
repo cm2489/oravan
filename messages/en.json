@@ -411,6 +411,7 @@
     "multiDistrictTitle": "This ZIP spans more than one district",
     "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Rostra site. Both candidate districts are shown below; your senators are the same either way.",
     "openFullLookup": "Refine with your address on Rostra",
-    "poweredBy": "Powered by Rostra"
+    "poweredBy": "Powered by Rostra",
+    "billNotFound": "We couldn't find that bill in our data."
   }
 }
