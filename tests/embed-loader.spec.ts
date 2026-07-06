@@ -1,7 +1,7 @@
-import { createServer, type Server } from 'node:http';
 import { expect, test, type Response } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { startCrossOriginHost } from './helpers';
 
 /*
  * S13 — public/embed.js on a synthetic host page, exercising the actual
@@ -47,26 +47,6 @@ const BILL_IFRAME_SELECTOR = 'iframe[data-rostra-embed="bill-card"]';
 const DECODED_SLUG = 'hr-5582-119';
 const ES_DECODED_SLUG = 'sjres-99-119';
 
-function startHostServer(html: string): Promise<{ url: string; origin: string; close: () => Promise<void> }> {
-  return new Promise((resolve, reject) => {
-    const server: Server = createServer((_req, res) => {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(html);
-    });
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port = typeof address === 'object' && address ? address.port : 0;
-      const origin = `http://127.0.0.1:${port}`;
-      resolve({
-        url: `${origin}/`,
-        origin,
-        close: () => new Promise((res) => server.close(() => res())),
-      });
-    });
-  });
-}
-
 const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
 
 /*
@@ -80,7 +60,7 @@ const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
 test.describe.configure({ timeout: 60_000 });
 
 test('the loader injects an iframe and the widget renders inside it', async ({ page, baseURL }) => {
-  const host = await startHostServer(hostHtml(baseURL!));
+  const host = await startCrossOriginHost(hostHtml(baseURL!));
   try {
     await page.goto(host.url);
     const iframeEl = page.locator(IFRAME_SELECTOR);
@@ -103,7 +83,7 @@ test('auto-resize: the iframe height changes once the widget renders results', a
   page,
   baseURL,
 }) => {
-  const host = await startHostServer(hostHtml(baseURL!));
+  const host = await startCrossOriginHost(hostHtml(baseURL!));
   try {
     await page.goto(host.url);
     const iframeEl = page.locator(IFRAME_SELECTOR);
@@ -130,7 +110,7 @@ test('zero cookies and zero third-party requests across the whole embed flow', a
 }) => {
   const base = new URL(baseURL!);
   const html = hostHtml(baseURL!);
-  const host = await startHostServer(html);
+  const host = await startCrossOriginHost(html);
   try {
     const outsideRequests: string[] = [];
     page.on('request', (req) => {
@@ -177,7 +157,7 @@ test('bill-card via the loader: EN renders the decoded headline + AI label on a 
   page,
   baseURL,
 }) => {
-  const host = await startHostServer(billCardHostHtml(baseURL!, 'en', DECODED_SLUG));
+  const host = await startCrossOriginHost(billCardHostHtml(baseURL!, 'en', DECODED_SLUG));
   try {
     await page.goto(host.url);
     const iframeEl = page.locator(BILL_IFRAME_SELECTOR);
@@ -197,7 +177,7 @@ test('bill-card via the loader: ES renders Spanish copy on a genuine cross-origi
   page,
   baseURL,
 }) => {
-  const host = await startHostServer(billCardHostHtml(baseURL!, 'es', ES_DECODED_SLUG));
+  const host = await startCrossOriginHost(billCardHostHtml(baseURL!, 'es', ES_DECODED_SLUG));
   try {
     await page.goto(host.url);
     const frame = page.frameLocator(BILL_IFRAME_SELECTOR);
@@ -219,7 +199,7 @@ test('bill-card via the loader: zero cookies and zero third-party requests', asy
 }) => {
   const base = new URL(baseURL!);
   const html = billCardHostHtml(baseURL!, 'en', DECODED_SLUG);
-  const host = await startHostServer(html);
+  const host = await startCrossOriginHost(html);
   try {
     const outsideRequests: string[] = [];
     page.on('request', (req) => {

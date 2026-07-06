@@ -48,14 +48,18 @@ export interface Envelope {
   license: string;
 }
 
-const SOURCE = "Congress.gov and unitedstates/congress-legislators, via Rostra's nightly sync";
+// Exported (not just module-local): the citations/correction page (S23)
+// quotes these same four strings verbatim so a reporter reading that page
+// sees exactly what an agent's `meta` envelope says — one copy, not a
+// second hand-written description that can drift from the real envelope.
+export const SOURCE = "Congress.gov and unitedstates/congress-legislators, via Rostra's nightly sync";
 
-const AI_LABEL_TEXT =
+export const AI_LABEL_TEXT =
   'This plain-language content is AI-generated and human-reviewed before publish. It is not the official bill text.';
 
-const LICENSE_PUBLIC_DOMAIN = 'Public domain (Congress.gov; unitedstates/congress-legislators).';
+export const LICENSE_PUBLIC_DOMAIN = 'Public domain (Congress.gov; unitedstates/congress-legislators).';
 
-const LICENSE_AI_CONTENT =
+export const LICENSE_AI_CONTENT =
   "CC BY 4.0 (Rostra's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).";
 
 /*

@@ -5,12 +5,12 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-06 (on PR #47 branch, orchestrator)
+**Last updated:** 2026-07-06 (on fix47 branch, orchestrator)
 
 ## Now / Next / Blocked
 
-- **Now:** Awaiting review: #44 (S24), #45 (S17), #46 (S23), #47 (S14 bill-card widget) — four sprints opened concurrently this cycle, per `gh pr list`. Merged this cycle: #42 (S13), #43 (S11).
-- **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit).
+- **Now:** Merged: #44 (S24 federal boundary-source hardening), #45 (S17 frame-ancestors split posture), #46 (S23 citability/correction page). Awaiting review: #47 (S14 bill-card widget), #48 (S25 triage spec), #49 (S21 pregen dark).
+- **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit) — both launch on #47's merge.
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
 ## Sprint tracker
@@ -39,19 +39,19 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S14 — Bill-card widget + theming — PR #47 **OPEN** · bill-card embed (citation, AI-decoded headline with the label traveling in-widget — never shown without a real `ai_headline`, official-title fallback otherwise), plain-language status, freshness stamp from `lib/freshness`, canonical slug-only link-out. Theming is CSS-custom-properties-only (`--rostra-accent`/`-radius`/`-font`), every value allowlist-validated in `lib/embed-theme.ts` before it reaches a style prop (hex regex for accent, closed enums mapped to hardcoded values for radius/font) — injection fixtures assert malformed values are discarded outright, never partially honored. Loader extended for widget-type + slug + theme params, still 4.7KB (well under the 5KB budget). *Issues:* none.
 - [ ] S15 — Embed privacy hardening + CI gates (F3)
 - [ ] S16 — Configurator + docs + launch kit (→ KTD-8 outreach sends week of Oct 26, post-S16)
-- [ ] S17 — frame-ancestors split posture (F1, F2)
+- [ ] S17 — frame-ancestors split posture (F1, F2) — PR #45 **OPEN**, awaiting review · **Audit first:** S13 (#42) shipped ONLY the embed carve-out (`frame-ancestors *` on `/embed/*`, its own comment said the site-wide lock was deliberately deferred) — every non-embed route (bill pages, homepage, `/reps`, `/about`, all `app/api/*`) had NO frame-ancestors header at all, confirmed live against a built server (curl). F2 (ZIP-only, no address field in the iframe, link-out) was already satisfied by construction in #42 - no gap there. **Closed:** added the site-wide `frame-ancestors 'self'` + `X-Frame-Options` block to `next.config.ts`, source patterns mutually exclusive with the embed block by construction (verified: no CSP-header-count bleed onto `/embed/*`, which would otherwise silently re-narrow the carve-out via the browser's multi-CSP intersection rule). New `tests/frame-posture.spec.ts`: per-route-class header assertions (bill page/homepage/`/reps`/`/about`/API routes → `'self'`, embed route → carve-out), a tree-discovery regression guard (fails if a new `app/[locale]|api|embed` segment ships with no registered frame-ancestors check), and the F2 named test (real cross-origin iframe at the split-ZIP address flow, `/reps?zip=10001` — never renders the address field). *Issues:* first cross-origin-iframe test run hit the 30s test timeout exactly - a blocked subframe's navigation never fires its own `load` event, and the top document's default `waitUntil:'load'` stalls on it; fixed via `waitUntil:'domcontentloaded'` (32s → ~2s, stable across repeated runs). Extracted the ad-hoc cross-origin HTTP host helper from `tests/embed-loader.spec.ts` into `tests/helpers.ts` (`startCrossOriginHost`) so this suite and S13's both use one implementation.
 - [ ] S18 — Stripe + tenancy tokens ($ decision: surface before build)
 - [ ] S19 — Action panel paid tier + shared rate-limit arch
 - [ ] S20 — Impression counts (F6)
 - [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build)
 - [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39, merged Jul 6 · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
-- [ ] S23 — Citability/correction page + ES redistribution spot-check
-- [ ] S24 — Federal boundary-source hardening (RDH adoption; two-clock model)
+- [ ] S23 — Citability/correction page + ES redistribution spot-check — PR #46, open · `/citations` (both locales), footer-reachable from every page incl. bill pages, correction path reuses the existing beta-feedback intake (`#feedback` anchor into Footer's own dialog, no parallel form). `lib/core/mcp.ts`'s `SOURCE`/`AI_LABEL_TEXT`/`LICENSE_*` exported and quoted verbatim on the page so it can't drift from the real MCP envelope. `docs/es-spotcheck-redistribution.md` assembles a real 12-bill sample (4 high-urgency, 4 recently-decoded, 4 older/settled) + rubric (legal-meaning accuracy, register/neutrality, label presence) + pass/fail criteria + a log section — no live native-speaker pass run yet, same interim-material pattern as S6's `docs/es-script-spotcheck.md`. *Findings:* the MCP envelope's `ai_label`/`source`/`license` fields are English-only regardless of the `locale` param requested — flagged on the page itself and in the spot-check doc as a real gap, not fixed in this PR.
+- [ ] S24 — Federal boundary-source hardening — PR #44 **OPEN**, awaiting review · scoped honestly as monitoring + guards, not a boundary-data migration: RDH's "What's New" page has no RSS/JSON/API (verified live) — polls RDH's own WordPress state-sitemap.xml `<lastmod>` per tracked state instead (real, scoped, machine-parseable), diffed against `data/redistricting-watch.json` and opening a `redistricting-watch`-labeled issue on change (KTD-10 tax: author-identity/rebase-retry/SHA-verify + `data-sync` concurrency + disjoint files, all inherited from `refresh-legislators.yml`). Two-clock model recorded in `docs/solutions/two-clock-district-boundaries.md` + a dated, non-blocking `::warning` tripwire (`lib/rollover-tripwire.mjs`, fires ~Dec 1, 2026) for the mandatory 119th→120th literal/dataset bump before Jan 3, 2027. *Issues:* the seeded 10-state list's LA entry was already stale vs. the strategy doc by seed time (doc said "likely, litigation delayed"; a replacement map had actually passed 2026-05-29 and was itself under fresh litigation) — corrected with sources in the seed data. Also found and fixed a latent gap in #40: the `data-vacancy` GitHub label its issue-creation step references was never created, so that step would have failed the first time a real vacancy fired — created it alongside the new `redistricting-watch` label.
 - [ ] S25 — Curated-triage state-architecture spec (spec-only)
 
 Off-plan riders (pulled forward, rename-independent):
 - [x] Data resilience: vacancy-diff + vacant UI state (§9.1(f) items 1–2 + KTD-10 tax) — PR #40, merged Jul 6 · seat-set derivation (never `terms[-1]`), seeded with the 4 real current vacancies (CA-14, FL-20, GA-13, TX-23), two-channel loud failure (≤5 vacancies → labeled issue each; >5 → exit 1 pre-commit), vacant-seat card EN/ES with no invented election claims. *Issues:* one suite run poisoned by a mid-run server death from concurrent agent load — clean isolated re-run counted, disclosed in PR. Live cron path statically validated only (crons still paused)
-- [ ] RDH map-monitoring polling (§9.1(f) item 3) — follow-up after the above
+- [ ] RDH map-monitoring polling (§9.1(f) item 3) — folded into PR #44 (S24) above
 
 ## Decision log (chronological)
 
@@ -70,6 +70,7 @@ Off-plan riders (pulled forward, rename-independent):
 - **Merge-ref blindness**: green-in-isolation branches can break combined; CI tests the merge ref, local suites don't. Fix: pre-open rule — merge latest main + full suite before `gh pr create`.
 - **Worktree hygiene**: agents must never cd into the main checkout (1 incident, disclosed + cleaned).
 - **Stale-fetch premises**: agents must `git fetch` before reasoning about repo state (1 agent argued from a 4-day-old view).
+- **Workflow-referenced GitHub labels aren't auto-created**: `gh issue create --label X` fails if `X` doesn't already exist in the repo. #40 shipped `--label data-vacancy` without ever creating that label — found while building S24's `redistricting-watch` label. Both now exist; future `gh issue create --label` additions should create the label in the same PR.
 
 ## Definition-of-done addendum (every future PR)
 
