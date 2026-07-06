@@ -9,6 +9,7 @@ import { CallPrompt } from '@/components/CallPrompt';
 import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
+import { JsonLd } from '@/components/JsonLd';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
@@ -17,6 +18,8 @@ import { StalenessNote } from '@/components/StalenessNote';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
+import { hreflangAlternates } from '@/lib/hreflang';
+import { buildBillJsonLd } from '@/lib/jsonld';
 import { SITE_ORIGIN } from '@/lib/site';
 
 export function generateStaticParams() {
@@ -42,10 +45,10 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      canonical: urlFor(locale),
-      languages: Object.fromEntries(routing.locales.map((l) => [l, urlFor(l)])),
-    },
+    // hreflangAlternates (lib/hreflang.ts) is the same canonical/language-map
+    // shape this page originated in PR #30, generalized site-wide and with
+    // an x-default entry added (S22 hreflang correctness pass).
+    alternates: hreflangAlternates(locale, `/bills/${id}`),
     openGraph: {
       title,
       description,
@@ -96,6 +99,9 @@ export default async function BillPage({
   // Canonical, slug-only share URL: no query params, no stance, no
   // locale-tracking params. The origin lives in lib/site.ts (rename in flight).
   const shareUrl = `${SITE_ORIGIN}${getPathname({ locale, href: `/bills/${id}` })}`;
+
+  // Article (+ FAQPage when the decode structure supports it) — lib/jsonld.ts.
+  const jsonLd = await buildBillJsonLd(bill, locale, id);
 
   const header = (
     <>
@@ -201,6 +207,7 @@ export default async function BillPage({
 
   return (
     <>
+      <JsonLd id="bill-jsonld" data={jsonLd} />
       <article className="mx-auto max-w-3xl px-4 py-12">
         {header}
         {content}
