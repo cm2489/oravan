@@ -17,6 +17,7 @@
       "terms": "Terms",
       "lore": "The Rostra was the platform in the Roman Forum where any citizen could address the powerful. Step up.",
       "about": "About",
+      "citations": "Citations",
       "donate": "Donate"
     },
     "switchLocale": "En español",
@@ -346,6 +347,30 @@
     "supportTitle": "Support Rostra",
     "supportBody": "Rostra is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. Rostra takes no advertising, no partisan grants, and stores no donor political activity — gifts are tax-deductible and processed off Rostra's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
     "donateCta": "Donate via our fiscal sponsor"
+  },
+  "citations": {
+    "title": "Cite Rostra",
+    "intro": "Rostra is built to be a source you can cite and correct: every bill has one permanent address, a dated freshness stamp, and a clear line between the official record and AI-drafted plain language. This page states that contract precisely — for reporters, librarians, and anyone building on Rostra's data or MCP server — and explains how to report an error.",
+    "urlTitle": "Canonical URLs",
+    "urlBody": "Every bill gets one permanent address in each language, built only from its own bill type, number, and Congress — never from its status. A citation written the day a bill is introduced still resolves after it's signed, fails, or expires; the address is never reused or reassigned.",
+    "urlExampleLabel": "Example — H.R. 1787, the same bill used in Rostra's own demo material:",
+    "asOfTitle": "\"Data as of\" freshness",
+    "asOfBody": "Every page states the date of Rostra's last successful nightly sync with Congress.gov — not a live feed, and not the date you happen to load the page. Cite that date, not today's date, as the moment the underlying facts were last checked. It's the same value as the {asOfField} field in every MCP tool response.",
+    "sourceTitle": "Where the data comes from",
+    "sourceBody": "Bill status, dates, sponsor, and text come from Congress.gov. Member and district-office data comes from the public-domain unitedstates/congress-legislators project. Both refresh only through Rostra's own nightly sync. The MCP citation envelope states the source this way, in English, regardless of which locale a query requested — that field isn't localized per-language yet:",
+    "aiTitle": "The AI-content policy",
+    "aiBody": "Two kinds of text appear on a bill page, and they're never presented the same way. The official record — title, status, sponsor, dates, last action, the Congress.gov link — is copied, not generated. The plain-language layer — the headline, the summary, and the what/who/why/cost sections — is AI-drafted, and every one of those fields is reviewed by a person before it publishes; a new bill enters Rostra's corpus only once that review is done, in both languages. Wherever AI-drafted content appears — the site, the MCP server, an embed — it carries this label:",
+    "aiCallScript": "Call scripts work under a stricter rule still: they're drafted only inside Rostra's own site, and a caller must read and can edit the script before placing a call. Rostra's MCP server never generates one — it hands back a link to the on-site flow instead, so that human-review step can't be bypassed by an agent.",
+    "licenseTitle": "Licensing",
+    "licenseOfficialLabel": "The underlying official-record data — U.S. public domain:",
+    "licenseAiLabel": "Rostra's own AI-drafted plain-language content:",
+    "licenseCoverage": "AllSides' outlet-lean ratings, shown in each bill's \"Read\" section, are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial — a website-only feature until that's resolved.",
+    "correctionTitle": "Report an error",
+    "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Use the feedback button in the footer of this (or any) page and choose \"Something's not working.\" Name the bill and describe the error — that's the same intake Rostra uses for every other bug report, not a separate correction form.",
+    "correctionLinkText": "Report an error",
+    "whenConfirmedTitle": "What happens when a correction is confirmed",
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Rostra's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Rostra's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. An embeddable widget that carries bill text is still in development, not yet shipped; once it exists, it will read this same corrected data with no separate correction step of its own.",
+    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Rostra's ongoing Spanish-language review process rather than patched quietly and forgotten."
   },
   "notFound": {
     "title": "Page not found",
