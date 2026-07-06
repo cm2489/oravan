@@ -17,6 +17,7 @@
       "terms": "Términos",
       "lore": "La Rostra era la tribuna del Foro Romano donde cualquier ciudadano podía dirigirse al poder. Súbete.",
       "about": "Acerca de",
+      "citations": "Citas y correcciones",
       "donate": "Donar"
     },
     "switchLocale": "In English",
@@ -347,6 +348,32 @@
     "supportBody": "Rostra es gratuito, sin anuncios y no acepta dinero partidista. Su donación nos ayuda a: dar seguimiento a cada proyecto de ley en el Congreso cada semana, mantener actualizadas y revisadas por personas las explicaciones en lenguaje sencillo, y mantener gratuitos los guiones de llamada en inglés y español. Rostra no acepta publicidad, ni subvenciones partidistas, ni almacena la actividad política de quienes donan — las donaciones son deducibles de impuestos y son procesadas fuera de los servidores de Rostra por nuestro patrocinador fiscal, The Hack Foundation, una organización 501(c)(3).",
     "donateCta": "Dona a través de nuestro patrocinador fiscal"
   },
+  "citations": {
+    "title": "Cita a Rostra",
+    "intro": "Rostra está construido para ser una fuente que puedas citar y corregir: cada proyecto de ley tiene una dirección permanente, un sello de fecha con la última actualización y una línea clara entre el registro oficial y el lenguaje sencillo redactado por IA. Esta página establece ese compromiso con precisión — para periodistas, bibliotecarios y cualquiera que use los datos o el servidor MCP de Rostra — y explica cómo reportar un error.",
+    "urlTitle": "URLs permanentes",
+    "urlBody": "Cada proyecto de ley tiene una sola dirección permanente en cada idioma, construida solo a partir de su tipo, número y Congreso — nunca de su estado. Una cita escrita el día en que se presenta un proyecto sigue funcionando después de que se firme, fracase o expire; la dirección nunca se reutiliza ni se reasigna.",
+    "urlExampleLabel": "Ejemplo — H.R. 1787, el mismo proyecto que usa el material de demostración de Rostra:",
+    "asOfTitle": "El sello de \"datos actualizados al\"",
+    "asOfBody": "Cada página indica la fecha de la última sincronización nocturna exitosa de Rostra con Congress.gov — no es un feed en vivo, ni la fecha en que abriste la página. Cita esa fecha, no la de hoy, como el momento en que se verificaron por última vez los hechos. Es el mismo valor que el campo {asOfField} en cada respuesta del servidor MCP.",
+    "sourceTitle": "De dónde vienen los datos",
+    "sourceBody": "El estado, las fechas, el patrocinador y el texto de cada proyecto vienen de Congress.gov. Los datos de representantes y oficinas distritales vienen del proyecto de dominio público unitedstates/congress-legislators. Ambos se actualizan solo mediante la sincronización nocturna propia de Rostra. El envoltorio de citación del MCP describe la fuente en el idioma que pida cada consulta — a continuación se muestran ambas versiones, ya que esta página la leen personas en los dos idiomas:",
+    "aiTitle": "La política de contenido con IA",
+    "aiBody": "En la página de un proyecto de ley aparecen dos tipos de texto, y nunca se presentan igual. El registro oficial — título, estado, patrocinador, fechas, última acción, el enlace a Congress.gov — se copia, no se genera. La capa en lenguaje sencillo — el titular, el resumen y las secciones de qué/quién/por qué/costo — está redactada por IA, y cada uno de esos campos es revisado por una persona antes de publicarse; un proyecto nuevo entra al corpus de Rostra solo una vez hecha esa revisión, en ambos idiomas. Donde sea que aparezca contenido redactado por IA — el sitio, el servidor MCP, un widget incrustado — lleva esta etiqueta, en el idioma de la consulta; a continuación se muestran ambas versiones:",
+    "aiCallScript": "Los guiones de llamada siguen una regla aún más estricta: se redactan solo dentro del propio sitio de Rostra, y quien llama debe leer y puede editar el guion antes de marcar. El servidor MCP de Rostra nunca genera uno — en su lugar, devuelve un enlace al flujo del sitio, para que ese paso de revisión humana no pueda saltárselo un agente.",
+    "licenseTitle": "Licencias",
+    "licenseOfficialLabel": "Los datos oficiales subyacentes — dominio público de EE. UU., en ambos idiomas:",
+    "licenseAiLabel": "El contenido en lenguaje sencillo redactado por IA de Rostra, en ambos idiomas:",
+    "langEnglish": "English",
+    "langSpanish": "Español",
+    "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides, mostradas en la sección \"Lectura\" de cada proyecto, se usan bajo una licencia CC BY-NC separada y están excluidas del servidor MCP y de cualquier uso comercial — una función exclusiva del sitio web hasta que eso se resuelva.",
+    "correctionTitle": "Reportar un error",
+    "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Usa el botón de comentarios en el pie de esta (o cualquier) página y elige \"Algo no funciona\". Indica el proyecto de ley y describe el error — es la misma vía que usa Rostra para cualquier otro reporte de errores, no un formulario de corrección aparte.",
+    "correctionLinkText": "Reportar un error",
+    "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
+    "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos revisados de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Rostra: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Rostra, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. Un widget incrustable que muestre texto de proyectos de ley todavía está en desarrollo, aún no se ha lanzado; cuando exista, leerá estos mismos datos corregidos sin un paso de corrección aparte.",
+    "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra para el proceso continuo de revisión en español de Rostra, en lugar de parchearse en silencio y olvidarse."
+  },
   "notFound": {
     "title": "Página no encontrada",
     "body": "Esa página no existe — pero tus representantes sí.",
@@ -411,6 +438,7 @@
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
     "multiDistrictBody": "Este widget incrustado no puede recibir una dirección — eso se mantiene solo en el sitio principal de Rostra. Ambos distritos candidatos se muestran abajo; tus senadores son los mismos en cualquier caso.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Rostra",
-    "poweredBy": "Desarrollado por Rostra"
+    "poweredBy": "Desarrollado por Rostra",
+    "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos."
   }
 }

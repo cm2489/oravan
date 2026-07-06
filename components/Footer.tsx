@@ -36,6 +36,13 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
           <Link href="/about" className="underline underline-offset-2 hover:text-ink">
             {t('footer.about')}
           </Link>
+          {/* S23: reachable from every page's footer (this component IS the
+              bill-page footer) - the citability/correction page a newsroom or
+              librarian needs: how to cite, the AI-content policy, how to
+              report an error. */}
+          <Link href="/citations" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.citations')}
+          </Link>
           {/* §6: quiet, persistent, never a banner or modal - link only, dark
               until HCB onboarding completes (DONATE_URL flips from null). */}
           {donateUrl && (
@@ -49,7 +56,10 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             </a>
           )}
         </nav>
-        <div className="pt-2">
+        {/* id is the correction-path anchor: /citations links here as "#feedback"
+            rather than duplicating this dialog (one intake, not a parallel one -
+            see docs/es-spotcheck-redistribution.md's sibling S23 scope note). */}
+        <div id="feedback" className="pt-2 scroll-mt-20">
           <FeedbackDialog />
         </div>
       </div>

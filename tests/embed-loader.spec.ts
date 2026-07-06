@@ -1,5 +1,6 @@
 import { expect, test, type Response } from '@playwright/test';
 import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { startCrossOriginHost } from './helpers';
 
 /*
@@ -27,6 +28,24 @@ function hostHtml(baseURL: string) {
     <script src="${baseURL}/embed.js" data-rostra-widget="rep-lookup" data-locale="en" data-target="host-slot"></script>
   </body></html>`;
 }
+
+/*
+ * S14 — the same loader, now also asked to inject the bill-card widget:
+ * `data-rostra-widget="bill-card"` plus `data-slug` (and, untested here,
+ * the optional `data-accent`/`data-radius`/`data-font` theming attrs —
+ * tests/embed-bill-card.spec.ts drives those directly against the widget
+ * page since the loader is a pure pass-through for them).
+ */
+function billCardHostHtml(baseURL: string, locale: 'en' | 'es', slug: string) {
+  return `<!doctype html><html><body>
+    <div id="host-slot"></div>
+    <script src="${baseURL}/embed.js" data-rostra-widget="bill-card" data-locale="${locale}" data-slug="${slug}" data-target="host-slot"></script>
+  </body></html>`;
+}
+
+const BILL_IFRAME_SELECTOR = 'iframe[data-rostra-embed="bill-card"]';
+const DECODED_SLUG = 'hr-5582-119';
+const ES_DECODED_SLUG = 'sjres-99-119';
 
 const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
 
@@ -125,6 +144,90 @@ test('zero cookies and zero third-party requests across the whole embed flow', a
       `unexpected third-party request(s): ${outsideRequests.join(', ')}`
     ).toEqual([]);
 
+    for (const res of responses) {
+      expect(res.headers()['set-cookie'], `${res.url()} set a cookie`).toBeUndefined();
+    }
+    expect(await page.context().cookies()).toHaveLength(0);
+  } finally {
+    await host.close();
+  }
+});
+
+test('bill-card via the loader: EN renders the decoded headline + AI label on a genuine cross-origin host', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(billCardHostHtml(baseURL!, 'en', DECODED_SLUG));
+  try {
+    await page.goto(host.url);
+    const iframeEl = page.locator(BILL_IFRAME_SELECTOR);
+    await expect(iframeEl).toHaveAttribute('sandbox', /allow-same-origin/);
+
+    const frame = page.frameLocator(BILL_IFRAME_SELECTOR);
+    await expect(
+      frame.getByText('Hospitals and insurers must publish real prices under HR 5582')
+    ).toBeVisible();
+    await expect(frame.getByText(en.og.aiDecoded, { exact: true })).toBeVisible();
+  } finally {
+    await host.close();
+  }
+});
+
+test('bill-card via the loader: ES renders Spanish copy on a genuine cross-origin host', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(billCardHostHtml(baseURL!, 'es', ES_DECODED_SLUG));
+  try {
+    await page.goto(host.url);
+    const frame = page.frameLocator(BILL_IFRAME_SELECTOR);
+    // The ES corpus carries its own translated headline (lib/core/bills.ts's
+    // localizeBill), not the EN one.
+    await expect(
+      frame.getByText('El Senado busca restablecer extensiones automáticas de permisos de trabajo')
+    ).toBeVisible();
+    await expect(frame.getByText(es.og.aiDecoded, { exact: true })).toBeVisible();
+    await expect(frame.getByText(en.og.aiDecoded, { exact: true })).toHaveCount(0);
+  } finally {
+    await host.close();
+  }
+});
+
+test('bill-card via the loader: zero cookies and zero third-party requests', async ({
+  page,
+  baseURL,
+}) => {
+  const base = new URL(baseURL!);
+  const html = billCardHostHtml(baseURL!, 'en', DECODED_SLUG);
+  const host = await startCrossOriginHost(html);
+  try {
+    const outsideRequests: string[] = [];
+    page.on('request', (req) => {
+      let url: URL;
+      try {
+        url = new URL(req.url());
+      } catch {
+        return;
+      }
+      if (url.protocol === 'data:' || url.protocol === 'blob:' || url.protocol === 'about:') return;
+      if (url.origin !== base.origin && url.origin !== host.origin) {
+        outsideRequests.push(req.url());
+      }
+    });
+
+    const responses: Response[] = [];
+    page.on('response', (res) => responses.push(res));
+
+    await page.goto(host.url);
+    const frame = page.frameLocator(BILL_IFRAME_SELECTOR);
+    await expect(
+      frame.getByText('Hospitals and insurers must publish real prices under HR 5582')
+    ).toBeVisible();
+
+    expect(
+      outsideRequests,
+      `unexpected third-party request(s): ${outsideRequests.join(', ')}`
+    ).toEqual([]);
     for (const res of responses) {
       expect(res.headers()['set-cookie'], `${res.url()} set a cookie`).toBeUndefined();
     }
