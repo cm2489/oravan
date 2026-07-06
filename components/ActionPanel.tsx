@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
+import { OfficeHoursNote } from './OfficeHoursNote';
 import { ZipForm } from './ZipForm';
 
 interface Props {
@@ -234,6 +235,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               {t('startCall')}
             </button>
           </div>
+          {/* Announce the copy confirmation without moving focus - same idiom
+              as SharePanel's copy-link status region. Covers the modal's own
+              copy button too, since both share this scriptCopied state. */}
+          <span role="status" aria-live="polite" className="sr-only">
+            {scriptCopied ? t('scriptCopied') : ''}
+          </span>
         </div>
       )}
 
@@ -264,27 +271,44 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               </button>
             </div>
 
-            {/* First-call nudge: gentle, only for someone who has never logged a call */}
-            {callCount === 0 && (
-              <div className="mt-4 flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
-                <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-                <div>
-                  <p className="font-semibold">{t('firstCallTitle')}</p>
-                  <p className="mt-0.5 text-ink-soft">{t('firstCallBody')}</p>
-                </div>
+            {/* Pre-dial beat: a calm moment between "script ready" and
+                dialing - never a gate in front of the tel: links below, just
+                what a first-time caller most needs to hear, or a lighter
+                reminder for everyone after that. Voicemail is framed as a
+                fully legitimate first choice, not an apologetic fallback -
+                offices tally it exactly like a live call (S7 / docs/ideation
+                §5). */}
+            <div className="mt-4 flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
+              <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
+              <div>
+                <p className="font-semibold">{callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}</p>
+                <p className="mt-0.5 text-ink-soft">{callCount === 0 ? t('firstCallBody') : t('preDialBody')}</p>
               </div>
-            )}
+            </div>
+            <div className="mt-3">
+              <OfficeHoursNote />
+            </div>
 
             <p className="mt-5 whitespace-pre-wrap rounded-control bg-paper p-4 font-display text-xl font-semibold leading-relaxed md:text-2xl">
               {script}
             </p>
-            <button
-              type="button"
-              onClick={() => setBigType(false)}
-              className="mt-2 text-sm font-semibold text-ink-soft underline underline-offset-4"
-            >
-              {t('editScript')}
-            </button>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setBigType(false)}
+                className="text-sm font-semibold text-ink-soft underline underline-offset-4"
+              >
+                {t('editScript')}
+              </button>
+              <button
+                type="button"
+                onClick={copyScript}
+                className="inline-flex items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
+              >
+                {scriptCopied ? <Check className="h-4 w-4 text-moss" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+                {scriptCopied ? t('scriptCopied') : t('copyScript')}
+              </button>
+            </div>
 
             {reps.length > 0 && (
               <div className="mt-5 space-y-2">
@@ -329,6 +353,9 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                 <p className="font-semibold">{t('afterHoursTitle')}</p>
                 <p className="mt-0.5 text-ink-soft">{t('afterHoursBody')}</p>
               </div>
+            </div>
+            <div className="sm:col-span-2">
+              <OfficeHoursNote />
             </div>
           </div>
           <p className="mt-3 text-sm text-ink-soft">{t('staffNote')}</p>
