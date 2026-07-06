@@ -1,0 +1,17 @@
+// Locked Oravan lone-O mark, single-path SVG with
+// fill="currentColor" so it themes via `text-*` like the lucide icons do.
+// Source master: assets/brand/oravan-mark.svg. Default h-8 w-8 (square viewBox).
+// Pass `className` to resize/recolor.
+export function OravanMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="75.7 698.5 648.9 648.9"
+      fill="currentColor"
+      fillRule="evenodd"
+      aria-hidden="true"
+      className={['h-8 w-8', className].filter(Boolean).join(' ')}
+    >
+      <path d="M 158.00 1023.00 a 242.13 241.00 0 1 0 484.26 0 a 242.13 241.00 0 1 0 -484.26 0 Z M388.163 791.326C417.351 788.757 444.666 796.473 468.985 812.824C582.547 889.219 590.771 1071.34 518.611 1178.54C492.76 1216.95 460.033 1245.54 413.851 1254.7C381.183 1259.99 351.557 1249.72 325.255 1230.63C276.368 1194.31 248.407 1131.57 238.734 1072.97C221.297 967.333 266.263 809.412 388.163 791.326Z" />
+    </svg>
+  );
+}

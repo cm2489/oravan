@@ -4,11 +4,12 @@ import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString } from '@/lib/freshness';
+import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
 
 /*
  * Per-bill share card (WhatsApp/iMessage/Slack previews). Same brand idiom as
- * the locale-level card (app/[locale]/opengraph-image.tsx): ink-navy ground,
- * brass-gold accents, system sans.
+ * the locale-level card (app/[locale]/opengraph-image.tsx): iron-gall ground,
+ * brass accents, the real mark/wordmark lockup, system sans.
  *
  * Hard rules for this surface: a forwarded card is a redistribution surface,
  * so it never carries AllSides/lean labels (settled decision) and no advocacy
@@ -18,7 +19,7 @@ import { dataAsOfString } from '@/lib/freshness';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Rostra';
+export const alt = 'Oravan';
 
 // Same param set as the page: 2 locales x every bill, prerendered at build.
 export function generateStaticParams() {
@@ -69,21 +70,8 @@ export default async function OgImage({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 14,
-              background: '#82632A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 34,
-            }}
-          >
-            📞
-          </div>
-          <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>Rostra</div>
+          <img src={markDataUri('#D9B65C')} width={60} height={60} alt="" />
+          <img src={wordmarkDataUri('#F3ECDD')} width={Math.round(44 * WORDMARK_RATIO)} height={44} alt="" />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
