@@ -31,6 +31,7 @@ const PATHS = [
   '/why-call',
   '/impact',
   '/citations', // S23's citability/correction page
+  '/embeds', // S16's configurator + docs page
   '/bills/hr-5582-119',
   '/bills/sjres-99-119',
   '/bills/hr-8553-119', // one of the corpus's two undecoded bills

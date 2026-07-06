@@ -102,6 +102,7 @@ test.describe(
       about: '/about',
       bills: '/bills/sjres-99-119',
       citations: '/citations',
+      embeds: '/embeds', // S16's configurator + docs page
       impact: '/impact',
       privacy: '/privacy',
       reps: '/reps',
