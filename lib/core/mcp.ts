@@ -52,15 +52,35 @@ export interface Envelope {
 // quotes these same four strings verbatim so a reporter reading that page
 // sees exactly what an agent's `meta` envelope says — one copy, not a
 // second hand-written description that can drift from the real envelope.
-export const SOURCE = "Congress.gov and unitedstates/congress-legislators, via Rostra's nightly sync";
+//
+// Keyed by locale (found + fixed post-#46): these five fields are the one
+// thing every MCP response hands a caller to relay verbatim - an AI
+// disclosure a Spanish-locale agent reads in English isn't a disclosure at
+// all to the person on the other end. Bilingual parity is a CLAUDE.md hard
+// rule; a redistributed surface like this one holds to the *higher* bar
+// (docs/ideation/2026-07-05-build-gtm-strategy.md). "CC BY 4.0" and
+// "Congress.gov" stay untranslated in the Spanish text on purpose - a
+// license identifier and a proper noun, not prose - the same convention the
+// rest of the corpus follows for bill citations and source names.
+export const SOURCE: Record<Locale, string> = {
+  en: "Congress.gov and unitedstates/congress-legislators, via Rostra's nightly sync",
+  es: 'Congress.gov y unitedstates/congress-legislators, mediante la sincronización nocturna de Rostra',
+};
 
-export const AI_LABEL_TEXT =
-  'This plain-language content is AI-generated and human-reviewed before publish. It is not the official bill text.';
+export const AI_LABEL_TEXT: Record<Locale, string> = {
+  en: 'This plain-language content is AI-generated and human-reviewed before publish. It is not the official bill text.',
+  es: 'Este contenido en lenguaje sencillo es generado por IA y revisado por una persona antes de publicarse. No es el texto oficial del proyecto de ley.',
+};
 
-export const LICENSE_PUBLIC_DOMAIN = 'Public domain (Congress.gov; unitedstates/congress-legislators).';
+export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
+  en: 'Public domain (Congress.gov; unitedstates/congress-legislators).',
+  es: 'Dominio público (Congress.gov; unitedstates/congress-legislators).',
+};
 
-export const LICENSE_AI_CONTENT =
-  "CC BY 4.0 (Rostra's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).";
+export const LICENSE_AI_CONTENT: Record<Locale, string> = {
+  en: "CC BY 4.0 (Rostra's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).",
+  es: 'CC BY 4.0 (el contenido en lenguaje sencillo generado por IA de Rostra); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
+};
 
 /*
  * i18n/routing.ts pins `localePrefix: 'as-needed'` with 'en' as the default
@@ -86,10 +106,10 @@ function absoluteUrl(locale: Locale, path: string): string {
 export function buildEnvelope(path: string, locale: Locale, hasAiContent: boolean): Envelope {
   return {
     as_of: getFreshness().checkedAt,
-    source: SOURCE,
+    source: SOURCE[locale],
     canonical_url: absoluteUrl(locale, path),
-    ai_label: hasAiContent ? AI_LABEL_TEXT : null,
-    license: hasAiContent ? LICENSE_AI_CONTENT : LICENSE_PUBLIC_DOMAIN,
+    ai_label: hasAiContent ? AI_LABEL_TEXT[locale] : null,
+    license: hasAiContent ? LICENSE_AI_CONTENT[locale] : LICENSE_PUBLIC_DOMAIN[locale],
   };
 }
 
@@ -110,6 +130,40 @@ export function statusLabel(status: BillStatus, locale: Locale): string {
 
 export function categoryLabel(category: string, locale: Locale): string {
   return (MESSAGES[locale].categories as Record<string, string>)[category] ?? category;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Tool-error copy - the same class of gap as the citation envelope: an
+ * agent relays these strings verbatim on a bad ZIP/slug/citation/bioguide,
+ * so they need a locale pair too, not just the happy-path payloads. Kept
+ * here (not messages/{locale}.json) because these are MCP-protocol error
+ * text, not site UI copy - app/api/mcp/[transport]/route.ts is the only
+ * caller.
+ * ---------------------------------------------------------------------- */
+
+export function noDistrictDataError(zip: string, locale: Locale): string {
+  return locale === 'es'
+    ? `No se encontraron datos de distrito congresional para el código postal ${zip}.`
+    : `No congressional district data found for ZIP ${zip}.`;
+}
+
+export function missingBillIdentifierError(locale: Locale): string {
+  return locale === 'es' ? 'Proporciona "slug" o "citation".' : 'Provide either "slug" or "citation".';
+}
+
+export function billNotFoundError(input: { slug?: string; citation?: string }, locale: Locale): string {
+  if (locale === 'es') {
+    return `No se encontró ningún proyecto de ley para ${
+      input.slug ? `el slug "${input.slug}"` : `la citación "${input.citation}"`
+    }.`;
+  }
+  return `No bill found for ${input.slug ? `slug "${input.slug}"` : `citation "${input.citation}"`}.`;
+}
+
+export function representativeNotFoundError(bioguide: string, locale: Locale): string {
+  return locale === 'es'
+    ? `No se encontró ningún representante para el bioguide "${bioguide}".`
+    : `No representative found for bioguide "${bioguide}".`;
 }
 
 /* ---------------------------------------------------------------------- *
@@ -227,12 +281,19 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     representatives,
     vacancies,
     needs_address: needsAddress,
-    refine_hint: needsAddress
-      ? `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`
-      : null,
+    refine_hint: needsAddress ? refineHintText(locale, repsUrl) : null,
     reps_url: repsUrl,
     meta: buildEnvelope(REPS_PATH, locale, false),
   };
+}
+
+// Same class of gap as the envelope (found alongside it): user-relayable
+// prose that ignored `locale` entirely. `repsUrl` is already locale-prefixed
+// by `absoluteUrl` above, so only the surrounding sentence needs a pair.
+function refineHintText(locale: Locale, repsUrl: string): string {
+  return locale === 'es'
+    ? `Este código postal abarca más de un distrito congresional. Para obtener una respuesta de un solo distrito, indica a la persona que vaya a ${repsUrl} e ingrese allí una dirección postal - el refinamiento ocurre mediante un proxy sin estado del geocodificador del Census que nunca guarda ni registra la dirección. Esta herramienta no realiza el refinamiento por dirección directamente.`
+    : `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`;
 }
 
 /* ---------------------------------------------------------------------- *
