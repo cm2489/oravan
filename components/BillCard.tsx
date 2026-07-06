@@ -18,7 +18,7 @@ export function BillCard({ bill, coverageCount }: { bill: BillTeaser; coverageCo
         {coverageCount != null && (
           <>
             <span aria-hidden>·</span>
-            <span className="text-booth">{t('news.sources', { count: coverageCount })}</span>
+            <span className="text-brass">{t('news.sources', { count: coverageCount })}</span>
           </>
         )}
       </div>
@@ -27,7 +27,7 @@ export function BillCard({ bill, coverageCount }: { bill: BillTeaser; coverageCo
       </h3>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
         {bill.tags.slice(0, 2).map((tag) => (
-          <span key={tag} className="rounded-full bg-booth-soft px-2.5 py-1 font-medium text-ink">
+          <span key={tag} className="rounded-full bg-brass-soft px-2.5 py-1 font-medium text-ink">
             {t(`categories.${tag}`)}
           </span>
         ))}

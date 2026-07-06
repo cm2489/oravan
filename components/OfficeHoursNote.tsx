@@ -35,7 +35,7 @@ export function OfficeHoursNote() {
   return (
     <div
       role="status"
-      className="flex gap-2 rounded-control bg-booth-soft p-4 text-sm"
+      className="flex gap-2 rounded-control bg-brass-soft p-4 text-sm"
       data-office-hours={status}
     >
       <Clock className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />

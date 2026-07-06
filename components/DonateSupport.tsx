@@ -32,7 +32,7 @@ export function DonateSupport({ donateUrl }: { donateUrl: string | null }) {
         href={donateUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-booth px-5 py-3 font-semibold text-night hover:bg-booth-bright"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
       >
         {t('donateCta')}
         <ArrowUpRight className="h-4 w-4" aria-hidden />

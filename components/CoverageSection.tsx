@@ -32,7 +32,7 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
       <p className="mt-1 max-w-prose text-ink-soft">{t('subhead')}</p>
 
       {tier === 'one_sided' && (
-        <p className="mt-4 flex items-start gap-2 rounded-control bg-booth-soft p-3 text-sm text-ink">
+        <p className="mt-4 flex items-start gap-2 rounded-control bg-brass-soft p-3 text-sm text-ink">
           <Info className="mt-0.5 h-4 w-4 flex-none text-ink-soft" aria-hidden />
           <span>{t('oneSidedNote')}</span>
         </p>

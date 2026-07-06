@@ -36,7 +36,7 @@ import type { FeedTeaser } from '@/lib/types';
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
-const DEFAULT_ACCENT = '#e8a317'; // matches the widget CSS's own var(--rostra-accent, #e8a317) fallback
+const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--rostra-accent, #82632a) fallback
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
 
@@ -192,7 +192,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     value={value}
                     checked={widget === value}
                     onChange={() => selectWidget(value)}
-                    className="mt-1 h-5 w-5 accent-booth"
+                    className="mt-1 h-5 w-5 accent-brass"
                   />
                   <span>
                     <span className="block font-semibold">{label}</span>

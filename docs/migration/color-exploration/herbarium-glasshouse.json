@@ -1,0 +1,28 @@
+{
+  "seedName": "Herbarium Glasshouse",
+  "thesis": "Rostra's palette is pulled from the physical objects of a 19th-century botanical atlas laid open on a conservatory reading table: cotton-rag page paper gone warm under humid glasshouse light, linen bookboard for the deeper washes, iron-gall ink for text that has browned rather than blacked with age, a pressed-moss-and-fern green as the one pigment that actually survives a century pressed in a herbarium sheet, and the verdigris patina that forms on a greenhouse's old copper fittings standing in for \"success\" — nothing here is a party color or a SaaS-blue, because none of those pigments exist in this material world.",
+  "palette": {
+    "paper": "#F2EEE0",
+    "paperDeep": "#E5DDC2",
+    "surface": "#FBF9F1",
+    "ink": "#241C12",
+    "inkSoft": "#56503F",
+    "inkFaint": "#6A6249",
+    "night": "#171912",
+    "accent": "#457452",
+    "accentBright": "#8FBF6E",
+    "accentSoft": "#E4ECDA",
+    "line": "#D9D2BC",
+    "success": "#2F6B5E",
+    "successSoft": "#DCEAE3",
+    "warn": "#8A5A22",
+    "warnSoft": "#F3E4C6"
+  },
+  "ctaText": "#F7F3E4",
+  "fonts": {
+    "display": "Fraunces",
+    "body": "Libre Franklin",
+    "note": "Caveat"
+  },
+  "rationale": "Layout read from the four grayscale screens: a dark hero/nav band (home.jpg, and the persistent dark header across bill-detail/reps/embeds) sitting above a light page with a bright card grid (\"In the news\"); a light ZIP-capture card floating on the dark hero; a dark \"quick take\" callout box and a floating dark pill CTA (\"Make the call\") on bill-detail.jpg; a deeper gray footer band carrying an italic epigraph on reps.jpg; and a dark monospace code-snippet block plus light preview card on embeds.jpg. That reads as exactly two grounds (light page-family, dark night-family) plus one accent doing heavy lifting across both — so I built the tokens around that structure rather than inventing new surfaces.\n\nPaper family (surface/paper/paperDeep) is cotton-rag herbarium page paper at three humidities: surface (#FBF9F1) is the freshest interior leaf, used for the white cards and the ZIP-capture card; paper (#F2EEE0) is the page itself, slightly toned by glasshouse humidity; paperDeep (#E5DDC2) is the linen bookboard cloth, used for the \"In the news\" section wash and the deeper reps.jpg footer band. Ink (#241C12) is iron-gall ink, which browns rather than blacks with age — 14.47:1 on paper, so headlines and body copy are unambiguous. inkSoft (#56503F, 6.91:1) is the same ink diluted for secondary text; inkFaint (#6A6249, 5.23:1 on paper, comfortably clear of the 4.5 floor) is a still-legible faded label for microcopy like \"Stays on your device.\" Night (#171912) is the glasshouse at dusk — cast-iron frame silhouette against bottle-glass, deep enough that paper-toned text reaches 15.27:1 on it, used for the header/hero band, the bill-detail callout box, the floating call pill, and the embed code block.\n\nAccent (#457452) is pressed fern/moss pigment — the one botanical color that actually survives decades flattened in a herbarium sheet. It was tuned, not guessed: at #457452 it clears 5.14:1 as small caps metadata on white cards, holds ctaText (#F7F3E4, a cream ink) at 4.88:1 when filled as the CTA/\"Find my representatives\" button, and — because the nav bar itself is dark — reaches 3.27:1 against night so the active nav pill (Home/Bills/My reps) actually reads as a raised pill rather than disappearing into the header; a first pass at a deeper \"bottle green\" hit all the text duties but only 2.17:1 against night, so it was lightened until the pill duty cleared too. accentBright (#8FBF6E, 8.31:1 on night) is new growth backlit through glass, used for glowing text on dark grounds. accentSoft (#E4ECDA) is a diluted watercolor wash for chip/selection backgrounds.\n\nSuccess (#2F6B5E) is verdigris — the blue-green patina on a conservatory's old copper and iron fittings — a distinct hue from accent so status and brand never get confused, at 5.88:1 on surface. Warn (#8A5A22) is ochre/goldenrod, the pigment used to hand-tint stamens and pollen on botanical plates: warm and calm at 5.59:1, with zero red in it. Line (#D9D2BC) is the faint shadow cast by linen weave — a hairline, not a stroke. Fraunces (variable, opsz+wght axes) carries headlines with the soft, slightly old-style serif quality of an engraved atlas title. Libre Franklin (variable) — a modern Franklin Gothic descendant with editorial newsprint DNA rather than SaaS-grotesque DNA — carries body copy, nav, forms, and buttons, and covers Spanish diacritics natively for bilingual parity. Caveat (variable) is reserved for small hand-lettered flourishes (plate captions, marginal notes) the way a botanist would annotate a specimen sheet by hand — never for primary UI text."
+}

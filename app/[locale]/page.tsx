@@ -154,7 +154,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {STEPS.map(({ icon: Icon, key }, i) => (
               <li key={key} className="relative">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-booth text-night font-display font-bold">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brass text-paper font-display font-bold">
                     {i + 1}
                   </span>
                   <Icon className="h-5 w-5 text-ink-soft" aria-hidden />
@@ -170,12 +170,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Why call: the persuasion moment gets the card; privacy reads as a quiet pledge */}
       <section className="mx-auto max-w-5xl px-4 py-14 grid gap-10 md:grid-cols-[3fr_2fr] md:items-start">
         <div className="rounded-card bg-night p-8 text-paper shadow-lift">
-          <PhoneCall className="h-6 w-6 text-booth-bright" aria-hidden />
+          <PhoneCall className="h-6 w-6 text-brass-bright" aria-hidden />
           <h2 className="mt-3 font-display text-3xl font-bold">{t('whyTitle')}</h2>
           <p className="mt-2 text-paper/85">{t('whyBody')}</p>
           <Link
             href="/why-call"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-booth px-5 py-3 font-semibold text-night hover:bg-booth-bright"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
           >
             {t('whyCta')}
             <ArrowRight className="h-4 w-4" aria-hidden />

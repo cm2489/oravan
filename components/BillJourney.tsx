@@ -71,7 +71,7 @@ export function BillJourney({ billType, status }: { billType: string; status: Bi
               <span
                 aria-hidden
                 className={`absolute left-1/2 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full ${
-                  current ? 'bg-booth ring-4 ring-booth-soft' : done ? 'bg-moss' : 'bg-line'
+                  current ? 'bg-brass ring-4 ring-brass-soft' : done ? 'bg-moss' : 'bg-line'
                 }`}
               />
               <span

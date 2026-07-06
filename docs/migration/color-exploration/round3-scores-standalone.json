@@ -1,0 +1,359 @@
+{
+  "panel": [
+    {
+      "Q1": {
+        "uiux": 85,
+        "copyFit": 87,
+        "brand": 90,
+        "resonance": 88,
+        "note": "The marigold-ochre 'Make the call' button and active 'Home' tab glow warmly against the near-black hero, and Fraunces' bouncy, hand-set serifs on 'Congress counts calls.' feel like a community bulletin someone cared about — not a form from the government."
+      },
+      "Q2": {
+        "uiux": 79,
+        "copyFit": 76,
+        "brand": 79,
+        "resonance": 74,
+        "note": "Same bones as Q1 but the matte-bronze CTA and active nav tab read duller and less clickable (compare the flat brown 'Home' pill to Q1's ochre) — feels like a fine leather portfolio, more reserved than inviting."
+      },
+      "Q3": {
+        "uiux": 81,
+        "copyFit": 77,
+        "brand": 73,
+        "resonance": 71,
+        "note": "The terracotta bullet dot, category tag, and 'Make the call' button on the bill-detail page read redder/more saturated than the others — paired with the plainer Libre Franklin body, it nudges toward 'urgent notice' rather than calm explainer, a small tension against the no-alarm brief."
+      },
+      "Q4": {
+        "uiux": 79,
+        "copyFit": 72,
+        "brand": 65,
+        "resonance": 66,
+        "note": "The pressed-fern green nav pill, bullet, and CTA on the bill-detail page read as an environmental/eco brand rather than warm civic paper — it lands closer to a sustainability newsletter than a nonpartisan call-your-rep tool, even though the hue itself isn't party-coded."
+      },
+      "Q5": {
+        "uiux": 79,
+        "copyFit": 75,
+        "brand": 69,
+        "resonance": 71,
+        "note": "Swapping Fraunces for Source Serif 4 on the home hero's 'Congress counts calls.' drains the biggest, most emotional headline on the page of its handcrafted warmth — it now reads like a sober broadsheet, closer to the 'cold' end the brief wants to avoid."
+      },
+      "Q6": {
+        "uiux": 83,
+        "copyFit": 83,
+        "brand": 84,
+        "resonance": 81,
+        "note": "Brass-compass accent sits between Q1's vividness and Q2's flatness — the OG card's amber 'Your line to Congress' and the warm 'Home' tab glow without shouting; a close, slightly quieter sibling to Q1."
+      },
+      "persona": "Rosa, 54, Spanish-dominant end user who wants to call about a healthcare bill",
+      "pick": "Q1",
+      "rationale": "Q1's marigold-ochre against warm kraft-cream is the version that most consistently reads as a caring community letter rather than a cold civic-tech form or a shouting campaign page — the accent has just enough saturation to feel alive and inviting (the 'Make the call' button genuinely looks like it wants me to press it) without tipping into the redder, more alarm-adjacent territory of Q3, the cooler eco-branding of Q4, or the flatter, more corporate restraint of Q2/Q5. Paired with Fraunces' characterful serifs on the big hero line, it's the one that would make me trust this enough to type my ZIP code in and actually dial the number. Q6 is a very close second — same font pairing, only slightly less vivid — and would be my backup if the team wants something a notch quieter."
+    },
+    {
+      "Q1": {
+        "uiux": 88,
+        "copyFit": 90,
+        "brand": 92,
+        "resonance": 85,
+        "note": "The marigold-ochre 'Find my representatives' button and the 'Home' nav pill read as confidently warm-editorial against the near-black header, not sales-y; the orange 'Education'/'5 OUTLETS' tag chips stay in kraft-paper territory rather than tipping into alert-red."
+      },
+      "Q2": {
+        "uiux": 85,
+        "copyFit": 84,
+        "brand": 84,
+        "resonance": 82,
+        "note": "The floating 'Make the call' pill on the bill-detail page is a flatter, lower-contrast bronze than Q1's version — still legible, but it quietly pulls the whole system toward 'law-firm letterhead' rather than 'warm newsroom.'"
+      },
+      "Q3": {
+        "uiux": 84,
+        "copyFit": 80,
+        "brand": 72,
+        "resonance": 68,
+        "note": "The terracotta 'Your line to Congress' OG tagline and the terracotta bill-status accent are the most saturated warm-red of all six systems — the one hue in the set my eye actually catches on and half-wonders 'is this leaning red?' before reading further."
+      },
+      "Q4": {
+        "uiux": 86,
+        "copyFit": 78,
+        "brand": 65,
+        "resonance": 62,
+        "note": "The fern-green bullet dot and 'Your line to Congress' OG tagline are the only green marks across all six systems — on a tool that promises strict neutrality, green reads as 'environmental-advocacy nonprofit' more than 'civic utility,' which is its own kind of coding."
+      },
+      "Q5": {
+        "uiux": 83,
+        "copyFit": 76,
+        "brand": 80,
+        "resonance": 77,
+        "note": "The 'Bill would find Jewish WWI and WWII graves...' headline in Source Serif 4 reads like a wire-service headline rather than the friendlier, more idiosyncratic Fraunces headlines everywhere else — safest color-wise, but it's the one system that drifts toward 'cold bureaucratic,' Oravan's own anti-reference."
+      },
+      "Q6": {
+        "uiux": 87,
+        "copyFit": 86,
+        "brand": 88,
+        "resonance": 84,
+        "note": "The brass 'AI-decoded' badge outline and 'Home' nav pill are noticeably quieter than Q1's marigold — the whole system reads as deliberate restraint, paper-and-ink rather than a pitch, which sits well with a skeptical reader."
+      },
+      "persona": "Jake, 38 — English-dominant, politically unaffiliated, actively distrustful of political websites; scans every accent color for red/blue partisan tells, astroturf polish, and manipulative CTAs before he'll engage with the actual content.",
+      "pick": "Q1",
+      "rationale": "Q1's marigold-ochre is warm enough to earn the 'editorial, human' feeling Oravan is going for, but it sits in the kraft-paper/turmeric family, not red or orange-alert territory, so it never trips my partisan-color radar the way Q3's terracotta does (that one reads as soft-red the instant I see the OG card in a social feed). It's also unambiguously not the odd-one-out green of Q4, which — ironically, for a 'strictly nonpartisan' tool — is the hue most likely to make me guess this is an advocacy org's side project. Compared to Q2 and Q6, which use the same safe brown-family strategy, Q1's slightly higher saturation gives it more warmth and personality without crossing into loud; and compared to Q5, keeping Fraunces instead of switching to Source Serif 4 keeps the copy's folksy, pun-forward voice ('Congress counts calls') feeling native instead of like a policy-institute report. Net: Q1 is the one system that hits 'warm, editorial, trustworthy' hardest while giving my partisan-color scanner nothing to snag on."
+    },
+    {
+      "Q1": {
+        "uiux": 88,
+        "copyFit": 82,
+        "brand": 78,
+        "resonance": 76,
+        "note": "The nav's active 'Home' pill and every CTA (buttons, tags, the reps.jpg focus ring) run on the same fully-saturated coral-orange — highest-contrast and most legible of the six, but it reads closer to a consumer-SaaS accent (think Stripe/Mailchimp orange) than a newsroom ink, and it's loud enough that it could visually fight a partner site's own brand color once embedded."
+      },
+      "Q2": {
+        "uiux": 72,
+        "copyFit": 74,
+        "brand": 85,
+        "resonance": 84,
+        "note": "Quietest, most institutional-feeling of the six — but that restraint has a real cost: on reps.jpg the ZIP-input focus ring in matte bronze nearly disappears into the cream card, which is exactly the kind of low-contrast interactive state I'd flag before shipping this as a white-label embed."
+      },
+      "Q3": {
+        "uiux": 87,
+        "copyFit": 88,
+        "brand": 84,
+        "resonance": 85,
+        "note": "Swapping Source Sans for Libre Franklin on bill-detail.jpg gives the 'Decoded' body copy a crisp, grotesk newsroom voice that's the only one of the six that visibly matches the actual partner audience (Spanish-language news sites), while the terracotta stays high-contrast (clear focus ring, legible tags) without tipping into Q1's consumer-orange territory."
+      },
+      "Q4": {
+        "uiux": 83,
+        "copyFit": 76,
+        "brand": 70,
+        "resonance": 68,
+        "note": "Pressed-fern green is the only accent outside the warm-earth family — it's legible (the green focus ring on reps.jpg reads clearly) but it's the one hue across all six I'd stop and question on a strictly nonpartisan civic tool, since green nudges toward an environmental-cause read that nothing else in the copy or layout supports."
+      },
+      "Q5": {
+        "uiux": 68,
+        "copyFit": 70,
+        "brand": 65,
+        "resonance": 62,
+        "note": "This is the only system that drops Fraunces for Source Serif 4 on the home.jpg hero ('Congress counts calls.') — the headline loses the ink-trap character the other five share and reads closer to a generic benefits-enrollment serif, which undercuts the 'not a cold gov site' promise more than any color choice here, and signals to me that the type system isn't actually locked yet."
+      },
+      "Q6": {
+        "uiux": 78,
+        "copyFit": 84,
+        "brand": 82,
+        "resonance": 80,
+        "note": "Brass-compass accent and aged iron-gall ink track closely with Q1/Q2's family — tasteful and coherent (the 'Home' pill and bill-detail tags stay legible throughout) but it's the safest, least distinctive of the close siblings; nothing on the embeds configurator gives me a reason to pick this over Q2 or Q3."
+      },
+      "persona": "Devon, 29 — developer at a partner org evaluating Oravan's white-label embeds/configurator, judging theming discipline and whether the system is trustworthy enough to put inside someone else's product",
+      "pick": "Q3",
+      "rationale": "All six share an identical embeds-configurator shell, so the real signal for an integrator is accent contrast/legibility (focus rings, button states) and whether the type pairing feels like a deliberate choice rather than a coat of paint. Q3 wins on both: the terracotta accent is high-contrast everywhere I'd need it to be (ZIP-input focus ring, bill-status tags, the 'Make the call' button) without Q1's consumer-SaaS coral punch, and swapping in Libre Franklin for body copy gives bill summaries a crisp newsroom register that's the closest visual match to the Spanish-language-newsroom partners this product is actually built for. Q2 is a close second on pure institutional calm, but its focus states are borderline-invisible on cream, which is a concrete accessibility/embed-quality flag I wouldn't want to inherit into my own site. Q5's font swap (Source Serif 4 instead of Fraunces) is the one system that looks like an unfinished decision rather than a finished token set, which is disqualifying for something I'm being asked to trust as a stable embed target."
+    },
+    {
+      "Q1": {
+        "uiux": 84,
+        "copyFit": 82,
+        "brand": 85,
+        "resonance": 83,
+        "note": "The vivid marigold on the 'Home' nav pill, the 'Make the call' button, and the soft peach 'Education' tag all read like a warm community bulletin board rather than a government notice — inviting without trying hard."
+      },
+      "Q2": {
+        "uiux": 80,
+        "copyFit": 80,
+        "brand": 78,
+        "resonance": 76,
+        "note": "The 'Home' pill and 'Make the call' button render as a flatter, muddier brown next to the crisp cream page — perfectly respectable, but it reads more like a museum placard than a page I'd tell a patron to click on."
+      },
+      "Q3": {
+        "uiux": 79,
+        "copyFit": 74,
+        "brand": 72,
+        "resonance": 70,
+        "note": "The H.R. tag chips and 'Make the call' pill land in a distinctly redder terracotta than the rest of the set — I'd have to stare at that a beat longer before I'd feel fully comfortable it reads 'warm,' not 'alert,' on a library screen."
+      },
+      "Q4": {
+        "uiux": 82,
+        "copyFit": 76,
+        "brand": 88,
+        "resonance": 90,
+        "note": "That fern green on the 'O' mark and the active nav pill is, honestly, banker's-lamp green — it's the one palette here that feels like it already belongs in a reading room, and it's the hue I'd worry about least handing to a patron of any politics."
+      },
+      "Q5": {
+        "uiux": 78,
+        "copyFit": 79,
+        "brand": 77,
+        "resonance": 74,
+        "note": "Losing Fraunces for 'Congress counts calls.' makes the headline read more like a broadsheet op-ed than a warm civic primer — dignified, but it trades away some of the huggability the brief is going for."
+      },
+      "Q6": {
+        "uiux": 83,
+        "copyFit": 83,
+        "brand": 82,
+        "resonance": 81,
+        "note": "The brass 'compass' tone on the nav pill and buttons has a nice old-atlas, wayfinding quality that actually echoes 'find your reps' — warm and tasteful, just a notch less instantly 'library' than the green."
+      },
+      "persona": "Marcus, 55, public librarian running civic-information programming",
+      "pick": "Q4",
+      "rationale": "Every one of these six is competently nonpartisan — nobody accidentally coded this red or blue, and none of them feel like a SaaS dashboard or a cold .gov form, which is the bar I actually have to clear before I'll put a link on the library's homepage. Once that bar is cleared, the question for me isn't which one is prettiest, it's which one I'd feel safest handing to a retiree who leans one way and a teenager who leans the other, at the same reference desk, on the same day. The five warm-toned systems (Q1, Q2, Q3, Q5, Q6) are all lovely amber/bronze/terracotta variations on 'old book, warm ink' — and Q1 and Q6 in particular are genuinely inviting — but terracotta (Q3) is red-warm enough that I'd hesitate half a second, and the more muted bronzes (Q2, Q5) read a little more like a museum plaque than a welcome mat. Q4's pressed-fern green is the outlier, and that's exactly why it wins for me: it's the one hue in the set that doesn't ping any 'which side is this on' instinct at all, it still sits warm and calm against the cream paper rather than feeling clinical, and it happens to echo the green glass of a library reading-lamp shade — which is not a coincidence I'm going to argue with. It's the system I'd point to a colleague and say 'yeah, that one's ours to recommend.'"
+    },
+    {
+      "Q1": {
+        "uiux": 76,
+        "copyFit": 78,
+        "brand": 66,
+        "resonance": 64,
+        "note": "That marigold accent renders far brighter than the swatch name suggests — the 'Home' nav pill, the O-mark, and the tag chips all read as a vivid consumer-app orange against the near-black header, closer to a fintech or SaaS CTA color than aged newsprint ink. Next to my own outlet's masthead accent it would compete for attention rather than sit quietly beside our copy."
+      },
+      "Q2": {
+        "uiux": 83,
+        "copyFit": 81,
+        "brand": 87,
+        "resonance": 85,
+        "note": "The matte-bronze accent barely raises its voice above the ink — on the active 'Home' pill and the 'Make the call' button it reads like the spine of a reference book, not a product. That hush is exactly the register I'd want for something living inside a news article, though it edges toward forgettable in a grid where our own site also has its own quiet accent colors."
+      },
+      "Q3": {
+        "uiux": 81,
+        "copyFit": 86,
+        "brand": 91,
+        "resonance": 91,
+        "note": "Terracotta on the nav pill, the tag chips, and the 'Make the call' button reads warm and earthen — adobe and sun-baked clay rather than corporate CTA orange — which is the one palette here that would feel native, not imported, next to a Spanish-language regional outlet's own warm branding. It's also the only one of the six I'd feel comfortable recommending to our design desk without a caveat."
+      },
+      "Q4": {
+        "uiux": 74,
+        "copyFit": 76,
+        "brand": 55,
+        "resonance": 58,
+        "note": "On the OG share cards — which is what actually travels on WhatsApp, our readers' main sharing channel — the fern-green subhead against the near-black background reads uncomfortably close to green text on a terminal screen, which is exactly the 'crypto/tech neon' territory the brand says to avoid. Green also carries a faint environmental-advocacy undertone on a strictly nonpartisan congress tool, which is the kind of thing a nervous fact-check editor would flag before publishing an embed."
+      },
+      "Q5": {
+        "uiux": 85,
+        "copyFit": 85,
+        "brand": 85,
+        "resonance": 84,
+        "note": "The brass accent and walnut ink are the most restrained of the six — the 'AI-decoded' badge outline and the 'Make the call' pill never shout over the body copy. That's the most broadsheet-credible pairing in the set, the one that would look least like a widget and most like part of the page — though on its own it's also the least memorable of the six."
+      },
+      "Q6": {
+        "uiux": 80,
+        "copyFit": 80,
+        "brand": 80,
+        "resonance": 79,
+        "note": "Brass-compass sits almost on top of Q5's palette, just a shade warmer and more saturated — on the embeds configurator's EN/ES toggle and the 'AI-decoded' OG badge it reads like a wax-seal mark, calm and legible. Solid and safe, but it doesn't earn a reason to choose it over Q2 or Q5 specifically."
+      },
+      "pick": "Q3",
+      "rationale": "As the embed partner who'd actually paste this widget into our site and forward its bill pages over WhatsApp, I need two things the vivid-orange (Q1) and green (Q4) options put at risk: a color that doesn't compete with our own masthead accent, and zero chance a reader mistakes it for an advocacy or tech-adjacent brand. Q3's terracotta clears both bars while doing something the safer bronze/brass trio (Q2, Q5, Q6) doesn't — it feels warm and regionally native rather than merely quiet and institutional, which matters more to my specific audience than to a generic English-language newsroom. Paired with Libre Franklin's slightly more 'wire service' body texture, Q3 is the one system I'd sign off on without a caveat to my design desk.",
+      "persona": "Elena, 41 — editor at a regional Spanish-language news outlet, evaluating Oravan strictly as a prospective embed partner: would this widget look credible parked inside our article pages, would our readers trust it, and does it read as journalistic infrastructure rather than an activist or tech product."
+    },
+    {
+      "persona": "Priya, 47 — program director / budget holder at a national civic nonprofit, evaluating Oravan for paid org licensing; needs board-presentable, grant-credible, nonpartisan-safe branding, not consumer-gimmicky.",
+      "Q1": {
+        "uiux": 88,
+        "copyFit": 85,
+        "brand": 83,
+        "resonance": 81,
+        "note": "The nav 'Home' pill and the 'Make the call' button render as a genuinely vivid pumpkin-orange against the near-black header — warm, legible, and the most 'literary-magazine masthead' of the six. It's the closest literal match to the 'warm editorial' brief, but sitting next to sober program budgets in a grant deck, I'd pause to confirm it doesn't read a shade too 'branded-startup' at first glance."
+      },
+      "Q2": {
+        "uiux": 76,
+        "copyFit": 79,
+        "brand": 82,
+        "resonance": 72,
+        "note": "This is the most 'annual report' of the six — genuinely board-safe — but on the bill-detail page the bronze 'Make the call' button nearly disappears into the dark header. The one CTA tied to our actual funded outcome (calls placed) is the hardest to spot of any system here, and that undercuts the sobriety win for me."
+      },
+      "Q3": {
+        "uiux": 86,
+        "copyFit": 83,
+        "brand": 79,
+        "resonance": 78,
+        "note": "The terracotta 'Make the call' buttons and status badges run noticeably redder than the other kraft-toned systems — warm and actionable, but given our hard no-red/blue-coding rule, this is the one palette where I'd want a second, careful look before it goes in front of my board, just to be sure it doesn't scan as a partisan-adjacent red."
+      },
+      "Q4": {
+        "uiux": 85,
+        "copyFit": 77,
+        "brand": 68,
+        "resonance": 66,
+        "note": "The fern-green nav pill, logo ring, and bill-status badges are the most distinctive of the six and execute cleanly — but for a strictly nonpartisan congressional tool, green risks reading as an environmental or issue-advocacy brand. That's exactly the kind of unintended signal I'd have to pre-empt in a funder conversation, which lowers my confidence recommending it for org licensing."
+      },
+      "Q5": {
+        "uiux": 82,
+        "copyFit": 80,
+        "brand": 80,
+        "resonance": 76,
+        "note": "The oat-paper background and olive-brass CTA give this the driest, most 'university policy-center handout' feel of the six — credible and safe, but a notch less of the newsroom warmth Oravan is going for. It would work fine in a citations appendix, less so as the face of the product."
+      },
+      "Q6": {
+        "uiux": 87,
+        "copyFit": 84,
+        "brand": 86,
+        "resonance": 84,
+        "note": "The aged cream page stock and muted brass CTA on 'My reps' stay clearly legible against the dark header while still feeling warm rather than corporate or flat — it reads equally credible on a grant one-pager and embedded on a library or newsroom site, with none of Q4's mis-association risk or Q2's vanishing CTA."
+      },
+      "pick": "Q6",
+      "rationale": "As the budget holder who has to defend this choice in a board deck and a grant narrative, I need warmth and editorial credibility without any color that requires a footnote of explanation. Q6's aged-cream-and-brass system is the most restrained of the group while still keeping every call-to-action legible and warm — it avoids Q1's slightly-too-bright startup energy, Q2's CTA-swallowing flatness, Q3's uncomfortable proximity to red, Q4's environmental-brand risk, and Q5's dry academic feel. It's the one system I could hand to a program officer and a library partner in the same week without hedging."
+    },
+    {
+      "Q1": {
+        "uiux": 88,
+        "copyFit": 84,
+        "brand": 87,
+        "resonance": 85,
+        "note": "On My Reps, the ZIP-code input's focus state is a bold marigold double-ring — the clearest, thickest focus indicator I saw across all six, and that same vivid orange repeats consistently in the active nav pill and outlet-count tags, giving me reliable scannable landmarks."
+      },
+      "Q2": {
+        "uiux": 66,
+        "copyFit": 74,
+        "brand": 71,
+        "resonance": 64,
+        "note": "The floating 'Make the call' pill on bill-detail is a flat matte-bronze that sits almost the same value as the card's own tan border, so the one button I most need to find fast doesn't separate itself enough from the page for me."
+      },
+      "Q3": {
+        "uiux": 89,
+        "copyFit": 87,
+        "brand": 86,
+        "resonance": 87,
+        "note": "The terracotta 'Make the call' button on bill-detail has the punchiest, most saturated pop against the cream page of any CTA I reviewed — it's the one I'd spot instantly while scanning at zoom, and the Libre Franklin tag/label text stays crisp at small sizes."
+      },
+      "Q4": {
+        "uiux": 76,
+        "copyFit": 80,
+        "brand": 66,
+        "resonance": 69,
+        "note": "The pressed-fern focus ring and active nav pill are legible enough, but on cream paper that green reads to me like a park-service or environmental-org accent rather than a warm civic one — it's the coolest, least 'warm' feeling of the six even though it's perfectly nonpartisan."
+      },
+      "Q5": {
+        "uiux": 85,
+        "copyFit": 85,
+        "brand": 83,
+        "resonance": 83,
+        "note": "Swapping in Source Serif 4 for the 'Congress counts calls.' hero gives it plainer, more classical letterforms than the other five's Fraunces — at a glance the big type is marginally easier for me to parse, and the brass accent still pops cleanly on tags and the call button."
+      },
+      "Q6": {
+        "uiux": 73,
+        "copyFit": 79,
+        "brand": 77,
+        "resonance": 75,
+        "note": "Same layout and fonts as Q1, but the brass-compass accent on the newspaper icon and outlet-count tags reads a shade duller and more olive than Q1's marigold, so the scannable accent cues are a little less immediate even though nothing is actually broken."
+      },
+      "persona": "Amara, 33 — low-vision reader who navigates with browser zoom and high-contrast display preferences; scans for focus rings and CTA color-pop before reading body copy.",
+      "pick": "Q3",
+      "rationale": "Q3's espresso-on-groundwood-paper base gives every system the same strong body-text contrast, but its terracotta accent is the most saturated and consistently legible of the six against the light ground — the floating 'Make the call' button on bill-detail is the single most eye-catching CTA I reviewed, the ZIP-input focus ring on My Reps is clearly visible without being gaudy, and Libre Franklin keeps small caption/tag text crisp at a glance. It also nails the warm-editorial-trustworthy brief without drifting cool (like Q4's green) or muddy (like Q2's and Q6's more muted bronzes). Q1 and Q5 are close seconds — Q1 for its equally bold focus ring and vivid marigold, Q5 for Source Serif 4's slightly cleaner hero legibility — but Q3's accent is the one that survives on light grounds most reliably for someone who needs color-pop to do real signaling work."
+    }
+  ],
+  "labelmap": [
+    [
+      "Q1",
+      "H"
+    ],
+    [
+      "Q2",
+      "J"
+    ],
+    [
+      "Q3",
+      "E"
+    ],
+    [
+      "Q4",
+      "K"
+    ],
+    [
+      "Q5",
+      "F"
+    ],
+    [
+      "Q6",
+      "G"
+    ]
+  ]
+}

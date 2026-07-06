@@ -25,7 +25,7 @@ export function Header() {
       <header className="bg-night text-paper">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold tracking-tight">
-            <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-control bg-booth text-night">
+            <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-control bg-brass text-paper">
               <PhoneCall className="h-4.5 w-4.5" strokeWidth={2.5} />
             </span>
             {t('appName')}
@@ -38,7 +38,7 @@ export function Header() {
                 aria-current={isActive(pathname, href) ? 'page' : undefined}
                 className={`px-3 py-2 rounded-control text-sm font-medium transition-colors ${
                   isActive(pathname, href)
-                    ? 'bg-booth text-night'
+                    ? 'bg-brass text-paper'
                     : 'text-paper/85 hover:text-paper hover:bg-white/10'
                 }`}
               >
@@ -50,7 +50,7 @@ export function Header() {
               aria-current={isActive(pathname, '/why-call') ? 'page' : undefined}
               className={`px-3 py-2 rounded-control text-sm font-medium transition-colors ${
                 isActive(pathname, '/why-call')
-                  ? 'bg-booth text-night'
+                  ? 'bg-brass text-paper'
                   : 'text-paper/85 hover:text-paper hover:bg-white/10'
               }`}
             >
@@ -75,7 +75,7 @@ export function Header() {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={`flex flex-col items-center gap-1 py-2.5 text-xs font-medium ${
-                    active ? 'text-booth-bright' : 'text-paper/75'
+                    active ? 'text-brass-bright' : 'text-paper/75'
                   }`}
                 >
                   <Icon className="h-5 w-5" aria-hidden />

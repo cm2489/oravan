@@ -24,7 +24,7 @@ export function CallPrompt({
       {sub && <p className="min-w-0 font-medium text-paper/85">{sub}</p>}
       <a
         href={href}
-        className="inline-flex items-center gap-2 rounded-control bg-booth px-5 py-3 font-semibold text-night transition-transform hover:bg-booth-bright active:translate-y-px"
+        className="inline-flex items-center gap-2 rounded-control bg-brass px-5 py-3 font-semibold text-paper transition-transform hover:bg-brass-deep active:translate-y-px"
       >
         <Phone className="h-4 w-4" aria-hidden />
         {label}

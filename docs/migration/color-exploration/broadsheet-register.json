@@ -1,0 +1,28 @@
+{
+  "seedName": "Broadsheet Register",
+  "thesis": "Rostra's palette is built from the physical stock of a serious newspaper, not a screen: warm groundwood paper for the page, brighter card stock for the panels laid onto it, and a warm near-black printer's ink for both body copy and the fully-inked masthead band — with exactly one spot color, a deep registrar's-stamp terracotta, standing in for the single confident accent a broadsheet allows itself (its section flag, its dateline rule, its \"verified\" ink pad) rather than any hue that reads as a party's red or blue.",
+  "palette": {
+    "paper": "#F5F0E6",
+    "paperDeep": "#ECE2CF",
+    "surface": "#FDFBF7",
+    "ink": "#221D17",
+    "inkSoft": "#4B4239",
+    "inkFaint": "#6E6255",
+    "night": "#15110C",
+    "accent": "#A34620",
+    "accentBright": "#E2905A",
+    "accentSoft": "#F1DDC7",
+    "line": "#DDD2BC",
+    "success": "#3A6E52",
+    "successSoft": "#DCEBE0",
+    "warn": "#8C5C18",
+    "warnSoft": "#F0E0BC"
+  },
+  "ctaText": "#FFFBF4",
+  "fonts": {
+    "display": "Fraunces",
+    "body": "Libre Franklin",
+    "note": "Courier Prime — a static-weight (400 Regular / 700 Bold / 400 Italic / 700 Bold Italic) wire-service monospace reserved for uppercase eyebrow metadata (bill numbers, dateline stamps) and the literal embed code block, so the one place the UI shows raw code and the one place it shows a bill's slug line share the same teletype material."
+  },
+  "rationale": "Layout drove three material decisions. First, the app has a hard light/dark split — a full-bleed night band (nav + hero on Home/Bills/Reps/Embeds) against a light working page below — which maps directly onto a broadsheet's fully-inked masthead block sitting above groundwood page stock: night (#15110C) is that ink at full saturation, paper (#F5F0E6) is the warm, slightly yellowed page it's printed on (paper-toned text on night computes to 16.55:1, so the hero headline reads with the effortless weight of white ink on a press band, not a screen gradient). Second, every screen nests brighter rectangles inside that page: the ZIP-code card floating in the Home hero, the \"Decoded\" panel and floating call button on Bill detail, the embed builder's live-preview panel — these are the inserted card stock of a real newsroom (a proof sheet, an index card, a clipped panel), so surface (#FDFBF7) is deliberately whiter/cleaner than paper itself, and paperDeep (#ECE2CF) is reserved for the quieter tucked-away zones (the Reps footer with its italic epigraph, the Bills \"Decoded\" wash) that read as a second, duller printing pass rather than a fresh sheet. Third, the one accent had to survive small uppercase eyebrow text on the \"In the news\" cards (\"H.R. 2616 · PASSED ONE CHAMBER\"), the filled CTA fills (\"Find my representatives,\" the floating \"Make the call\" pill), the active nav pill, and tiny dot markers inside the dark AI-summary callout — so accent (#A34620) is pitched as a registrar's ink-pad terracotta: the color of a courthouse date stamp or a \"received\" mark, procedural and human at once, sitting outside the red/blue spectrum by design (5.88:1 as text on surface, 5.89:1 under ctaText #FFFBF4 as a button fill). accentBright (#E2905A) is that same pigment let down for use as glowing text on the night band (7.49:1), and accentSoft (#F1DDC7) is it diluted to a wash for the Embeds page's selected-widget-card highlight and any tag chips. success (#3A6E52) and warn (#8C5C18) are pulled from adjacent archive-drawer colors — a teller's-ledger green and a manila-folder ochre — calm status colors that never approach party red. Fraunces gives headlines the warm, high-contrast, slightly ink-trapped drama of a nameplate; Libre Franklin is a direct nod to Franklin Gothic, the actual sans that ran newspaper decks and bylines for a century, so all the small UI chrome (nav, buttons, form labels) still reads as newsroom rather than SaaS dashboard; Courier Prime supplies the wire-service voice for bill-number eyebrows and doubles, unmodified, as the font for the Embeds page's real `<script>` snippet."
+}

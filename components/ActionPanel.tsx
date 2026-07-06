@@ -182,7 +182,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           </p>
           <p className="mt-0.5 text-sm text-ink-faint">{t('generatingHint')}</p>
           <div className="mt-2 h-1 max-w-md overflow-hidden rounded-full bg-paper-deep">
-            <div className="shimmer h-full w-1/3 rounded-full bg-booth" />
+            <div className="shimmer h-full w-1/3 rounded-full bg-brass" />
           </div>
         </div>
       )}
@@ -205,7 +205,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         <div className="mt-6">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h3 className="font-display text-xl font-bold">{t('scriptTitle')}</h3>
-            <p className="rounded-full bg-booth-soft px-3 py-1 text-xs font-medium text-ink">
+            <p className="rounded-full bg-brass-soft px-3 py-1 text-xs font-medium text-ink">
               {t('scriptDisclaimer')}
             </p>
           </div>
@@ -229,7 +229,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             <button
               type="button"
               onClick={() => setBigType(true)}
-              className="inline-flex items-center gap-2 rounded-control bg-booth px-4 py-2.5 font-semibold text-night transition-transform hover:bg-booth-bright active:translate-y-px"
+              className="inline-flex items-center gap-2 rounded-control bg-brass px-4 py-2.5 font-semibold text-paper transition-transform hover:bg-brass-deep active:translate-y-px"
             >
               <Phone className="h-4 w-4" aria-hidden />
               {t('startCall')}
@@ -278,7 +278,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                 fully legitimate first choice, not an apologetic fallback -
                 offices tally it exactly like a live call (S7 / docs/ideation
                 §5). */}
-            <div className="mt-4 flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
+            <div className="mt-4 flex gap-2 rounded-control bg-brass-soft p-4 text-sm">
               <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
               <div>
                 <p className="font-semibold">{callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}</p>
@@ -324,7 +324,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           <Phone className="h-4 w-4" aria-hidden />
                           {rep.name}
                         </span>
-                        <span className="font-mono text-sm text-booth-bright">{rep.phone}</span>
+                        <span className="font-mono text-sm text-brass-bright">{rep.phone}</span>
                       </a>
                     )
                 )}
@@ -340,14 +340,14 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           <h3 className="font-display text-xl font-bold">{t('callTitle')}</h3>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
+            <div className="flex gap-2 rounded-control bg-brass-soft p-4 text-sm">
               <Ear className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
               <div>
                 <p className="font-semibold">{t('hearFirstTitle')}</p>
                 <p className="mt-0.5 text-ink-soft">{t('hearFirstBody')}</p>
               </div>
             </div>
-            <div className="flex gap-2 rounded-control bg-booth-soft p-4 text-sm">
+            <div className="flex gap-2 rounded-control bg-brass-soft p-4 text-sm">
               <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
               <div>
                 <p className="font-semibold">{t('afterHoursTitle')}</p>

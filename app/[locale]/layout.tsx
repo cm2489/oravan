@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Bricolage_Grotesque, Public_Sans } from 'next/font/google';
+import { Fraunces, Source_Sans_3 } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -9,8 +9,8 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import '../globals.css';
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-display' });
-const body = Public_Sans({ subsets: ['latin'], variable: '--font-body' });
+const display = Fraunces({ subsets: ['latin'], variable: '--font-display' });
+const body = Source_Sans_3({ subsets: ['latin'], variable: '--font-body' });
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

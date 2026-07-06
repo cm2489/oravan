@@ -1,0 +1,28 @@
+{
+  "seedName": "Kitchen-Table Wire Service",
+  "thesis": "Rostra should feel like the community bulletin board at a public radio station or the front table at a bilingual library branch: kraft-paper cream instead of clinical white, marigold-gold ink instead of institutional blue, moss and clay instead of red/green traffic-light status colors — warm, hand-set, adult, and unmistakably nobody's campaign color. The seed's material world is newsprint stock, cork board, marigold dye, terracotta planters, and the amber glow of a radio dial at night; every token below is pulled from that world rather than from a generic SaaS or gov-portal starting point.",
+  "palette": {
+    "paper": "#FAF5EA",
+    "paperDeep": "#E9E1D3",
+    "surface": "#FFFDF7",
+    "ink": "#241C14",
+    "inkSoft": "#4A3B2C",
+    "inkFaint": "#6E5C48",
+    "night": "#1A130C",
+    "accent": "#9A5A16",
+    "accentBright": "#E3A94A",
+    "accentSoft": "#EFD79C",
+    "line": "#E3D6B8",
+    "success": "#3F6B4A",
+    "successSoft": "#DCEADB",
+    "warn": "#A8461F",
+    "warnSoft": "#F3DCCB"
+  },
+  "ctaText": "#FFFFFF",
+  "fonts": {
+    "display": "Fraunces",
+    "body": "Source Sans 3",
+    "note": "Fraunces is a variable font on Google Fonts — request weight 600-700 (semibold/bold) plus optional-mode 'soft' for headline warmth; enable its low 'opsz' axis for large display sizes if using the variable file, or pin static weight 700 if the build only wants a fixed cut. Source Sans 3 is variable too; ship regular 400 for body copy and 600 for UI labels/buttons."
+  },
+  "rationale": "Reading the four screenshots: the header/hero is a full dark band that recurs as a slim dark bar on every interior page (home, bill-detail, reps, embeds) — that's `night`, cast as a warm near-black (#1A130C, a \"dark radio-cabinet walnut\") rather than pure #000, so the brand never reads as a corporate slate-gray shell. `ink` (#241C14) is a hair lighter and warmer than night on purpose — night is architecture (the ground the header/hero/code-snippet/dark-callout sit on), ink is the color that reads as ink on the page, like body copy set in a broadsheet. `paper` (#FAF5EA) is the page ground behind the \"In the news\" section and the reps page — an uncoated cream stock, never bright white, so it feels like newsprint rather than a SaaS dashboard. `surface` (#FFFDF7) is deliberately lighter/cleaner than paper for the floating white cards (ZIP-code panel on home/reps, article cards, the embed live-preview panel) — the small lift in luminance is what makes those cards feel like index cards set on a warmer table rather than being invisible against the page. `paperDeep` (#E9E1D3) is the kraft-toned wash used for the footer band on the reps page and the \"Decoded\" explainer panel on bill-detail — a step down in luminance so those full-width sections read as a distinct \"backing board\" without resorting to gray. `line` sits just under paperDeep for hairline card borders (the \"Copy link\"/\"Share\" button outlines, the embed radio-card borders). The accent, a dried-marigold ochre (#9A5A16), was chosen because it survives every duty on the list at once: it's dark/saturated enough to serve as small-caps metadata text on white cards (H.R. 2616 · PASSED ONE CHAMBER), as the focus ring on the ZIP input, and as the filled CTA/active-nav-pill background (with white ctaText, 5.46:1) — one hue, no separate \"UI blue.\" `accentBright` (#E3A94A, a lit sunflower/marigold) is reserved for anything sitting on the night ground — nav labels, the tiny dot marker inside the dark bill-summary callout, any glow — because the base accent alone gets muddy at low luminance against near-black. `accentSoft` (#EFD79C) is a paler, more saturated marigold wash for the selected-widget card in the embed builder and topic chips, tuned to sit visibly apart from the neutral paperDeep kraft tone rather than blending into it. `success` (#3F6B4A, moss/sage — think a community garden bed, not a \"go\" traffic light) and `warn` (#A8461F, a terracotta rust — clay flowerpot, not stop-sign red) are both desaturated earth tones so bill-status language (\"Passed one chamber\" vs. \"Heading to a vote\") reads as calm editorial signal, never as red/green partisan or emergency coding. Type: Fraunces is a warm, slightly ink-trap serif built for exactly this \"editorial but human\" register (it's used across indie newsroom and public-media rebrands) — set at 600/700 for \"Congress counts calls.\" style headlines, it reads like a broadsheet nameplate, not a government form. Source Sans 3 carries body copy, ZIP labels, and buttons: humanist, highly legible at small sizes in both English and Spanish diacritics, and neutral enough not to compete with the serif display — an NPR-adjacent pairing rather than a tech-product one."
+}

@@ -26,6 +26,7 @@ Every sprint PR updates this ledger; Sprint 7 publishes the final report.
 | PR | Net code lines | Net doc lines | 25+ blocks (sanctioned item) |
 |---|---|---|---|
 | PR-0 `mig/s0-preflight` | 0 (docs only) | + kickoff package, ledger, decisions record | none — no code touched |
+| PR-1 `mig/s1-tokens` | ~+2 (token value/name swaps net-neutral; +1 `brass-deep` token, +1 contrast comment line) | + M4 decision record, exploration archive (10 JSON receipts + README) | none — token swap is value-level |
 
 Sanctioned-add register (kickoff-named): S2 wordmark component + `app/manifest.ts`;
 S5a rep-lookup theming + white-label mode; S5b GTM page. Everything else must

@@ -36,7 +36,7 @@ export function PhoneScene({ scene }: { scene: SceneKey }) {
             {t('walkthrough.phone.billHeadline')}
           </p>
           <p
-            className={`${styles.enter} mt-1.5 inline-flex items-center gap-1 rounded-full bg-booth-soft px-1.5 py-0.5 text-[8px] font-semibold`}
+            className={`${styles.enter} mt-1.5 inline-flex items-center gap-1 rounded-full bg-brass-soft px-1.5 py-0.5 text-[8px] font-semibold`}
             style={delay(0.6)}
           >
             <Sparkles className="h-2.5 w-2.5" />
@@ -92,7 +92,7 @@ export function PhoneScene({ scene }: { scene: SceneKey }) {
           {/* The label beat: the AI disclaimer draws the eye before anything gets read aloud. */}
           <span className={`${styles.beat} mt-1.5 inline-block rounded-full`} style={delay(2.2)}>
             <span
-              className={`${styles.enter} inline-block rounded-full bg-booth-soft px-1.5 py-0.5 text-[8px] font-semibold`}
+              className={`${styles.enter} inline-block rounded-full bg-brass-soft px-1.5 py-0.5 text-[8px] font-semibold`}
               style={delay(0.6)}
             >
               {t('bill.scriptDisclaimer')}
@@ -116,7 +116,7 @@ export function PhoneScene({ scene }: { scene: SceneKey }) {
           <span className={`${styles.fadeOut} col-start-1 row-start-1 text-paper/70`} style={delay(2.6)}>
             {t('walkthrough.phone.dialing')}
           </span>
-          <span className={`${styles.fadeIn} col-start-1 row-start-1 font-medium text-booth-bright`} style={delay(2.6)}>
+          <span className={`${styles.fadeIn} col-start-1 row-start-1 font-medium text-brass-bright`} style={delay(2.6)}>
             {t('walkthrough.phone.connected')}
           </span>
         </div>
@@ -173,7 +173,7 @@ function Screen({ children, className = '' }: { children: React.ReactNode; class
   return (
     <div className="flex h-full flex-col p-3 pt-6">
       <p className="flex items-center gap-1 pb-2 text-[9px] font-bold text-ink-soft">
-        <span className="h-1.5 w-1.5 rounded-full bg-booth" />
+        <span className="h-1.5 w-1.5 rounded-full bg-brass" />
         {t('common.appName')}
       </p>
       <div className={`flex min-h-0 flex-1 flex-col ${className}`}>{children}</div>

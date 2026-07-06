@@ -1,0 +1,359 @@
+{
+  "panel": [
+    {
+      "P1": {
+        "uiux": 78,
+        "copyFit": 68,
+        "brand": 60,
+        "resonance": 62,
+        "note": "The bold grotesque 'Congress counts calls.' headline and copper accent are crisp and legible, but sitting under that dark nav bar it reads like a fintech dashboard — nothing here signals 'newsroom' the way a serif masthead would."
+      },
+      "P2": {
+        "uiux": 85,
+        "copyFit": 92,
+        "brand": 94,
+        "resonance": 91,
+        "note": "The espresso-ink, groundwood-paper OG card with Fraunces is the only one of the six that looks like an actual newspaper front page rather than a civic-tech product — terracotta instead of green or gold also fully sidesteps any 'official seal' feeling."
+      },
+      "P3": {
+        "uiux": 74,
+        "copyFit": 58,
+        "brand": 55,
+        "resonance": 57,
+        "note": "Instrument Serif's thin, fashion-magazine strokes on 'Congress counts calls.' look delicate next to that vivid signal-orange 'Make the call' pill — the combination reads more like a boutique travel blog than statehouse reporting."
+      },
+      "P4": {
+        "uiux": 72,
+        "copyFit": 79,
+        "brand": 81,
+        "resonance": 74,
+        "note": "Source Serif and walnut/oat feel dignified and press-credible, but the brass 'Education'/'Environment & energy' tags nearly disappear into the oat paper on the homepage — warmth here comes at a real legibility cost."
+      },
+      "P5": {
+        "uiux": 77,
+        "copyFit": 66,
+        "brand": 72,
+        "resonance": 70,
+        "note": "Swapping P3's orange for copper calms things down and the green ink adds some gravitas, but the same slim Instrument Serif still leaves a three-word hero headline looking under-weighted for a lede statement."
+      },
+      "P6": {
+        "uiux": 75,
+        "copyFit": 64,
+        "brand": 52,
+        "resonance": 55,
+        "note": "Forest green plus bright golden-amber tags ('5 OUTLETS' rendered in amber) reads like an official park-service seal or an achievement badge — a little too close to governmental or gamified for a nonpartisan explainer tool."
+      },
+      "persona": "Elena, 41, editor at a regional Spanish-language news outlet, evaluating each system purely as a prospective embed partner: would this widget look credible dropped into her outlet's pages, would her readers trust it on sight, and does it read as journalism rather than advocacy or software.",
+      "pick": "P2",
+      "rationale": "P2 is the only one of the six that fully abandons the forest-green 'civic-tech' palette shared by four of the others — its espresso ink, groundwood paper, and terracotta accent read as warm newsprint rather than an official seal or a SaaS dashboard, and Fraunces gives the headline actual editorial character instead of either grotesque-sans genericness (P1/P6) or Instrument Serif's fashion-boutique delicacy (P3/P5). On the OG cards especially, P2 is the one Elena would run next to her own masthead without hesitation; P4 is the closest runner-up but loses points on the brass accent nearly vanishing against the oat paper."
+    },
+    {
+      "P1": {
+        "uiux": 88,
+        "copyFit": 84,
+        "brand": 80,
+        "resonance": 85,
+        "note": "The bold grotesque 'Congress counts calls.' headline on forest green reads clean and instantly legible — like good civic-tech signage — but next to the copper accent it lands closer to 'well-made app' than 'publication I'd hand a patron'; solid and safe, just not the warmest option on the table."
+      },
+      "P2": {
+        "uiux": 87,
+        "copyFit": 92,
+        "brand": 93,
+        "resonance": 91,
+        "note": "The Fraunces serif headline over espresso ink and groundwood paper, with the terracotta 'Education' / 'Environment & energy' tag pills, reads like a well-produced community newsletter I'd be proud to have on the reference desk — warm, literary, unmistakably nonpartisan, and it doesn't feel like it's trying to look like software."
+      },
+      "P3": {
+        "uiux": 74,
+        "copyFit": 77,
+        "brand": 70,
+        "resonance": 66,
+        "note": "Instrument Serif is elegant, but paired with the vivid signal-orange 'Bills' nav pill and 'Make the call' button it tips into indie-lit-journal territory — stylish in a way that could read as a taste statement to some patrons rather than a plain, everybody's-welcome civic tool."
+      },
+      "P4": {
+        "uiux": 84,
+        "copyFit": 87,
+        "brand": 84,
+        "resonance": 80,
+        "note": "Walnut ink, oat paper and the bold Source Serif headline feel like a university-press annual report — genuinely credible and dignified, with the brass accent staying refreshingly muted, but the darker overall palette reads more 'serious archive' than 'come on in,' a notch heavier than I'd want for a walk-up flyer."
+      },
+      "P5": {
+        "uiux": 77,
+        "copyFit": 79,
+        "brand": 77,
+        "resonance": 73,
+        "note": "Takes P1's calmer copper and green but swaps in the delicate Instrument Serif for the headline; it's a reasonable middle ground, though at marquee size the thin serif loses some of the sturdy, plainspoken authority I'd want on a page that's telling people how to call Congress."
+      },
+      "P6": {
+        "uiux": 86,
+        "copyFit": 84,
+        "brand": 75,
+        "resonance": 78,
+        "note": "Same friendly grotesque sans as P1, but the golden-amber 'Home' nav pill and EN/ES toggle in the embed preview read closer to a caution-yellow or promo badge than a quiet trust color — a bit brighter and more attention-grabbing than the calm, earthy tone I'd want representing the library's rack card."
+      },
+      "persona": "Marcus, 55 — public librarian running civic-information programming",
+      "pick": "P2",
+      "rationale": "P2's espresso-ink/groundwood-paper/terracotta palette with Fraunces serif display is the only system that reads as genuinely 'warm editorial' rather than 'civic-tech app' or 'design showcase.' It has the calm, earthy, print-newsletter feel of something I'd be comfortable putting on the library's reference desk or handing to a patron of any age or political stripe — nothing about it screams startup, government bureaucracy, or partisan advocacy. The serif headline dignifies the bill-detail content (WWII graves, union bargaining) without feeling stuffy, and the muted terracotta accent never reads as alert or promotional the way P3's vivid orange or P6's amber occasionally do. P4 is a close second for sheer institutional credibility, but its darker walnut/oat tone feels a shade more formal and less immediately inviting than P2's warmer, lighter-touch package."
+    },
+    {
+      "P1": {
+        "uiux": 80,
+        "copyFit": 78,
+        "brand": 62,
+        "resonance": 60,
+        "note": "Grotesque-sans headline + copper phone-chip on the OG card reads clean and functional, but next to the other five it's the one that could pass for any civic-tech SaaS landing page — the all-sans type system doesn't do much to say 'editorial' or 'not another app.'"
+      },
+      "P2": {
+        "uiux": 82,
+        "copyFit": 84,
+        "brand": 84,
+        "resonance": 82,
+        "note": "The bold Fraunces 'Bill would find Jewish WWI and WWII graves...' headline on espresso-and-groundwood paper looks like a real newspaper explainer, not an app screen — and 'groundwood paper' as a texture concept is exactly the register a newsroom embed should have."
+      },
+      "P3": {
+        "uiux": 79,
+        "copyFit": 68,
+        "brand": 58,
+        "resonance": 55,
+        "note": "The vivid signal-orange 'Your line to Congress' on the OG card is the brightest, most saturated accent of the six — paired with the delicate Instrument Serif it reads more like a hip media-startup rebrand than a neutral public utility, which is the opposite of reassuring to me."
+      },
+      "P4": {
+        "uiux": 72,
+        "copyFit": 76,
+        "brand": 74,
+        "resonance": 65,
+        "note": "Handsome antique-paper mood, but the oxidized-brass focus ring around the ZIP input on the reps page nearly disappears into the oat background — for a site that promises accessibility, that's the kind of detail a skeptic like me would clock as under-tested."
+      },
+      "P5": {
+        "uiux": 82,
+        "copyFit": 80,
+        "brand": 80,
+        "resonance": 78,
+        "note": "Same elegant Instrument Serif as P3 but with the quieter copper accent and forest-green ink instead of vivid orange — the hero card on home.jpg reads composed and unhurried rather than trying to sell me something, which is what I actually want from a 'find your rep' tool."
+      },
+      "P6": {
+        "uiux": 79,
+        "copyFit": 74,
+        "brand": 58,
+        "resonance": 50,
+        "note": "The gold-amber active nav pill and 'En español' chip give the whole header a gilded, badge-like sheen that reads more 'official seal' than 'nonprofit civic tool' — odd choice for a product whose whole pitch is 'no accounts, nothing official happening here.'"
+      },
+      "persona": "Jake, 38 — English-dominant, politically unaffiliated, actively suspicious of political-adjacent websites. Scans instinctively for red/blue coding, astroturf gloss, and any hint that a 'free nonpartisan tool' is actually optimizing for engagement or hiding an agenda. Rewards understatement; punishes anything that looks like it's trying too hard to look trustworthy or trying too hard to look expensive.",
+      "pick": "P2",
+      "rationale": "None of the six trips my partisan-color alarm — no red, no blue, nothing loud enough to read as a side. Past that baseline, P2 is the only one that doesn't just avoid looking bad, it actively looks like something specific and right: espresso ink on groundwood-toned paper with Fraunces is a newsprint/editorial palette, and this thing is literally going to live embedded inside newsroom pages. It doesn't look like a funded startup (P1, P6), it doesn't look like it's trying to be a lifestyle brand (P3's vivid orange + fashion serif), and it isn't undermined by a legibility miss like P4's brass focus ring. P5 is my honest runner-up — same restraint, calmer accent than P3 — but P2's warmer, darker ink and Fraunces give it more personality and a stronger, more specific 'this belongs in a real newsroom' identity, which matters more to me than P5's slightly cooler polish."
+    },
+    {
+      "persona": "Priya, 47 — Program Director at a national civic nonprofit; budget holder evaluating paid org licensing. Needs professional, board-presentable, credible enough to put in a grant application. Skeptical of anything that reads consumer-gimmicky or generic-startup.",
+      "P1": {
+        "uiux": 78,
+        "copyFit": 68,
+        "brand": 60,
+        "resonance": 62,
+        "note": "Home hero: the all-grotesque-sans 'Congress counts calls.' reads like a well-executed B2B SaaS landing page rather than an editorial civic brand — competent but exactly the anti-reference (generic SaaS) the brief warns against."
+      },
+      "P2": {
+        "uiux": 80,
+        "copyFit": 82,
+        "brand": 78,
+        "resonance": 75,
+        "note": "Fraunces's wonky ball-terminal 'g' in the hero headline is charming and warm, but on the bill-detail page it starts to read closer to an artisan/craft-brand editorial site than a national civic institution I'd cite in a grant deck."
+      },
+      "P3": {
+        "uiux": 79,
+        "copyFit": 78,
+        "brand": 66,
+        "resonance": 64,
+        "note": "og-home.png: the signal-orange 'Your line to Congress' is the most saturated accent of all six — striking, but it nudges the whole system toward consumer-app vibrancy, which is a harder sell to a board expecting institutional restraint."
+      },
+      "P4": {
+        "uiux": 82,
+        "copyFit": 80,
+        "brand": 74,
+        "resonance": 76,
+        "note": "The walnut-ink header on home.jpg photographs almost indistinguishably from plain black/dark-mode — Source Serif 4 and the brass accent are dignified and report-like, but the hero loses brand distinctiveness next to the forest-green systems."
+      },
+      "P5": {
+        "uiux": 83,
+        "copyFit": 84,
+        "brand": 85,
+        "resonance": 84,
+        "note": "Home hero: Instrument Serif on forest-green with a muted-copper accent gives 'Congress counts calls.' real editorial gravitas without Fraunces's quirkiness or P3's loud orange — this is the palette I'd actually feel safe screenshotting into a funder update."
+      },
+      "P6": {
+        "uiux": 76,
+        "copyFit": 66,
+        "brand": 58,
+        "resonance": 58,
+        "note": "The golden-amber 'Home' nav pill and 'Make the call' CTA on bill-detail.jpg read closer to a promotional sale/CTA yellow than a considered institutional accent — combined with the plain sans pairing, it's the weakest signal of the six for grant-application credibility."
+      },
+      "pick": "P5",
+      "rationale": "P5 is the only system that hits all four things I need simultaneously: a civic-safe, nonpartisan palette (forest green/warm paper, not gov-gray, not red/blue); genuine editorial distinctiveness via Instrument Serif that makes the punchy copy ('Congress counts calls.', 'Decoded') feel like a considered newsroom rather than a SaaS tagline; and a muted, dignified copper accent instead of a loud vivid orange (P3) or caution-yellow amber (P6). Compared to P2, it avoids Fraunces's boutique/craft-brand quirkiness; compared to P4, its forest-green hero is far more visually distinct and memorable than a near-black walnut background that photographs like generic dark mode. This is the version I'd put in front of my board and cite in a grant narrative without hedging."
+    },
+    {
+      "P1": {
+        "uiux": 78,
+        "copyFit": 82,
+        "brand": 83,
+        "resonance": 80,
+        "note": "On the embeds page the copper #B4551F 'EN' toggle and selected-radio border sit quietly next to the dark monospace snippet block — confident without competing; the grotesque 'Congress counts calls.' headline reads like a real product, which reassures me this is a maintained tool, not a static site."
+      },
+      "P2": {
+        "uiux": 80,
+        "copyFit": 79,
+        "brand": 89,
+        "resonance": 86,
+        "note": "The espresso navbar (#221D17) reads almost pure black, and Fraunces on 'Build your embed' / 'Copy this snippet' gives the configurator an unexpected editorial gravity without hurting the legibility of the code block underneath — this is the only one of the six where the embeds page looks deliberately 'designed' rather than 'themed onto a template.'"
+      },
+      "P3": {
+        "uiux": 84,
+        "copyFit": 64,
+        "brand": 60,
+        "resonance": 56,
+        "note": "The signal-orange #E65A2B 'EN' pill and active 'Home' nav tab are the most saturated accent of all six systems — technically the easiest to spot as 'selected,' but on a page whose whole pitch is 'no sales call, no server-side data,' that CTA-orange reads closer to a marketing-funnel color than a civic-trust one, which is exactly the generic-SaaS drift the brief warns against."
+      },
+      "P4": {
+        "uiux": 68,
+        "copyFit": 85,
+        "brand": 79,
+        "resonance": 76,
+        "note": "Source Serif 4 makes the 'Decoded / What does this do?' Q&A on the bill page feel like a real policy explainer — best copy fit of the six — but the brass #82611F 'EN' toggle and radio ring have visibly lower contrast against both the oat paper and the dark navbar than any other accent; as the person accountable for this rendering correctly inside someone else's page, that's the first thing I'd flag to file a bug on."
+      },
+      "P5": {
+        "uiux": 79,
+        "copyFit": 68,
+        "brand": 71,
+        "resonance": 69,
+        "note": "Same trustworthy copper as P1, but the hairline strokes of Instrument Serif on 'Embed Rostra on your site' read closer to a fashion-magazine dek than a configuration-page heading — elegant, but it undersells the 'flip a switch, ship it' developer confidence I want from a page whose whole job is getting me to paste a script tag."
+      },
+      "P6": {
+        "uiux": 81,
+        "copyFit": 81,
+        "brand": 67,
+        "resonance": 64,
+        "note": "The golden-amber #E8A317 'EN' toggle and active nav pill are bright enough that my first reflex reading the embeds page was 'warning state,' not 'selected' — in normal UI convention that hue means caution, and it's the accent I'd be least comfortable defending as 'trustworthy civic tool' to a partner newsroom."
+      },
+      "persona": "Devon, 29 — developer at a partner org evaluating the white-label embeds/configurator surface for integration into a Spanish-language newsroom's site, and for a paid org license.",
+      "pick": "P2",
+      "rationale": "I'm the one who has to paste this script tag into someone else's CMS and then defend the choice to my editor, so what I'm actually grading is 'does this look like a disciplined, maintained design system or a themed template.' P2's near-black espresso navbar plus Fraunces on the configurator headers is the only version where the embeds page reads as deliberately authored rather than a color-swap of the same layout — it clears the 'not generic SaaS' bar by the widest margin while the muted terracotta accent stays quiet enough not to clash once it's sitting inside a partner site's own palette. P4's Source Serif fits the plain-language bill copy even better, but its brass accent has visibly weaker contrast on both the light and dark chrome, which is a real integration risk, not just a taste call. P3 and P6 both reach for the most saturated accent of the six (signal-orange, golden-amber) and both read to me as louder/more marketing-coded than the 'warm editorial trustworthy' brief wants — P3's orange in particular is the one color here I could see someone mistaking for a generic startup CTA. P2 is the one I'd actually recommend my org pay for."
+    },
+    {
+      "P1": {
+        "uiux": 78,
+        "copyFit": 75,
+        "brand": 76,
+        "resonance": 74,
+        "note": "On home.jpg the bold grotesque 'Congress counts calls.' next to the copper 'Home' pill reads clean and current, but it feels closer to a well-made civic app than something warm to her — competent, not quite comforting."
+      },
+      "P2": {
+        "uiux": 83,
+        "copyFit": 88,
+        "brand": 92,
+        "resonance": 90,
+        "note": "The Fraunces serif headline over espresso ink and groundwood paper (home.jpg, og-home.png) looks like a trusted neighborhood paper explaining the news to her — exactly the warmth she wants before dialing a stranger's office."
+      },
+      "P3": {
+        "uiux": 70,
+        "copyFit": 68,
+        "brand": 62,
+        "resonance": 60,
+        "note": "On reps.jpg the vivid signal-orange focus ring around the ZIP box, paired with the thin Instrument Serif headline, reads more like a bright call-to-action banner than a calm civic helper — closest of the six to the alarmist-campaign feeling she's told to avoid."
+      },
+      "P4": {
+        "uiux": 80,
+        "copyFit": 85,
+        "brand": 88,
+        "resonance": 86,
+        "note": "Walnut ink, oat paper, and the plain Source Serif 4 headline on bill-detail.jpg feel like a well-worn civic handbook; the muted oxidized-brass 'Make the call' button is calm and legible without shouting at her."
+      },
+      "P5": {
+        "uiux": 72,
+        "copyFit": 70,
+        "brand": 68,
+        "resonance": 66,
+        "note": "Pairing P1's calmer copper with P3's delicate Instrument Serif (see the 'Your representatives' preview on embeds.jpg) softens the alarm, but the thin serif over the small widget label starts to feel more boutique-lifestyle than civic-explainer."
+      },
+      "P6": {
+        "uiux": 76,
+        "copyFit": 74,
+        "brand": 65,
+        "resonance": 63,
+        "note": "The golden-amber active nav tab and the og-home.png wordmark glow brighter and more gold than any other system — it reads closer to a rewards or finance app icon than a nonpartisan calling tool, which risks feeling salesy rather than trustworthy."
+      },
+      "persona": "Rosa, 54 — Spanish-dominant end user, wants to call about a healthcare bill, needs warmth and clarity, must not feel like a cold government site or an alarmist campaign page",
+      "pick": "P2",
+      "rationale": "P2 best hits \"warm, editorial, trustworthy\" without tipping into cold bureaucracy or campaign urgency. The espresso-on-groundwood palette and Fraunces serif read like a community newspaper or library handout — genres Rosa already trusts — while the terracotta accent stays earthy rather than alarm-bright, unlike P3's vivid signal-orange. It also flatters the current folksy, plain-spoken copy (\"Congress counts calls,\" \"Decoded,\" \"45-second read\") better than the more fashion-forward Instrument Serif systems (P3/P5) or the more generic grotesque-sans systems (P1/P6), and edges out P4's very similar heritage feel by reading slightly warmer and more human at display size, which matters most for someone deciding whether to trust the site enough to pick up the phone."
+    },
+    {
+      "P1": {
+        "uiux": 90,
+        "copyFit": 88,
+        "brand": 82,
+        "resonance": 90,
+        "note": "The grotesque display headline ('Congress counts calls.') has no thin hairlines to lose at zoom, and the copper accent is the darkest, most saturated of the six — it stays legible as the ZIP-code focus ring, the 'Find my representatives' button, and the ES/EN toggle fill on the embeds page. This is the one where I never have to guess what's clickable."
+      },
+      "P2": {
+        "uiux": 74,
+        "copyFit": 78,
+        "brand": 88,
+        "resonance": 76,
+        "note": "Fraunces gives the homepage headline real editorial warmth and it's set bold enough not to go thin, and the terracotta accent still reads dark on the white bill-detail tag pills — but the bouncy, high-contrast serif curves (look at the 'g' and 'C' on the OG card) add visual texture I have to parse through at high zoom that a plain sans just doesn't ask of me."
+      },
+      "P3": {
+        "uiux": 46,
+        "copyFit": 50,
+        "brand": 60,
+        "resonance": 42,
+        "note": "Instrument Serif's hairline strokes are the thinnest of any system here — visible on the homepage headline and painfully so on the 'Rostra' OG-card logotype, where the letterforms nearly vanish at small size. Paired with the plain, dry bill copy ('Bill sets union contract bargaining timeline and deadlines'), the delicate type feels like it wasn't built with someone like me in mind."
+      },
+      "P4": {
+        "uiux": 68,
+        "copyFit": 80,
+        "brand": 78,
+        "resonance": 70,
+        "note": "Source Serif 4 is a sturdy workhorse — I can read the homepage headline and the 'Decoded' body copy fine at a glance. But the oxidized-brass '5 OUTLETS' and outlet-count labels on the news cards sit noticeably lower-contrast against white than any copper or terracotta variant; the accent that's supposed to draw my eye is the one I have to hunt for."
+      },
+      "P5": {
+        "uiux": 52,
+        "copyFit": 55,
+        "brand": 65,
+        "resonance": 50,
+        "note": "Same thin Instrument Serif headline problem as P3 — the delicate strokes are the legibility bottleneck here, not the color. At least the copper accent keeps the ZIP-code focus ring and the 'Make the call' CTA properly dark and visible, so this is a font problem layered on top of an otherwise decent palette."
+      },
+      "P6": {
+        "uiux": 78,
+        "copyFit": 85,
+        "brand": 68,
+        "resonance": 74,
+        "note": "The grotesque headline is exactly as crisp as P1's — great. But the golden-amber accent washes out on light grounds: the '5 OUTLETS' label and outlet-count text on the homepage news cards, and especially the amber focus ring around the ZIP input on the reps page, both sit closer to yellow-on-cream than the punchy copper/terracotta of the other systems — the one moment I most need a clear 'this is focused' signal is the one where the color lets me down."
+      },
+      "persona": "Amara, 33 — low-vision reader who browses at increased zoom and with high-contrast display preferences on. I scan for whether text stays crisp when I blow it up, whether focus rings and buttons are actually findable without hunting, and whether an accent color still reads once it's sitting on white or cream instead of on a dark hero.",
+      "pick": "P1",
+      "rationale": "P1 is the only system where neither the type nor the color asks me to work harder than necessary: the grotesque display face has no hairline strokes to lose at zoom (unlike Fraunces' bounce or Instrument Serif's near-vanishing thinness in P3/P5), and its copper accent is dark and saturated enough to stay visible everywhere it does real accessibility work — the ZIP-input focus ring, the primary CTA, the embed toggle — not just on the dark hero where any accent would pop. P6 comes closest on type (same grotesque) but its golden-amber accent visibly thins out exactly where I need a focus/CTA signal most, on light grounds. P2 and P4 are legible enough but ask a bit more of me at zoom (Fraunces' ornamentation, brass's muted contrast). P3 and P5 share the weakest link — Instrument Serif's delicate strokes — which no accent choice can fully offset. P1 is the system I'd trust was built with someone like me in the room."
+    }
+  ],
+  "labelmap": [
+    [
+      "P1",
+      "C"
+    ],
+    [
+      "P2",
+      "E"
+    ],
+    [
+      "P3",
+      "A"
+    ],
+    [
+      "P4",
+      "F"
+    ],
+    [
+      "P5",
+      "D"
+    ],
+    [
+      "P6",
+      "B"
+    ]
+  ]
+}

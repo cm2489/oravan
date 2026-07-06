@@ -27,14 +27,14 @@ body {
     system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.45;
-  color: #18203a;
-  background: #faf6ee;
+  color: #2a2318;
+  background: #f3ecdd;
 }
 
 @media (prefers-color-scheme: dark) {
   body {
-    color: #f2ebdc;
-    background: #11182e;
+    color: #e4d9c0;
+    background: #1b1611;
   }
 }
 
@@ -47,7 +47,7 @@ body {
 
 /* Visible focus everywhere, never removed - same rule as the main site. */
 :focus-visible {
-  outline: 3px solid #e8a317;
+  outline: 3px solid #82632a;
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -114,12 +114,12 @@ body {
   border-radius: 8px;
   border: 2px solid transparent;
   cursor: pointer;
-  background: #18203a;
-  color: #faf6ee;
+  background: #2a2318;
+  color: #f3ecdd;
 }
 
 .re-btn:hover {
-  background: #11182e;
+  background: #1b1611;
 }
 
 .re-toggle {
@@ -137,9 +137,9 @@ body {
 }
 
 .re-toggle[aria-pressed='true'] {
-  background: #e8a317;
-  border-color: #e8a317;
-  color: #18203a;
+  background: #82632a;
+  border-color: #82632a;
+  color: #fbf8f0;
 }
 
 .re-card {
@@ -191,8 +191,8 @@ body {
   width: 44px;
   height: 54px;
   border-radius: 6px;
-  background: #18203a;
-  color: #faf6ee;
+  background: #2a2318;
+  color: #f3ecdd;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -200,8 +200,8 @@ body {
 
 @media (prefers-color-scheme: dark) {
   .re-avatar-initials {
-    background: #e8a317;
-    color: #18203a;
+    background: #82632a;
+    color: #fbf8f0;
   }
 }
 
@@ -227,8 +227,8 @@ body {
   padding: 10px 14px;
   margin-top: 10px;
   border-radius: 8px;
-  background: #18203a;
-  color: #faf6ee;
+  background: #2a2318;
+  color: #f3ecdd;
   text-decoration: none;
   font-weight: 600;
 }
@@ -332,8 +332,8 @@ body {
   margin-top: 10px;
   padding: 3px 10px;
   border-radius: var(--rostra-radius, 999px);
-  background: var(--rostra-accent, #e8a317);
-  color: #18203a;
+  background: var(--rostra-accent, #82632a);
+  color: #fbf8f0;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;

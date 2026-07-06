@@ -110,7 +110,7 @@ export default async function BillPage({
         <span aria-hidden>·</span>
         <span>{t(`bills.status.${bill.status}`)}</span>
         {(bill.issue_tags ?? []).slice(0, 2).map((tag) => (
-          <span key={tag} className="rounded-full bg-booth-soft px-2.5 py-1 text-xs font-medium text-ink">
+          <span key={tag} className="rounded-full bg-brass-soft px-2.5 py-1 text-xs font-medium text-ink">
             {t(`categories.${tag}`)}
           </span>
         ))}

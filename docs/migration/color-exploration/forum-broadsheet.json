@@ -1,0 +1,28 @@
+{
+  "seedName": "Forum Broadsheet",
+  "thesis": "This is the palette of a confident, physical print object rather than a screen: warm uncoated-stock paper, an ink that reads as near-black but is mixed with a trace of umber the way real printer's ink is, and exactly one considered color — a burnt-sienna terracotta pulled from the material world of the Rostra itself (fired clay, sun-baked brick, weathered civic stone) — deployed with editorial discipline as the single mark of emphasis across kickers, CTAs, and focus states. Status colors are muted ledger-ink green and ochre-gold rather than traffic-light red/green, and the dark \"night\" ground is a warm espresso-black, not a corporate slate, so the hero band reads like a printed masthead panel, not a SaaS dashboard. Every choice is calibrated to survive translation into Spanish-language newsroom embeds sitting next to real editorial content: it needs to look like it was designed by people who make things people read, not people who make things people sign up for.",
+  "palette": {
+    "paper": "#F7F2EA",
+    "paperDeep": "#EEE4D2",
+    "surface": "#FFFEFB",
+    "ink": "#241E18",
+    "inkSoft": "#46403A",
+    "inkFaint": "#6B6259",
+    "night": "#17130F",
+    "accent": "#9D4525",
+    "accentBright": "#E48258",
+    "accentSoft": "#F3DFCE",
+    "line": "#DFD3BF",
+    "success": "#3F7A52",
+    "successSoft": "#E1EBE0",
+    "warn": "#8A5A0A",
+    "warnSoft": "#F3E7CB"
+  },
+  "ctaText": "#FFF6EC",
+  "fonts": {
+    "display": "Fraunces",
+    "body": "Libre Franklin",
+    "note": "Both families are on Google Fonts and cover the Latin-extended range needed for Spanish diacritics (á é í ó ú ñ ¿ ¡) natively — verify in next/font/google with subsets:['latin','latin-ext']. For the embed code-snippet block (seen in the embeds screenshot) pair with JetBrains Mono at 400/500 rather than a system monospace, so the copy-snippet box reads as deliberately typeset rather than a raw terminal dump."
+  },
+  "rationale": "Structure first: all four screens share one dark band at the top (nav bar fused with the hero on home/reps/embeds, and the same tone reused as the callout box on bill-detail) sitting above a light page body, with white-ish cards floating on both grounds. That gave me the night/paper/surface hierarchy directly — night (#17130F) is a warm espresso-black used only for that shared top band and the dark callout, never diluted into a \"dark mode\" gray; paper (#F7F2EA) is the page ground, warmed toward cream rather than clinical white so it reads as stock, not glass; surface (#FFFEFB) is pulled lighter still for the floating cards (the ZIP-lookup card on the hero in home.jpg/reps.jpg, the \"In the news\" cards, the live-preview panel in embeds.jpg); paperDeep (#EEE4D2) is the deeper wash for the sunken sections — the \"Decoded\" Q&A card on bill-detail and the footer/mission band on reps.jpg, both of which sit visually one step back from the main page ground in the screenshots.\n\nInk (#241E18) is a blackened-umber rather than a true #000 — it carries 14.8:1 on paper, so it has headroom to be warmed without ever risking legibility, and it's what every headline and body line in the mockups is set in. inkSoft (#46403A, 9.2:1) covers the italic mission paragraphs on the reps.jpg footer and secondary body copy; inkFaint (#6B6259, 5.4:1) is for the true throwaway metadata — \"Last action May 20,\" \"Data as of July 6, 2026\" — that shouldn't compete with the kicker line above it.\n\nThe kicker line is where the accent earns its keep: \"H.R. 2616 · PASSED ONE CHAMBER · 5 OUTLETS\" and \"H.R. 2701 · Heading to a vote\" are small uppercase metadata sitting directly on white cards — that's the accent's hardest duty, and burnt sienna (#9D4525) clears it at 6.3:1. The same token fills \"Find my representatives,\" \"Make the call,\" and the active nav pill (Home/Bills/My reps in each header) as a solid background, so ctaText (#FFF6EC — a warm ivory, not stark white, echoing the paper tone so the button reads as \"paper-colored ink reversed out\" rather than a generic white label) needed to clear AA against it too — 5.9:1. Darkening the accent from an initial mid-tone helped both constraints at once, since a text-color and a fill-color reading of the same hue move in the same direction as it deepens. The tiny dot marker inside the dark callout on bill-detail.jpg, and the focus ring on the ZIP input in reps.jpg (currently a plain black double-ring), both take the accent too — on the paper ground it sits at 5.7:1, well past the 3:1 non-text minimum a focus ring needs. accentBright (#E48258) is reserved for anywhere the accent has to live on the night ground instead of paper — a glowing ember rather than a muddy rust, at 6.7:1. accentSoft (#F3DFCE) is the pale wash for the selected-radio-row state in the embeds builder and any tag-chip fill, kept close enough to paperDeep in value that it reads as a tint, not a competing surface.\n\nsuccess (#3F7A52, muted sage-ledger green) and warn (#8A5A0A, dark ochre-gold) are both pushed well clear of the accent's hue and of any red/blue partisan association — status colors that could sit on a bill's \"passed/committee\" tags without reading as party signaling, each clearing 4.5:1 as small text on surface so they can double as the tag-chip label color, not just a swatch. line (#DFD3BF) is the hairline — warm enough not to look like a UI-kit default gray, quiet enough to separate the code-snippet block, the radio rows, and the news-card grid without adding visual weight the layout doesn't already have."
+}

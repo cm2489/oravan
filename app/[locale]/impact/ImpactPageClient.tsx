@@ -38,7 +38,7 @@ export default function ImpactPageClient() {
           { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="rounded-card border border-line bg-surface p-4 text-center shadow-lift">
-            <Icon className="mx-auto h-5 w-5 text-booth" aria-hidden />
+            <Icon className="mx-auto h-5 w-5 text-brass" aria-hidden />
             <dd className="mt-1 font-display text-3xl font-bold">{value}</dd>
             <dt className="text-xs font-medium text-ink-soft">{label}</dt>
           </div>
