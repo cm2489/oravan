@@ -372,7 +372,14 @@
     "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto."
   },
   "og": {
-    "aiDecoded": "Descifrado con IA",
-    "dataAsOf": "Datos al {date}"
+    "aiDecoded": "Descifrado con IA"
+  },
+  "freshness": {
+    "dataAsOf": "Datos al {date}",
+    "quietWeekTitle": "Semana tranquila",
+    "quietWeekBody": "Ningún proyecto de ley ha superado el umbral para una llamada urgente en este momento. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
+    "dataStaleTitle": "Hace falta verificar los datos",
+    "dataStaleBody": "Todavía no podemos confirmar qué es más urgente — nuestra última verificación exitosa fue el {date}. Esto no es una semana tranquila: son datos desactualizados.",
+    "staleNote": "Nuestra última verificación exitosa de datos fue el {date} — es posible que actividad más reciente del Congreso aún no se muestre."
   }
 }

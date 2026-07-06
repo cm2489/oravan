@@ -44,22 +44,35 @@ export function getAllBills(): Bill[] {
   return BILLS;
 }
 
-export function getTeasers(locale = 'en'): FeedTeaser[] {
+const byUrgencyDesc = <T extends { eff: number; raw: Pick<Bill, 'last_action_date'> }>(a: T, b: T) =>
+  b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? '');
+
+/*
+ * The one place the corpus gets scored and split into active/settled with
+ * band floors applied (KTD-2) - getTeasers and getTopActions both read this
+ * so "Act now" means the same thing everywhere on the site. A third
+ * independent copy of this scoring is the exact drift
+ * docs/solutions/stale-urgency-freeze.md closed for the urgency curve
+ * itself; this keeps the band-floor logic from re-acquiring that problem.
+ */
+function scoreActiveBills() {
   const scored = BILLS.map((raw) => ({
     raw,
     eff: effectiveUrgency(raw.status, raw.last_action_date),
     terminal: TERMINAL_STATUSES.has(raw.status),
   }));
-  const byUrgency = (a: (typeof scored)[number], b: (typeof scored)[number]) =>
-    b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? '');
-
   // Active bills claim the now/moving bands by rank; terminal bills are
   // appended and pinned to radar, so they can never displace an actionable
   // bill. Floors come from the active bills alone, so a settled law can't
   // even raise the bar.
-  const activeBills = scored.filter((s) => !s.terminal).sort(byUrgency);
-  const settledBills = scored.filter((s) => s.terminal).sort(byUrgency);
+  const activeBills = scored.filter((s) => !s.terminal).sort(byUrgencyDesc);
+  const settledBills = scored.filter((s) => s.terminal).sort(byUrgencyDesc);
   const floors = bandFloors(activeBills.map((s) => s.eff));
+  return { activeBills, settledBills, floors };
+}
+
+export function getTeasers(locale = 'en'): FeedTeaser[] {
+  const { activeBills, settledBills, floors } = scoreActiveBills();
 
   return [...activeBills, ...settledBills].map(({ raw, eff, terminal }) => {
     const b = localizeBill(raw, locale);
@@ -76,14 +89,32 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
   });
 }
 
-/** Top N most urgent bills that have a decoded summary - the "this week" shortlist. */
+/**
+ * Top N most urgent bills that clear the "Act now" floor and have a decoded
+ * summary - the "worth a call this week" shortlist. KTD-2: this respects the
+ * same absolute+rank floor as getTeasers' "now" band, so a genuinely quiet
+ * week returns an empty list here too, instead of backfilling from whatever
+ * ranks highest regardless of how urgent it actually is.
+ */
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
-  return BILLS
-    .filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status))
-    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) }))
-    .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''))
+  const { activeBills, floors } = scoreActiveBills();
+  return activeBills
+    .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline)
     .slice(0, n)
-    .map(({ b }) => localizeBill(b, locale));
+    .map(({ raw }) => localizeBill(raw, locale));
+}
+
+/**
+ * Whether ANY active bill clears the "Act now" floor - decoded or not. The
+ * quiet-week claim must key on this, not on getTopActions() being empty:
+ * getTopActions also filters on ai_headline, so an undecoded bill that
+ * clears the floor would land in /bills' "Act now" band (getTeasers applies
+ * no headline filter) while the decoded shortlist reads empty - and "no bill
+ * has cleared the bar" would be a false statement (AE3: never a false quiet).
+ */
+export function hasActNow(): boolean {
+  const { activeBills, floors } = scoreActiveBills();
+  return activeBills.some((s) => s.eff >= floors.nowFloor);
 }
 
 /*

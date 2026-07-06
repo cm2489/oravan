@@ -1,9 +1,9 @@
 import { ImageResponse } from 'next/og';
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
 import { formatCitation } from '@/lib/format';
-import syncState from '@/data/sync-state.json';
+import { dataAsOfString } from '@/lib/freshness';
 
 /*
  * Per-bill share card (WhatsApp/iMessage/Slack previews). Same brand idiom as
@@ -42,13 +42,11 @@ export default async function OgImage({
 
   const t = await getTranslations({ locale, namespace: 'og' });
   const tAll = await getTranslations({ locale });
-  const format = await getFormatter({ locale });
 
-  // Freshness: data/sync-state.json `lastRun` is when the nightly sync last
-  // refreshed the corpus (statuses refresh every run) — the honest "as of".
-  const asOf = t('dataAsOf', {
-    date: format.dateTime(new Date(syncState.lastRun), { year: 'numeric', month: 'long', day: 'numeric' }),
-  });
+  // Freshness: the shared stamp helper (lib/freshness.ts) renders the honest
+  // "as of" from getFreshness().checkedAt — KTD-1's single code path for
+  // every freshness claim, on-site and on this forwarded card alike.
+  const asOf = await dataAsOfString(locale);
 
   // Label the headline as AI only when it IS the AI headline; the official
   // title fallback (rare: decode pending) must not be marked as AI content.
