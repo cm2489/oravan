@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { after } from 'next/server';
+import { noteEmbedReferralDomain } from '@/lib/embed-referrer';
 import './embed.css';
 
 /*
@@ -22,13 +25,33 @@ import './embed.css';
  * CSP for this route group lives in next.config.ts's headers() (source:
  * '/embed/:path*') rather than here, since Next's per-route headers()
  * config is the mechanism that actually sets response headers.
+ *
+ * F3 (S15) - referrer-domain nomination lives HERE, in the shared layout,
+ * rather than in each widget page: layouts wrap every current AND future
+ * app/embed/*\/page.tsx (a widget's actual document load), so this is the
+ * minimal single ingestion point the ledger calls for without duplicating
+ * the call into each widget page individually. Deliberately NOT triggered
+ * by app/embed/portrait/[bioguide]/route.ts - Route Handlers don't render
+ * through a layout at all, and a portrait image is a sub-resource of an
+ * already-counted page load, not a second embed visit; counting it too
+ * would double- (or triple-, for a rep-lookup card with several members)
+ * count a single page load. See lib/embed-referrer.ts for what this does
+ * and does not mean (Referer only NOMINATES a candidate domain - it is
+ * never auto-counted as a confirmed install). Scheduled with `after()` so a
+ * slow or failed write can never delay the widget's own response - the same
+ * fail-open posture as every other Upstash write in this repo
+ * (lib/ratelimit.ts, lib/scriptcache.ts).
  */
 export const metadata: Metadata = {
   title: 'Rostra embed',
   robots: { index: false, follow: false },
 };
 
-export default function EmbedLayout({ children }: { children: React.ReactNode }) {
+export default async function EmbedLayout({ children }: { children: React.ReactNode }) {
+  const requestHeaders = await headers();
+  const referer = requestHeaders.get('referer');
+  after(() => noteEmbedReferralDomain(referer));
+
   return (
     <html lang="en">
       <body>{children}</body>
