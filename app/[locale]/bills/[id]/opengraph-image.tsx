@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
-import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
+import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString } from '@/lib/freshness';
 

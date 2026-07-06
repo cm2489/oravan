@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-import { getBill } from '@/lib/data';
+import { getBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import type { Stance } from '@/lib/types';
 

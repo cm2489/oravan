@@ -14,7 +14,7 @@ import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
-import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/data';
+import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { SITE_ORIGIN } from '@/lib/site';

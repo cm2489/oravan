@@ -3,7 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { BillsBrowser } from '@/components/BillsBrowser';
 import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
-import { getNewsBills, getTeasers } from '@/lib/data';
+import { getNewsBills, getTeasers } from '@/lib/core';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 
 export async function generateMetadata({

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 // Relative import of the plain .mjs module (no 'server-only'), the same file
-// lib/data.ts and the sync scripts import — the curve tested here is the
-// curve that ships everywhere.
+// lib/core/bills.ts and the sync scripts import — the curve tested here is
+// the curve that ships everywhere.
 import { STATUS_BASE, TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();

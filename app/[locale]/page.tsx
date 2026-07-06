@@ -7,7 +7,7 @@ import { CallWalkthrough } from '@/components/call-walkthrough/CallWalkthrough';
 import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
-import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/data';
+import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 

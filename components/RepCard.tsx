@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Phone, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { portraitUrl } from '@/lib/data';
+import { portraitUrl } from '@/lib/core';
 import type { Legislator } from '@/lib/types';
 
 function telHref(phone: string) {
