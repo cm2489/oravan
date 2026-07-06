@@ -1,3 +1,4 @@
+import { createServer, type Server } from 'node:http';
 import { expect, type APIRequestContext, type APIResponse, type Page } from '@playwright/test';
 
 /**
@@ -103,4 +104,38 @@ export async function callTool(
   const rpc = await mcpRpc(request, 'tools/call', { name, arguments: args });
   expect(rpc.error, `tools/call "${name}" returned a protocol-level error`).toBeUndefined();
   return rpc.result!;
+}
+
+/*
+ * A throwaway ad-hoc HTTP server on its own ephemeral port - a genuine
+ * cross-origin page (127.0.0.1:X) relative to the app under test
+ * (localhost:PW_PORT), not a page.setContent() page. That distinction
+ * matters for anything exercising frame-ancestors/CSP: WebKit treats a
+ * page.setContent() page as an opaque ("null") origin and refuses to frame
+ * *anything* from it, including a permissive `frame-ancestors *` carve-out -
+ * a real HTTP origin is both the more realistic "third-party host" and the
+ * one that actually exercises the policy under test. Shared by
+ * tests/embed-loader.spec.ts (the loader/iframe seam) and
+ * tests/frame-posture.spec.ts (the site-wide lock, S17).
+ */
+export function startCrossOriginHost(
+  html: string
+): Promise<{ url: string; origin: string; close: () => Promise<void> }> {
+  return new Promise((resolve, reject) => {
+    const server: Server = createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(html);
+    });
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address ? address.port : 0;
+      const origin = `http://127.0.0.1:${port}`;
+      resolve({
+        url: `${origin}/`,
+        origin,
+        close: () => new Promise((res) => server.close(() => res())),
+      });
+    });
+  });
 }
