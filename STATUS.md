@@ -5,12 +5,12 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 
-**Last updated:** 2026-07-06 (on fix47 branch, orchestrator)
+**Last updated:** 2026-07-06 (fix50 branch, orchestrator — merge-conflict resolution sweep)
 
 ## Now / Next / Blocked
 
-- **Now:** Merged: #44 (S24 federal boundary-source hardening), #45 (S17 frame-ancestors split posture), #46 (S23 citability/correction page). Awaiting review: #47 (S14 bill-card widget), #48 (S25 triage spec), #49 (S21 pregen dark).
-- **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit) — both launch on #47's merge.
+- **Now:** Merged: #44 (S24 federal boundary-source hardening), #45 (S17 frame-ancestors split posture), #46 (S23 citability/correction page), #47 (S14 bill-card widget). Merge train order: #50 (this PR — fix: MCP envelope/refine_hint/tool-error ES localization, off-plan rider closing a gap #46 pinned) → #49 (S21 pregen dark) → #48 (S25 triage spec).
+- **Next:** S15 (embed privacy hardening + CI gates, F3), S16 (configurator + docs + launch kit) — both building now, PRs held behind the merge train above.
 - **Blocked on Colby:** 🔑 the NAME (gates noindex lift, identity, registry, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · sync-crons re-enable (due Jul 6).
 
 ## Sprint tracker
@@ -71,6 +71,7 @@ Off-plan riders (pulled forward, rename-independent):
 - **Worktree hygiene**: agents must never cd into the main checkout (1 incident, disclosed + cleaned).
 - **Stale-fetch premises**: agents must `git fetch` before reasoning about repo state (1 agent argued from a 4-day-old view).
 - **Workflow-referenced GitHub labels aren't auto-created**: `gh issue create --label X` fails if `X` doesn't already exist in the repo. #40 shipped `--label data-vacancy` without ever creating that label — found while building S24's `redistricting-watch` label. Both now exist; future `gh issue create --label` additions should create the label in the same PR.
+- **MCP envelope was English-only regardless of `locale`**: S23's copy-vs-code comparison (PR #46) found and honestly pinned — not fixed — that `buildEnvelope`'s `source`/`ai_label`/`license` text ignored the request's `locale`, so a Spanish-locale MCP query still carried an English AI-disclosure. Closed via PR #50 (`fix/mcp-envelope-es`): `SOURCE`/`AI_LABEL_TEXT`/`LICENSE_PUBLIC_DOMAIN`/`LICENSE_AI_CONTENT` are now `Record<Locale, string>` pairs, `lookup_representatives`' `refine_hint` and every `toolError()` message in `app/api/mcp/[transport]/route.ts` got the same EN/ES treatment, `/citations` now quotes both language variants side by side (with `lang` attributes), and the PR #46 pinning test in `tests/citations.spec.ts` was flipped from asserting the gap to asserting parity. Swept the rest of the MCP surface for the same class of gap: tool `title`/`description` and zod `.describe()` schema text stay English-only on purpose (agent-facing tool metadata, never relayed to the end user verbatim - documented inline in route.ts); the `vacancies` field is structured data (`{state, district}`) with no free text, so nothing to localize there. The compound loop working as designed - S23 named the gap, this PR closed it.
 
 ## Definition-of-done addendum (every future PR)
 
