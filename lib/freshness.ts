@@ -1,7 +1,7 @@
 import 'server-only';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import syncState from '@/data/sync-state.json';
-import { getAllBills } from './data';
+import { getAllBills } from './core';
 
 /*
  * KTD-1: freshness is three named timestamps from one accessor.

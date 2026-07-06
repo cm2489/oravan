@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { districtsForZip, repsForDistrict } from '@/lib/data';
+import { districtsForZip, repsForDistrict } from '@/lib/core';
 
 /** ZIP -> representatives. Pure lookup over static data; nothing logged, nothing stored. */
 export async function GET(req: NextRequest) {

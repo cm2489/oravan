@@ -5,7 +5,7 @@ import { ZipForm } from '@/components/ZipForm';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
 import { Link } from '@/i18n/navigation';
-import { districtsForZip, repsForDistrict } from '@/lib/data';
+import { districtsForZip, repsForDistrict } from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
 
 export async function generateMetadata({

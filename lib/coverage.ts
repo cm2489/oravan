@@ -2,7 +2,7 @@
  * Read-section data layer: third-party news coverage of a bill, each article
  * labeled with its outlet's lean from the vendored AllSides table.
  *
- * Deliberately NOT 'server-only' (unlike lib/data.ts): the pure matcher is
+ * Deliberately NOT 'server-only' (like lib/core): the pure matcher is
  * imported by tests/coverage.unit.spec.ts. getCoverage is only ever called
  * server-side from the bill page. JSON is imported by relative path so the
  * module resolves identically under the Next bundler and the Playwright/esbuild

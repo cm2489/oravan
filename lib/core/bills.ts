@@ -1,23 +1,26 @@
-import 'server-only';
+/*
+ * Bill data access — pure functions over the baked JSON corpus. Extracted
+ * from lib/data.ts (S9): deliberately NOT 'server-only', unlike the module
+ * it replaces. That coupling only ever suited page/RSC callers; a route
+ * handler (app/api/mcp) is a legitimate server-side caller too, and future
+ * agent surfaces need the same functions without a framework-specific guard
+ * in the way. Nothing here changes shape or behavior — see lib/core/index.ts.
+ */
 import bills from '@/data/bills.json';
 import billsEs from '@/data/bills-es.json';
-import legislators from '@/data/legislators.json';
-import zipDistricts from '@/data/zip-districts.json';
-import { formatCitation } from './format';
-import { bandFloors, bandForEff } from './taxonomy';
-import { coverageTier, getCoverage, normalizeSource, rankNews } from './coverage';
-import { TERMINAL_STATUSES, effectiveUrgency } from './urgency.mjs';
-import type { Bill, District, FeedTeaser, Legislator, NewsBill } from './types';
+import { formatCitation } from '../format';
+import { bandFloors, bandForEff } from '../taxonomy';
+import { coverageTier, getCoverage, normalizeSource, rankNews } from '../coverage';
+import { TERMINAL_STATUSES, effectiveUrgency } from '../urgency.mjs';
+import type { Bill, FeedTeaser, NewsBill } from '../types';
 
 export { effectiveUrgency };
 
 const BILLS = bills as Bill[];
 const ES = billsEs as Record<
   string,
-  { headline: string | null; summary: string; sections?: import('./types').DecodedSections }
+  { headline: string | null; summary: string; sections?: import('../types').DecodedSections }
 >;
-const LEGISLATORS = legislators as Legislator[];
-const ZIPS = zipDistricts as Record<string, District[]>;
 
 /** Overlay the Spanish decoded content when it exists; English is the fallback. */
 export function localizeBill(b: Bill, locale: string): Bill {
@@ -147,22 +150,4 @@ export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
       sourceCount: sources,
     };
   });
-}
-
-export function districtsForZip(zip: string): District[] {
-  return ZIPS[zip] ?? [];
-}
-
-export function repsForDistrict(d: District): Legislator[] {
-  const senators = LEGISLATORS.filter((l) => l.type === 'sen' && l.state === d.state);
-  const rep = LEGISLATORS.filter((l) => l.type === 'rep' && l.state === d.state && (l.district ?? 0) === d.district);
-  return [...rep, ...senators];
-}
-
-export function getLegislator(bioguide: string): Legislator | undefined {
-  return LEGISLATORS.find((l) => l.bioguide === bioguide);
-}
-
-export function portraitUrl(bioguide: string): string {
-  return `https://unitedstates.github.io/images/congress/450x550/${bioguide}.jpg`;
 }
