@@ -7,6 +7,13 @@ on:
 
 permissions:
   contents: write
+  # Needed only for the "newly detected vacancy" issue below (gh issue
+  # create with the workflow's own automatic GITHUB_TOKEN) - a normal,
+  # expected vacancy must never commit silently, so this opens a labeled
+  # issue instead of failing the run. No new secret, no scope change to
+  # GITHUB_FEEDBACK_TOKEN (that PAT stays issues-only for the beta-feedback
+  # route and is unrelated to this).
+  issues: write
 
 concurrency:
   group: data-sync
@@ -17,8 +24,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Refresh legislators + district offices + ZIP map
+      - name: Refresh legislators + district offices + ZIP map (vacancy-diff included)
+        id: refresh
+        # scripts/process-data.py now also derives data/vacancies.json - see
+        # scripts/vacancy_diff.py for the derivation (seat-set diff against
+        # the currently-committed legislators.json + vacancies.json, never a
+        # single legislator's own stale term data - the footgun this
+        # replaces) and scripts/test_vacancy_diff.py for its fixtures.
+        #
+        # Loud-failure design, matching the dead-man's-switch pattern
+        # scripts/verify-sync.mjs already uses for sync-bills.yml (fail
+        # before commit on a severe, corruption-shaped drop; this workflow
+        # adds a second, non-blocking channel for the normal case):
+        #   - a handful of newly-detected vacancies (<= 5 in one run) is
+        #     real, expected churn - the run does NOT fail, but the
+        #     "Open an issue" step below surfaces it loudly instead of
+        #     letting it commit silently.
+        #   - more than 5 new vacancies in one run is treated as a
+        #     truncated/broken upstream fetch, not reality (docs/ideation/
+        #     2026-07-05-build-gtm-strategy.md §9.1(f)) - process-data.py
+        #     exits 1 here, so nothing below this step runs and nothing
+        #     commits.
         run: python3 scripts/process-data.py --download
+      - name: Open an issue for newly detected vacancies
+        # Only for the non-anomalous case (the step above already failed
+        # and skipped everything downstream if it was anomalous). Each
+        # newly-detected seat gets its own issue so it's easy to close
+        # independently once a successor is sworn in; a chronic vacancy
+        # already on record from a prior run is never re-filed (process-
+        # data.py only reports the seats first observed vacant THIS run).
+        if: steps.refresh.outputs.anomalous_vacancy_shrink == 'false' && steps.refresh.outputs.newly_detected_vacancies != '[]'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VACANCIES: ${{ steps.refresh.outputs.newly_detected_vacancies }}
+        run: |
+          echo "$VACANCIES" | jq -c '.[]' | while read -r v; do
+            state=$(echo "$v" | jq -r '.state')
+            district=$(echo "$v" | jq -r '.district')
+            gh issue create \
+              --repo cm2489/rostra \
+              --title "Vacant seat detected: ${state}-${district}" \
+              --label data-vacancy \
+              --body "The weekly legislators refresh found no current representative for ${state} district ${district} in this week's pull. This is never silently backfilled from the departed member's stale record - rep-lookup surfaces (reps page, /api/reps, MCP lookup_representatives) now show an explicit vacant-seat state for this district instead. Close this once a successor is sworn in and data/vacancies.json no longer lists the seat (it heals automatically on the next refresh once the new member appears in the upstream feed)."
+          done
       - name: Commit data
         id: commit
         # The author email must map to the Vercel-linked GitHub account
@@ -44,7 +92,8 @@ jobs:
           # concurrency group, whose push lands after our SHA was resolved -
           # the 2026-06-22 failure). Rebase onto the latest main and retry;
           # safe because this workflow only ever touches legislators.json /
-          # zip-districts.json, disjoint from sync-bills.yml's files.
+          # zip-districts.json / vacancies.json, disjoint from sync-bills.yml's
+          # files.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
