@@ -404,5 +404,13 @@
     "dataStaleTitle": "Hace falta verificar los datos",
     "dataStaleBody": "Todavía no podemos confirmar qué es más urgente — nuestra última verificación exitosa fue el {date}. Esto no es una semana tranquila: son datos desactualizados.",
     "staleNote": "Nuestra última verificación exitosa de datos fue el {date} — es posible que actividad más reciente del Congreso aún no se muestre."
+  },
+  "embed": {
+    "frameTitle": "Tus representantes",
+    "languageLabel": "Idioma",
+    "multiDistrictTitle": "Este código postal abarca más de un distrito",
+    "multiDistrictBody": "Este widget incrustado no puede recibir una dirección — eso se mantiene solo en el sitio principal de Rostra. Ambos distritos candidatos se muestran abajo; tus senadores son los mismos en cualquier caso.",
+    "openFullLookup": "Precisa tu distrito con tu dirección en Rostra",
+    "poweredBy": "Desarrollado por Rostra"
   }
 }
