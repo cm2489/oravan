@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { mirroredPortraitBioguides } from '@/lib/core';
 import { RepLookupWidget } from '@/components/embed/RepLookupWidget';
 
 export const metadata: Metadata = {
@@ -27,5 +28,11 @@ export default async function RepLookupEmbedPage({
   const locale = normalizeLocale(localeParam);
   const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
 
-  return <RepLookupWidget initialLocale={locale} initialZip={initialZip} />;
+  return (
+    <RepLookupWidget
+      initialLocale={locale}
+      initialZip={initialZip}
+      availablePortraits={mirroredPortraitBioguides()}
+    />
+  );
 }

@@ -11,3 +11,4 @@
  */
 export * from './bills';
 export * from './reps';
+export * from './portraits';

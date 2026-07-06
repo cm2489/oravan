@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -38,6 +39,22 @@ function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
 
+/**
+ * A CSS-only initials avatar — the graceful fallback for every bioguide
+ * without a mirrored portrait (S15: no Vercel Blob store has been
+ * provisioned yet, so this is every bioguide as shipped). No network
+ * request of any kind, first-party or third-party: two letters, derived
+ * from the name already in the API response, rendered as text over a
+ * background color. See RepLookupWidget's `availablePortraits` prop for
+ * when this switches to the real (same-origin) portrait image instead.
+ */
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + last).toUpperCase() || '?';
+}
+
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
 function format(template: string, vars: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
@@ -51,11 +68,21 @@ type Vacancy = { state: string; district: number };
 export function RepLookupWidget({
   initialLocale,
   initialZip,
+  availablePortraits = [],
 }: {
   initialLocale: EmbedLocale;
   initialZip: string | null;
+  /**
+   * Bioguides with a mirrored (Vercel Blob) portrait, served same-origin via
+   * app/embed/portrait/[bioguide]/route.ts — never a third-party hotlink.
+   * Empty (the shipped default: no Blob store provisioned yet) means every
+   * rep falls back to the CSS-only initials avatar below. See
+   * lib/core/portraits.ts and the PR's "Owner enable checklist".
+   */
+  availablePortraits?: string[];
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
+  const portraitSet = new Set(availablePortraits);
   const [zipInput, setZipInput] = useState(initialZip ?? '');
   const [zip, setZip] = useState<string | null>(null);
   const [reps, setReps] = useState<Legislator[] | null>(null);
@@ -252,12 +279,38 @@ export function RepLookupWidget({
           const place =
             rep.type === 'rep' && rep.district != null ? `${rep.state}-${rep.district}` : rep.state;
 
+          const hasPortrait = portraitSet.has(rep.bioguide);
+
           return (
             <article key={rep.bioguide} className="re-card">
-              <p className="re-meta">
-                {role} · {party} · {place}
-              </p>
-              <p className="re-name">{rep.name}</p>
+              <div className="re-card-head">
+                {hasPortrait ? (
+                  // next/image keeps this request same-origin too (a local
+                  // path, not a remote URL - no images.remotePatterns entry
+                  // needed) while resizing the source 450x550 portrait down
+                  // to the 44x54 the card actually displays; the underlying
+                  // bytes still only ever come from
+                  // app/embed/portrait/[bioguide]/route.ts, never a
+                  // third-party host.
+                  <Image
+                    src={`/embed/portrait/${rep.bioguide}`}
+                    alt=""
+                    width={44}
+                    height={54}
+                    className="re-avatar-img"
+                  />
+                ) : (
+                  <div className="re-avatar-initials" aria-hidden="true">
+                    {initialsFor(rep.name)}
+                  </div>
+                )}
+                <div className="re-card-head-text">
+                  <p className="re-meta">
+                    {role} · {party} · {place}
+                  </p>
+                  <p className="re-name">{rep.name}</p>
+                </div>
+              </div>
               {rep.url && (
                 <p style={{ margin: '2px 0 0' }}>
                   <a className="re-link" href={rep.url} target="_blank" rel="noopener noreferrer">

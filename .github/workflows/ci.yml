@@ -30,12 +30,18 @@ jobs:
         run: node scripts/check-messages-parity.mjs
       - name: public/ ships only allowlisted files
         run: node scripts/check-public-allowlist.mjs
-      - name: Upstash key-namespace privacy gate (counters never see content, cache never sees callers)
+      - name: Upstash key-namespace privacy gate (counters never see content, cache never sees callers, embed-domain sees neither)
         # Self-test first: the gate must prove it still catches its seeded
         # violations before its "clean" verdict on the tree means anything.
         run: |
           node scripts/check-key-namespaces.mjs --self-test
           node scripts/check-key-namespaces.mjs
+      - name: Embed no-fingerprinting/no-analytics static gate
+        # Same self-test-first convention as the key-namespace gate above.
+        run: |
+          node scripts/check-embed-fingerprinting.mjs --self-test
+          node scripts/check-embed-fingerprinting.mjs
+      - run: npm run typecheck
       - run: npm run lint
       - name: Install Playwright WebKit
         run: npx playwright install --with-deps webkit

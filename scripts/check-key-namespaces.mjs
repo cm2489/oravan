@@ -1,10 +1,20 @@
 /**
  * Upstash key-namespace privacy gate (S11; KTD-3, AE5). Fails CI when code
- * would blur the line between the two physically separate Upstash databases:
+ * would blur the line between the counters and cache Upstash databases, or
+ * let the domain-nomination family (S15, F3) drift outside its own rules:
  *
- *   counters DB — caller-keyed, short-lived rate-limit counters ONLY.
- *                 No slug/stance/locale/tool/bill identifier may ever reach
- *                 a counters key (lib/ratelimit.ts is the single registry).
+ *   counters DB — TWO key families live here, both caller-agnostic in the
+ *                 sense that neither may ever carry the OTHER family's kind
+ *                 of material:
+ *                   - rate-limit counters: caller-keyed, short-lived.
+ *                     No slug/stance/locale/tool/bill identifier may ever
+ *                     reach one (lib/ratelimit.ts is the single registry).
+ *                   - embed-domain nominations (S15, F3): domain-keyed,
+ *                     content-free AND caller-free. No slug/stance/locale/
+ *                     tool identifier, no IP/caller-hash/salt/address
+ *                     material, and never the raw Referer/URL itself may
+ *                     reach one (lib/embed-referrer.ts is the single
+ *                     registry).
  *   cache DB    — content-keyed script cache ONLY. No IP-, caller-, salt-,
  *                 or address-derived material may ever reach a cache key
  *                 (lib/scriptcache.ts is the single registry).
@@ -39,15 +49,22 @@ const SCAN_DIRS = ['app', 'lib'];
 const SCAN_ROOT_FILES = ['proxy.ts'];
 const EXTENSIONS = ['.ts', '.tsx'];
 
-// The two registries.
+// The three registries.
 const COUNTERS_REGISTRY = 'lib/ratelimit.ts';
 const CACHE_REGISTRY = 'lib/scriptcache.ts';
+const DOMAIN_REGISTRY = 'lib/embed-referrer.ts';
 const CLIENT_MODULE = 'lib/upstash.ts';
 
-// Identifier fragments that mark CONTENT (never allowed near counters keys)
-// and CALLER material (never allowed near cache keys).
+// Identifier fragments that mark CONTENT (never allowed near counters or
+// domain-nomination keys) and CALLER material (never allowed near cache or
+// domain-nomination keys).
 const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation/i;
 const CALLER_MATERIAL = /(^|[^a-z])ip([^a-z]|$)|forwarded|caller|salt|address|\bzip\b/i;
+// The domain-nomination registry's own extra rule (S15, F3): even the raw
+// Referer/URL material it starts from must never make it into a template
+// interpolation — the only interpolations that belong in that file's key
+// builder are the already-truncated domain and a date bucket.
+const RAW_REFERER_MATERIAL = /referer|referrer|pathname|\bhref\b|\bsearch\b|\burl\b/i;
 
 /** Every ${...} interpolation inside template literals of a source text. */
 function templateInterpolations(text) {
@@ -83,10 +100,17 @@ export function scanText(file, text) {
     });
   }
 
-  // 2. client confinement: countersClient only in the counters registry,
-  //    cacheClient only in the cache registry (plus their definitions).
-  if (file !== CLIENT_MODULE && file !== COUNTERS_REGISTRY && /\bcountersClient\b/.test(text)) {
-    add('client-confinement', 0, `countersClient used outside ${COUNTERS_REGISTRY}`);
+  // 2. client confinement: countersClient only in the two registries built
+  //    on the counters database (rate-limit counters and domain
+  //    nominations), cacheClient only in the cache registry (plus their
+  //    definitions in the client module itself).
+  if (
+    file !== CLIENT_MODULE &&
+    file !== COUNTERS_REGISTRY &&
+    file !== DOMAIN_REGISTRY &&
+    /\bcountersClient\b/.test(text)
+  ) {
+    add('client-confinement', 0, `countersClient used outside ${COUNTERS_REGISTRY} or ${DOMAIN_REGISTRY}`);
   }
   if (file !== CLIENT_MODULE && file !== CACHE_REGISTRY && /\bcacheClient\b/.test(text)) {
     add('client-confinement', 0, `cacheClient used outside ${CACHE_REGISTRY}`);
@@ -108,6 +132,35 @@ export function scanText(file, text) {
     for (const { expr, line } of templateInterpolations(text)) {
       if (CALLER_MATERIAL.test(expr)) {
         add('cache-caller', line, `caller-derived material "${expr.trim()}" interpolated in the cache registry`);
+      }
+    }
+  }
+
+  // 4b. domain-nomination keys (S15, F3) carry neither content nor caller
+  //     material, and never the raw referer/URL itself — three checks
+  //     against the one file this ever applies to.
+  if (file === DOMAIN_REGISTRY) {
+    for (const { expr, line } of templateInterpolations(text)) {
+      if (CONTENT_IDENTIFIER.test(expr)) {
+        add(
+          'domain-content',
+          line,
+          `content identifier "${expr.trim()}" interpolated in the domain-nomination registry`
+        );
+      }
+      if (CALLER_MATERIAL.test(expr)) {
+        add(
+          'domain-caller',
+          line,
+          `caller-derived material "${expr.trim()}" interpolated in the domain-nomination registry`
+        );
+      }
+      if (RAW_REFERER_MATERIAL.test(expr)) {
+        add(
+          'domain-raw-referer',
+          line,
+          `raw referer/URL material "${expr.trim()}" interpolated in the domain-nomination registry`
+        );
       }
     }
   }
@@ -228,6 +281,30 @@ const SELF_TEST_FIXTURES = [
     text: '// counters are fully anonymized',
     rule: 'vocabulary',
   },
+  {
+    name: 'bill slug interpolated into a domain-nomination key',
+    file: DOMAIN_REGISTRY,
+    text: 'const k = `${keyPrefix()}:embed-domain:${day}:${slug}`;',
+    rule: 'domain-content',
+  },
+  {
+    name: 'caller IP interpolated into a domain-nomination key',
+    file: DOMAIN_REGISTRY,
+    text: 'const k = `${keyPrefix()}:embed-domain:${day}:${ip}`;',
+    rule: 'domain-caller',
+  },
+  {
+    name: 'the raw (untruncated) referer interpolated into a domain-nomination key',
+    file: DOMAIN_REGISTRY,
+    text: 'const k = `${keyPrefix()}:embed-domain:${day}:${referer}`;',
+    rule: 'domain-raw-referer',
+  },
+  {
+    name: 'countersClient used outside any allowed registry (embed layout)',
+    file: 'app/embed/layout.tsx',
+    text: "import { countersClient } from '@/lib/upstash';",
+    rule: 'client-confinement',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -240,6 +317,13 @@ const SELF_TEST_CLEAN = [
   {
     file: CACHE_REGISTRY,
     text: 'const k = `${keyPrefix()}:script:${parts.slug}:${parts.stance}:${parts.lang}:${parts.version}`;',
+  },
+  {
+    // Proves countersClient is allowed in the domain registry too (rule 2
+    // must not flag its own intended use), and that a proper
+    // domain+day-only key builder produces zero violations.
+    file: DOMAIN_REGISTRY,
+    text: "import { countersClient } from './upstash';\nconst k = `${keyPrefix()}:embed-domain:${day}:${domain}`;",
   },
 ];
 

@@ -52,6 +52,16 @@ jobs:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/sync-coverage.mjs
+      - name: Mirror embed portraits to Vercel Blob
+        # No-op unless BLOB_READ_WRITE_TOKEN is set, so this is safe before
+        # the store/secret exist - same pattern as "Sync coverage" above.
+        # See scripts/mirror-portraits.mjs and the S15 PR's Owner enable
+        # checklist. Runs here (not in refresh-legislators.yml, which is
+        # deliberately stdlib-only/no `npm ci`) because this job already
+        # installs node_modules for @vercel/blob to resolve.
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node scripts/mirror-portraits.mjs
       - name: Verify the sync did its job (dead-man's-switch)
         # Fails loudly BEFORE anything is committed: corpus parses, EN/ES
         # parity holds, the bill count didn't drop, and sync-state advanced
@@ -95,8 +105,9 @@ jobs:
           # data-sync concurrency group, whose push lands after our SHA was
           # resolved - the 2026-06-22 failure, there in the other workflow).
           # Rebase onto the latest main and retry; safe because this workflow
-          # only touches bills.json/bills-es.json/sync-state.json, disjoint
-          # from refresh-legislators.yml's files.
+          # only touches bills.json/bills-es.json/sync-state.json/
+          # portrait-manifest.json, disjoint from refresh-legislators.yml's
+          # files.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -118,3 +129,23 @@ jobs:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
         run: node scripts/verify-deploy.mjs
+      - name: Pre-generate top-band call scripts (S21, F7 - dark until armed)
+        # Nightly pregen of the top-10 "Act now" bills' call scripts
+        # (strategy §9.1(d)): writes straight into the S11 cache database
+        # with build-time secrets, never through /api/script (F7 - a public
+        # pregen flag is explicitly ruled out; app/api/script/route.ts stays
+        # unaware pregen exists, grep-enforced in CI). Shipped dark: gated on
+        # the PREGEN_ENABLED repo variable so this spends $0 until the owner
+        # explicitly arms it (see the introducing PR's Arming checklist).
+        # Must run via tsx, not plain node - see scripts/pregen-scripts.mjs.
+        env:
+          PREGEN_ENABLED: ${{ vars.PREGEN_ENABLED }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          UPSTASH_CACHE_REST_URL: ${{ secrets.UPSTASH_CACHE_REST_URL }}
+          UPSTASH_CACHE_REST_TOKEN: ${{ secrets.UPSTASH_CACHE_REST_TOKEN }}
+        run: |
+          if [ "$PREGEN_ENABLED" != "true" ]; then
+            echo "::notice::pregen SKIPPED - repo variable PREGEN_ENABLED is not 'true'. \$0 spent tonight. See the S21 PR's Arming checklist to turn this on."
+            exit 0
+          fi
+          npx tsx scripts/pregen-scripts.mjs

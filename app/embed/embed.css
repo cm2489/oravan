@@ -155,6 +155,56 @@ body {
   }
 }
 
+/*
+ * Rep-card portrait/avatar (S15). `.re-avatar-img` only ever renders for a
+ * bioguide with a mirrored (Vercel Blob) portrait, served same-origin via
+ * app/embed/portrait/[bioguide]/route.ts - never a third-party hotlink.
+ * `.re-avatar-initials` is the graceful, zero-network fallback (today's
+ * shipped default: no Blob store exists yet) - see
+ * components/embed/RepLookupWidget.tsx.
+ */
+.re-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.re-card-head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.re-avatar-img {
+  flex: none;
+  width: 44px;
+  height: 54px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(24, 32, 58, 0.08);
+}
+
+.re-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 54px;
+  border-radius: 6px;
+  background: #18203a;
+  color: #faf6ee;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@media (prefers-color-scheme: dark) {
+  .re-avatar-initials {
+    background: #e8a317;
+    color: #18203a;
+  }
+}
+
 .re-meta {
   font-size: 0.78rem;
   font-weight: 600;
