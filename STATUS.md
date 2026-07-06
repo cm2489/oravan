@@ -45,7 +45,7 @@ Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rena
 - [ ] S20 — Impression counts (F6)
 - [ ] S21 — Feed + admin CLI + ToS + pregen auth (F7; pregen ~$5–7.50/mo — surface at build)
 - [x] S22 — JSON-LD + hreflang + sitemap/robots/llms.txt — PR #39, merged Jul 6 · *Findings:* #30's hreflang covered bills only; /impact structurally lacked metadata (split to server wrapper); x-default added; URL-building centralized after validator caught homepage canonical/sitemap disagreement. noindex provably untouched
-- [ ] S23 — Citability/correction page + ES redistribution spot-check
+- [ ] S23 — Citability/correction page + ES redistribution spot-check — PR open · `/citations` (both locales), footer-reachable from every page incl. bill pages, correction path reuses the existing beta-feedback intake (`#feedback` anchor into Footer's own dialog, no parallel form). `lib/core/mcp.ts`'s `SOURCE`/`AI_LABEL_TEXT`/`LICENSE_*` exported and quoted verbatim on the page so it can't drift from the real MCP envelope. `docs/es-spotcheck-redistribution.md` assembles a real 12-bill sample (4 high-urgency, 4 recently-decoded, 4 older/settled) + rubric (legal-meaning accuracy, register/neutrality, label presence) + pass/fail criteria + a log section — no live native-speaker pass run yet, same interim-material pattern as S6's `docs/es-script-spotcheck.md`. *Findings:* the MCP envelope's `ai_label`/`source`/`license` fields are English-only regardless of the `locale` param requested — flagged on the page itself and in the spot-check doc as a real gap, not fixed in this PR.
 - [ ] S24 — Federal boundary-source hardening (RDH adoption; two-clock model)
 - [ ] S25 — Curated-triage state-architecture spec (spec-only)
 
