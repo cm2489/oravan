@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseCensusResponse } from '@/lib/district';
+import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
 
 /*
  * Street address -> single House district, for split-ZIP refinement.
@@ -30,25 +31,20 @@ const CENSUS_QUERY = {
   format: 'json',
 };
 
-// Light per-IP rate limit (in-memory, per instance), following app/api/script.
-// A little looser than scripts: address typos legitimately take a few tries.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 10;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) return true;
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear(); // crude memory cap
-  return false;
-}
+// Rate limit: 10 requests / 10 min per caller (a little looser than scripts:
+// address typos legitimately take a few tries — same limit as always). As of
+// S11 this is enforced with short-lived rate-limit counters in the Upstash
+// counters database (sha256(ip + rotating salt), durable across instances),
+// degrading to the per-instance in-memory window when unconfigured or
+// unreachable — see lib/ratelimit.ts. The address itself never gets anywhere
+// near the limiter: only the caller hash does.
+const limiter = createRateLimiter({ route: 'district', max: 10, windowSec: 600 });
 
 export async function POST(req: NextRequest) {
-  const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim();
-  if (rateLimited(ip)) {
+  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+
+  const ip = callerIp(req.headers);
+  if (await limiter.isLimited(ip)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 

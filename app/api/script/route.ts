@@ -2,38 +2,40 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { getBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
+import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
+import { contentVersion, createScriptCache } from '@/lib/scriptcache';
 import type { Stance } from '@/lib/types';
 
 /*
- * The only dynamic endpoint in Rostra. Stateless by design: nothing about
- * the caller is stored. Scripts are cached per (bill, stance, locale) -
- * shared across all visitors - so popular bills cost one generation total.
+ * The only Anthropic-calling endpoint in Rostra. Stateless by design:
+ * nothing about the caller is stored. Scripts are cached per
+ * (bill, stance, locale, content-version) — shared across all visitors —
+ * so popular bills cost one generation total, now across ALL instances
+ * (S11: the cache lives in the content-keyed Upstash cache database, with
+ * an in-memory fallback when unconfigured).
+ *
+ * Rate limiting (S11): 8 requests / 10 min per caller — the same limit as
+ * always, now enforced with short-lived rate-limit counters in the
+ * caller-keyed Upstash counters database (sha256(ip + rotating salt), TTL =
+ * the window), durable across instances. See lib/ratelimit.ts for the salt
+ * rules and lib/upstash.ts for why counters and cache are two physically
+ * separate databases. Unconfigured or unreachable Upstash degrades to the
+ * per-instance in-memory limiter — this route never hard-fails on it.
  */
 
 const anthropic = new Anthropic();
 
-const cache = new Map<string, string>();
+const cache = createScriptCache();
 
-// Light per-IP rate limit (in-memory, per instance): 8 requests / 10 min.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 8;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) return true;
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear(); // crude memory cap
-  return false;
-}
+const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
 
 export async function POST(req: NextRequest) {
-  const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim();
-  if (rateLimited(ip)) {
+  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+
+  const ip = callerIp(req.headers);
+  if (await limiter.isLimited(ip)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
@@ -54,8 +56,10 @@ export async function POST(req: NextRequest) {
   if (!bill) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const citation = formatCitation(bill.bill_type, bill.bill_number);
-  const key = `${slug}:${stance}:${lang}`;
-  const cached = cache.get(key);
+  // Content-version key component (§9.1(d)): a corrected ai_summary changes
+  // the version, so a stale script can never be served against it.
+  const version = contentVersion(bill.ai_summary ?? bill.title);
+  const cached = await cache.get({ slug, stance, lang, version });
   if (cached) return NextResponse.json({ script: cached, cached: true });
 
   const stanceLine = {
@@ -99,7 +103,7 @@ Rules:
     });
     const script = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     if (!script) throw new Error('empty');
-    cache.set(key, script);
+    await cache.set({ slug, stance, lang, version }, script); // never throws
     return NextResponse.json({ script, cached: false });
   } catch (err) {
     console.error('script generation failed', err);

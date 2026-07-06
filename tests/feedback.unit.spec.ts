@@ -173,3 +173,20 @@ test('rate limit: the 9th request from one IP inside the window is 429', async (
   const res = await POST(request({ category: 'bug', message: 'one too many' }, sameIp));
   expect(res.status).toBe(429);
 });
+
+test('X-Rostra-Key is recognized but inert (S11 dormant tenancy hook): identical behavior, never forwarded', async () => {
+  const calls = mockGithub({ status: 201 }, { status: 201 });
+  const body = { category: 'bug', message: 'same message either way.' };
+
+  const without = await POST(request(body));
+  const withKey = await POST(request(body, { 'x-rostra-key': 'rk_leak-canary-key' }));
+  expect(without.status).toBe(200);
+  expect(withKey.status).toBe(200);
+  expect(await withKey.json()).toEqual(await without.json());
+
+  // Identical outbound issue payloads - the header changed nothing...
+  expect(calls).toHaveLength(2);
+  expect(String(calls[1].init.body)).toBe(String(calls[0].init.body));
+  // ...and the key value never left the process.
+  expect(JSON.stringify(calls[1])).not.toContain('rk_leak-canary-key');
+});

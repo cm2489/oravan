@@ -107,3 +107,32 @@ test('DELETE is likewise rejected cleanly (stateless: there is no session to end
   expect(body.jsonrpc).toBe('2.0');
   expect(body.error?.message).toMatch(/not allowed/i);
 });
+
+test('anonymous rate limit is wired end-to-end: one caller cannot exceed 60 requests/min', async ({
+  request,
+}) => {
+  // Dedicated same-caller burst (every other test in this suite states a
+  // distinct caller - see tests/helpers.ts). One fixed address per project
+  // so the two projects' bursts never pollute each other's counter. The
+  // e2e server runs the in-memory degradation path (no Upstash env in CI),
+  // which is exactly the point: the 429 wiring must hold in degraded mode
+  // too. Cross-instance durable semantics are pinned in
+  // tests/ratelimit.unit.spec.ts against the mocked REST surface.
+  const ip = test.info().project.name === 'webkit-mobile' ? '192.0.2.61' : '192.0.2.62';
+  let last: { status: number; body: string } = { status: 0, body: '' };
+  for (let i = 0; i < 61; i += 1) {
+    const res = await request.post(MCP_ENDPOINT, {
+      headers: {
+        'content-type': 'application/json',
+        accept: MCP_ACCEPT,
+        'x-forwarded-for': ip,
+      },
+      data: { jsonrpc: '2.0', id: 1000 + i, method: 'tools/list', params: {} },
+    });
+    last = { status: res.status(), body: await res.text() };
+  }
+  // On a retry the counter is already saturated, so earlier calls in the
+  // burst may 429 too - the invariant is that the 61st call never succeeds.
+  expect(last.status).toBe(429);
+  expect(JSON.parse(last.body)).toMatchObject({ error: 'rate_limited' });
+});
