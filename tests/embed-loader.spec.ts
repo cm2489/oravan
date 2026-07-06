@@ -1,6 +1,6 @@
-import { createServer, type Server } from 'node:http';
 import { expect, test, type Response } from '@playwright/test';
 import en from '../messages/en.json';
+import { startCrossOriginHost } from './helpers';
 
 /*
  * S13 — public/embed.js on a synthetic host page, exercising the actual
@@ -28,26 +28,6 @@ function hostHtml(baseURL: string) {
   </body></html>`;
 }
 
-function startHostServer(html: string): Promise<{ url: string; origin: string; close: () => Promise<void> }> {
-  return new Promise((resolve, reject) => {
-    const server: Server = createServer((_req, res) => {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(html);
-    });
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port = typeof address === 'object' && address ? address.port : 0;
-      const origin = `http://127.0.0.1:${port}`;
-      resolve({
-        url: `${origin}/`,
-        origin,
-        close: () => new Promise((res) => server.close(() => res())),
-      });
-    });
-  });
-}
-
 const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
 
 /*
@@ -61,7 +41,7 @@ const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
 test.describe.configure({ timeout: 60_000 });
 
 test('the loader injects an iframe and the widget renders inside it', async ({ page, baseURL }) => {
-  const host = await startHostServer(hostHtml(baseURL!));
+  const host = await startCrossOriginHost(hostHtml(baseURL!));
   try {
     await page.goto(host.url);
     const iframeEl = page.locator(IFRAME_SELECTOR);
@@ -84,7 +64,7 @@ test('auto-resize: the iframe height changes once the widget renders results', a
   page,
   baseURL,
 }) => {
-  const host = await startHostServer(hostHtml(baseURL!));
+  const host = await startCrossOriginHost(hostHtml(baseURL!));
   try {
     await page.goto(host.url);
     const iframeEl = page.locator(IFRAME_SELECTOR);
@@ -111,7 +91,7 @@ test('zero cookies and zero third-party requests across the whole embed flow', a
 }) => {
   const base = new URL(baseURL!);
   const html = hostHtml(baseURL!);
-  const host = await startHostServer(html);
+  const host = await startCrossOriginHost(html);
   try {
     const outsideRequests: string[] = [];
     page.on('request', (req) => {
