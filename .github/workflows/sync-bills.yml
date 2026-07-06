@@ -129,3 +129,23 @@ jobs:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
         run: node scripts/verify-deploy.mjs
+      - name: Pre-generate top-band call scripts (S21, F7 - dark until armed)
+        # Nightly pregen of the top-10 "Act now" bills' call scripts
+        # (strategy §9.1(d)): writes straight into the S11 cache database
+        # with build-time secrets, never through /api/script (F7 - a public
+        # pregen flag is explicitly ruled out; app/api/script/route.ts stays
+        # unaware pregen exists, grep-enforced in CI). Shipped dark: gated on
+        # the PREGEN_ENABLED repo variable so this spends $0 until the owner
+        # explicitly arms it (see the introducing PR's Arming checklist).
+        # Must run via tsx, not plain node - see scripts/pregen-scripts.mjs.
+        env:
+          PREGEN_ENABLED: ${{ vars.PREGEN_ENABLED }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          UPSTASH_CACHE_REST_URL: ${{ secrets.UPSTASH_CACHE_REST_URL }}
+          UPSTASH_CACHE_REST_TOKEN: ${{ secrets.UPSTASH_CACHE_REST_TOKEN }}
+        run: |
+          if [ "$PREGEN_ENABLED" != "true" ]; then
+            echo "::notice::pregen SKIPPED - repo variable PREGEN_ENABLED is not 'true'. \$0 spent tonight. See the S21 PR's Arming checklist to turn this on."
+            exit 0
+          fi
+          npx tsx scripts/pregen-scripts.mjs
