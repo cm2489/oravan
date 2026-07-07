@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Image from 'next/image';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
+import { FONT_VALUES, RADIUS_VALUES, type FontKey, type RadiusKey } from '@/lib/embed-theme';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator } from '@/lib/types';
 
@@ -69,6 +70,8 @@ export function RepLookupWidget({
   initialLocale,
   initialZip,
   availablePortraits = [],
+  theme,
+  attribution = 'on',
 }: {
   initialLocale: EmbedLocale;
   initialZip: string | null;
@@ -80,6 +83,10 @@ export function RepLookupWidget({
    * lib/core/portraits.ts and the PR's "Owner enable checklist".
    */
   availablePortraits?: string[];
+  /** Same three validated knobs as BillCardWidget (lib/embed-theme). */
+  theme: { accent?: string; radiusKey: RadiusKey; fontKey: FontKey };
+  /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
+  attribution?: 'on' | 'none';
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
   const portraitSet = new Set(availablePortraits);
@@ -187,8 +194,16 @@ export function RepLookupWidget({
 
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
 
+  // Mirrors BillCardWidget: three validated CSS custom properties, nothing
+  // else tenant-supplied ever reaches a style prop.
+  const themeStyle: CSSProperties = {
+    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
+    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
+    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
+  };
+
   return (
-    <main ref={rootRef} className="re-root" lang={locale}>
+    <main ref={rootRef} className="re-root" lang={locale} style={themeStyle}>
       <div className="re-header">
         <h1 className="re-title">{t.embed.frameTitle}</h1>
         <div role="group" aria-label={t.embed.languageLabel} className="re-row" style={{ gap: 4 }}>
@@ -368,11 +383,13 @@ export function RepLookupWidget({
 
       {status === 'idle' && !zip && <p className="re-note">{t.reps.noZip}</p>}
 
-      <p className="re-footer">
-        <a className="re-link" href={siteBase} target="_blank" rel="noopener noreferrer">
-          {t.embed.poweredBy} ↗
-        </a>
-      </p>
+      {attribution === 'on' && (
+        <p className="re-footer">
+          <a className="re-link" href={siteBase} target="_blank" rel="noopener noreferrer">
+            {t.embed.poweredBy} ↗
+          </a>
+        </p>
+      )}
     </main>
   );
 }

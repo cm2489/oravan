@@ -77,7 +77,7 @@ way, thanks for a look: {SITE_ORIGIN}/embeds
 
 **Who it's for.** Newsrooms embedding a bill card inside a story. Libraries and civic-education sites offering a rep-lookup tool with no vendor contract and no data-sharing agreement to review. Nonpartisan civic organizations that want a neutral utility, not a mobilization platform.
 
-**What's free, what's not (yet).** The free tier is full-function with one requirement: a "Powered by Oravan" attribution link stays visible in the widget footer, always. There is no paid tier live today — white-label theming, the AI call-script action panel, and usage stats are scoped for a later build phase (V1.1, `docs/ideation/2026-07-02-embeds-spec.md` §4) and are not part of this outreach's offer.
+**What's free, what's not (yet).** The free tier is full-function with one requirement: a "Powered by Oravan" attribution link stays visible in the widget footer, always. Both widgets take the same theming (accent, corner radius, font — validated server-side), and a brandless-chrome option removes the Oravan name from widget titles and fallback labels while keeping the attribution link (S5a). Removing attribution itself is reserved for licensed partners; there is no paid tier live today — licensing terms, the AI call-script action panel, and usage stats remain a later phase (V1.1, `docs/ideation/2026-07-02-embeds-spec.md` §4) and are not part of this outreach's offer. Partner-facing overview: /partners.
 
 **The neutrality commitment, in Colby's own words (verbatim, settled — `docs/ideation/2026-07-05-build-gtm-strategy.md` §3):**
 

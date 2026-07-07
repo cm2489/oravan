@@ -38,8 +38,12 @@
   // read them - kept data-driven so a future widget's own params slot in
   // here without another branch in init() below.
   var WIDGET_PARAM_ATTRS = {
+    'rep-lookup': ['accent', 'radius', 'font'],
     'bill-card': ['slug', 'accent', 'radius', 'font'],
   };
+
+  // White-label knobs, every widget; validated server-side (embed-theme).
+  var UNIVERSAL_ATTRS = ['brandless', 'attribution'];
 
   var DEFAULT_HEIGHT = 480;
 
@@ -66,7 +70,7 @@
     var host = targetId ? document.getElementById(targetId) : null;
 
     var query = 'locale=' + encodeURIComponent(locale);
-    var paramAttrs = WIDGET_PARAM_ATTRS[widget] || [];
+    var paramAttrs = (WIDGET_PARAM_ATTRS[widget] || []).concat(UNIVERSAL_ATTRS);
     for (var i = 0; i < paramAttrs.length; i++) {
       var value = script.getAttribute('data-' + paramAttrs[i]);
       if (value) query += '&' + paramAttrs[i] + '=' + encodeURIComponent(value);
@@ -74,7 +78,10 @@
 
     var iframe = document.createElement('iframe');
     iframe.src = origin + '/embed/' + widget + '?' + query;
-    iframe.title = WIDGET_TITLES[widget] || 'Oravan widget';
+    var title = WIDGET_TITLES[widget] || 'Oravan widget';
+    // Brandless: neutral accessible title.
+    if (script.getAttribute('data-brandless')) title = title.replace('Oravan ', '');
+    iframe.title = title;
     iframe.style.width = '100%';
     iframe.style.maxWidth = '100%';
     iframe.style.border = '0';

@@ -102,6 +102,7 @@ test.describe(
       about: '/about',
       bills: '/bills/sjres-99-119',
       citations: '/citations',
+      partners: '/partners', // S5b's partner GTM page - standard locked-down posture
       embeds: '/embeds', // S16's configurator + docs page
       impact: '/impact',
       privacy: '/privacy',

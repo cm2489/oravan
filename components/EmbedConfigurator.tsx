@@ -55,6 +55,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const [accentInput, setAccentInput] = useState(DEFAULT_ACCENT);
   const [radius, setRadius] = useState<RadiusKey>('soft');
   const [font, setFont] = useState<FontKey>('system');
+  const [brandless, setBrandless] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(DEFAULT_HEIGHT);
 
@@ -122,17 +123,17 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const previewSrc = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
     const params = new URLSearchParams({ locale });
-    if (widget === 'bill-card' && slug) {
-      params.set('slug', slug);
-      params.set('accent', accent);
-      params.set('radius', radius);
-      params.set('font', font);
-    }
+    if (widget === 'bill-card' && slug) params.set('slug', slug);
+    // S5a: both widgets take the same three validated theme params.
+    params.set('accent', accent);
+    params.set('radius', radius);
+    params.set('font', font);
+    if (brandless) params.set('brandless', '1');
     // Relative on purpose: the live preview must show THIS deployment's
     // widget (localhost, preview deploys, prod alike). Only the copy-paste
     // snippet below carries the absolute production origin.
     return `/embed/${widget}?${params.toString()}`;
-  }, [widget, locale, slug, accent, radius, font]);
+  }, [widget, locale, slug, accent, radius, font, brandless]);
 
   const snippet = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
@@ -141,19 +142,18 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       `data-target="${targetId}"`,
       `data-locale="${locale}"`,
     ];
-    if (widget === 'bill-card' && slug) {
-      attrs.push(`data-slug="${slug}"`);
-      attrs.push(`data-accent="${accent}"`);
-      attrs.push(`data-radius="${radius}"`);
-      attrs.push(`data-font="${font}"`);
-    }
+    if (widget === 'bill-card' && slug) attrs.push(`data-slug="${slug}"`);
+    attrs.push(`data-accent="${accent}"`);
+    attrs.push(`data-radius="${radius}"`);
+    attrs.push(`data-font="${font}"`);
+    if (brandless) attrs.push(`data-brandless="1"`);
     return [
       `<div id="${targetId}"></div>`,
       `<script src="${SITE_ORIGIN}/embed.js"`,
       ...attrs.map((a) => `        ${a}`),
       `></script>`,
     ].join('\n');
-  }, [widget, targetId, locale, slug, accent, radius, font]);
+  }, [widget, targetId, locale, slug, accent, radius, font, brandless]);
 
   async function copySnippet() {
     if (!snippet) return;
@@ -279,7 +279,8 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
             </div>
           )}
 
-          {widget === 'bill-card' ? (
+          {/* S5a: both widgets take the same theme params, so no more gate */}
+          {(
             <fieldset>
               <legend className="text-sm font-semibold">{t('themeLegend')}</legend>
               <div className="mt-2 grid gap-4 sm:grid-cols-2">
@@ -340,9 +341,21 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 </div>
               </div>
             </fieldset>
-          ) : (
-            <p className="text-xs text-ink-soft">{t('themeNote')}</p>
           )}
+
+          <fieldset>
+            <legend className="text-sm font-semibold">{t('whiteLabelLegend')}</legend>
+            <label className="mt-2 flex min-h-[44px] items-center gap-3 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={brandless}
+                onChange={(e) => setBrandless(e.target.checked)}
+                className="h-5 w-5 rounded-control border-line accent-brass"
+              />
+              {t('whiteLabelBrandless')}
+            </label>
+            <p className="mt-1 text-xs text-ink-soft">{t('whiteLabelNote')}</p>
+          </fieldset>
         </div>
 
         <div className="min-w-0 space-y-6">

@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 import { mirroredPortraitBioguides } from '@/lib/core';
+import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
 import { RepLookupWidget } from '@/components/embed/RepLookupWidget';
 
-export const metadata: Metadata = {
-  title: 'Oravan — representative lookup',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ brandless?: string }>;
+}): Promise<Metadata> {
+  const { brandless } = await searchParams;
+  return {
+    // Brandless embeds keep the name out of the page title too.
+    title: safeBrandless(brandless) ? 'Representative lookup' : 'Oravan — representative lookup',
+    robots: { index: false, follow: false },
+  };
+}
 
 function normalizeLocale(value: string | undefined): 'en' | 'es' {
   return value === 'es' ? 'es' : 'en';
@@ -22,9 +31,17 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
 export default async function RepLookupEmbedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ locale?: string; zip?: string }>;
+  searchParams: Promise<{
+    locale?: string;
+    zip?: string;
+    accent?: string;
+    radius?: string;
+    font?: string;
+    brandless?: string;
+    attribution?: string;
+  }>;
 }) {
-  const { locale: localeParam, zip } = await searchParams;
+  const { locale: localeParam, zip, accent, radius, font, attribution } = await searchParams;
   const locale = normalizeLocale(localeParam);
   const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
 
@@ -33,6 +50,12 @@ export default async function RepLookupEmbedPage({
       initialLocale={locale}
       initialZip={initialZip}
       availablePortraits={mirroredPortraitBioguides()}
+      theme={{
+        accent: safeAccent(accent),
+        radiusKey: safeRadiusKey(radius),
+        fontKey: safeFontKey(font),
+      }}
+      attribution={safeAttribution(attribution)}
     />
   );
 }

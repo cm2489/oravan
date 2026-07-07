@@ -29,6 +29,8 @@ Every sprint PR updates this ledger; Sprint 7 publishes the final report.
 | PR-1 `mig/s1-tokens` | ~+2 (token value/name swaps net-neutral; +1 `brass-deep` token, +1 contrast comment line) | + M4 decision record, exploration archive (10 JSON receipts + README) | none — token swap is value-level |
 | PR-2 `mig/s2-brand-assets` | +~110 (all kickoff-sanctioned UI adds) | — | OravanMark + OravanWordmark components (~40), lib/og-brand.ts (~20), app/manifest.ts (~20), scripts/gen-app-icons.mjs (~28) — each named in the kickoff S2 list; Header/PhoneScene/OG wiring is net-negative (placeholder chip + text removed) |
 | PR-3 `mig/s3-rename` | ~+130 (gate script, kickoff-mandated); rename itself net-neutral (string swaps); +6 shim/i18n lines | sweep across living docs | scripts/check-naming.mjs (~120, the S3-mandated CI gate); LEGACY shim extension (+4); aria-label i18n keys (+2 per locale) |
+| PR-4 `mig/s4-copy` | 0 (copy line-neutral, 47/47) | — | hero/lore/voice pass |
+| PR-5 `mig/s5-embeds-gtm` (S5a+S5b consolidated) | ~+180 (feature work: rep-lookup theming, white-label knobs, /partners page, new spec) | press-kit capability update | budget is a concept per founder amendment — noted for the record only |
 
 Sanctioned-add register (kickoff-named): S2 wordmark component + `app/manifest.ts`;
 S5a rep-lookup theming + white-label mode; S5b GTM page. Everything else must

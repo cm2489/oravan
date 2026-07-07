@@ -48,6 +48,10 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
           <Link href="/embeds" className="underline underline-offset-2 hover:text-ink">
             {t('footer.embeds')}
           </Link>
+          {/* S5b: the partner-facing GTM page - same builder/reporter tier. */}
+          <Link href="/partners" className="underline underline-offset-2 hover:text-ink">
+            {t('footer.partners')}
+          </Link>
           {/* §6: quiet, persistent, never a banner or modal - link only, dark
               until HCB onboarding completes (DONATE_URL flips from null). */}
           {donateUrl && (
