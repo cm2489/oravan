@@ -28,7 +28,6 @@ const PATTERNS = [
 // same PR that removes the last literal.
 const ALLOWLIST = [
   { path: 'lib/local.ts', max: 4, note: 'M2/M2-bis: legacy localStorage migration keys, both pre-migration generations' },
-  { path: '.github/workflows/refresh-legislators.yml', max: 2, note: 'S8-held `--repo` slugs; flip + remove this entry in the repo-rename PR' },
   { prefix: 'docs/migration/', max: Infinity, note: 'M0/R1: verbatim migration history' },
   { path: 'docs/plans/2026-07-06-002-oravan-migration-kickoff.md', max: Infinity, note: 'M0: migration kickoff, verbatim' },
   { path: 'docs/plans/2026-07-03-001-feat-launch-buildout-plan.md', max: Infinity, note: 'R1: dated historical record' },

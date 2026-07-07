@@ -71,7 +71,7 @@ jobs:
             state=$(echo "$v" | jq -r '.state')
             district=$(echo "$v" | jq -r '.district')
             gh issue create \
-              --repo cm2489/rostra \
+              --repo cm2489/oravan \
               --title "Vacant seat detected: ${state}-${district}" \
               --label data-vacancy \
               --body "The weekly legislators refresh found no current representative for ${state} district ${district} in this week's pull. This is never silently backfilled from the departed member's stale record - rep-lookup surfaces (reps page, /api/reps, MCP lookup_representatives) now show an explicit vacant-seat state for this district instead. Close this once a successor is sworn in and data/vacancies.json no longer lists the seat (it heals automatically on the next refresh once the new member appears in the upstream feed)."
@@ -109,7 +109,7 @@ jobs:
             prev=$(echo "$c" | jq -r '.prevLastmod')
             new=$(echo "$c" | jq -r '.newLastmod')
             gh issue create \
-              --repo cm2489/rostra \
+              --repo cm2489/oravan \
               --title "Redistricting watch: ${state} map page changed on RDH" \
               --label redistricting-watch \
               --body "Redistricting Data Hub's page for ${state} (${url}) changed - lastmod moved from ${prev} to ${new}. This is a tripwire, not an automated status read: open the page, see what actually changed, and update data/redistricting-watch.json's status/note for ${state} accordingly. (The baseline lastmod in that file has already advanced this run, so this same change will not re-fire next week.)"
