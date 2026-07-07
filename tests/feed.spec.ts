@@ -31,7 +31,7 @@ test('topic chip filters the feed and persists', async ({ page }) => {
   await waitForFeedHydrated(page);
   await page.getByRole('button', { name: 'Health care' }).click();
   await expect(page.getByRole('button', { name: 'Health care' })).toHaveAttribute('aria-pressed', 'true');
-  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.prefs') ?? '{}'));
+  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('oravan.prefs') ?? '{}'));
   expect(prefs.interests).toContain('health');
 });
 

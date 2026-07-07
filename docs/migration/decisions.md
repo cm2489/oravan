@@ -90,6 +90,23 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   token names survive); S2 ports the mark/wordmark (color-agnostic
   `currentColor` assets) onto the new ground.
 
+## Sprint 3 — rename sweep decisions, 2026-07-07
+
+- **GitHub reference URLs: FLIP NOW (founder, structured question).** In-repo
+  references to `github.com/cm2489/rostra` (console easter egg, doc links)
+  point at `github.com/cm2489/oravan` immediately — dead for the few days
+  until the S8 repo rename (site is noindex), then permanent. The two
+  FUNCTIONAL `--repo cm2489/rostra` lines in `refresh-legislators.yml` are
+  held per the kickoff and allowlisted (exactly 2) until S8.
+- **M2-bis — `rostra.prefs` / `rostra.calls` join the legacy-key exemption.**
+  The S3 rename moves live keys to `oravan.*`; consistent with M2's intent
+  (testers keep their data), the shim now migrates both `cabina.*` and
+  `rostra.*`. `lib/local.ts` allowlisted at exactly 4 literals.
+- The CI naming gate (`scripts/check-naming.mjs`, blocking, self-test-first)
+  enforces done-criterion 3 from this sprint forward; its allowlist is
+  exactly this file's written exemptions (M0, M2/M2-bis, R1, the two held
+  workflow lines).
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

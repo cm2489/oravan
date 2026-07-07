@@ -1,10 +1,10 @@
-# Rostra
+# Oravan
 
 **Your line to Congress · Tu línea con el Congreso**
 
-Rostra is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language (English and Spanish), get a 30-second call script, and make the call — in under 5 minutes, with no account.
+Oravan is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language (English and Spanish), get a 30-second call script, and make the call — in under 5 minutes, with no account.
 
-The name is the **Rostra**: the platform in the Roman Forum where citizens stood to address the public and the powerful — the original place a voice met power. Latin roots are the shared ancestry of English and Spanish alike.
+The name is the **Oravan**: the platform in the Roman Forum where citizens stood to address the public and the powerful — the original place a voice met power. Latin roots are the shared ancestry of English and Spanish alike.
 
 ## Design principles
 
@@ -33,7 +33,7 @@ Solved pipeline incidents (root cause + the CI gates that prevent recurrence) ar
 
 ### The "Read" section (outlet-bias coverage)
 
-Each top bill's page shows real third-party articles about it, labeled by the **outlet's** political lean (Left / Center / Right) — reusing AllSides' publication-level ratings, never a Rostra-invented one. Rostra takes no stance and authors no partisan text: AI is used only behind the scenes — generating each bill's news-search terms (press-style names and a subject query) and a cheap relevance gate (is this article about this bill?) — and authors nothing displayed. The ingestion runs nightly in CI and bakes results to JSON, so the site still makes **zero runtime third-party calls**. Without `NEWS_API_KEY` the sync is a no-op and the section renders nothing; a small hand-built real sample (`data/coverage.json`) keeps it demoable. Lean is shown by **text label + position only — never party colors** (a hard rule; see `DESIGN.md`).
+Each top bill's page shows real third-party articles about it, labeled by the **outlet's** political lean (Left / Center / Right) — reusing AllSides' publication-level ratings, never a Oravan-invented one. Oravan takes no stance and authors no partisan text: AI is used only behind the scenes — generating each bill's news-search terms (press-style names and a subject query) and a cheap relevance gate (is this article about this bill?) — and authors nothing displayed. The ingestion runs nightly in CI and bakes results to JSON, so the site still makes **zero runtime third-party calls**. Without `NEWS_API_KEY` the sync is a no-op and the section renders nothing; a small hand-built real sample (`data/coverage.json`) keeps it demoable. Lean is shown by **text label + position only — never party colors** (a hard rule; see `DESIGN.md`).
 
 ## Develop
 

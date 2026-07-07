@@ -8,7 +8,7 @@ import { DONATE_URL } from '@/lib/site';
  * (there's exactly one, in the root layout) renders unchanged. The prop
  * exists as forward-compatible test infrastructure for injecting a fixture
  * value, since this project's Playwright setup can't currently render a
- * Rostra component directly (its .tsx JSX transform is hijacked for
+ * Oravan component directly (its .tsx JSX transform is hijacked for
  * Playwright's own component-testing runtime - see tests/donate.unit.spec.ts
  * for what that test actually verifies instead: the source-level wiring,
  * not a live "lit" render).
@@ -23,7 +23,7 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
         <p className="max-w-prose italic text-ink-faint">{t('footer.lore')}</p>
         <p className="max-w-prose">{t('footer.mission')}</p>
         <p className="max-w-prose">{t('footer.aiNote')}</p>
-        <nav aria-label="Footer" className="flex flex-wrap gap-5 pt-2">
+        <nav aria-label={t('footer.navLabel')} className="flex flex-wrap gap-5 pt-2">
           <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
             {t('footer.privacy')}
           </Link>

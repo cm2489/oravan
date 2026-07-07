@@ -27,10 +27,10 @@ test('F7: app/api/script/route.ts has zero pregen-awareness', () => {
   expect(source).not.toMatch(/pregen/i);
 });
 
-test('F7 sanity: the route still handles its normal recognized header (x-rostra-key) unrelated to pregen', () => {
+test('F7 sanity: the route still handles its normal recognized header (x-oravan-key) unrelated to pregen', () => {
   // Guards against the first test passing only because the whole route (or
   // its dormant-hook line) got deleted rather than because it's clean.
   const source = readFileSync(ROUTE_PATH, 'utf8');
-  expect(source).toMatch(/readRostraKey/);
+  expect(source).toMatch(/readOravanKey/);
   expect(source).toMatch(/anthropic\.messages\.create/);
 });

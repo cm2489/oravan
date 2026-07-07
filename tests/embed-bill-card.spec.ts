@@ -116,9 +116,9 @@ test('theming: a valid accent/radius/font renders as the corresponding CSS custo
   const root = page.locator('.bc-root');
   const read = (name: string) =>
     root.evaluate((el, n) => getComputedStyle(el).getPropertyValue(n).trim(), name);
-  await expect.poll(() => read('--rostra-accent')).toBe('#336699');
-  await expect.poll(() => read('--rostra-radius')).toBe(RADIUS_VALUES.round);
-  await expect.poll(() => read('--rostra-font')).toBe(FONT_VALUES.serif);
+  await expect.poll(() => read('--oravan-accent')).toBe('#336699');
+  await expect.poll(() => read('--oravan-radius')).toBe(RADIUS_VALUES.round);
+  await expect.poll(() => read('--oravan-font')).toBe(FONT_VALUES.serif);
 });
 
 test('theming injection: a malformed accent value is rejected outright, never applied', async ({
@@ -137,7 +137,7 @@ test('theming injection: a malformed accent value is rejected outright, never ap
   // an invalid theme value is discarded wholesale, not sanitized-and-kept.
   const root = page.locator('.bc-root');
   const accentValue = await root.evaluate((el) =>
-    getComputedStyle(el).getPropertyValue('--rostra-accent').trim()
+    getComputedStyle(el).getPropertyValue('--oravan-accent').trim()
   );
   expect(accentValue).toBe('');
   const html = await page.content();
@@ -161,10 +161,10 @@ test('theming injection: non-enum radius/font values fall back to the safe defau
   );
   const root = page.locator('.bc-root');
   const radiusValue = await root.evaluate((el) =>
-    getComputedStyle(el).getPropertyValue('--rostra-radius').trim()
+    getComputedStyle(el).getPropertyValue('--oravan-radius').trim()
   );
   const fontValue = await root.evaluate((el) =>
-    getComputedStyle(el).getPropertyValue('--rostra-font').trim()
+    getComputedStyle(el).getPropertyValue('--oravan-font').trim()
   );
   expect(radiusValue).toBe(RADIUS_VALUES.soft); // invalid input -> the 'soft' default
   expect(fontValue).toBe(FONT_VALUES.system); // invalid input -> the 'system' default

@@ -6,7 +6,7 @@ import { safeAccent, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
 import { BillCardWidget, type BillCardData } from '@/components/embed/BillCardWidget';
 
 export const metadata: Metadata = {
-  title: 'Rostra embed — bill card',
+  title: 'Oravan embed — bill card',
   robots: { index: false, follow: false },
 };
 
@@ -24,7 +24,7 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
  * calling notFound() — this route has no not-found boundary of its own
  * (app/embed's root layout carries no site chrome to render around one),
  * and a graceful in-widget message keeps the iframe's contract (always
- * something coherent, only ever content Rostra authored) intact.
+ * something coherent, only ever content Oravan authored) intact.
  */
 export default async function BillCardEmbedPage({
   searchParams,

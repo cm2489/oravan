@@ -1,7 +1,7 @@
 'use client';
 
 /*
- * All personal data lives HERE, in the visitor's browser. Rostra has no
+ * All personal data lives HERE, in the visitor's browser. Oravan has no
  * accounts and no server-side user storage - nothing to breach, nothing
  * to subpoena. Clearing browser data (or the Impact page's delete button)
  * erases everything.
@@ -25,12 +25,19 @@ export interface CallRecord {
   at: string; // ISO timestamp
 }
 
-const PREFS_KEY = 'rostra.prefs';
-const CALLS_KEY = 'rostra.calls';
+const PREFS_KEY = 'oravan.prefs';
+const CALLS_KEY = 'oravan.calls';
 
-// One-time migration from the test-phase name so early testers keep their
-// ZIP, interests, and call history across the rename.
-const LEGACY = { 'cabina.prefs': PREFS_KEY, 'cabina.calls': CALLS_KEY } as const;
+// One-time migration from the test-phase names so early testers keep their
+// ZIP, interests, and call history across the renames. The legacy literals
+// below are founder-exempted from the naming gate (docs/migration/decisions.md
+// M2): purging them would silently wipe pre-rename testers' data.
+const LEGACY = {
+  'cabina.prefs': PREFS_KEY,
+  'cabina.calls': CALLS_KEY,
+  'rostra.prefs': PREFS_KEY,
+  'rostra.calls': CALLS_KEY,
+} as const;
 if (typeof window !== 'undefined') {
   try {
     for (const [oldKey, newKey] of Object.entries(LEGACY)) {

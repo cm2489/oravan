@@ -30,7 +30,7 @@ export function Header() {
             <OravanMark className="h-8 w-8 text-brass-bright" />
             <OravanWordmark className="h-6 w-auto" />
           </Link>
-          <nav aria-label="Primary" className="hidden md:flex items-center gap-1">
+          <nav aria-label={t('nav.primaryLabel')} className="hidden md:flex items-center gap-1">
             {TABS.map(({ href, key }) => (
               <Link
                 key={key}
@@ -63,7 +63,7 @@ export function Header() {
 
       {/* Mobile bottom tab bar - thumb-reachable, 44px+ targets */}
       <nav
-        aria-label="Primary"
+        aria-label={t('nav.primaryLabel')}
         className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-night text-paper border-t border-white/10 pb-[env(safe-area-inset-bottom)]"
       >
         <ul className="grid grid-cols-4">

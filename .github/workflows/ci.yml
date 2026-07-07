@@ -28,6 +28,9 @@ jobs:
       - run: npm ci
       - name: EN/ES message-key parity (bilingual hard rule)
         run: node scripts/check-messages-parity.mjs
+      - name: Zero-survivor naming gate (retired names; self-tests before scanning)
+        # Exemptions are founder-decided in writing only — docs/migration/decisions.md.
+        run: node scripts/check-naming.mjs
       - name: public/ ships only allowlisted files
         run: node scripts/check-public-allowlist.mjs
       - name: Upstash key-namespace privacy gate (counters never see content, cache never sees callers, embed-domain sees neither)

@@ -14,7 +14,7 @@ import es from '../messages/es.json';
  * actually carried in the markup.
  */
 
-const SITE_ORIGIN = 'https://cabina-nine.vercel.app';
+const SITE_ORIGIN = 'https://oravan.org';
 
 async function readJsonLd(page: Page, scriptId: string): Promise<Record<string, unknown>> {
   const raw = await page.locator(`script#${scriptId}`).textContent();
@@ -37,7 +37,7 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
     expect((article!.headline as string).length).toBeGreaterThan(0);
     expect(article!.url).toBe(`${SITE_ORIGIN}/bills/hr-5582-119`);
     expect(article!.inLanguage).toBe('en');
-    expect(article!.publisher).toMatchObject({ '@type': 'Organization', name: 'Rostra' });
+    expect(article!.publisher).toMatchObject({ '@type': 'Organization', name: 'Oravan' });
 
     // Dates must be real (present, parseable, and drawn from the corpus —
     // never invented): this bill has both introduced_date and last_action_date.
@@ -119,7 +119,7 @@ test.describe('homepage + reps page JSON-LD (cheap Organization/WebSite)', () =>
     const graph = doc['@graph'] as Array<Record<string, unknown>>;
 
     const org = graph.find((n) => n['@type'] === 'Organization');
-    expect(org).toMatchObject({ name: 'Rostra', url: SITE_ORIGIN });
+    expect(org).toMatchObject({ name: 'Oravan', url: SITE_ORIGIN });
 
     const site = graph.find((n) => n['@type'] === 'WebSite');
     expect(site, 'WebSite node').toBeTruthy();
@@ -143,7 +143,7 @@ test.describe('homepage + reps page JSON-LD (cheap Organization/WebSite)', () =>
     await page.goto('/reps');
     const doc = await readJsonLd(page, 'org-jsonld');
     const graph = doc['@graph'] as Array<Record<string, unknown>>;
-    expect(graph.find((n) => n['@type'] === 'Organization')).toMatchObject({ name: 'Rostra' });
+    expect(graph.find((n) => n['@type'] === 'Organization')).toMatchObject({ name: 'Oravan' });
     expect(graph.find((n) => n['@type'] === 'WebSite')).toBeUndefined();
   });
 });

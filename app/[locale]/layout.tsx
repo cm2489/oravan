@@ -37,7 +37,7 @@ export async function generateMetadata({
     // Build identity for post-deploy verification: the data-sync workflows
     // poll production for the SHA they just pushed (scripts/verify-deploy.mjs).
     // Vercel sets VERCEL_GIT_COMMIT_SHA at build time, deploy-hook builds included.
-    other: { 'rostra-build': process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev' },
+    other: { 'oravan-build': process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev' },
   };
 }
 
@@ -59,7 +59,7 @@ export default async function LocaleLayout({
         {/* For the curious who open devtools: the no-trackers claim, verifiable */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cRostra","font-size:16px;font-weight:bold","— the platform where citizens addressed power. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/rostra");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— the platform where citizens addressed power. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/oravan");`,
           }}
         />
         <a

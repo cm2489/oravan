@@ -6,7 +6,7 @@ import { startCrossOriginHost } from './helpers';
 /*
  * S17 - the frame-ancestors split posture (docs/ideation/2026-07-05-build-
  * gtm-strategy.md, ledger items F1 and F2; see also
- * docs/plans/2026-07-03-001-feat-rostra-launch-buildout-plan.md's U15 unit).
+ * docs/plans/2026-07-03-001-feat-oravan-launch-buildout-plan.md's U15 unit).
  *
  * S13 shipped the embed route's OWN minimal CSP (`frame-ancestors *`, tight
  * everywhere else) but deliberately deferred the other half: the rest of the

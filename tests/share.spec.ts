@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
  * these expectations change together, and nothing else.
  */
 
-const CANONICAL = 'https://cabina-nine.vercel.app/bills/hr-5582-119';
+const CANONICAL = 'https://oravan.org/bills/hr-5582-119';
 
 // Deterministic native-share stub: capture the payload instead of opening a sheet.
 const stubNativeShare = () => {
@@ -50,7 +50,7 @@ test.describe('native share', () => {
     const shared = await page.evaluate(
       () => (window as unknown as { __shared: { url: string } }).__shared
     );
-    expect(shared.url).toBe('https://cabina-nine.vercel.app/es/bills/hr-5582-119');
+    expect(shared.url).toBe('https://oravan.org/es/bills/hr-5582-119');
   });
 });
 

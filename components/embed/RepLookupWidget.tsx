@@ -155,7 +155,7 @@ export function RepLookupWidget({
     const report = () => {
       window.parent.postMessage(
         {
-          source: 'rostra-embed',
+          source: 'oravan-embed',
           type: 'resize',
           widget: 'rep-lookup',
           height: Math.ceil(el.getBoundingClientRect().height),

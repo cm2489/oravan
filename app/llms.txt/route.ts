@@ -23,18 +23,18 @@ export const dynamic = 'force-static';
 
 export function GET() {
   const total = getAllBills().length;
-  const body = `# Rostra
+  const body = `# Oravan
 
 > Free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, get a call script, and call Congress. No account required.
 
-Rostra publishes a plain-language, AI-drafted and human-reviewed decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
+Oravan publishes a plain-language, AI-drafted and human-reviewed decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
 
 ## Pages
 
 - [Bills](${SITE_ORIGIN}/bills): browse and search the decoded bill corpus
 - [My representatives](${SITE_ORIGIN}/reps): find federal representatives by ZIP code
 - [Why call](${SITE_ORIGIN}/why-call): why calling Congress works, and how a call is counted
-- [About](${SITE_ORIGIN}/about): what Rostra is and isn't
+- [About](${SITE_ORIGIN}/about): what Oravan is and isn't
 - [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 - [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed

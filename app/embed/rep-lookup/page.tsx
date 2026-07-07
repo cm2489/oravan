@@ -3,7 +3,7 @@ import { mirroredPortraitBioguides } from '@/lib/core';
 import { RepLookupWidget } from '@/components/embed/RepLookupWidget';
 
 export const metadata: Metadata = {
-  title: 'Rostra — representative lookup',
+  title: 'Oravan — representative lookup',
   robots: { index: false, follow: false },
 };
 

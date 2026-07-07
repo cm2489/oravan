@@ -25,7 +25,7 @@ import { getFreshness } from './freshness';
 import { SITE_ORIGIN } from './site';
 import type { Bill } from './types';
 
-const ORG_NAME = 'Rostra';
+const ORG_NAME = 'Oravan';
 const ORG_ID = `${SITE_ORIGIN}/#organization`;
 
 const AI_DISCLOSURE =

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseCensusResponse } from '@/lib/district';
-import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
+import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 
 /*
  * Street address -> single House district, for split-ZIP refinement.
@@ -35,7 +35,7 @@ const CENSUS_URL = 'https://geocoding.geo.census.gov/geocoder/geographies/onelin
 // (lib/rollover-tripwire.mjs), run weekly from refresh-legislators.yml,
 // starts a loud ::warning on/after 2026-12-01. Ballot-facing/next-term
 // district content (a second, Nov-2026-map-based dataset) is a separate
-// clock this route does not serve and is not currently a Rostra feature.
+// clock this route does not serve and is not currently a Oravan feature.
 const CENSUS_QUERY = {
   benchmark: 'Public_AR_Current',
   vintage: 'Current_Current',
@@ -53,7 +53,7 @@ const CENSUS_QUERY = {
 const limiter = createRateLimiter({ route: 'district', max: 10, windowSec: 600 });
 
 export async function POST(req: NextRequest) {
-  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+  readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
   if (await limiter.isLimited(ip)) {

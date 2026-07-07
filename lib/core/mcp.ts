@@ -63,8 +63,8 @@ export interface Envelope {
 // license identifier and a proper noun, not prose - the same convention the
 // rest of the corpus follows for bill citations and source names.
 export const SOURCE: Record<Locale, string> = {
-  en: "Congress.gov and unitedstates/congress-legislators, via Rostra's nightly sync",
-  es: 'Congress.gov y unitedstates/congress-legislators, mediante la sincronización nocturna de Rostra',
+  en: "Congress.gov and unitedstates/congress-legislators, via Oravan's nightly sync",
+  es: 'Congress.gov y unitedstates/congress-legislators, mediante la sincronización nocturna de Oravan',
 };
 
 export const AI_LABEL_TEXT: Record<Locale, string> = {
@@ -78,8 +78,8 @@ export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
 };
 
 export const LICENSE_AI_CONTENT: Record<Locale, string> = {
-  en: "CC BY 4.0 (Rostra's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).",
-  es: 'CC BY 4.0 (el contenido en lenguaje sencillo generado por IA de Rostra); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
+  en: "CC BY 4.0 (Oravan's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).",
+  es: 'CC BY 4.0 (el contenido en lenguaje sencillo generado por IA de Oravan); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
 };
 
 /*

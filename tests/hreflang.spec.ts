@@ -19,7 +19,7 @@ import type { Page } from '@playwright/test';
  * x-default is present and consistent everywhere.
  */
 
-const SITE_ORIGIN = 'https://cabina-nine.vercel.app';
+const SITE_ORIGIN = 'https://oravan.org';
 
 const PATHS = [
   '/',
