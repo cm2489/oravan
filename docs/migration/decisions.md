@@ -118,6 +118,24 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   merge order/deploy), rebasing onto main after each squash-merge. Merge
   order itself is unchanged — strictly sprint-ordered, lower number first.
 
+## Sprint 5 — decided 2026-07-07
+
+- **M6 — Pricing: DEFERRED.** The /partners page ships with the three
+  audience sections and a licensing-contact line (the beta feedback dialog),
+  no numbers. Pricing copy lands whenever the founder supplies terms.
+- **M5 — Hero (recorded from S4): "Your voice matters. Make it heard." /
+  "Tu voz importa. Hazla escuchar."** — founder pick from three rendered
+  options.
+- **S5a white-label semantics:** `data-brandless` removes the Oravan name
+  from widget chrome (loader title, page title, fallback labels) while the
+  attribution link stays ON; `data-attribution="none"` removes attribution
+  and is documented as licensed-partner-only (honor system until the tenant
+  registry exists — stated plainly on /embeds). The AI-content label is
+  never removable. The public configurator offers brandless, never
+  attribution removal.
+- **Line budget (founder, 2026-07-07): the 25+ line rule is a CONCEPT, not
+  a hard constraint** — build lean; ledger keeps light notes only.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

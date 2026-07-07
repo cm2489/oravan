@@ -10,7 +10,7 @@ import { getAllBills } from '../lib/core';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 10; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds'
+const STATIC_PATH_COUNT = 11; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/partners'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
