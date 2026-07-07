@@ -53,7 +53,7 @@ export async function generateMetadata({
       title,
       description,
       url: urlFor(locale),
-      siteName: 'Rostra',
+      siteName: 'Oravan',
       type: 'website',
       locale: locale === 'es' ? 'es_ES' : 'en_US',
       alternateLocale: locale === 'es' ? 'en_US' : 'es_ES',

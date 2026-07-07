@@ -26,7 +26,7 @@ test('initialize handshake succeeds and identifies the server', async ({ request
       params: {
         protocolVersion: '2025-06-18',
         capabilities: {},
-        clientInfo: { name: 'rostra-ci-check', version: '1.0' },
+        clientInfo: { name: 'oravan-ci-check', version: '1.0' },
       },
     },
   });
@@ -36,7 +36,7 @@ test('initialize handshake succeeds and identifies the server', async ({ request
 
   const rpc = await readJsonRpc(res);
   expect(rpc.error).toBeUndefined();
-  expect(rpc.result?.serverInfo).toMatchObject({ name: 'rostra' });
+  expect(rpc.result?.serverInfo).toMatchObject({ name: 'oravan' });
   expect(rpc.result?.protocolVersion).toBeTruthy();
 });
 

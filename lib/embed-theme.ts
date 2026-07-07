@@ -22,17 +22,17 @@ const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 export type RadiusKey = 'sharp' | 'soft' | 'round';
 export type FontKey = 'system' | 'serif';
 
-/** --rostra-radius values, keyed by the closed enum above — never a raw string. */
+/** --oravan-radius values, keyed by the closed enum above — never a raw string. */
 export const RADIUS_VALUES: Record<RadiusKey, string> = {
   sharp: '2px',
   soft: '10px',
   round: '20px',
 };
 
-/** --rostra-font values, keyed by the closed enum above — never a raw string. */
+/** --oravan-font values, keyed by the closed enum above — never a raw string. */
 // Double-quoted, not single-quoted: browsers re-serialize font-family lists
 // with double quotes in computed style (WebKit confirmed), so this literal
-// matches what getComputedStyle().getPropertyValue('--rostra-font') returns.
+// matches what getComputedStyle().getPropertyValue('--oravan-font') returns.
 export const FONT_VALUES: Record<FontKey, string> = {
   system: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   serif: 'Georgia, "Times New Roman", Times, serif',

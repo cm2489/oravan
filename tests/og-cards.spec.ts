@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test';
  * no-query-params rule protects the shared page URL, not asset URLs.
  */
 
-const ORIGIN = 'https://cabina-nine.vercel.app';
+const ORIGIN = 'https://oravan.org';
 const CANONICAL = `${ORIGIN}/bills/hr-5582-119`;
 const CANONICAL_ES = `${ORIGIN}/es/bills/hr-5582-119`;
 

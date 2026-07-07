@@ -12,7 +12,7 @@ U.S. residents who want Congress to hear them but have never called a congressio
 
 ## Product Purpose
 
-Rostra (the speakers’ platform of the Roman Forum, where a citizen’s voice addressed power) is free, nonpartisan civic infrastructure: find your three members of Congress by ZIP, read any active bill in plain language, get a 30-second editable call script in your language, and make the call — or leave an after-hours voicemail, which counts identically. Zero accounts: all personal data lives in the visitor's browser. Success is a nervous first-timer completing a call in under 5 minutes and feeling like it counted.
+Oravan (the speakers’ platform of the Roman Forum, where a citizen’s voice addressed power) is free, nonpartisan civic infrastructure: find your three members of Congress by ZIP, read any active bill in plain language, get a 30-second editable call script in your language, and make the call — or leave an after-hours voicemail, which counts identically. Zero accounts: all personal data lives in the visitor's browser. Success is a nervous first-timer completing a call in under 5 minutes and feeling like it counted.
 
 ## Brand Personality
 

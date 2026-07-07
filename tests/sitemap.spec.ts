@@ -9,7 +9,7 @@ import { getAllBills } from '../lib/core';
  * gate's current, unchanged posture.
  */
 
-const SITE_ORIGIN = 'https://cabina-nine.vercel.app';
+const SITE_ORIGIN = 'https://oravan.org';
 const STATIC_PATH_COUNT = 10; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds'
 
 test.describe('sitemap.xml', () => {
@@ -65,7 +65,7 @@ test.describe('llms.txt', () => {
     expect(res.headers()['content-type']).toContain('text/plain');
     const body = await res.text();
 
-    expect(body).toContain('# Rostra');
+    expect(body).toContain('# Oravan');
     expect(body).toContain(`${SITE_ORIGIN}/bills`);
     expect(body).toContain(`${SITE_ORIGIN}/es`);
     expect(body).toContain(String(getAllBills().length));

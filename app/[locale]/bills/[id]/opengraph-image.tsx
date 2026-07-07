@@ -52,7 +52,7 @@ export default async function OgImage({
   // Label the headline as AI only when it IS the AI headline; the official
   // title fallback (rare: decode pending) must not be marked as AI content.
   const isAiHeadline = Boolean(bill?.ai_headline);
-  const headline = bill ? (bill.ai_headline ?? bill.short_title ?? bill.title) : 'Rostra';
+  const headline = bill ? (bill.ai_headline ?? bill.short_title ?? bill.title) : 'Oravan';
 
   return new ImageResponse(
     (

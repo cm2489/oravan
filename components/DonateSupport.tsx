@@ -12,13 +12,13 @@ import { useTranslations } from 'next-intl';
  *
  * The prop also doubles as forward-compatible test infrastructure for
  * injecting a fixture value - not currently exercised as a live render,
- * since this project's Playwright setup can't render a Rostra component
+ * since this project's Playwright setup can't render a Oravan component
  * directly (see tests/donate.unit.spec.ts, which instead checks the
  * source-level wiring). tests/donate.spec.ts covers what IS live-verified:
  * today's real dark state, end to end in a browser.
  *
  * Link-out only: target="_blank" + rel="noopener noreferrer", never an
- * iframe, never a payment field rendered on Rostra's own infra.
+ * iframe, never a payment field rendered on Oravan's own infra.
  */
 export function DonateSupport({ donateUrl }: { donateUrl: string | null }) {
   const t = useTranslations('about');

@@ -13,7 +13,7 @@ Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never r
 | `ink-soft` | #51473A | secondary text |
 | `ink-faint` | #6B6152 | meta text (AA on both papers) |
 | `night` | #1B1611 | header/hero band, solid dark buttons |
-| `brass` | #82632A | the tarnished-brass accent (renamed from the Cabina-era `booth` in the Oravan migration, PR-1): step numerals, active tab, focus ring, filled CTAs (with `paper` text) |
+| `brass` | #82632A | the tarnished-brass accent (renamed from the legacy `booth` token in the Oravan migration, PR-1): step numerals, active tab, focus ring, filled CTAs (with `paper` text) |
 | `brass-bright` | #D9B65C | brass on dark grounds (mobile active tab, OG tag lines) |
 | `brass-deep` | #6B5223 | pressed/hover state for brass-filled controls |
 | `brass-soft` | #F1E7C9 | tag pills, info panels |

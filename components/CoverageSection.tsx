@@ -7,7 +7,7 @@ import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
 /*
  * The "Read" section: real third-party articles about a bill, each tagged with
- * the outlet's lean (third-party AllSides rating, never Rostra's). Nonpartisan:
+ * the outlet's lean (third-party AllSides rating, never Oravan's). Nonpartisan:
  * no stance, no party colors. Lean is shown by text label + a neutral 3-segment
  * position glyph (left/center/right), never by color. The snippet preview is
  * the delight moment — revealed on hover/focus (desktop) and by an explicit

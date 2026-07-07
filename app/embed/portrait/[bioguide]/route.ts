@@ -20,7 +20,7 @@ import { BIOGUIDE_RE, mirroredPortraitBlobUrl } from '@/lib/core/portraits';
  *   - token configured and a bioguide has a mirrored entry: this route
  *     fetches the Blob URL SERVER-SIDE and streams the bytes back under the
  *     embed's own origin — the browser's request never leaves
- *     embed.rostra.org (or whatever the current origin is; see lib/site.ts).
+ *     embed.oravan.org (or whatever the current origin is; see lib/site.ts).
  *
  * Fails closed and cheaply on every edge (bad bioguide shape, no token, no
  * manifest entry, a dead/failed Blob fetch) — a 404, never a thrown error,

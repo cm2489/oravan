@@ -1,13 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { getBill } from '@/lib/core';
-import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
+import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { contentVersion, createScriptCache } from '@/lib/scriptcache';
 import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import type { Stance } from '@/lib/types';
 
 /*
- * The only Anthropic-calling endpoint in Rostra. Stateless by design:
+ * The only Anthropic-calling endpoint in Oravan. Stateless by design:
  * nothing about the caller is stored. Scripts are cached per
  * (bill, stance, locale, content-version) — shared across all visitors —
  * so popular bills cost one generation total, now across ALL instances
@@ -30,7 +30,7 @@ const cache = createScriptCache();
 const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
 
 export async function POST(req: NextRequest) {
-  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+  readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
   if (await limiter.isLimited(ip)) {

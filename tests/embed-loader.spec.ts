@@ -25,13 +25,13 @@ import { startCrossOriginHost } from './helpers';
 function hostHtml(baseURL: string) {
   return `<!doctype html><html><body>
     <div id="host-slot"></div>
-    <script src="${baseURL}/embed.js" data-rostra-widget="rep-lookup" data-locale="en" data-target="host-slot"></script>
+    <script src="${baseURL}/embed.js" data-oravan-widget="rep-lookup" data-locale="en" data-target="host-slot"></script>
   </body></html>`;
 }
 
 /*
  * S14 — the same loader, now also asked to inject the bill-card widget:
- * `data-rostra-widget="bill-card"` plus `data-slug` (and, untested here,
+ * `data-oravan-widget="bill-card"` plus `data-slug` (and, untested here,
  * the optional `data-accent`/`data-radius`/`data-font` theming attrs —
  * tests/embed-bill-card.spec.ts drives those directly against the widget
  * page since the loader is a pure pass-through for them).
@@ -39,15 +39,15 @@ function hostHtml(baseURL: string) {
 function billCardHostHtml(baseURL: string, locale: 'en' | 'es', slug: string) {
   return `<!doctype html><html><body>
     <div id="host-slot"></div>
-    <script src="${baseURL}/embed.js" data-rostra-widget="bill-card" data-locale="${locale}" data-slug="${slug}" data-target="host-slot"></script>
+    <script src="${baseURL}/embed.js" data-oravan-widget="bill-card" data-locale="${locale}" data-slug="${slug}" data-target="host-slot"></script>
   </body></html>`;
 }
 
-const BILL_IFRAME_SELECTOR = 'iframe[data-rostra-embed="bill-card"]';
+const BILL_IFRAME_SELECTOR = 'iframe[data-oravan-embed="bill-card"]';
 const DECODED_SLUG = 'hr-5582-119';
 const ES_DECODED_SLUG = 'sjres-99-119';
 
-const IFRAME_SELECTOR = 'iframe[data-rostra-embed="rep-lookup"]';
+const IFRAME_SELECTOR = 'iframe[data-oravan-embed="rep-lookup"]';
 
 /*
  * Each test below spins up a real ad-hoc HTTP server and a full cross-origin
@@ -67,7 +67,7 @@ test('the loader injects an iframe and the widget renders inside it', async ({ p
     await expect(iframeEl).toHaveAttribute('title', /.+/);
     await expect(iframeEl).toHaveAttribute('sandbox', /allow-scripts/);
     // allow-same-origin is intentional here (see public/embed.js's comment):
-    // this iframe hosts Rostra's own first-party widget, not untrusted
+    // this iframe hosts Oravan's own first-party widget, not untrusted
     // third-party content, and same-origin fetch (the ZIP lookup) needs it.
     await expect(iframeEl).toHaveAttribute('sandbox', /allow-same-origin/);
     await expect(iframeEl).not.toHaveAttribute('sandbox', /allow-top-navigation/);

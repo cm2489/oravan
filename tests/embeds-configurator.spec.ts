@@ -63,7 +63,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
     await page.goto('/embeds');
     const snippet = page.locator('pre code');
     await expect(snippet).toBeVisible();
-    await expect(snippet).toContainText('data-rostra-widget="rep-lookup"');
+    await expect(snippet).toContainText('data-oravan-widget="rep-lookup"');
     await expect(snippet).toContainText('/embed.js');
     // No bill picker or theme controls for a widget that doesn't use them.
     await expect(page.getByRole('searchbox', { name: en.embeds.billSearchLabel })).toHaveCount(0);
@@ -100,7 +100,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
     await page.getByLabel(en.embeds.fontLabel).selectOption('serif');
 
     const snippet = page.locator('pre code');
-    await expect(snippet).toContainText('data-rostra-widget="bill-card"');
+    await expect(snippet).toContainText('data-oravan-widget="bill-card"');
     await expect(snippet).toContainText('data-slug="hr-5582-119"');
     await expect(snippet).toContainText('data-radius="round"');
     await expect(snippet).toContainText('data-font="serif"');

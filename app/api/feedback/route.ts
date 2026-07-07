@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
+import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 
 /*
  * Beta feedback intake -> one GitHub issue in this repo (private tracker).
@@ -20,7 +20,7 @@ import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
  * submission - and nothing is created - so bots learn nothing.
  */
 
-const GITHUB_ISSUES_URL = 'https://api.github.com/repos/cm2489/rostra/issues';
+const GITHUB_ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan/issues';
 
 const CATEGORIES = ['bug', 'feature', 'other'] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -56,7 +56,7 @@ function createIssue(
 }
 
 export async function POST(req: NextRequest) {
-  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+  readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
   if (await limiter.isLimited(ip)) {

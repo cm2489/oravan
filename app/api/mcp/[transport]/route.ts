@@ -1,7 +1,7 @@
 import { createMcpHandler } from 'mcp-handler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { callerIp, createRateLimiter, readRostraKey } from '@/lib/ratelimit';
+import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { CATEGORIES } from '@/lib/taxonomy';
 import { BILL_STATUSES } from '@/lib/types';
 import {
@@ -18,7 +18,7 @@ import {
 } from '@/lib/core/mcp';
 
 /*
- * Rostra's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
+ * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
  * pure functions, which read the same baked JSON the site's own pages read -
  * an agent's answer and a visitor's page can never disagree. No tool here
  * makes an outbound network call; the one the spec allows (Census address
@@ -109,7 +109,7 @@ const handler = createMcpHandler(
           'congressional district (needs_address: true, all candidate districts returned); this tool ' +
           'does not perform address-level refinement itself in this release - point the person to the ' +
           "response's reps_url, where a stateless, unlogged Census-geocoder proxy narrows it to a " +
-          'single district from a street address that Rostra never stores. When a House seat currently ' +
+          'single district from a street address that Oravan never stores. When a House seat currently ' +
           'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
           'departed member is never returned as if still serving, and no election timeline is implied.',
         inputSchema: {
@@ -138,7 +138,7 @@ const handler = createMcpHandler(
           'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
           'AI-generated summary (headline, tl;dr, what/who/why/cost - human-reviewed before publish and ' +
           'clearly labeled when present), the official status in plain language, an urgency band, ' +
-          "sponsor, key dates, the official Congress.gov page, and an act_url to Rostra's on-site call " +
+          "sponsor, key dates, the official Congress.gov page, and an act_url to Oravan's on-site call " +
           'flow. This tool never drafts a phone script - script generation only happens on-site, behind ' +
           'a human-review step, never over this API.',
         inputSchema: {
@@ -168,7 +168,7 @@ const handler = createMcpHandler(
       {
         title: 'Search bills',
         description:
-          "Search Rostra's bilingual federal bill corpus by free-text query, issue topic, status, or " +
+          "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
           'active-only. Returns short teasers (headline, status, urgency) for matching bills, most ' +
           'urgent first.',
         inputSchema: {
@@ -196,10 +196,10 @@ const handler = createMcpHandler(
         title: "What's moving in Congress",
         description:
           "What's moving in Congress recently: active, plain-language-decoded bills that cleared " +
-          "Rostra's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
+          "Oravan's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
           'topic. Returns an honest empty list with quiet_week: true when nothing has cleared the bar - ' +
           'this tool never pads the list to look busier than Congress actually is this week. If the ' +
-          "list is empty because Rostra's own data sync looks stale rather than Congress being quiet, " +
+          "list is empty because Oravan's own data sync looks stale rather than Congress being quiet, " +
           'data_stale is set instead so that distinction is never lost.',
         inputSchema: {
           days: z.number().int().min(1).max(90).optional().describe('Lookback window in days (default 7).'),
@@ -237,7 +237,7 @@ const handler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: 'rostra', version: '0.1.0' },
+    serverInfo: { name: 'oravan', version: '0.1.0' },
   },
   {
     basePath: '/api/mcp',
@@ -260,7 +260,7 @@ const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 
 const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
 
 async function limitedPost(req: Request): Promise<Response> {
-  readRostraKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
+  readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
   if (await minuteLimiter.isLimited(ip)) {

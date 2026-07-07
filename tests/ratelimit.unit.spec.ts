@@ -8,7 +8,7 @@ import {
   counterKey,
   createRateLimiter,
   parseSaltRecord,
-  readRostraKey,
+  readOravanKey,
   saltKey,
 } from '../lib/ratelimit';
 import { getUpstashErrorCounts } from '../lib/upstash';
@@ -175,10 +175,10 @@ test('graceful degradation: Upstash request errors fail open to in-memory, are c
   }
 });
 
-test('X-Rostra-Key is parsed and inert: recognized shape, no effect on limiting', async () => {
-  expect(readRostraKey(new Headers({ 'x-rostra-key': '  rk_test_123  ' }))).toBe('rk_test_123');
-  expect(readRostraKey(new Headers({ 'x-rostra-key': '   ' }))).toBeNull();
-  expect(readRostraKey(new Headers())).toBeNull();
+test('X-Oravan-Key is parsed and inert: recognized shape, no effect on limiting', async () => {
+  expect(readOravanKey(new Headers({ 'x-oravan-key': '  rk_test_123  ' }))).toBe('rk_test_123');
+  expect(readOravanKey(new Headers({ 'x-oravan-key': '   ' }))).toBeNull();
+  expect(readOravanKey(new Headers())).toBeNull();
 
   // Inert against the limiter: the limiter API cannot even receive it -
   // route-level inertness (identical responses with/without the header) is

@@ -25,7 +25,7 @@ import type { FeedTeaser } from '@/lib/types';
  * can never drift out of sync with what the server actually accepts.
  *
  * Theming note (a real, current gap - not fixed here, see the S16 report):
- * only the bill-card widget accepts --rostra-accent/-radius/-font today;
+ * only the bill-card widget accepts --oravan-accent/-radius/-font today;
  * components/embed/RepLookupWidget.tsx has no theme prop at all, and
  * public/embed.js's WIDGET_PARAM_ATTRS map has no 'rep-lookup' entry, so the
  * loader wouldn't even forward theme data-attributes for it. The theme
@@ -36,7 +36,7 @@ import type { FeedTeaser } from '@/lib/types';
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
-const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--rostra-accent, #82632a) fallback
+const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--oravan-accent, #82632a) fallback
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
 
@@ -46,7 +46,7 @@ const FONT_KEYS: FontKey[] = ['system', 'serif'];
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
   const rawTargetId = useId();
-  const targetId = `rostra-embed-${rawTargetId.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const targetId = `oravan-embed-${rawTargetId.replace(/[^a-zA-Z0-9]/g, '')}`;
 
   const [widget, setWidget] = useState<WidgetType>('rep-lookup');
   const [locale, setLocale] = useState<ConfigLocale>('en');
@@ -98,16 +98,19 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   }
 
   // Same postMessage contract public/embed.js's loader listens for
-  // (docs comment in that file: {source:'rostra-embed', type:'resize',
+  // (docs comment in that file: {source:'oravan-embed', type:'resize',
   // widget, height}) - consumed here exactly as any real host page would.
+  // The preview iframe is same-origin (see previewSrc below), so the origin
+  // check pins to THIS deployment - never the production constant, which
+  // would make the preview depend on (and leak views to) a different host.
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      if (event.origin !== new URL(SITE_ORIGIN).origin) return;
+      if (event.origin !== window.location.origin) return;
       const data = event.data as
         | { source?: string; type?: string; widget?: string; height?: number }
         | null
         | undefined;
-      if (!data || data.source !== 'rostra-embed' || data.type !== 'resize') return;
+      if (!data || data.source !== 'oravan-embed' || data.type !== 'resize') return;
       if (data.widget !== widget) return;
       const height = Number(data.height);
       if (height > 0) setPreviewHeight(height);
@@ -125,13 +128,16 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       params.set('radius', radius);
       params.set('font', font);
     }
-    return `${SITE_ORIGIN}/embed/${widget}?${params.toString()}`;
+    // Relative on purpose: the live preview must show THIS deployment's
+    // widget (localhost, preview deploys, prod alike). Only the copy-paste
+    // snippet below carries the absolute production origin.
+    return `/embed/${widget}?${params.toString()}`;
   }, [widget, locale, slug, accent, radius, font]);
 
   const snippet = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
     const attrs = [
-      `data-rostra-widget="${widget}"`,
+      `data-oravan-widget="${widget}"`,
       `data-target="${targetId}"`,
       `data-locale="${locale}"`,
     ];
@@ -188,7 +194,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 >
                   <input
                     type="radio"
-                    name="rostra-widget-type"
+                    name="oravan-widget-type"
                     value={value}
                     checked={widget === value}
                     onChange={() => selectWidget(value)}
@@ -227,11 +233,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
 
           {widget === 'bill-card' && (
             <div>
-              <label htmlFor="rostra-bill-search" className="text-sm font-semibold">
+              <label htmlFor="oravan-bill-search" className="text-sm font-semibold">
                 {t('billPickerLabel')}
               </label>
               <input
-                id="rostra-bill-search"
+                id="oravan-bill-search"
                 type="search"
                 role="searchbox"
                 aria-label={t('billSearchLabel')}
@@ -278,12 +284,12 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
               <legend className="text-sm font-semibold">{t('themeLegend')}</legend>
               <div className="mt-2 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="rostra-accent" className="text-sm font-medium">
+                  <label htmlFor="oravan-accent" className="text-sm font-medium">
                     {t('accentLabel')}
                   </label>
                   <div className="mt-1 flex min-h-[44px] items-center gap-2">
                     <input
-                      id="rostra-accent"
+                      id="oravan-accent"
                       type="color"
                       value={accent}
                       onChange={(e) => setAccentInput(e.target.value)}
@@ -293,11 +299,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="rostra-radius" className="text-sm font-medium">
+                  <label htmlFor="oravan-radius" className="text-sm font-medium">
                     {t('radiusLabel')}
                   </label>
                   <select
-                    id="rostra-radius"
+                    id="oravan-radius"
                     value={radius}
                     onChange={(e) => setRadius(e.target.value as RadiusKey)}
                     className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
@@ -316,11 +322,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="rostra-font" className="text-sm font-medium">
+                  <label htmlFor="oravan-font" className="text-sm font-medium">
                     {t('fontLabel')}
                   </label>
                   <select
-                    id="rostra-font"
+                    id="oravan-font"
                     value={font}
                     onChange={(e) => setFont(e.target.value as FontKey)}
                     className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"

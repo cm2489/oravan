@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Rostra",
+    "appName": "Oravan",
     "tagline": "Your line to Congress",
     "skipToContent": "Skip to main content",
     "nav": {
@@ -8,18 +8,20 @@
       "bills": "Bills",
       "reps": "My reps",
       "impact": "My impact",
-      "whyCall": "Why call?"
+      "whyCall": "Why call?",
+      "primaryLabel": "Primary"
     },
     "footer": {
-      "mission": "Rostra is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
+      "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
       "privacy": "Privacy",
       "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them.",
       "terms": "Terms",
-      "lore": "The Rostra was the platform in the Roman Forum where any citizen could address the powerful. Step up.",
+      "lore": "The Oravan was the platform in the Roman Forum where any citizen could address the powerful. Step up.",
       "about": "About",
       "citations": "Citations",
       "donate": "Donate",
-      "embeds": "Embeds"
+      "embeds": "Embeds",
+      "navLabel": "Footer"
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -246,7 +248,7 @@
     "scenes": {
       "decode": {
         "title": "A bill, decoded",
-        "body": "Rostra turns every bill into plain language — always labeled as AI-drafted, with the official text one tap away."
+        "body": "Oravan turns every bill into plain language — always labeled as AI-drafted, with the official text one tap away."
       },
       "stance": {
         "title": "Say where you stand",
@@ -313,7 +315,7 @@
   },
   "impact": {
     "title": "Your impact",
-    "sub": "Stored only in this browser. Rostra has no servers that know who you are.",
+    "sub": "Stored only in this browser. Oravan has no servers that know who you are.",
     "calls": "{count, plural, one {Call made} other {Calls made}}",
     "contacts": "{count, plural, one {Conversation} other {Conversations}}",
     "voicemails": "{count, plural, one {Voicemail} other {Voicemails}}",
@@ -322,7 +324,7 @@
     "emptyCta": "Find a bill to call about",
     "historyTitle": "Call history",
     "eraseTitle": "Your data, your call",
-    "eraseBody": "Everything Rostra knows about you lives in this browser. Erase it any time.",
+    "eraseBody": "Everything Oravan knows about you lives in this browser. Erase it any time.",
     "erase": "Erase all my data",
     "eraseConfirm": "Erase your ZIP, interests, and call history from this device? This can't be undone.",
     "erased": "All local data erased.",
@@ -332,7 +334,7 @@
   },
   "privacy": {
     "title": "Privacy, in plain language",
-    "p1": "Rostra has no user accounts. We never ask for your name, email, address, or anything that identifies you.",
+    "p1": "Oravan has no user accounts. We never ask for your name, email, address, or anything that identifies you.",
     "p2": "Your ZIP code, your issue interests, and your call history are stored only in your browser's local storage, on your device. They are never transmitted to, or stored on, our servers. The Impact page has a one-tap button that erases all of it.",
     "p3": "When you ask for a call script, your chosen stance and the bill are sent to our server to draft the text, processed in memory, and not linked to any identity. We rate-limit by network address to prevent abuse; we don't keep a log tying addresses to political positions.",
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
@@ -341,39 +343,39 @@
     "p7": "One optional exception to \"we never ask\": if your ZIP code covers more than one congressional district, you can type your street address to pin down yours. It goes to our server once, is passed straight to the U.S. Census Bureau's public geocoder (so your device never contacts census.gov directly), and is never stored or written to any log. Only the district number comes back."
   },
   "about": {
-    "title": "About Rostra",
-    "intro": "Rostra is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, and make a 30-second call — in English or Spanish, with no account and no server-side record of your political activity.",
-    "fundingTitle": "How Rostra is funded",
-    "fundingBody": "Rostra runs without ads, without partisan grants, and without selling data — there's no data to sell. A donation option, hosted entirely off Rostra's own servers, is on the way.",
-    "supportTitle": "Support Rostra",
-    "supportBody": "Rostra is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. Rostra takes no advertising, no partisan grants, and stores no donor political activity — gifts are tax-deductible and processed off Rostra's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
+    "title": "About Oravan",
+    "intro": "Oravan is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, and make a 30-second call — in English or Spanish, with no account and no server-side record of your political activity.",
+    "fundingTitle": "How Oravan is funded",
+    "fundingBody": "Oravan runs without ads, without partisan grants, and without selling data — there's no data to sell. A donation option, hosted entirely off Oravan's own servers, is on the way.",
+    "supportTitle": "Support Oravan",
+    "supportBody": "Oravan is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. Oravan takes no advertising, no partisan grants, and stores no donor political activity — gifts are tax-deductible and processed off Oravan's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
     "donateCta": "Donate via our fiscal sponsor"
   },
   "citations": {
-    "title": "Cite Rostra",
-    "intro": "Rostra is built to be a source you can cite and correct: every bill has one permanent address, a dated freshness stamp, and a clear line between the official record and AI-drafted plain language. This page states that contract precisely — for reporters, librarians, and anyone building on Rostra's data or MCP server — and explains how to report an error.",
+    "title": "Cite Oravan",
+    "intro": "Oravan is built to be a source you can cite and correct: every bill has one permanent address, a dated freshness stamp, and a clear line between the official record and AI-drafted plain language. This page states that contract precisely — for reporters, librarians, and anyone building on Oravan's data or MCP server — and explains how to report an error.",
     "urlTitle": "Canonical URLs",
     "urlBody": "Every bill gets one permanent address in each language, built only from its own bill type, number, and Congress — never from its status. A citation written the day a bill is introduced still resolves after it's signed, fails, or expires; the address is never reused or reassigned.",
-    "urlExampleLabel": "Example — H.R. 1787, the same bill used in Rostra's own demo material:",
+    "urlExampleLabel": "Example — H.R. 1787, the same bill used in Oravan's own demo material:",
     "asOfTitle": "\"Data as of\" freshness",
-    "asOfBody": "Every page states the date of Rostra's last successful nightly sync with Congress.gov — not a live feed, and not the date you happen to load the page. Cite that date, not today's date, as the moment the underlying facts were last checked. It's the same value as the {asOfField} field in every MCP tool response.",
+    "asOfBody": "Every page states the date of Oravan's last successful nightly sync with Congress.gov — not a live feed, and not the date you happen to load the page. Cite that date, not today's date, as the moment the underlying facts were last checked. It's the same value as the {asOfField} field in every MCP tool response.",
     "sourceTitle": "Where the data comes from",
-    "sourceBody": "Bill status, dates, sponsor, and text come from Congress.gov. Member and district-office data comes from the public-domain unitedstates/congress-legislators project. Both refresh only through Rostra's own nightly sync. The MCP citation envelope states the source in whichever language a query requested — both language versions are shown below, since this page is read by both:",
+    "sourceBody": "Bill status, dates, sponsor, and text come from Congress.gov. Member and district-office data comes from the public-domain unitedstates/congress-legislators project. Both refresh only through Oravan's own nightly sync. The MCP citation envelope states the source in whichever language a query requested — both language versions are shown below, since this page is read by both:",
     "aiTitle": "The AI-content policy",
-    "aiBody": "Two kinds of text appear on a bill page, and they're never presented the same way. The official record — title, status, sponsor, dates, last action, the Congress.gov link — is copied, not generated. The plain-language layer — the headline, the summary, and the what/who/why/cost sections — is AI-drafted, and every one of those fields is reviewed by a person before it publishes; a new bill enters Rostra's corpus only once that review is done, in both languages. Wherever AI-drafted content appears — the site, the MCP server, an embed — it carries this label, in the language the request used; both language versions are shown below:",
-    "aiCallScript": "Call scripts work under a stricter rule still: they're drafted only inside Rostra's own site, and a caller must read and can edit the script before placing a call. Rostra's MCP server never generates one — it hands back a link to the on-site flow instead, so that human-review step can't be bypassed by an agent.",
+    "aiBody": "Two kinds of text appear on a bill page, and they're never presented the same way. The official record — title, status, sponsor, dates, last action, the Congress.gov link — is copied, not generated. The plain-language layer — the headline, the summary, and the what/who/why/cost sections — is AI-drafted, and every one of those fields is reviewed by a person before it publishes; a new bill enters Oravan's corpus only once that review is done, in both languages. Wherever AI-drafted content appears — the site, the MCP server, an embed — it carries this label, in the language the request used; both language versions are shown below:",
+    "aiCallScript": "Call scripts work under a stricter rule still: they're drafted only inside Oravan's own site, and a caller must read and can edit the script before placing a call. Oravan's MCP server never generates one — it hands back a link to the on-site flow instead, so that human-review step can't be bypassed by an agent.",
     "licenseTitle": "Licensing",
     "licenseOfficialLabel": "The underlying official-record data — U.S. public domain, in both languages:",
-    "licenseAiLabel": "Rostra's own AI-drafted plain-language content, in both languages:",
+    "licenseAiLabel": "Oravan's own AI-drafted plain-language content, in both languages:",
     "langEnglish": "English",
     "langSpanish": "Español",
     "licenseCoverage": "AllSides' outlet-lean ratings, shown in each bill's \"Read\" section, are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial — a website-only feature until that's resolved.",
     "correctionTitle": "Report an error",
-    "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Use the feedback button in the footer of this (or any) page and choose \"Something's not working.\" Name the bill and describe the error — that's the same intake Rostra uses for every other bug report, not a separate correction form.",
+    "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Use the feedback button in the footer of this (or any) page and choose \"Something's not working.\" Name the bill and describe the error — that's the same intake Oravan uses for every other bug report, not a separate correction form.",
     "correctionLinkText": "Report an error",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
-    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Rostra's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Rostra's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. An embeddable widget that carries bill text is still in development, not yet shipped; once it exists, it will read this same corrected data with no separate correction step of its own.",
-    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Rostra's ongoing Spanish-language review process rather than patched quietly and forgotten."
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. An embeddable widget that carries bill text is still in development, not yet shipped; once it exists, it will read this same corrected data with no separate correction step of its own.",
+    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Oravan's ongoing Spanish-language review process rather than patched quietly and forgotten."
   },
   "notFound": {
     "title": "Page not found",
@@ -396,16 +398,16 @@
   },
   "terms": {
     "title": "Terms, in plain language",
-    "p1": "Rostra is a free, nonpartisan civic tool. It helps you find your members of Congress, understand active bills, and call about them. It is not affiliated with Congress, any government agency, party, or campaign.",
+    "p1": "Oravan is a free, nonpartisan civic tool. It helps you find your members of Congress, understand active bills, and call about them. It is not affiliated with Congress, any government agency, party, or campaign.",
     "p2": "Bill summaries, headlines, and call scripts are drafted by AI and are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
-    "p3": "Rostra is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
+    "p3": "Oravan is provided as-is, with no warranties. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily; verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
     "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
   },
   "feedback": {
     "trigger": "Beta feedback",
     "title": "Beta feedback",
-    "intro": "Rostra is in beta. Tell us what's broken, confusing, or missing.",
+    "intro": "Oravan is in beta. Tell us what's broken, confusing, or missing.",
     "categoryLegend": "What kind of feedback?",
     "categoryBug": "Something's broken",
     "categoryFeature": "An idea or request",
@@ -437,13 +439,13 @@
     "frameTitle": "Your representatives",
     "languageLabel": "Language",
     "multiDistrictTitle": "This ZIP spans more than one district",
-    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Rostra site. Both candidate districts are shown below; your senators are the same either way.",
-    "openFullLookup": "Refine with your address on Rostra",
-    "poweredBy": "Powered by Rostra",
+    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Both candidate districts are shown below; your senators are the same either way.",
+    "openFullLookup": "Refine with your address on Oravan",
+    "poweredBy": "Powered by Oravan",
     "billNotFound": "We couldn't find that bill in our data."
   },
   "embeds": {
-    "title": "Embed Rostra on your site",
+    "title": "Embed Oravan on your site",
     "intro": "Free, self-serve widgets — no sales call, no account, no server-side data about your visitors. Pick a widget, set a few options, and copy one script tag.",
     "configuratorHeading": "Build your embed",
     "widgetLegend": "Widget",
@@ -462,7 +464,7 @@
     "billNoResults": "No bills match your search.",
     "billResultsNote": "Showing {shown} of {total} matches",
     "themeLegend": "Theme (bill card only)",
-    "themeNote": "Representative lookup doesn't support theming yet — it always uses Rostra's default look.",
+    "themeNote": "Representative lookup doesn't support theming yet — it always uses Oravan's default look.",
     "accentLabel": "Accent color",
     "radiusLabel": "Corner style",
     "radiusSharp": "Sharp",
@@ -483,14 +485,14 @@
     "docsIsolationBody": "The widget loads inside a cross-origin iframe, the same browser mechanism that keeps a video embed or a payment form isolated from the page around it. That isn't a policy promise — it's the browser enforcing it. Your page's own scripts, analytics, and tag managers cannot read what a visitor types into the widget or observe anything happening inside it, because they run in a different origin's sandbox.",
     "docsPrivacyTitle": "What the widget collects about your visitors: nothing",
     "docsPrivacyCookies": "Zero cookies. No response from the embed ever sets one.",
-    "docsPrivacyThirdParty": "Zero third-party requests. Every asset the widget loads — fonts, styles, data — comes from Rostra's own origin. Nothing calls out to an ad network, an analytics vendor, or any other third party.",
-    "docsPrivacyZip": "ZIP code only. The representative-lookup widget never asks for a street address inside the iframe; a visitor who needs the more precise, split-district lookup is linked out to the main Rostra site for that step.",
-    "docsPrivacyNoData": "No visitor data reaches Rostra beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup, and is never logged or stored.",
-    "docsPrivacyTested": "These aren't claims made only in this copy — they're enforced by automated tests in Rostra's own public repository, on every change, before it ships.",
+    "docsPrivacyThirdParty": "Zero third-party requests. Every asset the widget loads — fonts, styles, data — comes from Oravan's own origin. Nothing calls out to an ad network, an analytics vendor, or any other third party.",
+    "docsPrivacyZip": "ZIP code only. The representative-lookup widget never asks for a street address inside the iframe; a visitor who needs the more precise, split-district lookup is linked out to the main Oravan site for that step.",
+    "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup, and is never logged or stored.",
+    "docsPrivacyTested": "These aren't claims made only in this copy — they're enforced by automated tests in Oravan's own public repository, on every change, before it ships.",
     "docsThemingTitle": "Theming reference",
-    "docsThemingBody": "Theming is limited to three CSS custom properties, each validated on Rostra's server before it can reach a style: an accent color (a hex code), a corner-radius style (sharp, soft, or round), and a font (system or serif). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
+    "docsThemingBody": "Theming is limited to three CSS custom properties, each validated on Oravan's server before it can reach a style: an accent color (a hex code), a corner-radius style (sharp, soft, or round), and a font (system or serif). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
     "docsAttributionTitle": "Attribution",
-    "docsAttributionBody": "Every free widget shows a small \"Powered by Rostra\" link, pointing back to the canonical page on rostra.org. It's how the free tier stays free, and it's present on every embed today, with no option to remove it.",
+    "docsAttributionBody": "Every free widget shows a small \"Powered by Oravan\" link, pointing back to the canonical page on oravan.org. It's how the free tier stays free, and it's present on every embed today, with no option to remove it.",
     "docsLoaderTitle": "The loader script",
     "docsLoaderBody": "The script tag your snippet includes is a single, dependency-free file under 5KB. All it does is create the iframe, size it to fit its content, and relay that size back — nothing is read from your page, and nothing is sent anywhere except the one request that loads the widget itself."
   }

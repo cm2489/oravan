@@ -19,7 +19,7 @@ export async function waitForFeedHydrated(page: Page) {
 
 /** Seed a saved ZIP the way the app stores it (must run after first navigation). */
 export async function seedZip(page: Page, zip: string) {
-  await page.evaluate((z) => localStorage.setItem('rostra.prefs', JSON.stringify({ zip: z })), zip);
+  await page.evaluate((z) => localStorage.setItem('oravan.prefs', JSON.stringify({ zip: z })), zip);
 }
 
 /** Mock the AI script endpoint so tests are free, fast, and deterministic. */

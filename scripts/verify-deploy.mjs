@@ -4,10 +4,10 @@
  * pushes were BLOCKED for the repo's entire life — see
  * docs/solutions/vercel-bot-push-blocked-deploys.md). So after the hook
  * fires, poll production until the page reports the commit SHA we just
- * pushed, baked in at build time as <meta name="rostra-build">.
+ * pushed, baked in at build time as <meta name="oravan-build">.
  *
  * Env:
- *   PROD_URL    production origin (e.g. https://rostra.example). Unset =
+ *   PROD_URL    production origin (e.g. https://oravan.example). Unset =
  *               skip with a notice, so the pipeline works before it's wired.
  *   EXPECT_SHA  the commit SHA the deploy must be built from.
  *
@@ -34,8 +34,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function buildIdOf(html) {
   const m =
-    html.match(/<meta[^>]*name="rostra-build"[^>]*content="([^"]*)"/) ??
-    html.match(/<meta[^>]*content="([^"]*)"[^>]*name="rostra-build"/);
+    html.match(/<meta[^>]*name="oravan-build"[^>]*content="([^"]*)"/) ??
+    html.match(/<meta[^>]*content="([^"]*)"[^>]*name="oravan-build"/);
   return m ? m[1] : null;
 }
 

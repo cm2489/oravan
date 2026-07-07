@@ -77,7 +77,7 @@ export function BillCardWidget({
     const report = () => {
       window.parent.postMessage(
         {
-          source: 'rostra-embed',
+          source: 'oravan-embed',
           type: 'resize',
           widget: 'bill-card',
           height: Math.ceil(el.getBoundingClientRect().height),
@@ -95,9 +95,9 @@ export function BillCardWidget({
   // validated (lib/embed-theme) before this component ever sees them. No
   // other tenant-supplied value is ever assigned to a style prop here.
   const themeStyle: CSSProperties = {
-    ...(theme.accent ? { ['--rostra-accent' as string]: theme.accent } : {}),
-    ['--rostra-radius' as string]: RADIUS_VALUES[theme.radiusKey],
-    ['--rostra-font' as string]: FONT_VALUES[theme.fontKey],
+    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
+    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
+    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
   };
 
   const localeToggle = (

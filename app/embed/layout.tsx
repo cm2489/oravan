@@ -11,7 +11,7 @@ import './embed.css';
  * branch under app/ owns its own <html>/<body>. Embed pages carry no app
  * chrome at all (no Header, Footer, skip link, no next-intl locale
  * routing/middleware - see proxy.ts's matcher, which excludes /embed) -
- * they exist to run inside someone else's <iframe>, not inside Rostra's
+ * they exist to run inside someone else's <iframe>, not inside Oravan's
  * own navigation. Locale here is a widget-local concern (a query param +
  * an always-visible in-widget toggle - see components/embed), not a URL
  * segment, so this layout has none of the [locale] plumbing.
@@ -43,7 +43,7 @@ import './embed.css';
  * (lib/ratelimit.ts, lib/scriptcache.ts).
  */
 export const metadata: Metadata = {
-  title: 'Rostra embed',
+  title: 'Oravan embed',
   robots: { index: false, follow: false },
 };
 

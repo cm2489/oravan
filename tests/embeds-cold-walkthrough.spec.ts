@@ -28,7 +28,7 @@ import { startCrossOriginHost } from './helpers';
  * network endpoint is redirected to the code actually being verified.
  */
 
-const SITE_ORIGIN = 'https://cabina-nine.vercel.app'; // lib/site.ts's SITE_ORIGIN - see file header comment above
+const SITE_ORIGIN = 'https://oravan.org'; // lib/site.ts's SITE_ORIGIN - see file header comment above
 
 const DECODED_SLUG = 'hr-5582-119';
 
@@ -49,14 +49,14 @@ test('cold walkthrough (rep-lookup): the configurator default snippet loads and 
   // gets a working snippet with zero picks required.
   const snippet = await readSnippet(page);
   expect(snippet).toContain(`${SITE_ORIGIN}/embed.js`);
-  expect(snippet).toContain('data-rostra-widget="rep-lookup"');
+  expect(snippet).toContain('data-oravan-widget="rep-lookup"');
   expect(snippet).toContain('data-locale="en"');
 
   const hostSnippet = snippet.replaceAll(SITE_ORIGIN, baseURL!);
   const host = await startCrossOriginHost(`<!doctype html><html><body>${hostSnippet}</body></html>`);
   try {
     await page.goto(host.url);
-    const frame = page.frameLocator('iframe[data-rostra-embed="rep-lookup"]');
+    const frame = page.frameLocator('iframe[data-oravan-embed="rep-lookup"]');
     await expect(frame.getByText(en.embed.frameTitle)).toBeVisible();
 
     await frame.getByLabel(en.home.zipLabel).fill('78501');
@@ -80,7 +80,7 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
 
   const snippet = await readSnippet(page);
   expect(snippet).toContain(`${SITE_ORIGIN}/embed.js`);
-  expect(snippet).toContain('data-rostra-widget="bill-card"');
+  expect(snippet).toContain('data-oravan-widget="bill-card"');
   expect(snippet).toContain(`data-slug="${DECODED_SLUG}"`);
   expect(snippet).toContain('data-radius="round"');
   expect(snippet).toContain('data-font="serif"');
@@ -89,7 +89,7 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
   const host = await startCrossOriginHost(`<!doctype html><html><body>${hostSnippet}</body></html>`);
   try {
     await page.goto(host.url);
-    const frame = page.frameLocator('iframe[data-rostra-embed="bill-card"]');
+    const frame = page.frameLocator('iframe[data-oravan-embed="bill-card"]');
     await expect(
       frame.getByText('Hospitals and insurers must publish real prices under HR 5582')
     ).toBeVisible();
@@ -99,7 +99,7 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
     // uses for the widget page directly.
     const root = frame.locator('.bc-root');
     await expect
-      .poll(() => root.evaluate((el) => getComputedStyle(el).getPropertyValue('--rostra-radius').trim()))
+      .poll(() => root.evaluate((el) => getComputedStyle(el).getPropertyValue('--oravan-radius').trim()))
       .toBe('20px'); // RADIUS_VALUES.round, lib/embed-theme.ts
   } finally {
     await host.close();

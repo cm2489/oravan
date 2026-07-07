@@ -8,7 +8,7 @@ import { DONATE_URL } from '../lib/site';
  * every .tsx file (including component sources, not just spec files)
  * through its own component-testing JSX runtime, which produces inert
  * `{ __pw_type, ... }` objects instead of real React elements - so
- * react-dom/server can't render Rostra's own components here, and a
+ * react-dom/server can't render Oravan's own components here, and a
  * second `next build` under a different constant is out of scope for a
  * single test run (see tests/donate.spec.ts for what IS exercised live:
  * today's real "dark" behavior). This test instead pins the two
@@ -43,7 +43,7 @@ test.describe('DONATE_URL wiring (§6)', () => {
     expect(component).toContain('if (!donateUrl) return null');
     expect(component).toContain('target="_blank"');
     expect(component).toContain('rel="noopener noreferrer"');
-    // Never an iframe or a payment field on Rostra's own infra (§6, hard rule).
+    // Never an iframe or a payment field on Oravan's own infra (§6, hard rule).
     expect(component).not.toMatch(/<iframe/i);
     expect(component).not.toMatch(/<input/i);
     expect(component).not.toMatch(/<form/i);

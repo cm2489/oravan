@@ -1,7 +1,7 @@
 """Vacancy derivation for the weekly legislators refresh.
 
 Spec: docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f), sprint items 1
-and 4; docs/plans/2026-07-03-001-feat-rostra-launch-buildout-plan.md's
+and 4; docs/plans/2026-07-03-001-feat-oravan-launch-buildout-plan.md's
 "specific data-model footgun" note.
 
 The upstream unitedstates/congress-legislators feed has no explicit "vacant"

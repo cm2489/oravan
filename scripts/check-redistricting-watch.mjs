@@ -52,7 +52,7 @@ async function main() {
       // Identify ourselves - a bare default UA is more likely to get bucketed
       // as generic bot traffic by front-door bot mitigation than a UA that
       // names the project and its (public) source, for a once-a-week request.
-      headers: { 'User-Agent': 'rostra-redistricting-watch/1.0 (+https://github.com/cm2489/rostra)' },
+      headers: { 'User-Agent': 'oravan-redistricting-watch/1.0 (+https://github.com/cm2489/oravan)' },
     });
     if (!res.ok) throw new Error(`upstream status ${res.status}`);
     xml = await res.text();

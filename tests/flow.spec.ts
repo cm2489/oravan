@@ -35,7 +35,7 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await expect(page.getByText(/your first call/i)).toBeVisible();
 
   await page.getByRole('button', { name: 'Spoke to someone' }).first().click();
-  const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('rostra.calls') ?? '[]'));
+  const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('oravan.calls') ?? '[]'));
   expect(calls).toHaveLength(1);
   expect(calls[0].outcome).toBe('contact');
 

@@ -1,4 +1,4 @@
-# CLAUDE.md — Rostra
+# CLAUDE.md — Oravan
 
 Read README.md first; its **Design principles** section is the product constitution.
 
@@ -18,4 +18,4 @@ Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the d
 
 ## This is build #3 of 3
 
-Firewalled from the live Oravan app (`~/Projects/be-the-change`, read-only reference) and from the Civic Action MCP build. Don't import code or guardrail docs from either.
+Firewalled from the predecessor builds — the old Oravan app (its local repo location and archival plan are recorded in `docs/migration/oravan-grounding.md`; read-only reference) and the Civic Action MCP build. Don't import code or guardrail docs from either.

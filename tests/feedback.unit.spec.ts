@@ -10,7 +10,7 @@ import { POST } from '../app/api/feedback/route';
  * assertions below pin the exact outbound payload.
  */
 
-const ISSUES_URL = 'https://api.github.com/repos/cm2489/rostra/issues';
+const ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan/issues';
 
 // Distinct marker values: if any of these ever shows up in the outbound
 // GitHub payload, an identifier leaked.
@@ -174,12 +174,12 @@ test('rate limit: the 9th request from one IP inside the window is 429', async (
   expect(res.status).toBe(429);
 });
 
-test('X-Rostra-Key is recognized but inert (S11 dormant tenancy hook): identical behavior, never forwarded', async () => {
+test('X-Oravan-Key is recognized but inert (S11 dormant tenancy hook): identical behavior, never forwarded', async () => {
   const calls = mockGithub({ status: 201 }, { status: 201 });
   const body = { category: 'bug', message: 'same message either way.' };
 
   const without = await POST(request(body));
-  const withKey = await POST(request(body, { 'x-rostra-key': 'rk_leak-canary-key' }));
+  const withKey = await POST(request(body, { 'x-oravan-key': 'rk_leak-canary-key' }));
   expect(without.status).toBe(200);
   expect(withKey.status).toBe(200);
   expect(await withKey.json()).toEqual(await without.json());

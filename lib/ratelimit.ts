@@ -61,13 +61,13 @@ export function callerHash(ip: string, salt: string): string {
 }
 
 /**
- * Dormant tenancy hook (S18/S19): the X-Rostra-Key header is recognized as
+ * Dormant tenancy hook (S18/S19): the X-Oravan-Key header is recognized as
  * of S11 so embed/tenant callers can begin sending it, but NOTHING reads the
  * result yet — its presence or absence must not change any response
  * (test-enforced). It is never logged and never written to either database.
  */
-export function readRostraKey(headers: Headers): string | null {
-  const raw = headers.get('x-rostra-key');
+export function readOravanKey(headers: Headers): string | null {
+  const raw = headers.get('x-oravan-key');
   const trimmed = raw?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
 }
