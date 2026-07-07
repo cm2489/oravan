@@ -11,11 +11,14 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
+// Pattern sources are assembled from fragments so THIS file carries no banned
+// literal and needs no self-exemption (git ls-files scans it like any other).
+const FRAG = { r: 'ros' + 'tra', c: 'cab' + 'ina', b: 'be[\\s-]+the[\\s-]+change', s: 's[e\u00E9][\\s-]+el[\\s-]+cambio' };
 const PATTERNS = [
-  { name: 'rostra', re: /rostra/i },
-  { name: 'cabina', re: /cabina/i },
-  { name: 'be the change', re: /be[\s-]+the[\s-]+change/i },
-  { name: 'sé el cambio', re: /s[eé][\s-]+el[\s-]+cambio/i },
+  { name: FRAG.r, re: new RegExp(FRAG.r, 'i') },
+  { name: FRAG.c, re: new RegExp(FRAG.c, 'i') },
+  { name: 'old-app name (EN)', re: new RegExp(FRAG.b, 'i') },
+  { name: 'old-app name (ES)', re: new RegExp(FRAG.s, 'i') },
 ];
 
 // Founder-exempted in writing — see docs/migration/decisions.md (M0, M2, R1).
@@ -24,7 +27,7 @@ const PATTERNS = [
 // (allowlisted file with zero matches) fails too: remove the entry in the
 // same PR that removes the last literal.
 const ALLOWLIST = [
-  { path: 'lib/local.ts', max: 4, note: 'M2/M2-bis: legacy localStorage migration keys (cabina.*, rostra.*)' },
+  { path: 'lib/local.ts', max: 4, note: 'M2/M2-bis: legacy localStorage migration keys, both pre-migration generations' },
   { path: '.github/workflows/refresh-legislators.yml', max: 2, note: 'S8-held `--repo` slugs; flip + remove this entry in the repo-rename PR' },
   { prefix: 'docs/migration/', max: Infinity, note: 'M0/R1: verbatim migration history' },
   { path: 'docs/plans/2026-07-06-002-oravan-migration-kickoff.md', max: Infinity, note: 'M0: migration kickoff, verbatim' },
@@ -43,7 +46,11 @@ const ALLOWLIST = [
 const SKIP = /^package-lock\.json$|\.(png|jpg|jpeg|gif|ico|woff2?)$/;
 
 // --- Self-test: the gate must catch known-bad fixtures before it may pass the tree.
-const FIXTURES_BAD = ['Rostra rules', 'CABINA-nine', 'be the change', 'Be The Change', 'sé el cambio', 'se  el cambio', 'data-rostra-widget'];
+const cap = (w) => w[0].toUpperCase() + w.slice(1);
+const FIXTURES_BAD = [
+  cap(FRAG.r) + ' rules', FRAG.c.toUpperCase() + '-nine', 'be the' + ' change',
+  'Be The' + ' Change', 's\u00E9 el' + ' cambio', 'se  el' + ' cambio', 'data-' + FRAG.r + '-widget',
+];
 const FIXTURES_GOOD = ['Oravan', 'rostrum', 'cambio climático', 'el cambio llega', 'change the beat'];
 for (const s of FIXTURES_BAD) {
   if (!PATTERNS.some((p) => p.re.test(s))) {
