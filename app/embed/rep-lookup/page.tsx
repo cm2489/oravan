@@ -41,7 +41,7 @@ export default async function RepLookupEmbedPage({
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, zip, accent, radius, font, attribution } = await searchParams;
+  const { locale: localeParam, zip, accent, radius, font, brandless, attribution } = await searchParams;
   const locale = normalizeLocale(localeParam);
   const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
 
@@ -55,6 +55,7 @@ export default async function RepLookupEmbedPage({
         radiusKey: safeRadiusKey(radius),
         fontKey: safeFontKey(font),
       }}
+      brandless={safeBrandless(brandless)}
       attribution={safeAttribution(attribution)}
     />
   );

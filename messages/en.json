@@ -431,7 +431,7 @@
   "freshness": {
     "dataAsOf": "Data as of {date}",
     "quietWeekTitle": "Quiet week",
-    "quietWeekBody": "No bill has cleared the bar for an urgent call right now. Check back soon, or browse everything moving through Congress.",
+    "quietWeekBody": "No bill has cleared the bar for an urgent call right now — a higher bar than making the news. Check back soon, or browse everything moving through Congress.",
     "dataStaleTitle": "Data check needed",
     "dataStaleBody": "We can't confirm what's most urgent right now — our last successful data check was {date}. This isn't a quiet week, it's a stale one.",
     "staleNote": "Our last successful data check was {date} — newer activity in Congress may not be shown yet."
@@ -441,9 +441,14 @@
     "languageLabel": "Language",
     "multiDistrictTitle": "This ZIP spans more than one district",
     "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Both candidate districts are shown below; your senators are the same either way.",
+    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Both candidate districts are shown below; your senators are the same either way.",
     "openFullLookup": "Refine with your address on Oravan",
+    "openFullLookupBrandless": "Refine with your address",
     "poweredBy": "Powered by Oravan",
     "billNotFound": "We couldn't find that bill in our data."
+  },
+  "manifest": {
+    "description": "Find your reps. Understand the bills. Make the call."
   },
   "embeds": {
     "title": "Embed Oravan on your site",

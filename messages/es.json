@@ -28,7 +28,7 @@
     "loading": "Cargando…",
     "navShort": {
       "home": "Inicio",
-      "bills": "Leyes",
+      "bills": "Proyectos",
       "reps": "Reps",
       "impact": "Impacto"
     }
@@ -175,8 +175,8 @@
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
     "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje cuenta lo mismo. Menciona tu código postal para que sepan que eres su constituyente.",
     "officeHoursTitle": "Horario habitual de las oficinas",
-    "officeHoursOpenBody": "Las oficinas del Congreso suelen tener horario de oficina entre semana, aproximadamente de 9am a 5:30pm hora del Este — ahora mismo cae dentro de ese horario, así que alguien podría contestar en vivo. Si de todos modos te sale el buzón de voz, se cuenta exactamente igual.",
-    "officeHoursClosedBody": "Ahora mismo está fuera del horario habitual (entre semana, aproximadamente de 9am a 5:30pm hora del Este) — lo más probable es que te salga el buzón de voz, y eso está bien: deja tu nombre y código postal, y cuenta exactamente igual que una llamada en vivo.",
+    "officeHoursOpenBody": "Las oficinas del Congreso suelen tener horario de oficina entre semana, aproximadamente de 9:00 a. m. a 5:30 p. m., hora del Este — ahora mismo cae dentro de ese horario, así que alguien podría contestar en vivo. Si de todos modos te sale el buzón de voz, se cuenta exactamente igual.",
+    "officeHoursClosedBody": "Ahora mismo está fuera del horario habitual (entre semana, aproximadamente de 9:00 a. m. a 5:30 p. m., hora del Este) — lo más probable es que te salga el buzón de voz, y eso está bien: deja tu nombre y código postal, y cuenta exactamente igual que una llamada en vivo.",
     "staffNote": "Contesta un miembro del personal (muchas veces un pasante), anota tu posición y sigue adelante. Sin debate y sin examen. Menos de un minuto.",
     "copy": "Copiar número",
     "copied": "Copiado",
@@ -431,7 +431,7 @@
   "freshness": {
     "dataAsOf": "Datos al {date}",
     "quietWeekTitle": "Semana tranquila",
-    "quietWeekBody": "Ningún proyecto de ley necesita una llamada urgente en este momento. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
+    "quietWeekBody": "Ningún proyecto de ley necesita una llamada urgente en este momento — un umbral más alto que salir en las noticias. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
     "dataStaleTitle": "Verificación pendiente",
     "dataStaleBody": "Todavía no podemos confirmar qué es más urgente — nuestra última verificación exitosa fue el {date}. Esto no es una semana tranquila: son datos desactualizados.",
     "staleNote": "Nuestra última verificación exitosa de datos fue el {date} — es posible que actividad más reciente del Congreso aún no se muestre."
@@ -441,9 +441,14 @@
     "languageLabel": "Idioma",
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
     "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
+    "multiDistrictBodyBrandless": "Este widget incrustado no acepta una dirección — ese paso se hace en el sitio completo. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Oravan",
+    "openFullLookupBrandless": "Precisa tu distrito con tu dirección",
     "poweredBy": "Desarrollado por Oravan",
     "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos."
+  },
+  "manifest": {
+    "description": "Encuentra a tus representantes. Entiende los proyectos de ley. Haz la llamada."
   },
   "embeds": {
     "title": "Incorpora Oravan en tu sitio",

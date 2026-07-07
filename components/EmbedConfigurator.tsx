@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
 import { safeAccent, type FontKey, type RadiusKey } from '@/lib/embed-theme';
 import type { FeedTeaser } from '@/lib/types';
@@ -45,11 +45,15 @@ const FONT_KEYS: FontKey[] = ['system', 'serif'];
 
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
+  // Default the widget-being-built to the locale of the page you're on: an
+  // es-first outlet on /es/embeds should preview an es-first widget, not have
+  // to reach for the toggle first (S6 persona gate - Rosa/Devon).
+  const pageLocale = useLocale();
   const rawTargetId = useId();
   const targetId = `oravan-embed-${rawTargetId.replace(/[^a-zA-Z0-9]/g, '')}`;
 
   const [widget, setWidget] = useState<WidgetType>('rep-lookup');
-  const [locale, setLocale] = useState<ConfigLocale>('en');
+  const [locale, setLocale] = useState<ConfigLocale>(pageLocale === 'es' ? 'es' : 'en');
   const [billQuery, setBillQuery] = useState('');
   const [slug, setSlug] = useState<string | null>(null);
   const [accentInput, setAccentInput] = useState(DEFAULT_ACCENT);

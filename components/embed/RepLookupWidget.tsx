@@ -71,6 +71,7 @@ export function RepLookupWidget({
   initialZip,
   availablePortraits = [],
   theme,
+  brandless = false,
   attribution = 'on',
 }: {
   initialLocale: EmbedLocale;
@@ -85,6 +86,8 @@ export function RepLookupWidget({
   availablePortraits?: string[];
   /** Same three validated knobs as BillCardWidget (lib/embed-theme). */
   theme: { accent?: string; radiusKey: RadiusKey; fontKey: FontKey };
+  /** Removes the Oravan name from widget chrome (never the attribution link). */
+  brandless?: boolean;
   /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
   attribution?: 'on' | 'none';
 }) {
@@ -264,7 +267,9 @@ export function RepLookupWidget({
       {multiDistrict && status === 'idle' && zip && (
         <div className="re-note">
           <p style={{ fontWeight: 600, margin: '0 0 4px' }}>{t.embed.multiDistrictTitle}</p>
-          <p style={{ margin: 0 }}>{t.embed.multiDistrictBody}</p>
+          <p style={{ margin: 0 }}>
+            {brandless ? t.embed.multiDistrictBodyBrandless : t.embed.multiDistrictBody}
+          </p>
           <p style={{ margin: '8px 0 0' }}>
             <a
               className="re-link"
@@ -272,7 +277,7 @@ export function RepLookupWidget({
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t.embed.openFullLookup} ↗
+              {brandless ? t.embed.openFullLookupBrandless : t.embed.openFullLookup} ↗
             </a>
           </p>
         </div>

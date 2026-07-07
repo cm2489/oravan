@@ -136,6 +136,49 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
 - **Line budget (founder, 2026-07-07): the 25+ line rule is a CONCEPT, not
   a hard constraint** — build lean; ledger keeps light notes only.
 
+## Sprint 6 — persona gate round 1, decided 2026-07-07
+
+- **Panel outcome (round 1): NOT PASSED.** The seven M7-approved seats scored
+  all 18 user-facing surfaces × EN/ES × 4 axes against the ≥85 bar. The core
+  (home, both widgets in default + white-label, OG cards) cleared across all
+  seven seats in both languages; the failures were concentrated and every one
+  was confirmed in source. Full matrix + findings published to the founder as
+  the S6 scorecard (Round 1).
+- **Capture-integrity note (methodology, not product).** The round-1 EN
+  captures for surfaces 2–12 were corrupted by a single-browser-session cookie
+  bleed: after the run visited `/es`, next-intl's default `localeDetection`
+  307-redirected every later bare English URL to its `/es` twin. Six of seven
+  seats flagged it; confirmed by hand (`curl /bills` with/without the cookie).
+  Re-captured clean (cookies isolated per navigation) and re-scored in round 2.
+- **M-routing — Locale routing = URLs AUTHORITATIVE (founder decision).**
+  `i18n/routing.ts` gains `localeDetection: false`. A stored `NEXT_LOCALE`
+  cookie must never redirect a bare English URL to Spanish — an English link
+  always renders English, Spanish lives at `/es`. Chosen over next-intl's
+  sticky-cookie default because that default contradicts the S22 per-locale
+  canonical-URL/hreflang architecture and is the shared-library-terminal trap
+  the librarian seat raised. The language switcher still writes the cookie on
+  an explicit toggle (only passive detection is disabled). Guarded by
+  `tests/locale-routing.spec.ts`.
+- **PR-6 fix batch — approved and landed.** (1) PWA manifest is now bilingual:
+  a locale-aware `app/[locale]/manifest.webmanifest` route sourced from
+  `messages/*.json`, replacing the English-only static `app/manifest.ts`, with
+  a reviewed description reconciled to the shipped voice (was a stale
+  M5-pending placeholder — a hard-rule parity violation all seven seats
+  caught). (2) Rep-lookup widget `brandless` wiring — it was leaking "Oravan"
+  in the multi-district block (the page never passed `brandless` and the widget
+  had no such prop; bill-card already did it right). (3) OG ES card
+  "las leyes" → "los proyectos de ley". (4) Configurator previews the page's
+  own locale on `/es/embeds`. (5) Quiet-week copy clarified against news
+  coverage. (6) ES office-hours time notation. (7) "Leyes" → "Proyectos" mobile
+  tab. Gates green: typecheck, lint, message parity, key-namespaces, naming,
+  and the targeted Playwright suite.
+- **Deferred, with reasons (not silently dropped).** The "(en inglés)" tag on
+  English news sources needs per-article language metadata the coverage data
+  model doesn't carry (a blanket tag would mislabel the Spanish-language
+  outlets Oravan courts). An About "who's behind this" accountability line is
+  the founder's call on how much identity to disclose given the no-PII ethos —
+  surfaced for M-input rather than invented.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

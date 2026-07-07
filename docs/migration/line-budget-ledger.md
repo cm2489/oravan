@@ -31,6 +31,7 @@ Every sprint PR updates this ledger; Sprint 7 publishes the final report.
 | PR-3 `mig/s3-rename` | ~+130 (gate script, kickoff-mandated); rename itself net-neutral (string swaps); +6 shim/i18n lines | sweep across living docs | scripts/check-naming.mjs (~120, the S3-mandated CI gate); LEGACY shim extension (+4); aria-label i18n keys (+2 per locale) |
 | PR-4 `mig/s4-copy` | 0 (copy line-neutral, 47/47) | — | hero/lore/voice pass |
 | PR-5 `mig/s5-embeds-gtm` (S5a+S5b consolidated) | ~+180 (feature work: rep-lookup theming, white-label knobs, /partners page, new spec) | press-kit capability update | budget is a concept per founder amendment — noted for the record only |
+| PR-6 `mig/s6-s7-quality` (S6 persona fixes) | ~+45 (locale-aware manifest route ~40, rep-lookup brandless wiring +6, routing flag +1; copy/OG/config edits line-neutral) + `tests/locale-routing.spec.ts` (~50, the routing-decision guard) | + S6 decisions record + persona scorecard | none new — the manifest route replaces the deleted static `app/manifest.ts`; brandless wiring mirrors BillCardWidget; the test is a mandated correctness guard |
 
 Sanctioned-add register (kickoff-named): S2 wordmark component + `app/manifest.ts`;
 S5a rep-lookup theming + white-label mode; S5b GTM page. Everything else must
