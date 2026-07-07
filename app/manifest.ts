@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Oravan',
     // Neutral pre-launch description; the S4 voice pass owns the final line
     // (hero decision M5 pending).
-    description: 'Find your representatives, understand bills in plain language, and call Congress.',
+    description: 'Make your voice heard. One call at a time.',
     start_url: '/',
     display: 'standalone',
     background_color: '#F3ECDD', // paper

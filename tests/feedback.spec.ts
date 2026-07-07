@@ -103,7 +103,7 @@ test('rate limited: a gentle try-again-later message', async ({ page }) => {
   await page.getByRole('radio', { name: 'An idea or request' }).check();
   await page.getByLabel('Your feedback').fill('hello');
   await page.getByRole('button', { name: 'Send feedback' }).click();
-  await expect(page.getByRole('alert').filter({ hasText: /try again in a few minutes/i })).toBeVisible({
+  await expect(page.getByRole('alert').filter({ hasText: /try again soon/i })).toBeVisible({
     timeout: 10_000,
   });
 });

@@ -16,7 +16,7 @@
       "privacy": "Privacidad",
       "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos.",
       "terms": "Términos",
-      "lore": "La Oravan era la tribuna del Foro Romano donde cualquier ciudadano podía dirigirse al poder. Súbete.",
+      "lore": "Oravan es un nombre inventado — parte oratoria, parte caravana: una voz que se pone en camino y muchas que llegan juntas.",
       "about": "Acerca de",
       "citations": "Citas y correcciones",
       "donate": "Donar",
@@ -33,8 +33,8 @@
     }
   },
   "home": {
-    "heroTitle": "El Congreso cuenta las llamadas.",
-    "heroSub": "Haz que la tuya cuente en menos de 5 minutos. Encuentra a tus representantes, entiende los proyectos de ley que afectan tu vida — en lenguaje claro — y haz oír tu voz. Sin cuenta. Sin app. Solo tú y el teléfono.",
+    "heroTitle": "Tu voz importa. Hazla escuchar.",
+    "heroSub": "Cinco minutos bastan. Encuentra a tus representantes, entiende los proyectos de ley que afectan tu vida — en lenguaje claro — y haz oír tu voz. Sin cuenta. Sin app. Solo tú y el teléfono.",
     "zipLabel": "Tu código postal",
     "zipPlaceholder": "p. ej. 20002",
     "zipCta": "Encontrar a mis representantes",
@@ -58,7 +58,7 @@
     "whyTitle": "¿De verdad funciona llamar?",
     "whyBody": "Sí — y mejor que los correos, las peticiones o las redes. El personal del Congreso cuenta las llamadas a diario y reporta los números al congresista.",
     "whyCta": "Lee por qué llamar funciona",
-    "privacyTitle": "Pensado para tu seguridad",
+    "privacyTitle": "Tu privacidad, por diseño",
     "privacyBody": "Sin registro, sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor. Todo lo personal vive en tu navegador y puedes borrarlo con un toque.",
     "privacyCta": "Lee nuestra promesa de privacidad"
   },
@@ -66,7 +66,7 @@
     "title": "Tus representantes",
     "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos los números para alcanzarlos.",
     "noZip": "Escribe tu código postal para encontrar a tus tres miembros del Congreso.",
-    "multiDistrict": "Tu código postal abarca más de un distrito congresional. Abajo se muestran los distritos y sus representantes — tu dirección exacta determina cuál es el tuyo. Si tienes dudas, tus senadores son los mismos en cualquier caso.",
+    "multiDistrict": "Tu código postal abarca más de un distrito congresional. Te mostramos los dos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
     "districtHeading": "{state}, distrito {district}",
     "atLargeHeading": "{state}, distrito único",
     "senator": "Senador/a",
@@ -98,9 +98,9 @@
     "refineUnavailable": "No pudimos revisar tu dirección en este momento. Todos los distritos posibles siguen abajo, así que no falta nada. Inténtalo más tarde si quieres.",
     "refineRateLimited": "Has revisado varias direcciones en poco tiempo. Respira y vuelve a intentarlo pronto.",
     "refinedNote": "Este es tu distrito, encontrado con la dirección que escribiste. La dirección se usó una sola vez y nunca se guardó. Tus senadores son los mismos para todo el estado.",
-    "refinedOutsideZip": "Tu dirección cae en un distrito que nuestro mapa de códigos postales no esperaba para {zip}. Una dirección es más precisa que un mapa de códigos postales, así que este es el correcto.",
+    "refinedOutsideZip": "Tu dirección cae en un distrito que nuestro mapa de códigos postales no esperaba para {zip}. Una dirección es más precisa que un mapa de códigos postales, así que puedes confiar en este.",
     "showAllDistricts": "Ver todos los distritos del código postal {zip}",
-    "nextTitle": "¿Listo para actuar?",
+    "nextTitle": "Ya sabes a quién llamar.",
     "nextSub": "Esto vale la pena llamarles esta semana.",
     "nextSeeAll": "Ver los {count} proyectos de ley activos"
   },
@@ -113,7 +113,7 @@
     "noResults": "Ningún proyecto coincide. Prueba quitando un filtro.",
     "showingCount": "{shown} de {total} proyectos",
     "band": {
-      "now": "Actúa ya",
+      "now": "Llamando ahora",
       "moving": "En movimiento",
       "radar": "En el radar"
     },
@@ -141,7 +141,7 @@
   },
   "bill": {
     "decoded": "En claro",
-    "aiDisclaimer": "Resumen generado por IA. Verifica los detalles contra el texto oficial antes de actuar.",
+    "aiDisclaimer": "Resumen generado por IA. Verifícalo con el texto oficial antes de actuar.",
     "officialTitle": "Título oficial",
     "statusLabel": "Estado",
     "lastAction": "Última acción",
@@ -172,7 +172,7 @@
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
     "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
-    "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje es una forma totalmente válida de ser contado. Menciona tu código postal para que sepan que eres su constituyente.",
+    "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje cuenta lo mismo. Menciona tu código postal para que sepan que eres su constituyente.",
     "officeHoursTitle": "Horario habitual de las oficinas",
     "officeHoursOpenBody": "Las oficinas del Congreso suelen tener horario de oficina entre semana, aproximadamente de 9am a 5:30pm hora del Este — ahora mismo cae dentro de ese horario, así que alguien podría contestar en vivo. Si de todos modos te sale el buzón de voz, se cuenta exactamente igual.",
     "officeHoursClosedBody": "Ahora mismo está fuera del horario habitual (entre semana, aproximadamente de 9am a 5:30pm hora del Este) — lo más probable es que te salga el buzón de voz, y eso está bien: deja tu nombre y código postal, y cuenta exactamente igual que una llamada en vivo.",
@@ -233,7 +233,7 @@
     "startCall": "Empezar la llamada",
     "editScript": "Editar guion",
     "firstCallTitle": "¿Tu primera llamada?",
-    "firstCallBody": "Hablar con el personal del Senado puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
+    "firstCallBody": "Hablar con el personal del Congreso puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
     "preDialTitle": "Antes de marcar",
     "preDialBody": "El personal atiende llamadas como esta todo el día, y no es un debate: unos treinta segundos y ya. Que conteste alguien en vivo o te salga el buzón de voz, ambos cuentan igual — cualquiera de los dos es un buen resultado."
   },
@@ -260,7 +260,7 @@
       },
       "call": {
         "title": "Haz la llamada",
-        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso. Alguien del personal contesta, anota tu posición y listo — un trato amable, unos 30 segundos."
+        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso. Te contesta alguien amable del personal, anota tu posición y listo — unos 30 segundos."
       },
       "logged": {
         "title": "Registrada — solo en este dispositivo",
@@ -270,7 +270,7 @@
     "phone": {
       "billId": "H.R. 1787",
       "decodedChip": "Descifrado con IA",
-      "billHeadline": "Monedas de oro y plata honrarían a Roberto Clemente",
+      "billHeadline": "La Casa de Moneda de EE. UU. acuñaría monedas de Roberto Clemente en 2027",
       "billTldr": "Tres monedas conmemorativas en 2027 — los recargos irían a su fundación, sin costo para los contribuyentes.",
       "scriptSnippet": "Hola, me llamo [TU NOMBRE] y soy constituyente de [TU CIUDAD O CÓDIGO POSTAL]. Llamo sobre la H.R. 1787, la Ley de la Moneda Conmemorativa de Roberto Clemente…",
       "callee": "La oficina de tu representante",
@@ -295,16 +295,16 @@
   },
   "news": {
     "heading": "En las noticias",
-    "subhead": "Proyectos de ley con cobertura real de la prensa en este momento.",
+    "subhead": "Proyectos de ley que la prensa está cubriendo de verdad, ahora mismo.",
     "sources": "{count, plural, one {# medio} other {# medios}}"
   },
   "why": {
     "title": "Por qué llamar funciona",
     "intro": "Se siente demasiado pequeño para importar. No lo es. Esto es lo que pasa de verdad cuando llamas a una oficina del Congreso — y por qué una llamada pesa más que cien publicaciones.",
     "tallyTitle": "Las llamadas se cuentan, a diario",
-    "tallyBody": "Las oficinas del Congreso llevan un conteo continuo de las posiciones de sus constituyentes sobre los temas activos. Esos conteos llegan al escritorio del congresista mientras el voto sigue abierto. La prensa ha documentado oficinas genuinamente desbordadas — y congresistas cambiando de posición — bajo un volumen sostenido de llamadas.",
+    "tallyBody": "Las oficinas del Congreso llevan un conteo continuo de las posiciones de sus constituyentes sobre los temas activos. Esos conteos llegan al escritorio del congresista mientras el voto sigue abierto. La prensa ha documentado oficinas desbordadas por el volumen sostenido de llamadas, y congresistas que cambiaron de posición a raíz de eso.",
     "emailTitle": "¿Por qué no correos o peticiones?",
-    "emailBody": "El Congreso recibe decenas de millones de correos al año; las cartas de plantilla y las firmas de peticiones se descuentan mucho, y las oleadas de correo generado por IA se descuentan aún más. Una llamada es esfuerzo escaso y verificable de un constituyente real — exactamente por eso pesa más.",
+    "emailBody": "El Congreso recibe decenas de millones de correos al año. Las cartas de plantilla y las firmas de peticiones se descuentan mucho, y las oleadas de correo generado por IA se descuentan aún más. Una llamada es esfuerzo escaso y verificable de un constituyente real — exactamente por eso pesa más.",
     "voicemailTitle": "El mensaje de voz cuenta igual",
     "voicemailBody": "Las oficinas revisan el buzón de voz todos los días y cuentan los mensajes igual que las llamadas en vivo. Si hablar con una persona no es lo tuyo, el mensaje fuera de horario es una alternativa totalmente efectiva — no un premio de consolación.",
     "scriptTitle": "¿Y qué digo exactamente?",
@@ -339,7 +339,7 @@
     "p3": "Cuando pides un guion de llamada, tu postura y el proyecto de ley se envían a nuestro servidor para redactar el texto, se procesan en memoria y no se vinculan a ninguna identidad. Limitamos la frecuencia por dirección de red para prevenir abusos; no guardamos registros que liguen direcciones con posiciones políticas.",
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
-    "contact": "¿Preguntas? El proyecto es transparente sobre cómo funciona — cada línea de código es inspeccionable.",
+    "contact": "¿Preguntas? Oravan se construye a la vista de todos — cada línea de código es inspeccionable.",
     "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
   },
   "about": {
@@ -348,12 +348,12 @@
     "fundingTitle": "Cómo se financia Oravan",
     "fundingBody": "Oravan funciona sin anuncios, sin subvenciones partidistas y sin vender datos — no hay datos que vender. Una opción para donar, alojada por completo fuera de los servidores de Oravan, está en camino.",
     "supportTitle": "Apoya a Oravan",
-    "supportBody": "Oravan es gratuito, sin anuncios y no acepta dinero partidista. Su donación nos ayuda a: dar seguimiento a cada proyecto de ley en el Congreso cada semana, mantener actualizadas y revisadas por personas las explicaciones en lenguaje sencillo, y mantener gratuitos los guiones de llamada en inglés y español. Oravan no acepta publicidad, ni subvenciones partidistas, ni almacena la actividad política de quienes donan — las donaciones son deducibles de impuestos y son procesadas fuera de los servidores de Oravan por nuestro patrocinador fiscal, The Hack Foundation, una organización 501(c)(3).",
+    "supportBody": "Oravan es gratuito, sin anuncios y no acepta dinero partidista. Tu donación nos ayuda a: dar seguimiento a cada proyecto de ley que avanza en el Congreso cada semana, mantener las explicaciones en lenguaje sencillo actualizadas y revisadas por personas, y mantener gratuitos los guiones de llamada en inglés y español. Nunca almacenamos la actividad política de quienes donan — las donaciones son deducibles de impuestos y se procesan fuera de los servidores de Oravan, por nuestro patrocinador fiscal, The Hack Foundation, una organización 501(c)(3).",
     "donateCta": "Dona a través de nuestro patrocinador fiscal"
   },
   "citations": {
     "title": "Cita a Oravan",
-    "intro": "Oravan está construido para ser una fuente que puedas citar y corregir: cada proyecto de ley tiene una dirección permanente, un sello de fecha con la última actualización y una línea clara entre el registro oficial y el lenguaje sencillo redactado por IA. Esta página establece ese compromiso con precisión — para periodistas, bibliotecarios y cualquiera que use los datos o el servidor MCP de Oravan — y explica cómo reportar un error.",
+    "intro": "Oravan está construido para ser una fuente que puedas citar y corregir: cada proyecto de ley tiene una dirección permanente, un sello de fecha con la última actualización y una línea clara entre el registro oficial y el lenguaje sencillo redactado por IA. Esta página explica con exactitud qué significa esa promesa — para periodistas, bibliotecarios y cualquiera que use los datos o el servidor MCP de Oravan — y cómo reportar un error.",
     "urlTitle": "URLs permanentes",
     "urlBody": "Cada proyecto de ley tiene una sola dirección permanente en cada idioma, construida solo a partir de su tipo, número y Congreso — nunca de su estado. Una cita escrita el día en que se presenta un proyecto sigue funcionando después de que se firme, fracase o expire; la dirección nunca se reutiliza ni se reasigna.",
     "urlExampleLabel": "Ejemplo — H.R. 1787, el mismo proyecto que usa el material de demostración de Oravan:",
@@ -388,7 +388,7 @@
     "national_security": "Seguridad y asuntos exteriores",
     "environment_energy": "Medio ambiente y energía",
     "government_democracy": "Gobierno y democracia",
-    "crime_justice": "Crimen y justicia",
+    "crime_justice": "Delincuencia y justicia",
     "family_community": "Familia y comunidad",
     "education": "Educación",
     "immigration": "Inmigración",
@@ -400,7 +400,7 @@
     "title": "Términos, en lenguaje claro",
     "p1": "Oravan es una herramienta cívica gratuita y no partidista. Te ayuda a encontrar a tus miembros del Congreso, entender los proyectos de ley activos y llamar para opinar sobre ellos. No está afiliada al Congreso, a ninguna agencia de gobierno, partido ni campaña.",
     "p2": "Los resúmenes, titulares y guiones son borradores generados por IA y están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
-    "p3": "Oravan se ofrece tal cual, sin garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario; verifica lo que importe.",
+    "p3": "Oravan no viene con garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario — verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
     "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
   },
@@ -421,7 +421,7 @@
     "close": "Cerrar",
     "success": "Recibido, gracias. Cada nota durante la beta define qué se arregla primero.",
     "errorIncomplete": "Primero elige una categoría y escribe un mensaje.",
-    "errorRateLimited": "Muchos comentarios a la vez. Inténtalo de nuevo en unos minutos.",
+    "errorRateLimited": "Enviaste varias notas en poco tiempo. Tómate un respiro y vuelve a intentarlo pronto.",
     "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto."
   },
   "og": {
@@ -430,8 +430,8 @@
   "freshness": {
     "dataAsOf": "Datos al {date}",
     "quietWeekTitle": "Semana tranquila",
-    "quietWeekBody": "Ningún proyecto de ley ha superado el umbral para una llamada urgente en este momento. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
-    "dataStaleTitle": "Hace falta verificar los datos",
+    "quietWeekBody": "Ningún proyecto de ley necesita una llamada urgente en este momento. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
+    "dataStaleTitle": "Verificación pendiente",
     "dataStaleBody": "Todavía no podemos confirmar qué es más urgente — nuestra última verificación exitosa fue el {date}. Esto no es una semana tranquila: son datos desactualizados.",
     "staleNote": "Nuestra última verificación exitosa de datos fue el {date} — es posible que actividad más reciente del Congreso aún no se muestre."
   },
@@ -439,7 +439,7 @@
     "frameTitle": "Tus representantes",
     "languageLabel": "Idioma",
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
-    "multiDistrictBody": "Este widget incrustado no puede recibir una dirección — eso se mantiene solo en el sitio principal de Oravan. Ambos distritos candidatos se muestran abajo; tus senadores son los mismos en cualquier caso.",
+    "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Oravan",
     "poweredBy": "Desarrollado por Oravan",
     "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos."
@@ -481,8 +481,8 @@
     "copySnippet": "Copiar fragmento",
     "copied": "Copiado",
     "docsHeading": "Cómo funciona",
-    "docsIsolationTitle": "Un iframe, no un script corriendo en tu página",
-    "docsIsolationBody": "El widget se carga dentro de un iframe de origen cruzado, el mismo mecanismo del navegador que aísla un video incrustado o un formulario de pago de la página que lo rodea. No es una promesa de política — es el navegador haciéndolo cumplir. Los propios scripts, analíticas y gestores de etiquetas de tu página no pueden leer lo que un visitante escribe en el widget ni observar lo que ocurre dentro de él, porque corren en el entorno aislado de otro origen.",
+    "docsIsolationTitle": "Un iframe, no un script que se ejecuta en tu página",
+    "docsIsolationBody": "El widget se carga dentro de un iframe de origen cruzado, el mismo mecanismo del navegador que aísla un video incrustado o un formulario de pago de la página que lo rodea. No es una promesa de política — es el navegador quien lo hace cumplir. Los propios scripts, analíticas y gestores de etiquetas de tu página no pueden leer lo que un visitante escribe en el widget ni observar lo que ocurre dentro de él, porque corren en el entorno aislado de otro origen.",
     "docsPrivacyTitle": "Qué recopila el widget sobre tus visitantes: nada",
     "docsPrivacyCookies": "Cero cookies. Ninguna respuesta del widget establece una jamás.",
     "docsPrivacyThirdParty": "Cero solicitudes a terceros. Todo lo que carga el widget — fuentes, estilos, datos — viene del propio dominio de Oravan. Nada se conecta con una red publicitaria, un proveedor de analíticas ni ningún otro tercero.",
@@ -494,6 +494,6 @@
     "docsAttributionTitle": "Atribución",
     "docsAttributionBody": "Todo widget gratuito muestra un pequeño enlace \"Desarrollado por Oravan\" que apunta a la página canónica en oravan.org. Así es como el nivel gratuito se mantiene gratuito, y hoy está presente en todos los widgets, sin opción de quitarlo.",
     "docsLoaderTitle": "El script de carga",
-    "docsLoaderBody": "La etiqueta de script que incluye tu fragmento es un solo archivo, sin dependencias, de menos de 5KB. Lo único que hace es crear el iframe, ajustar su tamaño al contenido y reportar ese tamaño de vuelta — no se lee nada de tu página, y no se envía nada salvo la única solicitud que carga el widget."
+    "docsLoaderBody": "La etiqueta de script que incluye tu fragmento es un solo archivo, sin dependencias, de menos de 5KB. Lo único que hace es crear el iframe, ajustar su tamaño al contenido y devolver ese tamaño — no se lee nada de tu página, y no se envía nada salvo la única solicitud que carga el widget."
   }
 }

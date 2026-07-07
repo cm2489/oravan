@@ -59,7 +59,7 @@ export default async function LocaleLayout({
         {/* For the curious who open devtools: the no-trackers claim, verifiable */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— the platform where citizens addressed power. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/oravan");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/oravan");`,
           }}
         />
         <a

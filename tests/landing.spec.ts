@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Congress counts calls');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your voice matters');
   await page.getByLabel('Your ZIP code').fill('78501');
   await page.getByRole('button', { name: /find my representatives/i }).click();
   await expect(page).toHaveURL(/\/reps\?zip=78501/);
@@ -21,7 +21,7 @@ test('no horizontal overflow on either landing locale', async ({ page }) => {
 
 test('spanish landing is fully localized', async ({ page }) => {
   await page.goto('/es');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('El Congreso cuenta las llamadas');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Tu voz importa');
   await expect(page.getByLabel('Tu código postal')).toBeVisible();
 });
 
