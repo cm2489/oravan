@@ -26,12 +26,13 @@ import { usePathname } from '@/i18n/navigation';
 
 const MIN_OPEN_MS = 3000;
 
-const CATEGORIES = ['bug', 'feature', 'other'] as const;
+const CATEGORIES = ['bug', 'feature', 'partnership', 'other'] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CATEGORY_LABEL: Record<Category, string> = {
   bug: 'categoryBug',
   feature: 'categoryFeature',
+  partnership: 'categoryPartnership',
   other: 'categoryOther',
 };
 
@@ -191,7 +192,11 @@ export function FeedbackDialog() {
               className="mt-1 w-full rounded-control border-2 border-ink/20 bg-paper p-3 leading-relaxed focus:border-ink"
             />
             <p id="feedback-notice" className="mt-1 text-sm text-ink-faint">
-              {t('notice')}
+              {/* Partnership is a business inquiry, not anonymous citizen
+                  feedback: it invites an opt-in contact method (so a reply is
+                  possible) instead of the default "don't include personal
+                  details / we can't reply." */}
+              {category === 'partnership' ? t('noticePartnership') : t('notice')}
             </p>
 
             {/* Honeypot: visually removed and out of the a11y tree + tab order.

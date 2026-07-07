@@ -82,7 +82,7 @@ export default function ImpactPageClient() {
                   onClick={() => removeCall(c.at)}
                   aria-label={t('deleteRecord')}
                   title={t('deleteRecord')}
-                  className="shrink-0 rounded-control p-2.5 text-ink-faint hover:bg-clay-soft hover:text-clay"
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-control p-2.5 text-ink-faint hover:bg-clay-soft hover:text-clay"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>

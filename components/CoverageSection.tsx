@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { ChevronDown, ExternalLink, Info } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
 /*
@@ -18,6 +18,7 @@ const LEAN_POSITION: Record<Lean, 0 | 1 | 2> = { left: 0, center: 1, right: 2 };
 
 export function CoverageSection({ articles, tier }: { articles: CoverageArticle[]; tier: CoverageTier }) {
   const t = useTranslations('coverage');
+  const locale = useLocale();
   // No coverage -> render nothing (the graceful-empty path).
   if (articles.length === 0) return null;
 
@@ -30,6 +31,11 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
         {t('heading')}
       </h2>
       <p className="mt-1 max-w-prose text-ink-soft">{t('subhead')}</p>
+      {/* ES readers land on a predominantly English press corpus; flag it up
+          front so a language switch isn't a surprise after the click (S6). */}
+      {locale === 'es' && (
+        <p className="mt-2 text-sm text-ink-faint">{t('foreignLanguageNote')}</p>
+      )}
 
       {tier === 'one_sided' && (
         <p className="mt-4 flex items-start gap-2 rounded-control bg-brass-soft p-3 text-sm text-ink">

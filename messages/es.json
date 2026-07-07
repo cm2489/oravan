@@ -292,7 +292,8 @@
     },
     "preview": "Vista previa",
     "openArticle": "Abrir este artículo en {source}",
-    "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla."
+    "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla.",
+    "foreignLanguageNote": "Algunos artículos enlazados están en inglés."
   },
   "news": {
     "heading": "En las noticias",
@@ -350,7 +351,9 @@
     "fundingBody": "Oravan funciona sin anuncios, sin subvenciones partidistas y sin vender datos — no hay datos que vender. Una opción para donar, alojada por completo fuera de los servidores de Oravan, está en camino.",
     "supportTitle": "Apoya a Oravan",
     "supportBody": "Oravan es gratuito, sin anuncios y no acepta dinero partidista. Tu donación nos ayuda a: dar seguimiento a cada proyecto de ley que avanza en el Congreso cada semana, mantener las explicaciones en lenguaje sencillo actualizadas y revisadas por personas, y mantener gratuitos los guiones de llamada en inglés y español. Nunca almacenamos la actividad política de quienes donan — las donaciones son deducibles de impuestos y se procesan fuera de los servidores de Oravan, por nuestro patrocinador fiscal, The Hack Foundation, una organización 501(c)(3).",
-    "donateCta": "Dona a través de nuestro patrocinador fiscal"
+    "donateCta": "Dona a través de nuestro patrocinador fiscal",
+    "accountabilityTitle": "Independiente y accesible",
+    "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, el enlace de comentarios al final de cualquier página llega a una persona real."
   },
   "citations": {
     "title": "Cita a Oravan",
@@ -413,9 +416,11 @@
     "categoryBug": "Algo no funciona",
     "categoryFeature": "Una idea o sugerencia",
     "categoryOther": "Otra cosa",
+    "categoryPartnership": "Colaboración o licencia",
     "messageLabel": "Tu comentario",
     "pagePrefix": "Página: ",
     "notice": "No incluyas datos personales. Los comentarios se guardan como texto en un registro privado; no podemos responder.",
+    "noticePartnership": "Para recibir respuesta, incluye una forma de contactarte (correo o teléfono). Va a un registro privado, nunca a una página pública.",
     "send": "Enviar comentario",
     "sending": "Enviando…",
     "cancel": "Cancelar",
@@ -515,7 +520,7 @@
     "orgsTitle": "Organizaciones y uso con licencia",
     "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe y está documentada en la página de widgets.",
     "licensingTitle": "Licencias y precios",
-    "licensingBody": "Los precios aún no están publicados. Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos por el formulario de comentarios y menciona socios — una persona lee cada nota durante la beta.",
+    "licensingBody": "Los precios aún no están publicados. Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, usa el enlace de comentarios de abajo, elige «Colaboración o licencia» e incluye una forma de contactarte — una persona lee cada nota de colaboración durante la beta y te responderá.",
     "licensingCta": "Escríbenos"
   }
 }

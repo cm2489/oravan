@@ -179,6 +179,33 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   the founder's call on how much identity to disclose given the no-PII ethos —
   surfaced for M-input rather than invented.
 
+## Sprint 6 — gate passed after three rounds, 2026-07-07
+
+- **Round 2 (clean captures): 4/7 seats clean.** The failures clustered on five
+  source-confirmed causes: a bill-card widget missing root padding (`.bc-root`
+  vs `.re-root`'s 16px), a 36px Impact delete target (under the 44px rule), the
+  About accountability gap, the Partners bug-tracker intake (no partnership
+  category/reply path), and untagged English news headlines on ES bill pages.
+- **PR-6 round-2 fixes (founder-approved full batch, 2026-07-07):** `.bc-root`
+  padding; 44px Impact delete target; an About "Independent, and reachable"
+  section stating organizational accountability + a real contact path, rendered
+  outside the donation gate (deliberately NOT claiming the pending fiscal
+  sponsor or the private source, and NOT the personal-identity disclosure the
+  founder deferred); a dedicated "Partnership or licensing" feedback category
+  (dialog + API label) with a partnership-specific opt-in contact notice — which
+  also resolved a copy contradiction (dialog "we can't reply" vs a promised
+  reply time) caught during verification; and a section-level ES note that
+  linked coverage may be in English. Cosmetic EmbedConfigurator comment
+  deferred. Deferred with reasons still standing: per-article "(en inglés)"
+  tags (needs a data-model language field) and a named legal entity on About
+  (launch-gated; the fiscal sponsor onboarding is in-flight).
+- **S6 PASSED — round 3.** All 7 seats now score ≥85 on every surface, every
+  axis, both locales. The three previously-failing seats (Elena, Priya, Amara)
+  re-scored ONLY their own failed cells with FRESH instances (per protocol) and
+  all cleared; the four clean seats (Rosa, Jake, Marcus, Devon) carried forward.
+  Verified on production captures. The full three-round matrix was published to
+  the founder as the S6 scorecard.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

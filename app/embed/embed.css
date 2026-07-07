@@ -295,6 +295,11 @@ body {
  * var() with a safe literal fallback, never anything else host-supplied.
  */
 .bc-root {
+  /* Match .re-root's inset so the citation eyebrow + Powered-by footer don't
+     sit flush against the iframe edge while .bc-card's own padding insets the
+     body (S6 persona gate: 3 seats flagged the misaligned/edge-touching
+     header on the bill-card widget). */
+  padding: 16px;
   font-family: var(--oravan-font, inherit);
 }
 

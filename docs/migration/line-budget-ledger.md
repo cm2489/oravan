@@ -31,7 +31,14 @@ Every sprint PR updates this ledger; Sprint 7 publishes the final report.
 | PR-3 `mig/s3-rename` | ~+130 (gate script, kickoff-mandated); rename itself net-neutral (string swaps); +6 shim/i18n lines | sweep across living docs | scripts/check-naming.mjs (~120, the S3-mandated CI gate); LEGACY shim extension (+4); aria-label i18n keys (+2 per locale) |
 | PR-4 `mig/s4-copy` | 0 (copy line-neutral, 47/47) | — | hero/lore/voice pass |
 | PR-5 `mig/s5-embeds-gtm` (S5a+S5b consolidated) | ~+180 (feature work: rep-lookup theming, white-label knobs, /partners page, new spec) | press-kit capability update | budget is a concept per founder amendment — noted for the record only |
-| PR-6 `mig/s6-s7-quality` (S6 persona fixes) | ~+45 (locale-aware manifest route ~40, rep-lookup brandless wiring +6, routing flag +1; copy/OG/config edits line-neutral) + `tests/locale-routing.spec.ts` (~50, the routing-decision guard) | + S6 decisions record + persona scorecard | none new — the manifest route replaces the deleted static `app/manifest.ts`; brandless wiring mirrors BillCardWidget; the test is a mandated correctness guard |
+| PR-6/7 `mig/s6-s7-quality` (S6 persona gate + fixes; S7 audit) | **net +279** (+320 / −41, 20 files). Functional: locale-aware manifest route (~40, replaces the deleted static `app/manifest.ts`, −19); the mandated `tests/locale-routing.spec.ts` guard (~46); rep-lookup brandless wiring; bill-card padding; 44px Impact target; About accountability + Partners intake; `localeDetection: false`. Copy/OG/configurator edits net-neutral. Docs: personas.md (+71), decisions record, this ledger. | persona scorecard (3 rounds) | none unsanctioned — manifest route replaces the deleted static one; the test is a mandated guard; the rest is UI/copy corrections + records |
+
+## Final report (S7, 2026-07-07)
+
+- **Baseline** (`pre-oravan-migration`): 226 files / **41,010** lines.
+- **Current** (`mig/s6-s7-quality` tip): 261 files / **44,216** lines → net **+3,206** across the full S0–S7 migration.
+- Every meaningful add is a sanctioned UI/feature/mandated item: S2 brand assets + wordmark/manifest, the S3 CI naming gate (~120), S5 embed white-label + `/partners` + specs, and S6–S7's persona-panel doc, locale-aware manifest route, and the `localeDetection` regression test. Renames, copy, and token swaps were net-neutral-or-negative (S6 deleted the English-only static manifest, −19). **No unsanctioned 25+ blocks.**
+- **Zero-survivor audit: clean** (by-hand `git grep` + filename scan + `check-naming.mjs`, cross-checked). The only banned-term survivors are the 6 documented allowlist literals (4 in `lib/local.ts`, 2 S8-staged workflow lines) and the S8-staged infra (repo name `rostra`, Vercel `homepage` URL) — all tracked for the M9–M11 cutover.
 
 Sanctioned-add register (kickoff-named): S2 wordmark component + `app/manifest.ts`;
 S5a rep-lookup theming + white-label mode; S5b GTM page. Everything else must
