@@ -29,6 +29,15 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         <p className="mt-2 max-w-prose leading-relaxed">{t('fundingBody')}</p>
       </section>
 
+      {/* Who's accountable + how to reach a person — surfaced outside the
+          donation-gated section so it never depends on DONATE_URL being live
+          (S6 persona gate: newsroom/library/nonprofit seats couldn't tell who
+          stands behind the widget or how to reach them). */}
+      <section className="mt-10">
+        <h2 className="font-display text-2xl font-bold">{t('accountabilityTitle')}</h2>
+        <p className="mt-2 max-w-prose leading-relaxed">{t('accountabilityBody')}</p>
+      </section>
+
       {/* §6: the donations leg — link-out only, never a payment field on our
           own infra. Dark by construction until DONATE_URL is set (HCB
           onboarding is separate, in-flight paperwork); flipping that one

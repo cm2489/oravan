@@ -136,6 +136,76 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
 - **Line budget (founder, 2026-07-07): the 25+ line rule is a CONCEPT, not
   a hard constraint** — build lean; ledger keeps light notes only.
 
+## Sprint 6 — persona gate round 1, decided 2026-07-07
+
+- **Panel outcome (round 1): NOT PASSED.** The seven M7-approved seats scored
+  all 18 user-facing surfaces × EN/ES × 4 axes against the ≥85 bar. The core
+  (home, both widgets in default + white-label, OG cards) cleared across all
+  seven seats in both languages; the failures were concentrated and every one
+  was confirmed in source. Full matrix + findings published to the founder as
+  the S6 scorecard (Round 1).
+- **Capture-integrity note (methodology, not product).** The round-1 EN
+  captures for surfaces 2–12 were corrupted by a single-browser-session cookie
+  bleed: after the run visited `/es`, next-intl's default `localeDetection`
+  307-redirected every later bare English URL to its `/es` twin. Six of seven
+  seats flagged it; confirmed by hand (`curl /bills` with/without the cookie).
+  Re-captured clean (cookies isolated per navigation) and re-scored in round 2.
+- **M-routing — Locale routing = URLs AUTHORITATIVE (founder decision).**
+  `i18n/routing.ts` gains `localeDetection: false`. A stored `NEXT_LOCALE`
+  cookie must never redirect a bare English URL to Spanish — an English link
+  always renders English, Spanish lives at `/es`. Chosen over next-intl's
+  sticky-cookie default because that default contradicts the S22 per-locale
+  canonical-URL/hreflang architecture and is the shared-library-terminal trap
+  the librarian seat raised. The language switcher still writes the cookie on
+  an explicit toggle (only passive detection is disabled). Guarded by
+  `tests/locale-routing.spec.ts`.
+- **PR-6 fix batch — approved and landed.** (1) PWA manifest is now bilingual:
+  a locale-aware `app/[locale]/manifest.webmanifest` route sourced from
+  `messages/*.json`, replacing the English-only static `app/manifest.ts`, with
+  a reviewed description reconciled to the shipped voice (was a stale
+  M5-pending placeholder — a hard-rule parity violation all seven seats
+  caught). (2) Rep-lookup widget `brandless` wiring — it was leaking "Oravan"
+  in the multi-district block (the page never passed `brandless` and the widget
+  had no such prop; bill-card already did it right). (3) OG ES card
+  "las leyes" → "los proyectos de ley". (4) Configurator previews the page's
+  own locale on `/es/embeds`. (5) Quiet-week copy clarified against news
+  coverage. (6) ES office-hours time notation. (7) "Leyes" → "Proyectos" mobile
+  tab. Gates green: typecheck, lint, message parity, key-namespaces, naming,
+  and the targeted Playwright suite.
+- **Deferred, with reasons (not silently dropped).** The "(en inglés)" tag on
+  English news sources needs per-article language metadata the coverage data
+  model doesn't carry (a blanket tag would mislabel the Spanish-language
+  outlets Oravan courts). An About "who's behind this" accountability line is
+  the founder's call on how much identity to disclose given the no-PII ethos —
+  surfaced for M-input rather than invented.
+
+## Sprint 6 — gate passed after three rounds, 2026-07-07
+
+- **Round 2 (clean captures): 4/7 seats clean.** The failures clustered on five
+  source-confirmed causes: a bill-card widget missing root padding (`.bc-root`
+  vs `.re-root`'s 16px), a 36px Impact delete target (under the 44px rule), the
+  About accountability gap, the Partners bug-tracker intake (no partnership
+  category/reply path), and untagged English news headlines on ES bill pages.
+- **PR-6 round-2 fixes (founder-approved full batch, 2026-07-07):** `.bc-root`
+  padding; 44px Impact delete target; an About "Independent, and reachable"
+  section stating organizational accountability + a real contact path, rendered
+  outside the donation gate (deliberately NOT claiming the pending fiscal
+  sponsor or the private source, and NOT the personal-identity disclosure the
+  founder deferred); a dedicated "Partnership or licensing" feedback category
+  (dialog + API label) with a partnership-specific opt-in contact notice — which
+  also resolved a copy contradiction (dialog "we can't reply" vs a promised
+  reply time) caught during verification; and a section-level ES note that
+  linked coverage may be in English. Cosmetic EmbedConfigurator comment
+  deferred. Deferred with reasons still standing: per-article "(en inglés)"
+  tags (needs a data-model language field) and a named legal entity on About
+  (launch-gated; the fiscal sponsor onboarding is in-flight).
+- **S6 PASSED — round 3.** All 7 seats now score ≥85 on every surface, every
+  axis, both locales. The three previously-failing seats (Elena, Priya, Amara)
+  re-scored ONLY their own failed cells with FRESH instances (per protocol) and
+  all cleared; the four clean seats (Rosa, Jake, Marcus, Devon) carried forward.
+  Verified on production captures. The full three-round matrix was published to
+  the founder as the S6 scorecard.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8

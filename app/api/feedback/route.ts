@@ -22,7 +22,7 @@ import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 
 const GITHUB_ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan/issues';
 
-const CATEGORIES = ['bug', 'feature', 'other'] as const;
+const CATEGORIES = ['bug', 'feature', 'partnership', 'other'] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const MAX_MESSAGE_CHARS = 2000;

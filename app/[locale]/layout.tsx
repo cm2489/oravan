@@ -29,6 +29,9 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_ORIGIN),
     title: { default: `${t('appName')} — ${t('tagline')}`, template: `%s — ${t('appName')}` },
     description: t('footer.mission'),
+    // Per-locale PWA manifest (app/[locale]/manifest.webmanifest/route.ts) so
+    // install chrome ships in the page's own language, not English-only.
+    manifest: `/${locale}/manifest.webmanifest`,
     // LAUNCH GATE: robots noindex keeps the unbranded test deployment out of
     // search indexes during the feedback phase. KEPT per Colby, 2026-07-01 -
     // revisit at launch. CI emits a ::warning on every run while this gate

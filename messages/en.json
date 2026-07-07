@@ -292,7 +292,8 @@
     },
     "preview": "Preview",
     "openArticle": "Open this article at {source}",
-    "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind."
+    "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind.",
+    "foreignLanguageNote": "Some linked articles may be in another language."
   },
   "news": {
     "heading": "In the news",
@@ -350,7 +351,9 @@
     "fundingBody": "Oravan runs without ads, without partisan grants, and without selling data — there's no data to sell. A donation option, hosted entirely off Oravan's own servers, is on the way.",
     "supportTitle": "Support Oravan",
     "supportBody": "Oravan is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. We store no donor political activity, ever — gifts are tax-deductible and processed off Oravan's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
-    "donateCta": "Donate via our fiscal sponsor"
+    "donateCta": "Donate via our fiscal sponsor",
+    "accountabilityTitle": "Independent, and reachable",
+    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person."
   },
   "citations": {
     "title": "Cite Oravan",
@@ -413,9 +416,11 @@
     "categoryBug": "Something's broken",
     "categoryFeature": "An idea or request",
     "categoryOther": "Something else",
+    "categoryPartnership": "Partnership or licensing",
     "messageLabel": "Your feedback",
     "pagePrefix": "Page: ",
     "notice": "Don't include personal details. Feedback is stored as text in a private tracker; we can't reply.",
+    "noticePartnership": "For a reply, include a way to reach you (email or phone). It goes to a private tracker, never a public page.",
     "send": "Send feedback",
     "sending": "Sending…",
     "cancel": "Cancel",
@@ -431,7 +436,7 @@
   "freshness": {
     "dataAsOf": "Data as of {date}",
     "quietWeekTitle": "Quiet week",
-    "quietWeekBody": "No bill has cleared the bar for an urgent call right now. Check back soon, or browse everything moving through Congress.",
+    "quietWeekBody": "No bill has cleared the bar for an urgent call right now — a higher bar than making the news. Check back soon, or browse everything moving through Congress.",
     "dataStaleTitle": "Data check needed",
     "dataStaleBody": "We can't confirm what's most urgent right now — our last successful data check was {date}. This isn't a quiet week, it's a stale one.",
     "staleNote": "Our last successful data check was {date} — newer activity in Congress may not be shown yet."
@@ -441,9 +446,14 @@
     "languageLabel": "Language",
     "multiDistrictTitle": "This ZIP spans more than one district",
     "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Both candidate districts are shown below; your senators are the same either way.",
+    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Both candidate districts are shown below; your senators are the same either way.",
     "openFullLookup": "Refine with your address on Oravan",
+    "openFullLookupBrandless": "Refine with your address",
     "poweredBy": "Powered by Oravan",
     "billNotFound": "We couldn't find that bill in our data."
+  },
+  "manifest": {
+    "description": "Find your reps. Understand the bills. Make the call."
   },
   "embeds": {
     "title": "Embed Oravan on your site",
@@ -510,7 +520,7 @@
     "orgsTitle": "Organizations and licensed use",
     "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
     "licensingTitle": "Licensing and pricing",
-    "licensingBody": "Pricing isn't published yet. If your organization wants white-label embeds, attribution removal, or a data partnership, write to us through the feedback form and mention partners — a person reads every note during the beta.",
+    "licensingBody": "Pricing isn't published yet. If your organization wants white-label embeds, attribution removal, or a data partnership, use the feedback link below, choose “Partnership or licensing,” and include a way to reach you — a person reads every partnership note during the beta and will get back to you.",
     "licensingCta": "Write to us"
   }
 }

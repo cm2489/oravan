@@ -105,6 +105,11 @@ test.describe(
       partners: '/partners', // S5b's partner GTM page - standard locked-down posture
       embeds: '/embeds', // S16's configurator + docs page
       impact: '/impact',
+      // S6: per-locale PWA manifest (a route handler, not a page). Non-embed,
+      // so next.config.ts's site-wide block locks it to 'self' like everything
+      // else - a JSON manifest is never framed, but the guard still demands an
+      // explicit frame-ancestors decision for every new app/[locale]/ segment.
+      'manifest.webmanifest': '/en/manifest.webmanifest',
       privacy: '/privacy',
       reps: '/reps',
       terms: '/terms',

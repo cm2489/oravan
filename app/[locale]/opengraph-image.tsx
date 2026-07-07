@@ -7,7 +7,7 @@ export const alt = 'Oravan';
 
 const TAGLINES: Record<string, { tag: string; sub: string }> = {
   en: { tag: 'Your line to Congress', sub: 'Find your reps. Understand the bills. Make the call.' },
-  es: { tag: 'Tu línea con el Congreso', sub: 'Encuentra a tus representantes. Entiende las leyes. Haz la llamada.' },
+  es: { tag: 'Tu línea con el Congreso', sub: 'Encuentra a tus representantes. Entiende los proyectos de ley. Haz la llamada.' },
 };
 
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
