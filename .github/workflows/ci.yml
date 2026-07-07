@@ -46,9 +46,30 @@ jobs:
           node scripts/check-embed-fingerprinting.mjs
       - run: npm run typecheck
       - run: npm run lint
+      - name: Detect docs-only PR diff (founder-approved fast path, 2026-07-07)
+        # PRs whose entire diff is docs/** or *.md skip the E2E build below.
+        # Conservative on purpose: any other path (code, messages, configs,
+        # this workflow itself) runs the full pipeline, and every push to
+        # main still runs the full suite regardless — the fast path only
+        # shortens PR iteration, never the post-merge safety net.
+        id: paths
+        run: |
+          DOCS_ONLY=false
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --quiet origin "${{ github.event.pull_request.base.sha }}"
+            CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD)
+            echo "$CHANGED"
+            if [ -n "$CHANGED" ] && ! echo "$CHANGED" | grep -qvE '^docs/|\.md$'; then
+              DOCS_ONLY=true
+            fi
+          fi
+          echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+          echo "docs_only=$DOCS_ONLY"
       - name: Install Playwright WebKit
+        if: steps.paths.outputs.docs_only != 'true'
         run: npx playwright install --with-deps webkit
       - name: E2E (builds the app via webServer)
+        if: steps.paths.outputs.docs_only != 'true'
         run: npx playwright test
       - uses: actions/upload-artifact@v7
         if: failure()

@@ -107,6 +107,17 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   exactly this file's written exemptions (M0, M2/M2-bis, R1, the two held
   workflow lines).
 
+## Cadence amendments — founder-approved 2026-07-07
+
+- **Path-filtered CI (fast path):** PRs whose entire diff is `docs/**` or
+  `*.md` skip the E2E build in CI (all static gates, typecheck, and lint
+  still run). Every push to main runs the full suite regardless. Rationale:
+  the E2E build was the dominant per-PR wall-clock cost (13–44 min).
+- **Stacked branches:** the next sprint's branch may be cut from the previous
+  sprint's PR branch once that PR is green-and-waiting (CI passed, awaiting
+  merge order/deploy), rebasing onto main after each squash-merge. Merge
+  order itself is unchanged — strictly sprint-ordered, lower number first.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8
