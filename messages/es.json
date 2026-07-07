@@ -21,7 +21,8 @@
       "citations": "Citas y correcciones",
       "donate": "Donar",
       "embeds": "Widgets",
-      "navLabel": "Pie de página"
+      "navLabel": "Pie de página",
+      "partners": "Socios"
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
@@ -463,8 +464,7 @@
     "billNoneSelected": "Aún no has elegido un proyecto de ley",
     "billNoResults": "Ningún proyecto de ley coincide con tu búsqueda.",
     "billResultsNote": "Mostrando {shown} de {total} resultados",
-    "themeLegend": "Tema (solo tarjeta de proyecto de ley)",
-    "themeNote": "La búsqueda de representantes todavía no admite personalización de tema — siempre usa la apariencia predeterminada de Oravan.",
+    "themeLegend": "Tema",
     "accentLabel": "Color de acento",
     "radiusLabel": "Estilo de esquinas",
     "radiusSharp": "Rectas",
@@ -490,10 +490,27 @@
     "docsPrivacyNoData": "Ningún dato del visitante llega a Oravan más allá de una carga de página ordinaria. Un código postal que un visitante escribe se usa una sola vez, en memoria, para responder esa consulta, y nunca se registra ni se almacena.",
     "docsPrivacyTested": "Esto no son afirmaciones que solo aparecen en este texto — están verificadas por pruebas automatizadas en el propio repositorio público de Oravan, en cada cambio, antes de publicarse.",
     "docsThemingTitle": "Referencia de personalización",
-    "docsThemingBody": "La personalización se limita a tres propiedades CSS personalizadas, cada una validada en el servidor de Oravan antes de poder llegar a un estilo: un color de acento (un código hexadecimal), un estilo de esquinas (rectas, suaves o redondeadas) y una fuente (del sistema o serif). No hay forma de inyectar CSS o JavaScript arbitrario en el widget — es un límite de seguridad deliberado, no una función faltante.",
+    "docsThemingBody": "El tema funciona igual en ambos widgets y se limita a tres propiedades CSS personalizadas, cada una validada en el servidor de Oravan antes de llegar a un estilo: un color de acento (código hex), un estilo de esquinas (recto, suave o redondeado) y una fuente (sistema o serif). No hay forma de inyectar CSS ni JavaScript arbitrario en el widget — es una frontera de seguridad deliberada, no una función pendiente.",
     "docsAttributionTitle": "Atribución",
-    "docsAttributionBody": "Todo widget gratuito muestra un pequeño enlace \"Desarrollado por Oravan\" que apunta a la página canónica en oravan.org. Así es como el nivel gratuito se mantiene gratuito, y hoy está presente en todos los widgets, sin opción de quitarlo.",
+    "docsAttributionBody": "Cada widget muestra un pequeño enlace \"Desarrollado por Oravan\" que apunta a la página canónica en oravan.org. La opción sin marca quita el nombre Oravan del marco del widget (títulos accesibles y etiquetas de respaldo) pero conserva ese enlace de atribución — así se mantiene gratuito el nivel gratuito. Quitar la atribución en sí (data-attribution=\"none\") queda reservado a socios con licencia: aún no hay un candado técnico, así que lo decimos claro — si la quieres, escríbenos por una licencia. La etiqueta de contenido de IA nunca se puede quitar, en ningún nivel.",
     "docsLoaderTitle": "El script de carga",
-    "docsLoaderBody": "La etiqueta de script que incluye tu fragmento es un solo archivo, sin dependencias, de menos de 5KB. Lo único que hace es crear el iframe, ajustar su tamaño al contenido y devolver ese tamaño — no se lee nada de tu página, y no se envía nada salvo la única solicitud que carga el widget."
+    "docsLoaderBody": "La etiqueta de script que incluye tu fragmento es un solo archivo, sin dependencias, de menos de 5KB. Lo único que hace es crear el iframe, ajustar su tamaño al contenido y devolver ese tamaño — no se lee nada de tu página, y no se envía nada salvo la única solicitud que carga el widget.",
+    "whiteLabelLegend": "Marca blanca para socios",
+    "whiteLabelBrandless": "Marco sin marca (conserva el enlace de atribución)",
+    "whiteLabelNote": "Quita el nombre Oravan de los títulos del widget y las etiquetas de respaldo. El enlace \"Desarrollado por Oravan\" permanece — quitarlo está disponible solo para socios con licencia; mira la nota de atribución más abajo."
+  },
+  "partners": {
+    "title": "Socios",
+    "intro": "Los widgets de Oravan están hechos para vivir dentro de las páginas de otros — artículos de prensa, guías de biblioteca, el centro de acción de una organización. Todo lo de esta página se puede usar gratis hoy; aquí está lo que recibe cada tipo de socio, y dónde empieza el nivel con licencia.",
+    "newsroomsTitle": "Redacciones en español y medios locales",
+    "newsroomsBody": "Inserta un buscador de representantes o una tarjeta de ley en lenguaje claro dentro de cualquier artículo — dos etiquetas de script, sin cuentas, sin rastrear a tus lectores, nunca. Aquí el español no es una capa de traducción: cada superficie sale en inglés y español como iguales, así que un medio que publica primero en español inserta un widget que habla primero en español. Dale tus colores de sección, o usa el marco sin marca para que el widget se lea como parte de tu página.",
+    "newsroomsCta": "Crea tu widget",
+    "librariesTitle": "Bibliotecas y programas cívicos",
+    "librariesBody": "Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, lenguaje claro revisado por personas. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono.",
+    "orgsTitle": "Organizaciones y uso con licencia",
+    "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe y está documentada en la página de widgets.",
+    "licensingTitle": "Licencias y precios",
+    "licensingBody": "Los precios aún no están publicados. Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos por el formulario de comentarios y menciona socios — una persona lee cada nota durante la beta.",
+    "licensingCta": "Escríbenos"
   }
 }

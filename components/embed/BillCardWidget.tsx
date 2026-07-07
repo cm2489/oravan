@@ -52,12 +52,18 @@ export function BillCardWidget({
   bill,
   dataAsOf,
   theme,
+  brandless = false,
+  attribution = 'on',
 }: {
   initialLocale: EmbedLocale;
   bill: BillCardData | null;
   /** ISO timestamp from lib/freshness's getFreshness().checkedAt. */
   dataAsOf: string;
   theme: BillCardTheme;
+  /** Removes the Oravan name from chrome (never the AI-integrity chip). */
+  brandless?: boolean;
+  /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
+  attribution?: 'on' | 'none';
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
   const rootRef = useRef<HTMLElement>(null);
@@ -120,7 +126,8 @@ export function BillCardWidget({
     return (
       <main ref={rootRef} className="bc-root" lang={locale} style={themeStyle}>
         <div className="re-header">
-          <p className="bc-citation">{t.common.appName}</p>
+          {/* Brandless chrome drops the app-name fallback, not the layout */}
+          <p className="bc-citation">{brandless ? '' : t.common.appName}</p>
           {localeToggle}
         </div>
         <p className="re-error" role="alert">
@@ -155,11 +162,13 @@ export function BillCardWidget({
         <p className="bc-freshness">{dataAsOfText}</p>
       </article>
 
-      <p className="re-footer">
-        <a className="re-link" href={billUrl} target="_blank" rel="noopener noreferrer">
-          {t.embed.poweredBy} ↗
-        </a>
-      </p>
+      {attribution === 'on' && (
+        <p className="re-footer">
+          <a className="re-link" href={billUrl} target="_blank" rel="noopener noreferrer">
+            {t.embed.poweredBy} ↗
+          </a>
+        </p>
+      )}
     </main>
   );
 }

@@ -57,3 +57,18 @@ export function safeRadiusKey(value: string | undefined | null): RadiusKey {
 export function safeFontKey(value: string | undefined | null): FontKey {
   return value === 'serif' ? 'serif' : 'system';
 }
+
+/*
+ * White-label knobs (S5a). Same closed-enum, fail-closed convention:
+ * anything but the exact opt-in token means the branded default.
+ * `brandless` removes the Oravan name from widget chrome (never the
+ * AI-integrity chip); attribution stays ON unless `attribution=none`,
+ * which the embeds docs gate to licensed partners.
+ */
+export function safeBrandless(value: string | undefined | null): boolean {
+  return value === '1' || value === 'true';
+}
+
+export function safeAttribution(value: string | undefined | null): 'on' | 'none' {
+  return value === 'none' ? 'none' : 'on';
+}

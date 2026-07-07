@@ -65,9 +65,25 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
     await expect(snippet).toBeVisible();
     await expect(snippet).toContainText('data-oravan-widget="rep-lookup"');
     await expect(snippet).toContainText('/embed.js');
-    // No bill picker or theme controls for a widget that doesn't use them.
+    // No bill picker for a widget that doesn't use one — but theme controls
+    // now apply to both widgets (S5a closed the rep-lookup theming gap),
+    // and the white-label toggle is always offered.
     await expect(page.getByRole('searchbox', { name: en.embeds.billSearchLabel })).toHaveCount(0);
-    await expect(page.getByText(en.embeds.themeNote)).toBeVisible();
+    await expect(page.getByLabel(en.embeds.accentLabel)).toBeVisible();
+    await expect(page.getByText(en.embeds.whiteLabelLegend)).toBeVisible();
+    await expect(snippet).toContainText('data-accent=');
+  });
+
+  test('brandless toggle adds data-brandless to the snippet and keeps attribution language honest', async ({
+    page,
+  }) => {
+    await page.goto('/embeds');
+    await page.getByLabel(en.embeds.whiteLabelBrandless).check();
+    const snippet = page.locator('pre code');
+    await expect(snippet).toContainText('data-brandless="1"');
+    // The configurator never offers attribution removal - license-only,
+    // documented in the docs section below the fold.
+    await expect(snippet).not.toContainText('data-attribution');
   });
 
   test('switching to bill-card reveals the bill picker and theme controls, and hides the snippet until a bill is chosen', async ({

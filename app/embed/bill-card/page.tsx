@@ -2,13 +2,21 @@ import type { Metadata } from 'next';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
-import { safeAccent, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
+import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
 import { BillCardWidget, type BillCardData } from '@/components/embed/BillCardWidget';
 
-export const metadata: Metadata = {
-  title: 'Oravan embed — bill card',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ brandless?: string }>;
+}): Promise<Metadata> {
+  const { brandless } = await searchParams;
+  return {
+    // Brandless embeds keep the name out of the page title too.
+    title: safeBrandless(brandless) ? 'Bill card' : 'Oravan embed — bill card',
+    robots: { index: false, follow: false },
+  };
+}
 
 function normalizeLocale(value: string | undefined): 'en' | 'es' {
   return value === 'es' ? 'es' : 'en';
@@ -35,9 +43,11 @@ export default async function BillCardEmbedPage({
     accent?: string;
     radius?: string;
     font?: string;
+    brandless?: string;
+    attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, slug, accent, radius, font } = await searchParams;
+  const { locale: localeParam, slug, accent, radius, font, brandless, attribution } = await searchParams;
   const locale = normalizeLocale(localeParam);
   const raw = typeof slug === 'string' && slug.length > 0 ? getBill(slug) : undefined;
   const bill = raw ? localizeBill(raw, locale) : null;
@@ -62,6 +72,8 @@ export default async function BillCardEmbedPage({
         radiusKey: safeRadiusKey(radius),
         fontKey: safeFontKey(font),
       }}
+      brandless={safeBrandless(brandless)}
+      attribution={safeAttribution(attribution)}
     />
   );
 }

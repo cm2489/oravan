@@ -21,7 +21,8 @@
       "citations": "Citations",
       "donate": "Donate",
       "embeds": "Embeds",
-      "navLabel": "Footer"
+      "navLabel": "Footer",
+      "partners": "Partners"
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -463,8 +464,7 @@
     "billNoneSelected": "No bill selected yet",
     "billNoResults": "No bills match your search.",
     "billResultsNote": "Showing {shown} of {total} matches",
-    "themeLegend": "Theme (bill card only)",
-    "themeNote": "Representative lookup doesn't support theming yet — it always uses Oravan's default look.",
+    "themeLegend": "Theme",
     "accentLabel": "Accent color",
     "radiusLabel": "Corner style",
     "radiusSharp": "Sharp",
@@ -490,10 +490,27 @@
     "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup, and is never logged or stored.",
     "docsPrivacyTested": "These aren't claims made only in this copy — they're enforced by automated tests in Oravan's own public repository, on every change, before it ships.",
     "docsThemingTitle": "Theming reference",
-    "docsThemingBody": "Theming is limited to three CSS custom properties, each validated on Oravan's server before it can reach a style: an accent color (a hex code), a corner-radius style (sharp, soft, or round), and a font (system or serif). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
+    "docsThemingBody": "Theming works the same on both widgets and is limited to three CSS custom properties, each validated on Oravan's server before it can reach a style: an accent color (a hex code), a corner-radius style (sharp, soft, or round), and a font (system or serif). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
     "docsAttributionTitle": "Attribution",
-    "docsAttributionBody": "Every free widget shows a small \"Powered by Oravan\" link, pointing back to the canonical page on oravan.org. It's how the free tier stays free, and it's present on every embed today, with no option to remove it.",
+    "docsAttributionBody": "Every widget shows a small \"Powered by Oravan\" link, pointing back to the canonical page on oravan.org. The brandless option removes the Oravan name from the widget chrome (its accessible titles and fallback labels) but keeps that attribution link — it's how the free tier stays free. Removing attribution itself (data-attribution=\"none\") is reserved for licensed partners: there's no technical lock yet, so we say it plainly — if you want it, write us for a license. The AI-content label is never removable, on any tier.",
     "docsLoaderTitle": "The loader script",
-    "docsLoaderBody": "The script tag your snippet includes is a single, dependency-free file under 5KB. All it does is create the iframe, size it to fit its content, and relay that size back — nothing is read from your page, and nothing is sent anywhere except the one request that loads the widget itself."
+    "docsLoaderBody": "The script tag your snippet includes is a single, dependency-free file under 5KB. All it does is create the iframe, size it to fit its content, and relay that size back — nothing is read from your page, and nothing is sent anywhere except the one request that loads the widget itself.",
+    "whiteLabelLegend": "Partner white-label",
+    "whiteLabelBrandless": "Brandless chrome (keeps the attribution link)",
+    "whiteLabelNote": "Removes the Oravan name from widget titles and fallback labels. The \"Powered by Oravan\" link stays on — removing it is available to licensed partners only; see the attribution note below."
+  },
+  "partners": {
+    "title": "Partners",
+    "intro": "Oravan's widgets are built to live inside other people's pages — newsroom articles, library guides, an organization's action center. Everything on this page is free to use today; here's what each kind of partner gets, and where the licensed tier begins.",
+    "newsroomsTitle": "Spanish-language and local newsrooms",
+    "newsroomsBody": "Drop a representative lookup or a plain-language bill card into any article — two script tags, no account, no tracking of your readers, ever. Spanish isn't a translation layer here: every surface ships in English and Spanish as equals, so an es-first outlet embeds an es-first widget. Theme it to your section colors, or use brandless chrome so the widget reads as part of your page.",
+    "newsroomsCta": "Build your embed",
+    "librariesTitle": "Libraries and civic programs",
+    "librariesBody": "Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, plain language reviewed by people. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone.",
+    "orgsTitle": "Organizations and licensed use",
+    "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
+    "licensingTitle": "Licensing and pricing",
+    "licensingBody": "Pricing isn't published yet. If your organization wants white-label embeds, attribution removal, or a data partnership, write to us through the feedback form and mention partners — a person reads every note during the beta.",
+    "licensingCta": "Write to us"
   }
 }
