@@ -186,7 +186,8 @@
       "voicemail": "Left a voicemail",
       "unavailable": "Couldn't get through"
     },
-    "outcomeLogged": "Logged, and saved only on this device. Thank you for calling.",
+    "outcomeLogged": "Logged. Thank you for calling.",
+    "savedOnDevice": "Saved only on this device.",
     "viewImpact": "See your impact",
     "copyScript": "Copy script",
     "scriptCopied": "Script copied",
@@ -226,8 +227,8 @@
     },
     "tldrMeta": "{seconds}-second read · {count} questions answered below",
     "loggedFirst": "That was your first call. Most people never make one. You just did.",
-    "loggedFifth": "Five calls logged. The offices are starting to know your ZIP code.",
-    "loggedTenth": "Ten calls. What started as nerves is now a habit.",
+    "loggedFifth": "Five calls logged. Five times you've spoken up and had it counted.",
+    "loggedTenth": "Ten calls. The nerves faded; the voice stayed.",
     "generating1": "Reading the bill so you don't have to…",
     "generating2": "Putting it in your words…",
     "generating3": "Trimming it to thirty seconds…",
@@ -261,7 +262,7 @@
       },
       "call": {
         "title": "Make the call",
-        "body": "Dial any of your three members' offices. A friendly staffer answers, tallies your position, and that's it — about 30 seconds."
+        "body": "Dial any of your three members' offices — day or night. A staffer picks up, or you leave a voicemail; either way your position is tallied the same, in about 30 seconds."
       },
       "logged": {
         "title": "Logged — on this device only",
@@ -276,7 +277,7 @@
       "scriptSnippet": "Hi, my name is [YOUR NAME], and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about H.R. 1787, the Roberto Clemente Commemorative Coin Act…",
       "callee": "Your representative's office",
       "dialing": "Calling…",
-      "connected": "Connected — a staffer picks up",
+      "connected": "Sharing your position",
       "loggedTitle": "Call logged",
       "savedLocal": "Saved only on this device."
     }

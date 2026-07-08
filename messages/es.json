@@ -186,7 +186,8 @@
       "voicemail": "Dejé un mensaje de voz",
       "unavailable": "No pude comunicarme"
     },
-    "outcomeLogged": "Registrado, y guardado solo en este dispositivo. Gracias por llamar.",
+    "outcomeLogged": "Registrado. Gracias por llamar.",
+    "savedOnDevice": "Guardado solo en este dispositivo.",
     "viewImpact": "Ver tu impacto",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
@@ -226,8 +227,8 @@
     },
     "tldrMeta": "Lectura de {seconds} segundos · {count} preguntas respondidas abajo",
     "loggedFirst": "Esa fue tu primera llamada. La mayoría de la gente nunca hace ninguna. Tú acabas de hacerla.",
-    "loggedFifth": "Cinco llamadas registradas. En las oficinas ya empiezan a conocer tu código postal.",
-    "loggedTenth": "Diez llamadas. Lo que empezó con nervios ya es un hábito.",
+    "loggedFifth": "Cinco llamadas registradas. Cinco veces que alzaste la voz y quedó contada.",
+    "loggedTenth": "Diez llamadas. Los nervios se fueron; la voz se quedó.",
     "generating1": "Leyendo el proyecto de ley para que tú no tengas que hacerlo…",
     "generating2": "Poniéndolo en tus palabras…",
     "generating3": "Recortándolo a treinta segundos…",
@@ -261,7 +262,7 @@
       },
       "call": {
         "title": "Haz la llamada",
-        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso. Te contesta alguien amable del personal, anota tu posición y listo — unos 30 segundos."
+        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso — de día o de noche. Te contesta alguien del personal o dejas un mensaje de voz; de cualquier forma, tu posición cuenta igual, en unos 30 segundos."
       },
       "logged": {
         "title": "Registrada — solo en este dispositivo",
@@ -276,7 +277,7 @@
       "scriptSnippet": "Hola, me llamo [TU NOMBRE] y soy constituyente de [TU CIUDAD O CÓDIGO POSTAL]. Llamo sobre la H.R. 1787, la Ley de la Moneda Conmemorativa de Roberto Clemente…",
       "callee": "La oficina de tu representante",
       "dialing": "Llamando…",
-      "connected": "Conectado — contesta alguien del personal",
+      "connected": "Compartes tu posición",
       "loggedTitle": "Llamada registrada",
       "savedLocal": "Guardado solo en este dispositivo."
     }

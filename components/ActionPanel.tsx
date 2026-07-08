@@ -37,9 +37,19 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const zip = prefs.zip ?? null;
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
-  const [bigType, setBigType] = useState(false);
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
-  const closeBigRef = useRef<HTMLButtonElement>(null);
+  // Call modal: native <dialog> (focus trap, background inert, and Escape
+  // come from the platform - same idiom as FeedbackDialog). startCallRef is
+  // the trigger focus returns to when the dialog closes.
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const startCallRef = useRef<HTMLButtonElement>(null);
+  // The dialog is mounted ONLY while open (see render below). Mounting it
+  // whenever a script exists would put a second copy of the script, the
+  // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
+  // getByText for any of those matches twice — the call-action/flow e2e specs
+  // caught exactly that. openCallModal flips this; an effect drives showModal()
+  // once the element is in the tree, and onClose unmounts it again.
+  const [callOpen, setCallOpen] = useState(false);
   const callCount = useCalls().length;
 
   // The drafting wait gets product-specific rotating lines, not a frozen spinner.
@@ -67,15 +77,6 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   }, [zip]);
 
   useEffect(fetchReps, [fetchReps]);
-
-  // Big-type mode: Esc closes, focus moves to the close button.
-  useEffect(() => {
-    if (!bigType) return;
-    closeBigRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setBigType(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [bigType]);
 
   async function generate(s: Stance) {
     setStance(s);
@@ -137,6 +138,21 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setLoggedOutcomes((prev) => ({ ...prev, [rep.bioguide]: outcome }));
   }
 
+  function openCallModal() {
+    setCallOpen(true);
+  }
+
+  function closeCallModal() {
+    dialogRef.current?.close();
+  }
+
+  // Once callOpen mounts the <dialog>, open it modally (focus trap + inert come
+  // from showModal). Every close path — the ✕/edit/backdrop handlers call
+  // .close(), Escape closes it natively — fires onClose, which unmounts it.
+  useEffect(() => {
+    const dlg = dialogRef.current;
+    if (callOpen && dlg && !dlg.open) dlg.showModal();
+  }, [callOpen]);
 
   return (
     <section aria-labelledby="act" data-call-cta className="mt-12 rounded-card border-2 border-ink bg-surface p-6 md:p-8 shadow-lift">
@@ -169,7 +185,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         {/* Honest expectations: a concern is logged, not debated - keeps the
             "no debate, no quiz" promise true for this stance too. */}
         {stance === 'undecided' && (
-          <p className="mt-3 max-w-prose text-sm text-ink-soft">{t('concernNote')}</p>
+          <p className="mt-3 max-w-prose text-sm text-ink-soft" role="status">{t('concernNote')}</p>
         )}
       </fieldset>
 
@@ -227,8 +243,9 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               {scriptCopied ? t('scriptCopied') : t('copyScript')}
             </button>
             <button
+              ref={startCallRef}
               type="button"
-              onClick={() => setBigType(true)}
+              onClick={openCallModal}
               className="inline-flex items-center gap-2 rounded-control bg-brass px-4 py-2.5 font-semibold text-paper transition-transform hover:bg-brass-deep active:translate-y-px"
             >
               <Phone className="h-4 w-4" aria-hidden />
@@ -247,91 +264,90 @@ export function ActionPanel({ slug, identifier, title }: Props) {
       {/* Call mode: the V2 composition in a focused overlay. A deliberate
           modal - the call is a mode in real life too; nothing else matters
           while the phone is ringing. */}
-      {bigType && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-night/70 p-3 md:p-8"
-          onClick={(e) => e.target === e.currentTarget && setBigType(false)}
+      {script && callOpen && (
+        <dialog
+          ref={dialogRef}
+          aria-label={t('callTitle')}
+          onClose={() => {
+            setCallOpen(false);
+            startCallRef.current?.focus();
+          }}
+          onClick={(e) => e.target === dialogRef.current && closeCallModal()}
+          className="m-auto max-h-[85dvh] w-[min(92vw,42rem)] overflow-y-auto rounded-card bg-surface p-5 shadow-lift backdrop:bg-night/70 md:p-7"
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('callTitle')}
-            className="mx-auto my-4 max-w-2xl rounded-card bg-surface p-5 shadow-lift md:p-7"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="font-display text-2xl font-bold">{t('callTitle')}</h3>
-              <button
-                ref={closeBigRef}
-                type="button"
-                onClick={() => setBigType(false)}
-                className="inline-flex items-center gap-1.5 rounded-control border border-ink/25 px-3 py-2 text-sm font-semibold hover:border-ink/60"
-              >
-                <X className="h-4 w-4" aria-hidden />
-                {t('closeBig')}
-              </button>
-            </div>
-
-            {/* Pre-dial beat: a calm moment between "script ready" and
-                dialing - never a gate in front of the tel: links below, just
-                what a first-time caller most needs to hear, or a lighter
-                reminder for everyone after that. Voicemail is framed as a
-                fully legitimate first choice, not an apologetic fallback -
-                offices tally it exactly like a live call (S7 / docs/ideation
-                §5). */}
-            <div className="mt-4 flex gap-2 rounded-control bg-brass-soft p-4 text-sm">
-              <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-              <div>
-                <p className="font-semibold">{callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}</p>
-                <p className="mt-0.5 text-ink-soft">{callCount === 0 ? t('firstCallBody') : t('preDialBody')}</p>
-              </div>
-            </div>
-            <div className="mt-3">
-              <OfficeHoursNote />
-            </div>
-
-            <p className="mt-5 whitespace-pre-wrap rounded-control bg-paper p-4 font-display text-xl font-semibold leading-relaxed md:text-2xl">
-              {script}
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setBigType(false)}
-                className="text-sm font-semibold text-ink-soft underline underline-offset-4"
-              >
-                {t('editScript')}
-              </button>
-              <button
-                type="button"
-                onClick={copyScript}
-                className="inline-flex items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
-              >
-                {scriptCopied ? <Check className="h-4 w-4 text-moss" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
-                {scriptCopied ? t('scriptCopied') : t('copyScript')}
-              </button>
-            </div>
-
-            {reps.length > 0 && (
-              <div className="mt-5 space-y-2">
-                {reps.map(
-                  (rep) =>
-                    rep.phone && (
-                      <a
-                        key={rep.bioguide}
-                        href={telHref(rep.phone)}
-                        className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3.5 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Phone className="h-4 w-4" aria-hidden />
-                          {rep.name}
-                        </span>
-                        <span className="font-mono text-sm text-brass-bright">{rep.phone}</span>
-                      </a>
-                    )
-                )}
-              </div>
-            )}
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-display text-2xl font-bold">{t('callTitle')}</h3>
+            <button
+              type="button"
+              autoFocus
+              onClick={closeCallModal}
+              className="inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-control border border-ink/25 px-3 py-2 text-sm font-semibold hover:border-ink/60"
+            >
+              <X className="h-4 w-4" aria-hidden />
+              {t('closeBig')}
+            </button>
           </div>
-        </div>
+
+          {/* Pre-dial beat: a calm moment between "script ready" and
+              dialing - never a gate in front of the tel: links below, just
+              what a first-time caller most needs to hear, or a lighter
+              reminder for everyone after that. Voicemail is framed as a
+              fully legitimate first choice, not an apologetic fallback -
+              offices tally it exactly like a live call (S7 / docs/ideation
+              §5). */}
+          <div className="mt-4 flex gap-2 rounded-control bg-brass-soft p-4 text-sm">
+            <Moon className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
+            <div>
+              <p className="font-semibold">{callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}</p>
+              <p className="mt-0.5 text-ink-soft">{callCount === 0 ? t('firstCallBody') : t('preDialBody')}</p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <OfficeHoursNote />
+          </div>
+
+          <p className="mt-5 whitespace-pre-wrap rounded-control bg-paper p-4 font-display text-xl font-semibold leading-relaxed md:text-2xl">
+            {script}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={closeCallModal}
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline underline-offset-4"
+            >
+              {t('editScript')}
+            </button>
+            <button
+              type="button"
+              onClick={copyScript}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
+            >
+              {scriptCopied ? <Check className="h-4 w-4 text-moss" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+              {scriptCopied ? t('scriptCopied') : t('copyScript')}
+            </button>
+          </div>
+
+          {reps.length > 0 && (
+            <div className="mt-5 space-y-2">
+              {reps.map(
+                (rep) =>
+                  rep.phone && (
+                    <a
+                      key={rep.bioguide}
+                      href={telHref(rep.phone)}
+                      className="flex items-center justify-between gap-3 rounded-control bg-ink px-4 py-3.5 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Phone className="h-4 w-4" aria-hidden />
+                        {rep.name}
+                      </span>
+                      <span className="font-mono text-sm text-brass-bright">{rep.phone}</span>
+                    </a>
+                  )
+              )}
+            </div>
+          )}
+        </dialog>
       )}
 
       {/* Step 3 - call */}
@@ -412,7 +428,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                         <button
                           type="button"
                           onClick={() => copyNumber(rep.phone!)}
-                          className="inline-flex items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
                         >
                           {copied === rep.phone ? (
                             <Check className="h-4 w-4 text-moss" aria-hidden />
@@ -427,7 +443,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                       <a
                         key={i}
                         href={telHref(o.phone!)}
-                        className="inline-flex items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-ink/20 px-3 py-2.5 text-sm font-medium hover:border-ink/50"
                       >
                         <Phone className="h-3.5 w-3.5" aria-hidden />
                         {o.city} · {o.phone}
@@ -448,7 +464,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           type="button"
                           onClick={() => logOutcome(rep, o)}
                           aria-pressed={logged === o}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-medium ${
+                          className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-medium ${
                             logged === o
                               ? 'pop border-moss bg-moss-soft text-ink'
                               : 'border-ink/20 hover:bg-paper-deep'
@@ -476,18 +492,26 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                           <circle cx="12" cy="12" r="9" />
                           <path d="m8.5 12.5 2.5 2.5 5-6" />
                         </svg>
-                        <p className="font-medium">
-                          {callCount === 1
-                            ? t('loggedFirst')
-                            : callCount === 5
-                              ? t('loggedFifth')
-                              : callCount === 10
-                                ? t('loggedTenth')
-                                : t('outcomeLogged')}{' '}
-                          <Link href="/impact" className="underline underline-offset-2">
-                            {t('viewImpact')}
-                          </Link>
-                        </p>
+                        <div>
+                          <p className="font-medium">
+                            {callCount === 1
+                              ? t('loggedFirst')
+                              : callCount === 5
+                                ? t('loggedFifth')
+                                : callCount === 10
+                                  ? t('loggedTenth')
+                                  : t('outcomeLogged')}{' '}
+                            <Link href="/impact" className="underline underline-offset-2">
+                              {t('viewImpact')}
+                            </Link>
+                          </p>
+                          {/* PERSISTENT on-device reassurance: it must NOT vanish on
+                              the 1st/5th/10th call, when a first-timer — the moment
+                              the milestone fires — is most anxious about where the
+                              position they just logged actually went. Kept as its own
+                              always-rendered line, never folded into a milestone. */}
+                          <p className="mt-1 text-sm text-ink-soft">{t('savedOnDevice')}</p>
+                        </div>
                       </div>
                     )}
                   </div>
