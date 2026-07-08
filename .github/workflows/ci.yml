@@ -5,6 +5,16 @@ on:
   push:
     branches: [main]
 
+# A newer push to the same PR cancels its still-running CI: only the latest
+# commit — the one the merge gate actually checks — needs to finish, so runs on
+# superseded commits stop instead of burning minutes to completion. Scoped to
+# PRs only: cancel-in-progress is false for pushes to main, so every post-merge
+# run (the production safety net, incl. the nightly data-sync commits) always
+# runs to completion and is never interrupted.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -65,6 +75,33 @@ jobs:
           fi
           echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
           echo "docs_only=$DOCS_ONLY"
+      - name: Resolve Playwright version (browser-cache key)
+        id: pw
+        if: steps.paths.outputs.docs_only != 'true'
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright WebKit browser
+        # Version-keyed, so a cache hit is ALWAYS the browser this Playwright
+        # build expects — no mismatch risk. A miss just re-downloads (slower,
+        # never wrong). The install step below still runs, so --with-deps system
+        # libraries are always installed fresh; only the binary download is saved.
+        if: steps.paths.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Cache Next.js build cache
+        # Next content-validates .next/cache against each input file's hash, so a
+        # stale restore only ever forces a rebuild — it can never yield a wrong
+        # build or a page that doesn't reflect current source. Keyed per-commit
+        # (always saves a fresh entry) with a lockfile-scoped restore-key so a
+        # new commit still starts from the most recent warm cache.
+        if: steps.paths.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       - name: Install Playwright WebKit
         if: steps.paths.outputs.docs_only != 'true'
         run: npx playwright install --with-deps webkit
