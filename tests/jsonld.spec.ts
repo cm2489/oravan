@@ -6,8 +6,8 @@ import es from '../messages/es.json';
 /*
  * S22 — structural assertions on the JSON-LD this pass adds (lib/jsonld.ts,
  * rendered via components/JsonLd.tsx). Not a full schema.org conformance
- * checker — that's Google's Rich Results Test's job, and it needs a live
- * public URL this repo doesn't have yet (noindex is still active) — but
+ * checker — that's Google's Rich Results Test's job, run against the live
+ * public URL (indexing is on as of the 2026-07-08 soft-public lift) — but
  * enough to catch the regressions that matter: valid JSON, the right
  * @graph shape, dates that are real (never invented), FAQPage present only
  * when the decode structure supports it, and the AI-content disclosure

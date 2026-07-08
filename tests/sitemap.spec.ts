@@ -5,8 +5,9 @@ import { getAllBills } from '../lib/core';
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
  * Structural smoke tests (no XML-parser dependency in this repo, so this
  * asserts on well-known substrings/counts rather than a full DOM parse) that
- * they render, cover both locales, and stay consistent with the noindex
- * gate's current, unchanged posture.
+ * they render, cover both locales, and keep the permissive-crawl posture
+ * that lets the sitemap do real work now that the site is indexable
+ * (soft-public lift, 2026-07-08).
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
@@ -41,16 +42,16 @@ test.describe('sitemap.xml', () => {
 });
 
 test.describe('robots.txt', () => {
-  test('matches the current (permissive-crawl, noindex-gated) posture and points at the sitemap', async ({
+  test('keeps the permissive-crawl posture and points at the sitemap', async ({
     request,
   }) => {
     const res = await request.get('/robots.txt');
     expect(res.status()).toBe(200);
     const body = await res.text();
 
-    // Crawling stays open — the noindex meta tag (app/[locale]/layout.tsx)
-    // is the one and only gate, untouched by this file. Blocking crawl
-    // access here would hide that tag from Googlebot instead.
+    // Crawling stays open — always has, by design. Post-lift the site is
+    // indexable, so open crawl is exactly what lets Googlebot read and index
+    // the pages; /api/ stays disallowed as it never should be crawled.
     expect(body).toMatch(/User-agent:\s*\*/i);
     expect(body).toMatch(/Allow:\s*\/\s*$/im);
     expect(body).toMatch(/Disallow:\s*\/api\//i);
