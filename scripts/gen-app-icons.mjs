@@ -1,8 +1,8 @@
-// Generate the maskable PWA app icons referenced by app/manifest.ts
-// (/icons/icon-192.png + /icons/icon-512.png) from the locked Oravan lone-O
-// mark: a paper mark centered on an ink tile with safe-zone padding.
-// Reads the masters in assets/brand/ and recolors them, so there's no path
-// duplication here. Re-run with: node scripts/gen-app-icons.mjs
+// Generate the app icons from the locked Oravan lone-O mark: a paper mark on
+// an ink tile. Reads the masters in assets/brand/ and recolors them, so
+// there's no path duplication here. Re-run with: node scripts/gen-app-icons.mjs
+//   - public/icons/icon-192.png + icon-512.png : maskable PWA icons (app/manifest.ts)
+//   - public/apple-touch-icon.png              : iOS home-screen icon (root-probed)
 import sharp from 'sharp';
 import { readFile, mkdir } from 'node:fs/promises';
 
@@ -23,4 +23,21 @@ for (const size of [192, 512]) {
     .png()
     .toFile(`public/icons/icon-${size}.png`);
   console.log(`wrote public/icons/icon-${size}.png`);
+}
+
+// iOS "Add to Home Screen" auto-probes /apple-touch-icon.png and uses it
+// directly (no <link> needed). Apple applies its own rounded-corner mask and
+// expects an opaque, near-full-bleed square — so the mark sits at 72% (fuller
+// than the maskable icons' 60%) with no transparency. 180x180 is Apple's
+// current recommended size.
+{
+  const size = 180;
+  const inner = Math.round(size * 0.72);
+  const mark = await sharp(Buffer.from(paperMark)).resize(inner, inner).png().toBuffer();
+  await sharp({ create: { width: size, height: size, channels: 4, background: INK } })
+    .composite([{ input: mark, gravity: 'center' }])
+    .removeAlpha() // drop the (all-opaque) alpha channel — Apple wants flat RGB
+    .png()
+    .toFile('public/apple-touch-icon.png');
+  console.log('wrote public/apple-touch-icon.png');
 }

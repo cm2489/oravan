@@ -11,11 +11,17 @@ import { join } from 'node:path';
 // embed.js (S13): the ~5KB dependency-free loader that injects the embed
 // widget's iframe on a host page - see public/embed.js and
 // app/embed/rep-lookup. icons/* (migration S2): the maskable PWA icons
-// referenced by app/manifest.ts, generated from the brand mark by
-// scripts/gen-app-icons.mjs. Everything else still ships nothing from
-// public/ (the favicon lives at app/icon.svg and portraits are hotlinked
-// from unitedstates/images).
-const ALLOWLIST = new Set(['embed.js', 'icons/icon-192.png', 'icons/icon-512.png']);
+// referenced by app/manifest.ts. apple-touch-icon.png (S8 launch-prep): the
+// iOS home-screen icon, root-probed by Safari. All generated from the brand
+// mark by scripts/gen-app-icons.mjs. Everything else still ships nothing from
+// public/ (the browser favicon lives at app/icon.svg and portraits are
+// hotlinked from unitedstates/images).
+const ALLOWLIST = new Set([
+  'embed.js',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'apple-touch-icon.png',
+]);
 
 function walk(dir, prefix = '') {
   return readdirSync(dir).flatMap((name) => {
