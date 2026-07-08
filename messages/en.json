@@ -353,7 +353,7 @@
     "supportBody": "Oravan is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. We store no donor political activity, ever — gifts are tax-deductible and processed off Oravan's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
     "donateCta": "Donate via our fiscal sponsor",
     "accountabilityTitle": "Independent, and reachable",
-    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person."
+    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person, or email us at hello@oravan.org."
   },
   "citations": {
     "title": "Cite Oravan",
@@ -520,7 +520,7 @@
     "orgsTitle": "Organizations and licensed use",
     "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
     "licensingTitle": "Licensing and pricing",
-    "licensingBody": "Pricing isn't published yet. If your organization wants white-label embeds, attribution removal, or a data partnership, use the feedback link below, choose “Partnership or licensing,” and include a way to reach you — a person reads every partnership note during the beta and will get back to you.",
-    "licensingCta": "Write to us"
+    "licensingBody": "If your organization wants white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. Pricing isn't published yet. You can also use the feedback link at the bottom of any page and choose “Partnership or licensing” if you'd rather not email.",
+    "licensingCta": "Email hello@oravan.org"
   }
 }

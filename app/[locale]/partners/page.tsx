@@ -16,9 +16,11 @@ export async function generateMetadata({
 /*
  * S5b — the GTM surface for the three launch audiences (Spanish-language
  * newsrooms, libraries, paid orgs). Docs-grade and pricing-free by founder
- * decision (M6, 2026-07-07: terms deferred); the licensing section points
- * at the beta feedback channel rather than an address that doesn't exist
- * until the S8 cutover.
+ * decision (M6, 2026-07-07: terms deferred); the licensing section's
+ * primary contact is now hello@oravan.org (M12, S8 cutover), with the
+ * beta feedback channel kept as a fallback for anyone who'd rather not
+ * email. NOTE: hello@oravan.org is not live yet — this PR is do-not-merge
+ * until the inbox is confirmed live.
  */
 export default async function PartnersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -54,10 +56,12 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
       <section className="mt-10 rounded-card border border-line bg-surface p-6">
         <h2 className="font-display text-2xl font-bold">{t('licensingTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('licensingBody')}</p>
-        {/* The beta feedback dialog lives in the footer on every page —
-            same #feedback anchor the citations correction-path uses. */}
+        {/* Primary partnership contact (M12). The beta feedback dialog
+            (footer, #feedback anchor — same one the citations
+            correction-path uses) remains a secondary fallback, referenced
+            in licensingBody, for anyone who'd rather not email. */}
         <a
-          href="#feedback"
+          href="mailto:hello@oravan.org"
           className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-control border-2 border-ink px-5 py-3 font-semibold hover:bg-paper-deep"
         >
           {t('licensingCta')} →
