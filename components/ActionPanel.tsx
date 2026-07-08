@@ -43,6 +43,13 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   // the trigger focus returns to when the dialog closes.
   const dialogRef = useRef<HTMLDialogElement>(null);
   const startCallRef = useRef<HTMLButtonElement>(null);
+  // The dialog is mounted ONLY while open (see render below). Mounting it
+  // whenever a script exists would put a second copy of the script, the
+  // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
+  // getByText for any of those matches twice — the call-action/flow e2e specs
+  // caught exactly that. openCallModal flips this; an effect drives showModal()
+  // once the element is in the tree, and onClose unmounts it again.
+  const [callOpen, setCallOpen] = useState(false);
   const callCount = useCalls().length;
 
   // The drafting wait gets product-specific rotating lines, not a frozen spinner.
@@ -132,12 +139,20 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   }
 
   function openCallModal() {
-    dialogRef.current?.showModal();
+    setCallOpen(true);
   }
 
   function closeCallModal() {
     dialogRef.current?.close();
   }
+
+  // Once callOpen mounts the <dialog>, open it modally (focus trap + inert come
+  // from showModal). Every close path — the ✕/edit/backdrop handlers call
+  // .close(), Escape closes it natively — fires onClose, which unmounts it.
+  useEffect(() => {
+    const dlg = dialogRef.current;
+    if (callOpen && dlg && !dlg.open) dlg.showModal();
+  }, [callOpen]);
 
   return (
     <section aria-labelledby="act" data-call-cta className="mt-12 rounded-card border-2 border-ink bg-surface p-6 md:p-8 shadow-lift">
@@ -249,11 +264,14 @@ export function ActionPanel({ slug, identifier, title }: Props) {
       {/* Call mode: the V2 composition in a focused overlay. A deliberate
           modal - the call is a mode in real life too; nothing else matters
           while the phone is ringing. */}
-      {script && (
+      {script && callOpen && (
         <dialog
           ref={dialogRef}
           aria-label={t('callTitle')}
-          onClose={() => startCallRef.current?.focus()}
+          onClose={() => {
+            setCallOpen(false);
+            startCallRef.current?.focus();
+          }}
           onClick={(e) => e.target === dialogRef.current && closeCallModal()}
           className="m-auto max-h-[85dvh] w-[min(92vw,42rem)] overflow-y-auto rounded-card bg-surface p-5 shadow-lift backdrop:bg-night/70 md:p-7"
         >
