@@ -32,11 +32,10 @@ export async function generateMetadata({
     // Per-locale PWA manifest (app/[locale]/manifest.webmanifest/route.ts) so
     // install chrome ships in the page's own language, not English-only.
     manifest: `/${locale}/manifest.webmanifest`,
-    // LAUNCH GATE: robots noindex keeps the unbranded test deployment out of
-    // search indexes during the feedback phase. KEPT per Colby, 2026-07-01 -
-    // revisit at launch. CI emits a ::warning on every run while this gate
-    // exists (ci.yml "Launch-gate reminder") so it can't silently persist.
-    robots: { index: false, follow: false },
+    // Soft-public launch (2026-07-08): the citizen-site noindex gate is lifted —
+    // pages default to indexable. The embed routes keep their PERMANENT noindex
+    // (app/embed/layout.tsx), and robots.ts already keeps crawling open so the
+    // sitemap activates immediately. No announcement rides on this deploy.
     // Build identity for post-deploy verification: the data-sync workflows
     // poll production for the SHA they just pushed (scripts/verify-deploy.mjs).
     // Vercel sets VERCEL_GIT_COMMIT_SHA at build time, deploy-hook builds included.
