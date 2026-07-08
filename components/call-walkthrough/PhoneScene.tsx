@@ -159,7 +159,7 @@ export function PhoneScene({ scene }: { scene: SceneKey }) {
         style={delay(0.6)}
       >
         <Check className="h-2.5 w-2.5 text-moss" />
-        {t('bill.outcome.contact')}
+        {t('bill.outcome.voicemail')}
       </p>
       <p className={`${styles.enter} text-[8px] text-ink-faint`} style={delay(0.9)}>
         {t('walkthrough.phone.savedLocal')}

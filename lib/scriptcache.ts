@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { PROMPT_VERSION } from './scriptprompt';
 import { cacheClient, keyPrefix, noteUpstashError } from './upstash';
 
 /*
@@ -10,10 +11,12 @@ import { cacheClient, keyPrefix, noteUpstashError } from './upstash';
  *
  *   <env>:script:<slug>:<stance>:<lang>:<version>
  *
- * version = first 12 hex chars of sha256(bill.ai_summary). The pre-S11 key
- * (slug:stance:lang) had no content component, so a corrected decode would
- * keep serving the stale script — the exact gap strategy §9.1(d) names. A
- * changed summary now changes the version, which is a clean miss.
+ * version = first 12 hex chars of sha256(PROMPT_VERSION + bill.ai_summary).
+ * The pre-S11 key (slug:stance:lang) had no content component, so a corrected
+ * decode would keep serving the stale script — the exact gap strategy §9.1(d)
+ * names. A changed summary now changes the version, which is a clean miss; the
+ * folded-in PROMPT_VERSION (lib/scriptprompt.ts) does the same for a prompt
+ * change, which the summary alone would miss.
  *
  * TTL: 24 hours. The nightly sync is the only thing that changes a bill's
  * summary or status, so a cached script never outlives the corpus day it
@@ -40,9 +43,14 @@ export interface ScriptKeyParts {
   version: string;
 }
 
-/** Short content-version hash: a corrected decode invalidates stale scripts. */
+/**
+ * Short content-version hash: a corrected decode OR a changed generation prompt
+ * invalidates stale scripts. PROMPT_VERSION (lib/scriptprompt.ts) is folded in
+ * so a prompt edit is a clean miss for every (bill, stance, locale) — the
+ * summary alone can't catch that, since editing the prompt never touches it.
+ */
 export function contentVersion(summary: string): string {
-  return createHash('sha256').update(summary).digest('hex').slice(0, 12);
+  return createHash('sha256').update(`${PROMPT_VERSION}\n${summary}`).digest('hex').slice(0, 12);
 }
 
 // --- cache-database key builder (the whole registry) -------------------------
