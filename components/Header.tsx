@@ -3,8 +3,7 @@
 import { Home, ScrollText, Users, Activity } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { OravanMark } from './brand/OravanMark';
-import { OravanWordmark } from './brand/OravanWordmark';
+import { OravanLockup } from './brand/OravanLockup';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 const TABS = [
@@ -26,9 +25,8 @@ export function Header() {
     <>
       <header className="bg-night text-paper">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <OravanMark className="h-8 w-8 text-brass-bright" />
-            <OravanWordmark className="h-6 w-auto" />
+          <Link href="/" className="inline-flex items-center">
+            <OravanLockup />
           </Link>
           <nav aria-label={t('nav.primaryLabel')} className="hidden md:flex items-center gap-1">
             {TABS.map(({ href, key }) => (
