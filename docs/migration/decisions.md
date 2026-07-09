@@ -206,6 +206,31 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   Verified on production captures. The full three-round matrix was published to
   the founder as the S6 scorecard.
 
+## Soft-public launch — 2026-07-09 (M14 done)
+
+- **The citizen-site noindex gate was lifted** (PR #68, merge `4d5cbd6`), taking
+  oravan.org from unindexed test deployment to **soft-public**: indexable and
+  shareable, with **no announcement** (Show HN / Product Hunt / press / KTD-8
+  newsroom send / MCP registry blast all deliberately held for the
+  government-funding-fight window, late Aug–Sep). Reversible by re-adding the
+  one robots line.
+- **Verified on production** the same day: citizen pages emit no `noindex`
+  (home, `/es`, bill pages); the **permanent embed-route noindex is intact**
+  (`app/embed/layout.tsx`); `sitemap.xml` serves 3,596 URLs; `robots.txt` keeps
+  crawl open and points at the sitemap; the new `apple-touch-icon.png` resolves
+  (the root-probe 404s are gone). Zero production runtime errors over the prior
+  7 days.
+- **Why now, ahead of the calendar:** the build finished ~11 weeks early, so the
+  lift no longer waits on readiness. Going soft-public now starts the two clocks
+  every downstream decision depends on — the SEO indexing runway and the
+  usage-evidence accrual (logged calls toward the Nov-3 grant number, organic
+  demand signal) — without spending any one-shot launch channel. This is the
+  single action the monetization strategy flags as distinguishing this build
+  from the two that died behind a gate that never lifted.
+- **Post-lift activation (owner):** Google Search Console + Bing sitemap
+  submission (DNS is on Vercel; a `google-site-verification` TXT already
+  exists on the apex); MCP registry submission is optional and can follow.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8
