@@ -32,6 +32,19 @@ import { districtsForZip, getLegislator, portraitUrl, repsForDistrict, vacancyFo
 
 export type Locale = 'en' | 'es';
 
+/*
+ * The MCP server's real, live Streamable HTTP endpoint (S12). mcp-handler
+ * derives this itself from route.ts's `basePath: '/api/mcp'` config
+ * (deriveEndpointsFromBasePath: basePath + "/mcp" - verified against
+ * mcp-handler's source and pinned by tests/helpers.ts's MCP_ENDPOINT), but
+ * nothing before this sprint exported that literal anywhere a human-facing
+ * surface could read it without re-deriving it by hand. Exported here so the
+ * public /mcp docs page, llms.txt, and any future caller share one source
+ * instead of each hardcoding the path fragment separately.
+ */
+export const MCP_ENDPOINT_PATH = '/api/mcp/mcp';
+export const MCP_ENDPOINT_URL = `${SITE_ORIGIN}${MCP_ENDPOINT_PATH}`;
+
 export function normalizeLocale(input?: string): Locale {
   return input === 'es' ? 'es' : 'en';
 }
@@ -112,6 +125,88 @@ export function buildEnvelope(path: string, locale: Locale, hasAiContent: boolea
     license: hasAiContent ? LICENSE_AI_CONTENT[locale] : LICENSE_PUBLIC_DOMAIN[locale],
   };
 }
+
+/* ---------------------------------------------------------------------- *
+ * Tool metadata (S12): the exact title/description strings
+ * app/api/mcp/[transport]/route.ts hands an agent for each of the 5 tools,
+ * relocated here so the public /mcp docs page (S12) can quote them verbatim
+ * instead of hand-copying a second version that could silently drift from
+ * what the live server actually sends. route.ts imports these same constants
+ * for its registerTool() calls - one copy, two readers, same pattern as the
+ * citation envelope above.
+ *
+ * English-only by design, like every other piece of tool/schema metadata a
+ * calling agent's model reads (see route.ts's own header comment on this) -
+ * never translated, unlike the envelope fields above, which ARE relayed to
+ * an end user and so carry the higher bilingual-parity bar. The /mcp page
+ * explains this distinction in prose rather than translating protocol
+ * metadata that no agent would ever request in Spanish.
+ * ---------------------------------------------------------------------- */
+
+export const TOOL_NAMES = [
+  'lookup_representatives',
+  'get_bill',
+  'search_bills',
+  'whats_moving',
+  'get_representative',
+] as const;
+
+export type ToolName = (typeof TOOL_NAMES)[number];
+
+export interface ToolInfo {
+  title: string;
+  description: string;
+}
+
+export const TOOL_INFO: Record<ToolName, ToolInfo> = {
+  lookup_representatives: {
+    title: 'Look up representatives by ZIP',
+    description:
+      "Look up a person's U.S. House member and two Senators by 5-digit ZIP code. Returns each " +
+      "member's name, party, phone, official website, portrait URL, and district office phone " +
+      'numbers - the number a constituent should actually call. Some ZIP codes span more than one ' +
+      'congressional district (needs_address: true, all candidate districts returned); this tool ' +
+      'does not perform address-level refinement itself in this release - point the person to the ' +
+      "response's reps_url, where a stateless, unlogged Census-geocoder proxy narrows it to a " +
+      'single district from a street address that Oravan never stores. When a House seat currently ' +
+      'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
+      'departed member is never returned as if still serving, and no election timeline is implied.',
+  },
+  get_bill: {
+    title: 'Get a bill decode',
+    description:
+      'Get the full plain-language decode of a federal bill by slug (e.g. "hr-2701-119") or ' +
+      'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
+      'AI-generated summary (headline, tl;dr, what/who/why/cost - human-reviewed before publish and ' +
+      'clearly labeled when present), the official status in plain language, an urgency band, ' +
+      "sponsor, key dates, the official Congress.gov page, and an act_url to Oravan's on-site call " +
+      'flow. This tool never drafts a phone script - script generation only happens on-site, behind ' +
+      'a human-review step, never over this API.',
+  },
+  search_bills: {
+    title: 'Search bills',
+    description:
+      "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
+      'active-only. Returns short teasers (headline, status, urgency) for matching bills, most ' +
+      'urgent first.',
+  },
+  whats_moving: {
+    title: "What's moving in Congress",
+    description:
+      "What's moving in Congress recently: active, plain-language-decoded bills that cleared " +
+      "Oravan's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
+      'topic. Returns an honest empty list with quiet_week: true when nothing has cleared the bar - ' +
+      'this tool never pads the list to look busier than Congress actually is this week. If the ' +
+      "list is empty because Oravan's own data sync looks stale rather than Congress being quiet, " +
+      'data_stale is set instead so that distinction is never lost.',
+  },
+  get_representative: {
+    title: 'Get a representative',
+    description:
+      'Get full details for one member of Congress by bioguide ID (e.g. "W000797"), plus their 5 ' +
+      'most recently active sponsored bills. Facts only: no scorecards, ratings, or vote grades.',
+  },
+};
 
 /* ---------------------------------------------------------------------- *
  * Plain-language labels - read off messages/{locale}.json directly rather
