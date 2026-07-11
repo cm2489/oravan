@@ -11,7 +11,7 @@ import { getAllBills } from '../lib/core';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 11; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/partners'
+const STATIC_PATH_COUNT = 12; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/partners', '/mcp'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
@@ -72,5 +72,13 @@ test.describe('llms.txt', () => {
     expect(body).toContain(String(getAllBills().length));
     // Explicitly no confirmed-support or traffic-outcome claim.
     expect(body.toLowerCase()).toContain('not confirmed');
+  });
+
+  test('S12: names the MCP server, its real endpoint, and the docs page', async ({ request }) => {
+    const res = await request.get('/llms.txt');
+    const body = await res.text();
+    expect(body).toContain(`${SITE_ORIGIN}/mcp`);
+    expect(body).toContain(`${SITE_ORIGIN}/api/mcp/mcp`);
+    expect(body).toMatch(/MCP/);
   });
 });
