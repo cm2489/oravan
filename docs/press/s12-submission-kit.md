@@ -139,10 +139,10 @@ Glama auto-crawls the Official Registry too (per `docs/ideation/2026-07-02-mcp-s
 Smithery supports publishing an already-deployed remote server directly by URL — no SDK, no rebuild:
 
 ```bash
-smithery mcp publish https://oravan.org/api/mcp/mcp -n org.oravan/mcp
+smithery mcp publish https://oravan.org/api/mcp/mcp -n @oravan/mcp
 ```
 
-(Install the Smithery CLI first per `smithery.ai/docs` if not already present.) This is the right path here — Oravan's server is already live on Vercel; Smithery's SDK-based hosted-deployment flow is for servers Smithery itself runs, which doesn't apply. If the CLI's `-n` flag rejects the `org.oravan/mcp` form (Smithery's own namespace convention wasn't independently confirmed this pass), fall back to whatever name Smithery's own publish flow assigns and note the mismatch — it doesn't have to match the Official Registry's namespace exactly, only be recognizable as Oravan's.
+(Install the Smithery CLI first per `smithery.ai/docs` if not already present.) This is the right path here — Oravan's server is already live on Vercel; Smithery's SDK-based hosted-deployment flow is for servers Smithery itself runs, which doesn't apply. **Correction from an earlier draft of this kit:** Smithery's own `-n` naming convention is `@your-org/your-server` (npm-scope style, confirmed against `smithery.ai/docs/build/publish`), not the Official Registry's reverse-DNS form — `-n org.oravan/mcp` would likely be rejected. `@oravan` above is a placeholder for whatever Smithery org/account handle is actually submitting; confirm the real handle at `smithery.ai` before running the command, and it does not need to match the Official Registry's `org.oravan/mcp` namespace — only be recognizable as Oravan's.
 
 ---
 
