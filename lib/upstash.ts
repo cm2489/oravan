@@ -7,9 +7,9 @@
  * pattern), and a privacy-critical path should carry zero extra supply-chain
  * surface. If the command surface ever grows past trivial, revisit.
  *
- * TWO PHYSICALLY SEPARATE DATABASES — this is the load-bearing design rule
- * (KTD-3, strategy §9.1(c)), and this file is where both clients are
- * constructed, so the reason lives here:
+ * THREE PHYSICALLY SEPARATE DATABASES — this is the load-bearing design rule
+ * (KTD-3, strategy §9.1(c); tenancy added S18), and this file is where all
+ * three clients are constructed, so the reason lives here:
  *
  *   Caller-keyed, short-lived rate-limit counters (lib/ratelimit.ts) and the
  *   content-keyed script cache (lib/scriptcache.ts) must live in two separate
@@ -21,12 +21,35 @@
  *   database only ever sees bill content keys. CI enforces the separation
  *   (scripts/check-key-namespaces.mjs).
  *
- * GRACEFUL DEGRADATION: both constructors return null when their env vars
- * are absent (local dev, CI, previews without env). Callers fall back to the
- * per-instance in-memory behavior the routes shipped with — a route must
- * NEVER hard-fail because Upstash is unreachable. On request errors, callers
- * fail open the same way; errors are counted and logged as status codes
- * only, never response bodies.
+ *   The tenancy database (lib/tenancy.ts, S18) holds durable institutional
+ *   tenant records (domain, org name, tier, logo — Stripe-webhook-issued
+ *   capability tokens) and does not fit either existing database's contract:
+ *   it is neither short-lived (counters is TTL-bound by design; tenant
+ *   config persists until Stripe says otherwise) nor content-free-and-
+ *   caller-free (cache and the embed-domain-nomination family are both
+ *   deliberately thin; a tenant record is rich and identifying on purpose,
+ *   because Stripe already permits it to exist). Putting a tenant lookup and
+ *   a content-keyed script fetch in the same database's command log would
+ *   recreate, one layer up, the exact "who + what" re-pairing risk that
+ *   justified splitting counters from cache in the first place — so tenancy
+ *   gets its own physical database for the same reason ratelimit and
+ *   scriptcache don't share one. Stripe remains the system of record for
+ *   tenant identity/billing; this database is a fast, request-path-readable
+ *   CACHE of a subset of Stripe's state, kept in sync by the webhook and
+ *   fully reconstructable from Stripe if lost — a different consistency
+ *   philosophy from both other databases, which is one more reason it lives
+ *   apart from them.
+ *
+ * GRACEFUL DEGRADATION: all three constructors return null when their env
+ * vars are absent (local dev, CI, previews without env) — a uniform CLIENT
+ * behavior, so the env/client-confinement CI rules stay uniform across all
+ * three registries. What differs is how each REGISTRY module interprets
+ * that null: countersClient/cacheClient callers fall back to per-instance
+ * in-memory behavior — a route must NEVER hard-fail because Upstash is
+ * unreachable, and on request errors those callers fail open the same way
+ * (errors counted and logged as status codes only, never response bodies).
+ * tenancyClient callers do the OPPOSITE — see lib/tenancy.ts's
+ * lookupTenantByToken doc comment for why fail-CLOSED is deliberate there.
  */
 
 export class UpstashRequestError extends Error {
@@ -48,19 +71,22 @@ export interface UpstashClient {
 const REQUEST_TIMEOUT_MS = 2000;
 
 // Visible error counters (graceful-degradation observability): how many times
-// each database has failed open to in-memory this instance's lifetime.
-const errorCounts = { counters: 0, cache: 0 };
+// each database has failed this instance's lifetime. For counters/cache that
+// means "failed open to in-memory"; for tenancy it means "failed closed to
+// not-authorized" — the log line's wording below is qualified per scope.
+const errorCounts = { counters: 0, cache: 0, tenancy: 0 };
 
-export function noteUpstashError(scope: 'counters' | 'cache', err: unknown): void {
+export function noteUpstashError(scope: 'counters' | 'cache' | 'tenancy', err: unknown): void {
   errorCounts[scope] += 1;
   const status = err instanceof UpstashRequestError ? err.status : 0;
+  const consequence = scope === 'tenancy' ? 'failing closed to not-authorized' : 'failing open to in-memory';
   // Status code only — never bodies, never keys, never command args.
   console.error(
-    `upstash ${scope}: request failed (status ${status}); failing open to in-memory (error #${errorCounts[scope]} this instance)`
+    `upstash ${scope}: request failed (status ${status}); ${consequence} (error #${errorCounts[scope]} this instance)`
   );
 }
 
-export function getUpstashErrorCounts(): { counters: number; cache: number } {
+export function getUpstashErrorCounts(): { counters: number; cache: number; tenancy: number } {
   return { ...errorCounts };
 }
 
@@ -119,6 +145,24 @@ export function countersClient(): UpstashClient | null {
 export function cacheClient(): UpstashClient | null {
   const url = process.env.UPSTASH_CACHE_REST_URL;
   const token = process.env.UPSTASH_CACHE_REST_TOKEN;
+  if (!url || !token) return null;
+  return restClient(url, token);
+}
+
+/**
+ * Client for the TENANCY database (S18): durable institutional tenant
+ * records and their capability-token reverse index, nothing else.
+ * Caller-derived material (IPs, hashes of IPs, addresses, the salt) must
+ * never reach this database, same as the cache database's rule — a tenancy
+ * lookup is institutional, not a citizen request, and must never blur into
+ * the caller-keyed doctrine either.
+ * Null when unconfigured — but unlike countersClient/cacheClient, this
+ * null is interpreted as FAIL CLOSED by its one caller (lib/tenancy.ts),
+ * not "degrade to in-memory". See that file's lookupTenantByToken.
+ */
+export function tenancyClient(): UpstashClient | null {
+  const url = process.env.UPSTASH_TENANCY_REST_URL;
+  const token = process.env.UPSTASH_TENANCY_REST_TOKEN;
   if (!url || !token) return null;
   return restClient(url, token);
 }

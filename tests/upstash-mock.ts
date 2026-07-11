@@ -85,6 +85,7 @@ export class MockUpstash {
 
 export const COUNTERS_URL = 'https://counters.mock.test';
 export const CACHE_URL = 'https://cache.mock.test';
+export const TENANCY_URL = 'https://tenancy.mock.test';
 
 /**
  * Swap globalThis.fetch for one that serves the given mocks by URL prefix
@@ -118,16 +119,20 @@ export function installUpstashFetch(
   };
 }
 
-/** Set both databases' env vars at the mock URLs; returns a cleanup fn. */
+/** Set all three databases' env vars at the mock URLs; returns a cleanup fn. */
 export function setUpstashEnv(): () => void {
   process.env.UPSTASH_COUNTERS_REST_URL = COUNTERS_URL;
   process.env.UPSTASH_COUNTERS_REST_TOKEN = 'test-counters-token';
   process.env.UPSTASH_CACHE_REST_URL = CACHE_URL;
   process.env.UPSTASH_CACHE_REST_TOKEN = 'test-cache-token';
+  process.env.UPSTASH_TENANCY_REST_URL = TENANCY_URL;
+  process.env.UPSTASH_TENANCY_REST_TOKEN = 'test-tenancy-token';
   return () => {
     delete process.env.UPSTASH_COUNTERS_REST_URL;
     delete process.env.UPSTASH_COUNTERS_REST_TOKEN;
     delete process.env.UPSTASH_CACHE_REST_URL;
     delete process.env.UPSTASH_CACHE_REST_TOKEN;
+    delete process.env.UPSTASH_TENANCY_REST_URL;
+    delete process.env.UPSTASH_TENANCY_REST_TOKEN;
   };
 }

@@ -1,7 +1,8 @@
 /**
  * Upstash key-namespace privacy gate (S11; KTD-3, AE5). Fails CI when code
- * would blur the line between the counters and cache Upstash databases, or
- * let the domain-nomination family (S15, F3) drift outside its own rules:
+ * would blur the line between the counters, cache, and tenancy Upstash
+ * databases, or let the domain-nomination family (S15, F3) drift outside
+ * its own rules:
  *
  *   counters DB — TWO key families live here, both caller-agnostic in the
  *                 sense that neither may ever carry the OTHER family's kind
@@ -18,6 +19,13 @@
  *   cache DB    — content-keyed script cache ONLY. No IP-, caller-, salt-,
  *                 or address-derived material may ever reach a cache key
  *                 (lib/scriptcache.ts is the single registry).
+ *   tenancy DB  — durable institutional tenant records + capability-token
+ *                 reverse index (S18). No IP-, caller-, salt-, or
+ *                 address-derived material may ever reach a tenancy key
+ *                 either (lib/tenancy.ts is the single registry) — tenant
+ *                 config is institutional, not caller data, and must not
+ *                 blur into the caller-keyed doctrine any more than the
+ *                 cache database may.
  *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
@@ -49,10 +57,11 @@ const SCAN_DIRS = ['app', 'lib'];
 const SCAN_ROOT_FILES = ['proxy.ts'];
 const EXTENSIONS = ['.ts', '.tsx'];
 
-// The three registries.
+// The four registries.
 const COUNTERS_REGISTRY = 'lib/ratelimit.ts';
 const CACHE_REGISTRY = 'lib/scriptcache.ts';
 const DOMAIN_REGISTRY = 'lib/embed-referrer.ts';
+const TENANCY_REGISTRY = 'lib/tenancy.ts';
 const CLIENT_MODULE = 'lib/upstash.ts';
 
 // Identifier fragments that mark CONTENT (never allowed near counters or
@@ -97,13 +106,19 @@ export function scanText(file, text) {
       if (l.includes('UPSTASH_CACHE_REST')) {
         add('env-confinement', i + 1, `UPSTASH_CACHE_REST_* referenced outside ${CLIENT_MODULE}`);
       }
+      if (l.includes('UPSTASH_TENANCY_REST')) {
+        add('env-confinement', i + 1, `UPSTASH_TENANCY_REST_* referenced outside ${CLIENT_MODULE}`);
+      }
     });
   }
 
   // 2. client confinement: countersClient only in the two registries built
   //    on the counters database (rate-limit counters and domain
-  //    nominations), cacheClient only in the cache registry (plus their
-  //    definitions in the client module itself).
+  //    nominations), cacheClient only in the cache registry, tenancyClient
+  //    only in the tenancy registry (plus their definitions in the client
+  //    module itself). The Stripe webhook route must import functions FROM
+  //    lib/tenancy.ts, never touch tenancyClient() directly — mirrors how
+  //    app/api/script never touches cacheClient() directly.
   if (
     file !== CLIENT_MODULE &&
     file !== COUNTERS_REGISTRY &&
@@ -114,6 +129,9 @@ export function scanText(file, text) {
   }
   if (file !== CLIENT_MODULE && file !== CACHE_REGISTRY && /\bcacheClient\b/.test(text)) {
     add('client-confinement', 0, `cacheClient used outside ${CACHE_REGISTRY}`);
+  }
+  if (file !== CLIENT_MODULE && file !== TENANCY_REGISTRY && /\btenancyClient\b/.test(text)) {
+    add('client-confinement', 0, `tenancyClient used outside ${TENANCY_REGISTRY}`);
   }
 
   // 3. counters keys carry no content: inside the counters registry, no
@@ -161,6 +179,17 @@ export function scanText(file, text) {
           line,
           `raw referer/URL material "${expr.trim()}" interpolated in the domain-nomination registry`
         );
+      }
+    }
+  }
+
+  // 4c. tenancy keys carry no caller material (S18): tenant config is
+  //     institutional, not caller data, and must never blur into the
+  //     caller-keyed doctrine either — mirrors rule 4's cache-caller check.
+  if (file === TENANCY_REGISTRY) {
+    for (const { expr, line } of templateInterpolations(text)) {
+      if (CALLER_MATERIAL.test(expr)) {
+        add('tenancy-caller', line, `caller-derived material "${expr.trim()}" interpolated in the tenancy registry`);
       }
     }
   }
@@ -305,6 +334,30 @@ const SELF_TEST_FIXTURES = [
     text: "import { countersClient } from '@/lib/upstash';",
     rule: 'client-confinement',
   },
+  {
+    name: 'caller hash interpolated into a tenancy key',
+    file: TENANCY_REGISTRY,
+    text: 'const k = `${keyPrefix()}:tenant:${callerHash}`;',
+    rule: 'tenancy-caller',
+  },
+  {
+    name: 'caller IP interpolated into a tenancy key',
+    file: TENANCY_REGISTRY,
+    text: 'const k = `${keyPrefix()}:token:${ip}`;',
+    rule: 'tenancy-caller',
+  },
+  {
+    name: 'tenancy env var outside the client module',
+    file: 'app/api/stripe/webhook/route.ts',
+    text: 'const url = process.env.UPSTASH_TENANCY_REST_URL;',
+    rule: 'env-confinement',
+  },
+  {
+    name: 'tenancyClient used outside the tenancy registry (webhook route)',
+    file: 'app/api/stripe/webhook/route.ts',
+    text: "import { tenancyClient } from '@/lib/upstash';",
+    rule: 'client-confinement',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -324,6 +377,17 @@ const SELF_TEST_CLEAN = [
     // domain+day-only key builder produces zero violations.
     file: DOMAIN_REGISTRY,
     text: "import { countersClient } from './upstash';\nconst k = `${keyPrefix()}:embed-domain:${day}:${domain}`;",
+  },
+  {
+    // Proves tenancyClient is allowed in its own registry (rule 2 must not
+    // flag its own intended use), and that the real tenant/token/
+    // stripe-event key builders produce zero violations.
+    file: TENANCY_REGISTRY,
+    text:
+      "import { tenancyClient } from './upstash';\n" +
+      'const a = `${keyPrefix()}:tenant:${tenantId}`;\n' +
+      'const b = `${keyPrefix()}:token:${hash}`;\n' +
+      'const c = `${keyPrefix()}:stripe-event:${eventId}`;',
   },
 ];
 
