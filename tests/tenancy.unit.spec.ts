@@ -8,6 +8,7 @@ import {
   mintCapabilityToken,
   parseTenantRecord,
   provisionFromCheckout,
+  releaseStripeEventClaim,
   stripeEventKey,
   tenantKey,
   tokenHash,
@@ -140,6 +141,36 @@ test('claimStripeEvent: atomic SET NX EX 604800, duplicate delivery detected, un
   expect(await claimStripeEvent('evt_no_env')).toBe('unavailable');
 });
 
+test('releaseStripeEventClaim: a released claim can be re-claimed (not stuck as duplicate for the full 7d TTL)', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  expect(await claimStripeEvent('evt_release_1')).toBe('claimed');
+  expect(await claimStripeEvent('evt_release_1')).toBe('duplicate'); // still held
+
+  await releaseStripeEventClaim('evt_release_1');
+  expect(mock.store.has(stripeEventKey('evt_release_1'))).toBe(false);
+
+  // Re-claimable immediately after release - a genuine retry is treated as
+  // a fresh delivery, not stuck behind the original (failed) claim.
+  expect(await claimStripeEvent('evt_release_1')).toBe('claimed');
+});
+
+test('releaseStripeEventClaim: best-effort no-op when unconfigured or on an Upstash error (never throws)', async () => {
+  // Unconfigured: no env at all.
+  await expect(releaseStripeEventClaim('evt_no_env')).resolves.toBeUndefined();
+
+  // Configured but erroring: must swallow the error, not propagate it -
+  // the caller (the webhook route) is already mid-failure-response and
+  // must not itself crash trying to clean up after a failure.
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+  await expect(releaseStripeEventClaim('evt_erroring')).resolves.toBeUndefined();
+});
+
 test('provisionFromCheckout: new tenant mints a token that resolves via lookupTenantByToken', async () => {
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();
@@ -218,6 +249,54 @@ test('provisionFromCheckout: returning customer keeps the SAME token, updates ti
   expect(record.tokenHash).toBe(tokenHashBefore.slice('dev:token:'.length));
 });
 
+test('churn-then-resubscribe: a canceled tenant checking out again gets their SAME token working again (index restored, not just the record)', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  await provisionFromCheckout({
+    tenantId: 'cus_churn',
+    subscriptionId: 'sub_churn_1',
+    tier: 'pro',
+    orgName: 'Churning Org',
+    domainAllowlist: ['churn.example'],
+    subscriptionStatus: 'active',
+  });
+  const tokenKey = mock.keys().find((k) => k.startsWith('dev:token:'))!;
+  const originalHash = tokenKey.slice('dev:token:'.length);
+
+  // The plaintext token was never captured directly (only its hash is ever
+  // stored), so recover it is impossible by design - but we don't need the
+  // plaintext to prove reactivation: lookupTenantByToken hashes whatever
+  // it's given, so re-deriving via the SAME sha256 preimage isn't needed
+  // either. Instead, prove the index-level contract directly: the token
+  // key must exist, then not exist after cancellation, then exist again
+  // (same key, same hash) after resubscribing - which is exactly what a
+  // real customer's unchanged embed snippet depends on.
+  expect(await cancelSubscription('cus_churn')).toBe(true);
+  expect(mock.store.has(tokenKey), 'canceled: token index must be gone').toBe(false);
+
+  // Customer resubscribes - same Stripe customer id, a fresh subscription.
+  const ok = await provisionFromCheckout({
+    tenantId: 'cus_churn',
+    subscriptionId: 'sub_churn_2',
+    tier: 'pro',
+    orgName: 'Churning Org',
+    domainAllowlist: ['churn.example'],
+    subscriptionStatus: 'active',
+  });
+  expect(ok).toBe(true);
+
+  // The SAME token key (same hash - no new token minted) must resolve again.
+  expect(mock.store.has(tokenKey), 'resubscribed: the original token must work again, not stay dead').toBe(true);
+  expect(mock.store.get(tokenKey)!.value).toBe('cus_churn');
+
+  const record = parseTenantRecord(mock.store.get(tenantKey('cus_churn'))!.value)!;
+  expect(record.tokenHash, 'no new token was minted for reactivation').toBe(originalHash);
+  expect(record.subscriptionStatus).toBe('active');
+  expect(record.subscriptionId).toBe('sub_churn_2');
+});
+
 test('revocation within TTL: subscription.updated to past_due/canceled/unpaid deletes the token immediately; active/trialing keep it', async () => {
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();
@@ -248,6 +327,42 @@ test('revocation within TTL: subscription.updated to past_due/canceled/unpaid de
   // (We don't have the plaintext token here - re-provision to get a fresh
   // one and prove the *index* deletion is what lookupTenantByToken relies on.)
   expect(mock.store.has(tokenKey)).toBe(false);
+});
+
+test('dunning recovery: past_due -> active via subscription.updated ALONE (no new checkout) restores the revoked token', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  await provisionFromCheckout({
+    tenantId: 'cus_dunning',
+    subscriptionId: 'sub_dunning',
+    tier: 'pro',
+    orgName: 'Dunning Org',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+  });
+  const tokenKey = mock.keys().find((k) => k.startsWith('dev:token:'))!;
+
+  // A failed charge - Stripe's own retry schedule hasn't recovered it yet.
+  expect(await updateSubscriptionStatus('cus_dunning', 'past_due')).toBe(true);
+  expect(mock.store.has(tokenKey)).toBe(false);
+
+  // Stripe's automatic retry (dunning) succeeds: customer.subscription.updated
+  // fires with status='active' again. Critically, this is the ONLY event -
+  // no checkout.session.completed happens for a recovered existing
+  // subscription, so provisionFromCheckout is never called for this path.
+  expect(await updateSubscriptionStatus('cus_dunning', 'active')).toBe(true);
+  expect(mock.store.has(tokenKey), 'the customer is paying again - their original embed must work again').toBe(
+    true
+  );
+  expect(mock.store.get(tokenKey)!.value).toBe('cus_dunning');
+
+  const record = parseTenantRecord(mock.store.get(tenantKey('cus_dunning'))!.value)!;
+  expect(record.subscriptionStatus).toBe('active');
+  expect(record.tokenHash, 'no new token minted - restoring the index is enough').toBe(
+    tokenKey.slice('dev:token:'.length)
+  );
 });
 
 test('customer.subscription.deleted: unconditional cancel + token revoked, no-op if tenant never existed', async () => {

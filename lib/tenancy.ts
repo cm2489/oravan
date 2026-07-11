@@ -225,6 +225,34 @@ export async function claimStripeEvent(eventId: string): Promise<StripeEventClai
   }
 }
 
+/**
+ * Release a previously-successful claimStripeEvent claim. Callers use this
+ * ONLY when a claim was won ('claimed') but the actual processing that
+ * followed it failed (provisionFromCheckout/updateSubscriptionStatus/
+ * cancelSubscription returned false) — otherwise a transient Upstash hiccup
+ * on the processing write, landing in the split second after a successful
+ * claim write, would permanently swallow the event: the claim marker
+ * survives for its full 7-day TTL, so Stripe's own retry (which exists
+ * specifically to recover from exactly this kind of transient failure)
+ * would see 'duplicate' and return 200 without ever actually provisioning
+ * the paying customer.
+ *
+ * Best-effort: if the DEL itself fails (e.g. Upstash is still down), this
+ * silently does nothing more than log — there is no worse fallback than
+ * "the 7-day TTL eventually expires on its own", and the caller has already
+ * returned (or is about to return) a non-2xx response, so Stripe will keep
+ * retrying on its own schedule regardless.
+ */
+export async function releaseStripeEventClaim(eventId: string): Promise<void> {
+  const client = tenancyClient();
+  if (!client) return;
+  try {
+    await client.cmd(['DEL', stripeEventKey(eventId)]);
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+  }
+}
+
 // --- provisioning (checkout.session.completed) ------------------------------
 
 export interface ProvisionFromCheckoutInput {
@@ -239,10 +267,26 @@ export interface ProvisionFromCheckoutInput {
 /**
  * checkout.session.completed provisioning. If `tenant:<tenantId>` doesn't
  * yet exist, mints a new token and writes both keys. If it DOES exist (a
- * returning customer checking out again, e.g. an upgrade), updates
+ * returning customer checking out again, e.g. an upgrade — OR a churned
+ * customer resubscribing under the same Stripe customer id) updates
  * tier/domainAllowlist/orgName/subscriptionId/subscriptionStatus in place
- * and KEEPS the existing token unchanged — a live embed snippet must not
- * silently break on a plan change.
+ * and KEEPS the existing token's plaintext/hash unchanged — a live embed
+ * snippet must not silently break on a plan change.
+ *
+ * That "must not silently break" promise also has to cover reactivation:
+ * updateSubscriptionStatus's revocation path DELetes the `token:<hash>`
+ * reverse-index but deliberately leaves the tenant record's `tokenHash`
+ * field alone (see that function). So a resubscribing customer lands here
+ * with an existing tenant record whose token index may or may not still
+ * exist. The token-index SET below is therefore UNCONDITIONAL, not
+ * gated on "only for brand-new tenants" — cheap and idempotent when the
+ * index is already there (still-active customer, plan change), and the
+ * only thing that actually restores a paying customer's embed when it
+ * isn't (a churn-then-resubscribe cycle under the same customer id). No
+ * new token is minted for reactivation: the customer's original snippet
+ * still carries the one plaintext token that hashes to `existing.tokenHash`,
+ * so re-pointing that exact hash's index entry is sufficient and doesn't
+ * require ever knowing the plaintext again.
  *
  * Returns false only when the tenancy database itself is unconfigured or
  * unreachable (the caller decides the HTTP response from that).
@@ -264,6 +308,9 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
         subscriptionStatus: input.subscriptionStatus,
       };
       await client.cmd(['SET', key, JSON.stringify(updated)]);
+      // Restore/keep the reverse-index for the UNCHANGED token — see the
+      // doc comment above for why this must not be conditional.
+      await client.cmd(['SET', tokenIndexKey(existing.tokenHash), input.tenantId]);
       return true;
     }
 
@@ -297,12 +344,27 @@ const ACTIVE_STATUSES: SubscriptionStatus[] = ['active', 'trialing'];
 
 /**
  * customer.subscription.updated: map Stripe's status onto the tenant record.
- * active/trialing keep the token authorizing. Anything else (past_due,
- * unpaid, canceled, incomplete_expired, and any other Stripe status this
- * codebase doesn't enumerate) is treated as inactive — the status field is
- * updated and the token:<hash> reverse-index key is DELeted immediately
- * (a single-key atomic operation; there is no propagation delay to reason
- * about — revocation is effectively instantaneous at the storage layer).
+ * active/trialing keep (or RESTORE — see below) the token authorizing.
+ * Anything else (past_due, unpaid, canceled, incomplete_expired, and any
+ * other Stripe status this codebase doesn't enumerate) is treated as
+ * inactive — the status field is updated and the token:<hash> reverse-index
+ * key is DELeted immediately (a single-key atomic operation; there is no
+ * propagation delay to reason about — revocation is effectively
+ * instantaneous at the storage layer).
+ *
+ * REACTIVATION restores the same index entry (idempotent SET, not just a
+ * DEL's mirror image): Stripe's own payment-retry/dunning flow recovers a
+ * past_due subscription by emitting exactly this event with status='active'
+ * once a retried charge succeeds — no new checkout.session.completed fires
+ * for that recovery, so provisionFromCheckout is never in the picture. If
+ * this function only ever DELeted on the way out and never restored on the
+ * way back in, that (very common — it's Stripe's default dunning behavior)
+ * recovery path would leave a paying, active-status customer's embed
+ * permanently broken with no event left to fix it. tokenHash itself never
+ * changes here, so restoring is a re-SET of the same hash's index entry,
+ * not a new token mint — cheap and harmless when the index was never
+ * removed in the first place (the common case: no status change at all,
+ * or an active→trialing-style move that was never inactive to begin with).
  *
  * No-op (returns true) if no tenant record exists yet for this customer —
  * not this webhook's problem; nothing was ever provisioned, or it's already
@@ -324,7 +386,9 @@ export async function updateSubscriptionStatus(tenantId: string, rawStatus: stri
         : 'canceled'; // safe inactive default for any status this union doesn't enumerate
 
     await client.cmd(['SET', tenantKey(tenantId), JSON.stringify({ ...existing, subscriptionStatus: status })]);
-    if (!isActive) {
+    if (isActive) {
+      await client.cmd(['SET', tokenIndexKey(existing.tokenHash), tenantId]);
+    } else {
       await client.cmd(['DEL', tokenIndexKey(existing.tokenHash)]);
     }
     return true;

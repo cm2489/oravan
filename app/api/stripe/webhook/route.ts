@@ -6,7 +6,13 @@ import {
   parseStripeEvent,
   verifyStripeSignature,
 } from '@/lib/stripe-webhook';
-import { cancelSubscription, claimStripeEvent, provisionFromCheckout, updateSubscriptionStatus } from '@/lib/tenancy';
+import {
+  cancelSubscription,
+  claimStripeEvent,
+  provisionFromCheckout,
+  releaseStripeEventClaim,
+  updateSubscriptionStatus,
+} from '@/lib/tenancy';
 
 /*
  * Stripe webhook -> tenancy provisioning (S18). POST only (any other verb
@@ -119,7 +125,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Idempotency: atomic SET NX EX 7d claim before any processing. A
   // duplicate delivery (Stripe's own retries, or two near-simultaneous
-  // deliveries racing) returns 200 without reprocessing.
+  // deliveries racing) returns 200 without reprocessing. If processing
+  // itself then fails (see the `!ok` branch below), the claim is released
+  // so a genuine Stripe retry isn't told 'duplicate' against a failure it
+  // never actually recovered from.
   const claim = await claimStripeEvent(event.id);
   if (claim === 'unavailable') {
     return NextResponse.json({ error: 'unavailable' }, { status: 503 });
@@ -170,6 +179,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     default:
       break; // unhandled event type — acknowledged, nothing to do
+  }
+
+  // A claim was won above, but processing itself failed (a transient
+  // Upstash error on the write, not a bad request — we're past every
+  // parse/signature/replay guard by this point). Release the claim so
+  // Stripe's own retry can actually reprocess this event instead of being
+  // told 'duplicate' and giving up against a claim marker that outlives
+  // the failure by up to 7 days. See releaseStripeEventClaim's doc comment.
+  if (!ok) {
+    await releaseStripeEventClaim(event.id);
   }
 
   return NextResponse.json({ ok }, { status: ok ? 200 : 500 });

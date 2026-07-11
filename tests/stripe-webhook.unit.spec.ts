@@ -376,6 +376,65 @@ test('unhandled event type: acknowledged 200, no writes, no crash', async () => 
   expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
 });
 
+// --- idempotency claim vs. processing-failure interaction ------------------
+
+test('processing failure releases the idempotency claim so a genuine Stripe retry reprocesses instead of being told "duplicate"', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const payload = checkoutSessionCompletedPayload({ eventId: 'evt_release_test', customer: 'cus_release' });
+  const header = signPayload(TEST_SECRET, payload);
+
+  // Call #1 in this request is the idempotency claim (SET NX) - let it
+  // succeed. Call #2 is provisionFromCheckout's existing-tenant lookup
+  // (GET) - fail ONLY that one call, simulating a single transient Upstash
+  // blip landing in the split second after the claim write, not a
+  // sustained outage (which is already covered by the "tenancy database
+  // unconfigured" test above).
+  mock.failOnCallNumber = 2;
+  const first = await POST(stripeRequest(payload, header));
+  expect(first.status).toBe(500);
+  expect(await first.json()).toEqual({ ok: false });
+  // Nothing was actually provisioned.
+  expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
+
+  // Stripe's own retry redelivers the SAME event. If the claim from the
+  // failed first attempt were still standing, this would come back as a
+  // stale { ok: true, duplicate: true } and the customer would never
+  // actually get provisioned. It must instead be treated as a fresh
+  // delivery: full reprocessing, a real 200, and an actual tenant record.
+  const retry = await POST(stripeRequest(payload, header));
+  expect(retry.status, 'the claim must have been released - this is a fresh delivery, not a duplicate').toBe(200);
+  expect(await retry.json()).toEqual({ ok: true });
+
+  const record = parseTenantRecord(mock.store.get(tenantKey('cus_release'))!.value)!;
+  expect(record.tier).toBe('pro');
+  expect(record.subscriptionStatus).toBe('active');
+});
+
+test('successful processing does NOT release the claim - a genuine duplicate delivery still short-circuits', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const payload = checkoutSessionCompletedPayload({ eventId: 'evt_release_control', customer: 'cus_release_control' });
+  const header = signPayload(TEST_SECRET, payload);
+
+  const first = await POST(stripeRequest(payload, header));
+  expect(first.status).toBe(200);
+  expect(await first.json()).toEqual({ ok: true });
+
+  const second = await POST(stripeRequest(payload, header));
+  expect(second.status).toBe(200);
+  expect(await second.json(), 'a real duplicate of a SUCCESSFUL delivery must still short-circuit').toEqual({
+    ok: true,
+    duplicate: true,
+  });
+});
+
 // --- S18 changes nothing on existing routes ---------------------------------
 
 test('S18 pin: app/api/feedback is unaffected - X-Oravan-Key stays recognized-but-inert', async () => {
