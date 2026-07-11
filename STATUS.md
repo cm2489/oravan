@@ -5,7 +5,7 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 > **Milestone 2026-07-06: ungated backlog complete** — every sprint buildable without the rename or the Stripe decision is merged (S3–S7, S9–S11, S13–S17, S21-pregen, S22–S25 + riders; 25 PRs, 0 rollbacks, suite 164→772). Remaining: S1/S2/S8/S12 (rename-gated), S18–S20 (Stripe-gated), S21 feed/CLI/ToS (Stripe-gated).
-> Standing owner items (slow-moving; updated only via occasional docs PRs): 🔑 the NAME (gates S1/S2/S12/S8, noindex lift, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · pregen arming (PR #49 checklist, ~$3–4/mo) · Blob store for embed portraits (S15 checklist, ~cents/mo) · Stripe decision (unlocks S18–S20).
+> Standing owner items (slow-moving; updated only via occasional docs PRs): 🔑 the NAME (gates S1/S2/S12/S8, noindex lift, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · pregen arming (PR #49 checklist, ~$3–4/mo) · Blob store for embed portraits (S15 checklist, ~cents/mo) · Stripe decision (unlocks S18–S20) · 🍎 Apple MCP gateway watch (docs/ideation/2026-07-11-apple-mcp-gateway-flag.md — verify tools from Apple's MCP client when testable; join Apple's connector surface the week it opens).
 
 ## Sprint tracker
 
