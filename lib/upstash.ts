@@ -76,10 +76,26 @@ const REQUEST_TIMEOUT_MS = 2000;
 // not-authorized" — the log line's wording below is qualified per scope.
 const errorCounts = { counters: 0, cache: 0, tenancy: 0 };
 
-export function noteUpstashError(scope: 'counters' | 'cache' | 'tenancy', err: unknown): void {
+/**
+ * `consequenceOverride` (S20): every counters-database WRITE in this repo
+ * fails open to in-memory, so that's the right default wording for `scope:
+ * 'counters'`. lib/impressions.ts's READ path (readImpressionsWindow) is
+ * the one exception — it deliberately fails CLOSED (503, never a
+ * silently-degraded number from the per-instance in-memory fallback, which
+ * would badly undercount a serverless fleet's real total) — so it passes an
+ * accurate override rather than let this call claim "failing open" for a
+ * path that doesn't. Every other call site keeps the two-arg form
+ * unchanged.
+ */
+export function noteUpstashError(
+  scope: 'counters' | 'cache' | 'tenancy',
+  err: unknown,
+  consequenceOverride?: string
+): void {
   errorCounts[scope] += 1;
   const status = err instanceof UpstashRequestError ? err.status : 0;
-  const consequence = scope === 'tenancy' ? 'failing closed to not-authorized' : 'failing open to in-memory';
+  const consequence =
+    consequenceOverride ?? (scope === 'tenancy' ? 'failing closed to not-authorized' : 'failing open to in-memory');
   // Status code only — never bodies, never keys, never command args.
   console.error(
     `upstash ${scope}: request failed (status ${status}); ${consequence} (error #${errorCounts[scope]} this instance)`

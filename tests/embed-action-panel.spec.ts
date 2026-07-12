@@ -222,3 +222,28 @@ test('a11y basics: labeled ZIP input, 44px stance buttons, visible focus', async
   await zipInput.focus();
   await expect(zipInput).toBeFocused();
 });
+
+/*
+ * S20 (F6): the action panel's own impression count (after(() =>
+ * noteImpression(access.tenant.tenantId)) on the fully-authorized branch)
+ * must never affect this page's own rendering, whether the counters
+ * database is configured or not - the whole point of scheduling it via
+ * after(). tests/e2e-server.mjs deliberately keeps the counters database
+ * UNCONFIGURED for this whole suite (its own header comment), so this
+ * live-render test already exercises exactly that condition; the
+ * genuinely-erroring-vs-unconfigured distinction in the WRITE ITSELF is
+ * pinned separately at the unit level (tests/impressions.unit.spec.ts's
+ * MockUpstash.failWithNetworkError case) - see
+ * tests/embed-rep-lookup.spec.ts's matching S20 block for the full
+ * disclosure of why this e2e bootstrap isn't extended to fake an
+ * erroring counters backend too.
+ */
+test('S20: a fully-authorized live render is unaffected by the (unconfigured) counters database — same status, same content as every other live-render test above', async ({
+  page,
+}) => {
+  await mockScript(page);
+  const res = await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
+  expect(res?.status()).toBe(200);
+  await expect(page.getByRole('button', { name: en.bill.stance.support })).toBeVisible();
+  await expect(page.locator('a[href^="tel:"]')).toHaveCount(0); // pre-stance, same as the very first live test above
+});

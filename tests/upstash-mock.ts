@@ -1,10 +1,11 @@
 /*
  * In-process mock of the Upstash Redis REST surface, shared by the S11 unit
  * specs. Implements exactly the command subset lib/upstash.ts's callers use
- * (GET / SET [NX] [EX] / INCR / EXPIRE / TTL / DEL) over a Map, and installs
- * itself by swapping globalThis.fetch — the repo's established mocking
- * pattern (tests/feedback.unit.spec.ts). No live tokens exist anywhere in
- * the test environment, by design.
+ * (GET / SET [NX] [EX] / INCR / EXPIRE / TTL / DEL / MGET, the last added
+ * S20 for lib/impressions.ts's readImpressionsWindow) over a Map, and
+ * installs itself by swapping globalThis.fetch — the repo's established
+ * mocking pattern (tests/feedback.unit.spec.ts). No live tokens exist
+ * anywhere in the test environment, by design.
  *
  * Every command is recorded (`commands`) so privacy specs can assert over
  * everything that WOULD have crossed the wire, not just what got stored.
@@ -48,6 +49,8 @@ export class MockUpstash {
     switch (op) {
       case 'GET':
         return this.live(args[0])?.value ?? null;
+      case 'MGET':
+        return args.map((key) => this.live(key)?.value ?? null);
       case 'SET': {
         const [key, value, ...flags] = args;
         const nx = flags.includes('NX');

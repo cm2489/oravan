@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { after } from 'next/server';
 import { mirroredPortraitBioguides } from '@/lib/core';
 import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
+import { noteImpressionForToken } from '@/lib/impressions';
+import { callerIp } from '@/lib/ratelimit';
 import { RepLookupWidget } from '@/components/embed/RepLookupWidget';
 
 export async function generateMetadata({
@@ -27,6 +31,13 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
  * consistent with the rest of the API surface's "never a caller-originating
  * content identifier" posture. Everything else (results, errors, the
  * EN/ES toggle) is component state in RepLookupWidget - see that file.
+ *
+ * S20 (F6): an OPTIONAL `token` param. Absent -> byte-for-byte unchanged
+ * (no lookup, no write, nothing new touches the request). Present -> a
+ * background, non-blocking impression count for the resolved tenant, scheduled
+ * via after() so it can never affect this page's own rendering either way
+ * (a bad/invalid/revoked token silently no-ops the count, never a new
+ * paywall) - see lib/impressions.ts for the full mechanism.
  */
 export default async function RepLookupEmbedPage({
   searchParams,
@@ -34,6 +45,7 @@ export default async function RepLookupEmbedPage({
   searchParams: Promise<{
     locale?: string;
     zip?: string;
+    token?: string;
     accent?: string;
     radius?: string;
     font?: string;
@@ -41,9 +53,14 @@ export default async function RepLookupEmbedPage({
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, zip, accent, radius, font, brandless, attribution } = await searchParams;
+  const { locale: localeParam, zip, token, accent, radius, font, brandless, attribution } = await searchParams;
   const locale = normalizeLocale(localeParam);
   const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
+
+  if (token) {
+    const ip = callerIp(await headers());
+    after(() => noteImpressionForToken(token, ip));
+  }
 
   return (
     <RepLookupWidget

@@ -12,7 +12,8 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *   <env>:rl:<route>:<caller-hash>    one fixed-window counter per caller
  *   <env>:rl:<route>:<tenant-id>      one fixed-window counter per TENANT
  *                                      (S19, §2 — route is 'embed-script'/
- *                                      'embed-script-day' only; tenantId is
+ *                                      'embed-script-day'; S20 adds
+ *                                      'tenant-impressions-read'. tenantId is
  *                                      used RAW, never hashed — see
  *                                      createTenantRateLimiter's own doc
  *                                      comment for why that's the right call
@@ -51,6 +52,14 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * pattern invented. They are written by createTenantRateLimiter below, never
  * by createRateLimiter — a tenant-keyed counter and a caller-hash-keyed one
  * never share a route label.
+ *
+ * S20 adds three: 'embed-impression-token' is a per-IP (createRateLimiter)
+ * cap around the tenancy-database lookup that a token param on rep-lookup/
+ * bill-card now triggers — cost-containment only (a garbage token is never
+ * a security concern, just a free-to-trigger Upstash GET), never a render
+ * gate. 'tenant-impressions' (per-IP) and 'tenant-impressions-read'
+ * (per-tenant, createTenantRateLimiter) are GET /api/tenant/impressions's
+ * own two-limiter gate, composed the same order as /api/script's.
  */
 export type RouteName =
   | 'script'
@@ -59,7 +68,10 @@ export type RouteName =
   | 'mcp-min'
   | 'mcp-day'
   | 'embed-script'
-  | 'embed-script-day';
+  | 'embed-script-day'
+  | 'embed-impression-token'
+  | 'tenant-impressions'
+  | 'tenant-impressions-read';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
