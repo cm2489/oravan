@@ -11,7 +11,7 @@ import { getAllBills } from '../lib/core';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 12; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/partners', '/mcp'
+const STATIC_PATH_COUNT = 13; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
@@ -80,5 +80,12 @@ test.describe('llms.txt', () => {
     expect(body).toContain(`${SITE_ORIGIN}/mcp`);
     expect(body).toContain(`${SITE_ORIGIN}/api/mcp/mcp`);
     expect(body).toMatch(/MCP/);
+  });
+
+  test('S21: names the free "what moved" feed, both formats', async ({ request }) => {
+    const res = await request.get('/llms.txt');
+    const body = await res.text();
+    expect(body).toContain(`${SITE_ORIGIN}/feed/whats-moving.json`);
+    expect(body).toContain(`${SITE_ORIGIN}/feed/whats-moving.xml`);
   });
 });

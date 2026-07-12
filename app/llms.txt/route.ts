@@ -45,6 +45,7 @@ Oravan publishes a plain-language, AI-drafted and human-reviewed decoded summary
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 - [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed
 - [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
+- "What moved this week" feed: ${SITE_ORIGIN}/feed/whats-moving.json (JSON) and ${SITE_ORIGIN}/feed/whats-moving.xml (RSS 2.0) — free, keyless, updated nightly; active bills that cleared the "act now" urgency bar in the last 7 days, same pool as the homepage. No account or token required.
 
 ## Spanish
 
