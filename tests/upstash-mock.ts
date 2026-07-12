@@ -19,6 +19,18 @@ export class MockUpstash {
   failWithStatus: number | null = null;
   /** When true, every request throws (network-failure path). */
   failWithNetworkError = false;
+  /**
+   * When set, ONLY the call at this 1-indexed attempt number fails (a
+   * generic 500) — every other call, before or after, behaves normally.
+   * Simulates a single transient blip in the middle of a multi-call
+   * request (e.g. an idempotency claim that succeeds followed by a
+   * processing write that doesn't), which failWithStatus/
+   * failWithNetworkError can't express since both fail every call from the
+   * start. Unset (null, default): no effect on any existing test.
+   */
+  failOnCallNumber: number | null = null;
+  /** Total calls attempted against this mock (successful or failed). */
+  callsAttempted = 0;
 
   private live(key: string): Entry | undefined {
     const entry = this.store.get(key);
@@ -85,6 +97,7 @@ export class MockUpstash {
 
 export const COUNTERS_URL = 'https://counters.mock.test';
 export const CACHE_URL = 'https://cache.mock.test';
+export const TENANCY_URL = 'https://tenancy.mock.test';
 
 /**
  * Swap globalThis.fetch for one that serves the given mocks by URL prefix
@@ -100,9 +113,13 @@ export function installUpstashFetch(
     const url = String(input instanceof Request ? input.url : input);
     for (const [base, mock] of Object.entries(mocks)) {
       if (!url.startsWith(base)) continue;
+      mock.callsAttempted += 1;
       if (mock.failWithNetworkError) throw new TypeError('mock network failure');
       if (mock.failWithStatus !== null) {
         return new Response('mock upstream error', { status: mock.failWithStatus });
+      }
+      if (mock.callsAttempted === mock.failOnCallNumber) {
+        return new Response('mock upstream error (induced single-call failure)', { status: 500 });
       }
       const command = JSON.parse(String(init?.body)) as string[];
       return new Response(JSON.stringify({ result: mock.exec(command) }), {
@@ -118,16 +135,20 @@ export function installUpstashFetch(
   };
 }
 
-/** Set both databases' env vars at the mock URLs; returns a cleanup fn. */
+/** Set all three databases' env vars at the mock URLs; returns a cleanup fn. */
 export function setUpstashEnv(): () => void {
   process.env.UPSTASH_COUNTERS_REST_URL = COUNTERS_URL;
   process.env.UPSTASH_COUNTERS_REST_TOKEN = 'test-counters-token';
   process.env.UPSTASH_CACHE_REST_URL = CACHE_URL;
   process.env.UPSTASH_CACHE_REST_TOKEN = 'test-cache-token';
+  process.env.UPSTASH_TENANCY_REST_URL = TENANCY_URL;
+  process.env.UPSTASH_TENANCY_REST_TOKEN = 'test-tenancy-token';
   return () => {
     delete process.env.UPSTASH_COUNTERS_REST_URL;
     delete process.env.UPSTASH_COUNTERS_REST_TOKEN;
     delete process.env.UPSTASH_CACHE_REST_URL;
     delete process.env.UPSTASH_CACHE_REST_TOKEN;
+    delete process.env.UPSTASH_TENANCY_REST_URL;
+    delete process.env.UPSTASH_TENANCY_REST_TOKEN;
   };
 }

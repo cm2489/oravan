@@ -122,6 +122,10 @@ test.describe(
       mcp: '/api/mcp/mcp',
       reps: '/api/reps?zip=78501',
       script: '/api/script',
+      // S18: POST-only (Stripe webhook). A GET here 405s (no STRIPE_WEBHOOK_SECRET
+      // in the test env either, so it'd 503 even on POST) - either way this proves
+      // the site-wide frame-ancestors block still applies on a non-2xx response.
+      stripe: '/api/stripe/webhook',
     };
     const EMBED_ROUTES: Record<string, string> = {
       'rep-lookup': '/embed/rep-lookup?locale=en',
