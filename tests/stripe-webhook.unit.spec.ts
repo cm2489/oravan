@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 // deps - this route has no such dependency, so it's driven directly).
 import { POST, __resetStripeWebhookLogForTests } from '../app/api/stripe/webhook/route';
 import { POST as feedbackPost } from '../app/api/feedback/route';
-import { verifyStripeSignature } from '../lib/stripe-webhook';
+import { extractCheckoutSession, verifyStripeSignature } from '../lib/stripe-webhook';
 import { parseTenantRecord, tenantKey } from '../lib/tenancy';
 import { MockUpstash, TENANCY_URL, installUpstashFetch, setUpstashEnv } from './upstash-mock';
 
@@ -75,6 +75,8 @@ function checkoutSessionCompletedPayload(
     tier?: string | null;
     domain?: string | null;
     orgName?: string | null;
+    /** S19: 'accepted' mirrors Stripe's real consent_collection payload shape; omit for no consent data at all. */
+    consentTos?: 'accepted' | string;
   } = {}
 ): string {
   const {
@@ -85,6 +87,7 @@ function checkoutSessionCompletedPayload(
     tier = 'pro',
     domain = 'example.org',
     orgName = 'Example Org',
+    consentTos,
   } = overrides;
   const customFields: Array<{ key: string; type: string; text: { value: string } }> = [];
   if (domain !== null) customFields.push({ key: 'domain', type: 'text', text: { value: domain } });
@@ -99,6 +102,7 @@ function checkoutSessionCompletedPayload(
         subscription,
         metadata: tier !== null ? { tier } : {},
         custom_fields: customFields,
+        ...(consentTos !== undefined ? { consent: { terms_of_service: consentTos } } : {}),
       },
     },
   });
@@ -163,6 +167,28 @@ test('verifyStripeSignature: replay tolerance is exact at the 300s boundary (Str
   expect(verifyStripeSignature(payload, signPayload(TEST_SECRET, payload, now + 301), TEST_SECRET, 300, now)).toBe(
     false
   );
+});
+
+// --- S19: extractCheckoutSession's tosAcceptedAt field ----------------------
+
+test('extractCheckoutSession: consent.terms_of_service="accepted" -> tosAcceptedAt is the injected "now", never invented from nothing', () => {
+  const raw = JSON.parse(checkoutSessionCompletedPayload({ consentTos: 'accepted' })) as unknown;
+  const fixedNow = () => '2026-07-12T00:00:00.000Z';
+  const session = extractCheckoutSession(raw, fixedNow);
+  expect(session?.tosAcceptedAt).toBe('2026-07-12T00:00:00.000Z');
+});
+
+test('extractCheckoutSession: no consent object at all -> tosAcceptedAt is null, not a default timestamp', () => {
+  const raw = JSON.parse(checkoutSessionCompletedPayload({})) as unknown;
+  const session = extractCheckoutSession(raw);
+  expect(session?.tosAcceptedAt).toBeNull();
+});
+
+test('extractCheckoutSession: consent present but terms_of_service is anything other than "accepted" -> null', () => {
+  for (const value of ['pending', '', 'declined']) {
+    const raw = JSON.parse(checkoutSessionCompletedPayload({ consentTos: value })) as unknown;
+    expect(extractCheckoutSession(raw)?.tosAcceptedAt, `consentTos="${value}"`).toBeNull();
+  }
 });
 
 // --- dark-ship posture (unset secret) ---------------------------------------
@@ -293,6 +319,75 @@ test('checkout.session.completed: provisions a new tenant, normalizes the domain
   expect(record.subscriptionStatus).toBe('active');
   expect(record.attribution, 'self-serve checkout never grants attribution removal').toBe('required');
   expect(mock.keys().filter((k) => k.startsWith('dev:token:'))).toHaveLength(1);
+});
+
+test('checkout.session.completed (S19): consent acceptance threads through into tosAcceptedAt on the provisioned record', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const payload = checkoutSessionCompletedPayload({
+    eventId: 'evt_tos_1',
+    customer: 'cus_tos_route',
+    subscription: 'sub_tos_route',
+    consentTos: 'accepted',
+  });
+  const res = await POST(stripeRequest(payload, signPayload(TEST_SECRET, payload)));
+  expect(res.status).toBe(200);
+
+  const record = parseTenantRecord(mock.store.get(tenantKey('cus_tos_route'))!.value)!;
+  expect(record.tosAcceptedAt, 'consent_collection acceptance on this exact event must set it').toBeDefined();
+});
+
+test('checkout.session.completed (S19): no consent data on this event leaves tosAcceptedAt unset, never defaulted', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const payload = checkoutSessionCompletedPayload({
+    eventId: 'evt_no_tos_1',
+    customer: 'cus_no_tos_route',
+    subscription: 'sub_no_tos_route',
+    // consentTos omitted - the owner hasn't configured consent_collection yet.
+  });
+  const res = await POST(stripeRequest(payload, signPayload(TEST_SECRET, payload)));
+  expect(res.status).toBe(200);
+
+  const record = parseTenantRecord(mock.store.get(tenantKey('cus_no_tos_route'))!.value)!;
+  expect(record.tosAcceptedAt).toBeUndefined();
+});
+
+test('checkout.session.completed (S19): a later plan-change checkout with no consent data never clears an already-accepted ToS', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const first = checkoutSessionCompletedPayload({
+    eventId: 'evt_tos_preserve_1',
+    customer: 'cus_tos_preserve',
+    subscription: 'sub_a',
+    tier: 'pro',
+    consentTos: 'accepted',
+  });
+  await POST(stripeRequest(first, signPayload(TEST_SECRET, first)));
+  const accepted = parseTenantRecord(mock.store.get(tenantKey('cus_tos_preserve'))!.value)!.tosAcceptedAt;
+  expect(accepted).toBeDefined();
+
+  const second = checkoutSessionCompletedPayload({
+    eventId: 'evt_tos_preserve_2',
+    customer: 'cus_tos_preserve',
+    subscription: 'sub_b',
+    tier: 'nonprofit', // a plan change - no consent data on THIS event
+  });
+  const res = await POST(stripeRequest(second, signPayload(TEST_SECRET, second)));
+  expect(res.status).toBe(200);
+
+  const afterPlanChange = parseTenantRecord(mock.store.get(tenantKey('cus_tos_preserve'))!.value)!;
+  expect(afterPlanChange.tosAcceptedAt, 'a plan change must never regress ToS set -> unset').toBe(accepted);
+  expect(afterPlanChange.tier).toBe('nonprofit');
 });
 
 test('checkout.session.completed guard: non-subscription mode is a silent no-op (200, zero writes)', async () => {

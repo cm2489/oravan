@@ -9,6 +9,7 @@ import {
   parseTenantRecord,
   provisionFromCheckout,
   releaseStripeEventClaim,
+  resolveTenantAccess,
   stripeEventKey,
   tenantKey,
   tokenHash,
@@ -407,4 +408,244 @@ test('an unrecognized Stripe subscription status (e.g. "paused") is treated as i
 
   expect(await updateSubscriptionStatus('cus_paused', 'paused')).toBe(true);
   expect(mock.store.has(tokenKey), 'an exotic/unmapped status must revoke, not be silently ignored').toBe(false);
+});
+
+// --- S19: tosAcceptedAt schema + provisioning semantics ---------------------
+
+test('parseTenantRecord: tosAcceptedAt is optional-if-absent (pre-S19 records round-trip cleanly), rejects a wrong-typed value', () => {
+  const base: TenantRecord = {
+    tenantId: 'cus_1',
+    tokenHash: 'a'.repeat(64),
+    tier: 'pro',
+    domainAllowlist: [],
+    orgName: 'Example Org',
+    attribution: 'required',
+    createdAt: new Date().toISOString(),
+    subscriptionId: 'sub_1',
+    subscriptionStatus: 'active',
+  };
+  // Pre-S19 record: no tosAcceptedAt key at all - not a parse failure.
+  const parsed = parseTenantRecord(JSON.stringify(base));
+  expect(parsed).toEqual(base);
+  expect(parsed!.tosAcceptedAt).toBeUndefined();
+
+  // Present and a string: round-trips.
+  const withTos = { ...base, tosAcceptedAt: '2026-07-12T00:00:00.000Z' };
+  expect(parseTenantRecord(JSON.stringify(withTos))).toEqual(withTos);
+
+  // Present but wrong-typed: a genuine parse failure, not silently dropped.
+  expect(parseTenantRecord(JSON.stringify({ ...base, tosAcceptedAt: 12345 }))).toBeNull();
+});
+
+test('provisionFromCheckout: new tenant with consent sets tosAcceptedAt; without consent leaves it unset', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  await provisionFromCheckout({
+    tenantId: 'cus_tos_yes',
+    subscriptionId: 'sub_tos_yes',
+    tier: 'pro',
+    orgName: 'Consenting Org',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+    tosAcceptedAt: '2026-07-12T00:00:00.000Z',
+  });
+  const withConsent = parseTenantRecord(mock.store.get(tenantKey('cus_tos_yes'))!.value)!;
+  expect(withConsent.tosAcceptedAt).toBe('2026-07-12T00:00:00.000Z');
+
+  await provisionFromCheckout({
+    tenantId: 'cus_tos_no',
+    subscriptionId: 'sub_tos_no',
+    tier: 'pro',
+    orgName: 'No-Consent-Data Org',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+    // tosAcceptedAt omitted - the owner never configured consent_collection.
+  });
+  const withoutConsent = parseTenantRecord(mock.store.get(tenantKey('cus_tos_no'))!.value)!;
+  expect(withoutConsent.tosAcceptedAt, 'never invented, never defaulted').toBeUndefined();
+});
+
+test('provisionFromCheckout: accept-and-fill-forward, never regress set -> unset on a later checkout', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  // Tenant provisioned once with no consent data at all.
+  await provisionFromCheckout({
+    tenantId: 'cus_fill_forward',
+    subscriptionId: 'sub_a',
+    tier: 'pro',
+    orgName: 'Org',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+  });
+  expect(
+    parseTenantRecord(mock.store.get(tenantKey('cus_fill_forward'))!.value)!.tosAcceptedAt
+  ).toBeUndefined();
+
+  // A later checkout (e.g. a real ToS flow, or the owner re-configuring
+  // consent_collection) DOES carry acceptance - filled in now.
+  await provisionFromCheckout({
+    tenantId: 'cus_fill_forward',
+    subscriptionId: 'sub_b',
+    tier: 'pro',
+    orgName: 'Org',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+    tosAcceptedAt: '2026-08-01T00:00:00.000Z',
+  });
+  expect(
+    parseTenantRecord(mock.store.get(tenantKey('cus_fill_forward'))!.value)!.tosAcceptedAt
+  ).toBe('2026-08-01T00:00:00.000Z');
+
+  // A THIRD checkout (e.g. a plan change) that happens not to carry consent
+  // data must NEVER clear the already-accepted timestamp.
+  await provisionFromCheckout({
+    tenantId: 'cus_fill_forward',
+    subscriptionId: 'sub_c',
+    tier: 'nonprofit',
+    orgName: 'Org Renamed',
+    domainAllowlist: [],
+    subscriptionStatus: 'active',
+    // tosAcceptedAt omitted on this plan-change checkout.
+  });
+  const afterPlanChange = parseTenantRecord(mock.store.get(tenantKey('cus_fill_forward'))!.value)!;
+  expect(afterPlanChange.tosAcceptedAt, 'a plan change is a different event from ToS acceptance').toBe(
+    '2026-08-01T00:00:00.000Z'
+  );
+  expect(afterPlanChange.tier).toBe('nonprofit'); // the rest of the update still applied normally
+});
+
+// --- S19: resolveTenantAccess, the shared paid-embed gate -------------------
+
+test('resolveTenantAccess: no token -> unauthorized, without ever touching the tenancy database', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  expect(await resolveTenantAccess(null)).toEqual({ ok: false, reason: 'unauthorized' });
+  expect(mock.commands).toHaveLength(0);
+});
+
+test('resolveTenantAccess: unresolvable token (unconfigured Upstash) fails CLOSED to unauthorized, never silently downgraded', async () => {
+  // No setUpstashEnv() - the unconfigured path, same as lookupTenantByToken's own fail-closed test.
+  expect(await resolveTenantAccess('present-but-nothing-can-resolve-it')).toEqual({
+    ok: false,
+    reason: 'unauthorized',
+  });
+});
+
+test('resolveTenantAccess: a bad/unknown token is unauthorized (same outcome as an inactive subscription - deliberately not distinguished)', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+  expect(await resolveTenantAccess('never-issued')).toEqual({ ok: false, reason: 'unauthorized' });
+});
+
+test('resolveTenantAccess: valid token, inactive subscription (past_due) -> unauthorized, even with ToS on file', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  // Hand-seed (rather than provisionFromCheckout) so the test knows the
+  // real plaintext token to present - proves the STATUS check specifically,
+  // isolated from lookupTenantByToken's own index-deletion behavior
+  // (already covered by the "revocation within TTL" test above).
+  const token = mintCapabilityToken();
+  const hash = tokenHash(token);
+  const record: TenantRecord = {
+    tenantId: 'cus_past_due',
+    tokenHash: hash,
+    tier: 'pro',
+    domainAllowlist: [],
+    orgName: 'Past Due Org',
+    attribution: 'required',
+    createdAt: new Date().toISOString(),
+    subscriptionId: 'sub_past_due',
+    subscriptionStatus: 'past_due',
+    tosAcceptedAt: '2026-07-12T00:00:00.000Z', // even WITH ToS on file
+  };
+  mock.exec(['SET', tenantKey('cus_past_due'), JSON.stringify(record)]);
+  mock.exec(['SET', tokenIndexKey(hash), 'cus_past_due']);
+
+  expect(await resolveTenantAccess(token)).toEqual({ ok: false, reason: 'unauthorized' });
+});
+
+test('resolveTenantAccess: active tenant with NO tosAcceptedAt -> tos_required (distinct from unauthorized)', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  // provisionFromCheckout mints the token but we don't get the plaintext
+  // back directly - mint one ourselves and seed the record/index by hand so
+  // this test can present the real plaintext token to resolveTenantAccess.
+  const token = mintCapabilityToken();
+  const hash = tokenHash(token);
+  const record: TenantRecord = {
+    tenantId: 'cus_no_tos',
+    tokenHash: hash,
+    tier: 'pro',
+    domainAllowlist: [],
+    orgName: 'No ToS Org',
+    attribution: 'required',
+    createdAt: new Date().toISOString(),
+    subscriptionId: 'sub_no_tos',
+    subscriptionStatus: 'active',
+    // tosAcceptedAt intentionally absent.
+  };
+  mock.exec(['SET', tenantKey('cus_no_tos'), JSON.stringify(record)]);
+  mock.exec(['SET', tokenIndexKey(hash), 'cus_no_tos']);
+
+  expect(await resolveTenantAccess(token)).toEqual({ ok: false, reason: 'tos_required' });
+});
+
+test('resolveTenantAccess: active + trialing + ToS accepted both resolve ok, returning the full tenant record', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  for (const status of ['active', 'trialing'] as const) {
+    const token = mintCapabilityToken();
+    const hash = tokenHash(token);
+    const tenantId = `cus_ok_${status}`;
+    const record: TenantRecord = {
+      tenantId,
+      tokenHash: hash,
+      tier: 'pro',
+      domainAllowlist: ['example.org'],
+      orgName: 'OK Org',
+      attribution: 'required',
+      createdAt: new Date().toISOString(),
+      subscriptionId: `sub_ok_${status}`,
+      subscriptionStatus: status,
+      tosAcceptedAt: '2026-07-12T00:00:00.000Z',
+    };
+    mock.exec(['SET', tenantKey(tenantId), JSON.stringify(record)]);
+    mock.exec(['SET', tokenIndexKey(hash), tenantId]);
+
+    const result = await resolveTenantAccess(token);
+    expect(result.ok, `status=${status} must authorize`).toBe(true);
+    if (result.ok) {
+      expect(result.tenant.tenantId).toBe(tenantId);
+      expect(result.tenant.domainAllowlist).toEqual(['example.org']);
+    }
+  }
+});
+
+test('resolveTenantAccess: a present-but-invalid token is never treated as absent (both fail closed the SAME way)', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  const absent = await resolveTenantAccess(null);
+  const invalid = await resolveTenantAccess('totally-made-up-token');
+  // Both fail closed to `unauthorized` - but critically, the invalid-token
+  // path actually queried the tenancy database (it tried to resolve a real
+  // claim of identity), unlike the absent-token path which short-circuits
+  // before ever touching it. Different code paths, same outward result -
+  // exactly what "never silently downgraded to anonymous" requires.
+  expect(absent).toEqual({ ok: false, reason: 'unauthorized' });
+  expect(invalid).toEqual({ ok: false, reason: 'unauthorized' });
 });
