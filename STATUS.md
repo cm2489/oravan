@@ -5,7 +5,7 @@
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.
 > Strategy of record: `docs/ideation/2026-07-05-build-gtm-strategy.md` (approved 2026-07-05).
 > **Milestone 2026-07-06: ungated backlog complete** — every sprint buildable without the rename or the Stripe decision is merged (S3–S7, S9–S11, S13–S17, S21-pregen, S22–S25 + riders; 25 PRs, 0 rollbacks, suite 164→772). Remaining: S1/S2/S8/S12 (rename-gated), S18–S20 (Stripe-gated), S21 feed/CLI/ToS (Stripe-gated).
-> Standing owner items (slow-moving; updated only via occasional docs PRs): 🔑 the NAME (gates S1/S2/S12/S8, noindex lift, press kit — critical path for the Sept 30 GTM calendar; needed ~mid-Aug) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · pregen arming (PR #49 checklist, ~$3–4/mo) · Blob store for embed portraits (S15 checklist, ~cents/mo) · Stripe decision (unlocks S18–S20) · 🍎 Apple MCP gateway watch (docs/ideation/2026-07-11-apple-mcp-gateway-flag.md — verify tools from Apple's MCP client when testable; join Apple's connector surface the week it opens).
+> Standing owner items (slow-moving; updated only via occasional docs PRs): 🔑 the NAME — **resolved, rename landed 2026-07** (no longer gates S1/S2/S12/S8) · HCB application (donation page + grants) · ES-reviewer recruiting (start by Aug 17) · pregen arming (PR #49 checklist, ~$3–4/mo) — **armed 2026-07-11 pending owner secrets** · Blob store for embed portraits (S15 checklist, ~cents/mo) — **armed 2026-07-11 pending owner secrets** · Stripe decision (unlocks S18–S20) — **made 2026-07-11 — S18 build started** · 🍎 Apple MCP gateway watch (docs/ideation/2026-07-11-apple-mcp-gateway-flag.md — verify tools from Apple's MCP client when testable; join Apple's connector surface the week it opens).
 
 ## Sprint tracker
 
@@ -17,14 +17,14 @@ Pre-sprint features (approved verdicts, shipped Jul 4, all verified in productio
 - [x] Walkthrough integration — PR #31 · homepage + bill disclosure, press webm rider
 
 Numbered sprints (S1–S25 per strategy §1.3; resequenced 2026-07-05 under rename-only-gate ruling):
-- [ ] S1 — Rename/noindex-lift, technical — **RENAME-GATED** (SITE_ORIGIN constant + sitemap/robots/hreflang substrate already built via #27/#39; remaining: noindex lift + domain confirmation, fires within days of christening)
-- [ ] S2 — Identity finish — **RENAME-GATED**
+- [x] S1 — Rename/noindex-lift, technical — superseded/completed by the Oravan migration track (mig S0–S8, PRs #54–#69: rename swept #57, identity/brand #55/#56/#70, noindex lifted + soft-public launch #68, decisions log #69) — see `docs/migration/decisions.md`
+- [x] S2 — Identity finish — superseded/completed by the Oravan migration track (mig S0–S8, PRs #54–#69: rename swept #57, identity/brand #55/#56/#70, noindex lifted + soft-public launch #68, decisions log #69) — see `docs/migration/decisions.md`
 - [x] S3 — Freshness stamp + urgency floor — PR #35, merged Jul 5 · *Issues:* none in-sprint; agent's own review caught a P1 hydration mismatch + a homepage/bills quiet-week contradiction pre-open
 - [x] S4 — Homepage funnel (combined w/ S5) — PR #38, merged Jul 6 · *Issues:* merge-ref E2E failure post-#36/#37 → root cause was a **latent ZipForm hydration race on main** (input events not replayed post-hydration; valid ZIP rejected from stale state). Product fix (FormData live read). CI flake was a real slow-device user bug. → docs/solutions candidate
 - [x] S5 — Donation surfaces — PR #38 (same) · built dark behind `DONATE_URL = null`; lights up when HCB lands
 - [x] S6 — Spanish paired-script last mile — PR #33, merged Jul 5 · *Issues:* parity was already 304/304 — sprint honestly re-scoped to ES test coverage + 2 copy nits. Agent initially self-paused on stale premises (didn't fetch; didn't know rename-only ruling) → briefs now carry the ruling inline
 - [x] S7 — Call-moment slice — PR #36, merged Jul 6 · pre-dial beat for all callers, voicemail never-apologize (test-enforced); night screen deferred per first-cut rule. *Issues:* agent briefly ran git commands in the main checkout (disclosed, restored; left package-file residue we cleaned) → "never cd into main checkout" rule added
-- [ ] S8 — Buffer + LAUNCH gate (calendar-anchored ~Aug 25; needs rename landed)
+- [x] S8 — Buffer + LAUNCH gate — superseded/completed by the Oravan migration track (mig S0–S8, PRs #54–#69: rename swept #57, identity/brand #55/#56/#70, noindex lifted + soft-public launch #68, decisions log #69) — see `docs/migration/decisions.md`
 - [x] S9 — Data core + MCP scaffold — PR #34, merged Jul 5 · *Issues:* merge conflicts vs #35 (moved the functions #35 modified) → resolved by rebase agent, "location follows branch, content follows main"; #35 logic verified function-by-function into `lib/core/`
 - [x] S10 — Five MCP tools + envelope — PR #37, merged Jul 6 · ZIP-only lookup w/ refine_hint (privacy-conservative cut); quiet-week tested on real corpus; PW_PORT rider ended the port-race class. Lockfile name-sync accepted here (ends 4-agent churn class)
 - [x] S11 — Upstash two-DB rate limiting + CI privacy gate — PR #43, merged Jul 6 · plain-fetch clients (no SDK), salt 128-bit/24h w/ nightly dead-man's-switch, cache keys gain content-version hash, graceful in-memory fallback, self-testing key-namespace CI gate. *Issues:* agent initially refused on unverifiable authorization (docs were untracked — fixed by #41) + correctly declined nested CLAUDE.md edit (amendment orchestrator-authored instead). *Owner post-merge:* add the two counter secrets to GitHub Actions so the salt verifier arms (PR checklist)
@@ -56,6 +56,13 @@ Off-plan riders (pulled forward, rename-independent):
 - 2026-07-05: "I'm concerned" stance KEPT (cost analysis: savings are cents; it's the undecided on-ramp).
 - 2026-07-05: Lockfile package-name sync (pre-migration naming) accepted via #37 (ends recurring churn; rename PR loses one line item).
 - 2026-07-05: Full-speed subagents (no CPU throttling) — Colby watches and flags.
+- 2026-07-11: Folder consolidation — local working folder is now `~/Projects/oravan`; predecessor builds archived (public build-#1 repo; build-#2 archived at `cm2489/oravan-brand-v1`).
+- 2026-07-11: Calibration fork 1 (revenue goal) answered — sustainable solo income, $3–10k/mo target; the Feb 2027 decision gate measures against this bar.
+- 2026-07-11: Calibration fork 2 (advocacy-customer posture) — already resolved structurally 2026-07-02: neutral utilities, no capture mechanics for anyone (`docs/ideation/2026-07-02-monetization-strategy.md` §2.1). Recorded here for completeness, not reopened.
+- 2026-07-11: Calibration fork 3 (launch timing) answered — dated public launch pledge: announcement lands in the government-funding-fight window (proposed Tue Sep 22, 2026), public target of 1,000 calls by Nov 3; pledge text drafted, owner posts.
+- 2026-07-11: Stripe decision — GO. S18–S21 build starts 2026-07-11; pricing per `docs/ideation/2026-07-02-embeds-spec.md` §4 ladder ($29/mo or $290/yr Pro, $15/mo or $150/yr nonprofit, network hand-negotiated). Stripe is the institutional-embeds rail only; HCB is the citizen-donations rail; the two are never conflated.
+- 2026-07-11: S12 ruling — quiet-submit now (registry + directory submissions run this week; review/listing latency burns down while unannounced), the public announcement itself still holds for the late Aug–Sep window.
+- 2026-07-11: Pregen + Blob portraits — both armed, pending owner secrets (~$2.50–3.80/mo pregen + ~cents/mo Blob), surfaced and approved.
 
 ## Issues & learnings ledger (compound these)
 
