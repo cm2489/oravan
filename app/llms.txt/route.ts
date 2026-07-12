@@ -1,4 +1,5 @@
 import { getAllBills } from '@/lib/core';
+import { MCP_ENDPOINT_URL } from '@/lib/core/mcp';
 import { SITE_ORIGIN } from '@/lib/site';
 
 /*
@@ -13,6 +14,11 @@ import { SITE_ORIGIN } from '@/lib/site';
  * any major AI lab has confirmed support for it (none had, as of Q1 2026,
  * per Search Engine Land's reporting). Nothing here claims otherwise, and
  * nothing here claims a traffic or citation outcome.
+ *
+ * S12 adds the MCP endpoint line below: MCP_ENDPOINT_URL is the same
+ * constant app/[locale]/mcp/page.tsx and app/api/mcp/[transport]/route.ts's
+ * basePath resolve to (lib/core/mcp.ts) - one literal, not a third
+ * hand-typed copy of the URL.
  *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
@@ -38,6 +44,7 @@ Oravan publishes a plain-language, AI-drafted and human-reviewed decoded summary
 - [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 - [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed
+- [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
 
 ## Spanish
 

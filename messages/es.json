@@ -359,6 +359,8 @@
   "citations": {
     "title": "Cita a Oravan",
     "intro": "Oravan está construido para ser una fuente que puedas citar y corregir: cada proyecto de ley tiene una dirección permanente, un sello de fecha con la última actualización y una línea clara entre el registro oficial y el lenguaje sencillo redactado por IA. Esta página explica con exactitud qué significa esa promesa — para periodistas, bibliotecarios y cualquiera que use los datos o el servidor MCP de Oravan — y cómo reportar un error.",
+    "mcpNoteBody": "¿Construyes algo sobre los datos de Oravan? El servidor MCP entrega los mismos resúmenes de proyectos de ley y búsquedas de representantes a un agente de IA — de solo lectura, sin clave y con citación desde el inicio.",
+    "mcpNoteLinkText": "Documentación del servidor MCP",
     "urlTitle": "URLs permanentes",
     "urlBody": "Cada proyecto de ley tiene una sola dirección permanente en cada idioma, construida solo a partir de su tipo, número y Congreso — nunca de su estado. Una cita escrita el día en que se presenta un proyecto sigue funcionando después de que se firme, fracase o expire; la dirección nunca se reutiliza ni se reasigna.",
     "urlExampleLabel": "Ejemplo — H.R. 1787, el mismo proyecto que usa el material de demostración de Oravan:",
@@ -523,5 +525,30 @@
     "licensingTitle": "Licencias y precios",
     "licensingBody": "Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos a hello@oravan.org — llega directamente a una persona real. Los precios aún no están publicados. También puedes usar el enlace de comentarios al final de cualquier página y elegir «Colaboración o licencia» si prefieres no escribir un correo.",
     "licensingCta": "Escríbenos a hello@oravan.org"
+  },
+  "mcp": {
+    "title": "El servidor MCP de Oravan",
+    "intro": "Oravan también habla MCP (el Protocolo de Contexto de Modelo) — los mismos resúmenes de proyectos de ley y búsquedas de representantes que muestra el sitio, pero para que un asistente de IA los llame directamente. Es gratuito, de solo lectura y sin clave: no requiere cuenta ni clave de API, y cada respuesta indica con exactitud de dónde vienen sus datos.",
+    "endpointTitle": "El punto de conexión",
+    "endpointBody": "Cualquier cliente MCP compatible con Streamable HTTP puede conectarse a la dirección de abajo — el mismo servidor en vivo descrito en esta página, no una vista previa ni un entorno de prueba.",
+    "endpointLabel": "Punto de conexión Streamable HTTP",
+    "connectTitle": "Conecta un cliente",
+    "connectBody": "En Claude Desktop, en los conectores personalizados de claude.ai, o en cualquier otro cliente que lea un archivo de configuración JSON, agrega una entrada que apunte al punto de conexión de arriba. La mayoría de los clientes compatibles con Streamable HTTP aceptan una forma parecida a esta:",
+    "toolsTitle": "Las cinco herramientas",
+    "toolsIntro": "Cada herramienta es de solo lectura y de mundo cerrado — ninguna escribe nada, y ninguna sale de los datos que Oravan sincroniza cada noche. El nombre, el título y la descripción de abajo se citan exactamente como los envía el servidor en vivo a un agente que la llama.",
+    "toolsLangNote": "Los nombres y descripciones de las herramientas son metadatos de protocolo que lee el modelo de IA que llama, no texto escrito para una persona — por eso, como cualquier servidor MCP, Oravan los define solo en inglés. Todo lo que una llamada a una herramienta realmente devuelve a una conversación es completamente bilingüe: el envoltorio de citación de abajo, cada mensaje de error y cualquier contenido redactado por IA respetan el idioma que pida la consulta.",
+    "privacyTitle": "Privacidad",
+    "privacyNoAccounts": "Sin cuentas y sin clave de API — cualquiera puede llamarlo, igual que cualquiera puede cargar el sitio web.",
+    "privacyRateLimit": "El uso anónimo tiene un límite de velocidad (60 llamadas por minuto, 1,000 por día) mediante un contador breve y con hash — nunca una dirección IP guardada, y nunca vinculado a lo que se preguntó.",
+    "privacyNoLogging": "Nada aquí se registra de una forma que pudiera conectar a quien llama con un proyecto de ley, un representante o una postura política.",
+    "privacyLinkText": "Lee la política de privacidad completa",
+    "envelopeTitle": "Cada respuesta lleva una citación",
+    "envelopeBody": "Cada respuesta de una herramienta incluye un objeto meta con cinco campos: as_of (la fecha de actualización de los datos), source, canonical_url (un enlace permanente a la página de donde salió la respuesta del agente), ai_label (presente solo cuando la respuesta incluye contenido redactado por IA) y license. El texto de source y ai_label se muestra abajo en ambos idiomas, igual que lo recibe una consulta en inglés o en español — las mismas cadenas que cita la página de citación de Oravan.",
+    "licenseTitle": "Licencia",
+    "licenseOfficialLabel": "Campos del registro oficial — estado, fechas, patrocinador, texto del proyecto:",
+    "licenseAiLabel": "Campos en lenguaje sencillo redactados por IA — titular, resumen breve, qué/quién/por qué/costo:",
+    "freshnessTitle": "El sello de \"datos actualizados al\"",
+    "freshnessBody": "Los datos de Oravan se actualizan con una sincronización nocturna con Congress.gov, no en tiempo real. El campo {asOfField} de cada respuesta indica la fecha de la última sincronización exitosa — cita esa fecha, no el momento en que se hizo la consulta, como cuando se verificaron por última vez los hechos.",
+    "citationsLinkText": "Política completa de citación, corrección y licencias"
   }
 }

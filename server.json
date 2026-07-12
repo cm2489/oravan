@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "org.oravan/mcp",
+  "title": "Oravan",
+  "description": "Nonpartisan U.S. Congress data: bill decodes, rep lookup, bilingual EN/ES, read-only, no accounts.",
+  "version": "0.1.0",
+  "websiteUrl": "https://oravan.org/mcp",
+  "repository": {
+    "url": "https://github.com/cm2489/oravan",
+    "source": "github",
+    "id": "1266978017"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://oravan.org/api/mcp/mcp"
+    }
+  ]
+}

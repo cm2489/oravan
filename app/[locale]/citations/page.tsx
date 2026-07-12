@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import { absoluteUrl, hreflangAlternates } from '@/lib/hreflang';
 import { dataAsOfString } from '@/lib/freshness';
 import { AI_LABEL_TEXT, LICENSE_AI_CONTENT, LICENSE_PUBLIC_DOMAIN, SOURCE } from '@/lib/core/mcp';
@@ -85,6 +86,16 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
     <article className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
       <p className="mt-4 text-lg leading-relaxed text-ink-soft">{t('intro')}</p>
+      {/* S12: the intro above already names the MCP server as one of this
+          page's audiences - this is the one link out to its own docs page
+          (endpoint, tools, client config, privacy posture), added here
+          rather than in the site-wide footer/header (smallest-surface). */}
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-ink-soft">
+        {t('mcpNoteBody')}{' '}
+        <Link href="/mcp" className="font-semibold text-ink underline hover:no-underline">
+          {t('mcpNoteLinkText')} →
+        </Link>
+      </p>
 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('urlTitle')}</h2>

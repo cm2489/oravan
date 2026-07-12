@@ -14,6 +14,7 @@ import {
   normalizeLocale,
   representativeNotFoundError,
   searchBills,
+  TOOL_INFO,
   whatsMoving,
 } from '@/lib/core/mcp';
 
@@ -61,8 +62,10 @@ import {
  *    when the response is returned.
  *
  * Bilingual-parity scope note (the fix that closed the envelope/refine_hint/
- * tool-error gap PR #46 pinned): the `title`/`description` on each
- * registerTool call below, and every zod `.describe()` schema string
+ * tool-error gap PR #46 pinned): the `title`/`description` each
+ * registerTool call below pulls from lib/core/mcp.ts's TOOL_INFO (S12 -
+ * relocated there, not duplicated, so the public /mcp docs page can quote
+ * the same literal strings), and every zod `.describe()` schema string
  * (including localeSchema's own "en (default) or es" line), stay
  * English-only, deliberately. Those strings are tool/schema metadata the
  * calling agent's model reads to decide how to call the tool - they are
@@ -101,17 +104,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'lookup_representatives',
       {
-        title: 'Look up representatives by ZIP',
-        description:
-          "Look up a person's U.S. House member and two Senators by 5-digit ZIP code. Returns each " +
-          "member's name, party, phone, official website, portrait URL, and district office phone " +
-          'numbers - the number a constituent should actually call. Some ZIP codes span more than one ' +
-          'congressional district (needs_address: true, all candidate districts returned); this tool ' +
-          'does not perform address-level refinement itself in this release - point the person to the ' +
-          "response's reps_url, where a stateless, unlogged Census-geocoder proxy narrows it to a " +
-          'single district from a street address that Oravan never stores. When a House seat currently ' +
-          'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
-          'departed member is never returned as if still serving, and no election timeline is implied.',
+        ...TOOL_INFO.lookup_representatives,
         inputSchema: {
           zip: z
             .string()
@@ -132,15 +125,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'get_bill',
       {
-        title: 'Get a bill decode',
-        description:
-          'Get the full plain-language decode of a federal bill by slug (e.g. "hr-2701-119") or ' +
-          'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
-          'AI-generated summary (headline, tl;dr, what/who/why/cost - human-reviewed before publish and ' +
-          'clearly labeled when present), the official status in plain language, an urgency band, ' +
-          "sponsor, key dates, the official Congress.gov page, and an act_url to Oravan's on-site call " +
-          'flow. This tool never drafts a phone script - script generation only happens on-site, behind ' +
-          'a human-review step, never over this API.',
+        ...TOOL_INFO.get_bill,
         inputSchema: {
           slug: z
             .string()
@@ -166,11 +151,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'search_bills',
       {
-        title: 'Search bills',
-        description:
-          "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
-          'active-only. Returns short teasers (headline, status, urgency) for matching bills, most ' +
-          'urgent first.',
+        ...TOOL_INFO.search_bills,
         inputSchema: {
           query: z.string().optional().describe('Free-text search over the bill title and plain-language summary.'),
           topic: z.enum(CATEGORIES).optional().describe('One of the 12 issue categories.'),
@@ -193,14 +174,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'whats_moving',
       {
-        title: "What's moving in Congress",
-        description:
-          "What's moving in Congress recently: active, plain-language-decoded bills that cleared " +
-          "Oravan's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
-          'topic. Returns an honest empty list with quiet_week: true when nothing has cleared the bar - ' +
-          'this tool never pads the list to look busier than Congress actually is this week. If the ' +
-          "list is empty because Oravan's own data sync looks stale rather than Congress being quiet, " +
-          'data_stale is set instead so that distinction is never lost.',
+        ...TOOL_INFO.whats_moving,
         inputSchema: {
           days: z.number().int().min(1).max(90).optional().describe('Lookback window in days (default 7).'),
           topic: z.enum(CATEGORIES).optional().describe('One of the 12 issue categories.'),
@@ -218,10 +192,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'get_representative',
       {
-        title: 'Get a representative',
-        description:
-          'Get full details for one member of Congress by bioguide ID (e.g. "W000797"), plus their 5 ' +
-          'most recently active sponsored bills. Facts only: no scorecards, ratings, or vote grades.',
+        ...TOOL_INFO.get_representative,
         inputSchema: {
           bioguide: z.string().min(1).describe('Bioguide ID, e.g. "W000797".'),
           locale: localeSchema,

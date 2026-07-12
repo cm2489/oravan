@@ -359,6 +359,8 @@
   "citations": {
     "title": "Cite Oravan",
     "intro": "Oravan is built to be a source you can cite and correct: every bill has one permanent address, a dated freshness stamp, and a clear line between the official record and AI-drafted plain language. This page spells out exactly what that promise means — for reporters, librarians, and anyone building on Oravan's data or MCP server — and explains how to report an error.",
+    "mcpNoteBody": "Building something on top of Oravan's data instead? The MCP server hands the same bill decodes and representative lookups to an AI agent — read-only, keyless, and citation-first.",
+    "mcpNoteLinkText": "MCP server docs",
     "urlTitle": "Canonical URLs",
     "urlBody": "Every bill gets one permanent address in each language, built only from its own bill type, number, and Congress — never from its status. A citation written the day a bill is introduced still resolves after it's signed, fails, or expires; the address is never reused or reassigned.",
     "urlExampleLabel": "Example — H.R. 1787, the same bill used in Oravan's own demo material:",
@@ -523,5 +525,30 @@
     "licensingTitle": "Licensing and pricing",
     "licensingBody": "If your organization wants white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. Pricing isn't published yet. You can also use the feedback link at the bottom of any page and choose “Partnership or licensing” if you'd rather not email.",
     "licensingCta": "Email hello@oravan.org"
+  },
+  "mcp": {
+    "title": "Oravan's MCP server",
+    "intro": "Oravan also speaks MCP (the Model Context Protocol) — the same federal bill decodes and representative lookups the website shows, callable directly by an AI assistant. It's free, read-only, and keyless: no account, no API key, and every response states exactly where its facts came from.",
+    "endpointTitle": "The endpoint",
+    "endpointBody": "Any MCP client that supports Streamable HTTP can connect at the address below — the same live server described on this page, not a preview or a sandbox.",
+    "endpointLabel": "Streamable HTTP endpoint",
+    "connectTitle": "Connect a client",
+    "connectBody": "In Claude Desktop, claude.ai's custom connectors, or any other client that reads a JSON config, add an entry pointing at the endpoint above. Most Streamable-HTTP-aware clients accept a shape close to this:",
+    "toolsTitle": "The five tools",
+    "toolsIntro": "Every tool is read-only and closed-world — none of them writes anything, and none reaches outside Oravan's own nightly-synced data. The name, title, and description below are quoted exactly as the live server sends them to a calling agent.",
+    "toolsLangNote": "Tool names and descriptions are protocol metadata a calling AI model reads to decide how to use a tool, not prose written for a person — so, like every MCP server, Oravan defines them in English only. Everything a tool call actually hands back to a conversation is fully bilingual: the citation envelope below, every error message, and any AI-drafted content all honor the language a query requests.",
+    "privacyTitle": "Privacy",
+    "privacyNoAccounts": "No accounts and no API key — anyone can call it, the same way anyone can load the website.",
+    "privacyRateLimit": "Anonymous use is rate-limited (60 calls a minute, 1,000 a day) by a short-lived, hashed counter — never a stored IP address, and never linked to what was asked.",
+    "privacyNoLogging": "Nothing here is logged in a way that could connect a caller to a bill, a representative, or a political position.",
+    "privacyLinkText": "Read the full privacy policy",
+    "envelopeTitle": "Every response carries a citation",
+    "envelopeBody": "Every tool response nests a meta object with five fields: as_of (the data's freshness date), source, canonical_url (a stable link back to the page an agent's answer came from), ai_label (present only when the response includes AI-drafted content), and license. The source and AI-label text are shown below in both languages, matching what an English- or Spanish-locale query actually receives — the same strings Oravan's citability page quotes.",
+    "licenseTitle": "License",
+    "licenseOfficialLabel": "Official-record fields — status, dates, sponsor, bill text:",
+    "licenseAiLabel": "AI-drafted plain-language fields — headline, tl;dr, what/who/why/cost:",
+    "freshnessTitle": "\"As of\" freshness",
+    "freshnessBody": "Oravan's data refreshes on a nightly sync with Congress.gov, not a live feed. Every tool response's {asOfField} field states the date of the last successful sync — cite that date, not the moment a query ran, as when the underlying facts were last checked.",
+    "citationsLinkText": "Full citation, correction, and licensing policy"
   }
 }

@@ -17,10 +17,9 @@ export async function generateMetadata({
  * S5b — the GTM surface for the three launch audiences (Spanish-language
  * newsrooms, libraries, paid orgs). Docs-grade and pricing-free by founder
  * decision (M6, 2026-07-07: terms deferred); the licensing section's
- * primary contact is now hello@oravan.org (M12, S8 cutover), with the
- * beta feedback channel kept as a fallback for anyone who'd rather not
- * email. NOTE: hello@oravan.org is not live yet — this PR is do-not-merge
- * until the inbox is confirmed live.
+ * primary contact is hello@oravan.org (M12, S8 cutover; confirmed live via
+ * PR #64), with the beta feedback channel kept as a fallback for anyone
+ * who'd rather not email.
  */
 export default async function PartnersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
