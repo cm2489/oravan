@@ -7,6 +7,7 @@ import {
   callerIp,
   counterKey,
   createRateLimiter,
+  createTenantRateLimiter,
   parseSaltRecord,
   readOravanKey,
   saltKey,
@@ -196,4 +197,116 @@ test('X-Oravan-Key is parsed and inert: recognized shape, no effect on limiting'
 test('callerIp derivation is unchanged from the pre-S11 routes', () => {
   expect(callerIp(new Headers({ 'x-forwarded-for': '198.51.100.7, 10.0.0.1' }))).toBe('198.51.100.7');
   expect(callerIp(new Headers())).toBe('unknown');
+});
+
+// --- S19: createTenantRateLimiter -------------------------------------------
+
+test('tenant counter keys are RAW tenantId, not hashed/salted - the deliberate divergence from the caller-hash shape', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
+  await limiter.isLimited('cus_tenant_abc');
+
+  const key = mock.keys().find((k) => k.includes(':rl:embed-script:'))!;
+  expect(key).toBe('dev:rl:embed-script:cus_tenant_abc');
+  // No salt was ever touched for this - a tenant-keyed limiter has nothing
+  // to do with the caller-hash salt lifecycle.
+  expect(mock.commands.some((c) => c[0] === 'SET' && c[1] === saltKey())).toBe(false);
+});
+
+test('tenant limiter: cross-instance semantics, exact max/window, independent per tenant', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const a = createTenantRateLimiter({ route: 'embed-script', max: 3, windowSec: 600 });
+  const b = createTenantRateLimiter({ route: 'embed-script', max: 3, windowSec: 600 });
+
+  const tenantId = 'cus_shared_across_instances';
+  for (let i = 0; i < 3; i += 1) {
+    const instance = i % 2 === 0 ? a : b;
+    expect(await instance.isLimited(tenantId), `request ${i + 1} of 3 must pass`).toBe(false);
+  }
+  expect(await a.isLimited(tenantId)).toBe(true);
+  expect(await b.isLimited(tenantId), 'and equally limited on instance B').toBe(true);
+
+  // A different tenant is untouched by this one's saturation.
+  expect(await b.isLimited('cus_other_tenant')).toBe(false);
+});
+
+test('tenant limiter: TTL is attached at creation, same as the caller-hash limiter', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createTenantRateLimiter({ route: 'embed-script-day', max: 800, windowSec: 86400 });
+  await limiter.isLimited('cus_ttl');
+
+  const key = counterKey('embed-script-day', 'cus_ttl');
+  expect(mock.exec(['TTL', key])).toBeGreaterThan(0);
+  expect(mock.exec(['TTL', key])).toBeLessThanOrEqual(86400);
+});
+
+test('tenant limiter: graceful degradation - no env -> in-memory, zero network calls, no crash, shares the single startup line', async () => {
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const logged: string[] = [];
+  const realLog = console.log;
+  console.log = (...args: unknown[]) => logged.push(args.join(' '));
+  try {
+    const limiter = createTenantRateLimiter({ route: 'embed-script', max: 2, windowSec: 600 });
+    const tenantId = 'cus_memory_fallback';
+    expect(await limiter.isLimited(tenantId)).toBe(false);
+    expect(await limiter.isLimited(tenantId)).toBe(false);
+    expect(await limiter.isLimited(tenantId)).toBe(true);
+  } finally {
+    console.log = realLog;
+  }
+
+  expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
+  const fallbackLines = logged.filter((l) => l.includes('in-memory'));
+  expect(fallbackLines, 'the SAME startup line createRateLimiter uses - one counters DB, one line').toHaveLength(1);
+});
+
+test('tenant limiter: an Upstash request error fails open to in-memory and is counted/logged status-only', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const errorsBefore = getUpstashErrorCounts().counters;
+  const limiter = createTenantRateLimiter({ route: 'embed-script', max: 2, windowSec: 600 });
+  const tenantId = 'cus_error_fallback';
+  expect(await limiter.isLimited(tenantId)).toBe(false);
+  expect(await limiter.isLimited(tenantId)).toBe(false);
+  expect(await limiter.isLimited(tenantId), 'in-memory fallback still enforces the limit').toBe(true);
+  expect(getUpstashErrorCounts().counters).toBeGreaterThan(errorsBefore);
+});
+
+test('composition: the tenant limiter and the per-IP caller limiter are completely independent counters', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const ipLimiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+  const tenantLimiter = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
+
+  // Saturate the per-IP limit for one visitor IP...
+  for (let i = 0; i < 8; i += 1) expect(await ipLimiter.isLimited('203.0.113.201')).toBe(false);
+  expect(await ipLimiter.isLimited('203.0.113.201')).toBe(true);
+
+  // ...the tenant limiter for the SAME tenant is untouched by that -
+  // different key, different database row, different threat model.
+  expect(await tenantLimiter.isLimited('cus_independent')).toBe(false);
+
+  // And two different keys never collide in either direction.
+  const ipKeys = mock.keys().filter((k) => k.includes(':rl:script:'));
+  const tenantKeys = mock.keys().filter((k) => k.includes(':rl:embed-script:'));
+  expect(ipKeys).toHaveLength(1);
+  expect(tenantKeys).toHaveLength(1);
+  expect(ipKeys[0]).not.toBe(tenantKeys[0]);
 });

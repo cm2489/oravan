@@ -10,6 +10,13 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *
  *   <env>:salt:current                the rotating hashing salt (24h TTL)
  *   <env>:rl:<route>:<caller-hash>    one fixed-window counter per caller
+ *   <env>:rl:<route>:<tenant-id>      one fixed-window counter per TENANT
+ *                                      (S19, §2 — route is 'embed-script'/
+ *                                      'embed-script-day' only; tenantId is
+ *                                      used RAW, never hashed — see
+ *                                      createTenantRateLimiter's own doc
+ *                                      comment for why that's the right call
+ *                                      here and not a caller-privacy gap)
  *
  * The caller hash is sha256(ip + salt). These are short-lived rate-limit
  * counters — pseudonymous, NOT anonymous: a 32-bit IPv4 space brute-forces
@@ -21,9 +28,13 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *
  * No slug, stance, locale, tool name, or any other content identifier may
  * ever appear in a counters key. The RouteName union enforces that the one
- * variable key segment besides the hash comes from a closed set of route
- * labels (interest-level at most — the same exposure platform request logs
- * already have, per KTD-3's accepted residual — never a political position).
+ * variable key segment besides the hash/tenant-id comes from a closed set of
+ * route labels (interest-level at most — the same exposure platform request
+ * logs already have, per KTD-3's accepted residual — never a political
+ * position). The tenant-keyed shape must never ALSO fold in a caller-hash
+ * (`<tenant-id>:<caller-hash>`) — that would start building a per-visitor-
+ * within-tenant profile the product never asked for; CI-fixture-tested in
+ * scripts/check-key-namespaces.mjs.
  *
  * GRACEFUL DEGRADATION (load-bearing): when the counters database is
  * unconfigured, every limiter runs the same per-instance in-memory sliding
@@ -33,8 +44,22 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * A route must never hard-fail because Upstash is unreachable.
  */
 
-/** Closed set of counter-key route labels. Route names only — never content. */
-export type RouteName = 'script' | 'district' | 'feedback' | 'mcp-min' | 'mcp-day';
+/**
+ * Closed set of counter-key route labels. Route names only — never content.
+ * 'embed-script'/'embed-script-day' (S19) are the PER-TENANT limiter's two
+ * windows — mirrors the existing mcp-min/mcp-day two-window shape, no new
+ * pattern invented. They are written by createTenantRateLimiter below, never
+ * by createRateLimiter — a tenant-keyed counter and a caller-hash-keyed one
+ * never share a route label.
+ */
+export type RouteName =
+  | 'script'
+  | 'district'
+  | 'feedback'
+  | 'mcp-min'
+  | 'mcp-day'
+  | 'embed-script'
+  | 'embed-script-day';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
@@ -140,31 +165,35 @@ function logFallbackOnce(): void {
   );
 }
 
-export function createRateLimiter(opts: {
-  route: RouteName;
-  max: number;
-  windowSec: number;
-}): RateLimiter {
+/*
+ * Shared fixed-window counter core (S11, extended S19): the actual
+ * SET-NX-EX-then-INCR durable path and the in-memory fallback window, kept
+ * in exactly one place so createRateLimiter (caller-hash-keyed) and
+ * createTenantRateLimiter (tenant-id-keyed, below) can never drift into two
+ * slightly different implementations of "count within a window". Callers
+ * supply the already-built Upstash key and an arbitrary in-memory map key
+ * (never itself written anywhere) — this core has no opinion on WHAT
+ * identifies a caller, only on how a window is counted once something does.
+ */
+function windowedCounterCore(opts: { max: number; windowSec: number }) {
   // In-memory fallback: the exact sliding-window the routes shipped with.
-  // Raw IPs here are compliant only because this never leaves process memory
-  // (KTD-3's own note on the pre-S11 code) — nothing in this Map is ever
-  // written anywhere.
+  // Raw identifiers here are compliant only because this never leaves
+  // process memory (KTD-3's own note on the pre-S11 code) — nothing in this
+  // Map is ever written anywhere.
   const hits = new Map<string, number[]>();
   const windowMs = opts.windowSec * 1000;
 
-  function memoryLimited(ip: string): boolean {
+  function memoryLimited(memKey: string): boolean {
     const now = Date.now();
-    const recent = (hits.get(ip) ?? []).filter((t) => now - t < windowMs);
+    const recent = (hits.get(memKey) ?? []).filter((t) => now - t < windowMs);
     if (recent.length >= opts.max) return true;
     recent.push(now);
-    hits.set(ip, recent);
+    hits.set(memKey, recent);
     if (hits.size > 5000) hits.clear(); // crude memory cap
     return false;
   }
 
-  async function durableLimited(upstash: UpstashClient, ip: string): Promise<boolean> {
-    const salt = await currentSalt(upstash);
-    const key = counterKey(opts.route, callerHash(ip, salt));
+  async function durableLimited(upstash: UpstashClient, key: string): Promise<boolean> {
     // SET NX EX before INCR: the TTL is attached at creation, so a crash
     // between commands can never leave a TTL-less counter (which would let a
     // pseudonym outlive its window).
@@ -178,6 +207,16 @@ export function createRateLimiter(opts: {
     return typeof count === 'number' && count > opts.max;
   }
 
+  return { memoryLimited, durableLimited };
+}
+
+export function createRateLimiter(opts: {
+  route: RouteName;
+  max: number;
+  windowSec: number;
+}): RateLimiter {
+  const core = windowedCounterCore(opts);
+
   return {
     async isLimited(ip: string): Promise<boolean> {
       // Resolved per call, not captured at construction: route modules build
@@ -187,14 +226,66 @@ export function createRateLimiter(opts: {
       const client = countersClient();
       if (!client) {
         logFallbackOnce();
-        return memoryLimited(ip);
+        return core.memoryLimited(ip);
       }
       try {
-        return await durableLimited(client, ip);
+        const salt = await currentSalt(client);
+        const key = counterKey(opts.route, callerHash(ip, salt));
+        return await core.durableLimited(client, key);
       } catch (err) {
         // Fail open to in-memory for this request; never hard-fail the route.
         noteUpstashError('counters', err);
-        return memoryLimited(ip);
+        return core.memoryLimited(ip);
+      }
+    },
+  };
+}
+
+/**
+ * Per-tenant rate limiter (S19, §2): the counters database's SECOND
+ * identity shape, alongside the caller-hash one createRateLimiter builds.
+ * `tenantId` (a Stripe customer id, cus_...) is used RAW — never
+ * salted/hashed — a deliberate divergence from createRateLimiter, stated
+ * explicitly: hashing tenantId with the rotating 24h salt would buy zero
+ * privacy benefit (tenantId is already documented in lib/tenancy.ts as
+ * "internal-only, never in a URL" — institutional data, not a citizen
+ * identifier) and would actively break the limiter's own job, since salt
+ * rotation would make a stable tenant look like a "new" identity mid-
+ * window. A tenantId-keyed counter is structurally the same kind of thing
+ * as the plaintext route-name segment already sitting in every counter
+ * key, not like a caller hash — so this skips currentSalt/callerHash
+ * entirely and calls counterKey(route, tenantId) directly.
+ *
+ * Same in-memory-fallback pattern, same graceful-degradation doctrine, no
+ * new database — this and createRateLimiter share windowedCounterCore
+ * above and the same logFallbackOnce() startup line (both are the SAME
+ * counters database being unconfigured; one line covers either).
+ */
+export interface TenantRateLimiter {
+  /** True when this tenant is over the window's limit (request should 429). */
+  isLimited(tenantId: string): Promise<boolean>;
+}
+
+export function createTenantRateLimiter(opts: {
+  route: RouteName;
+  max: number;
+  windowSec: number;
+}): TenantRateLimiter {
+  const core = windowedCounterCore(opts);
+
+  return {
+    async isLimited(tenantId: string): Promise<boolean> {
+      const client = countersClient();
+      if (!client) {
+        logFallbackOnce();
+        return core.memoryLimited(tenantId);
+      }
+      try {
+        const key = counterKey(opts.route, tenantId);
+        return await core.durableLimited(client, key);
+      } catch (err) {
+        noteUpstashError('counters', err);
+        return core.memoryLimited(tenantId);
       }
     },
   };

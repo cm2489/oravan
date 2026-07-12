@@ -1,9 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { POST as districtPost } from '../app/api/district/route';
-import { createRateLimiter } from '../lib/ratelimit';
+import { createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
-import { CACHE_URL, COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
+import { mintCapabilityToken, resolveTenantAccess, tenantKey, tokenHash, tokenIndexKey } from '../lib/tenancy';
+import {
+  CACHE_URL,
+  COUNTERS_URL,
+  MockUpstash,
+  TENANCY_URL,
+  installUpstashFetch,
+  setUpstashEnv,
+} from './upstash-mock';
 import censusNoMatch from './fixtures/census-no-match.json';
 
 /*
@@ -161,4 +169,138 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
   expect(
     await createScriptCache().get({ slug: SLUG, stance: 'support', lang: 'en', version })
   ).toBe('generated script for support/en');
+});
+
+/*
+ * AE5, RE-RUN AGAINST THE EMBED-ORIGINATING PATH (S19). The ledger's own
+ * language: the invariant must hold across "/api/script, MCP, AND embed
+ * routes" - this is that third leg. Drives the EXACT sequence
+ * app/api/script/route.ts's gate runs for a tenant-authenticated request
+ * (per-IP limiter -> resolveTenantAccess -> per-tenant limiters -> the
+ * SAME cache-get/set the citizen path uses) through the real modules,
+ * never the route file itself - it pulls @anthropic-ai/sdk transitively,
+ * which cannot be require()d in a unit spec (confirmed: "Cannot use import
+ * statement outside a module" when attempted directly), the same
+ * limitation this file's other test already documents for script/MCP.
+ * A fresh trio of mocks (including, for the first time in this file, the
+ * TENANCY database) keeps this test's wire-surface assertions independent
+ * of the burst test above.
+ */
+test('AE5 (embed-originating path): a tenant-authenticated script request leaves counters/cache/tenancy clean, composes both limiters, and shares the cache with citizen requests', async () => {
+  const embedCounters = new MockUpstash();
+  const embedCache = new MockUpstash();
+  const tenancy = new MockUpstash();
+  const restoreEmbedFetch = installUpstashFetch({
+    [COUNTERS_URL]: embedCounters,
+    [CACHE_URL]: embedCache,
+    [TENANCY_URL]: tenancy,
+  });
+
+  try {
+    // Seed one active, ToS-accepted tenant directly (the shape
+    // provisionFromCheckout would have written) - this test is about the
+    // GATE's wire-surface cleanliness, not provisioning itself (covered in
+    // tests/tenancy.unit.spec.ts).
+    const token = mintCapabilityToken();
+    const hash = tokenHash(token);
+    const tenantId = 'cus_ae5_embed_origin';
+    tenancy.exec([
+      'SET',
+      tenantKey(tenantId),
+      JSON.stringify({
+        tenantId,
+        tokenHash: hash,
+        tier: 'pro',
+        domainAllowlist: [],
+        orgName: 'AE5 Embed Org',
+        attribution: 'required',
+        createdAt: new Date().toISOString(),
+        subscriptionId: 'sub_ae5_embed',
+        subscriptionStatus: 'active',
+        tosAcceptedAt: new Date().toISOString(),
+      }),
+    ]);
+    tenancy.exec(['SET', tokenIndexKey(hash), tenantId]);
+
+    // The route's own gate order: per-IP limiter first (independent of
+    // tenancy-database health), then resolveTenantAccess, then the two
+    // per-tenant windows.
+    const embedVisitorIp = '198.51.100.210';
+    const ipLimiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+    expect(await ipLimiter.isLimited(embedVisitorIp)).toBe(false);
+
+    const access = await resolveTenantAccess(token);
+    expect(access.ok, 'the seeded tenant must authorize').toBe(true);
+
+    const tenantMinuteLimiter = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
+    const tenantDayLimiter = createTenantRateLimiter({ route: 'embed-script-day', max: 800, windowSec: 86400 });
+    expect(await tenantMinuteLimiter.isLimited(tenantId)).toBe(false);
+    expect(await tenantDayLimiter.isLimited(tenantId)).toBe(false);
+
+    // CACHE-SHARING PROOF: the exact same cache-get -> (generate) -> set
+    // sequence app/api/script/route.ts runs after the gate passes, content-
+    // keyed only - identical whether the caller was this tenant or an
+    // anonymous citizen. This is what makes "reuse the one route, don't
+    // fork a parallel implementation" (S19 design §1) actually true, not
+    // just asserted.
+    const embedScriptCache = createScriptCache();
+    const version = contentVersion(bill.ai_summary!);
+    const parts = { slug: SLUG, stance: 'support' as const, lang: 'en' as const, version };
+    expect(await embedScriptCache.get(parts), 'fresh cache instance for this test - must start as a miss').toBeNull();
+    await embedScriptCache.set(parts, 'generated script for the embed-originating request');
+
+    // A DIFFERENT ScriptCache instance (standing in for the citizen site's
+    // own /api/script request for the identical bill/stance/locale) reads
+    // the SAME entry back - proof of sharing, not just same-process reuse.
+    expect(await createScriptCache().get(parts)).toBe('generated script for the embed-originating request');
+
+    // --- the AE5 invariant itself, now spanning three databases -----------
+
+    const tenancyCommandText = tenancy.commands.map((c) => c.join(' ')).join('\n');
+    const countersCommandText = embedCounters.commands.map((c) => c.join(' ')).join('\n');
+    const cacheCommandText = embedCache.commands.map((c) => c.join(' ')).join('\n');
+
+    // 1. Tenancy wire surface: only tenant:<id>/token:<hash> keys, no
+    //    caller-derived material (the visitor IP), no content identifier.
+    for (const key of tenancy.keys()) {
+      expect(key).toMatch(new RegExp(`^dev:(tenant:${tenantId}|token:[0-9a-f]{64})$`));
+    }
+    expect(tenancyCommandText).not.toContain(embedVisitorIp);
+    expect(tenancyCommandText).not.toContain(SLUG);
+    expect(tenancyCommandText).not.toContain('support');
+
+    // 2. Counters wire surface: the existing caller-hash 'script' shape
+    //    PLUS the new RAW-tenantId 'embed-script'/'embed-script-day' shape
+    //    - and critically, the PLAINTEXT TOKEN itself never appears
+    //    anywhere on this wire (only tenantId, which is documented
+    //    internal-only/institutional, does).
+    for (const key of embedCounters.keys()) {
+      expect(key).toMatch(new RegExp(`^dev:(salt:current|rl:script:[0-9a-f]{64}|rl:embed-script(-day)?:${tenantId})$`));
+    }
+    expect(countersCommandText, 'the plaintext capability token must never reach the counters wire').not.toContain(
+      token
+    );
+    expect(countersCommandText).not.toContain(SLUG);
+    expect(countersCommandText, 'counters wire surface must not carry a locale segment').not.toMatch(
+      /:(en|es)(?=:|\s|$)/
+    );
+
+    // 3. Cache wire surface: content-keyed only, as always - no tenantId,
+    //    no token, no IP anywhere, regardless of which "kind" of caller
+    //    populated this exact entry.
+    for (const key of embedCache.keys()) {
+      expect(key).toMatch(/^dev:script:[a-z0-9.-]+:(support|oppose|undecided):(en|es):[0-9a-f]{12}$/);
+    }
+    expect(cacheCommandText).not.toContain(tenantId);
+    expect(cacheCommandText).not.toContain(token);
+    expect(cacheCommandText).not.toContain(embedVisitorIp);
+
+    // 4. Citizen-site pin: nothing about the ABSENCE of a token changes
+    //    behavior for a plain per-IP caller hitting the exact same limiter
+    //    construction the route uses - byte-for-byte the pre-S19 shape.
+    const citizenLimiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+    expect(await citizenLimiter.isLimited('198.51.100.211')).toBe(false);
+  } finally {
+    restoreEmbedFetch();
+  }
 });

@@ -23,8 +23,18 @@ export default defineConfig({
     { name: 'webkit-desktop', use: { ...devices['Desktop Safari'] } },
   ],
   // Dedicated port so a dev server on :3000/:3200 never shadows the build under test.
+  //
+  // S19: the command is tests/e2e-server.mjs, not a direct `next build &&
+  // next start` — it stands up a tiny fake Upstash REST server for the
+  // TENANCY database only (seeding tests/fixtures/e2e-tenant.ts's one
+  // fixture tenant), sets UPSTASH_TENANCY_REST_URL/TOKEN, then execs the
+  // exact same `next build && next start` as its own child. See that
+  // file's header comment for why (Playwright starts webServer BEFORE any
+  // globalSetup hook runs, so globalSetup can't inject env the server
+  // would see). Counters/cache stay unconfigured — nothing about any
+  // pre-S19 test's behavior changes.
   webServer: {
-    command: `npm run build && npx next start -p ${PORT}`,
+    command: `npx tsx tests/e2e-server.mjs`,
     port: PORT,
     reuseExistingServer: false,
     timeout: 240_000,
