@@ -453,7 +453,12 @@
     "openFullLookup": "Refine with your address on Oravan",
     "openFullLookupBrandless": "Refine with your address",
     "poweredBy": "Powered by Oravan",
-    "billNotFound": "We couldn't find that bill in our data."
+    "billNotFound": "We couldn't find that bill in our data.",
+    "actionPanelUnauthorizedTitle": "This feature requires a paid Oravan plan.",
+    "actionPanelUnauthorizedLink": "See embed plans on Oravan",
+    "actionPanelTosRequired": "This feature isn't enabled yet for this account. Contact hello@oravan.org to finish setup.",
+    "actionPanelDomainNotAuthorized": "This embed's domain isn't authorized for this account.",
+    "actionPanelSeeImpact": "Want your call saved to your own device? Continue on Oravan"
   },
   "manifest": {
     "description": "Find your reps. Understand the bills. Make the call."

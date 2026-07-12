@@ -136,6 +136,12 @@ test.describe(
       // /embed/:path*, so next.config.ts's embed CSP block applies
       // regardless of the response's status code.
       portrait: '/embed/portrait/C000127',
+      // S19: paid-tier action panel. No token -> the "unauthorized" refusal
+      // state (tests/embed-action-panel.spec.ts covers that render), but
+      // CSP headers are path-pattern-based (next.config.ts), not render-
+      // state-based - still under /embed/:path*, so the carve-out applies
+      // regardless of which state this bare request happens to render.
+      'action-panel': '/embed/action-panel?locale=en&slug=sjres-99-119',
     };
 
     test('coverage maps match the actual app/ tree - no undecided segment slipped in', () => {

@@ -1,5 +1,6 @@
 /*!
- * Oravan embed loader (S13, +bill-card S14). Dependency-free, under 5KB.
+ * Oravan embed loader (S13, +bill-card S14, +action-panel S19).
+ * Dependency-free, under 5KB.
  *
  *   <div id="my-widget"></div>
  *   <script src="https://<oravan-origin>/embed.js"
@@ -7,24 +8,24 @@
  *           data-target="my-widget"
  *           data-locale="en"></script>
  *
- * Bill-card: data-slug (required, e.g. "hr-1787-119") plus optional theme
- * knobs data-accent (hex color), data-radius ("sharp"|"soft"|"round"),
- * data-font ("system"|"serif") - re-validated server-side
- * (lib/embed-theme.ts) before any becomes a style; this loader just
- * forwards whatever attribute is present as a query param.
+ * Bill-card: data-slug plus optional theme knobs data-accent (hex color),
+ * data-radius ("sharp"|"soft"|"round"), data-font ("system"|"serif") -
+ * re-validated server-side (lib/embed-theme.ts); this loader just forwards
+ * attributes as query params.
+ *
+ * Action panel (paid tier only): data-slug plus data-token, the 128-bit
+ * tenant capability token (embeds spec §3.2) - the one unavoidable place
+ * it appears in a URL. Nothing further happens to it here: no logging, no
+ * echo, no fetch of its own. The server page is what authorizes.
  *
  * `data-target` is optional - if omitted, the iframe lands right after
- * this <script> tag. Everything the widget needs (data, chrome, i18n, the
- * EN/ES toggle) lives inside the cross-origin iframe itself: this file
- * only injects it and relays its reported height back. No fetch, no
- * storage, no analytics, nothing read from the host page - the privacy
- * claim ("collects nothing about your visitors") is enforced by ordinary
- * cross-origin iframe isolation, not by this script being well-behaved
- * (docs/ideation/2026-07-02-embeds-spec.md §2.1, §2.3).
- *
- * TODO(subdomain): the iframe target is derived from this script's own src
- * origin below, never a hardcoded constant - moving to embed.<domain>
- * (rename-gated, see lib/site.ts) needs no change here.
+ * this <script> tag. Everything the widget needs lives inside the
+ * cross-origin iframe itself: this file only injects it and relays its
+ * height back. No fetch, no storage, no analytics, nothing read from the
+ * host page - "collects nothing about your visitors" is ordinary
+ * cross-origin isolation, not this script being well-behaved
+ * (docs/ideation/2026-07-02-embeds-spec.md §2). The iframe target is
+ * derived from this script's own src origin, never a hardcoded constant.
  */
 (function () {
   'use strict';
@@ -32,19 +33,21 @@
   var WIDGET_TITLES = {
     'rep-lookup': 'Oravan representative lookup',
     'bill-card': 'Oravan bill decoder',
+    'action-panel': 'Oravan action panel',
   };
 
-  // Attributes forwarded as iframe query params only for the widgets that
-  // read them - kept data-driven so a future widget's own params slot in
-  // here without another branch in init() below.
+  // Per-widget query params - data-driven so a future widget just adds a row.
   var WIDGET_PARAM_ATTRS = {
     'rep-lookup': ['accent', 'radius', 'font'],
     'bill-card': ['slug', 'accent', 'radius', 'font'],
+    'action-panel': ['slug', 'token', 'accent', 'radius', 'font'],
   };
 
   // White-label knobs, every widget; validated server-side (embed-theme).
   var UNIVERSAL_ATTRS = ['brandless', 'attribution'];
 
+  // Taller pre-resize placeholder for the extra ZIP step; cosmetic only.
+  var WIDGET_DEFAULT_HEIGHT = { 'action-panel': 620 };
   var DEFAULT_HEIGHT = 480;
 
   function currentScript() {
@@ -86,14 +89,11 @@
     iframe.style.maxWidth = '100%';
     iframe.style.border = '0';
     iframe.style.display = 'block';
-    iframe.style.height = DEFAULT_HEIGHT + 'px';
+    iframe.style.height = (WIDGET_DEFAULT_HEIGHT[widget] || DEFAULT_HEIGHT) + 'px';
     iframe.style.colorScheme = 'light dark';
     iframe.setAttribute('scrolling', 'no');
-    // Privacy comes from ordinary cross-origin isolation, not sandbox flags
-    // - the host's JS is already locked out of this different-origin frame
-    // regardless. `sandbox` is defense-in-depth against what the WIDGET can
-    // do TO the host; allow-same-origin stays in since this is Oravan's own
-    // trusted code, needed so its own same-origin fetch() calls still work.
+    // sandbox is defense-in-depth against the widget, not the isolation
+    // mechanism itself; allow-same-origin stays for our own fetch() calls.
     iframe.setAttribute(
       'sandbox',
       'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox'

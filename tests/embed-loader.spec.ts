@@ -2,6 +2,7 @@ import { expect, test, type Response } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { startCrossOriginHost } from './helpers';
+import { E2E_TENANT_TOKEN, E2E_TENANT_TOKEN_DOMAIN_GATED } from './fixtures/e2e-tenant';
 
 /*
  * S13 — public/embed.js on a synthetic host page, exercising the actual
@@ -232,6 +233,82 @@ test('bill-card via the loader: zero cookies and zero third-party requests', asy
       expect(res.headers()['set-cookie'], `${res.url()} set a cookie`).toBeUndefined();
     }
     expect(await page.context().cookies()).toHaveLength(0);
+  } finally {
+    await host.close();
+  }
+});
+
+/*
+ * S19 — action-panel via the loader (paid tier only). Proves the ONE
+ * unavoidable place the tenant capability token appears in a URL - the
+ * iframe src's query string, built by public/embed.js from data-token -
+ * and that it actually resolves through the real gate against
+ * tests/e2e-server.mjs's seeded fixture tenant (tests/fixtures/e2e-tenant.ts).
+ */
+const ACTION_PANEL_IFRAME_SELECTOR = 'iframe[data-oravan-embed="action-panel"]';
+const ACTION_PANEL_SLUG = 'sjres-99-119';
+
+function actionPanelHostHtml(baseURL: string, opts: { slug: string; token?: string }) {
+  return `<!doctype html><html><body>
+    <div id="host-slot"></div>
+    <script src="${baseURL}/embed.js" data-oravan-widget="action-panel" data-locale="en"
+            data-slug="${opts.slug}"${opts.token ? ` data-token="${opts.token}"` : ''}
+            data-target="host-slot"></script>
+  </body></html>`;
+}
+
+test('action-panel via the loader: data-token forwards into the iframe src and resolves through the real gate', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(
+    actionPanelHostHtml(baseURL!, { slug: ACTION_PANEL_SLUG, token: E2E_TENANT_TOKEN })
+  );
+  try {
+    await page.goto(host.url);
+    const iframeEl = page.locator(ACTION_PANEL_IFRAME_SELECTOR);
+    await expect(iframeEl).toBeVisible();
+    const src = (await iframeEl.getAttribute('src'))!;
+    expect(src).toContain(`token=${E2E_TENANT_TOKEN}`);
+    expect(src).toContain(`slug=${ACTION_PANEL_SLUG}`);
+
+    // Reaches the Live state - proves the forwarded token really resolves,
+    // not just that the query string was built correctly.
+    const frame = page.frameLocator(ACTION_PANEL_IFRAME_SELECTOR);
+    await expect(frame.getByRole('button', { name: en.bill.stance.support })).toBeVisible();
+  } finally {
+    await host.close();
+  }
+});
+
+test('action-panel via the loader: domain-gated tenant, genuine cross-origin host - Referer present, not in the allowlist -> domain not authorized', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(
+    actionPanelHostHtml(baseURL!, { slug: ACTION_PANEL_SLUG, token: E2E_TENANT_TOKEN_DOMAIN_GATED })
+  );
+  try {
+    await page.goto(host.url);
+    const frame = page.frameLocator(ACTION_PANEL_IFRAME_SELECTOR);
+    await expect(frame.getByText(en.embed.actionPanelDomainNotAuthorized)).toBeVisible();
+  } finally {
+    await host.close();
+  }
+});
+
+test('action-panel via the loader: no data-token -> refuses cleanly inside the iframe, never blank/broken', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(actionPanelHostHtml(baseURL!, { slug: ACTION_PANEL_SLUG }));
+  try {
+    await page.goto(host.url);
+    const frame = page.frameLocator(ACTION_PANEL_IFRAME_SELECTOR);
+    await expect(frame.getByText(en.embed.actionPanelUnauthorizedTitle)).toBeVisible();
+    // No src query string carries a "token" param at all when the attribute is absent.
+    const src = (await page.locator(ACTION_PANEL_IFRAME_SELECTOR).getAttribute('src'))!;
+    expect(src).not.toContain('token=');
   } finally {
     await host.close();
   }

@@ -453,7 +453,12 @@
     "openFullLookup": "Precisa tu distrito con tu dirección en Oravan",
     "openFullLookupBrandless": "Precisa tu distrito con tu dirección",
     "poweredBy": "Desarrollado por Oravan",
-    "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos."
+    "billNotFound": "No pudimos encontrar ese proyecto de ley en nuestros datos.",
+    "actionPanelUnauthorizedTitle": "Esta función requiere un plan pagado de Oravan.",
+    "actionPanelUnauthorizedLink": "Ver planes de integración en Oravan",
+    "actionPanelTosRequired": "Esta función aún no está habilitada para esta cuenta. Escribe a hello@oravan.org para completar la configuración.",
+    "actionPanelDomainNotAuthorized": "El dominio de este widget no está autorizado para esta cuenta.",
+    "actionPanelSeeImpact": "¿Quieres que tu llamada se guarde en tu propio dispositivo? Continúa en Oravan"
   },
   "manifest": {
     "description": "Encuentra a tus representantes. Entiende los proyectos de ley. Haz la llamada."
