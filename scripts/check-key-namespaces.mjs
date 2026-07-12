@@ -69,6 +69,11 @@ const CLIENT_MODULE = 'lib/upstash.ts';
 // domain-nomination keys).
 const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation/i;
 const CALLER_MATERIAL = /(^|[^a-z])ip([^a-z]|$)|forwarded|caller|salt|address|\bzip\b/i;
+// S19: the counters registry's SECOND identity shape (tenant-id-keyed,
+// alongside the caller-hash-keyed one) must never fold caller material into
+// the SAME interpolation as a tenant identifier — that would start building
+// a per-visitor-within-tenant profile the product never asked for.
+const TENANT_IDENTIFIER = /tenantId/;
 // The domain-nomination registry's own extra rule (S15, F3): even the raw
 // Referer/URL material it starts from must never make it into a template
 // interpolation — the only interpolations that belong in that file's key
@@ -83,6 +88,29 @@ function templateInterpolations(text) {
   while ((m = re.exec(text)) !== null) {
     const line = text.slice(0, m.index).split('\n').length;
     out.push({ expr: m[1], line });
+  }
+  return out;
+}
+
+/**
+ * Every whole backtick-delimited template literal in a source text, as its
+ * full text (every interpolation still inside, unlike templateInterpolations
+ * above which flattens each `${...}` out on its own). Needed for rule 3b
+ * below: a violation is two DIFFERENT interpolations — `${tenantId}` and
+ * `${callerHash}` — combined in the SAME key-builder string, so checking
+ * interpolations one at a time (as every other rule in this file does) can't
+ * see the combination. Simple backtick-to-backtick match — this codebase's
+ * key builders are single-line, unescaped, non-nested template literals by
+ * convention (every existing one already is), so this doesn't need a real
+ * parser.
+ */
+function templateLiterals(text) {
+  const out = [];
+  const re = /`[^`]*`/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const line = text.slice(0, m.index).split('\n').length;
+    out.push({ full: m[0], line });
   }
   return out;
 }
@@ -141,6 +169,28 @@ export function scanText(file, text) {
     for (const { expr, line } of templateInterpolations(text)) {
       if (CONTENT_IDENTIFIER.test(expr)) {
         add('counters-content', line, `content identifier "${expr.trim()}" interpolated in the counters registry`);
+      }
+    }
+  }
+
+  // 3b. tenant-keyed counters (S19) must never ALSO fold in caller material
+  //     in the SAME key-builder string — e.g.
+  //     `${route}:${tenantId}:${callerHash}`. Checked per WHOLE template
+  //     literal (templateLiterals, not templateInterpolations) because the
+  //     violation shape is two SEPARATE `${...}` interpolations combined in
+  //     one key, not one interpolation expression containing both. A bare
+  //     `${tenantId}` with no caller material anywhere in that same literal
+  //     is the legitimate S19 shape and must NOT be flagged (that's rule 3's
+  //     job, and tenantId doesn't match CONTENT_IDENTIFIER either — it's
+  //     institutional "who", not content).
+  if (file === COUNTERS_REGISTRY) {
+    for (const { full, line } of templateLiterals(text)) {
+      if (TENANT_IDENTIFIER.test(full) && CALLER_MATERIAL.test(full)) {
+        add(
+          'counters-tenant-caller-mix',
+          line,
+          `tenantId mixed with caller-derived material in one counters-registry key: ${full.trim()}`
+        );
       }
     }
   }
@@ -358,6 +408,18 @@ const SELF_TEST_FIXTURES = [
     text: "import { tenancyClient } from '@/lib/upstash';",
     rule: 'client-confinement',
   },
+  {
+    name: 'tenantId mixed with a caller hash in one counters-registry interpolation (S19)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:rl:${opts.route}:${tenantId}:${callerHash}`;',
+    rule: 'counters-tenant-caller-mix',
+  },
+  {
+    name: 'tenantId mixed with a raw caller IP in one counters-registry interpolation (S19)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:rl:${opts.route}:${tenantId + ip}`;',
+    rule: 'counters-tenant-caller-mix',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -370,6 +432,13 @@ const SELF_TEST_CLEAN = [
   {
     file: CACHE_REGISTRY,
     text: 'const k = `${keyPrefix()}:script:${parts.slug}:${parts.stance}:${parts.lang}:${parts.version}`;',
+  },
+  {
+    // The legitimate S19 tenant-keyed counter shape: a bare tenantId, no
+    // caller material folded in — proves rule 3b doesn't false-positive on
+    // the real createTenantRateLimiter usage (counterKey(route, tenantId)).
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:rl:${opts.route}:${tenantId}`;',
   },
   {
     // Proves countersClient is allowed in the domain registry too (rule 2

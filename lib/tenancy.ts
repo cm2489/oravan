@@ -52,14 +52,23 @@ import { keyPrefix, noteUpstashError, tenancyClient, type UpstashClient } from '
  * ATTRIBUTION HONOR-SYSTEM BREADCRUMB (docs/migration/decisions.md, S5a,
  * ~L131): that entry documents `data-attribution="none"` as
  * "licensed-partner-only (honor system until the tenant registry exists —
- * stated plainly on /embeds)". This file IS that registry, but S18 does not
- * flip enforcement on — nothing here or in the webhook checks an incoming
- * embed request's token against the `attribution` field before honoring a
- * snippet's data-attribution attribute. That wiring is S19's job (the
- * sprint that reads tenancy from a live embed route). Per the standing
- * append-only rule for decisions.md, don't edit the S5a entry itself; a new
- * dated entry closing the honor-system caveat belongs to whichever PR
- * actually wires the enforcement.
+ * stated plainly on /embeds)". This file IS that registry, and S19 (below)
+ * wires the FIRST live embed route read of it (the action panel) — but
+ * still does NOT flip attribution-field enforcement on: the action panel
+ * doesn't check an incoming request's token against the `attribution`
+ * field before honoring that widget's own `attribution` query param
+ * either. The S19 design doc this sprint implements is silent on that
+ * wiring, so it stays deliberately out of scope here rather than being
+ * invented unprompted — flagged in the PR body for an explicit owner call.
+ * Per the standing append-only rule for decisions.md, don't edit the S5a
+ * entry itself; a new dated entry closing the honor-system caveat belongs
+ * to whichever PR actually wires the enforcement.
+ *
+ * S19 additions: `TenantRecord.tosAcceptedAt` (optional — see below) plus
+ * `resolveTenantAccess`, the ONE shared gate both `app/api/script` and
+ * `app/embed/action-panel/page.tsx` call so the "no token / bad token /
+ * inactive / no ToS on file" checks can never drift into two different
+ * implementations between the API route and the widget page.
  */
 
 // --- token lifecycle ---------------------------------------------------------
@@ -113,10 +122,22 @@ export interface TenantRecord {
   createdAt: string; // ISO-8601
   subscriptionId: string; // sub_... — for correlating future subscription.* events
   subscriptionStatus: SubscriptionStatus;
+  /**
+   * ISO-8601, set the moment Stripe Checkout's own consent_collection
+   * reports acceptance (S19, §3). OPTIONAL — absent, not a parse failure —
+   * because every tenant S18 has ever provisioned predates this field
+   * (STRIPE_WEBHOOK_SECRET has been unset in every environment since S18
+   * shipped) and must still round-trip cleanly. "Absent" is read by
+   * resolveTenantAccess below as "ToS not on file yet", never invented and
+   * never defaulted to a timestamp.
+   */
+  tosAcceptedAt?: string;
 }
 
 const VALID_TIERS: TenantTier[] = ['pro', 'nonprofit', 'network'];
 const VALID_STATUSES: SubscriptionStatus[] = ['active', 'trialing', 'past_due', 'canceled', 'unpaid'];
+/** active/trialing = the token authorizes; everything else does not (S18/S19). */
+export const ACTIVE_STATUSES: SubscriptionStatus[] = ['active', 'trialing'];
 
 /** Parse-or-reject, matching lib/ratelimit.ts's parseSaltRecord style. */
 export function parseTenantRecord(raw: string): TenantRecord | null {
@@ -133,6 +154,9 @@ export function parseTenantRecord(raw: string): TenantRecord | null {
     if (typeof p.subscriptionStatus !== 'string' || !VALID_STATUSES.includes(p.subscriptionStatus as SubscriptionStatus)) {
       return null;
     }
+    // Optional-if-absent (S19): a missing key is fine (every pre-S19 record
+    // lacks it) — only a PRESENT-but-wrong-typed value is a parse failure.
+    if (p.tosAcceptedAt !== undefined && typeof p.tosAcceptedAt !== 'string') return null;
     return {
       tenantId: p.tenantId,
       tokenHash: p.tokenHash,
@@ -143,6 +167,7 @@ export function parseTenantRecord(raw: string): TenantRecord | null {
       createdAt: p.createdAt,
       subscriptionId: p.subscriptionId,
       subscriptionStatus: p.subscriptionStatus as SubscriptionStatus,
+      ...(p.tosAcceptedAt !== undefined ? { tosAcceptedAt: p.tosAcceptedAt } : {}),
     };
   } catch {
     return null;
@@ -262,6 +287,15 @@ export interface ProvisionFromCheckoutInput {
   orgName: string;
   domainAllowlist: string[]; // already-normalized registrable domains
   subscriptionStatus: SubscriptionStatus;
+  /**
+   * ISO-8601, present ONLY when this exact checkout event carried Stripe's
+   * own consent_collection.terms_of_service acceptance (S19, §3) — never
+   * invented, never defaulted. Absent (undefined) means "this checkout
+   * didn't tell us", not "not accepted" — see provisionFromCheckout's own
+   * accept-and-fill-forward doc comment for what that does to an existing
+   * record.
+   */
+  tosAcceptedAt?: string;
 }
 
 /**
@@ -288,6 +322,17 @@ export interface ProvisionFromCheckoutInput {
  * so re-pointing that exact hash's index entry is sufficient and doesn't
  * require ever knowing the plaintext again.
  *
+ * tosAcceptedAt (S19): "accept-and-fill-forward, never regress set→unset".
+ *   - New tenant, input carries consent  -> set it on the fresh record.
+ *   - New tenant, input has no consent   -> record exists, field stays unset
+ *     (the action panel refuses per resolveTenantAccess below until it's
+ *     captured some other way).
+ *   - Returning tenant, already accepted -> PRESERVED regardless of what
+ *     this checkout carries — a plan change is a different event from ToS
+ *     acceptance, and must never clear a previously-set timestamp.
+ *   - Returning tenant, never accepted, this checkout DOES carry consent ->
+ *     filled in now. Never the other direction (set -> unset).
+ *
  * Returns false only when the tenancy database itself is unconfigured or
  * unreachable (the caller decides the HTTP response from that).
  */
@@ -299,6 +344,7 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
     const existing = await getTenantRecord(client, input.tenantId);
 
     if (existing) {
+      const tosAcceptedAt = existing.tosAcceptedAt ?? input.tosAcceptedAt;
       const updated: TenantRecord = {
         ...existing,
         tier: input.tier,
@@ -306,6 +352,7 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
         orgName: input.orgName,
         subscriptionId: input.subscriptionId,
         subscriptionStatus: input.subscriptionStatus,
+        ...(tosAcceptedAt !== undefined ? { tosAcceptedAt } : {}),
       };
       await client.cmd(['SET', key, JSON.stringify(updated)]);
       // Restore/keep the reverse-index for the UNCHANGED token — see the
@@ -328,6 +375,7 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
       createdAt: new Date().toISOString(),
       subscriptionId: input.subscriptionId,
       subscriptionStatus: input.subscriptionStatus,
+      ...(input.tosAcceptedAt !== undefined ? { tosAcceptedAt: input.tosAcceptedAt } : {}),
     };
     await client.cmd(['SET', key, JSON.stringify(record)]);
     await client.cmd(['SET', tokenIndexKey(hash), input.tenantId]);
@@ -339,8 +387,11 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
 }
 
 // --- lifecycle sync (customer.subscription.updated|deleted) ----------------
-
-const ACTIVE_STATUSES: SubscriptionStatus[] = ['active', 'trialing'];
+// S19 note: this function is DELIBERATELY untouched — tosAcceptedAt is only
+// ever set at checkout time (provisionFromCheckout above), never here. See
+// this sprint's "constraint S19 must still honor" note: keeping the
+// unguarded get->merge->SET race scoped to exactly the two functions it's
+// already scoped to today, not spreading it into a third.
 
 /**
  * customer.subscription.updated: map Stripe's status onto the tenant record.
@@ -401,4 +452,46 @@ export async function updateSubscriptionStatus(tenantId: string, rawStatus: stri
 /** customer.subscription.deleted: unconditionally canceled + token revoked. */
 export function cancelSubscription(tenantId: string): Promise<boolean> {
   return updateSubscriptionStatus(tenantId, 'canceled');
+}
+
+// --- the S19 paid-embed access gate -----------------------------------------
+
+export type TenantAccessResult =
+  | { ok: true; tenant: TenantRecord }
+  | { ok: false; reason: 'unauthorized' }
+  | { ok: false; reason: 'tos_required' };
+
+/**
+ * THE shared paid-embed access gate (S19, §1 + §3) — `app/api/script`
+ * (the live X-Oravan-Key check) and `app/embed/action-panel/page.tsx` (the
+ * render-state resolution) both call this ONE function rather than each
+ * re-implementing "no token / bad token / inactive / no ToS on file", so
+ * the two call sites can never drift into disagreeing about who's
+ * authorized. The domain-allowlist check is NOT here — that's a
+ * page-only, best-effort, Referer-based check with no equivalent at the
+ * API layer (see the page's own comment for why) — this function only
+ * ever answers the token/subscription/ToS question.
+ *
+ * Deliberately collapses "bad token", "revoked token", and "Upstash
+ * momentarily down" into the SAME `unauthorized` outcome — the fail-closed
+ * doctrine's own point (lookupTenantByToken's doc comment) is that these
+ * must be indistinguishable to the caller, and a finer-grained result here
+ * would only help token-probing. `tos_required` is the one deliberately
+ * DISTINCT outcome: unlike identity or security kind, "ToS not on file" is
+ * actionable and leaks nothing a prober can exploit.
+ *
+ * A present-but-invalid token is NEVER treated as "absent" — there is no
+ * silent downgrade to an anonymous/citizen path here. This function has no
+ * concept of an anonymous caller at all; `token === null` is simply one
+ * more way to fail closed to `unauthorized`, exactly like a bad or revoked
+ * one. Callers that also serve an anonymous path (the script route) decide
+ * that branching themselves, before ever calling this function.
+ */
+export async function resolveTenantAccess(token: string | null): Promise<TenantAccessResult> {
+  if (!token) return { ok: false, reason: 'unauthorized' };
+  const tenant = await lookupTenantByToken(token);
+  if (!tenant) return { ok: false, reason: 'unauthorized' };
+  if (!ACTIVE_STATUSES.includes(tenant.subscriptionStatus)) return { ok: false, reason: 'unauthorized' };
+  if (!tenant.tosAcceptedAt) return { ok: false, reason: 'tos_required' };
+  return { ok: true, tenant };
 }

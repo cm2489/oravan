@@ -358,3 +358,44 @@ body {
   font-size: 0.78rem;
   opacity: 0.7;
 }
+
+/*
+ * Action-panel widget (S19, paid tier only). Reuses the re- and bc- classes
+ * above everywhere it can (the stance/locale toggles, the ZIP form, the AI
+ * chip, the pre-dial note, the tel: links) — these two are the only
+ * genuinely new shapes it needs: an unstyled <fieldset>/<legend> wrapper
+ * (browsers' default fieldset border/padding doesn't match this design
+ * system) and the editable script textarea.
+ */
+.ap-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.ap-legend {
+  padding: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.ap-textarea {
+  width: 100%;
+  min-height: 120px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.5;
+  border: 2px solid rgba(24, 32, 58, 0.25);
+  border-radius: var(--oravan-radius, 8px);
+  background: transparent;
+  color: inherit;
+  resize: vertical;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ap-textarea {
+    border-color: rgba(242, 235, 220, 0.3);
+  }
+}

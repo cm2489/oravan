@@ -21,7 +21,8 @@ import {
  * required for signature verification and is already load-bearing in
  * lib/ratelimit.ts, and no route in this codebase declares an Edge runtime.
  *
- * Events handled (minimum — see the S18 design doc for the full table):
+ * Events handled (minimum — see docs/ideation/2026-07-02-embeds-spec.md §3,
+ * "Tenancy without accounts creep", for the full table):
  *   checkout.session.completed    -> provisionFromCheckout (guarded: only
  *                                     subscription-mode sessions with a
  *                                     subscription id and a recognized
@@ -39,9 +40,16 @@ import {
  * — the coarse past_due-via-subscription.updated handling above already
  * covers the authorization-relevant case). No STRIPE_SECRET_KEY anywhere in
  * this file — the webhook payload itself already carries every field these
- * three events need; see the design doc's §2 for why reaching for it would
- * also collide with the parked constitutional question on persistent
- * tenant identity (a billing-portal "manage subscription" flow).
+ * three events need; reaching for it would also collide with the parked
+ * constitutional question on persistent tenant identity (a billing-portal
+ * "manage subscription" flow) — see docs/ideation/2026-07-02-embeds-spec.md
+ * §3 again.
+ *
+ * S19 addition: checkout.session.completed also threads tosAcceptedAt
+ * (lib/stripe-webhook.ts's extractCheckoutSession) into provisionFromCheckout
+ * — ONLY when Stripe's own consent_collection payload indicates acceptance,
+ * never invented, never defaulted. See lib/tenancy.ts's provisionFromCheckout
+ * doc comment for the accept-and-fill-forward update-path semantics.
  *
  * Rate limiting: deliberately NOT added to lib/ratelimit.ts's RouteName
  * union. The caller here is Stripe, authenticated by signature, not an
@@ -159,6 +167,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           // event corrects this if the plan actually started in a
           // non-active state (e.g. a trial).
           subscriptionStatus: 'active',
+          // undefined (not passed) when Stripe's payload carried no
+          // consent acceptance — provisionFromCheckout treats that as "this
+          // checkout didn't tell us", never as "not accepted".
+          ...(session.tosAcceptedAt ? { tosAcceptedAt: session.tosAcceptedAt } : {}),
         });
       }
       // Anything that fails the guard (wrong mode, missing subscription,

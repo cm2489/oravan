@@ -146,10 +146,40 @@ export interface ExtractedCheckoutSession {
   tier: string | null;
   domain: string | null;
   orgName: string | null;
+  /**
+   * ISO-8601, present ONLY when Stripe's own `consent_collection.
+   * terms_of_service = 'required'` was configured on the Checkout Session
+   * and the customer checked the box (S19, §3). `null` when Stripe's
+   * payload carries no consent object at all — e.g. the owner hasn't
+   * configured `consent_collection` on that Payment Link yet — NEVER
+   * invented, NEVER defaulted to "accepted". lib/tenancy.ts's
+   * provisionFromCheckout is the only thing allowed to turn `null` here
+   * into a stored value, and it deliberately does nothing with it (leaves
+   * tosAcceptedAt unset) rather than guessing.
+   */
+  tosAcceptedAt: string | null;
+}
+
+/**
+ * Stripe stamps acceptance under `consent.terms_of_service: 'accepted'`
+ * on the Checkout Session object once the customer checks the (Stripe-
+ * configured) consent box. There is no separate acceptance TIMESTAMP field
+ * in Stripe's payload — accepting IS what causes this webhook to fire in
+ * the first place, so the moment this event is processed is the accurate
+ * "accepted at" instant, not a guess.
+ */
+function extractTosAcceptedAt(object: Record<string, unknown>, now: () => string): string | null {
+  const consent = object.consent;
+  if (typeof consent !== 'object' || consent === null) return null;
+  const tos = (consent as Record<string, unknown>).terms_of_service;
+  return tos === 'accepted' ? now() : null;
 }
 
 /** Defensive field extraction for `checkout.session.completed`. */
-export function extractCheckoutSession(raw: unknown): ExtractedCheckoutSession | null {
+export function extractCheckoutSession(
+  raw: unknown,
+  now: () => string = () => new Date().toISOString()
+): ExtractedCheckoutSession | null {
   const object = eventObject(raw);
   if (!object) return null;
   const metadata = object.metadata;
@@ -164,6 +194,7 @@ export function extractCheckoutSession(raw: unknown): ExtractedCheckoutSession |
     tier,
     domain: extractCustomField(object.custom_fields, 'domain'),
     orgName: extractCustomField(object.custom_fields, 'org_name'),
+    tosAcceptedAt: extractTosAcceptedAt(object, now),
   };
 }
 
