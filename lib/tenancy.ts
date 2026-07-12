@@ -527,3 +527,173 @@ export async function activeTenantForImpression(token: string | null): Promise<T
   if (!tenant || !ACTIVE_STATUSES.includes(tenant.subscriptionStatus)) return null;
   return tenant;
 }
+
+// --- S21 admin-CLI primitives (list / rotate / set-attribution) -------------
+//
+// scripts/tenant-admin.mjs (lib/tenant-admin.ts) is the only caller of this
+// section — an owner-only, interactive CLI (embeds spec §6: "admin CLI
+// (list/rotate/revoke tenants)"). `revoke` needs no new code here: it's
+// literally cancelSubscription() above, already exported. This section adds
+// the two genuinely new primitives (list, rotate) plus one entitlement
+// writer (set-attribution) that closes a real gap — no code path before this
+// ever set attribution: 'none' (provisionFromCheckout hardcodes 'required'),
+// so a hand-negotiated network deal had no way to be recorded at all.
+
+const TENANT_KEY_PREFIX_SEGMENT = 'tenant:';
+// Bounded, not "loop until Redis says done": a pathological SCAN response
+// (a cursor that never returns to '0', e.g. a mocked or misbehaving backend)
+// must not hang an interactive CLI forever. At the tenant counts this
+// product will ever see (embeds spec §5: "100 tenants" is the modeled
+// ceiling), one page already covers everything in practice — this is a
+// safety cap, not a real limit.
+const SCAN_MAX_ITERATIONS = 1000;
+const SCAN_COUNT_HINT = '100';
+
+/**
+ * SCAN, not a maintained `<env>:tenants` index Set — deliberately. A
+ * maintained index would need a new SADD in provisionFromCheckout's
+ * new-tenant branch, touching the S18 webhook path (already adversarially
+ * hardened three times over — see that function's own doc comments) for an
+ * owner-tooling feature that doesn't need request-path speed. SCAN is
+ * self-healing (no second source of truth to drift) and introduces NO new
+ * key shape: it reads the existing, already-registered `tenant:<tenantId>`
+ * key by pattern. Net key-namespace-gate impact: none — every function in
+ * this section stays inside lib/tenancy.ts (the gate's client-confinement
+ * rule only fires on tenancyClient used OUTSIDE this file) and touches only
+ * the already-registered `tenant:` key shape.
+ */
+async function scanTenantIds(client: UpstashClient): Promise<string[]> {
+  const prefix = `${keyPrefix()}:${TENANT_KEY_PREFIX_SEGMENT}`;
+  const pattern = `${prefix}*`;
+  const ids: string[] = [];
+  let cursor = '0';
+  let iterations = 0;
+  do {
+    const result = await client.cmd(['SCAN', cursor, 'MATCH', pattern, 'COUNT', SCAN_COUNT_HINT]);
+    if (!Array.isArray(result) || result.length !== 2 || !Array.isArray(result[1])) break; // malformed reply — stop with whatever's already collected, never throw
+    cursor = String(result[0]);
+    for (const key of result[1] as unknown[]) {
+      if (typeof key === 'string' && key.startsWith(prefix)) ids.push(key.slice(prefix.length));
+    }
+    iterations++;
+  } while (cursor !== '0' && iterations < SCAN_MAX_ITERATIONS);
+  return ids;
+}
+
+/**
+ * Every tenantId currently on file. Owner-tooling only (scripts/tenant-
+ * admin.mjs's `list`/`inspect`/`impressions` commands) — no request-serving
+ * route calls this. Fails toward an empty list (never throws) on an
+ * unconfigured or unreachable tenancy database, same graceful-return style
+ * as every other function in this file; the CLI itself is what refuses
+ * loudly (lib/tenant-admin.ts's requireTenancyConfigured, backed by
+ * lib/upstash.ts's tenancyConfigured()) before ever calling this.
+ */
+export async function listTenantIds(): Promise<string[]> {
+  const client = tenancyClient();
+  if (!client) return [];
+  try {
+    return await scanTenantIds(client);
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+    return [];
+  }
+}
+
+/**
+ * Every tenant record currently on file, fetched with ONE MGET round trip
+ * after the SCAN (mirrors lib/impressions.ts's readImpressionsWindow — one
+ * batched read, never N sequential GETs). A record that fails to parse
+ * (parseTenantRecord returning null) is silently dropped rather than
+ * crashing the whole listing — the same parse-or-reject posture
+ * parseTenantRecord itself documents.
+ */
+export async function listTenants(): Promise<TenantRecord[]> {
+  const client = tenancyClient();
+  if (!client) return [];
+  try {
+    const ids = await scanTenantIds(client);
+    if (ids.length === 0) return [];
+    const raw = await client.cmd(['MGET', ...ids.map(tenantKey)]);
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((v) => (typeof v === 'string' ? parseTenantRecord(v) : null))
+      .filter((t): t is TenantRecord => t !== null);
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+    return [];
+  }
+}
+
+export interface RotatedToken {
+  /** The new plaintext capability token — the CLI shows this exactly once. */
+  token: string;
+  tokenHash: string;
+}
+
+/**
+ * Mint a new capability token for an existing tenant, same two primitives
+ * (mintCapabilityToken/tokenHash) this file's header comment already named
+ * as "the same two primitives a future admin-CLI 'rotate' command would
+ * call" — this IS that command's backing function, not new cryptography.
+ *
+ * Write order matters: new tenant record + new token index are written
+ * BEFORE the old index is deleted, so a crash mid-rotation fails toward
+ * "the old token still works for one more request" rather than toward a
+ * moment where NEITHER token resolves — the same bias toward "a paying
+ * customer's embed must not silently break" that provisionFromCheckout and
+ * updateSubscriptionStatus already apply to reactivation.
+ *
+ * Returns null when the tenant doesn't exist or the tenancy database is
+ * unconfigured/unreachable — the CLI reports either as "no such tenant" /
+ * "rotate failed", never distinguishing further (nothing here is a
+ * security-sensitive fail-closed decision like lookupTenantByToken's; it's
+ * just "did the write succeed").
+ */
+export async function rotateCapabilityToken(tenantId: string): Promise<RotatedToken | null> {
+  const client = tenancyClient();
+  if (!client) return null;
+  try {
+    const existing = await getTenantRecord(client, tenantId);
+    if (!existing) return null;
+    const token = mintCapabilityToken();
+    const hash = tokenHash(token);
+    const updated: TenantRecord = { ...existing, tokenHash: hash };
+    await client.cmd(['SET', tenantKey(tenantId), JSON.stringify(updated)]);
+    await client.cmd(['SET', tokenIndexKey(hash), tenantId]);
+    await client.cmd(['DEL', tokenIndexKey(existing.tokenHash)]);
+    return { token, tokenHash: hash };
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+    return null;
+  }
+}
+
+/**
+ * Owner-CLI-only entitlement writer (S21). Writes ONLY the `attribution`
+ * metadata field — this wires NO enforcement into any widget (see this
+ * file's header comment on the S5a honor-system breadcrumb, still
+ * unresolved as of this sprint). Before this function existed, no code path
+ * anywhere ever set attribution: 'none' — provisionFromCheckout hardcodes
+ * 'required' for every self-serve checkout (S5a: full attribution removal
+ * is licensed-partner-only) — so a hand-negotiated Network-tier deal that
+ * actually earned attribution removal had no way to be recorded. This
+ * closes that recording gap; it does not open an enforcement gap, because
+ * there was never any enforcement to begin with.
+ */
+export async function setAttributionEntitlement(
+  tenantId: string,
+  attribution: TenantRecord['attribution']
+): Promise<boolean> {
+  const client = tenancyClient();
+  if (!client) return false;
+  try {
+    const existing = await getTenantRecord(client, tenantId);
+    if (!existing) return false;
+    await client.cmd(['SET', tenantKey(tenantId), JSON.stringify({ ...existing, attribution })]);
+    return true;
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+    return false;
+  }
+}

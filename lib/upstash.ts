@@ -193,3 +193,26 @@ export function tenancyClient(): UpstashClient | null {
 export function keyPrefix(): string {
   return process.env.VERCEL_ENV ?? 'dev';
 }
+
+/**
+ * CLI-only configuration checks (S21, scripts/tenant-admin.mjs via
+ * lib/tenant-admin.ts): every route caller in this repo treats an
+ * unconfigured database as "degrade gracefully" (counters/cache: fall back
+ * to in-memory; tenancy: fail closed to not-authorized) — never a loud
+ * refusal, because a request-serving route must never crash a visitor's
+ * page load over a missing env var. An interactive owner CLI has the
+ * opposite obligation: silently operating on an empty/wrong keyspace would
+ * waste the owner's time and could look like "no tenants exist" when the
+ * real problem is a missing token. These two functions exist ONLY so
+ * lib/tenant-admin.ts can refuse loudly (nonzero exit) before running a
+ * command — they deliberately live here, not in lib/tenant-admin.ts itself,
+ * so the env var literals stay confined to this one file
+ * (scripts/check-key-namespaces.mjs's env-confinement rule).
+ */
+export function tenancyConfigured(): boolean {
+  return Boolean(process.env.UPSTASH_TENANCY_REST_URL && process.env.UPSTASH_TENANCY_REST_TOKEN);
+}
+
+export function countersConfigured(): boolean {
+  return Boolean(process.env.UPSTASH_COUNTERS_REST_URL && process.env.UPSTASH_COUNTERS_REST_TOKEN);
+}

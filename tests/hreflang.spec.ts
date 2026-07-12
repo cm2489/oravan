@@ -32,6 +32,7 @@ const PATHS = [
   '/impact',
   '/citations', // S23's citability/correction page
   '/embeds', // S16's configurator + docs page
+  '/embeds/terms', // S21's embeds Terms of Service
   '/partners', // S5b's partner GTM page
   '/mcp', // S12's MCP server docs page
   '/bills/hr-5582-119',

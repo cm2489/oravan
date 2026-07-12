@@ -2,7 +2,8 @@
  * In-process mock of the Upstash Redis REST surface, shared by the S11 unit
  * specs. Implements exactly the command subset lib/upstash.ts's callers use
  * (GET / SET [NX] [EX] / INCR / EXPIRE / TTL / DEL / MGET, the last added
- * S20 for lib/impressions.ts's readImpressionsWindow) over a Map, and
+ * S20 for lib/impressions.ts's readImpressionsWindow; SCAN added S21 for
+ * lib/tenancy.ts's listTenantIds/listTenants) over a Map, and
  * installs itself by swapping globalThis.fetch — the repo's established
  * mocking pattern (tests/feedback.unit.spec.ts). No live tokens exist
  * anywhere in the test environment, by design.
@@ -10,6 +11,12 @@
  * Every command is recorded (`commands`) so privacy specs can assert over
  * everything that WOULD have crossed the wire, not just what got stored.
  */
+
+/** Redis glob (only `*` is used by any caller in this repo) -> RegExp. */
+function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+  return new RegExp(`^${escaped}$`);
+}
 
 type Entry = { value: string; expiresAt: number | null };
 
@@ -88,6 +95,20 @@ export class MockUpstash {
       }
       case 'DEL':
         return this.live(args[0]) ? (this.store.delete(args[0]), 1) : 0;
+      case 'SCAN': {
+        // Single-page mock: real Upstash paginates via a numeric cursor and
+        // a COUNT hint; this mock ignores COUNT and always exhausts in one
+        // call (cursor '0' in, '0' out), which is sufficient to exercise
+        // lib/tenancy.ts's scanTenantIds bounded-loop contract (it only
+        // requires "eventually returns cursor '0'", never "returns exactly
+        // one page's worth"). [cursor, MATCH, pattern, ...ignored] — COUNT
+        // and its value, if present, are accepted and ignored.
+        const matchIdx = args.indexOf('MATCH');
+        const pattern = matchIdx >= 0 ? args[matchIdx + 1] : '*';
+        const re = globToRegExp(pattern);
+        const liveKeys = [...this.store.keys()].filter((k) => this.live(k) !== undefined);
+        return ['0', liveKeys.filter((k) => re.test(k))];
+      }
       default:
         throw new Error(`MockUpstash: unimplemented command ${op}`);
     }

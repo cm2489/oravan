@@ -14,6 +14,7 @@ import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildSiteJsonLd } from '@/lib/jsonld';
+import { SITE_ORIGIN } from '@/lib/site';
 
 const STEPS = [
   { icon: MapPin, key: 1 },
@@ -33,7 +34,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { alternates: hreflangAlternates(locale, '/') };
+  // S21: the "what moved this week" feed (lib/core/feed.ts) mirrors this
+  // page's own "Act now" section, so the RSS discovery link lives here —
+  // one <link rel="alternate" type="application/rss+xml"> per locale,
+  // pointing at that locale's own static feed route
+  // (app/feed/whats-moving.xml or app/es/feed/whats-moving.xml).
+  const feedPath = locale === 'es' ? '/es/feed/whats-moving.xml' : '/feed/whats-moving.xml';
+  return {
+    alternates: {
+      ...hreflangAlternates(locale, '/'),
+      types: { 'application/rss+xml': `${SITE_ORIGIN}${feedPath}` },
+    },
+  };
 }
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
