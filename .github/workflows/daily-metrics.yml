@@ -1,0 +1,73 @@
+name: Daily metrics digest
+
+# Traffic-watch design (2026-07): a founder-facing daily digest of MCP
+# tool-call / /api/script generation VOLUME, sourced entirely from the
+# existing counters-database usage family (lib/usage.ts) — no new
+# database, no new secret, zero client-side analytics (CLAUDE.md's
+# constitution forbids that permanently; see scripts/daily-metrics.mjs's
+# header comment and the digest body itself for the disclosure). Site
+# page-view traffic is deliberately NOT covered — there is no compliant
+# programmatic source for it today (Vercel Web Analytics needs a banned
+# client script; Vercel's server-side Observability has no REST API).
+
+on:
+  schedule:
+    - cron: '0 13 * * *' # 13:00 UTC — after sync-bills (07:30) and Monday's legislators refresh (08:00)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-metrics
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        # Unlike refresh-legislators.yml's stdlib-only steps, this job needs
+        # `tsx` (a real devDependency) to run scripts/daily-metrics.mjs —
+        # that script reuses lib/usage.ts's real key-builder/read logic
+        # rather than a second, independently-maintained copy of the key
+        # format (see that script's own header comment for why plain node
+        # can't resolve lib/usage.ts's extensionless imports).
+      - name: Ensure labels + pinned digest issue exist (idempotent)
+        id: setup
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create metrics --color 1D76DB --description "Daily metrics digest" --force
+          gh label create traffic-spike --color D93F0B --description "Automated traffic-spike alert" --force
+          NUM=$(gh issue list --repo cm2489/oravan --state open --search 'in:title "Daily metrics"' \
+                --json number,title --jq '.[] | select(.title=="📊 Daily metrics") | .number' | head -1)
+          if [ -z "$NUM" ]; then
+            NUM=$(gh issue create --repo cm2489/oravan --title "📊 Daily metrics" --label metrics \
+                  --body "Automated daily digest — one comment per day. Covers MCP tool calls and /api/script generations from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median. Site-level page-view traffic is NOT included: Vercel's Web Analytics API needs the @vercel/analytics client script, which CLAUDE.md permanently bans, and Vercel's server-side Observability (the compliant, no-client-script data source) has no REST API — dashboard/CSV-export only. See scripts/daily-metrics.mjs for the full reasoning." \
+                  | grep -oE '[0-9]+$')
+            gh issue pin --repo cm2489/oravan "$NUM" || true
+          fi
+          echo "issue_num=$NUM" >> "$GITHUB_OUTPUT"
+        # Labels + the pinned issue are created BY THIS WORKFLOW every run,
+        # idempotently — a `gh label create --force` is a no-op upsert when
+        # the label already exists, and the issue lookup/create is guarded
+        # by its own title search. This repo's own house lesson (a
+        # workflow-referenced label that doesn't already exist breaks the
+        # first real run — refresh-legislators.yml's data-vacancy/
+        # redistricting-watch labels were both created out-of-band, not by
+        # committed code) is why this step exists at all rather than a
+        # separate manual PR-checklist item to forget.
+      - name: Compute + post digest, open spike issue if tripped
+        env:
+          UPSTASH_COUNTERS_REST_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
+          UPSTASH_COUNTERS_REST_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIGEST_ISSUE_NUMBER: ${{ steps.setup.outputs.issue_num }}
+        run: npx tsx scripts/daily-metrics.mjs
