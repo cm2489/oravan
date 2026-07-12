@@ -1,5 +1,5 @@
 import { createMcpHandler } from 'mcp-handler';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { CATEGORIES } from '@/lib/taxonomy';
@@ -17,6 +17,7 @@ import {
   TOOL_INFO,
   whatsMoving,
 } from '@/lib/core/mcp';
+import { noteMcpToolCall, type McpToolName } from '@/lib/usage';
 
 /*
  * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
@@ -97,6 +98,28 @@ function toolError(message: string): ToolResult {
   return { content: [{ type: 'text', text: message }], isError: true };
 }
 
+/*
+ * Usage-counting wrapper (traffic-watch design, 2026-07): one call site
+ * instead of five edits scattered through each handler body. Counts every
+ * INVOCATION regardless of outcome (a toolError result still counts — "how
+ * many times was the tool called," not a success-rate metric) via
+ * `after()`, so a slow or failed counter write can never delay the tool's
+ * own response — see lib/usage.ts's header comment for the full key-safety
+ * argument (`tool` here is always one of ToolName's five compile-time
+ * literals the route itself supplies to registerTool, never caller-
+ * controlled input). Rate-limited (429) requests never reach this wrapper
+ * at all — limitedPost below returns before `handler(req)` runs.
+ */
+function withUsage<A extends unknown[]>(
+  tool: McpToolName,
+  fn: (...args: A) => Promise<ToolResult>
+): (...args: A) => Promise<ToolResult> {
+  return (...args: A): Promise<ToolResult> => {
+    after(() => noteMcpToolCall(tool));
+    return fn(...args);
+  };
+}
+
 const localeSchema = z.enum(['en', 'es']).optional().describe('Response language: "en" (default) or "es".');
 
 const handler = createMcpHandler(
@@ -114,12 +137,12 @@ const handler = createMcpHandler(
         },
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ zip, locale }) => {
+      withUsage('lookup_representatives', async ({ zip, locale }) => {
         const loc = normalizeLocale(locale);
         const result = lookupRepresentatives(zip, loc);
         if (!result) return toolError(noDistrictDataError(zip, loc));
         return toolResult(result);
-      }
+      })
     );
 
     server.registerTool(
@@ -139,13 +162,13 @@ const handler = createMcpHandler(
         },
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ slug, citation, locale }) => {
+      withUsage('get_bill', async ({ slug, citation, locale }) => {
         const loc = normalizeLocale(locale);
         if (!slug && !citation) return toolError(missingBillIdentifierError(loc));
         const result = getBillDetail({ slug, citation }, loc);
         if (!result) return toolError(billNotFoundError({ slug, citation }, loc));
         return toolResult(result);
-      }
+      })
     );
 
     server.registerTool(
@@ -162,13 +185,13 @@ const handler = createMcpHandler(
         },
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ query, topic, status, active_only, locale, limit }) => {
+      withUsage('search_bills', async ({ query, topic, status, active_only, locale, limit }) => {
         const result = searchBills(
           { query, topic, status, activeOnly: active_only, limit },
           normalizeLocale(locale)
         );
         return toolResult(result);
-      }
+      })
     );
 
     server.registerTool(
@@ -183,10 +206,10 @@ const handler = createMcpHandler(
         },
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ days, topic, locale, limit }) => {
+      withUsage('whats_moving', async ({ days, topic, locale, limit }) => {
         const result = whatsMoving({ days, topic, limit }, normalizeLocale(locale));
         return toolResult(result);
-      }
+      })
     );
 
     server.registerTool(
@@ -199,12 +222,12 @@ const handler = createMcpHandler(
         },
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
-      async ({ bioguide, locale }) => {
+      withUsage('get_representative', async ({ bioguide, locale }) => {
         const loc = normalizeLocale(locale);
         const result = getRepresentativeDetail(bioguide, loc);
         if (!result) return toolError(representativeNotFoundError(bioguide, loc));
         return toolResult(result);
-      }
+      })
     );
   },
   {

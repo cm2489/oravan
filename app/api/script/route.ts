@@ -1,11 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { getBill } from '@/lib/core';
 import { callerIp, createRateLimiter, createTenantRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { contentVersion, createScriptCache } from '@/lib/scriptcache';
 import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
+import { noteScriptGeneration } from '@/lib/usage';
 
 /*
  * The only Anthropic-calling endpoint in Oravan. Stateless by design:
@@ -131,6 +132,10 @@ export async function POST(req: NextRequest) {
     const script = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     if (!script) throw new Error('empty');
     await cache.set({ slug, stance, lang, version }, script); // never throws
+    // traffic-watch (2026-07): counts only real cache-miss generations (an
+    // actual Anthropic spend), not cache hits — see lib/usage.ts. after()
+    // so a slow/failed counter write never delays this response.
+    after(() => noteScriptGeneration());
     return NextResponse.json({ script, cached: false });
   } catch (err) {
     console.error('script generation failed', err);

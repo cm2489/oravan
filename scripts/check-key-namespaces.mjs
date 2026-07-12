@@ -32,6 +32,18 @@
  *                 discipline as the embed-domain-nomination family —
  *                 lib/impressions.ts is the single registry).
  *
+ * counters DB gains a FOURTH family (traffic-watch, 2026-07): MCP tool /
+ *                 AI-script usage counters (lib/usage.ts is the single
+ *                 registry). Content-free like every other counters family
+ *                 (no slug/stance/locale/query/bill — a caller's own lookup
+ *                 key must never reach a usage key), but with ONE
+ *                 deliberate carve-out from CONTENT_IDENTIFIER: `tool` is
+ *                 allowed here, and ONLY here — it is drawn from a closed
+ *                 5-member compile-time union the MCP SDK itself supplies,
+ *                 never caller-controlled input (see lib/usage.ts's header
+ *                 comment for the full argument). Still caller-free — no
+ *                 IP/UA/referer/salt may reach a usage key either.
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -68,6 +80,7 @@ const CACHE_REGISTRY = 'lib/scriptcache.ts';
 const DOMAIN_REGISTRY = 'lib/embed-referrer.ts';
 const TENANCY_REGISTRY = 'lib/tenancy.ts';
 const IMPRESSION_REGISTRY = 'lib/impressions.ts';
+const USAGE_REGISTRY = 'lib/usage.ts';
 const CLIENT_MODULE = 'lib/upstash.ts';
 
 // Identifier fragments that mark CONTENT (never allowed near counters or
@@ -75,6 +88,14 @@ const CLIENT_MODULE = 'lib/upstash.ts';
 // domain-nomination keys).
 const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation/i;
 const CALLER_MATERIAL = /(^|[^a-z])ip([^a-z]|$)|forwarded|caller|salt|address|\bzip\b/i;
+// The usage registry's OWN content rule (traffic-watch, 2026-07): identical
+// to CONTENT_IDENTIFIER except `tool` is deliberately removed — this is the
+// one registry where a tool name is the intentional dimension, not content
+// (see lib/usage.ts's header comment). Every OTHER forbidden term
+// (slug/stance/locale/lang/bill/summary/title/topic/query/citation) still
+// applies unchanged — a caller's ZIP, bill slug, or search string must
+// never reach a usage key.
+const USAGE_CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|summary|title|topic|query|citation/i;
 // S19: the counters registry's SECOND identity shape (tenant-id-keyed,
 // alongside the caller-hash-keyed one) must never fold caller material into
 // the SAME interpolation as a tenant identifier — that would start building
@@ -146,24 +167,26 @@ export function scanText(file, text) {
     });
   }
 
-  // 2. client confinement: countersClient only in the three registries built
+  // 2. client confinement: countersClient only in the four registries built
   //    on the counters database (rate-limit counters, domain nominations,
-  //    and impression counts), cacheClient only in the cache registry,
-  //    tenancyClient only in the tenancy registry (plus their definitions
-  //    in the client module itself). The Stripe webhook route must import
-  //    functions FROM lib/tenancy.ts, never touch tenancyClient() directly
-  //    — mirrors how app/api/script never touches cacheClient() directly.
+  //    impression counts, and usage counters), cacheClient only in the
+  //    cache registry, tenancyClient only in the tenancy registry (plus
+  //    their definitions in the client module itself). The Stripe webhook
+  //    route must import functions FROM lib/tenancy.ts, never touch
+  //    tenancyClient() directly — mirrors how app/api/script never touches
+  //    cacheClient() directly.
   if (
     file !== CLIENT_MODULE &&
     file !== COUNTERS_REGISTRY &&
     file !== DOMAIN_REGISTRY &&
     file !== IMPRESSION_REGISTRY &&
+    file !== USAGE_REGISTRY &&
     /\bcountersClient\b/.test(text)
   ) {
     add(
       'client-confinement',
       0,
-      `countersClient used outside ${COUNTERS_REGISTRY}, ${DOMAIN_REGISTRY}, or ${IMPRESSION_REGISTRY}`
+      `countersClient used outside ${COUNTERS_REGISTRY}, ${DOMAIN_REGISTRY}, ${IMPRESSION_REGISTRY}, or ${USAGE_REGISTRY}`
     );
   }
   if (file !== CLIENT_MODULE && file !== CACHE_REGISTRY && /\bcacheClient\b/.test(text)) {
@@ -277,6 +300,22 @@ export function scanText(file, text) {
           line,
           `caller-derived material "${expr.trim()}" interpolated in the impression registry`
         );
+      }
+    }
+  }
+
+  // 4e. usage keys (traffic-watch, 2026-07) carry no content identifier
+  //     (using the usage-specific list, which allows `tool`) and no
+  //     caller-derived material — mirrors rule 4d's impression-content/
+  //     impression-caller checks. A bare `${tool}` or `${day}` interpolation
+  //     is the legitimate shape and must NOT be flagged.
+  if (file === USAGE_REGISTRY) {
+    for (const { expr, line } of templateInterpolations(text)) {
+      if (USAGE_CONTENT_IDENTIFIER.test(expr)) {
+        add('usage-content', line, `content identifier "${expr.trim()}" interpolated in the usage registry`);
+      }
+      if (CALLER_MATERIAL.test(expr)) {
+        add('usage-caller', line, `caller-derived material "${expr.trim()}" interpolated in the usage registry`);
       }
     }
   }
@@ -469,6 +508,18 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:imp:${slug}:${day}`;',
     rule: 'impression-content',
   },
+  {
+    name: 'bill slug interpolated into a usage key (traffic-watch)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:mcp:${tool}:${slug}`;',
+    rule: 'usage-content',
+  },
+  {
+    name: 'caller IP interpolated into a usage key (traffic-watch)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:mcp:${tool}:${ip}`;',
+    rule: 'usage-caller',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -513,6 +564,19 @@ const SELF_TEST_CLEAN = [
     // imp:${tenantId}:${day} shape produces zero violations.
     file: IMPRESSION_REGISTRY,
     text: "import { countersClient } from './upstash';\nconst k = `${keyPrefix()}:imp:${tenantId}:${day}`;",
+  },
+  {
+    // Proves countersClient is allowed in the usage registry too (rule 2
+    // must not flag its own intended use), and that the real
+    // usage:mcp:${tool}:${day} shape produces zero violations — `tool` is
+    // the deliberate carve-out this registry alone permits.
+    file: USAGE_REGISTRY,
+    text: "import { countersClient } from './upstash';\nconst k = `${keyPrefix()}:usage:mcp:${tool}:${day}`;",
+  },
+  {
+    // The real usage:script:${day} shape (no `tool` segment at all).
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:script:${day}`;',
   },
 ];
 

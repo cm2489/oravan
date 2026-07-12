@@ -5,6 +5,7 @@ import { noteImpression, noteImpressionForToken } from '../lib/impressions';
 import { createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
 import { mintCapabilityToken, resolveTenantAccess, tenantKey, tokenHash, tokenIndexKey } from '../lib/tenancy';
+import { MCP_TOOL_NAMES, noteMcpToolCall, noteScriptGeneration } from '../lib/usage';
 import {
   CACHE_URL,
   COUNTERS_URL,
@@ -505,5 +506,75 @@ test('F6 named fixture: a burst of spoofed-IP traffic against rep-lookup and the
     expect(counters.store.get(impressionKeys[0])?.value).toBe(String(SPOOFED_IPS.length + 5));
   } finally {
     restoreBurstFetch();
+  }
+});
+
+/*
+ * AE5, RE-RUN AGAINST THE USAGE-COUNTER FAMILY (traffic-watch design,
+ * 2026-07): mirrors the impression-family block above. Drives
+ * noteMcpToolCall/noteScriptGeneration DIRECTLY - the exact functions
+ * app/api/mcp/[transport]/route.ts's withUsage wrapper and
+ * app/api/script/route.ts call from inside after() - never the route
+ * modules themselves, which pull ESM-only deps (mcp-handler,
+ * @anthropic-ai/sdk) this file's other tests already document as
+ * unrequireable in a unit spec. Proves the usage family's wire surface
+ * carries neither content (no slug/stance/locale/query/bill - and,
+ * pointedly, no OTHER tool's name folded into one entry) nor caller
+ * material (no IP/UA), and that `tool` itself - the one deliberate
+ * carve-out from CONTENT_IDENTIFIER this registry alone permits - never
+ * bleeds into a DIFFERENT tool's counter.
+ */
+test('AE5 (usage-counter family, traffic-watch): MCP tool calls + script generations leave the counters wire clean, per-tool counters stay independent', async () => {
+  const counters = new MockUpstash();
+  const restoreUsageFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  try {
+    // Every tool gets called a different number of times, plus one tool
+    // twice-in-a-row, so a mixed-up counter would be visible in the
+    // asserted values below, not just in the key shape.
+    await noteMcpToolCall('lookup_representatives');
+    await noteMcpToolCall('get_bill');
+    await noteMcpToolCall('get_bill');
+    await noteMcpToolCall('search_bills');
+    await noteMcpToolCall('whats_moving');
+    await noteMcpToolCall('get_representative');
+    await noteScriptGeneration();
+    await noteScriptGeneration();
+    await noteScriptGeneration();
+
+    const countersCommandText = counters.commands.map((c) => c.join(' ')).join('\n');
+
+    // 1. Every usage key stays inside the closed shape: usage:mcp:<one of
+    //    the 5 tool literals>:<day>, or usage:script:<day>. No other shape
+    //    (this ALSO proves rule usage-content/usage-caller's real-world
+    //    counterpart: nothing besides `tool` and a date ever appears).
+    const toolAlternation = MCP_TOOL_NAMES.join('|');
+    for (const key of counters.keys()) {
+      expect(key).toMatch(new RegExp(`^dev:usage:(mcp:(${toolAlternation}):\\d{4}-\\d{2}-\\d{2}|script:\\d{4}-\\d{2}-\\d{2})$`));
+    }
+
+    // 2. No content identifier (a bill slug/citation, a search query, a
+    //    locale, a stance) and no caller material (an IP, a UA string) ever
+    //    reaches this wire - the write path's only inputs are a closed
+    //    tool-name union and a date, exactly as lib/usage.ts's header
+    //    comment argues.
+    for (const marker of [SLUG, 'support', 'oppose', 'undecided', ...CALLER_IPS, 'Mozilla']) {
+      expect(countersCommandText, `usage wire surface must not carry "${marker}"`).not.toContain(marker);
+    }
+
+    // 3. Per-tool independence, with exact counts (not just "some keys
+    //    exist") - get_bill really is 2, every other tool really is 1, and
+    //    the script counter really is 3, all in the SAME daily bucket
+    //    shape, never blended into one another.
+    for (const tool of MCP_TOOL_NAMES) {
+      const key = counters.keys().find((k) => k.startsWith(`dev:usage:mcp:${tool}:`));
+      expect(key, `${tool} must have its own counter`).toBeDefined();
+      expect(counters.store.get(key!)?.value).toBe(tool === 'get_bill' ? '2' : '1');
+    }
+    const scriptKey = counters.keys().find((k) => k.startsWith('dev:usage:script:'));
+    expect(scriptKey).toBeDefined();
+    expect(counters.store.get(scriptKey!)?.value).toBe('3');
+  } finally {
+    restoreUsageFetch();
   }
 });
