@@ -33,6 +33,7 @@ const STATIC_PATHS = [
   '/impact',
   '/citations',
   '/embeds',
+  '/embeds/terms',
   '/partners',
   '/mcp',
 ] as const;

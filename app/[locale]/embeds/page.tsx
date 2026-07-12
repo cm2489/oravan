@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { getTeasers } from '@/lib/core';
 import { EmbedConfigurator } from '@/components/EmbedConfigurator';
@@ -32,11 +33,22 @@ export async function generateMetadata({
   return { title: t('title'), alternates: hreflangAlternates(locale, '/embeds') };
 }
 
+// S21: the free "what moved this week" feed's two static routes. Locale-
+// explicit dotted-folder routes (app/feed/whats-moving.{json,xml} for en,
+// app/es/feed/whats-moving.{json,xml} for es) - see lib/core/feed.ts's
+// header comment for why one route + a `?locale=` param doesn't work for a
+// force-static handler.
+function feedUrls(locale: string): { json: string; xml: string } {
+  const prefix = locale === 'es' ? '/es/feed' : '/feed';
+  return { json: `${prefix}/whats-moving.json`, xml: `${prefix}/whats-moving.xml` };
+}
+
 export default async function EmbedsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('embeds');
   const bills = getTeasers(locale);
+  const feeds = feedUrls(locale);
 
   return (
     <article className="mx-auto max-w-5xl px-4 py-12">
@@ -77,6 +89,33 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
         <div className="mt-8">
           <h3 className="font-display text-lg font-bold">{t('docsLoaderTitle')}</h3>
           <p className="mt-2 leading-relaxed">{t('docsLoaderBody')}</p>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="font-display text-lg font-bold">{t('docsFeedTitle')}</h3>
+          <p className="mt-2 leading-relaxed">{t('docsFeedBody')}</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            <li>
+              <a href={feeds.json} className="underline underline-offset-2">
+                {t('docsFeedJsonLabel')}: {feeds.json}
+              </a>
+            </li>
+            <li>
+              <a href={feeds.xml} className="underline underline-offset-2">
+                {t('docsFeedRssLabel')}: {feeds.xml}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="font-display text-lg font-bold">{t('docsTosTitle')}</h3>
+          <p className="mt-2 leading-relaxed">
+            {t('docsTosBody')}{' '}
+            <Link href="/embeds/terms" className="underline underline-offset-2 font-semibold">
+              {t('docsTosLinkText')}
+            </Link>
+          </p>
         </div>
       </section>
     </article>
