@@ -193,3 +193,40 @@ test('the embed CSP carve-out applies to bill-card too (same route-group header)
   expect(csp).toContain('frame-ancestors *');
   expect(csp).toContain("connect-src 'self'");
 });
+
+/*
+ * S20 (F6): the optional `token` param, same contract as rep-lookup's own
+ * (see that file's matching test block for the full "counters DB down"
+ * disclosure - identical reasoning applies here, not repeated verbatim).
+ */
+test('S20: a token param never changes the render — identical content and status whether or not it resolves', async ({
+  page,
+}) => {
+  const noToken = await page.goto(`/embed/bill-card?locale=en&slug=${DECODED_SLUG}`);
+  await expect(page.getByText('H.R. 5582')).toBeVisible();
+  const noTokenStatus = noToken?.status();
+  // The <main> markup only - not the raw response text. Next's own RSC
+  // payload (a trailing <script> tag) legitimately echoes the requested
+  // URL/query string verbatim (Next's router state, unrelated to S20) -
+  // comparing the full response text would flag that expected, harmless
+  // difference as if the WIDGET's own render had changed. <main> is the
+  // entire widget - everything a host page's iframe actually shows.
+  const noTokenMain = await noToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
+
+  const garbageToken = await page.goto(
+    `/embed/bill-card?locale=en&slug=${DECODED_SLUG}&token=totally-made-up-token`
+  );
+  await expect(page.getByText('H.R. 5582')).toBeVisible();
+  expect(garbageToken?.status()).toBe(noTokenStatus);
+  const garbageTokenMain = await garbageToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
+
+  expect(noTokenMain).toBeTruthy();
+  expect(garbageTokenMain).toBe(noTokenMain);
+});
+
+test('S20: token param renders identically on the "bill not found" state too (no crash before any lookup)', async ({
+  page,
+}) => {
+  await page.goto('/embed/bill-card?locale=en&slug=not-a-real-bill-999&token=another-made-up-token');
+  await expect(page.getByText(en.embed.billNotFound)).toBeVisible();
+});

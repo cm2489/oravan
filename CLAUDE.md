@@ -14,7 +14,7 @@ Read README.md first; its **Design principles** section is the product constitut
 
 ## Architecture in one breath
 
-Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database; ~1,000 SSG pages; the only dynamic routes are `app/api/script` (Anthropic, cached + rate-limited), `app/api/reps` (pure lookup), `app/api/district` (stateless Census-geocoder proxy for split-ZIP address refinement — address never stored or logged), `app/api/feedback` (beta feedback → GitHub issue; only the volunteered text, no identifiers), `app/api/mcp/[transport]` (the MCP server: 5 read-only tools, rate-limited, citation envelope), and `app/api/stripe/webhook` (S18 tenant provisioning; 503-dark until `STRIPE_WEBHOOK_SECRET` exists). `proxy.ts` does locale negotiation only.
+Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database; ~1,000 SSG pages; the only dynamic routes are `app/api/script` (Anthropic, cached + rate-limited), `app/api/reps` (pure lookup), `app/api/district` (stateless Census-geocoder proxy for split-ZIP address refinement — address never stored or logged), `app/api/feedback` (beta feedback → GitHub issue; only the volunteered text, no identifiers), `app/api/mcp/[transport]` (the MCP server: 5 read-only tools, rate-limited, citation envelope), `app/api/stripe/webhook` (S18 tenant provisioning; 503-dark until `STRIPE_WEBHOOK_SECRET` exists), and `app/api/tenant/impressions` (S20; token-authenticated, a tenant reads only its own daily/monthly aggregates, best-effort by design). `proxy.ts` does locale negotiation only.
 
 ## This is build #3 of 3
 

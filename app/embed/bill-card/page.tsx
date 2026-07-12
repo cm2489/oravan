@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { after } from 'next/server';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
+import { noteImpressionForToken } from '@/lib/impressions';
+import { callerIp } from '@/lib/ratelimit';
 import { BillCardWidget, type BillCardData } from '@/components/embed/BillCardWidget';
 
 export async function generateMetadata({
@@ -33,6 +37,11 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
  * (app/embed's root layout carries no site chrome to render around one),
  * and a graceful in-widget message keeps the iframe's contract (always
  * something coherent, only ever content Oravan authored) intact.
+ *
+ * S20 (F6): an OPTIONAL `token` param, same contract as rep-lookup's own —
+ * absent -> byte-for-byte unchanged; present -> a background, non-blocking
+ * impression count via after(), never a new paywall, never affects
+ * rendering either way. See lib/impressions.ts.
  */
 export default async function BillCardEmbedPage({
   searchParams,
@@ -40,6 +49,7 @@ export default async function BillCardEmbedPage({
   searchParams: Promise<{
     locale?: string;
     slug?: string;
+    token?: string;
     accent?: string;
     radius?: string;
     font?: string;
@@ -47,10 +57,15 @@ export default async function BillCardEmbedPage({
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, slug, accent, radius, font, brandless, attribution } = await searchParams;
+  const { locale: localeParam, slug, token, accent, radius, font, brandless, attribution } = await searchParams;
   const locale = normalizeLocale(localeParam);
   const raw = typeof slug === 'string' && slug.length > 0 ? getBill(slug) : undefined;
   const bill = raw ? localizeBill(raw, locale) : null;
+
+  if (token) {
+    const ip = callerIp(await headers());
+    after(() => noteImpressionForToken(token, ip));
+  }
 
   const billData: BillCardData | null = bill
     ? {

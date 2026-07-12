@@ -27,6 +27,11 @@
  *                 blur into the caller-keyed doctrine any more than the
  *                 cache database may.
  *
+ * counters DB gains a THIRD family (S20): impression counts
+ *                 (tenantId + day, content-free AND caller-free, same shape
+ *                 discipline as the embed-domain-nomination family —
+ *                 lib/impressions.ts is the single registry).
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -57,11 +62,12 @@ const SCAN_DIRS = ['app', 'lib'];
 const SCAN_ROOT_FILES = ['proxy.ts'];
 const EXTENSIONS = ['.ts', '.tsx'];
 
-// The four registries.
+// The five registries.
 const COUNTERS_REGISTRY = 'lib/ratelimit.ts';
 const CACHE_REGISTRY = 'lib/scriptcache.ts';
 const DOMAIN_REGISTRY = 'lib/embed-referrer.ts';
 const TENANCY_REGISTRY = 'lib/tenancy.ts';
+const IMPRESSION_REGISTRY = 'lib/impressions.ts';
 const CLIENT_MODULE = 'lib/upstash.ts';
 
 // Identifier fragments that mark CONTENT (never allowed near counters or
@@ -140,20 +146,25 @@ export function scanText(file, text) {
     });
   }
 
-  // 2. client confinement: countersClient only in the two registries built
-  //    on the counters database (rate-limit counters and domain
-  //    nominations), cacheClient only in the cache registry, tenancyClient
-  //    only in the tenancy registry (plus their definitions in the client
-  //    module itself). The Stripe webhook route must import functions FROM
-  //    lib/tenancy.ts, never touch tenancyClient() directly — mirrors how
-  //    app/api/script never touches cacheClient() directly.
+  // 2. client confinement: countersClient only in the three registries built
+  //    on the counters database (rate-limit counters, domain nominations,
+  //    and impression counts), cacheClient only in the cache registry,
+  //    tenancyClient only in the tenancy registry (plus their definitions
+  //    in the client module itself). The Stripe webhook route must import
+  //    functions FROM lib/tenancy.ts, never touch tenancyClient() directly
+  //    — mirrors how app/api/script never touches cacheClient() directly.
   if (
     file !== CLIENT_MODULE &&
     file !== COUNTERS_REGISTRY &&
     file !== DOMAIN_REGISTRY &&
+    file !== IMPRESSION_REGISTRY &&
     /\bcountersClient\b/.test(text)
   ) {
-    add('client-confinement', 0, `countersClient used outside ${COUNTERS_REGISTRY} or ${DOMAIN_REGISTRY}`);
+    add(
+      'client-confinement',
+      0,
+      `countersClient used outside ${COUNTERS_REGISTRY}, ${DOMAIN_REGISTRY}, or ${IMPRESSION_REGISTRY}`
+    );
   }
   if (file !== CLIENT_MODULE && file !== CACHE_REGISTRY && /\bcacheClient\b/.test(text)) {
     add('client-confinement', 0, `cacheClient used outside ${CACHE_REGISTRY}`);
@@ -240,6 +251,32 @@ export function scanText(file, text) {
     for (const { expr, line } of templateInterpolations(text)) {
       if (CALLER_MATERIAL.test(expr)) {
         add('tenancy-caller', line, `caller-derived material "${expr.trim()}" interpolated in the tenancy registry`);
+      }
+    }
+  }
+
+  // 4d. impression keys (S20) carry no content identifier and no
+  //     caller-derived material — mirrors rule 4b's domain-content/
+  //     domain-caller checks. This family has no raw-referer input to guard
+  //     against (unlike domain nominations, which start from a Referer
+  //     header), so only two checks apply here, not three. A bare
+  //     `${tenantId}` is the legitimate S20 shape and must NOT be flagged —
+  //     tenantId matches neither CONTENT_IDENTIFIER nor CALLER_MATERIAL.
+  if (file === IMPRESSION_REGISTRY) {
+    for (const { expr, line } of templateInterpolations(text)) {
+      if (CONTENT_IDENTIFIER.test(expr)) {
+        add(
+          'impression-content',
+          line,
+          `content identifier "${expr.trim()}" interpolated in the impression registry`
+        );
+      }
+      if (CALLER_MATERIAL.test(expr)) {
+        add(
+          'impression-caller',
+          line,
+          `caller-derived material "${expr.trim()}" interpolated in the impression registry`
+        );
       }
     }
   }
@@ -420,6 +457,18 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:rl:${opts.route}:${tenantId + ip}`;',
     rule: 'counters-tenant-caller-mix',
   },
+  {
+    name: 'caller IP interpolated into an impression key (S20)',
+    file: IMPRESSION_REGISTRY,
+    text: 'const k = `${keyPrefix()}:imp:${tenantId}:${ip}`;',
+    rule: 'impression-caller',
+  },
+  {
+    name: 'bill slug interpolated into an impression key (S20)',
+    file: IMPRESSION_REGISTRY,
+    text: 'const k = `${keyPrefix()}:imp:${slug}:${day}`;',
+    rule: 'impression-content',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -457,6 +506,13 @@ const SELF_TEST_CLEAN = [
       'const a = `${keyPrefix()}:tenant:${tenantId}`;\n' +
       'const b = `${keyPrefix()}:token:${hash}`;\n' +
       'const c = `${keyPrefix()}:stripe-event:${eventId}`;',
+  },
+  {
+    // Proves countersClient is allowed in the impression registry too (rule
+    // 2 must not flag its own intended use), and that the real
+    // imp:${tenantId}:${day} shape produces zero violations.
+    file: IMPRESSION_REGISTRY,
+    text: "import { countersClient } from './upstash';\nconst k = `${keyPrefix()}:imp:${tenantId}:${day}`;",
   },
 ];
 

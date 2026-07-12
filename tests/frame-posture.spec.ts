@@ -126,6 +126,10 @@ test.describe(
       // in the test env either, so it'd 503 even on POST) - either way this proves
       // the site-wide frame-ancestors block still applies on a non-2xx response.
       stripe: '/api/stripe/webhook',
+      // S20: tenant-authenticated impression read. No X-Oravan-Key header on
+      // this bare request -> 403 unauthorized - again proving the site-wide
+      // block applies regardless of status code.
+      tenant: '/api/tenant/impressions',
     };
     const EMBED_ROUTES: Record<string, string> = {
       'rep-lookup': '/embed/rep-lookup?locale=en',

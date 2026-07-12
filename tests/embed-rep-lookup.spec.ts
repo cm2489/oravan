@@ -175,3 +175,63 @@ test('the embed CSP carve-out allows framing by any origin (F1 site-wide lock is
   expect(csp).toContain('frame-ancestors *');
   expect(csp).toContain("connect-src 'self'");
 });
+
+/*
+ * S20 (F6): the optional `token` param. Absent -> byte-for-byte unchanged
+ * (already proven by every test above, none of which ever pass one).
+ * Present -> the render must STILL be byte-for-byte unchanged, whether the
+ * token resolves to a real active tenant or not - this can never become a
+ * new paywall, only the background impression count
+ * (lib/impressions.ts's noteImpressionForToken) silently no-ops or
+ * succeeds via after().
+ *
+ * "Counters DB down" disclosure: tests/e2e-server.mjs deliberately keeps
+ * the counters database UNCONFIGURED for the whole suite (its own header
+ * comment: "ONLY the tenancy database gets a live (fake) backend"), so
+ * every e2e test in this file - including these - already renders under
+ * exactly that degraded-Upstash condition today. That is the SAME code
+ * path (countersClient() === null -> in-memory fallback) an
+ * actually-erroring counters database falls back to after a caught request
+ * error (lib/impressions.ts's noteImpression / lib/upstash.ts's graceful-
+ * degradation doctrine) - the page-level render is provably identical
+ * either way, since after() decouples the write from the response
+ * entirely. The genuinely-erroring-vs-unconfigured distinction in the
+ * WRITE ITSELF (not the render) is pinned at the unit level instead
+ * (tests/impressions.unit.spec.ts's MockUpstash.failWithNetworkError
+ * case). Expanding this shared e2e bootstrap to also fake an erroring
+ * counters backend for the whole suite was considered and rejected: it
+ * would change the Upstash-degradation behavior of every pre-S20
+ * rate-limited route across the ENTIRE e2e suite, not just this one - a
+ * bigger blast radius than this sprint's own scope.
+ */
+test('S20: a token param never changes the render — identical content and status whether or not it resolves', async ({
+  page,
+}) => {
+  const noToken = await page.goto('/embed/rep-lookup?locale=en&zip=78501');
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  const noTokenStatus = noToken?.status();
+  // The <main> markup only - not the raw response text. Next's own RSC
+  // payload (a trailing <script> tag) legitimately echoes the requested
+  // URL/query string verbatim (Next's router state, unrelated to S20) -
+  // comparing the full response text would flag that expected, harmless
+  // difference as if the WIDGET's own render had changed. <main> is the
+  // entire widget - everything a host page's iframe actually shows.
+  const noTokenMain = await noToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
+
+  const garbageToken = await page.goto('/embed/rep-lookup?locale=en&zip=78501&token=totally-made-up-token');
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  expect(garbageToken?.status()).toBe(noTokenStatus);
+  await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
+  const garbageTokenMain = await garbageToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
+
+  expect(noTokenMain).toBeTruthy();
+  expect(garbageTokenMain).toBe(noTokenMain);
+});
+
+test('S20: token param renders identically at the zero-ZIP entry state too (no crash before any lookup)', async ({
+  page,
+}) => {
+  await page.goto('/embed/rep-lookup?locale=en&token=another-made-up-token');
+  await expect(page.getByLabel(en.home.zipLabel)).toBeVisible();
+  expect(await page.context().cookies()).toHaveLength(0); // still zero cookies with a token present
+});

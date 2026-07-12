@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { after } from 'next/server';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { registrableDomain } from '@/lib/embed-referrer';
+import { noteImpression } from '@/lib/impressions';
 import {
   FONT_VALUES,
   RADIUS_VALUES,
@@ -145,6 +147,15 @@ export default async function ActionPanelEmbedPage({
     headline: bill.ai_headline,
     officialTitle: bill.short_title ?? bill.title,
   };
+
+  // S20 (F6): count an impression only on this fully-authorized live-render
+  // branch — after ok:true, the domain check, and a real bill are all
+  // confirmed. Every refusal branch above (unauthorized/tos_required/
+  // domain-blocked/bill-not-found) returns before reaching here, so it never
+  // counts — crediting a broken installation's impressions would be the
+  // opposite of honest disclosure. Scheduled via after() so a slow/failed
+  // write can never delay this response (lib/impressions.ts never throws).
+  after(() => noteImpression(tenant.tenantId));
 
   return (
     <ActionPanelWidget

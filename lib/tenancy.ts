@@ -495,3 +495,35 @@ export async function resolveTenantAccess(token: string | null): Promise<TenantA
   if (!tenant.tosAcceptedAt) return { ok: false, reason: 'tos_required' };
   return { ok: true, tenant };
 }
+
+// --- the S20 impression-counting gate (deliberately narrower than resolveTenantAccess) --
+
+/**
+ * Active-subscription check only — no ToS gate. Used by lib/impressions.ts's
+ * rep-lookup/bill-card token path (S20, §1) and by the tenant read endpoint
+ * (app/api/tenant/impressions), NOT by the action panel or /api/script
+ * (those two keep calling resolveTenantAccess, unchanged).
+ *
+ * Why not just reuse resolveTenantAccess: tosAcceptedAt is Stripe Checkout's
+ * consent_collection acceptance, gating the one feature that puts
+ * AI-generated text in front of a phone call (action panel / /api/script).
+ * Rep-lookup and bill-card carry no AI-generated content and have never
+ * required ToS. More concretely, the ToS URL is not yet configured in
+ * Stripe (see resolveTenantAccess's own PR history) — every tenant
+ * provisioned before that lands has tosAcceptedAt unset. Gating impression
+ * COUNTING (or a tenant reading their own metering) on it would silently
+ * zero out every Pro tenant's white-label numbers until an unrelated Stripe
+ * dashboard step is done — the opposite of the honest disclosure this
+ * feature exists to provide.
+ *
+ * Same fail-closed doctrine as lookupTenantByToken: absent token, unknown
+ * token, revoked token, and an unreachable tenancy database all collapse to
+ * `null` here — never a thrown error, never a distinguishable outcome a
+ * prober could use to map token validity.
+ */
+export async function activeTenantForImpression(token: string | null): Promise<TenantRecord | null> {
+  if (!token) return null;
+  const tenant = await lookupTenantByToken(token);
+  if (!tenant || !ACTIVE_STATUSES.includes(tenant.subscriptionStatus)) return null;
+  return tenant;
+}
