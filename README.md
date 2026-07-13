@@ -6,6 +6,16 @@ Oravan is free, nonpartisan civic infrastructure: find your federal representati
 
 The name is the **Oravan**: the platform in the Roman Forum where citizens stood to address the public and the powerful — the original place a voice met power. Latin roots are the shared ancestry of English and Spanish alike.
 
+## MCP server
+
+This repository also implements a **remote MCP (Model Context Protocol) server** — the same decoded corpus and lookups, exposed for AI assistants and agents:
+
+- **Endpoint (Streamable HTTP):** `https://oravan.org/api/mcp/mcp` — keyless, read-only, rate-limited; no account or credentials required
+- **Implementation:** `app/api/mcp/[transport]/route.ts` (built on `mcp-handler` + `@modelcontextprotocol/sdk`), pure data layer in `lib/core/`
+- **Five tools:** `lookup_representatives`, `get_bill`, `search_bills`, `whats_moving`, `get_representative` — every response carries a citation envelope (source, as-of freshness, AI-content label, license) in English or Spanish
+- **Official MCP Registry:** published as [`org.oravan/mcp`](https://registry.modelcontextprotocol.io/v0.1/servers?search=org.oravan/mcp) (`server.json` at the repo root, schema-validated in CI by `scripts/check-server-json.mjs`)
+- **Docs:** [oravan.org/mcp](https://oravan.org/mcp) (tool reference, client config, privacy posture) · [docs/mcp-server-readme.md](docs/mcp-server-readme.md)
+
 ## Design principles
 
 1. **Zero accounts.** ZIP code, interests, and call history live in `localStorage` on the visitor's device. No server-side user data exists — nothing to breach, leak, or subpoena. This is the core privacy posture for at-risk users, not a missing feature.
