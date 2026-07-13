@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { mirroredPortraitBioguides } from '../lib/core/portraits';
 
 /*
  * S13 — rep-lookup embed widget. Drives the widget's own page directly
@@ -116,17 +117,23 @@ test('a11y basics: labeled input, 44px targets, visible focus', async ({ page })
 });
 
 /*
- * S15 - portraits without third-party hotlinks. data/portrait-manifest.json
- * ships empty (no Vercel Blob store provisioned yet - see the PR's Owner
- * enable checklist), so every rep card falls back to the CSS-only initials
- * avatar and NO <img> pointed at a portrait exists anywhere on this page -
- * the zero-third-party network trace in tests/embed-loader.spec.ts already
- * covers "no extra requests fire"; this pins the visible fallback state
- * itself, plus the forward-guarding invariant that whenever a portrait DOES
- * render (once the owner completes the enable checklist and
- * scripts/mirror-portraits.mjs has run), its src stays same-origin.
+ * S15 - portraits without third-party hotlinks. The widget renders a
+ * same-origin portrait <img> (app/embed/portrait/[bioguide]/route.ts) for
+ * any bioguide lib/core/portraits.ts's mirroredPortraitBioguides() lists,
+ * and a CSS-only initials avatar for every other bioguide - that choice is
+ * driven purely by manifest membership at render time, not by whether
+ * BLOB_READ_WRITE_TOKEN happens to be set (only the proxy route itself
+ * gates on the token; see tests/embed-portrait.unit.spec.ts). This test
+ * derives its expected counts from the REAL committed
+ * data/portrait-manifest.json (via mirroredPortraitBioguides()) rather than
+ * assuming either the dark (empty manifest) or armed (populated manifest,
+ * the state it has carried since 2026-07-12) state, so it keeps holding as
+ * scripts/mirror-portraits.mjs mirrors more members over time. The
+ * zero-third-party network trace in tests/embed-loader.spec.ts covers "no
+ * extra THIRD-PARTY request fires" separately; this pins the visible
+ * avatar-type split itself.
  */
-test('no Blob store provisioned yet: every rep renders an initials avatar, never a portrait <img>', async ({
+test('portrait avatars match the committed manifest: img for a mirrored bioguide, initials for every other', async ({
   page,
 }) => {
   await page.goto('/embed/rep-lookup?locale=en');
@@ -134,12 +141,21 @@ test('no Blob store provisioned yet: every rep renders an initials avatar, never
   await page.getByRole('button', { name: en.home.zipCta }).click();
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
 
+  // TX-15's rep + both TX senators - the same fixture this file's other
+  // ZIP-78501 tests above already depend on rendering by name.
+  const FIXTURE_BIOGUIDES = ['D000594', 'C001056', 'C001098']; // De La Cruz, Cornyn, Cruz
+  const mirrored = mirroredPortraitBioguides();
+  const expectedPortraitCount = FIXTURE_BIOGUIDES.filter((b) => mirrored.includes(b)).length;
+  const expectedInitialsCount = FIXTURE_BIOGUIDES.length - expectedPortraitCount;
+
   const avatarImages = page.locator('img.re-avatar-img');
-  expect(await avatarImages.count()).toBe(0);
+  expect(await avatarImages.count()).toBe(expectedPortraitCount);
 
   const initialsAvatars = page.locator('.re-avatar-initials');
-  expect(await initialsAvatars.count()).toBeGreaterThan(0);
-  await expect(initialsAvatars.first()).toHaveAttribute('aria-hidden', 'true');
+  expect(await initialsAvatars.count()).toBe(expectedInitialsCount);
+  if (expectedInitialsCount > 0) {
+    await expect(initialsAvatars.first()).toHaveAttribute('aria-hidden', 'true');
+  }
 });
 
 test('invariant: any portrait <img> that does render is always same-origin, never a direct third-party or Blob URL', async ({
