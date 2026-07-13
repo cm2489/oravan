@@ -11,7 +11,8 @@ The name is the **Oravan**: the platform in the Roman Forum where citizens stood
 This repository also implements a **remote MCP (Model Context Protocol) server** — the same decoded corpus and lookups, exposed for AI assistants and agents:
 
 - **Endpoint (Streamable HTTP):** `https://oravan.org/api/mcp/mcp` — keyless, read-only, rate-limited; no account or credentials required
-- **Implementation:** `app/api/mcp/[transport]/route.ts` (built on `mcp-handler` + `@modelcontextprotocol/sdk`), pure data layer in `lib/core/`
+- **Local/stdio:** `npm ci` then `npx tsx scripts/mcp-stdio.mjs` — the same 5 tools over stdio, zero env vars/secrets required
+- **Implementation:** `app/api/mcp/[transport]/route.ts` (built on `mcp-handler` + `@modelcontextprotocol/sdk`), tool definitions shared with the stdio entry via `lib/core/mcp-tools.ts`, pure data layer in `lib/core/`
 - **Five tools:** `lookup_representatives`, `get_bill`, `search_bills`, `whats_moving`, `get_representative` — every response carries a citation envelope (source, as-of freshness, AI-content label, license) in English or Spanish
 - **Official MCP Registry:** published as [`org.oravan/mcp`](https://registry.modelcontextprotocol.io/v0.1/servers?search=org.oravan/mcp) (`server.json` at the repo root, schema-validated in CI by `scripts/check-server-json.mjs`)
 - **Docs:** [oravan.org/mcp](https://oravan.org/mcp) (tool reference, client config, privacy posture) · [docs/mcp-server-readme.md](docs/mcp-server-readme.md)
