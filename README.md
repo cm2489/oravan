@@ -63,3 +63,9 @@ npm run dev
 - Script cache and rate limits are in-memory per serverless instance — fine at demo scale, should move to a shared store before heavy traffic.
 - New bills can lag behind Congress.gov: the nightly sync decodes at most `MAX_NEW_DECODES` new bills per run (cost ceiling), so after a missed window the corpus catches up over several nights (decode-before-publish; the backlog drains oldest-first).
 - "Read" coverage exists only for top-band bills (the long tail shows nothing); the ES locale shows the same English articles with localized chrome; outlets absent from `data/media-bias.json` appear without a lean chip.
+
+## License
+
+- **Code:** [GNU AGPL-3.0](LICENSE). You may use, modify, and run this code — including as a network service — provided modified versions you operate or distribute remain open under the same license. Embedding Oravan's hosted widgets on your site via the loader/script tag does **not** subject your site to the AGPL; that's use of our service, not distribution of this code.
+- **Not licensed:** the Oravan name, logo, and brand assets (`assets/brand/`, app icons). All rights reserved — forks must use their own identity.
+- **Content:** underlying legislative data is U.S. government work (public domain). AI-generated decodes and summaries are licensed CC BY 4.0, exactly as declared in the MCP citation envelope and on the [citations page](https://oravan.org/citations).
