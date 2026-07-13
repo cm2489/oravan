@@ -1,23 +1,8 @@
 import { createMcpHandler } from 'mcp-handler';
 import { after, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
-import { CATEGORIES } from '@/lib/taxonomy';
-import { BILL_STATUSES } from '@/lib/types';
-import {
-  billNotFoundError,
-  getBillDetail,
-  getRepresentativeDetail,
-  lookupRepresentatives,
-  missingBillIdentifierError,
-  noDistrictDataError,
-  normalizeLocale,
-  representativeNotFoundError,
-  searchBills,
-  TOOL_INFO,
-  whatsMoving,
-} from '@/lib/core/mcp';
-import { noteMcpToolCall, type McpToolName } from '@/lib/usage';
+import { registerOravanTools } from '@/lib/core/mcp-tools';
+import { noteMcpToolCall } from '@/lib/usage';
 
 /*
  * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
@@ -37,6 +22,20 @@ import { noteMcpToolCall, type McpToolName } from '@/lib/usage';
  * Every tool is readOnlyHint + openWorldHint:false (the spec's own design
  * rule, §2) - true here in the most literal sense: nothing in this file
  * performs I/O beyond reading process-local, build-time-baked JSON.
+ *
+ * Tool DEFINITIONS (zod schemas, annotations, TOOL_INFO title/description,
+ * pure handler bodies) live in lib/core/mcp-tools.ts's `registerOravanTools`
+ * (feat/mcp-stdio-entry) - extracted so lib/mcp-stdio.ts's stdio transport
+ * (built for Glama's MCP directory, which sandbox-validates a server by
+ * building and running it locally over stdio - proxying to this hosted
+ * endpoint is explicitly rejected by their harness) can register the exact
+ * same 5 tools without a second hand-copy. This file keeps every HTTP-only
+ * concern: mcp-handler's Streamable HTTP wiring, rate limiting (below), and
+ * the after()-deferred usage-counter write threaded into
+ * registerOravanTools via `onToolCall`. tests/mcp.spec.ts + tests/
+ * mcp-tools.spec.ts hit this route over real HTTP unchanged and are the
+ * pinning proof that the extraction changed WHERE the registration code
+ * lives, never WHAT it does.
  *
  * Streamable HTTP only (SSE is disabled: the 2025-03-26 MCP spec deprecated
  * SSE-only transports), and stateless: no sessionIdGenerator, so every
@@ -64,171 +63,40 @@ import { noteMcpToolCall, type McpToolName } from '@/lib/usage';
  *
  * Bilingual-parity scope note (the fix that closed the envelope/refine_hint/
  * tool-error gap PR #46 pinned): the `title`/`description` each
- * registerTool call below pulls from lib/core/mcp.ts's TOOL_INFO (S12 -
- * relocated there, not duplicated, so the public /mcp docs page can quote
- * the same literal strings), and every zod `.describe()` schema string
- * (including localeSchema's own "en (default) or es" line), stay
- * English-only, deliberately. Those strings are tool/schema metadata the
- * calling agent's model reads to decide how to call the tool - they are
+ * registerTool call in lib/core/mcp-tools.ts pulls from lib/core/mcp.ts's
+ * TOOL_INFO (S12 - relocated there, not duplicated, so the public /mcp docs
+ * page can quote the same literal strings), and every zod `.describe()`
+ * schema string (including localeSchema's own "en (default) or es" line),
+ * stay English-only, deliberately. Those strings are tool/schema metadata
+ * the calling agent's model reads to decide how to call the tool - they are
  * never returned in a response payload and never relayed to the end user
  * verbatim, unlike `meta`'s envelope fields or a toolError() message. Every
  * string that IS returned to a caller - the citation envelope
  * (lib/core/mcp.ts), lookup_representatives' `refine_hint`, and every
- * toolError() message below - is now locale-paired.
+ * toolError() message in lib/core/mcp-tools.ts - is now locale-paired.
  */
 export const dynamic = 'force-dynamic';
 
-/** The shape every registerTool callback returns - matches the SDK's
- *  CallToolResult closely enough to satisfy it structurally without
- *  importing a type from a subpath this repo hasn't otherwise depended on. */
-type ToolResult = {
-  content: Array<{ type: 'text'; text: string }>;
-  structuredContent?: Record<string, unknown>;
-  isError?: boolean;
-};
-
-function toolResult(data: Record<string, unknown>): ToolResult {
-  return {
-    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-    structuredContent: data,
-  };
-}
-
-function toolError(message: string): ToolResult {
-  return { content: [{ type: 'text', text: message }], isError: true };
-}
-
-/*
- * Usage-counting wrapper (traffic-watch design, 2026-07): one call site
- * instead of five edits scattered through each handler body. Counts every
- * INVOCATION regardless of outcome (a toolError result still counts — "how
- * many times was the tool called," not a success-rate metric) via
- * `after()`, so a slow or failed counter write can never delay the tool's
- * own response — see lib/usage.ts's header comment for the full key-safety
- * argument (`tool` here is always one of ToolName's five compile-time
- * literals the route itself supplies to registerTool, never caller-
- * controlled input). Rate-limited (429) requests never reach this wrapper
- * at all — limitedPost below returns before `handler(req)` runs.
- */
-function withUsage<A extends unknown[]>(
-  tool: McpToolName,
-  fn: (...args: A) => Promise<ToolResult>
-): (...args: A) => Promise<ToolResult> {
-  return (...args: A): Promise<ToolResult> => {
-    after(() => noteMcpToolCall(tool));
-    return fn(...args);
-  };
-}
-
-const localeSchema = z.enum(['en', 'es']).optional().describe('Response language: "en" (default) or "es".');
-
 const handler = createMcpHandler(
   (server) => {
-    server.registerTool(
-      'lookup_representatives',
-      {
-        ...TOOL_INFO.lookup_representatives,
-        inputSchema: {
-          zip: z
-            .string()
-            .regex(/^\d{5}$/, 'ZIP code must be exactly 5 digits.')
-            .describe('5-digit U.S. ZIP code.'),
-          locale: localeSchema,
-        },
-        annotations: { readOnlyHint: true, openWorldHint: false },
+    /*
+     * Usage-counting wrapper (traffic-watch design, 2026-07): one call site
+     * instead of five edits scattered through each handler body. Counts
+     * every INVOCATION regardless of outcome (a toolError result still
+     * counts — "how many times was the tool called," not a success-rate
+     * metric) via `after()`, so a slow or failed counter write can never
+     * delay the tool's own response — see lib/usage.ts's header comment for
+     * the full key-safety argument (`tool` here is always one of ToolName's
+     * five compile-time literals lib/core/mcp-tools.ts itself supplies,
+     * never caller-controlled input). Rate-limited (429) requests never
+     * reach this wrapper at all — limitedPost below returns before
+     * `handler(req)` runs.
+     */
+    registerOravanTools(server, {
+      onToolCall: (tool) => {
+        after(() => noteMcpToolCall(tool));
       },
-      withUsage('lookup_representatives', async ({ zip, locale }) => {
-        const loc = normalizeLocale(locale);
-        const result = lookupRepresentatives(zip, loc);
-        if (!result) return toolError(noDistrictDataError(zip, loc));
-        return toolResult(result);
-      })
-    );
-
-    server.registerTool(
-      'get_bill',
-      {
-        ...TOOL_INFO.get_bill,
-        inputSchema: {
-          slug: z
-            .string()
-            .optional()
-            .describe('Bill slug, e.g. "hr-2701-119". Takes priority over citation when both are given.'),
-          citation: z
-            .string()
-            .optional()
-            .describe('Bill citation, e.g. "H.R. 2701" or "S.J.Res. 99". Used only when slug is omitted.'),
-          locale: localeSchema,
-        },
-        annotations: { readOnlyHint: true, openWorldHint: false },
-      },
-      withUsage('get_bill', async ({ slug, citation, locale }) => {
-        const loc = normalizeLocale(locale);
-        if (!slug && !citation) return toolError(missingBillIdentifierError(loc));
-        const result = getBillDetail({ slug, citation }, loc);
-        if (!result) return toolError(billNotFoundError({ slug, citation }, loc));
-        return toolResult(result);
-      })
-    );
-
-    server.registerTool(
-      'search_bills',
-      {
-        ...TOOL_INFO.search_bills,
-        inputSchema: {
-          query: z.string().optional().describe('Free-text search over the bill title and plain-language summary.'),
-          topic: z.enum(CATEGORIES).optional().describe('One of the 12 issue categories.'),
-          status: z.enum(BILL_STATUSES).optional().describe('Bill status to filter to.'),
-          active_only: z.boolean().optional().describe('Exclude signed/vetoed (terminal) bills when true.'),
-          locale: localeSchema,
-          limit: z.number().int().min(1).max(50).optional().describe('Max results (default 20, max 50).'),
-        },
-        annotations: { readOnlyHint: true, openWorldHint: false },
-      },
-      withUsage('search_bills', async ({ query, topic, status, active_only, locale, limit }) => {
-        const result = searchBills(
-          { query, topic, status, activeOnly: active_only, limit },
-          normalizeLocale(locale)
-        );
-        return toolResult(result);
-      })
-    );
-
-    server.registerTool(
-      'whats_moving',
-      {
-        ...TOOL_INFO.whats_moving,
-        inputSchema: {
-          days: z.number().int().min(1).max(90).optional().describe('Lookback window in days (default 7).'),
-          topic: z.enum(CATEGORIES).optional().describe('One of the 12 issue categories.'),
-          locale: localeSchema,
-          limit: z.number().int().min(1).max(50).optional().describe('Max results (default 10, max 50).'),
-        },
-        annotations: { readOnlyHint: true, openWorldHint: false },
-      },
-      withUsage('whats_moving', async ({ days, topic, locale, limit }) => {
-        const result = whatsMoving({ days, topic, limit }, normalizeLocale(locale));
-        return toolResult(result);
-      })
-    );
-
-    server.registerTool(
-      'get_representative',
-      {
-        ...TOOL_INFO.get_representative,
-        inputSchema: {
-          bioguide: z.string().min(1).describe('Bioguide ID, e.g. "W000797".'),
-          locale: localeSchema,
-        },
-        annotations: { readOnlyHint: true, openWorldHint: false },
-      },
-      withUsage('get_representative', async ({ bioguide, locale }) => {
-        const loc = normalizeLocale(locale);
-        const result = getRepresentativeDetail(bioguide, loc);
-        if (!result) return toolError(representativeNotFoundError(bioguide, loc));
-        return toolResult(result);
-      })
-    );
+    });
   },
   {
     serverInfo: { name: 'oravan', version: '0.1.0' },
