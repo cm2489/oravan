@@ -565,11 +565,14 @@ export function whatsMoving(params: WhatsMovingParams, locale: Locale) {
    * AE3/KTD-2 honesty rule, reusing lib/freshness-state.ts's collapse rather
    * than re-deriving it (that file's own doc comment names this exact
    * tool): an empty result reads as a genuine "quiet week" only while the
-   * nightly pipeline itself looks alive. A stale or dead pipeline must never
-   * be dressed up as "nothing to act on this week" - that would hand an
-   * agent a fact about our sync health disguised as a fact about Congress.
+   * nightly pipeline itself looks alive AND the sync cursor/corpus itself
+   * shows real recent progress (not just "the job executed" - see
+   * emptyStateVerdict's own doc comment for why both signals matter). A
+   * stale or dead pipeline must never be dressed up as "nothing to act on
+   * this week" - that would hand an agent a fact about our sync health
+   * disguised as a fact about Congress.
    */
-  const verdict = limited.length === 0 ? emptyStateVerdict(getFreshness().checkedAt) : null;
+  const verdict = limited.length === 0 ? emptyStateVerdict(getFreshness()) : null;
 
   return {
     bills: limited,
