@@ -4,10 +4,11 @@ import { after } from 'next/server';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
-import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
+import { resolveEmbedTheme, safeAttribution, safeBrandless } from '@/lib/embed-theme';
 import { noteImpressionForToken } from '@/lib/impressions';
 import { callerIp } from '@/lib/ratelimit';
 import { BillCardWidget, type BillCardData } from '@/components/embed/BillCardWidget';
+import { EmbedThemeStyle } from '@/components/embed/EmbedThemeStyle';
 
 export async function generateMetadata({
   searchParams,
@@ -28,9 +29,9 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
 
 /*
  * The bill-card embed (S14). `locale` and `slug` are the content inputs a
- * host page's iframe src (built by public/embed.js) supplies; `accent`,
- * `radius`, and `font` are the theming inputs — every one of the three is
- * validated through lib/embed-theme before it ever reaches a style prop
+ * host page's iframe src (built by public/embed.js) supplies; the theming
+ * inputs (accent/surface/ink/mode/radius/font) are each validated through
+ * lib/embed-theme's resolveEmbedTheme before they ever reach CSS
  * (CSS-custom-properties-only theming, no exceptions). An unknown or
  * missing slug renders the widget's own "bill not found" state rather than
  * calling notFound() — this route has no not-found boundary of its own
@@ -51,13 +52,17 @@ export default async function BillCardEmbedPage({
     slug?: string;
     token?: string;
     accent?: string;
+    surface?: string;
+    ink?: string;
+    mode?: string;
     radius?: string;
     font?: string;
     brandless?: string;
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, slug, token, accent, radius, font, brandless, attribution } = await searchParams;
+  const { locale: localeParam, slug, token, accent, surface, ink, mode, radius, font, brandless, attribution } =
+    await searchParams;
   const locale = normalizeLocale(localeParam);
   const raw = typeof slug === 'string' && slug.length > 0 ? getBill(slug) : undefined;
   const bill = raw ? localizeBill(raw, locale) : null;
@@ -78,17 +83,15 @@ export default async function BillCardEmbedPage({
     : null;
 
   return (
-    <BillCardWidget
-      initialLocale={locale}
-      bill={billData}
-      dataAsOf={getFreshness().checkedAt}
-      theme={{
-        accent: safeAccent(accent),
-        radiusKey: safeRadiusKey(radius),
-        fontKey: safeFontKey(font),
-      }}
-      brandless={safeBrandless(brandless)}
-      attribution={safeAttribution(attribution)}
-    />
+    <>
+      <EmbedThemeStyle theme={resolveEmbedTheme({ accent, surface, ink, mode, radius, font })} />
+      <BillCardWidget
+        initialLocale={locale}
+        bill={billData}
+        dataAsOf={getFreshness().checkedAt}
+        brandless={safeBrandless(brandless)}
+        attribution={safeAttribution(attribution)}
+      />
+    </>
   );
 }

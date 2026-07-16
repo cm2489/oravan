@@ -8,18 +8,14 @@ import { formatCitation } from '@/lib/format';
 import { registrableDomain } from '@/lib/embed-referrer';
 import { noteImpression } from '@/lib/impressions';
 import {
-  FONT_VALUES,
-  RADIUS_VALUES,
-  safeAccent,
+  resolveEmbedTheme,
   safeAttribution,
   safeBrandless,
-  safeFontKey,
-  safeRadiusKey,
-  type FontKey,
-  type RadiusKey,
+  type ResolvedEmbedTheme,
 } from '@/lib/embed-theme';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import { ActionPanelWidget, type ActionPanelBillData } from '@/components/embed/ActionPanelWidget';
+import { EmbedThemeStyle } from '@/components/embed/EmbedThemeStyle';
 
 export async function generateMetadata({
   searchParams,
@@ -39,12 +35,6 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
 
 type EmbedLocale = 'en' | 'es';
 const DICTS: Record<EmbedLocale, typeof en> = { en, es };
-
-interface EmbedThemeInput {
-  accent?: string;
-  radiusKey: RadiusKey;
-  fontKey: FontKey;
-}
 
 /*
  * The action-panel embed (S19, paid tier only). Same theming/locale
@@ -71,21 +61,21 @@ export default async function ActionPanelEmbedPage({
     slug?: string;
     token?: string;
     accent?: string;
+    surface?: string;
+    ink?: string;
+    mode?: string;
     radius?: string;
     font?: string;
     brandless?: string;
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, slug, token, accent, radius, font, brandless, attribution } = await searchParams;
+  const { locale: localeParam, slug, token, accent, surface, ink, mode, radius, font, brandless, attribution } =
+    await searchParams;
   const locale = normalizeLocale(localeParam);
   const t = DICTS[locale];
   const brandlessFlag = safeBrandless(brandless);
-  const theme: EmbedThemeInput = {
-    accent: safeAccent(accent),
-    radiusKey: safeRadiusKey(radius),
-    fontKey: safeFontKey(font),
-  };
+  const theme = resolveEmbedTheme({ accent, surface, ink, mode, radius, font });
 
   const access = await resolveTenantAccess(token ?? null);
   if (!access.ok) {
@@ -158,18 +148,26 @@ export default async function ActionPanelEmbedPage({
   after(() => noteImpression(tenant.tenantId));
 
   return (
-    <ActionPanelWidget
-      initialLocale={locale}
-      token={token!}
-      bill={billData}
-      theme={theme}
-      brandless={brandlessFlag}
-      attribution={safeAttribution(attribution)}
-    />
+    <>
+      <EmbedThemeStyle theme={theme} />
+      <ActionPanelWidget
+        initialLocale={locale}
+        token={token!}
+        bill={billData}
+        brandless={brandlessFlag}
+        attribution={safeAttribution(attribution)}
+      />
+    </>
   );
 }
 
-/** Shared server-rendered chrome for every non-live (refusal) state. */
+/**
+ * Shared server-rendered chrome for every non-live (refusal) state. Renders
+ * its own EmbedThemeStyle: refusal iframes never resize (no client widget
+ * mounts), so the :root-level style tag is the only thing keeping the whole
+ * fixed-height frame — including the band below this short content — on the
+ * tenant's palette.
+ */
 function ActionPanelMessage({
   locale,
   theme,
@@ -177,22 +175,20 @@ function ActionPanelMessage({
   children,
 }: {
   locale: EmbedLocale;
-  theme: EmbedThemeInput;
+  theme: ResolvedEmbedTheme;
   brandless: boolean;
   children: React.ReactNode;
 }) {
   const t = DICTS[locale];
-  const themeStyle: React.CSSProperties = {
-    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
-    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
-    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
-  };
   return (
-    <main className="re-root" lang={locale} style={themeStyle}>
-      <div className="re-header">
-        <p className="bc-citation">{brandless ? '' : t.common.appName}</p>
-      </div>
-      {children}
-    </main>
+    <>
+      <EmbedThemeStyle theme={theme} />
+      <main className="re-root" lang={locale}>
+        <div className="re-header">
+          <p className="bc-citation">{brandless ? '' : t.common.appName}</p>
+        </div>
+        {children}
+      </main>
+    </>
   );
 }

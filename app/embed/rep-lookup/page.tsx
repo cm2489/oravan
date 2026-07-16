@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { after } from 'next/server';
 import { mirroredPortraitBioguides } from '@/lib/core';
-import { safeAccent, safeAttribution, safeBrandless, safeFontKey, safeRadiusKey } from '@/lib/embed-theme';
+import { resolveEmbedTheme, safeAttribution, safeBrandless } from '@/lib/embed-theme';
 import { noteImpressionForToken } from '@/lib/impressions';
 import { callerIp } from '@/lib/ratelimit';
+import { EmbedThemeStyle } from '@/components/embed/EmbedThemeStyle';
 import { RepLookupWidget } from '@/components/embed/RepLookupWidget';
 
 export async function generateMetadata({
@@ -47,13 +48,17 @@ export default async function RepLookupEmbedPage({
     zip?: string;
     token?: string;
     accent?: string;
+    surface?: string;
+    ink?: string;
+    mode?: string;
     radius?: string;
     font?: string;
     brandless?: string;
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, zip, token, accent, radius, font, brandless, attribution } = await searchParams;
+  const { locale: localeParam, zip, token, accent, surface, ink, mode, radius, font, brandless, attribution } =
+    await searchParams;
   const locale = normalizeLocale(localeParam);
   const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
 
@@ -63,17 +68,15 @@ export default async function RepLookupEmbedPage({
   }
 
   return (
-    <RepLookupWidget
-      initialLocale={locale}
-      initialZip={initialZip}
-      availablePortraits={mirroredPortraitBioguides()}
-      theme={{
-        accent: safeAccent(accent),
-        radiusKey: safeRadiusKey(radius),
-        fontKey: safeFontKey(font),
-      }}
-      brandless={safeBrandless(brandless)}
-      attribution={safeAttribution(attribution)}
-    />
+    <>
+      <EmbedThemeStyle theme={resolveEmbedTheme({ accent, surface, ink, mode, radius, font })} />
+      <RepLookupWidget
+        initialLocale={locale}
+        initialZip={initialZip}
+        availablePortraits={mirroredPortraitBioguides()}
+        brandless={safeBrandless(brandless)}
+        attribution={safeAttribution(attribution)}
+      />
+    </>
   );
 }

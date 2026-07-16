@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
-import { FONT_VALUES, RADIUS_VALUES, type FontKey, type RadiusKey } from '@/lib/embed-theme';
 import { officeHoursStatus } from '@/lib/office-hours';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator, Stance } from '@/lib/types';
@@ -52,12 +51,6 @@ export interface ActionPanelBillData {
   officialTitle: string;
 }
 
-export interface ActionPanelTheme {
-  accent?: string;
-  radiusKey: RadiusKey;
-  fontKey: FontKey;
-}
-
 function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
@@ -79,7 +72,6 @@ export function ActionPanelWidget({
   initialLocale,
   token,
   bill,
-  theme,
   brandless = false,
   attribution = 'on',
 }: {
@@ -87,7 +79,6 @@ export function ActionPanelWidget({
   /** Held in component state, sent ONLY as the X-Oravan-Key header — never re-appended to a URL. */
   token: string;
   bill: ActionPanelBillData;
-  theme: ActionPanelTheme;
   /** Removes the Oravan name from chrome (never the AI-integrity chip). */
   brandless?: boolean;
   /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
@@ -207,17 +198,11 @@ export function ActionPanelWidget({
 
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
 
-  const themeStyle: CSSProperties = {
-    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
-    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
-    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
-  };
-
   const displayHeadline = bill.headline ?? bill.officialTitle;
   const officeHours = hydrated ? officeHoursStatus() : null;
 
   return (
-    <main ref={rootRef} className="re-root" lang={locale} style={themeStyle}>
+    <main ref={rootRef} className="re-root" lang={locale}>
       <div className="re-header">
         <p className="bc-citation">{brandless ? '' : t.common.appName}</p>
         <div role="group" aria-label={t.embed.languageLabel} className="re-row" style={{ gap: 4 }}>

@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
 import { SITE_ORIGIN } from '@/lib/site';
-import { FONT_VALUES, RADIUS_VALUES, type FontKey, type RadiusKey } from '@/lib/embed-theme';
 import type { BillStatus } from '@/lib/types';
 
 /*
@@ -33,13 +32,6 @@ export interface BillCardData {
   status: BillStatus;
 }
 
-export interface BillCardTheme {
-  /** Already validated (lib/embed-theme's safeAccent) — a hex color or undefined. */
-  accent?: string;
-  radiusKey: RadiusKey;
-  fontKey: FontKey;
-}
-
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
 function format(template: string, vars: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
@@ -51,7 +43,6 @@ export function BillCardWidget({
   initialLocale,
   bill,
   dataAsOf,
-  theme,
   brandless = false,
   attribution = 'on',
 }: {
@@ -59,7 +50,6 @@ export function BillCardWidget({
   bill: BillCardData | null;
   /** ISO timestamp from lib/freshness's getFreshness().checkedAt. */
   dataAsOf: string;
-  theme: BillCardTheme;
   /** Removes the Oravan name from chrome (never the AI-integrity chip). */
   brandless?: boolean;
   /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
@@ -97,15 +87,8 @@ export function BillCardWidget({
     return () => observer.disconnect();
   }, []);
 
-  // The ONLY theming surface: three CSS custom properties, each already
-  // validated (lib/embed-theme) before this component ever sees them. No
-  // other tenant-supplied value is ever assigned to a style prop here.
-  const themeStyle: CSSProperties = {
-    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
-    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
-    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
-  };
-
+  // Theming lives entirely at :root now (EmbedThemeStyle, rendered by the
+  // page) — no tenant-supplied value ever reaches a style prop here.
   const localeToggle = (
     <div role="group" aria-label={t.embed.languageLabel} className="re-row" style={{ gap: 4 }}>
       {(['en', 'es'] as const).map((l) => (
@@ -124,7 +107,7 @@ export function BillCardWidget({
 
   if (!bill) {
     return (
-      <main ref={rootRef} className="bc-root" lang={locale} style={themeStyle}>
+      <main ref={rootRef} className="bc-root" lang={locale}>
         <div className="re-header">
           {/* Brandless chrome drops the app-name fallback, not the layout */}
           <p className="bc-citation">{brandless ? '' : t.common.appName}</p>
@@ -149,7 +132,7 @@ export function BillCardWidget({
   });
 
   return (
-    <main ref={rootRef} className="bc-root" lang={locale} style={themeStyle}>
+    <main ref={rootRef} className="bc-root" lang={locale}>
       <div className="re-header">
         <p className="bc-citation">{bill.citation}</p>
         {localeToggle}

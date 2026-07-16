@@ -314,6 +314,58 @@ test('action-panel via the loader: no data-token -> refuses cleanly inside the i
   }
 });
 
+/*
+ * Brand-preview build: the loader forwards the widened theme attrs
+ * (data-surface/-ink/-mode) as query params and mirrors a forced mode onto
+ * the iframe element's own color-scheme so the browser never paints a
+ * wrong-mode backdrop while the document loads.
+ */
+test('the loader forwards data-surface/-ink/-mode and mirrors forced mode onto iframe colorScheme', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(`<!doctype html><html><body>
+    <div id="host-slot"></div>
+    <script src="${baseURL}/embed.js" data-oravan-widget="rep-lookup" data-locale="en"
+            data-surface="#0f1a2b" data-ink="#f5f7fa" data-mode="dark" data-accent="#336699"
+            data-target="host-slot"></script>
+  </body></html>`);
+  try {
+    await page.goto(host.url);
+    const iframeEl = page.locator(IFRAME_SELECTOR);
+    await expect(iframeEl).toBeVisible();
+    const src = (await iframeEl.getAttribute('src'))!;
+    expect(src).toContain('surface=%230f1a2b');
+    expect(src).toContain('ink=%23f5f7fa');
+    expect(src).toContain('mode=dark');
+    expect(src).toContain('accent=%23336699');
+    const scheme = await iframeEl.evaluate((el) => (el as HTMLIFrameElement).style.colorScheme);
+    expect(scheme).toBe('dark');
+  } finally {
+    await host.close();
+  }
+});
+
+test('the loader keeps auto color-scheme when data-mode is absent or junk', async ({
+  page,
+  baseURL,
+}) => {
+  const host = await startCrossOriginHost(`<!doctype html><html><body>
+    <div id="host-slot"></div>
+    <script src="${baseURL}/embed.js" data-oravan-widget="rep-lookup" data-locale="en"
+            data-mode="midnight" data-target="host-slot"></script>
+  </body></html>`);
+  try {
+    await page.goto(host.url);
+    const iframeEl = page.locator(IFRAME_SELECTOR);
+    await expect(iframeEl).toBeVisible();
+    const scheme = await iframeEl.evaluate((el) => (el as HTMLIFrameElement).style.colorScheme);
+    expect(scheme).toBe('light dark');
+  } finally {
+    await host.close();
+  }
+});
+
 test('the loader script itself stays well under the 5KB budget', async ({ request, baseURL }) => {
   const res = await request.get(`${baseURL}/embed.js`);
   expect(res.status()).toBe(200);
