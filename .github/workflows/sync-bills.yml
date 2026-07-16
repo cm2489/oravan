@@ -6,8 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       max_new_decodes:
-        description: 'Max new bills to AI-decode this run'
-        default: '120'
+        description: 'Max new bills to AI-decode this run (safety ceiling — the priority gate does the real limiting)'
+        default: '60'
+      force_decode_slugs:
+        description: 'Comma-separated slugs to bypass the priority gate for (e.g. hr-1234-119,s-45-119)'
+        default: ''
 
 permissions:
   contents: write
@@ -35,7 +38,8 @@ jobs:
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '120' }}
+          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '60' }}
+          FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
         run: node scripts/sync-bills.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
