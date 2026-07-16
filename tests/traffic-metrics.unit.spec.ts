@@ -6,8 +6,10 @@ import { expect, test } from '@playwright/test';
 // nightly against the real counters database.
 import {
   formatDigestBody,
+  formatMcpClientsLine,
   formatPercent,
   isoDateDaysAgo,
+  MCP_CLIENTS_LINE_MAX,
   MCP_SPIKE_FLOOR,
   median,
   SCRIPT_SPIKE_FLOOR,
@@ -166,6 +168,54 @@ test.describe('isoDateDaysAgo / trailingWindowDays', () => {
   });
 });
 
+test.describe('formatMcpClientsLine', () => {
+  test('descending by count, "name: N" comma-joined, exact line shape', () => {
+    expect(
+      formatMcpClientsLine([
+        { client: 'glama', count: 3 },
+        { client: 'claude-ai', count: 12 },
+      ])
+    ).toBe('MCP client handshakes yesterday: claude-ai: 12, glama: 3');
+  });
+
+  test('equal counts tie-break alphabetically (a stable line, not map-order luck)', () => {
+    expect(
+      formatMcpClientsLine([
+        { client: 'unknown', count: 3 },
+        { client: 'glama', count: 3 },
+      ])
+    ).toBe('MCP client handshakes yesterday: glama: 3, unknown: 3');
+  });
+
+  test(`caps at ${MCP_CLIENTS_LINE_MAX} clients — the top ones by count, the rest silently omitted`, () => {
+    const clients = Array.from({ length: 8 }, (_, i) => ({ client: `client-${i}`, count: i + 1 }));
+    const line = formatMcpClientsLine(clients);
+    expect(line).toBe(
+      'MCP client handshakes yesterday: client-7: 8, client-6: 7, client-5: 6, client-4: 5, client-3: 4'
+    );
+    expect(line).not.toContain('client-0'); // the smallest counts fall off, never the biggest
+  });
+
+  test('empty input: honest "none recorded" fallback, never an empty-looking half-line', () => {
+    expect(formatMcpClientsLine([])).toBe('MCP client handshakes yesterday: none recorded');
+  });
+
+  test('zero-count entries are dropped — an all-zero day reads as none recorded, not "x: 0"', () => {
+    expect(formatMcpClientsLine([{ client: 'claude-ai', count: 0 }])).toBe(
+      'MCP client handshakes yesterday: none recorded'
+    );
+  });
+
+  test('does not mutate its input', () => {
+    const input = [
+      { client: 'b', count: 1 },
+      { client: 'a', count: 2 },
+    ];
+    formatMcpClientsLine(input);
+    expect(input.map((c) => c.client)).toEqual(['b', 'a']);
+  });
+});
+
 test.describe('formatDigestBody / spikeIssueContent', () => {
   const mcpTools = [
     { tool: 'lookup_representatives', stats: seriesStats([12, 9, 9, 9, 9, 9, 9, 9], Infinity) },
@@ -185,6 +235,25 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     // Site traffic disclosure must always be present - never silently omitted.
     expect(body).toContain('Site page-view traffic: not measured');
     expect(body).toContain('@vercel/analytics');
+  });
+
+  test('includes the MCP client-handshake line, with the honest fallback when none were recorded', () => {
+    const withClients = formatDigestBody({
+      date: '2026-07-11',
+      mcpTools,
+      mcpTotal,
+      script,
+      mcpClients: [
+        { client: 'claude-ai', count: 12 },
+        { client: 'glama', count: 3 },
+      ],
+    });
+    expect(withClients).toContain('MCP client handshakes yesterday: claude-ai: 12, glama: 3');
+
+    // mcpClients omitted entirely (and the pre-handshake-family call shape):
+    // the line still appears, honestly empty — never silently missing.
+    const without = formatDigestBody({ date: '2026-07-11', mcpTools, mcpTotal, script });
+    expect(without).toContain('MCP client handshakes yesterday: none recorded');
   });
 
   test('spike case includes the spike issue URL when one was opened', () => {

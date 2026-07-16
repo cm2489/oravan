@@ -44,6 +44,18 @@
  *                 comment for the full argument). Still caller-free — no
  *                 IP/UA/referer/salt may reach a usage key either.
  *
+ * The usage family gains a THIRD key shape (mcp-client handshakes,
+ *                 2026-07): a daily counter per self-reported MCP client
+ *                 SOFTWARE name (initialize's params.clientInfo.name —
+ *                 program identity, never user data). Unlike `tool`, that
+ *                 segment IS caller-controlled, so lib/usage.ts sanitizes
+ *                 it structurally inside the key builder itself
+ *                 ([a-z0-9._-], max 32 chars, "unknown" fallback). The
+ *                 adjacent temptations stay banned by rule: no User-Agent
+ *                 material (CALLER_MATERIAL names it) and no client
+ *                 VERSION (USAGE_CONTENT_IDENTIFIER names it — software
+ *                 name only) may ever reach a usage key.
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -87,15 +99,23 @@ const CLIENT_MODULE = 'lib/upstash.ts';
 // domain-nomination keys) and CALLER material (never allowed near cache or
 // domain-nomination keys).
 const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation/i;
-const CALLER_MATERIAL = /(^|[^a-z])ip([^a-z]|$)|forwarded|caller|salt|address|\bzip\b/i;
+// `useragent`/`\bua\b` added with the mcp-client handshake shape (2026-07):
+// a client SOFTWARE name is allowed into the usage registry, but the
+// adjacent temptation — User-Agent header material — is caller material in
+// every registry, named here so a `${userAgent}` interpolation can never
+// pass as "just another client identifier".
+const CALLER_MATERIAL = /(^|[^a-z])ip([^a-z]|$)|forwarded|caller|salt|address|\bzip\b|useragent|\bua\b/i;
 // The usage registry's OWN content rule (traffic-watch, 2026-07): identical
 // to CONTENT_IDENTIFIER except `tool` is deliberately removed — this is the
 // one registry where a tool name is the intentional dimension, not content
 // (see lib/usage.ts's header comment). Every OTHER forbidden term
 // (slug/stance/locale/lang/bill/summary/title/topic/query/citation) still
 // applies unchanged — a caller's ZIP, bill slug, or search string must
-// never reach a usage key.
-const USAGE_CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|summary|title|topic|query|citation/i;
+// never reach a usage key. `version` added with the mcp-client handshake
+// shape (2026-07): that family stores the client software's NAME only, by
+// owner decision — a `${clientVersion}` (or any version) interpolation in
+// a usage key is a violation.
+const USAGE_CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|summary|title|topic|query|citation|version/i;
 // S19: the counters registry's SECOND identity shape (tenant-id-keyed,
 // alongside the caller-hash-keyed one) must never fold caller material into
 // the SAME interpolation as a tenant identifier — that would start building
@@ -520,6 +540,18 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:usage:mcp:${tool}:${ip}`;',
     rule: 'usage-caller',
   },
+  {
+    name: 'User-Agent material interpolated into an mcp-client usage key (2026-07)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:mcp-client:${userAgent}:${day}`;',
+    rule: 'usage-caller',
+  },
+  {
+    name: 'client version interpolated into an mcp-client usage key (software name only, 2026-07)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:mcp-client:${client}:${clientVersion}:${day}`;',
+    rule: 'usage-content',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -577,6 +609,14 @@ const SELF_TEST_CLEAN = [
     // The real usage:script:${day} shape (no `tool` segment at all).
     file: USAGE_REGISTRY,
     text: 'const k = `${keyPrefix()}:usage:script:${day}`;',
+  },
+  {
+    // The real mcp-client handshake shape (2026-07), exactly as
+    // lib/usage.ts's mcpClientUsageKey builds it — the sanitizer call is
+    // part of the interpolation on purpose (structural sanitization) and
+    // must not false-positive against any rule.
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:mcp-client:${sanitizeMcpClientName(client)}:${day}`;',
   },
 ];
 

@@ -5,11 +5,16 @@ import {
   __memoryUsageCountForTests,
   __resetUsageFallbackLogForTests,
   MCP_TOOL_NAMES,
+  mcpClientUsageKey,
   mcpUsageKey,
+  noteMcpClientHandshake,
   noteMcpToolCall,
   noteScriptGeneration,
+  readMcpClientDay,
   readUsageWindow,
+  sanitizeMcpClientName,
   scriptUsageKey,
+  UNKNOWN_MCP_CLIENT,
   usageDayKey,
 } from '../lib/usage';
 import { getUpstashErrorCounts } from '../lib/upstash';
@@ -55,6 +60,47 @@ test('MCP_TOOL_NAMES: the exact 5-tool closed set, in a stable order', () => {
   ]);
 });
 
+// --- sanitizeMcpClientName / mcpClientUsageKey (client-handshake family) --------
+
+test('sanitizeMcpClientName: lowercases and strips everything outside [a-z0-9._-]', () => {
+  expect(sanitizeMcpClientName('Claude-AI')).toBe('claude-ai');
+  expect(sanitizeMcpClientName('glama')).toBe('glama');
+  expect(sanitizeMcpClientName('client.name_v1-2')).toBe('client.name_v1-2'); // allowed charset preserved
+  expect(sanitizeMcpClientName('My MCP Client 2')).toBe('mymcpclient2');
+  expect(sanitizeMcpClientName('  ✨wéird→uni¢ode✨  ')).toBe('wirduniode'); // non-ASCII dropped, never mangled into a throw
+});
+
+test('sanitizeMcpClientName: truncates to 32 chars, AFTER stripping (strip-then-truncate order)', () => {
+  expect(sanitizeMcpClientName('a'.repeat(100))).toBe('a'.repeat(32));
+  // 32 'a's interleaved with spaces: strip-first keeps all 32; a
+  // truncate-first implementation would keep only 16 — pin the order.
+  expect(sanitizeMcpClientName('a '.repeat(32))).toBe('a'.repeat(32));
+});
+
+test('sanitizeMcpClientName: empty, all-stripped, and non-string inputs all degrade to "unknown"', () => {
+  expect(sanitizeMcpClientName('')).toBe(UNKNOWN_MCP_CLIENT);
+  expect(sanitizeMcpClientName('💥🎉')).toBe(UNKNOWN_MCP_CLIENT);
+  expect(sanitizeMcpClientName(undefined)).toBe(UNKNOWN_MCP_CLIENT);
+  expect(sanitizeMcpClientName(null)).toBe(UNKNOWN_MCP_CLIENT);
+  expect(sanitizeMcpClientName(42)).toBe(UNKNOWN_MCP_CLIENT);
+  expect(sanitizeMcpClientName({ name: 'sneaky-object' })).toBe(UNKNOWN_MCP_CLIENT);
+});
+
+test('sanitizeMcpClientName: idempotent — sanitizing a sanitized name is a no-op', () => {
+  for (const raw of ['Claude-AI', '💥🎉', '', 'a '.repeat(32), 'client.name_v1-2']) {
+    const once = sanitizeMcpClientName(raw);
+    expect(sanitizeMcpClientName(once)).toBe(once);
+  }
+});
+
+test('mcpClientUsageKey: exact shape, and sanitization is structural — a hostile raw name cannot inject key structure', () => {
+  expect(mcpClientUsageKey('claude-ai', '2026-07-15')).toBe('dev:usage:mcp-client:claude-ai:2026-07-15');
+  // ':' (the key separator) and glob chars are outside the sanitized
+  // alphabet — the key builder itself strips them; there is no raw-name path.
+  expect(mcpClientUsageKey('Evil:Client:*?[]', '2026-07-15')).toBe('dev:usage:mcp-client:evilclient:2026-07-15');
+  expect(mcpClientUsageKey('', '2026-07-15')).toBe('dev:usage:mcp-client:unknown:2026-07-15');
+});
+
 // --- noteMcpToolCall / noteScriptGeneration: the write path ---------------------
 
 test('noteMcpToolCall: durable SET NX EX (90d) before INCR, exact key shape, per-tool independence', async () => {
@@ -90,6 +136,39 @@ test('noteScriptGeneration: independent of every MCP tool counter, exact key sha
 
   expect(counters.store.get(scriptUsageKey(usageDayKey()))?.value).toBe('2');
   expect(counters.store.get(mcpUsageKey('get_bill', usageDayKey()))?.value).toBe('1');
+});
+
+test('noteMcpClientHandshake: durable SET NX EX (90d) before INCR, sanitized key, "unknown" fallback, independent of the tool counters', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  await noteMcpClientHandshake('Claude-AI'); // raw, unsanitized input — the route passes it through as-is
+  const key = mcpClientUsageKey('claude-ai', usageDayKey());
+  expect(counters.store.get(key)?.value).toBe('1');
+
+  const setCommands = counters.commands.filter((c) => c[0] === 'SET' && c[1] === key);
+  expect(setCommands).toHaveLength(1);
+  expect(setCommands[0].slice(3)).toEqual(['NX', 'EX', String(90 * 24 * 60 * 60)]);
+
+  await noteMcpClientHandshake('claude-ai');
+  expect(counters.store.get(key)?.value).toBe('2'); // same-day handshakes accumulate
+
+  // A handshake with no usable name still counts — under "unknown".
+  await noteMcpClientHandshake(undefined);
+  expect(counters.store.get(mcpClientUsageKey(UNKNOWN_MCP_CLIENT, usageDayKey()))?.value).toBe('1');
+
+  // Never blended with the per-tool family.
+  await noteMcpToolCall('get_bill');
+  expect(counters.store.get(mcpUsageKey('get_bill', usageDayKey()))?.value).toBe('1');
+  expect(counters.store.get(key)?.value).toBe('2'); // unaffected
+
+  // Constitution check, in the test: every key this suite just wrote is a
+  // software name + day — no raw name survived, nothing else was stored.
+  for (const written of counters.keys()) {
+    expect(written).toMatch(/^dev:usage:(mcp|mcp-client|script)/);
+    expect(written).not.toContain('Claude'); // the raw (unsanitized) input never reaches a key
+  }
 });
 
 test('graceful degradation: no env → in-memory fallback, zero network calls, single startup line', async () => {
@@ -199,4 +278,75 @@ test('readUsageWindow: ONE MGET round trip, exact per-tool + script counts mappe
     if (tool === 'get_bill') continue;
     expect(result.mcp[tool]).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
   }
+});
+
+// --- readMcpClientDay: the client-handshake read path -----------------------------
+
+test('readMcpClientDay: unconfigured counters database fails CLOSED, never a degraded list', async () => {
+  // No setUpstashEnv() — the unconfigured path.
+  expect(await readMcpClientDay('2026-07-15')).toEqual({ ok: false });
+});
+
+test('readMcpClientDay: an Upstash error fails CLOSED and logs an ACCURATE (non-"failing open") consequence', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  counters.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  const logged: string[] = [];
+  const realError = console.error;
+  console.error = (...args: unknown[]) => logged.push(args.join(' '));
+  let result: unknown;
+  try {
+    result = await readMcpClientDay('2026-07-15');
+  } finally {
+    console.error = realError;
+  }
+
+  expect(result).toEqual({ ok: false });
+  expect(logged.length).toBeGreaterThan(0);
+  for (const line of logged) {
+    expect(line).not.toContain('failing open to in-memory');
+  }
+});
+
+test('readMcpClientDay: SCANs only that day\'s mcp-client keys, one MGET, sorted count-descending with alphabetical ties, other days/families ignored', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  counters.exec(['SET', mcpClientUsageKey('claude-ai', '2026-07-15'), '12']);
+  counters.exec(['SET', mcpClientUsageKey('glama', '2026-07-15'), '3']);
+  counters.exec(['SET', mcpClientUsageKey('unknown', '2026-07-15'), '3']);
+  counters.exec(['SET', mcpClientUsageKey('claude-ai', '2026-07-14'), '99']); // another DAY — must not bleed in
+  counters.exec(['SET', mcpUsageKey('get_bill', '2026-07-15'), '77']); // another FAMILY — must not bleed in
+  counters.commands.length = 0; // count only the read's own round trips
+
+  const result = await readMcpClientDay('2026-07-15');
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+
+  expect(result.clients).toEqual([
+    { client: 'claude-ai', count: 12 },
+    { client: 'glama', count: 3 }, // 3-vs-3 tie: alphabetical, glama before unknown
+    { client: 'unknown', count: 3 },
+  ]);
+
+  const mgets = counters.commands.filter((c) => c[0] === 'MGET');
+  expect(mgets).toHaveLength(1); // one round trip for the counts, never N sequential GETs
+  expect(mgets[0].slice(1).sort()).toEqual(
+    [
+      mcpClientUsageKey('claude-ai', '2026-07-15'),
+      mcpClientUsageKey('glama', '2026-07-15'),
+      mcpClientUsageKey('unknown', '2026-07-15'),
+    ].sort()
+  );
+});
+
+test('readMcpClientDay: a day with no handshakes is an honest empty list (ok: true), never an error and never an invented entry', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  expect(await readMcpClientDay('2026-07-15')).toEqual({ ok: true, clients: [] });
 });

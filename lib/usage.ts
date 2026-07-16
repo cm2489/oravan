@@ -16,11 +16,12 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * lib/ratelimit.ts, lib/scriptcache.ts, lib/embed-referrer.ts,
  * lib/tenancy.ts, and lib/impressions.ts.
  *
- * WHAT THIS IS, STATED PLAINLY: a daily, per-tool invocation count for the
- * MCP server (app/api/mcp/[transport]/route.ts) and a daily generation
- * count for /api/script (app/api/script/route.ts) — an internal operating
- * signal for a founder-facing digest (scripts/daily-metrics.mjs), never a
- * per-caller or per-content record. Counts every MCP tool INVOCATION
+ * WHAT THIS IS, STATED PLAINLY: a daily, per-tool invocation count and a
+ * daily per-client-software initialize-handshake count for the MCP server
+ * (app/api/mcp/[transport]/route.ts), plus a daily generation count for
+ * /api/script (app/api/script/route.ts) — an internal operating signal for
+ * a founder-facing digest (scripts/daily-metrics.mjs), never a per-caller
+ * or per-content record. Counts every MCP tool INVOCATION
  * regardless of outcome (a not_found/bad_zip toolError still counts — "how
  * many times was the tool called," not a success-rate metric); a
  * rate-limited (429) request never reaches this module at all, since
@@ -45,13 +46,20 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *
  * Key registry — the only shapes ever written under this family:
  *
- *   <env>:usage:mcp:<tool>:<YYYY-MM-DD>     an INCR'd daily counter per tool
- *   <env>:usage:script:<YYYY-MM-DD>         an INCR'd daily counter
+ *   <env>:usage:mcp:<tool>:<YYYY-MM-DD>          an INCR'd daily counter per tool
+ *   <env>:usage:mcp-client:<client>:<YYYY-MM-DD> an INCR'd daily counter per
+ *                                                self-reported MCP client
+ *                                                software name — initialize
+ *                                                HANDSHAKES, not tool calls
+ *                                                (see noteMcpClientHandshake)
+ *   <env>:usage:script:<YYYY-MM-DD>              an INCR'd daily counter
  *
- * Both families are content-free (no slug/stance/locale/query/bill) and
- * caller-free (no IP/UA/referer/salt) by construction: noteMcpToolCall's
- * only parameter is a closed-union tool name, and noteScriptGeneration
- * takes no parameter at all.
+ * All three families are content-free (no slug/stance/locale/query/bill)
+ * and caller-free (no IP/UA/referer/salt) by construction: noteMcpToolCall's
+ * only parameter is a closed-union tool name, noteScriptGeneration takes no
+ * parameter at all, and noteMcpClientHandshake's one input is force-
+ * sanitized into a bounded software-name alphabet before any key is built —
+ * see the CONSTITUTIONAL CONSTRAINT comment at sanitizeMcpClientName.
  */
 
 // 90 days: long enough for month-over-month trend context beyond a single
@@ -94,6 +102,50 @@ export function scriptUsageKey(day: string): string {
 /** UTC calendar date, YYYY-MM-DD — the daily bucket a usage count lives under. */
 export function usageDayKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
+}
+
+// --- MCP client-software handshake counters (2026-07) -----------------------
+
+/*
+ * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data"): the
+ * <client> key segment is the CLIENT SOFTWARE's self-reported name from the
+ * MCP initialize handshake's params.clientInfo.name (e.g. "claude-ai",
+ * "glama") — the identity of a PROGRAM, never of a person. Nothing else is
+ * ever stored: no clientInfo.version, no User-Agent, no IP, no session
+ * correlation — the counter is one integer per software name per UTC day.
+ *
+ * Unlike `tool` above (a closed compile-time union), this segment IS
+ * caller-controlled input, so sanitization is structural, not advisory:
+ * mcpClientUsageKey applies sanitizeMcpClientName itself, leaving no code
+ * path through which a raw name can reach a key. The sanitized alphabet
+ * ([a-z0-9._-], max 32 chars, "unknown" fallback) cannot carry the key
+ * separator (":"), a glob character, or meaningful free-text — a hostile
+ * clientInfo.name degrades to a short ASCII token, never key-structure
+ * injection or an unbounded-length key.
+ */
+
+export const UNKNOWN_MCP_CLIENT = 'unknown';
+const MCP_CLIENT_NAME_MAX_CHARS = 32;
+
+/**
+ * Lowercase, strip everything outside [a-z0-9._-], THEN truncate to 32
+ * chars (strip-before-truncate keeps more signal from a name padded with
+ * separators); empty/missing/non-string input degrades to "unknown".
+ * Idempotent: sanitize(sanitize(x)) === sanitize(x).
+ */
+export function sanitizeMcpClientName(raw: unknown): string {
+  if (typeof raw !== 'string') return UNKNOWN_MCP_CLIENT;
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
+    .slice(0, MCP_CLIENT_NAME_MAX_CHARS);
+  return cleaned === '' ? UNKNOWN_MCP_CLIENT : cleaned;
+}
+
+export function mcpClientUsageKey(client: string, day: string): string {
+  // Sanitization applied HERE, not just at the call site — see the
+  // CONSTITUTIONAL CONSTRAINT comment above for why this is structural.
+  return `${keyPrefix()}:usage:mcp-client:${sanitizeMcpClientName(client)}:${day}`;
 }
 
 // --- the ingestion calls ------------------------------------------------------
@@ -179,6 +231,26 @@ export async function noteScriptGeneration(): Promise<void> {
   await noteUsage(scriptUsageKey(usageDayKey()));
 }
 
+/**
+ * Record one MCP initialize HANDSHAKE — a client software connecting, NOT a
+ * tool call. Handshakes are the honest unit for this family: the HTTP route
+ * is deliberately stateless (fresh McpServer per POST), so the SDK's
+ * initialize-time clientInfo (server.server.getClientVersion()) is always
+ * undefined by the time a separate tools/call POST arrives — verified
+ * empirically against mcp-handler@1.1.0 + @modelcontextprotocol/sdk@1.26.0.
+ * The initialize request's own body is the one place the name exists, so
+ * that is what gets counted, once per handshake.
+ *
+ * Called via `after()` from app/api/mcp/[transport]/route.ts's limitedPost
+ * (rate-limited requests never reach it), so a slow or failed write can
+ * never delay the response. Takes the RAW caller-controlled
+ * params.clientInfo.name as `unknown` and sanitizes before any key is
+ * built (see sanitizeMcpClientName). Never throws.
+ */
+export async function noteMcpClientHandshake(clientName: unknown): Promise<void> {
+  await noteUsage(mcpClientUsageKey(sanitizeMcpClientName(clientName), usageDayKey()));
+}
+
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
 
 export type UsageWindowResult =
@@ -232,4 +304,85 @@ export async function readUsageWindow(days: string[]): Promise<UsageWindowResult
   const script = raw.slice(cursor, cursor + days.length).map(toNum);
 
   return { ok: true, mcp, script };
+}
+
+export type McpClientDayResult =
+  | { ok: true; clients: Array<{ client: string; count: number }> }
+  | { ok: false };
+
+// SCAN page budget for readMcpClientDay. The sanitized-name alphabet caps
+// the family at one key per distinct 32-char token per day, so a day's
+// worth of client keys is small; 50 pages × COUNT 100 is orders of
+// magnitude of headroom. If the cursor still hasn't exhausted by then,
+// something is wrong — fail closed rather than under-report.
+const MCP_CLIENT_SCAN_MAX_PAGES = 50;
+
+/**
+ * Read ONE day's MCP client-handshake counts, every client name seen that
+ * day. Client names are open-ended (self-reported), so unlike
+ * readUsageWindow there is no fixed key list to MGET directly — this SCANs
+ * the day's `usage:mcp-client:*` pattern first (cursor loop, bounded), then
+ * MGETs the found keys in one round trip. Returns clients sorted by count
+ * descending, ties alphabetical.
+ *
+ * Same DELIBERATE WRITE/READ ASYMMETRY as readUsageWindow above: fails
+ * LOUD (`{ ok: false }`) on an unconfigured client, a request error, a
+ * malformed reply, or an unexhausted scan — never a silently-degraded
+ * list. A day with genuinely no handshakes is `{ ok: true, clients: [] }`,
+ * which the digest renders as an honest "none recorded".
+ */
+export async function readMcpClientDay(day: string): Promise<McpClientDayResult> {
+  const client = countersClient();
+  if (!client) return { ok: false };
+
+  const prefix = `${keyPrefix()}:usage:mcp-client:`;
+  const suffix = `:${day}`;
+
+  const found = new Set<string>(); // SCAN may return a key more than once
+  let scanCursor = '0';
+  try {
+    for (let page = 0; page < MCP_CLIENT_SCAN_MAX_PAGES; page += 1) {
+      const raw = await client.cmd(['SCAN', scanCursor, 'MATCH', `${prefix}*${suffix}`, 'COUNT', '100']);
+      if (!Array.isArray(raw) || raw.length !== 2 || !Array.isArray(raw[1])) return { ok: false };
+      for (const key of raw[1]) {
+        if (typeof key === 'string') found.add(key);
+      }
+      scanCursor = String(raw[0]);
+      if (scanCursor === '0') break;
+    }
+  } catch (err) {
+    noteUpstashError(
+      'counters',
+      err,
+      'failing closed to a digest read error (MCP client handshakes, never a degraded number)'
+    );
+    return { ok: false };
+  }
+  if (scanCursor !== '0') return { ok: false }; // never exhausted — refuse to under-report
+
+  const keys = [...found];
+  if (keys.length === 0) return { ok: true, clients: [] };
+
+  let counts: unknown;
+  try {
+    counts = await client.cmd(['MGET', ...keys]);
+  } catch (err) {
+    noteUpstashError(
+      'counters',
+      err,
+      'failing closed to a digest read error (MCP client handshakes, never a degraded number)'
+    );
+    return { ok: false };
+  }
+  if (!Array.isArray(counts) || counts.length !== keys.length) return { ok: false };
+
+  const clients = keys
+    .map((key, i) => ({
+      client: key.slice(prefix.length, key.length - suffix.length),
+      count: typeof counts[i] === 'string' ? Number(counts[i]) || 0 : 0,
+    }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count || (a.client < b.client ? -1 : a.client > b.client ? 1 : 0));
+
+  return { ok: true, clients };
 }
