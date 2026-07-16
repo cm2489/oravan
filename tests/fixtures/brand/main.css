@@ -1,0 +1,7 @@
+:root { --brand: #b91c1c; }
+body { background: #fdf6ec; color: #292524; font-family: "Source Serif Pro", Georgia, serif; }
+h1, h2 { font-family: "Source Serif Pro", Georgia, serif; }
+.button, .pill { background: #b91c1c; color: #fdf6ec; border-radius: 24px; }
+.card { border-radius: 24px; border: 1px solid rgba(41, 37, 36, 0.15); }
+nav a { color: #b91c1c; }
+footer { background: #292524; color: #fdf6ec; }
