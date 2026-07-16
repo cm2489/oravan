@@ -50,7 +50,7 @@ import { join } from 'node:path';
 // directly — lib/core/mcp.ts transitively imports 'server-only' (via
 // lib/freshness.ts), which only resolves inside Next's own bundler, not
 // under tsx. See lib/usage.ts's header/MCP_TOOL_NAMES comments.
-import { MCP_TOOL_NAMES, readUsageWindow } from '../lib/usage';
+import { MCP_TOOL_NAMES, readMcpClientDay, readUsageWindow } from '../lib/usage';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -172,6 +172,20 @@ async function main() {
     return;
   }
 
+  // Day-1's initialize-handshake counts by client software name — a
+  // descriptive digest line only, never spike-checked (see
+  // formatMcpClientsLine). Same fail-LOUD posture as readUsageWindow
+  // above: a read failure must never quietly render as "none recorded",
+  // which would be an invented zero.
+  const clientHandshakes = await readMcpClientDay(date);
+  if (!clientHandshakes.ok) {
+    console.error(
+      '::error::could not read the MCP client-handshake counts from the counters database — refusing to post a digest with an invented number'
+    );
+    process.exit(1);
+    return;
+  }
+
   // Per-tool stats are informational only (floor Infinity => .spike is
   // always false) — the design deliberately spike-checks the two aggregate
   // series only, not each of the 5 tools individually (low/uneven per-tool
@@ -192,7 +206,14 @@ async function main() {
     spikeIssueUrls.script = ensureSpikeIssue({ series: 'script generations', date, stats: script, floor: SCRIPT_SPIKE_FLOOR });
   }
 
-  const body = formatDigestBody({ date, mcpTools, mcpTotal, script, spikeIssueUrls });
+  const body = formatDigestBody({
+    date,
+    mcpTools,
+    mcpTotal,
+    script,
+    mcpClients: clientHandshakes.clients,
+    spikeIssueUrls,
+  });
   postOrEditTodaysComment(issueNumber, date, body);
 
   console.log(

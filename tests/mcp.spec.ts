@@ -40,6 +40,40 @@ test('initialize handshake succeeds and identifies the server', async ({ request
   expect(rpc.result?.protocolVersion).toBeTruthy();
 });
 
+test('a JSON-RPC batch-array body is handled cleanly, never a crash (the handshake counter parses batches defensively)', async ({
+  request,
+}) => {
+  // The route's countClientHandshakes clones and parses every POST body
+  // pre-handler (single object OR batch array) to spot initialize's
+  // clientInfo.name — this pins that an array body neither breaks that
+  // parse nor the transport behind it. Distinct fixed caller, same
+  // convention as the burst test below (192.0.2.61/.62 are taken).
+  const res = await request.post(MCP_ENDPOINT, {
+    headers: {
+      'content-type': 'application/json',
+      accept: MCP_ACCEPT,
+      'x-forwarded-for': '192.0.2.63',
+    },
+    data: [
+      {
+        jsonrpc: '2.0',
+        id: 71,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-06-18',
+          capabilities: {},
+          clientInfo: { name: 'oravan-ci-batch-check', version: '1.0' },
+        },
+      },
+    ],
+  });
+  // The SDK transport parses batch arrays itself (pre-2025-06-18 protocol
+  // revisions allowed them) — whatever verdict it returns must be a clean
+  // JSON-RPC-level one, never a 5xx from the route's own body handling.
+  expect(res.status()).toBeLessThan(500);
+  expect(res.headers()['set-cookie']).toBeUndefined();
+});
+
 test('an unrecognized method is rejected as a clean JSON-RPC error, not a crash', async ({
   request,
 }) => {

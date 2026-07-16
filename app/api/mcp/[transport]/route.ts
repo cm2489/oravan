@@ -2,7 +2,7 @@ import { createMcpHandler } from 'mcp-handler';
 import { after, NextResponse } from 'next/server';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { registerOravanTools } from '@/lib/core/mcp-tools';
-import { noteMcpToolCall } from '@/lib/usage';
+import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
 
 /*
  * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
@@ -60,6 +60,10 @@ import { noteMcpToolCall } from '@/lib/usage';
  *    key (a ZIP, a slug, a bioguide, a search string) - nothing here writes
  *    it anywhere; it's read once, used to look up baked JSON, and discarded
  *    when the response is returned.
+ *  - The one pre-handler body read (countClientHandshakes below) extracts
+ *    exactly one field - initialize's params.clientInfo.name, the calling
+ *    SOFTWARE's self-reported name - and nothing else; see that function's
+ *    own constitutional-constraint comment.
  *
  * Bilingual-parity scope note (the fix that closed the envelope/refine_hint/
  * tool-error gap PR #46 pinned): the `title`/`description` each
@@ -121,6 +125,58 @@ const handler = createMcpHandler(
 const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 60 });
 const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
 
+/*
+ * MCP client-software handshake counter (2026-07). WHY HANDSHAKES, NOT TOOL
+ * CALLS: this route is deliberately stateless (no sessionIdGenerator — see
+ * the header comment), so mcp-handler builds a FRESH McpServer per POST and
+ * the SDK's initialize-time clientInfo (server.server.getClientVersion())
+ * is always undefined by the time a separate tools/call POST arrives —
+ * verified empirically against mcp-handler@1.1.0 + SDK 1.26.0. The
+ * initialize request's own body is the one place the name exists, so this
+ * route counts THAT: one increment per initialize handshake, keyed by the
+ * client software's self-reported name.
+ *
+ * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data"): the
+ * ONLY thing read out of the body here is params.clientInfo.name — the
+ * calling SOFTWARE's self-chosen name (e.g. "claude-ai", "glama"), the
+ * identity of a program, never of a person. No clientInfo.version, no
+ * User-Agent, no IP reaches the counter (lib/usage.ts force-sanitizes the
+ * name structurally before any key is built). The body is parsed from a
+ * clone() — the original stream stays untouched for the transport — and
+ * the parsed value is discarded immediately: never logged, never stored.
+ *
+ * Counting must never break request handling: every parse failure is
+ * swallowed (the transport below produces the real JSON-RPC error for a
+ * malformed body) and the write itself is after()-deferred, exactly like
+ * onToolCall's tool counters. Handles both a single JSON-RPC object and a
+ * batch array (batches exist in pre-2025-06-18 protocol revisions and the
+ * SDK transport still parses them — handled defensively here so a batched
+ * initialize is neither missed nor a crash).
+ */
+async function countClientHandshakes(req: Request): Promise<void> {
+  try {
+    const body: unknown = await req.clone().json();
+    for (const raw of Array.isArray(body) ? body : [body]) {
+      if (typeof raw !== 'object' || raw === null) continue;
+      const msg = raw as { method?: unknown; params?: unknown };
+      if (msg.method !== 'initialize') continue;
+      const params =
+        typeof msg.params === 'object' && msg.params !== null
+          ? (msg.params as { clientInfo?: unknown })
+          : {};
+      const info =
+        typeof params.clientInfo === 'object' && params.clientInfo !== null
+          ? (params.clientInfo as { name?: unknown })
+          : {};
+      const name = info.name; // raw + caller-controlled; sanitized in lib/usage.ts
+      after(() => noteMcpClientHandshake(name));
+    }
+  } catch {
+    // Non-JSON or malformed body: nothing to count, deliberately silent —
+    // the transport returns the real JSON-RPC parse error to the caller.
+  }
+}
+
 async function limitedPost(req: Request): Promise<Response> {
   readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
@@ -137,6 +193,10 @@ async function limitedPost(req: Request): Promise<Response> {
       { status: 429, headers: { 'retry-after': '3600' } }
     );
   }
+  // AFTER the rate-limit gates on purpose: a 429'd request never counts,
+  // the same posture as the per-tool counters (see the wrapper comment in
+  // the createMcpHandler callback above).
+  await countClientHandshakes(req);
   return handler(req);
 }
 
