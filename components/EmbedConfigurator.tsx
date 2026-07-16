@@ -3,7 +3,8 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
-import { safeAccent, type FontKey, type RadiusKey } from '@/lib/embed-theme';
+import { safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
+import { contrastRatio } from '@/lib/contrast';
 import type { FeedTeaser } from '@/lib/types';
 
 /*
@@ -24,24 +25,41 @@ import type { FeedTeaser } from '@/lib/types';
  * than re-declaring the radius/font options here) means this configurator
  * can never drift out of sync with what the server actually accepts.
  *
- * Theming note (a real, current gap - not fixed here, see the S16 report):
- * only the bill-card widget accepts --oravan-accent/-radius/-font today;
- * components/embed/RepLookupWidget.tsx has no theme prop at all, and
- * public/embed.js's WIDGET_PARAM_ATTRS map has no 'rep-lookup' entry, so the
- * loader wouldn't even forward theme data-attributes for it. The theme
- * controls below are therefore only shown for the bill-card widget - this
- * reflects what's actually shipped, not an aspiration.
+ * Theming (S5a + brand-preview build): every widget accepts the full
+ * validated knob set — accent/surface/ink/mode/radius/font — forwarded by
+ * public/embed.js and resolved server-side (lib/embed-theme). The custom
+ * surface/ink pair is gated client-side by the SAME lib/contrast math the
+ * server enforces: a pair below AA (4.5:1) is warned about AND omitted from
+ * both the preview and the snippet, so this configurator can never emit a
+ * snippet the server would discard.
  */
 
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
 const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--oravan-accent, #82632a) fallback
+const DEFAULT_SURFACE = '#f3ecdd'; // the light-mode token fallbacks in app/embed/embed.css
+const DEFAULT_INK = '#2a2318';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
+const MIN_PAIR_CONTRAST = 4.5; // WCAG AA — the exact server-side bar (lib/embed-theme)
 
 const RADIUS_KEYS: RadiusKey[] = ['sharp', 'soft', 'round'];
-const FONT_KEYS: FontKey[] = ['system', 'serif'];
+const FONT_KEYS: FontKey[] = ['system', 'serif', 'humanist', 'geometric'];
+const MODE_KEYS: ModeKey[] = ['auto', 'light', 'dark'];
+
+const FONT_LABEL_KEYS = {
+  system: 'fontSystem',
+  serif: 'fontSerif',
+  humanist: 'fontHumanist',
+  geometric: 'fontGeometric',
+} as const satisfies Record<FontKey, string>;
+
+const MODE_LABEL_KEYS = {
+  auto: 'modeAuto',
+  light: 'modeLight',
+  dark: 'modeDark',
+} as const satisfies Record<ModeKey, string>;
 
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
@@ -59,6 +77,10 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const [accentInput, setAccentInput] = useState(DEFAULT_ACCENT);
   const [radius, setRadius] = useState<RadiusKey>('soft');
   const [font, setFont] = useState<FontKey>('system');
+  const [mode, setMode] = useState<ModeKey>('auto');
+  const [customColors, setCustomColors] = useState(false);
+  const [surfaceInput, setSurfaceInput] = useState(DEFAULT_SURFACE);
+  const [inkInput, setInkInput] = useState(DEFAULT_INK);
   const [brandless, setBrandless] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(DEFAULT_HEIGHT);
@@ -68,6 +90,13 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   // means the configurator's own live preview can't diverge from what the
   // server would actually render for the exact same input.
   const accent = safeAccent(accentInput) ?? DEFAULT_ACCENT;
+
+  // Custom surface/ink: gated by the SAME contrast math the server enforces
+  // (lib/contrast, one implementation), so a failing pair is warned about
+  // here and omitted from preview + snippet rather than silently discarded
+  // server-side later. Native color inputs always emit #rrggbb.
+  const pairPasses = contrastRatio(inkInput, surfaceInput) >= MIN_PAIR_CONTRAST;
+  const pairActive = customColors && pairPasses;
 
   const filteredBills = useMemo(() => {
     const q = billQuery.trim().toLowerCase();
@@ -128,16 +157,21 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     if (widget === 'bill-card' && !slug) return null;
     const params = new URLSearchParams({ locale });
     if (widget === 'bill-card' && slug) params.set('slug', slug);
-    // S5a: both widgets take the same three validated theme params.
+    // Every widget takes the same validated theme params (S5a + brand-preview).
     params.set('accent', accent);
     params.set('radius', radius);
     params.set('font', font);
+    if (mode !== 'auto') params.set('mode', mode);
+    if (pairActive) {
+      params.set('surface', surfaceInput);
+      params.set('ink', inkInput);
+    }
     if (brandless) params.set('brandless', '1');
     // Relative on purpose: the live preview must show THIS deployment's
     // widget (localhost, preview deploys, prod alike). Only the copy-paste
     // snippet below carries the absolute production origin.
     return `/embed/${widget}?${params.toString()}`;
-  }, [widget, locale, slug, accent, radius, font, brandless]);
+  }, [widget, locale, slug, accent, radius, font, mode, pairActive, surfaceInput, inkInput, brandless]);
 
   const snippet = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
@@ -148,6 +182,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     ];
     if (widget === 'bill-card' && slug) attrs.push(`data-slug="${slug}"`);
     attrs.push(`data-accent="${accent}"`);
+    if (pairActive) {
+      attrs.push(`data-surface="${surfaceInput}"`);
+      attrs.push(`data-ink="${inkInput}"`);
+    }
+    if (mode !== 'auto') attrs.push(`data-mode="${mode}"`);
     attrs.push(`data-radius="${radius}"`);
     attrs.push(`data-font="${font}"`);
     if (brandless) attrs.push(`data-brandless="1"`);
@@ -157,7 +196,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       ...attrs.map((a) => `        ${a}`),
       `></script>`,
     ].join('\n');
-  }, [widget, targetId, locale, slug, accent, radius, font, brandless]);
+  }, [widget, targetId, locale, slug, accent, radius, font, mode, pairActive, surfaceInput, inkInput, brandless]);
 
   async function copySnippet() {
     if (!snippet) return;
@@ -338,12 +377,78 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   >
                     {FONT_KEYS.map((key) => (
                       <option key={key} value={key}>
-                        {t(key === 'serif' ? 'fontSerif' : 'fontSystem')}
+                        {t(FONT_LABEL_KEYS[key])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="oravan-mode" className="text-sm font-medium">
+                    {t('modeLabel')}
+                  </label>
+                  <select
+                    id="oravan-mode"
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value as ModeKey)}
+                    className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
+                  >
+                    {MODE_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {t(MODE_LABEL_KEYS[key])}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              <label className="mt-4 flex min-h-[44px] items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={customColors}
+                  onChange={(e) => setCustomColors(e.target.checked)}
+                  className="h-5 w-5 rounded-control border-line accent-brass"
+                />
+                {t('customColorsToggle')}
+              </label>
+              {customColors && (
+                <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="oravan-surface" className="text-sm font-medium">
+                      {t('surfaceLabel')}
+                    </label>
+                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                      <input
+                        id="oravan-surface"
+                        type="color"
+                        value={surfaceInput}
+                        onChange={(e) => setSurfaceInput(e.target.value)}
+                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                      />
+                      <span className="font-mono text-sm text-ink-soft">{surfaceInput}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="oravan-ink" className="text-sm font-medium">
+                      {t('inkLabel')}
+                    </label>
+                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                      <input
+                        id="oravan-ink"
+                        type="color"
+                        value={inkInput}
+                        onChange={(e) => setInkInput(e.target.value)}
+                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                      />
+                      <span className="font-mono text-sm text-ink-soft">{inkInput}</span>
+                    </div>
+                  </div>
+                  {!pairPasses && (
+                    <p role="alert" className="rounded-control border border-line bg-paper-deep p-3 text-sm sm:col-span-2">
+                      {t('contrastWarning')}
+                    </p>
+                  )}
+                </div>
+              )}
             </fieldset>
           )}
 

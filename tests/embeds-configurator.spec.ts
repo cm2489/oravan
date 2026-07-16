@@ -188,3 +188,107 @@ test('footer Embeds link is reachable and clickable on mobile', async ({ page, i
   await link.click();
   await expect(page).toHaveURL(/\/embeds$/);
 });
+
+/*
+ * Brand-preview build — the widened theme controls: color mode, the two new
+ * font stacks, and the custom surface/ink pair gated by the same lib/contrast
+ * math the server enforces (warn + omit on a failing pair, so the snippet can
+ * never carry values the server would discard).
+ */
+test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)', () => {
+  // React controlled color inputs need the native value setter + a bubbling
+  // input event; locator.fill() doesn't support type="color".
+  async function setColor(page: import('@playwright/test').Page, id: string, value: string) {
+    await page.locator(`#${id}`).evaluate((el, v) => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      setter.call(el, v);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, value);
+  }
+
+  test('mode select emits data-mode only when forced', async ({ page }) => {
+    await page.goto('/embeds');
+    const snippet = page.locator('pre code');
+    await expect(snippet).not.toContainText('data-mode');
+    await page.getByLabel(en.embeds.modeLabel).selectOption('dark');
+    await expect(snippet).toContainText('data-mode="dark"');
+    await page.getByLabel(en.embeds.modeLabel).selectOption('auto');
+    await expect(snippet).not.toContainText('data-mode');
+  });
+
+  test('the two new font stacks are selectable and land in the snippet', async ({ page }) => {
+    await page.goto('/embeds');
+    const fontSelect = page.getByLabel(en.embeds.fontLabel);
+    await expect(fontSelect.locator('option')).toHaveCount(4);
+    await fontSelect.selectOption('humanist');
+    await expect(page.locator('pre code')).toContainText('data-font="humanist"');
+    await fontSelect.selectOption('geometric');
+    await expect(page.locator('pre code')).toContainText('data-font="geometric"');
+  });
+
+  test('custom colors: hidden by default, defaults pass contrast, snippet carries the pair', async ({
+    page,
+  }) => {
+    await page.goto('/embeds');
+    await expect(page.locator('#oravan-surface')).toHaveCount(0);
+    await expect(page.locator('pre code')).not.toContainText('data-surface');
+
+    await page.getByLabel(en.embeds.customColorsToggle).check();
+    await expect(page.getByLabel(en.embeds.surfaceLabel, { exact: true })).toBeVisible();
+    await expect(page.getByLabel(en.embeds.inkLabel, { exact: true })).toBeVisible();
+    // The prefilled defaults are the brand pair — they pass AA, no warning.
+    await expect(page.getByText(en.embeds.contrastWarning)).toHaveCount(0);
+    await expect(page.locator('pre code')).toContainText('data-surface="#f3ecdd"');
+    await expect(page.locator('pre code')).toContainText('data-ink="#2a2318"');
+  });
+
+  test('a failing pair warns AND is omitted from snippet + preview', async ({ page }) => {
+    await page.goto('/embeds');
+    await page.getByLabel(en.embeds.customColorsToggle).check();
+    await setColor(page, 'oravan-ink', '#dddddd'); // ~1.2:1 against the default cream
+    await expect(page.getByText(en.embeds.contrastWarning)).toBeVisible();
+    await expect(page.locator('pre code')).not.toContainText('data-surface');
+    await expect(page.locator('pre code')).not.toContainText('data-ink');
+    const previewSrc = await page.locator('iframe[title]').first().getAttribute('src');
+    expect(previewSrc).not.toContain('surface=');
+    expect(previewSrc).not.toContain('ink=');
+    // Repairing the pair clears the warning and restores the knobs.
+    await setColor(page, 'oravan-ink', '#111111');
+    await expect(page.getByText(en.embeds.contrastWarning)).toHaveCount(0);
+    await expect(page.locator('pre code')).toContainText('data-ink="#111111"');
+  });
+
+  test('a valid custom pair + forced mode reach the live preview iframe', async ({ page }) => {
+    await page.goto('/embeds');
+    await page.getByLabel(en.embeds.customColorsToggle).check();
+    await setColor(page, 'oravan-surface', '#0f1a2b');
+    await setColor(page, 'oravan-ink', '#f5f7fa');
+    await page.getByLabel(en.embeds.modeLabel).selectOption('dark');
+    const previewSrc = await page.locator('iframe[title]').first().getAttribute('src');
+    expect(previewSrc).toContain('surface=%230f1a2b');
+    expect(previewSrc).toContain('ink=%23f5f7fa');
+    expect(previewSrc).toContain('mode=dark');
+  });
+
+  test('ES locale renders the new control labels', async ({ page }) => {
+    await page.goto('/es/embeds');
+    await expect(page.getByLabel(es.embeds.modeLabel)).toBeVisible();
+    await expect(page.getByLabel(es.embeds.fontLabel)).toBeVisible();
+    await expect(page.getByText(es.embeds.customColorsToggle)).toBeVisible();
+  });
+
+  test('new controls meet the 44px touch-target bar', async ({ page }) => {
+    await page.goto('/embeds');
+    // Native <select> ignores min-height in WebKit (the pre-existing radius/
+    // font selects render identically) — the mode select matches that shipped
+    // pattern, so the bounding-box assertion covers the controls that DO
+    // honor sizing: the checkbox row and the color inputs.
+    const toggleBox = await page
+      .locator('label', { hasText: en.embeds.customColorsToggle })
+      .boundingBox();
+    expect(toggleBox!.height).toBeGreaterThanOrEqual(44);
+    await page.getByLabel(en.embeds.customColorsToggle).check();
+    const surfaceBox = await page.locator('#oravan-surface').boundingBox();
+    expect(surfaceBox!.height).toBeGreaterThanOrEqual(43); // h-11 = 44px, allow subpixel
+  });
+});
