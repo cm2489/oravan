@@ -85,6 +85,66 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const [copied, setCopied] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(DEFAULT_HEIGHT);
 
+  // "Match your site" (brand-preview build): POST /api/brand, autofill the
+  // theme controls from the validated suggestion. Plain setState on the
+  // existing controls — manual edits afterward just work; re-running
+  // overwrites (the hint says so).
+  const [matchUrl, setMatchUrl] = useState('');
+  const [matchStatus, setMatchStatus] = useState<
+    'idle' | 'loading' | 'done' | 'bad_request' | 'rate_limited' | 'unavailable' | 'generation_failed'
+  >('idle');
+  const [matchedSite, setMatchedSite] = useState<{ name?: string; logoUrl?: string } | null>(null);
+  const [adjusted, setAdjusted] = useState(false);
+
+  async function suggestTheme() {
+    if (!matchUrl.trim() || matchStatus === 'loading') return;
+    setMatchStatus('loading');
+    setMatchedSite(null);
+    setAdjusted(false);
+    try {
+      const res = await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: matchUrl.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { error?: string } | null;
+        setMatchStatus(
+          err?.error === 'rate_limited' || err?.error === 'unavailable' || err?.error === 'generation_failed'
+            ? err.error
+            : 'bad_request'
+        );
+        return;
+      }
+      const data = (await res.json()) as {
+        theme: { surface: string; ink: string; accent: string; radius: RadiusKey; font: FontKey; mode: ModeKey };
+        site: { name?: string; logoUrl?: string };
+        adjusted: boolean;
+      };
+      // Server-validated values, re-gated by the same client validators the
+      // manual controls use (belt-and-suspenders, one contrast bar).
+      setAccentInput(safeAccent(data.theme.accent) ?? DEFAULT_ACCENT);
+      setSurfaceInput(safeAccent(data.theme.surface) ?? DEFAULT_SURFACE);
+      setInkInput(safeAccent(data.theme.ink) ?? DEFAULT_INK);
+      setCustomColors(true);
+      setRadius(RADIUS_KEYS.includes(data.theme.radius) ? data.theme.radius : 'soft');
+      setFont(FONT_KEYS.includes(data.theme.font) ? data.theme.font : 'system');
+      setMode(MODE_KEYS.includes(data.theme.mode) ? data.theme.mode : 'auto');
+      setMatchedSite(data.site ?? null);
+      setAdjusted(Boolean(data.adjusted));
+      setMatchStatus('done');
+    } catch {
+      setMatchStatus('unavailable');
+    }
+  }
+
+  const MATCH_ERROR_KEYS = {
+    bad_request: 'matchSiteErrorInvalid',
+    rate_limited: 'matchSiteErrorRateLimited',
+    unavailable: 'matchSiteErrorUnavailable',
+    generation_failed: 'matchSiteErrorFailed',
+  } as const;
+
   // A malformed accent never reaches the preview/snippet - same fail-closed
   // rule lib/embed-theme.ts's safeAccent enforces server-side; this just
   // means the configurator's own live preview can't diverge from what the
@@ -322,6 +382,59 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
             </div>
           )}
 
+          <fieldset>
+            <legend className="text-sm font-semibold">{t('matchSiteHeading')}</legend>
+            <p className="mt-1 text-xs text-ink-soft">{t('matchSiteHint')}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="oravan-match-url" className="sr-only">
+                  {t('matchSiteUrlLabel')}
+                </label>
+                <input
+                  id="oravan-match-url"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://example.org"
+                  value={matchUrl}
+                  onChange={(e) => setMatchUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void suggestTheme();
+                    }
+                  }}
+                  className="min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-base"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => void suggestTheme()}
+                disabled={matchStatus === 'loading'}
+                className="inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px disabled:opacity-60"
+              >
+                {t('matchSiteCta')}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-ink-faint">{t('matchSitePrivacy')}</p>
+            <div aria-live="polite" className="mt-2 text-sm">
+              {matchStatus === 'loading' && <p className="text-ink-soft">{t('matchSiteLoading')}</p>}
+              {(matchStatus === 'bad_request' ||
+                matchStatus === 'rate_limited' ||
+                matchStatus === 'unavailable' ||
+                matchStatus === 'generation_failed') && (
+                <p role="alert" className="rounded-control border border-line bg-paper-deep p-3">
+                  {t(MATCH_ERROR_KEYS[matchStatus])}
+                </p>
+              )}
+              {matchStatus === 'done' && adjusted && (
+                <p className="rounded-control border border-line bg-paper-deep p-3">
+                  {t('matchSiteAdjustedNote')}
+                </p>
+              )}
+            </div>
+          </fieldset>
+
           {/* S5a: both widgets take the same theme params, so no more gate */}
           {(
             <fieldset>
@@ -470,6 +583,29 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
         <div className="min-w-0 space-y-6">
           <div>
             <h3 className="font-display text-lg font-bold">{t('previewHeading')}</h3>
+            {/* Mock "on your site" strip (brand-preview build): the honest,
+                minimal version — their surface color, their logo (loaded
+                client-side straight from their https same-host URL, never
+                proxied or re-hosted), no fake browser chrome. Renders only
+                after a successful match with the pair active, so it always
+                shows colors that actually passed the contrast gate. */}
+            {matchedSite && pairActive && (
+              <div
+                className="mt-2 flex items-center gap-3 rounded-t-card border border-b-0 border-line px-4 py-2"
+                style={{ backgroundColor: surfaceInput, color: inkInput }}
+              >
+                {matchedSite.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- external, unconfigurable host; plain img is the point (no proxying)
+                  <img src={matchedSite.logoUrl} alt="" className="h-6 w-6 shrink-0 object-contain" />
+                )}
+                <span className="truncate text-sm font-semibold">{matchedSite.name ?? ''}</span>
+                {matchedSite.name && (
+                  <span className="ml-auto shrink-0 text-xs opacity-70">
+                    {t('matchSiteFrameNote', { name: matchedSite.name })}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="mt-2 overflow-hidden rounded-card border border-line bg-paper-deep">
               {previewSrc ? (
                 <iframe

@@ -292,3 +292,104 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
     expect(surfaceBox!.height).toBeGreaterThanOrEqual(43); // h-11 = 44px, allow subpixel
   });
 });
+
+/*
+ * "Match your site" (brand-preview build) — the client flow with /api/brand
+ * mocked via page.route(): autofill, the adjusted-colors honesty note, the
+ * mock site strip, and the error-string taxonomy. The route's own behavior
+ * (guard, limits, taxonomy) is pinned server-side in embed-brand-route.spec.
+ */
+test.describe('match your site (mocked /api/brand)', () => {
+  const THEME_RESPONSE = {
+    theme: {
+      surface: '#0f1a2b',
+      ink: '#f5f7fa',
+      accent: '#2ea043',
+      radius: 'sharp',
+      font: 'geometric',
+      mode: 'dark',
+    },
+    site: { name: 'Nightowl Analytics', logoUrl: 'https://nightowl.example/logo.png' },
+    adjusted: true,
+  };
+
+  async function submitUrl(page: import('@playwright/test').Page) {
+    await page.getByLabel(en.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
+    await page.getByRole('button', { name: en.embeds.matchSiteCta }).click();
+  }
+
+  test('a successful match autofills every theme control and the snippet', async ({ page }) => {
+    await page.route('**/api/brand', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(THEME_RESPONSE) })
+    );
+    await page.goto('/embeds');
+    await submitUrl(page);
+
+    const snippet = page.locator('pre code');
+    await expect(snippet).toContainText('data-accent="#2ea043"');
+    await expect(snippet).toContainText('data-surface="#0f1a2b"');
+    await expect(snippet).toContainText('data-ink="#f5f7fa"');
+    await expect(snippet).toContainText('data-mode="dark"');
+    await expect(snippet).toContainText('data-radius="sharp"');
+    await expect(snippet).toContainText('data-font="geometric"');
+    await expect(page.getByLabel(en.embeds.modeLabel)).toHaveValue('dark');
+    await expect(page.getByLabel(en.embeds.customColorsToggle)).toBeChecked();
+    // The adjusted-colors honesty note.
+    await expect(page.getByText(en.embeds.matchSiteAdjustedNote)).toBeVisible();
+    // The mock site strip, painted with the returned surface.
+    await expect(page.getByText('Simulated on Nightowl Analytics')).toBeVisible();
+  });
+
+  test('manual edits after autofill still work (plain state, no locking)', async ({ page }) => {
+    await page.route('**/api/brand', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(THEME_RESPONSE) })
+    );
+    await page.goto('/embeds');
+    await submitUrl(page);
+    await page.getByLabel(en.embeds.radiusLabel).selectOption('round');
+    await expect(page.locator('pre code')).toContainText('data-radius="round"');
+    await expect(page.locator('pre code')).toContainText('data-surface="#0f1a2b"'); // rest intact
+  });
+
+  test('the error taxonomy maps to the four bilingual strings', async ({ page }) => {
+    const cases: Array<[number, string, string]> = [
+      [400, 'bad_request', en.embeds.matchSiteErrorInvalid],
+      [429, 'rate_limited', en.embeds.matchSiteErrorRateLimited],
+      [502, 'unavailable', en.embeds.matchSiteErrorUnavailable],
+      [502, 'generation_failed', en.embeds.matchSiteErrorFailed],
+    ];
+    for (const [status, error, message] of cases) {
+      await page.route('**/api/brand', (route) =>
+        route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ error }) })
+      );
+      await page.goto('/embeds');
+      await submitUrl(page);
+      await expect(page.getByText(message)).toBeVisible();
+      await page.unroute('**/api/brand');
+    }
+  });
+
+  test('ES locale: heading, privacy line, and an error string render in Spanish', async ({
+    page,
+  }) => {
+    await page.route('**/api/brand', (route) =>
+      route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'unavailable' }) })
+    );
+    await page.goto('/es/embeds');
+    await expect(page.getByText(es.embeds.matchSiteHeading)).toBeVisible();
+    await expect(page.getByText(es.embeds.matchSitePrivacy)).toBeVisible();
+    await page.getByLabel(es.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
+    await page.getByRole('button', { name: es.embeds.matchSiteCta }).click();
+    await expect(page.getByText(es.embeds.matchSiteErrorUnavailable)).toBeVisible();
+  });
+
+  test('match controls meet the 44px bar and the URL input is labeled', async ({ page }) => {
+    await page.goto('/embeds');
+    const input = page.getByLabel(en.embeds.matchSiteUrlLabel);
+    await expect(input).toBeVisible();
+    const inputBox = await input.boundingBox();
+    expect(inputBox!.height).toBeGreaterThanOrEqual(44);
+    const buttonBox = await page.getByRole('button', { name: en.embeds.matchSiteCta }).boundingBox();
+    expect(buttonBox!.height).toBeGreaterThanOrEqual(44);
+  });
+});
