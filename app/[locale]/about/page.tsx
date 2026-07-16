@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { DonateSupport } from '@/components/DonateSupport';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { DONATE_URL } from '@/lib/site';
 
@@ -27,6 +26,26 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('fundingTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('fundingBody')}</p>
+        {/* The one support ask on this page (the HCB fiscal-sponsorship route
+            was denied 2026-07-15, so the former DonateSupport section and its
+            sponsor/tax-deductible claims are retired). Dark by construction
+            until DONATE_URL is set - one constant, no second flag. Never
+            claims tax-deductibility or nonprofit status - this is a personal,
+            founder-funded contribution, not a charitable gift. Link-out only:
+            never an iframe or a payment field on Oravan's own infra (§6). */}
+        {DONATE_URL && (
+          <p className="mt-2 max-w-prose leading-relaxed">
+            {t('fundingSupportBody')}{' '}
+            <a
+              href={DONATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 hover:text-ink"
+            >
+              {t('fundingSupportCta')}
+            </a>
+          </p>
+        )}
       </section>
 
       {/* Who's accountable + how to reach a person — surfaced outside the
@@ -37,12 +56,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         <h2 className="font-display text-2xl font-bold">{t('accountabilityTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('accountabilityBody')}</p>
       </section>
-
-      {/* §6: the donations leg — link-out only, never a payment field on our
-          own infra. Dark by construction until DONATE_URL is set (HCB
-          onboarding is separate, in-flight paperwork); flipping that one
-          constant is the entire code change needed to light this up. */}
-      <DonateSupport donateUrl={DONATE_URL} />
     </article>
   );
 }

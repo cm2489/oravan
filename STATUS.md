@@ -65,6 +65,7 @@ Off-plan riders (pulled forward, rename-independent):
 - 2026-07-11: Stripe decision — GO. S18–S21 build starts 2026-07-11; pricing per `docs/ideation/2026-07-02-embeds-spec.md` §4 ladder ($29/mo or $290/yr Pro, $15/mo or $150/yr nonprofit, network hand-negotiated). Stripe is the institutional-embeds rail only; HCB is the citizen-donations rail; the two are never conflated.
 - 2026-07-11: S12 ruling — quiet-submit now (registry + directory submissions run this week; review/listing latency burns down while unannounced), the public announcement itself still holds for the late Aug–Sep window.
 - 2026-07-11: Pregen + Blob portraits — both armed, pending owner secrets (~$2.50–3.80/mo pregen + ~cents/mo Blob), surfaced and approved.
+- 2026-07-15: HCB application DENIED (HCB currently sponsors teen hacker builds only) — the citizen-donations rail is undecided again; About/footer copy scrubbed of every fiscal-sponsor/501(c)(3)/tax-deductible claim and `DonateSupport` retired in branch `feat/funding-transparency` (founder-funded framing is the single truthful surface); `DONATE_URL` stays null until a replacement rail is chosen.
 
 ## Issues & learnings ledger (compound these)
 

@@ -23,6 +23,28 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
         <p className="max-w-prose italic text-ink-faint">{t('footer.lore')}</p>
         <p className="max-w-prose">{t('footer.mission')}</p>
         <p className="max-w-prose">{t('footer.aiNote')}</p>
+        {/* Phase 1/2 funding transparency line: dark copy today (DONATE_URL
+            null), automatically upgrades to the "funded + supporters" line
+            with a Support Oravan link the moment DONATE_URL is set - one
+            constant, no separate flag, same pattern as the nav Donate link
+            below. */}
+        <p className="max-w-prose">
+          {donateUrl ? (
+            <>
+              {t('footer.fundingLive')}{' '}
+              <a
+                href={donateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-ink"
+              >
+                {t('footer.fundingCta')}
+              </a>
+            </>
+          ) : (
+            t('footer.funding')
+          )}
+        </p>
         <nav aria-label={t('footer.navLabel')} className="flex flex-wrap gap-5 pt-2">
           <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
             {t('footer.privacy')}
@@ -53,7 +75,8 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             {t('footer.partners')}
           </Link>
           {/* §6: quiet, persistent, never a banner or modal - link only, dark
-              until HCB onboarding completes (DONATE_URL flips from null). */}
+              until a donation rail exists (DONATE_URL flips from null; the
+              HCB fiscal-sponsorship route was denied 2026-07-15, rail TBD). */}
           {donateUrl && (
             <a
               href={donateUrl}

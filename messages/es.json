@@ -22,7 +22,10 @@
       "donate": "Donar",
       "embeds": "Widgets",
       "navLabel": "Pie de página",
-      "partners": "Socios"
+      "partners": "Socios",
+      "funding": "Financiado por su fundador. Sin anuncios, sin rastreo, sin dinero externo.",
+      "fundingLive": "Financiado por el fundador y quienes lo apoyan.",
+      "fundingCta": "Apoya a Oravan"
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
@@ -348,11 +351,10 @@
   "about": {
     "title": "Acerca de Oravan",
     "intro": "Oravan es infraestructura cívica gratuita y no partidista: encuentra a tus representantes federales, entiende los proyectos de ley activos en lenguaje claro y haz una llamada de 30 segundos — en inglés o español, sin cuenta y sin ningún registro en un servidor de tu actividad política.",
-    "fundingTitle": "Cómo se financia Oravan",
-    "fundingBody": "Oravan funciona sin anuncios, sin subvenciones partidistas y sin vender datos — no hay datos que vender. Una opción para donar, alojada por completo fuera de los servidores de Oravan, está en camino.",
-    "supportTitle": "Apoya a Oravan",
-    "supportBody": "Oravan es gratuito, sin anuncios y no acepta dinero partidista. Tu donación nos ayuda a: dar seguimiento a cada proyecto de ley que avanza en el Congreso cada semana, mantener las explicaciones en lenguaje sencillo actualizadas y revisadas por personas, y mantener gratuitos los guiones de llamada en inglés y español. Nunca almacenamos la actividad política de quienes donan — las donaciones son deducibles de impuestos y se procesan fuera de los servidores de Oravan, por nuestro patrocinador fiscal, The Hack Foundation, una organización 501(c)(3).",
-    "donateCta": "Dona a través de nuestro patrocinador fiscal",
+    "fundingTitle": "¿Quién paga esto?",
+    "fundingBody": "Oravan es un proyecto independiente, financiado por su fundador. Cuesta unos cientos de dólares al año alojarlo y mantenerlo, actualmente pagados de su propio bolsillo por una sola persona. No hay anuncios, ni patrocinadores, ni inversionistas — y nada que vender, porque no recopilamos datos personales.",
+    "fundingSupportBody": "Si Oravan te resulta útil, puedes colaborar para mantenerlo en marcha. Las contribuciones ayudan a cubrir el alojamiento y el mantenimiento y no son deducibles de impuestos.",
+    "fundingSupportCta": "Apoya a Oravan",
     "accountabilityTitle": "Independiente y accesible",
     "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, el enlace de comentarios al final de cualquier página llega a una persona real, o escríbenos a hello@oravan.org."
   },
