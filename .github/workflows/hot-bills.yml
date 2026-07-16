@@ -1,0 +1,89 @@
+name: Hot-bill refresh
+
+# Twice-daily, refresh-ONLY pass between nightly bill syncs (audit §4 Alt B /
+# §5 item 3, pipeline-audit.md): the nightly sync (sync-bills.yml, 07:30 UTC)
+# structurally can't reflect a floor vote or markup that happens mid-day
+# until the next morning. This job re-fetches the ~100 most-recently-updated
+# Congress.gov bills and refreshes status/last_action_date/urgency for
+# whichever of them are ALREADY in the corpus - decodes nothing, so a
+# brand-new bill still waits for the nightly sync's decode-before-publish
+# gate (scripts/hot-bills.mjs's header comment has the full reasoning).
+# Zero Anthropic usage: no ANTHROPIC_API_KEY in this workflow at all.
+
+on:
+  schedule:
+    # 17:00 and 22:00 UTC (~1pm/6pm ET) - both inside the US legislative day,
+    # after floor/committee activity has had time to post to Congress.gov,
+    # and well clear of the 07:30 UTC nightly sync on both sides.
+    - cron: '0 17 * * *'
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shared with sync-bills.yml/refresh-legislators.yml so this can never race
+  # the nightly sync's commit - same reasoning as those two workflows already
+  # sharing this group.
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  hot-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        # scripts/hot-bills.mjs and scripts/congress-fetch.mjs are stdlib-only
+        # (Node's global fetch + lib/urgency.mjs, a plain .mjs with no npm
+        # deps) - same "the runner's node suffices, no npm ci" posture as
+        # refresh-legislators.yml and scripts/verify-deploy.mjs.
+        with:
+          node-version: 24
+      - name: Refresh hot bills
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/hot-bills.mjs
+      - name: Commit data
+        id: commit
+        # Same oravan-sync author pattern as sync-bills.yml/refresh-
+        # legislators.yml - the author email must map to the Vercel-linked
+        # GitHub account or Vercel BLOCKs the auto-deploy (docs/solutions/
+        # vercel-bot-push-blocked-deploys.md).
+        run: |
+          git config user.name "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "no changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git commit -m "chore(data): hot-bill refresh $(date -u +%FT%HZ)"
+          # This job only ever touches data/bills.json (refresh-only, no ES/
+          # coverage/sync-state writes) - disjoint from sync-bills.yml's and
+          # refresh-legislators.yml's own file sets, but the checked-out base
+          # can still go stale behind either of them in the shared data-sync
+          # concurrency group. Rebase onto the latest main and retry, same
+          # pattern as the other two workflows.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "push rejected, rebasing onto latest main (attempt $i)"
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
+      - name: Verify the deploy landed
+        # Same dead-man's-switch as sync-bills.yml/refresh-legislators.yml -
+        # poll production until it serves the SHA we just pushed. Skips with
+        # a notice until the PROD_URL repo variable is set.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          EXPECT_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/verify-deploy.mjs
