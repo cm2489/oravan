@@ -1,0 +1,119 @@
+name: Newsdesk headline trigger
+
+# Hourly headline-triggered bill resync (Part 2 of the 2026-07-16
+# spend-reduction pair; Part 1 is the priority decode gate in
+# scripts/sync-bills.mjs). Polls a politically-balanced basket of free RSS
+# feeds (NO paid news API - see scripts/newsdesk.mjs's header comment),
+# matches headlines to bills cheapest-tier-first, and only acts on a bill
+# that clears the >=2-distinct-outlet corroboration rule (or carries an
+# explicit bill-number citation, which needs no corroboration).
+#
+# COST: expected ~$0.12/day Haiku (t3 disambiguation - most hourly runs'
+# batch is empty, $0) + $0-0.45/day trigger decodes on a typical/busy day;
+# NEWSDESK_DAILY_DECODE_CAP=10 (scripts/newsdesk.mjs) makes the documented
+# <$2/day ceiling code-enforced, not just expected. Actions minutes: $0
+# (public repo, unlimited free minutes on standard runners). Full
+# typical/busy/hard-ceiling breakdown in scripts/newsdesk.mjs's header
+# comment and the introducing PR's report.
+
+on:
+  schedule:
+    - cron: '7 * * * *' # hourly, offset from the top of the hour
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shared with sync-bills.yml/hot-bills.yml/refresh-legislators.yml so this
+  # can never race any of their commits to data/bills.json or data/bills-es.json.
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  newsdesk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        # Needs npm ci (not stdlib-only like hot-bills.yml): scripts/newsdesk.mjs
+        # constructs its own Anthropic client for the t3 disambiguation call
+        # and the (shared, bill-decode.mjs) decode-before-publish path.
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Restore seen-headlines cache
+        # Ever-growing-cache pattern (GitHub Actions caches can't be
+        # overwritten under the same key): restore-keys prefix-matches the
+        # most recent previous run's exact key; the save step below always
+        # writes a NEW run-scoped key. GitHub auto-evicts any cache entry
+        # unused for 7 days, which is exactly the "7-day retention" the spec
+        # asks for - no explicit TTL bookkeeping needed in the script itself.
+        # A cache miss (first run ever, or a fully-evicted history) degrades
+        # gracefully - see scripts/newsdesk.mjs's loadCache().
+        uses: actions/cache/restore@v4
+        with:
+          path: .newsdesk-cache
+          key: newsdesk-seen-${{ github.run_id }}
+          restore-keys: |
+            newsdesk-seen-
+      - name: Run newsdesk
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/newsdesk.mjs
+      - name: Save seen-headlines cache
+        # Always saves under this run's own unique key (see the restore
+        # step's comment) - if: always() so a mid-run failure still persists
+        # whatever cache state was written before the failure, rather than
+        # losing dedupe progress on every transient error.
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .newsdesk-cache
+          key: newsdesk-seen-${{ github.run_id }}
+      - name: Commit data
+        id: commit
+        # Same oravan-sync author + push-with-rebase-retry pattern as
+        # sync-bills.yml/hot-bills.yml - the author email must map to the
+        # Vercel-linked GitHub account or Vercel BLOCKs the auto-deploy
+        # (docs/solutions/vercel-bot-push-blocked-deploys.md). Commits
+        # ONLY when scripts/newsdesk.mjs actually changed data/ - an
+        # hourly no-op run (the common case) must never produce a deploy.
+        run: |
+          git config user.name "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "no changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
+          # This job only ever touches data/bills.json/data/bills-es.json
+          # (no sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
+          # Boundaries section) - disjoint from refresh-legislators.yml's
+          # files but overlapping sync-bills.yml's/hot-bills.yml's, all of
+          # which share this concurrency group. Rebase onto the latest main
+          # and retry, same pattern as those workflows.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "push rejected, rebasing onto latest main (attempt $i)"
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
+      - name: Verify the deploy landed
+        # Same dead-man's-switch as sync-bills.yml/hot-bills.yml - poll
+        # production until it serves the SHA we just pushed. Skips with a
+        # notice until the PROD_URL repo variable is set.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          EXPECT_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/verify-deploy.mjs
