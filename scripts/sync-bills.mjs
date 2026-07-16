@@ -12,26 +12,69 @@
  *   their EN+ES summary and headline exist, so the feed never shows
  *   undecoded entries. At most MAX_NEW_DECODES per run (cost ceiling);
  *   the rest wait for the next night.
+ *
+ * Two-pass fetch (2026-07-16, audit §5 item 2). Congress.gov is queried
+ * TWICE per run, in this order:
+ *   1. Recent-first: `sort=updateDate+desc, limit=RECENT_FETCH_LIMIT` - the
+ *      ~100 most-recently-touched bills in the whole 119th Congress, no
+ *      cursor floor. Already-known bills refresh for free; brand-new bills
+ *      decode within a RESERVED sub-budget (RECENT_DECODE_RESERVE, carved
+ *      OUT of MAX_NEW_DECODES, not additional). This exists because the
+ *      ascending backlog scan below structurally reaches the newest bills
+ *      LAST - on a night with a deep backlog (or a busy legislative day) a
+ *      floor vote that just happened would otherwise lose the race against
+ *      both MAX_UPDATES and MAX_NEW_DECODES every single night, which is
+ *      exactly how HR 7378 (and the whole "worth a call" feed) went stale
+ *      for weeks even on clean, successful runs (see the audit).
+ *   2. Ascending backlog: `fromDateTime: lastSync, sort=updateDate+asc` -
+ *      unchanged from before, drains the historical backlog oldest-first
+ *      with whatever decode budget the recent-first pass didn't use. A bill
+ *      already handled by pass 1 this run is skipped here (deduped, not
+ *      re-fetched or re-decoded).
+ *
+ * CURSOR SEMANTICS (load-bearing, KTD-pinned): `state.lastSync`'s freeze-
+ * on-incomplete-work high-water mark is advanced ONLY by the ascending pass
+ * below. The recent-first pass never reads or writes `cursor`/`frozen` - it
+ * can find and decode a bill from last week while the ascending backlog is
+ * still stuck in May, and the cursor must keep meaning "the backlog scan has
+ * fully processed through here", not silently jump forward just because a
+ * recent bill happened to get handled out of order. See
+ * docs/solutions/pinned-sync-cursor.md for why an all-or-nothing cursor is
+ * exactly the failure this preserves the fix for.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { STATUS_BASE } from '../lib/urgency.mjs';
+import {
+  BILL_TYPES,
+  CONGRESS,
+  cg,
+  fetchRecentlyUpdated,
+  mapStatus,
+  refreshBillFields,
+  slugOf,
+  tagBill,
+  updateSlug,
+  urgencyScore,
+} from './congress-fetch.mjs';
 import { generateSearchInputs } from './search-inputs.mjs';
 
-const CONGRESS = 119;
-const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
 const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 500);
 // Raised 40 -> 120 (2026-07-16, audit §5 item 1): live nightly logs showed
 // 373-418 bills/night needing decode against a 40-bill budget, pinning the
 // ascending-pass cursor (state.lastSync) weeks behind and starving newer
 // bills of decode slots night after night. 120 doesn't fully clear that
 // inflow alone (~$8-14/night at $0.07-0.15/bill) - see the two-pass fetch
-// below for the fix that stops recency from losing the race structurally,
-// independent of how large the budget is.
+// design note above for the fix that stops recency from losing the race
+// structurally, independent of how large the budget is.
 const MAX_NEW_DECODES = Number(process.env.MAX_NEW_DECODES ?? 120);
-const API = 'https://api.congress.gov/v3';
-const KEY = process.env.CONGRESS_API_KEY;
-if (!KEY) throw new Error('CONGRESS_API_KEY missing');
+// The recent-first pass's fetch window (audit §5 item 2 / §4 Alt A) - same
+// rough size as the twice-daily hot-bills.mjs refresh pass.
+const RECENT_FETCH_LIMIT = Number(process.env.RECENT_FETCH_LIMIT ?? 100);
+// New-bill decode budget RESERVED for the recent-first pass, carved out of
+// (not additional to) MAX_NEW_DECODES - a night with zero brand-new bills in
+// the last ~100 updates leaves the full MAX_NEW_DECODES for the ascending
+// backlog pass; a night with several leaves proportionally less.
+const RECENT_DECODE_RESERVE = Number(process.env.RECENT_DECODE_RESERVE ?? 20);
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 // Sonnet 5's tokenizer runs ~30% more tokens than 4.6 for the same text, so
@@ -45,106 +88,12 @@ const es = JSON.parse(readFileSync('data/bills-es.json', 'utf8'));
 const state = JSON.parse(readFileSync('data/sync-state.json', 'utf8'));
 const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
 
-function slugOf(b) {
-  return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
-}
-
 // Congress.gov's bill-list `updateDate` field is date-only (e.g. "2026-06-04"),
 // not a full timestamp. Persisting it as-is breaks the next run's fromDateTime
 // query, which Congress.gov 400s on - the 2026-06-25/07-01 outage. Always
 // normalize to a full ISO-8601 datetime before it becomes the next cursor.
 function toISODateTime(d) {
   return /T/.test(d) ? d : `${d}T00:00:00Z`;
-}
-
-async function cg(path, params = {}) {
-  const url = new URL(`${API}${path}`);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  url.searchParams.set('api_key', KEY);
-  url.searchParams.set('format', 'json');
-  let lastErr;
-  for (let attempt = 0; attempt <= 4; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
-    try {
-      // 30s per-request ceiling: a hung socket fails fast and retries instead
-      // of hanging on undici's ~5min headers timeout (the 2026-06-13 crash).
-      const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-      // await inside the try: the 30s abort can fire mid-body-read, and an
-      // un-awaited res.json() rejection would escape the catch and kill the
-      // run uncaught instead of retrying (the 2026-07-04 crash).
-      if (res.ok) return await res.json();
-      lastErr = new Error(`Congress.gov ${res.status} for ${path}`);
-    } catch (e) {
-      lastErr = e; // network error / timeout - retry rather than kill the run
-    }
-  }
-  throw lastErr;
-}
-
-// ---- status mapping (ported from the reference implementation) ----
-function mapStatus(actionText) {
-  const text = (actionText ?? '').toLowerCase().trim();
-  if (!text) return 'committee';
-  if (text.includes('became public law') || text.includes('signed by president')) return 'signed';
-  if (text.includes('vetoed')) return 'vetoed';
-  if (text.includes('conference report') || text.includes('conference committee')) return 'conference';
-  if (
-    text.includes('passed house') || text.includes('passed senate') ||
-    text.includes('passed/agreed to') || text.includes('agreed to in') ||
-    text.includes('received in the senate') || text.includes('received in the house') ||
-    text.includes('held at the desk')
-  ) return 'passed_chamber';
-  if (
-    text.includes('placed on') || text.includes('calendar') ||
-    text.includes('cloture') || text.includes('rule provid') ||
-    text.includes('motion to proceed')
-  ) return 'floor_vote';
-  if (text.includes('markup') || text.includes('ordered to be reported') || text.includes('reported by')) return 'markup';
-  return 'committee';
-}
-
-// Stored sync-time score (freshness bonus, no decay) - the FEED never ranks
-// by this; read-time effectiveUrgency in lib/urgency.mjs does the ranking.
-// The base table is shared so the two curves can't drift apart.
-function urgencyScore(status, lastActionDate) {
-  const base = STATUS_BASE[status] ?? 0.2;
-  let bonus = 0;
-  if (lastActionDate) {
-    const days = (Date.now() - new Date(lastActionDate).getTime()) / 86_400_000;
-    if (Number.isFinite(days)) bonus = days < 3 ? 0.1 : days < 7 ? 0.05 : 0;
-  }
-  return Math.round(Math.min(1, Math.max(0, base + bonus)) * 1000) / 1000;
-}
-
-// CRS Policy Area -> our 12 flat categories (1:1, all 32 areas covered)
-const POLICY_AREA_TO_CATEGORY = {
-  'Labor and Employment': 'jobs_economy', 'Commerce': 'jobs_economy',
-  'Finance and Financial Sector': 'jobs_economy', 'Taxation': 'jobs_economy',
-  'Economics and Public Finance': 'jobs_economy', 'Agriculture and Food': 'jobs_economy',
-  'Transportation and Public Works': 'jobs_economy',
-  'Science, Technology, Communications': 'ai_technology',
-  'Health': 'health',
-  'Housing and Community Development': 'housing',
-  'Immigration': 'immigration',
-  'Government Operations and Politics': 'government_democracy', 'Congress': 'government_democracy',
-  'Emergency Management': 'government_democracy',
-  'Crime and Law Enforcement': 'crime_justice', 'Law': 'crime_justice',
-  'Education': 'education', 'Sports and Recreation': 'education',
-  'Social Sciences and History': 'education',
-  'Environmental Protection': 'environment_energy', 'Energy': 'environment_energy',
-  'Public Lands and Natural Resources': 'environment_energy',
-  'Water Resources Development': 'environment_energy', 'Animals': 'environment_energy',
-  'Civil Rights and Liberties, Minority Issues': 'rights_liberties',
-  'Armed Forces and National Security': 'national_security',
-  'International Affairs': 'national_security',
-  'Foreign Trade and International Finance': 'national_security',
-  'Families': 'family_community', 'Social Welfare': 'family_community',
-  'Native Americans': 'family_community', 'Arts, Culture, Religion': 'family_community',
-};
-
-function tagBill(policyArea) {
-  const cat = POLICY_AREA_TO_CATEGORY[policyArea ?? ''];
-  return cat ? [cat] : [];
 }
 
 // ---- AI decode (new bills only) ----
@@ -265,6 +214,110 @@ const since = state.lastSync;
 const runStart = new Date().toISOString();
 console.log(`sync since ${since}`);
 
+// Shared new-bill decode-budget counter - both passes below decrement into
+// this ONE pool (RECENT_DECODE_RESERVE is a ceiling on the recent-first
+// pass's share of it, not a separate allowance; see the header comment).
+let added = 0;
+let refreshed = 0; // combined total across both passes (log-only, not gated)
+
+/**
+ * Fetch one bill's current detail and either refresh it (already in the
+ * corpus - free) or decode it as new (only if `allowDecode`). The one place
+ * both passes below do "turn a Congress.gov update item into a corpus
+ * mutation", so the decode-before-publish invariant and the refresh fields
+ * can't drift between the recent-first pass and the ascending backlog pass.
+ * Returns one of:
+ *   'refreshed' - an existing bill's fields were updated in place
+ *   'added'     - a brand-new bill was decoded and pushed into the corpus
+ *   'budget'    - a brand-new bill was found but `allowDecode` was false
+ *   'failed'    - the fetch or decode threw; `isNew` tells the caller
+ *                 whether this was a new-bill decode failure (must retry)
+ *                 or an existing bill's transient refresh failure
+ *                 (idempotent, self-heals on its next update).
+ */
+async function syncOneBill(u, allowDecode) {
+  const type = u.type.toLowerCase();
+  const slug = updateSlug(u);
+  try {
+    const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
+    const existing = bySlug.get(slug);
+    if (existing) {
+      refreshBillFields(existing, d);
+      return { outcome: 'refreshed', slug };
+    }
+    if (!allowDecode) return { outcome: 'budget', slug };
+    const status = mapStatus(d.latestAction?.text);
+    const lastActionDate = d.latestAction?.actionDate ?? null;
+    const bill = {
+      full_identifier: slug,
+      congress_number: CONGRESS,
+      bill_type: type,
+      bill_number: Number(u.number),
+      title: d.title,
+      short_title: null,
+      ai_summary: null, ai_headline: null,
+      sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
+      introduced_date: d.introducedDate ?? null,
+      last_action_date: lastActionDate,
+      last_action_text: d.latestAction?.text ?? null,
+      status,
+      issue_tags: tagBill(d.policyArea?.name),
+      policy_area: d.policyArea?.name ?? null,
+      urgency_score: urgencyScore(status, lastActionDate),
+      congress_gov_url: `https://www.congress.gov/bill/${CONGRESS}th-congress/${type === 'hr' ? 'house-bill' : type === 's' ? 'senate-bill' : type === 'hjres' ? 'house-joint-resolution' : 'senate-joint-resolution'}/${u.number}`,
+    };
+    const text = await fetchBillText(type, u.number);
+    const dec = await decode(bill, text);
+    bill.ai_summary = dec.ai_summary;
+    bill.ai_headline = dec.ai_headline;
+    bill.ai_sections = dec.ai_sections;
+    // Search handles for the coverage sync (press names + subject query).
+    // Non-fatal: the backfill script sweeps up any misses.
+    try {
+      const si = await generateSearchInputs(anthropic, bill);
+      bill.press_names = si.press_names;
+      bill.news_query = si.news_query;
+    } catch (e) {
+      console.error(`  search-inputs failed for ${slug}: ${e.message}`);
+    }
+    es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
+    bills.push(bill);
+    bySlug.set(slug, bill);
+    return { outcome: 'added', slug };
+  } catch (e) {
+    console.error(`FAIL ${slug}: ${e.message}`);
+    return { outcome: 'failed', slug, isNew: !bySlug.has(slug) };
+  }
+}
+
+// ---- Pass 1: recent-first (audit §5 item 2) ----------------------------
+// Guarantees this run always sees the most recently-touched bills in
+// Congress, no matter how deep the ascending backlog is. `handledSlugs`
+// tracks everything this pass successfully resolved so pass 2 can dedupe
+// without re-fetching or re-decoding - see updateSlug/refreshBillFields.
+const handledSlugs = new Set();
+const recentDecodeCap = Math.min(RECENT_DECODE_RESERVE, MAX_NEW_DECODES);
+console.log(`recent-first pass: fetching up to ${RECENT_FETCH_LIMIT} most-recently-updated bills (decode reserve ${recentDecodeCap})`);
+const recentBills = await fetchRecentlyUpdated(RECENT_FETCH_LIMIT);
+let recentRefreshed = 0, recentAdded = 0, recentDeferred = 0, recentFailed = 0;
+for (const u of recentBills) {
+  const result = await syncOneBill(u, added < recentDecodeCap);
+  if (result.outcome === 'refreshed') {
+    refreshed++; recentRefreshed++; handledSlugs.add(result.slug);
+  } else if (result.outcome === 'added') {
+    added++; recentAdded++; handledSlugs.add(result.slug);
+  } else if (result.outcome === 'budget') {
+    recentDeferred++; // new bill, reserve exhausted - left for pass 2 (same run) or next run
+  } else {
+    recentFailed++; // logged only; deliberately NOT folded into the abort check below
+  }
+}
+console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} added+decoded, ${recentDeferred} deferred (reserve exhausted), ${recentFailed} failed`);
+
+// ---- Pass 2: ascending backlog scan from the cursor ---------------------
+// Unchanged shape from before the two-pass fetch - see the header comment.
+// The freeze-on-incomplete-work cursor logic below is tied ONLY to this
+// pass; pass 1 above never touches `cursor`/`frozen`.
 const updated = [];
 let offset = 0;
 for (;;) {
@@ -278,7 +331,7 @@ for (;;) {
 }
 console.log(`${updated.length} updated bills (capped at ${MAX_UPDATES})`);
 
-let refreshed = 0, added = 0, queued = 0, failed = 0;
+let queued = 0, failed = 0;
 // High-water mark: advance the cursor over every bill we fully handle, and
 // freeze it the instant we hit one that still needs work (decode budget
 // exhausted, or a new bill whose decode failed). A transient *refresh* failure
@@ -288,70 +341,27 @@ let refreshed = 0, added = 0, queued = 0, failed = 0;
 let cursor = since;
 let frozen = false;
 for (const u of updated.slice(0, MAX_UPDATES)) {
-  const type = u.type.toLowerCase();
-  const slug = `${type}-${u.number}-${CONGRESS}`;
+  const slug = updateSlug(u);
   let needsWork = false;
-  try {
-    const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
-    const status = mapStatus(d.latestAction?.text);
-    const lastActionDate = d.latestAction?.actionDate ?? null;
-    const existing = bySlug.get(slug);
-    if (existing) {
-      existing.status = status;
-      existing.last_action_date = lastActionDate;
-      existing.last_action_text = d.latestAction?.text ?? existing.last_action_text;
-      existing.urgency_score = urgencyScore(status, lastActionDate);
-      const tags = tagBill(d.policyArea?.name);
-      if (tags.length) existing.issue_tags = tags;
-      existing.policy_area = d.policyArea?.name ?? existing.policy_area;
+  if (handledSlugs.has(slug)) {
+    // Already fully resolved by the recent-first pass this run - dedupe,
+    // don't re-fetch/re-decode. Resolved is resolved, so the cursor may
+    // still advance over it exactly as if pass 2 had handled it itself.
+  } else {
+    const result = await syncOneBill(u, added < MAX_NEW_DECODES);
+    if (result.outcome === 'refreshed') {
       refreshed++;
-    } else if (added < MAX_NEW_DECODES) {
-      const bill = {
-        full_identifier: slug,
-        congress_number: CONGRESS,
-        bill_type: type,
-        bill_number: Number(u.number),
-        title: d.title,
-        short_title: null,
-        ai_summary: null, ai_headline: null,
-        sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
-        introduced_date: d.introducedDate ?? null,
-        last_action_date: lastActionDate,
-        last_action_text: d.latestAction?.text ?? null,
-        status,
-        issue_tags: tagBill(d.policyArea?.name),
-        policy_area: d.policyArea?.name ?? null,
-        urgency_score: urgencyScore(status, lastActionDate),
-        congress_gov_url: `https://www.congress.gov/bill/${CONGRESS}th-congress/${type === 'hr' ? 'house-bill' : type === 's' ? 'senate-bill' : type === 'hjres' ? 'house-joint-resolution' : 'senate-joint-resolution'}/${u.number}`,
-      };
-      const text = await fetchBillText(type, u.number);
-      const dec = await decode(bill, text);
-      bill.ai_summary = dec.ai_summary;
-      bill.ai_headline = dec.ai_headline;
-      bill.ai_sections = dec.ai_sections;
-      // Search handles for the coverage sync (press names + subject query).
-      // Non-fatal: the backfill script sweeps up any misses.
-      try {
-        const si = await generateSearchInputs(anthropic, bill);
-        bill.press_names = si.press_names;
-        bill.news_query = si.news_query;
-      } catch (e) {
-        console.error(`  search-inputs failed for ${slug}: ${e.message}`);
-      }
-      es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
-      bills.push(bill);
-      bySlug.set(slug, bill);
+    } else if (result.outcome === 'added') {
       added++;
-    } else {
+    } else if (result.outcome === 'budget') {
       queued++; // decode budget exhausted; revisit next run
       needsWork = true;
+    } else {
+      failed++;
+      // A new bill that failed to decode must be retried; a failed refresh of
+      // a known bill is idempotent and re-touches on its next update.
+      if (result.isNew) needsWork = true;
     }
-  } catch (e) {
-    failed++;
-    console.error(`FAIL ${slug}: ${e.message}`);
-    // A new bill that failed to decode must be retried; a failed refresh of a
-    // known bill is idempotent and re-touches on its next update.
-    if (!bySlug.has(slug)) needsWork = true;
   }
   if (needsWork) frozen = true;
   else if (!frozen && u.updateDate) cursor = toISODateTime(u.updateDate);
@@ -367,4 +377,8 @@ writeFileSync('data/bills.json', JSON.stringify(bills));
 writeFileSync('data/bills-es.json', JSON.stringify(es));
 writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 console.log(`DONE: ${refreshed} refreshed, ${added} added+decoded, ${queued} queued for next run, ${failed} failed; corpus ${bills.length}`);
-if (failed > updated.length / 2) process.exit(1); // mostly-failed run: don't let CI commit garbage
+// Mostly-failed run: don't let CI commit garbage. Scoped to the ascending
+// pass's own failed/updated.length exactly as before the two-pass fetch -
+// the recent-first pass's (much smaller, logged-separately) failures don't
+// feed this check.
+if (failed > updated.length / 2) process.exit(1);
