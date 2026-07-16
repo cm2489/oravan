@@ -75,7 +75,8 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             {t('footer.partners')}
           </Link>
           {/* §6: quiet, persistent, never a banner or modal - link only, dark
-              until HCB onboarding completes (DONATE_URL flips from null). */}
+              until a donation rail exists (DONATE_URL flips from null; the
+              HCB fiscal-sponsorship route was denied 2026-07-15, rail TBD). */}
           {donateUrl && (
             <a
               href={donateUrl}
