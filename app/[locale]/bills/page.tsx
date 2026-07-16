@@ -37,7 +37,7 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
           <NewsLens bills={news} />
         </div>
       )}
-      <BillsBrowser bills={getTeasers(locale)} checkedAt={freshness.checkedAt} />
+      <BillsBrowser bills={getTeasers(locale)} freshness={freshness} />
     </div>
   );
 }

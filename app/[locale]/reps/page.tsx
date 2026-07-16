@@ -176,7 +176,7 @@ export default async function RepsPage({
             </div>
           ) : (
             <div className="mt-5">
-              <UrgencyEmptyState checkedAt={freshness.checkedAt} />
+              <UrgencyEmptyState {...freshness} />
             </div>
           )}
           <Link

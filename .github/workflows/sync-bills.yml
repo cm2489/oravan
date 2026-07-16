@@ -7,7 +7,7 @@ on:
     inputs:
       max_new_decodes:
         description: 'Max new bills to AI-decode this run'
-        default: '40'
+        default: '120'
 
 permissions:
   contents: write
@@ -35,7 +35,7 @@ jobs:
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '40' }}
+          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '120' }}
         run: node scripts/sync-bills.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
@@ -143,6 +143,15 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           UPSTASH_CACHE_REST_URL: ${{ secrets.UPSTASH_CACHE_REST_URL }}
           UPSTASH_CACHE_REST_TOKEN: ${{ secrets.UPSTASH_CACHE_REST_TOKEN }}
+          # 2026-07-16 metrics-env fix (same root cause as PR #87's "Flagged,
+          # not fixed" note on daily-metrics.yml): this workflow never set
+          # VERCEL_ENV either, so lib/scriptcache.ts's keys were written under
+          # keyPrefix()'s 'dev' fallback instead of 'production' — every combo
+          # this step ever cached since PREGEN_ENABLED was armed (2026-07-12)
+          # landed in a keyspace app/api/script/route.ts's live requests
+          # (VERCEL_ENV=production, Vercel-injected) never read, so every
+          # pregen run has been pure spend with zero possible cache hits.
+          VERCEL_ENV: production
         run: |
           if [ "$PREGEN_ENABLED" != "true" ]; then
             echo "::notice::pregen SKIPPED - repo variable PREGEN_ENABLED is not 'true'. \$0 spent tonight. See the S21 PR's Arming checklist to turn this on."

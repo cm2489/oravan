@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { emptyStateVerdict } from '@/lib/freshness-state';
+import { emptyStateVerdict, type FreshnessSignals } from '@/lib/freshness-state';
 
 // The React-idiomatic hydration gate: server snapshot (and the hydration
 // render) reads false, the first client snapshot reads true. No state, no
@@ -20,10 +20,13 @@ const useHydrated = () =>
  * bills clearing the urgency floor. Which of the two honest messages shows
  * depends on whether the data itself is trustworthy right now:
  *  - quiet week: floor cleared no bills, but the corpus was checked recently
- *    - a real quiet week, said plainly instead of backfilled from rank.
- *  - data stale: the last successful check is older than the claim window,
- *    so an empty list might just mean "we haven't looked lately" - the copy
- *    says that, not "quiet."
+ *    AND the sync cursor/corpus itself shows real recent progress - a real
+ *    quiet week, said plainly instead of backfilled from rank.
+ *  - data stale: either the last successful check is older than its claim
+ *    window, or the sync cursor / newest known activity has gone dark past
+ *    the wider dead window (lib/freshness-state.ts's emptyStateVerdict has
+ *    the full threshold reasoning) - an empty list might just mean "we
+ *    haven't actually looked lately," and the copy says that, not "quiet."
  *
  * This must stay a client component: the site is largely static-generated,
  * so a server-rendered verdict freezes at build time and a dead sync would
@@ -35,7 +38,7 @@ const useHydrated = () =>
  * the visitor's: baked "quiet week" HTML would flash (or, with JS off,
  * permanently claim) quiet on long-dead data.
  */
-export function UrgencyEmptyState({ checkedAt }: { checkedAt: string }) {
+export function UrgencyEmptyState({ checkedAt, completeThrough, newestAction }: FreshnessSignals) {
   const t = useTranslations('freshness');
   const format = useFormatter();
   const hydrated = useHydrated();
@@ -51,7 +54,7 @@ export function UrgencyEmptyState({ checkedAt }: { checkedAt: string }) {
     );
   }
 
-  const staleVerdict = emptyStateVerdict(checkedAt) === 'data_stale';
+  const staleVerdict = emptyStateVerdict({ checkedAt, completeThrough, newestAction }) === 'data_stale';
   return (
     <div role="status" className="rounded-card border border-line bg-paper-deep p-6">
       <p className="font-display text-lg font-semibold text-ink">

@@ -5,6 +5,7 @@ import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
+import type { FreshnessSignals } from '@/lib/freshness-state';
 import type { FeedTeaser } from '@/lib/types';
 import { BillCard } from './BillCard';
 import { UrgencyEmptyState } from './UrgencyEmptyState';
@@ -16,7 +17,7 @@ const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
    stays one "Show all" away. Derived from BAND_SIZES so the two can't drift. */
 const BAND_CAP = BAND_SIZES.now;
 
-export function BillsBrowser({ bills, checkedAt }: { bills: FeedTeaser[]; checkedAt: string }) {
+export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshness: FreshnessSignals }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
@@ -195,7 +196,7 @@ export function BillsBrowser({ bills, checkedAt }: { bills: FeedTeaser[]; checke
               </h2>
               <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
               <div className="mt-4">
-                <UrgencyEmptyState checkedAt={checkedAt} />
+                <UrgencyEmptyState {...freshness} />
               </div>
             </section>
           );

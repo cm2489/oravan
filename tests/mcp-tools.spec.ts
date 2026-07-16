@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
+import syncState from '../data/sync-state.json';
+import bills from '../data/bills.json';
+import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
 import { callTool } from './helpers';
 
 /*
@@ -219,17 +222,40 @@ test.describe('search_bills', () => {
   });
 });
 
+// This corpus's freshest last_action_date trails "today" by enough that no
+// bill currently clears the S3 absolute urgency floor (pinned independently
+// against the real data at authoring time) - the real, undoctored honesty
+// case the spec calls for, not a mock. `data.bills` is empty either way;
+// which of quiet_week/data_stale that empty result carries is corpus-derived
+// below (mirroring lib/freshness-state.ts's emptyStateVerdict exactly)
+// rather than hardcoded, so this test keeps tracking the site's real
+// behavior as the nightly sync rewrites data/ instead of silently drifting
+// from it.
+//
+// 2026-07-16 (audit §5 item 4): this invariant legitimately changed.
+// emptyStateVerdict used to look ONLY at checkedAt/lastRun ("did the job
+// run"), so this test could hardcode quiet_week=true/data_stale=false once
+// and trust it. Now the sync cursor and the corpus's own newest activity
+// independently gate the verdict too, and both are real fields the pipeline
+// can leave stale even on nights lastRun itself looks fresh (the exact bug
+// the audit found) - so the expectation has to be computed from the same
+// three signals, not assumed.
+const newestActionDate = (bills as { last_action_date: string | null }[]).reduce(
+  (max, b) => (b.last_action_date && b.last_action_date > max ? b.last_action_date : max),
+  ''
+);
+const expectDataStale =
+  freshnessState(syncState.lastRun) !== 'fresh' ||
+  freshnessAgeDays(syncState.lastSync) > FRESHNESS_DEAD_WINDOW_DAYS ||
+  freshnessAgeDays(newestActionDate) > FRESHNESS_DEAD_WINDOW_DAYS;
+
 test.describe('whats_moving', () => {
-  test('honest empty during a genuine quiet week - never padded', async ({ request }) => {
-    // This corpus's freshest last_action_date trails "today" by enough that
-    // no bill currently clears the S3 absolute urgency floor (pinned
-    // independently against the real data at authoring time) - the real,
-    // undoctored honesty case the spec calls for, not a mock.
+  test('honest empty state matches the real corpus\'s freshness signals - never padded, never falsely quiet', async ({ request }) => {
     const result = await callTool(request, 'whats_moving', { locale: 'en' });
     const data = result.structuredContent!;
     expect(data.bills).toEqual([]);
-    expect(data.quiet_week).toBe(true);
-    expect(data.data_stale).toBe(false); // fresh pipeline, genuinely quiet - not a stale-data false alarm
+    expect(data.quiet_week).toBe(!expectDataStale);
+    expect(data.data_stale).toBe(expectDataStale);
     expect(data.days).toBe(7);
     // An empty, non-AI result carries no AI label - nothing to disclose.
     expectMeta(data.meta as Record<string, unknown>, '/', false);

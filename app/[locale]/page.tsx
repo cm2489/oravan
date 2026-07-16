@@ -139,7 +139,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         ) : quiet ? (
           <div className="mt-6">
-            <UrgencyEmptyState checkedAt={freshness.checkedAt} />
+            <UrgencyEmptyState {...freshness} />
           </div>
         ) : null}
       </section>

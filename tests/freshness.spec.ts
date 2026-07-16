@@ -3,6 +3,7 @@ import syncState from '../data/sync-state.json';
 import bills from '../data/bills.json';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
 import { bandFloors } from '../lib/taxonomy';
+import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 
 /*
  * KTD-1 / KTD-2 / AE3. The stamp is baked at build time from getFreshness()
@@ -41,6 +42,25 @@ const FRESH_CLOCK = LAST_RUN + 60 * 60 * 1000; // 1h after the last check
 const STALE_CLOCK = LAST_RUN + 10 * 86_400_000; // past the 5d claim window
 const DEAD_CLOCK = LAST_RUN + 30 * 86_400_000; // past the 21d dead window
 
+// 2026-07-16 (audit §5 item 4): emptyStateVerdict no longer looks only at
+// lastRun/checkedAt — the sync cursor (lastSync/completeThrough) and the
+// corpus's own newest last_action_date now independently gate the verdict
+// too (lib/freshness-state.ts). Mirror that here, corpus-derived exactly
+// like anyNow/anyTop above, rather than hardcoding today's specific data —
+// so these tests keep tracking the site's real behavior as the nightly sync
+// rewrites data/ instead of silently drifting from it.
+const newestActionDate = (bills as CorpusBill[]).reduce(
+  (max, b) => (b.last_action_date && b.last_action_date > max ? b.last_action_date : max),
+  ''
+);
+/** Whether the empty-state verdict reads data_stale AT FRESH_CLOCK for a
+ *  reason that has nothing to do with lastRun (which is fresh by
+ *  construction at FRESH_CLOCK) — i.e. the cursor or the corpus's newest
+ *  known activity has gone dark past the dead window. */
+const contentStaleAtFreshClock =
+  freshnessAgeDays(syncState.lastSync, FRESH_CLOCK) > FRESHNESS_DEAD_WINDOW_DAYS ||
+  freshnessAgeDays(newestActionDate, FRESH_CLOCK) > FRESHNESS_DEAD_WINDOW_DAYS;
+
 /** Collect hydration-related console errors — the AE3 client verdict must
  *  never be bought at the price of a server/client HTML mismatch. */
 function trackHydrationErrors(page: Page): string[] {
@@ -76,19 +96,29 @@ test.describe('freshness stamp reads from sync-state via the shared accessor', (
 });
 
 test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
-  test('fresh clock: quiet week reads as quiet — and only on a truly quiet corpus', async ({ page }) => {
+  test('fresh clock: quiet week reads as quiet — and only on a truly quiet, genuinely current corpus', async ({ page }) => {
     const hydrationErrors = trackHydrationErrors(page);
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/');
     const quietCard = page.getByRole('status').filter({ hasText: /Quiet week/ });
+    const staleCard = page.getByRole('status').filter({ hasText: /Data check needed/ });
     if (anyTop) {
       // Hot corpus: cards render, no quiet-week claim anywhere.
       await expect(
         page.locator('section[aria-labelledby="top-actions"] a[href*="/bills/"]').first()
       ).toBeVisible();
       await expect(quietCard).toHaveCount(0);
+    } else if (contentStaleAtFreshClock) {
+      // The band is empty, but the sync cursor or the corpus's own newest
+      // activity is dead-window-stale — never claim "quiet" over that, even
+      // though lastRun (checkedAt) itself is fresh at this clock (2026-07-16
+      // fix, audit §5 item 4: emptyStateVerdict no longer looks at lastRun
+      // alone).
+      await expect(staleCard).toBeVisible();
+      await expect(quietCard).toHaveCount(0);
     } else if (!anyNow) {
-      // Genuinely quiet: the honest empty state, never a padded card.
+      // Genuinely quiet AND genuinely current: the honest empty state, never
+      // a padded card.
       await expect(quietCard).toBeVisible();
     } else {
       // Floor cleared only by undecoded bills: no cards, but also no false
@@ -102,7 +132,8 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
     test.skip(anyNow, 'corpus not quiet this week — ES quiet-week copy not renderable');
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/es');
-    await expect(page.getByRole('status').filter({ hasText: 'Semana tranquila' })).toBeVisible();
+    const text = contentStaleAtFreshClock ? 'Verificación pendiente' : 'Semana tranquila';
+    await expect(page.getByRole('status').filter({ hasText: text })).toBeVisible();
   });
 
   test('stale clock: the empty slot says "data check needed", never "quiet"', async ({ page }) => {
@@ -130,10 +161,18 @@ test.describe('AE3: /bills "Act now" band mirrors the same tri-state', () => {
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/bills');
     const quietCard = page.getByRole('status').filter({ hasText: /Quiet week/ });
+    const staleCard = page.getByRole('status').filter({ hasText: /Data check needed/ });
     if (!anyNow) {
-      // The unfiltered now band renders the quiet-week card under its header.
+      // The unfiltered now band renders the empty-state card under its
+      // header — quiet_week only when the cursor/corpus are also genuinely
+      // current at this clock (audit §5 item 4), data_stale otherwise.
       await expect(page.locator('section[aria-labelledby="band-now"]').getByRole('status')).toBeVisible();
-      await expect(quietCard).toBeVisible();
+      if (contentStaleAtFreshClock) {
+        await expect(staleCard).toBeVisible();
+        await expect(quietCard).toHaveCount(0);
+      } else {
+        await expect(quietCard).toBeVisible();
+      }
     } else {
       await expect(page.locator('section[aria-labelledby="band-now"] a[href*="/bills/"]').first()).toBeVisible();
       await expect(quietCard).toHaveCount(0);

@@ -11,20 +11,37 @@
  *     (RUN_STARTED_AT, captured by the workflow before the sync step)
  *   - lastSync is not a full ISO-8601 datetime — the bare-date cursor that
  *     400-looped every night from 2026-06-25 to 07-01 (PR #16)
+ *   - the sync cursor (lastSync) is more than CURSOR_MAX_AGE_DAYS old — see
+ *     the "Cursor-age threshold" note below (2026-07-16, audit §5 item 4;
+ *     promoted from a non-blocking ::warning)
  *   - the bill count dropped more than 2% vs the committed corpus (the sync
  *     only ever appends, so any real drop means corruption)
  *   - EN/ES parity broke: a decoded bill without a bills-es.json entry, or
  *     an ES entry pointing at a bill that doesn't exist
  *
- * WARNS (::warning, never fails) on corpus staleness: the cursor is weeks
- * behind BY DESIGN while the 361-bill decode backlog drains (the high-water
+ * Cursor-age threshold (2026-07-16, audit §5 item 4). This check used to be
+ * a non-blocking ::warning, on the theory that the cursor would sit weeks
+ * behind BY DESIGN while a 361-bill decode backlog drained (the high-water
  * mark freezes at the oldest bill still awaiting decode — see
- * docs/solutions/pinned-sync-cursor.md). A wall-clock staleness failure
- * would fire every night until the backlog clears; revisit the threshold
- * once these warnings stop.
+ * docs/solutions/pinned-sync-cursor.md). Live logs proved that premise
+ * false: the warning fired every clean night for weeks (06-16 through
+ * 07-14) and was never acted on — exactly the silent-failure shape this
+ * script exists to prevent, and the root cause behind "worth a call"
+ * reading stale/empty in production. Promoted to a hard failure, at a
+ * DELIBERATELY GENEROUS CURSOR_MAX_AGE_DAYS=10 (not the old 7-day warning
+ * threshold): the raised MAX_NEW_DECODES + the recent-first two-pass fetch
+ * (scripts/sync-bills.mjs) still need real nights to drain the pre-existing
+ * backlog once this change merges, and a threshold that insta-fails the
+ * very next run would block that catch-up window instead of giving it room
+ * to work. 10 days sits comfortably below lib/freshness-state.ts's
+ * FRESHNESS_DEAD_WINDOW_DAYS=21 (the site's own "this has gone genuinely
+ * dead" ceiling for the SAME cursor value), so CI catches a regression well
+ * before a visitor could ever see a dishonest "quiet week" from it.
  */
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+
+const CURSOR_MAX_AGE_DAYS = 10;
 
 let failed = false;
 const fail = (msg) => {
@@ -140,9 +157,11 @@ if (state) {
     );
   } else {
     const cursorAgeDays = (Date.now() - Date.parse(state.lastSync)) / 86_400_000;
-    if (cursorAgeDays > 7) {
-      warn(
-        `corpus cursor is ${Math.round(cursorAgeDays)} days old (lastSync ${state.lastSync}). Expected while the decode backlog drains; if this warning persists after the backlog clears, promote it to a failure.`
+    // Hard failure, not a ::warning — see this file's header comment
+    // ("Cursor-age threshold") for why 10 days and why this was promoted.
+    if (cursorAgeDays > CURSOR_MAX_AGE_DAYS) {
+      fail(
+        `corpus cursor is ${Math.round(cursorAgeDays)} days old (lastSync ${state.lastSync}), past the ${CURSOR_MAX_AGE_DAYS}-day ceiling — the ascending backlog scan has stopped making real progress`
       );
     }
   }

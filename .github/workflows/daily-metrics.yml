@@ -70,4 +70,14 @@ jobs:
           UPSTASH_COUNTERS_REST_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DIGEST_ISSUE_NUMBER: ${{ steps.setup.outputs.issue_num }}
+          # Flagged (not fixed) in PR #87: this workflow never set VERCEL_ENV,
+          # so lib/upstash.ts's keyPrefix() resolved to 'dev' here while the
+          # live site's routes write under 'production:' (VERCEL_ENV is
+          # Vercel-injected at request time, not something a GitHub Actions
+          # runner has). Every readUsageWindow/readMcpClientDay call was
+          # silently reading an empty 'dev:' keyspace instead of the real
+          # counters - the digest could only ever report zeros. Same fix
+          # scripts/tenant-admin.mjs's own header comment already documents
+          # for laptop-shell CLI runs: export VERCEL_ENV=production explicitly.
+          VERCEL_ENV: production
         run: npx tsx scripts/daily-metrics.mjs
