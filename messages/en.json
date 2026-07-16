@@ -22,7 +22,10 @@
       "donate": "Donate",
       "embeds": "Embeds",
       "navLabel": "Footer",
-      "partners": "Partners"
+      "partners": "Partners",
+      "funding": "Founder-funded. No ads, no tracking, no outside money.",
+      "fundingLive": "Funded by the founder and supporters.",
+      "fundingCta": "Support Oravan"
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -348,8 +351,10 @@
   "about": {
     "title": "About Oravan",
     "intro": "Oravan is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, and make a 30-second call — in English or Spanish, with no account and no server-side record of your political activity.",
-    "fundingTitle": "How Oravan is funded",
-    "fundingBody": "Oravan runs without ads, without partisan grants, and without selling data — there's no data to sell. A donation option, hosted entirely off Oravan's own servers, is on the way.",
+    "fundingTitle": "Who pays for this?",
+    "fundingBody": "Oravan is independently run and founder-funded. It costs a few hundred dollars a year to host and maintain, currently paid out of one person's pocket. There are no ads, no sponsors, and no investors — and nothing to sell, because we collect no personal data.",
+    "fundingSupportBody": "If Oravan is useful to you, you can chip in to keep it running. Contributions support hosting and upkeep and are not tax-deductible.",
+    "fundingSupportCta": "Support Oravan",
     "supportTitle": "Support Oravan",
     "supportBody": "Oravan is free, ad-free, and takes no partisan money. Your gift helps us: track every bill moving through Congress each week, keep the plain-language decodes current and human-reviewed, and keep call scripts free in English and Spanish. We store no donor political activity, ever — gifts are tax-deductible and processed off Oravan's own servers by our fiscal sponsor, The Hack Foundation, a 501(c)(3) nonprofit.",
     "donateCta": "Donate via our fiscal sponsor",

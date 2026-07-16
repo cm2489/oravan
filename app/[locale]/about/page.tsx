@@ -27,6 +27,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{t('fundingTitle')}</h2>
         <p className="mt-2 max-w-prose leading-relaxed">{t('fundingBody')}</p>
+        {/* Phase 2 upgrade: dark by construction until DONATE_URL is set (same
+            constant DonateSupport below reads - no second flag to keep in
+            sync). Never claims tax-deductibility or nonprofit status - this
+            is a personal, founder-funded contribution, not a charitable gift. */}
+        {DONATE_URL && (
+          <p className="mt-2 max-w-prose leading-relaxed">
+            {t('fundingSupportBody')}{' '}
+            <a
+              href={DONATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 hover:text-ink"
+            >
+              {t('fundingSupportCta')}
+            </a>
+          </p>
+        )}
       </section>
 
       {/* Who's accountable + how to reach a person — surfaced outside the
