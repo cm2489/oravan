@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 // scripts/decode-gate.mjs's header comment for the full status-distribution
 // numbers and the reasoning behind the chosen gate line.
 import { GATE_PASS_STATUSES, parseForceSlugs, passesGate } from '../scripts/decode-gate.mjs';
+import { mapStatus } from '../scripts/congress-fetch.mjs';
 
 /*
  * These tests PIN the priority decode gate's status table. If a status here
@@ -35,6 +36,14 @@ test.describe('passesGate (status table)', () => {
     expect([...GATE_PASS_STATUSES].sort()).toEqual(
       ['conference', 'floor_vote', 'markup', 'passed_chamber', 'signed', 'vetoed']
     );
+  });
+
+  test('hyphenated "Mark-up" action text maps to markup and clears the gate — 133 live bills depend on this spelling', () => {
+    expect(mapStatus('Committee Consideration and Mark-up Session Held')).toBe('markup');
+    expect(mapStatus('Subcommittee Consideration and Markup Session Held')).toBe('markup');
+    expect(passesGate(mapStatus('Committee Consideration and Mark-up Session Held'))).toBe(true);
+    // plain referral still reads as committee and stays gated
+    expect(mapStatus('Referred to the Committee on Energy and Commerce')).toBe('committee');
   });
 });
 

@@ -17,12 +17,16 @@ export const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
 
 const API = 'https://api.congress.gov/v3';
 const KEY = process.env.CONGRESS_API_KEY;
-if (!KEY) throw new Error('CONGRESS_API_KEY missing');
+// Key is checked at first fetch, not at import: this module also exports
+// pure functions (mapStatus, urgencyScore, ...) that unit tests import
+// without any secrets. Sync scripts still fail on their first cg() call
+// with the same message.
 
 /** GET one Congress.gov endpoint, retrying on a bad status or a thrown/timed
  *  out request (a hung socket must retry, not kill the whole run - the
  *  2026-06-13 crash). */
 export async function cg(path, params = {}) {
+  if (!KEY) throw new Error('CONGRESS_API_KEY missing');
   const url = new URL(`${API}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   url.searchParams.set('api_key', KEY);
@@ -76,7 +80,14 @@ export function mapStatus(actionText) {
     text.includes('cloture') || text.includes('rule provid') ||
     text.includes('motion to proceed')
   ) return 'floor_vote';
-  if (text.includes('markup') || text.includes('ordered to be reported') || text.includes('reported by')) return 'markup';
+  // 'mark-up': Congress.gov action text uses both spellings ("Mark-up
+  // Session Held") — the hyphenated form alone covers 133 live corpus bills
+  // that would otherwise read as mere 'committee' and be gated out of
+  // decoding (measured 2026-07-16; see scripts/decode-gate.mjs header).
+  if (
+    text.includes('markup') || text.includes('mark-up') ||
+    text.includes('ordered to be reported') || text.includes('reported by')
+  ) return 'markup';
   return 'committee';
 }
 
