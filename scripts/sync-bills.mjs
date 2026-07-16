@@ -21,7 +21,14 @@ import { generateSearchInputs } from './search-inputs.mjs';
 const CONGRESS = 119;
 const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
 const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 500);
-const MAX_NEW_DECODES = Number(process.env.MAX_NEW_DECODES ?? 40);
+// Raised 40 -> 120 (2026-07-16, audit §5 item 1): live nightly logs showed
+// 373-418 bills/night needing decode against a 40-bill budget, pinning the
+// ascending-pass cursor (state.lastSync) weeks behind and starving newer
+// bills of decode slots night after night. 120 doesn't fully clear that
+// inflow alone (~$8-14/night at $0.07-0.15/bill) - see the two-pass fetch
+// below for the fix that stops recency from losing the race structurally,
+// independent of how large the budget is.
+const MAX_NEW_DECODES = Number(process.env.MAX_NEW_DECODES ?? 120);
 const API = 'https://api.congress.gov/v3';
 const KEY = process.env.CONGRESS_API_KEY;
 if (!KEY) throw new Error('CONGRESS_API_KEY missing');

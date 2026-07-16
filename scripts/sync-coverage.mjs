@@ -24,10 +24,19 @@ if (!NEWS_API_KEY) {
   process.exit(0);
 }
 
-// Cover every eligible bill by default (the news API's daily quota is the real
-// ceiling; the run stops early and commits what it has if quota is hit). 25
-// candidates/bill is TheNewsAPI's Basic-tier per-request max.
-const TOP_N = Number(process.env.COVERAGE_TOP_N ?? Infinity);
+// Capped at the 150 most urgent eligible bills by default (raised from the
+// prior unbounded Infinity, 2026-07-16, audit §5 item 1): at Infinity this
+// queried every eligible bill in urgency order every night, so a bill sitting
+// near the bottom of the ranking was effectively guaranteed to lose the race
+// against TheNewsAPI's daily quota before it was ever reached - the same
+// bills, night after night, never got a fresh look. 150 keeps the nightly
+// query bounded while comfortably covering everything that could plausibly
+// clear the "Act now"/"Moving" floors (taxonomy.ts's BAND_SIZES is 18 total),
+// still overridable via env for a one-off wider sweep. The news API's daily
+// quota remains the real ceiling either way - the run stops early and commits
+// what it has if quota is hit. 25 candidates/bill is TheNewsAPI's Basic-tier
+// per-request max.
+const TOP_N = Number(process.env.COVERAGE_TOP_N ?? 150);
 const PER_BILL = Number(process.env.COVERAGE_PER_BILL ?? 5);
 const MAX_CANDIDATES = Number(process.env.COVERAGE_MAX_CANDIDATES ?? 25);
 const NEWS_API = 'https://api.thenewsapi.com/v1/news/all';

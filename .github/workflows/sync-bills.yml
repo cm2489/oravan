@@ -7,7 +7,7 @@ on:
     inputs:
       max_new_decodes:
         description: 'Max new bills to AI-decode this run'
-        default: '40'
+        default: '120'
 
 permissions:
   contents: write
@@ -35,7 +35,7 @@ jobs:
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '40' }}
+          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '120' }}
         run: node scripts/sync-bills.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
