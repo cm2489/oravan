@@ -568,7 +568,10 @@
     "docsFeedRssLabel": "RSS feed",
     "docsTosTitle": "Terms of Service",
     "docsTosBody": "Institutional and commercial use of these widgets — Free, Pro, Nonprofit, and Network plans alike — is governed by a separate Terms of Service from the one that covers Oravan's free citizen site.",
-    "docsTosLinkText": "Read the embeds Terms of Service"
+    "docsTosLinkText": "Read the embeds Terms of Service",
+    "docsManageTitle": "Manage your subscription",
+    "docsManageBody": "Subscribers on a paid plan can update their payment method, download invoices, and cancel at any time through Stripe's secure billing portal — sign in there with the email you used at checkout. Oravan itself holds no account and no payment details.",
+    "docsManageLinkText": "Open the billing portal"
   },
   "embedsTerms": {
     "title": "Embeds Terms of Service",

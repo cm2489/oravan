@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { BILLING_PORTAL_URL } from '@/lib/site';
 import { getTeasers } from '@/lib/core';
 import { EmbedConfigurator } from '@/components/EmbedConfigurator';
 
@@ -115,6 +116,24 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
             <Link href="/embeds/terms" className="underline underline-offset-2 font-semibold">
               {t('docsTosLinkText')}
             </Link>
+          </p>
+        </div>
+
+        {/* Link-out only, like every payment surface (§6): Stripe hosts the
+            portal; Oravan never proxies or iframes billing. The portal has
+            plan switching disabled — copy promises only what it can do. */}
+        <div className="mt-8">
+          <h3 className="font-display text-lg font-bold">{t('docsManageTitle')}</h3>
+          <p className="mt-2 leading-relaxed">
+            {t('docsManageBody')}{' '}
+            <a
+              href={BILLING_PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 hover:text-ink"
+            >
+              {t('docsManageLinkText')}
+            </a>
           </p>
         </div>
       </section>
