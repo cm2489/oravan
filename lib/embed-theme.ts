@@ -172,7 +172,11 @@ export function resolveEmbedTheme(raw: {
     ({ surface, ink } = MODE_DEFAULTS[mode]);
   }
 
-  const accentInk = accent ? pickTextColor(accent) : undefined;
+  // accentInk (the text on an accent-filled chip/toggle) picks the tenant's
+  // OWN light/dark color when a pair is set — not Oravan's #fbf8f0/#1b1611 —
+  // so a themed widget's button text is the buyer's white, not our cream.
+  // With no pair, pickTextColor's defaults preserve the shipped look.
+  const accentInk = accent ? pickTextColor(accent, surface, ink) : undefined;
   const focus =
     accent && surface ? (contrastRatio(accent, surface) >= 3 ? accent : ink) : undefined;
 

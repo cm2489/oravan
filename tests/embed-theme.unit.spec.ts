@@ -121,6 +121,12 @@ test.describe('resolveEmbedTheme', () => {
     const light = resolveEmbedTheme({ accent: '#ffe680' });
     expect(light.accentInk).toBe('#1b1611');
 
+    // With a tenant pair, accentInk uses the TENANT's own light/dark, not
+    // Oravan's cream — a black accent on a white/near-black brand yields the
+    // tenant's pure white, not #fbf8f0.
+    const themed = resolveEmbedTheme({ accent: '#000000', surface: '#ffffff', ink: '#121212' });
+    expect(themed.accentInk).toBe('#ffffff');
+
     // Accent readable on the surface -> focus = accent.
     const readable = resolveEmbedTheme({ accent: '#82632a', surface: '#ffffff', ink: '#111111' });
     expect(readable.focus).toBe('#82632a');

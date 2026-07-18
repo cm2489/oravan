@@ -86,6 +86,28 @@ test('the two new font stacks land as computed --oravan-font', async ({ page }) 
   }
 });
 
+test('a themed widget shows no Oravan-palette leak: note box re-tints, toggle text is the tenant color', async ({
+  page,
+}) => {
+  // The NYT-shaped case Colby flagged: black accent, white surface, near-black
+  // ink. The note box must NOT be Oravan amber, and the pressed toggle text
+  // must be the tenant's white, not Oravan's #fbf8f0.
+  await page.goto(
+    '/embed/rep-lookup?locale=en&accent=%23000000&surface=%23ffffff&ink=%23121212&mode=light'
+  );
+  const note = page.locator('.re-note');
+  await expect(note).toBeVisible();
+  const noteBorder = await note.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // Oravan amber was rgb(232, 163, 23); the themed box must not be that hue.
+  expect(noteBorder).not.toContain('232, 163, 23');
+
+  const toggleText = await page
+    .locator('.re-toggle[aria-pressed="true"]')
+    .evaluate((el) => getComputedStyle(el).color);
+  // #fbf8f0 (Oravan paper) is rgb(251, 248, 240); tenant white is rgb(255,255,255).
+  expect(toggleText).toBe('rgb(255, 255, 255)');
+});
+
 test('accent alone also derives --oravan-accent-ink and the chip renders with it', async ({
   page,
 }) => {

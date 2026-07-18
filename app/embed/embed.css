@@ -30,6 +30,11 @@
   --_line-strong: rgba(24, 32, 58, 0.25);
   --_line-faint: rgba(24, 32, 58, 0.08);
   --_ink-hover: #1b1611;
+  /* The info-note callout: fallback is the historic amber; color-mix engines
+     re-tint it to the tenant's accent below so a white-label widget never
+     shows an Oravan-branded box. */
+  --_note-border: rgba(232, 163, 23, 0.55);
+  --_note-fill: rgba(232, 163, 23, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,6 +57,8 @@
     --_line-strong: color-mix(in srgb, var(--_ink) 25%, transparent);
     --_line-faint: color-mix(in srgb, var(--_ink) 8%, transparent);
     --_ink-hover: color-mix(in srgb, var(--_ink) 85%, var(--_surface));
+    --_note-border: color-mix(in srgb, var(--_accent) 42%, var(--_surface));
+    --_note-fill: color-mix(in srgb, var(--_accent) 9%, var(--_surface));
   }
 }
 
@@ -273,11 +280,13 @@ body {
   color: inherit;
 }
 
-/* Semantic status tints, NOT theme knobs: translucent amber/red read on any
-   surface, so these two deliberately stay literal. */
+/* Info/prompt note: a gentle accent-tinted callout (--_note-* tokens), so on
+   a white-label widget it wears the tenant's brand color, not Oravan amber.
+   The error box below stays red — a universal "something went wrong" signal
+   that shouldn't be repainted in a tenant's (possibly green) brand color. */
 .re-note {
-  border: 1px solid rgba(232, 163, 23, 0.55);
-  background: rgba(232, 163, 23, 0.14);
+  border: 1px solid var(--_note-border);
+  background: var(--_note-fill);
   border-radius: 10px;
   padding: 12px;
   margin-top: 12px;
