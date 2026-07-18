@@ -3,8 +3,13 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
-import { safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
+import { FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
 import { contrastRatio } from '@/lib/contrast';
+import {
+  HostPageMockup,
+  MOCKUP_ARCHETYPES,
+  type MockupArchetype,
+} from '@/components/embed/HostPageMockup';
 import type { FeedTeaser } from '@/lib/types';
 
 /*
@@ -61,6 +66,13 @@ const MODE_LABEL_KEYS = {
   dark: 'modeDark',
 } as const satisfies Record<ModeKey, string>;
 
+const MOCKUP_LABEL_KEYS = {
+  generic: 'mockupGeneric',
+  newsroom: 'mockupNewsroom',
+  library: 'mockupLibrary',
+  advocacy: 'mockupAdvocacy',
+} as const satisfies Record<MockupArchetype, string>;
+
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
   // Default the widget-being-built to the locale of the page you're on: an
@@ -95,6 +107,20 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   >('idle');
   const [matchedSite, setMatchedSite] = useState<{ name?: string; logoUrl?: string } | null>(null);
   const [adjusted, setAdjusted] = useState(false);
+  // Exact-match hints for the mockup CHROME only (never the widget iframe).
+  const [previewFont, setPreviewFont] = useState<string | undefined>(undefined);
+  const [previewWebfont, setPreviewWebfont] = useState<string | undefined>(undefined);
+  const [mockup, setMockup] = useState<MockupArchetype>('newsroom');
+  // Mirror the visitor's color-scheme so the mockup chrome matches the widget
+  // in `auto` mode (SSR-safe: starts false, corrects on mount).
+  const [prefersDark, setPrefersDark] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = () => setPrefersDark(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   async function suggestTheme() {
     if (!matchUrl.trim() || matchStatus === 'loading') return;
@@ -119,6 +145,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       const data = (await res.json()) as {
         theme: { surface: string; ink: string; accent: string; radius: RadiusKey; font: FontKey; mode: ModeKey };
         site: { name?: string; logoUrl?: string };
+        preview?: { fontFamily?: string; webfontHref?: string };
         adjusted: boolean;
       };
       // Server-validated values, re-gated by the same client validators the
@@ -131,6 +158,8 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       setFont(FONT_KEYS.includes(data.theme.font) ? data.theme.font : 'system');
       setMode(MODE_KEYS.includes(data.theme.mode) ? data.theme.mode : 'auto');
       setMatchedSite(data.site ?? null);
+      setPreviewFont(data.preview?.fontFamily);
+      setPreviewWebfont(data.preview?.webfontHref);
       setAdjusted(Boolean(data.adjusted));
       setMatchStatus('done');
     } catch {
@@ -157,6 +186,22 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   // server-side later. Native color inputs always emit #rrggbb.
   const pairPasses = contrastRatio(inkInput, surfaceInput) >= MIN_PAIR_CONTRAST;
   const pairActive = customColors && pairPasses;
+
+  // The mockup CHROME (the fake host page around the widget) uses the
+  // tenant's EXACT colors and font with no AA gating — it's a preview of
+  // *their* page, not the widget. When no custom pair is set, it falls back
+  // to the mode's default palette so it's always coherent. (The widget
+  // iframe nested inside still uses the AA-gated pairActive values.)
+  //
+  // In `auto` mode the widget follows the VISITOR's prefers-color-scheme, so
+  // the chrome must too — otherwise a dark-OS reviewer sees a dark widget in
+  // a light mock page. Track the media query and resolve auto to the live
+  // preference before painting the chrome.
+  const effectiveMode = mode === 'auto' ? (prefersDark ? 'dark' : 'light') : mode;
+  const chromePalette = customColors
+    ? { surface: surfaceInput, ink: inkInput }
+    : MODE_DEFAULTS[effectiveMode];
+  const chromeFont = previewFont ?? FONT_VALUES[font];
 
   const filteredBills = useMemo(() => {
     const q = billQuery.trim().toLowerCase();
@@ -583,40 +628,58 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
         <div className="min-w-0 space-y-6">
           <div>
             <h3 className="font-display text-lg font-bold">{t('previewHeading')}</h3>
-            {/* Mock "on your site" strip (brand-preview build): the honest,
-                minimal version — their surface color, their logo (loaded
-                client-side straight from their https same-host URL, never
-                proxied or re-hosted), no fake browser chrome. Renders only
-                after a successful match with the pair active, so it always
-                shows colors that actually passed the contrast gate. */}
-            {matchedSite && pairActive && (
-              <div
-                className="mt-2 flex items-center gap-3 rounded-t-card border border-b-0 border-line px-4 py-2"
-                style={{ backgroundColor: surfaceInput, color: inkInput }}
-              >
-                {matchedSite.logoUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element -- external, unconfigurable host; plain img is the point (no proxying)
-                  <img src={matchedSite.logoUrl} alt="" className="h-6 w-6 shrink-0 object-contain" />
-                )}
-                <span className="truncate text-sm font-semibold">{matchedSite.name ?? ''}</span>
-                {matchedSite.name && (
-                  <span className="ml-auto shrink-0 text-xs opacity-70">
-                    {t('matchSiteFrameNote', { name: matchedSite.name })}
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="mt-2 overflow-hidden rounded-card border border-line bg-paper-deep">
+
+            {/* Preview-context switcher: the live preview is always a themed
+                host-page mockup with the real widget embedded in it, so it
+                reads as "on their site," not a bare widget on an Oravan card.
+                The switcher is a radiogroup over the four archetypes. */}
+            <div
+              role="radiogroup"
+              aria-label={t('mockupLegend')}
+              className="mt-2 flex flex-wrap gap-1.5"
+            >
+              {MOCKUP_ARCHETYPES.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={mockup === key}
+                  onClick={() => setMockup(key)}
+                  className={`min-h-[36px] rounded-control border px-3 text-xs font-semibold ${
+                    mockup === key
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-line bg-surface text-ink hover:border-ink/40'
+                  }`}
+                >
+                  {t(MOCKUP_LABEL_KEYS[key])}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-2">
               {previewSrc ? (
-                <iframe
-                  key={previewSrc}
-                  src={previewSrc}
-                  title={t('previewHeading')}
-                  style={{ width: '100%', height: previewHeight, border: 0, display: 'block' }}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                />
+                <HostPageMockup
+                  archetype={mockup}
+                  surface={chromePalette.surface}
+                  ink={chromePalette.ink}
+                  accent={accent}
+                  fontFamily={chromeFont}
+                  webfontHref={previewWebfont}
+                  siteName={matchedSite?.name}
+                  logoUrl={matchedSite?.logoUrl}
+                >
+                  <iframe
+                    key={previewSrc}
+                    src={previewSrc}
+                    title={t('previewHeading')}
+                    style={{ width: '100%', height: previewHeight, border: 0, display: 'block' }}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  />
+                </HostPageMockup>
               ) : (
-                <p className="p-6 text-sm text-ink-soft">{t('previewPending')}</p>
+                <div className="overflow-hidden rounded-card border border-line bg-paper-deep">
+                  <p className="p-6 text-sm text-ink-soft">{t('previewPending')}</p>
+                </div>
               )}
             </div>
           </div>

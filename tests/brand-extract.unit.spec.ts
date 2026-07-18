@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { extractFromHtml, mergeCssSignals, normalizeCssColor } from '../lib/brand-extract';
+import {
+  extractFromHtml,
+  isAllowlistedWebfontUrl,
+  mergeCssSignals,
+  normalizeCssColor,
+} from '../lib/brand-extract';
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, 'fixtures', 'brand', name), 'utf8');
@@ -45,6 +50,13 @@ test.describe('extractFromHtml', () => {
     expect(blue!.count).toBeGreaterThanOrEqual(3);
     expect(c.fonts.some((f) => f.value.includes('georgia'))).toBe(true);
     expect(c.radii.some((r) => r.value === '8px')).toBe(true);
+    // Exact-font fields for the mockup: the body face + the Google Fonts sheet.
+    expect(c.bodyFontFamily).toBe('Georgia, "Times New Roman", serif');
+    expect(c.webfontHref).toBe(
+      'https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap'
+    );
+    // The allowlisted webfont link is NOT counted as a fetchable stylesheet.
+    expect(c.stylesheets).not.toContain(c.webfontHref);
   });
 
   test('dark site: darkBackground true from body/html background declarations', () => {
@@ -80,6 +92,43 @@ test.describe('extractFromHtml', () => {
     const c = extractFromHtml(html, SITE_URL);
     expect(c.logoUrl).toBeUndefined();
     expect(c.stylesheets).toEqual([]);
+  });
+});
+
+test.describe('exact-font signals', () => {
+  test('isAllowlistedWebfontUrl gates on host + https', () => {
+    expect(isAllowlistedWebfontUrl('https://fonts.googleapis.com/css2?family=Inter')).toBe(true);
+    expect(isAllowlistedWebfontUrl('https://fonts.bunny.net/css?family=lato')).toBe(true);
+    expect(isAllowlistedWebfontUrl('https://use.typekit.net/abc.css')).toBe(true);
+    // Not a font CDN, wrong scheme, or junk → refused.
+    expect(isAllowlistedWebfontUrl('https://evil.example/fonts.css')).toBe(false);
+    expect(isAllowlistedWebfontUrl('http://fonts.googleapis.com/css2?family=Inter')).toBe(false);
+    expect(isAllowlistedWebfontUrl('not a url')).toBe(false);
+    // fonts.gstatic.com serves the font FILES, not a linkable stylesheet — excluded.
+    expect(isAllowlistedWebfontUrl('https://fonts.gstatic.com/s/inter/x.woff2')).toBe(false);
+  });
+
+  test('body/html font-family declaration wins over mere frequency', () => {
+    const html = `<title>X</title><style>
+      .huge { font-family: "Wrong Font", sans-serif; }
+      .a { font-family: "Wrong Font", sans-serif; }
+      body { font-family: "Right Serif", Georgia, serif; }
+    </style>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.bodyFontFamily).toBe('"Right Serif", Georgia, serif');
+  });
+
+  test('a bare preconnect origin is not mistaken for a stylesheet', () => {
+    const html = `<link rel="stylesheet" href="https://fonts.googleapis.com">
+      <title>X</title>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.webfontHref).toBeUndefined();
+  });
+
+  test('@import of an allowlisted webfont in linked CSS is captured on merge', () => {
+    const base = extractFromHtml('<title>X</title>', new URL('https://x.example/'));
+    const merged = mergeCssSignals(base, '@import url("https://fonts.bunny.net/css?family=lora");');
+    expect(merged.webfontHref).toBe('https://fonts.bunny.net/css?family=lora');
   });
 });
 

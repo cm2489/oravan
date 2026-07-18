@@ -336,8 +336,10 @@ test.describe('match your site (mocked /api/brand)', () => {
     await expect(page.getByLabel(en.embeds.customColorsToggle)).toBeChecked();
     // The adjusted-colors honesty note.
     await expect(page.getByText(en.embeds.matchSiteAdjustedNote)).toBeVisible();
-    // The mock site strip, painted with the returned surface.
-    await expect(page.getByText('Simulated on Nightowl Analytics')).toBeVisible();
+    // The host-page mockup masthead carries the matched site name + the
+    // "simulated preview" label.
+    await expect(page.getByText('Nightowl Analytics')).toBeVisible();
+    await expect(page.getByText(en.embeds.mockupSimulated)).toBeVisible();
   });
 
   test('manual edits after autofill still work (plain state, no locking)', async ({ page }) => {
@@ -391,5 +393,49 @@ test.describe('match your site (mocked /api/brand)', () => {
     expect(inputBox!.height).toBeGreaterThanOrEqual(44);
     const buttonBox = await page.getByRole('button', { name: en.embeds.matchSiteCta }).boundingBox();
     expect(buttonBox!.height).toBeGreaterThanOrEqual(44);
+  });
+});
+
+/*
+ * The host-page mockup preview (brand-preview build): the live preview is
+ * always a themed fake host page (newsroom / library / advocacy / generic)
+ * with the widget embedded, switchable via a radiogroup. Painted in the
+ * current effective colors; after a match, in the tenant's exact palette.
+ */
+test.describe('host-page mockup preview', () => {
+  test('the archetype switcher renders all four contexts and swaps content', async ({ page }) => {
+    await page.goto('/embeds');
+    const group = page.getByRole('radiogroup', { name: en.embeds.mockupLegend });
+    await expect(group).toBeVisible();
+    for (const label of [
+      en.embeds.mockupGeneric,
+      en.embeds.mockupNewsroom,
+      en.embeds.mockupLibrary,
+      en.embeds.mockupAdvocacy,
+    ]) {
+      await expect(group.getByRole('radio', { name: label })).toBeVisible();
+    }
+    // Default is newsroom → its headline shows; switching to advocacy swaps it.
+    await expect(page.getByText(en.embeds.mockupNewsHeadline)).toBeVisible();
+    await group.getByRole('radio', { name: en.embeds.mockupAdvocacy }).click();
+    await expect(page.getByRole('heading', { name: en.embeds.mockupAdvocacyHeading })).toBeVisible();
+    await expect(page.getByText(en.embeds.mockupNewsHeadline)).toHaveCount(0);
+  });
+
+  test('the widget iframe renders inside the mockup, still themed by the controls', async ({
+    page,
+  }) => {
+    await page.goto('/embeds');
+    // The preview iframe lives inside the mockup region and shows the real widget.
+    const frame = page.frameLocator('iframe[title]').first();
+    await expect(frame.getByText(en.embed.frameTitle)).toBeVisible();
+  });
+
+  test('ES: the mockup switcher and newsroom content render in Spanish', async ({ page }) => {
+    await page.goto('/es/embeds');
+    await expect(
+      page.getByRole('radiogroup', { name: es.embeds.mockupLegend })
+    ).toBeVisible();
+    await expect(page.getByText(es.embeds.mockupNewsHeadline)).toBeVisible();
   });
 });

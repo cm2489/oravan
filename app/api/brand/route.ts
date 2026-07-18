@@ -1,7 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { after, NextRequest, NextResponse } from 'next/server';
 import { createLruCache } from '@/lib/brand-cache';
-import { extractFromHtml, mergeCssSignals, type BrandCandidates } from '@/lib/brand-extract';
+import {
+  extractFromHtml,
+  isAllowlistedWebfontUrl,
+  mergeCssSignals,
+  type BrandCandidates,
+} from '@/lib/brand-extract';
 import { fetchGuarded, normalizeBrandUrl } from '@/lib/brand-fetch';
 import {
   BRAND_MAX_TOKENS,
@@ -59,6 +64,14 @@ const GLOBAL_BUCKET = 'brand-global';
 interface BrandResponse {
   theme: BrandTheme;
   site: { name?: string; logoUrl?: string };
+  /**
+   * Exact-match hints for the /embeds preview MOCKUP chrome ONLY (Oravan's
+   * own page) — never fed to the widget, whose fonts stay on the closed
+   * system stacks. webfontHref is re-validated against the font-CDN
+   * allowlist here (the trust boundary the client relies on), not just at
+   * extraction.
+   */
+  preview: { fontFamily?: string; webfontHref?: string };
   adjusted: boolean;
 }
 
@@ -127,6 +140,13 @@ export async function POST(req: NextRequest) {
     const response: BrandResponse = {
       theme: finalized.theme,
       site: { name: candidates.siteName, logoUrl: candidates.logoUrl },
+      preview: {
+        fontFamily: candidates.bodyFontFamily,
+        webfontHref:
+          candidates.webfontHref && isAllowlistedWebfontUrl(candidates.webfontHref)
+            ? candidates.webfontHref
+            : undefined,
+      },
       adjusted: finalized.adjusted,
     };
     cache.set(origin, response);
