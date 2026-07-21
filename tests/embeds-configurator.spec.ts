@@ -313,9 +313,22 @@ test.describe('match your site (mocked /api/brand)', () => {
     adjusted: true,
   };
 
-  async function submitUrl(page: import('@playwright/test').Page) {
-    await page.getByLabel(en.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
-    await page.getByRole('button', { name: en.embeds.matchSiteCta }).click();
+  // Submit the match URL, robust against the click-before-hydration race:
+  // a click that lands on the server-rendered button before React attaches
+  // its handler fires no fetch and leaves no replayable DOM effect, so we
+  // retry fill+click until the /api/brand request actually goes out. Takes
+  // the locale's messages so the ES flow reuses the same guard.
+  async function submitUrl(
+    page: import('@playwright/test').Page,
+    messages: typeof en | typeof es = en
+  ) {
+    const button = page.getByRole('button', { name: messages.embeds.matchSiteCta });
+    await expect(async () => {
+      await page.getByLabel(messages.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
+      const request = page.waitForRequest('**/api/brand', { timeout: 1500 });
+      await button.click();
+      await request; // rejects if the click was lost → expect.toPass re-issues it
+    }).toPass({ timeout: 10000 });
   }
 
   test('a successful match autofills every theme control and the snippet', async ({ page }) => {
@@ -380,8 +393,7 @@ test.describe('match your site (mocked /api/brand)', () => {
     await page.goto('/es/embeds');
     await expect(page.getByText(es.embeds.matchSiteHeading)).toBeVisible();
     await expect(page.getByText(es.embeds.matchSitePrivacy)).toBeVisible();
-    await page.getByLabel(es.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
-    await page.getByRole('button', { name: es.embeds.matchSiteCta }).click();
+    await submitUrl(page, es);
     await expect(page.getByText(es.embeds.matchSiteErrorUnavailable)).toBeVisible();
   });
 
