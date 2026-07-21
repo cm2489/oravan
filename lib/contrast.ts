@@ -63,7 +63,7 @@ export function pickTextColor(bgHex: string, light = '#fbf8f0', dark = '#1b1611'
 }
 
 /** Linear blend of two parseable hex colors, t in [0,1], returned as #rrggbb. */
-function mixHex(fromHex: string, toHex: string, t: number): string {
+export function mixHex(fromHex: string, toHex: string, t: number): string {
   const from = hexToRgb(fromHex)!;
   const to = hexToRgb(toHex)!;
   const ch = (a: number, b: number) => Math.round(a + (b - a) * t);

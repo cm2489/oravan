@@ -151,6 +151,19 @@ test.describe('buildThemeCss', () => {
     expect(css).toContain('color-scheme:dark');
   });
 
+  test('note tint tokens are emitted only for a themed widget, never on the default', () => {
+    // Un-themed default → no note tokens, so embed.css keeps its amber fallback.
+    expect(buildThemeCss(resolveEmbedTheme({}))).not.toContain('--oravan-note');
+    // Accent alone (no known surface) is still not "themed" enough to tint.
+    expect(buildThemeCss(resolveEmbedTheme({ accent: '#000000' }))).not.toContain('--oravan-note');
+    // Accent + a real pair → note border/fill emitted as opaque hex.
+    const themed = buildThemeCss(
+      resolveEmbedTheme({ accent: '#000000', surface: '#ffffff', ink: '#121212' })
+    );
+    expect(themed).toMatch(/--oravan-note-border:#[0-9a-f]{6}/);
+    expect(themed).toMatch(/--oravan-note-fill:#[0-9a-f]{6}/);
+  });
+
   test('a tenant pair under auto derives its scheme from surface luminance', () => {
     expect(buildThemeCss(resolveEmbedTheme({ surface: '#0f1a2b', ink: '#f5f7fa' }))).toContain(
       'color-scheme:dark'

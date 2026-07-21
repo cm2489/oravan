@@ -98,7 +98,7 @@ test('a themed widget shows no Oravan-palette leak: note box re-tints, toggle te
   const note = page.locator('.re-note');
   await expect(note).toBeVisible();
   const noteBorder = await note.evaluate((el) => getComputedStyle(el).borderTopColor);
-  // Oravan amber was rgb(232, 163, 23); the themed box must not be that hue.
+  // Oravan amber is rgb(232, 163, 23); a themed box must not be that hue.
   expect(noteBorder).not.toContain('232, 163, 23');
 
   const toggleText = await page
@@ -106,6 +106,17 @@ test('a themed widget shows no Oravan-palette leak: note box re-tints, toggle te
     .evaluate((el) => getComputedStyle(el).color);
   // #fbf8f0 (Oravan paper) is rgb(251, 248, 240); tenant white is rgb(255,255,255).
   expect(toggleText).toBe('rgb(255, 255, 255)');
+});
+
+test('the UN-themed default widget keeps its amber note box (Oravan default look preserved)', async ({
+  page,
+}) => {
+  await page.goto('/embed/rep-lookup?locale=en');
+  const noteBorder = await page
+    .locator('.re-note')
+    .evaluate((el) => getComputedStyle(el).borderTopColor);
+  // No theme applied → the amber fallback stands: rgb(232, 163, 23) at 0.55 alpha.
+  expect(noteBorder).toContain('232, 163, 23');
 });
 
 test('accent alone also derives --oravan-accent-ink and the chip renders with it', async ({

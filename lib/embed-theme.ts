@@ -24,7 +24,7 @@
  * validator didn't produce, and buildThemeCss defensively re-tests every
  * hex before interpolation.
  */
-import { contrastRatio, hexToRgb, pickTextColor, relativeLuminance } from './contrast';
+import { contrastRatio, hexToRgb, mixHex, pickTextColor, relativeLuminance } from './contrast';
 
 const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
@@ -132,6 +132,14 @@ export interface ResolvedEmbedTheme {
   accentInk?: string;
   /** Derived: focus-outline color — accent when it reads on the surface, else ink. */
   focus?: string;
+  /**
+   * Derived: the info-note callout border/fill, an accent tint over the
+   * surface. Emitted ONLY when a real theme is present (accent + a known
+   * surface), so the un-themed default widget keeps its historic amber note
+   * (embed.css's var() fallback) rather than a brass tint.
+   */
+  noteBorder?: string;
+  noteFill?: string;
   mode: ModeKey;
   radiusKey: RadiusKey;
   fontKey: FontKey;
@@ -180,12 +188,20 @@ export function resolveEmbedTheme(raw: {
   const focus =
     accent && surface ? (contrastRatio(accent, surface) >= 3 ? accent : ink) : undefined;
 
+  // Note callout tint — only for a genuinely themed widget (accent + a known
+  // surface). Absent otherwise, so embed.css's amber fallback stands on the
+  // un-themed default (Colby: keep amber on default, accent-tint when themed).
+  const noteBorder = accent && surface ? mixHex(surface, accent, 0.42) : undefined;
+  const noteFill = accent && surface ? mixHex(surface, accent, 0.09) : undefined;
+
   return {
     accent,
     surface,
     ink,
     accentInk,
     focus,
+    noteBorder,
+    noteFill,
     mode,
     radiusKey: safeRadiusKey(raw.radius),
     fontKey: safeFontKey(raw.font),
@@ -215,6 +231,8 @@ export function buildThemeCss(theme: ResolvedEmbedTheme): string {
   hex('--oravan-ink', theme.ink);
   hex('--oravan-accent-ink', theme.accentInk);
   hex('--oravan-focus', theme.focus);
+  hex('--oravan-note-border', theme.noteBorder);
+  hex('--oravan-note-fill', theme.noteFill);
   decls.push(`--oravan-radius:${RADIUS_VALUES[theme.radiusKey]}`);
   decls.push(`--oravan-font:${FONT_VALUES[theme.fontKey]}`);
 
