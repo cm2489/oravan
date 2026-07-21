@@ -59,8 +59,9 @@
     "status": "new-map-litigated",
     "note": "CORRECTED from the strategy doc's 'likely, litigation delayed' framing (stale by the time of this seed): SCOTUS's Louisiana v. Callais ruling (2026-04-29) struck the prior map's second majority-Black district as an unconstitutional racial gerrymander. The legislature passed a REPLACEMENT map on 2026-05-29 (28-10 state Senate vote; keeps only one majority-Black district of six seats). That replacement map is itself now under fresh litigation from multiple sides - conservative plaintiffs re-suing over the remaining Black-opportunity district, and the Legislative Black Caucus weighing its own suit. Not settled either direction - do not treat as final without re-checking.",
     "rdh_url": "https://redistrictingdatahub.org/state/louisiana/",
-    "rdh_lastmod": "2026-06-04T14:57:34+00:00",
-    "verified": "2026-07-06"
+    "rdh_lastmod": "2026-07-17T16:46:34+00:00",
+    "verified": "2026-07-06",
+    "checked": "2026-07-20"
   },
   "AL": {
     "status": "settled",
