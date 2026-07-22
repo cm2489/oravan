@@ -91,7 +91,10 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
                 </span>
               </>
             )}
-            {article.lean && <LeanChip lean={article.lean} />}
+            {/* Always render: a missing chip is ambiguous between "center"
+                and "unrated" and reads as selective labeling (2026-07
+                critique, unanimous). Unrated outlets say so explicitly. */}
+            <LeanChip lean={article.lean ?? null} />
           </p>
         </div>
 
@@ -126,10 +129,13 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
   );
 }
 
-/** Neutral lean chip: text label + a 3-segment position glyph. Never color-coded. */
-function LeanChip({ lean }: { lean: Lean }) {
+/** Neutral lean chip: text label + a 3-segment position glyph. Never
+ *  color-coded. `lean: null` = AllSides has no rating for the outlet — all
+ *  three segments stay muted and the label says so, because absence must
+ *  never be readable as "center". */
+function LeanChip({ lean }: { lean: Lean | null }) {
   const t = useTranslations('coverage');
-  const position = LEAN_POSITION[lean];
+  const position = lean ? LEAN_POSITION[lean] : null;
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2 py-0.5 text-xs font-medium text-ink-soft">
@@ -141,7 +147,7 @@ function LeanChip({ lean }: { lean: Lean }) {
           />
         ))}
       </span>
-      {t(`lean.${lean}`)}
+      {lean ? t(`lean.${lean}`) : t('lean.unrated')}
     </span>
   );
 }

@@ -10,16 +10,16 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await page.reload();
 
   // Stance -> mocked script appears, editable
-  await page.getByRole('button', { name: 'I support it' }).click();
+  await page.getByRole('radio', { name: 'I support it' }).click();
   const textarea = page.getByRole('textbox', { name: 'Your script' });
   await expect(textarea).toBeVisible();
   await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
   await textarea.fill('My edited script.');
 
   // Switching stance does not destroy the edit
-  await page.getByRole('button', { name: 'I oppose it' }).click();
+  await page.getByRole('radio', { name: 'I oppose it' }).click();
   await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
-  await page.getByRole('button', { name: 'I support it' }).click();
+  await page.getByRole('radio', { name: 'I support it' }).click();
   await expect(textarea).toHaveValue('My edited script.');
 
   // Call section: reps render with tel links
@@ -51,7 +51,7 @@ test('call mode shows nudge, script, and dial buttons; Escape closes', async ({ 
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
-  await page.getByRole('button', { name: 'I support it' }).click();
+  await page.getByRole('radio', { name: 'I support it' }).click();
   await page.getByRole('button', { name: 'Start the call' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -71,7 +71,7 @@ test('script failure shows a retry that recovers', async ({ page }) => {
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ script: 'RECOVERED SCRIPT', cached: false }) });
   });
   await page.goto(BILL);
-  await page.getByRole('button', { name: "I'm concerned" }).click();
+  await page.getByRole('radio', { name: "I'm concerned" }).click();
   // Next.js's route announcer is also role=alert - filter to ours
   await expect(page.getByRole('alert').filter({ hasText: /try again/i })).toBeVisible();
   await page.getByRole('button', { name: 'Try again' }).click();

@@ -47,7 +47,7 @@ test('ES bill page: script UI is fully localized across all three stances', asyn
   const textarea = page.getByRole('textbox', { name: es.bill.scriptTitle });
 
   for (const stance of STANCES) {
-    await page.getByRole('button', { name: stanceLabels[stance] }).click();
+    await page.getByRole('radio', { name: stanceLabels[stance] }).click();
     // The mocked draft for THIS stance renders in the ES-labeled textarea.
     await expect(textarea).toHaveValue(new RegExp(`GUION SIMULADO \\(${stance}\\)`));
     // The AI-label + review-before-call disclosure sits beside every script.
@@ -81,7 +81,7 @@ test('ES call moment: dial mode and outcome logging speak Spanish end to end', a
   await seedZip(page, '78501');
   await page.reload();
 
-  await page.getByRole('button', { name: es.bill.stance.support }).click();
+  await page.getByRole('radio', { name: es.bill.stance.support }).click();
   await expect(page.getByRole('textbox', { name: es.bill.scriptTitle })).toBeVisible();
 
   // Call mode opens as an ES-labeled dialog with the script and tel: links.

@@ -38,7 +38,7 @@ async function clickFirstBillCardIn(page: Page, sectionSelector: string) {
 // /api/script request actually goes out. A retry can only fire after a
 // lost click, so it never double-toggles a stance that already registered.
 async function declareStance(page: Page, stanceLabel: string) {
-  const button = page.getByRole('button', { name: stanceLabel });
+  const button = page.getByRole('radio', { name: stanceLabel });
   await expect(async () => {
     const request = page.waitForRequest('**/api/script', { timeout: 2000 });
     await button.click();

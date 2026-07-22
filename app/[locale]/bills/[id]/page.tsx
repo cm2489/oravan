@@ -5,7 +5,6 @@ import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/serve
 import { routing } from '@/i18n/routing';
 import { getPathname } from '@/i18n/navigation';
 import { ActionPanel } from '@/components/ActionPanel';
-import { CallPrompt } from '@/components/CallPrompt';
 import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
@@ -84,10 +83,6 @@ export default async function BillPage({
   // claim - no surface reads data/sync-state.json or assembles the stamp.
   const dataAsOf = await dataAsOfString(locale);
 
-  // The inline call prompt reuses the action panel's own copy — no new strings.
-  const callLabel = t('bill.actTitle');
-  const callSub = t('bill.actSub');
-
   const citation = formatCitation(bill.bill_type, bill.bill_number);
   const displayTitle = bill.ai_headline ?? bill.short_title ?? bill.title;
   // Headlines often already name the bill; don't repeat the citation (same
@@ -119,9 +114,12 @@ export default async function BillPage({
       <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">
         {bill.ai_headline ?? bill.short_title ?? bill.title}
       </h1>
-      <p className="mt-1.5 text-xs text-ink-faint">{dataAsOf}</p>
-      {/* R2: this page urges a call — surface staleness here too, client-side */}
-      <StalenessNote checkedAt={getFreshness().checkedAt} />
+      {/* R2: this page urges a call — the staleness caveat continues the
+          stamp's own sentence, client-side (one line, one date). */}
+      <p className="mt-1.5 max-w-prose text-xs text-ink-faint">
+        {dataAsOf}
+        <StalenessNote checkedAt={getFreshness().checkedAt} />
+      </p>
 
       <TldrStrip bill={bill} />
 
@@ -133,9 +131,18 @@ export default async function BillPage({
   const decodedBlock = (
     // Decoded - the plain-language translation is the hero
     <section aria-labelledby="decoded" className="mt-8 rounded-card bg-paper-deep border border-line p-6 md:p-8">
-      <h2 id="decoded" className="font-display text-2xl font-bold">
-        {t('bill.decoded')}
-      </h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 id="decoded" className="font-display text-2xl font-bold">
+          {t('bill.decoded')}
+        </h2>
+        {/* The label lives at the header, not only in the fine print at the
+            card's foot (2026-07 critique, unanimous AI-labeling gap). */}
+        {(bill.ai_summary || bill.ai_sections) && (
+          <span className="rounded-full bg-brass-soft px-2.5 py-1 text-xs font-semibold text-ink">
+            {t('bill.aiChip')}
+          </span>
+        )}
+      </div>
       {bill.ai_summary || bill.ai_sections ? (
         <>
           <DecodedSections bill={bill} />
@@ -183,20 +190,6 @@ export default async function BillPage({
     </section>
   );
 
-  const content = (
-    <>
-      {decodedBlock}
-      {/* Surface the call at the moment of comprehension, right after Decoded */}
-      <CallPrompt label={callLabel} sub={callSub} />
-      {/* For the hesitant: what a call actually looks like, on demand, right
-          where the ask lands - collapsed so it never displaces the CTA */}
-      <WalkthroughDisclosure />
-      {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
-      <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
-      {officialBlock}
-    </>
-  );
-
   const action = (
     <ActionPanel
       slug={id}
@@ -205,13 +198,32 @@ export default async function BillPage({
     />
   );
 
+  // 2026-07 critique (majority): the read-then-act path must not detour
+  // through press headlines and procedural prose - the action panel sits at
+  // the moment of comprehension, directly after Decoded; coverage and the
+  // official record follow it. The old CallPrompt jump band existed to
+  // bridge the gap this ordering removes.
+  const content = (
+    <>
+      {decodedBlock}
+      {action}
+      {/* For the hesitant: what a call actually looks like, on demand,
+          collapsed so it never displaces the CTA */}
+      <WalkthroughDisclosure />
+      {/* Read - how the bill is being covered (third-party articles + outlet lean) */}
+      <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
+      {officialBlock}
+    </>
+  );
+
   return (
     <>
       <JsonLd id="bill-jsonld" data={jsonLd} />
-      <article className="mx-auto max-w-3xl px-4 py-12">
+      {/* Bottom padding clears the floating call pill on mobile so it never
+          sits on the last lines of body text (2026-07 critique). */}
+      <article className="mx-auto max-w-3xl px-4 pt-12 pb-28 md:pb-16">
         {header}
         {content}
-        {action}
       </article>
 
       {/* Keeps the call reachable while reading; yields when another call CTA is on screen */}

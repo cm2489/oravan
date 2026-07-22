@@ -49,7 +49,7 @@ const WEEKEND_MIDDAY = new Date('2026-07-12T15:00:00Z').getTime(); // Sun 11:00 
 
 async function openCallMode(page: Page, locale: 'en' | 'es', stance: (typeof STANCES)[number]) {
   const messages = locale === 'en' ? en : es;
-  await page.getByRole('button', { name: messages.bill.stance[stance] }).click();
+  await page.getByRole('radio', { name: messages.bill.stance[stance] }).click();
   await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
   await page.getByRole('button', { name: messages.bill.startCall }).click();
   return page.getByRole('dialog', { name: messages.bill.callTitle });
@@ -95,7 +95,7 @@ test('S7 pre-dial beat: a repeat caller sees the general beat, not the first-cal
   await page.clock.setFixedTime(WEEKDAY_MORNING);
 
   // Log one outcome so callCount becomes 1.
-  await page.getByRole('button', { name: en.bill.stance.support }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await page.getByRole('button', { name: en.bill.startCall }).click();
   let dialog = page.getByRole('dialog', { name: en.bill.callTitle });
   await expect(dialog.getByText(en.bill.firstCallTitle)).toBeVisible();
@@ -104,7 +104,7 @@ test('S7 pre-dial beat: a repeat caller sees the general beat, not the first-cal
 
   // A different stance, opened after that first logged call, gets the
   // general "before you dial" beat instead of the first-call framing.
-  await page.getByRole('button', { name: en.bill.stance.oppose }).click();
+  await page.getByRole('radio', { name: en.bill.stance.oppose }).click();
   await page.getByRole('button', { name: en.bill.startCall }).click();
   dialog = page.getByRole('dialog', { name: en.bill.callTitle });
   await expect(dialog.getByText(en.bill.preDialTitle)).toBeVisible();
@@ -119,7 +119,7 @@ test.describe('S7 office-hours note: honest, time-aware, Eastern-only', () => {
     await seedZip(page, '78501');
     await page.reload();
     await page.clock.setFixedTime(WEEKDAY_MORNING);
-    await page.getByRole('button', { name: en.bill.stance.support }).click();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
     await expect(page.getByText(en.bill.officeHoursOpenBody)).toBeVisible();
     await expect(page.getByText(en.bill.officeHoursClosedBody)).toHaveCount(0);
   });
@@ -132,7 +132,7 @@ test.describe('S7 office-hours note: honest, time-aware, Eastern-only', () => {
     await seedZip(page, '78501');
     await page.reload();
     await page.clock.setFixedTime(WEEKEND_MIDDAY);
-    await page.getByRole('button', { name: en.bill.stance.support }).click();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
     await expect(page.getByText(en.bill.officeHoursClosedBody)).toBeVisible();
     await expect(page.getByText(en.bill.officeHoursOpenBody)).toHaveCount(0);
     // Never "sorry" / "unfortunately" language — voicemail is a plus, not a caveat.
@@ -145,7 +145,7 @@ test.describe('S7 office-hours note: honest, time-aware, Eastern-only', () => {
     await seedZip(page, '78501');
     await page.reload();
     await page.clock.setFixedTime(WEEKEND_MIDDAY);
-    await page.getByRole('button', { name: es.bill.stance.support }).click();
+    await page.getByRole('radio', { name: es.bill.stance.support }).click();
     await expect(page.getByText(es.bill.officeHoursTitle)).toBeVisible();
     await expect(page.getByText(es.bill.officeHoursClosedBody)).toBeVisible();
   });
@@ -174,7 +174,7 @@ test.describe('S7 clipboard copy: one tap, visible confirmation, aria-live annou
     await page.goto(BILL);
     await seedZip(page, '78501');
     await page.reload();
-    await page.getByRole('button', { name: en.bill.stance.support }).click();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
 
     await page.getByRole('button', { name: en.bill.copyScript, exact: true }).click();
     await expect(page.getByRole('button', { name: en.bill.scriptCopied })).toBeVisible();
@@ -190,7 +190,7 @@ test.describe('S7 clipboard copy: one tap, visible confirmation, aria-live annou
     await page.goto(BILL);
     await seedZip(page, '78501');
     await page.reload();
-    await page.getByRole('button', { name: en.bill.stance.support }).click();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
     await page.getByRole('button', { name: en.bill.startCall }).click();
 
     const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
@@ -208,7 +208,7 @@ test.describe('S7 clipboard copy: one tap, visible confirmation, aria-live annou
     await page.goto('/es' + BILL);
     await seedZip(page, '78501');
     await page.reload();
-    await page.getByRole('button', { name: es.bill.stance.support }).click();
+    await page.getByRole('radio', { name: es.bill.stance.support }).click();
     await page.getByRole('button', { name: es.bill.copyScript, exact: true }).click();
     await expect(page.getByRole('button', { name: es.bill.scriptCopied })).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: es.bill.scriptCopied })).toHaveCount(1);
@@ -220,7 +220,7 @@ test('S7: call mode survives a visibilitychange/blur-return with its content int
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
-  await page.getByRole('button', { name: en.bill.stance.support }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await page.getByRole('button', { name: en.bill.startCall }).click();
 
   const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
@@ -244,4 +244,28 @@ test('S7: call mode survives a visibilitychange/blur-return with its content int
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
   await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
+});
+
+/*
+ * 2026-07 critique, top consensus P0: with no saved ZIP the call mode used to
+ * be a dead end — the script and reassurance rendered, but zero phone
+ * numbers, no ZIP form, and no explanation. The fix lives IN the mode: a ZIP
+ * mini-form inside the dialog, plus the Capitol switchboard as the universal
+ * fallback that needs no ZIP at all.
+ */
+test('call mode without a saved ZIP is never a dead end: in-dialog ZIP form + switchboard', async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL); // deliberately NO seedZip
+  const dialog = await openCallMode(page, 'en', 'support');
+  await expect(dialog).toBeVisible();
+
+  // The universal fallback: the Capitol switchboard, dialable with no ZIP.
+  await expect(dialog.getByText(en.bill.switchboardNote)).toBeVisible();
+  await expect(dialog.locator('a[href="tel:+12022243121"]')).toBeVisible();
+
+  // And the way to fix it without leaving the mode: the ZIP form, in-dialog.
+  await expect(dialog.getByText(en.bill.needZip)).toBeVisible();
+  await expect(dialog.getByLabel(en.home.zipLabel)).toBeVisible();
 });

@@ -149,6 +149,7 @@
   },
   "bill": {
     "decoded": "Decoded",
+    "aiChip": "AI-decoded",
     "aiDisclaimer": "AI-drafted summary. Verify it against the official text before you act on it.",
     "officialTitle": "Official title",
     "statusLabel": "Status",
@@ -178,6 +179,8 @@
     "rateLimited": "You've requested several scripts in a short time. Take a breath and try again soon.",
     "callTitle": "Place your call",
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
+    "switchboard": "Capitol switchboard",
+    "switchboardNote": "No ZIP handy? The Capitol switchboard can connect you to any congressional office.",
     "callWho": "Call any of your three, or all of them. One call per office is plenty.",
     "afterHoursTitle": "Nervous? Call after hours.",
     "afterHoursBody": "Voicemails are tallied exactly like live calls. Calling evenings or weekends and leaving a message counts just as much. Mention your ZIP code so they know you're a constituent.",
@@ -291,12 +294,13 @@
   },
   "coverage": {
     "heading": "How it's being covered",
-    "subhead": "Real reporting on this bill, labeled by each outlet's political lean.",
+    "subhead": "Real reporting on this bill, with each outlet's political lean labeled where AllSides has rated it.",
     "leanNote": "Lean labels describe the news outlet, not this bill or any party. Ratings by AllSides.",
     "lean": {
       "left": "Leans left",
       "center": "Center",
-      "right": "Leans right"
+      "right": "Leans right",
+      "unrated": "Not rated"
     },
     "preview": "Preview",
     "openArticle": "Open this article at {source}",
@@ -448,7 +452,7 @@
     "quietWeekBody": "No bill has cleared the bar for an urgent call right now — a higher bar than making the news. Check back soon, or browse everything moving through Congress.",
     "dataStaleTitle": "Data check needed",
     "dataStaleBody": "We can't confirm what's most urgent right now — our last successful data check was {date}. This isn't a quiet week, it's a stale one.",
-    "staleNote": "Our last successful data check was {date} — newer activity in Congress may not be shown yet."
+    "staleNote": "newer activity in Congress may not be shown yet"
   },
   "embed": {
     "frameTitle": "Your representatives",
