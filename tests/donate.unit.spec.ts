@@ -11,10 +11,11 @@ import { DONATE_URL } from '../lib/site';
  * react-dom/server can't render Oravan's own components here, and a
  * second `next build` under a different constant is out of scope for a
  * single test run (see tests/donate.spec.ts for what IS exercised live:
- * today's real "dark" behavior). This test instead pins the two
- * requirements that make flipping DONATE_URL a genuine one-line change:
- * the constant is null today, and every gated surface reads that exact
- * constant with no separate flag to keep in sync.
+ * today's real "lit" behavior). This test instead pins the two
+ * requirements that keep the donate wiring a one-constant change:
+ * the constant is the live Stripe payment link (lit 2026-07-18), and
+ * every gated surface reads that exact constant with no separate flag
+ * to keep in sync.
  *
  * History: the HCB fiscal-sponsorship application was denied 2026-07-15
  * (teen-builds-only policy), so the former DonateSupport section and its
@@ -24,8 +25,11 @@ import { DONATE_URL } from '../lib/site';
  */
 
 test.describe('DONATE_URL wiring (§6)', () => {
-  test('is dark today: null, not merely falsy or empty-string', () => {
-    expect(DONATE_URL).toBeNull();
+  test('is lit: the exact live Stripe payment link, https, link-out only', () => {
+    // Pinned to the exact URL (not just "some string") so a typo'd or
+    // test-mode link can't ship: this is the live "Support Oravan"
+    // custom-amount payment link minted 2026-07-18.
+    expect(DONATE_URL).toBe('https://buy.stripe.com/00w8wIcX74px0CH8EJ8k804');
   });
 
   test('Footer gates its funding line and Donate link on the DONATE_URL default, not a hardcoded value', () => {

@@ -568,7 +568,10 @@
     "docsFeedRssLabel": "Feed RSS",
     "docsTosTitle": "Términos del servicio",
     "docsTosBody": "El uso institucional y comercial de estos widgets — planes Gratuito, Pro, Sin fines de lucro y Red por igual — se rige por unos Términos del servicio distintos de los que cubren el sitio gratuito para la ciudadanía.",
-    "docsTosLinkText": "Lee los Términos del servicio para widgets"
+    "docsTosLinkText": "Lee los Términos del servicio para widgets",
+    "docsManageTitle": "Gestiona tu suscripción",
+    "docsManageBody": "Si tienes un plan de pago, puedes actualizar tu método de pago, descargar facturas y cancelar en cualquier momento desde el portal de facturación seguro de Stripe — inicia sesión allí con el correo que usaste al pagar. Oravan no guarda ninguna cuenta ni datos de pago.",
+    "docsManageLinkText": "Abre el portal de facturación"
   },
   "embedsTerms": {
     "title": "Términos del servicio para widgets",
