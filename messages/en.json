@@ -64,7 +64,11 @@
     "whyCta": "Read why calling works",
     "privacyTitle": "Private by design",
     "privacyBody": "No sign-up, no cookies that follow you, no political profile stored on any server. Everything personal lives in your browser, and you can erase it with one tap.",
-    "privacyCta": "Read our privacy promise"
+    "privacyCta": "Read our privacy promise",
+    "supportTitle": "Free for everyone. Funded by people who use it.",
+    "supportBody": "No ads, no trackers, no profiles — what you read, where you stand, and who you call stays in your browser, never on our servers. Reader support pays for the hosting and data that keep it that way.",
+    "supportCta": "Support Oravan",
+    "supportNote": "Personal support — not tax-deductible."
   },
   "reps": {
     "title": "Your representatives",

@@ -62,12 +62,23 @@ test.describe('DONATE_URL wiring (§6)', () => {
     expect(page).not.toMatch(/<form/i);
   });
 
+  test('the homepage support band gates on the same DONATE_URL constant - no second flag', () => {
+    const page = readFileSync('app/[locale]/page.tsx', 'utf8');
+    expect(page).toContain("import { DONATE_URL, SITE_ORIGIN } from '@/lib/site'");
+    expect(page).toContain('{DONATE_URL && (');
+    expect(page).toContain("t('supportCta')");
+    expect(page).toContain("t('supportNote')");
+    expect(page).toContain('target="_blank"');
+    expect(page).toContain('rel="noopener noreferrer"');
+  });
+
   test('no partisan-rail processor is named anywhere near the donate surfaces (§6 hard exclusion)', () => {
     const forbidden = /actblue|winred|anedot/i;
     for (const file of [
       'lib/site.ts',
       'components/Footer.tsx',
       'app/[locale]/about/page.tsx',
+      'app/[locale]/page.tsx',
     ]) {
       expect(readFileSync(file, 'utf8')).not.toMatch(forbidden);
     }
