@@ -113,6 +113,21 @@ test.describe('finalizeBrandTheme', () => {
     expect(finalizeBrandTheme({ surface: '#ffffff', ink: '#000000' })).toBeNull(); // accent missing
   });
 
+  test('3-digit hex is expanded to #rrggbb (so the color-input swatch is not black)', () => {
+    const result = finalizeBrandTheme({
+      surface: '#fff',
+      ink: '#111',
+      accent: '#0af',
+      radius: 'soft',
+      font: 'system',
+      mode: 'light',
+    });
+    expect(result).not.toBeNull();
+    expect(result!.theme.surface).toBe('#ffffff');
+    expect(result!.theme.ink).toBe('#111111');
+    expect(result!.theme.accent).toBe('#00aaff');
+  });
+
   test('junk enums fall back to defaults instead of failing the whole theme', () => {
     const result = finalizeBrandTheme({
       surface: '#ffffff',

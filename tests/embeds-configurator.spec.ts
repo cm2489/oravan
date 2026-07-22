@@ -411,13 +411,14 @@ test.describe('match your site (mocked /api/brand)', () => {
 /*
  * The host-page mockup preview (brand-preview build): the live preview is
  * always a themed fake host page (newsroom / library / advocacy / generic)
- * with the widget embedded, switchable via a radiogroup. Painted in the
- * current effective colors; after a match, in the tenant's exact palette.
+ * with the widget embedded, switchable via aria-pressed toggle buttons in a
+ * labeled group. Painted in the current effective colors; after a match, in
+ * the tenant's exact palette.
  */
 test.describe('host-page mockup preview', () => {
   test('the archetype switcher renders all four contexts and swaps content', async ({ page }) => {
     await page.goto('/embeds');
-    const group = page.getByRole('radiogroup', { name: en.embeds.mockupLegend });
+    const group = page.getByRole('group', { name: en.embeds.mockupLegend });
     await expect(group).toBeVisible();
     for (const label of [
       en.embeds.mockupGeneric,
@@ -425,13 +426,19 @@ test.describe('host-page mockup preview', () => {
       en.embeds.mockupLibrary,
       en.embeds.mockupAdvocacy,
     ]) {
-      await expect(group.getByRole('radio', { name: label })).toBeVisible();
+      await expect(group.getByRole('button', { name: label })).toBeVisible();
     }
-    // Default is newsroom → its headline shows; switching to advocacy swaps it.
+    // Default newsroom is pressed; its headline shows; advocacy swaps it.
+    await expect(
+      group.getByRole('button', { name: en.embeds.mockupNewsroom })
+    ).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText(en.embeds.mockupNewsHeadline)).toBeVisible();
-    await group.getByRole('radio', { name: en.embeds.mockupAdvocacy }).click();
+    await group.getByRole('button', { name: en.embeds.mockupAdvocacy }).click();
     await expect(page.getByRole('heading', { name: en.embeds.mockupAdvocacyHeading })).toBeVisible();
     await expect(page.getByText(en.embeds.mockupNewsHeadline)).toHaveCount(0);
+    // The switcher buttons meet the 44px touch-target bar.
+    const box = await group.getByRole('button', { name: en.embeds.mockupAdvocacy }).boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
   });
 
   test('the widget iframe renders inside the mockup, still themed by the controls', async ({
@@ -445,9 +452,7 @@ test.describe('host-page mockup preview', () => {
 
   test('ES: the mockup switcher and newsroom content render in Spanish', async ({ page }) => {
     await page.goto('/es/embeds');
-    await expect(
-      page.getByRole('radiogroup', { name: es.embeds.mockupLegend })
-    ).toBeVisible();
+    await expect(page.getByRole('group', { name: es.embeds.mockupLegend })).toBeVisible();
     await expect(page.getByText(es.embeds.mockupNewsHeadline)).toBeVisible();
   });
 });

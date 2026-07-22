@@ -132,7 +132,58 @@ test.describe('exact-font signals', () => {
   });
 });
 
+test.describe('darkBackground uses the first/default body background, not a vote', () => {
+  test('a light site with a dark prefers-color-scheme override stays light', () => {
+    const html = `<title>X</title><style>
+      body { background: #ffffff; color: #111; }
+      @media (prefers-color-scheme: dark) { body { background: #111111; } }
+    </style>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.darkBackground).toBe(false);
+  });
+
+  test('a light HTML verdict survives a merge whose stylesheet has no body rule', () => {
+    const base = extractFromHtml(
+      '<title>X</title><meta name="theme-color" content="#0a0a0a"><style>body{background:#fff}</style>',
+      new URL('https://x.example/')
+    );
+    expect(base.darkBackground).toBe(false); // body#fff beats the dark theme-color
+    const merged = mergeCssSignals(base, 'a { color: #0a0a0a }'); // no body rule
+    expect(merged.darkBackground).toBe(false); // must NOT flip to dark via theme-color
+  });
+});
+
 test.describe('mergeCssSignals', () => {
+  test('a confirmed body font from the HTML pass is not overwritten by a frequency guess', () => {
+    const base = extractFromHtml(
+      '<title>X</title><style>body{font-family:Georgia, serif}</style>',
+      new URL('https://x.example/')
+    );
+    expect(base.bodyFontFamily).toBe('Georgia, serif');
+    // Merge a stylesheet with NO body rule but a frequent icon-font family.
+    const merged = mergeCssSignals(
+      base,
+      '.i1{font-family:"Icons"}.i2{font-family:"Icons"}.i3{font-family:"Icons"}'
+    );
+    expect(merged.bodyFontFamily).toBe('Georgia, serif'); // confirmed font wins
+  });
+
+  test('HTML entities in an href/title are decoded (webfont link + site name)', () => {
+    const c = extractFromHtml(
+      `<title>AT&amp;T Civic Hub</title>
+       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora&amp;display=swap">`,
+      new URL('https://att.example/')
+    );
+    expect(c.siteName).toBe('AT&T Civic Hub');
+    expect(c.webfontHref).toBe('https://fonts.googleapis.com/css2?family=Lora&display=swap');
+  });
+
+  test('a page of thousands of malformed tags extracts in well under a second (ReDoS guard)', () => {
+    const bomb = ('<style>' + 'x'.repeat(20)).repeat(40000) + '<meta '.repeat(40000);
+    const t = Date.now();
+    expect(() => extractFromHtml(bomb, new URL('https://x.example/'))).not.toThrow();
+    expect(Date.now() - t).toBeLessThan(1000);
+  });
   test('linked-CSS-only site: colors arrive via the merge, dark stays false', () => {
     const base = extractFromHtml(
       '<title>Linked Only</title><link rel="stylesheet" href="/css/main.css">',

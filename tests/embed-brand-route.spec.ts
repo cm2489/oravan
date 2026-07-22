@@ -50,6 +50,21 @@ test('missing / non-string / oversized url -> 400 bad_request', async ({ request
   }
 });
 
+test('a bare JSON null / array / primitive body -> 400, never a 500 TypeError', async ({
+  request,
+}) => {
+  // req.json() resolves these without throwing; reading .url off them must not
+  // crash the route (which would also produce a server error log).
+  for (const raw of ['null', '[1,2,3]', '"just-a-string"', '42']) {
+    const res = await request.post('/api/brand', {
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': nextIp() },
+      data: raw,
+    });
+    expect(res.status(), raw).toBe(400);
+    expect(await res.json(), raw).toEqual({ error: 'bad_request' });
+  }
+});
+
 test('SSRF guard: private/loopback/metadata/localhost/userinfo/port targets are refused with 400', async ({
   request,
 }) => {

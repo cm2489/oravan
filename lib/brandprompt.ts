@@ -94,6 +94,13 @@ export function parseBrandResponse(text: string): Record<string, unknown> | null
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' ? value : undefined;
 
+/** Expand a validated `#rgb` to `#rrggbb`; a 6-digit value is returned as-is. */
+function expandHex(hex: string): string {
+  return hex.length === 4
+    ? '#' + [...hex.slice(1)].map((c) => c + c).join('')
+    : hex;
+}
+
 /**
  * Fail-closed finalization: every model-suggested value through the exact
  * widget-boundary validators, then the ONE place in the system that repairs
@@ -106,10 +113,18 @@ export function finalizeBrandTheme(
 ): { theme: BrandTheme; adjusted: boolean } | null {
   if (!raw) return null;
 
-  const surface = safeSurface(asString(raw.surface));
-  const accent = safeAccent(asString(raw.accent));
-  let ink = safeInk(asString(raw.ink));
-  if (!surface || !ink || !accent) return null;
+  const rawSurface = safeSurface(asString(raw.surface));
+  const rawAccent = safeAccent(asString(raw.accent));
+  const rawInk = safeInk(asString(raw.ink));
+  if (!rawSurface || !rawInk || !rawAccent) return null;
+
+  // Expand #rgb → #rrggbb. The validators accept 3-digit hex, but the
+  // configurator's <input type="color"> swatches only accept #rrggbb and
+  // sanitize a 3-digit value to #000000 (black) — so a model answer of "#fff"
+  // would show a black swatch while the preview/snippet used white.
+  const surface = expandHex(rawSurface);
+  const accent = expandHex(rawAccent);
+  let ink = expandHex(rawInk);
 
   let adjusted = false;
   if (contrastRatio(ink, surface) < 4.5) {

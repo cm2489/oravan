@@ -127,6 +127,10 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     setMatchStatus('loading');
     setMatchedSite(null);
     setAdjusted(false);
+    // Clear the previous site's exact typeface too, or a failed re-match would
+    // leave site A's font/webfont painting the mockup chrome under site B.
+    setPreviewFont(undefined);
+    setPreviewWebfont(undefined);
     try {
       const res = await fetch('/api/brand', {
         method: 'POST',
@@ -632,20 +636,17 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
             {/* Preview-context switcher: the live preview is always a themed
                 host-page mockup with the real widget embedded in it, so it
                 reads as "on their site," not a bare widget on an Oravan card.
-                The switcher is a radiogroup over the four archetypes. */}
-            <div
-              role="radiogroup"
-              aria-label={t('mockupLegend')}
-              className="mt-2 flex flex-wrap gap-1.5"
-            >
+                These are aria-pressed toggle buttons (the widget's own toggle
+                pattern) — NOT role=radio, which would promise arrow-key group
+                navigation + a single tab stop this doesn't implement. */}
+            <div role="group" aria-label={t('mockupLegend')} className="mt-2 flex flex-wrap gap-1.5">
               {MOCKUP_ARCHETYPES.map((key) => (
                 <button
                   key={key}
                   type="button"
-                  role="radio"
-                  aria-checked={mockup === key}
+                  aria-pressed={mockup === key}
                   onClick={() => setMockup(key)}
-                  className={`min-h-[36px] rounded-control border px-3 text-xs font-semibold ${
+                  className={`min-h-[44px] rounded-control border px-3 text-xs font-semibold ${
                     mockup === key
                       ? 'border-ink bg-ink text-paper'
                       : 'border-line bg-surface text-ink hover:border-ink/40'

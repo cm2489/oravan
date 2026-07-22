@@ -50,6 +50,12 @@ export interface BrandCandidates {
 }
 
 const MAX_INPUT_BYTES = 1_572_864; // defensive re-cap; the fetcher already caps
+// Per-tag-kind scan caps — a real homepage has a handful of each; the caps
+// just bound work on adversarial input (thousands of tags).
+const MAX_META_TAGS = 400;
+const MAX_LINK_TAGS = 400;
+const MAX_STYLE_BLOCKS = 30;
+const MAX_STYLE_BLOCK_BYTES = 262_144;
 const TOP_COLORS = 12;
 const TOP_FONTS = 8;
 const TOP_RADII = 5;
@@ -79,15 +85,96 @@ function normalizeFontRaw(raw: string): string {
   return out.replace(/!important/gi, '').replace(/\s+/g, ' ').trim().slice(0, 160);
 }
 
-/** All attributes of one HTML tag, lowercased keys, entity-light values. */
+/**
+ * Iterate opening tags `<name ...>` linearly via indexOf — NOT a regex, and
+ * hard-capped. A bounded-lazy regex like
+ * `<style\b[^>]{0,1024}>([\s\S]{0,262144}?)<\/style` is O(n²) on adversarial
+ * input (measured: ~25s on a 1.5MB page of unclosed `<style>` openings), a
+ * real CPU-DoS since the fetched homepage is attacker-submittable. This scans
+ * each `<name` occurrence once, up to `maxCount` of them — real pages have a
+ * handful of meaningful meta/link/style tags, so the cap costs nothing and
+ * bounds the total work regardless of input.
+ *
+ * `fn` receives the opening element and `afterOpen` (index just past its `>`),
+ * and may RETURN an index to resume scanning from — so a <style> handler that
+ * consumed a block of content advances past it instead of re-triggering on
+ * every nested `<style>` inside.
+ */
+function forEachOpenTag(
+  doc: string,
+  name: string,
+  maxTagLen: number,
+  maxCount: number,
+  fn: (openTag: string, afterOpen: number) => number | void
+): void {
+  const needle = '<' + name;
+  let i = 0;
+  let count = 0;
+  let scans = 0;
+  // Cap START positions examined too, not just successful fn calls — a page of
+  // thousands of MALFORMED `<meta` (no closing `>`) never calls fn, so without
+  // this the loop would examine them all.
+  const maxScans = maxCount * 8;
+  while (count < maxCount && scans < maxScans && (i = doc.indexOf(needle, i)) !== -1) {
+    scans++;
+    const nameEnd = i + needle.length;
+    const next = doc[nameEnd];
+    // Boundary check (the old `\b`): the char after the name must end it, so
+    // `<link` matches but `<linkx` doesn't.
+    if (next === undefined || next === '>' || next === '/' || /\s/.test(next)) {
+      // Window the `>` search to maxTagLen (a slice) so a tag with no closing
+      // `>` costs O(maxTagLen), never a scan to end-of-document.
+      const rel = doc.slice(nameEnd, nameEnd + maxTagLen + 1).indexOf('>');
+      if (rel !== -1) {
+        const end = nameEnd + rel;
+        count++;
+        const resume = fn(doc.slice(i, end + 1), end + 1);
+        i = typeof resume === 'number' ? resume : end + 1;
+        continue;
+      }
+    }
+    i = nameEnd;
+  }
+}
+
+/** All attributes of one HTML tag, lowercased keys, entity-decoded values. */
 function tagAttrs(tag: string): Map<string, string> {
   const attrs = new Map<string, string>();
   const re = /([a-zA-Z][\w:-]{0,63})\s*=\s*(?:"([^"]{0,2048})"|'([^']{0,2048})')/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(tag)) !== null) {
-    attrs.set(m[1].toLowerCase(), (m[2] ?? m[3] ?? '').trim());
+    attrs.set(m[1].toLowerCase(), decodeEntities((m[2] ?? m[3] ?? '').trim()));
   }
   return attrs;
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+};
+
+/**
+ * Decode the handful of HTML entities that actually matter for the signals we
+ * read: a well-formed page serializes `&` in a Google Fonts href as `&amp;`
+ * (so `family=Lora&amp;display=swap` would otherwise reach the mockup <link>
+ * verbatim and drop the second family), and a site name like `AT&amp;T` should
+ * render decoded. Downstream everything is re-validated (URL parse, hex regex,
+ * cleanFontFamily strips `<>{};`), so decoding introduces no injection surface.
+ */
+function decodeEntities(s: string): string {
+  if (!s.includes('&')) return s;
+  return s.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (whole, bodyRaw: string) => {
+    const b = bodyRaw.toLowerCase();
+    if (b[0] === '#') {
+      const code = b[1] === 'x' ? parseInt(b.slice(2), 16) : parseInt(b.slice(1), 10);
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+    }
+    return NAMED_ENTITIES[b] ?? whole;
+  });
 }
 
 function toHex6(r: number, g: number, b: number): string {
@@ -229,31 +316,35 @@ export function extractFromHtml(html: string, finalUrl: URL): BrandCandidates {
     }
   };
 
-  const metaRe = /<meta\b[^>]{0,4096}>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = metaRe.exec(doc)) !== null) {
-    const attrs = tagAttrs(m[0]);
+  forEachOpenTag(doc, 'meta', 4096, MAX_META_TAGS, (openTag) => {
+    const attrs = tagAttrs(openTag);
     const content = attrs.get('content');
-    if (!content) continue;
+    if (!content) return;
     if (attrs.get('property') === 'og:site_name' && !siteName) {
       siteName = content.slice(0, 80);
     }
     if (attrs.get('name') === 'theme-color' && !themeColor) {
       themeColor = normalizeCssColor(content) ?? undefined;
     }
-  }
+  });
 
   if (!siteName) {
-    const title = /<title[^>]{0,256}>([^<]{1,200})/i.exec(doc);
-    if (title) siteName = title[1].trim().slice(0, 80) || undefined;
+    const open = doc.search(/<title[\s>]/i);
+    if (open !== -1) {
+      const gt = doc.indexOf('>', open);
+      const lt = gt === -1 ? -1 : doc.indexOf('<', gt + 1);
+      if (gt !== -1) {
+        const text = doc.slice(gt + 1, lt === -1 ? gt + 1 + 200 : lt).slice(0, 200);
+        siteName = decodeEntities(text).trim().slice(0, 80) || undefined;
+      }
+    }
   }
 
-  const linkRe = /<link\b[^>]{0,4096}>/gi;
-  while ((m = linkRe.exec(doc)) !== null) {
-    const attrs = tagAttrs(m[0]);
+  forEachOpenTag(doc, 'link', 4096, MAX_LINK_TAGS, (openTag) => {
+    const attrs = tagAttrs(openTag);
     const rel = (attrs.get('rel') ?? '').toLowerCase();
     const href = attrs.get('href');
-    if (!href) continue;
+    if (!href) return;
     if (/\bstylesheet\b/.test(rel)) {
       // A cross-origin sheet from an allowlisted font CDN is a webfont link
       // (mockup-only); a same-host sheet is a signal source to fetch.
@@ -276,12 +367,18 @@ export function extractFromHtml(html: string, finalUrl: URL): BrandCandidates {
     } else if (/\bicon\b/.test(rel) && !iconUrl) {
       iconUrl = sameHostHttps(href);
     }
-  }
+  });
 
-  const styleRe = /<style\b[^>]{0,1024}>([\s\S]{0,262144}?)<\/style/gi;
-  while ((m = styleRe.exec(doc)) !== null) {
-    scanCss(m[1], signals);
-  }
+  forEachOpenTag(doc, 'style', 1024, MAX_STYLE_BLOCKS, (_openTag, afterOpen) => {
+    // Bound the close search to a window (a slice, so indexOf can't scan the
+    // whole doc for an absent `</style`), then RESUME past the consumed block
+    // so a `<style>…<style>…` bomb with no closes can't re-trigger per opening.
+    const windowEnd = Math.min(doc.length, afterOpen + MAX_STYLE_BLOCK_BYTES);
+    const rel = doc.slice(afterOpen, windowEnd).indexOf('</style');
+    const contentEnd = rel === -1 ? windowEnd : afterOpen + rel;
+    scanCss(doc.slice(afterOpen, contentEnd), signals);
+    return contentEnd;
+  });
   if (themeColor) signals.colors.add(themeColor, 3); // strong, author-declared signal
 
   return finalize(signals, { siteName, themeColor, logoUrl: appleIconUrl ?? iconUrl, stylesheets });
@@ -293,8 +390,9 @@ export function mergeCssSignals(candidates: BrandCandidates, cssText: string): B
   for (const { value, count } of candidates.colors) signals.colors.add(value, count);
   for (const { value, count } of candidates.fonts) signals.fonts.add(value, count);
   for (const { value, count } of candidates.radii) signals.radii.add(value, count);
-  if (candidates.darkBackground) signals.bodyBackgrounds.push('#000000');
   scanCss(cssText, signals);
+  // Carry the prior dark/light verdict as a boolean (finalize's `base`), NOT a
+  // synthetic '#000000' vote — a light verdict must survive the merge too.
   return finalize(signals, candidates);
 }
 
@@ -303,19 +401,29 @@ function finalize(
   base: Pick<
     BrandCandidates,
     'siteName' | 'themeColor' | 'logoUrl' | 'stylesheets' | 'bodyFontFamily' | 'webfontHref'
-  >
+  > & { darkBackground?: boolean }
 ): BrandCandidates {
-  const darkVotes = signals.bodyBackgrounds.filter(isDark).length;
+  // The FIRST body/html background is the page's default (a later
+  // `@media (prefers-color-scheme: dark)` override is conditional, not the
+  // default), so read [0] rather than vote-counting — otherwise a light site
+  // with a dark override ties and flips to dark. Fall back to a carried prior
+  // verdict (merge pass), then the theme-color hue.
+  const firstBg = signals.bodyBackgrounds[0];
   const darkBackground =
-    signals.bodyBackgrounds.length > 0
-      ? darkVotes * 2 >= signals.bodyBackgrounds.length
-      : base.themeColor
-        ? isDark(base.themeColor)
-        : false;
+    firstBg !== undefined
+      ? isDark(firstBg)
+      : base.darkBackground !== undefined
+        ? base.darkBackground
+        : base.themeColor
+          ? isDark(base.themeColor)
+          : false;
 
   // The exact body face: a body/html font-family declaration if we found one,
-  // else the most-frequent font-family overall, else whatever was carried in.
-  const bodyFontFamily = signals.bodyFonts[0] ?? cleanFontFamily(signals.fonts.top(1)[0]?.value ?? '') ?? base.bodyFontFamily;
+  // else the confirmed body font carried in from the HTML pass, else the
+  // most-frequent font-family (a weaker guess that must not beat a real
+  // body-rule value already detected).
+  const bodyFontFamily =
+    signals.bodyFonts[0] ?? base.bodyFontFamily ?? cleanFontFamily(signals.fonts.top(1)[0]?.value ?? '');
   const webfontHref = signals.webfontHrefs[0] ?? base.webfontHref;
 
   return {

@@ -93,18 +93,28 @@ const CSS_FETCH = {
 
 export async function POST(req: NextRequest) {
   const ip = callerIp(req.headers);
-  if ((await limiter.isLimited(ip)) || (await dayLimiter.isLimited(GLOBAL_BUCKET))) {
+  // Per-IP limiter runs first and unconditionally — it bounds a single
+  // abusive caller regardless of what the request costs. The GLOBAL daily
+  // breaker is NOT checked here: it caps Anthropic SPEND, so consuming it on
+  // cache hits, bad requests, or failed fetches (all $0) would let cheap junk
+  // dark the feature for everyone. It's checked on the actual-spend path below.
+  if (await limiter.isLimited(ip)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
-  let body: { url?: unknown };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
+  // req.json() resolves `null` for a body of `null` (no throw), and can be any
+  // JSON value — read `url` only from a real object so a null/array/primitive
+  // body is a clean 400, never a TypeError → 500 (which would also log).
+  const rawUrl =
+    typeof body === 'object' && body !== null ? (body as { url?: unknown }).url : undefined;
 
-  const normalized = normalizeBrandUrl(body.url);
+  const normalized = normalizeBrandUrl(rawUrl);
   if (!normalized.ok) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
@@ -119,11 +129,19 @@ export async function POST(req: NextRequest) {
   }
 
   let candidates: BrandCandidates = extractFromHtml(page.text, page.finalUrl);
-  for (const stylesheetUrl of candidates.stylesheets) {
-    // Same-origin was enforced at extraction; each fetch re-guards anyway.
-    // A failed stylesheet is just a skipped signal, never an error.
-    const css = await fetchGuarded(stylesheetUrl, CSS_FETCH);
-    if (css.ok) candidates = mergeCssSignals(candidates, css.text);
+  // Same-origin was enforced at extraction and each fetch re-guards anyway.
+  // Fetch the (≤2) stylesheets concurrently, then merge in order so a slow
+  // second sheet doesn't add its whole timeout to the first's tail latency.
+  const sheets = await Promise.all(candidates.stylesheets.map((u) => fetchGuarded(u, CSS_FETCH)));
+  for (const css of sheets) {
+    if (css.ok) candidates = mergeCssSignals(candidates, css.text); // a failed sheet is just a skipped signal
+  }
+
+  // The daily spend breaker gates the one expensive step (the Anthropic call).
+  // Reaching here means a real generation is about to happen, so this is where
+  // the ~$2/day cap belongs — counting attempts, not cheap no-ops.
+  if (await dayLimiter.isLimited(GLOBAL_BUCKET)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
   try {

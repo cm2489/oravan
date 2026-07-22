@@ -108,6 +108,24 @@ test('a themed widget shows no Oravan-palette leak: note box re-tints, toggle te
   expect(toggleText).toBe('rgb(255, 255, 255)');
 });
 
+test('accent-only theme keeps a visible focus ring (falls back to ink, not the raw accent)', async ({
+  page,
+}) => {
+  // A dark-navy accent on the light default surface: the focus ring must not
+  // become the near-invisible accent. --oravan-focus is only emitted when the
+  // accent is confirmed to contrast, so accent-only must fall back to ink.
+  await page.goto('/embed/rep-lookup?locale=en&accent=%2318203a');
+  const html = page.locator('html');
+  const focus = await html.evaluate((el) => getComputedStyle(el).getPropertyValue('--_focus').trim());
+  const ink = await html.evaluate((el) => getComputedStyle(el).getPropertyValue('--_ink').trim());
+  const accent = await html.evaluate((el) =>
+    getComputedStyle(el).getPropertyValue('--_accent').trim()
+  );
+  // Focus resolves to ink (visible on the surface), not the supplied accent.
+  expect(focus).toBe(ink);
+  expect(focus).not.toBe(accent);
+});
+
 test('the UN-themed default widget keeps its amber note box (Oravan default look preserved)', async ({
   page,
 }) => {

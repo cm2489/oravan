@@ -24,7 +24,13 @@
   --_ink: var(--oravan-ink, #2a2318);
   --_accent: var(--oravan-accent, #82632a);
   --_accent-ink: var(--oravan-accent-ink, #fbf8f0);
-  --_focus: var(--oravan-focus, var(--_accent));
+  /* Focus ring falls back to INK, not accent: the server only emits
+     --oravan-focus once it has confirmed the accent contrasts on the surface
+     (>=3:1). With just an accent set (auto mode — the common case), the raw
+     accent could be near-invisible on the surface, silently killing the
+     always-visible focus outline. Ink always contrasts with the surface (it's
+     the body text), so the ring stays visible. */
+  --_focus: var(--oravan-focus, var(--_ink));
   /* Static fallbacks for engines without color-mix. */
   --_line: rgba(24, 32, 58, 0.15);
   --_line-strong: rgba(24, 32, 58, 0.25);
