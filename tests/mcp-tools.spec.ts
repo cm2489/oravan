@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
-import syncState from '../data/sync-state.json';
-import bills from '../data/bills.json';
-import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
+import { expectDataStaleAt, movingSlugsAt, stableAcross } from './corpus';
 import { callTool } from './helpers';
 
 /*
@@ -222,51 +220,63 @@ test.describe('search_bills', () => {
   });
 });
 
-// This corpus's freshest last_action_date trails "today" by enough that no
-// bill currently clears the S3 absolute urgency floor (pinned independently
-// against the real data at authoring time) - the real, undoctored honesty
-// case the spec calls for, not a mock. `data.bills` is empty either way;
-// which of quiet_week/data_stale that empty result carries is corpus-derived
-// below (mirroring lib/freshness-state.ts's emptyStateVerdict exactly)
-// rather than hardcoded, so this test keeps tracking the site's real
-// behavior as the nightly sync rewrites data/ instead of silently drifting
-// from it.
-//
-// 2026-07-16 (audit §5 item 4): this invariant legitimately changed.
-// emptyStateVerdict used to look ONLY at checkedAt/lastRun ("did the job
-// run"), so this test could hardcode quiet_week=true/data_stale=false once
-// and trust it. Now the sync cursor and the corpus's own newest activity
-// independently gate the verdict too, and both are real fields the pipeline
-// can leave stale even on nights lastRun itself looks fresh (the exact bug
-// the audit found) - so the expectation has to be computed from the same
-// three signals, not assumed.
-const newestActionDate = (bills as { last_action_date: string | null }[]).reduce(
-  (max, b) => (b.last_action_date && b.last_action_date > max ? b.last_action_date : max),
-  ''
-);
-const expectDataStale =
-  freshnessState(syncState.lastRun) !== 'fresh' ||
-  freshnessAgeDays(syncState.lastSync) > FRESHNESS_DEAD_WINDOW_DAYS ||
-  freshnessAgeDays(newestActionDate) > FRESHNESS_DEAD_WINDOW_DAYS;
-
+/*
+ * whats_moving branches on the live corpus by design: a hot legislative week
+ * must list exactly the Act-now-recent bills, and an empty week must carry
+ * the honest quiet_week/data_stale verdict - never padding, never a false
+ * quiet. The expectation is fully corpus-derived via tests/corpus.ts (the
+ * same idiom freshness.spec.ts uses), NOT pinned to an empty corpus: this
+ * test was originally authored against a chronically stale corpus and
+ * hardcoded `bills: []`, which turned deterministically red the first
+ * genuinely hot week after the 2026-07 pipeline repairs (#88/#90) landed
+ * H.R. 6955 at floor-vote freshness - the site was right, the pin was wrong.
+ *
+ * 2026-07-16 (audit §5 item 4) history, still load-bearing: the
+ * quiet_week/data_stale split reads THREE signals (lastRun, the sync
+ * cursor, and the corpus's own newest activity - lib/freshness-state.ts's
+ * emptyStateVerdict), so the empty-week branch computes all three rather
+ * than assuming quiet_week.
+ */
 test.describe('whats_moving', () => {
-  test('honest empty state matches the real corpus\'s freshness signals - never padded, never falsely quiet', async ({ request }) => {
+  const MOVING_STABLE = stableAcross((at) => [movingSlugsAt(at), expectDataStaleAt(at)]);
+
+  test('mirrors the corpus exactly: a hot week lists the Act-now-recent bills, an empty week is honest - never padded, never falsely quiet', async ({ request }) => {
+    test.skip(!MOVING_STABLE, 'corpus sits at an urgency/recency boundary - expectation could flip between build and assert');
+    const expected = movingSlugsAt(Date.now());
+    const expectDataStale = expectDataStaleAt(Date.now());
+
     const result = await callTool(request, 'whats_moving', { locale: 'en' });
     const data = result.structuredContent!;
-    expect(data.bills).toEqual([]);
-    expect(data.quiet_week).toBe(!expectDataStale);
-    expect(data.data_stale).toBe(expectDataStale);
+    const returned = data.bills as Array<{ slug: string; ai_generated: boolean }>;
+    expect(returned.map((b) => b.slug)).toEqual(expected);
+    if (expected.length === 0) {
+      expect(data.quiet_week).toBe(!expectDataStale);
+      expect(data.data_stale).toBe(expectDataStale);
+    } else {
+      // A populated result needs no verdict - and every listed bill cleared
+      // getTopActions' ai_headline gate, so each carries the AI label.
+      expect(data.quiet_week).toBe(false);
+      expect(data.data_stale).toBe(false);
+      for (const b of returned) expect(b.ai_generated).toBe(true);
+    }
     expect(data.days).toBe(7);
-    // An empty, non-AI result carries no AI label - nothing to disclose.
-    expectMeta(data.meta as Record<string, unknown>, '/', false);
+    // Empty result = non-AI, no label to disclose; any listed bill = AI teasers.
+    expectMeta(data.meta as Record<string, unknown>, '/', expected.length > 0);
   });
 
   test('never silently backfills to hit a limit or ignore a topic filter', async ({ request }) => {
-    const result = await callTool(request, 'whats_moving', { topic: 'housing', days: 3, locale: 'es' });
+    const args = { topic: 'housing', days: 3 } as const;
+    test.skip(
+      !stableAcross((at) => movingSlugsAt(at, args)),
+      'corpus sits at an urgency/recency boundary - expectation could flip between build and assert'
+    );
+    const expected = movingSlugsAt(Date.now(), args);
+
+    const result = await callTool(request, 'whats_moving', { ...args, locale: 'es' });
     const data = result.structuredContent!;
-    expect(data.bills).toEqual([]);
+    expect((data.bills as Array<{ slug: string }>).map((b) => b.slug)).toEqual(expected);
     expect(data.topic).toBe('housing');
-    expectMeta(data.meta as Record<string, unknown>, '/es', false, 'es');
+    expectMeta(data.meta as Record<string, unknown>, '/es', expected.length > 0, 'es');
   });
 });
 

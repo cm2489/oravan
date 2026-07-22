@@ -318,6 +318,11 @@ test.describe('match your site (mocked /api/brand)', () => {
   // its handler fires no fetch and leaves no replayable DOM effect, so we
   // retry fill+click until the /api/brand request actually goes out. Takes
   // the locale's messages so the ES flow reuses the same guard.
+  // 2026-07-22: widened from 1500ms/10s after CI webkit (both projects, run
+  // 29889610791) exhausted every retry - under parallel-worker load the
+  // click→fetch gap alone can exceed 1.5s, and slow hydration eats most of
+  // a 10s budget. If this STILL flakes, the next step is a hydration beacon
+  // (helpers.ts's waitForFeedHydrated idiom), not more timeout.
   async function submitUrl(
     page: import('@playwright/test').Page,
     messages: typeof en | typeof es = en
@@ -325,10 +330,10 @@ test.describe('match your site (mocked /api/brand)', () => {
     const button = page.getByRole('button', { name: messages.embeds.matchSiteCta });
     await expect(async () => {
       await page.getByLabel(messages.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
-      const request = page.waitForRequest('**/api/brand', { timeout: 1500 });
+      const request = page.waitForRequest('**/api/brand', { timeout: 3000 });
       await button.click();
       await request; // rejects if the click was lost → expect.toPass re-issues it
-    }).toPass({ timeout: 10000 });
+    }).toPass({ timeout: 20_000 });
   }
 
   test('a successful match autofills every theme control and the snippet', async ({ page }) => {

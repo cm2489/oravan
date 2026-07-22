@@ -1,9 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import syncState from '../data/sync-state.json';
-import bills from '../data/bills.json';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { bandFloors } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
+import { anyNowAt, anyTopAt, newestActionDate, stableAcross } from './corpus';
+import { waitForFeedHydrated } from './helpers';
 
 /*
  * KTD-1 / KTD-2 / AE3. The stamp is baked at build time from getFreshness()
@@ -22,20 +21,19 @@ import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-s
 const fmt = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(iso));
 
-// Mirror lib/data.ts scoreActiveBills + getTopActions, using the same shared
-// modules the site imports (the ONE urgency curve + the ONE floor function).
-// effectiveUrgency reads the real clock — the same clock the server used
-// when the suite's `npm run build` baked these pages minutes ago.
-type CorpusBill = { status: string; last_action_date: string | null; ai_headline: string | null };
-const active = (bills as CorpusBill[]).filter((b) => !TERMINAL_STATUSES.has(b.status));
-const effs = active.map((b) => effectiveUrgency(b.status, b.last_action_date)).sort((a, b) => b - a);
-const floors = bandFloors(effs);
+// The corpus mirror (scoreActiveBills + getTopActions on the same shared
+// modules the site imports) lives in tests/corpus.ts — one copy shared with
+// funnel.spec.ts / feed.spec.ts / mcp-tools.spec.ts, drift-pinned by
+// corpus.unit.spec.ts. Evaluated at the real clock — the same clock the
+// server used when the suite's `npm run build` baked these pages minutes ago.
 /** Any active bill clears the "Act now" floor (site: hasActNow / getTeasers' now band). */
-const anyNow = active.some((b) => effectiveUrgency(b.status, b.last_action_date) >= floors.nowFloor);
+const anyNow = anyNowAt(Date.now());
 /** Any DECODED active bill clears it (site: getTopActions — the homepage cards). */
-const anyTop = active.some(
-  (b) => b.ai_headline && effectiveUrgency(b.status, b.last_action_date) >= floors.nowFloor
-);
+const anyTop = anyTopAt(Date.now());
+/** The build baked one branch of the tri-state; when the corpus sits at a
+ *  scoring boundary the assert-time recomputation can disagree with it —
+ *  skip the branch-dependent tests then, never gamble (tests/corpus.ts). */
+const CORPUS_STABLE = stableAcross((at) => [anyNowAt(at), anyTopAt(at)]);
 
 const LAST_RUN = new Date(syncState.lastRun).getTime();
 const FRESH_CLOCK = LAST_RUN + 60 * 60 * 1000; // 1h after the last check
@@ -44,15 +42,13 @@ const DEAD_CLOCK = LAST_RUN + 30 * 86_400_000; // past the 21d dead window
 
 // 2026-07-16 (audit §5 item 4): emptyStateVerdict no longer looks only at
 // lastRun/checkedAt — the sync cursor (lastSync/completeThrough) and the
-// corpus's own newest last_action_date now independently gate the verdict
-// too (lib/freshness-state.ts). Mirror that here, corpus-derived exactly
-// like anyNow/anyTop above, rather than hardcoding today's specific data —
-// so these tests keep tracking the site's real behavior as the nightly sync
-// rewrites data/ instead of silently drifting from it.
-const newestActionDate = (bills as CorpusBill[]).reduce(
-  (max, b) => (b.last_action_date && b.last_action_date > max ? b.last_action_date : max),
-  ''
-);
+// corpus's own newest last_action_date (tests/corpus.ts's newestActionDate)
+// now independently gate the verdict too (lib/freshness-state.ts). Mirror
+// that here, corpus-derived exactly like anyNow/anyTop above, rather than
+// hardcoding today's specific data — so these tests keep tracking the
+// site's real behavior as the nightly sync rewrites data/ instead of
+// silently drifting from it. Deterministic (fixed clock over static data),
+// so it needs no CORPUS_STABLE guard.
 /** Whether the empty-state verdict reads data_stale AT FRESH_CLOCK for a
  *  reason that has nothing to do with lastRun (which is fresh by
  *  construction at FRESH_CLOCK) — i.e. the cursor or the corpus's newest
@@ -97,6 +93,7 @@ test.describe('freshness stamp reads from sync-state via the shared accessor', (
 
 test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
   test('fresh clock: quiet week reads as quiet — and only on a truly quiet, genuinely current corpus', async ({ page }) => {
+    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
     const hydrationErrors = trackHydrationErrors(page);
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/');
@@ -129,6 +126,7 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
   });
 
   test('Spanish locale renders the same verdict in Spanish', async ({ page }) => {
+    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
     test.skip(anyNow, 'corpus not quiet this week — ES quiet-week copy not renderable');
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/es');
@@ -137,6 +135,7 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
   });
 
   test('stale clock: the empty slot says "data check needed", never "quiet"', async ({ page }) => {
+    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
     test.skip(anyNow, 'corpus not quiet this week — empty band not renderable');
     const hydrationErrors = trackHydrationErrors(page);
     await page.clock.setFixedTime(STALE_CLOCK);
@@ -148,6 +147,7 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
   });
 
   test('dead clock (>21d): still an honest stale message, still never "quiet"', async ({ page }) => {
+    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
     test.skip(anyNow, 'corpus not quiet this week — empty band not renderable');
     await page.clock.setFixedTime(DEAD_CLOCK);
     await page.goto('/');
@@ -158,8 +158,13 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
 
 test.describe('AE3: /bills "Act now" band mirrors the same tri-state', () => {
   test('unfiltered empty band shows the honest empty state; a filter never fakes one', async ({ page }) => {
+    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/bills');
+    // The search interaction below drives a controlled input — wedged if it
+    // fires before React attaches (tests/helpers.ts) — and the 2026-07-22 CI
+    // reds were exactly that lost fill on webkit. Wait it out up front.
+    await waitForFeedHydrated(page);
     const quietCard = page.getByRole('status').filter({ hasText: /Quiet week/ });
     const staleCard = page.getByRole('status').filter({ hasText: /Data check needed/ });
     if (!anyNow) {
