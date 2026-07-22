@@ -14,7 +14,7 @@ import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildSiteJsonLd } from '@/lib/jsonld';
-import { SITE_ORIGIN } from '@/lib/site';
+import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
 const STEPS = [
   { icon: MapPin, key: 1 },
@@ -206,6 +206,37 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </Link>
         </div>
       </section>
+
+      {/* §6 support band — gated on the same DONATE_URL constant as every
+          donate affordance (setting it back to null darkens all of them at
+          once). Link-out only, never a payment field here; copy leads with
+          the no-tracking mission, and the not-tax-deductible line is the
+          required truthful framing. Note color is ink-soft, not ink-faint:
+          ink-faint is only 4.33:1 on paper-deep — below AA. */}
+      {DONATE_URL && (
+        <section className="bg-paper-deep border-t border-line" aria-labelledby="support-title">
+          <div className="mx-auto max-w-5xl px-4 py-12 flex flex-wrap items-center justify-between gap-8">
+            <div className="max-w-prose">
+              <h2 id="support-title" className="font-display text-3xl font-bold">
+                {t('supportTitle')}
+              </h2>
+              <p className="mt-2 text-ink-soft">{t('supportBody')}</p>
+            </div>
+            <div>
+              <a
+                href={DONATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
+              >
+                {t('supportCta')}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </a>
+              <p className="mt-2 text-sm text-ink-soft">{t('supportNote')}</p>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

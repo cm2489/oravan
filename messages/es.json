@@ -64,7 +64,11 @@
     "whyCta": "Lee por qué llamar funciona",
     "privacyTitle": "Tu privacidad, por diseño",
     "privacyBody": "Sin registro, sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor. Todo lo personal vive en tu navegador y puedes borrarlo con un toque.",
-    "privacyCta": "Lee nuestra promesa de privacidad"
+    "privacyCta": "Lee nuestra promesa de privacidad",
+    "supportTitle": "Gratis para todos. Financiado por quienes lo usan.",
+    "supportBody": "Sin anuncios, sin rastreadores, sin perfiles — lo que lees, tu postura y a quién llamas se queda en tu navegador, nunca en nuestros servidores. El apoyo de los lectores paga el alojamiento y los datos que lo mantienen así.",
+    "supportCta": "Apoya a Oravan",
+    "supportNote": "Apoyo personal, no deducible de impuestos."
   },
   "reps": {
     "title": "Tus representantes",

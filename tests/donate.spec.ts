@@ -60,6 +60,24 @@ for (const [locale, prefix, messages] of [
       await expect(ask).toHaveAttribute('rel', 'noopener noreferrer');
     });
 
+    test('homepage support band renders the mission copy with a Stripe link-out', async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/`);
+      // Scoped to the band's own section: the footer CTA shares the same
+      // accessible name on the same page (strict-mode collision otherwise).
+      const band = page.locator('section[aria-labelledby="support-title"]');
+      await expect(
+        band.getByRole('heading', { name: messages.home.supportTitle })
+      ).toBeVisible();
+      await expect(band.getByText(messages.home.supportBody)).toBeVisible();
+      const cta = band.getByRole('link', { name: messages.home.supportCta });
+      await expect(cta).toBeVisible();
+      await expect(cta).toHaveAttribute('href', DONATE_URL!);
+      await expect(cta).toHaveAttribute('target', '_blank');
+      await expect(cta).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
     test('the About page content itself has no form fields or iframes (link-out only, per §6)', async ({
       page,
     }) => {

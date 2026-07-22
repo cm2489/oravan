@@ -28,15 +28,19 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             with a Support Oravan link the moment DONATE_URL is set - one
             constant, no separate flag, same pattern as the nav Donate link
             below. */}
-        <p className="max-w-prose">
+        <p className="max-w-prose flex flex-wrap items-center gap-3">
           {donateUrl ? (
             <>
-              {t('footer.fundingLive')}{' '}
+              <span>{t('footer.fundingLive')}</span>{' '}
+              {/* Outline-brass button: clearly interactive without shouting in
+                  the footer's quiet register (brass-deep on paper-deep is
+                  5.25:1 — AA). The louder solid-brass ask lives on the
+                  homepage support band. */}
               <a
                 href={donateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-ink"
+                className="inline-flex min-h-11 items-center rounded-control border border-brass px-4 font-semibold text-brass-deep hover:bg-brass-soft"
               >
                 {t('footer.fundingCta')}
               </a>
