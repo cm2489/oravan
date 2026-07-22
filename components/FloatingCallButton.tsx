@@ -44,8 +44,11 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
         hidden ? 'pointer-events-none translate-y-3 opacity-0' : 'opacity-100'
       }`}
     >
+      {/* Label at every width (2026-07 critique, unanimous): an icon-only
+          brass circle is ambiguous for exactly the nervous first-timer the
+          product serves — readable as "support line" or "dials immediately". */}
       <Phone className="h-5 w-5 flex-none" aria-hidden />
-      <span className="hidden sm:inline">{label}</span>
+      <span>{label}</span>
     </a>
   );
 }

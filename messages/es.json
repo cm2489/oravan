@@ -32,7 +32,7 @@
     "navShort": {
       "home": "Inicio",
       "bills": "Proyectos",
-      "reps": "Reps",
+      "reps": "Mis reps",
       "impact": "Impacto"
     }
   },
@@ -149,6 +149,7 @@
   },
   "bill": {
     "decoded": "En claro",
+    "aiChip": "Descifrado con IA",
     "aiDisclaimer": "Resumen generado por IA. Verifícalo con el texto oficial antes de actuar.",
     "officialTitle": "Título oficial",
     "statusLabel": "Estado",
@@ -178,6 +179,8 @@
     "rateLimited": "Has pedido varios guiones en poco tiempo. Respira y vuelve a intentarlo pronto.",
     "callTitle": "Haz tu llamada",
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
+    "switchboard": "Centralita del Capitolio",
+    "switchboardNote": "¿Sin código postal a mano? La centralita del Capitolio te conecta con cualquier oficina del Congreso.",
     "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
     "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje cuenta lo mismo. Menciona tu código postal para que sepan que eres su constituyente.",
@@ -291,12 +294,13 @@
   },
   "coverage": {
     "heading": "Cómo lo están cubriendo",
-    "subhead": "Reportajes reales sobre este proyecto de ley, etiquetados según la tendencia política de cada medio.",
+    "subhead": "Reportajes reales sobre este proyecto de ley, con la tendencia política de cada medio etiquetada cuando AllSides lo ha calificado.",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {
       "left": "Tiende a la izquierda",
       "center": "Centro",
-      "right": "Tiende a la derecha"
+      "right": "Tiende a la derecha",
+      "unrated": "Sin calificación"
     },
     "preview": "Vista previa",
     "openArticle": "Abrir este artículo en {source}",
@@ -448,7 +452,7 @@
     "quietWeekBody": "Ningún proyecto de ley necesita una llamada urgente en este momento — un umbral más alto que salir en las noticias. Vuelve pronto, o consulta todo lo que se mueve en el Congreso.",
     "dataStaleTitle": "Verificación pendiente",
     "dataStaleBody": "Todavía no podemos confirmar qué es más urgente — nuestra última verificación exitosa fue el {date}. Esto no es una semana tranquila: son datos desactualizados.",
-    "staleNote": "Nuestra última verificación exitosa de datos fue el {date} — es posible que actividad más reciente del Congreso aún no se muestre."
+    "staleNote": "es posible que actividad más reciente del Congreso aún no se muestre"
   },
   "embed": {
     "frameTitle": "Tus representantes",

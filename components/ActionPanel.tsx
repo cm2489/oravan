@@ -43,6 +43,8 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   // the trigger focus returns to when the dialog closes.
   const dialogRef = useRef<HTMLDialogElement>(null);
   const startCallRef = useRef<HTMLButtonElement>(null);
+  const callTitleRef = useRef<HTMLHeadingElement>(null);
+  const stanceRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // The dialog is mounted ONLY while open (see render below). Mounting it
   // whenever a script exists would put a second copy of the script, the
   // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
@@ -151,7 +153,14 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   // .close(), Escape closes it natively — fires onClose, which unmounts it.
   useEffect(() => {
     const dlg = dialogRef.current;
-    if (callOpen && dlg && !dlg.open) dlg.showModal();
+    if (callOpen && dlg && !dlg.open) {
+      dlg.showModal();
+      // First focus lands on the dialog's title, not the Close button: a
+      // screen reader at the highest-anxiety moment should hear "Make the
+      // call" and then the reassurance, never "Close" first (2026-07 a11y
+      // critique).
+      callTitleRef.current?.focus();
+    }
   }, [callOpen]);
 
   return (
@@ -161,16 +170,35 @@ export function ActionPanel({ slug, identifier, title }: Props) {
       </h2>
       <p className="mt-1 text-ink-soft">{t('actSub')}</p>
 
-      {/* Step 1 - stance */}
+      {/* Step 1 - stance. A real radio group, not three independent toggles:
+          exactly one stance can be active, and 2026-07's a11y critique found
+          aria-pressed here misdescribes that contract to screen readers.
+          Roving tabindex + arrow keys per the WAI-ARIA radio pattern; arrows
+          select as they move, same as clicking. */}
       <fieldset className="mt-6">
         <legend className="font-semibold">{t('stanceQ')}</legend>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {STANCES.map((s) => (
+        <div role="radiogroup" aria-label={t('stanceQ')} className="mt-3 flex flex-wrap gap-2">
+          {STANCES.map((s, i) => (
             <button
               key={s}
+              ref={(el) => {
+                stanceRefs.current[i] = el;
+              }}
               type="button"
+              role="radio"
+              aria-checked={stance === s}
+              tabIndex={(stance ?? STANCES[0]) === s ? 0 : -1}
               onClick={() => generate(s)}
-              aria-pressed={stance === s}
+              onKeyDown={(e) => {
+                let next: number | null = null;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % STANCES.length;
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + STANCES.length) % STANCES.length;
+                if (next != null) {
+                  e.preventDefault();
+                  stanceRefs.current[next]?.focus();
+                  generate(STANCES[next]);
+                }
+              }}
               disabled={loading}
               className={`rounded-control border-2 px-4 py-3 font-semibold transition-transform disabled:opacity-50 active:translate-y-px ${
                 stance === s
@@ -276,10 +304,11 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           className="m-auto max-h-[85dvh] w-[min(92vw,42rem)] overflow-y-auto rounded-card bg-surface p-5 shadow-lift backdrop:bg-night/70 md:p-7"
         >
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-display text-2xl font-bold">{t('callTitle')}</h3>
+            <h3 ref={callTitleRef} tabIndex={-1} className="font-display text-2xl font-bold outline-none">
+              {t('callTitle')}
+            </h3>
             <button
               type="button"
-              autoFocus
               onClick={closeCallModal}
               className="inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-control border border-ink/25 px-3 py-2 text-sm font-semibold hover:border-ink/60"
             >
@@ -345,6 +374,45 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                     </a>
                   )
               )}
+            </div>
+          )}
+
+          {/* Never a dead end (2026-07 critique, top consensus P0): with no
+              saved ZIP the modal used to show a script and zero numbers. The
+              ZIP mini-form lives IN the mode now, and the Capitol switchboard
+              is the universal fallback that needs no ZIP at all. */}
+          {reps.length === 0 && (
+            <div className="mt-5 space-y-3">
+              {repsError && (
+                <div className="flex flex-wrap items-center gap-3 rounded-control bg-clay-soft px-4 py-3 text-sm" role="alert">
+                  <span className="font-medium">{t('repsError')}</span>
+                  <button
+                    type="button"
+                    onClick={fetchReps}
+                    className="inline-flex items-center gap-1.5 rounded-control border border-ink/30 bg-surface px-3 py-1.5 font-semibold hover:border-ink/60"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                    {t('retry')}
+                  </button>
+                </div>
+              )}
+              {!zip && (
+                <div className="rounded-control border border-line bg-paper p-4">
+                  <p className="mb-3 text-sm font-medium">{t('needZip')}</p>
+                  <ZipForm />
+                </div>
+              )}
+              <div className="rounded-control border border-line p-4">
+                <p className="text-sm text-ink-soft">{t('switchboardNote')}</p>
+                <a
+                  href="tel:+12022243121"
+                  className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-control bg-ink px-4 py-3 font-semibold text-paper transition-transform hover:bg-night active:translate-y-px"
+                >
+                  <Phone className="h-4 w-4" aria-hidden />
+                  {t('switchboard')}
+                  <span className="font-mono text-sm text-brass-bright">(202) 224-3121</span>
+                </a>
+              </div>
             </div>
           )}
         </dialog>

@@ -108,9 +108,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('topTitle')}
             </h2>
             <p className="mt-1 text-ink-soft">{t('topSub')}</p>
-            <p className="mt-1 text-xs text-ink-faint">{dataAsOf}</p>
-            {/* R2: client-side stale caveat — renders nothing while fresh */}
-            <StalenessNote checkedAt={freshness.checkedAt} />
+            {/* R2: the client-side stale caveat continues the stamp's own
+                sentence — one line, one date; renders nothing while fresh */}
+            <p className="mt-1 max-w-prose text-xs text-ink-faint">
+              {dataAsOf}
+              <StalenessNote checkedAt={freshness.checkedAt} />
+            </p>
           </div>
           <Link
             href="/bills"

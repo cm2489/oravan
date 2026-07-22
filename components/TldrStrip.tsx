@@ -27,7 +27,15 @@ export function TldrStrip({ bill }: { bill: Bill }) {
       <span aria-hidden className="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-brass" />
       <p className="font-semibold leading-snug md:text-lg">
         {s.tldr}
-        <span className="mt-1 block text-sm font-medium text-brass-bright">
+        {/* AI label at FIRST contact (2026-07 critique, unanimous): this strip
+            is the first AI-drafted text a reader meets; the Decoded card's
+            disclaimer sits far below the mobile fold. Same wording as the
+            walkthrough demo chip, per the citations page's "carries this
+            label" promise. */}
+        <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-brass-bright">
+          <span className="rounded-full border border-brass-bright/60 px-2 py-0.5 text-xs font-semibold">
+            {t('aiChip')}
+          </span>
           {t('tldrMeta', { seconds, count })}
         </span>
       </p>

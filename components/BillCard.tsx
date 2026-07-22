@@ -11,15 +11,22 @@ export function BillCard({ bill, coverageCount }: { bill: BillTeaser; coverageCo
       href={`/bills/${bill.slug}`}
       className="group block rounded-card border border-line bg-surface p-5 shadow-lift transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-        <span className="font-mono normal-case">{bill.identifier}</span>
-        <span aria-hidden>·</span>
-        <span>{t(`bills.status.${bill.status}`)}</span>
+      {/* Wrapping happens BETWEEN whole chunks, never inside one: long Spanish
+          status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
+          mid-identifier with orphaned middots leading lines (2026-07 critique,
+          verified on live /es). Separators ride at the END of the preceding
+          chunk so a wrapped line can never start with a floating "·". */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+        <span className="whitespace-nowrap font-mono normal-case">
+          {bill.identifier}
+          <span aria-hidden> ·</span>
+        </span>
+        <span className="whitespace-nowrap">
+          {t(`bills.status.${bill.status}`)}
+          {coverageCount != null && <span aria-hidden> ·</span>}
+        </span>
         {coverageCount != null && (
-          <>
-            <span aria-hidden>·</span>
-            <span className="text-brass">{t('news.sources', { count: coverageCount })}</span>
-          </>
+          <span className="whitespace-nowrap text-brass">{t('news.sources', { count: coverageCount })}</span>
         )}
       </div>
       <h3 className="mt-2 font-display text-lg font-semibold leading-snug group-hover:underline underline-offset-2">

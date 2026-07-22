@@ -8,17 +8,19 @@
  * indicator, whose final frame is transparent, never shows at all).
  */
 
-/* Staggered entrance for scene elements (per-element delay set inline). */
+/* Staggered entrance for scene elements (per-element delay set inline).
+   Transform-only, deliberately: the old opacity-0 start gated content
+   visibility on the animation actually running, so headless renderers and
+   paused tabs painted an empty phone frame (2026-07 critique, two
+   independent captures). The base state is visible; motion only settles it. */
 .enter {
   animation: enter 0.5s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 @keyframes enter {
   from {
-    opacity: 0;
     transform: translateY(6px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
