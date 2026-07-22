@@ -85,6 +85,28 @@ test.describe('input hygiene', () => {
   });
 });
 
+test.describe('injectable clock (third param, tests/corpus.ts only)', () => {
+  test('omitting `now` and passing Date.now() are the same call', () => {
+    const date = daysAgo(5);
+    expect(effectiveUrgency('committee', date, Date.now())).toBe(
+      effectiveUrgency('committee', date)
+    );
+  });
+
+  test('`now` shifts the whole curve: the same date reads fresher at an earlier clock', () => {
+    const date = daysAgo(5);
+    // Rewind the clock 4 days: a 5-day-old action becomes 1 day old (+0.1 bonus).
+    expect(effectiveUrgency('committee', date, Date.now() - 4 * 86_400_000)).toBe(0.55);
+    // Advance 20 days: 25 days old, decay (25−14) × 0.015 = 0.165.
+    expect(effectiveUrgency('committee', date, Date.now() + 20 * 86_400_000)).toBe(0.285);
+  });
+
+  test('dateless and unparseable inputs ignore the clock entirely', () => {
+    expect(effectiveUrgency('committee', null, 0)).toBe(0.45);
+    expect(effectiveUrgency('committee', 'not-a-date', 0)).toBe(0.45);
+  });
+});
+
 test('terminal statuses are exactly signed + vetoed', () => {
   expect([...TERMINAL_STATUSES].sort()).toEqual(['signed', 'vetoed']);
 });

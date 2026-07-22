@@ -1,9 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import bills from '../data/bills.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { bandFloors } from '../lib/taxonomy';
+import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
 /*
@@ -15,24 +13,37 @@ import { mockScriptApi } from './helpers';
  *     adds (previously a dead end - see reps.spec.ts for the rep-lookup
  *     behavior itself, unchanged here)
  *
- * Mirrors freshness.spec.ts's corpus math rather than hardcoding a slug:
- * whether "Act now" has any decoded bills depends on the live, nightly-
- * synced data/bills.json, so the click-path assertions skip (not fail)
- * on a genuinely quiet week - same idiom the freshness suite already uses.
+ * Shares freshness.spec.ts's corpus math (tests/corpus.ts) rather than
+ * hardcoding a slug: whether "Act now" has any decoded bills depends on the
+ * live, nightly-synced data/bills.json, so the click-path assertions skip
+ * (not fail) on a genuinely quiet week - same idiom the freshness suite
+ * already uses. CORPUS_STABLE additionally skips when the corpus sits at a
+ * scoring boundary and the baked homepage could disagree with this
+ * assert-time recomputation (see tests/corpus.ts).
  */
-type CorpusBill = { status: string; last_action_date: string | null; ai_headline: string | null };
-const active = (bills as CorpusBill[]).filter((b) => !TERMINAL_STATUSES.has(b.status));
-const effs = active.map((b) => effectiveUrgency(b.status, b.last_action_date)).sort((a, b) => b - a);
-const floors = bandFloors(effs);
 /** Same condition as lib/core's getTopActions: a decoded bill clearing the "now" floor. */
-const anyTop = active.some(
-  (b) => b.ai_headline && effectiveUrgency(b.status, b.last_action_date) >= floors.nowFloor
-);
+const anyTop = anyTopAt(Date.now());
+const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
 
 const ZIP = '78501'; // single district + two senators, no address-refinement detour (see reps.spec.ts)
 
 async function clickFirstBillCardIn(page: Page, sectionSelector: string) {
   await page.locator(`${sectionSelector} a[href*="/bills/"]`).first().click();
+}
+
+// Declare a stance robust against the click-before-hydration race (same
+// guard as embeds-configurator.spec.ts's submitUrl): a click that lands on
+// the server-rendered stance button before React attaches fires no script
+// fetch and leaves nothing to wait on, so retry until the (mocked)
+// /api/script request actually goes out. A retry can only fire after a
+// lost click, so it never double-toggles a stance that already registered.
+async function declareStance(page: Page, stanceLabel: string) {
+  const button = page.getByRole('button', { name: stanceLabel });
+  await expect(async () => {
+    const request = page.waitForRequest('**/api/script', { timeout: 2000 });
+    await button.click();
+    await request;
+  }).toPass({ timeout: 15_000 });
 }
 
 async function expectCompletedScript(page: Page, scriptTitleLabel: string) {
@@ -55,6 +66,7 @@ for (const { locale, prefix, messages } of LOCALES) {
     test('bill-first: homepage "worth a call" card -> stance = completed script in 2 clicks', async ({
       page,
     }) => {
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
       test.skip(!anyTop, 'corpus is quiet this week - no Top Actions card to drive this path');
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
@@ -65,13 +77,14 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       // Click 2 of <=3: declare a stance - the script appears immediately,
       // no further navigation required.
-      await page.getByRole('button', { name: messages.bill.stance.support }).click();
+      await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
     });
 
     test('ZIP-first: find reps -> reps-page continuation -> stance = completed script in 3 clicks', async ({
       page,
     }) => {
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
       test.skip(!anyTop, 'corpus is quiet this week - the reps continuation has no bill card to drive this path');
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
@@ -90,7 +103,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       await expect(page).toHaveURL(/\/bills\//);
 
       // Click 3 of <=3: declare a stance - script appears.
-      await page.getByRole('button', { name: messages.bill.stance.support }).click();
+      await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
     });
 
@@ -104,6 +117,7 @@ for (const { locale, prefix, messages } of LOCALES) {
     test('quiet-week fallback: neither entry point dead-ends when Top Actions is empty', async ({
       page,
     }) => {
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
       test.skip(anyTop, 'corpus has Top Actions cards this run - covered by the tests above instead');
       await mockScriptApi(page);
 
@@ -115,7 +129,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       await expect(page).toHaveURL(/\/bills$/);
       await page.locator('a[href*="/bills/"]').first().click();
       await expect(page).toHaveURL(/\/bills\//);
-      await page.getByRole('button', { name: messages.bill.stance.support }).click();
+      await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
 
       await page.goto(`${prefix}/`);
