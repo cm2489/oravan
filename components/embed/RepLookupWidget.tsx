@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
-import { FONT_VALUES, RADIUS_VALUES, type FontKey, type RadiusKey } from '@/lib/embed-theme';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator } from '@/lib/types';
 
@@ -70,7 +69,6 @@ export function RepLookupWidget({
   initialLocale,
   initialZip,
   availablePortraits = [],
-  theme,
   brandless = false,
   attribution = 'on',
 }: {
@@ -84,8 +82,6 @@ export function RepLookupWidget({
    * lib/core/portraits.ts and the PR's "Owner enable checklist".
    */
   availablePortraits?: string[];
-  /** Same three validated knobs as BillCardWidget (lib/embed-theme). */
-  theme: { accent?: string; radiusKey: RadiusKey; fontKey: FontKey };
   /** Removes the Oravan name from widget chrome (never the attribution link). */
   brandless?: boolean;
   /** 'none' hides the Powered-by footer — licensed partners only (see /embeds docs). */
@@ -197,16 +193,10 @@ export function RepLookupWidget({
 
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
 
-  // Mirrors BillCardWidget: three validated CSS custom properties, nothing
-  // else tenant-supplied ever reaches a style prop.
-  const themeStyle: CSSProperties = {
-    ...(theme.accent ? { ['--oravan-accent' as string]: theme.accent } : {}),
-    ['--oravan-radius' as string]: RADIUS_VALUES[theme.radiusKey],
-    ['--oravan-font' as string]: FONT_VALUES[theme.fontKey],
-  };
-
+  // Theming lives entirely at :root now (EmbedThemeStyle, rendered by the
+  // page) — no tenant-supplied value ever reaches a style prop here.
   return (
-    <main ref={rootRef} className="re-root" lang={locale} style={themeStyle}>
+    <main ref={rootRef} className="re-root" lang={locale}>
       <div className="re-header">
         <h1 className="re-title">{t.embed.frameTitle}</h1>
         <div role="group" aria-label={t.embed.languageLabel} className="re-row" style={{ gap: 4 }}>

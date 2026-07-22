@@ -1,0 +1,208 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { expect, test } from '@playwright/test';
+import {
+  extractFromHtml,
+  isAllowlistedWebfontUrl,
+  mergeCssSignals,
+  normalizeCssColor,
+} from '../lib/brand-extract';
+
+const fixture = (name: string) =>
+  readFileSync(join(__dirname, 'fixtures', 'brand', name), 'utf8');
+
+const SITE_URL = new URL('https://www.rivertonledger.com/');
+
+test.describe('normalizeCssColor', () => {
+  test('hex shapes normalize to #rrggbb, alpha dropped', () => {
+    expect(normalizeCssColor('#fff')).toBe('#ffffff');
+    expect(normalizeCssColor('#0B5CAD')).toBe('#0b5cad');
+    expect(normalizeCssColor('#abcd')).toBe('#aabbcc');
+    expect(normalizeCssColor('#11223344')).toBe('#112233');
+  });
+
+  test('rgb()/rgba() normalize; fully transparent is discarded; keywords are not colors', () => {
+    expect(normalizeCssColor('rgb(255, 255, 255)')).toBe('#ffffff');
+    expect(normalizeCssColor('rgba(11, 92, 173, 0.5)')).toBe('#0b5cad');
+    expect(normalizeCssColor('rgba(0, 0, 0, 0)')).toBeNull();
+    expect(normalizeCssColor('red')).toBeNull();
+    expect(normalizeCssColor('var(--brand)')).toBeNull();
+    expect(normalizeCssColor('color-mix(in srgb, red, blue)')).toBeNull();
+  });
+});
+
+test.describe('extractFromHtml', () => {
+  test('normal site: name, theme color, icon preference, same-origin stylesheets only', () => {
+    const c = extractFromHtml(fixture('normal-site.html'), SITE_URL);
+    expect(c.siteName).toBe('The Riverton Ledger');
+    expect(c.themeColor).toBe('#0b5cad');
+    // apple-touch-icon preferred over favicon; resolved absolute + same host.
+    expect(c.logoUrl).toBe('https://www.rivertonledger.com/apple-icon.png');
+    // The cross-origin vendor.css is excluded; cap is 2.
+    expect(c.stylesheets).toEqual([
+      'https://www.rivertonledger.com/css/main.css',
+      'https://www.rivertonledger.com/css/extra.css',
+    ]);
+    expect(c.darkBackground).toBe(false);
+    // The brand blue is present and boosted by the theme-color vote.
+    const blue = c.colors.find((entry) => entry.value === '#0b5cad');
+    expect(blue).toBeDefined();
+    expect(blue!.count).toBeGreaterThanOrEqual(3);
+    expect(c.fonts.some((f) => f.value.includes('georgia'))).toBe(true);
+    expect(c.radii.some((r) => r.value === '8px')).toBe(true);
+    // Exact-font fields for the mockup: the body face + the Google Fonts sheet.
+    expect(c.bodyFontFamily).toBe('Georgia, "Times New Roman", serif');
+    expect(c.webfontHref).toBe(
+      'https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap'
+    );
+    // The allowlisted webfont link is NOT counted as a fetchable stylesheet.
+    expect(c.stylesheets).not.toContain(c.webfontHref);
+  });
+
+  test('dark site: darkBackground true from body/html background declarations', () => {
+    const c = extractFromHtml(fixture('dark-site.html'), new URL('https://nightowl.example/'));
+    expect(c.darkBackground).toBe(true);
+    expect(c.colors.some((entry) => entry.value === '#2ea043')).toBe(true);
+    expect(c.fonts.some((f) => f.value.includes('montserrat'))).toBe(true);
+  });
+
+  test('multi-byte content (CJK + emoji) extracts without corruption', () => {
+    const c = extractFromHtml(fixture('cjk-emoji.html'), new URL('https://shimin.example/'));
+    expect(c.siteName).toContain('市民ニュース');
+    expect(c.colors.some((entry) => entry.value === '#333333')).toBe(true);
+  });
+
+  test('tag soup never throws and still yields the recoverable signals', () => {
+    const c = extractFromHtml(fixture('tag-soup.html'), new URL('https://broken.example/'));
+    expect(c.themeColor).toBe('#aa3355');
+    expect(c.siteName).toContain('Broken & Co');
+    expect(c.colors.some((entry) => entry.value === '#f5f0e8')).toBe(true);
+  });
+
+  test('truncated input (byte-cap cut mid-document) never throws', () => {
+    const whole = fixture('normal-site.html');
+    for (const cut of [10, 100, 300, whole.length - 40]) {
+      expect(() => extractFromHtml(whole.slice(0, cut), SITE_URL)).not.toThrow();
+    }
+  });
+
+  test('icon/stylesheet resolution refuses cross-host and non-https', () => {
+    const html = `<link rel="icon" href="https://cdn.other.example/icon.png">
+      <link rel="stylesheet" href="http://www.rivertonledger.com/insecure.css">`;
+    const c = extractFromHtml(html, SITE_URL);
+    expect(c.logoUrl).toBeUndefined();
+    expect(c.stylesheets).toEqual([]);
+  });
+});
+
+test.describe('exact-font signals', () => {
+  test('isAllowlistedWebfontUrl gates on host + https', () => {
+    expect(isAllowlistedWebfontUrl('https://fonts.googleapis.com/css2?family=Inter')).toBe(true);
+    expect(isAllowlistedWebfontUrl('https://fonts.bunny.net/css?family=lato')).toBe(true);
+    expect(isAllowlistedWebfontUrl('https://use.typekit.net/abc.css')).toBe(true);
+    // Not a font CDN, wrong scheme, or junk → refused.
+    expect(isAllowlistedWebfontUrl('https://evil.example/fonts.css')).toBe(false);
+    expect(isAllowlistedWebfontUrl('http://fonts.googleapis.com/css2?family=Inter')).toBe(false);
+    expect(isAllowlistedWebfontUrl('not a url')).toBe(false);
+    // fonts.gstatic.com serves the font FILES, not a linkable stylesheet — excluded.
+    expect(isAllowlistedWebfontUrl('https://fonts.gstatic.com/s/inter/x.woff2')).toBe(false);
+  });
+
+  test('body/html font-family declaration wins over mere frequency', () => {
+    const html = `<title>X</title><style>
+      .huge { font-family: "Wrong Font", sans-serif; }
+      .a { font-family: "Wrong Font", sans-serif; }
+      body { font-family: "Right Serif", Georgia, serif; }
+    </style>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.bodyFontFamily).toBe('"Right Serif", Georgia, serif');
+  });
+
+  test('a bare preconnect origin is not mistaken for a stylesheet', () => {
+    const html = `<link rel="stylesheet" href="https://fonts.googleapis.com">
+      <title>X</title>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.webfontHref).toBeUndefined();
+  });
+
+  test('@import of an allowlisted webfont in linked CSS is captured on merge', () => {
+    const base = extractFromHtml('<title>X</title>', new URL('https://x.example/'));
+    const merged = mergeCssSignals(base, '@import url("https://fonts.bunny.net/css?family=lora");');
+    expect(merged.webfontHref).toBe('https://fonts.bunny.net/css?family=lora');
+  });
+});
+
+test.describe('darkBackground uses the first/default body background, not a vote', () => {
+  test('a light site with a dark prefers-color-scheme override stays light', () => {
+    const html = `<title>X</title><style>
+      body { background: #ffffff; color: #111; }
+      @media (prefers-color-scheme: dark) { body { background: #111111; } }
+    </style>`;
+    const c = extractFromHtml(html, new URL('https://x.example/'));
+    expect(c.darkBackground).toBe(false);
+  });
+
+  test('a light HTML verdict survives a merge whose stylesheet has no body rule', () => {
+    const base = extractFromHtml(
+      '<title>X</title><meta name="theme-color" content="#0a0a0a"><style>body{background:#fff}</style>',
+      new URL('https://x.example/')
+    );
+    expect(base.darkBackground).toBe(false); // body#fff beats the dark theme-color
+    const merged = mergeCssSignals(base, 'a { color: #0a0a0a }'); // no body rule
+    expect(merged.darkBackground).toBe(false); // must NOT flip to dark via theme-color
+  });
+});
+
+test.describe('mergeCssSignals', () => {
+  test('a confirmed body font from the HTML pass is not overwritten by a frequency guess', () => {
+    const base = extractFromHtml(
+      '<title>X</title><style>body{font-family:Georgia, serif}</style>',
+      new URL('https://x.example/')
+    );
+    expect(base.bodyFontFamily).toBe('Georgia, serif');
+    // Merge a stylesheet with NO body rule but a frequent icon-font family.
+    const merged = mergeCssSignals(
+      base,
+      '.i1{font-family:"Icons"}.i2{font-family:"Icons"}.i3{font-family:"Icons"}'
+    );
+    expect(merged.bodyFontFamily).toBe('Georgia, serif'); // confirmed font wins
+  });
+
+  test('HTML entities in an href/title are decoded (webfont link + site name)', () => {
+    const c = extractFromHtml(
+      `<title>AT&amp;T Civic Hub</title>
+       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora&amp;display=swap">`,
+      new URL('https://att.example/')
+    );
+    expect(c.siteName).toBe('AT&T Civic Hub');
+    expect(c.webfontHref).toBe('https://fonts.googleapis.com/css2?family=Lora&display=swap');
+  });
+
+  test('a page of thousands of malformed tags extracts in well under a second (ReDoS guard)', () => {
+    const bomb = ('<style>' + 'x'.repeat(20)).repeat(40000) + '<meta '.repeat(40000);
+    const t = Date.now();
+    expect(() => extractFromHtml(bomb, new URL('https://x.example/'))).not.toThrow();
+    expect(Date.now() - t).toBeLessThan(1000);
+  });
+  test('linked-CSS-only site: colors arrive via the merge, dark stays false', () => {
+    const base = extractFromHtml(
+      '<title>Linked Only</title><link rel="stylesheet" href="/css/main.css">',
+      SITE_URL
+    );
+    expect(base.colors).toEqual([]);
+    const merged = mergeCssSignals(base, fixture('main.css'));
+    expect(merged.colors.some((entry) => entry.value === '#b91c1c')).toBe(true);
+    expect(merged.fonts.some((f) => f.value.includes('source serif pro'))).toBe(true);
+    expect(merged.radii.some((r) => r.value === '24px')).toBe(true);
+    expect(merged.darkBackground).toBe(false);
+    expect(merged.siteName).toBe('Linked Only');
+  });
+
+  test('merge accumulates counts instead of replacing them', () => {
+    const base = extractFromHtml(fixture('normal-site.html'), SITE_URL);
+    const before = base.colors.find((entry) => entry.value === '#0b5cad')!.count;
+    const merged = mergeCssSignals(base, 'a { color: #0b5cad } b { color: #0b5cad }');
+    const after = merged.colors.find((entry) => entry.value === '#0b5cad')!.count;
+    expect(after).toBe(before + 2);
+  });
+});

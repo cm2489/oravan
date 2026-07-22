@@ -3,7 +3,13 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
-import { safeAccent, type FontKey, type RadiusKey } from '@/lib/embed-theme';
+import { FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
+import { contrastRatio } from '@/lib/contrast';
+import {
+  HostPageMockup,
+  MOCKUP_ARCHETYPES,
+  type MockupArchetype,
+} from '@/components/embed/HostPageMockup';
 import type { FeedTeaser } from '@/lib/types';
 
 /*
@@ -24,24 +30,48 @@ import type { FeedTeaser } from '@/lib/types';
  * than re-declaring the radius/font options here) means this configurator
  * can never drift out of sync with what the server actually accepts.
  *
- * Theming note (a real, current gap - not fixed here, see the S16 report):
- * only the bill-card widget accepts --oravan-accent/-radius/-font today;
- * components/embed/RepLookupWidget.tsx has no theme prop at all, and
- * public/embed.js's WIDGET_PARAM_ATTRS map has no 'rep-lookup' entry, so the
- * loader wouldn't even forward theme data-attributes for it. The theme
- * controls below are therefore only shown for the bill-card widget - this
- * reflects what's actually shipped, not an aspiration.
+ * Theming (S5a + brand-preview build): every widget accepts the full
+ * validated knob set — accent/surface/ink/mode/radius/font — forwarded by
+ * public/embed.js and resolved server-side (lib/embed-theme). The custom
+ * surface/ink pair is gated client-side by the SAME lib/contrast math the
+ * server enforces: a pair below AA (4.5:1) is warned about AND omitted from
+ * both the preview and the snippet, so this configurator can never emit a
+ * snippet the server would discard.
  */
 
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
 const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--oravan-accent, #82632a) fallback
+const DEFAULT_SURFACE = '#f3ecdd'; // the light-mode token fallbacks in app/embed/embed.css
+const DEFAULT_INK = '#2a2318';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
+const MIN_PAIR_CONTRAST = 4.5; // WCAG AA — the exact server-side bar (lib/embed-theme)
 
 const RADIUS_KEYS: RadiusKey[] = ['sharp', 'soft', 'round'];
-const FONT_KEYS: FontKey[] = ['system', 'serif'];
+const FONT_KEYS: FontKey[] = ['system', 'serif', 'humanist', 'geometric'];
+const MODE_KEYS: ModeKey[] = ['auto', 'light', 'dark'];
+
+const FONT_LABEL_KEYS = {
+  system: 'fontSystem',
+  serif: 'fontSerif',
+  humanist: 'fontHumanist',
+  geometric: 'fontGeometric',
+} as const satisfies Record<FontKey, string>;
+
+const MODE_LABEL_KEYS = {
+  auto: 'modeAuto',
+  light: 'modeLight',
+  dark: 'modeDark',
+} as const satisfies Record<ModeKey, string>;
+
+const MOCKUP_LABEL_KEYS = {
+  generic: 'mockupGeneric',
+  newsroom: 'mockupNewsroom',
+  library: 'mockupLibrary',
+  advocacy: 'mockupAdvocacy',
+} as const satisfies Record<MockupArchetype, string>;
 
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
@@ -59,15 +89,123 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const [accentInput, setAccentInput] = useState(DEFAULT_ACCENT);
   const [radius, setRadius] = useState<RadiusKey>('soft');
   const [font, setFont] = useState<FontKey>('system');
+  const [mode, setMode] = useState<ModeKey>('auto');
+  const [customColors, setCustomColors] = useState(false);
+  const [surfaceInput, setSurfaceInput] = useState(DEFAULT_SURFACE);
+  const [inkInput, setInkInput] = useState(DEFAULT_INK);
   const [brandless, setBrandless] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(DEFAULT_HEIGHT);
+
+  // "Match your site" (brand-preview build): POST /api/brand, autofill the
+  // theme controls from the validated suggestion. Plain setState on the
+  // existing controls — manual edits afterward just work; re-running
+  // overwrites (the hint says so).
+  const [matchUrl, setMatchUrl] = useState('');
+  const [matchStatus, setMatchStatus] = useState<
+    'idle' | 'loading' | 'done' | 'bad_request' | 'rate_limited' | 'unavailable' | 'generation_failed'
+  >('idle');
+  const [matchedSite, setMatchedSite] = useState<{ name?: string; logoUrl?: string } | null>(null);
+  const [adjusted, setAdjusted] = useState(false);
+  // Exact-match hints for the mockup CHROME only (never the widget iframe).
+  const [previewFont, setPreviewFont] = useState<string | undefined>(undefined);
+  const [previewWebfont, setPreviewWebfont] = useState<string | undefined>(undefined);
+  const [mockup, setMockup] = useState<MockupArchetype>('newsroom');
+  // Mirror the visitor's color-scheme so the mockup chrome matches the widget
+  // in `auto` mode (SSR-safe: starts false, corrects on mount).
+  const [prefersDark, setPrefersDark] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = () => setPrefersDark(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  async function suggestTheme() {
+    if (!matchUrl.trim() || matchStatus === 'loading') return;
+    setMatchStatus('loading');
+    setMatchedSite(null);
+    setAdjusted(false);
+    // Clear the previous site's exact typeface too, or a failed re-match would
+    // leave site A's font/webfont painting the mockup chrome under site B.
+    setPreviewFont(undefined);
+    setPreviewWebfont(undefined);
+    try {
+      const res = await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: matchUrl.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { error?: string } | null;
+        setMatchStatus(
+          err?.error === 'rate_limited' || err?.error === 'unavailable' || err?.error === 'generation_failed'
+            ? err.error
+            : 'bad_request'
+        );
+        return;
+      }
+      const data = (await res.json()) as {
+        theme: { surface: string; ink: string; accent: string; radius: RadiusKey; font: FontKey; mode: ModeKey };
+        site: { name?: string; logoUrl?: string };
+        preview?: { fontFamily?: string; webfontHref?: string };
+        adjusted: boolean;
+      };
+      // Server-validated values, re-gated by the same client validators the
+      // manual controls use (belt-and-suspenders, one contrast bar).
+      setAccentInput(safeAccent(data.theme.accent) ?? DEFAULT_ACCENT);
+      setSurfaceInput(safeAccent(data.theme.surface) ?? DEFAULT_SURFACE);
+      setInkInput(safeAccent(data.theme.ink) ?? DEFAULT_INK);
+      setCustomColors(true);
+      setRadius(RADIUS_KEYS.includes(data.theme.radius) ? data.theme.radius : 'soft');
+      setFont(FONT_KEYS.includes(data.theme.font) ? data.theme.font : 'system');
+      setMode(MODE_KEYS.includes(data.theme.mode) ? data.theme.mode : 'auto');
+      setMatchedSite(data.site ?? null);
+      setPreviewFont(data.preview?.fontFamily);
+      setPreviewWebfont(data.preview?.webfontHref);
+      setAdjusted(Boolean(data.adjusted));
+      setMatchStatus('done');
+    } catch {
+      setMatchStatus('unavailable');
+    }
+  }
+
+  const MATCH_ERROR_KEYS = {
+    bad_request: 'matchSiteErrorInvalid',
+    rate_limited: 'matchSiteErrorRateLimited',
+    unavailable: 'matchSiteErrorUnavailable',
+    generation_failed: 'matchSiteErrorFailed',
+  } as const;
 
   // A malformed accent never reaches the preview/snippet - same fail-closed
   // rule lib/embed-theme.ts's safeAccent enforces server-side; this just
   // means the configurator's own live preview can't diverge from what the
   // server would actually render for the exact same input.
   const accent = safeAccent(accentInput) ?? DEFAULT_ACCENT;
+
+  // Custom surface/ink: gated by the SAME contrast math the server enforces
+  // (lib/contrast, one implementation), so a failing pair is warned about
+  // here and omitted from preview + snippet rather than silently discarded
+  // server-side later. Native color inputs always emit #rrggbb.
+  const pairPasses = contrastRatio(inkInput, surfaceInput) >= MIN_PAIR_CONTRAST;
+  const pairActive = customColors && pairPasses;
+
+  // The mockup CHROME (the fake host page around the widget) uses the
+  // tenant's EXACT colors and font with no AA gating — it's a preview of
+  // *their* page, not the widget. When no custom pair is set, it falls back
+  // to the mode's default palette so it's always coherent. (The widget
+  // iframe nested inside still uses the AA-gated pairActive values.)
+  //
+  // In `auto` mode the widget follows the VISITOR's prefers-color-scheme, so
+  // the chrome must too — otherwise a dark-OS reviewer sees a dark widget in
+  // a light mock page. Track the media query and resolve auto to the live
+  // preference before painting the chrome.
+  const effectiveMode = mode === 'auto' ? (prefersDark ? 'dark' : 'light') : mode;
+  const chromePalette = customColors
+    ? { surface: surfaceInput, ink: inkInput }
+    : MODE_DEFAULTS[effectiveMode];
+  const chromeFont = previewFont ?? FONT_VALUES[font];
 
   const filteredBills = useMemo(() => {
     const q = billQuery.trim().toLowerCase();
@@ -128,16 +266,21 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     if (widget === 'bill-card' && !slug) return null;
     const params = new URLSearchParams({ locale });
     if (widget === 'bill-card' && slug) params.set('slug', slug);
-    // S5a: both widgets take the same three validated theme params.
+    // Every widget takes the same validated theme params (S5a + brand-preview).
     params.set('accent', accent);
     params.set('radius', radius);
     params.set('font', font);
+    if (mode !== 'auto') params.set('mode', mode);
+    if (pairActive) {
+      params.set('surface', surfaceInput);
+      params.set('ink', inkInput);
+    }
     if (brandless) params.set('brandless', '1');
     // Relative on purpose: the live preview must show THIS deployment's
     // widget (localhost, preview deploys, prod alike). Only the copy-paste
     // snippet below carries the absolute production origin.
     return `/embed/${widget}?${params.toString()}`;
-  }, [widget, locale, slug, accent, radius, font, brandless]);
+  }, [widget, locale, slug, accent, radius, font, mode, pairActive, surfaceInput, inkInput, brandless]);
 
   const snippet = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
@@ -148,6 +291,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     ];
     if (widget === 'bill-card' && slug) attrs.push(`data-slug="${slug}"`);
     attrs.push(`data-accent="${accent}"`);
+    if (pairActive) {
+      attrs.push(`data-surface="${surfaceInput}"`);
+      attrs.push(`data-ink="${inkInput}"`);
+    }
+    if (mode !== 'auto') attrs.push(`data-mode="${mode}"`);
     attrs.push(`data-radius="${radius}"`);
     attrs.push(`data-font="${font}"`);
     if (brandless) attrs.push(`data-brandless="1"`);
@@ -157,7 +305,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
       ...attrs.map((a) => `        ${a}`),
       `></script>`,
     ].join('\n');
-  }, [widget, targetId, locale, slug, accent, radius, font, brandless]);
+  }, [widget, targetId, locale, slug, accent, radius, font, mode, pairActive, surfaceInput, inkInput, brandless]);
 
   async function copySnippet() {
     if (!snippet) return;
@@ -283,6 +431,59 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
             </div>
           )}
 
+          <fieldset>
+            <legend className="text-sm font-semibold">{t('matchSiteHeading')}</legend>
+            <p className="mt-1 text-xs text-ink-soft">{t('matchSiteHint')}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="oravan-match-url" className="sr-only">
+                  {t('matchSiteUrlLabel')}
+                </label>
+                <input
+                  id="oravan-match-url"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://example.org"
+                  value={matchUrl}
+                  onChange={(e) => setMatchUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void suggestTheme();
+                    }
+                  }}
+                  className="min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-base"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => void suggestTheme()}
+                disabled={matchStatus === 'loading'}
+                className="inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px disabled:opacity-60"
+              >
+                {t('matchSiteCta')}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-ink-faint">{t('matchSitePrivacy')}</p>
+            <div aria-live="polite" className="mt-2 text-sm">
+              {matchStatus === 'loading' && <p className="text-ink-soft">{t('matchSiteLoading')}</p>}
+              {(matchStatus === 'bad_request' ||
+                matchStatus === 'rate_limited' ||
+                matchStatus === 'unavailable' ||
+                matchStatus === 'generation_failed') && (
+                <p role="alert" className="rounded-control border border-line bg-paper-deep p-3">
+                  {t(MATCH_ERROR_KEYS[matchStatus])}
+                </p>
+              )}
+              {matchStatus === 'done' && adjusted && (
+                <p className="rounded-control border border-line bg-paper-deep p-3">
+                  {t('matchSiteAdjustedNote')}
+                </p>
+              )}
+            </div>
+          </fieldset>
+
           {/* S5a: both widgets take the same theme params, so no more gate */}
           {(
             <fieldset>
@@ -338,12 +539,78 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   >
                     {FONT_KEYS.map((key) => (
                       <option key={key} value={key}>
-                        {t(key === 'serif' ? 'fontSerif' : 'fontSystem')}
+                        {t(FONT_LABEL_KEYS[key])}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="oravan-mode" className="text-sm font-medium">
+                    {t('modeLabel')}
+                  </label>
+                  <select
+                    id="oravan-mode"
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value as ModeKey)}
+                    className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
+                  >
+                    {MODE_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {t(MODE_LABEL_KEYS[key])}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              <label className="mt-4 flex min-h-[44px] items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={customColors}
+                  onChange={(e) => setCustomColors(e.target.checked)}
+                  className="h-5 w-5 rounded-control border-line accent-brass"
+                />
+                {t('customColorsToggle')}
+              </label>
+              {customColors && (
+                <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="oravan-surface" className="text-sm font-medium">
+                      {t('surfaceLabel')}
+                    </label>
+                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                      <input
+                        id="oravan-surface"
+                        type="color"
+                        value={surfaceInput}
+                        onChange={(e) => setSurfaceInput(e.target.value)}
+                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                      />
+                      <span className="font-mono text-sm text-ink-soft">{surfaceInput}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="oravan-ink" className="text-sm font-medium">
+                      {t('inkLabel')}
+                    </label>
+                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                      <input
+                        id="oravan-ink"
+                        type="color"
+                        value={inkInput}
+                        onChange={(e) => setInkInput(e.target.value)}
+                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                      />
+                      <span className="font-mono text-sm text-ink-soft">{inkInput}</span>
+                    </div>
+                  </div>
+                  {!pairPasses && (
+                    <p role="alert" className="rounded-control border border-line bg-paper-deep p-3 text-sm sm:col-span-2">
+                      {t('contrastWarning')}
+                    </p>
+                  )}
+                </div>
+              )}
             </fieldset>
           )}
 
@@ -365,17 +632,55 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
         <div className="min-w-0 space-y-6">
           <div>
             <h3 className="font-display text-lg font-bold">{t('previewHeading')}</h3>
-            <div className="mt-2 overflow-hidden rounded-card border border-line bg-paper-deep">
+
+            {/* Preview-context switcher: the live preview is always a themed
+                host-page mockup with the real widget embedded in it, so it
+                reads as "on their site," not a bare widget on an Oravan card.
+                These are aria-pressed toggle buttons (the widget's own toggle
+                pattern) — NOT role=radio, which would promise arrow-key group
+                navigation + a single tab stop this doesn't implement. */}
+            <div role="group" aria-label={t('mockupLegend')} className="mt-2 flex flex-wrap gap-1.5">
+              {MOCKUP_ARCHETYPES.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={mockup === key}
+                  onClick={() => setMockup(key)}
+                  className={`min-h-[44px] rounded-control border px-3 text-xs font-semibold ${
+                    mockup === key
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-line bg-surface text-ink hover:border-ink/40'
+                  }`}
+                >
+                  {t(MOCKUP_LABEL_KEYS[key])}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-2">
               {previewSrc ? (
-                <iframe
-                  key={previewSrc}
-                  src={previewSrc}
-                  title={t('previewHeading')}
-                  style={{ width: '100%', height: previewHeight, border: 0, display: 'block' }}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                />
+                <HostPageMockup
+                  archetype={mockup}
+                  surface={chromePalette.surface}
+                  ink={chromePalette.ink}
+                  accent={accent}
+                  fontFamily={chromeFont}
+                  webfontHref={previewWebfont}
+                  siteName={matchedSite?.name}
+                  logoUrl={matchedSite?.logoUrl}
+                >
+                  <iframe
+                    key={previewSrc}
+                    src={previewSrc}
+                    title={t('previewHeading')}
+                    style={{ width: '100%', height: previewHeight, border: 0, display: 'block' }}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  />
+                </HostPageMockup>
               ) : (
-                <p className="p-6 text-sm text-ink-soft">{t('previewPending')}</p>
+                <div className="overflow-hidden rounded-card border border-line bg-paper-deep">
+                  <p className="p-6 text-sm text-ink-soft">{t('previewPending')}</p>
+                </div>
               )}
             </div>
           </div>

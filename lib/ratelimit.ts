@@ -71,7 +71,15 @@ export type RouteName =
   | 'embed-script-day'
   | 'embed-impression-token'
   | 'tenant-impressions'
-  | 'tenant-impressions-read';
+  | 'tenant-impressions-read'
+  // /api/brand (brand-preview build): 'brand' is the per-IP limiter;
+  // 'brand-day' is a GLOBAL daily spend breaker — a tenant-limiter keyed by
+  // the documented constant 'brand-global' (neither caller nor content
+  // material, same class as a route label), because this is an
+  // unauthenticated Anthropic-spending endpoint with no cross-user cache to
+  // blunt a distributed farm.
+  | 'brand'
+  | 'brand-day';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)

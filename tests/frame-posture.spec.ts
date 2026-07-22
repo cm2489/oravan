@@ -117,6 +117,10 @@ test.describe(
       'why-call': '/why-call',
     };
     const API_ROUTES: Record<string, string> = {
+      // Brand-preview build: POST-only (stateless homepage → theme suggestion).
+      // A GET here 405s, which — like stripe/tenant below — proves the
+      // site-wide frame-ancestors block applies regardless of status code.
+      brand: '/api/brand',
       district: '/api/district',
       feedback: '/api/feedback',
       mcp: '/api/mcp/mcp',

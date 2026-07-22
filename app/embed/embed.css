@@ -6,10 +6,59 @@
  * than pulling in the whole app theme for one widget. Colors below are the
  * same brand palette as app/globals.css's @theme block, hand-copied (not
  * shared custom properties) so this file has zero dependency on it.
+ *
+ * Palette architecture (brand-preview build): every color flows through the
+ * private --_* tokens below, which read the tenant-facing --oravan-* knobs
+ * (set by components/embed/EmbedThemeStyle.tsx from validated values only)
+ * with the brand palette as fallback. HARD RULE: component rules never use
+ * @media (prefers-color-scheme) — all light/dark difference lives in the
+ * ONE token block below, so a forced mode (EmbedThemeStyle pinning the
+ * knobs + color-scheme) re-keys everything with no drift. Derived tones use
+ * color-mix() behind @supports; older engines (pre-Safari 16.2) keep the
+ * static literals declared first, i.e. today's exact look.
  */
 
 :root {
   color-scheme: light dark;
+  --_surface: var(--oravan-surface, #f3ecdd);
+  --_ink: var(--oravan-ink, #2a2318);
+  --_accent: var(--oravan-accent, #82632a);
+  --_accent-ink: var(--oravan-accent-ink, #fbf8f0);
+  /* Focus ring falls back to INK, not accent: the server only emits
+     --oravan-focus once it has confirmed the accent contrasts on the surface
+     (>=3:1). With just an accent set (auto mode — the common case), the raw
+     accent could be near-invisible on the surface, silently killing the
+     always-visible focus outline. Ink always contrasts with the surface (it's
+     the body text), so the ring stays visible. */
+  --_focus: var(--oravan-focus, var(--_ink));
+  /* Static fallbacks for engines without color-mix. */
+  --_line: rgba(24, 32, 58, 0.15);
+  --_line-strong: rgba(24, 32, 58, 0.25);
+  --_line-faint: rgba(24, 32, 58, 0.08);
+  --_ink-hover: #1b1611;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --_surface: var(--oravan-surface, #1b1611);
+    --_ink: var(--oravan-ink, #e4d9c0);
+    --_line: rgba(242, 235, 220, 0.2);
+    --_line-strong: rgba(242, 235, 220, 0.3);
+    --_line-faint: rgba(242, 235, 220, 0.1);
+    --_ink-hover: #f3ecdd;
+  }
+}
+
+/* Last in source on purpose: same :root specificity as the blocks above, so
+   in color-mix-capable engines these derived tones win in BOTH modes (they
+   track --_ink/--_surface, which are already mode- and tenant-aware). */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root {
+    --_line: color-mix(in srgb, var(--_ink) 15%, transparent);
+    --_line-strong: color-mix(in srgb, var(--_ink) 25%, transparent);
+    --_line-faint: color-mix(in srgb, var(--_ink) 8%, transparent);
+    --_ink-hover: color-mix(in srgb, var(--_ink) 85%, var(--_surface));
+  }
 }
 
 * {
@@ -27,15 +76,8 @@ body {
     system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.45;
-  color: #2a2318;
-  background: #f3ecdd;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    color: #e4d9c0;
-    background: #1b1611;
-  }
+  color: var(--_ink);
+  background: var(--_surface);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -47,17 +89,17 @@ body {
 
 /* Visible focus everywhere, never removed - same rule as the main site. */
 :focus-visible {
-  outline: 3px solid #82632a;
+  outline: 3px solid var(--_focus);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
 /*
- * S5a: the rep-lookup widget accepts the same three validated theming
- * custom properties as the bill card (--oravan-accent/-radius/-font, set
- * inline on .re-root by RepLookupWidget). Fallbacks below preserve the
- * exact pre-S5a look, and because .re-* classes are shared, a themed
- * bill-card's shared chrome now follows its theme too.
+ * S5a: every widget accepts the same validated theming custom properties
+ * (--oravan-accent/-surface/-ink/-radius/-font + derived -accent-ink/-focus,
+ * rendered by EmbedThemeStyle at :root). Fallbacks preserve the exact
+ * pre-theming look, and because .re-* classes are shared, a themed
+ * bill-card's shared chrome follows its theme too.
  */
 .re-root {
   padding: 16px;
@@ -102,13 +144,14 @@ body {
   width: 100%;
   padding: 10px 12px;
   font-size: 1.05rem;
-  border: 2px solid rgba(24, 32, 58, 0.25);
+  border: 2px solid var(--_line-strong);
   border-radius: var(--oravan-radius, 8px);
   min-height: 44px;
   background: transparent;
   color: inherit;
 }
 
+/* Primary buttons invert ink/surface, so a tenant palette re-keys them too. */
 .re-btn {
   display: inline-flex;
   align-items: center;
@@ -122,53 +165,40 @@ body {
   border-radius: var(--oravan-radius, 8px);
   border: 2px solid transparent;
   cursor: pointer;
-  background: #2a2318;
-  color: #f3ecdd;
+  background: var(--_ink);
+  color: var(--_surface);
 }
 
 .re-btn:hover {
-  background: #1b1611;
+  background: var(--_ink-hover);
 }
 
 .re-toggle {
   background: transparent;
   color: inherit;
-  border-color: rgba(24, 32, 58, 0.25);
+  border-color: var(--_line-strong);
   min-width: 44px;
   padding: 8px 12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .re-toggle {
-    border-color: rgba(242, 235, 220, 0.3);
-  }
-}
-
 .re-toggle[aria-pressed='true'] {
-  background: var(--oravan-accent, #82632a);
-  border-color: var(--oravan-accent, #82632a);
-  color: #fbf8f0;
+  background: var(--_accent);
+  border-color: var(--_accent);
+  color: var(--_accent-ink);
 }
 
 .re-card {
-  border: 1px solid rgba(24, 32, 58, 0.15);
+  border: 1px solid var(--_line);
   border-radius: var(--oravan-radius, 12px);
   padding: 14px;
   margin-top: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .re-card {
-    border-color: rgba(242, 235, 220, 0.2);
-  }
 }
 
 /*
  * Rep-card portrait/avatar (S15). `.re-avatar-img` only ever renders for a
  * bioguide with a mirrored (Vercel Blob) portrait, served same-origin via
  * app/embed/portrait/[bioguide]/route.ts - never a third-party hotlink.
- * `.re-avatar-initials` is the graceful, zero-network fallback (today's
- * shipped default: no Blob store exists yet) - see
+ * `.re-avatar-initials` is the graceful, zero-network fallback - see
  * components/embed/RepLookupWidget.tsx.
  */
 .re-card-head {
@@ -188,7 +218,7 @@ body {
   height: 54px;
   border-radius: 6px;
   object-fit: cover;
-  background: rgba(24, 32, 58, 0.08);
+  background: var(--_line-faint);
 }
 
 .re-avatar-initials {
@@ -199,18 +229,11 @@ body {
   width: 44px;
   height: 54px;
   border-radius: 6px;
-  background: #2a2318;
-  color: #f3ecdd;
+  background: var(--_ink);
+  color: var(--_surface);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-}
-
-@media (prefers-color-scheme: dark) {
-  .re-avatar-initials {
-    background: var(--oravan-accent, #82632a);
-    color: #fbf8f0;
-  }
 }
 
 .re-meta {
@@ -235,8 +258,8 @@ body {
   padding: 10px 14px;
   margin-top: 10px;
   border-radius: 8px;
-  background: #2a2318;
-  color: #f3ecdd;
+  background: var(--_ink);
+  color: var(--_surface);
   text-decoration: none;
   font-weight: 600;
 }
@@ -256,9 +279,15 @@ body {
   color: inherit;
 }
 
+/* Info/prompt note. Amber is the un-themed DEFAULT (the var() fallbacks);
+   a genuinely themed widget gets --oravan-note-* from the server (an accent
+   tint over the surface), so a white-label embed wears the tenant's color
+   without repainting the plain default. The error box below stays red — a
+   universal "something went wrong" signal that shouldn't take on a tenant's
+   (possibly green) brand color. */
 .re-note {
-  border: 1px solid rgba(232, 163, 23, 0.55);
-  background: rgba(232, 163, 23, 0.14);
+  border: 1px solid var(--oravan-note-border, rgba(232, 163, 23, 0.55));
+  background: var(--oravan-note-fill, rgba(232, 163, 23, 0.14));
   border-radius: 10px;
   padding: 12px;
   margin-top: 12px;
@@ -278,21 +307,14 @@ body {
 .re-footer {
   margin-top: 18px;
   padding-top: 10px;
-  border-top: 1px solid rgba(24, 32, 58, 0.12);
+  border-top: 1px solid var(--_line);
   font-size: 0.78rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .re-footer {
-    border-color: rgba(242, 235, 220, 0.18);
-  }
-}
-
 /*
- * Bill-card widget (S14). --oravan-accent/--oravan-radius/--oravan-font are
- * the ONLY tenant-facing theming surface (lib/embed-theme.ts validates every
- * value before it reaches a style prop) - every rule below reads them via
- * var() with a safe literal fallback, never anything else host-supplied.
+ * Bill-card widget (S14). Every rule reads the --_* tokens (fed only by
+ * lib/embed-theme-validated values) with safe literal fallbacks, never
+ * anything else host-supplied.
  */
 .bc-root {
   /* Match .re-root's inset so the citation eyebrow + Powered-by footer don't
@@ -312,16 +334,10 @@ body {
 }
 
 .bc-card {
-  border: 1px solid rgba(24, 32, 58, 0.15);
+  border: 1px solid var(--_line);
   border-radius: var(--oravan-radius, 10px);
   padding: 16px;
   margin-top: 4px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .bc-card {
-    border-color: rgba(242, 235, 220, 0.2);
-  }
 }
 
 .bc-status {
@@ -345,8 +361,8 @@ body {
   margin-top: 10px;
   padding: 3px 10px;
   border-radius: var(--oravan-radius, 999px);
-  background: var(--oravan-accent, #82632a);
-  color: #fbf8f0;
+  background: var(--_accent);
+  color: var(--_accent-ink);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -387,15 +403,9 @@ body {
   padding: 10px 12px;
   font: inherit;
   line-height: 1.5;
-  border: 2px solid rgba(24, 32, 58, 0.25);
+  border: 2px solid var(--_line-strong);
   border-radius: var(--oravan-radius, 8px);
   background: transparent;
   color: inherit;
   resize: vertical;
-}
-
-@media (prefers-color-scheme: dark) {
-  .ap-textarea {
-    border-color: rgba(242, 235, 220, 0.3);
-  }
 }

@@ -99,6 +99,10 @@ export function scriptUsageKey(day: string): string {
   return `${keyPrefix()}:usage:script:${day}`;
 }
 
+export function brandUsageKey(day: string): string {
+  return `${keyPrefix()}:usage:brand:${day}`;
+}
+
 /** UTC calendar date, YYYY-MM-DD — the daily bucket a usage count lives under. */
 export function usageDayKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
@@ -229,6 +233,15 @@ export async function noteMcpToolCall(tool: McpToolName): Promise<void> {
  */
 export async function noteScriptGeneration(): Promise<void> {
   await noteUsage(scriptUsageKey(usageDayKey()));
+}
+
+/**
+ * Record one real (cache-miss) brand-preview generation — an actual
+ * Anthropic spend on /api/brand. Same after()-only, content-free,
+ * caller-free contract as noteScriptGeneration. Never throws.
+ */
+export async function noteBrandPreview(): Promise<void> {
+  await noteUsage(brandUsageKey(usageDayKey()));
 }
 
 /**

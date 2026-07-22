@@ -8,24 +8,21 @@
  *           data-target="my-widget"
  *           data-locale="en"></script>
  *
- * Bill-card: data-slug plus optional theme knobs data-accent (hex color),
- * data-radius ("sharp"|"soft"|"round"), data-font ("system"|"serif") -
- * re-validated server-side (lib/embed-theme.ts); this loader just forwards
- * attributes as query params.
+ * Theme knobs (all widgets): data-accent/-surface/-ink (hex), data-mode
+ * ("light"|"dark"|"auto"), data-radius, data-font - re-validated
+ * server-side (lib/embed-theme.ts); this loader just forwards attributes
+ * as query params. Bill-card adds data-slug.
  *
- * Action panel (paid tier only): data-slug plus data-token, the 128-bit
- * tenant capability token (embeds spec §3.2) - the one unavoidable place
- * it appears in a URL. Nothing further happens to it here: no logging, no
- * echo, no fetch of its own. The server page is what authorizes.
+ * Action panel (paid tier only) adds data-token, the tenant capability
+ * token (spec §3.2) - the one unavoidable place it appears in a URL; this
+ * file never logs, echoes, or fetches with it. The server page authorizes.
  *
  * `data-target` is optional - if omitted, the iframe lands right after
  * this <script> tag. Everything the widget needs lives inside the
  * cross-origin iframe itself: this file only injects it and relays its
  * height back. No fetch, no storage, no analytics, nothing read from the
- * host page - "collects nothing about your visitors" is ordinary
- * cross-origin isolation, not this script being well-behaved
- * (docs/ideation/2026-07-02-embeds-spec.md §2). The iframe target is
- * derived from this script's own src origin, never a hardcoded constant.
+ * host page (spec §2). The iframe target is derived from this script's own
+ * src origin, never a hardcoded constant.
  */
 (function () {
   'use strict';
@@ -36,11 +33,14 @@
     'action-panel': 'Oravan action panel',
   };
 
+  // Validated theme knobs, shared by every current widget.
+  var THEME_ATTRS = ['accent', 'surface', 'ink', 'mode', 'radius', 'font'];
+
   // Per-widget query params - data-driven so a future widget just adds a row.
   var WIDGET_PARAM_ATTRS = {
-    'rep-lookup': ['accent', 'radius', 'font'],
-    'bill-card': ['slug', 'accent', 'radius', 'font'],
-    'action-panel': ['slug', 'token', 'accent', 'radius', 'font'],
+    'rep-lookup': THEME_ATTRS,
+    'bill-card': ['slug'].concat(THEME_ATTRS),
+    'action-panel': ['slug', 'token'].concat(THEME_ATTRS),
   };
 
   // White-label knobs, every widget; validated server-side (embed-theme).
@@ -90,7 +90,9 @@
     iframe.style.border = '0';
     iframe.style.display = 'block';
     iframe.style.height = (WIDGET_DEFAULT_HEIGHT[widget] || DEFAULT_HEIGHT) + 'px';
-    iframe.style.colorScheme = 'light dark';
+    // Forced mode: keep the iframe element's scheme in step (no wrong-mode backdrop).
+    var mode = script.getAttribute('data-mode');
+    iframe.style.colorScheme = mode === 'dark' || mode === 'light' ? mode : 'light dark';
     iframe.setAttribute('scrolling', 'no');
     // sandbox is defense-in-depth against the widget, not the isolation
     // mechanism itself; allow-same-origin stays for our own fetch() calls.
