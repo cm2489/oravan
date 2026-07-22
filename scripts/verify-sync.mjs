@@ -151,9 +151,17 @@ if (state) {
     );
   }
 
-  if (!state.lastSync || !/T/.test(state.lastSync) || Number.isNaN(Date.parse(state.lastSync))) {
+  // Strict seconds-precision shape: a bare date 400s Congress.gov (PR #16,
+  // the 06-25 outage) and so do Date.toISOString() milliseconds (the
+  // 07-17/07-22 outage) - /T/-plus-parseable passed the poisoned .862Z
+  // cursor straight through, so pin the exact accepted format instead.
+  if (
+    !state.lastSync ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(state.lastSync) ||
+    Number.isNaN(Date.parse(state.lastSync))
+  ) {
     fail(
-      `sync-state.json lastSync (${JSON.stringify(state.lastSync)}) is not a full ISO-8601 datetime — Congress.gov 400s on bare-date fromDateTime cursors (PR #16)`
+      `sync-state.json lastSync (${JSON.stringify(state.lastSync)}) is not a seconds-precision ISO-8601 datetime (YYYY-MM-DDTHH:MM:SSZ) — Congress.gov 400s on both bare-date and fractional-seconds fromDateTime cursors (PR #16; 2026-07-17/22 outage)`
     );
   } else {
     const cursorAgeDays = (Date.now() - Date.parse(state.lastSync)) / 86_400_000;

@@ -117,12 +117,16 @@ if (forceSlugs.size) {
   console.log(`FORCE_DECODE_SLUGS active (gate bypassed for): ${[...forceSlugs].join(', ')}`);
 }
 
-// Congress.gov's bill-list `updateDate` field is date-only (e.g. "2026-06-04"),
-// not a full timestamp. Persisting it as-is breaks the next run's fromDateTime
-// query, which Congress.gov 400s on - the 2026-06-25/07-01 outage. Always
-// normalize to a full ISO-8601 datetime before it becomes the next cursor.
+// Congress.gov's fromDateTime is picky in BOTH directions. A bare date
+// ("2026-06-04", the shape its own bill-list updateDate uses) 400s - the
+// 2026-06-25/07-01 outage. A fractional-seconds timestamp
+// ("2026-07-16T17:54:26.862Z", the shape Date.toISOString() emits) ALSO
+// 400s - the 2026-07-17/07-22 outage, triggered the first time a clean
+// (unfrozen) run persisted raw runStart as the cursor. Live-verified
+// 2026-07-22: .862Z -> 400, seconds-precision -> 200. Always normalize to
+// seconds-precision ISO-8601 before anything becomes the next cursor.
 function toISODateTime(d) {
-  return /T/.test(d) ? d : `${d}T00:00:00Z`;
+  return /T/.test(d) ? d.replace(/\.\d+(?=Z$|[+-]\d\d:\d\d$)/, '') : `${d}T00:00:00Z`;
 }
 
 // ---- main ----
@@ -230,8 +234,10 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
 
 // Clean run (nothing left behind) advances to runStart; otherwise advance to
 // the high-water mark so we still make forward progress instead of re-scanning
-// the same window forever.
-state.lastSync = frozen ? cursor : runStart;
+// the same window forever. Both paths pass through toISODateTime: runStart
+// carries Date.toISOString() milliseconds, which poison the next run's
+// fromDateTime (the 07-17/07-22 outage).
+state.lastSync = toISODateTime(frozen ? cursor : runStart);
 state.lastRun = runStart;
 
 writeFileSync('data/bills.json', JSON.stringify(bills));
