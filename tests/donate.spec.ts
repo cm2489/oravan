@@ -8,8 +8,9 @@ import { DONATE_URL } from '../lib/site';
  * 2026-07-18 — a live Stripe "Support Oravan" payment link, the rail
  * chosen after the HCB fiscal-sponsorship denial (2026-07-15) — so this
  * build's real, observable behavior is: the footer states the
- * founder-and-supporters line with a Support CTA and a Donate nav link,
- * and the About page renders its support ask. Every affordance is a
+ * founder-and-supporters line with a single Support CTA (the old Donate
+ * nav link was consolidated away in the 2026-07 critique round 2), and
+ * the About page renders its support ask. Every affordance is a
  * link-out to Stripe (target=_blank, noopener) — never an iframe or a
  * payment field on Oravan's own infra. That's what these e2e tests hold
  * the current build to.
@@ -26,7 +27,7 @@ for (const [locale, prefix, messages] of [
   ['es', '/es', es],
 ] as const) {
   test.describe(`${locale} locale: donate surfaces are lit`, () => {
-    test('footer states the supporters line, with Support CTA and Donate link-outs to Stripe, and always an About link', async ({
+    test('footer states the supporters line with ONE Support CTA link-out to Stripe, and always an About link', async ({
       page,
     }) => {
       await page.goto(`${prefix}/`);
@@ -37,9 +38,10 @@ for (const [locale, prefix, messages] of [
       await expect(cta).toBeVisible();
       await expect(cta).toHaveAttribute('href', DONATE_URL!);
       await expect(cta).toHaveAttribute('target', '_blank');
-      const donate = footer.getByRole('link', { name: messages.common.footer.donate });
-      await expect(donate).toBeVisible();
-      await expect(donate).toHaveAttribute('href', DONATE_URL!);
+      // 2026-07 critique round 2: one money ask at the page exit. The former
+      // nav "Donate" link was consolidated into the Support CTA above — the
+      // footer carries exactly one link to the Stripe rail, never two.
+      await expect(footer.locator(`a[href="${DONATE_URL}"]`)).toHaveCount(1);
       await expect(footer.getByRole('link', { name: messages.common.footer.about })).toBeVisible();
     });
 

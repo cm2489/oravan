@@ -32,20 +32,23 @@ test.describe('DONATE_URL wiring (§6)', () => {
     expect(DONATE_URL).toBe('https://buy.stripe.com/00w8wIcX74px0CH8EJ8k804');
   });
 
-  test('Footer gates its funding line and Donate link on the DONATE_URL default, not a hardcoded value', () => {
+  test('Footer gates its funding line and single Support CTA on the DONATE_URL default, not a hardcoded value', () => {
     const src = readFileSync('components/Footer.tsx', 'utf8');
     expect(src).toContain("import { DONATE_URL } from '@/lib/site'");
     // Prop defaults to the real constant - production call sites (`<Footer />`,
     // no prop) render exactly what DONATE_URL says; the prop only exists so
     // tests can inject a fixture value without a second build.
     expect(src).toMatch(/donateUrl\s*=\s*DONATE_URL/);
-    expect(src).toContain('{donateUrl &&');
+    expect(src).toContain('{donateUrl ? (');
     // Dark today = the founder-funded line; lit = the supporters line + CTA.
     expect(src).toContain("t('footer.funding')");
     expect(src).toContain("t('footer.fundingLive')");
     expect(src).toContain("t('footer.fundingCta')");
     expect(src).toContain('target="_blank"');
     expect(src).toContain('rel="noopener noreferrer"');
+    // 2026-07 critique round 2: the footer's money surfaces consolidated to
+    // ONE ask - the Support CTA. The separate nav "Donate" link never returns.
+    expect(src).not.toContain("t('footer.donate')");
   });
 
   test('the About page gates its support ask on the same DONATE_URL constant - no second flag', () => {
