@@ -116,7 +116,7 @@
     "title": "Active bills, decoded",
     "sub": "Every bill moving through Congress right now, translated into plain language by AI. Filter by what matters to you.",
     "searchLabel": "Search bills",
-    "searchPlaceholder": "Search by topic, keyword, or bill number…",
+    "searchPlaceholder": "Search bills — topic, keyword, or number",
     "all": "All topics",
     "noResults": "No bills match. Try clearing a filter.",
     "showingCount": "{shown} of {total} bills",

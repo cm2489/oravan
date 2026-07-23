@@ -116,7 +116,7 @@
     "title": "Proyectos de ley activos, en claro",
     "sub": "Cada proyecto de ley que avanza ahora en el Congreso, traducido a lenguaje claro por IA. Filtra por lo que te importa.",
     "searchLabel": "Buscar proyectos de ley",
-    "searchPlaceholder": "Busca por tema, palabra clave o número…",
+    "searchPlaceholder": "Buscar — tema, palabra o número",
     "all": "Todos los temas",
     "noResults": "Ningún proyecto coincide. Prueba quitando un filtro.",
     "showingCount": "{shown} de {total} proyectos",
