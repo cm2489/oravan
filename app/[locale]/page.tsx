@@ -75,6 +75,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('heroTitle')}
             </h1>
             <p className="mt-5 max-w-prose text-lg text-paper/85">{t('heroSub')}</p>
+            {/* Thumb-reachable language switch (2026-07 critique round 2):
+                the header pill sits in the least reachable corner on mobile,
+                and the one control a Spanish-dominant visitor needs most
+                shouldn't. The link text is in the TARGET language — the EN
+                page says "Ver en español" — hence lang/hreflang on the link,
+                not the page. Complements the header pill, never replaces it. */}
+            <Link
+              href="/"
+              locale={locale === 'es' ? 'en' : 'es'}
+              lang={locale === 'es' ? 'en' : 'es'}
+              hrefLang={locale === 'es' ? 'en' : 'es'}
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-paper underline underline-offset-4 hover:text-brass-bright"
+            >
+              {t('heroLocaleLink')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
           </div>
           <div className="min-w-0 rounded-card bg-paper p-6 text-ink shadow-lift">
             <ZipForm />

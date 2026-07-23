@@ -39,6 +39,7 @@
   "home": {
     "heroTitle": "Tu voz importa. Hazla escuchar.",
     "heroSub": "Cinco minutos bastan. Encuentra a tus representantes, entiende los proyectos de ley que afectan tu vida — en lenguaje claro — y haz oír tu voz. Sin cuenta. Sin app. Solo tú y el teléfono.",
+    "heroLocaleLink": "View in English",
     "zipLabel": "Tu código postal",
     "zipPlaceholder": "p. ej. 20002",
     "zipCta": "Encontrar a mis representantes",

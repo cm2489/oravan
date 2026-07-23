@@ -39,6 +39,7 @@
   "home": {
     "heroTitle": "Your voice matters. Make it heard.",
     "heroSub": "Five minutes is all it takes. Find your representatives, understand the bills that touch your life in plain language, and say your piece. No account. No app. Just you and the phone.",
+    "heroLocaleLink": "Ver en español",
     "zipLabel": "Your ZIP code",
     "zipPlaceholder": "e.g. 20002",
     "zipCta": "Find my representatives",
