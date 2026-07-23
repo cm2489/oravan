@@ -76,9 +76,35 @@ export default async function RepsPage({
       <p className="mt-2 max-w-prose text-ink-soft">{t('sub')}</p>
 
       {!zip && (
-        <div className="mt-8 rounded-card border border-line bg-surface p-6 shadow-lift max-w-xl">
-          <p className="mb-4 font-medium">{t('noZip')}</p>
-          <ZipForm autoFocus />
+        <div className="mt-8">
+          <div className="max-w-xl rounded-card border border-line bg-surface p-6 shadow-lift">
+            <p className="mb-4 font-medium">{t('noZip')}</p>
+            <ZipForm autoFocus />
+          </div>
+
+          {/* The payoff, previewed before anything is asked (2026-07 critique
+              round 2): a ghost of the three cards a ZIP unlocks, so the
+              privacy-sensitive visitor deciding whether to type anything sees
+              exactly what they get. The skeletons are decorative — the
+              caption carries the promise. */}
+          <p className="mt-10 max-w-prose text-sm text-ink-soft">{t('previewNote')}</p>
+          <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rounded-card border border-line bg-surface p-5 opacity-60">
+                <div className="flex gap-4">
+                  <div className="h-22 w-18 shrink-0 rounded-lg bg-paper-deep" />
+                  <div className="min-w-0 flex-1">
+                    <div className="h-3 w-24 rounded-full bg-paper-deep" />
+                    <div className="mt-2.5 h-5 w-36 max-w-full rounded-full bg-paper-deep" />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="h-11 rounded-control bg-paper-deep" />
+                  <div className="h-11 rounded-control bg-paper-deep" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

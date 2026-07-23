@@ -74,6 +74,7 @@
     "title": "Tus representantes",
     "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos los números para alcanzarlos.",
     "noZip": "Escribe tu código postal para encontrar a tus tres miembros del Congreso.",
+    "previewNote": "Aquí aparecerán tus tres — tu representante en la Cámara y tus dos senadores, con sus números en Washington y en tu zona.",
     "multiDistrict": "Tu código postal abarca más de un distrito congresional. Te mostramos los dos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
     "districtHeading": "{state}, distrito {district}",
     "atLargeHeading": "{state}, distrito único",

@@ -74,6 +74,7 @@
     "title": "Your representatives",
     "sub": "Every US resident has one House representative and two senators. Here are yours, with every number that reaches them.",
     "noZip": "Enter your ZIP code to find your three members of Congress.",
+    "previewNote": "Your three will appear here — one House representative and two senators, with their DC and local numbers.",
     "multiDistrict": "Your ZIP code spans more than one congressional district. We've shown both below — your street address decides which one is yours. Not sure? Your senators are the same either way.",
     "districtHeading": "{state} district {district}",
     "atLargeHeading": "{state} at-large",
