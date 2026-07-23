@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs';
 import {
   CONGRESS,
   cg,
+  congressGovUrl,
   mapStatus,
   refreshBillFields,
   tagBill,
@@ -216,7 +217,7 @@ export async function syncOneBill(u, ctx) {
       issue_tags: tagBill(d.policyArea?.name),
       policy_area: d.policyArea?.name ?? null,
       urgency_score: urgencyScore(status, lastActionDate),
-      congress_gov_url: `https://www.congress.gov/bill/${CONGRESS}th-congress/${type === 'hr' ? 'house-bill' : type === 's' ? 'senate-bill' : type === 'hjres' ? 'house-joint-resolution' : 'senate-joint-resolution'}/${u.number}`,
+      congress_gov_url: congressGovUrl(type, u.number),
     };
     const text = await fetchBillText(type, u.number);
     const dec = await decode(anthropic, bill, text);
