@@ -127,7 +127,7 @@ test.describe('matchLocal (t2 free token-overlap match)', () => {
     expect(result).not.toBeNull();
     expect(result?.tier).toBe('ambiguous');
     if (!result || !('candidates' in result)) throw new Error('unreachable');
-    expect(result.candidates.map((c: { slug: string }) => c.slug)).toContain('hr-4346-119');
+    expect((result.candidates ?? []).map((c: { slug: string }) => c.slug)).toContain('hr-4346-119');
   });
 
   test('a single COMMON shared token still yields no candidate (rare-weighting is not a floor drop)', () => {
@@ -151,7 +151,7 @@ test.describe('matchLocal (t2 free token-overlap match)', () => {
     const result = matchLocal('USCIS ends employment authorization extensions after new vote', nqIndex);
     expect(result).not.toBeNull();
     if (!result) throw new Error('unreachable');
-    const slugs = result.tier === 't2' ? [result.slug] : result.candidates.map((c: { slug: string }) => c.slug);
+    const slugs = result.tier === 't2' ? [result.slug] : (result.candidates ?? []).map((c: { slug: string }) => c.slug);
     expect(slugs).toContain('hjres-7-119');
   });
 });
