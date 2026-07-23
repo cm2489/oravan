@@ -118,26 +118,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Top actions */}
       <section className="mx-auto max-w-5xl px-4 py-14" aria-labelledby="top-actions">
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <h2 id="top-actions" className="font-display text-3xl font-bold">
-              {t('topTitle')}
-            </h2>
-            <p className="mt-1 text-ink-soft">{t('topSub')}</p>
-            {/* R2: the client-side stale caveat continues the stamp's own
-                sentence — one line, one date; renders nothing while fresh */}
-            <p className="mt-1 max-w-prose text-xs text-ink-faint">
-              {dataAsOf}
-              <StalenessNote checkedAt={freshness.checkedAt} />
-            </p>
-          </div>
-          <Link
-            href="/bills"
-            className="inline-flex items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:text-night"
-          >
-            {t('seeAll', { count: total })}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
+        <div>
+          <h2 id="top-actions" className="font-display text-3xl font-bold">
+            {t('topTitle')}
+          </h2>
+          <p className="mt-1 text-ink-soft">{t('topSub')}</p>
+          {/* R2: the client-side stale caveat continues the stamp's own
+              sentence — one line, one date; renders nothing while fresh */}
+          <p className="mt-1 max-w-prose text-xs text-ink-faint">
+            {dataAsOf}
+            <StalenessNote checkedAt={freshness.checkedAt} />
+          </p>
         </div>
         {top.length > 0 ? (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -161,6 +152,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <UrgencyEmptyState {...freshness} />
           </div>
         ) : null}
+        {/* The section closes with its exit (2026-07 critique round 2): a
+            full-width row under the grid, not a link floating beside the
+            intro where it reads as decoration — and odd card counts never
+            end the band on a visible hole. */}
+        <Link
+          href="/bills"
+          className="mt-4 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control border-2 border-ink/15 bg-surface px-4 py-3 font-semibold hover:border-ink/40"
+        >
+          {t('seeAll', { count: total })}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
       </section>
 
       {/* See how a call works - the bills above lead here; the demo de-risks
