@@ -217,11 +217,11 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
   } else {
     const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < MAX_NEW_DECODES });
     if (result.outcome === 'refreshed') {
-      refreshed++;
+      refreshed++; handledSlugs.add(result.slug);
     } else if (result.outcome === 'added') {
-      added++;
+      added++; handledSlugs.add(result.slug);
     } else if (result.outcome === 'gated') {
-      gated++; // real legislative motion absent - fully handled, NOT queued/frozen
+      gated++; handledSlugs.add(result.slug); // real legislative motion absent - fully handled, NOT queued/frozen
     } else if (result.outcome === 'budget') {
       queued++; // decode budget exhausted; revisit next run
       needsWork = true;
@@ -234,6 +234,29 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
   }
   if (needsWork) frozen = true;
   else if (!frozen && u.updateDate) cursor = toISODateTime(u.updateDate);
+}
+
+// ---- Force-slug direct fetch (2026-07-23) ------------------------------
+// FORCE_DECODE_SLUGS used to be only a gate bypass for bills the two passes
+// happened to ENCOUNTER - a forced bill whose last update predates the
+// cursor window was silently never fetched at all (the hr-7296/hr-22
+// catch-up gap: "0 failed", bills absent). A force list is an explicit
+// owner order: any listed slug the passes didn't resolve gets fetched
+// directly by number. Failures log loudly but never freeze the cursor -
+// a bad slug must not stall the nightly backlog.
+for (const slug of forceSlugs) {
+  if (handledSlugs.has(slug)) continue;
+  const m = slug.match(/^([a-z]+)-(\d+)-\d+$/);
+  if (!m) {
+    console.log(`force direct-fetch: SKIPPED malformed slug ${JSON.stringify(slug)}`);
+    continue;
+  }
+  const result = await syncOneBill({ type: m[1], number: m[2] }, { ...ctxBase, allowDecode: true });
+  console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
+  if (result.outcome === 'refreshed') refreshed++;
+  else if (result.outcome === 'added') added++;
+  else if (result.outcome === 'failed') failed++;
+  handledSlugs.add(slug);
 }
 
 // Clean run (nothing left behind) advances to runStart; otherwise advance to

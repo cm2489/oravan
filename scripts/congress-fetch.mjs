@@ -158,6 +158,22 @@ export function updateSlug(u, congress = CONGRESS) {
   return `${u.type.toLowerCase()}-${u.number}-${congress}`.toLowerCase();
 }
 
+/** Congress.gov's URL path segment per bill type. The old inline ternary
+ *  only knew the four original types, so a decoded hconres/sconres got a
+ *  senate-joint-resolution URL (2026-07-23). One map, all six types. */
+const CHAMBER_PATHS = {
+  hr: 'house-bill',
+  s: 'senate-bill',
+  hjres: 'house-joint-resolution',
+  sjres: 'senate-joint-resolution',
+  hconres: 'house-concurrent-resolution',
+  sconres: 'senate-concurrent-resolution',
+};
+
+export function congressGovUrl(type, number) {
+  return `https://www.congress.gov/bill/${CONGRESS}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
+}
+
 /** Mutate an existing corpus bill's refreshable fields in place from a
  *  Congress.gov bill-detail payload (`cg('/bill/{congress}/{type}/{number}')`'s
  *  `.bill`). Free, no AI cost - the one place both scripts' "refresh" branch
@@ -172,4 +188,8 @@ export function refreshBillFields(existing, detail) {
   const tags = tagBill(detail.policyArea?.name);
   if (tags.length) existing.issue_tags = tags;
   existing.policy_area = detail.policyArea?.name ?? existing.policy_area;
+  // Recompute rather than trust the stored value: bills decoded while the
+  // URL builder was wrong (hconres/sconres, 2026-07-23) self-heal on their
+  // next refresh.
+  existing.congress_gov_url = congressGovUrl(existing.bill_type, existing.bill_number);
 }
