@@ -122,9 +122,6 @@ export default async function BillPage({
       </p>
 
       <TldrStrip bill={bill} />
-
-      {/* Pass the page along - a quiet utility, not a hero */}
-      <SharePanel url={shareUrl} text={shareText} />
     </>
   );
 
@@ -200,12 +197,18 @@ export default async function BillPage({
 
   // 2026-07 critique (majority): the read-then-act path must not detour
   // through press headlines and procedural prose - the action panel sits at
-  // the moment of comprehension, directly after Decoded; coverage and the
-  // official record follow it. The old CallPrompt jump band existed to
-  // bridge the gap this ordering removes.
+  // the moment of comprehension, right after Decoded (only the one-row share
+  // utility between); coverage and the official record follow it. The old
+  // CallPrompt jump band existed to bridge the gap this ordering removes.
   const content = (
     <>
       {decodedBlock}
+      {/* Pass the page along - a quiet utility, not a hero. Below Decoded,
+          not above it: sharing intent forms after reading, and the hero
+          shouldn't spend prime space on a secondary action (2026-07
+          critique round 2). One compact row - the action panel is still
+          immediately in view below. */}
+      <SharePanel url={shareUrl} text={shareText} />
       {action}
       {/* For the hesitant: what a call actually looks like, on demand,
           collapsed so it never displaces the CTA */}
