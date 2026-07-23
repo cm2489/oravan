@@ -1,6 +1,10 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react';
+
+// Stable no-op subscription for the hydration gate below (same idiom as
+// StalenessNote/UrgencyEmptyState).
+const emptySubscribe = () => () => {};
 import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
 import { FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
@@ -125,11 +129,15 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   // Hydration beacon for the e2e suite: interactions on this page drive
   // controlled inputs, and a fill/click that lands before React attaches is
   // silently lost (the CI-webkit autofill race that survived two rounds of
-  // timeout-widening). `true` only after mount, so the attribute's presence
-  // PROVES the handlers exist. Same rationale as tests/helpers.ts's
-  // waitForFeedHydrated; zero user-facing effect.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  // timeout-widening). False on the server and the hydration render, true
+  // after — the same useSyncExternalStore gate StalenessNote uses (no state
+  // in an effect, no hydration mismatch, no react-hooks lint violation).
+  // The attribute's presence PROVES the handlers exist; zero user effect.
+  const hydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   async function suggestTheme() {
     if (!matchUrl.trim() || matchStatus === 'loading') return;
