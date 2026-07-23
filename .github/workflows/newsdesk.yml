@@ -2,19 +2,25 @@ name: Newsdesk headline trigger
 
 # Hourly headline-triggered bill resync (Part 2 of the 2026-07-16
 # spend-reduction pair; Part 1 is the priority decode gate in
-# scripts/sync-bills.mjs). Polls a politically-balanced basket of free RSS
-# feeds (NO paid news API - see scripts/newsdesk.mjs's header comment),
-# matches headlines to bills cheapest-tier-first, and only acts on a bill
-# that clears the >=2-distinct-outlet corroboration rule (or carries an
-# explicit bill-number citation, which needs no corroboration).
+# scripts/sync-bills.mjs). Since 2026-07-23 it ingests TWO signal classes:
+# tier-0 government feeds (Congress.gov floor-today/most-viewed RSS +
+# docs.house.gov's weekly look-ahead floorschedule - explicit bill numbers,
+# zero lean, fire without press corroboration, loudly logged) and a
+# politically-balanced basket of free press RSS feeds (NO paid news API -
+# see scripts/newsdesk.mjs's header comment), matched cheapest-tier-first;
+# a press-derived match only acts on a bill that clears the
+# >=2-distinct-outlet corroboration rule (or carries an explicit
+# bill-number citation, which needs no corroboration).
 #
 # COST: expected ~$0.12/day Haiku (t3 disambiguation - most hourly runs'
-# batch is empty, $0) + $0-0.45/day trigger decodes on a typical/busy day;
-# NEWSDESK_DAILY_DECODE_CAP=10 (scripts/newsdesk.mjs) makes the documented
-# <$2/day ceiling code-enforced, not just expected. Actions minutes: $0
-# (public repo, unlimited free minutes on standard runners). Full
-# typical/busy/hard-ceiling breakdown in scripts/newsdesk.mjs's header
-# comment and the introducing PR's report.
+# batch is empty, $0) + $0-0.45/day trigger decodes on a typical/busy day
+# (tier-0 fires are almost always free refreshes of corpus bills);
+# NEWSDESK_DAILY_DECODE_CAP=10 + NEWSDESK_TIER0_DAILY_DECODE_CAP=20
+# (scripts/newsdesk.mjs) make the black-swan hard ceiling 30 decodes/day
+# (~$2.10-4.50) code-enforced - inside the owner's all-in <$5/day
+# directive. Actions minutes: $0 (public repo, unlimited free minutes on
+# standard runners). Full typical/busy/hard-ceiling breakdown in
+# scripts/newsdesk.mjs's header comment and the introducing PRs' reports.
 
 on:
   schedule:

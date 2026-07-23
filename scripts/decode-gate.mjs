@@ -39,12 +39,12 @@
  * 'committee' — markup / floor_vote / passed_chamber / conference /
  * signed / vetoed all count as "real legislative motion" per the owner's
  * directive; 'committee' does not, because it is dominated (92%) by mere
- * referral. This intentionally gates out the 133 miscategorized
- * real-action bills along with the 1,573 referral-only ones, trading a
- * small amount of recall for a bright, cheap-to-reason-about line that
- * needs no new classification surface. If that recall loss turns out to
- * matter in practice, fixing the "Mark-up" hyphen gap in `mapStatus` is
- * the correct follow-up, not a second condition here.
+ * referral. (Historical note: this comment once cited ~133 real-action
+ * bills miscategorized by mapStatus's "Mark-up" hyphen gap; that gap was
+ * closed in PR #90 — mapStatus now matches both spellings — so the gate's
+ * recall loss today is referral-stage bills only. Those get their page the
+ * moment they show real motion, or sooner via a newsdesk/tier-0 signal
+ * fire, which force-bypasses this gate.)
  *
  * At today's distribution, roughly 20.5% of bills (441/2,147) would clear
  * this line — matching the owner's own framing that "the majority… is
