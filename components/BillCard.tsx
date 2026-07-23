@@ -2,14 +2,28 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { BillTeaser } from '@/lib/types';
 
-export function BillCard({ bill, coverageCount }: { bill: BillTeaser; coverageCount?: number }) {
+export function BillCard({
+  bill,
+  coverageCount,
+  emphasis = false,
+}: {
+  bill: BillTeaser;
+  coverageCount?: number;
+  /** The 2px ink border the ActionPanel already owns — reserved for the
+      "Calling now" band, so "a call lands hardest here" is visible before
+      it's read (2026-07 critique round 2). Never a new color, per the
+      nonpartisan-palette rule. */
+  emphasis?: boolean;
+}) {
   const t = useTranslations();
   const format = useFormatter();
 
   return (
     <Link
       href={`/bills/${bill.slug}`}
-      className="group block rounded-card border border-line bg-surface p-5 shadow-lift transition-transform hover:-translate-y-0.5"
+      className={`group block rounded-card bg-surface p-5 shadow-lift transition-transform hover:-translate-y-0.5 ${
+        emphasis ? 'border-2 border-ink' : 'border border-line'
+      }`}
     >
       {/* Wrapping happens BETWEEN whole chunks, never inside one: long Spanish
           status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
