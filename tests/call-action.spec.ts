@@ -74,7 +74,9 @@ test.describe('S7 pre-dial beat: renders for a fresh caller across all three sta
         await expect(dialog).toBeVisible();
         // Fresh profile (no calls logged yet): the first-call flavor of the
         // pre-dial beat shows, never the repeat-caller one, for every stance.
-        await expect(dialog.getByText(messages.bill.firstCallTitle)).toBeVisible();
+        // exact: the dialog's why-call link (2026-07 critique round 2) starts
+        // with this same phrase in Spanish, so substring matching is ambiguous.
+        await expect(dialog.getByText(messages.bill.firstCallTitle, { exact: true })).toBeVisible();
         // The honest, time-aware office-hours line sits beside it.
         await expect(dialog.getByText(messages.bill.officeHoursTitle)).toBeVisible();
         await expect(dialog.getByText(messages.bill.officeHoursOpenBody)).toBeVisible();
@@ -98,7 +100,7 @@ test('S7 pre-dial beat: a repeat caller sees the general beat, not the first-cal
   await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await page.getByRole('button', { name: en.bill.startCall }).click();
   let dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog.getByText(en.bill.firstCallTitle)).toBeVisible();
+  await expect(dialog.getByText(en.bill.firstCallTitle, { exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: en.bill.outcome.voicemail }).first().click();
 
@@ -109,7 +111,7 @@ test('S7 pre-dial beat: a repeat caller sees the general beat, not the first-cal
   dialog = page.getByRole('dialog', { name: en.bill.callTitle });
   await expect(dialog.getByText(en.bill.preDialTitle)).toBeVisible();
   await expect(dialog.getByText(en.bill.preDialBody)).toBeVisible();
-  await expect(dialog.getByText(en.bill.firstCallTitle)).toHaveCount(0);
+  await expect(dialog.getByText(en.bill.firstCallTitle, { exact: true })).toHaveCount(0);
 });
 
 test.describe('S7 office-hours note: honest, time-aware, Eastern-only', () => {
