@@ -122,6 +122,15 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
+  // Hydration beacon for the e2e suite: interactions on this page drive
+  // controlled inputs, and a fill/click that lands before React attaches is
+  // silently lost (the CI-webkit autofill race that survived two rounds of
+  // timeout-widening). `true` only after mount, so the attribute's presence
+  // PROVES the handlers exist. Same rationale as tests/helpers.ts's
+  // waitForFeedHydrated; zero user-facing effect.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
   async function suggestTheme() {
     if (!matchUrl.trim() || matchStatus === 'loading') return;
     setMatchStatus('loading');
@@ -321,7 +330,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   }
 
   return (
-    <div className="mt-8">
+    <div className="mt-8" data-hydrated={hydrated || undefined}>
       <h2 className="font-display text-2xl font-bold">{t('configuratorHeading')}</h2>
 
       {/* min-w-0 on both columns: grid items default to min-width:auto, so

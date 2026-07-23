@@ -315,18 +315,18 @@ test.describe('match your site (mocked /api/brand)', () => {
 
   // Submit the match URL, robust against the click-before-hydration race:
   // a click that lands on the server-rendered button before React attaches
-  // its handler fires no fetch and leaves no replayable DOM effect, so we
-  // retry fill+click until the /api/brand request actually goes out. Takes
-  // the locale's messages so the ES flow reuses the same guard.
-  // 2026-07-22: widened from 1500ms/10s after CI webkit (both projects, run
-  // 29889610791) exhausted every retry - under parallel-worker load the
-  // click→fetch gap alone can exceed 1.5s, and slow hydration eats most of
-  // a 10s budget. If this STILL flakes, the next step is a hydration beacon
-  // (helpers.ts's waitForFeedHydrated idiom), not more timeout.
+  // its handler fires no fetch and leaves no replayable DOM effect. Two
+  // rounds of timeout-widening (1500ms/10s → 3000ms/20s) still exhausted on
+  // CI webkit-desktop (runs 29889610791, 30036660024), so this now does what
+  // the 07-22 note promised: wait for the configurator's hydration beacon
+  // (data-hydrated, set in a mount effect — proof the handlers exist) before
+  // driving the form. The retry loop stays as the belt to the beacon's
+  // suspenders. Takes the locale's messages so the ES flow reuses the guard.
   async function submitUrl(
     page: import('@playwright/test').Page,
     messages: typeof en | typeof es = en
   ) {
+    await page.locator('[data-hydrated="true"]').waitFor({ timeout: 30_000 });
     const button = page.getByRole('button', { name: messages.embeds.matchSiteCta });
     await expect(async () => {
       await page.getByLabel(messages.embeds.matchSiteUrlLabel).fill('https://nightowl.example');
