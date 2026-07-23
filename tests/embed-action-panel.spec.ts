@@ -51,7 +51,7 @@ test('no token: refuses with the generic unauthorized message, link to /embeds',
   await expect(link).toHaveAttribute('href', '/embeds');
   await expect(link).toHaveAttribute('target', '_blank');
   // Never a blank/broken page, never a crash, never the citizen flow.
-  await expect(page.getByRole('button', { name: en.bill.stance.support })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: en.bill.stance.support })).toHaveCount(0);
 });
 
 test('bad/unresolvable token: SAME generic unauthorized message as no token (deliberately not distinguished)', async ({
@@ -83,7 +83,7 @@ test('domain-gated tenant, direct navigation (no Referer sent): Referer absent -
   page,
 }) => {
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN_DOMAIN_GATED }));
-  await expect(page.getByRole('button', { name: en.bill.stance.support })).toBeVisible();
+  await expect(page.getByRole('radio', { name: en.bill.stance.support })).toBeVisible();
 });
 
 // The genuine-cross-origin-iframe variant of this same domain-gated tenant
@@ -119,11 +119,11 @@ test('Live: stance -> ZIP -> generate -> review (AI chip, editable) -> call, in 
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
 
   // Step 1 - stance. No script, no call affordance yet.
-  const supportBtn = page.getByRole('button', { name: en.bill.stance.support });
+  const supportBtn = page.getByRole('radio', { name: en.bill.stance.support });
   await expect(supportBtn).toBeVisible();
   await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
   await supportBtn.click();
-  await expect(supportBtn).toHaveAttribute('aria-pressed', 'true');
+  await expect(supportBtn).toHaveAttribute('aria-checked', 'true');
 
   // Step 2 - ZIP (F2: never an address field in any iframe).
   await expect(page.locator('input[name="street-address"]')).toHaveCount(0);
@@ -163,7 +163,7 @@ test('Live: the editable textarea can actually be edited (a real review step, no
 }) => {
   await mockScript(page);
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
-  await page.getByRole('button', { name: en.bill.stance.oppose }).click();
+  await page.getByRole('radio', { name: en.bill.stance.oppose }).click();
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   const textarea = page.getByRole('textbox', { name: en.bill.scriptTitle });
@@ -179,7 +179,7 @@ test('Live: rate-limited generate() shows the inline rateLimited message (widget
     route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: 'rate_limited' }) })
   );
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
-  await page.getByRole('button', { name: en.bill.stance.support }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   await expect(page.getByText(en.bill.rateLimited)).toBeVisible();
@@ -189,7 +189,7 @@ test('Live: rate-limited generate() shows the inline rateLimited message (widget
 test('Live: brandless never hides the AI-disclosure chip (S14 precedent, no tier exception)', async ({ page }) => {
   await mockScript(page);
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN, brandless: '1' }));
-  await page.getByRole('button', { name: en.bill.stance.support }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   await expect(page.getByText(en.bill.scriptDisclaimer)).toBeVisible();
@@ -214,13 +214,45 @@ test('zero cookies on the action-panel embed response', async ({ page }) => {
 
 test('a11y basics: labeled ZIP input, 44px stance buttons, visible focus', async ({ page }) => {
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
-  const supportBtn = page.getByRole('button', { name: en.bill.stance.support });
+  const supportBtn = page.getByRole('radio', { name: en.bill.stance.support });
   const box = await supportBtn.boundingBox();
   expect(box?.height, 'stance button must meet the 44px touch target').toBeGreaterThanOrEqual(44);
   const zipInput = page.getByLabel(en.home.zipLabel);
   await expect(zipInput).toBeVisible();
   await zipInput.focus();
   await expect(zipInput).toBeFocused();
+});
+
+/*
+ * 2026-07 critique round 2: the embed's stance picker is the same WAI-ARIA
+ * radio group the citizen ActionPanel became in round 1 (#97) — a paying
+ * customer's visitors get the identical screen-reader contract, never the
+ * old three-independent-toggles misdescription.
+ */
+test('a11y: stance picker is a real radio group — roving tabindex, arrow keys select as they move', async ({
+  page,
+}) => {
+  await mockScript(page);
+  await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
+
+  const group = page.getByRole('radiogroup', { name: en.bill.stanceQ });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('radio')).toHaveCount(3);
+
+  // Roving tabindex: exactly one stop in the group before any selection.
+  await expect(group.locator('[role="radio"][tabindex="0"]')).toHaveCount(1);
+
+  const support = page.getByRole('radio', { name: en.bill.stance.support });
+  const oppose = page.getByRole('radio', { name: en.bill.stance.oppose });
+  await support.click();
+  await expect(support).toHaveAttribute('aria-checked', 'true');
+
+  // Arrow keys move focus AND select, same as clicking (WAI-ARIA radio pattern).
+  await support.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(oppose).toBeFocused();
+  await expect(oppose).toHaveAttribute('aria-checked', 'true');
+  await expect(support).toHaveAttribute('aria-checked', 'false');
 });
 
 /*
@@ -244,6 +276,6 @@ test('S20: a fully-authorized live render is unaffected by the (unconfigured) co
   await mockScript(page);
   const res = await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
   expect(res?.status()).toBe(200);
-  await expect(page.getByRole('button', { name: en.bill.stance.support })).toBeVisible();
+  await expect(page.getByRole('radio', { name: en.bill.stance.support })).toBeVisible();
   await expect(page.locator('a[href^="tel:"]')).toHaveCount(0); // pre-stance, same as the very first live test above
 });

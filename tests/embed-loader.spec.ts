@@ -275,7 +275,7 @@ test('action-panel via the loader: data-token forwards into the iframe src and r
     // Reaches the Live state - proves the forwarded token really resolves,
     // not just that the query string was built correctly.
     const frame = page.frameLocator(ACTION_PANEL_IFRAME_SELECTOR);
-    await expect(frame.getByRole('button', { name: en.bill.stance.support })).toBeVisible();
+    await expect(frame.getByRole('radio', { name: en.bill.stance.support })).toBeVisible();
   } finally {
     await host.close();
   }
