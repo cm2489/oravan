@@ -181,7 +181,10 @@ body {
   padding: 8px 12px;
 }
 
-.re-toggle[aria-pressed='true'] {
+/* aria-pressed covers the language toggles; aria-checked covers the stance
+   radio group (WAI-ARIA radio pattern, mirroring the citizen ActionPanel). */
+.re-toggle[aria-pressed='true'],
+.re-toggle[aria-checked='true'] {
   background: var(--_accent);
   border-color: var(--_accent);
   color: var(--_accent-ink);

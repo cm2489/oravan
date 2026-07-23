@@ -89,8 +89,10 @@ test('ES call moment: dial mode and outcome logging speak Spanish end to end', a
   const dialog = page.getByRole('dialog', { name: es.bill.callTitle });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText(/GUION SIMULADO/)).toBeVisible();
-  // Fresh profile: the first-call voicemail nudge shows, localized.
-  await expect(dialog.getByText(es.bill.firstCallTitle)).toBeVisible();
+  // Fresh profile: the first-call voicemail nudge shows, localized. exact:
+  // the dialog's why-call link (2026-07 critique round 2) starts with this
+  // same phrase in Spanish, so substring matching is ambiguous.
+  await expect(dialog.getByText(es.bill.firstCallTitle, { exact: true })).toBeVisible();
   // Auto-waiting assertion: the dial buttons appear once /api/reps resolves.
   await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
   await page.keyboard.press('Escape');

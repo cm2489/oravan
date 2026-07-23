@@ -329,6 +329,17 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             <div>
               <p className="font-semibold">{callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}</p>
               <p className="mt-0.5 text-ink-soft">{callCount === 0 ? t('firstCallBody') : t('preDialBody')}</p>
+              {/* The core persuasion, one tap from the highest-anxiety moment
+                  (2026-07 critique round 2): every pre-call surface links
+                  /why-call in-flow. Navigating away closes the mode - that is
+                  the reader's own call to make. */}
+              <Link
+                href="/why-call"
+                className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold underline underline-offset-4"
+              >
+                <BookOpen className="h-4 w-4" aria-hidden />
+                {t('whyLink')}
+              </Link>
             </div>
           </div>
           <div className="mt-3">

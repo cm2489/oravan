@@ -209,9 +209,12 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
               {t(`bills.band.${band}`)}
             </h2>
             <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
+            {/* Only "Calling now" cards carry the 2px ink border (the
+                ActionPanel's own treatment) — the urgency hierarchy the bands
+                exist for, visible before it's read (2026-07 critique round 2). */}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {visible.map((b) => (
-                <BillCard key={b.slug} bill={b} />
+                <BillCard key={b.slug} bill={b} emphasis={band === 'now'} />
               ))}
             </div>
             {!isOpen && all.length > BAND_CAP && (

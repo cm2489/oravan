@@ -87,6 +87,7 @@ export function ActionPanelWidget({
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
   const t = DICTS[locale];
   const rootRef = useRef<HTMLElement>(null);
+  const stanceRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const hydrated = useHydrated();
 
   const [stance, setStance] = useState<Stance | null>(null);
@@ -223,16 +224,36 @@ export function ActionPanelWidget({
       <p className="bc-citation">{bill.citation}</p>
       <h1 className="bc-headline">{displayHeadline}</h1>
 
-      {/* Step 1 - stance */}
+      {/* Step 1 - stance. A real radio group, not three independent toggles —
+          the same WAI-ARIA radio pattern components/ActionPanel.tsx adopted in
+          the 2026-07 a11y critique (exactly one stance can be active, and
+          aria-pressed misdescribes that contract to screen readers). Roving
+          tabindex + arrow keys; arrows select as they move, same as clicking.
+          Paying-customer surface: parity with the citizen panel, never less. */}
       <fieldset className="ap-fieldset" style={{ marginTop: 16 }}>
         <legend className="ap-legend">{t.bill.stanceQ}</legend>
-        <div className="re-row">
-          {STANCES.map((s) => (
+        <div role="radiogroup" aria-label={t.bill.stanceQ} className="re-row">
+          {STANCES.map((s, i) => (
             <button
               key={s}
+              ref={(el) => {
+                stanceRefs.current[i] = el;
+              }}
               type="button"
               className="re-btn re-toggle"
-              aria-pressed={stance === s}
+              role="radio"
+              aria-checked={stance === s}
+              tabIndex={(stance ?? STANCES[0]) === s ? 0 : -1}
+              onKeyDown={(e) => {
+                let next: number | null = null;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % STANCES.length;
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + STANCES.length) % STANCES.length;
+                if (next != null) {
+                  e.preventDefault();
+                  stanceRefs.current[next]?.focus();
+                  void generate(STANCES[next], zip);
+                }
+              }}
               disabled={loading}
               onClick={() => void generate(s, zip)}
             >

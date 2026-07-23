@@ -39,8 +39,23 @@ test.describe('locale routing — URLs authoritative (localeDetection off)', () 
   test('the language switcher still performs an explicit locale change', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await page.getByRole('link', { name: 'En español' }).click();
+    // exact: the homepage hero gained its own thumb-reachable "Ver en
+    // español" link (2026-07 critique round 2), whose accessible name
+    // contains this one as a substring.
+    await page.getByRole('link', { name: 'En español', exact: true }).click();
     await expect(page).toHaveURL(/\/es$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  });
+
+  test('the hero language link is a second, thumb-reachable switch into Spanish (and back)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Ver en español' }).click();
+    await expect(page).toHaveURL(/\/es$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await page.getByRole('link', { name: 'View in English' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 });

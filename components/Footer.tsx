@@ -26,8 +26,10 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
         {/* Phase 1/2 funding transparency line: dark copy today (DONATE_URL
             null), automatically upgrades to the "funded + supporters" line
             with a Support Oravan link the moment DONATE_URL is set - one
-            constant, no separate flag, same pattern as the nav Donate link
-            below. */}
+            constant, no separate flag. This outline button is the footer's
+            ONE money ask: the former nav "Donate" link was consolidated away
+            (2026-07 critique round 2 - stacked CTAs at the page exit read as
+            needy and split one action across two labels). */}
         <p className="max-w-prose flex flex-wrap items-center gap-3">
           {donateUrl ? (
             <>
@@ -78,19 +80,6 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
           <Link href="/partners" className="underline underline-offset-2 hover:text-ink">
             {t('footer.partners')}
           </Link>
-          {/* §6: quiet, persistent, never a banner or modal - link only, dark
-              until a donation rail exists (DONATE_URL flips from null; the
-              HCB fiscal-sponsorship route was denied 2026-07-15, rail TBD). */}
-          {donateUrl && (
-            <a
-              href={donateUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-ink"
-            >
-              {t('footer.donate')}
-            </a>
-          )}
         </nav>
         {/* id is the correction-path anchor: /citations links here as "#feedback"
             rather than duplicating this dialog (one intake, not a parallel one -

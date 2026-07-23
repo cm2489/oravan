@@ -14,9 +14,9 @@ export const SITE_ORIGIN = 'https://oravan.org';
  * with a customer-chosen amount ("Support Oravan", minted 2026-07-18). This
  * is the rail chosen after the HCB fiscal-sponsorship denial (2026-07-15):
  * a plain payment link, personal support, no sponsor. Every donate
- * affordance (footer funding line + Donate link, the About page's "Who pays
- * for this?" ask copy) reads this one constant; setting it back to null
- * darkens all of them at once.
+ * affordance (footer funding line + Support CTA, the homepage support band,
+ * the About page's "Who pays for this?" ask copy) reads this one constant;
+ * setting it back to null darkens all of them at once.
  *
  * Copy rule, non-negotiable: no surface may claim tax-deductibility,
  * nonprofit status, or a fiscal sponsor — contributions are personal
