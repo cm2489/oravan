@@ -70,7 +70,7 @@ import { createHash } from 'node:crypto';
 // The 119th Congress; bump alongside congress-fetch.mjs's own CONGRESS if
 // the tracked Congress ever changes.
 const CONGRESS = 119;
-export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
+export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']);
 
 // ---- t1: explicit bill-number citations ------------------------------
 // Each alternative requires the number to be IMMEDIATELY adjacent (through
@@ -82,13 +82,25 @@ export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
 // between "U" and "S"). HJRES/SJRES are tried before the shorter HR/S
 // alternatives at each scan position so "H.J.Res. 45" resolves as hjres,
 // not as a stray "H." partial.
-const CITATION_RE = /\b(H\.?\s?J\.?\s?Res\.?|S\.?\s?J\.?\s?Res\.?|H\.?\s?R\.?|S\.?)\s?(\d{1,5})\b/gi;
+const CITATION_RE =
+  /\b(H\.?\s?Con\.?\s?Res\.?|S\.?\s?Con\.?\s?Res\.?|H\.?\s?J\.?\s?Res\.?|S\.?\s?J\.?\s?Res\.?|H\.?\s?R\.?|S\.?)\s?(\d{1,5})\b/gi;
 
 function normalizeType(raw) {
   return raw.replace(/[^a-zA-Z]/g, '').toLowerCase();
 }
 
-const TYPE_ALIASES = { h: null, hr: 'hr', s: 's', hjres: 'hjres', sjres: 'sjres' };
+// hconres/sconres tracked as of 2026-07-23 (War Powers + budget resolutions
+// — mirrors congress-fetch.mjs BILL_TYPES). "H. Res."/"S. Res." simple
+// resolutions still normalize to hres/sres -> absent here -> dropped.
+const TYPE_ALIASES = {
+  h: null,
+  hr: 'hr',
+  s: 's',
+  hjres: 'hjres',
+  sjres: 'sjres',
+  hconres: 'hconres',
+  sconres: 'sconres',
+};
 
 /** Find every explicit, trackable bill-number citation in `text`. Returns
  *  `[{type, number, slug}]` — type is one of hr/s/hjres/sjres, slug is

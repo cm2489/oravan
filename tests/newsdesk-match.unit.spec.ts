@@ -257,10 +257,12 @@ test.describe('extractFloorFeedSlugs (Congress.gov floor-today RSS: title IS the
 </channel></rss>`;
 
   test('extracts tracked bill numbers from item titles', () => {
-    expect(extractFloorFeedSlugs(HOUSE_FLOOR_XML)).toEqual(['hr-8884-119']);
+    // hconres tracked as of 2026-07-23 (War Powers fights ride on
+    // concurrent resolutions - the H.Con.Res.38 invisibility bug).
+    expect(extractFloorFeedSlugs(HOUSE_FLOOR_XML)).toEqual(['hr-8884-119', 'hconres-89-119']);
   });
 
-  test('H.Con.Res (untracked type) is silently excluded, never mis-parsed as H.R.', () => {
+  test('H.Con.Res resolves as hconres, never mis-parsed as H.R.', () => {
     expect(extractFloorFeedSlugs(HOUSE_FLOOR_XML)).not.toContain('hr-89-119');
   });
 
@@ -303,13 +305,19 @@ test.describe('extractBillsThisWeekSlugs (docs.house.gov floorschedule look-ahea
 </floorschedule>`;
 
   test('extracts tracked legis-num bills (the look-ahead: scheduled before the vote)', () => {
-    expect(extractBillsThisWeekSlugs(FLOORSCHEDULE_XML).sort()).toEqual(['hr-2715-119', 'hr-9770-119']);
+    // hconres tracked as of 2026-07-23; H. Res. (simple resolution) stays out.
+    expect(extractBillsThisWeekSlugs(FLOORSCHEDULE_XML).sort()).toEqual([
+      'hconres-113-119',
+      'hr-2715-119',
+      'hr-9770-119',
+    ]);
   });
 
-  test('untracked H. Con. Res. / H. Res. legis-nums are excluded', () => {
+  test('H. Con. Res. resolves as hconres; untracked H. Res. legis-nums stay excluded', () => {
     const slugs = extractBillsThisWeekSlugs(FLOORSCHEDULE_XML);
     expect(slugs).not.toContain('hr-113-119');
     expect(slugs).not.toContain('hr-1438-119');
+    expect(slugs).not.toContain('hres-1438-119');
   });
 
   test('bills cited only in floor-text prose (H.R. 8800 in the rule item) do NOT leak in', () => {

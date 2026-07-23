@@ -180,7 +180,11 @@ const updated = [];
 let offset = 0;
 for (;;) {
   const page = await cg(`/bill/${CONGRESS}`, {
-    fromDateTime: since, sort: 'updateDate+asc', limit: 250, offset,
+    // Space, not "+": URLSearchParams turns the space into the "+" the API
+    // expects; a literal "+" becomes %2B and the sort is silently ignored
+    // (the 2026-07-23 inert-recent-pass bug; this pass survived only because
+    // the ignored-sort default happens to be ascending).
+    fromDateTime: since, sort: 'updateDate asc', limit: 250, offset,
   });
   const items = page.bills ?? [];
   updated.push(...items.filter((b) => BILL_TYPES.has((b.type ?? '').toLowerCase())));

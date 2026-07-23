@@ -13,7 +13,12 @@
 import { STATUS_BASE } from '../lib/urgency.mjs';
 
 export const CONGRESS = 119;
-export const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres']);
+// hconres/sconres added 2026-07-23: concurrent resolutions carry War Powers
+// fights and budget resolutions — their exclusion made H.Con.Res.38 (the
+// Iran war-powers resolution everyone was talking about) STRUCTURALLY
+// unfetchable. Simple resolutions (hres/sres) stay excluded: they are
+// chamber-internal and almost never call-worthy.
+export const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']);
 
 const API = 'https://api.congress.gov/v3';
 const KEY = process.env.CONGRESS_API_KEY;
@@ -57,7 +62,14 @@ export async function cg(path, params = {}) {
  *  ascending "since cursor" scan structurally reaches the newest bills LAST,
  *  so both freshness-sensitive callers fetch this descending window instead. */
 export async function fetchRecentlyUpdated(limit) {
-  const page = await cg(`/bill/${CONGRESS}`, { sort: 'updateDate+desc', limit });
+  // The sort value must reach Congress.gov as "updateDate+desc" ON THE WIRE,
+  // where "+" is the URL encoding of a SPACE. URLSearchParams percent-encodes
+  // a literal "+" to %2B, which the API silently IGNORES - with 'updateDate+desc'
+  // here, every "recent-first" fetch since 2026-07-16 actually returned the
+  // OLDEST bills of the Congress (live-verified 2026-07-23: %2B -> Jan-2025
+  // resolutions; space -> today's floor bills). A space in the JS string
+  // serializes to "+" and restores the documented syntax.
+  const page = await cg(`/bill/${CONGRESS}`, { sort: 'updateDate desc', limit });
   const items = page.bills ?? [];
   return items.filter((b) => BILL_TYPES.has((b.type ?? '').toLowerCase()));
 }
