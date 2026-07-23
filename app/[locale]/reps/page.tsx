@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, BookOpen, Info } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
@@ -44,6 +44,9 @@ export default async function RepsPage({
   setRequestLocale(locale);
   const { zip, district: districtParam } = await searchParams;
   const t = await getTranslations('reps');
+  // Reused verbatim from the bill namespace (the ActionPanel's own why-call
+  // line) rather than duplicated into reps.* — the two surfaces can't drift.
+  const tBill = await getTranslations('bill');
 
   const candidates = zip && /^\d{5}$/.test(zip) ? districtsForZip(zip) : [];
 
@@ -170,6 +173,21 @@ export default async function RepsPage({
           </section>
         );
       })}
+
+      {/* Why call, right under the numbers (2026-07 critique round 2): the
+          page holding the persuasion isn't in the mobile tab bar, so every
+          pre-call surface links it in-flow — same line the ActionPanel uses. */}
+      {zip && districts.length > 0 && (
+        <p className="mt-6">
+          <Link
+            href="/why-call"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline underline-offset-4"
+          >
+            <BookOpen className="h-4 w-4" aria-hidden />
+            {tBill('whyLink')}
+          </Link>
+        </p>
+      )}
 
       {/* The obvious next step: a rep card is a phone number, not a
           destination. Point straight at what's actually callable this week
