@@ -87,10 +87,23 @@ export function mapStatus(actionText) {
     text.includes('received in the senate') || text.includes('received in the house') ||
     text.includes('held at the desk')
   ) return 'passed_chamber';
+  // Floor activity. The scheduling signals (calendar/cloture/rule) were the
+  // original set; the recorded-vote and live-consideration signals were added
+  // 2026-07-23 after H.Con.Res. 89 — a war-powers resolution in active House
+  // debate that week — read as plain 'committee', which both buried it below
+  // the urgency floors and gated it out of decoding entirely. A "Yea-Nay
+  // Vote" with a "Record Vote Number", a postponed/resumed proceeding, a
+  // discharge motion, or the Chair putting the question are all chamber-floor
+  // events by definition; committee roll calls use the distinct "Yeas and
+  // Nays" phrasing and are caught by the markup branch below.
   if (
     text.includes('placed on') || text.includes('calendar') ||
     text.includes('cloture') || text.includes('rule provid') ||
-    text.includes('motion to proceed')
+    text.includes('motion to proceed') ||
+    text.includes('yea-nay vote') || text.includes('record vote number') ||
+    text.includes('roll call') || text.includes('postponed proceedings') ||
+    text.includes('motion to discharge') || text.includes('put the question') ||
+    text.includes('unfinished business')
   ) return 'floor_vote';
   // 'mark-up': Congress.gov action text uses both spellings ("Mark-up
   // Session Held") — the hyphenated form alone covers 133 live corpus bills
