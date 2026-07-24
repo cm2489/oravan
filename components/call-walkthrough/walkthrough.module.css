@@ -25,13 +25,15 @@
   }
 }
 
-/* Tap indicator: an amber ring that pulses twice, then disappears.
-   Positioned by a wrapper element; this fills it. */
+/* Tap indicator: an ink ring that pulses twice, then disappears.
+   Positioned by a wrapper element; this fills it. Amber is spent on exactly
+   one fact — a bill standing on the floor calendar — and a finger tapping a
+   demo is not that fact, so this ring is ink. */
 .tap {
   position: absolute;
   inset: 0;
-  border: 3px solid var(--color-brass);
-  border-radius: 9999px;
+  border: 3px solid var(--color-ink);
+  border-radius: var(--radius-control);
   pointer-events: none;
   animation: tap 1.1s cubic-bezier(0.25, 1, 0.5, 1) 2 both;
 }
@@ -49,33 +51,34 @@
   }
 }
 
-/* A choice flipping to its selected style after the tap lands. */
+/* A choice flipping to its selected style after the tap lands. `tint` means
+   YOURS in this system, and a chosen stance is the canonical case of it. */
 .select {
   animation: select 0.25s ease both;
 }
 @keyframes select {
   to {
-    background-color: var(--color-ink);
-    border-color: var(--color-ink);
-    color: var(--color-paper);
+    background-color: var(--color-tint);
+    border-color: var(--color-go);
+    color: var(--color-go-deep);
   }
 }
 
-/* One gentle emphasis beat (the "AI-drafted" label calling attention to itself). */
+/* One gentle emphasis beat (the "AI-drafted" label calling attention to
+   itself). Scale only — the old version rang a coloured halo around it, and
+   this system carries no shadow namespace at all. */
 .beat {
   animation: beat 0.6s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 @keyframes beat {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 var(--color-brass);
   }
   45% {
     transform: scale(1.06);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px transparent;
   }
 }
 
@@ -101,16 +104,22 @@
 }
 
 /* The dial button "ringing" (globals.css forces a single iteration under
-   reduced motion, so it can't loop there). */
+   reduced motion, so it can't loop there). An expanding OUTLINE, not a
+   shadow: the shadow namespace is cleared in this system, and a ring that
+   travels outward is a ring, not elevation. The colour is the go token
+   rather than the retired hardcoded moss rgb. */
 .pulse {
+  outline: 3px solid transparent;
   animation: pulse-ring 1.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgb(62 107 79 / 0.45);
+    outline-color: var(--color-go);
+    outline-offset: 0;
   }
   100% {
-    box-shadow: 0 0 0 14px rgb(62 107 79 / 0);
+    outline-color: transparent;
+    outline-offset: 14px;
   }
 }
 

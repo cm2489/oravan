@@ -24,7 +24,11 @@
       "partners": "Socios",
       "funding": "Financiado por su fundador. Sin anuncios, sin rastreo, sin dinero externo.",
       "fundingLive": "Financiado por el fundador y quienes lo apoyan.",
-      "fundingCta": "Apoya a Oravan"
+      "fundingCta": "Apoya a Oravan",
+      "colSite": "Sitio",
+      "colTrust": "Confianza",
+      "sourceNote": "El texto y el estado de cada proyecto de ley se sincronizan cada noche desde Congress.gov, el registro oficial.",
+      "corrections": "¿Ves un error en esta página?"
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
@@ -33,11 +37,13 @@
       "bills": "Proyectos",
       "reps": "Mis reps",
       "impact": "Impacto"
-    }
+    },
+    "aiMarker": "IA",
+    "localeGroupLabel": "Idioma / Language"
   },
   "home": {
-    "heroTitle": "Tu voz importa. Hazla escuchar.",
-    "heroSub": "Cinco minutos bastan. Encuentra a tus representantes, entiende los proyectos de ley que afectan tu vida — en lenguaje claro — y haz oír tu voz. Sin cuenta. Sin app. Solo tú y el teléfono.",
+    "heroTitle": "Cinco minutos. Una llamada.",
+    "heroSub": "Escribe tu código postal. Lee un proyecto de ley en palabras sencillas, en inglés o en español. Recibe un guion de 30 segundos. Llama a tu congresista y su personal registra tu postura.",
     "heroLocaleLink": "View in English",
     "zipLabel": "Tu código postal",
     "zipPlaceholder": "p. ej. 20002",
@@ -50,7 +56,7 @@
     "heroJump": "O ve directo a los proyectos de ley de esta semana",
     "walkthroughTitle": "Así funciona una llamada",
     "walkthroughSub": "Qué pasa realmente, paso a paso — del lenguaje claro a una llamada de 30 segundos.",
-    "howTitle": "Cómo funciona",
+    "howTitle": "Tus cinco minutos, a escala",
     "how1Title": "Encuentra a tus tres",
     "how1Body": "Tu código postal encuentra a tu representante en la Cámara y a tus dos senadores — con sus números en Washington y en tu zona.",
     "how2Title": "Elige un proyecto y léelo en claro",
@@ -71,7 +77,34 @@
     "supportNote": "Apoyo personal, no deducible de impuestos.",
     "momentsTitle": "Momentos vigentes",
     "momentsSub": "Cuestiones legislativas que cubren las noticias en este momento, con enlace directo a los proyectos de ley reales.",
-    "momentsCta": "Ver todos los Momentos"
+    "momentsCta": "Ver todos los Momentos",
+    "heroTitleGo": "Sí cuenta.",
+    "aiMarker": "IA",
+    "heroAi": "Cada proyecto de ley en palabras sencillas y cada guion de este sitio los traduce la IA, y una persona los revisa antes de que sugieran una llamada.",
+    "demoTitle": "La llamada completa, sin adornos",
+    "demoStafferLabel": "Asistente:",
+    "demoStafferOpen": "«Oficina del Congreso, buenos días.»",
+    "demoYouLabel": "Tú:",
+    "demoYouLine": "lees tu guion en voz alta. Unos 30 segundos.",
+    "demoStafferClose": "«Lo transmitiré. Gracias por llamar.»",
+    "demoNoteLead": "No pasa nada más.",
+    "demoNote": "Tu postura entra en un conteo que la oficina reporta hacia arriba, y nadie te debate ni te examina por el camino. Si te contesta el buzón de voz, cuenta exactamente igual.",
+    "floorCalendar": "En el calendario del pleno",
+    "floorCta": "Léelo en palabras sencillas",
+    "aiReviewed": "Traducido por IA, revisado por una persona",
+    "stampLabel": "Datos al",
+    "weekNote": "El ámbar y el panel verde se reservan para un solo hecho: un proyecto de ley está en el calendario del pleno, y el día en que llegó allí va impreso en la marca. Todo lo demás aparece en una lista simple. Hay semanas en que no se destaca nada, y preferimos mostrártelo así antes que rellenar la lista.",
+    "how1Dur": "0:30",
+    "how2Dur": "1:00",
+    "how3Dur": "1:00",
+    "how4Dur": "2:30",
+    "routeGaugeLabel": "Este paso toma {duration} de {total}",
+    "routeTotal": "5:00",
+    "routeTotalNote": "de principio a fin — y la mitad es la llamada misma.",
+    "privacyPoint1": "En este sitio no existe ningún registro. No podrías crear un perfil aunque quisieras.",
+    "privacyPoint2": "La dirección que sirve para identificar tu distrito se usa una vez y nunca se guarda.",
+    "privacyPoint3": "Borra los datos de tu navegador y Oravan te olvida por completo.",
+    "zipErrorLabel": "Revisa esto"
   },
   "reps": {
     "title": "Tus representantes",
@@ -114,7 +147,8 @@
     "showAllDistricts": "Ver todos los distritos del código postal {zip}",
     "nextTitle": "Ya sabes a quién llamar.",
     "nextSub": "Esto vale la pena llamarles esta semana.",
-    "nextSeeAll": "Ver los {count} proyectos de ley activos"
+    "nextSeeAll": "Ver los {count} proyectos de ley activos",
+    "errorLabel": "Revisa esto"
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
@@ -149,7 +183,9 @@
     "showAll": "Ver los {count}",
     "clearSearch": "Borrar búsqueda",
     "clearFilters": "Borrar todos los filtros",
-    "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor."
+    "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor.",
+    "aiNote": "Los titulares en lenguaje claro de esta página los descifra la IA y los revisa una persona antes de que sugieran una llamada.",
+    "onCalendar": "En el calendario del pleno"
   },
   "bill": {
     "decoded": "En claro",
@@ -251,7 +287,24 @@
     "firstCallTitle": "¿Tu primera llamada?",
     "firstCallBody": "Hablar con el personal del Congreso puede intimidar la primera vez. Llamar fuera de horario es la forma más suave de empezar: sin conversación en vivo, solo un mensaje de voz que cuenta exactamente igual. Esta noche sirve tanto como ahora mismo.",
     "preDialTitle": "Antes de marcar",
-    "preDialBody": "El personal atiende llamadas como esta todo el día, y no es un debate: unos treinta segundos y ya. Que conteste alguien en vivo o te salga el buzón de voz, ambos cuentan igual — cualquiera de los dos es un buen resultado."
+    "preDialBody": "El personal atiende llamadas como esta todo el día, y no es un debate: unos treinta segundos y ya. Que conteste alguien en vivo o te salga el buzón de voz, ambos cuentan igual — cualquiera de los dos es un buen resultado.",
+    "allBills": "Todos los proyectos",
+    "aiMarker": "IA",
+    "aiLabel": "Descifrado con IA · revisado por una persona",
+    "aiLede": "La versión en lenguaje claro va primero. El texto oficial siempre es la referencia.",
+    "congressLabel": "Congreso {congress}",
+    "officialDisclosure": "Leer el texto oficial",
+    "trackerLabel": "En qué punto del proceso está este proyecto",
+    "stampLabel": "Datos al",
+    "footNote": "El panel se desplaza · la llamada se queda",
+    "floor": {
+      "calendarHouse": "En el calendario del pleno de la Cámara",
+      "calendarSenate": "En el calendario del pleno del Senado",
+      "headlineHouse": "Este proyecto está en fila para una votación de toda la Cámara.",
+      "headlineSenate": "Este proyecto está en fila para una votación de todo el Senado.",
+      "meta": "Un proyecto en el calendario puede llamarse a votación con poco aviso, y las oficinas cuentan llamadas hasta que ocurre.",
+      "cta": "Haz tu llamada"
+    }
   },
   "walkthrough": {
     "label": "Cómo funciona una llamada — demostración en cinco pasos",
@@ -445,7 +498,8 @@
     "success": "Recibido, gracias. Cada nota durante la beta define qué se arregla primero.",
     "errorIncomplete": "Primero elige una categoría y escribe un mensaje.",
     "errorRateLimited": "Enviaste varias notas en poco tiempo. Tómate un respiro y vuelve a intentarlo pronto.",
-    "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto."
+    "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto.",
+    "errorLabel": "Revisa esto"
   },
   "og": {
     "aiDecoded": "Descifrado con IA"
@@ -702,6 +756,7 @@
     "howMadeRule3": "Una acción posible: la página del proyecto de ley y el guion de llamada ya funcionan — todo proyecto de ley del catálogo califica por construcción.",
     "howMadeRule4": "Un nombre neutral: una descripción del desacuerdo que cualquiera de los dos lados reconocería como justa, nunca la etiqueta propia de un lado.",
     "lifecycleLive": "Este Momento se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado. Los Momentos resueltos siguen disponibles, marcados como resueltos; nunca se reabren.",
-    "browseAll": "Ver todos los Momentos"
+    "browseAll": "Ver todos los Momentos",
+    "aiNote": "Cada resumen de Momento lo redacta la IA y lo revisa una persona antes de publicarse."
   }
 }

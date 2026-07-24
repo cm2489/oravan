@@ -2,9 +2,17 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { Bill } from '@/lib/types';
 
 /*
- * The 5-second layer: night strip, amber dot, the TL;DR sentence, and an
- * honest meta line - reading time computed from the actual section word
- * count, question count computed from which sections exist (4 or 5).
+ * The 5-second layer, and the reading column's lede.
+ *
+ * It used to be a dark card with an amber dot and its own AI chip, sitting
+ * ABOVE the decoded card. In variant B it is what it always was in
+ * substance: the first sentence of the decoding. So it is set in the
+ * reading voice (Besley, one rung up the ladder) on paper, and the AI label
+ * that used to ride here now sits in the bill header, above it and above
+ * the fold at 390px — one label, at first contact, instead of two.
+ *
+ * The meta line stays honest and computed: reading time from the actual
+ * section word count, question count from which sections exist (4 or 5).
  */
 
 export function TldrStrip({ bill }: { bill: Bill }) {
@@ -23,21 +31,10 @@ export function TldrStrip({ bill }: { bill: Bill }) {
   const count = s.cost ? 5 : 4;
 
   return (
-    <div className="mt-6 flex items-start gap-3 rounded-card bg-night p-4 text-paper md:p-5">
-      <span aria-hidden className="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-brass" />
-      <p className="font-semibold leading-snug md:text-lg">
-        {s.tldr}
-        {/* AI label at FIRST contact (2026-07 critique, unanimous): this strip
-            is the first AI-drafted text a reader meets; the Decoded card's
-            disclaimer sits far below the mobile fold. Same wording as the
-            walkthrough demo chip, per the citations page's "carries this
-            label" promise. */}
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-brass-bright">
-          <span className="rounded-full border border-brass-bright/60 px-2 py-0.5 text-xs font-semibold">
-            {t('aiChip')}
-          </span>
-          {t('tldrMeta', { seconds, count })}
-        </span>
+    <div className="mt-4">
+      <p className="font-reading text-lede text-ink">{s.tldr}</p>
+      <p className="mt-2 text-xs font-semibold text-ink-2 tabular-nums">
+        {t('tldrMeta', { seconds, count })}
       </p>
     </div>
   );

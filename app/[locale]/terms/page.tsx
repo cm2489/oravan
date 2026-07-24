@@ -20,18 +20,24 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
   const tc = await getTranslations('common');
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <div className="mt-6 space-y-5 leading-relaxed max-w-prose">
-        {(['p1', 'p2', 'p3', 'p4'] as const).map((p) => (
-          <p key={p}>{t(p)}</p>
-        ))}
-        <p>
-          {t('p5')}{' '}
-          <Link href="/privacy" className="underline underline-offset-2 font-semibold">
-            {tc('footer.privacy')}
-          </Link>
-        </p>
+    <article className="mx-auto max-w-5xl px-4 py-12">
+      {/* one cap on the column, not one per block */}
+      <div className="max-w-read">
+        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+        <div className="mt-6 space-y-5">
+          {(['p1', 'p2', 'p3', 'p4'] as const).map((p) => (
+            <p key={p}>{t(p)}</p>
+          ))}
+          <p>
+            {t('p5')}{' '}
+            <Link
+              href="/privacy"
+              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            >
+              {tc('footer.privacy')}
+            </Link>
+          </p>
+        </div>
       </div>
     </article>
   );

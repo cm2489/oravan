@@ -3,27 +3,56 @@
  * NOT the citizen site's globals.css: an iframe payload should be small
  * and self-contained (docs/ideation/2026-07-02-embeds-spec.md §5 - "system
  * fonts, no client framework bloat"), and this keeps it that way rather
- * than pulling in the whole app theme for one widget. Colors below are the
- * same brand palette as app/globals.css's @theme block, hand-copied (not
- * shared custom properties) so this file has zero dependency on it.
+ * than pulling in the whole app theme for one widget. The default palette
+ * below is the same variant-B palette as app/globals.css's @theme block,
+ * hand-copied (not shared custom properties) so this file has zero
+ * dependency on it. That copy is a standing LOCKSTEP obligation, spelled
+ * out in DESIGN.md § "Embed lockstep": a change to the @theme color block
+ * lands here in the same PR, and in lib/embed-theme.ts's MODE_DEFAULTS,
+ * components/EmbedConfigurator.tsx's DEFAULT_*, and lib/contrast.ts's ink
+ * pair — four mirrors, one move.
+ *
+ * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
+ *   COLOR — `go` (#0f6c4a) is the un-themed default accent and it means GO;
+ *   it is reachable ONLY through --_accent, i.e. only where the tenant's own
+ *   --oravan-accent would land, so a tenant palette always displaces it.
+ *   Amber is spent on exactly one fact site-wide — a bill standing on the
+ *   floor calendar, with the date printed — and no widget renders that fact,
+ *   so THERE IS NO AMBER IN THIS FILE. `.re-note` is a neutral wash. Failure,
+ *   and only failure, is red, and it never carries meaning alone (3px ink
+ *   rule + bold label + role="alert"; color is the third signal).
+ *   SHAPE — radius is assigned by SCALE, not by interactivity. Small marks
+ *   (the AI chip, portraits) take --_radius-mark; anything at panel, card,
+ *   button or input scale takes --_radius-control. A chip and a card do not
+ *   share a corner. The tenant's --oravan-radius knob governs the control
+ *   scale; the mark scale is capped at 3px off it, so `round` (20px) cannot
+ *   turn a chip into a capsule and `sharp` (2px) cannot make a mark rounder
+ *   than the card holding it.
  *
  * Palette architecture (brand-preview build): every color flows through the
  * private --_* tokens below, which read the tenant-facing --oravan-* knobs
  * (set by components/embed/EmbedThemeStyle.tsx from validated values only)
- * with the brand palette as fallback. HARD RULE: component rules never use
+ * with the default palette as fallback. HARD RULE: component rules never use
  * @media (prefers-color-scheme) — all light/dark difference lives in the
  * ONE token block below, so a forced mode (EmbedThemeStyle pinning the
- * knobs + color-scheme) re-keys everything with no drift. Derived tones use
+ * knobs + color-scheme) re-keys everything with no drift. That is also why
+ * --_accent is NOT redeclared in the dark block: a mode-dependent accent
+ * would be the one token a forced mode could not pin. Derived tones use
  * color-mix() behind @supports; older engines (pre-Safari 16.2) keep the
- * static literals declared first, i.e. today's exact look.
+ * static literals declared first.
  */
 
 :root {
   color-scheme: light dark;
-  --_surface: var(--oravan-surface, #f3ecdd);
-  --_ink: var(--oravan-ink, #2a2318);
-  --_accent: var(--oravan-accent, #82632a);
-  --_accent-ink: var(--oravan-accent-ink, #fbf8f0);
+  --_surface: var(--oravan-surface, #ffffff);
+  --_ink: var(--oravan-ink, #16191b);
+  /* GO. The un-themed default only; --oravan-accent displaces it, and
+     lib/embed-theme.ts guarantees a tenant who supplied a palette without
+     an accent gets THEIR ink emitted here rather than falling through to
+     this literal. Oravan green can therefore never appear on a widget
+     wearing someone else's colors. */
+  --_accent: var(--oravan-accent, #0f6c4a);
+  --_accent-ink: var(--oravan-accent-ink, #ffffff);
   /* Focus ring falls back to INK, not accent: the server only emits
      --oravan-focus once it has confirmed the accent contrasts on the surface
      (>=3:1). With just an accent set (auto mode — the common case), the raw
@@ -31,21 +60,36 @@
      always-visible focus outline. Ink always contrasts with the surface (it's
      the body text), so the ring stays visible. */
   --_focus: var(--oravan-focus, var(--_ink));
-  /* Static fallbacks for engines without color-mix. */
-  --_line: rgba(24, 32, 58, 0.15);
-  --_line-strong: rgba(24, 32, 58, 0.25);
-  --_line-faint: rgba(24, 32, 58, 0.08);
-  --_ink-hover: #1b1611;
+  /* Failure, and only failure: `alert` (#8c3a1f) from the variant-B palette
+     at 12%, written as a flat rgba rather than a color-mix so it needs no
+     @supports twin — it is the one tone in this file that is NOT derived
+     from the tenant tokens, on purpose. Red is a universal signal and must
+     not take on a tenant's (possibly green) brand color. */
+  --_alert-wash: rgba(140, 58, 31, 0.12);
+
+  /* SHAPE, by scale. */
+  --_radius-control: var(--oravan-radius, 8px);
+  --_radius-mark: min(var(--oravan-radius, 8px), 3px);
+  --_radius-hair: 2px; /* the focus indicator's own rounding. Never a box. */
+
+  /* Static fallbacks for engines without color-mix. --_line-strong is HALF
+     ink: that is what puts a component edge at 3.37:1 on the default light
+     surface and 5.24:1 on the dark one, clearing 1.4.11. --_line stays
+     decorative (1.36:1) and is never an edge. */
+  --_line: rgba(22, 25, 27, 0.15);
+  --_line-strong: rgba(22, 25, 27, 0.5);
+  --_line-faint: rgba(22, 25, 27, 0.08);
+  --_ink-hover: #393c3d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --_surface: var(--oravan-surface, #1b1611);
-    --_ink: var(--oravan-ink, #e4d9c0);
-    --_line: rgba(242, 235, 220, 0.2);
-    --_line-strong: rgba(242, 235, 220, 0.3);
-    --_line-faint: rgba(242, 235, 220, 0.1);
-    --_ink-hover: #f3ecdd;
+    --_surface: var(--oravan-surface, #16191b);
+    --_ink: var(--oravan-ink, #ffffff);
+    --_line: rgba(255, 255, 255, 0.15);
+    --_line-strong: rgba(255, 255, 255, 0.5);
+    --_line-faint: rgba(255, 255, 255, 0.08);
+    --_ink-hover: #dcdddd;
   }
 }
 
@@ -55,7 +99,7 @@
 @supports (color: color-mix(in srgb, red 50%, blue)) {
   :root {
     --_line: color-mix(in srgb, var(--_ink) 15%, transparent);
-    --_line-strong: color-mix(in srgb, var(--_ink) 25%, transparent);
+    --_line-strong: color-mix(in srgb, var(--_ink) 50%, transparent);
     --_line-faint: color-mix(in srgb, var(--_ink) 8%, transparent);
     --_ink-hover: color-mix(in srgb, var(--_ink) 85%, var(--_surface));
   }
@@ -71,11 +115,17 @@ body {
   padding: 0;
 }
 
+/* The embed uses SYSTEM FONTS, never next/font and never a webfont link
+   (DESIGN.md § Embed lockstep): a font request from inside the iframe would
+   hand visitor IPs to a font host and break the "collects nothing about your
+   visitors" claim. So the widget does not get Franklin or Besley — but it
+   does keep the system's type LADDER (12 · 13 · 14 · 16 · 18 · 21) and its
+   leading, which are font-independent. */
 body {
   font-family:
     system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.45;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--_ink);
   background: var(--_surface);
 }
@@ -87,11 +137,14 @@ body {
   }
 }
 
-/* Visible focus everywhere, never removed - same rule as the main site. */
+/* Visible focus everywhere, never removed - same rule as the main site, and
+   two-tone by the same construction: the 2px offset opens a gap of the
+   surface between the control's fill and the ring, so the ring is never
+   adjacent to a fill whose contrast we cannot vouch for. */
 :focus-visible {
   outline: 3px solid var(--_focus);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--_radius-hair);
 }
 
 /*
@@ -119,18 +172,19 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .re-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.125rem;
+  line-height: 1.35;
   font-weight: 700;
 }
 
 .re-label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   margin-bottom: 4px;
 }
@@ -142,27 +196,31 @@ body {
 
 .re-input {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 1.05rem;
+  padding: 12px;
+  font-size: 1.125rem;
   border: 2px solid var(--_line-strong);
-  border-radius: var(--oravan-radius, 8px);
-  min-height: 44px;
+  border-radius: var(--_radius-control);
+  min-height: 48px;
   background: transparent;
   color: inherit;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Primary buttons invert ink/surface, so a tenant palette re-keys them too. */
+/* Primary buttons invert ink/surface, so a tenant palette re-keys them too —
+   and, unlike an accent fill, that inversion is contrast-GUARANTEED in every
+   tenant configuration, because the ink/surface pair is the one thing the
+   server refuses to accept below 4.5:1. */
 .re-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 10px 16px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: var(--oravan-radius, 8px);
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--_radius-control);
   border: 2px solid transparent;
   cursor: pointer;
   background: var(--_ink);
@@ -177,23 +235,30 @@ body {
   background: transparent;
   color: inherit;
   border-color: var(--_line-strong);
-  min-width: 44px;
-  padding: 8px 12px;
+  font-weight: 600;
+  min-width: 48px;
+  padding: 12px;
 }
 
 /* aria-pressed covers the language toggles; aria-checked covers the stance
-   radio group (WAI-ARIA radio pattern, mirroring the citizen ActionPanel). */
+   radio group (WAI-ARIA radio pattern, mirroring the citizen ActionPanel).
+   The selected state is carried by THREE signals, not by the accent fill
+   alone: an ink edge (>=4.5:1 on any accepted surface, so the control is
+   bounded even when a tenant accent is near-invisible against their own
+   background), the weight shift to 700, and the fill. Color is never the
+   only carrier. */
 .re-toggle[aria-pressed='true'],
 .re-toggle[aria-checked='true'] {
   background: var(--_accent);
-  border-color: var(--_accent);
+  border-color: var(--_ink);
   color: var(--_accent-ink);
+  font-weight: 700;
 }
 
 .re-card {
-  border: 1px solid var(--_line);
-  border-radius: var(--oravan-radius, 12px);
-  padding: 14px;
+  border: 1px solid var(--_line-strong);
+  border-radius: var(--_radius-control);
+  padding: 16px;
   margin-top: 12px;
 }
 
@@ -202,12 +267,13 @@ body {
  * bioguide with a mirrored (Vercel Blob) portrait, served same-origin via
  * app/embed/portrait/[bioguide]/route.ts - never a third-party hotlink.
  * `.re-avatar-initials` is the graceful, zero-network fallback - see
- * components/embed/RepLookupWidget.tsx.
+ * components/embed/RepLookupWidget.tsx. A portrait is a small MARK, so it is
+ * squared at the mark radius, never rounded to a circle.
  */
 .re-card-head {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .re-card-head-text {
@@ -219,7 +285,7 @@ body {
   flex: none;
   width: 44px;
   height: 54px;
-  border-radius: 6px;
+  border-radius: var(--_radius-mark);
   object-fit: cover;
   background: var(--_line-faint);
 }
@@ -231,24 +297,28 @@ body {
   flex: none;
   width: 44px;
   height: 54px;
-  border-radius: 6px;
+  border-radius: var(--_radius-mark);
   background: var(--_ink);
   color: var(--_surface);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
+/* Secondary text is one opacity, not three: 0.75 of ink lands at 7.76:1 on
+   the default light surface and 10.32:1 on the dark one — the same footing
+   as the citizen site's `ink-2` (7.87:1). */
 .re-meta {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   opacity: 0.75;
   margin: 0;
 }
 
 .re-name {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   font-weight: 700;
+  line-height: 1.35;
   margin: 4px 0;
 }
 
@@ -257,14 +327,15 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 44px;
-  padding: 10px 14px;
-  margin-top: 10px;
-  border-radius: 8px;
+  min-height: 48px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  border-radius: var(--_radius-control);
   background: var(--_ink);
   color: var(--_surface);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .re-office {
@@ -282,36 +353,50 @@ body {
   color: inherit;
 }
 
-/* Info/prompt note. Amber is the un-themed DEFAULT (the var() fallbacks);
-   a genuinely themed widget gets --oravan-note-* from the server (an accent
-   tint over the surface), so a white-label embed wears the tenant's color
-   without repainting the plain default. The error box below stays red — a
-   universal "something went wrong" signal that shouldn't take on a tenant's
-   (possibly green) brand color. */
+/* Info/prompt note. NO AMBER: amber is spent site-wide on exactly one fact —
+   a bill standing on the floor calendar, with its date printed — and no
+   widget renders that fact, so a "heads up, this ZIP spans two districts"
+   callout has no claim on it. The un-themed default is a neutral ink wash
+   (ink text on it: 15.06:1 light, 14.21:1 dark); a genuinely themed widget
+   still gets --oravan-note-* from the server (an accent tint over the
+   surface), so a white-label embed wears the tenant's color instead. The
+   error box below stays red — a universal "something went wrong" signal that
+   shouldn't take on a tenant's (possibly green) brand color. */
 .re-note {
-  border: 1px solid var(--oravan-note-border, rgba(232, 163, 23, 0.55));
-  background: var(--oravan-note-fill, rgba(232, 163, 23, 0.14));
-  border-radius: 10px;
+  border: 1px solid var(--oravan-note-border, var(--_line-strong));
+  background: var(--oravan-note-fill, var(--_line-faint));
+  border-radius: var(--_radius-control);
   padding: 12px;
   margin-top: 12px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
+/* FAILURE, and only failure — and it is a RULED BLOCK, not a card. The
+   reference sets an error as a 3px ink rule over a wash with square corners
+   and no box around it, because a box around a failure reads as a card ABOUT
+   the failure rather than the failure itself; it is also the only way a 3px
+   rule can run edge to edge instead of dying into a corner radius. The red is
+   decorative reinforcement only: `go` and `alert` sit 1.19:1 apart in
+   luminance, so to a deuteranope they are near-identical. The signals that
+   actually carry the state are the 3px INK rule (17.66:1 on the default
+   surface, either mode), the bold text (14.54:1 light / 16.58:1 dark on the
+   tinted ground), and role="alert" on the element itself — exactly the
+   mitigation the contrast ledger mandates. Color is the third signal. */
 .re-error {
-  border: 1px solid rgba(161, 77, 58, 0.45);
-  background: rgba(161, 77, 58, 0.12);
-  border-radius: 10px;
+  border: 0;
+  border-top: 3px solid var(--_ink);
+  background: var(--_alert-wash);
   padding: 12px;
   margin-top: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 .re-footer {
-  margin-top: 18px;
-  padding-top: 10px;
+  margin-top: 20px;
+  padding-top: 12px;
   border-top: 1px solid var(--_line);
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
 }
 
 /*
@@ -331,21 +416,22 @@ body {
 .bc-citation {
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 
 .bc-card {
-  border: 1px solid var(--_line);
-  border-radius: var(--oravan-radius, 10px);
+  border: 1px solid var(--_line-strong);
+  border-radius: var(--_radius-control);
   padding: 16px;
   margin-top: 4px;
 }
 
 .bc-status {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -353,29 +439,38 @@ body {
 }
 
 .bc-headline {
-  margin: 6px 0 0;
-  font-size: 1.2rem;
+  margin: 8px 0 0;
+  font-size: 1.3125rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
+/* The AI label is an INTEGRITY MARK, not brand chrome — it is the one thing
+   `brandless` may never remove — so it is set in ink like every other mark
+   the citizen site stamps, not filled with the accent. That also makes it the
+   only chip whose contrast is guaranteed in every tenant configuration: the
+   ink/surface pair is server-validated at 4.5:1, where an accent fill's
+   contrast against the surface is not knowable. Mark scale, so mark radius. */
 .bc-chip-ai {
   display: inline-block;
-  margin-top: 10px;
-  padding: 3px 10px;
-  border-radius: var(--oravan-radius, 999px);
-  background: var(--_accent);
-  color: var(--_accent-ink);
-  font-size: 0.7rem;
+  margin-top: 12px;
+  padding: 4px 8px;
+  border: 1.5px solid var(--_ink);
+  border-radius: var(--_radius-mark);
+  background: transparent;
+  color: var(--_ink);
+  font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.35;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .bc-freshness {
   margin: 12px 0 0;
-  font-size: 0.78rem;
-  opacity: 0.7;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 
 /*
@@ -395,20 +490,24 @@ body {
 .ap-legend {
   padding: 0;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   margin-bottom: 8px;
 }
 
+/* The drafted script is what the caller will read aloud and edit — it is
+   THEIRS. On the citizen site that is the green tint; here it is the tenant's
+   own note tint (or the neutral ink wash by default), because a white-label
+   widget must never reach for Oravan's green to say "yours". */
 .ap-textarea {
   width: 100%;
   min-height: 120px;
   margin-top: 8px;
-  padding: 10px 12px;
+  padding: 12px;
   font: inherit;
-  line-height: 1.5;
+  line-height: 1.6;
   border: 2px solid var(--_line-strong);
-  border-radius: var(--oravan-radius, 8px);
-  background: transparent;
+  border-radius: var(--_radius-control);
+  background: var(--oravan-note-fill, var(--_line-faint));
   color: inherit;
   resize: vertical;
 }

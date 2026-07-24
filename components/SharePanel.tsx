@@ -11,6 +11,9 @@ import { useTranslations } from 'next-intl';
  * who shared it. Native share sheet when the browser has one; otherwise a
  * copy-link button plus a plain WhatsApp anchor (user-initiated navigation).
  * No third-party share SDKs, widgets, or scripts, ever.
+ *
+ * A quiet row after the whole task, on its own hairline rule: it is a
+ * utility, not a second call to action, so nothing here is filled in `go`.
  */
 
 interface Props {
@@ -20,8 +23,10 @@ interface Props {
   text: string;
 }
 
+// Hand-sized controls, so `rounded-control`. `line-strong` reads 3.24:1
+// against the paper page on at least one side of every edge.
 const btn =
-  'inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-ink/20 px-3.5 py-2.5 text-sm font-medium hover:border-ink/50';
+  'inline-flex min-h-11 items-center gap-1.5 rounded-control border-[1.5px] border-line-strong px-3 py-2 text-sm font-semibold text-ink no-underline hover:border-go hover:bg-tint hover:text-go-deep';
 
 // Browser capability, resolved hydration-safely (same pattern as lib/local.ts):
 // the server renders 'ssr', the client re-renders once with the real answer.
@@ -58,22 +63,33 @@ export function SharePanel({ url, text }: Props) {
   const waHref = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
 
   return (
-    <div role="group" aria-label={t('label')} className="mt-4 flex flex-wrap items-center gap-2">
+    <div
+      role="group"
+      aria-labelledby="share-label"
+      className="flex flex-wrap items-center gap-2 border-t-[1.5px] border-line pt-4"
+    >
+      <p id="share-label" className="mr-2 text-sm font-bold text-ink">
+        {t('label')}
+      </p>
       {mode === 'native' && (
         <button type="button" onClick={share} className={btn}>
-          <Share2 className="h-4 w-4" aria-hidden />
+          <Share2 className="h-4 w-4 flex-none" aria-hidden />
           {t('share')}
         </button>
       )}
       {mode === 'fallback' && (
         <button type="button" onClick={copyLink} className={btn}>
-          {copied ? <Check className="h-4 w-4 text-moss" aria-hidden /> : <LinkIcon className="h-4 w-4" aria-hidden />}
+          {copied ? (
+            <Check className="h-4 w-4 flex-none" aria-hidden />
+          ) : (
+            <LinkIcon className="h-4 w-4 flex-none" aria-hidden />
+          )}
           {copied ? t('copied') : t('copyLink')}
         </button>
       )}
       {mode !== 'native' && (
         <a href={waHref} target="_blank" rel="noopener noreferrer" className={btn}>
-          <MessageCircle className="h-4 w-4" aria-hidden />
+          <MessageCircle className="h-4 w-4 flex-none" aria-hidden />
           {t('whatsapp')}
         </a>
       )}

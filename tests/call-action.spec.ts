@@ -15,15 +15,59 @@ const slug = Object.keys(coverageData).find((k) => !k.startsWith('_'));
 
 test('the floating call button surfaces the action and yields to on-screen CTAs', async ({ page }) => {
   test.skip(!slug, 'no bills in current data');
+
+  // THE FLASH GUARD. The button's resting, server-rendered state must already
+  // be the inert one. It used to be the shown one, so on every page where a
+  // CTA is on screen at the top the button painted at full size and then faded
+  // out over 300ms. A computed-style assertion cannot catch that — Playwright
+  // retries until the value settles — so the resting markup is what gets
+  // pinned, before any of the live behavior below.
+  const resting = /<a[^>]*data-floating-call[^>]*>/.exec(
+    await (await page.request.get(`/bills/${slug}`)).text()
+  )?.[0];
+  expect(resting).toBeTruthy();
+  expect(resting).toContain('opacity-0');
+  expect(resting).toContain('aria-hidden="true"');
+
   await page.goto(`/bills/${slug}`);
 
   const fab = page.locator('[data-floating-call]');
+  const cta = page.locator('[data-call-cta]').first();
   await expect(fab).toHaveAttribute('href', '#act');
-  // At the top of a long page no other CTA is on screen — the button is shown.
+
+  // The layout the page is actually in, asked of the browser rather than
+  // inferred from a project name — this is the same query Tailwind's
+  // `min-[62rem]:` utilities compile to, evaluated against the real root font
+  // size, so the branch can never disagree with the CSS it is describing.
+  const onDesk = await page.evaluate(() => window.matchMedia('(min-width: 62rem)').matches);
+
+  if (onDesk) {
+    // THE DESK. The two-column bill page parks a sticky call rail beside the
+    // reading column, so a CTA is already on screen at the top and the
+    // floating button — whose entire contract is to stand down when one is —
+    // must be inert there instead of duplicating it.
+    await expect(cta).toBeInViewport();
+    await expect(fab).toHaveCSS('opacity', '0');
+    await expect(fab).toHaveAttribute('aria-hidden', 'true');
+
+    // Past the foot of the grid the rail is gone: the coverage section and the
+    // footer sit outside it. The floating button is what keeps the call one tap
+    // away down there — the invariant this component exists for is that SOME
+    // call CTA is on screen at every scroll depth, not that this one is.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(cta).not.toBeInViewport();
+    await expect(fab).toHaveCSS('opacity', '1');
+    await expect(fab).toHaveAttribute('aria-hidden', 'false');
+    return;
+  }
+
+  // SINGLE COLUMN. No rail, so at the top of a long page no other CTA is on
+  // screen — the button is shown.
+  await expect(cta).not.toBeInViewport();
   await expect(fab).toHaveCSS('opacity', '1');
 
-  // Bring the inline prompt into view — the floating button fades out (inert).
-  await page.locator('[data-call-cta]').first().scrollIntoViewIfNeeded();
+  // Bring the action panel into view — the floating button fades out (inert).
+  await cta.scrollIntoViewIfNeeded();
   await expect(fab).toHaveCSS('opacity', '0');
   await expect(fab).toHaveAttribute('aria-hidden', 'true');
 

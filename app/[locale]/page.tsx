@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
-import { PhoneCall, MapPin, FileText, MessageSquareText, Voicemail, ShieldCheck, ArrowRight } from 'lucide-react';
-import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
+import { ArrowRight } from 'lucide-react';
+import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/server';
+import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
-import { BillCard } from '@/components/BillCard';
 import { CallWalkthrough } from '@/components/call-walkthrough/CallWalkthrough';
 import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
+import { Chip, FloorVotePanel, Gauge, Stamp, selectFloorVoteFeature } from '@/components/system';
 import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -18,12 +18,49 @@ import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
 import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
-const STEPS = [
-  { icon: MapPin, key: 1 },
-  { icon: FileText, key: 2 },
-  { icon: MessageSquareText, key: 3 },
-  { icon: Voicemail, key: 4 },
+/*
+ * THE HOME SURFACE — variant B.
+ *
+ * Three things on this page are load-bearing and must survive any future
+ * edit:
+ *
+ * 1. ONE GREEN SLAB, and it is the FloorVotePanel. Green is the page's only
+ *    DATA-EARNED shape change: on a quiet week the panel does not render and
+ *    no green ground exists anywhere. The hero, privacy, the route and the
+ *    support band are all ruled paper and none of them may take a ground of
+ *    their own — a shape change that happens for four reasons carries no data.
+ *
+ *    The Moments band is the ONE sanctioned exception (owner, 2026-07-24) and
+ *    it is deliberately INK, not green: it needed weight, and ink buys weight
+ *    without spending a colour the data gate governs. So the page has two
+ *    full-bleed grounds but still exactly one green one, and green still
+ *    means only ever "a vote is on the calendar."
+ *    (The site footer is the page's back cover and is exempt.)
+ *
+ * 2. EXACTLY ONE BILL takes that panel, chosen by selectFloorVoteFeature().
+ *    The corpus is HOT — every bill in this week's shortlist currently
+ *    carries `floor_vote` — so the cap is the entire mechanism. Everything
+ *    else in the week is a plain ruled listing.
+ *
+ * 3. EVERY CALLABLE BILL LINK stays inside section[aria-labelledby=
+ *    "top-actions"]. The <=3-click funnel and the freshness specs both read
+ *    that boundary, and the panel carries a bill link — which is why that
+ *    section is full-width with the max-width wrapper INSIDE it.
+ *
+ * The go-mark appears twice, both times measuring: as the stroke under the
+ * hero's promise (the thing the whole product measures) and as the route
+ * gauge, whose segment widths are the true proportions of five minutes.
+ */
+
+/** The five minutes, in seconds. The gauge is drawn from these numbers, so
+ *  the drawing can never disagree with the durations printed beside it. */
+const ROUTE = [
+  { key: 1, seconds: 30 },
+  { key: 2, seconds: 60 },
+  { key: 3, seconds: 60 },
+  { key: 4, seconds: 150 },
 ] as const;
+const ROUTE_TOTAL = ROUTE.reduce((sum, leg) => sum + leg.seconds, 0); // 300
 
 // Homepage had zero metadata override before this pass — no canonical, no
 // hreflang alternates — so every locale's title/description fell through to
@@ -54,6 +91,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
+  const tShared = await getTranslations();
+  const format = await getFormatter();
   const top = getTopActions(4, locale);
   const news = getNewsBills(locale, 6);
   const total = getAllBills().length;
@@ -71,203 +110,468 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // above it; this renders strictly after it.
   const liveMoments = getLiveMoments();
 
+  // DATA-GATED LOUDNESS. One call, at the data layer, so the cap-to-one can
+  // never be broken by a component that cannot see its siblings. `feature`
+  // is null on a week with no floor-calendar bill — and then the page is an
+  // unbroken paper column, which is the point.
+  const feature = selectFloorVoteFeature(top);
+  const listed = top.filter((b) => b !== feature);
+
+  /*
+   * A bill's own calendar date, e.g. "Jul 20, 2026" / "20 jul 2026".
+   *
+   * PINNED TO UTC ON PURPOSE. `last_action_date` is a bare `YYYY-MM-DD`, so
+   * `new Date()` reads it as UTC midnight — formatted in any negative-offset
+   * zone it prints the DAY BEFORE (verified: 2026-07-20 rendered "Jul 19,
+   * 2026" on an America/New_York build machine). Amber is only legal with a
+   * TRUE printed date, and a listing's "last action" is a claim about a real
+   * day, so both are formatted in UTC and never drift with the builder's
+   * clock.
+   */
+  const billDate = (iso: string) =>
+    format.dateTime(new Date(iso), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+
+  /*
+   * The stamp's date. Deliberately NOT pinned to UTC: its screen-reader
+   * sentence is dataAsOfString(), which goes through the shared formatter,
+   * and a visible date that disagreed with its own accessible name by a day
+   * would be worse than either convention. `checkedAt` is a full timestamp,
+   * not a bare date, so it does not have the midnight problem above.
+   */
+  const stampDate = format.dateTime(new Date(freshness.checkedAt), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
   return (
     <div>
       <JsonLd id="site-jsonld" data={jsonLd} />
-      {/* Hero */}
-      <section className="bg-night text-paper">
-        <div className="mx-auto max-w-5xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-[3fr_2fr] md:items-center">
+
+      {/* ---------------------------------------------------------------
+          HERO — the job on the left, the fear answered on the right. Paper,
+          not a dark slab: the only ground change on this page belongs to
+          the green panel below.
+          --------------------------------------------------------------- */}
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-8 md:pt-16 md:pb-12">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-start md:gap-16">
           <div className="min-w-0">
-            <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
-              {t('heroTitle')}
+            {/* THE GO-MARK AS A STROKE: the same 6px bar at the same 3px cap
+                the route gauge is built from, drawn under the promise —
+                because the promise is the thing being measured. It is a
+                pseudo-element, never the <Gauge> component. */}
+            <h1 className="max-w-[16ch] text-h1 font-extrabold">
+              {t('heroTitle')}{' '}
+              <span className="relative inline-block whitespace-nowrap after:absolute after:right-[0.08em] after:bottom-[-0.12em] after:left-[0.02em] after:h-[6px] after:rounded-stamp after:bg-go after:content-['']">
+                {t('heroTitleGo')}
+              </span>
             </h1>
-            <p className="mt-5 max-w-prose text-lg text-paper/85">{t('heroSub')}</p>
+
+            <p className="mt-6 max-w-read text-lede text-ink-2">{t('heroSub')}</p>
+
+            {/* AI at first contact: the decoded words are this page's whole
+                content, so the label sits with the promise, above the fold. */}
+            <p className="mt-5 max-w-[44ch]">
+              <Chip tone="ai" marker={t('aiMarker')}>
+                {t('heroAi')}
+              </Chip>
+            </p>
+
+            <div className="mt-6">
+              <ZipForm />
+            </div>
+
+            {/* The funnel's other entry point: someone who already knows why
+                they're here shouldn't have to scroll past the ZIP field to
+                find it. Same page, no navigation — just a jump to the
+                callable bills below. */}
+            <a
+              href="#top-actions"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('heroJump')}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </a>
+
             {/* Thumb-reachable language switch (2026-07 critique round 2):
                 the header pill sits in the least reachable corner on mobile,
                 and the one control a Spanish-dominant visitor needs most
                 shouldn't. The link text is in the TARGET language — the EN
                 page says "Ver en español" — hence lang/hreflang on the link,
                 not the page. Complements the header pill, never replaces it. */}
-            <Link
-              href="/"
-              locale={locale === 'es' ? 'en' : 'es'}
-              lang={locale === 'es' ? 'en' : 'es'}
-              hrefLang={locale === 'es' ? 'en' : 'es'}
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-paper underline underline-offset-4 hover:text-brass-bright"
-            >
-              {t('heroLocaleLink')}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+            <p className="mt-4 max-w-note text-sm">
+              <Link
+                href="/"
+                locale={locale === 'es' ? 'en' : 'es'}
+                lang={locale === 'es' ? 'en' : 'es'}
+                hrefLang={locale === 'es' ? 'en' : 'es'}
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+              >
+                {t('heroLocaleLink')}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </p>
           </div>
-          <div className="min-w-0 rounded-card bg-paper p-6 text-ink shadow-lift">
-            <ZipForm />
-            {/* The funnel's other entry point: someone who already knows why
-                they're here shouldn't have to scroll past the ZIP card to
-                find it. Same page, no navigation - just a jump to the
-                callable bills below. */}
-            <a
-              href="#top-actions"
-              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft underline underline-offset-4 hover:text-ink"
+
+          {/* The fear, named and answered. The title bar is a real heading, so
+              this is a named region in the outline rather than a styled
+              paragraph the outline cannot see. The three turns are set in the
+              READING voice: these are words said out loud, which is exactly
+              what Besley is spent on. */}
+          <aside
+            className="min-w-0 overflow-hidden rounded-control border-2 border-ink"
+            aria-labelledby="call-demo-title"
+          >
+            <h2
+              id="call-demo-title"
+              className="bg-ink-deep px-5 py-3 text-xs font-bold tracking-[0.06em] text-paper uppercase leading-tight"
             >
-              {t('heroJump')}
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </a>
-          </div>
+              {t('demoTitle')}
+            </h2>
+            <div className="p-4 md:p-6">
+              <p className="rounded-control p-3 font-reading text-md text-ink-2">
+                <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
+                {t('demoStafferOpen')}
+              </p>
+              {/* `tint` means YOURS — the caller's own words. It is the one
+                  legal use of the tint on this page. */}
+              <p className="mt-2 rounded-control bg-tint p-3 font-reading text-md text-ink">
+                <b className="font-sans font-bold text-go-deep">{t('demoYouLabel')}</b>{' '}
+                {t('demoYouLine')}
+              </p>
+              <p className="mt-2 rounded-control p-3 font-reading text-md text-ink-2">
+                <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
+                {t('demoStafferClose')}
+              </p>
+              <p className="mt-4 max-w-note border-t-[1.5px] border-line pt-4 text-sm text-ink-2">
+                <strong className="font-semibold text-ink">{t('demoNoteLead')}</strong>{' '}
+                {t('demoNote')}
+              </p>
+            </div>
+          </aside>
         </div>
-      </section>
+      </div>
 
-      {/* In the news - coverage-led discovery leads the first impression */}
-      {news.length > 0 && (
-        <section className="mx-auto max-w-5xl px-4 pt-14">
-          <NewsLens bills={news} />
-        </section>
-      )}
+      {/* ---------------------------------------------------------------
+          THE WEEK. Full-width by construction: the green panel is full-bleed
+          and it MUST stay inside this section (the funnel + freshness specs
+          read this boundary), so the max-width wrapper is inside, around the
+          section's other children.
+          --------------------------------------------------------------- */}
+      <section aria-labelledby="top-actions">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="border-t-[3px] border-ink pt-4">
+            <h2 id="top-actions" className="text-h2 font-extrabold">
+              {t('topTitle')}
+            </h2>
+          </div>
+          <p className="mt-2 max-w-note text-ink-2">{t('topSub')}</p>
+        </div>
 
-      {/* Top actions */}
-      <section className="mx-auto max-w-5xl px-4 py-14" aria-labelledby="top-actions">
-        <div>
-          <h2 id="top-actions" className="font-display text-3xl font-bold">
-            {t('topTitle')}
-          </h2>
-          <p className="mt-1 text-ink-soft">{t('topSub')}</p>
-          {/* R2: the client-side stale caveat continues the stamp's own
-              sentence — one line, one date; renders nothing while fresh */}
-          <p className="mt-1 max-w-prose text-xs text-ink-faint">
-            {dataAsOf}
+        {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
+            selectFloorVoteFeature() above holds the cap. The date printed is
+            the calendar-PLACEMENT date the corpus actually holds — no bill in
+            data/bills.json carries a forward-looking scheduled-vote date, so
+            no mark here claims one. */}
+        {feature?.last_action_date && (
+          <FloorVotePanel
+            className="mt-6"
+            headingLevel={3}
+            status={feature.status}
+            dateLabel={billDate(feature.last_action_date)}
+            calendarLabel={t('floorCalendar')}
+            identifier={formatCitation(feature.bill_type, feature.bill_number)}
+            headline={feature.ai_headline ?? feature.short_title ?? feature.title}
+            href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
+            ctaLabel={t('floorCta')}
+            meta={
+              <>
+                {feature.issue_tags?.[0] && (
+                  <Chip tone="tag" ground="go">
+                    {tShared(`categories.${feature.issue_tags[0]}`)}
+                  </Chip>
+                )}
+                <Chip tone="ai" ground="go" marker={t('aiMarker')}>
+                  {t('aiReviewed')}
+                </Chip>
+              </>
+            }
+          />
+        )}
+
+        <div className="mx-auto max-w-5xl px-4">
+          {/* The rest of the week is a plain ruled listing, not a card. Two
+              reasons, the same reason twice: a bordered box indents its own
+              content by border + padding, which would put these headlines
+              ~33px right of the green panel's headline directly above — two
+              items in one list on two different left edges. And "listed
+              plainly" is what the note below promises, so the distance
+              between the panel and these rows is the whole distance between
+              scheduled and not. */}
+          {listed.length > 0 && (
+            <div className="mt-6 border-t-[1.5px] border-line-strong">
+              {listed.map((b, i) => {
+                const isLast = i === listed.length - 1;
+                return (
+                  <article
+                    key={billSlug(b)}
+                    // the stamp straddles this row's closing rule, so a
+                    // stamped row reserves ~48px of clearance and an
+                    // unstamped one stays tight
+                    className={`relative grid gap-3 border-b-[1.5px] border-line-strong py-6 ${
+                      isLast ? 'pb-12' : ''
+                    }`}
+                  >
+                    <h3 className="max-w-[36ch] text-h3 font-extrabold">
+                      <Link
+                        href={`/bills/${billSlug(b)}`}
+                        className="inline-flex min-h-11 items-center text-ink no-underline visited:text-ink-2 hover:underline hover:decoration-go hover:decoration-[3px]"
+                      >
+                        {b.ai_headline ?? b.short_title ?? b.title}
+                      </Link>
+                    </h3>
+                    <p className="text-sm font-semibold text-ink-2 tabular-nums">
+                      {formatCitation(b.bill_type, b.bill_number)}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-ink-2">
+                      {b.issue_tags?.[0] && (
+                        <Chip tone="tag">{tShared(`categories.${b.issue_tags[0]}`)}</Chip>
+                      )}
+                      <span>{tShared(`bills.status.${b.status}`)}</span>
+                      {b.last_action_date && (
+                        <span className="tabular-nums">
+                          {tShared('bills.updated', { date: billDate(b.last_action_date) })}
+                        </span>
+                      )}
+                    </div>
+                    {/* ONCE PER PAGE, and the sole printed sync date: the
+                        "Data as of" line that used to sit under the section
+                        heading is gone, so this mark carries information
+                        rather than repeating something said 300px away. */}
+                    {isLast && (
+                      <Stamp
+                        label={t('stampLabel')}
+                        dateLabel={stampDate}
+                        srLabel={dataAsOf}
+                      />
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {quiet && top.length === 0 && (
+            <div className="mt-6">
+              <UrgencyEmptyState {...freshness} />
+            </div>
+          )}
+
+          {/* The note says what the loudness means, and the client-side stale
+              caveat continues its sentence — one line, one claim; renders
+              nothing at all while the data is fresh. */}
+          <p className="mt-8 max-w-note text-sm text-ink-2">
+            {t('weekNote')}
             <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
+
+          {/* The section closes with its exit: a full-width row under the
+              listing, not a link floating beside the intro where it reads as
+              decoration. */}
+          <Link
+            href="/bills"
+            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-control border-2 border-ink px-4 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
+          >
+            {t('seeAll', { count: total })}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
         </div>
-        {top.length > 0 ? (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {top.map((b) => (
-              <BillCard
-                key={billSlug(b)}
-                bill={{
-                  slug: billSlug(b),
-                  identifier: formatCitation(b.bill_type, b.bill_number),
-                  headline: b.ai_headline,
-                  title: b.short_title ?? b.title,
-                  status: b.status,
-                  tags: b.issue_tags ?? [],
-                  lastActionDate: b.last_action_date,
-                }}
-              />
-            ))}
-          </div>
-        ) : quiet ? (
-          <div className="mt-6">
-            <UrgencyEmptyState {...freshness} />
-          </div>
-        ) : null}
-        {/* The section closes with its exit (2026-07 critique round 2): a
-            full-width row under the grid, not a link floating beside the
-            intro where it reads as decoration — and odd card counts never
-            end the band on a visible hole. */}
-        <Link
-          href="/bills"
-          className="mt-4 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control border-2 border-ink/15 bg-surface px-4 py-3 font-semibold hover:border-ink/40"
-        >
-          {t('seeAll', { count: total })}
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
       </section>
 
-      {/* Moments strip — small, conservative, homepage-shared-surface band
-          (spec §4.2). Sits after "Worth a call," never displacing it, and
-          disappears entirely when no Moment currently reads as live. */}
+      {/* Moments strip — the discovery layer sits UNDER the week, never above
+          it: you look for a subject after you have seen what is actually
+          moving. Disappears entirely when no Moment currently reads as live.
+
+          DARK ENAMEL, NOT GREEN (owner decision, 2026-07-24). It read as an
+          afterthought as ruled paper, so it needed real weight. Green was the
+          obvious way to give it that and is the wrong one: green here would
+          fire every week regardless of data, and the whole point of the green
+          panel above is that it only appears when a vote is actually on the
+          calendar. Ink enamel buys the weight and spends no green, so the
+          page still has exactly ONE green slab and it is still data-earned. */}
       {liveMoments.length > 0 && (
-        <section className="mx-auto max-w-5xl px-4 pb-14" aria-labelledby="moments-strip-title">
-          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-line pt-10">
-            <h2 id="moments-strip-title" className="font-display text-2xl font-bold">
-              {t('momentsTitle')}
-            </h2>
-            <Link
-              href="/moments"
-              className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold underline underline-offset-4"
-            >
-              {t('momentsCta')}
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
+        <section
+          className="on-dark mt-12 border-y-[3px] border-line-strong bg-ink-deep py-10 text-paper md:mt-16 md:py-14"
+          aria-labelledby="moments-strip-title"
+        >
+          <div className="mx-auto max-w-5xl px-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-4">
+              <h2 id="moments-strip-title" className="text-h2 font-extrabold text-paper">
+                {t('momentsTitle')}
+              </h2>
+              <Link
+                href="/moments"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go-bright underline underline-offset-4 hover:text-paper"
+              >
+                {t('momentsCta')}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </div>
+            <p className="mt-1 max-w-note text-sm text-ink-pale">{t('momentsSub')}</p>
+            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong">
+              {liveMoments.map((m) => (
+                <li key={m.id} className="border-b-[1.5px] border-line-strong">
+                  <Link
+                    href={`/moments/${m.id}`}
+                    className="flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-1 py-5 text-paper no-underline hover:underline hover:decoration-go-bright hover:decoration-[3px]"
+                  >
+                    <span className="text-lg font-bold">
+                      {locale === 'es' ? m.name.es : m.name.en}
+                    </span>
+                    <span className="max-w-note text-sm text-ink-pale">
+                      {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <p className="mt-1 max-w-prose text-sm text-ink-soft">{t('momentsSub')}</p>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {liveMoments.map((m) => (
-              <li key={m.id}>
-                <Link
-                  href={`/moments/${m.id}`}
-                  className="block rounded-control border border-line bg-surface p-4 transition-colors hover:border-ink/40"
-                >
-                  <p className="font-display font-semibold">{locale === 'es' ? m.name.es : m.name.en}</p>
-                  <p className="mt-1 text-sm text-ink-soft">
-                    {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
         </section>
       )}
 
-      {/* See how a call works - the bills above lead here; the demo de-risks
-          the ask before the informational sections make the fuller case */}
-      <section className="mx-auto max-w-5xl px-4 pb-14" aria-labelledby="walkthrough-title">
-        <h2 id="walkthrough-title" className="font-display text-3xl font-bold">
+      {/* In the news — coverage-led discovery, kept as ruled paper inside the
+          measure. Ordered AFTER Moments (owner, 2026-07-24): the week is what
+          is moving, Moments is how you find your subject, and coverage is the
+          quietest of the three. It renders nothing when a sync leaves no
+          cross-spectrum or neutral coverage to feature. */}
+      {news.length > 0 && (
+        <div className="mx-auto max-w-5xl px-4 pt-12 md:pt-16">
+          <NewsLens bills={news} />
+        </div>
+      )}
+
+      {/* ---------------------------------------------------------------
+          THE FIVE MINUTES, DRAWN TO SCALE. The only gauge on this page, and
+          it measures: each leg's bar is that step's true share of five
+          minutes, computed from ROUTE, so the drawing cannot drift from the
+          durations printed beside it. Three legs are barely marks — the call
+          itself is half the time, which is the honest shape of the job.
+          --------------------------------------------------------------- */}
+      {/* `id="how"` lives on the HEADING only. Putting it on the section too
+          made aria-labelledby="how" resolve to the section itself, whose
+          accessible name then became its entire text — which starts "Your ZIP
+          code…" and collided with the hero's ZIP field in every getByLabel
+          query. One id, one owner. */}
+      <section className="mx-auto max-w-5xl px-4 pt-12 md:pt-16" aria-labelledby="how">
+        <div className="border-t-[3px] border-ink pt-4">
+          <h2 id="how" className="text-h2 font-extrabold">
+            {t('howTitle')}
+          </h2>
+        </div>
+        <ol className="mt-8 grid list-none gap-6">
+          {ROUTE.map(({ key, seconds }) => (
+            <li
+              key={key}
+              className="grid gap-2 md:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)] md:items-start md:gap-x-6"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
+                <h3 className="text-lg font-bold leading-tight">{t(`how${key}Title`)}</h3>
+                <span className="text-xs font-bold tracking-[0.06em] whitespace-nowrap text-ink-2 tabular-nums">
+                  {t(`how${key}Dur`)}
+                </span>
+              </div>
+              <div>
+                <Gauge
+                  id={`route-leg-${key}`}
+                  hideLabel
+                  label={t('routeGaugeLabel', {
+                    duration: t(`how${key}Dur`),
+                    total: t('routeTotal'),
+                  })}
+                  total={ROUTE_TOTAL}
+                  segments={[{ id: `leg-${key}`, value: seconds }]}
+                />
+                <p className="mt-3 max-w-read text-ink-2">{t(`how${key}Body`)}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-6 flex flex-wrap items-baseline gap-4 border-t-[1.5px] border-ink pt-3 text-sm text-ink-2">
+          <b className="text-lg font-extrabold text-ink tabular-nums">{t('routeTotal')}</b>
+          <span>{t('routeTotalNote')}</span>
+        </p>
+      </section>
+
+      {/* See how a call works — the bills above lead here; the demo de-risks
+          the ask before the informational sections make the fuller case. */}
+      <section
+        className="mx-auto max-w-5xl px-4 pt-12 md:pt-16"
+        aria-labelledby="walkthrough-title"
+      >
+        <h2 id="walkthrough-title" className="text-h2 font-extrabold">
           {t('walkthroughTitle')}
         </h2>
-        <p className="mt-1 max-w-prose text-ink-soft">{t('walkthroughSub')}</p>
+        <p className="mt-2 max-w-note text-ink-2">{t('walkthroughSub')}</p>
         <div className="mt-8">
           <CallWalkthrough />
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-paper-deep border-y border-line" aria-labelledby="how">
-        <div className="mx-auto max-w-5xl px-4 py-14">
-          <h2 id="how" className="font-display text-3xl font-bold">
-            {t('howTitle')}
+      {/* Why calling works — a quiet block. It used to be a dark enamel card,
+          which at a squint made it the page's second heavy mass and took the
+          meaning out of the one ground change that carries data. */}
+      <section className="mx-auto max-w-5xl px-4 pt-12 md:pt-16" aria-labelledby="why-title">
+        <div className="grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-start md:gap-12">
+          <h2 id="why-title" className="text-h2 font-extrabold">
+            {t('whyTitle')}
           </h2>
-          <ol className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map(({ icon: Icon, key }, i) => (
-              <li key={key} className="relative">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brass text-paper font-display font-bold">
-                    {i + 1}
-                  </span>
-                  <Icon className="h-5 w-5 text-ink-soft" aria-hidden />
-                </div>
-                <h3 className="mt-3 font-display text-lg font-semibold">{t(`how${key}Title`)}</h3>
-                <p className="mt-1 text-sm text-ink-soft">{t(`how${key}Body`)}</p>
-              </li>
-            ))}
-          </ol>
+          <div>
+            <p className="max-w-note text-ink-2">{t('whyBody')}</p>
+            <Link
+              href="/why-call"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('whyCta')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Why call: the persuasion moment gets the card; privacy reads as a quiet pledge */}
-      <section className="mx-auto max-w-5xl px-4 py-14 grid gap-10 md:grid-cols-[3fr_2fr] md:items-start">
-        <div className="rounded-card bg-night p-8 text-paper shadow-lift">
-          <PhoneCall className="h-6 w-6 text-brass-bright" aria-hidden />
-          <h2 className="mt-3 font-display text-3xl font-bold">{t('whyTitle')}</h2>
-          <p className="mt-2 text-paper/85">{t('whyBody')}</p>
-          <Link
-            href="/why-call"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
-          >
-            {t('whyCta')}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-        <div className="border-t-2 border-moss pt-5 md:border-t-0 md:border-l-0 md:pt-1">
-          <ShieldCheck className="h-6 w-6 text-moss" aria-hidden />
-          <h2 className="mt-3 font-display text-2xl font-bold">{t('privacyTitle')}</h2>
-          <p className="mt-2 text-ink-soft">{t('privacyBody')}</p>
-          <Link
-            href="/privacy"
-            className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4"
-          >
-            {t('privacyCta')}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
+      {/* Privacy, as ruled paper. The claim does not need a dark ground to
+          land: it is opened by the same 3px ink rule that opens the week and
+          the route, and the three guarantees are set as a ruled list, which
+          is how a document states terms. */}
+      <section className="mx-auto max-w-5xl px-4 pt-12 md:pt-16" aria-labelledby="privacy-title">
+        <div className="grid gap-6 border-t-[3px] border-ink pt-6 md:grid-cols-[1.1fr_1fr] md:items-start md:gap-12">
+          <h2 id="privacy-title" className="text-h2-loud font-extrabold">
+            {t('privacyTitle')}
+          </h2>
+          <div>
+            <p className="max-w-note text-ink-2">{t('privacyBody')}</p>
+            <ul className="mt-5 max-w-note list-none">
+              {(['privacyPoint1', 'privacyPoint2', 'privacyPoint3'] as const).map((k) => (
+                <li
+                  key={k}
+                  className="border-t border-line-strong py-3 text-sm text-ink-2 last:border-b"
+                >
+                  {t(k)}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/privacy"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('privacyCta')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -275,28 +579,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           donate affordance (setting it back to null darkens all of them at
           once). Link-out only, never a payment field here; copy leads with
           the no-tracking mission, and the not-tax-deductible line is the
-          required truthful framing. Note color is ink-soft, not ink-faint:
-          ink-faint is only 4.33:1 on paper-deep — below AA. */}
+          required truthful framing. It is ruled paper now, not a full-bleed
+          wash band: this page changes ground exactly once. */}
       {DONATE_URL && (
-        <section className="bg-paper-deep border-t border-line" aria-labelledby="support-title">
-          <div className="mx-auto max-w-5xl px-4 py-12 flex flex-wrap items-center justify-between gap-8">
-            <div className="max-w-prose">
-              <h2 id="support-title" className="font-display text-3xl font-bold">
+        <section
+          className="mx-auto max-w-5xl px-4 pt-12 pb-12 md:pt-16 md:pb-16"
+          aria-labelledby="support-title"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-6 border-t-[1.5px] border-line pt-8">
+            <div className="max-w-note">
+              <h2 id="support-title" className="text-h2 font-extrabold">
                 {t('supportTitle')}
               </h2>
-              <p className="mt-2 text-ink-soft">{t('supportBody')}</p>
+              <p className="mt-2 text-ink-2">{t('supportBody')}</p>
             </div>
             <div>
               <a
                 href={DONATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
+                className="inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
               >
                 {t('supportCta')}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
-              <p className="mt-2 text-sm text-ink-soft">{t('supportNote')}</p>
+              <p className="mt-2 max-w-note text-sm text-ink-2">{t('supportNote')}</p>
             </div>
           </div>
         </section>

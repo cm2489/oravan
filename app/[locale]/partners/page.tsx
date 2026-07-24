@@ -27,45 +27,54 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
   const t = await getTranslations('partners');
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <p className="mt-4 text-lg leading-relaxed text-ink-soft">{t('intro')}</p>
+    <article className="mx-auto max-w-5xl px-4 py-12">
+      {/* one cap on the column, not one per block */}
+      <div className="max-w-read">
+        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
 
-      <section className="mt-10">
-        <h2 className="font-display text-2xl font-bold">{t('newsroomsTitle')}</h2>
-        <p className="mt-2 max-w-prose leading-relaxed">{t('newsroomsBody')}</p>
-        <Link
-          href="/embeds"
-          className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-control bg-brass px-5 py-3 font-semibold text-paper hover:bg-brass-deep"
-        >
-          {t('newsroomsCta')} →
-        </Link>
-      </section>
+        <section className="mt-8 border-t border-line pt-6">
+          <h2 className="text-h3 font-extrabold">{t('newsroomsTitle')}</h2>
+          <p className="mt-2">{t('newsroomsBody')}</p>
+          {/* the page's one filled action — green, with the two-tone focus
+              stack (`ring-gap` swaps the border to paper so the ink ring is
+              never adjacent to the green fill) */}
+          <Link
+            href="/embeds"
+            className="ring-gap mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+          >
+            {t('newsroomsCta')} <span aria-hidden>→</span>
+          </Link>
+        </section>
 
-      <section className="mt-10">
-        <h2 className="font-display text-2xl font-bold">{t('librariesTitle')}</h2>
-        <p className="mt-2 max-w-prose leading-relaxed">{t('librariesBody')}</p>
-      </section>
+        <section className="mt-8 border-t border-line pt-6">
+          <h2 className="text-h3 font-extrabold">{t('librariesTitle')}</h2>
+          <p className="mt-2">{t('librariesBody')}</p>
+        </section>
 
-      <section className="mt-10">
-        <h2 className="font-display text-2xl font-bold">{t('orgsTitle')}</h2>
-        <p className="mt-2 max-w-prose leading-relaxed">{t('orgsBody')}</p>
-      </section>
+        <section className="mt-8 border-t border-line pt-6">
+          <h2 className="text-h3 font-extrabold">{t('orgsTitle')}</h2>
+          <p className="mt-2">{t('orgsBody')}</p>
+        </section>
 
-      <section className="mt-10 rounded-card border border-line bg-surface p-6">
-        <h2 className="font-display text-2xl font-bold">{t('licensingTitle')}</h2>
-        <p className="mt-2 max-w-prose leading-relaxed">{t('licensingBody')}</p>
-        {/* Primary partnership contact (M12). The beta feedback dialog
-            (footer, #feedback anchor — same one the citations
-            correction-path uses) remains a secondary fallback, referenced
-            in licensingBody, for anyone who'd rather not email. */}
-        <a
-          href="mailto:hello@oravan.org"
-          className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-control border-2 border-ink px-5 py-3 font-semibold hover:bg-paper-deep"
-        >
-          {t('licensingCta')} →
-        </a>
-      </section>
+        {/* A recessed `wash` panel, so its own edge is `ink-2` (7.23:1), not
+            `line-strong` — line-strong on wash is 2.97:1 and only an inactive
+            control may take it. */}
+        <section className="mt-8 rounded-control border border-ink-2 bg-wash p-6">
+          <h2 className="text-h3 font-extrabold">{t('licensingTitle')}</h2>
+          <p className="mt-2">{t('licensingBody')}</p>
+          {/* Primary partnership contact (M12). The beta feedback dialog
+              (footer, #feedback anchor — same one the citations
+              correction-path uses) remains a secondary fallback, referenced
+              in licensingBody, for anyone who'd rather not email. */}
+          <a
+            href="mailto:hello@oravan.org"
+            className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
+          >
+            {t('licensingCta')} <span aria-hidden>→</span>
+          </a>
+        </section>
+      </div>
     </article>
   );
 }

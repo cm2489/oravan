@@ -53,56 +53,56 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
 
   return (
     <article className="mx-auto max-w-5xl px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <p className="mt-4 max-w-prose text-lg leading-relaxed text-ink-soft">{t('intro')}</p>
+      <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
+      <p className="mt-6 max-w-read text-lede text-ink-2">{t('intro')}</p>
 
       <EmbedConfigurator bills={bills} />
 
-      <section className="mt-16 max-w-3xl border-t border-line pt-10">
-        <h2 className="font-display text-2xl font-bold">{t('docsHeading')}</h2>
+      <section className="mt-16 max-w-read border-t-[3px] border-ink pt-4">
+        <h2 className="text-h2 font-extrabold">{t('docsHeading')}</h2>
 
         <div className="mt-6">
-          <h3 className="font-display text-lg font-bold">{t('docsIsolationTitle')}</h3>
-          <p className="mt-2 leading-relaxed">{t('docsIsolationBody')}</p>
+          <h3 className="text-h3 font-extrabold">{t('docsIsolationTitle')}</h3>
+          <p className="mt-2">{t('docsIsolationBody')}</p>
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsPrivacyTitle')}</h3>
-          <ul className="mt-2 list-disc space-y-2 pl-5 leading-relaxed">
+          <h3 className="text-h3 font-extrabold">{t('docsPrivacyTitle')}</h3>
+          <ul className="mt-2 list-disc space-y-2 pl-5">
             <li>{t('docsPrivacyCookies')}</li>
             <li>{t('docsPrivacyThirdParty')}</li>
             <li>{t('docsPrivacyZip')}</li>
             <li>{t('docsPrivacyNoData')}</li>
           </ul>
-          <p className="mt-3 text-sm text-ink-soft">{t('docsPrivacyTested')}</p>
+          <p className="mt-3 text-sm text-ink-2">{t('docsPrivacyTested')}</p>
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsThemingTitle')}</h3>
-          <p className="mt-2 leading-relaxed">{t('docsThemingBody')}</p>
+          <h3 className="text-h3 font-extrabold">{t('docsThemingTitle')}</h3>
+          <p className="mt-2">{t('docsThemingBody')}</p>
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsAttributionTitle')}</h3>
-          <p className="mt-2 leading-relaxed">{t('docsAttributionBody')}</p>
+          <h3 className="text-h3 font-extrabold">{t('docsAttributionTitle')}</h3>
+          <p className="mt-2">{t('docsAttributionBody')}</p>
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsLoaderTitle')}</h3>
-          <p className="mt-2 leading-relaxed">{t('docsLoaderBody')}</p>
+          <h3 className="text-h3 font-extrabold">{t('docsLoaderTitle')}</h3>
+          <p className="mt-2">{t('docsLoaderBody')}</p>
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsFeedTitle')}</h3>
-          <p className="mt-2 leading-relaxed">{t('docsFeedBody')}</p>
+          <h3 className="text-h3 font-extrabold">{t('docsFeedTitle')}</h3>
+          <p className="mt-2">{t('docsFeedBody')}</p>
           <ul className="mt-2 space-y-1 text-sm">
             <li>
-              <a href={feeds.json} className="underline underline-offset-2">
+              <a href={feeds.json} className="text-go underline hover:text-go-deep">
                 {t('docsFeedJsonLabel')}: {feeds.json}
               </a>
             </li>
             <li>
-              <a href={feeds.xml} className="underline underline-offset-2">
+              <a href={feeds.xml} className="text-go underline hover:text-go-deep">
                 {t('docsFeedRssLabel')}: {feeds.xml}
               </a>
             </li>
@@ -110,10 +110,10 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
         </div>
 
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsTosTitle')}</h3>
-          <p className="mt-2 leading-relaxed">
+          <h3 className="text-h3 font-extrabold">{t('docsTosTitle')}</h3>
+          <p className="mt-2">
             {t('docsTosBody')}{' '}
-            <Link href="/embeds/terms" className="underline underline-offset-2 font-semibold">
+            <Link href="/embeds/terms" className="font-semibold text-go underline hover:text-go-deep">
               {t('docsTosLinkText')}
             </Link>
           </p>
@@ -123,14 +123,14 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
             portal; Oravan never proxies or iframes billing. The portal has
             plan switching disabled — copy promises only what it can do. */}
         <div className="mt-8">
-          <h3 className="font-display text-lg font-bold">{t('docsManageTitle')}</h3>
-          <p className="mt-2 leading-relaxed">
+          <h3 className="text-h3 font-extrabold">{t('docsManageTitle')}</h3>
+          <p className="mt-2">
             {t('docsManageBody')}{' '}
             <a
               href={BILLING_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 hover:text-ink"
+              className="inline-flex min-h-11 items-center font-semibold text-go underline hover:text-go-deep"
             >
               {t('docsManageLinkText')}
             </a>

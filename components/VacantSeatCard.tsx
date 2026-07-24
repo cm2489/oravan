@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 /**
@@ -9,26 +8,27 @@ import { useTranslations } from 'next-intl';
  * an "election pending" claim: a seat can be vacant with no successor
  * scheduled at all (the FL-20 case, whose new map eliminates the district
  * outright) — this says the one true thing and stops.
+ *
+ * It is the same card silhouette as RepCard, minus the dial: a vacancy is a
+ * fact about this district, not a failure, so it takes no alert tone and no
+ * amber. It carries no green either, because there is nothing here to press.
+ * The heading is an h3 so it sits at the same outline level as the rep names
+ * beside it rather than dropping out of the document outline entirely.
  */
 export function VacantSeatCard() {
   const t = useTranslations('reps');
   return (
-    <article className="rounded-card border border-line bg-surface p-5 shadow-lift">
-      <div className="flex items-start gap-3">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-        <div className="min-w-0">
-          <p className="font-display text-lg font-bold leading-tight">{t('vacantSeat')}</p>
-          <p className="mt-1 text-sm text-ink-soft">{t('vacantSeatBody')}</p>
-          <a
-            href="https://www.house.gov/representatives/find-your-representative"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center text-sm text-ink-soft underline underline-offset-2 hover:text-ink"
-          >
-            {t('vacantSeatLink')}
-          </a>
-        </div>
-      </div>
+    <article className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
+      <h3 className="text-xl font-extrabold">{t('vacantSeat')}</h3>
+      <p className="mt-2 text-sm text-ink-2">{t('vacantSeatBody')}</p>
+      <a
+        href="https://www.house.gov/representatives/find-your-representative"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-2"
+      >
+        {t('vacantSeatLink')}
+      </a>
     </article>
   );
 }

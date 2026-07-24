@@ -22,6 +22,32 @@ import { usePathname } from '@/i18n/navigation';
  *
  * Bot friction, both invisible to humans: a honeypot field ("website") that
  * only bots fill, and a minimum-open-time hold before the request is sent.
+ *
+ * ---------------------------------------------------------------------------
+ * DESIGN NOTES
+ *
+ * The trigger is drawn in `currentColor` on purpose. It lives inside the site
+ * footer, and the footer is the page's back cover - it may be a paper block
+ * or an ink enamel ground depending on the shell. Inheriting its ground's own
+ * text tone means the button reads at 7.87:1 on paper (ink-2) and 10.82:1 on
+ * the ink ground (ink-pale) without this file having to know which it landed
+ * on. Focus is retuned by the ground's own `.on-dark`, so the ring follows too.
+ *
+ * The chosen category takes the `tint` ground, because `tint` means YOURS -
+ * what the visitor picked or wrote - and this is the one control on the page
+ * where that is literally true. The native radio keeps carrying the state
+ * (accent-ink); the tint is a second signal on top of it, never the only one.
+ *
+ * Neither the failure nor the success block is carried by color. Both are
+ * opened by a 3px ink rule on `wash`; the failure adds a bold uppercase label
+ * in the alert tone plus aria-invalid and role="alert", the success is
+ * role="status". `go` and `alert` are 1.19:1 apart in luminance, so a
+ * green-vs-red read would be invisible to a deuteranope - which is exactly
+ * why the rule and the label come first and the hue comes third.
+ *
+ * In-flight controls take a real :disabled state - `wash` ground, line-strong
+ * edge (legal here: 1.4.11 exempts inactive components), ink-2 text at 7.23:1
+ * - instead of an opacity dim, which would drag every pair below AA at once.
  */
 
 const MIN_OPEN_MS = 3000;
@@ -45,6 +71,8 @@ const useHydrated = () =>
     () => true,
     () => false
   );
+
+const DISABLED = 'disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2';
 
 export function FeedbackDialog() {
   const t = useTranslations('feedback');
@@ -108,6 +136,7 @@ export function FeedbackDialog() {
     }
   }
 
+  const sending = status === 'sending';
   const error =
     status === 'incomplete'
       ? t('errorIncomplete')
@@ -122,9 +151,9 @@ export function FeedbackDialog() {
       <button
         type="button"
         onClick={open}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border-2 border-ink/15 bg-surface px-4 text-sm font-semibold text-ink hover:border-ink/40"
+        className="inline-flex min-h-11 items-center gap-2 rounded-control border-2 border-current px-4 text-sm font-bold underline-offset-4 hover:underline hover:decoration-2"
       >
-        <MessageSquare className="h-4 w-4" aria-hidden />
+        <MessageSquare className="h-4 w-4 shrink-0" aria-hidden />
         {t('trigger')}
       </button>
 
@@ -135,41 +164,53 @@ export function FeedbackDialog() {
           // Closing keeps an unsent draft for a reopen; transient states reset.
           if (status !== 'success') setStatus('idle');
         }}
-        className="m-auto w-[min(92vw,32rem)] max-h-[85dvh] overflow-y-auto rounded-card border border-line bg-surface p-6 text-ink shadow-lift backdrop:bg-night/60"
+        /* The dialog carries its OWN focus tones rather than inheriting them.
+           Its ground is always paper, but its trigger can sit anywhere — the
+           footer's ink ground included — and an `.on-dark` ancestor would
+           otherwise hand this paper panel a paper-coloured ring, i.e. an
+           invisible one. Self-sufficient here means the component cannot be
+           broken by where it is mounted. */
+        className="m-auto max-h-[85dvh] w-[min(92vw,32rem)] overflow-y-auto rounded-control border-2 border-ink bg-paper p-6 text-ink backdrop:bg-ink/60 [--focus-gap:var(--color-paper)] [--focus:var(--color-ink)]"
       >
-        <h2 id="feedback-title" className="font-display text-2xl font-bold">
+        <h2 id="feedback-title" className="text-h2 font-extrabold">
           {t('title')}
         </h2>
 
         {status === 'success' ? (
           <div>
-            <p role="status" className="mt-3 rounded-control bg-moss-soft p-4 text-moss">
+            <p
+              role="status"
+              className="mt-4 max-w-note border-t-[3px] border-ink bg-wash p-4 text-sm font-semibold text-ink"
+            >
               {t('success')}
             </p>
             <button
               type="button"
               onClick={close}
-              className="mt-4 inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px"
+              className="ring-gap mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-6 font-bold text-paper hover:border-go-deep hover:bg-go-deep"
             >
               {t('close')}
             </button>
           </div>
         ) : (
           <form onSubmit={submit} noValidate>
-            <p className="mt-1 text-sm text-ink-soft">{t('intro')}</p>
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t('intro')}</p>
 
             <fieldset className="mt-4">
-              <legend className="text-sm font-semibold">{t('categoryLegend')}</legend>
-              <div className="mt-1">
+              <legend className="text-sm font-bold">{t('categoryLegend')}</legend>
+              <div className="mt-2 grid gap-0.5">
                 {CATEGORIES.map((value) => (
-                  <label key={value} className="flex min-h-[44px] items-center gap-3">
+                  <label
+                    key={value}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-control px-3 text-md has-[:checked]:bg-tint has-[:checked]:font-semibold"
+                  >
                     <input
                       type="radio"
                       name="category"
                       value={value}
                       checked={category === value}
                       onChange={() => setCategory(value)}
-                      className="h-5 w-5 accent-ink"
+                      className="h-5 w-5 shrink-0 accent-ink"
                     />
                     {t(CATEGORY_LABEL[value])}
                   </label>
@@ -177,7 +218,7 @@ export function FeedbackDialog() {
               </div>
             </fieldset>
 
-            <label htmlFor="feedback-message" className="mt-4 block text-sm font-semibold">
+            <label htmlFor="feedback-message" className="mt-4 block text-sm font-bold">
               {t('messageLabel')}
             </label>
             <textarea
@@ -186,12 +227,16 @@ export function FeedbackDialog() {
               onChange={(e) => setMessage(e.target.value)}
               maxLength={2000}
               rows={5}
-              disabled={status === 'sending'}
+              disabled={sending}
               aria-describedby={error ? 'feedback-error feedback-notice' : 'feedback-notice'}
               aria-invalid={!!error}
-              className="mt-1 w-full rounded-control border-2 border-ink/20 bg-paper p-3 leading-relaxed focus:border-ink"
+              className={`mt-2 w-full rounded-control p-4 text-md leading-body text-ink ${DISABLED} ${
+                error
+                  ? 'border-[3px] border-ink bg-wash'
+                  : 'border-2 border-ink bg-paper enabled:hover:border-go-deep'
+              }`}
             />
-            <p id="feedback-notice" className="mt-1 text-sm text-ink-faint">
+            <p id="feedback-notice" className="mt-2 max-w-note text-sm text-ink-2">
               {/* Partnership is a business inquiry, not anonymous citizen
                   feedback: it invites an opt-in contact method (so a reply is
                   possible) instead of the default "don't include personal
@@ -217,23 +262,30 @@ export function FeedbackDialog() {
             </div>
 
             {error && (
-              <p id="feedback-error" role="alert" className="mt-2 text-sm font-medium text-clay">
+              <p
+                id="feedback-error"
+                role="alert"
+                className="mt-3 max-w-note border-t-[3px] border-ink bg-wash p-4 text-sm font-semibold text-ink"
+              >
+                <b className="mb-0.5 block text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
+                  {t('errorLabel')}
+                </b>
                 {error}
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap gap-2">
               <button
                 type="submit"
-                disabled={status === 'sending'}
-                className="inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px disabled:opacity-60"
+                disabled={sending}
+                className={`ring-gap inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-6 font-bold text-paper enabled:hover:border-go-deep enabled:hover:bg-go-deep ${DISABLED}`}
               >
-                {status === 'sending' ? t('sending') : t('send')}
+                {sending ? t('sending') : t('send')}
               </button>
               <button
                 type="button"
                 onClick={close}
-                className="inline-flex min-h-[44px] items-center rounded-control border border-ink/25 px-4 font-semibold hover:border-ink/60"
+                className="inline-flex min-h-12 items-center rounded-control border-2 border-ink px-5 font-bold text-ink hover:bg-ink hover:text-paper"
               >
                 {t('cancel')}
               </button>

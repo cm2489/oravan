@@ -41,10 +41,18 @@ const MT_FACTOR = (698.5 - 678.2) / MARK_VB; // vertical box-top delta
 export function OravanLockup({
   markRem = 2.75, // 2.75rem === Tailwind h-11 / w-11 (the standard header size)
   className,
+  markClassName,
 }: {
   /** Height (and width) of the mark, in rem. Everything else scales from this. */
   markRem?: number;
   className?: string;
+  /**
+   * Optional colour override for the MARK ONLY (owner decision, 2026-07-24:
+   * the O carries a green pop). Omit it and the lockup stays one ink, which
+   * is what every dark ground must do — `go` on `ink` computes 2.75:1 and
+   * fails AA, so the footer lockup passes nothing here and inherits `paper`.
+   */
+  markClassName?: string;
 }) {
   const ravanRem = markRem * RAVAN_SCALE;
   const markStyle: CSSProperties = {
@@ -66,14 +74,25 @@ export function OravanLockup({
       role="img"
       aria-label="Oravan"
     >
-      {/* Mark-as-O: brass. */}
+      {/* Mark-as-O. It inherits currentColor by default, so the lockup reads as
+          ONE ink (or one paper, on a dark ground). `markClassName` is the one
+          sanctioned exception: the owner asked for the O to carry a green pop
+          (2026-07-24), so the header passes `text-go`.
+
+          This deliberately spends `go` outside the "actions and the gauge"
+          rule, and the owner made that call knowing it: green now sits in the
+          header on every page, so it is no longer exclusively a data-earned
+          colour. The data gate still governs the one thing that matters —
+          the floor-vote panel is still the page's only green SLAB.
+
+          Never pass `markClassName` on a dark ground: `go` on `ink` is 2.75:1. */}
       <svg
         viewBox="75.7 698.5 648.9 648.9"
         fill="currentColor"
         fillRule="evenodd"
         aria-hidden="true"
         style={markStyle}
-        className="text-brass-bright"
+        className={markClassName}
       >
         <path d={MARK_PATH} />
       </svg>

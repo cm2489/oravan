@@ -39,7 +39,12 @@ test.describe('DONATE_URL wiring (§6)', () => {
     // no prop) render exactly what DONATE_URL says; the prop only exists so
     // tests can inject a fixture value without a second build.
     expect(src).toMatch(/donateUrl\s*=\s*DONATE_URL/);
-    expect(src).toContain('{donateUrl ? (');
+    // BOTH gates, because there are now two: the funding line swaps copy on
+    // the same constant, and the CTA is rendered only when it is set. Pinning
+    // both is strictly stronger than the single `{donateUrl ? (` this replaced
+    // — that one gate could not tell the two surfaces apart.
+    expect(src).toContain("{donateUrl ? t('footer.fundingLive') : t('footer.funding')}");
+    expect(src).toContain('{donateUrl && (');
     // Dark today = the founder-funded line; lit = the supporters line + CTA.
     expect(src).toContain("t('footer.funding')");
     expect(src).toContain("t('footer.fundingLive')");

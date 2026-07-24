@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { Chip } from '@/components/system';
 import type { BillStatus } from '@/lib/types';
 
 /*
@@ -7,6 +8,21 @@ import type { BillStatus } from '@/lib/types';
  * hallucinate procedure. A single stored status can't distinguish which
  * chamber a floor calendar belongs to, so positions are deliberately
  * conservative: floor_vote pins to the origin-chamber vote step.
+ *
+ * SHAPE: the same 6px bar the gauge is drawn with, capped at rounded-stamp.
+ * It is NOT the Gauge primitive, and that is deliberate: Gauge draws every
+ * segment in `go` because a gauge measures a quantity already spent, while
+ * this strip has to say "reached" AND "not reached yet" for six named steps
+ * and keep a label on both kinds. Passing only the reached steps to Gauge
+ * would collapse "Passed" and "President's desk" into one anonymous stub,
+ * which is exactly the information a first-time caller is looking for. The
+ * reference mockup hand-writes this block for the same reason.
+ *
+ * COLOR: reached steps are `go`, unreached are the `line` track — the same
+ * pair the Gauge primitive uses (4.70:1 against each other). Position is
+ * carried by WEIGHT and by the "Right now:" sentence underneath, never by
+ * color alone: the reference tinted the current label green, and green in
+ * this system is spent on actions and the gauge, never on a label.
  */
 
 const POSITION: Record<BillStatus, number> = {
@@ -34,7 +50,16 @@ const NOW_KEY: Record<BillStatus, string> = {
 /** Statuses where the "changes send it back" trailer is still ahead. */
 const TRAILER_STATUSES = new Set<BillStatus>(['introduced', 'committee', 'markup', 'floor_vote', 'passed_chamber']);
 
-export function BillJourney({ billType, status }: { billType: string; status: BillStatus }) {
+interface Props {
+  billType: string;
+  status: BillStatus;
+  /** Short, already-localized introduced date, printed under step 1. */
+  introducedLabel?: string;
+  /** Short, already-localized last-action date, printed under the current step. */
+  currentLabel?: string;
+}
+
+export function BillJourney({ billType, status, introducedLabel, currentLabel }: Props) {
   const t = useTranslations('bill.journey');
   const chamber = billType.startsWith('h') ? 'House' : 'Senate';
   const other = chamber === 'House' ? 'Senate' : 'House';
@@ -51,49 +76,52 @@ export function BillJourney({ billType, status }: { billType: string; status: Bi
   const isVetoed = status === 'vetoed';
 
   return (
-    <div className="mt-3 border-t border-line pt-4">
-      <ol className="grid grid-cols-5">
+    <div>
+      {/* Below 48rem the strip stands up and runs DOWN the page rather than
+          scrolling sideways: a region that scrolls needs a tab stop, and a
+          tab stop on a region that does not scroll is dead weight every
+          keyboard user pays for on every visit. So it never scrolls. */}
+      <ol className="grid list-none gap-3 md:flex md:gap-1">
         {labels.map((label, i) => {
           const done = isLaw || i < here;
           const current = !isLaw && !isVetoed && i === here;
+          const note = i === 0 ? introducedLabel : current ? currentLabel : undefined;
           return (
-            <li key={i} className="relative pt-6 text-center">
-              {/* connector */}
-              {i > 0 && (
-                <span
-                  aria-hidden
-                  className={`absolute left-[-50%] top-[0.55rem] h-0.5 w-full ${
-                    done || current ? 'bg-moss' : 'bg-line'
-                  }`}
-                />
-              )}
-              {/* dot */}
+            <li
+              key={i}
+              aria-current={current ? 'step' : undefined}
+              className="relative min-w-0 pl-4 md:flex-1 md:pt-3 md:pr-2 md:pl-0"
+            >
               <span
                 aria-hidden
-                className={`absolute left-1/2 top-1 z-10 h-3 w-3 -translate-x-1/2 rounded-full ${
-                  current ? 'bg-brass ring-4 ring-brass-soft' : done ? 'bg-moss' : 'bg-line'
+                className={`absolute top-0.5 bottom-0.5 left-0 w-[6px] rounded-stamp md:top-0 md:right-1 md:bottom-auto md:h-[6px] md:w-auto ${
+                  done || current ? 'bg-go' : 'bg-line'
                 }`}
               />
               <span
-                className={`block px-0.5 text-xs leading-tight ${
-                  current ? 'font-bold text-ink' : done ? 'font-medium text-ink-soft' : 'text-ink-faint'
+                className={`block text-xs break-words ${
+                  current
+                    ? 'font-extrabold text-ink'
+                    : done
+                      ? 'font-semibold text-ink'
+                      : 'font-semibold text-ink-2'
                 }`}
               >
                 {label}
                 {current && <span className="sr-only"> — {t('youAreHere')}</span>}
               </span>
+              {note && <span className="block text-2xs text-ink-2 tabular-nums">{note}</span>}
             </li>
           );
         })}
       </ol>
-      <p className="mt-4 text-sm text-ink-soft">
-        <strong className="text-ink">{t('now')}</strong> {t(NOW_KEY[status] ?? 'nowCommittee', { chamber, other })}
-        {TRAILER_STATUSES.has(status) && <> {t('backTrailer', { chamber, other })}</>}
-        {isLaw && (
-          <span className="ml-2 rounded-full bg-moss-soft px-2 py-0.5 text-xs font-semibold text-ink">
-            {t('law')}
-          </span>
-        )}
+      <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
+        <span>
+          <strong className="font-bold text-ink">{t('now')}</strong>{' '}
+          {t(NOW_KEY[status] ?? 'nowCommittee', { chamber, other })}
+          {TRAILER_STATUSES.has(status) && <> {t('backTrailer', { chamber, other })}</>}
+        </span>
+        {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>
     </div>
   );

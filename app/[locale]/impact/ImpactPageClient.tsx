@@ -27,8 +27,8 @@ export default function ImpactPageClient() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <p className="mt-2 text-ink-soft">{t('sub')}</p>
+      <h1 className="text-h2 font-extrabold text-ink">{t('title')}</h1>
+      <p className="mt-2 text-ink-2">{t('sub')}</p>
 
       {calls.length > 0 && (
       <dl className="mt-8 grid grid-cols-3 gap-3">
@@ -37,22 +37,22 @@ export default function ImpactPageClient() {
           { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
           { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
         ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-card border border-line bg-surface p-4 text-center shadow-lift">
-            <Icon className="mx-auto h-5 w-5 text-brass" aria-hidden />
-            <dd className="mt-1 font-display text-3xl font-bold">{value}</dd>
-            <dt className="text-xs font-medium text-ink-soft">{label}</dt>
+          <div key={label} className="rounded-control border border-line-strong bg-paper p-4 text-center">
+            <Icon className="mx-auto h-5 w-5 text-ink-2" aria-hidden />
+            <dd className="mt-1 text-h3 font-extrabold tabular-nums">{value}</dd>
+            <dt className="text-xs font-medium text-ink-2">{label}</dt>
           </div>
         ))}
       </dl>
       )}
 
       {calls.length === 0 && !erased && (
-        <div className="mt-10 rounded-card border border-line bg-surface p-8 text-center shadow-lift">
-          <h2 className="font-display text-xl font-bold">{t('emptyTitle')}</h2>
-          <p className="mt-2 text-ink-soft">{t('emptyBody')}</p>
+        <div className="mt-10 rounded-control border border-line-strong bg-paper p-8 text-center">
+          <h2 className="text-h3 font-extrabold">{t('emptyTitle')}</h2>
+          <p className="mt-2 text-ink-2">{t('emptyBody')}</p>
           <Link
             href="/bills"
-            className="mt-5 inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 font-semibold text-paper hover:bg-night"
+            className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
           >
             {t('emptyCta')}
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -62,17 +62,17 @@ export default function ImpactPageClient() {
 
       {calls.length > 0 && (
         <section className="mt-10" aria-labelledby="history">
-          <h2 id="history" className="font-display text-2xl font-bold">
+          <h2 id="history" className="text-h3 font-extrabold">
             {t('historyTitle')}
           </h2>
           <ul className="mt-4 space-y-3">
             {calls.map((c) => (
-              <li key={c.at} className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface p-4 shadow-lift">
+              <li key={c.at} className="flex items-start justify-between gap-3 rounded-control border border-line-strong bg-paper p-4">
                 <div>
                   <Link href={`/bills/${c.billSlug}`} className="font-semibold hover:underline underline-offset-2">
                     {c.billLabel}
                   </Link>
-                  <p className="mt-1 text-sm text-ink-soft">
+                  <p className="mt-1 text-sm text-ink-2">
                     {c.repName} · {tBill(`outcome.${c.outcome}`)} ·{' '}
                     {format.dateTime(new Date(c.at), { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
@@ -82,7 +82,7 @@ export default function ImpactPageClient() {
                   onClick={() => removeCall(c.at)}
                   aria-label={t('deleteRecord')}
                   title={t('deleteRecord')}
-                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-control p-2.5 text-ink-faint hover:bg-clay-soft hover:text-clay"
+                  className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-control p-2.5 text-ink-2 hover:bg-wash hover:text-ink"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
@@ -93,14 +93,14 @@ export default function ImpactPageClient() {
       )}
 
       {(hasAnything || erased) && (
-        <section className="mt-12 rounded-card border border-clay/30 bg-clay-soft p-6">
-          <h2 className="font-display text-xl font-bold">{t('eraseTitle')}</h2>
-          <p className="mt-1 text-sm text-ink-soft">{t('eraseBody')}</p>
+        <section className="mt-12 rounded-control bg-wash p-6">
+          <h2 className="text-h3 font-extrabold">{t('eraseTitle')}</h2>
+          <p className="mt-1 text-sm text-ink-2">{t('eraseBody')}</p>
           {!confirming ? (
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-control border-2 border-clay px-4 py-2.5 font-semibold text-clay hover:bg-clay hover:text-paper"
+              className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-paper px-4 py-2.5 font-bold text-ink hover:bg-wash"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
               {t('erase')}
@@ -112,7 +112,7 @@ export default function ImpactPageClient() {
                 <button
                   type="button"
                   onClick={onErase}
-                  className="inline-flex items-center gap-2 rounded-control bg-clay px-4 py-2.5 font-semibold text-paper hover:opacity-90"
+                  className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-ink-deep px-4 py-2.5 font-bold text-paper"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                   {t('confirmErase')}
@@ -120,7 +120,7 @@ export default function ImpactPageClient() {
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
-                  className="rounded-control border-2 border-ink/20 px-4 py-2.5 font-semibold hover:border-ink/50"
+                  className="min-h-12 rounded-control border-2 border-line-strong px-4 py-2.5 font-bold text-ink hover:border-ink"
                 >
                   {t('cancel')}
                 </button>

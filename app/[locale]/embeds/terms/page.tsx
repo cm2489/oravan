@@ -67,23 +67,27 @@ export default async function EmbedsTermsPage({ params }: { params: Promise<{ lo
   const t = await getTranslations('embedsTerms');
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <p className="mt-4 max-w-prose leading-relaxed text-ink-soft">{t('intro')}</p>
-      <p className="mt-4 max-w-prose rounded-control border border-line bg-paper-deep p-4 text-sm leading-relaxed italic">
+    <article className="mx-auto max-w-read px-4 py-12">
+      <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
+      <p className="mt-6 text-lede text-ink-2">{t('intro')}</p>
+      {/* The governing-language clause is the one thing a reader must not
+          skim past, so it is opened by the 3px ink rule this system uses to
+          say "stop and read this" — the same mark as a failure, without
+          borrowing a law-bearing color for a clause that is not a failure. */}
+      <p className="mt-6 border-t-[3px] border-ink bg-wash p-4 text-sm italic">
         {t('governingLanguageNotice')}
       </p>
 
-      <div className="mt-8 space-y-8 leading-relaxed max-w-prose">
+      <div className="mt-8 space-y-8">
         {SECTIONS.map(([heading, body]) => (
           <section key={heading}>
-            <h2 className="font-display text-xl font-bold">{t(heading)}</h2>
+            <h2 className="text-h3 font-extrabold">{t(heading)}</h2>
             <p className="mt-2">{t(body)}</p>
           </section>
         ))}
 
         <section>
-          <h2 className="font-display text-xl font-bold">{t('prohibitedHeading')}</h2>
+          <h2 className="text-h3 font-extrabold">{t('prohibitedHeading')}</h2>
           <p className="mt-2">{t('prohibitedIntro')}</p>
           <ul className="mt-2 list-disc space-y-2 pl-5">
             {PROHIBITED_ITEMS.map((item) => (
@@ -94,19 +98,19 @@ export default async function EmbedsTermsPage({ params }: { params: Promise<{ lo
 
         {SECTIONS_AFTER_PROHIBITED.map(([heading, body]) => (
           <section key={heading}>
-            <h2 className="font-display text-xl font-bold">{t(heading)}</h2>
+            <h2 className="text-h3 font-extrabold">{t(heading)}</h2>
             <p className="mt-2">{t(body)}</p>
           </section>
         ))}
       </div>
 
-      <p className="mt-10 text-sm text-ink-soft">{t('lastUpdated')}</p>
+      <p className="mt-8 text-sm tabular-nums text-ink-2">{t('lastUpdated')}</p>
 
       <div className="mt-6 flex flex-col gap-2 border-t border-line pt-6 text-sm">
-        <Link href="/embeds" className="underline underline-offset-2 font-semibold">
+        <Link href="/embeds" className="font-semibold text-go underline hover:text-go-deep">
           {t('backLinkText')}
         </Link>
-        <Link href="/terms" className="underline underline-offset-2">
+        <Link href="/terms" className="text-go underline hover:text-go-deep">
           {t('citizenTermsLinkText')}
         </Link>
       </div>

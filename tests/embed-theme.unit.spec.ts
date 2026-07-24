@@ -115,15 +115,16 @@ test.describe('resolveEmbedTheme', () => {
 
   test('accentInk derives from accent by contrast; focus needs a surface', () => {
     const noSurface = resolveEmbedTheme({ accent: '#82632a' });
-    expect(noSurface.accentInk).toBe('#fbf8f0'); // the shipped default chip text
+    expect(noSurface.accentInk).toBe('#ffffff'); // pickTextColor's variant-B paper
     expect(noSurface.focus).toBeUndefined();
 
     const light = resolveEmbedTheme({ accent: '#ffe680' });
-    expect(light.accentInk).toBe('#1b1611');
+    expect(light.accentInk).toBe('#16191b');
 
     // With a tenant pair, accentInk uses the TENANT's own light/dark, not
-    // Oravan's cream — a black accent on a white/near-black brand yields the
-    // tenant's pure white, not #fbf8f0.
+    // Oravan's own paper/ink — a black accent on a white/near-black brand
+    // yields the tenant's #ffffff because THEY supplied it, not because it is
+    // the default. (Proved by the #121212 ink below: the pick is measured.)
     const themed = resolveEmbedTheme({ accent: '#000000', surface: '#ffffff', ink: '#121212' });
     expect(themed.accentInk).toBe('#ffffff');
 
