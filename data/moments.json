@@ -9,8 +9,24 @@
       "es": "Fuerzas de Estados Unidos participan en hostilidades con Irán desde fines de febrero de 2026 — hostilidades que el Congreso no ha autorizado con su voto. Las medidas de abajo someten una pregunta a votación: ¿esas operaciones necesitan la aprobación explícita del Congreso para continuar? Un sí ordena al Presidente poner fin a la participación de EE. UU. en hostilidades que el Congreso no ha autorizado, y mantiene excepciones que permiten a las fuerzas militares proteger al personal estadounidense y ayudar a países socios a interceptar proyectiles. Un no deja las operaciones en curso bajo la dirección del Presidente."
     },
     "aliases": {
-      "en": ["iran", "war powers", "iran war", "strikes on iran", "war with iran", "operation epic fury", "strait of hormuz", "hormuz"],
-      "es": ["irán", "iran", "poderes de guerra", "guerra con irán", "estrecho de ormuz", "ormuz"]
+      "en": [
+        "iran",
+        "war powers",
+        "iran war",
+        "strikes on iran",
+        "war with iran",
+        "operation epic fury",
+        "strait of hormuz",
+        "hormuz"
+      ],
+      "es": [
+        "irán",
+        "iran",
+        "poderes de guerra",
+        "guerra con irán",
+        "estrecho de ormuz",
+        "ormuz"
+      ]
     },
     "category": "national_security",
     "vehicles": [
@@ -26,6 +42,13 @@
         "role": {
           "en": "The earlier Senate measure on the same question. A yes vote directs the same wind-down; a no vote leaves operations unchanged. While it sits in committee, calls reach the members who decide whether it advances.",
           "es": "La medida anterior del Senado sobre la misma pregunta. Un voto a favor ordena el mismo repliegue; un voto en contra deja las operaciones sin cambios. Mientras está en comité, las llamadas llegan a los miembros que deciden si avanza."
+        }
+      },
+      {
+        "slug": "hconres-38-119",
+        "role": {
+          "en": "The House version of the same question. A yes vote directs the President to remove U.S. armed forces from hostilities with Iran that Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
+          "es": "La versión de la Cámara de la misma cuestión. Un voto a favor ordena al Presidente retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
         }
       }
     ],
@@ -50,8 +73,25 @@
       "es": "El dinero para la mayoría de las agencias federales se agota el 30 de septiembre de 2026. La Cámara de Representantes aprobó un proyecto de financiamiento a corto plazo — una resolución de continuidad — que mantendría a las agencias funcionando a los niveles de este año hasta el 4 de diciembre de 2026, mientras el Congreso sigue trabajando en las leyes de gasto de todo el año. La pregunta ahora está en el Senado: ¿aprobar la extensión a corto plazo o no? Un sí mantiene al gobierno financiado a los niveles actuales hasta diciembre. Un no deja el financiamiento en camino a vencer el 1 de octubre, a menos que el Congreso apruebe una medida diferente."
     },
     "aliases": {
-      "en": ["shutdown", "government shutdown", "continuing resolution", "cr", "stopgap", "spending bill", "budget deadline", "appropriations", "funding deadline"],
-      "es": ["cierre del gobierno", "cierre", "resolución de continuidad", "presupuesto", "fondos del gobierno", "gasto federal"]
+      "en": [
+        "shutdown",
+        "government shutdown",
+        "continuing resolution",
+        "cr",
+        "stopgap",
+        "spending bill",
+        "budget deadline",
+        "appropriations",
+        "funding deadline"
+      ],
+      "es": [
+        "cierre del gobierno",
+        "cierre",
+        "resolución de continuidad",
+        "presupuesto",
+        "fondos del gobierno",
+        "gasto federal"
+      ]
     },
     "category": "jobs_economy",
     "vehicles": [
