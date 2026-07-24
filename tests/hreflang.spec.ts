@@ -32,6 +32,8 @@ const PATHS = [
   '/impact',
   '/citations', // S23's citability/correction page
   '/embeds', // S16's configurator + docs page
+  '/moments', // the discovery layer index (2026-07-23)
+  '/moments/iran-war-powers', // a live Moment page (id from data/moments.json)
   '/embeds/terms', // S21's embeds Terms of Service
   '/partners', // S5b's partner GTM page
   '/mcp', // S12's MCP server docs page

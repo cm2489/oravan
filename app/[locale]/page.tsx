@@ -14,6 +14,8 @@ import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildSiteJsonLd } from '@/lib/jsonld';
+import { getLiveMoments } from '@/lib/moments';
+import { momentDek } from '@/lib/moments-ui';
 import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
 const STEPS = [
@@ -63,6 +65,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // claim; /bills (linked in this section) shows it under "Act now".
   const quiet = !hasActNow();
   const jsonLd = await buildSiteJsonLd(locale);
+  // Small, conservative homepage strip (spec §4.2) — only when a live
+  // Moment exists, so a quiet moments week shows nothing rather than a
+  // stale-feeling empty band. Never touches the "Worth a call" section
+  // above it; this renders strictly after it.
+  const liveMoments = getLiveMoments();
 
   return (
     <div>
@@ -164,6 +171,42 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </section>
+
+      {/* Moments strip — small, conservative, homepage-shared-surface band
+          (spec §4.2). Sits after "Worth a call," never displacing it, and
+          disappears entirely when no Moment currently reads as live. */}
+      {liveMoments.length > 0 && (
+        <section className="mx-auto max-w-5xl px-4 pb-14" aria-labelledby="moments-strip-title">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-line pt-10">
+            <h2 id="moments-strip-title" className="font-display text-2xl font-bold">
+              {t('momentsTitle')}
+            </h2>
+            <Link
+              href="/moments"
+              className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold underline underline-offset-4"
+            >
+              {t('momentsCta')}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </div>
+          <p className="mt-1 max-w-prose text-sm text-ink-soft">{t('momentsSub')}</p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {liveMoments.map((m) => (
+              <li key={m.id}>
+                <Link
+                  href={`/moments/${m.id}`}
+                  className="block rounded-control border border-line bg-surface p-4 transition-colors hover:border-ink/40"
+                >
+                  <p className="font-display font-semibold">{locale === 'es' ? m.name.es : m.name.en}</p>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* See how a call works - the bills above lead here; the demo de-risks
           the ask before the informational sections make the fuller case */}

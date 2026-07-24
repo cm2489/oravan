@@ -106,6 +106,7 @@ test.describe(
       embeds: '/embeds', // S16's configurator + docs page
       impact: '/impact',
       mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
+      moments: '/moments/iran-war-powers', // the discovery layer (2026-07-23) - standard locked-down posture
       // S6: per-locale PWA manifest (a route handler, not a page). Non-embed,
       // so next.config.ts's site-wide block locks it to 'self' like everything
       // else - a JSON manifest is never framed, but the guard still demands an

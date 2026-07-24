@@ -68,7 +68,10 @@
     "supportTitle": "Free for everyone. Funded by people who use it.",
     "supportBody": "No ads, no trackers, no profiles — what you read, where you stand, and who you call stays in your browser, never on our servers. Reader support pays for the hosting and data that keep it that way.",
     "supportCta": "Support Oravan",
-    "supportNote": "Personal support — not tax-deductible."
+    "supportNote": "Personal support — not tax-deductible.",
+    "momentsTitle": "Live Moments",
+    "momentsSub": "Legislative questions the news is covering right now, routed straight to the real bills.",
+    "momentsCta": "Browse all Moments"
   },
   "reps": {
     "title": "Your representatives",
@@ -654,5 +657,51 @@
     "freshnessTitle": "\"As of\" freshness",
     "freshnessBody": "Oravan's data refreshes on a nightly sync with Congress.gov, not a live feed. Every tool response's {asOfField} field states the date of the last successful sync — cite that date, not the moment a query ran, as when the underlying facts were last checked.",
     "citationsLinkText": "Full citation, correction, and licensing policy"
+  },
+  "moments": {
+    "crumb": "Moments",
+    "indexTitle": "Moments",
+    "indexSub": "Entry points into the legislative questions the news is covering right now — each one routes straight to the real bills the fight runs through.",
+    "liveHeading": "Live",
+    "liveSub": "Open questions with a callable bill moving through Congress right now.",
+    "settledHeading": "Settled",
+    "settledSub": "Recently closed questions, kept for the record. These don't reopen.",
+    "emptyTitle": "No live Moments right now",
+    "emptyBody": "A Moment opens only when a real, callable bill meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
+    "browseBillsCta": "Browse all bills",
+    "scarcityNote": "{count, plural, =1 {1 live Moment} other {# live Moments}} today — never more than 6.",
+    "cardVehicleCount": "{count, plural, one {# vehicle} other {# vehicles}}",
+    "cardUpdated": "Updated {date}",
+    "liveBadge": "Live",
+    "settledBadge": "Settled",
+    "staleBadge": "Needs review",
+    "decidingLive": "What Congress is deciding",
+    "decidingSettled": "What Congress decided",
+    "settledBanner": "This fight is settled — here's what happened. This page stays as the record and won't reopen.",
+    "staleBanner": "This Moment's scheduled review ({date}) passed without renewal — it may not reflect where things stand right now.",
+    "vehiclesHeading": "The vehicles",
+    "vehiclesLede": "The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.",
+    "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
+    "readCall": "Read + call",
+    "readBill": "Read the bill",
+    "whyHeading": "Why this Moment exists",
+    "whyCriteria": "A Moment opens only when a live, callable bill meets published criteria: a government scheduling signal, or press coverage from outlets across the spectrum, within the last 14 days.",
+    "signalLabel": "The qualifying signal",
+    "signalType": {
+      "tier0_floor": "On the floor schedule",
+      "tier0_scheduled": "Scheduled for a floor vote",
+      "tier0_most_viewed": "Congress.gov most-viewed this week",
+      "press": "Covered by outlets across the spectrum"
+    },
+    "evidenceLink": "Source {index}",
+    "howMadeLink": "How Moments get made",
+    "howMadeHeading": "How Moments get made",
+    "howMadeBody": "A Moment opens only when a real bill in Congress meets every rule below — checked by an automated gate, then reviewed by a person before it publishes.",
+    "howMadeRule1": "A live bill: at least one tracked bill in a non-terminal status. The fight has to still be one a call can affect.",
+    "howMadeRule2": "A recent signal: the bill appeared in the last 14 days on a government schedule (a floor vote, the week's bill list, Congress.gov's most-viewed) or in press coverage from at least two outlets of differing leanings.",
+    "howMadeRule3": "A callable action: the bill's page and call script already work — every corpus bill qualifies by construction.",
+    "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
+    "lifecycleLive": "This Moment retires when the question is settled — every vehicle signed, vetoed, or dead. Settled Moments stay readable, marked resolved; they never reopen.",
+    "browseAll": "Browse all Moments"
   }
 }

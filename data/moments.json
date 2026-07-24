@@ -1,0 +1,123 @@
+{
+  "iran-war-powers": {
+    "name": {
+      "en": "The Iran war-powers question",
+      "es": "La cuestión de los poderes de guerra sobre Irán"
+    },
+    "summary": {
+      "en": "U.S. forces have been involved in hostilities with Iran since late February 2026 — hostilities Congress has not voted to authorize. The measures below put one question to a vote: do those operations need Congress's explicit approval to continue? A yes directs the President to end U.S. involvement in hostilities Congress has not authorized, keeping exceptions that let the military protect U.S. personnel and help partner countries intercept incoming strikes. A no leaves the operations in place under the President's direction.",
+      "es": "Fuerzas de Estados Unidos participan en hostilidades con Irán desde fines de febrero de 2026 — hostilidades que el Congreso no ha autorizado con su voto. Las medidas de abajo someten una pregunta a votación: ¿esas operaciones necesitan la aprobación explícita del Congreso para continuar? Un sí ordena al Presidente poner fin a la participación de EE. UU. en hostilidades que el Congreso no ha autorizado, y mantiene excepciones que permiten a las fuerzas militares proteger al personal estadounidense y ayudar a países socios a interceptar proyectiles. Un no deja las operaciones en curso bajo la dirección del Presidente."
+    },
+    "aliases": {
+      "en": [
+        "iran",
+        "war powers",
+        "iran war",
+        "strikes on iran",
+        "war with iran",
+        "operation epic fury",
+        "strait of hormuz",
+        "hormuz"
+      ],
+      "es": [
+        "irán",
+        "iran",
+        "poderes de guerra",
+        "guerra con irán",
+        "estrecho de ormuz",
+        "ormuz"
+      ]
+    },
+    "category": "national_security",
+    "vehicles": [
+      {
+        "slug": "sjres-185-119",
+        "role": {
+          "en": "A yes vote directs the President to end U.S. involvement in hostilities with Iran that Congress has not authorized, with exceptions for protecting U.S. personnel and facilities and for helping partner countries intercept incoming strikes. A no vote leaves current operations in place under the President's direction.",
+          "es": "Un voto a favor ordena al Presidente poner fin a la participación de EE. UU. en hostilidades con Irán que el Congreso no ha autorizado, con excepciones para proteger al personal y las instalaciones de EE. UU. y para ayudar a países socios a interceptar proyectiles. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
+      },
+      {
+        "slug": "sjres-172-119",
+        "role": {
+          "en": "The earlier Senate measure on the same question. A yes vote directs the same wind-down; a no vote leaves operations unchanged. While it sits in committee, calls reach the members who decide whether it advances.",
+          "es": "La medida anterior del Senado sobre la misma pregunta. Un voto a favor ordena el mismo repliegue; un voto en contra deja las operaciones sin cambios. Mientras está en comité, las llamadas llegan a los miembros que deciden si avanza."
+        }
+      },
+      {
+        "slug": "hconres-38-119",
+        "role": {
+          "en": "The House version of the same question. A yes vote directs the President to remove U.S. armed forces from hostilities with Iran that Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
+          "es": "La versión de la Cámara de la misma cuestión. Un voto a favor ordena al Presidente retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
+      },
+      {
+        "slug": "hconres-89-119",
+        "role": {
+          "en": "The measure the House took up this week. A yes vote states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
+          "es": "La medida que la Cámara consideró esta semana. Un voto a favor declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
+      }
+    ],
+    "qualifying_signal": {
+      "type": "tier0_floor",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172"
+      ]
+    },
+    "opened": "2026-07-23",
+    "review_by": "2026-08-22",
+    "status": "live"
+  },
+  "government-funding-deadline": {
+    "name": {
+      "en": "The government funding deadline",
+      "es": "La fecha límite para financiar el gobierno"
+    },
+    "summary": {
+      "en": "Money for most federal agencies runs out on September 30, 2026. The House has passed a short-term funding bill — a continuing resolution — that would keep agencies running at this year's levels through December 4, 2026, while Congress keeps working on the full-year spending bills. The question now sits with the Senate: pass the short-term extension, or not? A yes keeps the government funded at current levels into December. A no leaves funding on track to lapse on October 1 unless Congress passes a different measure.",
+      "es": "El dinero para la mayoría de las agencias federales se agota el 30 de septiembre de 2026. La Cámara de Representantes aprobó un proyecto de financiamiento a corto plazo — una resolución de continuidad — que mantendría a las agencias funcionando a los niveles de este año hasta el 4 de diciembre de 2026, mientras el Congreso sigue trabajando en las leyes de gasto de todo el año. La pregunta ahora está en el Senado: ¿aprobar la extensión a corto plazo o no? Un sí mantiene al gobierno financiado a los niveles actuales hasta diciembre. Un no deja el financiamiento en camino a vencer el 1 de octubre, a menos que el Congreso apruebe una medida diferente."
+    },
+    "aliases": {
+      "en": [
+        "shutdown",
+        "government shutdown",
+        "continuing resolution",
+        "cr",
+        "stopgap",
+        "spending bill",
+        "budget deadline",
+        "appropriations",
+        "funding deadline"
+      ],
+      "es": [
+        "cierre del gobierno",
+        "cierre",
+        "resolución de continuidad",
+        "presupuesto",
+        "fondos del gobierno",
+        "gasto federal"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "hr-9770-119",
+        "role": {
+          "en": "A yes vote extends current funding through December 4, 2026, so federal agencies, benefit programs, and services keep operating while the full-year bills are negotiated. A no vote leaves funding set to run out on September 30, 2026, unless Congress passes a different measure.",
+          "es": "Un voto a favor extiende el financiamiento actual hasta el 4 de diciembre de 2026, para que las agencias federales, los programas de beneficios y los servicios sigan funcionando mientras se negocian las leyes de gasto de todo el año. Un voto en contra deja el financiamiento por agotarse el 30 de septiembre de 2026, a menos que el Congreso apruebe una medida diferente."
+        }
+      }
+    ],
+    "qualifying_signal": {
+      "type": "tier0_floor",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/house-bill/9770"
+      ]
+    },
+    "opened": "2026-07-23",
+    "review_by": "2026-08-22",
+    "status": "live"
+  }
+}

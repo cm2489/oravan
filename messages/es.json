@@ -68,7 +68,10 @@
     "supportTitle": "Gratis para todos. Financiado por quienes lo usan.",
     "supportBody": "Sin anuncios, sin rastreadores, sin perfiles — lo que lees, tu postura y a quién llamas se queda en tu navegador, nunca en nuestros servidores. El apoyo de los lectores paga el alojamiento y los datos que lo mantienen así.",
     "supportCta": "Apoya a Oravan",
-    "supportNote": "Apoyo personal, no deducible de impuestos."
+    "supportNote": "Apoyo personal, no deducible de impuestos.",
+    "momentsTitle": "Momentos vigentes",
+    "momentsSub": "Cuestiones legislativas que cubren las noticias en este momento, con enlace directo a los proyectos de ley reales.",
+    "momentsCta": "Ver todos los Momentos"
   },
   "reps": {
     "title": "Tus representantes",
@@ -654,5 +657,51 @@
     "freshnessTitle": "El sello de \"datos actualizados al\"",
     "freshnessBody": "Los datos de Oravan se actualizan con una sincronización nocturna con Congress.gov, no en tiempo real. El campo {asOfField} de cada respuesta indica la fecha de la última sincronización exitosa — cita esa fecha, no el momento en que se hizo la consulta, como cuando se verificaron por última vez los hechos.",
     "citationsLinkText": "Política completa de citación, corrección y licencias"
+  },
+  "moments": {
+    "crumb": "Momentos",
+    "indexTitle": "Momentos",
+    "indexSub": "Puntos de entrada a las cuestiones legislativas que cubren las noticias en este momento — cada uno lleva directo a los proyectos de ley reales por donde pasa el debate.",
+    "liveHeading": "Vigentes",
+    "liveSub": "Cuestiones abiertas con un proyecto de ley que avanza por el Congreso ahora mismo.",
+    "settledHeading": "Resueltos",
+    "settledSub": "Cuestiones cerradas recientemente, conservadas como registro. Estos no se reabren.",
+    "emptyTitle": "No hay Momentos vigentes en este momento",
+    "emptyBody": "Un Momento se abre solo cuando un proyecto de ley real y con acción posible cumple los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
+    "browseBillsCta": "Ver todos los proyectos de ley",
+    "scarcityNote": "{count, plural, =1 {1 Momento vigente} other {# Momentos vigentes}} hoy — nunca más de 6.",
+    "cardVehicleCount": "{count, plural, one {# proyecto de ley} other {# proyectos de ley}}",
+    "cardUpdated": "Actualizado el {date}",
+    "liveBadge": "Vigente",
+    "settledBadge": "Resuelto",
+    "staleBadge": "Necesita revisión",
+    "decidingLive": "Qué está decidiendo el Congreso",
+    "decidingSettled": "Qué decidió el Congreso",
+    "settledBanner": "Este asunto está resuelto — esto es lo que pasó. Esta página queda como registro y no se reabrirá.",
+    "staleBanner": "La revisión programada de este Momento ({date}) pasó sin renovarse — puede que no refleje la situación actual.",
+    "vehiclesHeading": "Los proyectos de ley",
+    "vehiclesLede": "Los proyectos de ley por los que realmente pasa esta cuestión. Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.",
+    "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
+    "readCall": "Leer y llamar",
+    "readBill": "Leer el proyecto de ley",
+    "whyHeading": "Por qué existe este Momento",
+    "whyCriteria": "Un Momento se abre solo cuando un proyecto de ley real y con acción posible cumple criterios publicados: una señal de calendario del gobierno, o cobertura de prensa de medios de todo el espectro, dentro de los últimos 14 días.",
+    "signalLabel": "La señal que califica",
+    "signalType": {
+      "tier0_floor": "En el calendario del pleno",
+      "tier0_scheduled": "Programado para una votación en el pleno",
+      "tier0_most_viewed": "Más visto de la semana en Congress.gov",
+      "press": "Cubierto por medios de todo el espectro"
+    },
+    "evidenceLink": "Fuente {index}",
+    "howMadeLink": "Cómo se crean los Momentos",
+    "howMadeHeading": "Cómo se crean los Momentos",
+    "howMadeBody": "Un Momento se abre solo cuando un proyecto de ley real del Congreso cumple cada regla de abajo — verificada por un control automático y luego revisada por una persona antes de publicarse.",
+    "howMadeRule1": "Un proyecto de ley vigente: al menos un proyecto de ley rastreado en un estado no terminal. El asunto todavía tiene que ser uno en el que una llamada pueda influir.",
+    "howMadeRule2": "Una señal reciente: el proyecto de ley apareció en los últimos 14 días en un calendario del gobierno (una votación en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov) o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
+    "howMadeRule3": "Una acción posible: la página del proyecto de ley y el guion de llamada ya funcionan — todo proyecto de ley del catálogo califica por construcción.",
+    "howMadeRule4": "Un nombre neutral: una descripción del desacuerdo que cualquiera de los dos lados reconocería como justa, nunca la etiqueta propia de un lado.",
+    "lifecycleLive": "Este Momento se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado. Los Momentos resueltos siguen disponibles, marcados como resueltos; nunca se reabren.",
+    "browseAll": "Ver todos los Momentos"
   }
 }
