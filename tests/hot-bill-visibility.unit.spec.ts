@@ -56,3 +56,31 @@ test.describe('mapStatus markup coverage (the gate admits real committee action)
     expect(mapStatus('Committee markup held')).toBe('markup');
   });
 });
+
+test.describe('floor-activity status mapping (the buried-vote bug)', () => {
+  test('recorded floor votes and live consideration map to floor_vote, not committee', () => {
+    // Every string below is real Congress.gov action text from a bill that
+    // was actively on a chamber floor while the corpus called it 'committee'
+    // (2026-07-23: H.Con.Res. 89 in House debate, S.J.Res. 172's discharge
+    // vote). At 'committee' they score 0.45 — below the moving floor — and
+    // are gated out of decoding entirely, so the bill in the news has no page.
+    expect(
+      mapStatus('POSTPONED PROCEEDINGS - At the conclusion of debate on H. Con. Res. 89, the Chair put the question')
+    ).toBe('floor_vote');
+    expect(
+      mapStatus('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 187.')
+    ).toBe('floor_vote');
+    expect(mapStatus('Considered as unfinished business.')).toBe('floor_vote');
+  });
+
+  test('committee roll calls still read as markup, never floor_vote', () => {
+    // Committee votes use "Yeas and Nays", never the floor's "Yea-Nay Vote"
+    // + "Record Vote Number" pairing - the distinction the branch relies on.
+    expect(mapStatus('Ordered to be Reported by the Yeas and Nays: 25 - 20.')).toBe('markup');
+    expect(mapStatus('Committee Consideration and Mark-up Session Held')).toBe('markup');
+  });
+
+  test('plain referral is untouched', () => {
+    expect(mapStatus('Referred to the House Committee on Foreign Affairs.')).toBe('committee');
+  });
+});
