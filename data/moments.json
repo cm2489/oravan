@@ -50,6 +50,13 @@
           "en": "The House version of the same question. A yes vote directs the President to remove U.S. armed forces from hostilities with Iran that Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
           "es": "La versión de la Cámara de la misma cuestión. Un voto a favor ordena al Presidente retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
         }
+      },
+      {
+        "slug": "hconres-89-119",
+        "role": {
+          "en": "The measure the House took up this week. A yes vote states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
+          "es": "La medida que la Cámara consideró esta semana. Un voto a favor declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
       }
     ],
     "qualifying_signal": {
