@@ -208,6 +208,9 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
 
   test('mode select emits data-mode only when forced', async ({ page }) => {
     await page.goto('/embeds');
+    // Same guard as submitUrl: a select driven before React attaches updates
+    // the DOM but never the snippet state (CI webkit-mobile race, 2026-07-23).
+    await page.locator('[data-hydrated="true"]').waitFor({ timeout: 30_000 });
     const snippet = page.locator('pre code');
     await expect(snippet).not.toContainText('data-mode');
     await page.getByLabel(en.embeds.modeLabel).selectOption('dark');
