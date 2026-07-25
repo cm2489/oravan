@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write  # lets the workflow dispatch ci.yml after its own push
 
 concurrency:
   group: data-sync
@@ -151,6 +152,16 @@ jobs:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
         run: node scripts/verify-deploy.mjs
+      - name: Dispatch CI against the pushed data
+        # Bot pushes (GITHUB_TOKEN) never trigger `on: push`, so without this
+        # main's own suite never runs against a fresh corpus and test/corpus
+        # drift lands on the next open PR instead (2026-07-25 incident).
+        # Free on a public repo; the ci-refs/heads/main concurrency group
+        # queues rather than cancels, so runs serialize harmlessly.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref main
       - name: Pre-generate top-band call scripts (S21, F7 - dark until armed)
         # Nightly pregen of the top-10 "Act now" bills' call scripts
         # (strategy §9.1(d)): writes straight into the S11 cache database

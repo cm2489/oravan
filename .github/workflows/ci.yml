@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Dispatched by the four data workflows after their bot pushes: a push made
+  # with GITHUB_TOKEN never fires `on: push`, so before this existed main's
+  # own CI never tested a freshly-synced corpus. The drift then surfaced on
+  # whatever innocent PR ran next (2026-07-25: call-action.spec vs the new
+  # floor_vote coverage leader — a full day of red across five open PRs).
+  workflow_dispatch:
 
 # A newer push to the same PR cancels its still-running CI: only the latest
 # commit — the one the merge gate actually checks — needs to finish, so runs on
