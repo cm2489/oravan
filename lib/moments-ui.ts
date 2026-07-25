@@ -6,6 +6,7 @@
  * layer the pages can lean on without touching the tested surface.
  */
 import { getBill } from './core/bills';
+import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import type { MomentVehicle } from './moments';
 
 /**
@@ -17,6 +18,57 @@ import type { MomentVehicle } from './moments';
 export function momentDek(summary: string): string {
   const match = summary.match(/^.*?[.!?](?:\s|$)/);
   return (match ? match[0] : summary).trim();
+}
+
+/**
+ * The timeline's day frame (v2 spec §3): the last `windowDays` ET days —
+ * quiet ones included, because a day nothing happened is a first-class render
+ * — PLUS any OLDER day that actually carries a recorded action.
+ *
+ * The tail matters: retention keeps 60 days, and a roll-call vote from six
+ * weeks ago is still the record. Dropping it because it fell off a two-week
+ * frame would be an editorial act, which is what §3 exists to forbid. Older
+ * days that are EMPTY are dropped, though — a two-month run of "nothing
+ * recorded" is not information, it is padding.
+ *
+ * Implemented by widening the reader's own window rather than hand-rolling a
+ * second grouping, so exactly one code path computes days, class-priority
+ * ordering, the render cap, and the overflow count.
+ *
+ * The clock is a defaulted parameter (the same idiom as lib/moments.ts and
+ * lib/freshness-state.ts) so tests can pin the frame — and so the pages,
+ * which are statically generated, never call an impure function inside a
+ * component body.
+ */
+export function timelineDays(
+  momentId: string,
+  windowDays: number,
+  now: number = Date.now(),
+): UpdateDayGroup[] {
+  const all = getUpdates(momentId);
+  const oldest = all.reduce<string | null>((min, u) => (!min || u.day < min ? u.day : min), null);
+  // +2 days of slack absorbs the ET-vs-UTC boundary at both ends of the span.
+  const spanDays = oldest
+    ? Math.ceil((now - Date.parse(`${oldest}T00:00:00Z`)) / 86_400_000) + 2
+    : windowDays;
+  const groups = groupUpdatesByDay(momentId, Math.max(windowDays, spanDays), now);
+  return [...groups.slice(0, windowDays), ...groups.slice(windowDays).filter((d) => !d.quiet)];
+}
+
+/**
+ * The display label for an external reference: its host, minus the "www."
+ * noise ("https://www.congress.gov/bill/…" → "congress.gov"). Naming the
+ * source is the point — a row of "Source 1 · Source 2" links tells a reader
+ * nothing about whether the evidence is the government's own record or a
+ * newspaper's. Unparseable input returns the raw string rather than throwing:
+ * the gate already guarantees https, so this is a belt, not a brace.
+ */
+export function linkHost(url: string): string {
+  try {
+    return new URL(url).host.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
 }
 
 /**

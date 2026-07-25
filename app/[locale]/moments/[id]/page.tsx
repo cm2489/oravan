@@ -4,6 +4,8 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
+import { MomentQuietNote } from '@/components/MomentQuietNote';
+import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
@@ -12,8 +14,9 @@ import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { RENDER_DAY_CAP, getCurrentSummary, getRevisions } from '@/lib/moment-updates';
 import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
-import { momentDek } from '@/lib/moments-ui';
+import { linkHost, momentDek } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -85,6 +88,28 @@ export default async function MomentPage({
 
   const liveCount = getMoments().filter((m) => m.state === 'live').length;
 
+  // ── The live layer (v2 spec §7) ────────────────────────────────────────
+  const summaryRevision = getCurrentSummary(id);
+  const revisions = getRevisions(id);
+  // The revision disclosure lists the PRIOR revisions; with only one on file
+  // there is no history to disclose and the <details> never renders.
+  const priorRevisions = revisions.slice(0, -1).reverse();
+
+  // Citation + Congress.gov actions page per vehicle, resolved here so the
+  // timeline stays a pure renderer and never reaches into the bill corpus.
+  const timelineVehicles: Record<string, TimelineVehicle | undefined> = {};
+  for (const v of moment.vehicles) {
+    const raw = getBill(v.slug);
+    if (!raw) continue;
+    timelineVehicles[v.slug] = {
+      citation: formatCitation(raw.bill_type, raw.bill_number),
+      // Congress.gov's own full list of actions for the bill — the place the
+      // honest overflow line ("N further recorded actions this day") sends a
+      // reader who wants everything the cap held back.
+      actionsUrl: raw.congress_gov_url ? `${raw.congress_gov_url}/all-actions` : null,
+    };
+  }
+
   return (
     <article className="mx-auto max-w-3xl px-4 pt-12 pb-16">
       {/* 1 · Moment header */}
@@ -135,7 +160,91 @@ export default async function MomentPage({
         <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
       </section>
 
-      {/* 3 · The vehicles */}
+      {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
+          §7). It sits BELOW the hand-authored section above on purpose: the
+          issue stays front-and-center and dated motion is subordinate to it.
+          Renders NOTHING when no revision exists — an empty placeholder
+          promising a summary later is a claim about our pipeline, not about
+          Congress, and this surface only makes the second kind of claim.
+
+          THE EDITORIAL LAW (owner-settled 2026-07-25, v2 §2): "Truth about
+          the record, attribution about the spin… When the record is silent —
+          motive, likelihood, what it really means — Oravan's voice stops, and
+          named sources speak or nobody does. Speculation never wears our
+          voice." The gate lints this text in BOTH languages before it can
+          land; what the page owes the law is the labeling and the receipts —
+          the AI chip above the passage, the standing disclaimer under it, and
+          the dated record of every time the summary was rewritten. */}
+      {summaryRevision && (
+        <section aria-labelledby="where-it-stands" className="mt-12 border-t border-line pt-4">
+          <h2 id="where-it-stands" className="text-h2 font-extrabold text-ink">
+            {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
+          </h2>
+          {/* AI labeled at FIRST contact — above the passage, never in a
+              footnote. Reuses the page's own chip pattern. */}
+          <p className="mt-4">
+            <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+              {t('moments.updates.summaryAiChip')}
+            </Chip>
+          </p>
+          {/* Franklin, not Besley: the reading voice is spent on the ONE
+              passage above (a bill's decoded prose and the words a caller
+              says aloud). This is Oravan stating where the record currently
+              stands — its own voice, in its own font, and visibly
+              subordinate to the section it follows. */}
+          <p className="mt-4 max-w-read text-md text-ink">
+            {localeText(summaryRevision.text, locale)}
+          </p>
+          <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
+
+          {/* The site's existing native-disclosure idiom (WalkthroughDisclosure):
+              the browser's own marker is kept and merely toned, so the
+              affordance survives with no client JavaScript and no icon. */}
+          {priorRevisions.length > 0 && (
+            <details className="mt-5 max-w-read rounded-control border border-line-strong bg-paper px-4 pb-2">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
+                {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
+              </summary>
+              <ol className="mt-2 list-none">
+                {priorRevisions.map((rev) => (
+                  <li key={rev.id} className="border-t border-line py-3">
+                    <p className="text-xs font-bold text-ink-2 tabular-nums">
+                      {t('moments.updates.revisionAsOf', { date: fmtDate(rev.as_of_day) })}
+                    </p>
+                    <p className="mt-1 max-w-read text-sm text-ink">{localeText(rev.text, locale)}</p>
+                    {rev.changed_because.length > 0 && (
+                      <p className="mt-1 text-xs text-ink-2">
+                        <span className="font-semibold">
+                          {t('moments.updates.revisionReasonLabel')}
+                        </span>{' '}
+                        {rev.changed_because.join(' · ')}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+        </section>
+      )}
+
+      {/* 4 · "What's moved" — the dated timeline. The lede carries the client
+          sentinel, because a quiet ledger has two possible causes and only
+          one of them is Congress's: "nothing moved" is server-rendered from
+          the record, "we couldn't check" is the visitor's own clock talking
+          (v2 spec §3). */}
+      <section aria-labelledby="whats-moved" className="mt-12 border-t border-line pt-4">
+        <h2 id="whats-moved" className="text-h2 font-extrabold text-ink">
+          {t('moments.updates.timelineHeading')}
+        </h2>
+        <p className="mt-2 max-w-read text-sm text-ink-2">
+          {t('moments.updates.timelineLede', { cap: RENDER_DAY_CAP })}
+          <MomentQuietNote checkedAt={freshness.checkedAt} dateLabel={fmtDate(freshness.checkedAt)} />
+        </p>
+        <MomentTimeline momentId={id} locale={locale} vehicles={timelineVehicles} />
+      </section>
+
+      {/* 5 · The vehicles */}
       <section className="mt-12 border-t border-line pt-4" aria-labelledby="vehicles-h">
         <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
           {t('moments.vehiclesHeading')}
@@ -170,7 +279,7 @@ export default async function MomentPage({
         <p className="mt-6 max-w-read text-sm text-ink-2">{t('moments.bothNote')}</p>
       </section>
 
-      {/* 4 · Why this Moment exists */}
+      {/* 6 · Why this Moment exists */}
       <section className="mt-12 border-t border-line pt-4" aria-labelledby="why-h">
         <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
           {t('moments.whyHeading')}
@@ -200,6 +309,40 @@ export default async function MomentPage({
           ))}
         </div>
 
+        {/* Hand-curated institutional grounding (v2 spec §5): the CRS / CBO /
+            GAO material a reader can check the summaries against. Auto-
+            discovery of CRS reports was refuted, so these are added by hand
+            when a moment opens and host-allowlisted by the moments gate —
+            which is why the row renders only when a moment actually carries
+            them, and why nothing is invented to fill it. Ink label, green
+            links: the label is a mark, the evidence goes somewhere. */}
+        {moment.context_refs && moment.context_refs.length > 0 && (
+          <>
+            <p className="mt-5 text-sm font-bold text-ink">{t('moments.updates.refsLabel')}</p>
+            <ul className="mt-2 max-w-read list-none">
+              {moment.context_refs.map((ref) => (
+                <li
+                  key={ref.url}
+                  className="flex flex-wrap items-baseline gap-x-3 border-t border-line py-2"
+                >
+                  <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+                    {t(`moments.updates.refKind.${ref.kind}`)}
+                  </span>
+                  <a
+                    href={ref.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${CONTENT_LINK} text-sm`}
+                  >
+                    {ref.title ? localeText(ref.title, locale) : linkHost(ref.url)}
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
         <p className="mt-5">
           <Link href="/moments#how" className={`${CONTENT_LINK} text-sm`}>
             {t('moments.howMadeLink')} →
@@ -213,7 +356,7 @@ export default async function MomentPage({
         )}
       </section>
 
-      {/* 5 · Browse-all affordance (scarcity) */}
+      {/* 7 · Browse-all affordance (scarcity) */}
       <p className="mt-12 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line pt-4">
         <Link href="/moments" className={CONTENT_LINK}>
           {t('moments.browseAll')} →

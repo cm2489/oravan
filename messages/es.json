@@ -757,6 +757,38 @@
     "howMadeRule4": "Un nombre neutral: una descripción del desacuerdo que cualquiera de los dos lados reconocería como justa, nunca la etiqueta propia de un lado.",
     "lifecycleLive": "Este Momento se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado. Los Momentos resueltos siguen disponibles, marcados como resueltos; nunca se reabren.",
     "browseAll": "Ver todos los Momentos",
-    "aiNote": "Cada resumen de Momento lo redacta la IA y lo revisa una persona antes de publicarse."
+    "aiNote": "Cada resumen de Momento lo redacta la IA y lo revisa una persona antes de publicarse.",
+    "updates": {
+      "whereHeading": "En qué punto está — {date}",
+      "summaryAiChip": "Redactado por IA a partir del registro público",
+      "revisionsToggle": "Cómo ha cambiado este resumen ({count})",
+      "revisionAsOf": "Al {date}",
+      "revisionReasonLabel": "Se reescribió porque",
+      "timelineHeading": "Qué se ha movido",
+      "timelineLede": "Todo lo que el registro muestra sobre los proyectos de ley de esta cuestión, empezando por el día más reciente. Se listan hasta {cap} por día, y los días sin nada registrado se muestran tal cual.",
+      "timelineAiChip": "Las explicaciones de una línea que siguen las redacta la IA a partir del texto oficial de cada acción.",
+      "class": {
+        "vote": "Votación",
+        "status_change": "Cambio de estado",
+        "floor_action": "Acción en el pleno",
+        "scheduled": "Programado",
+        "press_cluster": "Cobertura",
+        "correction": "Corrección"
+      },
+      "quietToday": "Todavía no hay nada registrado hoy.",
+      "quietDay": "Nada registrado.",
+      "checkGapNote": "no hemos podido comprobar si hay actividad nueva desde el {date}",
+      "overflow": "{count, plural, one {# acción registrada más este día} other {# acciones registradas más este día}}",
+      "sourcesLabel": "Fuentes",
+      "correctionLink": "Ver la actualización que corrige",
+      "verbatimLabel": "El registro, textual",
+      "refsLabel": "Contexto del registro institucional",
+      "refKind": {
+        "crs": "Servicio de Investigación del Congreso",
+        "cbo": "Oficina de Presupuesto del Congreso",
+        "gao": "Oficina de Rendición de Cuentas del Gobierno"
+      },
+      "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
+    }
   }
 }
