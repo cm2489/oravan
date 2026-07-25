@@ -42,6 +42,20 @@ export interface MomentVehicle {
   role: Localized;
 }
 
+export type ContextRefKind = 'crs' | 'cbo' | 'gao';
+
+/**
+ * A hand-curated link into the institutional record — a CRS report, CBO
+ * score, or GAO finding — added by the owner when a moment opens (v2 spec
+ * §5). Grounds the v2 state summaries; host-allowlisted by the gate.
+ */
+export interface ContextRef {
+  kind: ContextRefKind;
+  url: string;
+  /** Optional display title; when present it renders, so it is bilingual. */
+  title?: Localized;
+}
+
 /** Stored status. 'settled' is deliberately NOT representable here — it is
  *  computed from vehicle statuses at read time (see momentState). */
 export type StoredMomentStatus = 'live' | 'retired';
@@ -63,6 +77,8 @@ export interface MomentEntry {
   category: Category;
   vehicles: MomentVehicle[];
   qualifying_signal: QualifyingSignal;
+  /** Optional institutional grounding (CRS/CBO/GAO) — see ContextRef. */
+  context_refs?: ContextRef[];
   opened: string;
   review_by: string;
   status: StoredMomentStatus;

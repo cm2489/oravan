@@ -50,6 +50,11 @@ jobs:
         run: |
           node scripts/check-embed-fingerprinting.mjs --self-test
           node scripts/check-embed-fingerprinting.mjs
+      - name: Moments curation gate (schema, EN/ES parity, vocabulary lint, live cap)
+        # Was only running transitively via tests/moments.unit.spec.ts in the
+        # Playwright job — wiring it here fails fast on a bad data/moments.json
+        # before the e2e suite spends its minutes (v2 spec slice S1).
+        run: node scripts/check-moments.mjs
       - run: npm run typecheck
       - run: npm run lint
       - name: Detect docs-only PR diff (founder-approved fast path, 2026-07-07)

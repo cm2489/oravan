@@ -237,6 +237,43 @@ test.describe('checkMoments (fixtures)', () => {
     expect(v2.some((x: string) => x.includes('press signal needs'))).toBe(true);
   });
 
+  test('context_refs: valid CRS/CBO refs pass, with and without a bilingual title', () => {
+    const m = {
+      ...validMoment(),
+      context_refs: [
+        { kind: 'crs', url: 'https://crsreports.congress.gov/product/pdf/R/R48832' },
+        {
+          kind: 'cbo',
+          url: 'https://www.cbo.gov/publication/61402',
+          title: { en: 'CBO cost estimate', es: 'Estimación de costos de la CBO' },
+        },
+      ],
+    };
+    expect(run({ 'example-question': m }).violations).toEqual([]);
+  });
+
+  test('context_refs: a non-allowlisted host fails — grounding means the institutional record', () => {
+    const m = {
+      ...validMoment(),
+      context_refs: [{ kind: 'crs', url: 'https://example.com/totally-a-crs-report' }],
+    };
+    const { violations } = run({ 'example-question': m });
+    expect(violations.some((v) => v.includes('not an allowlisted institutional source'))).toBe(true);
+  });
+
+  test('context_refs: http (not https), an unknown kind, an empty array, and a title missing ES all fail', () => {
+    const bad = (context_refs: unknown) =>
+      run({ 'example-question': { ...validMoment(), context_refs } }).violations;
+    expect(bad([{ kind: 'crs', url: 'http://www.cbo.gov/publication/61402' }]).some((v) => v.includes('https'))).toBe(true);
+    expect(bad([{ kind: 'thinktank', url: 'https://www.cbo.gov/publication/61402' }]).some((v) => v.includes('.kind'))).toBe(true);
+    expect(bad([]).some((v) => v.includes('non-empty array'))).toBe(true);
+    expect(
+      bad([
+        { kind: 'gao', url: 'https://www.gao.gov/products/gao-26-107', title: { en: 'GAO finding' } },
+      ]).some((v) => v.includes('title.es')),
+    ).toBe(true);
+  });
+
   test('the live cap is 6 — a seventh live moment fails', () => {
     const seven: Record<string, unknown> = {};
     for (let i = 1; i <= 7; i++) seven[`moment-${i}`] = validMoment();
