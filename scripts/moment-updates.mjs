@@ -147,6 +147,21 @@ const TIER0_USER_AGENT =
 const MOMENT_KEY = '__moment';
 
 const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
+
+/**
+ * The UI's own plain-language status vocabulary (messages/*.json,
+ * bills.status.*), loaded once per run. The summary prompt speaks in these
+ * phrases so the page and the prose can never disagree about what a status
+ * is called — and so the raw enum never reaches the model (first proof run
+ * leaked "floor_vote" into published-candidate prose in both languages).
+ * Fallback: the token with underscores spaced, still never shown as an enum.
+ */
+const STATUS_PHRASES = {
+  en: readJSON('messages/en.json').bills?.status ?? {},
+  es: readJSON('messages/es.json').bills?.status ?? {},
+};
+const statusPhrase = (status, lang) =>
+  STATUS_PHRASES[lang]?.[status] ?? String(status).replace(/_/g, ' ');
 const now = new Date();
 const nowISO = now.toISOString();
 const todayET = etDay(now);
@@ -606,8 +621,16 @@ async function generateStateSummary(anthropic, momentId, entry, statuses, contex
         : `- ${u.day} [${u.class}] ${billLabel(u.vehicle)}: ${u.record?.action_text ?? ''}`,
     )
     .join('\n');
+  // The model must NEVER see a raw status enum — the first live proof run
+  // (2026-07-25) leaked "sits at floor_vote status" / "estado floor_vote"
+  // straight into reader-facing prose in both languages. Feed it the same
+  // plain-language phrases the UI uses (messages/*.json bills.status.*), per
+  // language, and the enum never enters the model's vocabulary at all.
   const statusLines = Object.entries(statuses)
-    .map(([slug, status]) => `- ${billLabel(slug)} (${slug}): ${status}`)
+    .map(
+      ([slug, status]) =>
+        `- ${billLabel(slug)}: EN "${statusPhrase(status, 'en')}" / ES "${statusPhrase(status, 'es')}"`,
+    )
     .join('\n');
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
@@ -640,9 +663,17 @@ RULES:
 - Use ONLY the statuses and records below. Never add motive, likelihood, consequence, or what any of it "means".
 - NO hedging or forecasting: no "expected to", "likely to", "could", "might", "set to", "poised to", "on track to"; no "se espera", "probablemente", "podria", "podrian", "estaria", "previsto que", "a punto de".
 - Never name a political party; never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
-- Reproduce every tally, roll-call number and date exactly as given.
+- Reproduce every tally and roll-call number exactly as given.
 - 90 to 140 words per language. Plain text, no markdown, no headings.
-- Say plainly where each measure now sits. If nothing has moved recently, say that plainly too.
+
+VOICE — "where it stands", not a log:
+- Open with the single most important CURRENT fact (where the live question sits right now), then how it got there. Group measures that are in the same place instead of reciting them one by one.
+- Status words: use ONLY the quoted plain-language phrases given per measure below. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, stop.
+- Dates as a reader says them: "July 23, 2026" in English, "23 de julio de 2026" in Spanish. Never ISO "2026-07-23" in prose.
+- Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
+- The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
+- No meta-commentary about this summary itself (never "this summary reflects…", "as of this record…"). The page already stamps the date.
+- If nothing has moved recently, say that plainly.
 
 CURRENT STATUS OF EACH MEASURE:
 ${statusLines}
