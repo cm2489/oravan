@@ -15,7 +15,7 @@
     "footer": {
       "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
       "privacy": "Privacy",
-      "aiNote": "Bill summaries and scripts are AI-drafted and clearly marked. Always review before you use them.",
+      "aiNote": "AI-drafted content is always clearly marked — review it before you use it.",
       "terms": "Terms",
       "lore": "Oravan is a coined name — part oration, part caravan: one voice setting out, many arriving together.",
       "about": "About",
@@ -28,8 +28,7 @@
       "fundingCta": "Support Oravan",
       "colSite": "Site",
       "colTrust": "Trust",
-      "sourceNote": "Bill text and status are synced nightly from Congress.gov, the official record.",
-      "corrections": "Something wrong on this page?"
+      "sourceNote": "Bill text and status are synced nightly from Congress.gov, the official record."
     },
     "switchLocale": "En español",
     "loading": "Loading…",
