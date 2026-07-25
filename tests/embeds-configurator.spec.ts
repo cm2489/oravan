@@ -1,6 +1,20 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+
+/**
+ * Every test that DRIVES a control must wait for React to attach first: a
+ * select/click fired before hydration updates the DOM but never the snippet
+ * state (the CI webkit race, 2026-07-23 — and its webkit-desktop encore that
+ * hard-blocked the v2 merge train, 2026-07-25). The data-hydrated beacon is
+ * set in a mount effect, so its presence is proof the handlers exist. One
+ * helper instead of 19 hand-sprinkled waits, so a future test cannot forget.
+ */
+async function gotoEmbeds(page: Page) {
+  await page.goto('/embeds');
+  await page.locator('[data-hydrated="true"]').waitFor({ timeout: 30_000 });
+}
+
 
 /*
  * S16 — the embeds configurator + public docs page
@@ -60,7 +74,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   test('rep-lookup is selected by default and a working snippet renders immediately', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const snippet = page.locator('pre code');
     await expect(snippet).toBeVisible();
     await expect(snippet).toContainText('data-oravan-widget="rep-lookup"');
@@ -77,7 +91,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   test('brandless toggle adds data-brandless to the snippet and keeps attribution language honest', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.getByLabel(en.embeds.whiteLabelBrandless).check();
     const snippet = page.locator('pre code');
     await expect(snippet).toContainText('data-brandless="1"');
@@ -89,7 +103,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   test('switching to bill-card reveals the bill picker and theme controls, and hides the snippet until a bill is chosen', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.locator('input[type="radio"][value="bill-card"]').check();
 
     await expect(page.getByRole('searchbox', { name: en.embeds.billSearchLabel })).toBeVisible();
@@ -103,7 +117,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   test('bill search filters the corpus and picking a result generates a snippet with the chosen slug + theme', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.locator('input[type="radio"][value="bill-card"]').check();
 
     const search = page.getByRole('searchbox', { name: en.embeds.billSearchLabel });
@@ -131,7 +145,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   test('the locale toggle sets data-locale in the snippet without needing a bill for rep-lookup', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.getByRole('button', { name: en.embeds.localeEs }).click();
     await expect(page.locator('pre code')).toContainText('data-locale="es"');
   });
@@ -147,7 +161,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
         value: { writeText: (t: string) => ((w.__copied = t), Promise.resolve()) },
       });
     });
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const snippetText = await page.locator('pre code').textContent();
     await page.getByRole('button', { name: en.embeds.copySnippet }).click();
     await expect(page.getByRole('button', { name: en.embeds.copied })).toBeVisible();
@@ -158,7 +172,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
   });
 
   test('a11y basics: radio group labeled, 44px touch targets, visible focus', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const repLookupRadio = page.locator('input[type="radio"][value="rep-lookup"]');
     await expect(repLookupRadio).toBeChecked();
 
@@ -207,10 +221,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   }
 
   test('mode select emits data-mode only when forced', async ({ page }) => {
-    await page.goto('/embeds');
-    // Same guard as submitUrl: a select driven before React attaches updates
-    // the DOM but never the snippet state (CI webkit-mobile race, 2026-07-23).
-    await page.locator('[data-hydrated="true"]').waitFor({ timeout: 30_000 });
+    await gotoEmbeds(page);
     const snippet = page.locator('pre code');
     await expect(snippet).not.toContainText('data-mode');
     await page.getByLabel(en.embeds.modeLabel).selectOption('dark');
@@ -220,7 +231,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   });
 
   test('the two new font stacks are selectable and land in the snippet', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const fontSelect = page.getByLabel(en.embeds.fontLabel);
     await expect(fontSelect.locator('option')).toHaveCount(4);
     await fontSelect.selectOption('humanist');
@@ -232,7 +243,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   test('custom colors: hidden by default, defaults pass contrast, snippet carries the pair', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await expect(page.locator('#oravan-surface')).toHaveCount(0);
     await expect(page.locator('pre code')).not.toContainText('data-surface');
 
@@ -249,7 +260,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   });
 
   test('a failing pair warns AND is omitted from snippet + preview', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.getByLabel(en.embeds.customColorsToggle).check();
     await setColor(page, 'oravan-ink', '#dddddd'); // ~1.2:1 against the default cream
     await expect(page.getByText(en.embeds.contrastWarning)).toBeVisible();
@@ -265,7 +276,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   });
 
   test('a valid custom pair + forced mode reach the live preview iframe', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await page.getByLabel(en.embeds.customColorsToggle).check();
     await setColor(page, 'oravan-surface', '#0f1a2b');
     await setColor(page, 'oravan-ink', '#f5f7fa');
@@ -284,7 +295,7 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
   });
 
   test('new controls meet the 44px touch-target bar', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     // Native <select> ignores min-height in WebKit (the pre-existing radius/
     // font selects render identically) — the mode select matches that shipped
     // pattern, so the bounding-box assertion covers the controls that DO
@@ -346,7 +357,7 @@ test.describe('match your site (mocked /api/brand)', () => {
     await page.route('**/api/brand', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(THEME_RESPONSE) })
     );
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await submitUrl(page);
 
     const snippet = page.locator('pre code');
@@ -370,7 +381,7 @@ test.describe('match your site (mocked /api/brand)', () => {
     await page.route('**/api/brand', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(THEME_RESPONSE) })
     );
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     await submitUrl(page);
     await page.getByLabel(en.embeds.radiusLabel).selectOption('round');
     await expect(page.locator('pre code')).toContainText('data-radius="round"');
@@ -388,7 +399,7 @@ test.describe('match your site (mocked /api/brand)', () => {
       await page.route('**/api/brand', (route) =>
         route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ error }) })
       );
-      await page.goto('/embeds');
+      await gotoEmbeds(page);
       await submitUrl(page);
       await expect(page.getByText(message)).toBeVisible();
       await page.unroute('**/api/brand');
@@ -409,7 +420,7 @@ test.describe('match your site (mocked /api/brand)', () => {
   });
 
   test('match controls meet the 44px bar and the URL input is labeled', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const input = page.getByLabel(en.embeds.matchSiteUrlLabel);
     await expect(input).toBeVisible();
     const inputBox = await input.boundingBox();
@@ -428,7 +439,7 @@ test.describe('match your site (mocked /api/brand)', () => {
  */
 test.describe('host-page mockup preview', () => {
   test('the archetype switcher renders all four contexts and swaps content', async ({ page }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     const group = page.getByRole('group', { name: en.embeds.mockupLegend });
     await expect(group).toBeVisible();
     for (const label of [
@@ -455,7 +466,7 @@ test.describe('host-page mockup preview', () => {
   test('the widget iframe renders inside the mockup, still themed by the controls', async ({
     page,
   }) => {
-    await page.goto('/embeds');
+    await gotoEmbeds(page);
     // The preview iframe lives inside the mockup region and shows the real widget.
     const frame = page.frameLocator('iframe[title]').first();
     await expect(frame.getByText(en.embed.frameTitle)).toBeVisible();
