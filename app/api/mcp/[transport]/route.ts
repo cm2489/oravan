@@ -122,6 +122,14 @@ const handler = createMcpHandler(
  * are the transport's cheap 405s. Degrades to per-instance in-memory
  * counters when Upstash is unconfigured or unreachable, like every route.
  */
+/**
+ * How many JSON-RPC messages the handshake scan will look at. One: the MCP
+ * spec allows a single `initialize` per connection. See the comment inside
+ * countClientHandshakes for why this bound is load-bearing — it is what keeps
+ * per-request Upstash work O(1) instead of O(batch length).
+ */
+const HANDSHAKE_SCAN_CAP = 1;
+
 const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 60 });
 const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
 
@@ -156,7 +164,17 @@ const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 8
 async function countClientHandshakes(req: Request): Promise<void> {
   try {
     const body: unknown = await req.clone().json();
-    for (const raw of Array.isArray(body) ? body : [body]) {
+    // ONE handshake per request, and the work is bounded BEFORE the counter.
+    // This scan runs ahead of handler(), so it happened even for a request
+    // the transport then rejected with 400 — and it scheduled one Upstash
+    // write per batch element while the limiters count REQUESTS. A single
+    // 5,000-element batch measured 10,008 counters-DB commands and 5,003 new
+    // 90-day keys for one unit of a caller's 60/min budget (pre-launch audit,
+    // 2026-07-25). The MCP spec permits at most one `initialize` per
+    // connection, so 1 is the protocol's own cap, not a heuristic: a batch
+    // carrying more is malformed, and counting the first is generous.
+    const messages = (Array.isArray(body) ? body : [body]).slice(0, HANDSHAKE_SCAN_CAP);
+    for (const raw of messages) {
       if (typeof raw !== 'object' || raw === null) continue;
       const msg = raw as { method?: unknown; params?: unknown };
       if (msg.method !== 'initialize') continue;
@@ -170,6 +188,8 @@ async function countClientHandshakes(req: Request): Promise<void> {
           : {};
       const name = info.name; // raw + caller-controlled; sanitized in lib/usage.ts
       after(() => noteMcpClientHandshake(name));
+      // At most one write per request — belt to the slice() braces above.
+      return;
     }
   } catch {
     // Non-JSON or malformed body: nothing to count, deliberately silent —

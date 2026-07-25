@@ -626,10 +626,23 @@ async function generateStateSummary(anthropic, momentId, entry, statuses, contex
   // straight into reader-facing prose in both languages. Feed it the same
   // plain-language phrases the UI uses (messages/*.json bills.status.*), per
   // language, and the enum never enters the model's vocabulary at all.
+  // ...but the UI's own phrase for `floor_vote` is "Heading to a vote", which
+  // is a FORECAST. Instructing the model to reuse UI phrases verbatim then
+  // published "S.J.Res. 185 and S.J.Res. 172 are heading to a vote" above a
+  // timeline recording both motions rejected (pre-launch audit, 2026-07-25).
+  // The summary speaks only about the record, so forward-looking labels are
+  // rewritten to record-only phrasing HERE, at the boundary, rather than
+  // hoping the model declines a word we handed it. The lint now also rejects
+  // these idioms outright, so this is the belt and that is the braces.
+  const RECORD_ONLY_PHRASE = {
+    floor_vote: { en: 'on the floor calendar', es: 'en el calendario del pleno' },
+  };
+  const recordPhrase = (status, lang) =>
+    RECORD_ONLY_PHRASE[status]?.[lang] ?? statusPhrase(status, lang);
   const statusLines = Object.entries(statuses)
     .map(
       ([slug, status]) =>
-        `- ${billLabel(slug)}: EN "${statusPhrase(status, 'en')}" / ES "${statusPhrase(status, 'es')}"`,
+        `- ${billLabel(slug)}: EN "${recordPhrase(status, 'en')}" / ES "${recordPhrase(status, 'es')}"`,
     )
     .join('\n');
 
