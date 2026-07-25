@@ -31,9 +31,19 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
     const targets = Array.from(document.querySelectorAll('[data-call-cta]'));
     // Nothing to defer to: reveal, rather than staying inert forever. (With
     // the resting state shown this branch could be a bare return.)
+    //
+    // Settled on the next frame rather than synchronously in the effect body.
+    // A bare setHidden() here is a cascading render — `react-hooks/
+    // set-state-in-effect` flags it, and it is right to: the rule's own carve
+    // -out is that state may be set from a CALLBACK when external state
+    // resolves, which is exactly what the observer branch below does. This
+    // branch now resolves the same way, so both paths answer "is a CTA on
+    // screen?" on the first frame after mount instead of one answering during
+    // render. Behaviourally identical — the resting state is already
+    // `opacity-0`, so this reveals by fading in rather than flashing.
     if (targets.length === 0) {
-      setHidden(false);
-      return;
+      const frame = requestAnimationFrame(() => setHidden(false));
+      return () => cancelAnimationFrame(frame);
     }
     const onScreen = new Set<Element>();
     const io = new IntersectionObserver((entries) => {

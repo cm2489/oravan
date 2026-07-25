@@ -12,7 +12,7 @@ import { FONT_VALUES, MODE_DEFAULTS } from '../lib/embed-theme';
 
 const DECODED_SLUG = 'hr-5582-119';
 
-function readVar(name: string) {
+function readVar() {
   return (el: Element, n: string) => getComputedStyle(el).getPropertyValue(n).trim();
 }
 
@@ -47,8 +47,8 @@ test('a valid surface/ink pair re-keys the whole document, band below content in
 }) => {
   await page.goto('/embed/rep-lookup?locale=en&surface=%230f1a2b&ink=%23f5f7fa');
   const html = page.locator('html');
-  await expect.poll(() => html.evaluate(readVar('--oravan-surface'), '--oravan-surface')).toBe('#0f1a2b');
-  await expect.poll(() => html.evaluate(readVar('--oravan-ink'), '--oravan-ink')).toBe('#f5f7fa');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-surface')).toBe('#0f1a2b');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-ink')).toBe('#f5f7fa');
   // The BODY background is the pair's surface — that's the band a fixed-height
   // iframe shows below short content, the thing inline vars on <main> could
   // never recolor.
@@ -63,14 +63,14 @@ test('a pair below AA contrast is discarded as a pair (default background surviv
 }) => {
   await page.goto('/embed/rep-lookup?locale=en&surface=%23888888&ink=%23999999');
   const html = page.locator('html');
-  await expect.poll(() => html.evaluate(readVar('--oravan-surface'), '--oravan-surface')).toBe('');
-  await expect.poll(() => html.evaluate(readVar('--oravan-ink'), '--oravan-ink')).toBe('');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-surface')).toBe('');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-ink')).toBe('');
 });
 
 test('a lone ink (no surface) is discarded — pair-or-nothing', async ({ page }) => {
   await page.goto('/embed/rep-lookup?locale=en&ink=%23000000');
   const html = page.locator('html');
-  await expect.poll(() => html.evaluate(readVar('--oravan-ink'), '--oravan-ink')).toBe('');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-ink')).toBe('');
 });
 
 test('mode=dark forces the dark default palette on a light-preference visitor', async ({
@@ -80,7 +80,7 @@ test('mode=dark forces the dark default palette on a light-preference visitor', 
   await page.goto('/embed/bill-card?locale=en&slug=' + DECODED_SLUG + '&mode=dark');
   const html = page.locator('html');
   await expect
-    .poll(() => html.evaluate(readVar('--oravan-surface'), '--oravan-surface'))
+    .poll(() => html.evaluate(readVar(), '--oravan-surface'))
     .toBe(MODE_DEFAULTS.dark.surface);
   const scheme = await html.evaluate((el) => getComputedStyle(el).colorScheme);
   expect(scheme).toBe('dark');
@@ -106,7 +106,7 @@ test('the two new font stacks land as computed --oravan-font', async ({ page }) 
   for (const key of ['humanist', 'geometric'] as const) {
     await page.goto(`/embed/rep-lookup?locale=en&font=${key}`);
     const html = page.locator('html');
-    await expect.poll(() => html.evaluate(readVar('--oravan-font'), '--oravan-font')).toBe(
+    await expect.poll(() => html.evaluate(readVar(), '--oravan-font')).toBe(
       FONT_VALUES[key]
     );
   }
@@ -180,7 +180,7 @@ test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink m
   await page.goto('/embed/bill-card?locale=en&slug=' + DECODED_SLUG + '&accent=%23ffe680');
   const html = page.locator('html');
   await expect
-    .poll(() => html.evaluate(readVar('--oravan-accent-ink'), '--oravan-accent-ink'))
+    .poll(() => html.evaluate(readVar(), '--oravan-accent-ink'))
     .toBe('#16191b');
   // The chip half of this test changed MEANING, not just its hex: .bc-chip-ai
   // no longer fills with the accent (embed.css — "the AI label is an INTEGRITY
@@ -213,7 +213,7 @@ test('injection through the new knobs never reaches the document', async ({ page
   expect(styleText).not.toContain('pwned');
   expect(await page.content()).not.toContain('<script>window.__pwned9');
   const html = page.locator('html');
-  await expect.poll(() => html.evaluate(readVar('--oravan-surface'), '--oravan-surface')).toBe('');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-surface')).toBe('');
 });
 
 /*
