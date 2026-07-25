@@ -2,8 +2,9 @@
 
 import { useId, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter, getPathname } from '@/i18n/navigation';
+import type { routing } from '@/i18n/routing';
 import { setPrefs, usePrefs } from '@/lib/local';
 
 /*
@@ -41,6 +42,7 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
   const errorId = `zip-error-${uid}`;
   const helpId = `zip-help-${uid}`;
   const router = useRouter();
+  const locale = useLocale();
   const prefs = usePrefs();
   const [typed, setTyped] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,19 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
   }
 
   return (
-    <form onSubmit={submit} className="@container max-w-[30rem]" noValidate>
+    // PROGRESSIVE ENHANCEMENT: `action` + `method` are what make this form work
+    // before hydration and with JS off. Without them the browser GETs the
+    // current URL, and the home page never reads `?zip=` — so a correctly typed
+    // ZIP vanished and the funnel's front door was a dead end. `submit` still
+    // calls preventDefault(), so nothing changes for a hydrated visitor; the
+    // field's `name="zip"` already produces exactly the query /reps expects.
+    <form
+      onSubmit={submit}
+      action={getPathname({ locale: locale as (typeof routing)['locales'][number], href: '/reps' })}
+      method="get"
+      className="@container max-w-[30rem]"
+      noValidate
+    >
       <label htmlFor={fieldId} className="block text-sm font-bold">
         {t('zipLabel')}
       </label>
@@ -98,7 +112,7 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
         />
         <button
           type="submit"
-          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep"
+          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep"
         >
           {t('zipCta')}
           <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

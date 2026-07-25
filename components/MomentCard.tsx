@@ -54,8 +54,11 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
         {moment.updatedDate && (
           <span>
             {t('moments.cardUpdated', {
-              // date-only string => format in UTC, or it reads a day early
+              // date-only string => format in UTC, or it reads a day early.
+              // Year included: a bare "Dec 1" on a card that claims currency
+              // reads as this year even when the action is months past.
               date: format.dateTime(new Date(moment.updatedDate), {
+                year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 timeZone: 'UTC',

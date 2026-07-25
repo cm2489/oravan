@@ -32,7 +32,7 @@ export function TldrStrip({ bill }: { bill: Bill }) {
 
   return (
     <div className="mt-4">
-      <p className="font-reading text-lede text-ink">{s.tldr}</p>
+      <p className="font-reading text-lg text-ink">{s.tldr}</p>
       <p className="mt-2 text-xs font-semibold text-ink-2 tabular-nums">
         {t('tldrMeta', { seconds, count })}
       </p>

@@ -10,6 +10,18 @@ const TAGLINES: Record<string, { tag: string; sub: string }> = {
   es: { tag: 'Tu línea con el Congreso', sub: 'Encuentra a tus representantes. Entiende los proyectos de ley. Haz la llamada.' },
 };
 
+// Palette is the live token set from app/globals.css, restated as literals because
+// Satori resolves neither CSS vars nor currentColor (see lib/og-brand.ts). Keep in
+// lockstep with globals.css: --color-ink, --color-paper, --color-go-bright.
+//
+// The lockup is MONOCHROME on this dark ground, matching the footer's treatment:
+// `go` (#0f6c4a) sits at 2.75:1 on ink and must never carry the mark there. The
+// dark-ground green token, `go-bright`, is spent on the tagline only (10.3:1 on ink).
+const INK = '#16191b'; // --color-ink
+const PAPER = '#ffffff'; // --color-paper
+const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(255,255,255,0.86)';
+
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const { tag, sub } = TAGLINES[locale] ?? TAGLINES.en;
@@ -24,17 +36,17 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 80,
-          background: '#1B1611',
-          color: '#F3ECDD',
+          background: INK,
+          color: PAPER,
           fontFamily: 'sans-serif',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          <img src={markDataUri('#D9B65C')} width={88} height={88} alt="" />
-          <img src={wordmarkDataUri('#F3ECDD')} width={Math.round(72 * WORDMARK_RATIO)} height={72} alt="" />
+          <img src={markDataUri(PAPER)} width={88} height={88} alt="" />
+          <img src={wordmarkDataUri(PAPER)} width={Math.round(72 * WORDMARK_RATIO)} height={72} alt="" />
         </div>
-        <div style={{ marginTop: 36, fontSize: 48, color: '#D9B65C', fontWeight: 600 }}>{tag}</div>
-        <div style={{ marginTop: 16, fontSize: 32, color: 'rgba(243,236,221,0.85)' }}>{sub}</div>
+        <div style={{ marginTop: 36, fontSize: 48, color: GO_BRIGHT, fontWeight: 600 }}>{tag}</div>
+        <div style={{ marginTop: 16, fontSize: 32, color: PAPER_SOFT }}>{sub}</div>
       </div>
     ),
     size

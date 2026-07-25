@@ -95,7 +95,7 @@
     "floorCta": "Read it in plain words",
     "aiReviewed": "Decoded by AI, reviewed by a person",
     "stampLabel": "Data as of",
-    "weekNote": "Amber and a green panel are spent on one fact only: a bill is standing on the floor calendar, and the day it got there is printed on the mark. Everything else is listed plainly. Some weeks nothing is flagged, and we would rather show you that than pad the list.",
+    "weekNote": "The green panel marks one fact only: this bill is standing on the floor calendar, and the day it got there is printed on the mark. The order comes from the legislative record — what moved, and when — never from what we think matters most. Some weeks nothing is flagged at all, and we would rather show you a quiet week than pad the list.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
     "how3Dur": "1:00",
@@ -458,6 +458,12 @@
     "title": "Page not found",
     "body": "That page doesn't exist, but your representatives do.",
     "cta": "Go home"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "body": "This page hit a snag. Reloading usually fixes it. If it keeps happening, erasing your saved data on the Impact page can clear it.",
+    "retry": "Try again",
+    "home": "Go home"
   },
   "categories": {
     "jobs_economy": "Jobs & the economy",

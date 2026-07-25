@@ -76,8 +76,18 @@ function write(key: string, value: unknown) {
   notify();
 }
 
-/** Snapshot cache so useSyncExternalStore gets referentially-stable values. */
-function makeSnapshot<T>(key: string, fallback: T) {
+/**
+ * Snapshot cache so useSyncExternalStore gets referentially-stable values.
+ *
+ * `isValid` is not optional politeness — it is the only thing standing between
+ * a malformed entry and a blank page. JSON.parse's try/catch catches *syntax*
+ * errors, but `null`, `5`, `"x"` and `{}` are all syntactically valid JSON that
+ * sailed through the `as T` cast into every consumer. A single
+ * `localStorage.setItem('oravan.prefs', 'null')` was enough to throw in
+ * ZipForm and unmount the whole tree — and localStorage is the only persistence
+ * this product has, so this layer has to be total.
+ */
+function makeSnapshot<T>(key: string, fallback: T, isValid: (v: unknown) => boolean) {
   let cache: { raw: string | null; value: T } | null = null;
   return () => {
     let raw: string | null = null;
@@ -89,7 +99,8 @@ function makeSnapshot<T>(key: string, fallback: T) {
     if (!cache || cache.raw !== raw) {
       let value = fallback;
       try {
-        value = raw ? (JSON.parse(raw) as T) : fallback;
+        const parsed = raw ? JSON.parse(raw) : fallback;
+        value = isValid(parsed) ? (parsed as T) : fallback;
       } catch {
         /* corrupted entry */
       }
@@ -101,8 +112,9 @@ function makeSnapshot<T>(key: string, fallback: T) {
 
 const EMPTY_PREFS: Prefs = {};
 const EMPTY_CALLS: CallRecord[] = [];
-const prefsSnapshot = makeSnapshot<Prefs>(PREFS_KEY, EMPTY_PREFS);
-const callsSnapshot = makeSnapshot<CallRecord[]>(CALLS_KEY, EMPTY_CALLS);
+const isPlainObject = (v: unknown) => typeof v === 'object' && v !== null && !Array.isArray(v);
+const prefsSnapshot = makeSnapshot<Prefs>(PREFS_KEY, EMPTY_PREFS, isPlainObject);
+const callsSnapshot = makeSnapshot<CallRecord[]>(CALLS_KEY, EMPTY_CALLS, Array.isArray);
 
 export function usePrefs(): Prefs {
   return useSyncExternalStore(subscribe, prefsSnapshot, () => EMPTY_PREFS);

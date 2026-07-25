@@ -33,7 +33,7 @@ export default async function WhyCallPage({ params }: { params: Promise<{ locale
   const t = await getTranslations('why');
 
   return (
-    <article className="mx-auto max-w-5xl px-4 py-12">
+    <article className="mx-auto max-w-read px-4 py-12">
       <div className="max-w-read">
         <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
         <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>

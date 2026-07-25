@@ -235,17 +235,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('demoTitle')}
             </h2>
             <div className="p-4 md:p-6">
-              <p className="rounded-control p-3 font-reading text-md text-ink-2">
+              <p className="rounded-control p-3 font-reading text-lg text-ink-2">
                 <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
                 {t('demoStafferOpen')}
               </p>
               {/* `tint` means YOURS — the caller's own words. It is the one
                   legal use of the tint on this page. */}
-              <p className="mt-2 rounded-control bg-tint p-3 font-reading text-md text-ink">
+              <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
                 <b className="font-sans font-bold text-go-deep">{t('demoYouLabel')}</b>{' '}
                 {t('demoYouLine')}
               </p>
-              <p className="mt-2 rounded-control p-3 font-reading text-md text-ink-2">
+              <p className="mt-2 rounded-control p-3 font-reading text-lg text-ink-2">
                 <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
                 {t('demoStafferClose')}
               </p>
@@ -316,6 +316,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               scheduled and not. */}
           {listed.length > 0 && (
             <div className="mt-6 border-t-[1.5px] border-line-strong">
+              {/* These headlines are `ai_headline` — decoded text. The hero's
+                  AI chip is scoped to "the bill and the script" and the panel
+                  above carries its own, so without this the only unlabeled
+                  AI content on the page was the part that reads most like
+                  editorial copy. The label sits with the content, per DESIGN.md. */}
+              <p className="pt-4">
+                <Chip tone="ai" marker={t('aiMarker')}>
+                  {t('aiReviewed')}
+                </Chip>
+              </p>
               {listed.map((b, i) => {
                 const isLast = i === listed.length - 1;
                 return (
@@ -424,6 +434,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </Link>
             </div>
             <p className="mt-1 max-w-note text-sm text-ink-pale">{t('momentsSub')}</p>
+            {/* The dek under each moment is AI-drafted summary text. /moments
+                labels it; this strip did not, so the same sentences appeared
+                labeled on one surface and unlabeled on the front door. */}
+            <p className="mt-3 max-w-note text-2xs font-bold tracking-[0.06em] text-ink-pale uppercase">
+              {tShared('moments.aiNote')}
+            </p>
             <ul className="mt-6 list-none border-t-[1.5px] border-line-strong">
               {liveMoments.map((m) => (
                 <li key={m.id} className="border-b-[1.5px] border-line-strong">

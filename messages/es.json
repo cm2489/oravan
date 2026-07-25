@@ -95,7 +95,7 @@
     "floorCta": "Léelo en palabras sencillas",
     "aiReviewed": "Traducido por IA, revisado por una persona",
     "stampLabel": "Datos al",
-    "weekNote": "El ámbar y el panel verde se reservan para un solo hecho: un proyecto de ley está en el calendario del pleno, y el día en que llegó allí va impreso en la marca. Todo lo demás aparece en una lista simple. Hay semanas en que no se destaca nada, y preferimos mostrártelo así antes que rellenar la lista.",
+    "weekNote": "El panel verde señala un solo hecho: este proyecto de ley está en el calendario del pleno, y el día en que llegó allí va impreso en la marca. El orden viene del registro legislativo — qué se movió y cuándo —, nunca de lo que a nosotros nos parezca más importante. Hay semanas en que no se destaca nada, y preferimos mostrarte una semana tranquila antes que rellenar la lista.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
     "how3Dur": "1:00",
@@ -458,6 +458,12 @@
     "title": "Página no encontrada",
     "body": "Esa página no existe — pero tus representantes sí.",
     "cta": "Ir al inicio"
+  },
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "body": "Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, borrar tus datos guardados en la página Mi impacto puede solucionarlo.",
+    "retry": "Intentar de nuevo",
+    "home": "Ir al inicio"
   },
   "categories": {
     "jobs_economy": "Empleo y economía",

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BillStatus } from '@/lib/types';
+import { isSignalFresh } from '@/lib/signal-window';
 import { Chip } from './Chip';
 
 /*
@@ -167,6 +168,10 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
   let bestScore = Number.NEGATIVE_INFINITY;
   for (const bill of bills) {
     if (bill.status !== 'floor_vote') continue;
+    // The panel asserts the bill is standing on the floor calendar *now*.
+    // Past the published 14-day window that assertion stops being true, and
+    // the honest quiet week is the correct output. See lib/urgency.mjs.
+    if (!isSignalFresh(billDateOf(bill))) continue;
     const score = rank(bill);
     if (score > bestScore) {
       bestScore = score;
@@ -174,6 +179,11 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
     }
   }
   return best;
+}
+
+function billDateOf(bill: unknown): string | null {
+  const b = bill as { last_action_date?: string | null; lastActionDate?: string | null };
+  return b.last_action_date ?? b.lastActionDate ?? null;
 }
 
 function defaultRank(bill: unknown): number {
