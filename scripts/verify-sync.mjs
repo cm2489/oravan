@@ -18,6 +18,12 @@
  *     only ever appends, so any real drop means corruption)
  *   - EN/ES parity broke: a decoded bill without a bills-es.json entry, or
  *     an ES entry pointing at a bill that doesn't exist
+ *   - data/moment-updates.json (the v2 live layer) doesn't parse, isn't an
+ *     object, carries an unknown _meta.schema, references a moment that
+ *     doesn't exist in data/moments.json, lost >50% of its updates overnight,
+ *     broke EN/ES parity, went future-dated, or blew the size ceiling. Every
+ *     part of it is skipped cleanly when the file doesn't exist — on HEAD or
+ *     in the working tree.
  *
  * Cursor-age threshold (2026-07-16, audit §5 item 4). This check used to be
  * a non-blocking ::warning, on the theory that the cursor would sit weeks
@@ -39,7 +45,8 @@
  * before a visitor could ever see a dishonest "quiet week" from it.
  */
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { SCHEMA_VERSION, SIZE_FAIL_BYTES } from '../lib/moment-updates-gate.mjs';
 
 const CURSOR_MAX_AGE_DAYS = 10;
 
@@ -136,6 +143,121 @@ if (coverage && typeof coverage === 'object' && !Array.isArray(coverage)) {
     }
   } catch {
     warn('could not read HEAD:data/coverage.json for the coverage comparison');
+  }
+}
+
+// --- moment updates: the live layer must not silently lose its record -------
+//
+// THE EDITORIAL LAW this guards (v2 spec §2, docs/ideation/
+// 2026-07-25-moments-v2.md): "Truth about the record… When the record is
+// silent — motive, likelihood, what it really means — Oravan's voice stops."
+// A nightly run that quietly halves the timeline, or lands a future-dated
+// update, or ships an EN line with no ES sibling, is the live layer telling a
+// story the record does not support. Same dead-man's-switch posture as the
+// bill and coverage checks above: shrink is the tell, and >50% overnight is
+// corruption rather than retention.
+//
+// ALL OF IT is tolerant of the file not existing — on HEAD (the collector,
+// slice S3, is what first writes it) and in the working tree (a branch that
+// predates the live layer must still verify cleanly).
+const MOMENT_UPDATES_PATH = 'data/moment-updates.json';
+if (!existsSync(MOMENT_UPDATES_PATH)) {
+  console.log(`${MOMENT_UPDATES_PATH} not present — skipping the moment-updates checks`);
+} else {
+  const updates = parse(MOMENT_UPDATES_PATH, readFileSync(MOMENT_UPDATES_PATH, 'utf8'));
+  if (updates !== null && (typeof updates !== 'object' || Array.isArray(updates))) {
+    fail(`${MOMENT_UPDATES_PATH} is not an object keyed by moment id`);
+  } else if (updates !== null) {
+    if (updates._meta?.schema !== SCHEMA_VERSION) {
+      fail(
+        `${MOMENT_UPDATES_PATH} _meta.schema is ${JSON.stringify(updates._meta?.schema)}, not the known schema version ${SCHEMA_VERSION}`
+      );
+    }
+
+    // Size ceiling — the same number the gate fails at, imported not copied.
+    const bytes = statSync(MOMENT_UPDATES_PATH).size;
+    if (bytes >= SIZE_FAIL_BYTES) {
+      fail(`${MOMENT_UPDATES_PATH} is ${bytes} bytes, at or past the ${SIZE_FAIL_BYTES}-byte ceiling — retention pruning has stopped working`);
+    }
+
+    const entries = Object.entries(updates).filter(([k]) => k !== '_meta');
+    const countUpdates = (obj) =>
+      Object.entries(obj ?? {})
+        .filter(([k]) => k !== '_meta')
+        .reduce((n, [, e]) => n + (Array.isArray(e?.updates) ? e.updates.length : 0), 0);
+    const total = countUpdates(updates);
+
+    // Every id resolves in the hand-authored file. moments.json and
+    // moment-updates.json are deliberately separate owners (auto-commits and
+    // hand edits never contend for one file); an orphan here means one of
+    // them moved without the other.
+    const momentsForUpdates = parse('data/moments.json', readFileSync('data/moments.json', 'utf8'));
+    if (momentsForUpdates && typeof momentsForUpdates === 'object') {
+      const orphans = entries.map(([id]) => id).filter((id) => !momentsForUpdates[id]);
+      if (orphans.length) {
+        fail(
+          `${MOMENT_UPDATES_PATH}: ${orphans.length} entr(ies) reference moments that don't exist in data/moments.json (first: ${orphans[0]})`
+        );
+      }
+    }
+
+    // EN/ES parity over every rendered string — update one-liners AND summary
+    // revisions. The bilingual hard rule does not get a machine-authored
+    // exemption.
+    const parityGaps = [];
+    const futureDated = [];
+    const nowMs = Date.now();
+    for (const [id, entry] of entries) {
+      for (const u of entry?.updates ?? []) {
+        if (!u?.text?.en?.trim() || !u?.text?.es?.trim()) parityGaps.push(`${id}/${u?.id} update text`);
+        for (const field of ['day', 'occurred_at', 'recorded_at']) {
+          const t = Date.parse(u?.[field]);
+          if (Number.isFinite(t) && t > nowMs + 86_400_000) futureDated.push(`${id}/${u?.id}.${field}=${u[field]}`);
+        }
+      }
+      for (const r of entry?.summary_revisions ?? []) {
+        if (!r?.text?.en?.trim() || !r?.text?.es?.trim()) parityGaps.push(`${id}/${r?.id} summary revision`);
+      }
+    }
+    if (parityGaps.length) {
+      fail(
+        `EN/ES parity broke in ${MOMENT_UPDATES_PATH}: ${parityGaps.length} string(s) missing a sibling (first: ${parityGaps[0]})`
+      );
+    }
+    if (futureDated.length) {
+      fail(
+        `${MOMENT_UPDATES_PATH}: ${futureDated.length} future-dated field(s) — nothing claims a date the record does not support (first: ${futureDated[0]})`
+      );
+    }
+
+    // Update-count vs the committed file. Retention prunes gradually; an
+    // overnight cliff means the collector replaced the file with a partial
+    // result. Same idiom as the coverage-shrink check above.
+    try {
+      const before = JSON.parse(
+        execSync(`git show HEAD:${MOMENT_UPDATES_PATH}`, {
+          encoding: 'utf8',
+          maxBuffer: 512 * 1024 * 1024,
+          // Silence git's "exists on disk, but not in HEAD" — the expected
+          // case on the branch that first adds the file, and a red `fatal:`
+          // in a green CI log is exactly the noise that trains people to
+          // stop reading logs.
+          stdio: ['ignore', 'pipe', 'ignore'],
+        })
+      );
+      const beforeTotal = countUpdates(before);
+      if (beforeTotal >= 10 && total < beforeTotal * 0.5) {
+        fail(`${MOMENT_UPDATES_PATH} shrank ${beforeTotal} -> ${total} updates (>50% overnight) — a partial collector run replaced the file`);
+      } else if (beforeTotal >= 10 && total < beforeTotal * 0.8) {
+        warn(`${MOMENT_UPDATES_PATH} shrank ${beforeTotal} -> ${total} updates (>20% overnight) — worth a look`);
+      } else {
+        console.log(`moment updates: ${beforeTotal} -> ${total} across ${entries.length} moment(s)`);
+      }
+    } catch {
+      // Expected on the branch that first adds the file, and on a shallow
+      // checkout — never a failure.
+      console.log(`no HEAD:${MOMENT_UPDATES_PATH} to compare against (first commit of the live layer?) — ${total} update(s) now`);
+    }
   }
 }
 

@@ -68,21 +68,43 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
       await expect(fab).toHaveAttribute('aria-hidden', 'false');
     }
 
-    // Past the foot of the grid the rail is gone: the coverage section and the
-    // footer sit outside it. The floating button is what keeps the call one tap
-    // away down there — the invariant this component exists for is that SOME
-    // call CTA is on screen at every scroll depth, not that this one is.
+    // Past the foot of the grid the rail is USUALLY gone — but on a short
+    // bill (thin decode, thin coverage) the sticky rail can still be
+    // partially on screen at max scroll, and Linux webkit's text metrics
+    // shift the boundary vs a Mac (the second half of the same corpus-shape
+    // lesson as above: this went red in CI on hr-3937-119 while passing
+    // locally on identical code). The invariant this component exists for is
+    // that SOME call surface is on screen at every depth and never two —
+    // assert the complementary pair from measured visibility, whichever side
+    // of the boundary this bill and this engine land on.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(cta).not.toBeInViewport();
-    await expect(fab).toHaveCSS('opacity', '1');
-    await expect(fab).toHaveAttribute('aria-hidden', 'false');
+    const ctaAtBottom = await cta.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+    });
+    if (ctaAtBottom) {
+      await expect(fab).toHaveCSS('opacity', '0');
+      await expect(fab).toHaveAttribute('aria-hidden', 'true');
+    } else {
+      await expect(fab).toHaveCSS('opacity', '1');
+      await expect(fab).toHaveAttribute('aria-hidden', 'false');
+    }
     return;
   }
 
-  // SINGLE COLUMN. No rail, so at the top of a long page no other CTA is on
-  // screen — the button is shown.
-  await expect(cta).not.toBeInViewport();
-  await expect(fab).toHaveCSS('opacity', '1');
+  // SINGLE COLUMN. No rail; on a long page no other CTA is on screen at the
+  // top — but measure rather than assume, for the same corpus-shape reason
+  // as the desk branch: a short bill can put the panel inside the first
+  // viewport, and then the button standing DOWN is the correct behavior.
+  const ctaAtTop = await cta.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+  });
+  if (ctaAtTop) {
+    await expect(fab).toHaveCSS('opacity', '0');
+  } else {
+    await expect(fab).toHaveCSS('opacity', '1');
+  }
 
   // Bring the action panel into view — the floating button fades out (inert).
   await cta.scrollIntoViewIfNeeded();
