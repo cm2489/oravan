@@ -43,12 +43,30 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
 
   if (onDesk) {
     // THE DESK. The two-column bill page parks a sticky call rail beside the
-    // reading column, so a CTA is already on screen at the top and the
-    // floating button — whose entire contract is to stand down when one is —
-    // must be inert there instead of duplicating it.
-    await expect(cta).toBeInViewport();
-    await expect(fab).toHaveCSS('opacity', '0');
-    await expect(fab).toHaveAttribute('aria-hidden', 'true');
+    // reading column. Whether that rail's CTA is on screen AT THE TOP is
+    // corpus-dependent, not layout-dependent: a floor_vote bill renders the
+    // full-bleed deadline band above the grid, which at shorter desktop
+    // viewports (webkit-desktop) pushes the rail below the fold. The night
+    // hr-3937-119 (floor_vote) became coverage.json's first key, the old
+    // hardcoded `toBeInViewport` went red on main itself — first caught on
+    // 2026-07-25, by PR CI, because nightly-sync pushes use GITHUB_TOKEN and
+    // therefore never trigger main's own CI on a fresh corpus.
+    //
+    // The PROPERTY this test exists to pin is the component's contract:
+    // exactly one call surface at a time — the button stands down when a CTA
+    // is on screen and stands up when none is. Assert THAT, from measured
+    // visibility, for whichever bill the corpus serves up.
+    const ctaOnScreen = await cta.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+    });
+    if (ctaOnScreen) {
+      await expect(fab).toHaveCSS('opacity', '0');
+      await expect(fab).toHaveAttribute('aria-hidden', 'true');
+    } else {
+      await expect(fab).toHaveCSS('opacity', '1');
+      await expect(fab).toHaveAttribute('aria-hidden', 'false');
+    }
 
     // Past the foot of the grid the rail is gone: the coverage section and the
     // footer sit outside it. The floating button is what keeps the call one tap
