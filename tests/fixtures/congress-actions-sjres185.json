@@ -1,0 +1,107 @@
+{
+ "actions": [
+  {
+   "actionDate": "2026-06-24",
+   "recordedVotes": [
+    {
+     "chamber": "Senate",
+     "congress": 119,
+     "date": "2026-06-25T03:01:38Z",
+     "rollNumber": 192,
+     "sessionNumber": 2,
+     "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00192.xml"
+    }
+   ],
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)",
+   "type": "Floor"
+  },
+  {
+   "actionDate": "2026-05-19",
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 415.",
+   "type": "Calendars"
+  },
+  {
+   "actionDate": "2026-05-19",
+   "committees": [
+    {
+     "name": "Foreign Relations Committee",
+     "systemCode": "ssfr00",
+     "url": "https://api.congress.gov/v3/committee/senate/ssfr00?format=json"
+    }
+   ],
+   "recordedVotes": [
+    {
+     "chamber": "Senate",
+     "congress": 119,
+     "date": "2026-05-19T21:46:08Z",
+     "rollNumber": 129,
+     "sessionNumber": 2,
+     "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00129.xml"
+    }
+   ],
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Senate Committee on Foreign Relations discharged by Yea-Nay Vote. 50 - 47. Record Vote Number: 129. (consideration: CR S2355)",
+   "type": "Discharge"
+  },
+  {
+   "actionCode": "14500",
+   "actionDate": "2026-05-19",
+   "committees": [
+    {
+     "name": "Foreign Relations Committee",
+     "systemCode": "ssfr00",
+     "url": "https://api.congress.gov/v3/committee/senate/ssfr00?format=json"
+    }
+   ],
+   "recordedVotes": [
+    {
+     "chamber": "Senate",
+     "congress": 119,
+     "date": "2026-05-19T21:46:08Z",
+     "rollNumber": 129,
+     "sessionNumber": 2,
+     "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00129.xml"
+    }
+   ],
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Senate Committee on Foreign Relations discharged by Yea-Nay Vote. 50 - 47. Record Vote Number: 129.",
+   "type": "Committee"
+  },
+  {
+   "actionDate": "2026-04-27",
+   "committees": [
+    {
+     "name": "Foreign Relations Committee",
+     "systemCode": "ssfr00",
+     "url": "https://api.congress.gov/v3/committee/senate/ssfr00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Read twice and referred to the Committee on Foreign Relations.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "10000",
+   "actionDate": "2026-04-27",
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Introduced in Senate",
+   "type": "IntroReferral"
+  }
+ ]
+}

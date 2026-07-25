@@ -56,6 +56,23 @@ jobs:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/sync-coverage.mjs
+      - name: Collect Moment updates (Moments v2 live layer, nightly)
+        # Nightly mode = the incremental pass PLUS press clusters, retention
+        # pruning, and the "Where it stands" state summaries. Runs AFTER the
+        # coverage sync (so tonight's clusters see tonight's articles) and
+        # BEFORE verify-sync.mjs (so the night's dead-man's-switch inspects
+        # what this step actually wrote). continue-on-error for the same
+        # reason as in newsdesk.yml: the live layer is additive and must never
+        # cost the nightly run its corpus work.
+        # Cost: ONE batched Haiku call + at most MOMENT_SUMMARY_DAILY_CAP=8
+        # Sonnet 5 summaries, and only for moments that actually moved — see
+        # scripts/moment-updates.mjs's SPEND section.
+        continue-on-error: true
+        env:
+          MOMENT_UPDATES_MODE: nightly
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/moment-updates.mjs
       - name: Mirror embed portraits to Vercel Blob
         # No-op unless BLOB_READ_WRITE_TOKEN is set, so this is safe before
         # the store/secret exist - same pattern as "Sync coverage" above.
@@ -110,8 +127,9 @@ jobs:
           # resolved - the 2026-06-22 failure, there in the other workflow).
           # Rebase onto the latest main and retry; safe because this workflow
           # only touches bills.json/bills-es.json/sync-state.json/
-          # portrait-manifest.json, disjoint from refresh-legislators.yml's
-          # files.
+          # coverage.json/portrait-manifest.json/moment-updates.json, disjoint
+          # from refresh-legislators.yml's files. `git add data/` stages all of
+          # them, including whatever the Moment-updates step wrote.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

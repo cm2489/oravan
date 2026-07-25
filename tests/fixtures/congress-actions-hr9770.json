@@ -1,0 +1,207 @@
+{
+ "actions": [
+  {
+   "actionDate": "2026-07-22",
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Received in the Senate.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "H38310",
+   "actionDate": "2026-07-21",
+   "actionTime": "22:14:42",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Motion to reconsider laid on the table Agreed to without objection.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H37100",
+   "actionDate": "2026-07-21",
+   "actionTime": "22:14:39",
+   "recordedVotes": [
+    {
+     "chamber": "House",
+     "congress": 119,
+     "date": "2026-07-22T02:14:39Z",
+     "rollNumber": 272,
+     "sessionNumber": 2,
+     "url": "https://clerk.house.gov/evs/2026/roll272.xml"
+    }
+   ],
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272). (text: CR H4731-4733)",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "8000",
+   "actionDate": "2026-07-21",
+   "actionTime": "22:14:39",
+   "recordedVotes": [
+    {
+     "chamber": "House",
+     "congress": 119,
+     "date": "2026-07-22T02:14:39Z",
+     "rollNumber": 272,
+     "sessionNumber": 2,
+     "url": "https://clerk.house.gov/evs/2026/roll272.xml"
+    }
+   ],
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Passed/agreed to in House: On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272).",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H30000",
+   "actionDate": "2026-07-21",
+   "actionTime": "22:06:32",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Considered as unfinished business. (consideration: CR H5019-5020)",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-21",
+   "actionTime": "16:27:55",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "POSTPONED PROCEEDINGS - At the conclusion of debate on H.R. 9770, the Chair put the question on passage of the bill and by voice vote, announced the ayes had prevailed. Ms. DeLauro demanded the yeas and nays and the Chair postponed further proceedings until a time to be announced.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H35000",
+   "actionDate": "2026-07-21",
+   "actionTime": "16:27:34",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "The previous question was ordered pursuant to the rule.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-21",
+   "actionTime": "15:53:57",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "DEBATE - The House proceeded with one hour of debate on H.R. 9770.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-21",
+   "actionTime": "15:53:11",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Rule provides for consideration of H.R. 8800, H.R. 8884, H. Con. Res. 113, H.R. 7008, H.R. 6955 and H.R. 9770. The resolution provides for consideration of H.R. 8800 under a structured rule and for consideration of H.R. 8884, H. Con. Res. 113, H.R. 7008, H.R. 6955, and H.R. 9770 under a closed rule, with one hour of debate on each measure and one motion to recommit on H.R. 8800, H.R. 8884, H.R. 7008, H.R. 6955, and H.R. 9770.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H30000",
+   "actionDate": "2026-07-21",
+   "actionTime": "15:53:06",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Considered under the provisions of rule H. Res. 1438. (consideration: CR H4731-4736)",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H1L220",
+   "actionDate": "2026-07-21",
+   "actionTime": "14:39:59",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Rule H. Res. 1438 passed House.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H1L210",
+   "actionDate": "2026-07-20",
+   "actionTime": "20:33:13",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Rules Committee Resolution H. Res. 1438 Reported to House. Rule provides for consideration of H.R. 8800, H.R. 8884, H. Con. Res. 113, H.R. 7008, H.R. 6955 and H.R. 9770. The resolution provides for consideration of H.R. 8800 under a structured rule and for consideration of H.R. 8884, H. Con. Res. 113, H.R. 7008, H.R. 6955, and H.R. 9770 under a closed rule, with one hour of debate on each measure and one motion to recommit on H.R. 8800, H.R. 8884, H.R. 7008, H.R. 6955, and H.R. 9770.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H11100",
+   "actionDate": "2026-07-18",
+   "committees": [
+    {
+     "name": "Budget Committee",
+     "systemCode": "hsbu00",
+     "url": "https://api.congress.gov/v3/committee/house/hsbu00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Referred to the Committee on Appropriations, and in addition to the Committee on the Budget, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "H11100",
+   "actionDate": "2026-07-18",
+   "committees": [
+    {
+     "name": "Appropriations Committee",
+     "systemCode": "hsap00",
+     "url": "https://api.congress.gov/v3/committee/house/hsap00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Referred to the Committee on Appropriations, and in addition to the Committee on the Budget, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "Intro-H",
+   "actionDate": "2026-07-18",
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Introduced in House",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "1000",
+   "actionDate": "2026-07-18",
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Introduced in House",
+   "type": "IntroReferral"
+  }
+ ]
+}

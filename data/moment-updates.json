@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-07-25T06:20:00Z"
+    "generated_at": "2026-07-25T07:06:54.754Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -59,6 +59,32 @@
             "chamber": "house",
             "number": 272
           }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_79d24344",
+        "class": "scheduled",
+        "vehicle": "hr-9770-119",
+        "day": "2026-07-16",
+        "occurred_at": "2026-07-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T07:06:54.754Z",
+        "text": {
+          "en": "H.R. 9770, the continuing appropriations bill for 2027, was added to the House floor schedule for the week of July 20, 2026.",
+          "es": "La H.R. 9770, el proyecto de asignaciones continuas para 2027, fue añadida al calendario del pleno de la Cámara para la semana del 20 de julio de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://docs.house.gov/billsthisweek/20260720/20260720.xml"
+          ]
+        },
+        "record": {
+          "action_text": "H.R. 9770 — Continuing Appropriations Act, 2027",
+          "action_code": null,
+          "action_type": "Items that may be considered pursuant to a rule",
+          "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
         },
         "ai": false
       }
@@ -151,6 +177,32 @@
         "ai": false
       },
       {
+        "id": "u_80f9d9ff",
+        "class": "scheduled",
+        "vehicle": "hconres-89-119",
+        "day": "2026-07-22",
+        "occurred_at": "2026-07-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T07:06:54.754Z",
+        "text": {
+          "en": "H. Con. Res. 89 was added to the House floor schedule for the week of July 20, 2026.",
+          "es": "La H. Con. Res. 89 fue añadida al calendario del pleno de la Cámara para la semana del 20 de julio de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://docs.house.gov/billsthisweek/20260720/20260720.xml"
+          ]
+        },
+        "record": {
+          "action_text": "H. Con. Res. 89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
+          "action_code": null,
+          "action_type": "Items that may be considered",
+          "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
+        },
+        "ai": false
+      },
+      {
         "id": "u_8b7ad678",
         "class": "vote",
         "vehicle": "sjres-185-119",
@@ -177,6 +229,37 @@
           "roll_call": {
             "chamber": "senate",
             "number": 192
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_524e5667",
+        "class": "vote",
+        "vehicle": "sjres-172-119",
+        "day": "2026-06-16",
+        "occurred_at": "2026-06-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T07:06:54.754Z",
+        "text": {
+          "en": "The Senate rejected the motion to discharge S.J.Res. 172 from the Foreign Relations Committee, 47-48, on Record Vote 174.",
+          "es": "El Senado rechazó la moción para descargar la S.J.Res. 172 del Comité de Relaciones Exteriores, 47-48, en la votación registrada 174."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00174.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 174
           }
         },
         "ai": false
