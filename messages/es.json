@@ -15,7 +15,7 @@
     "footer": {
       "mission": "Oravan es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
       "privacy": "Privacidad",
-      "aiNote": "Los resúmenes y guiones son borradores generados por IA y están claramente marcados. Revísalos siempre antes de usarlos.",
+      "aiNote": "El contenido redactado por IA siempre está claramente marcado: revíselo antes de usarlo.",
       "terms": "Términos",
       "lore": "Oravan es un nombre inventado — parte oratoria, parte caravana: una voz que se pone en camino y muchas que llegan juntas.",
       "about": "Acerca de",
@@ -28,8 +28,7 @@
       "fundingCta": "Apoya a Oravan",
       "colSite": "Sitio",
       "colTrust": "Confianza",
-      "sourceNote": "El texto y el estado de cada proyecto de ley se sincronizan cada noche desde Congress.gov, el registro oficial.",
-      "corrections": "¿Ves un error en esta página?"
+      "sourceNote": "El texto y el estado de cada proyecto de ley se sincronizan cada noche desde Congress.gov, el registro oficial."
     },
     "switchLocale": "In English",
     "loading": "Cargando…",
