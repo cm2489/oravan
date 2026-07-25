@@ -20,7 +20,7 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
   const tc = await getTranslations('common');
 
   return (
-    <article className="mx-auto max-w-5xl px-4 py-12">
+    <article className="mx-auto max-w-read px-4 py-12">
       {/* one cap on the column, not one per block */}
       <div className="max-w-read">
         <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>

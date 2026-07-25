@@ -28,6 +28,14 @@ const SIGNAL_TYPES: QualifyingSignalType[] = ['tier0_floor', 'tier0_scheduled', 
 const CONTENT_LINK =
   'inline-flex min-h-11 items-center gap-2 font-bold text-go underline transition-colors hover:text-go-deep';
 
+/*
+ * Every bill/moment is enumerated by generateStaticParams below, so an id
+ * that is not in that list does not exist. Without this, Next serves an
+ * unknown slug as a cached 200 carrying the site's own <title> — a soft 404
+ * that crawlers index as a real Oravan page. false makes the router 404 it.
+ */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) => getMoments().map((m) => ({ locale, id: m.id })));
 }

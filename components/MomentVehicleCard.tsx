@@ -4,6 +4,7 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import type { BillStatus } from '@/lib/types';
+import { isSignalFresh } from '@/lib/signal-window';
 
 /**
  * A Moment's vehicle card — BillCard's teaser idiom (cite · status ·
@@ -72,8 +73,11 @@ export function MomentVehicleCard({
   const t = useTranslations();
   const format = useFormatter();
 
-  // The gate: the status earns the mark, the printed date earns the amber.
-  const onCalendar = status === 'floor_vote' && !!lastActionDate;
+  // The gate: the status earns the mark, the printed date earns the amber —
+  // and the date has to still be inside the 14-day window this page publishes
+  // to the reader a few hundred pixels below ("Why this Moment exists").
+  // Amber on a 39-day-old placement contradicted our own stated rule in view.
+  const onCalendar = status === 'floor_vote' && isSignalFresh(lastActionDate);
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can
   // never start with a floating "·" (the /es long-status failure shape).
@@ -128,7 +132,10 @@ export function MomentVehicleCard({
         {!onCalendar && lastActionDate && (
           <span>
             {t('bills.updated', {
+              // Year included — see components/BillCard.tsx: a bare month/day
+              // on a corpus that is 40% pre-2026 reads as an upcoming date.
               date: format.dateTime(new Date(lastActionDate), {
+                year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 timeZone: 'UTC',

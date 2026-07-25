@@ -321,6 +321,51 @@ a {
   --focus-gap: var(--color-go-deep);
 }
 
+/* THE DARK-GROUND LEADING FIX — why it has to look like this.
+   `leading-dark` was being applied to the WRAPPER, but every Tailwind `text-*`
+   utility ships its own paired `--text-*--line-height`, and that pair wins at
+   the descendant. So light type on ink and on the green enamel was rendering
+   at 1.6, not the 1.7 the system requires (measured: 21 of 29 text runs on the
+   home page alone). `tracking-dark` inherits fine — only leading failed.
+   Retuning `--leading-body` here does NOT work: custom properties resolve at
+   the element that declares them, so the utility's own pair still wins. The
+   fix is to restate the pairs themselves on the ground. One rule replaces
+   ~20 hand-applied utilities; anything with an explicit `leading-*` is
+   untouched, by design. */
+.on-dark,
+.on-go {
+  --text-2xs--line-height: var(--leading-dark);
+  --text-xs--line-height: var(--leading-dark);
+  --text-sm--line-height: var(--leading-dark);
+  --text-md--line-height: var(--leading-dark);
+  --text-lg--line-height: var(--leading-dark);
+  --text-lede--line-height: var(--leading-dark);
+}
+
+/* THE BASE TRANSITION. DESIGN.md says state changes ease at 150ms, but there
+   was no rule establishing that — only 11 hand-applied `transition-colors`
+   utilities, leaving 31 of 43 controls on the home page snapping instantly
+   (155 of 261 site-wide). The reduced-motion block below was neutralizing
+   transitions that had never been declared.
+
+   Exactly the four legal properties — colour only, never transform, never
+   size — so nothing here can move layout or violate the Motion law. */
+a,
+button,
+summary,
+input,
+select,
+textarea,
+label,
+[role='button'],
+[role='tab'] {
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    color 150ms,
+    text-decoration-color 150ms;
+}
+
 /* A filled control swaps its own border to the gap tone on focus, so the ring
    is never adjacent to the fill. Opt in on any solid button: `class="ring-gap"`. */
 .ring-gap:focus-visible {

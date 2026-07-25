@@ -43,6 +43,14 @@ import { SITE_ORIGIN } from '@/lib/site';
  * `status === "floor_vote"` on purpose.
  */
 
+/*
+ * Every bill/moment is enumerated by generateStaticParams below, so an id
+ * that is not in that list does not exist. Without this, Next serves an
+ * unknown slug as a cached 200 carrying the site's own <title> — a soft 404
+ * that crawlers index as a real Oravan page. false makes the router 404 it.
+ */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
     getAllBills().map((b) => ({ locale, id: billSlug(b) }))
@@ -116,7 +124,12 @@ export async function generateMetadata({
 }
 
 /** The page's one wrapper. 70rem holds 33rem of reading + a 25rem rail. */
-const WRAP = 'mx-auto w-full max-w-[70rem] px-[clamp(1rem,4vw,2rem)]';
+// Was max-w-[70rem] with a clamped gutter, which put this page's content on a
+// DIFFERENT left edge from the header and footer at every width — and the
+// disagreement flipped sign across the breakpoints (+16px at 1024, −32px at
+// 1440). max-w-5xl px-4 is the site rail every other route already sits on,
+// and the two-track grid still fits exactly: 1024 − 32 = 992 = 528 + 64 + 400.
+const WRAP = 'mx-auto w-full max-w-5xl px-4';
 
 export default async function BillPage({
   params,

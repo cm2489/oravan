@@ -58,7 +58,7 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
 
       <EmbedConfigurator bills={bills} />
 
-      <section className="mt-16 max-w-read border-t-[3px] border-ink pt-4">
+      <section className="mt-16 mx-auto max-w-read border-t-[3px] border-ink pt-4">
         <h2 className="text-h2 font-extrabold">{t('docsHeading')}</h2>
 
         <div className="mt-6">

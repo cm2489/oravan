@@ -54,7 +54,12 @@ export function LocaleSwitcher() {
           <Link
             key={code}
             href={pathname}
-            locale={code}
+            // Only pass `locale` when it actually SWITCHES. Passing it for the
+            // current locale forces a prefixed href even for the default one,
+            // so the "English" pill on /bills pointed at /en/bills and served a
+            // 307 back to itself on every page — the exact thing i18n/routing.ts
+            // says a bare English URL must never do.
+            locale={current ? undefined : code}
             lang={code}
             hrefLang={code}
             aria-current={current ? 'page' : undefined}

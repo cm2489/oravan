@@ -30,8 +30,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
     // Install from /es opens the Spanish app; default locale keeps the root.
     start_url: locale === routing.defaultLocale ? '/' : `/${locale}`,
     display: 'standalone',
-    background_color: '#F3ECDD', // paper
-    theme_color: '#2A2318', // ink
+    // Live tokens from app/globals.css (--color-paper / --color-ink). These
+    // were left at the retired Field Notebook values (#F3ECDD / #2A2318) when
+    // the design refresh landed, so the install splash and the Android status
+    // bar still rendered the old cream-and-brown identity.
+    background_color: '#ffffff', // --color-paper
+    theme_color: '#16191b', // --color-ink
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

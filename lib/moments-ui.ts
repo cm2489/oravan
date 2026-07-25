@@ -9,6 +9,46 @@ import { getBill } from './core/bills';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import type { MomentVehicle } from './moments';
 
+/*
+ * Sentence-final punctuation is ambiguous in legislative prose. "U.S. forces
+ * have been involved…", "H.R. 8800 would…", "Sen. Smith said…" all put a
+ * period-plus-space *inside* the first sentence, and the naive
+ * /^.*?[.!?](?:\s|$)/ this replaced stopped at the first one — so the Iran
+ * moment's dek rendered as the literal two-letter string "U.S." on /moments,
+ * in the homepage strip, and (worst) as the page's <meta description> and
+ * og:description. English only: the Spanish summary opens "Fuerzas de Estados
+ * Unidos…" and was unaffected, which is exactly why it survived review.
+ *
+ * A period ends a sentence only when the token before it is not an
+ * abbreviation. Two tests, cheap and locale-safe:
+ *   1. any token carrying an internal dot is an initialism (U.S, S.J.Res)
+ *   2. an explicit list covers short prose abbreviations in EN and ES
+ * MIN_DEK is the backstop for abbreviations neither test knows: a "sentence"
+ * shorter than this is never a real one in this corpus.
+ */
+const ABBREVIATIONS = new Set([
+  // legislative citation forms that survive tokenizing
+  's', 'no', 'art', 'sec', 'pub', 'stat',
+  // titles, EN
+  'sen', 'rep', 'gov', 'dr', 'mr', 'mrs', 'ms', 'st', 'vs', 'etc', 'al', 'inc',
+  // months, EN
+  'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec',
+  // ES
+  'ee', 'uu', 'sr', 'sra', 'srta', 'núm', 'pág', 'ej', 'cf',
+]);
+
+// Backstop only — the two tests above do the real work. Kept just above the
+// length of the longest abbreviation-fragment they could miss, so a genuinely
+// short first sentence ("The House voted to pass it.") is not swallowed.
+const MIN_DEK = 16;
+
+function endsInAbbreviation(prefix: string): boolean {
+  const token = prefix.slice(0, -1).split(/[\s("'“‘¿¡]/).pop() ?? '';
+  if (!token) return false;
+  if (token.includes('.')) return true; // initialism: U.S, H.R, S.J.Res
+  return ABBREVIATIONS.has(token.toLowerCase());
+}
+
 /**
  * A short one-line teaser derived from the moment's full summary — the data
  * model (spec §4.1) has no separate one-liner "dek" field, so the dek is the
@@ -16,8 +56,18 @@ import type { MomentVehicle } from './moments';
  * boundary is found. Pure string logic; adds no new AI surface.
  */
 export function momentDek(summary: string): string {
-  const match = summary.match(/^.*?[.!?](?:\s|$)/);
-  return (match ? match[0] : summary).trim();
+  const text = summary.trim();
+  const boundary = /[.!?](?=\s|$)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = boundary.exec(text)) !== null) {
+    const end = match.index + 1;
+    if (end < MIN_DEK) continue;
+    // ? and ! are unambiguous; only . needs the abbreviation test.
+    if (match[0] === '.' && endsInAbbreviation(text.slice(0, end))) continue;
+    return text.slice(0, end);
+  }
+  return text;
 }
 
 /**

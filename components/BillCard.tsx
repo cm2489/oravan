@@ -83,7 +83,14 @@ export function BillCard({
               // `last_action_date` is a date-only string: render it in UTC or
               // it renders a day early for every viewer west of Greenwich
               // (the same fix components/CoverageSection.tsx already carries).
+              //
+              // The year is NOT optional here. 40% of the corpus last acted in
+              // 2025 or earlier, and this card sits under decks that promise
+              // "right now" — without a year, "Dec 1" reads as an upcoming date
+              // this year rather than an action eight months past. Matches the
+              // homepage's own billDate() helper (app/[locale]/page.tsx).
               date: format.dateTime(new Date(bill.lastActionDate), {
+                year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 timeZone: 'UTC',
