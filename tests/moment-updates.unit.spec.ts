@@ -223,16 +223,53 @@ test.describe('update ids', () => {
     );
   });
 
-  test('identityKey: a roll call keys on chamber + number; voteless keys on code + text', () => {
+  test('identityKey: a roll call keys on chamber + number; voteless keys on the event text alone', () => {
     expect(identityKey(base)).toBe('roll:house:272');
     const senate = {
       record: { action_text: 'Received in the Senate.', action_code: null, action_type: 'IntroReferral' },
     };
-    // Senate actions carry a NULL actionCode — the type is the fallback.
-    expect(identityKey(senate)).toBe('act:introreferral:received in the senate.');
+    // The action CODE left the key 2026-07-25: it is exactly what differs
+    // between the two rows Congress.gov emits for ONE event (the chamber
+    // sends null + a type, the Library of Congress echo sends its own numeric
+    // code), so keying on it stored voteless events twice. Identity is the
+    // event; the day/vehicle/class are already in the id around it.
+    expect(identityKey(senate)).toBe('act:received in the senate.');
     // Long action text is truncated to a bounded key.
     const long = { record: { action_text: 'x'.repeat(400), action_code: 'H1' } };
-    expect(identityKey(long)).toBe(`act:h1:${'x'.repeat(ACTION_TEXT_KEY_CHARS)}`);
+    expect(identityKey(long)).toBe(`act:${'x'.repeat(ACTION_TEXT_KEY_CHARS)}`);
+  });
+
+  test('the LOC echo of a voteless event keys identically to the chamber row', () => {
+    // Real pair from s-2280-119, 2026-04-29 — the case that stored one event
+    // twice and burned two of the day's five render slots.
+    const chamber = {
+      record: {
+        action_text:
+          'Passed Senate without amendment by Unanimous Consent. (consideration: CR S2100; text: CR S2100)',
+        action_code: null,
+        action_type: 'Floor',
+        source_system: 'Senate',
+      },
+    };
+    const echo = {
+      record: {
+        action_text: 'Passed/agreed to in Senate: Passed Senate without amendment by Unanimous Consent.',
+        action_code: '17000',
+        action_type: 'Floor',
+        source_system: 'Library of Congress',
+      },
+    };
+    expect(identityKey(echo)).toBe(identityKey(chamber));
+    // ...and a genuinely different event on the same vehicle still differs.
+    const other = {
+      record: {
+        action_text: 'Senate Committee on Homeland Security and Governmental Affairs discharged by Unanimous Consent.',
+        action_code: null,
+        action_type: 'Discharge',
+        source_system: 'Senate',
+      },
+    };
+    expect(identityKey(other)).not.toBe(identityKey(chamber));
   });
 
   test('a press cluster keys on its sorted outlet set, order-independent', () => {
@@ -640,6 +677,78 @@ test.describe('bilingual parity', () => {
  * ------------------------------------------------------------------ */
 test.describe('pruneEntry', () => {
   const PRUNE_NOW = new Date('2026-07-25T12:00:00Z').getTime();
+
+  // The gap the audit found (2026-07-25): updates prune by AGE, revisions
+  // trim by COUNT, so around day 61 a surviving revision still cited ids that
+  // had just been pruned — and check-moment-updates, a required CI step,
+  // treats an unresolvable citation as a violation. A scheduled CI outage
+  // with no code change to blame. These two compose prune -> gate, which no
+  // prior test did.
+  test('prune preserves referential integrity: revision citations are rewritten to survivors', () => {
+    const old = shiftDay('2026-07-25', -(RETENTION_DAYS + 5));
+    const recent = '2026-07-20';
+    const mk = (day: string) => ({
+      class: 'vote',
+      vehicle: 'v',
+      day,
+      occurred_at: day,
+      occurred_precision: 'day',
+      recorded_at: `${day}T00:00:00Z`,
+      text: { en: 'The Senate rejected the motion, 47-50.', es: 'El Senado rechazó la moción, 47-50.' },
+      source: { kind: 'congress_actions', refs: ['https://www.congress.gov/x'] },
+      record: {
+        action_text: `Action on ${day}`,
+        action_code: null,
+        action_type: 'Floor',
+        source_system: 'Senate',
+      },
+      ai: false,
+    });
+    const dropped = { ...mk(old), id: '' };
+    dropped.id = computeUpdateId('m', dropped);
+    const kept = { ...mk(recent), id: '' };
+    kept.id = computeUpdateId('m', kept);
+
+    const pruned = pruneEntry(
+      {
+        updates: [dropped, kept],
+        summary_revisions: [
+          {
+            id: 's_abcdef12',
+            generated_at: `${old}T01:00:00Z`,
+            as_of_day: old,
+            text: { en: 'x', es: 'x' },
+            grounded_in: { vehicle_statuses: { v: 'committee' }, update_ids: [dropped.id, kept.id], refs: [] },
+            changed_because: ['seed'],
+            model: 'm',
+          },
+        ],
+      },
+      { now: PRUNE_NOW },
+    )!;
+
+    expect(pruned.updates.map((u: { id: string }) => u.id)).toEqual([kept.id]);
+    expect(pruned.summary_revisions[0].grounded_in.update_ids).toEqual([kept.id]);
+  });
+
+  test('a correction never outlives the update it corrects', () => {
+    const old = shiftDay('2026-07-25', -(RETENTION_DAYS + 5));
+    const target = {
+      id: 'u_00000009',
+      class: 'vote',
+      vehicle: 'v',
+      day: old,
+    };
+    const correction = {
+      id: 'u_0000000a',
+      class: 'correction',
+      vehicle: 'v',
+      day: '2026-07-24',
+      corrects: 'u_00000009',
+    };
+    const pruned = pruneEntry({ updates: [target, correction], summary_revisions: [] }, { now: PRUNE_NOW })!;
+    expect(pruned.updates).toEqual([]);
+  });
 
   test('updates older than the retention window are dropped; the boundary day is KEPT', () => {
     const cutoff = shiftDay('2026-07-25', -RETENTION_DAYS);

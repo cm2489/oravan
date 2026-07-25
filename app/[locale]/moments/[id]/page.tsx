@@ -14,7 +14,7 @@ import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { RENDER_DAY_CAP, getCurrentSummary, getRevisions } from '@/lib/moment-updates';
+import { RENDER_DAY_CAP, VERBATIM_MODE, getCurrentSummary, getRevisions } from '@/lib/moment-updates';
 import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
 import { linkHost, momentDek } from '@/lib/moments-ui';
 
@@ -183,7 +183,11 @@ export default async function MomentPage({
           land; what the page owes the law is the labeling and the receipts —
           the AI chip above the passage, the standing disclaimer under it, and
           the dated record of every time the summary was rewritten. */}
-      {summaryRevision && (
+      {/* VERBATIM_MODE hides this entire block: unlike a timeline item, a
+          summary has no government record to fall back to, so the honest
+          off-state is silence (the section is already absent when no revision
+          exists — see lib/moment-updates.ts). */}
+      {summaryRevision && !VERBATIM_MODE && (
         <section aria-labelledby="where-it-stands" className="mt-12 border-t border-line pt-4">
           <h2 id="where-it-stands" className="text-h2 font-extrabold text-ink">
             {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}

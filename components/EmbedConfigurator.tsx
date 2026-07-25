@@ -7,7 +7,7 @@ import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react
 const emptySubscribe = () => () => {};
 import { useLocale, useTranslations } from 'next-intl';
 import { SITE_ORIGIN } from '@/lib/site';
-import { FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
+import { MIN_PAIR_CONTRAST, FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
 import { contrastRatio } from '@/lib/contrast';
 import {
   HostPageMockup,
@@ -56,7 +56,8 @@ const DEFAULT_SURFACE = '#ffffff'; // the light-mode token fallbacks in app/embe
 const DEFAULT_INK = '#16191b';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
-const MIN_PAIR_CONTRAST = 4.5; // WCAG AA — the exact server-side bar (lib/embed-theme)
+// MIN_PAIR_CONTRAST is imported from lib/embed-theme — the server-side bar
+// itself, not a copy of it (the mirror this comment used to promise).
 
 const RADIUS_KEYS: RadiusKey[] = ['sharp', 'soft', 'round'];
 const FONT_KEYS: FontKey[] = ['system', 'serif', 'humanist', 'geometric'];

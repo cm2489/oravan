@@ -215,3 +215,21 @@ export function groupUpdatesByDay(
 
 /** Re-exported so a page never hard-codes a number the gate owns. */
 export { RENDER_DAY_CAP, RETENTION_DAYS, SCHEMA_VERSION };
+
+/**
+ * THE KILL-SWITCH (v2 spec §2.4), read once at module scope: these pages are
+ * statically generated, so this is a property of the BUILD, not of a request.
+ *
+ * It lives HERE, not in a component, because it has to govern every surface
+ * that renders unreviewed AI prose. It originally sat inside MomentTimeline
+ * and therefore covered only the one-liners — leaving the Sonnet "Where it
+ * stands" paragraph, the largest and most voice-y block on the page, with no
+ * off switch at all, which is precisely the thing the armed-from-day-one
+ * decision was leaning on (pre-launch audit, 2026-07-25).
+ *
+ * Timeline items fall back to the government's verbatim record; the summary
+ * has no verbatim equivalent to fall back TO, so it renders nothing — the
+ * section is already absent when no revision exists, so silence is a shape
+ * the page knows how to be.
+ */
+export const VERBATIM_MODE = process.env.MOMENT_UPDATES_VERBATIM === '1';
