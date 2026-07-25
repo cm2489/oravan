@@ -3,7 +3,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import { linkHost, timelineDays } from '@/lib/moments-ui';
-import { getUpdates, type MomentUpdate } from '@/lib/moment-updates';
+import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updates';
 
 /*
  * "What's moved" — the dated timeline of a Moment's recorded activity
@@ -72,7 +72,7 @@ const WINDOW_DAYS = 14;
  * request, and pretending otherwise would imply a per-visitor toggle that
  * does not exist.
  */
-const VERBATIM = process.env.MOMENT_UPDATES_VERBATIM === '1';
+const VERBATIM = VERBATIM_MODE; // re-exported from lib so ONE flag governs every AI surface
 
 /* Content links are green — green means GO, and a link goes somewhere. Same
    token as the Moment page's own links, restated here rather than exported

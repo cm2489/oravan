@@ -13,6 +13,43 @@ import { mockScriptApi, seedZip } from './helpers';
  */
 const slug = Object.keys(coverageData).find((k) => !k.startsWith('_'));
 
+/**
+ * THE ONE-SURFACE INVARIANT, sampled atomically.
+ *
+ * Both facts are read inside a SINGLE page.evaluate, inside expect.poll, so
+ * the CTA's visibility and the button's state can never come from different
+ * moments. The morning's version branched on a getBoundingClientRect taken
+ * right after a scroll — on a cold WebKit page the scroll had not applied
+ * yet, so it picked the wrong branch and then asserted the exact OPPOSITE of
+ * correct behaviour. Playwright reported it flaky rather than wrong, which is
+ * worse: a test that can assert either answer is not pinning anything
+ * (pre-launch audit, 2026-07-25).
+ *
+ * The invariant itself: exactly one call surface is offered. When a CTA is on
+ * screen the floating button stands down; when none is, it stands up. That is
+ * `ctaOnScreen === fabInert`, and it holds at every scroll depth, on every
+ * layout, for whatever bill the corpus serves up.
+ */
+async function oneSurfaceHolds(page: Page) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const cta = document.querySelector('[data-call-cta]');
+          const fab = document.querySelector('[data-floating-call]');
+          if (!cta || !fab) return null;
+          const r = cta.getBoundingClientRect();
+          const onScreen = r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+          const inert =
+            fab.getAttribute('aria-hidden') === 'true' &&
+            getComputedStyle(fab).opacity === '0';
+          return onScreen === inert;
+        }),
+      { message: 'exactly one call surface must be offered at this scroll depth' },
+    )
+    .toBe(true);
+}
+
 test('the floating call button surfaces the action and yields to on-screen CTAs', async ({ page }) => {
   test.skip(!slug, 'no bills in current data');
 
@@ -56,17 +93,7 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
     // exactly one call surface at a time — the button stands down when a CTA
     // is on screen and stands up when none is. Assert THAT, from measured
     // visibility, for whichever bill the corpus serves up.
-    const ctaOnScreen = await cta.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
-    });
-    if (ctaOnScreen) {
-      await expect(fab).toHaveCSS('opacity', '0');
-      await expect(fab).toHaveAttribute('aria-hidden', 'true');
-    } else {
-      await expect(fab).toHaveCSS('opacity', '1');
-      await expect(fab).toHaveAttribute('aria-hidden', 'false');
-    }
+    await oneSurfaceHolds(page);
 
     // Past the foot of the grid the rail is USUALLY gone — but on a short
     // bill (thin decode, thin coverage) the sticky rail can still be
@@ -78,17 +105,7 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
     // assert the complementary pair from measured visibility, whichever side
     // of the boundary this bill and this engine land on.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const ctaAtBottom = await cta.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
-    });
-    if (ctaAtBottom) {
-      await expect(fab).toHaveCSS('opacity', '0');
-      await expect(fab).toHaveAttribute('aria-hidden', 'true');
-    } else {
-      await expect(fab).toHaveCSS('opacity', '1');
-      await expect(fab).toHaveAttribute('aria-hidden', 'false');
-    }
+    await oneSurfaceHolds(page);
     return;
   }
 
@@ -96,15 +113,7 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
   // top — but measure rather than assume, for the same corpus-shape reason
   // as the desk branch: a short bill can put the panel inside the first
   // viewport, and then the button standing DOWN is the correct behavior.
-  const ctaAtTop = await cta.evaluate((el) => {
-    const r = el.getBoundingClientRect();
-    return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
-  });
-  if (ctaAtTop) {
-    await expect(fab).toHaveCSS('opacity', '0');
-  } else {
-    await expect(fab).toHaveCSS('opacity', '1');
-  }
+  await oneSurfaceHolds(page);
 
   // Bring the action panel into view — the floating button fades out (inert).
   await cta.scrollIntoViewIfNeeded();

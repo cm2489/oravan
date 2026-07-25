@@ -286,11 +286,29 @@ export function actionToCandidate({ momentId, vehicle, action, billUrl, recorded
  */
 export function statusDiffToCandidate({ momentId, vehicle, before, after, billUrl, recordedAt }) {
   if (!before || !after) return null;
+  // A CHANGE IS NOT AN EVENT. Firing on any last_action_text edit emitted
+  // `status_change` rows carrying exactly the procedural bookkeeping
+  // MILESTONE_PATTERNS exists to suppress — including rows where
+  // status_from === status_to, a "status change" that changed no status.
+  // Measured: 1,705 of 2,401 corpus bills carry a last_action_text that
+  // milestoneOf() rejects, e.g. hconres-38-119's "Motion to reconsider laid
+  // on the table Agreed to without objection." (pre-launch audit,
+  // 2026-07-25). Two ways to earn a row: the status actually moved, or the
+  // new action is a milestone in its own right — the same bar
+  // actionToCandidate already applies via classifyAction.
+  // Two gates, both required. First: something must have moved AT ALL — a
+  // re-fetch that returns byte-identical data is not an event, whatever the
+  // action text says.
   const changed =
     before.status !== after.status ||
     before.last_action_date !== after.last_action_date ||
     normalizeText(before.last_action_text) !== normalizeText(after.last_action_text);
   if (!changed) return null;
+
+  // Second: what moved must be worth a row.
+  const statusMoved = before.status !== after.status;
+  const isMilestone = Boolean(milestoneOf({ text: after.last_action_text }));
+  if (!statusMoved && !isMilestone) return null;
 
   const day = String(after.last_action_date ?? '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;

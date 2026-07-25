@@ -172,6 +172,15 @@ export interface ResolvedEmbedTheme {
 }
 
 /**
+ * WCAG AA for normal text — the ONE bar for every theming decision the widget
+ * makes: the tenant's ink/surface pair, and (since 2026-07-25) the derived
+ * text color on an accent fill. Exported so components/EmbedConfigurator.tsx
+ * imports it instead of keeping a second copy: that mirror is documented, and
+ * a documented mirror is still a mirror.
+ */
+export const MIN_PAIR_CONTRAST = 4.5;
+
+/**
  * Validate + resolve every theming searchParam into the closed shape above.
  *
  * Contrast policy at THIS boundary is reject, never repair (the header's
@@ -198,7 +207,7 @@ export function resolveEmbedTheme(raw: {
 
   let surface = safeSurface(raw.surface);
   let ink = safeInk(raw.ink);
-  if (!surface || !ink || contrastRatio(ink, surface) < 4.5) {
+  if (!surface || !ink || contrastRatio(ink, surface) < MIN_PAIR_CONTRAST) {
     surface = undefined;
     ink = undefined;
   }
@@ -225,7 +234,25 @@ export function resolveEmbedTheme(raw: {
   // OWN light/dark color when a pair is set — not Oravan's paper/ink — so a
   // themed widget's button text is the buyer's white, not ours. With no pair,
   // pickTextColor's defaults are the variant-B paper/ink pair.
-  const accentInk = accent ? pickTextColor(accent, surface, ink) : undefined;
+  //
+  // ...but WITH an AA FLOOR. Picking the better of the tenant's own two
+  // colors says nothing about whether the better one is legible: the
+  // ink/surface pair is validated at 4.5:1 above, while the accent is only
+  // validated as well-formed hex, so an ordinary tenant palette (a mid-tone
+  // accent whose brand ink and surface both sit near it) shipped sub-AA text
+  // inside the widget on the buyer's own site (pre-launch audit, 2026-07-25).
+  //
+  // If the tenant's own choice does not clear 4.5, fall back to whichever of
+  // paper/ink does — lib/contrast.ts proves one of them always clears >= 4.58
+  // against any surface, so this always converges. The buyer's palette is
+  // honored whenever it is legible, and never at the cost of legibility.
+  const accentInk = accent
+    ? (() => {
+        const tenantChoice = pickTextColor(accent, surface, ink);
+        if (contrastRatio(accent, tenantChoice) >= MIN_PAIR_CONTRAST) return tenantChoice;
+        return pickTextColor(accent);
+      })()
+    : undefined;
   const focus =
     accent && surface ? (contrastRatio(accent, surface) >= 3 ? accent : ink) : undefined;
 
