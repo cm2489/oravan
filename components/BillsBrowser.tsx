@@ -17,6 +17,31 @@ const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
    stays one "Show all" away. Derived from BAND_SIZES so the two can't drift. */
 const BAND_CAP = BAND_SIZES.now;
 
+/* THE PAGE'S SPINE. Two rule weights, and the difference between them is the
+   band hierarchy made visible before it is read: the lead band is opened by
+   the full 3px ink rule the reference spends on a section that asks for
+   something, the other two by a decorative hairline. `line` is legal here and
+   only here — as a SEPARATOR (1.37:1). It is never a component edge. */
+const BAND_RULE: Record<UrgencyBand, string> = {
+  now: 'border-t-[3px] border-ink',
+  moving: 'border-t border-line',
+  radar: 'border-t border-line',
+};
+
+/* One ghost-button idiom, used by both of this surface's secondary controls.
+   Ink, never green: green means GO and is spent on the call itself. */
+const GHOST_BTN =
+  'inline-flex min-h-12 items-center justify-center rounded-control border-2 border-ink bg-paper px-5 text-sm font-bold text-ink transition-colors hover:bg-ink hover:text-paper';
+
+/* Topic filters are TAGS, and a tag is ink in every state — rest, hover,
+   pressed. Never green (pressing a filter goes nowhere) and never `tint`
+   (the color law names topic tags as the one thing `tint` may never be, even
+   though a pressed filter is genuinely "yours"). Small mark => 3px. */
+const FILTER_CHIP =
+  'inline-flex min-h-11 shrink-0 items-center rounded-stamp border px-4 text-sm font-semibold transition-colors';
+const FILTER_ON = 'border-ink bg-ink text-paper';
+const FILTER_OFF = 'border-line-strong bg-paper text-ink-2 hover:border-ink hover:bg-wash hover:text-ink';
+
 export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshness: FreshnessSignals }) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
@@ -84,12 +109,15 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
 
   return (
     <div>
-      <div className="mt-6">
+      <div className="mt-8">
         <label htmlFor="bill-search" className="sr-only">
           {t('bills.searchLabel')}
         </label>
         <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-faint" aria-hidden />
+          <Search
+            className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-ink-2"
+            aria-hidden
+          />
           <input
             ref={searchRef}
             id="bill-search"
@@ -97,21 +125,23 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-control border-2 border-ink/15 bg-surface py-3 pl-12 pr-12 focus:border-ink"
+            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label={t('bills.clearSearch')}
-              className="absolute right-1.5 top-1/2 inline-flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-control text-ink-faint hover:text-ink"
+              className="absolute top-1/2 right-1 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-control text-ink-2 transition-colors hover:text-ink"
             >
               <X className="h-4 w-4" aria-hidden />
             </button>
           ) : (
+            // decorative, aria-hidden: `line` is a separator tone and is legal
+            // on a mark that carries no meaning of its own
             <kbd
               aria-hidden
-              className="absolute right-4 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-paper px-1.5 py-0.5 font-mono text-xs text-ink-faint md:block"
+              className="absolute top-1/2 right-4 hidden -translate-y-1/2 rounded-stamp border border-line bg-wash px-1.5 py-0.5 text-2xs text-ink-2 md:block"
             >
               /
             </kbd>
@@ -121,7 +151,7 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
 
       {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}
       <div
-        className="mt-4 flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible"
+        className="mt-4 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
         role="group"
         aria-label={t('bills.all')}
       >
@@ -129,11 +159,7 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
           type="button"
           onClick={() => setPrefs({ interests: [] })}
           aria-pressed={active.length === 0}
-          className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-medium border ${
-            active.length === 0
-              ? 'bg-ink text-paper border-ink'
-              : 'bg-surface border-line text-ink-soft hover:border-ink/40'
-          }`}
+          className={`${FILTER_CHIP} ${active.length === 0 ? FILTER_ON : FILTER_OFF}`}
         >
           {t('bills.all')}
         </button>
@@ -143,26 +169,22 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
             type="button"
             onClick={() => toggle(cat)}
             aria-pressed={active.includes(cat)}
-            className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-medium border ${
-              active.includes(cat)
-                ? 'bg-ink text-paper border-ink'
-                : 'bg-surface border-line text-ink-soft hover:border-ink/40'
-            }`}
+            className={`${FILTER_CHIP} ${active.includes(cat) ? FILTER_ON : FILTER_OFF}`}
           >
             {t(`categories.${cat}`)}
           </button>
         ))}
       </div>
 
-      <p className="mt-2 text-xs text-ink-faint">{t('bills.interestsNote')}</p>
+      <p className="mt-3 text-xs text-ink-2">{t('bills.interestsNote')}</p>
 
-      <p className="mt-4 text-sm text-ink-faint" aria-live="polite">
+      <p className="mt-4 text-sm text-ink-2" aria-live="polite">
         {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
       </p>
 
       {filtered.length === 0 && (
         <div className="mt-8">
-          <p className="text-ink-soft">{t('bills.noResults')}</p>
+          <p className="max-w-read text-ink-2">{t('bills.noResults')}</p>
           {(query.trim() !== '' || active.length > 0) && (
             <button
               type="button"
@@ -170,7 +192,7 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
                 setQuery('');
                 setPrefs({ interests: [] });
               }}
-              className="mt-4 inline-flex min-h-[44px] items-center rounded-control border-2 border-ink/15 bg-surface px-4 font-semibold hover:border-ink/40"
+              className={`mt-4 ${GHOST_BTN}`}
             >
               {t('bills.clearFilters')}
             </button>
@@ -190,12 +212,12 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
           const unfiltered = query.trim() === '' && active.length === 0 && bills.length > 0;
           if (band !== 'now' || !unfiltered) return null;
           return (
-            <section key={band} className="mt-10" aria-labelledby={`band-${band}`}>
-              <h2 id={`band-${band}`} className="font-display text-2xl font-bold">
+            <section key={band} className={`mt-12 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
+              <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
                 {t(`bills.band.${band}`)}
               </h2>
-              <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
-              <div className="mt-4">
+              <p className="mt-2 max-w-read text-sm text-ink-2">{t(`bills.bandSub.${band}`)}</p>
+              <div className="mt-6">
                 <UrgencyEmptyState {...freshness} />
               </div>
             </section>
@@ -204,15 +226,15 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
         const isOpen = !!expanded[band];
         const visible = isOpen ? all : all.slice(0, BAND_CAP);
         return (
-          <section key={band} className="mt-10" aria-labelledby={`band-${band}`}>
-            <h2 id={`band-${band}`} className="font-display text-2xl font-bold">
+          <section key={band} className={`mt-12 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
+            <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
               {t(`bills.band.${band}`)}
             </h2>
-            <p className="mt-0.5 text-sm text-ink-soft">{t(`bills.bandSub.${band}`)}</p>
+            <p className="mt-2 max-w-read text-sm text-ink-2">{t(`bills.bandSub.${band}`)}</p>
             {/* Only "Calling now" cards carry the 2px ink border (the
                 ActionPanel's own treatment) — the urgency hierarchy the bands
                 exist for, visible before it's read (2026-07 critique round 2). */}
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {visible.map((b) => (
                 <BillCard key={b.slug} bill={b} emphasis={band === 'now'} />
               ))}
@@ -221,7 +243,7 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
               <button
                 type="button"
                 onClick={() => setExpanded((e) => ({ ...e, [band]: true }))}
-                className="mt-4 w-full rounded-control border-2 border-ink/15 bg-surface px-4 py-3 font-semibold hover:border-ink/40"
+                className={`mt-6 ${GHOST_BTN}`}
               >
                 {t('bills.showAll', { count: all.length })}
               </button>

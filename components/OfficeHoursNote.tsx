@@ -1,7 +1,6 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Clock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { officeHoursStatus } from '@/lib/office-hours';
 
@@ -25,6 +24,13 @@ const useHydrated = () =>
  * gentlest first call"), never as an apology - offices tally a voicemail
  * exactly like a live call (docs/ideation/2026-07-05-build-gtm-strategy.md
  * §5). No fake per-office data: this is a generic, honest guide only.
+ *
+ * COLOR: this note used to sit on a warm amber-ish ground. Amber is now spent
+ * on exactly one fact - a bill standing on the floor calendar, with the date
+ * printed beside it - and "offices are usually open 9 to 5 Eastern" is not
+ * that fact. So it is a recessed `wash` note in ink: the same quiet register
+ * the system gives every other aside. Its `role="status"` is what makes the
+ * open/closed flip reach a screen reader, not its fill.
  */
 export function OfficeHoursNote() {
   const t = useTranslations('bill');
@@ -35,16 +41,13 @@ export function OfficeHoursNote() {
   return (
     <div
       role="status"
-      className="flex gap-2 rounded-control bg-brass-soft p-4 text-sm"
+      className="rounded-control bg-wash p-4 text-sm"
       data-office-hours={status}
     >
-      <Clock className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-      <div>
-        <p className="font-semibold">{t('officeHoursTitle')}</p>
-        <p className="mt-0.5 text-ink-soft">
-          {status === 'open' ? t('officeHoursOpenBody') : t('officeHoursClosedBody')}
-        </p>
-      </div>
+      <p className="font-bold text-ink">{t('officeHoursTitle')}</p>
+      <p className="mt-0.5 text-ink-2">
+        {status === 'open' ? t('officeHoursOpenBody') : t('officeHoursClosedBody')}
+      </p>
     </div>
   );
 }

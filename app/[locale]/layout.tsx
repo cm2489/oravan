@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Fraunces, Source_Sans_3 } from 'next/font/google';
+import { Besley, Libre_Franklin } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -9,8 +9,35 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import '../globals.css';
 
-const display = Fraunces({ subsets: ['latin'], variable: '--font-display' });
-const body = Source_Sans_3({ subsets: ['latin'], variable: '--font-body' });
+/**
+ * Two voices, both self-hosted at build by next/font (never a third-party
+ * font link — see CLAUDE.md).
+ *
+ * Libre Franklin is Oravan's OWN voice: every heading, label, control and line
+ * of UI, in both languages. It is `--font-sans`, so it is the default.
+ *
+ * Besley is the READING voice, and it is spent on exactly two things: a bill's
+ * AI-decoded prose and the words a caller says aloud — English and Spanish
+ * alike. It is exposed as `--font-reading` and is deliberately NOT mapped to a
+ * display token. There is no `font-display` in this system; headings are
+ * Franklin. Reach for `font-reading` only on decoded prose or a spoken script.
+ *
+ * Both are variable fonts (one wght axis), so no `weight` array is passed and
+ * the whole 400-900 range ships in one file. `latin` covers every Spanish
+ * glyph the product sets (a-acute through n-tilde, inverted marks).
+ * Italics are NOT loaded: nothing in the system sets italic type, and adding
+ * the italic face would double the reading voice's payload.
+ */
+const franklin = Libre_Franklin({
+  subsets: ['latin'],
+  variable: '--font-franklin',
+  display: 'swap',
+});
+const besley = Besley({
+  subsets: ['latin'],
+  variable: '--font-besley',
+  display: 'swap',
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -56,7 +83,7 @@ export default async function LocaleLayout({
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return (
-    <html lang={locale} className={`${display.variable} ${body.variable}`}>
+    <html lang={locale} className={`${franklin.variable} ${besley.variable}`}>
       <body className="min-h-dvh flex flex-col">
         {/* For the curious who open devtools: the no-trackers claim, verifiable */}
         <script

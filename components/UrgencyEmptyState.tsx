@@ -48,19 +48,19 @@ export function UrgencyEmptyState({ checkedAt, completeThrough, newestAction }: 
   if (!hydrated) {
     // Pre-hydration / no-JS: state the plain fact, judge nothing.
     return (
-      <div role="status" className="rounded-card border border-line bg-paper-deep p-6">
-        <p className="max-w-prose text-sm text-ink-soft">{t('dataAsOf', { date })}</p>
+      <div role="status" className="rounded-control bg-wash p-6">
+        <p className="max-w-read text-sm text-ink-2">{t('dataAsOf', { date })}</p>
       </div>
     );
   }
 
   const staleVerdict = emptyStateVerdict({ checkedAt, completeThrough, newestAction }) === 'data_stale';
   return (
-    <div role="status" className="rounded-card border border-line bg-paper-deep p-6">
-      <p className="font-display text-lg font-semibold text-ink">
+    <div role="status" className="rounded-control bg-wash p-6">
+      <p className="text-lg font-bold text-ink">
         {staleVerdict ? t('dataStaleTitle') : t('quietWeekTitle')}
       </p>
-      <p className="mt-1 max-w-prose text-sm text-ink-soft">
+      <p className="mt-1 max-w-read text-sm text-ink-2">
         {staleVerdict ? t('dataStaleBody', { date }) : t('quietWeekBody')}
       </p>
     </div>

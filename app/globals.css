@@ -1,43 +1,337 @@
 @import "tailwindcss";
 
-/*
- * Oravan design tokens ("Field Notebook").
- * Metaphor: a well-thumbed civic almanac - aged cream page stock, iron-gall
- * ink, and one tarnished-brass instrument accent. High contrast by default
- * (WCAG AA+): ink/paper 13.2:1, brass small-text on surface 5.3:1, CTA text
- * on brass 5.3:1, brass-bright on night 9.2:1, brass focus ring on paper 4.7:1.
- */
-@theme {
-  --color-paper: #F3ECDD;
-  --color-paper-deep: #E4D9C0;
-  --color-surface: #FBF8F0; /* card surface: brighter page stock that lifts off paper without going clinical #fff */
-  --color-ink: #2A2318;
-  --color-ink-soft: #51473A;
-  --color-ink-faint: #6B6152; /* AA on both paper (5.2:1) and surface (5.7:1) */
-  --color-night: #1B1611;
-  --color-brass: #82632A;
-  --color-brass-bright: #D9B65C; /* brass in raking light: accent text on dark grounds */
-  --color-brass-deep: #6B5223; /* pressed/hover state for brass-filled controls */
-  --color-brass-soft: #F1E7C9;
-  --color-line: #DDD2BB;
-  --color-moss: #3E6B4C;
-  --color-moss-soft: #E1EBDD;
-  --color-clay: #8C4C2A;
-  --color-clay-soft: #F1E1D3;
+/* ============================================================================
+   Oravan design tokens — variant B.
 
-  --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+   This file is the whole foundation: colors, the type ladder, leading, shape,
+   measure, focus. Components hold no raw hex, no raw px radius, no font stack.
 
-  --radius-card: 1rem;
-  --radius-control: 0.5rem;
+   ---------------------------------------------------------------------------
+   THE TWO LAWS (settled by the owner — do not re-derive, do not soften)
+   ---------------------------------------------------------------------------
 
-  --shadow-lift: 0 1px 2px rgb(27 22 17 / 0.06), 0 8px 24px -12px rgb(27 22 17 / 0.18);
+   COLOR LAW
+     `go` (#0f6c4a) means GO. It is spent on actions and on the 6px gauge, and
+     on nothing else. Not a heading, not a rule, not a hover tint on a topic.
+     `tint` (#e7f2ec) means YOURS — what the user picked, typed, or was handed.
+     Never a topic tag, never a status, never decoration.
+     `urgent` (#ffc845, amber) is spent on exactly ONE fact: a bill standing on
+     the floor calendar. Always with ink text. The date is always printed
+     beside it. No date, no amber.
+     `alert` means failure, and only failure.
+     `ink` carries everything else — including every topic tag in every state.
+
+   SHAPE LAW — radius is assigned by SCALE, not by interactivity.
+     Small marks — chips, tags, the 6px gauge, the dated stamp, the language
+     switch, topic pills, portraits — are stamped at 3px (`rounded-stamp`).
+     Anything at panel, card, or button scale is 8px (`rounded-control`).
+     A chip and a card do not share a corner, because they are not the same
+     size of thing. The inverted phrasing — "panels 3px / controls 8px" — is
+     WRONG and must never be reintroduced.
+     `rounded-hair` (2px) is the focus indicator's own rounding and the stamp's
+     inner hairline. It is not a component radius. Never put it on a box.
+
+   ---------------------------------------------------------------------------
+   CONTRAST LEDGER — every ratio computed with lib/contrast.ts's WCAG 2.x math
+   against the rendered hex, not eyeballed and not inherited from a mockup
+   comment. Recompute this block if any value below changes.
+   ---------------------------------------------------------------------------
+
+   TEXT PAIRS (AA needs 4.5:1 normal, 3:1 at >=24px or >=18.66px bold)
+     ink        on paper ......... 17.66  AAA
+     ink        on wash .......... 16.23  AAA
+     ink        on tint .......... 15.40  AAA
+     ink        on urgent ........ 11.44  AAA   <- the only legal text on amber
+     ink-2      on paper .......... 7.87  AAA
+     ink-2      on wash ........... 7.23  AAA
+     ink-2      on tint ........... 6.86  AAA
+     go         on paper .......... 6.43  AAA
+     go         on wash ........... 5.91  AA
+     go         on tint ........... 5.61  AA
+     go-deep    on paper .......... 9.75  AAA
+     go-deep    on wash ........... 8.96  AAA
+     go-deep    on tint ........... 8.50  AAA
+     paper      on go ............. 6.43  AAA   <- filled action button
+     paper      on go-deep ........ 9.75  AAA   <- pressed action button
+     paper      on ink ........... 17.66  AAA   <- every ink enamel ground
+     paper      on alert .......... 7.66  AAA   <- filled failure state
+     alert      on paper .......... 7.66  AAA
+     alert      on wash ........... 7.04  AAA
+     go-bright  on ink ............ 9.48  AAA   <- link on an ink ground
+     go-pale    on go-deep ........ 6.86  AAA   <- secondary on the green panel
+     ink-pale   on ink ........... 10.82  AAA   <- secondary on an ink ground
+
+   NON-TEXT / BOUNDARY PAIRS (1.4.11 needs 3:1)
+     line-strong on paper ......... 3.24  PASS  <- every component edge
+     line-strong on wash .......... 2.97  FAIL by 0.03 — see the note below
+     go (gauge segment) on paper .. 6.43  PASS
+     go (gauge segment) on line ... 4.70  PASS  <- segment against its track
+     go-bright on go-deep ......... 5.23  PASS
+     line       on paper .......... 1.37  DECORATIVE ONLY. `line` may separate;
+                                          it may never be a component edge, and
+                                          it may never be the only thing making
+                                          a control findable.
+     urgent     on paper .......... 1.54  fill, not a boundary — the amber chip
+                                          is found by its ink text (11.44), so
+                                          1.4.11 does not apply to the fill.
+     tint       on paper .......... 1.15  same: `tint` is always carrying ink
+                                          text, and any tinted CONTROL also
+                                          takes a line-strong or ink edge.
+
+   THE line-strong / wash NOTE (read before edging anything on a wash ground):
+     line-strong clears 3:1 against paper (3.24) but lands at 2.97 against
+     wash — 1% short. In the reference the only place a line-strong edge meets
+     a wash fill is a DISABLED control, and 1.4.11 exempts inactive components.
+     So the rule is: an enabled component's line-strong edge must have `paper`
+     on at least one side. A component whose own ground is `wash` takes an
+     `ink-2` edge (7.23) instead. Do not "fix" this by lightening wash or by
+     using `line` as an edge.
+
+   FOCUS IS TWO-TONE BY CONSTRUCTION, and that is why it passes:
+     A 3px ink ring alone on a go-filled button would be 2.75:1 — a fail. The
+     ring is therefore never adjacent to the fill. A filled control swaps its
+     own 2px border to the gap tone on focus (`.ring-gap`), so the stack reads
+     outward: go fill | paper border 6.43 | paper gap | ink ring 17.66 | paper
+     page 17.66. Every adjacency clears 3:1.
+     On the green enamel panel (`.on-go`) it inverts: white fill | go-deep
+     border 9.75 | go-deep gap | white ring 9.75 | go-deep panel 9.75.
+     On an ink ground (`.on-dark`): white ring 17.66 against the ink ground.
+
+   KNOWN COLOR-VISION HAZARD, and its mitigation:
+     `go` and `alert` sit 1.19:1 apart in luminance. To a deuteranope they are
+     near-identical. `alert` is therefore NEVER the sole carrier of meaning: a
+     failure always also carries a 3px rule, a bold text label, and the right
+     ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never
+     the first. Same reasoning keeps `urgent` legible — it is found by its ink
+     text and its printed date, not by being yellow.
+   ========================================================================= */
+
+/* `static` — every token is emitted to :root whether or not a utility happens
+   to reference it. Without it Tailwind tree-shakes unused theme variables, and
+   a component reaching for `var(--color-alert)` in raw CSS or an inline style
+   would silently resolve to nothing. A foundation other people build on has to
+   be present unconditionally. */
+@theme static {
+  /* ---------------------------------------------------------------- COLOR
+     The default Tailwind palette is cleared on purpose. There is no
+     bg-white, no text-gray-600, and — the point — no indigo and no purple
+     reachable by accident. Fifteen colors, all of them law-bearing. */
+  --color-*: initial;
+
+  --color-paper: #ffffff;        /* the page, and text on any dark ground */
+  --color-wash: #f3f6f4;         /* recessed ground: notes, disabled, inset */
+  --color-ink: #16191b;          /* primary text, and every component edge */
+  --color-ink-2: #4a544e;        /* secondary text on paper or wash */
+  --color-ink-pale: #c3cdc6;     /* secondary text on an ink ground */
+  --color-ink-deep: #16191b;     /* ROLE TOKEN: dark enamel GROUND only.
+                                    Deliberately the same value as --color-ink:
+                                    variant B has exactly one dark, and the ink
+                                    you read is the ink you stand on. The two
+                                    names exist so the role is legible at the
+                                    call site — `text-ink` / `border-ink` for
+                                    marks, `bg-ink-deep` for a ground. Never
+                                    give these two different values. */
+  --color-line: #d7ded9;         /* DECORATIVE separators only (1.37:1) */
+  --color-line-strong: #7e948a;  /* every component edge (3.24:1 on paper) */
+  --color-go: #0f6c4a;           /* GO: actions and the gauge. Nothing else. */
+  --color-go-deep: #0a4e35;      /* pressed/hover go; the enamel panel ground */
+  --color-go-bright: #5fd39a;    /* go, on an ink ground */
+  --color-go-pale: #c9ddd4;      /* secondary text on the green enamel panel */
+  --color-tint: #e7f2ec;         /* YOURS: what the user chose or wrote */
+  --color-urgent: #ffc845;       /* one dated floor-calendar fact, ink text */
+  --color-alert: #8c3a1f;        /* failure, and only failure */
+  /* WHY THIS HEX, AND WHY IT WAS NOT CHANGED (decided 2026-07-24, measured).
+     `alert` is confusable with `go` for a deuteranope — they are 1.19:1 apart
+     in luminance. That is real, and it has no colour-space fix: every darker
+     candidate that separates from `go` collapses into `ink` instead
+     (#6b1d10 = 1.81 vs go but 1.52 vs ink), and every lighter one that
+     separates from `ink` moves into `go` (#b23a1a = 2.95 vs ink, 1.08 vs go).
+     There is no hex that clears both, so the search was abandoned rather than
+     churned. #8c3a1f keeps the best contrast on both grounds (7.66 on paper,
+     7.04 on wash) and mid-range separation from each.
+     Of the two confusions, alert-vs-ink is the costlier one — an error you do
+     not register AS an error — and this value is the stronger of the two there.
+     THE MITIGATION IS THE ACTUAL ANSWER, and it is mandatory: alert is never
+     the sole carrier of failure. It always rides with a 3px rule, a bold
+     label, and `aria-invalid` / `role="alert"`. That is what WCAG 1.4.1
+     requires; the hue is the third signal, never the first.
+     Do not "fix" this by picking a truer red — that reintroduces a flag hue
+     the nonpartisan rule pushed this palette away from in the first place. */
+
+  /* ----------------------------------------------------------------- TYPE
+     Libre Franklin is Oravan's own voice: every heading, label, control and
+     line of UI, in both languages.
+     Besley is the READING voice, and it is spent on exactly two things — a
+     bill's AI-decoded prose and the words a caller says aloud — in both
+     languages. It is deliberately NOT mapped to a display token. There is no
+     `font-display` in this system; headings are Franklin. */
+  --font-sans: var(--font-franklin), -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-reading: var(--font-besley), Georgia, "Times New Roman", serif;
+
+  /* THE LADDER: 12 · 13 · 14 · 16 · 18 · 21, then five display steps.
+     Nothing is authored off it. Each rung carries its own leading, and the
+     display steps carry their own tracking, because that IS the ladder.
+     A serif reads a size small, so the reading voice is set one rung up
+     (`font-reading text-lg`) — that is the only size adjustment it gets. */
+  --text-2xs: 0.75rem;      --text-2xs--line-height: var(--leading-body);
+  --text-xs: 0.8125rem;     --text-xs--line-height: var(--leading-body);
+  --text-sm: 0.875rem;      --text-sm--line-height: var(--leading-body);
+  --text-md: 1rem;          --text-md--line-height: var(--leading-body);
+  --text-lg: 1.125rem;      --text-lg--line-height: var(--leading-body);
+  --text-xl: 1.3125rem;     --text-xl--line-height: var(--leading-tight);
+
+  /* the lede STEPS 18 -> 21 at 62rem (see the media query below); it never
+     interpolates, so it can never render at 20.16px beside a 21px sibling */
+  --text-lede: 1.125rem;    --text-lede--line-height: var(--leading-body);
+
+  --text-h3: clamp(1.3125rem, 2.4vw, 1.625rem);   /* 21 -> 26 */
+  --text-h3--line-height: 1.25;
+  --text-h2: clamp(1.5rem, 3.5vw, 2.125rem);      /* 24 -> 34 */
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2-loud: clamp(1.625rem, 4vw, 2.5rem);   /* 26 -> 40 */
+  --text-h2-loud--line-height: 1.1;
+  --text-h2-loud--letter-spacing: -0.01em;
+  --text-h1-bill: clamp(2rem, 5.5vw, 3.5rem);     /* 32 -> 56 */
+  --text-h1-bill--line-height: 1.06;
+  --text-h1-bill--letter-spacing: -0.02em;
+  --text-h1: clamp(2.5rem, 7vw, 4.25rem);         /* 40 -> 68 */
+  --text-h1--line-height: 1.04;
+  --text-h1--letter-spacing: -0.02em;
+
+  /* LEADING: three named ratios and no others. The namespace is cleared so
+     `leading-relaxed` (1.625) and `leading-normal` (1.5) cannot come back.
+     A size renders at one ratio unless a stated reason changes it, and there
+     is exactly one stated reason: copy on an ink or green ground takes
+     --leading-dark plus --tracking-dark, because light type on a dark ground
+     needs the air. */
+  --leading-*: initial;
+  --leading-tight: 1.35;    /* headings at or below 21px, and dense marks */
+  --leading-body: 1.6;      /* every run of body copy on paper */
+  --leading-dark: 1.7;      /* the same copy on an ink or green ground */
+
+  --tracking-dark: 0.01em;  /* pairs with --leading-dark, same reason */
+
+  /* ---------------------------------------------------------------- SHAPE
+     Two radii, assigned by scale, plus the focus indicator's own hairline.
+     The namespace is cleared so rounded-sm/md/lg/xl cannot be reached. */
+  --radius-*: initial;
+  --radius-stamp: 3px;      /* chips · tags · gauge · stamp · lang · pills */
+  --radius-control: 8px;    /* panels · cards · buttons · inputs */
+  --radius-hair: 2px;       /* the focus ring, and hairline inner rules ONLY */
+
+  /* -------------------------------------------------------------- MEASURE
+     Set in rem, not ch, so the same token means the same column on every
+     screen. 33rem holds ~71 characters at 16px; 27rem holds ~66 at 14px.
+     Registered in the container namespace so `max-w-read` / `max-w-note`
+     exist as utilities; mirrored onto --measure-* below for raw var() use. */
+  --container-read: 33rem;
+  --container-note: 27rem;
+
+  /* ------------------------------------------------------------ ELEVATION
+     There is none. Depth is carried by rules, edges and grounds — never by a
+     shadow. The namespace is cleared so shadow-sm/md/lg render nothing. */
+  --shadow-*: initial;
+}
+
+/* --text-lede steps rather than slides. Unlayered, so it beats the value
+   Tailwind emits into `@layer theme`. */
+@media (min-width: 62rem) {
+  :root {
+    --text-lede: 1.3125rem;
+  }
+}
+
+:root {
+  /* one source of truth: these mirror the container tokens above */
+  --measure-read: var(--container-read);
+  --measure-note: var(--container-note);
+
+  /* FOCUS is two-tone: a 3px rule plus a gap of the opposite tone. It is
+     never drawn in the action green, because the action green is what
+     buttons are filled with, and a green ring on a green button is 1.00:1. */
+  --focus: var(--color-ink);
+  --focus-gap: var(--color-paper);
+
+  /* SPACE. Tailwind's default 0.25rem step already IS this scale, so there is
+     nothing to declare — but only these steps are legal:
+       0.5=2 · 1=4 · 2=8 · 3=12 · 4=16 · 5=20 · 6=24 · 8=32 · 12=48 · 16=64 · 24=96
+     p-7 / p-9 / p-10 / p-11 (28/36/40/44) are OFF the scale. Every fluid
+     clamp must land on a step at BOTH bounds. */
 }
 
 html {
+  -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* headings never leave a one-word last line; body copy never leaves a runt */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p,
+li,
+figcaption {
+  text-wrap: pretty;
+}
+
+/* Link COLOR is not set here on purpose — the shell's nav, the footer and the
+   green panel all carry links that must inherit their ground's tone. Content
+   links take `text-go hover:text-go-deep`; visited is spent on bills and
+   articles only (`visited:text-go-deep` — an ink-weight shift, not a second
+   hue, so it stays inside the color law) and never on navigation. */
+a {
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-tint);
+  color: var(--color-ink);
+}
+
+/* Visible focus everywhere, never removed. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-hair);
+}
+
+/* Ground contexts. Put `on-dark` on any ink enamel ground (footer, voicemail,
+   transcript title bar) and `on-go` on the green enamel panel. They only
+   retune the focus indicator; text colors stay explicit at the call site. */
+.on-dark {
+  --focus: var(--color-paper);
+  --focus-gap: var(--color-ink);
+}
+.on-go {
+  --focus: var(--color-paper);
+  --focus-gap: var(--color-go-deep);
+}
+
+/* A filled control swaps its own border to the gap tone on focus, so the ring
+   is never adjacent to the fill. Opt in on any solid button: `class="ring-gap"`. */
+.ring-gap:focus-visible {
+  border-color: var(--focus-gap);
+  outline-offset: 1px;
+}
+
+/* prefers-reduced-motion kills transitions and animations globally.
+   TRANSFORMS SURVIVE ON PURPOSE: the stamp's tilt is static geometry, not
+   motion, so it must still be there when motion is off. Never express the
+   stamp — or any other permanent shape — as an animation. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -51,44 +345,38 @@ html {
   }
 }
 
-body {
-  background: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background: var(--color-brass-soft);
-}
-
-/* Visible focus everywhere, never removed */
-:focus-visible {
-  outline: 3px solid var(--color-brass);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* Delight moments - all killed by the prefers-reduced-motion block above */
+/* Delight moments — all killed by the block above. */
 @keyframes pop {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.07); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .pop {
   animation: pop 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @keyframes shimmer-slide {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(300%); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
 }
 .shimmer {
   animation: shimmer-slide 1.4s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
 
 @keyframes draw-stroke {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .draw-check circle {
   stroke-dasharray: 60;

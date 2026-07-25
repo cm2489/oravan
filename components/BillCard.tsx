@@ -1,7 +1,30 @@
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { Chip } from '@/components/system';
 import type { BillTeaser } from '@/lib/types';
 
+/*
+ * The bill teaser card — the browse surface's unit, also reused by the
+ * homepage, /reps and the news lens. Variant B:
+ *
+ * SHAPE LAW. The card is hand-sized, so it is `rounded-control` (8px); the
+ * topic marks inside it are small marks, so they are the system `Chip`'s 3px.
+ * A chip and a card do not share a corner.
+ *
+ * COLOR LAW. Nothing here is green and nothing here is amber. Green means GO
+ * and is spent on actions; a listing is not an action, it is a listing. Amber
+ * means one dated floor-calendar fact — and on this surface it would be
+ * wallpaper, not a signal: the live corpus ranks `floor_vote` bills to the
+ * top, so every one of the six cards in the "Calling now" band currently
+ * carries that status (the whole top-20 by urgency does). Marking all six
+ * amber makes amber mean "a card"; marking one implies the other five are not
+ * on the calendar, which is false. So the fact is carried in ink by the status
+ * label, exactly as the reference does for an un-featured listing, and amber
+ * is left to the surfaces where it actually discriminates.
+ *
+ * `emphasis` keeps its original job (the "Calling now" band's cards) and its
+ * original mechanism — a 2px ink edge, never a new color.
+ */
 export function BillCard({
   bill,
   coverageCount,
@@ -21,8 +44,8 @@ export function BillCard({
   return (
     <Link
       href={`/bills/${bill.slug}`}
-      className={`group block rounded-card bg-surface p-5 shadow-lift transition-transform hover:-translate-y-0.5 ${
-        emphasis ? 'border-2 border-ink' : 'border border-line'
+      className={`group block rounded-control bg-paper p-5 transition-colors hover:border-ink ${
+        emphasis ? 'border-2 border-ink' : 'border border-line-strong'
       }`}
     >
       {/* Wrapping happens BETWEEN whole chunks, never inside one: long Spanish
@@ -30,8 +53,10 @@ export function BillCard({
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
           chunk so a wrapped line can never start with a floating "·". */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-        <span className="whitespace-nowrap font-mono normal-case">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
+        {/* tabular figures, not a third typeface: the system has two voices
+            and `font-mono` was neither */}
+        <span className="whitespace-nowrap tabular-nums normal-case">
           {bill.identifier}
           <span aria-hidden> ·</span>
         </span>
@@ -40,22 +65,29 @@ export function BillCard({
           {coverageCount != null && <span aria-hidden> ·</span>}
         </span>
         {coverageCount != null && (
-          <span className="whitespace-nowrap text-brass">{t('news.sources', { count: coverageCount })}</span>
+          <span className="whitespace-nowrap">{t('news.sources', { count: coverageCount })}</span>
         )}
       </div>
-      <h3 className="mt-2 font-display text-lg font-semibold leading-snug group-hover:underline underline-offset-2">
+      <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
         {bill.headline ?? bill.title}
       </h3>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {bill.tags.slice(0, 2).map((tag) => (
-          <span key={tag} className="rounded-full bg-brass-soft px-2.5 py-1 font-medium text-ink">
+          <Chip key={tag} tone="tag">
             {t(`categories.${tag}`)}
-          </span>
+          </Chip>
         ))}
         {bill.lastActionDate && (
-          <span className="text-ink-faint">
+          <span>
             {t('bills.updated', {
-              date: format.dateTime(new Date(bill.lastActionDate), { month: 'short', day: 'numeric' }),
+              // `last_action_date` is a date-only string: render it in UTC or
+              // it renders a day early for every viewer west of Greenwich
+              // (the same fix components/CoverageSection.tsx already carries).
+              date: format.dateTime(new Date(bill.lastActionDate), {
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'UTC',
+              }),
             })}
           </span>
         )}

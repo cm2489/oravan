@@ -1,91 +1,157 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { OravanLockup } from '@/components/brand/OravanLockup';
 import { DONATE_URL } from '@/lib/site';
 
 /*
- * donateUrl defaults to the real DONATE_URL constant - every real call site
- * (there's exactly one, in the root layout) renders unchanged. The prop
- * exists as forward-compatible test infrastructure for injecting a fixture
- * value, since this project's Playwright setup can't currently render a
- * Oravan component directly (its .tsx JSX transform is hijacked for
- * Playwright's own component-testing runtime - see tests/donate.unit.spec.ts
- * for what that test actually verifies instead: the source-level wiring,
- * not a live "lit" render).
+ * THE BACK COVER.
+ *
+ * The footer takes the ink ground because nothing follows it: it is the one
+ * place a dark mass reads as the end of the document rather than as a band
+ * across it. At a squint a page changes shape exactly once for its content
+ * (the green floor-vote panel, if the week earns one) and once for its
+ * ending — this.
+ *
+ * Light type on an ink ground takes `leading-dark` + `tracking-dark`, always
+ * together; `.on-dark` retunes the focus ring to paper.
+ *
+ * ONE SECTION, AND ONE ASK. The back cover is a single block: brand and
+ * navigation, then one ruled row carrying provenance, the support link-out and
+ * the correction path. The correction path used to sit on its own paper slip
+ * below that row, which read as a second footer stuck on the end (owner,
+ * 2026-07-24) — it is folded in now.
+ *
+ * Folded in, but NOT promoted: it stays a utility with no styled CTA and no
+ * ground of its own, so the support link-out remains the footer's only call to
+ * action. Its `#feedback` id is the anchor /citations links to, so this stays
+ * the ONE intake, never a parallel one.
+ *
+ * Nothing here prints the sync DATE: the Stamp owns that, once per page. This
+ * block carries the provenance, which the Stamp does not.
+ *
+ * donateUrl defaults to the real DONATE_URL constant — every real call site
+ * (there is exactly one, in the root layout) renders unchanged. The prop is
+ * forward-compatible test infrastructure for injecting a fixture value, since
+ * this project's Playwright setup can't currently render an Oravan component
+ * directly (see tests/donate.unit.spec.ts for what it verifies instead: the
+ * source-level wiring, not a live render).
  */
+
+const SITE_LINKS = [
+  { href: '/why-call', key: 'nav.whyCall' },
+  { href: '/about', key: 'footer.about' },
+  { href: '/partners', key: 'footer.partners' },
+  { href: '/embeds', key: 'footer.embeds' },
+] as const;
+
+const TRUST_LINKS = [
+  { href: '/privacy', key: 'footer.privacy' },
+  { href: '/terms', key: 'footer.terms' },
+  { href: '/citations', key: 'footer.citations' },
+] as const;
+
 export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null } = {}) {
   const t = useTranslations('common');
 
+  const linkClass =
+    'inline-flex min-h-11 items-center text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
+
   return (
-    <footer className="mt-16 border-t border-line bg-paper-deep">
-      {/* pb clears the fixed mobile tab bar so footer links stay tappable */}
-      <div className="mx-auto max-w-5xl px-4 pt-10 pb-28 md:pb-10 text-sm text-ink-soft space-y-3">
-        <p className="max-w-prose italic text-ink-faint">{t('footer.lore')}</p>
-        <p className="max-w-prose">{t('footer.mission')}</p>
-        <p className="max-w-prose">{t('footer.aiNote')}</p>
-        {/* Phase 1/2 funding transparency line: dark copy today (DONATE_URL
-            null), automatically upgrades to the "funded + supporters" line
-            with a Support Oravan link the moment DONATE_URL is set - one
-            constant, no separate flag. This outline button is the footer's
-            ONE money ask: the former nav "Donate" link was consolidated away
-            (2026-07 critique round 2 - stacked CTAs at the page exit read as
-            needy and split one action across two labels). */}
-        <p className="max-w-prose flex flex-wrap items-center gap-3">
-          {donateUrl ? (
-            <>
-              <span>{t('footer.fundingLive')}</span>{' '}
-              {/* Outline-brass button: clearly interactive without shouting in
-                  the footer's quiet register (brass-deep on paper-deep is
-                  5.25:1 — AA). The louder solid-brass ask lives on the
-                  homepage support band. */}
-              <a
-                href={donateUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center rounded-control border border-brass px-4 font-semibold text-brass-deep hover:bg-brass-soft"
-              >
-                {t('footer.fundingCta')}
-              </a>
-            </>
-          ) : (
-            t('footer.funding')
+    <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
+      {/* pb clears the fixed thumb bar so footer links stay tappable on phones */}
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-16 text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
+        <div className="grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
+          <div>
+            <OravanLockup markRem={1.5} className="text-paper" />
+            {/* One paragraph, not two: the name's origin ("lore") moved to the
+                About page, where someone is actually asking what Oravan is —
+                it was ~120px of brand poetry on the tail of all ~1,000 pages. */}
+            <p className="mt-4 max-w-note">{t('footer.mission')}</p>
+          </div>
+
+          {/* One landmark, two columns: a screen reader hears a single footer
+              navigation, sighted readers get the site / trust split. */}
+          <nav
+            aria-label={t('footer.navLabel')}
+            className="grid grid-cols-2 gap-8 md:col-span-2"
+          >
+            <div>
+              <h2 className="text-xs font-bold tracking-[0.08em] text-paper uppercase">
+                {t('footer.colSite')}
+              </h2>
+              <ul className="mt-2 grid">
+                {SITE_LINKS.map(({ href, key }) => (
+                  <li key={href}>
+                    <Link href={href} className={linkClass}>
+                      {t(key)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h2 className="text-xs font-bold tracking-[0.08em] text-paper uppercase">
+                {t('footer.colTrust')}
+              </h2>
+              <ul className="mt-2 grid">
+                {TRUST_LINKS.map(({ href, key }) => (
+                  <li key={href}>
+                    <Link href={href} className={linkClass}>
+                      {t(key)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        </div>
+
+        {/* Provenance, the AI note, and the ONE ask. The funding line upgrades
+            itself the moment DONATE_URL is set — one constant, no second flag —
+            and it never claims tax-deductibility or nonprofit status. Link-out
+            only: never an iframe, never a payment field on Oravan's infra. */}
+        <div className="mt-8 grid gap-6 border-t border-ink-pale/20 pt-6 text-xs md:grid-cols-[1fr_auto] md:items-center">
+          <div className="max-w-note space-y-2">
+            <p>{t('footer.sourceNote')}</p>
+            <p>{t('footer.aiNote')}</p>
+            <p>{donateUrl ? t('footer.fundingLive') : t('footer.funding')}</p>
+          </div>
+          {donateUrl && (
+            <a
+              href={donateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              /* No `ring-gap` here: that mechanism is for FILLED controls,
+                 where the ring must not touch the fill. This one is an outline
+                 button whose border is already the ring's own colour, so
+                 swapping the border to the gap tone would make the focused
+                 state look exactly like the resting state. Keeping the default
+                 2px offset draws an ink gap between the white border and the
+                 white ring — a visibly doubled edge. */
+              className="inline-flex min-h-12 items-center justify-center justify-self-start rounded-control border-2 border-paper px-5 text-md font-bold text-paper no-underline hover:bg-paper hover:text-ink-deep"
+            >
+              {t('footer.fundingCta')}
+            </a>
           )}
-        </p>
-        <nav aria-label={t('footer.navLabel')} className="flex flex-wrap gap-5 pt-2">
-          <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.privacy')}
-          </Link>
-          <Link href="/terms" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.terms')}
-          </Link>
-          <Link href="/why-call" className="underline underline-offset-2 hover:text-ink">
-            {t('nav.whyCall')}
-          </Link>
-          <Link href="/about" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.about')}
-          </Link>
-          {/* S23: reachable from every page's footer (this component IS the
-              bill-page footer) - the citability/correction page a newsroom or
-              librarian needs: how to cite, the AI-content policy, how to
-              report an error. */}
-          <Link href="/citations" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.citations')}
-          </Link>
-          {/* S16: the embeds configurator + docs - footer-only, same tier as
-              Citations above (a builder/reporter surface, not primary nav). */}
-          <Link href="/embeds" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.embeds')}
-          </Link>
-          {/* S5b: the partner-facing GTM page - same builder/reporter tier. */}
-          <Link href="/partners" className="underline underline-offset-2 hover:text-ink">
-            {t('footer.partners')}
-          </Link>
-        </nav>
-        {/* id is the correction-path anchor: /citations links here as "#feedback"
-            rather than duplicating this dialog (one intake, not a parallel one -
-            see docs/es-spotcheck-redistribution.md's sibling S23 scope note). */}
-        <div id="feedback" className="pt-2 scroll-mt-20">
-          <FeedbackDialog />
+
+          {/* The correction path, folded INTO this block rather than sitting on
+              its own paper slip below it (owner, 2026-07-24: the back cover is
+              one section, not two). It stays a UTILITY, not a second ask — no
+              styled CTA, no ground of its own — so the support link-out above
+              is still the footer's only call to action. The dialog itself is
+              paper and now carries its own focus tones, so it survives being
+              triggered from this ink ground.
+
+              `#feedback` is the correction anchor /citations links to. It must
+              travel with this block: it is the ONE intake, never a parallel. */}
+          <div
+            id="feedback"
+            className="flex scroll-mt-20 flex-wrap items-center gap-x-3 gap-y-2 md:col-span-2"
+          >
+            <p className="max-w-note">{t('footer.corrections')}</p>
+            <FeedbackDialog />
+          </div>
         </div>
       </div>
     </footer>

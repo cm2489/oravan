@@ -1,12 +1,19 @@
 import { useTranslations } from 'next-intl';
-import { BillJourney } from './BillJourney';
+import { Chip } from '@/components/system';
 import type { Bill } from '@/lib/types';
 
 /*
- * C-style decoded layout: question-form subheads, cost as fact chips
- * (prose fallback), and the computed journey stepper. The TL;DR strip
- * lives above the card (TldrStrip). Falls back to legacy paragraphs for
- * bills not yet restructured.
+ * The decoded body: question-form subheads with their answers in the READING
+ * VOICE (Besley, one rung up the ladder — a serif reads a size small at
+ * Franklin's metrics). Both languages take the same voice; the questions
+ * themselves are Oravan talking, so they stay in Franklin.
+ *
+ * The answers are always open. They are three or four short paragraphs, and
+ * a disclosure that hides a two-line answer costs a click to save nothing.
+ *
+ * "Where does it stand?" used to live here. It now sits BELOW the reading
+ * column as the status tracker, with the stamp pressed onto its foot: it
+ * describes the bill's history, and the decode and the call are the job.
  */
 
 export function DecodedSections({ bill }: { bill: Bill }) {
@@ -15,7 +22,7 @@ export function DecodedSections({ bill }: { bill: Bill }) {
 
   if (!s) {
     return (
-      <div className="mt-3 max-w-prose space-y-3 leading-relaxed">
+      <div className="mt-6 space-y-4 font-reading text-lg text-ink">
         {(bill.ai_summary ?? '').split('\n').filter(Boolean).map((p, i) => (
           <p key={i}>{p}</p>
         ))}
@@ -24,42 +31,37 @@ export function DecodedSections({ bill }: { bill: Bill }) {
   }
 
   return (
-    <div className="max-w-prose mt-2 space-y-5">
-      <section>
-        <h3 className="font-display text-lg font-bold">{t('sec.what')}</h3>
-        <p className="mt-1 leading-relaxed">{s.what}</p>
+    // One bordered stack, hairline-ruled between answers — no nested cards.
+    // `line-strong` is the edge (3.24:1 on paper); `line` never is.
+    <div className="mt-6 divide-y-[1.5px] divide-line-strong rounded-control border-[1.5px] border-line-strong">
+      <section className="p-4 md:p-5">
+        <h3 className="text-md font-bold text-ink">{t('sec.what')}</h3>
+        <p className="mt-2 font-reading text-lg text-ink-2">{s.what}</p>
       </section>
-      <section>
-        <h3 className="font-display text-lg font-bold">{t('sec.who')}</h3>
-        <p className="mt-1 leading-relaxed">{s.who}</p>
+      <section className="p-4 md:p-5">
+        <h3 className="text-md font-bold text-ink">{t('sec.who')}</h3>
+        <p className="mt-2 font-reading text-lg text-ink-2">{s.who}</p>
       </section>
-      <section>
-        <h3 className="font-display text-lg font-bold">{t('sec.why')}</h3>
-        <p className="mt-1 leading-relaxed">{s.why}</p>
+      <section className="p-4 md:p-5">
+        <h3 className="text-md font-bold text-ink">{t('sec.why')}</h3>
+        <p className="mt-2 font-reading text-lg text-ink-2">{s.why}</p>
       </section>
       {s.cost && (
-        <section>
-          <h3 className="font-display text-lg font-bold">{t('sec.cost')}</h3>
+        <section className="p-4 md:p-5">
+          <h3 className="text-md font-bold text-ink">{t('sec.cost')}</h3>
           {s.costChips?.length ? (
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul className="mt-2 flex list-none flex-wrap gap-2">
               {s.costChips.map((chip) => (
-                <li
-                  key={chip}
-                  className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-semibold"
-                >
-                  {chip}
+                <li key={chip}>
+                  <Chip tone="tag">{chip}</Chip>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-1 leading-relaxed">{s.cost}</p>
+            <p className="mt-2 font-reading text-lg text-ink-2">{s.cost}</p>
           )}
         </section>
       )}
-      <section>
-        <h3 className="font-display text-lg font-bold">{t('sec.journey')}</h3>
-        <BillJourney billType={bill.bill_type} status={bill.status} />
-      </section>
     </div>
   );
 }

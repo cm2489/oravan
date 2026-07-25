@@ -99,7 +99,7 @@ export function HostPageMockup({
   );
 
   const widgetSlot = (
-    <div className="rounded-lg" style={{ border: `1px solid ${hairline}`, overflow: 'hidden' }}>
+    <div className="rounded-[6px]" style={{ border: `1px solid ${hairline}`, overflow: 'hidden' }}>
       {children}
     </div>
   );
@@ -115,29 +115,29 @@ export function HostPageMockup({
         <p className="mt-1 text-xs" style={{ color: muted }}>
           {t('mockupNewsByline')}
         </p>
-        <p className="mt-3 text-sm leading-relaxed">{t('mockupNewsBody1')}</p>
+        <p className="mt-3 text-sm leading-[1.625]">{t('mockupNewsBody1')}</p>
         <figure className="my-4">
           {widgetSlot}
           <figcaption className="mt-1 text-[0.7rem]" style={{ color: muted }}>
             {t('mockupWidgetCaption')}
           </figcaption>
         </figure>
-        <p className="text-sm leading-relaxed">{t('mockupNewsBody2')}</p>
+        <p className="text-sm leading-[1.625]">{t('mockupNewsBody2')}</p>
       </article>
     );
   } else if (archetype === 'library') {
     body = (
       <div className="px-5 py-4">
         <h2 className="text-xl font-bold">{t('mockupLibraryHeading')}</h2>
-        <p className="mt-2 text-sm leading-relaxed">{t('mockupLibraryBody')}</p>
+        <p className="mt-2 text-sm leading-[1.625]">{t('mockupLibraryBody')}</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_minmax(0,20rem)]">
-          <div className="space-y-2 text-sm leading-relaxed" style={{ color: muted }}>
+          <div className="space-y-2 text-sm leading-[1.625]" style={{ color: muted }}>
             <p style={{ color: ink }} className="font-semibold">
               {t('mockupLibrarySidebarHeading')}
             </p>
             <p>{t('mockupLibraryBody2')}</p>
           </div>
-          <aside className="rounded-lg p-2" style={{ backgroundColor: faintFill }}>
+          <aside className="rounded-[6px] p-2" style={{ backgroundColor: faintFill }}>
             {widgetSlot}
             <p className="mt-1 text-[0.7rem]" style={{ color: muted }}>
               {t('mockupWidgetCaption')}
@@ -152,7 +152,7 @@ export function HostPageMockup({
         <h2 className="text-2xl font-extrabold" style={{ color: accent }}>
           {t('mockupAdvocacyHeading')}
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed">{t('mockupAdvocacyBody')}</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-[1.625]">{t('mockupAdvocacyBody')}</p>
         <div className="mx-auto mt-4 max-w-md text-left">{widgetSlot}</div>
         <p className="mt-2 text-[0.7rem]" style={{ color: muted }}>
           {t('mockupWidgetCaption')}
@@ -163,9 +163,9 @@ export function HostPageMockup({
     body = (
       <div className="px-5 py-4">
         <h2 className="text-xl font-bold">{t('mockupGenericHeading')}</h2>
-        <p className="mt-2 text-sm leading-relaxed">{t('mockupGenericBody')}</p>
+        <p className="mt-2 text-sm leading-[1.625]">{t('mockupGenericBody')}</p>
         <div className="my-4">{widgetSlot}</div>
-        <p className="text-sm leading-relaxed" style={{ color: muted }}>
+        <p className="text-sm leading-[1.625]" style={{ color: muted }}>
           {t('mockupGenericBody2')}
         </p>
       </div>
@@ -174,7 +174,7 @@ export function HostPageMockup({
 
   return (
     <div
-      className="overflow-hidden rounded-card border border-line"
+      className="overflow-hidden rounded-control border border-line-strong"
       style={rootStyle}
       // Illustrative preview chrome — not a live region, and clearly labeled.
       aria-label={t('mockupRegionLabel', { name })}

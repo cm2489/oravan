@@ -46,9 +46,14 @@ import type { FeedTeaser } from '@/lib/types';
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
-const DEFAULT_ACCENT = '#82632a'; // matches the widget CSS's own var(--oravan-accent, #82632a) fallback
-const DEFAULT_SURFACE = '#f3ecdd'; // the light-mode token fallbacks in app/embed/embed.css
-const DEFAULT_INK = '#2a2318';
+// The fourth palette mirror (DESIGN.md § Embed lockstep). These are variant
+// B's `go`, `paper` and `ink`, and they must equal app/embed/embed.css's
+// :root fallbacks and lib/embed-theme.ts's MODE_DEFAULTS.light exactly —
+// otherwise the live preview and the copied snippet promise a look the
+// server would not render.
+const DEFAULT_ACCENT = '#0f6c4a'; // matches the widget CSS's own var(--oravan-accent, #0f6c4a) fallback
+const DEFAULT_SURFACE = '#ffffff'; // the light-mode token fallbacks in app/embed/embed.css
+const DEFAULT_INK = '#16191b';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
 const MIN_PAIR_CONTRAST = 4.5; // WCAG AA — the exact server-side bar (lib/embed-theme)
@@ -339,7 +344,12 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
 
   return (
     <div className="mt-8" data-hydrated={hydrated || undefined}>
-      <h2 className="font-display text-2xl font-bold">{t('configuratorHeading')}</h2>
+      {/* The 3px ink rule is how this system opens a section. It is the only
+          weight above a hairline that is not a law-bearing color, so it can
+          be spent freely on structure without touching the color law. */}
+      <h2 className="border-t-[3px] border-ink pt-4 text-h2 font-extrabold">
+        {t('configuratorHeading')}
+      </h2>
 
       {/* min-w-0 on both columns: grid items default to min-width:auto, so
           the snippet <pre>'s long unbreakable lines would otherwise widen
@@ -357,9 +367,13 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   ['bill-card', t('widgetBillCard'), t('widgetBillCardHint')],
                 ] as const
               ).map(([value, label, hint]) => (
+                // `tint` means YOURS — what the user picked — so the chosen
+                // widget is the one place on this page it is spent. The edge
+                // steps line-strong -> ink at the same time, so the choice is
+                // never carried by a 1.15:1 fill alone.
                 <label
                   key={value}
-                  className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 has-[:checked]:border-ink has-[:checked]:bg-paper-deep"
+                  className="flex min-h-11 cursor-pointer items-start gap-3 rounded-control border-[1.5px] border-line-strong bg-paper p-3 has-[:checked]:border-ink has-[:checked]:bg-tint"
                 >
                   <input
                     type="radio"
@@ -367,11 +381,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     value={value}
                     checked={widget === value}
                     onChange={() => selectWidget(value)}
-                    className="mt-1 h-5 w-5 accent-brass"
+                    className="mt-1 h-5 w-5 accent-ink"
                   />
                   <span>
                     <span className="block font-semibold">{label}</span>
-                    <span className="block text-sm text-ink-soft">{hint}</span>
+                    <span className="block text-sm text-ink-2">{hint}</span>
                   </span>
                 </label>
               ))}
@@ -387,17 +401,17 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   type="button"
                   aria-pressed={locale === l}
                   onClick={() => setLocale(l)}
-                  className={`min-h-[44px] flex-1 rounded-control border px-3 text-sm font-semibold ${
+                  className={`min-h-11 flex-1 rounded-control border-[1.5px] px-3 text-sm font-semibold ${
                     locale === l
                       ? 'border-ink bg-ink text-paper'
-                      : 'border-line bg-surface text-ink hover:border-ink/40'
+                      : 'border-line-strong bg-paper text-ink hover:border-ink hover:bg-wash'
                   }`}
                 >
                   {l === 'en' ? t('localeEn') : t('localeEs')}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-ink-soft">{t('localeNote')}</p>
+            <p className="mt-2 text-xs text-ink-2">{t('localeNote')}</p>
           </fieldset>
 
           {widget === 'bill-card' && (
@@ -413,16 +427,18 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 placeholder={t('billSearchPlaceholder')}
                 value={billQuery}
                 onChange={(e) => setBillQuery(e.target.value)}
-                className="mt-2 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-base"
+                className="mt-2 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-md"
               />
-              <p className="mt-1 text-xs text-ink-soft">
+              <p className="mt-1 text-xs text-ink-2">
                 {selectedBill
                   ? `${selectedBill.identifier} — ${selectedBill.headline ?? selectedBill.title}`
                   : t('billNoneSelected')}
               </p>
-              <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto rounded-control border border-line">
+              {/* max-h-64 is a scroll viewport ceiling, not a spacing choice —
+                  the same kind of functional size as min-h-11. */}
+              <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto rounded-control border-[1.5px] border-line-strong">
                 {filteredBills.length === 0 && (
-                  <li className="p-3 text-sm text-ink-soft">{t('billNoResults')}</li>
+                  <li className="p-3 text-sm text-ink-2">{t('billNoResults')}</li>
                 )}
                 {filteredBills.map((b) => (
                   <li key={b.slug}>
@@ -430,11 +446,11 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                       type="button"
                       onClick={() => selectBill(b.slug)}
                       aria-pressed={slug === b.slug}
-                      className={`flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                        slug === b.slug ? 'bg-paper-deep font-semibold' : 'hover:bg-paper-deep'
+                      className={`flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                        slug === b.slug ? 'bg-tint font-semibold' : 'hover:bg-wash'
                       }`}
                     >
-                      <span className="shrink-0 font-mono text-xs text-ink-soft">
+                      <span className="shrink-0 font-mono text-xs tabular-nums text-ink-2">
                         {b.identifier}
                       </span>
                       <span className="truncate">{b.headline ?? b.title}</span>
@@ -442,7 +458,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   </li>
                 ))}
               </ul>
-              <p className="mt-1 text-xs text-ink-faint">
+              <p className="mt-1 text-xs tabular-nums text-ink-2">
                 {t('billResultsNote', { shown: filteredBills.length, total: bills.length })}
               </p>
             </div>
@@ -450,7 +466,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
 
           <fieldset>
             <legend className="text-sm font-semibold">{t('matchSiteHeading')}</legend>
-            <p className="mt-1 text-xs text-ink-soft">{t('matchSiteHint')}</p>
+            <p className="mt-1 text-xs text-ink-2">{t('matchSiteHint')}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <div className="min-w-0 flex-1">
                 <label htmlFor="oravan-match-url" className="sr-only">
@@ -470,31 +486,41 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                       void suggestTheme();
                     }
                   }}
-                  className="min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-base"
+                  className="min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-md"
                 />
               </div>
+              {/* An action, so it is `go` — and `ring-gap`, because a 3px ink
+                  ring laid straight onto a go fill is 2.75:1. The button
+                  swaps its own border to the gap tone on focus instead. */}
               <button
                 type="button"
                 onClick={() => void suggestTheme()}
                 disabled={matchStatus === 'loading'}
-                className="inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px disabled:opacity-60"
+                className="ring-gap inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper hover:border-go-deep hover:bg-go-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
               >
                 {t('matchSiteCta')}
               </button>
             </div>
-            <p className="mt-1 text-xs text-ink-faint">{t('matchSitePrivacy')}</p>
+            <p className="mt-1 text-xs text-ink-2">{t('matchSitePrivacy')}</p>
             <div aria-live="polite" className="mt-2 text-sm">
-              {matchStatus === 'loading' && <p className="text-ink-soft">{t('matchSiteLoading')}</p>}
+              {matchStatus === 'loading' && <p className="text-ink-2">{t('matchSiteLoading')}</p>}
+              {/* A failure is opened by a 3px ink rule and set in bold on a
+                  wash — the same specimen the citizen site uses. `alert` and
+                  `go` are 1.19:1 apart in luminance, so color is never the
+                  carrier here: the rule, the weight and role="alert" are. */}
               {(matchStatus === 'bad_request' ||
                 matchStatus === 'rate_limited' ||
                 matchStatus === 'unavailable' ||
                 matchStatus === 'generation_failed') && (
-                <p role="alert" className="rounded-control border border-line bg-paper-deep p-3">
+                <p
+                  role="alert"
+                  className="max-w-note border-t-[3px] border-ink bg-wash p-3 font-semibold"
+                >
                   {t(MATCH_ERROR_KEYS[matchStatus])}
                 </p>
               )}
               {matchStatus === 'done' && adjusted && (
-                <p className="rounded-control border border-line bg-paper-deep p-3">
+                <p className="max-w-note rounded-control border-[1.5px] border-line-strong bg-paper p-3">
                   {t('matchSiteAdjustedNote')}
                 </p>
               )}
@@ -510,15 +536,15 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   <label htmlFor="oravan-accent" className="text-sm font-medium">
                     {t('accentLabel')}
                   </label>
-                  <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                  <div className="mt-1 flex min-h-11 items-center gap-2">
                     <input
                       id="oravan-accent"
                       type="color"
                       value={accent}
                       onChange={(e) => setAccentInput(e.target.value)}
-                      className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                      className="h-11 w-14 cursor-pointer rounded-control border-2 border-ink bg-paper"
                     />
-                    <span className="font-mono text-sm text-ink-soft">{accent}</span>
+                    <span className="font-mono text-sm text-ink-2">{accent}</span>
                   </div>
                 </div>
                 <div>
@@ -529,7 +555,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     id="oravan-radius"
                     value={radius}
                     onChange={(e) => setRadius(e.target.value as RadiusKey)}
-                    className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
+                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
                   >
                     {RADIUS_KEYS.map((key) => (
                       <option key={key} value={key}>
@@ -552,7 +578,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     id="oravan-font"
                     value={font}
                     onChange={(e) => setFont(e.target.value as FontKey)}
-                    className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
+                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
                   >
                     {FONT_KEYS.map((key) => (
                       <option key={key} value={key}>
@@ -569,7 +595,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     id="oravan-mode"
                     value={mode}
                     onChange={(e) => setMode(e.target.value as ModeKey)}
-                    className="mt-1 min-h-[44px] w-full rounded-control border border-line bg-surface px-3 text-sm"
+                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
                   >
                     {MODE_KEYS.map((key) => (
                       <option key={key} value={key}>
@@ -580,12 +606,12 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 </div>
               </div>
 
-              <label className="mt-4 flex min-h-[44px] items-center gap-3 text-sm font-medium">
+              <label className="mt-4 flex min-h-11 items-center gap-3 text-sm font-medium">
                 <input
                   type="checkbox"
                   checked={customColors}
                   onChange={(e) => setCustomColors(e.target.checked)}
-                  className="h-5 w-5 rounded-control border-line accent-brass"
+                  className="h-5 w-5 accent-ink"
                 />
                 {t('customColorsToggle')}
               </label>
@@ -595,34 +621,37 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                     <label htmlFor="oravan-surface" className="text-sm font-medium">
                       {t('surfaceLabel')}
                     </label>
-                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                    <div className="mt-1 flex min-h-11 items-center gap-2">
                       <input
                         id="oravan-surface"
                         type="color"
                         value={surfaceInput}
                         onChange={(e) => setSurfaceInput(e.target.value)}
-                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                        className="h-11 w-14 cursor-pointer rounded-control border-2 border-ink bg-paper"
                       />
-                      <span className="font-mono text-sm text-ink-soft">{surfaceInput}</span>
+                      <span className="font-mono text-sm text-ink-2">{surfaceInput}</span>
                     </div>
                   </div>
                   <div>
                     <label htmlFor="oravan-ink" className="text-sm font-medium">
                       {t('inkLabel')}
                     </label>
-                    <div className="mt-1 flex min-h-[44px] items-center gap-2">
+                    <div className="mt-1 flex min-h-11 items-center gap-2">
                       <input
                         id="oravan-ink"
                         type="color"
                         value={inkInput}
                         onChange={(e) => setInkInput(e.target.value)}
-                        className="h-11 w-14 cursor-pointer rounded-control border border-line bg-surface"
+                        className="h-11 w-14 cursor-pointer rounded-control border-2 border-ink bg-paper"
                       />
-                      <span className="font-mono text-sm text-ink-soft">{inkInput}</span>
+                      <span className="font-mono text-sm text-ink-2">{inkInput}</span>
                     </div>
                   </div>
                   {!pairPasses && (
-                    <p role="alert" className="rounded-control border border-line bg-paper-deep p-3 text-sm sm:col-span-2">
+                    <p
+                      role="alert"
+                      className="border-t-[3px] border-ink bg-wash p-3 text-sm font-semibold sm:col-span-2"
+                    >
                       {t('contrastWarning')}
                     </p>
                   )}
@@ -633,22 +662,22 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
 
           <fieldset>
             <legend className="text-sm font-semibold">{t('whiteLabelLegend')}</legend>
-            <label className="mt-2 flex min-h-[44px] items-center gap-3 text-sm font-medium">
+            <label className="mt-2 flex min-h-11 items-center gap-3 text-sm font-medium">
               <input
                 type="checkbox"
                 checked={brandless}
                 onChange={(e) => setBrandless(e.target.checked)}
-                className="h-5 w-5 rounded-control border-line accent-brass"
+                className="h-5 w-5 accent-ink"
               />
               {t('whiteLabelBrandless')}
             </label>
-            <p className="mt-1 text-xs text-ink-soft">{t('whiteLabelNote')}</p>
+            <p className="mt-1 text-xs text-ink-2">{t('whiteLabelNote')}</p>
           </fieldset>
         </div>
 
         <div className="min-w-0 space-y-6">
           <div>
-            <h3 className="font-display text-lg font-bold">{t('previewHeading')}</h3>
+            <h3 className="text-h3 font-extrabold">{t('previewHeading')}</h3>
 
             {/* Preview-context switcher: the live preview is always a themed
                 host-page mockup with the real widget embedded in it, so it
@@ -663,10 +692,10 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   type="button"
                   aria-pressed={mockup === key}
                   onClick={() => setMockup(key)}
-                  className={`min-h-[44px] rounded-control border px-3 text-xs font-semibold ${
+                  className={`min-h-11 rounded-control border-[1.5px] px-3 text-xs font-semibold ${
                     mockup === key
                       ? 'border-ink bg-ink text-paper'
-                      : 'border-line bg-surface text-ink hover:border-ink/40'
+                      : 'border-line-strong bg-paper text-ink hover:border-ink hover:bg-wash'
                   }`}
                 >
                   {t(MOCKUP_LABEL_KEYS[key])}
@@ -695,25 +724,25 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   />
                 </HostPageMockup>
               ) : (
-                <div className="overflow-hidden rounded-card border border-line bg-paper-deep">
-                  <p className="p-6 text-sm text-ink-soft">{t('previewPending')}</p>
+                <div className="overflow-hidden rounded-control border-[1.5px] border-line-strong bg-wash">
+                  <p className="p-6 text-sm text-ink-2">{t('previewPending')}</p>
                 </div>
               )}
             </div>
           </div>
 
           <div>
-            <h3 className="font-display text-lg font-bold">{t('snippetHeading')}</h3>
-            <p className="mt-1 text-sm text-ink-soft">{t('snippetHint')}</p>
+            <h3 className="text-h3 font-extrabold">{t('snippetHeading')}</h3>
+            <p className="mt-1 text-sm text-ink-2">{t('snippetHint')}</p>
             {snippet ? (
               <>
-                <pre className="mt-2 overflow-x-auto rounded-control border border-line bg-night p-4 text-xs text-paper">
+                <pre className="on-dark mt-2 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs leading-dark tracking-dark text-paper">
                   <code>{snippet}</code>
                 </pre>
                 <button
                   type="button"
                   onClick={copySnippet}
-                  className="mt-3 inline-flex min-h-[44px] items-center rounded-control bg-ink px-5 font-semibold text-paper hover:bg-night active:translate-y-px"
+                  className="ring-gap mt-3 inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper hover:border-go-deep hover:bg-go-deep"
                 >
                   {copied ? t('copied') : t('copySnippet')}
                 </button>
@@ -722,7 +751,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 </span>
               </>
             ) : (
-              <p className="mt-2 rounded-control border border-line bg-paper-deep p-4 text-sm text-ink-soft">
+              <p className="mt-2 max-w-note rounded-control border-[1.5px] border-line-strong bg-wash p-4 text-sm text-ink-2">
                 {t('snippetPending')}
               </p>
             )}

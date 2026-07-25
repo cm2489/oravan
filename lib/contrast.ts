@@ -50,13 +50,17 @@ export function contrastRatio(hexA: string, hexB: string): number {
 
 /**
  * Whichever of the two candidate text colors reads better on `bgHex`.
- * Defaults are the brand's near-white/near-black ink pair, so the shipped
- * default accent (#82632a) keeps yielding today's #fbf8f0 chip text.
- * Unparseable background falls back to the light candidate (matches the
- * pre-existing hardcoded chip color, so a validation slip can only ever
- * reproduce the old look, never invent a new one).
+ *
+ * Defaults are variant B's `paper`/`ink` pair — one of the four palette
+ * mirrors listed in DESIGN.md § Embed lockstep. They are deliberately the
+ * two neutral extremes rather than a tinted near-white/near-black: this
+ * function's output lands on a TENANT's chip when they set an accent and no
+ * palette, and a cream would put a recognizably Oravan color on someone
+ * else's brand. Unparseable background falls back to the light candidate, so
+ * a validation slip can only ever reproduce the default look, never invent a
+ * new one.
  */
-export function pickTextColor(bgHex: string, light = '#fbf8f0', dark = '#1b1611'): string {
+export function pickTextColor(bgHex: string, light = '#ffffff', dark = '#16191b'): string {
   const bg = hexToRgb(bgHex);
   if (!bg) return light;
   return contrastRatio(bgHex, light) >= contrastRatio(bgHex, dark) ? light : dark;
@@ -98,9 +102,10 @@ export function adjustInkForContrast(
     if (contrastRatio(candidate, surface) >= min) return { ink: candidate, adjusted: true };
   }
   // Unreachable for min <= 4.58 (the i = STEPS candidate IS the extreme),
-  // kept for callers that pass a stricter threshold.
-  const extreme = contrastRatio('#1b1611', surface) >= contrastRatio('#fbf8f0', surface)
-    ? '#1b1611'
-    : '#fbf8f0';
+  // kept for callers that pass a stricter threshold. Same variant-B ink pair
+  // as pickTextColor's defaults above — the two move together.
+  const extreme = contrastRatio('#16191b', surface) >= contrastRatio('#ffffff', surface)
+    ? '#16191b'
+    : '#ffffff';
   return contrastRatio(extreme, surface) >= min ? { ink: extreme, adjusted: true } : null;
 }

@@ -240,9 +240,12 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
     await expect(page.getByLabel(en.embeds.surfaceLabel, { exact: true })).toBeVisible();
     await expect(page.getByLabel(en.embeds.inkLabel, { exact: true })).toBeVisible();
     // The prefilled defaults are the brand pair — they pass AA, no warning.
+    // Re-keyed to variant B's paper/ink (17.66:1); the property is unchanged —
+    // the configurator prefills Oravan's OWN shipped pair, and that pair clears
+    // AA on its own, so a tenant who touches nothing cannot ship a failing embed.
     await expect(page.getByText(en.embeds.contrastWarning)).toHaveCount(0);
-    await expect(page.locator('pre code')).toContainText('data-surface="#f3ecdd"');
-    await expect(page.locator('pre code')).toContainText('data-ink="#2a2318"');
+    await expect(page.locator('pre code')).toContainText('data-surface="#ffffff"');
+    await expect(page.locator('pre code')).toContainText('data-ink="#16191b"');
   });
 
   test('a failing pair warns AND is omitted from snippet + preview', async ({ page }) => {

@@ -17,6 +17,17 @@ import { useRouter } from '@/i18n/navigation';
  * impossible. The address lives in component state only; it is never written
  * to localStorage, a URL, or anywhere else. Only the derived district
  * ("NY-12") goes into the query string for the refined view.
+ *
+ * IN-FLIGHT IS A REAL DISABLED STATE, not a dimmed one: opacity would drag
+ * every pair below AA at once. A checking control takes the `wash` ground and
+ * a `line-strong` edge - the one place that pairing is legal, because 1.4.11
+ * exempts inactive components - plus `ink-2` text at 7.23:1 and
+ * cursor-not-allowed. The status line beside it is `role="status"`, so the
+ * wait is announced rather than only drawn.
+ *
+ * FAILURE IS NEVER CARRIED BY COLOR (go and alert are 1.19:1 apart): a 3px
+ * ink rule, a bold uppercase label, aria-invalid and role="alert" all fire
+ * before the alert tone does.
  */
 
 type Status = 'idle' | 'checking' | 'invalid' | 'notFound' | 'unavailable' | 'rateLimited';
@@ -35,6 +46,9 @@ const useHydrated = () =>
     () => true,
     () => false
   );
+
+const FIELD_BASE =
+  'min-h-12 w-full min-w-0 rounded-control px-4 py-3 text-md text-ink placeholder:text-ink-2 disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2';
 
 export function AddressForm({ zip }: { zip: string }) {
   const t = useTranslations('reps');
@@ -71,15 +85,21 @@ export function AddressForm({ zip }: { zip: string }) {
   }
 
   const error = status === 'idle' || status === 'checking' ? null : t(ERROR_KEY[status]);
+  const checking = status === 'checking';
 
   return (
-    <div className="mt-4 max-w-xl rounded-card border border-line bg-surface p-5 shadow-lift">
-      <p className="font-medium">{t('refineTitle')}</p>
-      <form onSubmit={submit} className="mt-3 flex flex-col gap-2" noValidate>
-        <label htmlFor="street-address" className="text-sm font-semibold">
+    <section
+      aria-labelledby="refine-title"
+      className="mt-6 max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-5"
+    >
+      <h2 id="refine-title" className="text-lg font-extrabold">
+        {t('refineTitle')}
+      </h2>
+      <form onSubmit={submit} className="@container mt-4" noValidate>
+        <label htmlFor="street-address" className="block text-sm font-bold">
           {t('addressLabel')}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-2 grid gap-2 @min-[30rem]:grid-cols-[minmax(0,1fr)_auto]">
           <input
             id="street-address"
             name="street-address"
@@ -88,30 +108,41 @@ export function AddressForm({ zip }: { zip: string }) {
             placeholder={t('addressPlaceholder')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            disabled={status === 'checking'}
+            disabled={checking}
             aria-invalid={!!error}
             aria-describedby={error ? 'address-error' : 'address-help'}
-            className="w-full max-w-xs rounded-control border-2 border-ink/20 bg-surface px-4 py-3 focus:border-ink"
+            className={
+              error
+                ? `${FIELD_BASE} border-[3px] border-ink bg-wash`
+                : `${FIELD_BASE} border-2 border-ink bg-paper enabled:hover:border-go-deep`
+            }
           />
           <button
             type="submit"
-            disabled={status === 'checking'}
-            className="inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 font-semibold text-paper hover:bg-night active:translate-y-px disabled:opacity-60"
+            disabled={checking}
+            className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper enabled:hover:border-go-deep enabled:hover:bg-go-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
           >
             {t('refineCta')}
-            <ArrowRight className="h-4 w-4" aria-hidden />
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </button>
         </div>
         {error ? (
-          <p id="address-error" role="alert" className="text-sm font-medium text-clay">
+          <p
+            id="address-error"
+            role="alert"
+            className="mt-3 max-w-note border-t-[3px] border-ink bg-wash p-4 text-sm font-semibold text-ink"
+          >
+            <b className="mb-0.5 block text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
+              {t('errorLabel')}
+            </b>
             {error}
           </p>
         ) : (
-          <p id="address-help" role="status" className="text-sm text-ink-faint">
-            {status === 'checking' ? t('refineChecking') : t('refinePrivacy')}
+          <p id="address-help" role="status" className="mt-3 max-w-note text-sm text-ink-2">
+            {checking ? t('refineChecking') : t('refinePrivacy')}
           </p>
         )}
       </form>
-    </div>
+    </section>
   );
 }

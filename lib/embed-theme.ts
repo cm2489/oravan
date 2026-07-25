@@ -32,10 +32,22 @@ export type RadiusKey = 'sharp' | 'soft' | 'round';
 export type FontKey = 'system' | 'serif' | 'humanist' | 'geometric';
 export type ModeKey = 'light' | 'dark' | 'auto';
 
-/** --oravan-radius values, keyed by the closed enum above — never a raw string. */
+/**
+ * --oravan-radius values, keyed by the closed enum above — never a raw string.
+ *
+ * This knob governs the CONTROL scale only (panels, cards, buttons, inputs).
+ * embed.css derives the MARK scale from it as `min(radius, 3px)`, so the
+ * shape law — radius assigned by scale, a chip and a card never sharing a
+ * corner — survives every tenant choice: `round` cannot inflate a chip into a
+ * capsule, and `sharp` cannot make a mark rounder than the card holding it.
+ *
+ * `soft` is the default (safeRadiusKey falls back to it), so it is also the
+ * value nearly every rendered embed actually gets — which is why it is the
+ * design system's own control radius, 8px, and not a near-miss.
+ */
 export const RADIUS_VALUES: Record<RadiusKey, string> = {
   sharp: '2px',
-  soft: '10px',
+  soft: '8px',
   round: '20px',
 };
 
@@ -59,10 +71,18 @@ export const FONT_VALUES: Record<FontKey, string> = {
  * as token fallbacks. A forced mode with no tenant pair pins these, so
  * "mode=dark" renders the brand's own dark palette regardless of the
  * visitor's OS preference.
+ *
+ * LOCKSTEP (DESIGN.md § Embed lockstep): these are variant B's `paper`
+ * (#ffffff) and `ink` (#16191b). Variant B has exactly ONE dark, so the dark
+ * mode is not a second palette — it is the same two colors swapped, ink
+ * becoming the ground it was named for. Both pairs compute to 17.66:1.
+ * Change these only together with app/embed/embed.css's :root fallbacks,
+ * components/EmbedConfigurator.tsx's DEFAULT_*, and lib/contrast.ts's ink
+ * pair — four mirrors, one move.
  */
 export const MODE_DEFAULTS: Record<'light' | 'dark', { surface: string; ink: string }> = {
-  light: { surface: '#f3ecdd', ink: '#2a2318' },
-  dark: { surface: '#1b1611', ink: '#e4d9c0' },
+  light: { surface: '#ffffff', ink: '#16191b' },
+  dark: { surface: '#16191b', ink: '#ffffff' },
 };
 
 /**
@@ -125,6 +145,11 @@ export function safeAttribution(value: string | undefined | null): 'on' | 'none'
  * that already cleared AA (4.5:1).
  */
 export interface ResolvedEmbedTheme {
+  /**
+   * The tenant's accent — or, when they supplied a surface/ink pair and no
+   * accent, their own ink standing in for it, so embed.css's Oravan-green
+   * fallback can never surface on a widget wearing someone else's colors.
+   */
   accent?: string;
   surface?: string;
   ink?: string;
@@ -135,8 +160,9 @@ export interface ResolvedEmbedTheme {
   /**
    * Derived: the info-note callout border/fill, an accent tint over the
    * surface. Emitted ONLY when a real theme is present (accent + a known
-   * surface), so the un-themed default widget keeps its historic amber note
-   * (embed.css's var() fallback) rather than a brass tint.
+   * surface); otherwise embed.css's own neutral ink wash stands. Never
+   * amber — amber is spent site-wide on one dated floor-calendar fact, and
+   * no widget renders that fact.
    */
   noteBorder?: string;
   noteFill?: string;
@@ -167,7 +193,7 @@ export function resolveEmbedTheme(raw: {
   radius?: string;
   font?: string;
 }): ResolvedEmbedTheme {
-  const accent = safeAccent(raw.accent);
+  const rawAccent = safeAccent(raw.accent);
   const mode = safeModeKey(raw.mode);
 
   let surface = safeSurface(raw.surface);
@@ -176,21 +202,38 @@ export function resolveEmbedTheme(raw: {
     surface = undefined;
     ink = undefined;
   }
+  // Captured BEFORE the forced-mode default is pinned below: the white-label
+  // rule turns on whether the TENANT supplied this palette, and Oravan's own
+  // mode default must not be mistaken for one.
+  const tenantPair = Boolean(surface && ink);
   if (!surface && mode !== 'auto') {
     ({ surface, ink } = MODE_DEFAULTS[mode]);
   }
 
+  // THE WHITE-LABEL BOUNDARY. embed.css's --_accent falls back to Oravan's
+  // own `go` green, which is right for an un-themed widget and a LEAK for a
+  // tenant who supplied a palette and no accent of their own — they would see
+  // our green on their page. Emitting their ink as the accent makes that
+  // fallback literal unreachable the moment a tenant palette exists, which is
+  // the only way the guarantee can hold: CSS cannot express "fall back to
+  // green ONLY if nothing else was themed", so the server has to decide it.
+  // Same shape as the derived focus/accentInk below — computed here, never
+  // accepted as input.
+  const accent = rawAccent ?? (tenantPair ? ink : undefined);
+
   // accentInk (the text on an accent-filled chip/toggle) picks the tenant's
-  // OWN light/dark color when a pair is set — not Oravan's #fbf8f0/#1b1611 —
-  // so a themed widget's button text is the buyer's white, not our cream.
-  // With no pair, pickTextColor's defaults preserve the shipped look.
+  // OWN light/dark color when a pair is set — not Oravan's paper/ink — so a
+  // themed widget's button text is the buyer's white, not ours. With no pair,
+  // pickTextColor's defaults are the variant-B paper/ink pair.
   const accentInk = accent ? pickTextColor(accent, surface, ink) : undefined;
   const focus =
     accent && surface ? (contrastRatio(accent, surface) >= 3 ? accent : ink) : undefined;
 
   // Note callout tint — only for a genuinely themed widget (accent + a known
-  // surface). Absent otherwise, so embed.css's amber fallback stands on the
-  // un-themed default (Colby: keep amber on default, accent-tint when themed).
+  // surface). Absent otherwise, so embed.css's own neutral ink wash stands on
+  // the un-themed default. (The historic amber default is gone: amber is
+  // spent site-wide on exactly one fact, a bill standing on the floor
+  // calendar with its date printed, and no widget renders that fact.)
   const noteBorder = accent && surface ? mixHex(surface, accent, 0.42) : undefined;
   const noteFill = accent && surface ? mixHex(surface, accent, 0.09) : undefined;
 

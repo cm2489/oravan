@@ -90,21 +90,21 @@ export function CallWalkthrough() {
       {/* The phone is scenery; the captions beside it tell the real story.
           key={key} remounts the scene so its CSS choreography replays. */}
       <div aria-hidden className="w-56 flex-none select-none sm:w-60">
-        <div className="rounded-[2.25rem] bg-night p-2 shadow-lift">
-          <div className="relative aspect-[9/18] overflow-hidden rounded-[1.75rem] bg-paper">
-            <span className="absolute left-1/2 top-2 z-10 h-1.5 w-14 -translate-x-1/2 rounded-full bg-ink/15" />
+        <div className="rounded-control bg-ink-deep p-2">
+          <div className="relative aspect-[9/18] overflow-hidden rounded-control bg-paper">
+            <span className="absolute top-2 left-1/2 z-10 h-1.5 w-14 -translate-x-1/2 rounded-stamp bg-line" />
             <PhoneScene key={key} scene={key} />
           </div>
         </div>
       </div>
 
-      <div className="min-w-0 max-w-prose">
+      <div className="min-w-0 max-w-read">
         <div aria-live={advancing ? 'off' : 'polite'} aria-atomic="true">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="text-xs font-bold tracking-[0.06em] text-ink-2 uppercase leading-tight">
             {t('stepOf', { step: scene + 1, total: SCENES.length })}
           </p>
-          <h3 className="mt-1 font-display text-2xl font-bold">{t(`scenes.${key}.title`)}</h3>
-          <p className="mt-2 leading-relaxed text-ink-soft">{t(`scenes.${key}.body`)}</p>
+          <h3 className="mt-1 text-h3 font-extrabold text-ink">{t(`scenes.${key}.title`)}</h3>
+          <p className="mt-2 text-ink-2">{t(`scenes.${key}.body`)}</p>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -112,7 +112,7 @@ export function CallWalkthrough() {
             type="button"
             onClick={() => setUserPaused(playing)}
             aria-label={playing ? t('pause') : t('play')}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-ink/20 hover:border-ink/50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-control border-[1.5px] border-line-strong text-ink hover:border-ink"
           >
             {playing ? <Pause className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
           </button>
@@ -126,9 +126,11 @@ export function CallWalkthrough() {
                 aria-current={i === scene ? 'step' : undefined}
                 className="group inline-flex h-11 w-11 items-center justify-center"
               >
+                {/* Small marks are stamped at 3px, and position is carried by
+                    size as well as tone — never by colour alone. */}
                 <span
-                  className={`h-2.5 w-2.5 rounded-full transition-all ${
-                    i === scene ? 'bg-brass ring-4 ring-brass-soft' : 'bg-line group-hover:bg-ink-faint'
+                  className={`rounded-stamp transition-all ${
+                    i === scene ? 'h-2.5 w-4 bg-ink' : 'h-2.5 w-2.5 bg-line group-hover:bg-ink-2'
                   }`}
                 />
               </button>
@@ -136,7 +138,7 @@ export function CallWalkthrough() {
           </div>
         </div>
 
-        <p className="mt-3 text-xs text-ink-faint">{t('sampleNote')}</p>
+        <p className="mt-3 max-w-note text-xs text-ink-2">{t('sampleNote')}</p>
       </div>
     </div>
   );

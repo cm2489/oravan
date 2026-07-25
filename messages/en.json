@@ -24,7 +24,11 @@
       "partners": "Partners",
       "funding": "Founder-funded. No ads, no tracking, no outside money.",
       "fundingLive": "Funded by the founder and supporters.",
-      "fundingCta": "Support Oravan"
+      "fundingCta": "Support Oravan",
+      "colSite": "Site",
+      "colTrust": "Trust",
+      "sourceNote": "Bill text and status are synced nightly from Congress.gov, the official record.",
+      "corrections": "Something wrong on this page?"
     },
     "switchLocale": "En español",
     "loading": "Loading…",
@@ -33,11 +37,13 @@
       "bills": "Bills",
       "reps": "Reps",
       "impact": "Impact"
-    }
+    },
+    "aiMarker": "AI",
+    "localeGroupLabel": "Language / Idioma"
   },
   "home": {
-    "heroTitle": "Your voice matters. Make it heard.",
-    "heroSub": "Five minutes is all it takes. Find your representatives, understand the bills that touch your life in plain language, and say your piece. No account. No app. Just you and the phone.",
+    "heroTitle": "Five minutes. One call.",
+    "heroSub": "Type your ZIP. Read a bill in plain words, in English or Spanish. Get a 30-second script. Call your member of Congress, and a staffer tallies your position.",
     "heroLocaleLink": "Ver en español",
     "zipLabel": "Your ZIP code",
     "zipPlaceholder": "e.g. 20002",
@@ -50,7 +56,7 @@
     "heroJump": "Or jump straight to this week's callable bills",
     "walkthroughTitle": "See how a call works",
     "walkthroughSub": "What actually happens, step by step — from plain language to a 30-second call.",
-    "howTitle": "How it works",
+    "howTitle": "Your five minutes, drawn to scale",
     "how1Title": "Find your three",
     "how1Body": "Your ZIP code finds your House representative and two senators, with their DC and local office numbers.",
     "how2Title": "Pick a bill, get the plain version",
@@ -71,7 +77,34 @@
     "supportNote": "Personal support — not tax-deductible.",
     "momentsTitle": "Live Moments",
     "momentsSub": "Legislative questions the news is covering right now, routed straight to the real bills.",
-    "momentsCta": "Browse all Moments"
+    "momentsCta": "Browse all Moments",
+    "heroTitleGo": "It counts.",
+    "aiMarker": "AI",
+    "heroAi": "Every plain-words bill and script on this site is AI-decoded, then read by a person before it suggests a call.",
+    "demoTitle": "The whole call, honestly",
+    "demoStafferLabel": "Staffer:",
+    "demoStafferOpen": "“Congressional office, good morning.”",
+    "demoYouLabel": "You:",
+    "demoYouLine": "read your script out loud. About 30 seconds.",
+    "demoStafferClose": "“I’ll pass that along. Thanks for calling.”",
+    "demoNoteLead": "Nothing else happens.",
+    "demoNote": "Your position goes into a tally the office reports up, and nobody debates or quizzes you along the way. If you get voicemail instead, it counts exactly the same.",
+    "floorCalendar": "On the floor calendar",
+    "floorCta": "Read it in plain words",
+    "aiReviewed": "Decoded by AI, reviewed by a person",
+    "stampLabel": "Data as of",
+    "weekNote": "Amber and a green panel are spent on one fact only: a bill is standing on the floor calendar, and the day it got there is printed on the mark. Everything else is listed plainly. Some weeks nothing is flagged, and we would rather show you that than pad the list.",
+    "how1Dur": "0:30",
+    "how2Dur": "1:00",
+    "how3Dur": "1:00",
+    "how4Dur": "2:30",
+    "routeGaugeLabel": "This step takes {duration} of {total}",
+    "routeTotal": "5:00",
+    "routeTotalNote": "start to finish — and half of it is the call itself.",
+    "privacyPoint1": "No sign-up exists on this site. You could not create a profile if you tried.",
+    "privacyPoint2": "A street address used to pick your district is used once and never stored.",
+    "privacyPoint3": "Clear your browser data and Oravan forgets you completely.",
+    "zipErrorLabel": "Check this"
   },
   "reps": {
     "title": "Your representatives",
@@ -114,7 +147,8 @@
     "showAllDistricts": "Show all districts for ZIP {zip}",
     "nextTitle": "Now you know who to call",
     "nextSub": "Here's what's worth a call to them this week.",
-    "nextSeeAll": "Browse all {count} active bills"
+    "nextSeeAll": "Browse all {count} active bills",
+    "errorLabel": "Check this"
   },
   "bills": {
     "title": "Active bills, decoded",
@@ -149,7 +183,9 @@
     "showAll": "Show all {count}",
     "clearSearch": "Clear search",
     "clearFilters": "Clear all filters",
-    "interestsNote": "Topic picks are saved only on this device, never on a server."
+    "interestsNote": "Topic picks are saved only on this device, never on a server.",
+    "aiNote": "Plain-language headlines on this page are AI-decoded, then read by a person before they suggest a call.",
+    "onCalendar": "On the floor calendar"
   },
   "bill": {
     "decoded": "Decoded",
@@ -251,7 +287,24 @@
     "firstCallTitle": "Your first call?",
     "firstCallBody": "Talking to a congressional staffer can feel intimidating the first time. Calling after hours is the gentlest way to start: no live conversation, just a voicemail that counts exactly the same. Tonight works as well as right now.",
     "preDialTitle": "Before you dial",
-    "preDialBody": "Staffers field calls like this all day, and it's not a debate — about thirty seconds and you're done. A live pickup or a voicemail count exactly the same, so either one is a good outcome."
+    "preDialBody": "Staffers field calls like this all day, and it's not a debate — about thirty seconds and you're done. A live pickup or a voicemail count exactly the same, so either one is a good outcome.",
+    "allBills": "All bills",
+    "aiMarker": "AI",
+    "aiLabel": "Decoded by AI · reviewed by a person",
+    "aiLede": "The plain-language version leads. The official text is always the reference.",
+    "congressLabel": "{congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress",
+    "officialDisclosure": "Read the official text",
+    "trackerLabel": "Where this bill is in the process",
+    "stampLabel": "Data as of",
+    "footNote": "The panel scrolls · the call stays",
+    "floor": {
+      "calendarHouse": "On the House floor calendar",
+      "calendarSenate": "On the Senate floor calendar",
+      "headlineHouse": "This bill is queued for a vote of the full House.",
+      "headlineSenate": "This bill is queued for a vote of the full Senate.",
+      "meta": "A bill on the calendar can be called up with little notice, and offices tally until it is.",
+      "cta": "Make your call"
+    }
   },
   "walkthrough": {
     "label": "How a call works — a five-step demo",
@@ -445,7 +498,8 @@
     "success": "Got it — thank you. Every note during the beta shapes what gets fixed first.",
     "errorIncomplete": "Pick a category and write a message first.",
     "errorRateLimited": "You've sent several notes in a short time. Take a breath and try again soon.",
-    "errorGeneric": "That didn't go through. Try again in a minute."
+    "errorGeneric": "That didn't go through. Try again in a minute.",
+    "errorLabel": "Check this"
   },
   "og": {
     "aiDecoded": "AI-decoded"
@@ -702,6 +756,7 @@
     "howMadeRule3": "A callable action: the bill's page and call script already work — every corpus bill qualifies by construction.",
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Moment retires when the question is settled — every vehicle signed, vetoed, or dead. Settled Moments stay readable, marked resolved; they never reopen.",
-    "browseAll": "Browse all Moments"
+    "browseAll": "Browse all Moments",
+    "aiNote": "Every Moment summary is AI-drafted, then read by a person before it publishes."
   }
 }

@@ -33,12 +33,12 @@ export function WalkthroughDisclosure() {
     <details
       data-walkthrough-disclosure
       onToggle={(e) => setOpen(e.currentTarget.open)}
-      className="mt-3 rounded-card border border-line bg-surface px-5"
+      className="rounded-control border-[1.5px] border-line-strong px-5"
     >
-      <summary className="min-h-11 cursor-pointer select-none py-3 font-semibold marker:text-ink-faint hover:text-night">
+      <summary className="min-h-11 cursor-pointer py-3 font-semibold text-ink select-none marker:text-ink-2 hover:text-go-deep">
         {t('disclosure')}
       </summary>
-      <div className="pb-6 pt-2">{open && <CallWalkthrough />}</div>
+      <div className="pt-2 pb-6">{open && <CallWalkthrough />}</div>
     </details>
   );
 }

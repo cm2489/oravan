@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, BookOpen, Info } from 'lucide-react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
@@ -23,6 +23,23 @@ import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildOrganizationJsonLd } from '@/lib/jsonld';
 
+/*
+ * THE LOOKUP SURFACE, as ruled paper.
+ *
+ * This page changes shape zero times. That is deliberate: data-gated loudness
+ * means the full-bleed green enamel panel is spent on ONE bill standing on the
+ * floor calendar, and the page that earns it is the one whose subject is a
+ * bill. A ZIP lookup's subject is three phone numbers, so every band here is
+ * paper - bordered cards for people, a rule-and-`wash` note for anything the
+ * page has to caveat, and one green control per rep card, which is the dial.
+ *
+ * NOTES ARE OPENED BY A RULE, NOT BY A FILL. The failure register is a 3px ink
+ * rule plus a bold uppercase label plus role="alert"; the informational
+ * register is a 1.5px line-strong rule and no label at all. Neither one is
+ * amber: amber is reserved for a bill standing on the floor calendar, with the
+ * date printed beside it, and "your ZIP spans two districts" is not that fact.
+ */
+
 export async function generateMetadata({
   params,
 }: {
@@ -32,6 +49,9 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'reps' });
   return { title: t('title'), alternates: hreflangAlternates(locale, '/reps') };
 }
+
+/** The informational register: a hairline rule over a recessed ground. */
+const NOTE = 'border-t-[1.5px] border-line-strong bg-wash p-4 text-sm text-ink-2';
 
 export default async function RepsPage({
   params,
@@ -75,13 +95,13 @@ export default async function RepsPage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <JsonLd id="org-jsonld" data={orgJsonLd} />
-      <h1 className="font-display text-4xl font-bold">{t('title')}</h1>
-      <p className="mt-2 max-w-prose text-ink-soft">{t('sub')}</p>
+      <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
+      <p className="mt-4 max-w-read text-lede text-ink-2">{t('sub')}</p>
 
       {!zip && (
         <div className="mt-8">
-          <div className="max-w-xl rounded-card border border-line bg-surface p-6 shadow-lift">
-            <p className="mb-4 font-medium">{t('noZip')}</p>
+          <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
+            <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
             <ZipForm autoFocus />
           </div>
 
@@ -89,21 +109,26 @@ export default async function RepsPage({
               round 2): a ghost of the three cards a ZIP unlocks, so the
               privacy-sensitive visitor deciding whether to type anything sees
               exactly what they get. The skeletons are decorative — the
-              caption carries the promise. */}
-          <p className="mt-10 max-w-prose text-sm text-ink-soft">{t('previewNote')}</p>
+              caption carries the promise. They are drawn in `wash` rather than
+              dimmed with opacity, so nothing here is a faded copy of a real
+              contrast pair. */}
+          <p className="mt-12 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
           <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="rounded-card border border-line bg-surface p-5 opacity-60">
+              <div
+                key={i}
+                className="rounded-control border-[1.5px] border-line-strong bg-paper p-5"
+              >
                 <div className="flex gap-4">
-                  <div className="h-22 w-18 shrink-0 rounded-lg bg-paper-deep" />
+                  <div className="h-22 w-18 shrink-0 rounded-stamp border-[1.5px] border-line-strong bg-wash" />
                   <div className="min-w-0 flex-1">
-                    <div className="h-3 w-24 rounded-full bg-paper-deep" />
-                    <div className="mt-2.5 h-5 w-36 max-w-full rounded-full bg-paper-deep" />
+                    <div className="h-3 w-24 rounded-stamp bg-wash" />
+                    <div className="mt-2 h-5 w-36 max-w-full rounded-stamp bg-wash" />
                   </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  <div className="h-11 rounded-control bg-paper-deep" />
-                  <div className="h-11 rounded-control bg-paper-deep" />
+                <div className="mt-4 grid gap-2">
+                  <div className="h-12 rounded-control bg-wash" />
+                  <div className="h-11 rounded-control bg-wash" />
                 </div>
               </div>
             ))}
@@ -112,8 +137,11 @@ export default async function RepsPage({
       )}
 
       {zip && districts.length === 0 && (
-        <div className="mt-8 rounded-card border border-clay/30 bg-clay-soft p-6 max-w-xl" role="alert">
-          <p className="font-medium text-ink">{t('zipNotFound')}</p>
+        <div className="mt-8 max-w-xl border-t-[3px] border-ink bg-wash p-4" role="alert">
+          <p className="text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
+            {t('errorLabel')}
+          </p>
+          <p className="mt-1 font-semibold text-ink">{t('zipNotFound')}</p>
           <div className="mt-4">
             <ZipForm />
           </div>
@@ -121,16 +149,16 @@ export default async function RepsPage({
       )}
 
       {refined && zip && (
-        <div className="mt-6 max-w-prose rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
-          <p className="flex gap-2">
-            <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-            <span>
-              {t('refinedNote')}
-              {refinedOutsideZip && <> {t('refinedOutsideZip', { zip })}</>}
-            </span>
+        <div className={`mt-6 max-w-read ${NOTE}`}>
+          <p>
+            {t('refinedNote')}
+            {refinedOutsideZip && <> {t('refinedOutsideZip', { zip })}</>}
           </p>
-          <p className="mt-2 pl-7">
-            <Link href={`/reps?zip=${zip}`} className="underline underline-offset-2">
+          <p>
+            <Link
+              href={`/reps?zip=${zip}`}
+              className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-2"
+            >
               {t('showAllDistricts', { zip })}
             </Link>
           </p>
@@ -139,10 +167,7 @@ export default async function RepsPage({
 
       {!refined && districts.length > 1 && zip && (
         <>
-          <p className="mt-6 flex max-w-prose gap-2 rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
-            <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-            {t('multiDistrict')}
-          </p>
+          <p className={`mt-6 max-w-read ${NOTE}`}>{t('multiDistrict')}</p>
           <AddressForm zip={zip} />
         </>
       )}
@@ -152,18 +177,13 @@ export default async function RepsPage({
         const noSenators = reps.every((r) => r.type !== 'sen');
         const vacancy = vacancyForDistrict(d);
         return (
-          <section key={`${d.state}-${d.district}`} className="mt-10" aria-label={`${d.state} ${d.district}`}>
-            <h2 className="font-display text-2xl font-bold">
+          <section key={`${d.state}-${d.district}`} className="mt-12" aria-label={`${d.state} ${d.district}`}>
+            <h2 className="text-h2 font-extrabold">
               {d.district === 0
                 ? t('atLargeHeading', { state: d.state })
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
-            {noSenators && (
-              <p className="mt-3 flex max-w-prose gap-2 rounded-card border border-brass/40 bg-brass-soft p-4 text-sm">
-                <Info className="h-5 w-5 shrink-0 text-ink-soft" aria-hidden />
-                {t('delegateNote', { state: d.state })}
-              </p>
-            )}
+            {noSenators && <p className={`mt-4 max-w-read ${NOTE}`}>{t('delegateNote', { state: d.state })}</p>}
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
@@ -181,9 +201,9 @@ export default async function RepsPage({
         <p className="mt-6">
           <Link
             href="/why-call"
-            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline underline-offset-4"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
           >
-            <BookOpen className="h-4 w-4" aria-hidden />
+            <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
             {tBill('whyLink')}
           </Link>
         </p>
@@ -191,18 +211,20 @@ export default async function RepsPage({
 
       {/* The obvious next step: a rep card is a phone number, not a
           destination. Point straight at what's actually callable this week
-          so the ZIP-first path never dead-ends here. */}
+          so the ZIP-first path never dead-ends here. The 2px ink edge is the
+          one weight change on the page — it is the continuation, so it gets
+          the heaviest rule the paper register has. */}
       {zip && districts.length > 0 && (
         <section
-          className="mt-12 rounded-card border-2 border-ink bg-surface p-6 shadow-lift md:p-8"
+          className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
           aria-labelledby="reps-next"
         >
-          <h2 id="reps-next" className="font-display text-2xl font-bold">
+          <h2 id="reps-next" className="text-h2 font-extrabold">
             {t('nextTitle')}
           </h2>
-          <p className="mt-1 max-w-prose text-ink-soft">{t('nextSub')}</p>
+          <p className="mt-2 max-w-read text-ink-2">{t('nextSub')}</p>
           {topActions.length > 0 ? (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {topActions.map((b) => (
                 <BillCard
                   key={billSlug(b)}
@@ -219,22 +241,22 @@ export default async function RepsPage({
               ))}
             </div>
           ) : (
-            <div className="mt-5">
+            <div className="mt-6">
               <UrgencyEmptyState {...freshness} />
             </div>
           )}
           <Link
             href="/bills"
-            className="mt-5 inline-flex items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:text-night"
+            className="mt-6 inline-flex min-h-11 items-center gap-2 font-semibold text-ink underline underline-offset-4"
           >
             {t('nextSeeAll', { count: totalBills })}
-            <ArrowRight className="h-4 w-4" aria-hidden />
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         </section>
       )}
 
       {zip && districts.length > 0 && (
-        <p className="mt-10 text-sm text-ink-faint">
+        <p className="mt-12 text-sm text-ink-2">
           ZIP {zip} ·{' '}
           <Link href="/reps" className="underline underline-offset-2">
             {t('changeZip')}

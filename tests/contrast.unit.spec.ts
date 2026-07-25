@@ -48,18 +48,23 @@ test.describe('relativeLuminance / contrastRatio', () => {
 
 test.describe('pickTextColor', () => {
   test('default accent keeps the shipped chip color', () => {
-    expect(pickTextColor('#82632a')).toBe('#fbf8f0');
+    // The shipped default accent is variant B's `go` — embed.css's
+    // var(--oravan-accent, #0f6c4a) — and its readable text is `paper`.
+    expect(pickTextColor('#0f6c4a')).toBe('#ffffff');
+    // The retired default accent resolves the same way: the pick is MEASURED,
+    // not a lookup keyed on one known brand color.
+    expect(pickTextColor('#82632a')).toBe('#ffffff');
   });
 
   test('light backgrounds get dark text, dark get light', () => {
-    expect(pickTextColor('#f3ecdd')).toBe('#1b1611');
-    expect(pickTextColor('#ffe680')).toBe('#1b1611');
-    expect(pickTextColor('#1b1611')).toBe('#fbf8f0');
-    expect(pickTextColor('#0f1a2b')).toBe('#fbf8f0');
+    expect(pickTextColor('#f3ecdd')).toBe('#16191b');
+    expect(pickTextColor('#ffe680')).toBe('#16191b');
+    expect(pickTextColor('#1b1611')).toBe('#ffffff');
+    expect(pickTextColor('#0f1a2b')).toBe('#ffffff');
   });
 
   test('unparseable background falls back to the light candidate', () => {
-    expect(pickTextColor('nope')).toBe('#fbf8f0');
+    expect(pickTextColor('nope')).toBe('#ffffff');
   });
 });
 
