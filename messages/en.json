@@ -9,7 +9,8 @@
       "reps": "My reps",
       "impact": "My impact",
       "whyCall": "Why call?",
-      "primaryLabel": "Primary"
+      "primaryLabel": "Primary",
+      "moments": "Moments"
     },
     "footer": {
       "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
@@ -36,7 +37,8 @@
       "home": "Home",
       "bills": "Bills",
       "reps": "Reps",
-      "impact": "Impact"
+      "impact": "Impact",
+      "moments": "Moments"
     },
     "aiMarker": "AI",
     "localeGroupLabel": "Language / Idioma"
@@ -104,7 +106,8 @@
     "privacyPoint1": "No sign-up exists on this site. You could not create a profile if you tried.",
     "privacyPoint2": "A street address used to pick your district is used once and never stored.",
     "privacyPoint3": "Clear your browser data and Oravan forgets you completely.",
-    "zipErrorLabel": "Check this"
+    "zipErrorLabel": "Check this",
+    "momentsUpdated": "Latest: {date}"
   },
   "reps": {
     "title": "Your representatives",

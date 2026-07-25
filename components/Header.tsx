@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, ScrollText, Users, Activity } from 'lucide-react';
+import { Home, ScrollText, Users, Activity, Newspaper } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { OravanLockup } from './brand/OravanLockup';
@@ -31,10 +31,14 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * a lockup is not thumb-reachable.
  */
 
-/** The thumb bar (phones): four destinations, home included. */
+/** The thumb bar (phones): five destinations, home included. Five cells at
+ *  the 5xl max width is ≥64px each at 320px — comfortably over the 44px
+ *  floor (verified in e2e). Moments joined 2026-07-25 (v2 slice S5): the
+ *  discovery layer is a flagship surface now, not an experiment. */
 const TABS = [
   { href: '/', key: 'home', icon: Home },
   { href: '/bills', key: 'bills', icon: ScrollText },
+  { href: '/moments', key: 'moments', icon: Newspaper },
   { href: '/reps', key: 'reps', icon: Users },
   { href: '/impact', key: 'impact', icon: Activity },
 ] as const;
@@ -51,6 +55,11 @@ const TABS = [
  */
 const LINKS = [
   { href: '/bills', key: 'bills', wide: false },
+  // Moments joined 2026-07-25 (v2 slice S5) — flagship surface, never held
+  // back. Measured at 768/820px ES with all four non-wide labels + the
+  // switch: 0px overflow, no wrap ("Momentos" is short; the bar absorbs it
+  // without demoting anything).
+  { href: '/moments', key: 'moments', wide: false },
   { href: '/reps', key: 'reps', wide: false },
   { href: '/impact', key: 'impact', wide: false },
   { href: '/why-call', key: 'whyCall', wide: true },
@@ -114,7 +123,7 @@ export function Header() {
         aria-label={t('nav.primaryLabel')}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line-strong bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <ul className="mx-auto grid max-w-5xl grid-cols-4">
+        <ul className="mx-auto grid max-w-5xl grid-cols-5">
           {TABS.map(({ href, key, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (

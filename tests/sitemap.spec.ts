@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { getAllBills } from '../lib/core';
+import { getMoments } from '../lib/moments';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -11,7 +12,7 @@ import { getAllBills } from '../lib/core';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 13; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp'
+const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/moments'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
@@ -21,8 +22,14 @@ test.describe('sitemap.xml', () => {
     const body = await res.text();
 
     const totalBills = getAllBills().length;
+    // Moments (v2 slice S5): every non-retired moment ships, both locales.
+    const totalMoments = getMoments().filter((m) => m.state !== 'retired').length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
-    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills) * 2);
+    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments) * 2);
+
+    // A representative moment page, both locales.
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/moments/iran-war-powers</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/moments/iran-war-powers</loc>`);
 
     // Homepage, both locales. The en entry has no trailing slash — Next's
     // Metadata URL resolution collapses a bare "/" to the origin, and

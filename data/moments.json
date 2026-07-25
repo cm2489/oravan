@@ -68,7 +68,17 @@
     },
     "opened": "2026-07-23",
     "review_by": "2026-08-22",
-    "status": "live"
+    "status": "live",
+    "context_refs": [
+      {
+        "kind": "crs",
+        "url": "https://www.congress.gov/crs-report/R42699",
+        "title": {
+          "en": "CRS: The War Powers Resolution — Concepts and Practice",
+          "es": "CRS: La Resolución de Poderes de Guerra — conceptos y práctica"
+        }
+      }
+    ]
   },
   "government-funding-deadline": {
     "name": {
@@ -118,6 +128,16 @@
     },
     "opened": "2026-07-23",
     "review_by": "2026-08-22",
-    "status": "live"
+    "status": "live",
+    "context_refs": [
+      {
+        "kind": "crs",
+        "url": "https://www.congress.gov/crs-report/R48832",
+        "title": {
+          "en": "CRS: The 2025 (FY2026) Government Shutdown — Economic Effects",
+          "es": "CRS: El cierre del gobierno de 2025 (AF2026) — efectos económicos"
+        }
+      }
+    ]
   }
 }
