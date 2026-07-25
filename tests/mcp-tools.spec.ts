@@ -147,7 +147,12 @@ test.describe('get_bill', () => {
     expect(decoded.tldr).toBeTruthy();
     expect(decoded.cost_chips).toEqual(expect.arrayContaining([expect.any(String)]));
     expect(bill.status).toBe('floor_vote');
-    expect(bill.status_label).toBe('Heading to a vote');
+    // The label retired its forecast 2026-07-25 (pre-launch audit): the
+    // corpus carries no forward-looking scheduled dates, so "Heading to a
+    // vote" claimed a schedule the record cannot support — and on nine bills
+    // whose motions had been REJECTED it contradicted the action text printed
+    // beside it. The status key is unchanged; only what we assert it MEANS.
+    expect(bill.status_label).toBe('On the floor calendar');
     expect(['now', 'moving', 'radar']).toContain(bill.urgency_band);
     expect((bill.sponsor as { name: string }).name).toBe('Debbie Wasserman Schultz');
     expect(bill.congress_gov_url).toContain('congress.gov');
