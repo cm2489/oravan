@@ -1,0 +1,218 @@
+{
+  "_meta": {
+    "schema": 1,
+    "generated_at": "2026-07-25T06:20:00Z"
+  },
+  "government-funding-deadline": {
+    "updates": [
+      {
+        "id": "u_da8362f5",
+        "class": "floor_action",
+        "vehicle": "hr-9770-119",
+        "day": "2026-07-22",
+        "occurred_at": "2026-07-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T06:20:00Z",
+        "text": {
+          "en": "The Senate received the funding bill on July 22, 2026.",
+          "es": "El Senado recibió el proyecto de financiamiento el 22 de julio de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the Senate.",
+          "action_code": null,
+          "action_type": "IntroReferral",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_212c0547",
+        "class": "vote",
+        "vehicle": "hr-9770-119",
+        "day": "2026-07-21",
+        "occurred_at": "2026-07-21",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T06:20:00Z",
+        "text": {
+          "en": "The House passed H.R. 9770, the short-term funding extension, 220-205 on Roll Call 272.",
+          "es": "La Cámara aprobó la H.R. 9770, la extensión de financiamiento a corto plazo, 220-205 en la votación nominal 272."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://clerk.house.gov/evs/2026/roll272.xml"
+          ]
+        },
+        "record": {
+          "action_text": "On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272). (text: CR H4731-4733)",
+          "action_code": "H37100",
+          "action_type": "Floor",
+          "source_system": "House floor actions",
+          "roll_call": {
+            "chamber": "house",
+            "number": 272
+          }
+        },
+        "ai": false
+      }
+    ],
+    "summary_revisions": [
+      {
+        "id": "s_1856a409",
+        "generated_at": "2026-07-25T06:20:00Z",
+        "as_of_day": "2026-07-25",
+        "text": {
+          "en": "The House passed H.R. 9770, the short-term funding extension, 220-205 on July 21, 2026. The Senate received the bill on July 22, 2026 and has not voted on it.",
+          "es": "La Cámara aprobó la H.R. 9770, la extensión de financiamiento a corto plazo, 220-205, el 21 de julio de 2026. El Senado recibió el proyecto el 22 de julio de 2026 y no lo ha votado."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_da8362f5",
+            "u_212c0547"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770"
+          ]
+        },
+        "changed_because": [
+          "seed"
+        ],
+        "model": "hand-authored"
+      }
+    ]
+  },
+  "iran-war-powers": {
+    "updates": [
+      {
+        "id": "u_19ae0eba",
+        "class": "vote",
+        "vehicle": "hconres-89-119",
+        "day": "2026-07-23",
+        "occurred_at": "2026-07-23",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T06:20:00Z",
+        "text": {
+          "en": "The House adopted H. Con. Res. 89, 214-208, on Roll Call 282.",
+          "es": "La Cámara aprobó la H. Con. Res. 89, 214-208, en la votación nominal 282."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://clerk.house.gov/evs/2026/roll282.xml"
+          ]
+        },
+        "record": {
+          "action_text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 214 - 208 (Roll no. 282).",
+          "action_code": "H37100",
+          "action_type": "Floor",
+          "source_system": "House floor actions",
+          "roll_call": {
+            "chamber": "house",
+            "number": 282
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_e454d115",
+        "class": "floor_action",
+        "vehicle": "hconres-89-119",
+        "day": "2026-07-23",
+        "occurred_at": "2026-07-23",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T06:20:00Z",
+        "text": {
+          "en": "The Senate received the resolution on July 23, 2026 and referred it to the Committee on Foreign Relations.",
+          "es": "El Senado recibió la resolución el 23 de julio de 2026 y la remitió al Comité de Relaciones Exteriores."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the Senate and referred to the Committee on Foreign Relations.",
+          "action_code": null,
+          "action_type": "IntroReferral",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_8b7ad678",
+        "class": "vote",
+        "vehicle": "sjres-185-119",
+        "day": "2026-06-24",
+        "occurred_at": "2026-06-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-07-25T06:20:00Z",
+        "text": {
+          "en": "The Senate rejected the motion to proceed to S.J.Res. 185, 47-50, on Record Vote 192.",
+          "es": "El Senado rechazó la moción para considerar la S.J.Res. 185, 47-50, en la votación registrada 192."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00192.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 192
+          }
+        },
+        "ai": false
+      }
+    ],
+    "summary_revisions": [
+      {
+        "id": "s_d26a6b43",
+        "generated_at": "2026-07-25T06:20:00Z",
+        "as_of_day": "2026-07-25",
+        "text": {
+          "en": "On July 23, 2026 the House adopted H. Con. Res. 89, 214-208, and the Senate referred it to the Committee on Foreign Relations that day. On June 24, 2026 the Senate rejected a motion to proceed to S.J.Res. 185, 47-50.",
+          "es": "El 23 de julio de 2026 la Cámara aprobó la H. Con. Res. 89, 214-208, y el Senado la remitió al Comité de Relaciones Exteriores ese mismo día. El 24 de junio de 2026 el Senado rechazó una moción para considerar la S.J.Res. 185, 47-50."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_19ae0eba",
+            "u_e454d115",
+            "u_8b7ad678"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185"
+          ]
+        },
+        "changed_because": [
+          "seed"
+        ],
+        "model": "hand-authored"
+      }
+    ]
+  }
+}
