@@ -44,7 +44,10 @@ test.describe('momentDek', () => {
     const moments = JSON.parse(
       readFileSync(join(__dirname, '..', 'data/moments.json'), 'utf8')
     ) as Record<string, { summary: { en: string; es: string } }>;
-    const entries = Object.entries(moments.moments ?? moments);
+    // data/moments.json is keyed by moment id at the root — no wrapper. The
+    // defensive `.moments ??` this replaced also broke the type: entries of
+    // the union resolved `m` to the inner {en,es}, so `.summary` failed tsc.
+    const entries = Object.entries(moments);
     expect(entries.length).toBeGreaterThan(0);
     for (const [id, m] of entries) {
       for (const locale of ['en', 'es'] as const) {
