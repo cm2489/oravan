@@ -85,7 +85,12 @@ test.describe('/moments/[id] detail page', () => {
 
       // AI labeling — the existing bill.aiChip idiom, reused verbatim.
       await expect(page.getByText(en.bill.aiChip, { exact: true })).toBeVisible();
-      await expect(page.getByText(en.bill.aiDisclaimer)).toBeVisible();
+      // .first(): the v2 live layer puts the SAME standing disclaimer under
+      // the "Where it stands" state summary too, so on a moment carrying a
+      // revision this string legitimately appears twice. One site-wide AI
+      // caveat, repeated under each AI passage, is the intended posture —
+      // tests/moment-updates-page.spec.ts asserts the second occurrence.
+      await expect(page.getByText(en.bill.aiDisclaimer).first()).toBeVisible();
 
       // Evidence: the qualifying-signal type and every clickable ref.
       await expect(page.getByRole('heading', { name: en.moments.whyHeading })).toBeVisible();

@@ -757,6 +757,38 @@
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Moment retires when the question is settled — every vehicle signed, vetoed, or dead. Settled Moments stay readable, marked resolved; they never reopen.",
     "browseAll": "Browse all Moments",
-    "aiNote": "Every Moment summary is AI-drafted, then read by a person before it publishes."
+    "aiNote": "Every Moment summary is AI-drafted, then read by a person before it publishes.",
+    "updates": {
+      "whereHeading": "Where it stands — {date}",
+      "summaryAiChip": "AI-drafted from the public record",
+      "revisionsToggle": "How this summary has changed ({count})",
+      "revisionAsOf": "As of {date}",
+      "revisionReasonLabel": "Rewritten because",
+      "timelineHeading": "What's moved",
+      "timelineLede": "Everything the record shows on this question's bills, newest day first. Up to {cap} a day are listed here, and the days nothing was recorded are shown as they were.",
+      "timelineAiChip": "The one-line decodes below are AI-written from the official action text.",
+      "class": {
+        "vote": "Vote",
+        "status_change": "Status change",
+        "floor_action": "Floor action",
+        "scheduled": "Scheduled",
+        "press_cluster": "Coverage",
+        "correction": "Correction"
+      },
+      "quietToday": "Nothing recorded yet today.",
+      "quietDay": "Nothing recorded.",
+      "checkGapNote": "we have not been able to check for new activity since {date}",
+      "overflow": "{count, plural, one {# further recorded action this day} other {# further recorded actions this day}}",
+      "sourcesLabel": "Sources",
+      "correctionLink": "See the update this corrects",
+      "verbatimLabel": "The record, verbatim",
+      "refsLabel": "Background from the institutional record",
+      "refKind": {
+        "crs": "Congressional Research Service",
+        "cbo": "Congressional Budget Office",
+        "gao": "Government Accountability Office"
+      },
+      "privacyNote": "Nobody is watching you read this — no account, no tracking, no feed tuned to you, which is why the same page can be shared across the spectrum."
+    }
   }
 }

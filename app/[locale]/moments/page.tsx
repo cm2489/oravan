@@ -64,6 +64,12 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           {t('moments.aiNote')}
         </Chip>
       </p>
+      {/* The privacy line (v2 spec §7): threaded through, never a banner. It
+          sits beside the AI note because the two are the same disclosure —
+          here is what a machine wrote, and here is what nobody recorded about
+          you reading it. Stated once, in ink, in the calm register: no
+          "unlike them", no adversary, no claim about any named competitor. */}
+      <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.updates.privacyNote')}</p>
 
       {/* The section that asks something of the reader takes the full 3px ink
           rule; the record below it takes a hairline. `line` is a separator
