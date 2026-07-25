@@ -16,6 +16,7 @@ import { hreflangAlternates } from '@/lib/hreflang';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
+import { latestUpdateDay } from '@/lib/moment-updates';
 import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
 /*
@@ -436,6 +437,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <span className="max-w-note text-sm text-ink-pale">
                       {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
                     </span>
+                    {/* Live-layer recency (v2 slice S5): only when a recorded
+                        update exists — never a synthesized date. ink-pale on
+                        ink-deep is 10.82:1. */}
+                    {latestUpdateDay(m.id) && (
+                      <span className="text-xs font-semibold text-ink-pale tabular-nums">
+                        {t('momentsUpdated', {
+                          date: billDate(latestUpdateDay(m.id) as string),
+                        })}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

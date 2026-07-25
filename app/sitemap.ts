@@ -3,6 +3,9 @@ import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills } from '@/lib/core';
 import { getFreshness } from '@/lib/freshness';
 import { absoluteUrl } from '@/lib/hreflang';
+import { getMoments } from '@/lib/moments';
+import { latestUpdateDay } from '@/lib/moment-updates';
+import { latestVehicleAction } from '@/lib/moments-ui';
 
 /*
  * S22 — no sitemap existed before this PR. Ships alongside the still-active
@@ -36,6 +39,7 @@ const STATIC_PATHS = [
   '/embeds/terms',
   '/partners',
   '/mcp',
+  '/moments',
 ] as const;
 
 function languagesFor(href: string): Record<string, string> {
@@ -64,6 +68,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Real per-bill signal when we have one; the corpus-wide "last checked"
     // timestamp otherwise — never an invented date.
     const lastModified = bill.last_action_date ? new Date(bill.last_action_date) : siteLastModified;
+    for (const locale of routing.locales) {
+      entries.push({
+        url: absoluteUrl(locale, href),
+        lastModified,
+        alternates,
+      });
+    }
+  }
+
+  // Moments (v2 slice S5): every non-retired moment, both locales — settled
+  // ones stay listed because their pages persist as the fight's record.
+  // Retired means the page 404s, so listing it would be a lie to crawlers.
+  // lastModified prefers a recorded live-layer update (the strongest recency
+  // claim we can prove), then the newest vehicle action, then the corpus
+  // stamp — never an invented date, mirroring the bills loop above.
+  for (const moment of getMoments()) {
+    if (moment.state === 'retired') continue;
+    const href = `/moments/${moment.id}`;
+    const alternates = { languages: languagesFor(href) };
+    const day = latestUpdateDay(moment.id) ?? latestVehicleAction(moment.vehicles);
+    const lastModified = day ? new Date(day) : siteLastModified;
     for (const locale of routing.locales) {
       entries.push({
         url: absoluteUrl(locale, href),

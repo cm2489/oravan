@@ -6,6 +6,7 @@ import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getMoments, type MomentWithState } from '@/lib/moments';
 import { latestVehicleAction, momentDek } from '@/lib/moments-ui';
+import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 
@@ -19,7 +20,10 @@ function toTeaser(m: MomentWithState, locale: string): MomentTeaser {
     dek: momentDek(localeText(m.summary, locale)),
     category: m.category,
     vehicleCount: m.vehicles.length,
-    updatedDate: latestVehicleAction(m.vehicles),
+    // A recorded live-layer update is a stronger recency claim than a
+    // vehicle's last action date (it is OUR record of the event, dated to
+    // the legislative day); fall back to the bill-derived date otherwise.
+    updatedDate: latestUpdateDay(m.id) ?? latestVehicleAction(m.vehicles),
     state: m.state,
   };
 }
