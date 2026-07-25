@@ -149,6 +149,10 @@
  * Never touches data/sync-state.json's nightly cursor — same reasoning as
  * scripts/hot-bills.mjs: a same-day refresh/trigger pass is not the
  * nightly backlog scan's own progress signal.
+ * SIBLING STEP: scripts/moment-updates.mjs runs immediately after this one in
+ * newsdesk.yml and owns data/moment-updates.json alone — it reads this
+ * script's output (data/bills.json) and never writes anything this script
+ * touches, so neither has to know about the other beyond this line.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

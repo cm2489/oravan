@@ -69,6 +69,23 @@ jobs:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/newsdesk.mjs
+      - name: Collect Moment updates (Moments v2 live layer, incremental)
+        # A SEPARATE step, not a change to scripts/newsdesk.mjs: the two
+        # scripts own disjoint files (newsdesk owns bills.json/bills-es.json,
+        # this owns moment-updates.json) and neither reads the other's state.
+        # continue-on-error so a Congress.gov hiccup in the live layer can
+        # never cost the run its bill refreshes — the collector is additive,
+        # and the next hourly run re-collects whatever this one missed.
+        # It writes NOTHING when nothing moved (no _meta restamp), which is
+        # what keeps an hourly cron from becoming an hourly deploy.
+        # Cost: ONE batched Haiku call per run, skipped entirely on an empty
+        # batch — see scripts/moment-updates.mjs's SPEND section.
+        continue-on-error: true
+        env:
+          MOMENT_UPDATES_MODE: incremental
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/moment-updates.mjs
       - name: Save seen-headlines cache
         # Always saves under this run's own unique key (see the restore
         # step's comment) - if: always() so a mid-run failure still persists
@@ -98,9 +115,11 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
-          # This job only ever touches data/bills.json/data/bills-es.json
-          # (no sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
-          # Boundaries section) - disjoint from refresh-legislators.yml's
+          # This job touches data/bills.json/data/bills-es.json (no
+          # sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
+          # Boundaries section) plus data/moment-updates.json from the
+          # collector step above; `git add data/` already stages all of them
+          # - disjoint from refresh-legislators.yml's
           # files but overlapping sync-bills.yml's/hot-bills.yml's, all of
           # which share this concurrency group. Rebase onto the latest main
           # and retry, same pattern as those workflows.

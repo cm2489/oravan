@@ -1,0 +1,203 @@
+{
+ "actions": [
+  {
+   "actionDate": "2026-07-23",
+   "committees": [
+    {
+     "name": "Foreign Relations Committee",
+     "systemCode": "ssfr00",
+     "url": "https://api.congress.gov/v3/committee/senate/ssfr00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "name": "Senate"
+   },
+   "text": "Received in the Senate and referred to the Committee on Foreign Relations.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "H38310",
+   "actionDate": "2026-07-23",
+   "actionTime": "10:25:11",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Motion to reconsider laid on the table Agreed to without objection.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H37100",
+   "actionDate": "2026-07-23",
+   "actionTime": "10:25:10",
+   "recordedVotes": [
+    {
+     "chamber": "House",
+     "congress": 119,
+     "date": "2026-07-23T14:25:10Z",
+     "rollNumber": 282,
+     "sessionNumber": 2,
+     "url": "https://clerk.house.gov/evs/2026/roll282.xml"
+    }
+   ],
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 214 - 208 (Roll no. 282).",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "8000",
+   "actionDate": "2026-07-23",
+   "actionTime": "10:25:10",
+   "recordedVotes": [
+    {
+     "chamber": "House",
+     "congress": 119,
+     "date": "2026-07-23T14:25:10Z",
+     "rollNumber": 282,
+     "sessionNumber": 2,
+     "url": "https://clerk.house.gov/evs/2026/roll282.xml"
+    }
+   ],
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Passed/agreed to in House: On agreeing to the resolution Agreed to by the Yeas and Nays: 214 - 208 (Roll no. 282).",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H30000",
+   "actionDate": "2026-07-23",
+   "actionTime": "09:46:33",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Considered as unfinished business. (consideration: CR H5186)",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-22",
+   "actionTime": "19:49:04",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "POSTPONED PROCEEDINGS - At the conclusion of debate on H. Con. Res. 89, the Chair put the question on agreeing to the concurrent resolution and by voice vote, announced the noes had prevailed. Ms. Jayapal demanded the yeas and nays and the Chair postponed further proceedings until a time to be announced.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H35000",
+   "actionDate": "2026-07-22",
+   "actionTime": "19:48:40",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "The previous question was ordered pursuant to a previous order of the House.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-22",
+   "actionTime": "18:47:13",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "DEBATE - Pursuant to a previous order, the House proceeded with one hour of debate on H. Con. Res. 89.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H30000",
+   "actionDate": "2026-07-22",
+   "actionTime": "18:46:50",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Considered pursuant to a previous order. (consideration: CR H5160-5165; text: CR H5160)",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H30800",
+   "actionDate": "2026-07-22",
+   "actionTime": "18:46:31",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Consideration initiated pursuant to a previous order.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H8D000",
+   "actionDate": "2026-07-22",
+   "actionTime": "18:45:45",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "ORDER OF PROCEDURE - Mr. Mast asked unanimous consent that, it be in order at any time to consider H. Con. Res. 89 in the House if called up by the chair of the Committee on Foreign Affairs or his designee; that the concurrent resolution be considered as read; and that the previous question be considered as ordered on the concurrent resolution to adoption without intervening motion except for one hour of debate equally divided among and controlled by Representative Mast of Florida, Representative Meeks of New York, and Representative Jayapal of Washington, or their respective designees. Agreed to without objection.",
+   "type": "Floor"
+  },
+  {
+   "actionCode": "H11100",
+   "actionDate": "2026-04-23",
+   "committees": [
+    {
+     "name": "Foreign Affairs Committee",
+     "systemCode": "hsfa00",
+     "url": "https://api.congress.gov/v3/committee/house/hsfa00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Referred to the House Committee on Foreign Affairs.",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "1025",
+   "actionDate": "2026-04-23",
+   "committees": [
+    {
+     "name": "Foreign Affairs Committee",
+     "systemCode": "hsfa00",
+     "url": "https://api.congress.gov/v3/committee/house/hsfa00?format=json"
+    }
+   ],
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Submitted in House",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "H11100",
+   "actionDate": "2026-04-23",
+   "sourceSystem": {
+    "code": 2,
+    "name": "House floor actions"
+   },
+   "text": "Submitted in House",
+   "type": "IntroReferral"
+  },
+  {
+   "actionCode": "1025",
+   "actionDate": "2026-04-23",
+   "sourceSystem": {
+    "code": 9,
+    "name": "Library of Congress"
+   },
+   "text": "Submitted in House",
+   "type": "IntroReferral"
+  }
+ ]
+}
