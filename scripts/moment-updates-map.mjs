@@ -679,13 +679,13 @@ export function suppressRedundantStatusChanges(candidates) {
  * cannot be broken mid-string, and an over-long record is cut with an ellipsis
  * INSIDE the quote, which reads as the truncation it is.
  */
-export function quotedRecordText(actionText) {
+export function quotedRecordText(actionText, budgetChars = TEXT_MAX_CHARS) {
   const cleaned = String(actionText ?? '')
     .replace(/\s+/g, ' ')
     .replace(/["“”]/g, "'")
     .trim();
   if (!cleaned) return '';
-  const budget = TEXT_MAX_CHARS - 2; // the two quote marks
+  const budget = budgetChars - 2; // the two quote marks
   const body = cleaned.length > budget ? `${cleaned.slice(0, budget - 1).trimEnd()}…` : cleaned;
   return `“${body}”`;
 }
@@ -693,7 +693,8 @@ export function quotedRecordText(actionText) {
 /**
  * The bilingual fallback for one candidate.
  *
- * Record classes get the quoted record in BOTH languages. That is a
+ * Record classes get the quoted English record, framed in Spanish for the
+ * es field (see the inline note). That is a
  * deliberately degraded state, and an honest one: the record is in English
  * and Oravan does not machine-translate the government's words into a
  * quotation it would then be attributing to the government. The runner logs
@@ -715,8 +716,21 @@ export function fallbackTextFor(candidate) {
       es: `${a} y ${b}${more} publicaron cobertura sobre ${label}.`,
     };
   }
+  // The record is English — Congress publishes it that way, and this path
+  // exists precisely BECAUSE translation (the AI call) failed or was refused.
+  // Putting the raw English sentence in the `es` field claimed a Spanish
+  // string that isn't one: bilingual parity satisfied on paper, broken for
+  // the reader (pre-launch audit, 2026-07-25). A Spanish reader now gets a
+  // Spanish sentence telling them exactly what follows and why it is in
+  // English, which is the honest thing we can actually produce here.
   const quoted = quotedRecordText(candidate?.record?.action_text);
-  return { en: quoted, es: quoted };
+  if (!quoted) return { en: '', es: '' };
+  // The Spanish frame costs characters, so the quote it wraps gets a smaller
+  // budget — the gate's 200-char ceiling applies per language, and a fallback
+  // must never be the thing that reddens CI.
+  const esLead = 'Registro oficial, en inglés: ';
+  const esQuoted = quotedRecordText(candidate?.record?.action_text, TEXT_MAX_CHARS - esLead.length);
+  return { en: quoted, es: `${esLead}${esQuoted}` };
 }
 
 /* ------------------------------------------------------------------ *

@@ -14,7 +14,7 @@
  * failing — see lib/moments-gate.mjs's header for why those are soft.
  */
 import { readFileSync } from 'node:fs';
-import { checkMoments, TERMINAL_VEHICLE_STATUSES } from '../lib/moments-gate.mjs';
+import { checkMoments, lintForbidden, TERMINAL_VEHICLE_STATUSES } from '../lib/moments-gate.mjs';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
 
 // The gate's import-free copy of the terminal set must never drift from the
@@ -34,9 +34,38 @@ const bills = read('data/bills.json');
 const billSlugs = new Set(bills.map((x) => x.full_identifier));
 const statusBySlug = new Map(bills.map((x) => [x.full_identifier, x.status]));
 
+/*
+ * The chrome copy gets the SAME vocabulary lint as the curated content.
+ *
+ * The lint only ever read data/moments.json, so the surrounding UI strings —
+ * which sit beside that content and read as the same voice — were ungoverned.
+ * Three English strings had drifted to "fight", a word this project's own
+ * table bans in a Moment's prose, while their Spanish siblings had
+ * independently chosen neutral words (pre-launch audit, 2026-07-25). A rule
+ * that governs the paragraph but not the heading above it is half a rule.
+ */
+const messages = { en: read('messages/en.json'), es: read('messages/es.json') };
+const chromeViolations = [];
+for (const [lang, doc] of Object.entries(messages)) {
+  const walk = (node, path) => {
+    for (const [k, v] of Object.entries(node ?? {})) {
+      const at = path ? `${path}.${k}` : k;
+      if (typeof v === 'string') {
+        for (const word of lintForbidden(v, lang)) {
+          chromeViolations.push(`messages/${lang}.json ${at}: forbidden vocabulary "${word}" — Moments chrome shares the curated voice (spec §3.3)`);
+        }
+      } else if (v && typeof v === 'object') {
+        walk(v, at);
+      }
+    }
+  };
+  walk(doc.moments, 'moments');
+}
+
 const { violations, warnings } = checkMoments(moments, billSlugs, (slug) => statusBySlug.get(slug));
 
 for (const w of warnings) console.warn(`::warning::check-moments: ${w}`);
+violations.push(...chromeViolations);
 if (violations.length) {
   for (const v of violations) console.error(`::error::check-moments: ${v}`);
   console.error(`check-moments: ${violations.length} violation(s) in data/moments.json`);

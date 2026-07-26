@@ -120,7 +120,11 @@ Exactly **one** bill per page takes the full-bleed green enamel panel (`componen
 
 This is not a stylistic preference — it is the entire mechanism. The corpus is **hot**: **217 of the 2,373 bills** in `data/bills.json` currently carry `status: "floor_vote"`. Stack two panels and both read as wallpaper; stack ten and the page has no signal left. Capping at one is what makes the one mean something.
 
-At a squint, a page changes shape **exactly once**, and the green panel is that change. Everything else — privacy, specimens, the ledger, the coverage table — is ruled paper. The footer is the only other dark mass, and it reads as the back cover because nothing follows it. If you are adding a second full-bleed band, you are taking meaning away from the first one.
+At a squint, a page changes shape for its **content** exactly once, and the green panel is that change. Everything else — privacy, specimens, the ledger, the coverage table — is ruled paper. The footer is a dark mass but reads as the back cover, because nothing follows it.
+
+**One sanctioned exception, and it is INK, not green** (owner ruling, 2026-07-25): the homepage Moments band. Moments read as an afterthought as ruled paper and needed real weight, and ink buys weight without spending a colour the data gate governs. So the homepage carries three full-bleed grounds — green panel, ink Moments band, ink footer — and still exactly **one green** one, which is the only one that has to be earned. Green remains the page's only *data-gated* shape change: on a quiet week it does not render and no green ground exists anywhere.
+
+The rule that still binds: **if you are adding a second GREEN band, you are taking meaning away from the first one.** A new full-bleed ground of any colour needs an owner ruling; a new green one needs the data to have earned it.
 
 Build against **live data in `data/`**, never against the mockups' fiction.
 

@@ -80,9 +80,20 @@ export const SOURCE: Record<Locale, string> = {
   es: 'Congress.gov y unitedstates/congress-legislators, mediante la sincronización nocturna de Oravan',
 };
 
+/**
+ * The AI disclosure carried in every envelope. Corrected 2026-07-25
+ * (pre-launch audit): it claimed "human-reviewed before publish", which was
+ * never true of the decode path — the nightly sync commits decodes straight
+ * to main with no human step, and the Moments live layer publishes its
+ * summaries the same way. An agent consuming this API was being told a
+ * provenance fact that did not hold, which is worse than saying less.
+ *
+ * What IS true, and is what it now says: the content is AI-generated, it is
+ * always labeled, and it does not publish unless automated gates pass.
+ */
 export const AI_LABEL_TEXT: Record<Locale, string> = {
-  en: 'This plain-language content is AI-generated and human-reviewed before publish. It is not the official bill text.',
-  es: 'Este contenido en lenguaje sencillo es generado por IA y revisado por una persona antes de publicarse. No es el texto oficial del proyecto de ley.',
+  en: 'This plain-language content is AI-generated and automatically checked before publish. It is not the official bill text.',
+  es: 'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley.',
 };
 
 export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
