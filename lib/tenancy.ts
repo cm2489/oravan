@@ -30,6 +30,11 @@ import { keyPrefix, noteUpstashError, tenancyClient, type UpstashClient } from '
  *                                    THIS is what a presented capability
  *                                    token resolves through. DEL'd on
  *                                    revocation — see lookupTenantByToken)
+ *   <env>:readtoken:<sha256>     -> tenantId             (reverse index for
+ *                                    the READ credential — a SEPARATE
+ *                                    credential from the widget token, which
+ *                                    is public by construction; see
+ *                                    readTokenIndexKey)
  *   <env>:stripe-event:<id>      -> "1", TTL 7d           (webhook
  *                                    idempotency marker; comfortably exceeds
  *                                    Stripe's ~3-day retry window)
@@ -100,6 +105,27 @@ export function tokenIndexKey(hash: string): string {
   return `${keyPrefix()}:token:${hash}`;
 }
 
+/**
+ * The READ credential's reverse index — a separate keyspace from `token:`,
+ * because it is a separate credential with different exposure (S20 hardening,
+ * pre-launch audit 2026-07-25).
+ *
+ * WHY TWO. The capability token is published in the tenant's own page source
+ * by design — it rides the widget URL, and anyone who views source on their
+ * site can read it. S19 accepted that: the token's authority was "render a
+ * widget and draft scripts under this tenant's quota". S20 then reused the
+ * SAME token to authorize a private analytics READ without re-deriving what
+ * it now guarded, so a tenant's impression numbers became readable by any
+ * visitor to their page.
+ *
+ * The read token is never placed in a URL, never rendered, and never leaves
+ * the owner's hands except when handed to the tenant out-of-band. Minted
+ * alongside the widget token so no tenant is ever without one.
+ */
+export function readTokenIndexKey(hash: string): string {
+  return `${keyPrefix()}:readtoken:${hash}`;
+}
+
 export function stripeEventKey(eventId: string): string {
   return `${keyPrefix()}:stripe-event:${eventId}`;
 }
@@ -112,6 +138,14 @@ export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled'
 export interface TenantRecord {
   tenantId: string; // Stripe customer id (cus_...) — internal only, never in a URL
   tokenHash: string; // sha256(plaintext token) hex — mirrors the token:<hash> key
+  /**
+   * sha256 of the READ credential — the one that authorizes
+   * GET /api/tenant/impressions. Separate from tokenHash because the widget
+   * token is public by construction (see readTokenIndexKey). Optional on the
+   * type so records provisioned before this field existed still parse; a
+   * record without one simply cannot authorize a read until it is rotated.
+   */
+  readTokenHash?: string;
   tier: TenantTier;
   domainAllowlist: string[]; // registrable domains, lowercase, normalized before storage
   orgName: string;
@@ -145,6 +179,7 @@ export function parseTenantRecord(raw: string): TenantRecord | null {
     const p = JSON.parse(raw) as Partial<TenantRecord>;
     if (typeof p.tenantId !== 'string' || p.tenantId.length === 0) return null;
     if (typeof p.tokenHash !== 'string' || !/^[0-9a-f]{64}$/.test(p.tokenHash)) return null;
+    if (p.readTokenHash !== undefined && (typeof p.readTokenHash !== 'string' || !/^[0-9a-f]{64}$/.test(p.readTokenHash))) return null;
     if (typeof p.tier !== 'string' || !VALID_TIERS.includes(p.tier as TenantTier)) return null;
     if (!Array.isArray(p.domainAllowlist) || !p.domainAllowlist.every((d) => typeof d === 'string')) return null;
     if (typeof p.orgName !== 'string') return null;
@@ -167,6 +202,11 @@ export function parseTenantRecord(raw: string): TenantRecord | null {
       createdAt: p.createdAt,
       subscriptionId: p.subscriptionId,
       subscriptionStatus: p.subscriptionStatus as SubscriptionStatus,
+      // Same optional-if-absent treatment as tosAcceptedAt: this parser
+      // rebuilds the record field by field (an allowlist, so a tampered blob
+      // cannot smuggle extra keys through), which means a new field is
+      // invisible until it is named HERE — validated above, carried here.
+      ...(p.readTokenHash !== undefined ? { readTokenHash: p.readTokenHash } : {}),
       ...(p.tosAcceptedAt !== undefined ? { tosAcceptedAt: p.tosAcceptedAt } : {}),
     };
   } catch {
@@ -363,9 +403,14 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
 
     const token = mintCapabilityToken();
     const hash = tokenHash(token);
+    // Minted together so no tenant ever exists without a read credential —
+    // the widget token must never become the fallback for a read.
+    const readToken = mintCapabilityToken();
+    const readHash = tokenHash(readToken);
     const record: TenantRecord = {
       tenantId: input.tenantId,
       tokenHash: hash,
+      readTokenHash: readHash,
       tier: input.tier,
       domainAllowlist: input.domainAllowlist,
       orgName: input.orgName,
@@ -379,6 +424,7 @@ export async function provisionFromCheckout(input: ProvisionFromCheckoutInput): 
     };
     await client.cmd(['SET', key, JSON.stringify(record)]);
     await client.cmd(['SET', tokenIndexKey(hash), input.tenantId]);
+    await client.cmd(['SET', readTokenIndexKey(readHash), input.tenantId]);
     return true;
   } catch (err) {
     noteUpstashError('tenancy', err);
@@ -528,6 +574,41 @@ export async function activeTenantForImpression(token: string | null): Promise<T
   return tenant;
 }
 
+/**
+ * Authorize a tenant's own analytics READ — and ONLY via the read credential.
+ *
+ * The widget token deliberately does not resolve here. It is printed in the
+ * tenant's public page source, so accepting it would mean any visitor to a
+ * customer's site could read that customer's impression numbers (pre-launch
+ * audit, 2026-07-25 — the S19/S20 credential-reuse gap).
+ *
+ * Fails closed to null identically for: no token, an unknown token, a WIDGET
+ * token presented here, a record with no read credential yet, an inactive
+ * subscription, and an unreachable database. The route collapses all of them
+ * to one 403, so this never becomes a probe that distinguishes them.
+ */
+export async function activeTenantForImpressionRead(
+  token: string | null,
+): Promise<TenantRecord | null> {
+  if (!token) return null;
+  const client = tenancyClient();
+  if (!client) return null;
+  try {
+    const tenantId = await client.cmd(['GET', readTokenIndexKey(tokenHash(token))]);
+    if (typeof tenantId !== 'string' || !tenantId) return null;
+    const raw = await client.cmd(['GET', tenantKey(tenantId)]);
+    const tenant = typeof raw === 'string' ? parseTenantRecord(raw) : null;
+    if (!tenant || !tenant.readTokenHash) return null;
+    // Belt: the index resolved, but the record must agree it owns this hash.
+    if (tenant.readTokenHash !== tokenHash(token)) return null;
+    if (!ACTIVE_STATUSES.includes(tenant.subscriptionStatus)) return null;
+    return tenant;
+  } catch (err) {
+    noteUpstashError('tenancy', err);
+    return null;
+  }
+}
+
 // --- S21 admin-CLI primitives (list / rotate / set-attribution) -------------
 //
 // scripts/tenant-admin.mjs (lib/tenant-admin.ts) is the only caller of this
@@ -629,6 +710,13 @@ export interface RotatedToken {
   /** The new plaintext capability token — the CLI shows this exactly once. */
   token: string;
   tokenHash: string;
+  /**
+   * The new plaintext READ credential (analytics only), shown exactly once
+   * alongside it. This one is handed to the tenant out-of-band and must NEVER
+   * be placed in an embed URL — that is the whole distinction it exists for.
+   */
+  readToken: string;
+  readTokenHash: string;
 }
 
 /**
@@ -658,11 +746,21 @@ export async function rotateCapabilityToken(tenantId: string): Promise<RotatedTo
     if (!existing) return null;
     const token = mintCapabilityToken();
     const hash = tokenHash(token);
-    const updated: TenantRecord = { ...existing, tokenHash: hash };
+    // Rotate BOTH credentials together. Rotation exists as the theft
+    // mitigation, and a tenant who believes a credential leaked should not
+    // have to reason about which of the two they are replacing — nor should
+    // a record provisioned before the read credential existed stay unable to
+    // authorize a read forever (the field is optional on the type precisely
+    // so those records still parse; this is how they acquire one).
+    const readToken = mintCapabilityToken();
+    const readHash = tokenHash(readToken);
+    const updated: TenantRecord = { ...existing, tokenHash: hash, readTokenHash: readHash };
     await client.cmd(['SET', tenantKey(tenantId), JSON.stringify(updated)]);
     await client.cmd(['SET', tokenIndexKey(hash), tenantId]);
+    await client.cmd(['SET', readTokenIndexKey(readHash), tenantId]);
     await client.cmd(['DEL', tokenIndexKey(existing.tokenHash)]);
-    return { token, tokenHash: hash };
+    if (existing.readTokenHash) await client.cmd(['DEL', readTokenIndexKey(existing.readTokenHash)]);
+    return { token, tokenHash: hash, readToken, readTokenHash: readHash };
   } catch (err) {
     noteUpstashError('tenancy', err);
     return null;

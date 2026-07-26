@@ -146,12 +146,25 @@ export interface RotateResult {
   tokenHashPreview: string;
   /** Shown exactly once by formatRotate — never logged or stored anywhere else. */
   plaintextToken: string;
+  /**
+   * The analytics READ credential, also shown exactly once. It is a separate
+   * secret from the widget token because the widget token is public by
+   * construction (it rides the embed URL); this one authorizes
+   * GET /api/tenant/impressions and must never be placed in a URL.
+   */
+  plaintextReadToken: string;
+  readTokenHashPreview: string;
 }
 
 export async function cmdRotate(tenantId: string): Promise<RotateResult | null> {
   const result = await rotateCapabilityToken(tenantId);
   if (!result) return null;
-  return { plaintextToken: result.token, tokenHashPreview: hashPreview(result.tokenHash) };
+  return {
+    plaintextToken: result.token,
+    tokenHashPreview: hashPreview(result.tokenHash),
+    plaintextReadToken: result.readToken,
+    readTokenHashPreview: hashPreview(result.readTokenHash),
+  };
 }
 
 /** Zero new code beyond this thin pass-through — literally cancelSubscription(). */
@@ -228,6 +241,15 @@ export function formatRotate(result: RotateResult): string {
     '=== NEW CAPABILITY TOKEN — COPY NOW. This will never be shown again. ===',
     result.plaintextToken,
     `(tokenHash: ${result.tokenHashPreview})`,
+    '',
+    '=== NEW ANALYTICS READ KEY — COPY NOW. Never shown again. ===',
+    result.plaintextReadToken,
+    `(readTokenHash: ${result.readTokenHashPreview})`,
+    '',
+    'The capability token goes in the embed snippet (it is public — it ships',
+    'in the page source of every site that embeds a widget).',
+    'The read key authorizes GET /api/tenant/impressions and must NEVER go in',
+    'a URL or a page. Send it to the tenant out-of-band.',
   ].join('\n');
 }
 
@@ -244,7 +266,8 @@ const USAGE = `usage: tenant-admin <command> [args] [--yes]
 commands:
   list                                       enumerate all tenants
   inspect <tenantId>                         full record + last 3 months' impressions
-  rotate <tenantId> --yes                    mint a new capability token (shown once)
+  rotate <tenantId> --yes                    mint a new capability token AND a new
+                                             analytics read key (both shown once)
   revoke <tenantId> --yes                    cancel a tenant's subscription now
   set-attribution <tenantId> <required|none> --yes
                                               write the attribution entitlement (S5a honor system;

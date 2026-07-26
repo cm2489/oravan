@@ -218,14 +218,25 @@ test('formatInspect: same redaction rule as formatList', () => {
   expect(out).toContain('42');
 });
 
-test('formatRotate: shows the plaintext token exactly once, behind the "copy now" banner, plus a hash preview', () => {
+test('formatRotate: shows BOTH plaintext credentials exactly once, behind "copy now" banners, plus hash previews', () => {
   const token = 'f'.repeat(32);
-  const result: RotateResult = { plaintextToken: token, tokenHashPreview: hashPreview(tokenHash(token)) };
+  const readToken = 'a'.repeat(32);
+  const result: RotateResult = {
+    plaintextToken: token,
+    tokenHashPreview: hashPreview(tokenHash(token)),
+    plaintextReadToken: readToken,
+    readTokenHashPreview: hashPreview(tokenHash(readToken)),
+  };
   const out = formatRotate(result);
   expect(out).toContain('COPY NOW');
   expect(out).toContain(token);
   expect(out.split(token)).toHaveLength(2); // exactly one occurrence
-  expect(out).not.toMatch(/[0-9a-f]{64}/); // the hash preview stays truncated even here
+  expect(out).toContain(readToken);
+  expect(out.split(readToken)).toHaveLength(2);
+  expect(out).not.toMatch(/[0-9a-f]{64}/); // hash previews stay truncated even here
+  // The distinction is the whole point of the second credential, so the
+  // operator is told it out loud rather than left to infer it.
+  expect(out).toMatch(/never go in\s*\n?\s*a URL|NEVER go in/i);
 });
 
 test('formatImpressions: renders every month plus a total', () => {

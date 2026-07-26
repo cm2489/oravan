@@ -10,7 +10,15 @@ import {
   readImpressionsWindow,
 } from '../lib/impressions';
 import { dayKey } from '../lib/embed-referrer';
-import { mintCapabilityToken, tenantKey, tokenHash, tokenIndexKey, type TenantRecord } from '../lib/tenancy';
+import {
+  activeTenantForImpressionRead,
+  mintCapabilityToken,
+  readTokenIndexKey,
+  tenantKey,
+  tokenHash,
+  tokenIndexKey,
+  type TenantRecord,
+} from '../lib/tenancy';
 import { getUpstashErrorCounts } from '../lib/upstash';
 import {
   COUNTERS_URL,
@@ -45,10 +53,21 @@ function seedTenant(
   mock: MockUpstash,
   overrides: Partial<TenantRecord> & { tenantId: string }
 ): string {
+  return seedTenantPair(mock, overrides).token;
+}
+
+/** Like seedTenant, but hands back BOTH credentials for the auth-split tests. */
+function seedTenantPair(
+  mock: MockUpstash,
+  overrides: Partial<TenantRecord> & { tenantId: string }
+): { token: string; readToken: string } {
   const token = mintCapabilityToken();
   const hash = tokenHash(token);
+  const readToken = mintCapabilityToken();
+  const readHash = tokenHash(readToken);
   const record: TenantRecord = {
     tokenHash: hash,
+    readTokenHash: readHash,
     tier: 'pro',
     domainAllowlist: [],
     orgName: 'Impressions Fixture Org',
@@ -61,8 +80,63 @@ function seedTenant(
   };
   mock.exec(['SET', tenantKey(overrides.tenantId), JSON.stringify(record)]);
   mock.exec(['SET', tokenIndexKey(hash), overrides.tenantId]);
-  return token;
+  mock.exec(['SET', readTokenIndexKey(readHash), overrides.tenantId]);
+  return { token, readToken };
 }
+
+/*
+ * THE CREDENTIAL SPLIT (pre-launch audit, 2026-07-25). The widget token is
+ * printed in every embedding page's source by design; S20 originally let it
+ * authorize the analytics READ too, so a tenant's own numbers were readable
+ * by anyone who viewed source on that tenant's site. These pin the fix from
+ * both directions — the read key opens the read, and the widget token does
+ * not — because a split that only works in one direction is not a split.
+ */
+test('the analytics read accepts the read credential', async () => {
+  restoreEnv = setUpstashEnv();
+  const tenancy = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: new MockUpstash(), [TENANCY_URL]: tenancy });
+
+  const { readToken } = seedTenantPair(tenancy, { tenantId: 'cus_split_ok' });
+  const tenant = await activeTenantForImpressionRead(readToken);
+  expect(tenant?.tenantId).toBe('cus_split_ok');
+});
+
+test('the PUBLIC widget token cannot read a tenant\'s analytics', async () => {
+  restoreEnv = setUpstashEnv();
+  const tenancy = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: new MockUpstash(), [TENANCY_URL]: tenancy });
+
+  const { token } = seedTenantPair(tenancy, { tenantId: 'cus_split_deny' });
+  expect(await activeTenantForImpressionRead(token)).toBeNull();
+});
+
+test('a record with no read credential authorizes nothing', async () => {
+  restoreEnv = setUpstashEnv();
+  const tenancy = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: new MockUpstash(), [TENANCY_URL]: tenancy });
+
+  // A pre-split record: parses fine, but cannot open the read until rotated.
+  const token = mintCapabilityToken();
+  const hash = tokenHash(token);
+  tenancy.exec([
+    'SET',
+    tenantKey('cus_legacy'),
+    JSON.stringify({
+      tenantId: 'cus_legacy',
+      tokenHash: hash,
+      tier: 'pro',
+      domainAllowlist: [],
+      orgName: 'Legacy',
+      attribution: 'required',
+      createdAt: new Date().toISOString(),
+      subscriptionId: 'sub_legacy',
+      subscriptionStatus: 'active',
+    }),
+  ]);
+  tenancy.exec(['SET', tokenIndexKey(hash), 'cus_legacy']);
+  expect(await activeTenantForImpressionRead(token)).toBeNull();
+});
 
 // --- key builder ---------------------------------------------------------------
 

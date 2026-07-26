@@ -8,7 +8,14 @@ import { expect, test } from '@playwright/test';
 import { GET as tenantImpressionsGet } from '../app/api/tenant/impressions/route';
 import { dayKey } from '../lib/embed-referrer';
 import { impressionDayKey } from '../lib/impressions';
-import { mintCapabilityToken, tenantKey, tokenHash, tokenIndexKey, type TenantRecord } from '../lib/tenancy';
+import {
+  mintCapabilityToken,
+  readTokenIndexKey,
+  tenantKey,
+  tokenHash,
+  tokenIndexKey,
+  type TenantRecord,
+} from '../lib/tenancy';
 import { COUNTERS_URL, MockUpstash, TENANCY_URL, installUpstashFetch, setUpstashEnv } from './upstash-mock';
 
 /*
@@ -29,12 +36,34 @@ test.afterEach(() => {
   restoreEnv = null;
 });
 
+/**
+ * Seed a tenant and hand back the credential that opens THIS endpoint — the
+ * analytics READ key, not the widget token.
+ *
+ * The two split 2026-07-25 (pre-launch audit): the widget token ships in the
+ * page source of every site that embeds a widget, so letting it authorize a
+ * private analytics read meant any visitor to a tenant's own page could read
+ * that tenant's numbers. Both credentials are indexed here so the refusal
+ * case can present the public one and be denied — see the dedicated test
+ * below, which is the assertion that keeps the split honest.
+ */
 function seedTenant(mock: MockUpstash, tenantId: string, overrides: Partial<TenantRecord> = {}): string {
+  return seedTenantPair(mock, tenantId, overrides).readToken;
+}
+
+function seedTenantPair(
+  mock: MockUpstash,
+  tenantId: string,
+  overrides: Partial<TenantRecord> = {}
+): { token: string; readToken: string } {
   const token = mintCapabilityToken();
   const hash = tokenHash(token);
+  const readToken = mintCapabilityToken();
+  const readHash = tokenHash(readToken);
   const record: TenantRecord = {
     tenantId,
     tokenHash: hash,
+    readTokenHash: readHash,
     tier: 'pro',
     domainAllowlist: [],
     orgName: 'Tenant Read Fixture Org',
@@ -47,8 +76,21 @@ function seedTenant(mock: MockUpstash, tenantId: string, overrides: Partial<Tena
   };
   mock.exec(['SET', tenantKey(tenantId), JSON.stringify(record)]);
   mock.exec(['SET', tokenIndexKey(hash), tenantId]);
-  return token;
+  mock.exec(['SET', readTokenIndexKey(readHash), tenantId]);
+  return { token, readToken };
 }
+
+test('the PUBLIC widget token is refused by the analytics read — 403, same shape as any bad token', async () => {
+  restoreEnv = setUpstashEnv();
+  const tenancy = new MockUpstash();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: tenancy, [COUNTERS_URL]: counters });
+
+  const { token } = seedTenantPair(tenancy, 'cus_public_token_denied');
+  const res = await tenantImpressionsGet(req({ token, ip: '198.51.100.77' }));
+  expect(res.status).toBe(403);
+  expect(await res.json()).toEqual({ error: 'unauthorized' });
+});
 
 function req(opts: { token?: string; ip?: string; months?: string } = {}): NextRequest {
   const url = new URL('http://localhost/api/tenant/impressions');

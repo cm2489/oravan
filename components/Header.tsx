@@ -131,7 +131,16 @@ export function Header() {
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
-                  className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 px-2 text-2xs leading-tight ${
+                  // `tracking-tight` below 22.5rem, full tracking above it.
+                  // Five cells at 320px are 64px each, and Spanish is the
+                  // long language here: "Momentos" measures 61.6px of glyphs
+                  // in that cell — 1.2px of slack per side, so adjacent
+                  // labels very nearly touch (pre-launch audit, 2026-07-25;
+                  // English never showed it, which is exactly the
+                  // measure-the-longer-language lesson). Nothing was clipped,
+                  // so this buys breathing room rather than fixing a break —
+                  // and it buys it ONLY where the pressure is real.
+                  className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 text-2xs leading-tight tracking-tight min-[22.5rem]:px-2 min-[22.5rem]:tracking-normal ${
                     active
                       ? 'font-bold text-ink after:absolute after:inset-x-0 after:top-0 after:h-[3px] after:bg-ink'
                       : 'font-semibold text-ink-2'

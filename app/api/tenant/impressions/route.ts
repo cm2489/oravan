@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readImpressionsWindow } from '@/lib/impressions';
 import { callerIp, createRateLimiter, createTenantRateLimiter, readOravanKey } from '@/lib/ratelimit';
-import { activeTenantForImpression } from '@/lib/tenancy';
+import { activeTenantForImpressionRead } from '@/lib/tenancy';
 
 /*
  * A tenant reading their OWN monthly aggregate impression counts (S20, F6).
- * Auth: X-Oravan-Key (readOravanKey, reused verbatim from lib/ratelimit.ts —
- * no new header parsing), authorized via activeTenantForImpression — NOT
- * resolveTenantAccess. Same reasoning as the write path (lib/tenancy.ts's
+ *
+ * AUTH IS THE READ CREDENTIAL, NOT THE WIDGET TOKEN (hardened 2026-07-25,
+ * pre-launch audit). The capability token that rides the widget URL is
+ * published in the tenant's own page source by design; S20 originally reused
+ * it here, which made a tenant's private analytics readable by anyone who
+ * viewed source on that tenant's site. This endpoint now resolves ONLY
+ * through activeTenantForImpressionRead, whose credential is never placed in
+ * a URL and never rendered. Same header (X-Oravan-Key, readOravanKey reused
+ * verbatim from lib/ratelimit.ts — no new header parsing), different secret.
+ * Authorized via activeTenantForImpressionRead — NOT resolveTenantAccess. Same reasoning as the write path (lib/tenancy.ts's
  * own doc comment): tosAcceptedAt is an AI-consent gate for the action
  * panel / /api/script, and the ToS URL isn't yet configured in Stripe, so
  * every tenant provisioned before that lands has it unset. Reading your own
@@ -62,7 +69,7 @@ export async function GET(req: NextRequest) {
   }
 
   const token = readOravanKey(req.headers);
-  const tenant = await activeTenantForImpression(token);
+  const tenant = await activeTenantForImpressionRead(token);
   if (!tenant) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 403 });
   }
