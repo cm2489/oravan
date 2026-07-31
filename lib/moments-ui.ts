@@ -136,3 +136,73 @@ export function latestVehicleAction(vehicles: MomentVehicle[]): string | null {
   }
   return latest;
 }
+
+/*
+ * `changed_because` is the collector's own audit trail, not prose. Its values
+ * are machine tokens — 'seed', 'updates:+2', 'reanchor:12d',
+ * 'status:sjres-185-119 floor_vote→committee' — and the revision-history
+ * disclosure printed them verbatim, so /moments/government-funding-deadline
+ * read "Rewritten because seed" in English and the IDENTICAL untranslated
+ * "Se reescribió porque seed" in Spanish: an English token inside Spanish
+ * chrome, past next-intl entirely, live in production. The status form is
+ * worse — it carries the raw bill-status enum that scripts/moment-updates.mjs
+ * goes out of its way to keep out of reader-facing prose (pre-launch audit
+ * 2026-07-25, constitution-07).
+ *
+ * The stored tokens do not change; this maps each one to a message key the
+ * page renders through next-intl, in the reader's language. A token nobody
+ * has taught this function about maps to nothing and the reason simply is not
+ * shown — silence, never the token, because a reader learns less than nothing
+ * from 'reanchor:12d'.
+ *
+ * The producers: scripts/moment-updates.mjs:597 `changedBecause` emits
+ * 'first-summary', `status:${slug} ${from}→${to}`, `updates:+${n}` and
+ * `reanchor:${n}d`; 'seed' is the hand-authored first revision the live layer
+ * shipped with. tests/moments-ui.unit.spec.ts pins all five against the
+ * shipped corpus, so a sixth token cannot land unnoticed.
+ */
+export type RevisionReasonKey = 'first' | 'newActions' | 'statusMoved' | 'reanchor';
+
+export interface RevisionReason {
+  /** Message key under `moments.updates.reason`. */
+  key: RevisionReasonKey;
+  /** ICU arguments, for the phrases that carry a number. */
+  values?: Record<string, number>;
+}
+
+const UPDATES_TOKEN = /^updates:\+(\d+)$/;
+const REANCHOR_TOKEN = /^reanchor:(\d+)d$/;
+
+function revisionReason(token: string): RevisionReason | null {
+  // Two names for one event: the collector's, and the hand-authored seed's.
+  if (token === 'first-summary' || token === 'seed') return { key: 'first' };
+  const updates = UPDATES_TOKEN.exec(token);
+  if (updates) return { key: 'newActions', values: { count: Number(updates[1]) } };
+  const reanchor = REANCHOR_TOKEN.exec(token);
+  if (reanchor) return { key: 'reanchor', values: { days: Number(reanchor[1]) } };
+  // The slug and the from→to enums are dropped on purpose: what a reader is
+  // owed here is "a bill moved", not 'sjres-185-119 committee→floor_vote'.
+  if (token.startsWith('status:')) return { key: 'statusMoved' };
+  return null;
+}
+
+/**
+ * The renderable reasons for one revision, in the collector's order and
+ * de-duplicated — a summary rewritten because three of its bills all changed
+ * stage says that once, not three times. An empty array is the honest
+ * outcome for a revision whose tokens are all unrecognized: the page renders
+ * no reason line at all.
+ */
+export function revisionReasons(tokens: readonly string[]): RevisionReason[] {
+  const out: RevisionReason[] = [];
+  const seen = new Set<string>();
+  for (const token of tokens) {
+    const reason = revisionReason(token);
+    if (!reason) continue;
+    const fingerprint = `${reason.key}:${JSON.stringify(reason.values ?? null)}`;
+    if (seen.has(fingerprint)) continue;
+    seen.add(fingerprint);
+    out.push(reason);
+  }
+  return out;
+}

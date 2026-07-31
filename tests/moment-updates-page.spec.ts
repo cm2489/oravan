@@ -4,7 +4,8 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getMoments, type MomentWithState } from '../lib/moments';
 import { RENDER_DAY_CAP, getCurrentSummary, getRevisions, getUpdates } from '../lib/moment-updates';
-import { timelineDays } from '../lib/moments-ui';
+import { createTranslator } from 'next-intl';
+import { revisionReasons, timelineDays } from '../lib/moments-ui';
 
 /*
  * e2e coverage for the Moments LIVE LAYER (v2 spec §7): the "Where it
@@ -38,6 +39,16 @@ const fmtDay = (day: string, locale: 'en' | 'es') =>
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(day));
+
+/** The phrases the page prints after the reason label — same map, same ICU
+ *  formatter, same message files the page itself renders through. */
+const reasonPhrases = (tokens: string[], locale: 'en' | 'es'): string[] => {
+  const t = createTranslator({
+    locale,
+    messages: (locale === 'en' ? en : es) as Record<string, unknown>,
+  }) as unknown as (key: string, values?: Record<string, number>) => string;
+  return revisionReasons(tokens).map((r) => t(`moments.updates.reason.${r.key}`, r.values));
+};
 
 const moments: MomentWithState[] = getMoments().filter((m) => m.state !== 'retired');
 const withUpdates = moments.filter((m) => getUpdates(m.id).length > 0);
@@ -90,16 +101,66 @@ test.describe('"Where it stands" — the state summary', () => {
       ).toBeVisible();
       // Prior revisions are listed with their dates; the current one is not
       // repeated inside its own history.
+      //
+      // COUNTED, not merely visible: the collector re-summarizes on a cadence,
+      // so two revisions of the SAME ET day are ordinary — and iran-war-powers
+      // shipped exactly that on 2026-07-25, which turned this assertion into a
+      // Playwright strict-mode violation on main (two <p>As of July 25, 2026</p>
+      // for one exact-text locator). One row per prior revision is the property
+      // that was always meant here.
       await toggle.click();
+      const perDate = new Map<string, number>();
       for (const prior of revisions.slice(0, -1)) {
-        await expect(
-          page.getByText(
-            en.moments.updates.revisionAsOf.replace('{date}', fmtDay(prior.as_of_day, 'en')),
-            { exact: true }
-          )
-        ).toBeVisible();
+        const label = en.moments.updates.revisionAsOf.replace(
+          '{date}',
+          fmtDay(prior.as_of_day, 'en')
+        );
+        perDate.set(label, (perDate.get(label) ?? 0) + 1);
+      }
+      for (const [label, count] of perDate) {
+        await expect(page.getByText(label, { exact: true })).toHaveCount(count);
       }
     });
+
+    /*
+     * constitution-07: this disclosure printed `changed_because` verbatim, so
+     * the page read "Rewritten because seed" — and /es read the same English
+     * token. The reason is now a phrase from messages/*.json in the reader's
+     * language, and a token that no longer maps takes the line with it rather
+     * than printing itself. Asserted in the DOM, in BOTH locales, because
+     * that is where the defect lived.
+     */
+    for (const locale of ['en', 'es'] as const) {
+      test(`${m.id}: revision reasons read as language, not tokens (${locale})`, async ({
+        page,
+      }) => {
+        const revisions = getRevisions(m.id);
+        test.skip(revisions.length < 2, 'no prior revision to disclose');
+
+        await page.goto(locale === 'en' ? `/moments/${m.id}` : `/es/moments/${m.id}`);
+        const messages = locale === 'en' ? en : es;
+        const history = page.locator('details', {
+          has: page.locator('summary', {
+            hasText: messages.moments.updates.revisionsToggle.replace(/\s*\(\{count\}\)$/, ''),
+          }),
+        });
+        await history.locator('summary').click();
+        const disclosed = await history.innerText();
+
+        for (const prior of revisions.slice(0, -1)) {
+          for (const phrase of reasonPhrases(prior.changed_because, locale)) {
+            expect(disclosed, `${locale}: the localized reason is missing`).toContain(phrase);
+          }
+          for (const token of prior.changed_because) {
+            expect(disclosed, `${locale}: raw token "${token}" reached the reader`).not.toContain(
+              token
+            );
+          }
+        }
+        // Belt: no reason line survives with nothing after the label.
+        expect(disclosed).not.toContain(`${messages.moments.updates.revisionReasonLabel}\n`);
+      });
+    }
   }
 });
 

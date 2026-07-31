@@ -772,6 +772,12 @@
       "revisionsToggle": "How this summary has changed ({count})",
       "revisionAsOf": "As of {date}",
       "revisionReasonLabel": "Rewritten because",
+      "reason": {
+        "first": "no summary of this question existed yet",
+        "newActions": "{count, plural, one {# new action was recorded} other {# new actions were recorded}} since the last version",
+        "statusMoved": "a bill on this question moved to a different stage",
+        "reanchor": "{days, plural, one {# day had passed} other {# days had passed}} since the last version"
+      },
       "timelineHeading": "What's moved",
       "timelineLede": "Everything the record shows on this question's bills, newest day first. Up to {cap} a day are listed here, and the days nothing was recorded are shown as they were.",
       "timelineAiChip": "The one-line decodes below are AI-written from the official action text.",
