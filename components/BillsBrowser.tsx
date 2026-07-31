@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { ArrowRight, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
+import { matchMoments, type MomentSearchTeaser } from '@/lib/moments-ui';
+import { Chip } from './system';
 import type { FreshnessSignals } from '@/lib/freshness-state';
 import type { FeedTeaser } from '@/lib/types';
 import { BillCard } from './BillCard';
@@ -42,7 +45,21 @@ const FILTER_CHIP =
 const FILTER_ON = 'border-ink bg-ink text-paper';
 const FILTER_OFF = 'border-line-strong bg-paper text-ink-2 hover:border-ink hover:bg-wash hover:text-ink';
 
-export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshness: FreshnessSignals }) {
+/* A stable empty default: an inline `[]` would be a new array every render
+   and would churn the memo below on every keystroke. */
+const NO_MOMENTS: MomentSearchTeaser[] = [];
+
+export function BillsBrowser({
+  bills,
+  freshness,
+  moments = NO_MOMENTS,
+}: {
+  bills: FeedTeaser[];
+  freshness: FreshnessSignals;
+  /** Live moments this search may pin, pre-localized by the server page.
+      Optional: the embed and any other caller renders the browser unchanged. */
+  moments?: MomentSearchTeaser[];
+}) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
@@ -91,6 +108,11 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
       );
     });
   }, [bills, query, active, t]);
+
+  /* The pinned moments, computed OUTSIDE `filtered` on purpose: a moment is
+     never injected into the bill list and never counted in it. The two answers
+     stay separate objects, which is what keeps the count line honest. */
+  const pinned = useMemo(() => matchMoments(query, moments), [query, moments]);
 
   const byBand = useMemo(() => {
     const groups: Record<UrgencyBand, FeedTeaser[]> = { now: [], moving: [], radar: [] };
@@ -177,6 +199,50 @@ export function BillsBrowser({ bills, freshness }: { bills: FeedTeaser[]; freshn
       </div>
 
       <p className="mt-3 text-xs text-ink-2">{t('bills.interestsNote')}</p>
+
+      {/* THE PINNED QUESTION (spec §7.3). Above the count, and outside it.
+          Three rules hold this row honest:
+            1. It is not a bill result. The aria-live count below still says
+               how many BILLS matched — a pin that inflated that number would
+               be answering a question the reader didn't ask with a number
+               they can't check. "ukraine" can legitimately read
+               "0 bills" and still show this row.
+            2. No vehicle bill is force-injected into the list underneath. The
+               moment's own page is where its bills live; the browser keeps
+               showing exactly what the corpus matched.
+            3. Aliases are never printed. The reader matched on "shutdown";
+               what they see is the neutral name we chose and the dek.
+
+          DARK ENAMEL, NOT GREEN — the homepage strip's idiom, and for the
+          same reason (owner decision, 2026-07-24): green is spent on the call
+          itself and is data-earned, and a search match is not a floor-calendar
+          fact. Ink enamel buys the weight without spending it. */}
+      {pinned.length > 0 && (
+        <ul className="mt-6 list-none">
+          {pinned.map((m) => (
+            <li key={m.id} className="mt-3 first:mt-0">
+              <Link
+                href={`/moments/${m.id}`}
+                className="on-dark group flex min-h-12 flex-col items-start gap-x-3 gap-y-2 rounded-control bg-ink-deep px-5 py-4 text-paper no-underline sm:flex-row sm:flex-wrap sm:items-baseline"
+              >
+                <Chip tone="tag" ground="ink" className="shrink-0">
+                  {t('moments.searchPinLabel')}
+                </Chip>
+                <span className="text-lg font-bold group-hover:underline group-hover:decoration-go-bright group-hover:decoration-[3px]">
+                  {m.name}
+                </span>
+                {/* AI-drafted, like every other dek — the page already carries
+                    the AI chip above the feed, which is the same first contact. */}
+                <span className="max-w-note text-sm text-ink-pale">{m.dek}</span>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-go-bright underline underline-offset-4 group-hover:text-paper">
+                  {t('moments.searchPinCta')}
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <p className="mt-4 text-sm text-ink-2" aria-live="polite">
         {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
