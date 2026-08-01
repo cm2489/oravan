@@ -9,22 +9,32 @@ import { expect, test, type Page } from '@playwright/test';
  * it detects presence, not behavior, so it can never mask a real failure —
  * only an unmount, which the integration's own specs would surface.
  *
- * Bill pages get the same walkthrough behind a collapsed <details>
- * disclosure; its spec is at the bottom.
+ * TRUTH-FIRST FLIP (2026-07-31): the homepage walkthrough moved into the act
+ * zone as a collapsed <details> disclosure — the same shape, and the same
+ * lazy open-gate, the bill page has always used. So the homepage helper now
+ * opens the disclosure before returning the root, and the presence guard
+ * keys on the disclosure rather than on a walkthrough that deliberately is
+ * not mounted until someone asks for it. Every behavioral assertion below is
+ * unchanged.
  */
 
-// Where the walkthrough is mounted (homepage, "See how a call works").
+// Where the walkthrough is mounted (homepage act zone, "See how a call works").
 const PAGE_PATH = '/';
 // Longer than the longest per-scene hold (6.8s), to prove "no auto-advance".
 const LONGEST_SCENE_MS = 7500;
 
 async function gotoWalkthrough(page: Page) {
   await page.goto(PAGE_PATH);
-  const root = page.locator('[data-walkthrough]');
+  const disclosure = page.locator('[data-walkthrough-disclosure]');
   test.skip(
-    (await root.count()) === 0,
+    (await disclosure.count()) === 0,
     'CallWalkthrough is not mounted on a page yet — these activate with the integration PR'
   );
+  // Collapsed costs nothing: the chunk is code-split and the scene timers do
+  // not run until this click, so the demo always starts at scene 1.
+  await disclosure.locator('summary').click();
+  const root = page.locator('[data-walkthrough]');
+  await expect(root).toBeVisible();
   return root;
 }
 
