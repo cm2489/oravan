@@ -38,6 +38,9 @@ export interface CorpusBill {
   last_action_date: string | null;
   ai_headline: string | null;
   issue_tags?: string[];
+  /** Read by mcp-tools.spec.ts to derive get_representative's sponsored
+   *  window from the corpus instead of naming a bill inside it. */
+  sponsor_bioguide_id?: string | null;
 }
 
 export const corpus = billsJson as unknown as CorpusBill[];
