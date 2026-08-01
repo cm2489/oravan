@@ -1,7 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { mockScriptApi, seedZip } from './helpers';
 
 const BILL = '/bills/sjres-99-119';
+const BILL_SLUG = 'sjres-99-119';
 
 test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await mockScriptApi(page);
@@ -39,9 +42,15 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   expect(calls).toHaveLength(1);
   expect(calls[0].outcome).toBe('contact');
 
-  // Impact shows the record; per-record delete empties it
+  // The civic record shows the call; per-record delete empties that list.
+  // Scoped to the calls section on purpose: since the record also carries a
+  // reading history, this same bill now appears twice on the page — once as
+  // "you read it", once as "you called about it" — and a page-wide text
+  // match would be ambiguous about which one it proved.
   await page.goto('/impact');
-  await expect(page.getByText('S.J.Res. 99', { exact: false })).toBeVisible();
+  await expect(
+    page.locator('section[aria-labelledby="history"]').getByText('S.J.Res. 99', { exact: false })
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Delete this record' }).click();
   await expect(page.getByText('No calls logged yet')).toBeVisible();
 });
@@ -83,3 +92,91 @@ test('spanish bill page serves translated decoded content', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'En claro' })).toBeVisible();
   await expect(page.locator('main')).toContainText(/El Congreso|El Senado|La Cámara|regla/i);
 });
+
+/*
+ * THE CIVIC RECORD (repositioning spec §4). /impact stopped being a call
+ * scoreboard: reading a bill now leaves a row of its own, alongside the
+ * topics you follow and above the calls you made.
+ *
+ * The load-bearing claim under test is not "the list renders" — it is that
+ * the new store is ERASABLE BY THE SAME BUTTON as everything else. A store
+ * the erase path forgets about is a private-by-design product quietly
+ * keeping a political reading list, so the localStorage key itself is
+ * asserted gone rather than the UI merely looking empty.
+ */
+const readCount = (page: Page) =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('oravan.reads') ?? '[]').length);
+
+/** ReadReceipt writes from an effect, so the row exists after hydration, not
+ *  after navigation — poll rather than assume the two coincide. */
+async function visitAndWaitForReceipt(page: Page, url: string) {
+  await page.goto(url);
+  await expect.poll(() => readCount(page)).toBe(1);
+}
+
+for (const locale of ['en', 'es'] as const) {
+  const m = locale === 'en' ? en : es;
+  const at = (path: string) => (locale === 'es' ? '/es' + path : path);
+
+  test(`${locale}: reading a bill records it on the civic record, and its row deletes on its own`, async ({
+    page,
+  }) => {
+    await visitAndWaitForReceipt(page, at(BILL));
+    await page.goto(at('/impact'));
+
+    const reads = page.locator('section[aria-labelledby="reads"]');
+    await expect(page.getByRole('heading', { name: m.impact.readsTitle })).toBeVisible();
+    // The row links back to the bill it records.
+    await expect(reads.locator(`a[href$="/bills/${BILL_SLUG}"]`)).toBeVisible();
+    // Device-only, said out loud — bills.interestsNote's phrasing, for reads.
+    await expect(reads.getByText(m.impact.readsNote)).toBeVisible();
+
+    // Per-item delete: this row only, and it leaves the store behind it.
+    await reads.getByRole('button', { name: m.impact.deleteRead }).click();
+    await expect(page.getByRole('heading', { name: m.impact.readsTitle })).toHaveCount(0);
+    expect(await readCount(page)).toBe(0);
+  });
+
+  test(`${locale}: erase-everything clears the reading history with the rest, and says so first`, async ({
+    page,
+  }) => {
+    await visitAndWaitForReceipt(page, at(BILL));
+    // A full profile: ZIP + a followed topic + a logged call + the read above.
+    await page.evaluate(() => {
+      localStorage.setItem('oravan.prefs', JSON.stringify({ zip: '78501', interests: ['health'] }));
+      localStorage.setItem(
+        'oravan.calls',
+        JSON.stringify([
+          {
+            billSlug: 'sjres-99-119',
+            billLabel: 'S.J.Res. 99',
+            repBioguide: 'D000399',
+            repName: 'Monica De La Cruz',
+            stance: 'support',
+            outcome: 'contact',
+            at: '2026-07-01T12:00:00.000Z',
+          },
+        ])
+      );
+    });
+    await page.goto(at('/impact'));
+
+    // All three sections are present, in the spec's order.
+    await expect(page.getByRole('heading', { name: m.impact.followTitle })).toBeVisible();
+    await expect(page.getByRole('heading', { name: m.impact.readsTitle })).toBeVisible();
+    await expect(page.getByRole('heading', { name: m.impact.historyTitle })).toBeVisible();
+
+    // The confirm names what it is about to erase — reading history included.
+    await page.getByRole('button', { name: m.impact.erase }).click();
+    await expect(page.getByText(m.impact.eraseConfirm)).toBeVisible();
+    await page.getByRole('button', { name: m.impact.confirmErase }).click();
+
+    await expect(page.getByRole('status').filter({ hasText: m.impact.erased })).toBeVisible();
+    // The keys themselves, not the rendering: every store this app writes.
+    expect(
+      await page.evaluate(() =>
+        ['oravan.reads', 'oravan.calls', 'oravan.prefs'].map((k) => localStorage.getItem(k))
+      )
+    ).toEqual([null, null, null]);
+  });
+}

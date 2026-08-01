@@ -106,6 +106,29 @@ test.describe('matchMoments — the name matches too', () => {
 });
 
 test.describe('matchMoments — degenerate aliases cannot pin everything', () => {
+  /*
+   * The "cr" defect (pre-launch audit 2026-07-25, constitution-02 neighbour):
+   * data/moments.json carried a bare "cr" for the funding question, and
+   * `query.includes(alias)` made it pin every query with those two letters in
+   * it — "credit", "crime", "crisis". Fixed in the DATA, not here: the matcher
+   * is right, the alias was not. An abbreviation earns its place by carrying a
+   * second word.
+   */
+  test('a two-letter abbreviation pins every word containing it; a paired one does not', () => {
+    const bare = [teaser({ id: 'funding', name: 'The government funding deadline', aliases: ['cr'] })];
+    expect(ids(matchMoments('credit', bare))).toEqual(['funding']); // the defect, reproduced
+    expect(ids(matchMoments('crime', bare))).toEqual(['funding']);
+
+    const paired = [
+      teaser({ id: 'funding', name: 'The government funding deadline', aliases: ['cr bill'] }),
+    ];
+    expect(matchMoments('credit', paired)).toEqual([]);
+    expect(matchMoments('crime', paired)).toEqual([]);
+    // And the reader who means it still lands — typed whole, or still typing.
+    expect(ids(matchMoments('cr bill', paired))).toEqual(['funding']);
+    expect(ids(matchMoments('cr', paired))).toEqual(['funding']);
+  });
+
   test('a one-character alias is ignored in both directions', () => {
     // Without the floor, `query.includes(alias)` would make "a" pin this
     // moment for essentially every query a reader could type.
@@ -142,6 +165,25 @@ test.describe('getMomentSearchTeasers — live only, localized, aliases carried'
       const m = byId.get(t.id)!;
       expect(t.name).toBe(m.name.es);
       expect(t.aliases).toEqual(m.aliases.es);
+    }
+  });
+
+  test('no live alias is short enough to pin fragments of ordinary words', () => {
+    // The floor the "cr" fix established, applied to the whole corpus: below
+    // four characters, `query.includes(alias)` starts matching the insides of
+    // unrelated words ("cr" → credit/crime, "ice" → police/service). The
+    // matcher's own floor is 2 — enough to stop one-letter aliases, not
+    // enough to stop this — so the rule lives on the data.
+    const MIN_ALIAS = 4;
+    for (const locale of ['en', 'es'] as const) {
+      for (const t of getMomentSearchTeasers(locale)) {
+        for (const alias of t.aliases) {
+          expect(
+            alias.trim().length,
+            `${t.id}/${locale}: "${alias}" is short enough to pin ordinary words — pair it with a second word`
+          ).toBeGreaterThanOrEqual(MIN_ALIAS);
+        }
+      }
     }
   });
 

@@ -189,6 +189,28 @@ export function getRevisions(id: string): SummaryRevision[] {
   return entryFor(id).summary_revisions;
 }
 
+/**
+ * The token a revision carries when a PERSON wrote it. Only the seed
+ * revisions the live layer shipped with carry it today; the collector stamps
+ * its own model id (`claude-sonnet-5`) on everything it writes.
+ */
+export const HAND_AUTHORED_MODEL = 'hand-authored';
+
+/**
+ * Whether a summary revision is AI text — the provenance the "Where it
+ * stands" chip is gated on (pre-launch audit 2026-07-25, constitution-08).
+ * `MomentUpdate` carries an explicit `ai` boolean; a `SummaryRevision`
+ * carries only `model`, so provenance is read from that.
+ *
+ * A model string nobody recognizes reads as AI. The failure modes are not
+ * symmetric: labeling human text as AI is a small insult, while shipping AI
+ * text with no label breaks a CLAUDE.md hard rule — so only the one explicit
+ * hand-authored token drops the label.
+ */
+export function isAiSummary(revision: Pick<SummaryRevision, 'model'>): boolean {
+  return revision.model.trim().toLowerCase() !== HAND_AUTHORED_MODEL;
+}
+
 /** The most recent legislative day with anything on it, or undefined. */
 export function latestUpdateDay(id: string): string | undefined {
   let latest: string | undefined;

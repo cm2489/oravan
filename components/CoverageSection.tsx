@@ -62,7 +62,8 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
   const format = useFormatter();
   const [open, setOpen] = useState(false);
   const panelId = useId();
-  const hasSnippet = Boolean(article.snippet);
+  const snippet = article.snippet ?? '';
+  const hasSnippet = snippet.length > 0;
 
   return (
     <li className="group grid gap-1 border-t-[1.5px] border-line py-3 md:grid-cols-[11rem_9rem_minmax(0,1fr)_2.75rem] md:items-baseline md:gap-4">
@@ -89,17 +90,36 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
             })}
           </p>
         )}
+        {/* THE SNIPPET IS THE OUTLET'S VOICE, AND IS SET AS SUCH.
+            It used to render as a bare paragraph of page body copy — so a
+            reader-directed line like "Let's keep the pressure on" read as
+            Oravan's own sentence on a nonpartisan surface (pre-launch audit
+            2026-07-25, constitution-02). It is now a real <blockquote>: the
+            quotation marks come from the message file (so Spanish gets its
+            own «…»), the outlet is named beside the sentence in a <cite>,
+            and `cite=` carries the source URL for anything reading the DOM.
+            No new rule, no panel, no tint — the mark is typographic, which
+            is the whole reason this section is ruled paper and not cards. */}
         {hasSnippet && (
-          <p
+          <blockquote
             id={panelId}
+            cite={article.url}
             className={`max-w-read text-sm text-ink-2 ${
               open
                 ? 'mt-2 block'
                 : 'hidden md:group-hover:mt-2 md:group-hover:block md:group-focus-within:mt-2 md:group-focus-within:block'
             }`}
           >
-            {article.snippet}
-          </p>
+            <p>
+              {t('snippetQuote', { text: snippet })}{' '}
+              {/* No `whitespace-nowrap`: a long domain
+                  ("economictimes.indiatimes.com") must be allowed to wrap
+                  rather than push the row wide at 320px. */}
+              <cite className="font-semibold break-words not-italic">
+                {t('snippetAttribution', { source: article.source })}
+              </cite>
+            </p>
+          </blockquote>
         )}
       </div>
 

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-07-26T09:35:00.886Z"
+    "generated_at": "2026-08-01T09:47:28.328Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -138,6 +138,32 @@
         },
         "changed_because": [
           "updates:+1"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_4695676a",
+        "generated_at": "2026-08-01T09:47:33.063Z",
+        "as_of_day": "2026-08-01",
+        "text": {
+          "en": "H.R. 9770 has passed one chamber. The House approved the bill on July 21, 2026, by a recorded vote of 220 to 205 (Roll no. 272). The following day, July 22, 2026, the bill was received in the Senate. No further floor action is recorded in the last 14 days. The measure now sits with the Senate, where no vote has yet been recorded.",
+          "es": "El proyecto H.R. 9770 ha sido aprobado por una cámara. La Cámara de Representantes lo aprobó el 21 de julio de 2026 por votación nominal de 220 a 205 (votación num. 272). Al día siguiente, 22 de julio de 2026, el proyecto fue recibido en el Senado. No se registra ninguna otra acción en el pleno durante los últimos 14 días. La medida se encuentra ahora en el Senado, donde todavía no se ha registrado ninguna votación."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_9085cf38",
+            "u_212c0547"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }

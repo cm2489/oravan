@@ -3,7 +3,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
-import { getTeasers } from '../lib/core';
+import { getBill, getTeasers } from '../lib/core';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -94,6 +94,17 @@ test.describe('/moments/[id] detail page', () => {
       // caveat, repeated under each AI passage, is the intended posture —
       // tests/moment-updates-page.spec.ts asserts the second occurrence.
       await expect(page.getByText(en.bill.aiDisclaimer).first()).toBeVisible();
+
+      // The vehicles grid leads with AI-decoded headlines and its CTA is the
+      // phone call — the one place unlabeled AI text sat directly on the
+      // control that drives a call (pre-launch audit, constitution-05). It
+      // now carries the same label /bills prints over the same sentences,
+      // and it is DATA-GATED: a grid whose decodes are all still pending
+      // renders official titles, which are not AI text, and claims nothing.
+      const decoded = m.vehicles.some((v) => Boolean(getBill(v.slug)?.ai_headline));
+      await expect(
+        page.locator('section[aria-labelledby="vehicles-h"]').getByText(en.bills.aiNote, { exact: true })
+      ).toHaveCount(decoded ? 1 : 0);
 
       // Evidence: the qualifying-signal type and every clickable ref.
       await expect(page.getByRole('heading', { name: en.moments.whyHeading })).toBeVisible();
