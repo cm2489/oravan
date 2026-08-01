@@ -363,6 +363,8 @@
     },
     "preview": "Vista previa",
     "openArticle": "Abrir este artículo en {source}",
+    "snippetQuote": "«{text}»",
+    "snippetAttribution": "— {source}",
     "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla.",
     "foreignLanguageNote": "Algunos artículos enlazados están en inglés."
   },

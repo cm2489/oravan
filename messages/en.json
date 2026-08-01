@@ -363,6 +363,8 @@
     },
     "preview": "Preview",
     "openArticle": "Open this article at {source}",
+    "snippetQuote": "“{text}”",
+    "snippetAttribution": "— {source}",
     "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind.",
     "foreignLanguageNote": "Some linked articles may be in another language."
   },
