@@ -189,13 +189,13 @@
   --text-h2: clamp(1.5rem, 3.5vw, 2.125rem);      /* 24 -> 34 */
   --text-h2--line-height: 1.15;
   --text-h2--letter-spacing: -0.01em;
-  --text-h2-loud: clamp(1.625rem, 4vw, 2.5rem);   /* 26 -> 40 */
+  --text-h2-loud: clamp(1.5rem, 4vw, 2.5rem);     /* 24 -> 40; mobile-density pass 2026-07-29 */
   --text-h2-loud--line-height: 1.1;
   --text-h2-loud--letter-spacing: -0.01em;
-  --text-h1-bill: clamp(2rem, 5.5vw, 3.5rem);     /* 32 -> 56 */
+  --text-h1-bill: clamp(1.75rem, 5.5vw, 3.5rem);  /* 28 -> 56; mobile-density pass 2026-07-29: floor 32->28, desktop unchanged */
   --text-h1-bill--line-height: 1.06;
   --text-h1-bill--letter-spacing: -0.02em;
-  --text-h1: clamp(2.5rem, 7vw, 4.25rem);         /* 40 -> 68 */
+  --text-h1: clamp(2rem, 7vw, 4.25rem);           /* 32 -> 68; mobile-density pass 2026-07-29: floor 40->32 (a 390px phone hit the 40px floor), desktop unchanged */
   --text-h1--line-height: 1.04;
   --text-h1--letter-spacing: -0.02em;
 

@@ -184,9 +184,9 @@ test.describe('ES locale renders ES content end to end', () => {
   });
 });
 
-test.describe('homepage Moments strip', () => {
+test.describe('homepage Big Questions band', () => {
   for (const { locale, prefix, messages } of LOCALES) {
-    test(`${locale}: strip appears iff a live Moment exists, sits after "Worth a call," never before`, async ({
+    test(`${locale}: band appears iff a live entry exists, sits BEFORE the week, never after`, async ({
       page,
     }) => {
       const liveMoments = getLiveMoments();
@@ -198,14 +198,17 @@ test.describe('homepage Moments strip', () => {
       if (liveMoments.length > 0) {
         await expect(strip).toBeVisible();
         await expect(strip.getByRole('heading', { name: messages.home.momentsTitle })).toBeVisible();
-        // DOM order: the strip must not precede the "Worth a call" band.
+        // DOM order: the band leads the truth half. The 2026-07-24 ruling put
+        // discovery UNDER the week; the truth-first flip (owner decisions of
+        // record, 2026-07-31, spec §7.1) reversed it, and this expected value
+        // flipped 'after' -> 'before' in that same commit.
         const order = await page.evaluate(() => {
           const a = document.querySelector('section[aria-labelledby="top-actions"]');
           const b = document.querySelector('section[aria-labelledby="moments-strip-title"]');
           if (!a || !b) return null;
           return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? 'after' : 'before';
         });
-        expect(order).toBe('after');
+        expect(order).toBe('before');
         await expect(topActions).toBeVisible();
 
         const first = liveMoments[0];
@@ -215,6 +218,34 @@ test.describe('homepage Moments strip', () => {
       } else {
         await expect(strip).toHaveCount(0);
       }
+    });
+  }
+});
+
+/*
+ * test-honesty-010 — the always-visible route into the feature had no test at
+ * all. Nothing asserted the header carried this entry, in either nav or either
+ * language, so the 2026-07-31 label change (Moments -> Big Questions / Grandes
+ * preguntas; the /moments ROUTE and every internal name deliberately unchanged,
+ * spec §0.2) could have silently broken it. Exactly one "Primary" landmark is
+ * in the tree at a time (components/Header.tsx): the thumb bar on phones, which
+ * carries `navShort`, and the row nav above 48rem, which carries `nav`.
+ */
+test.describe('header nav carries the Big Questions label', () => {
+  for (const { locale, prefix, messages } of LOCALES) {
+    test(`${locale}: the primary nav reaches /moments under its renamed label`, async ({
+      page,
+      isMobile,
+    }) => {
+      await page.goto(`${prefix}/`);
+      const label = isMobile ? messages.common.navShort.moments : messages.common.nav.moments;
+      const link = page.getByRole('link', { name: label, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', `${prefix}/moments`);
+      // The retired label is gone from every nav on the page, both locales.
+      await expect(page.getByRole('link', { name: /^(Moments|Momentos)$/ })).toHaveCount(0);
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/moments$`));
     });
   }
 });
