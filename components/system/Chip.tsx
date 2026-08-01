@@ -3,9 +3,11 @@ import type { ReactNode } from 'react';
 /*
  * THE CHIP FAMILY — four tones, one shape, and a law behind each.
  *
- *   ai      The AI label at first contact. Ink outline, ink text, with a
- *           filled marker holding the AI mark. Always ABOVE the AI content it
- *           labels, never in a footnote.
+ *   ai      The AI label at first contact. UNBOXED since 2026-08-01 (owner
+ *           ruling): the filled marker holding the AI mark plus a small
+ *           tracked caption, no outline — the label is a caption on the
+ *           content, not a component competing with it. Still always WITH
+ *           the AI content it labels, never in a footnote.
  *   urgent  The ONLY amber in the product. One fact: a bill standing on the
  *           floor calendar. Ink text on amber (11.44:1), and the date is
  *           PRINTED — the type below makes `dateLabel` impossible to omit.
@@ -74,11 +76,13 @@ const OUTLINE: Record<ChipGround, string> = {
   go: 'border-go-pale text-go-pale',
 };
 
-/** The AI chip keeps a full-strength outline on every ground. */
-const AI_OUTLINE: Record<ChipGround, string> = {
-  paper: 'border-ink text-ink',
-  ink: 'border-paper text-paper',
-  go: 'border-paper text-paper',
+/** The unboxed AI caption's text tone per ground. Computed passes at 12px
+ *  bold: ink-2-on-paper 7.87 · ink-pale-on-ink 10.82 · go-pale-on-go-deep
+ *  6.86. */
+const AI_TEXT: Record<ChipGround, string> = {
+  paper: 'text-ink-2',
+  ink: 'text-ink-pale',
+  go: 'text-go-pale',
 };
 
 const AI_MARKER: Record<ChipGround, string> = {
@@ -86,6 +90,22 @@ const AI_MARKER: Record<ChipGround, string> = {
   ink: 'bg-paper text-ink',
   go: 'bg-paper text-go-deep',
 };
+
+/**
+ * The filled AI mark on its own — for the one surface (the hero credit
+ * line) whose caption is multi-line prose rather than a chip. Same colors
+ * and stamp radius as the mark inside the chip, exported so the two can
+ * never drift.
+ */
+export function AiMark({ ground = 'paper', children }: ChipBase) {
+  return (
+    <span
+      className={`inline-flex flex-none rounded-stamp px-1 py-0.5 text-2xs font-extrabold tracking-[0.05em] ${AI_MARKER[ground]}`}
+    >
+      {children}
+    </span>
+  );
+}
 
 const TAG: Record<ChipGround, string> = {
   paper: 'border-line-strong text-ink-2',
@@ -110,18 +130,14 @@ export function Chip(props: ChipProps) {
   }
 
   if (props.tone === 'ai') {
+    // Unboxed: marker + tracked caption. items-start keeps the mark on the
+    // first line when a narrow column wraps the caption.
     return (
       <span
-        className={`${SHELL} items-start border-[1.5px] px-3 py-1 text-xs font-semibold ${AI_OUTLINE[ground]} ${className}`}
+        className={`${SHELL} items-start text-2xs font-bold tracking-[0.08em] uppercase ${AI_TEXT[ground]} ${className}`}
       >
-        {props.marker && (
-          <span
-            className={`flex-none rounded-stamp px-1 py-0.5 text-2xs font-extrabold tracking-[0.05em] ${AI_MARKER[ground]}`}
-          >
-            {props.marker}
-          </span>
-        )}
-        <span>{children}</span>
+        {props.marker && <AiMark ground={ground}>{props.marker}</AiMark>}
+        <span className="pt-0.5">{children}</span>
       </span>
     );
   }

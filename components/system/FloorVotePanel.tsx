@@ -73,6 +73,14 @@ export interface FloorVotePanelProps {
   headingLevel?: 2 | 3;
   /** Set when a parent needs `aria-labelledby` pointed at this headline. */
   headingId?: string;
+  /**
+   * Renders without the panel's own 3px border-y and with a short top
+   * padding, for when a parent GREEN SLAB already carries the slab's edges —
+   * the homepage week crown (2026-08-01) fuses its masthead onto this
+   * panel's top. The crown is the SAME data-gated ground extended, never a
+   * second one: it exists only because this panel rendered.
+   */
+  flush?: boolean;
   className?: string;
 }
 
@@ -87,6 +95,7 @@ export function FloorVotePanel({
   meta,
   headingLevel = 2,
   headingId,
+  flush = false,
   className = '',
 }: FloorVotePanelProps) {
   // THE GATE. Both halves are load-bearing: the status earns the loudness,
@@ -109,19 +118,19 @@ export function FloorVotePanel({
     // `on-go` retunes the focus indicator for this ground: white ring, go-deep
     // gap. The ring is never green, because the buttons here are green-filled.
     <section
-      className={`on-go border-y-[3px] border-go bg-go-deep py-8 text-paper md:py-12 ${className}`}
+      className={`on-go bg-go-deep text-paper ${
+        flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-go py-8 md:py-12'
+      } ${className}`}
     >
       <div className="mx-auto grid max-w-5xl gap-3 px-4">
         <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
           {calendarLabel}
         </Chip>
 
-        <p className="text-sm font-semibold text-go-pale tabular-nums">{identifier}</p>
-
-        <Heading
-          id={headingId}
-          className="max-w-[36ch] text-h2-loud font-extrabold text-paper"
-        >
+        {/* text-h2, one rung under the section masthead it can sit beneath
+            (owner, 2026-08-01: the loudness is the ground and the amber, not
+            a headline outshouting its own section title). */}
+        <Heading id={headingId} className="max-w-[36ch] text-h2 font-extrabold text-paper">
           <a
             href={href}
             className="inline-flex min-h-11 items-center text-paper no-underline hover:underline hover:decoration-[3px]"
@@ -130,11 +139,13 @@ export function FloorVotePanel({
           </a>
         </Heading>
 
-        {meta && (
-          <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-go-pale">
-            {meta}
-          </div>
-        )}
+        {/* The identifier rides the meta row, under the headline — the same
+            headline → citation → meta order every plain listing uses (owner,
+            2026-08-01: it sat alone above the headline before). */}
+        <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-go-pale">
+          <span className="font-semibold tabular-nums">{identifier}</span>
+          {meta}
+        </div>
 
         <div>
           {/* white fill on the enamel: `ring-gap` swaps this button's own

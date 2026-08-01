@@ -9,7 +9,7 @@
  * See DESIGN.md for the two laws and the contrast ledger.
  */
 
-export { Chip } from './Chip';
+export { Chip, AiMark } from './Chip';
 export type { ChipProps, ChipGround } from './Chip';
 
 export { FloorVotePanel, selectFloorVoteFeature } from './FloorVotePanel';
