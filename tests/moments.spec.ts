@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, type MomentWithState } from '../lib/moments';
+import { momentDek } from '../lib/moments-ui';
+import { getTeasers } from '../lib/core';
+import { waitForFeedHydrated } from './helpers';
 
 /*
  * e2e coverage for the Moments UI (app/[locale]/moments/*, the homepage
@@ -110,13 +113,34 @@ test.describe('/moments/[id] detail page', () => {
 
       // Every vehicle both names its bill and resolves — click through and
       // confirm the real bill page renders (not a 404, not a stub).
+      //
+      // And the round trip: the bill page must say which bigger question it
+      // is a vehicle of (spec §7.2). Only live and stale moments backlink
+      // (lib/moments.ts), so a settled or retired moment naturally takes the
+      // goBack() path instead — the same corpus-robust idiom the rest of
+      // this file uses, no hardcoded expectation about today's data.
+      const backlinks = m.state === 'live' || m.state === 'stale';
       for (const v of m.vehicles) {
         const billLink = page.locator(`a[href="/bills/${v.slug}"]`).first();
         await expect(billLink).toBeVisible();
         await billLink.click();
         await expect(page).toHaveURL(new RegExp(`/bills/${v.slug}$`));
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-        await page.goBack();
+
+        if (backlinks) {
+          const backlink = page.getByRole('link', {
+            name: new RegExp(escapeRegex(en.moments.partOf.replace('{name}', m.name.en))),
+          });
+          await expect(backlink).toBeVisible();
+          const box = await backlink.boundingBox();
+          expect(box?.height, 'the backlink must meet the 44px touch target').toBeGreaterThanOrEqual(44);
+          // The backlink IS the return trip: clicking it must land on this
+          // moment's page, which is where the next vehicle is read from.
+          await backlink.click();
+          await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+        } else {
+          await page.goBack();
+        }
       }
     });
   }
@@ -204,5 +228,83 @@ test.describe('accessibility basics', () => {
     const card = page.getByRole('link', { name: new RegExp(escapeRegex(m.name.en)) });
     await card.focus();
     await expect(card).toBeFocused();
+  });
+});
+
+/*
+ * SEARCH PINNING (spec §7.3) — the promise data/moments.json has carried
+ * since its first entry while nothing read the field. Corpus-derived like the
+ * rest of this file: which alias to type, and whether that alias can produce
+ * a zero-bill page today, are both facts about the live data, so they are
+ * computed here and the test skips honestly when today's corpus can't
+ * exercise the case.
+ */
+test.describe('bills search pins a live Moment', () => {
+  /*
+   * BillsBrowser's own bill-match rule, replicated so "this query returns no
+   * bills" is derived rather than assumed. Saved interests are empty in a
+   * fresh browser context, so the topic filter is not part of it.
+   */
+  const billsMatch = (q: string): boolean => {
+    const categories = en.categories as Record<string, string>;
+    return getTeasers('en').some(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        (b.headline ?? '').toLowerCase().includes(q) ||
+        b.identifier.toLowerCase().includes(q) ||
+        b.tags.some((tag) => (categories[tag] ?? '').toLowerCase().includes(q))
+    );
+  };
+
+  test("typing a live Moment's first alias pins it, and the row links through", async ({ page }) => {
+    const live = getLiveMoments();
+    test.skip(live.length === 0, 'no live moment in the corpus right now');
+    const m = live[0];
+    const alias = m.aliases.en[0];
+
+    await page.goto('/bills');
+    await waitForFeedHydrated(page);
+    await page.getByRole('searchbox').fill(alias);
+
+    const pin = page.locator(`a[href="/moments/${m.id}"]`);
+    await expect(pin).toBeVisible();
+    await expect(pin).toContainText(m.name.en);
+    await expect(pin).toContainText(en.moments.searchPinLabel);
+    await expect(pin).toContainText(en.moments.searchPinCta);
+
+    /* ALIASES ARE NEVER RENDERED (the field's own contract). Asserted with an
+       alias the name and dek don't already contain, so this is a claim about
+       the row rather than an accident of English. */
+    const rendered = `${m.name.en} ${momentDek(m.summary.en)}`.toLowerCase();
+    const unrendered = m.aliases.en.find((a) => !rendered.includes(a.toLowerCase()));
+    if (unrendered) await expect(pin).not.toContainText(unrendered, { ignoreCase: true });
+
+    await pin.click();
+    await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(m.name.en);
+  });
+
+  test('a query no bill matches still surfaces the Moment (the "ukraine" dead end)', async ({
+    page,
+  }) => {
+    const candidates = getLiveMoments().flatMap((m) =>
+      m.aliases.en
+        .map((a) => a.trim())
+        .filter((a) => a.length >= 2 && !billsMatch(a.toLowerCase()))
+        .map((alias) => ({ m, alias }))
+    );
+    test.skip(
+      candidates.length === 0,
+      "every live alias also matches a bill in today's corpus - the dead end can't be reproduced"
+    );
+    const { m, alias } = candidates[0];
+
+    await page.goto('/bills');
+    await waitForFeedHydrated(page);
+    await page.getByRole('searchbox').fill(alias);
+
+    // Zero bills, and the count line says so - the pin is not a bill result.
+    await expect(page.getByText(en.bills.noResults)).toBeVisible();
+    await expect(page.locator(`a[href="/moments/${m.id}"]`)).toBeVisible();
   });
 });

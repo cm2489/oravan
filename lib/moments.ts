@@ -149,3 +149,38 @@ export function getMoment(id: string, now: number = Date.now()): MomentWithState
 export function isSettled(id: string, now: number = Date.now()): boolean {
   return getMoment(id, now)?.state === 'settled';
 }
+
+/**
+ * The visibility rule for the bill → moment backlink, pure and
+ * fixture-testable (the same split as computeMomentState above: the rule is
+ * pinned by tests/moments-backlink.unit.spec.ts, the corpus binding is not).
+ *
+ * live + stale only. A settled question would send a reader who came to make
+ * a call to a page that opens "this is over" — the backlink is a live route,
+ * not an archive cross-reference — and retired is the owner's decision to
+ * take a moment off every surface. Stale STAYS: the review tripwire already
+ * renders its own caveat on the moment page, and silently withdrawing the
+ * route as well would be a second editorial act nobody asked for. Same
+ * live-or-stale set /moments's own index section uses.
+ */
+export function momentsForBill(moments: MomentWithState[], slug: string): MomentWithState[] {
+  return moments.filter(
+    (m) =>
+      (m.state === 'live' || m.state === 'stale') && m.vehicles.some((v) => v.slug === slug)
+  );
+}
+
+/**
+ * The moments a bill is a vehicle of (repositioning spec §7.2) — the bill
+ * page's "part of a bigger question" line.
+ *
+ * Computed at read time over the same getMoments() every other surface
+ * reads, deliberately NOT a build-time reverse index: an index would freeze
+ * the state this file's header exists to keep unfrozen, and a moment that
+ * settles overnight would keep backlinking until somebody remembered to
+ * rebuild it. The corpus is ≤6 moments with a handful of vehicles each, so
+ * the scan is free.
+ */
+export function getMomentsForBill(slug: string, now: number = Date.now()): MomentWithState[] {
+  return momentsForBill(getMoments(now), slug);
+}

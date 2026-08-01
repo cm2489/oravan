@@ -746,6 +746,7 @@
     "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",
     "readBill": "Leer el proyecto de ley",
+    "partOf": "Parte de una pregunta más amplia: {name}",
     "whyHeading": "Por qué existe este Momento",
     "whyCriteria": "Un Momento se abre solo cuando un proyecto de ley real y con acción posible cumple criterios publicados: una señal de calendario del gobierno, o cobertura de prensa de medios de todo el espectro, dentro de los últimos 14 días.",
     "signalLabel": "La señal que califica",
@@ -766,6 +767,8 @@
     "lifecycleLive": "Este Momento se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado. Los Momentos resueltos siguen disponibles, marcados como resueltos; nunca se reabren.",
     "browseAll": "Ver todos los Momentos",
     "aiNote": "Cada resumen de Momento lo redacta la IA a partir del registro público y lleva esa etiqueta. Nada se publica sin pasar controles automáticos — los dos idiomas, el registro adjunto, sin lenguaje de campaña.",
+    "searchPinLabel": "Gran pregunta",
+    "searchPinCta": "Ver la pregunta completa",
     "updates": {
       "whereHeading": "En qué punto está — {date}",
       "summaryAiChip": "Redactado por IA a partir del registro público",
