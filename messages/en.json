@@ -746,6 +746,7 @@
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
     "readCall": "Read + call",
     "readBill": "Read the bill",
+    "partOf": "Part of a bigger question: {name}",
     "whyHeading": "Why this Moment exists",
     "whyCriteria": "A Moment opens only when a live, callable bill meets published criteria: a government scheduling signal, or press coverage from outlets across the spectrum, within the last 14 days.",
     "signalLabel": "The qualifying signal",

@@ -110,13 +110,34 @@ test.describe('/moments/[id] detail page', () => {
 
       // Every vehicle both names its bill and resolves — click through and
       // confirm the real bill page renders (not a 404, not a stub).
+      //
+      // And the round trip: the bill page must say which bigger question it
+      // is a vehicle of (spec §7.2). Only live and stale moments backlink
+      // (lib/moments.ts), so a settled or retired moment naturally takes the
+      // goBack() path instead — the same corpus-robust idiom the rest of
+      // this file uses, no hardcoded expectation about today's data.
+      const backlinks = m.state === 'live' || m.state === 'stale';
       for (const v of m.vehicles) {
         const billLink = page.locator(`a[href="/bills/${v.slug}"]`).first();
         await expect(billLink).toBeVisible();
         await billLink.click();
         await expect(page).toHaveURL(new RegExp(`/bills/${v.slug}$`));
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-        await page.goBack();
+
+        if (backlinks) {
+          const backlink = page.getByRole('link', {
+            name: new RegExp(escapeRegex(en.moments.partOf.replace('{name}', m.name.en))),
+          });
+          await expect(backlink).toBeVisible();
+          const box = await backlink.boundingBox();
+          expect(box?.height, 'the backlink must meet the 44px touch target').toBeGreaterThanOrEqual(44);
+          // The backlink IS the return trip: clicking it must land on this
+          // moment's page, which is where the next vehicle is read from.
+          await backlink.click();
+          await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+        } else {
+          await page.goBack();
+        }
       }
     });
   }

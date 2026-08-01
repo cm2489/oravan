@@ -21,6 +21,7 @@ import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildBillJsonLd } from '@/lib/jsonld';
+import { getMomentsForBill } from '@/lib/moments';
 import { SITE_ORIGIN } from '@/lib/site';
 
 /*
@@ -202,6 +203,12 @@ export default async function BillPage({
       ? floorCalendarChamber(bill.last_action_text)
       : null;
 
+  // The bigger question this bill is a vehicle of, if any — live and stale
+  // moments only (lib/moments.ts owns that rule). Read-time, off the same
+  // list /moments reads; on the overwhelming majority of bills this is empty
+  // and the header renders exactly as it did before.
+  const parentMoments = getMomentsForBill(id);
+
   return (
     <>
       <JsonLd id="bill-jsonld" data={jsonLd} />
@@ -261,6 +268,29 @@ export default async function BillPage({
                 </Chip>
               ))}
             </div>
+          )}
+          {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
+              a bill page said nothing about the Moment it is a vehicle of —
+              the link existed in one direction only. It lands here, after
+              the chips and above the statute-speak, because it is context
+              for the claim in the h1, not a task.
+              Quiet on purpose: a hairline rule and an ink link, never green.
+              Green is the call, and this page already spends its one green
+              affordance on the rail; a second one competing for the eye
+              would make the reader choose between reading and calling. */}
+          {parentMoments.length > 0 && (
+            <ul className="mt-4 max-w-read border-t border-line pt-1">
+              {parentMoments.map((m) => (
+                <li key={m.id}>
+                  <Link
+                    href={`/moments/${m.id}`}
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                  >
+                    {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
           <details className="group mt-4 max-w-read">
             <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
