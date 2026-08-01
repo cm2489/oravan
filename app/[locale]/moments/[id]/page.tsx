@@ -14,7 +14,13 @@ import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { RENDER_DAY_CAP, VERBATIM_MODE, getCurrentSummary, getRevisions } from '@/lib/moment-updates';
+import {
+  RENDER_DAY_CAP,
+  VERBATIM_MODE,
+  getCurrentSummary,
+  getRevisions,
+  isAiSummary,
+} from '@/lib/moment-updates';
 import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
 import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
 
@@ -102,6 +108,29 @@ export default async function MomentPage({
   // The revision disclosure lists the PRIOR revisions; with only one on file
   // there is no history to disclose and the <details> never renders.
   const priorRevisions = revisions.slice(0, -1).reverse();
+
+  // AI labeling is DATA-GATED here the way MomentTimeline gates it: the chip
+  // appears only when a model actually wrote the sentence it stands over
+  // (pre-launch audit 2026-07-25, constitution-08 — the seed revisions are
+  // stamped `hand-authored`, and a chip over human text is over-labeling,
+  // which erodes the label exactly as under-labeling does).
+  //
+  // The CURRENT summary decides the chip and the disclaimer, because both sit
+  // directly above and below the passage they describe (first contact). The
+  // history is checked separately so that a hand-authored current summary
+  // over an AI history still labels the AI text — no summary a model wrote
+  // ever renders unlabeled.
+  const currentIsAi = summaryRevision ? isAiSummary(summaryRevision) : false;
+  const historyIsAi = priorRevisions.some(isAiSummary);
+
+  // Does the vehicles grid actually print AI text? A decoded headline is
+  // model-written; the official title it falls back to is not (see the chip
+  // beside the grid below). Resolved through the SAME localize call the cards
+  // render with, so the answer is about this locale's headlines, not English's.
+  const vehicleHeadlinesAreAi = moment.vehicles.some((v) => {
+    const raw = getBill(v.slug);
+    return raw ? Boolean(localizeBill(raw, locale).ai_headline) : false;
+  });
 
   // Citation + Congress.gov actions page per vehicle, resolved here so the
   // timeline stays a pure renderer and never reaches into the bill corpus.
@@ -193,12 +222,15 @@ export default async function MomentPage({
             {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
           </h2>
           {/* AI labeled at FIRST contact — above the passage, never in a
-              footnote. Reuses the page's own chip pattern. */}
-          <p className="mt-4">
-            <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-              {t('moments.updates.summaryAiChip')}
-            </Chip>
-          </p>
+              footnote. Reuses the page's own chip pattern, and appears only
+              when a model wrote the passage below it (see `currentIsAi`). */}
+          {currentIsAi && (
+            <p className="mt-4">
+              <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+                {t('moments.updates.summaryAiChip')}
+              </Chip>
+            </p>
+          )}
           {/* Franklin, not Besley: the reading voice is spent on the ONE
               passage above (a bill's decoded prose and the words a caller
               says aloud). This is Oravan stating where the record currently
@@ -207,7 +239,12 @@ export default async function MomentPage({
           <p className="mt-4 max-w-read text-md text-ink">
             {localeText(summaryRevision.text, locale)}
           </p>
-          <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
+          {/* The standing caveat describes AI text ("AI-drafted summary…"),
+              so it travels with the chip: both are claims about how the
+              passage above was written. */}
+          {currentIsAi && (
+            <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
+          )}
 
           {/* The site's existing native-disclosure idiom (WalkthroughDisclosure):
               the browser's own marker is kept and merely toned, so the
@@ -217,6 +254,18 @@ export default async function MomentPage({
               <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
                 {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
               </summary>
+              {/* The label follows the AI text. When the current summary is
+                  hand-authored the chip above is gone, and any model-written
+                  version in the history would otherwise render with no label
+                  at all — so it moves here, once, over the list it describes.
+                  Still one AI chip per section (v2 spec §7), never two. */}
+              {!currentIsAi && historyIsAi && (
+                <p className="mt-1 mb-2">
+                  <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+                    {t('moments.updates.summaryAiChip')}
+                  </Chip>
+                </p>
+              )}
               <ol className="mt-2 list-none">
                 {priorRevisions.map((rev) => {
                   /* changed_because holds the collector's machine tokens
@@ -280,6 +329,22 @@ export default async function MomentPage({
           {t('moments.vehiclesHeading')}
         </h2>
         <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.vehiclesLede')}</p>
+        {/* Every card below leads with an AI-decoded headline, and the card's
+            CTA is the phone call — so this was the one place on the site where
+            unlabeled AI text sat directly on the control that drives a call
+            (pre-launch audit 2026-07-25, constitution-05). The label is the
+            same sentence /bills prints over the same decoded headlines, in the
+            same chip, at first contact — above the grid, never in a footnote.
+            DATA-GATED like every other AI chip here: a vehicle whose decode is
+            still pending falls back to its official title, which is not AI
+            text, so a grid with no decode in it carries no label. */}
+        {vehicleHeadlinesAreAi && (
+          <p className="mt-5">
+            <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+              {t('bills.aiNote')}
+            </Chip>
+          </p>
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {moment.vehicles.map((v) => {

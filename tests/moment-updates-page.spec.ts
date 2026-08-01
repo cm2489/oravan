@@ -3,7 +3,13 @@ import type { Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getMoments, type MomentWithState } from '../lib/moments';
-import { RENDER_DAY_CAP, getCurrentSummary, getRevisions, getUpdates } from '../lib/moment-updates';
+import {
+  RENDER_DAY_CAP,
+  getCurrentSummary,
+  getRevisions,
+  getUpdates,
+  isAiSummary,
+} from '../lib/moment-updates';
 import { createTranslator } from 'next-intl';
 import { revisionReasons, timelineDays } from '../lib/moments-ui';
 
@@ -75,12 +81,27 @@ test.describe('"Where it stands" — the state summary', () => {
       await expect(heading).toHaveText(
         en.moments.updates.whereHeading.replace('{date}', fmtDay(revision.as_of_day, 'en'))
       );
-      // AI labeled at first contact, above the passage it labels.
-      await expect(page.getByText(en.moments.updates.summaryAiChip, { exact: true })).toBeVisible();
       await expect(page.getByText(revision.text.en, { exact: true })).toBeVisible();
-      // The standing site-wide AI disclaimer sits under it (it also sits under
-      // the hand-authored summary above, hence .last()).
-      await expect(page.getByText(en.bill.aiDisclaimer).last()).toBeVisible();
+
+      // AI labeled at first contact, above the passage it labels — and ONLY
+      // when a model wrote that passage (pre-launch audit 2026-07-25,
+      // constitution-08). The seed revisions carry model "hand-authored", and
+      // a chip standing over human text erodes the label the same way a
+      // missing chip does. Provenance is read through the same helper the
+      // page renders with, so the two can't drift.
+      const chip = page.getByText(en.moments.updates.summaryAiChip, { exact: true });
+      if (isAiSummary(revision)) {
+        await expect(chip.first()).toBeVisible();
+        // The standing site-wide AI disclaimer sits under it (it also sits
+        // under the hand-authored summary above, hence .last()).
+        await expect(page.getByText(en.bill.aiDisclaimer).last()).toBeVisible();
+      } else {
+        // Nothing labels the passage as AI: no chip stands over it (any chip
+        // in the DOM at all would be the one inside the closed revision
+        // disclosure, which is hidden, and which labels the history — not
+        // this summary).
+        await expect(chip.first()).toBeHidden();
+      }
     });
 
     test(`${m.id}: the revision history discloses only when there is history`, async ({ page }) => {
@@ -300,10 +321,12 @@ test.describe('the ES live layer', () => {
       await expect(page.getByText(en.moments.updates.quietDay, { exact: true })).toHaveCount(0);
       await expect(page.getByText(en.moments.updates.sourcesLabel, { exact: true })).toHaveCount(0);
       await expect(page.getByRole('heading', { name: /^Where it stands/ })).toHaveCount(0);
-      if (getCurrentSummary(m.id)) {
-        await expect(page.getByText(es.moments.updates.summaryAiChip, { exact: true })).toBeVisible();
-        await expect(page.getByText(en.moments.updates.summaryAiChip, { exact: true })).toHaveCount(0);
+      const current = getCurrentSummary(m.id);
+      if (current && isAiSummary(current)) {
+        await expect(page.getByText(es.moments.updates.summaryAiChip, { exact: true }).first()).toBeVisible();
       }
+      // The English chip never leaks onto the Spanish page, labeled or not.
+      await expect(page.getByText(en.moments.updates.summaryAiChip, { exact: true })).toHaveCount(0);
     });
   }
 });
