@@ -205,6 +205,8 @@ export function revisionReasons(tokens: readonly string[]): RevisionReason[] {
     out.push(reason);
   }
   return out;
+}
+
 /* ---------------------------------------------------------------------------
  * SEARCH PINNING (spec §7.3 — the v1 §4.2 promise that was never built).
  *
