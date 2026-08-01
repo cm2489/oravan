@@ -16,7 +16,7 @@ import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { RENDER_DAY_CAP, VERBATIM_MODE, getCurrentSummary, getRevisions } from '@/lib/moment-updates';
 import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
-import { linkHost, momentDek } from '@/lib/moments-ui';
+import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -218,22 +218,40 @@ export default async function MomentPage({
                 {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
               </summary>
               <ol className="mt-2 list-none">
-                {priorRevisions.map((rev) => (
-                  <li key={rev.id} className="border-t border-line py-3">
-                    <p className="text-xs font-bold text-ink-2 tabular-nums">
-                      {t('moments.updates.revisionAsOf', { date: fmtDate(rev.as_of_day) })}
-                    </p>
-                    <p className="mt-1 max-w-read text-sm text-ink">{localeText(rev.text, locale)}</p>
-                    {rev.changed_because.length > 0 && (
-                      <p className="mt-1 text-xs text-ink-2">
-                        <span className="font-semibold">
-                          {t('moments.updates.revisionReasonLabel')}
-                        </span>{' '}
-                        {rev.changed_because.join(' · ')}
+                {priorRevisions.map((rev) => {
+                  /* changed_because holds the collector's machine tokens
+                     ('seed', 'updates:+2', 'status:sjres-185-119
+                     floor_vote→committee'). This line used to print them, so
+                     the page read "Rewritten because seed" — and the Spanish
+                     page read the same English token (audit constitution-07).
+                     Each token is now a message key; a token this build does
+                     not recognize renders nothing at all, and a revision with
+                     no recognized token loses the line rather than leaking
+                     one. The tokens themselves stay in the data, where they
+                     are an audit trail, and stay out of the DOM entirely —
+                     the status form carries the raw bill-status enum. */
+                  const reasons = revisionReasons(rev.changed_because).map((r) =>
+                    t(`moments.updates.reason.${r.key}`, r.values),
+                  );
+                  return (
+                    <li key={rev.id} className="border-t border-line py-3">
+                      <p className="text-xs font-bold text-ink-2 tabular-nums">
+                        {t('moments.updates.revisionAsOf', { date: fmtDate(rev.as_of_day) })}
                       </p>
-                    )}
-                  </li>
-                ))}
+                      <p className="mt-1 max-w-read text-sm text-ink">
+                        {localeText(rev.text, locale)}
+                      </p>
+                      {reasons.length > 0 && (
+                        <p className="mt-1 max-w-read text-xs text-ink-2">
+                          <span className="font-semibold">
+                            {t('moments.updates.revisionReasonLabel')}
+                          </span>{' '}
+                          {reasons.join(' · ')}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             </details>
           )}

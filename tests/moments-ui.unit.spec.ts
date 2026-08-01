@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { momentDek } from '../lib/moments-ui';
+import { createTranslator } from 'next-intl';
+import enMessages from '../messages/en.json';
+import esMessages from '../messages/es.json';
+import { momentDek, revisionReasons } from '../lib/moments-ui';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
 /*
@@ -83,5 +86,132 @@ test.describe('isSignalFresh', () => {
 
   test('the window matches the number published to users', () => {
     expect(SIGNAL_WINDOW_DAYS).toBe(14);
+  });
+});
+
+/*
+ * The revision-history reason line (pre-launch audit 2026-07-25,
+ * constitution-07). It printed `changed_because` verbatim, so production read
+ * "Rewritten because seed" in English and the identical, untranslated
+ * "Se reescribió porque seed" in Spanish — and the status form would have put
+ * 'status:sjres-185-119 committee→floor_vote', raw enum and all, in front of
+ * readers.
+ *
+ * These tests are the reason that cannot come back: every token the collector
+ * can write maps to a phrase that renders in the reader's own language, an
+ * unknown token maps to nothing at all, and no token text survives into
+ * either locale's output.
+ */
+test.describe('revisionReasons', () => {
+  const MESSAGES: Record<'en' | 'es', Record<string, unknown>> = {
+    en: enMessages,
+    es: esMessages,
+  };
+
+  /** What the page actually prints after "Rewritten because" / "Se reescribió
+   *  porque" — the real ICU formatter, in the real locale, off the real
+   *  message files. The key is composed at runtime here exactly as
+   *  app/[locale]/moments/[id]/page.tsx composes it; the cast is what the
+   *  page's own untyped `getTranslations` gives it for free. */
+  const render = (tokens: string[], locale: 'en' | 'es') => {
+    const t = createTranslator({ locale, messages: MESSAGES[locale] }) as unknown as (
+      key: string,
+      values?: Record<string, number>
+    ) => string;
+    return revisionReasons(tokens)
+      .map((r) => t(`moments.updates.reason.${r.key}`, r.values))
+      .join(' · ');
+  };
+
+  test('every token the collector can write maps to a reason', () => {
+    // scripts/moment-updates.mjs:597 changedBecause, plus the hand-authored
+    // 'seed' the live layer shipped with.
+    expect(revisionReasons(['first-summary'])).toEqual([{ key: 'first' }]);
+    expect(revisionReasons(['seed'])).toEqual([{ key: 'first' }]);
+    expect(revisionReasons(['updates:+3'])).toEqual([{ key: 'newActions', values: { count: 3 } }]);
+    expect(revisionReasons(['reanchor:12d'])).toEqual([{ key: 'reanchor', values: { days: 12 } }]);
+    expect(revisionReasons(['status:sjres-185-119 committee→floor_vote'])).toEqual([
+      { key: 'statusMoved' },
+    ]);
+  });
+
+  test('a known token renders a human phrase, in each locale', () => {
+    expect(render(['seed'], 'en')).toBe('no summary of this question existed yet');
+    expect(render(['seed'], 'es')).toBe('aún no existía ningún resumen de esta cuestión');
+
+    expect(render(['updates:+1'], 'en')).toBe('1 new action was recorded since the last version');
+    expect(render(['updates:+1'], 'es')).toBe('se registró 1 acción nueva desde la versión anterior');
+    expect(render(['updates:+2'], 'en')).toBe('2 new actions were recorded since the last version');
+    expect(render(['updates:+2'], 'es')).toBe(
+      'se registraron 2 acciones nuevas desde la versión anterior'
+    );
+
+    expect(render(['reanchor:1d'], 'en')).toBe('1 day had passed since the last version');
+    expect(render(['reanchor:12d'], 'es')).toBe('habían pasado 12 días desde la versión anterior');
+
+    expect(render(['status:sjres-185-119 committee→floor_vote'], 'en')).toBe(
+      'a bill on this question moved to a different stage'
+    );
+    expect(render(['status:sjres-185-119 committee→floor_vote'], 'es')).toBe(
+      'un proyecto de ley de esta cuestión pasó a otra etapa'
+    );
+  });
+
+  test('the two locales say it in their own words — never the same string twice', () => {
+    for (const token of ['seed', 'updates:+2', 'reanchor:12d', 'status:hr-1-119 a→b']) {
+      expect(render([token], 'en')).not.toBe(render([token], 'es'));
+    }
+  });
+
+  test('an unknown token renders nothing rather than itself', () => {
+    // A shape the collector has never emitted, and the shapes it emits with
+    // one character wrong — the line disappears, the token never prints.
+    for (const token of ['', 'seeded', 'updates:+', 'updates:2', 'reanchor:12', 'statuses:x y→z']) {
+      expect(revisionReasons([token]), token).toEqual([]);
+      expect(render([token], 'en'), token).toBe('');
+      expect(render([token], 'es'), token).toBe('');
+    }
+    // And a revision that carries one known token beside an unknown one keeps
+    // the known phrase and drops only the stranger.
+    expect(render(['seed', 'quantum:7'], 'en')).toBe('no summary of this question existed yet');
+  });
+
+  test('one event said three times is printed once', () => {
+    // The Iran moment's second revision: three vehicles, one stage change.
+    expect(
+      render(
+        [
+          'status:sjres-185-119 floor_vote→committee',
+          'status:sjres-172-119 floor_vote→committee',
+          'status:hr-9770-119 floor_vote→committee',
+        ],
+        'en'
+      )
+    ).toBe('a bill on this question moved to a different stage');
+  });
+
+  test('the shipped corpus maps completely, and leaks no token text', () => {
+    const file = JSON.parse(
+      readFileSync(join(__dirname, '..', 'data/moment-updates.json'), 'utf8')
+    ) as Record<string, { summary_revisions?: { changed_because: string[] }[] }>;
+
+    const tokens = Object.entries(file)
+      .filter(([id]) => id !== '_meta')
+      .flatMap(([, entry]) => entry.summary_revisions ?? [])
+      .flatMap((rev) => rev.changed_because);
+    expect(tokens.length, 'the seeded corpus must carry revision reasons').toBeGreaterThan(0);
+
+    for (const token of tokens) {
+      // A token the map has never met would silently cost the reader the
+      // whole line — that is a code change owed, not a quiet degradation.
+      expect(revisionReasons([token]), `unmapped changed_because token: ${token}`).not.toEqual([]);
+      for (const locale of ['en', 'es'] as const) {
+        const text = render([token], locale);
+        expect(text.length, `${token}/${locale}`).toBeGreaterThan(0);
+        expect(text, `${token}/${locale} leaks the token`).not.toContain(token);
+        // The status enums the collector keeps out of reader-facing prose.
+        expect(text).not.toMatch(/[:→]|floor_vote|committee|introduced|passed_house/);
+      }
+    }
   });
 });

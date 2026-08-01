@@ -775,6 +775,12 @@
       "revisionsToggle": "Cómo ha cambiado este resumen ({count})",
       "revisionAsOf": "Al {date}",
       "revisionReasonLabel": "Se reescribió porque",
+      "reason": {
+        "first": "aún no existía ningún resumen de esta cuestión",
+        "newActions": "{count, plural, one {se registró # acción nueva} other {se registraron # acciones nuevas}} desde la versión anterior",
+        "statusMoved": "un proyecto de ley de esta cuestión pasó a otra etapa",
+        "reanchor": "{days, plural, one {había pasado # día} other {habían pasado # días}} desde la versión anterior"
+      },
       "timelineHeading": "Qué se ha movido",
       "timelineLede": "Todo lo que el registro muestra sobre los proyectos de ley de esta cuestión, empezando por el día más reciente. Se listan hasta {cap} por día, y los días sin nada registrado se muestran tal cual.",
       "timelineAiChip": "Las explicaciones de una línea que siguen las redacta la IA a partir del texto oficial de cada acción.",
