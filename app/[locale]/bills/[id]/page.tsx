@@ -10,6 +10,7 @@ import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
 import { DecodedSections } from '@/components/DecodedSections';
 import { JsonLd } from '@/components/JsonLd';
+import { ReadReceipt } from '@/components/ReadReceipt';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
@@ -188,6 +189,13 @@ export default async function BillPage({
   const shareText = norm(displayTitle).includes(norm(citation))
     ? displayTitle
     : `${citation} — ${displayTitle}`;
+  // The reading-history label, built by the SAME rule (and the same middot)
+  // ActionPanel:171 uses for call-log labels — the civic record prints read
+  // rows directly above call rows, and two labelling idioms in one list
+  // would read as two different products.
+  const recordLabel = norm(displayTitle).includes(norm(citation))
+    ? displayTitle
+    : `${citation} · ${displayTitle}`;
   // Canonical, slug-only share URL: no query params, no stance, no
   // locale-tracking params. The origin lives in lib/site.ts (rename in flight).
   const shareUrl = `${SITE_ORIGIN}${getPathname({ locale, href: `/bills/${id}` })}`;
@@ -363,6 +371,10 @@ export default async function BillPage({
             aria-labelledby="decoded"
             className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1"
           >
+            {/* Records this bill in the visitor's own reading history
+                (localStorage, this device only). Renders no markup — see
+                components/ReadReceipt.tsx. */}
+            <ReadReceipt slug={id} label={recordLabel} />
             <div className="border-t-[3px] border-ink pt-4">
               <h2 id="decoded" className="text-h2 font-extrabold text-ink">
                 {t('bill.decoded')}

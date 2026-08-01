@@ -4,17 +4,55 @@ import { useState } from 'react';
 import { PhoneCall, MessageCircle, Voicemail, Trash2, ArrowRight } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { eraseAll, removeCall, useCalls, usePrefs } from '@/lib/local';
+import { eraseAll, removeCall, removeRead, useCalls, usePrefs, useReads } from '@/lib/local';
+
+/*
+ * THE CIVIC RECORD (repositioning spec §4). Formerly "Your impact", which
+ * counted only calls — so a reader who had followed three topics and read a
+ * dozen decodes was told they had done nothing. The page now reads in the
+ * order the product actually works: what you follow, what you've read, then
+ * what you did about it.
+ *
+ * CALLS STAY THIRD AND STAY WHOLE. Third is not a demotion — the stat trio,
+ * the history list and the erase block are the surfaces they already were,
+ * in the position the arc puts them: the outcome, after the two sections
+ * that lead to it. Demote, never bury.
+ *
+ * TAGS ARE INK, NEVER GREEN. The topic chips below navigate; navigating is
+ * not an action, and green is spent on the call — the same color law that
+ * governs BillsBrowser's filter rail.
+ *
+ * EVERY ROW HERE CAME OUT OF localStorage. There is no server that holds any
+ * of it, which is why each section says so in its own words instead of
+ * leaning on one global promise at the top of the page.
+ */
+
+/* The topic chip, as a link: BillsBrowser's own FILTER_OFF idiom (rounded-
+   stamp, line-strong edge, ink-2 text) at the 44px touch floor. */
+const TOPIC_CHIP =
+  'inline-flex min-h-11 shrink-0 items-center rounded-stamp border border-line-strong bg-paper px-4 text-sm font-semibold text-ink-2 no-underline transition-colors hover:border-ink hover:bg-wash hover:text-ink';
+
+/* Read rows and call rows are the same object in two tenses — one row idiom,
+   declared once, so they cannot drift apart as either list changes. */
+const ROW =
+  'flex items-start justify-between gap-3 rounded-control border border-line-strong bg-paper p-4';
+const ROW_LINK = 'font-semibold hover:underline underline-offset-2';
+const ROW_DELETE =
+  'flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-control p-2.5 text-ink-2 hover:bg-wash hover:text-ink';
 
 export default function ImpactPageClient() {
   const t = useTranslations('impact');
   const tBill = useTranslations('bill');
+  const tBills = useTranslations('bills');
+  const tCat = useTranslations('categories');
   const format = useFormatter();
   const calls = useCalls();
+  const reads = useReads();
   const prefs = usePrefs();
   const [confirming, setConfirming] = useState(false);
   const [erased, setErased] = useState(false);
-  const hasAnything = calls.length > 0 || !!prefs.zip || !!prefs.interests?.length;
+  const interests = prefs.interests ?? [];
+  const hasAnything = calls.length > 0 || reads.length > 0 || !!prefs.zip || interests.length > 0;
 
   function onErase() {
     eraseAll();
@@ -24,26 +62,97 @@ export default function ImpactPageClient() {
 
   const contacts = calls.filter((c) => c.outcome === 'contact').length;
   const voicemails = calls.filter((c) => c.outcome === 'voicemail').length;
+  const day = (iso: string) =>
+    format.dateTime(new Date(iso), { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-h2 font-extrabold text-ink">{t('title')}</h1>
       <p className="mt-2 text-ink-2">{t('sub')}</p>
 
+      {/* 1. WHAT YOU FOLLOW — the saved topics, shown as what they are: a
+             list this device kept. Each chip goes to /bills, which opens
+             already filtered by these same interests (BillsBrowser reads
+             them from this very store), so a tap lands on the bills the
+             chip names. */}
+      {interests.length > 0 && (
+        <section className="mt-10" aria-labelledby="follows">
+          <h2 id="follows" className="text-h3 font-extrabold">
+            {t('followTitle')}
+          </h2>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {interests.map((cat) => (
+              <li key={cat}>
+                <Link href="/bills" className={TOPIC_CHIP}>
+                  {tCat(cat)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-ink-2">{tBills('interestsNote')}</p>
+          <p className="mt-3">
+            <Link
+              href="/bills"
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go visited:text-go-deep hover:text-go-deep hover:underline"
+            >
+              {t('followCta')}
+              <ArrowRight className="h-4 w-4 flex-none" aria-hidden />
+            </Link>
+          </p>
+        </section>
+      )}
+
+      {/* 2. WHAT YOU'VE READ — newest first, each row removable on its own.
+             The per-item delete is not a convenience: a record you cannot
+             edit is a record kept ON you rather than FOR you. */}
+      {reads.length > 0 && (
+        <section className="mt-10" aria-labelledby="reads">
+          <h2 id="reads" className="text-h3 font-extrabold">
+            {t('readsTitle')}
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {reads.map((r) => (
+              <li key={r.billSlug} className={ROW}>
+                <div>
+                  <Link href={`/bills/${r.billSlug}`} className={ROW_LINK}>
+                    {r.billLabel}
+                  </Link>
+                  <p className="mt-1 text-sm text-ink-2 tabular-nums">{day(r.at)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeRead(r.billSlug)}
+                  aria-label={t('deleteRead')}
+                  title={t('deleteRead')}
+                  className={ROW_DELETE}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-ink-2">{t('readsNote')}</p>
+        </section>
+      )}
+
+      {/* 3. YOUR CALLS — the celebrated outcome, kept whole, in third place. */}
       {calls.length > 0 && (
-      <dl className="mt-8 grid grid-cols-3 gap-3">
-        {[
-          { icon: PhoneCall, label: t('calls', { count: calls.length }), value: calls.length },
-          { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
-          { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
-        ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-control border border-line-strong bg-paper p-4 text-center">
-            <Icon className="mx-auto h-5 w-5 text-ink-2" aria-hidden />
-            <dd className="mt-1 text-h3 font-extrabold tabular-nums">{value}</dd>
-            <dt className="text-xs font-medium text-ink-2">{label}</dt>
-          </div>
-        ))}
-      </dl>
+        <dl className="mt-10 grid grid-cols-3 gap-3">
+          {[
+            { icon: PhoneCall, label: t('calls', { count: calls.length }), value: calls.length },
+            { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
+            { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
+          ].map(({ icon: Icon, label, value }) => (
+            <div
+              key={label}
+              className="rounded-control border border-line-strong bg-paper p-4 text-center"
+            >
+              <Icon className="mx-auto h-5 w-5 text-ink-2" aria-hidden />
+              <dd className="mt-1 text-h3 font-extrabold tabular-nums">{value}</dd>
+              <dt className="text-xs font-medium text-ink-2">{label}</dt>
+            </div>
+          ))}
+        </dl>
       )}
 
       {calls.length === 0 && !erased && (
@@ -67,14 +176,13 @@ export default function ImpactPageClient() {
           </h2>
           <ul className="mt-4 space-y-3">
             {calls.map((c) => (
-              <li key={c.at} className="flex items-start justify-between gap-3 rounded-control border border-line-strong bg-paper p-4">
+              <li key={c.at} className={ROW}>
                 <div>
-                  <Link href={`/bills/${c.billSlug}`} className="font-semibold hover:underline underline-offset-2">
+                  <Link href={`/bills/${c.billSlug}`} className={ROW_LINK}>
                     {c.billLabel}
                   </Link>
                   <p className="mt-1 text-sm text-ink-2">
-                    {c.repName} · {tBill(`outcome.${c.outcome}`)} ·{' '}
-                    {format.dateTime(new Date(c.at), { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {c.repName} · {tBill(`outcome.${c.outcome}`)} · {day(c.at)}
                   </p>
                 </div>
                 <button
@@ -82,7 +190,7 @@ export default function ImpactPageClient() {
                   onClick={() => removeCall(c.at)}
                   aria-label={t('deleteRecord')}
                   title={t('deleteRecord')}
-                  className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-control p-2.5 text-ink-2 hover:bg-wash hover:text-ink"
+                  className={ROW_DELETE}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
