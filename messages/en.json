@@ -767,6 +767,8 @@
     "lifecycleLive": "This Moment retires when the question is settled — every vehicle signed, vetoed, or dead. Settled Moments stay readable, marked resolved; they never reopen.",
     "browseAll": "Browse all Moments",
     "aiNote": "Every Moment summary is AI-drafted from the public record and labeled. Nothing publishes until it passes automated checks — both languages, the record attached, no advocacy language.",
+    "searchPinLabel": "Big Question",
+    "searchPinCta": "See the whole question",
     "updates": {
       "whereHeading": "Where it stands — {date}",
       "summaryAiChip": "AI-drafted from the public record",

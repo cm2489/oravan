@@ -5,6 +5,7 @@ import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getNewsBills, getTeasers } from '@/lib/core';
+import { getMomentSearchTeasers } from '@/lib/moments-ui';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 
@@ -49,7 +50,15 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
       {/* Search-first (2026-07 critique, majority P0): the page's stated
           purpose - find and browse bills - leads; the news lens follows as
           compact rows instead of a duplicated homepage card wall. */}
-      <BillsBrowser bills={getTeasers(locale)} freshness={freshness} />
+      {/* Live Moments travel with the page so a search that matches one can
+          pin it (spec §7.3). Resolved on the server: the browser gets two
+          short localized strings and the alias list per moment, never the
+          moments corpus. */}
+      <BillsBrowser
+        bills={getTeasers(locale)}
+        freshness={freshness}
+        moments={getMomentSearchTeasers(locale)}
+      />
       {news.length > 0 && (
         <div className="mt-16 border-t border-line pt-8">
           <NewsLens bills={news.slice(0, 3)} compact />

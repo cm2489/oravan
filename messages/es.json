@@ -767,6 +767,8 @@
     "lifecycleLive": "Este Momento se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado. Los Momentos resueltos siguen disponibles, marcados como resueltos; nunca se reabren.",
     "browseAll": "Ver todos los Momentos",
     "aiNote": "Cada resumen de Momento lo redacta la IA a partir del registro público y lleva esa etiqueta. Nada se publica sin pasar controles automáticos — los dos idiomas, el registro adjunto, sin lenguaje de campaña.",
+    "searchPinLabel": "Gran pregunta",
+    "searchPinCta": "Ver la pregunta completa",
     "updates": {
       "whereHeading": "En qué punto está — {date}",
       "summaryAiChip": "Redactado por IA a partir del registro público",
