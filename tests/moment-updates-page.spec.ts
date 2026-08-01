@@ -90,14 +90,25 @@ test.describe('"Where it stands" — the state summary', () => {
       ).toBeVisible();
       // Prior revisions are listed with their dates; the current one is not
       // repeated inside its own history.
+      //
+      // COUNTED, not merely visible: the collector re-summarizes on a cadence,
+      // so two revisions of the SAME ET day are ordinary — and iran-war-powers
+      // shipped exactly that on 2026-07-25, which turned this assertion into a
+      // Playwright strict-mode violation on main (two <p>As of July 25, 2026</p>
+      // for one exact-text locator). One row per prior revision is the property
+      // that was always meant here. (Same fix as PR #132's, carried here too so
+      // this PR's merge-ref check can go green on its own.)
       await toggle.click();
+      const perDate = new Map<string, number>();
       for (const prior of revisions.slice(0, -1)) {
-        await expect(
-          page.getByText(
-            en.moments.updates.revisionAsOf.replace('{date}', fmtDay(prior.as_of_day, 'en')),
-            { exact: true }
-          )
-        ).toBeVisible();
+        const label = en.moments.updates.revisionAsOf.replace(
+          '{date}',
+          fmtDay(prior.as_of_day, 'en')
+        );
+        perDate.set(label, (perDate.get(label) ?? 0) + 1);
+      }
+      for (const [label, count] of perDate) {
+        await expect(page.getByText(label, { exact: true })).toHaveCount(count);
       }
     });
   }

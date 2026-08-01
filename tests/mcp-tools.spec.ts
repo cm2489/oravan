@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
-import { expectDataStaleAt, movingSlugsAt, stableAcross } from './corpus';
+import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
 import { callTool } from './helpers';
 
 /*
@@ -19,6 +19,16 @@ import { callTool } from './helpers';
 
 const BILL_SLUG = 'hr-2701-119';
 const SPONSOR_BIOGUIDE = 'W000797';
+const FIXTURE_TOPIC = 'national_security';
+/* A word from the fixture's OFFICIAL title, so it narrows the match set in
+ * both locales - localizeBill only overlays the AI decode, never the
+ * congressional title. */
+const FIXTURE_KEYWORD = 'servicemembers';
+/* search_bills' own `limit` ceiling (lib/core/mcp-tools.ts's zod schema).
+ * The tool has no offset/cursor, so a result deeper than this is
+ * unreachable by any caller - which is exactly why the assertions below
+ * never assume a bill sits inside a window. */
+const SEARCH_MAX_LIMIT = 50;
 
 /*
  * `locale` defaults to 'en' so every pre-existing English call site below is
@@ -190,25 +200,80 @@ test.describe('get_bill', () => {
   });
 });
 
+/*
+ * search_bills returns a WINDOW, not the whole match set: most-urgent-first,
+ * capped at `limit` (default 20, max 50), with no offset to page past it.
+ * These tests therefore assert the contract - the filter selects by topic,
+ * the window is sorted, the envelope discloses AI - and never that a named
+ * fixture sits inside a window it does not control.
+ *
+ * 2026-07-31: the topic test used to assert exactly that, and went red on
+ * main when the corpus outgrew it. Nothing regressed - hr-2701-119's last
+ * action is 2025-12-09, so its urgency decayed to the floor while the
+ * nightly sync kept adding fresher national_security bills above it: rank 12
+ * of 309 matches on 07-28, rank 38 of 334 three days later. The fix is to
+ * reach the fixture through a filter narrow enough that the window cannot
+ * hide it, and to assert that narrowness rather than trust it.
+ */
 test.describe('search_bills', () => {
   test('topic filter finds the fixture bill, sorted, both locales', async ({ request }) => {
     for (const locale of ['en', 'es'] as const) {
-      const result = await callTool(request, 'search_bills', { topic: 'national_security', locale });
+      const result = await callTool(request, 'search_bills', { topic: FIXTURE_TOPIC, locale });
       const data = result.structuredContent!;
-      const results = data.results as Array<{ slug: string; ai_generated: boolean }>;
-      expect(results.some((r) => r.slug === BILL_SLUG)).toBe(true);
+      const results = data.results as Array<{
+        slug: string;
+        ai_generated: boolean;
+        urgency_score: number;
+        topics: Array<{ id: string }>;
+      }>;
       expect((data.total_matches as number)).toBeGreaterThan(0);
-      expect(data.topic).toBe('national_security');
+      expect(results.length).toBeGreaterThan(0);
+      expect(data.topic).toBe(FIXTURE_TOPIC);
+      // The filter is real, not just non-empty: every result carries the topic.
+      for (const r of results) expect(r.topics.map((t) => t.id)).toContain(FIXTURE_TOPIC);
+      // "sorted": most urgent first, the same rule the site's feeds use. The
+      // scores are rounded to 3 decimals (lib/urgency.mjs), so this is an
+      // exact check, not a tolerance one.
+      const scores = results.map((r) => r.urgency_score);
+      expect(scores).toEqual([...scores].sort((a, b) => b - a));
       // Some AI-decoded results present -> envelope discloses it; a search
       // across an undecoded corner would not force a false label.
       const hasAi = results.some((r) => r.ai_generated);
       expectMeta(data.meta as Record<string, unknown>, locale === 'es' ? '/es/bills' : '/bills', hasAi, locale);
+
+      // The fixture, reached through that same topic filter - narrowed by a
+      // title keyword so the whole match set fits inside one window. The
+      // total_matches assertion is what makes the next line window-proof:
+      // when every match is returned, "the fixture is in results" IS "the
+      // fixture matches the filter". If a future corpus pushes this past
+      // SEARCH_MAX_LIMIT, that assertion fails first and says so - narrow
+      // the keyword, never widen the window.
+      const narrowed = await callTool(request, 'search_bills', {
+        topic: FIXTURE_TOPIC,
+        query: FIXTURE_KEYWORD,
+        limit: SEARCH_MAX_LIMIT,
+        locale,
+      });
+      const narrowData = narrowed.structuredContent!;
+      const narrowResults = narrowData.results as Array<{ slug: string; topics: Array<{ id: string }> }>;
+      expect((narrowData.total_matches as number)).toBeLessThanOrEqual(SEARCH_MAX_LIMIT);
+      expect(narrowResults.length).toBe(narrowData.total_matches as number);
+      expect(narrowResults.some((r) => r.slug === BILL_SLUG)).toBe(true);
     }
   });
 
   test('free-text query matches the fixture bill by title keyword', async ({ request }) => {
-    const result = await callTool(request, 'search_bills', { query: 'servicemembers', locale: 'en' });
-    const results = result.structuredContent!.results as Array<{ slug: string }>;
+    const result = await callTool(request, 'search_bills', {
+      query: FIXTURE_KEYWORD,
+      limit: SEARCH_MAX_LIMIT,
+      locale: 'en',
+    });
+    const data = result.structuredContent!;
+    const results = data.results as Array<{ slug: string }>;
+    // Same window-proofing as above: assert the full match set came back
+    // before asserting the fixture is in it.
+    expect((data.total_matches as number)).toBeLessThanOrEqual(SEARCH_MAX_LIMIT);
+    expect(results.length).toBe(data.total_matches as number);
     expect(results.some((r) => r.slug === BILL_SLUG)).toBe(true);
   });
 
@@ -285,6 +350,23 @@ test.describe('whats_moving', () => {
   });
 });
 
+/*
+ * get_representative carries a window too: the sponsor's 5 most recent
+ * bills, newest last action first, a HARD slice in lib/core/mcp.ts with no
+ * limit param and no paging. The same unstated assumption that took
+ * search_bills red sat here one nightly sync from firing - W000797 has
+ * exactly 5 sponsored bills in the corpus and BILL_SLUG (last action
+ * 2025-12-09) is the oldest of them, so the next bill she sponsors evicts
+ * the fixture. Derive the window from the corpus rather than naming a
+ * member of it.
+ */
+const SPONSOR_WINDOW = 5;
+const expectedSponsored = corpus
+  .filter((b) => b.sponsor_bioguide_id === SPONSOR_BIOGUIDE)
+  .sort((a, b) => (b.last_action_date ?? '').localeCompare(a.last_action_date ?? ''))
+  .slice(0, SPONSOR_WINDOW)
+  .map(slugOf);
+
 test.describe('get_representative', () => {
   test('full record + recent sponsored teasers, English', async ({ request }) => {
     const result = await callTool(request, 'get_representative', { bioguide: SPONSOR_BIOGUIDE, locale: 'en' });
@@ -296,7 +378,9 @@ test.describe('get_representative', () => {
     expect(rep).not.toHaveProperty('rating');
     expect(rep).not.toHaveProperty('grade');
     const sponsored = rep.recent_sponsored as Array<{ slug: string; ai_generated: boolean }>;
-    expect(sponsored.some((b) => b.slug === BILL_SLUG)).toBe(true);
+    // Exactly the corpus's own newest-first window - stronger than "the
+    // fixture is in there somewhere", and it cannot rot as she sponsors more.
+    expect(sponsored.map((b) => b.slug)).toEqual(expectedSponsored);
     const hasAi = sponsored.some((b) => b.ai_generated);
     expectMeta(result.structuredContent!.meta as Record<string, unknown>, '/reps', hasAi);
   });
@@ -304,6 +388,14 @@ test.describe('get_representative', () => {
   test('Spanish locale localizes sponsored-bill headlines and carries the Spanish envelope', async ({
     request,
   }) => {
+    // This assertion needs the fixture's known ES decode ("judías"), so it
+    // needs the fixture inside the sponsor's 5-bill window. Skip loudly
+    // rather than fail obscurely when the corpus evicts it - the fix then is
+    // to re-anchor BILL_SLUG on a currently-windowed decoded bill.
+    test.skip(
+      !expectedSponsored.includes(BILL_SLUG),
+      `corpus pushed ${BILL_SLUG} out of ${SPONSOR_BIOGUIDE}'s ${SPONSOR_WINDOW}-bill sponsored window - re-anchor the ES decode fixture`
+    );
     const result = await callTool(request, 'get_representative', { bioguide: SPONSOR_BIOGUIDE, locale: 'es' });
     const rep = result.structuredContent!.representative as Record<string, unknown>;
     const sponsored = rep.recent_sponsored as Array<{
