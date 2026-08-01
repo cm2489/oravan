@@ -213,7 +213,19 @@ export default async function RepsPage({
           destination. Point straight at what's actually callable this week
           so the ZIP-first path never dead-ends here. The 2px ink edge is the
           one weight change on the page — it is the continuation, so it gets
-          the heaviest rule the paper register has. */}
+          the heaviest rule the paper register has.
+
+          TRUTH-FIRST COPY REVIEW, 2026-08-01 (repositioning spec §5.5).
+          `nextTitle`/`nextSub` were reviewed against the de-assignment pass
+          that rewrote `home.topTitle` and `bills.band.now`, and are KEPT
+          near-verbatim — deliberately, not by omission. Call-forward copy is
+          *earned* on this surface: a visitor who has just typed a ZIP asked
+          who represents them, so "Now you know who to call" reports what
+          they already did rather than assigning them a task. The
+          de-assignment rule bites on surfaces a visitor reaches before
+          engaging (the homepage front door, the bills index bands); it does
+          not bite here. The section id `reps-next` is frozen — invariant I2
+          in tests/funnel.spec.ts reads it. */}
       {zip && districts.length > 0 && (
         <section
           className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"

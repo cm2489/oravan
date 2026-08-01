@@ -15,14 +15,14 @@ import type { BillTeaser } from '@/lib/types';
  * and is spent on actions; a listing is not an action, it is a listing. Amber
  * means one dated floor-calendar fact — and on this surface it would be
  * wallpaper, not a signal: the live corpus ranks `floor_vote` bills to the
- * top, so every one of the six cards in the "Calling now" band currently
+ * top, so every one of the six cards in the "Deciding now" band currently
  * carries that status (the whole top-20 by urgency does). Marking all six
  * amber makes amber mean "a card"; marking one implies the other five are not
  * on the calendar, which is false. So the fact is carried in ink by the status
  * label, exactly as the reference does for an un-featured listing, and amber
  * is left to the surfaces where it actually discriminates.
  *
- * `emphasis` keeps its original job (the "Calling now" band's cards) and its
+ * `emphasis` keeps its original job (the "Deciding now" band's cards) and its
  * original mechanism — a 2px ink edge, never a new color.
  */
 export function BillCard({
@@ -33,7 +33,7 @@ export function BillCard({
   bill: BillTeaser;
   coverageCount?: number;
   /** The 2px ink border the ActionPanel already owns — reserved for the
-      "Calling now" band, so "a call lands hardest here" is visible before
+      "Deciding now" band, so "a call lands hardest here" is visible before
       it's read (2026-07 critique round 2). Never a new color, per the
       nonpartisan-palette rule. */
   emphasis?: boolean;

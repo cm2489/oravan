@@ -167,7 +167,7 @@
     "noResults": "No bills match. Try clearing a filter.",
     "showingCount": "{shown} of {total} bills",
     "band": {
-      "now": "Calling now",
+      "now": "Deciding now",
       "moving": "Moving",
       "radar": "On the radar"
     },
