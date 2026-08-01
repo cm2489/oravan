@@ -1,29 +1,68 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { getLiveMoments } from '../lib/moments';
 import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
 /*
- * S4-S5 — the homepage funnel's own success test: a first-time visitor
- * reaches a completed, editable call script in <=3 clicks, in either
- * language, from either of the two legitimate entry points:
- *   - bill-first: "Worth a call this week" on the homepage
- *   - ZIP-first: find your reps, then the /reps continuation this sprint
- *     adds (previously a dead end - see reps.spec.ts for the rep-lookup
- *     behavior itself, unchanged here)
+ * THE FUNNEL INVARIANTS — three, named, in both locales.
  *
- * Shares freshness.spec.ts's corpus math (tests/corpus.ts) rather than
- * hardcoding a slug: whether "Act now" has any decoded bills depends on the
- * live, nightly-synced data/bills.json, so the click-path assertions skip
- * (not fail) on a genuinely quiet week - same idiom the freshness suite
- * already uses. CORPUS_STABLE additionally skips when the corpus sits at a
- * scoring boundary and the baked homepage could disagree with this
- * assert-time recomputation (see tests/corpus.ts).
+ * This file used to enforce a single governing invariant: "<=3 clicks to a
+ * completed call script." The truth-first repositioning (decided 2026-07-26,
+ * spec docs/ideation/2026-07-26-truth-first-repositioning.md §3) demoted the
+ * call to the natural next step after engagement, which means that invariant
+ * had to be REWRITTEN DELIBERATELY rather than quietly broken. It is not
+ * dropped and it is not weakened - it is renamed I2 and joined by a new
+ * primary one. What the three of them say together is the product's whole
+ * thesis, mechanically: understanding is one click away, the call is still
+ * two, and a quiet week is admitted rather than faked.
+ *
+ *   I1 - TRUTH (new, primary). Every truth surface on the homepage is <=1
+ *        CLICK from a decoded, AI-labeled answer. Boundaries: bill links in
+ *        section[aria-labelledby="top-actions"], and Big Questions links in
+ *        the promoted band, section[aria-labelledby="moments-strip-title"].
+ *        Proof AT THE DESTINATION, never at the link: the decode's own
+ *        `bill.sec.what` heading plus the AI chip beside it, visible.
+ *        (The spec drafted this as "`bill.sec.what` + `bill.aiChip`". The
+ *        bill page's AI chip is actually `bill.aiLabel` - "Decoded by AI ·
+ *        checked against the record", gated on `hasDecode`; `bill.aiChip` is
+ *        the string the MOMENT page reuses. Both are asserted below, each on
+ *        the page that renders it.)
+ *
+ *   I2 - CALL PATH (preserved). From any decoded answer, a completed,
+ *        editable script is <=2 INTERACTIONS away (stance radio -> a visible
+ *        `bill.scriptTitle` textbox), and the ZIP-first route stays <=3
+ *        CLICKS end to end through section[aria-labelledby="reps-next"].
+ *        Assertions unchanged from the pre-repositioning suite; only the
+ *        narration moved. The bill page's sticky two-column rail (DESIGN.md
+ *        structural constraint 1) is what makes this true: DEMOTE, NEVER
+ *        BURY, enforced structurally.
+ *
+ *   I3 - QUIET-WEEK HONESTY (unchanged). When the truth surfaces are empty
+ *        they say so in a role=status empty state (never a false "quiet"
+ *        claim - AE3), and neither entry point dead-ends.
+ *
+ * FROZEN IDENTIFIERS, read by this file and by freshness.spec.ts:
+ * `top-actions`, `reps-next`, `moments-strip-title`. Heading copy may change
+ * freely - it did, twice, in this train - but the ids may not. DESIGN.md
+ * structural constraint 2 states the same budgets in prose; the numbers there
+ * and the numbers here must always agree.
+ *
+ * CORPUS COUPLING (unchanged idiom): these suites branch on the live,
+ * nightly-synced data/bills.json and data/moments.json rather than hardcoding
+ * a slug, sharing freshness.spec.ts's corpus math (tests/corpus.ts). A
+ * genuinely quiet week SKIPS the hot-week paths (and runs I3 instead);
+ * CORPUS_STABLE additionally skips when the corpus sits at a scoring boundary
+ * and the baked pages could disagree with this assert-time recomputation.
  */
 /** Same condition as lib/core's getTopActions: a decoded bill clearing the "now" floor. */
 const anyTop = anyTopAt(Date.now());
 const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
+/** The Big Questions band renders only when something reads as live, and then
+ *  the truth claim survives in the hero instead - so I1's second surface is
+ *  corpus-gated the same way its first one is. */
+const anyLiveMoment = getLiveMoments().length > 0;
 
 const ZIP = '78501'; // single district + two senators, no address-refinement detour (see reps.spec.ts)
 
@@ -50,6 +89,18 @@ async function expectCompletedScript(page: Page, scriptTitleLabel: string) {
   await expect(page.getByRole('textbox', { name: scriptTitleLabel })).toBeVisible();
 }
 
+/** I1's proof at the destination: the decode is actually rendered AND it is
+ *  labeled as machine-written. One without the other fails the invariant -
+ *  an unlabeled decode breaks the AI rule, and a chip with no decode under it
+ *  is a promise rather than an answer. */
+async function expectDecodedAnswer(
+  page: Page,
+  messages: typeof en | typeof es
+) {
+  await expect(page.getByRole('heading', { name: messages.bill.sec.what })).toBeVisible();
+  await expect(page.getByText(messages.bill.aiLabel, { exact: true }).first()).toBeVisible();
+}
+
 /** Turn a "...{count}..." message template into a regex matching any count. */
 function messageRegex(template: string): RegExp {
   const escaped = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{count\\\}/, '\\d+');
@@ -62,26 +113,65 @@ const LOCALES = [
 ] as const;
 
 for (const { locale, prefix, messages } of LOCALES) {
-  test.describe(`${locale} locale: <=3-click funnel`, () => {
-    test('bill-first: homepage "worth a call" card -> stance = completed script in 2 clicks', async ({
+  test.describe(`${locale} locale: I1 - Truth (<=1 click to a decoded, AI-labeled answer)`, () => {
+    test('I1: a bill link in the week reaches a decoded answer in 1 click', async ({ page }) => {
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
+      test.skip(!anyTop, 'corpus is quiet this week - no bill card in the week to drive this path');
+      await page.goto(`${prefix}/`);
+
+      // The ONLY click. The front door promises understanding, so the very
+      // next thing on screen has to be the understanding - not a form, not a
+      // stance, not an ask.
+      await clickFirstBillCardIn(page, 'section[aria-labelledby="top-actions"]');
+      await expect(page).toHaveURL(/\/bills\//);
+      await expectDecodedAnswer(page, messages);
+    });
+
+    test('I1: a Big Questions band link reaches its decoded answer in 1 click', async ({ page }) => {
+      test.skip(!anyLiveMoment, 'no live Big Question in the corpus - the band is absent by design');
+      await page.goto(`${prefix}/`);
+
+      const band = page.locator('section[aria-labelledby="moments-strip-title"]');
+      await expect(band).toBeVisible();
+
+      // The ONLY click. `/moments` (the band's see-all CTA) has no trailing
+      // slash, so this selector can only pick an entry link.
+      await band.locator('a[href*="/moments/"]').first().click();
+      await expect(page).toHaveURL(/\/moments\/[^/]+$/);
+
+      // Proof at the destination: the hand-authored answer to the question,
+      // under its own heading, with the page's AI label visible. Note the
+      // band is live-only, so the heading is the LIVE framing - a settled
+      // entry never appears on the front door.
+      await expect(
+        page.getByRole('heading', { name: messages.moments.decidingLive })
+      ).toBeVisible();
+      await expect(page.getByText(messages.bill.aiChip, { exact: true }).first()).toBeVisible();
+    });
+  });
+
+  test.describe(`${locale} locale: I2 - Call path (<=2 interactions, ZIP-first <=3 clicks)`, () => {
+    test('I2: from a decoded answer, stance = a completed script in 1 more interaction', async ({
       page,
     }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
-      test.skip(!anyTop, 'corpus is quiet this week - no Top Actions card to drive this path');
+      test.skip(!anyTop, 'corpus is quiet this week - no bill card in the week to drive this path');
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
 
-      // Click 1 of <=3: a callable bill from "Worth a call this week".
+      // I1's click, replayed to reach the decoded answer I2 starts from.
       await clickFirstBillCardIn(page, 'section[aria-labelledby="top-actions"]');
       await expect(page).toHaveURL(/\/bills\//);
 
-      // Click 2 of <=3: declare a stance - the script appears immediately,
-      // no further navigation required.
+      // Interaction 1 of <=2: declare a stance - the script appears
+      // immediately, no further navigation required. (The budget is 2 because
+      // an undecided visitor may open the rail's ZIP dialog first; the
+      // straight line is 1.)
       await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
     });
 
-    test('ZIP-first: find reps -> reps-page continuation -> stance = completed script in 3 clicks', async ({
+    test('I2: ZIP-first - find reps -> reps-page continuation -> stance = completed script in 3 clicks', async ({
       page,
     }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
@@ -89,13 +179,18 @@ for (const { locale, prefix, messages } of LOCALES) {
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
 
-      // Click 1 of <=3: submit a ZIP code from the hero.
+      // Click 1 of <=3: submit a ZIP code. The flip demoted ZipForm BY
+      // POSITION only - it stays in the hero and stays page-wide-locatable
+      // via getByLabel, and Playwright auto-scrolls, so the demotion cost
+      // this path exactly zero clicks.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
       await page.getByRole('button', { name: messages.home.zipCta }).click();
       await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
 
-      // The rep-lookup result is not a dead end: a "Ready to act?" section
-      // (this sprint's /reps continuation) surfaces the same callable bills.
+      // The rep-lookup result is not a dead end: the continuation section
+      // surfaces the same callable bills. Its copy was reviewed in the
+      // truth-first copy pass and deliberately KEPT (see the note at
+      // app/[locale]/reps/page.tsx) - call-forward language is earned here.
       await expect(page.getByRole('heading', { name: messages.reps.nextTitle })).toBeVisible();
 
       // Click 2 of <=3: a callable bill from that continuation section.
@@ -106,19 +201,19 @@ for (const { locale, prefix, messages } of LOCALES) {
       await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
     });
+  });
 
-    // The corpus this session is genuinely quiet (no bill clears the "now"
-    // floor - see freshness.spec.ts), so the two tests above skip rather
-    // than run against a fabricated hot week. This test instead pins that
-    // neither entry point dead-ends even then: both surfaces show the
-    // honest empty state (never a false "quiet" claim - AE3) with a
-    // working "browse all bills" escape hatch that still reaches a
-    // completed script, just not inside the 3-click budget a hot week gets.
-    test('quiet-week fallback: neither entry point dead-ends when Top Actions is empty', async ({
-      page,
-    }) => {
+  test.describe(`${locale} locale: I3 - Quiet-week honesty`, () => {
+    // When the corpus is genuinely quiet (no bill clears the "now" floor -
+    // see freshness.spec.ts), I1 and I2 skip rather than run against a
+    // fabricated hot week. This pins that neither entry point dead-ends even
+    // then: both surfaces show the honest empty state (never a false "quiet"
+    // claim - AE3) with a working "browse all bills" escape hatch that still
+    // reaches a completed script, just not inside the click budgets a hot
+    // week gets.
+    test('I3: neither entry point dead-ends when the week is empty', async ({ page }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
-      test.skip(anyTop, 'corpus has Top Actions cards this run - covered by the tests above instead');
+      test.skip(anyTop, 'corpus has bill cards in the week this run - covered by I1/I2 instead');
       await mockScriptApi(page);
 
       await page.goto(`${prefix}/`);

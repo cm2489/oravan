@@ -297,7 +297,7 @@ export function BillsBrowser({
               {t(`bills.band.${band}`)}
             </h2>
             <p className="mt-2 max-w-read text-sm text-ink-2">{t(`bills.bandSub.${band}`)}</p>
-            {/* Only "Calling now" cards carry the 2px ink border (the
+            {/* Only "Deciding now" cards carry the 2px ink border (the
                 ActionPanel's own treatment) — the urgency hierarchy the bands
                 exist for, visible before it's read (2026-07 critique round 2). */}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">

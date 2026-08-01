@@ -167,7 +167,7 @@
     "noResults": "Ningún proyecto coincide. Prueba quitando un filtro.",
     "showingCount": "{shown} de {total} proyectos",
     "band": {
-      "now": "Llamando ahora",
+      "now": "Decidiéndose ahora",
       "moving": "En movimiento",
       "radar": "En el radar"
     },
