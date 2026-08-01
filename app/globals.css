@@ -281,6 +281,20 @@ h2,
 h3 {
   text-wrap: balance;
 }
+
+/* THE ONE EXCEPTION (owner, 2026-08-01): the homepage hero's two-beat h1.
+   Balance prefers the evener mid-clause break ("…in plain / words. Then…")
+   over the clause-clean one whenever the first clause is the longest line,
+   and the hero's design IS the clause-clean lockup — truth clause on one
+   line, the stroked beat under it. Greedy wrap restores that, at md+ only:
+   on a phone the clause cannot hold one line at any legible size, and there
+   balance is still what prevents a one-word runt. Unlayered on purpose,
+   like the rule it excepts — a `md:text-wrap` utility loses to it. */
+@media (min-width: 48rem) {
+  h1[data-clause-lock] {
+    text-wrap: wrap;
+  }
+}
 p,
 li,
 figcaption {

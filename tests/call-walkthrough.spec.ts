@@ -11,15 +11,21 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * TRUTH-FIRST FLIP (2026-07-31): the homepage walkthrough moved into the act
  * zone as a collapsed <details> disclosure — the same shape, and the same
- * lazy open-gate, the bill page has always used. So the homepage helper now
- * opens the disclosure before returning the root, and the presence guard
- * keys on the disclosure rather than on a walkthrough that deliberately is
- * not mounted until someone asks for it. Every behavioral assertion below is
- * unchanged.
+ * lazy open-gate, the bill page has always used. So the helper opens the
+ * disclosure before returning the root, and the presence guard keys on the
+ * disclosure rather than on a walkthrough that deliberately is not mounted
+ * until someone asks for it.
+ *
+ * ROUND 3 (2026-08-01): the homepage disclosure was RETIRED — the act zone
+ * now carries the HomeScreencast player instead (its behavior is asserted by
+ * the homepage suites, not here). CallWalkthrough ships only on bill pages
+ * now, so every behavioral run below targets the same known-good decoded
+ * slug the collapsed-by-default test has always used. Every behavioral
+ * assertion is unchanged.
  */
 
-// Where the walkthrough is mounted (homepage act zone, "See how a call works").
-const PAGE_PATH = '/';
+// Where the walkthrough is mounted (bill page rail, "See how a call works").
+const PAGE_PATH = '/bills/hr-5582-119';
 // Longer than the longest per-scene hold (6.8s), to prove "no auto-advance".
 const LONGEST_SCENE_MS = 7500;
 

@@ -16,11 +16,19 @@ import { join } from 'node:path';
 // mark by scripts/gen-app-icons.mjs. Everything else still ships nothing from
 // public/ (the browser favicon lives at app/icon.svg and portraits are
 // hotlinked from unitedstates/images).
+// walkthrough/{en,es}/step-{1..4}.png (2026-08-01, PR #140): the homepage
+// screencast walkthrough's frames — real captures of the real flow, one set
+// per locale, rendered by components/HomeScreencast.tsx. Deliberately
+// committed (they ship): regenerate against a running dev server when the
+// featured corpus moves, and keep the two locales' sets in step.
 const ALLOWLIST = new Set([
   'embed.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'apple-touch-icon.png',
+  ...['en', 'es'].flatMap((locale) =>
+    [1, 2, 3, 4].map((step) => `walkthrough/${locale}/step-${step}.png`)
+  ),
 ]);
 
 function walk(dir, prefix = '') {

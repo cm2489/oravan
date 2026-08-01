@@ -4,11 +4,11 @@ import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/serve
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
-import { HomeWalkthroughDisclosure } from '@/components/call-walkthrough/HomeWalkthroughDisclosure';
+import { HomeScreencast } from '@/components/HomeScreencast';
 import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
-import { Chip, FloorVotePanel, Gauge, Stamp, selectFloorVoteFeature } from '@/components/system';
+import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
 import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/core';
 import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
@@ -28,11 +28,15 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  * door; the call is the natural next step, demoted but never buried. Four
  * things on this page are load-bearing and must survive any future edit:
  *
- * 1. ONE GREEN SLAB, and it is the FloorVotePanel. Green is the page's only
- *    DATA-EARNED shape change: on a quiet week the panel does not render and
- *    no green ground exists anywhere. The hero, the act zone, privacy and the
- *    support band are all ruled paper and none of them may take a ground of
- *    their own — a shape change that happens for four reasons carries no data.
+ * 1. ONE GREEN SLAB, and it is the FloorVotePanel — since 2026-08-01 worn as
+ *    a crown: on a hot week the week's masthead fuses onto the panel's top
+ *    and the two are ONE full-bleed green ground (the "green crown", owner
+ *    decision; the masthead goes green only because the panel under it
+ *    earned it, and on a quiet week it reverts to ruled paper). Green is
+ *    still the page's only DATA-EARNED shape change: no panel, no green
+ *    ground anywhere. The hero, the act zone, privacy and the support band
+ *    are all ruled paper and none of them may take a ground of their own — a
+ *    shape change that happens for four reasons carries no data.
  *
  *    The Big Questions band is the ONE sanctioned exception (owner,
  *    2026-07-24) and it is deliberately INK, not green: it needed weight, and
@@ -55,11 +59,11 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  *    the heading copy moved ("Worth a call this week" -> "Moving in Congress
  *    this week"), because the section stopped being an assignment.
  *
- * 4. THE GO-MARK STILL APPEARS TWICE, BOTH TIMES MEASURING. The 2026-07-31
- *    fork: a pure truth h1 has no measured promise in it and would have cost
- *    the hero stroke its meaning. Hero C's SECOND BEAT — "Then make it count."
- *    — is still the measured promise, so the stroke survives legitimately
- *    under that clause, and the route gauge in the act zone is the other.
+ * 4. THE GO-MARK APPEARS ONCE, MEASURING. Hero C's SECOND BEAT — "Then make
+ *    it count." — is the measured promise, and the stroke under it survives
+ *    under that clause (2026-07-31 fork). The act zone's route gauge was its
+ *    twin until 2026-08-01, when the owner retired the drawing (two redraws
+ *    never made it read); the printed durations carry that honesty now.
  *
  * The act zone (section[aria-labelledby="act-zone"]) is where the call
  * apparatus was consolidated: one titled zone opened by the 3px ink rule,
@@ -68,15 +72,16 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  * page. "Natural next step" made literal in the page structure.
  */
 
-/** The five minutes, in seconds. The gauge is drawn from these numbers, so
- *  the drawing can never disagree with the durations printed beside it. */
+/** The five minutes, in seconds. The `seconds` figures are what the printed
+ *  `how*Dur` strings claim (0:30 / 1:00 / 1:00 / 2:30 — 5:00 total); they
+ *  stay here as the record of that arithmetic even though the route gauge
+ *  that drew them was retired on 2026-08-01. */
 const ROUTE = [
   { key: 1, seconds: 30 },
   { key: 2, seconds: 60 },
   { key: 3, seconds: 60 },
   { key: 4, seconds: 150 },
 ] as const;
-const ROUTE_TOTAL = ROUTE.reduce((sum, leg) => sum + leg.seconds, 0); // 300
 
 // Homepage had zero metadata override before this pass — no canonical, no
 // hreflang alternates — so every locale's title/description fell through to
@@ -113,13 +118,22 @@ export async function generateMetadata({
  * REAL CORPUS DATA, NEVER FICTION. It renders only when the chosen bill
  * actually carries a decode, so a corpus that has not been decoded yet shows
  * nothing here rather than an invented example.
+ *
+ * Density pass 2026-08-01 (owner finding): the card stretches to its grid
+ * row and must carry real information down its whole height — status,
+ * summary teaser, topic, last action — with the exit pinned to the foot
+ * (`mt-auto`). The kicker is the citation + status, not "The official text"
+ * again: the enamel header already says that 40px up. `dateLabel` arrives
+ * pre-formatted from the parent because the UTC-pinning rule for
+ * `last_action_date` lives there, beside billDate() — not duplicated here.
  */
-async function SpecimenAside({ bill }: { bill: Bill }) {
+async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: string | null }) {
   const t = await getTranslations('home');
+  const tShared = await getTranslations();
   const official = bill.title.length > 180 ? `${bill.title.slice(0, 180)}…` : bill.title;
   return (
     <aside
-      className="min-w-0 overflow-hidden rounded-control border-2 border-ink"
+      className="flex min-w-0 flex-col overflow-hidden rounded-control border-2 border-ink"
       aria-labelledby="specimen-title"
     >
       <h2
@@ -128,11 +142,12 @@ async function SpecimenAside({ bill }: { bill: Bill }) {
       >
         {t('specimenTitle')}
       </h2>
-      <div className="p-4 md:p-6">
-        <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-          {t('specimenOfficial')} · {formatCitation(bill.bill_type, bill.bill_number)}
+      <div className="flex flex-1 flex-col p-4 md:p-6">
+        <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
+          {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
+          {tShared(`bills.status.${bill.status}`)}
         </p>
-        <p className="mt-2 rounded-control p-3 font-reading text-base text-ink-2">{official}</p>
+        <p className="mt-2 font-reading text-base text-ink-2">{official}</p>
         <p className="mt-4 border-t-[1.5px] border-line pt-4 text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
           {t('specimenPlain')}
         </p>
@@ -141,59 +156,40 @@ async function SpecimenAside({ bill }: { bill: Bill }) {
         <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
           {bill.ai_headline}
         </p>
-        <p className="mt-3">
-          <Chip tone="ai" marker={t('aiMarker')}>
-            {t('aiReviewed')}
-          </Chip>
-        </p>
-        <Link
-          href={`/bills/${billSlug(bill)}`}
-          className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-        >
-          {t('specimenCta')}
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
+        {/* The decode's opening, clamped: an honest teaser for the exit link
+            below it, in the reading voice like every decoded sentence. md+
+            only — it exists to fill the card's stretched grid row, and on a
+            phone the card is content-height, so here it would be pure
+            scroll (mobile-density audit, 2026-08-01). */}
+        {bill.ai_summary && (
+          <p className="mt-3 hidden font-reading text-base text-ink-2 md:line-clamp-4">
+            {bill.ai_summary}
+          </p>
+        )}
+        <div className="mt-auto pt-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t-[1.5px] border-line pt-4 text-sm text-ink-2">
+            {bill.issue_tags?.[0] && (
+              <Chip tone="tag">{tShared(`categories.${bill.issue_tags[0]}`)}</Chip>
+            )}
+            {dateLabel && (
+              <span className="tabular-nums">{tShared('bills.updated', { date: dateLabel })}</span>
+            )}
+          </div>
+          <p className="mt-3">
+            <Chip tone="ai" marker={t('aiMarker')}>
+              {t('aiReviewed')}
+            </Chip>
+          </p>
+          <Link
+            href={`/bills/${billSlug(bill)}`}
+            className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+          >
+            {t('specimenCta')}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </div>
       </div>
     </aside>
-  );
-}
-
-/*
- * The relocated phone transcript — the fear, named and answered, immediately
- * before the ask instead of before the reading. Same keys, new position and
- * new form: a native <details> disclosure (mobile-density pass), because a
- * three-turn transcript was ~800px of every phone scroll on the way to
- * something the visitor had not asked for yet. The heading id is unchanged.
- */
-async function TranscriptDisclosure() {
-  const t = await getTranslations('home');
-  return (
-    <details className="min-w-0 max-w-xl overflow-hidden rounded-control border-2 border-ink">
-      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-        <h2 id="call-demo-title" className="text-lg font-extrabold">
-          {t('demoTitle')}
-        </h2>
-        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-      </summary>
-      <div className="border-t-[1.5px] border-line-strong p-4 md:p-6">
-        <p className="rounded-control p-3 font-reading text-lg text-ink-2">
-          <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
-          {t('demoStafferOpen')}
-        </p>
-        {/* `tint` means YOURS — the caller's own words. */}
-        <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
-          <b className="font-sans font-bold text-go-deep">{t('demoYouLabel')}</b>{' '}
-          {t('demoYouLine')}
-        </p>
-        <p className="mt-2 rounded-control p-3 font-reading text-lg text-ink-2">
-          <b className="font-sans font-bold text-ink">{t('demoStafferLabel')}</b>{' '}
-          {t('demoStafferClose')}
-        </p>
-        <p className="mt-4 max-w-note border-t-[1.5px] border-line pt-4 text-sm text-ink-2">
-          <strong className="font-semibold text-ink">{t('demoNoteLead')}</strong> {t('demoNote')}
-        </p>
-      </div>
-    </details>
   );
 }
 
@@ -226,6 +222,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // unbroken paper column, which is the point.
   const feature = selectFloorVoteFeature(top);
   const listed = top.filter((b) => b !== feature);
+  // The week wears its green crown (masthead fused onto the panel) exactly
+  // when the panel itself renders — same condition, one name, so the seam
+  // classes below can never disagree with the crown's presence.
+  const crowned = Boolean(feature?.last_action_date);
 
   // The hero's specimen keys on the same bill the week's panel features, so
   // the front door's example and its headline act are the same fact. Falls
@@ -276,36 +276,70 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           page belongs to the green panel below.
           --------------------------------------------------------------- */}
       <div className="mx-auto max-w-5xl px-4 pt-5 pb-6 md:pt-16 md:pb-12">
-        <div className="grid gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-start md:gap-16">
+        {/* THE GO-MARK AS A STROKE: the same 6px bar at the same 3px cap
+            the route gauge is built from, drawn under the SECOND BEAT —
+            because that clause is the thing being measured. The first
+            beat is the truth promise and takes no mark. It is a
+            pseudo-element, never the <Gauge> component. */}
+        {/* FULL WIDTH, ABOVE THE COLUMNS (owner finding 2026-08-01). The
+            stroked beat cannot wrap (the bar has to be one continuous mark),
+            and inside the old 1.1fr column it could not FIT either: at every
+            md+ width the beat set wider than the column (637px against a
+            590px column at 1024, measured) and ran under the specimen card.
+            The h1 now spans the hero measure, where both locales' beats
+            clear with room; the two-column split starts below it. */}
+        {/* One step below the --text-h1 floor under 360px, and only
+            there. MEASURED: "Luego haz que cuente." sets 330px at the 32px
+            floor — 42px past the 288px content box of a 320px screen, which
+            is a WCAG 1.4.10 reflow failure, not a taste call. At 26px it
+            sets 268px. English fits at either size; this fires for both so
+            the two locales cannot drift apart typographically. */}
+        {/* TWO LINES AT md+, BROKEN AT THE CLAUSE (owner directive
+            2026-08-01: "Understand it in plain words." never breaks). Two
+            things make that true, and both are needed. (1) `data-clause-lock`
+            opts the h1 out of the global `text-wrap: balance` at md+ (the
+            unlayered rule in globals.css — a layered utility cannot beat
+            it): balance prefers the evener mid-clause break ("…in plain /
+            words. Then…") over the clause-clean one whenever the first
+            clause is the longest line — balance was the breaker, not the
+            width. (2) md:text-h1-bill (56px
+            cap, the next rung down): on the --text-h1 track the ES clause
+            sets wider than the measure between ~768–830px (741px against a
+            704px measure at 768), so the clause-clean break needs the
+            smaller rung to hold at EVERY md width — measured EN 733px /
+            ES 772px against 992px at the cap. Below md the phone keeps the
+            mobile-density-pass text-h1 floor, balance, and its three-line
+            stack, unchanged. */}
+        <h1
+          data-clause-lock
+          className="text-h1 font-extrabold max-[22.5rem]:text-[1.625rem] md:text-h1-bill"
+        >
+          {t('heroTitle')}{' '}
+          <span className="relative inline-block whitespace-nowrap after:absolute after:right-[0.08em] after:bottom-[-0.12em] after:left-[0.02em] after:h-[6px] after:rounded-stamp after:bg-go after:content-['']">
+            {t('heroTitleGo')}
+          </span>
+        </h1>
+
+        {/* No md:items-start: the columns stretch to one height, which is
+            what lets the specimen card fill its block to the foot. */}
+        <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
           <div className="min-w-0">
-            {/* THE GO-MARK AS A STROKE: the same 6px bar at the same 3px cap
-                the route gauge is built from, drawn under the SECOND BEAT —
-                because that clause is the thing being measured. The first
-                beat is the truth promise and takes no mark. It is a
-                pseudo-element, never the <Gauge> component. */}
-            {/* One step below the --text-h1 floor under 360px, and only
-                there. MEASURED: the stroked beat cannot wrap (the bar has to
-                be one continuous mark), and the Spanish clause "Luego haz que
-                cuente." sets 330px at the 32px floor — 42px past the 288px
-                content box of a 320px screen, which is a WCAG 1.4.10 reflow
-                failure, not a taste call. At 26px it sets 268px. English
-                fits at either size; this fires for both so the two locales
-                cannot drift apart typographically. */}
-            <h1 className="max-w-[18ch] text-h1 font-extrabold max-[22.5rem]:text-[1.625rem]">
-              {t('heroTitle')}{' '}
-              <span className="relative inline-block whitespace-nowrap after:absolute after:right-[0.08em] after:bottom-[-0.12em] after:left-[0.02em] after:h-[6px] after:rounded-stamp after:bg-go after:content-['']">
-                {t('heroTitleGo')}
+            <p className="max-w-read text-lede text-pretty text-ink-2">{t('heroSub')}</p>
+
+            {/* AI at first contact, as a CREDIT LINE under the lede (owner
+                pick 6C, 2026-08-01): the disclosure qualifies the lede's
+                promise, so it sits with those words as two lines of small
+                metadata — read order promise -> disclosure -> action — and
+                the button below stands alone. The middot fragments keep the
+                second line reading as metadata, not a second paragraph. The
+                old bordered chip here was the page's largest AI label and
+                outweighed the button it sat over. */}
+            <p className="mt-4 flex max-w-[52ch] items-start gap-2 text-xs text-ink-2">
+              <AiMark>{t('aiMarker')}</AiMark>
+              <span className="pt-0.5">
+                <span className="block">{t('heroAiLead')}</span>
+                <span className="block">{t('heroAiMeta')}</span>
               </span>
-            </h1>
-
-            <p className="mt-6 max-w-read text-lede text-ink-2">{t('heroSub')}</p>
-
-            {/* AI at first contact: the decoded words are this page's whole
-                content, so the label sits with the promise, above the fold. */}
-            <p className="mt-5 max-w-[44ch]">
-              <Chip tone="ai" marker={t('aiMarker')}>
-                {t('heroAi')}
-              </Chip>
             </p>
 
             {/* THE PROMOTED PRIMARY (2026-07-31): straight to what is moving.
@@ -349,7 +383,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </p>
           </div>
 
-          {specimen && <SpecimenAside bill={specimen} />}
+          {specimen && (
+            <SpecimenAside
+              bill={specimen}
+              dateLabel={specimen.last_action_date ? billDate(specimen.last_action_date) : null}
+            />
+          )}
         </div>
       </div>
 
@@ -378,7 +417,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           proof that someone said no. */}
       {liveMoments.length > 0 && (
         <section
-          className="on-dark mt-2 border-y-[3px] border-line-strong bg-ink-deep py-8 text-paper md:py-14"
+          // THE SEAM (owner pick 8B, 2026-08-01): when the green crown
+          // follows, the band drops its own bottom border and the two slabs
+          // meet flush on the crown's single bright-green rule — no white
+          // sliver. On a crownless week the band keeps both edges.
+          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-14`}
           aria-labelledby="moments-strip-title"
         >
           <div className="mx-auto max-w-5xl px-4">
@@ -394,13 +437,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
             </div>
-            <p className="mt-1 max-w-note text-sm text-ink-pale">{t('momentsSub')}</p>
-            {/* The dek under each entry is AI-drafted summary text. /moments
-                labels it; this band did not, so the same sentences appeared
-                labeled on one surface and unlabeled on the front door. */}
-            <p className="mt-3 max-w-note text-2xs font-bold tracking-[0.06em] text-ink-pale uppercase">
-              {tShared('moments.aiNote')}
-            </p>
+            <p className="mt-1 max-w-note text-sm text-pretty text-ink-pale">{t('momentsSub')}</p>
             <ul className="mt-6 list-none border-t-[1.5px] border-line-strong">
               {liveMoments.map((m) => (
                 <li key={m.id} className="border-b-[1.5px] border-line-strong">
@@ -433,6 +470,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <p className="mt-4 text-sm font-semibold text-ink-pale">
               {tShared('moments.scarcityNote', { count: liveMoments.length })}
             </p>
+            {/* The dek under each entry is AI-drafted summary text; /moments
+                labels it, so the front door must too. At the band's FOOT and
+                in sentence case (owner, 2026-08-01 — the bold-uppercase
+                version at the top read as shouting); every entry still lands
+                on a labeled surface one click away. */}
+            <p className="mt-2 max-w-read text-xs text-pretty text-ink-pale">
+              {tShared('moments.aiNote')}
+            </p>
           </div>
         </section>
       )}
@@ -444,44 +489,88 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           section's other children. The id `top-actions` is frozen.
           --------------------------------------------------------------- */}
       <section aria-labelledby="top-actions">
-        <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-16">
-          <div className="border-t-[3px] border-ink pt-4">
-            <h2 id="top-actions" className="text-h2 font-extrabold">
-              {t('topTitle')}
-            </h2>
-          </div>
-          <p className="mt-2 max-w-note text-ink-2">{t('topSub')}</p>
-        </div>
-
+        {/* THE MASTHEAD (M3 "green crown", owner decision 2026-08-01): the
+            section opens as a dateline row — heading with the Stamp pressed
+            across the row's closing hairline, sub beneath — instead of a
+            heading floating in the white strip between the ink band and the
+            green panel. On a HOT week the masthead is the TOP OF THE GREEN
+            SLAB ITSELF: one full-bleed ground carrying masthead + featured
+            bill (FloorVotePanel renders `flush` inside it), so the heading
+            carries green only because the panel below earned it. On a QUIET
+            week it renders as ruled paper and no green exists anywhere — the
+            color law's data gate is intact, and this is still ONE green
+            ground, extended, never a second one. The masthead outranks the
+            panel's headline (h2-loud over the panel's h2) in both states.
+            The Stamp lives here now — still once per page, still the sole
+            printed sync date; it certifies the whole week, panel included. */}
         {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
             selectFloorVoteFeature() above holds the cap. The date printed is
             the calendar-PLACEMENT date the corpus actually holds — no bill in
             data/bills.json carries a forward-looking scheduled-vote date, so
             no mark here claims one. */}
-        {feature?.last_action_date && (
-          <FloorVotePanel
-            className="mt-6"
-            headingLevel={3}
-            status={feature.status}
-            dateLabel={billDate(feature.last_action_date)}
-            calendarLabel={t('floorCalendar')}
-            identifier={formatCitation(feature.bill_type, feature.bill_number)}
-            headline={feature.ai_headline ?? feature.short_title ?? feature.title}
-            href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
-            ctaLabel={t('floorCta')}
-            meta={
-              <>
-                {feature.issue_tags?.[0] && (
-                  <Chip tone="tag" ground="go">
-                    {tShared(`categories.${feature.issue_tags[0]}`)}
+        {feature?.last_action_date ? (
+          // Seam 8B: flush against the band above (no margin), joined by the
+          // crown's own 3px top rule in the band's bright link green — one
+          // luminous line where ink meets enamel. When the band is absent
+          // (no live Big Questions) the crown sits on paper instead and
+          // keeps the quiet deep-green edge and its small offset.
+          <div
+            className={`border-y-[3px] bg-go-deep ${
+              liveMoments.length > 0 ? 'border-t-go-bright border-b-go' : 'mt-2 border-go'
+            }`}
+          >
+            <div className="mx-auto max-w-5xl px-4 pt-6 md:pt-8">
+              {/* Below md the wrapped heading and the sub would both cross
+                  the stamp's straddle band (±~30px around the rule), so the
+                  row reserves it vertically: pb-8 keeps the heading's last
+                  line above the stamp's top half, mt-8 on the sub clears its
+                  bottom half. At md+ the one-line heading sits far left of
+                  the stamp and the tight rhythm returns. */}
+              <div className="relative border-b-[1.5px] border-paper/35 pb-8 md:pb-3">
+                <h2 id="top-actions" className="text-h2-loud font-extrabold text-paper">
+                  {t('topTitle')}
+                </h2>
+                <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
+              </div>
+              <p className="mt-8 max-w-read text-pretty leading-dark tracking-dark text-go-pale md:mt-4">
+                {t('topSub')}
+              </p>
+            </div>
+            <FloorVotePanel
+              flush
+              headingLevel={3}
+              status={feature.status}
+              dateLabel={billDate(feature.last_action_date)}
+              calendarLabel={t('floorCalendar')}
+              identifier={formatCitation(feature.bill_type, feature.bill_number)}
+              headline={feature.ai_headline ?? feature.short_title ?? feature.title}
+              href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
+              ctaLabel={t('floorCta')}
+              meta={
+                <>
+                  {feature.issue_tags?.[0] && (
+                    <Chip tone="tag" ground="go">
+                      {tShared(`categories.${feature.issue_tags[0]}`)}
+                    </Chip>
+                  )}
+                  <Chip tone="ai" ground="go" marker={t('aiMarker')}>
+                    {t('aiReviewed')}
                   </Chip>
-                )}
-                <Chip tone="ai" ground="go" marker={t('aiMarker')}>
-                  {t('aiReviewed')}
-                </Chip>
-              </>
-            }
-          />
+                </>
+              }
+            />
+          </div>
+        ) : (
+          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-10">
+            {/* Same straddle-band reservation as the hot-week masthead. */}
+            <div className="relative border-b-[1.5px] border-line-strong pb-8 md:pb-3">
+              <h2 id="top-actions" className="text-h2-loud font-extrabold">
+                {t('topTitle')}
+              </h2>
+              <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
+            </div>
+            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">{t('topSub')}</p>
+          </div>
         )}
 
         <div className="mx-auto max-w-5xl px-4">
@@ -493,29 +582,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               plainly" is what the note below promises, so the distance
               between the panel and these rows is the whole distance between
               scheduled and not. */}
+          {/* No opening rule of its own (owner, 2026-08-01): the green slab
+              directly above already closes the featured half, and a hairline
+              60px under that 3px edge read as clutter. The rows' own
+              border-b rules carry the listing's structure. */}
           {listed.length > 0 && (
-            <div className="mt-6 border-t-[1.5px] border-line-strong">
+            <div className="mt-6">
               {/* These headlines are `ai_headline` — decoded text. The hero's
                   AI chip is scoped to "the bill and the script" and the panel
                   above carries its own, so without this the only unlabeled
                   AI content on the page was the part that reads most like
                   editorial copy. The label sits with the content, per DESIGN.md. */}
-              <p className="pt-4">
+              <p>
                 <Chip tone="ai" marker={t('aiMarker')}>
                   {t('aiReviewed')}
                 </Chip>
               </p>
-              {listed.map((b, i) => {
-                const isLast = i === listed.length - 1;
+              {listed.map((b) => {
                 return (
                   <article
                     key={billSlug(b)}
-                    // the stamp straddles this row's closing rule, so a
-                    // stamped row reserves ~48px of clearance and an
-                    // unstamped one stays tight
-                    className={`relative grid gap-3 border-b-[1.5px] border-line-strong py-6 ${
-                      isLast ? 'pb-12' : ''
-                    }`}
+                    className="grid gap-3 border-b-[1.5px] border-line-strong py-6"
                   >
                     <h3 className="max-w-[36ch] text-h3 font-extrabold">
                       <Link
@@ -539,17 +626,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         </span>
                       )}
                     </div>
-                    {/* ONCE PER PAGE, and the sole printed sync date: the
-                        "Data as of" line that used to sit under the section
-                        heading is gone, so this mark carries information
-                        rather than repeating something said 300px away. */}
-                    {isLast && (
-                      <Stamp
-                        label={t('stampLabel')}
-                        dateLabel={stampDate}
-                        srLabel={dataAsOf}
-                      />
-                    )}
                   </article>
                 );
               })}
@@ -564,9 +640,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           {/* The note says what the loudness means, and the client-side stale
               caveat continues its sentence — one line, one claim; renders
-              nothing at all while the data is fresh. */}
+              nothing at all while the data is fresh. Gated on the SAME
+              condition as the panel itself: a note that says "the green
+              panel marks one fact" on a week with no green panel is a false
+              claim (owner finding 2026-08-01), so the panel-less week gets
+              the sentence without the panel in it. */}
           <p className="mt-8 max-w-note text-sm text-ink-2">
-            {t('weekNote')}
+            {feature?.last_action_date ? t('weekNote') : t('weekNoteQuiet')}
             <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
 
@@ -595,118 +675,110 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* ---------------------------------------------------------------
-          THE ACT ZONE (2026-07-31). One consolidated zone instead of four
-          scattered call sections. It is opened by the page's third and last
-          3px ink rule; everything below it until privacy is its hairline
-          body. Ruled paper, no third ground.
-          --------------------------------------------------------------- */}
+          THE ACT ZONE (2026-07-31; rebuilt 2026-08-01, owner picks round 3).
+          One titled zone under the page's third and last 3px ink rule, and
+          the rule now opens BOTH columns at once: left holds the heading,
+          the sub, and the five minutes as a numbered list; right holds the
+          SCREENCAST WALKTHROUGH (HomeScreencast — real frames of the real
+          flow, owner pick 2A, raised level with the heading) with the
+          why-call teaser beneath it (owner item 4). The two demo disclosures
+          this replaced are gone (owner item 3); the transcript's reassurance
+          survives as the note under the player. Ruled paper, no third
+          ground. */}
+      {/* THE FIVE MINUTES, AS NUMBERS ONLY (owner decision 2026-08-01,
+          round 3): the route gauge is gone. It was redrawn twice — four
+          per-leg bars, then one stacked track — and neither read as a
+          measurement to a fresh eye, so the printed durations and the 5:00
+          total now carry the honesty alone. The hero stroke is the page's
+          one remaining go-mark. A REAL sequence, so the list numbers are
+          information, not scaffolding: the order is the order you do the
+          steps in. */}
       <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="act-zone">
-        <div className="border-t-[3px] border-ink pt-4">
-          <h2 id="act-zone" className="text-h2 font-extrabold">
-            {t('actTitle')}
-          </h2>
-        </div>
-        <p className="mt-2 max-w-note text-ink-2">{t('actSub')}</p>
-      </section>
-
-      {/* THE FIVE MINUTES, DRAWN TO SCALE — the act zone's first body block
-          and the page's other go-mark. Each leg's bar is that step's true
-          share of five minutes, computed from ROUTE, so the drawing cannot
-          drift from the durations printed beside it. Three legs are barely
-          marks — the call itself is half the time, which is the honest shape
-          of the job. */}
-      {/* `id="how"` lives on the HEADING only. Putting it on the section too
-          made aria-labelledby="how" resolve to the section itself, whose
-          accessible name then became its entire text — which starts "Your ZIP
-          code…" and collided with the hero's ZIP field in every getByLabel
-          query. One id, one owner. */}
-      <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="how">
-        <div className="border-t-[1.5px] border-line-strong pt-4">
-          <h2 id="how" className="text-h3 font-extrabold">
-            {t('howTitle')}
-          </h2>
-        </div>
-        <ol className="mt-8 grid list-none gap-6">
-          {ROUTE.map(({ key, seconds }) => (
-            <li
-              key={key}
-              className="grid gap-2 md:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)] md:items-start md:gap-x-6"
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
-                <h3 className="text-lg font-bold leading-tight">{t(`how${key}Title`)}</h3>
-                <span className="text-xs font-bold tracking-[0.06em] whitespace-nowrap text-ink-2 tabular-nums">
-                  {t(`how${key}Dur`)}
-                </span>
-              </div>
-              <div>
-                <Gauge
-                  id={`route-leg-${key}`}
-                  hideLabel
-                  label={t('routeGaugeLabel', {
-                    duration: t(`how${key}Dur`),
-                    total: t('routeTotal'),
-                  })}
-                  total={ROUTE_TOTAL}
-                  segments={[{ id: `leg-${key}`, value: seconds }]}
-                />
-                {/* mobile-density pass: the duration + the gauge carry the leg
-                    on a phone; the explainer joins at md. */}
-                <p className="mt-3 hidden max-w-read text-ink-2 md:block">{t(`how${key}Body`)}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-6 flex flex-wrap items-baseline gap-4 border-t-[1.5px] border-ink pt-3 text-sm text-ink-2">
-          <b className="text-lg font-extrabold text-ink tabular-nums">{t('routeTotal')}</b>
-          <span>{t('routeTotalNote')}</span>
-        </p>
-      </section>
-
-      {/* The two demos, as disclosures (mobile-density pass): a phone scene
-          and a three-turn transcript were ~2,000px of every scroll. Open = the
-          full experience, closed = one honest row each. Native
-          details/summary keeps both semantic and keyboard-reachable, and the
-          summaries clear 44px. */}
-      <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="walkthrough-title">
-        <HomeWalkthroughDisclosure />
-        <div className="mt-4">
-          <TranscriptDisclosure />
-        </div>
-      </section>
-
-      {/* Why calling works — the act zone's closing teaser, a quiet block. It
-          used to be a dark enamel card, which at a squint made it the page's
-          second heavy mass and took the meaning out of the one ground change
-          that carries data. */}
-      <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="why-title">
-        <div className="grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-start md:gap-12">
-          <h2 id="why-title" className="text-h3 font-extrabold">
-            {t('whyTitle')}
-          </h2>
+        <div className="grid gap-8 border-t-[3px] border-ink pt-4 md:grid-cols-2 md:items-start md:gap-12">
           <div>
-            <p className="max-w-note text-ink-2">{t('whyBody')}</p>
-            <Link
-              href="/why-call"
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('whyCta')}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+            <h2 id="act-zone" className="text-h2 font-extrabold">
+              {t('actTitle')}
+            </h2>
+            <p className="mt-2 max-w-note text-pretty text-ink-2">{t('actSub')}</p>
+            <ol className="mt-8 list-none">
+              {ROUTE.map(({ key }) => (
+                <li
+                  key={key}
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3 border-t border-line-strong py-4 md:gap-x-4"
+                >
+                  <span className="text-sm font-extrabold text-ink-2 tabular-nums">{key}</span>
+                  <div>
+                    <h3 className="text-lg font-bold leading-tight">{t(`how${key}Title`)}</h3>
+                    {/* mobile-density pass: the title + duration carry the
+                        leg on a phone; the explainer joins at md. */}
+                    <p className="mt-1 hidden max-w-read text-ink-2 md:block">
+                      {t(`how${key}Body`)}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold tracking-[0.06em] whitespace-nowrap text-ink-2 tabular-nums">
+                    {t(`how${key}Dur`)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="flex flex-wrap items-baseline gap-4 border-t-[1.5px] border-ink pt-3 text-sm text-ink-2">
+              <b className="text-lg font-extrabold text-ink tabular-nums">{t('routeTotal')}</b>
+              <span>{t('routeTotalNote')}</span>
+            </p>
+          </div>
+          {/* The walkthrough beside the steps it plays out, top-aligned
+              with the zone heading (owner pick 2A), and the why-call teaser
+              directly under it (owner item 4) — the column that used to be
+              half dead space now answers "show me" and then "does it
+              work?". why-title stays an h3: it is a subsection of this
+              zone's h2. */}
+          <div>
+            <HomeScreencast />
+            <div className="mt-8 border-t-[1.5px] border-line-strong pt-6">
+              <h3 id="why-title" className="text-h3 font-extrabold">
+                {t('whyTitle')}
+              </h3>
+              <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
+              <Link
+                href="/why-call"
+                className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+              >
+                {t('whyCta')}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Privacy, as ruled paper. The claim does not need a dark ground to
-          land: it is opened by the same 3px ink rule that opens the week and
-          the act zone, and the three guarantees are set as a ruled list, which
-          is how a document states terms. */}
-      <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="privacy-title">
-        <div className="grid gap-6 border-t-[3px] border-ink pt-6 md:grid-cols-[1.1fr_1fr] md:items-start md:gap-12">
-          <h2 id="privacy-title" className="text-h2-loud font-extrabold">
-            {t('privacyTitle')}
-          </h2>
-          <div>
-            <p className="max-w-note text-ink-2">{t('privacyBody')}</p>
+      {/* Privacy + support, one closing two-column band (owner direction
+          2026-08-01): the page's terms, side by side under the third 3px ink
+          rule — "Private by design" left, the support ask right — instead of
+          two stacked sections that each ran a half-empty screen. Both
+          headings sit at the same rung (text-h2; privacy dropped from
+          h2-loud) so neither reads subordinate. The columns do not
+          bottom-align and should not: this is ruled paper, not cards. Each
+          half keeps its own <section> — donate.spec.ts reads
+          section[aria-labelledby="support-title"], and the privacy
+          guarantees stay a ruled list, which is how a document states terms.
+          §6 rules unchanged: the support half is gated on the same
+          DONATE_URL constant as every donate affordance (setting it back to
+          null darkens all of them at once, and this band quietly becomes the
+          privacy column alone); link-out only, never a payment field here;
+          the not-tax-deductible line is the required truthful framing. Ruled
+          paper, no new ground: this page still changes ground exactly
+          once. */}
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-10 md:pt-16 md:pb-16">
+        <div
+          className={`grid gap-10 border-t-[3px] border-ink pt-6 ${
+            DONATE_URL ? 'md:grid-cols-2 md:items-start md:gap-12' : ''
+          }`}
+        >
+          <section aria-labelledby="privacy-title">
+            <h2 id="privacy-title" className="text-h2 font-extrabold">
+              {t('privacyTitle')}
+            </h2>
+            <p className="mt-3 max-w-note text-pretty text-ink-2">{t('privacyBody')}</p>
             <ul className="mt-5 max-w-note list-none">
               {(['privacyPoint1', 'privacyPoint2', 'privacyPoint3'] as const).map((k) => (
                 <li
@@ -724,43 +796,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('privacyCta')}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* §6 support band — gated on the same DONATE_URL constant as every
-          donate affordance (setting it back to null darkens all of them at
-          once). Link-out only, never a payment field here; copy leads with
-          the no-tracking mission, and the not-tax-deductible line is the
-          required truthful framing. It is ruled paper now, not a full-bleed
-          wash band: this page changes ground exactly once. */}
-      {DONATE_URL && (
-        <section
-          className="mx-auto max-w-5xl px-4 pt-8 pb-10 md:pt-16 md:pb-16"
-          aria-labelledby="support-title"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-6 border-t-[1.5px] border-line pt-8">
-            <div className="max-w-note">
+          </section>
+          {DONATE_URL && (
+            <section aria-labelledby="support-title">
               <h2 id="support-title" className="text-h2 font-extrabold">
                 {t('supportTitle')}
               </h2>
-              <p className="mt-2 text-ink-2">{t('supportBody')}</p>
-            </div>
-            <div>
+              <p className="mt-3 max-w-note text-pretty text-ink-2">{t('supportBody')}</p>
               <a
                 href={DONATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
+                className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
               >
                 {t('supportCta')}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
               <p className="mt-2 max-w-note text-sm text-ink-2">{t('supportNote')}</p>
-            </div>
-          </div>
-        </section>
-      )}
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
