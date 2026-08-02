@@ -37,6 +37,7 @@ const ALLOWLIST = [
   { path: 'docs/ideation/2026-07-02-mcp-spec.md', max: Infinity, note: 'R1: dated historical record' },
   { path: 'docs/ideation/2026-07-02-monetization-strategy.md', max: Infinity, note: 'R1: dated historical record' },
   { path: 'docs/ideation/2026-07-05-build-gtm-strategy.md', max: Infinity, note: 'R1: dated historical record' },
+  { path: 'docs/ideation/2026-07-26-truth-first-repositioning.md', max: Infinity, note: 'R1: dated historical record — ported to main 2026-08-02 (teardown Phase 0); discusses the rename itself' },
   { path: 'docs/solutions/two-clock-district-boundaries.md', max: Infinity, note: 'R1: dated historical record' },
 ];
 
