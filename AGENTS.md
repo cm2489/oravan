@@ -7,7 +7,7 @@ the visual system. This file carries what design tooling reads directly.
 ## Design Context
 
 Register: product (per PRODUCT.md), with brand-register front doors — `/`,
-`/why-call`, `/about`, `/partners`, `/moments`. Scope design commands to a
+`/why-call`, `/about`, `/partners`, `/questions` (route renamed from `/moments` in this train). Scope design commands to a
 named route so the register follows the surface.
 
 Personas (project-specific; design critiques should walk these alongside the
