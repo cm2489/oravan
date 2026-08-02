@@ -34,6 +34,22 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         <section className="mt-8 border-t border-line pt-6">
           <h2 className="text-h3 font-extrabold">{t('fundingTitle')}</h2>
           <p className="mt-2">{t('fundingBody')}</p>
+          {/* The operator, named, with the verifiable half of "built in the
+              open": an outside audit (2026-08-02) found the site claiming
+              inspectability while linking no repository and naming no human —
+              while asking for money. The repo IS public; now the claim
+              carries its proof, and the donation ask below has a name on it. */}
+          <p className="mt-2">
+            {t('builtBy')}{' '}
+            <a
+              href="https://github.com/cm2489/oravan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            >
+              {t('repoLinkLabel')}
+            </a>
+          </p>
           {/* The one support ask on this page (the HCB fiscal-sponsorship route
               was denied 2026-07-15, so the former DonateSupport section and its
               sponsor/tax-deductible claims are retired). Dark by construction

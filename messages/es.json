@@ -13,9 +13,9 @@
       "moments": "Grandes preguntas"
     },
     "footer": {
-      "mission": "Oravan es infraestructura cívica gratuita y no partidista. Sin cuentas y sin rastreo: tus datos nunca salen de tu dispositivo.",
+      "mission": "Oravan es infraestructura cívica gratuita y no partidista. Sin cuentas, sin anuncios, sin rastreadores — nada sobre ti se guarda jamás en nuestros servidores.",
       "privacy": "Privacidad",
-      "aiNote": "El contenido redactado por IA siempre está claramente marcado: revíselo antes de usarlo.",
+      "aiNote": "El contenido redactado por IA siempre está claramente marcado: revísalo antes de usarlo.",
       "terms": "Términos",
       "lore": "Oravan es un nombre inventado — parte oratoria, parte caravana: una voz que se pone en camino y muchas que llegan juntas.",
       "about": "Acerca de",
@@ -70,7 +70,7 @@
     "privacyBody": "Sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor — todo lo personal vive en tu navegador.",
     "privacyCta": "Lee nuestra promesa de privacidad",
     "supportTitle": "Gratis para todos. Financiado por quienes lo usan.",
-    "supportBody": "Sin anuncios, sin rastreadores, sin perfiles — lo que lees, tu postura y a quién llamas se queda en tu navegador, nunca en nuestros servidores. El apoyo de los lectores paga el alojamiento y los datos que lo mantienen así.",
+    "supportBody": "Sin anuncios, sin rastreadores, sin perfiles — el apoyo de los lectores es lo que paga el alojamiento y los datos que lo mantienen así.",
     "supportCta": "Apoya a Oravan",
     "supportNote": "Apoyo personal, no deducible de impuestos.",
     "momentsTitle": "Grandes preguntas",
@@ -113,7 +113,7 @@
   },
   "reps": {
     "title": "Tus representantes",
-    "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos los números para alcanzarlos.",
+    "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos sus números de contacto.",
     "noZip": "Escribe tu código postal para encontrar a tus tres miembros del Congreso.",
     "previewNote": "Aquí aparecerán tus tres — tu representante en la Cámara y tus dos senadores, con sus números en Washington y en tu zona.",
     "multiDistrict": "Tu código postal abarca más de un distrito congresional. Te mostramos los dos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
@@ -151,7 +151,7 @@
     "refinedOutsideZip": "Tu dirección cae en un distrito que nuestro mapa de códigos postales no esperaba para {zip}. Una dirección es más precisa que un mapa de códigos postales, así que puedes confiar en este.",
     "showAllDistricts": "Ver todos los distritos del código postal {zip}",
     "nextTitle": "Ya sabes a quién llamar.",
-    "nextSub": "Esto vale la pena llamarles esta semana.",
+    "nextSub": "Lo que vale una llamada esta semana.",
     "nextSeeAll": "Ver los {count} proyectos de ley activos",
     "errorLabel": "Revisa esto"
   },
@@ -301,7 +301,7 @@
     "officialDisclosure": "Leer el texto oficial",
     "trackerLabel": "En qué punto del proceso está este proyecto",
     "stampLabel": "Datos al",
-    "footNote": "El panel se desplaza · la llamada se queda",
+    "footNote": "Este panel te sigue mientras lees — tu llamada siempre queda a mano",
     "floor": {
       "calendarHouse": "En el calendario del pleno de la Cámara",
       "calendarSenate": "En el calendario del pleno del Senado",
@@ -356,7 +356,7 @@
   },
   "coverage": {
     "heading": "Cómo lo están cubriendo",
-    "subhead": "Reportajes reales sobre este proyecto de ley, con la tendencia política de cada medio etiquetada cuando AllSides lo ha calificado.",
+    "subhead": "Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como \"Sin calificar\" donde no.",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {
       "left": "Tiende a la izquierda",
@@ -423,6 +423,8 @@
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
     "contact": "¿Preguntas? Oravan se construye a la vista de todos — cada línea de código es inspeccionable.",
+    "builtBy": "Oravan lo construye y mantiene Colby Maxwell. Todo el código fuente es público:",
+    "repoLinkLabel": "github.com/cm2489/oravan",
     "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
   },
   "about": {
@@ -698,7 +700,7 @@
     "newsroomsBody": "Inserta un buscador de representantes o una tarjeta de ley en lenguaje claro dentro de cualquier artículo — dos etiquetas de script, sin cuentas, sin rastrear a tus lectores, nunca. Aquí el español no es una capa de traducción: cada superficie sale en inglés y español como iguales, así que un medio que publica primero en español inserta un widget que habla primero en español. Dale tus colores de sección, o usa el marco sin marca para que el widget se lea como parte de tu página.",
     "newsroomsCta": "Crea tu widget",
     "librariesTitle": "Bibliotecas y programas cívicos",
-    "librariesBody": "Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, lenguaje claro revisado por personas. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono.",
+    "librariesBody": "Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, y lenguaje claro que nunca se publica sin pasar controles automáticos contra el registro oficial. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono.",
     "orgsTitle": "Organizaciones y uso con licencia",
     "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe y está documentada en la página de widgets.",
     "licensingTitle": "Licencias y precios",
