@@ -126,7 +126,7 @@
     "website": "Official website",
     "call": "Call",
     "changeZip": "Change ZIP code",
-    "zipNotFound": "We couldn't match that ZIP code to a congressional district. Double-check it, or look up your member directly at house.gov.",
+    "zipNotFound": "We couldn't match that ZIP code to a congressional district. Some valid ZIPs — like PO-box or business-only ZIP codes — don't map to any district. Double-check the digits, try your home ZIP, or look up your member directly at house.gov.",
     "party": {
       "Democrat": "Democrat",
       "Republican": "Republican",
@@ -222,6 +222,15 @@
     "scriptDisclaimer": "AI-drafted. Review and edit before you call.",
     "scriptError": "Couldn't draft a script right now. Try again in a minute.",
     "rateLimited": "You've requested several scripts in a short time. Take a breath and try again soon.",
+    "fallbackTitle": "A ready-made script",
+    "fallbackDisclaimer": "A standard template — not AI-drafted. Fill in the [brackets] and it's ready.",
+    "rateRetryIn": "You can ask for a fresh AI draft in {time}.",
+    "rateRetryHint": "This usually clears within about ten minutes. The template and the phone numbers work right now.",
+    "fallbackScript": {
+      "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I support this bill, and I'm asking the office to record my position in favor. Thank you for your time.",
+      "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I oppose this bill, and I'm asking the office to record my position against it. Thank you for your time.",
+      "undecided": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I have concerns about this bill and haven't settled on a position. Please log my concern; I'm watching for the office's position before I decide. Thank you for your time."
+    },
     "callTitle": "Place your call",
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
     "switchboard": "Capitol switchboard",
@@ -253,6 +262,7 @@
     "generatingHint": "Usually takes about ten seconds.",
     "retry": "Try again",
     "repsError": "We couldn't load your representatives just now.",
+    "repsLoading": "Finding your representatives…",
     "whyLink": "First call ever? Two minutes on why it works",
     "callWhoOne": "Your delegate is your voice in the House. One call to their office counts.",
     "sec": {

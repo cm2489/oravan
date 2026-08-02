@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { OfficeHoursNote } from './OfficeHoursNote';
+import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
 
 /*
@@ -51,6 +52,35 @@ function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
 
+type Translate = ReturnType<typeof useTranslations>;
+
+/**
+ * The rate-limit fallback: a static template with [bracket] slots, honestly
+ * labeled as NOT AI-drafted. Built from messages so both locales carry it,
+ * with the bill's citation interpolated — the one fact it needs.
+ */
+function fallbackFor(t: Translate, s: Stance, citation: string) {
+  return t(`fallbackScript.${s}`, { citation });
+}
+
+/** m:ss for the rate-limit countdown line. */
+function formatRetryTime(totalSec: number) {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * The rep lookup as a status model, not two loose variables: idle (no ZIP —
+ * also SSR/first paint, so a saved-but-unmatched ZIP never flashes
+ * "not found"), loading, error, or ready with whatever the lookup returned.
+ */
+type RepLookup =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; reps: Legislator[]; vacancies: { state: string; district: number }[] };
+
 /** Failure, expressed three ways: a 3px rule, a bold label, and role="alert". */
 function Failure({ children }: { children: React.ReactNode }) {
   return (
@@ -65,15 +95,26 @@ function Failure({ children }: { children: React.ReactNode }) {
 
 export function ActionPanel({ slug, identifier, title }: Props) {
   const t = useTranslations('bill');
+  // The not-found register reuses /reps's own strings verbatim (ZipForm
+  // already crosses into 'home' the same way) — the two surfaces can't drift.
+  const tReps = useTranslations('reps');
   const locale = useLocale();
 
   const [stance, setStance] = useState<Stance | null>(null);
   // One draft per stance: switching stances never destroys the user's edits.
   const [drafts, setDrafts] = useState<Partial<Record<Stance, string>>>({});
+  // Rate-limit fallbacks live in their OWN map, never in `drafts`: writing
+  // one into drafts would (a) permanently suppress AI regeneration via
+  // generate()'s draft-exists early return and (b) put the AI-drafted label
+  // on non-AI text — the labeling hard rule cuts both ways.
+  const [fallbacks, setFallbacks] = useState<Partial<Record<Stance, string>>>({});
+  // When the API disclosed seconds-to-reset on a 429: the epoch-ms moment a
+  // fresh AI draft becomes worth asking for again. null = no reset known.
+  const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<'generic' | 'rate' | null>(null);
-  const [reps, setReps] = useState<Legislator[]>([]);
-  const [repsError, setRepsError] = useState(false);
+  const [lookup, setLookup] = useState<RepLookup>({ status: 'idle' });
   const prefs = usePrefs();
   const zip = prefs.zip ?? null;
   const [copied, setCopied] = useState<string | null>(null);
@@ -86,6 +127,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
   const startCallRef = useRef<HTMLButtonElement>(null);
   const callTitleRef = useRef<HTMLHeadingElement>(null);
   const stanceRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const repsHeadingRef = useRef<HTMLParagraphElement>(null);
+  // Set by the in-panel ZipForms' onSaved: the submit that just happened
+  // unmounts its own form, so the focus-continuity effect below has to move
+  // focus somewhere sensible once the lookup settles — but ONLY then, never
+  // on an ordinary page load with a saved ZIP.
+  const zipJustSaved = useRef(false);
   // The dialog is mounted ONLY while open (see render below). Mounting it
   // whenever a script exists would put a second copy of the script, the
   // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
@@ -103,25 +150,92 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     return () => clearInterval(id);
   }, [loading]);
 
-  const script = stance ? (drafts[stance] ?? '') : '';
+  // The AI draft wins whenever it exists; the fallback template fills the
+  // slot on rate limit so every `script &&` gate below — the review step,
+  // the call section with the rep tel: links, the foot, the modal — stays
+  // mounted. The phones never leave the DOM over a script-slot failure.
+  const aiDraft = stance ? drafts[stance] : undefined;
+  const isFallback = !aiDraft && !!stance && !!fallbacks[stance];
+  const script = aiDraft ?? (stance ? (fallbacks[stance] ?? '') : '');
   const setScript = (text: string) => {
-    if (stance) setDrafts((d) => ({ ...d, [stance]: text }));
+    if (!stance) return;
+    if (isFallback) setFallbacks((f) => ({ ...f, [stance]: text }));
+    else setDrafts((d) => ({ ...d, [stance]: text }));
   };
+  // An untouched fallback still earns retry guidance; once the user edits
+  // it, their edited script IS the script — offer nothing extra (the same
+  // philosophy as generate()'s draft-exists early return).
+  const fallbackPristine =
+    !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier);
+  const retryRemainingSec =
+    retryAt === null ? null : Math.max(0, Math.ceil((retryAt - nowMs) / 1000));
+
+  // Tick the countdown once a second while a known reset time is pending —
+  // same interval idiom as the genLine rotation above. State is only set
+  // inside the interval callback, never synchronously in the effect.
+  useEffect(() => {
+    if (error !== 'rate' || retryAt === null) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [error, retryAt]);
+
+  const reps = lookup.status === 'ready' ? lookup.reps : [];
+  const vacancies = lookup.status === 'ready' ? lookup.vacancies : [];
+  const notFound = lookup.status === 'ready' && reps.length === 0 && vacancies.length === 0;
 
   const fetchReps = useCallback(() => {
-    if (!zip) return;
+    if (!zip) {
+      setLookup({ status: 'idle' });
+      return;
+    }
+    setLookup({ status: 'loading' });
     fetch(`/api/reps?zip=${zip}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        setReps(d.reps);
-        setRepsError(false);
-      })
-      .catch(() => setRepsError(true));
+      .then((d) => setLookup({ status: 'ready', reps: d.reps, vacancies: d.vacancies ?? [] }))
+      .catch(() => setLookup({ status: 'error' }));
   }, [zip]);
 
-  useEffect(fetchReps, [fetchReps]);
+  // Deferred a tick: fetchReps sets 'loading' synchronously, which the
+  // react-hooks/set-state-in-effect rule forbids inside the effect's own
+  // commit — same defer the embed's RepLookupWidget documents. The retry
+  // buttons keep calling fetchReps directly (event handlers are fine).
+  useEffect(() => {
+    const id = setTimeout(fetchReps, 0);
+    return () => clearTimeout(id);
+  }, [fetchReps]);
+
+  const onZipSaved = useCallback(() => {
+    zipJustSaved.current = true;
+  }, []);
+
+  // Focus continuity after an in-panel ZIP submit: the submit unmounts its
+  // own form, so once the lookup settles, move focus to the outcome — the
+  // first dial link (in the dialog) / the call-who line (in the rail) on
+  // success, or the failure block otherwise. focus() in an effect is fine —
+  // it is not a state write. On ordinary loads nothing moves.
+  useEffect(() => {
+    if (!zipJustSaved.current) return;
+    if (lookup.status === 'idle' || lookup.status === 'loading') return;
+    zipJustSaved.current = false;
+    const scope = callOpen ? dialogRef.current : null;
+    let el: HTMLElement | null = null;
+    if (lookup.status === 'ready' && lookup.reps.length > 0) {
+      el = scope ? scope.querySelector<HTMLElement>('a[href^="tel:"]') : repsHeadingRef.current;
+    } else {
+      el = (scope ?? document).querySelector<HTMLElement>('[data-reps-alert]');
+    }
+    el?.focus();
+  }, [lookup, callOpen]);
 
   async function generate(s: Stance) {
+    // Clock read up front (event-handler time): a 429 below anchors its
+    // countdown to the moment the request went out — conservative by at
+    // most the round-trip. The purity lint flags ANY handler clock read in
+    // this component (probed: main's own copyNumber + Date.now() trips it
+    // identically — a whole-component compiler bailout, not this line);
+    // generate() only ever runs from click/key handlers, never render.
+    // eslint-disable-next-line react-hooks/purity -- event-handler clock read; never runs during render
+    const calledAt = Date.now();
     setStance(s);
     setError(null);
     if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
@@ -134,6 +248,26 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         body: JSON.stringify({ slug, stance: s, locale }),
       });
       if (res.status === 429) {
+        // The citizen 429 may disclose seconds-to-reset; older mocks and the
+        // token path send a bare body — tolerate both (null = no countdown).
+        let sec: number | null = null;
+        try {
+          const b = (await res.json()) as { retryAfterSec?: unknown };
+          if (
+            typeof b.retryAfterSec === 'number' &&
+            Number.isFinite(b.retryAfterSec) &&
+            b.retryAfterSec > 0
+          ) {
+            sec = Math.ceil(b.retryAfterSec);
+          }
+        } catch {
+          /* bare 429 body — no reset info to show */
+        }
+        setNowMs(calledAt);
+        setRetryAt(sec ? calledAt + sec * 1000 : null);
+        // Seed the honest fallback template for this stance — never
+        // overwriting one the user may already have edited.
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
         setError('rate');
         return;
       }
@@ -297,25 +431,58 @@ export function ActionPanel({ slug, identifier, title }: Props) {
           </div>
         )}
         {error && (
-          <Failure>
-            <span className="font-bold text-alert">
-              {error === 'rate' ? t('rateLimited') : t('scriptError')}
-            </span>
-            {error !== 'rate' && stance && (
-              <button type="button" onClick={() => generate(stance)} className={GHOST}>
-                <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
-                {t('retry')}
-              </button>
-            )}
-          </Failure>
+          <div>
+            <Failure>
+              <span className="font-bold text-alert">
+                {error === 'rate' ? t('rateLimited') : t('scriptError')}
+              </span>
+              {error !== 'rate' && stance && (
+                <button type="button" onClick={() => generate(stance)} className={GHOST}>
+                  <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
+                  {t('retry')}
+                </button>
+              )}
+            </Failure>
+            {/* Retry guidance sits BELOW the alert, never inside it: a 1-s
+                ticker in a live region would re-announce every second. Ink
+                only — no amber (no printed date), no green (not an action
+                destination; the dial links stay the only green). Shown only
+                while the fallback is untouched: an edited fallback IS the
+                user's script. */}
+            {error === 'rate' &&
+              stance &&
+              fallbackPristine &&
+              (retryAt !== null && retryRemainingSec !== null ? (
+                retryRemainingSec > 0 ? (
+                  <p className="mt-2 text-sm text-ink-2 tabular-nums">
+                    {t('rateRetryIn', { time: formatRetryTime(retryRemainingSec) })}
+                  </p>
+                ) : (
+                  <div className="mt-2">
+                    <button type="button" onClick={() => generate(stance)} className={GHOST}>
+                      <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
+                      {t('retry')}
+                    </button>
+                  </div>
+                )
+              ) : (
+                <p className="mt-2 text-sm text-ink-2">{t('rateRetryHint')}</p>
+              ))}
+          </div>
         )}
         {script && (
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold text-ink">{t('scriptTitle')}</h3>
+              <h3 className="text-lg font-bold text-ink">
+                {isFallback ? t('fallbackTitle') : t('scriptTitle')}
+              </h3>
             </div>
-            {/* The AI label rides with the draft, above it, every time. */}
-            <p className="mt-1 text-sm font-semibold text-ink-2">{t('scriptDisclaimer')}</p>
+            {/* The label rides with the words, above them, every time: the
+                AI line on an AI draft, the honest not-AI line on the static
+                fallback template. Never the AI label on non-AI text. */}
+            <p className="mt-1 text-sm font-semibold text-ink-2">
+              {isFallback ? t('fallbackDisclaimer') : t('scriptDisclaimer')}
+            </p>
             <p className="mt-1 max-w-note text-sm text-ink-2">{t('scriptHint')}</p>
             {/* The words a caller says aloud take the reading voice, in both
                 languages — and `tint` because the draft is now YOURS. */}
@@ -323,7 +490,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               value={script}
               onChange={(e) => setScript(e.target.value)}
               rows={8}
-              aria-label={t('scriptTitle')}
+              aria-label={isFallback ? t('fallbackTitle') : t('scriptTitle')}
               className="mt-3 w-full rounded-control border-2 border-ink bg-paper p-4 font-reading text-lg text-ink"
             />
             <div className="mt-2 flex flex-wrap gap-2">
@@ -381,8 +548,8 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               {t('whyLink')}
             </Link>
 
-            {repsError && (
-              <div className="mt-4">
+            {lookup.status === 'error' && (
+              <div data-reps-alert tabIndex={-1} className="mt-4">
                 <Failure>
                   <span className="font-bold text-alert">{t('repsError')}</span>
                   <button type="button" onClick={fetchReps} className={GHOST}>
@@ -393,15 +560,49 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               </div>
             )}
 
+            {/* Plain ink, no shimmer: the drafting shimmer idiom is reserved
+                for the AI wait. */}
+            {lookup.status === 'loading' && (
+              <p role="status" className="mt-4 text-sm text-ink-2">
+                {t('repsLoading')}
+              </p>
+            )}
+
             {!zip && (
               <div className="mt-4 rounded-control border-[1.5px] border-line-strong bg-paper p-4">
                 <p className="mb-3 text-sm font-semibold text-ink">{t('needZip')}</p>
-                <ZipForm />
+                <ZipForm onSaved={onZipSaved} />
+              </div>
+            )}
+
+            {/* A saved-but-unmatched ZIP (a PO box, a typo) used to render a
+                silently empty rail. The /reps failure register, verbatim:
+                3px ink rule + bold uppercase label + role=alert — the alert
+                color never the sole carrier — and the form re-shown so the
+                correction happens right here. */}
+            {notFound && (
+              <div
+                data-reps-alert
+                tabIndex={-1}
+                role="alert"
+                className="mt-4 border-t-[3px] border-ink bg-wash p-4"
+              >
+                <p className="text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
+                  {tReps('errorLabel')}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-ink">{tReps('zipNotFound')}</p>
+                <div className="mt-3">
+                  <ZipForm onSaved={onZipSaved} />
+                </div>
               </div>
             )}
 
             {reps.length > 0 && (
-              <p className="mt-4 max-w-note font-semibold text-ink">
+              <p
+                ref={repsHeadingRef}
+                tabIndex={-1}
+                className="mt-4 max-w-note font-semibold text-ink outline-none"
+              >
                 {reps.some((r) => r.type === 'sen') ? t('callWho') : t('callWhoOne')}
               </p>
             )}
@@ -520,6 +721,15 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                   </li>
                 );
               })}
+              {/* A vacant House seat is a fact about the district, not a
+                  failure: the same ink-only card /reps shows, in the same
+                  list silhouette. Senators still render above it, so the
+                  dial is never lost to a House vacancy. */}
+              {vacancies.length > 0 && (
+                <li>
+                  <VacantSeatCard />
+                </li>
+              )}
             </ul>
           </div>
         )}
@@ -656,19 +866,44 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               is the universal fallback that needs no ZIP at all. */}
           {reps.length === 0 && (
             <div className="mt-5 grid gap-3">
-              {repsError && (
-                <Failure>
-                  <span className="font-bold text-alert">{t('repsError')}</span>
-                  <button type="button" onClick={fetchReps} className={GHOST}>
-                    <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
-                    {t('retry')}
-                  </button>
-                </Failure>
+              {lookup.status === 'error' && (
+                <div data-reps-alert tabIndex={-1}>
+                  <Failure>
+                    <span className="font-bold text-alert">{t('repsError')}</span>
+                    <button type="button" onClick={fetchReps} className={GHOST}>
+                      <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
+                      {t('retry')}
+                    </button>
+                  </Failure>
+                </div>
+              )}
+              {lookup.status === 'loading' && (
+                <p role="status" className="text-sm text-ink-2">
+                  {t('repsLoading')}
+                </p>
               )}
               {!zip && (
                 <div className="rounded-control border-[1.5px] border-line-strong bg-paper p-4">
                   <p className="mb-3 text-sm font-semibold text-ink">{t('needZip')}</p>
-                  <ZipForm />
+                  <ZipForm onSaved={onZipSaved} />
+                </div>
+              )}
+              {/* Same not-found register as the rail: correct the ZIP
+                  without leaving the mode. */}
+              {notFound && (
+                <div
+                  data-reps-alert
+                  tabIndex={-1}
+                  role="alert"
+                  className="border-t-[3px] border-ink bg-wash p-4"
+                >
+                  <p className="text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
+                    {tReps('errorLabel')}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{tReps('zipNotFound')}</p>
+                  <div className="mt-3">
+                    <ZipForm onSaved={onZipSaved} />
+                  </div>
                 </div>
               )}
               <div className="rounded-control border-[1.5px] border-line-strong p-4">

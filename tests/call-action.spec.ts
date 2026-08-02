@@ -342,6 +342,126 @@ test('S7: call mode survives a visibilitychange/blur-return with its content int
 });
 
 /*
+ * Rate-limit degradation (2026-08, campaign #2 critical): a 429 from
+ * /api/script must degrade ONLY the script slot. The representative phone
+ * numbers and their tel: links never leave the DOM — a static fallback
+ * template (honestly labeled as not-AI-drafted) fills the slot so every
+ * script-gated surface stays mounted, and the retry guidance reflects
+ * exactly what the API disclosed (a countdown when retryAfterSec came back,
+ * an honest static hint when it didn't).
+ */
+test.describe('rate-limit degradation: phones never leave, script slot degrades', () => {
+  /** The rateRetryIn line with its {time} slot as a m:ss pattern. */
+  function retryInPattern(msg: string) {
+    const esc = msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(esc.replace('\\{time\\}', '\\d+:\\d{2}'));
+  }
+
+  function mock429(page: Page, body: Record<string, unknown>) {
+    return page.route('**/api/script', (route) =>
+      route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify(body) })
+    );
+  }
+
+  for (const locale of ['en', 'es'] as const) {
+    test(`${locale}: 429 with retryAfterSec — fallback fills the slot, tel: links stay, countdown then retry`, async ({
+      page,
+    }) => {
+      const messages = locale === 'en' ? en : es;
+      await page.clock.install();
+      await mock429(page, { error: 'rate_limited', retryAfterSec: 120 });
+      await page.goto(locale === 'es' ? '/es' + BILL : BILL);
+      await seedZip(page, '78501');
+      await page.reload();
+
+      await page.getByRole('radio', { name: messages.bill.stance.support }).click();
+
+      // The honest fallback template fills the script slot, labeled as
+      // not-AI — the AI disclaimer never rides non-AI text.
+      const fallback = page.getByRole('textbox', { name: messages.bill.fallbackTitle });
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toBeEditable();
+      await expect(page.getByText(messages.bill.scriptDisclaimer)).toHaveCount(0);
+      await expect(page.getByText(messages.bill.fallbackDisclaimer)).toBeVisible();
+
+      // The alert itself stays static; the countdown ticks OUTSIDE any live
+      // region (a 1-s ticker inside role=alert would re-announce every
+      // second).
+      await expect(page.getByText(messages.bill.rateLimited)).toBeVisible();
+      const countdown = page.getByText(retryInPattern(messages.bill.rateRetryIn));
+      await expect(countdown).toBeVisible();
+      await expect(
+        page.getByRole('alert').filter({ hasText: retryInPattern(messages.bill.rateRetryIn) })
+      ).toHaveCount(0);
+
+      // The call apparatus never left: the foot's start-call button is up,
+      // and call mode still holds the dial links.
+      await page.getByRole('button', { name: messages.bill.startCall }).click();
+      const dialog = page.getByRole('dialog', { name: messages.bill.callTitle });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+
+      // When the disclosed window elapses, the countdown yields to a real
+      // retry affordance.
+      await page.clock.fastForward(120_000);
+      await expect(page.getByRole('button', { name: messages.bill.retry })).toBeVisible();
+    });
+  }
+
+  test('429 with a bare body (no retryAfterSec): honest static hint, no invented countdown', async ({
+    page,
+  }) => {
+    await mock429(page, { error: 'rate_limited' });
+    await page.goto(BILL);
+    await seedZip(page, '78501');
+    await page.reload();
+
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+    await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toBeVisible();
+    await expect(page.getByText(en.bill.rateRetryHint)).toBeVisible();
+    await expect(page.getByText(retryInPattern(en.bill.rateRetryIn))).toHaveCount(0);
+  });
+
+  test('phones-never-leave regression: a 429 on the SECOND stance keeps the tel: links of the first', async ({
+    page,
+  }) => {
+    let calls = 0;
+    await page.route('**/api/script', (route) => {
+      calls += 1;
+      if (calls === 1) {
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ script: 'FIRST AI DRAFT. MOCKED SCRIPT BODY.', cached: false }),
+        });
+      }
+      return route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'rate_limited' }),
+      });
+    });
+    await page.goto(BILL);
+    await seedZip(page, '78501');
+    await page.reload();
+
+    // First stance: a real AI draft, reps + tel: links render.
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+    await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveValue(
+      /FIRST AI DRAFT/
+    );
+    await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
+
+    // Second stance trips the limiter: the script slot degrades to the
+    // fallback — and the phone numbers are still in the DOM.
+    await page.getByRole('radio', { name: en.bill.stance.oppose }).click();
+    await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toBeVisible();
+    await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
+  });
+});
+
+/*
  * 2026-07 critique, top consensus P0: with no saved ZIP the call mode used to
  * be a dead end — the script and reassurance rendered, but zero phone
  * numbers, no ZIP form, and no explanation. The fix lives IN the mode: a ZIP
