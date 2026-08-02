@@ -437,7 +437,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           // follows, the band drops its own bottom border and the two slabs
           // meet flush on the crown's single bright-green rule — no white
           // sliver. On a crownless week the band keeps both edges.
-          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-14`}
+          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-12`}
           aria-labelledby="moments-strip-title"
         >
           <div className="mx-auto max-w-5xl px-4">
@@ -789,7 +789,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           the not-tax-deductible line is the required truthful framing. Ruled
           paper, no new ground: this page still changes ground exactly
           once. */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-10 md:pt-16 md:pb-16">
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-8 md:pt-16 md:pb-16">
         <div
           className={`grid gap-10 border-t-[3px] border-ink pt-6 ${
             DONATE_URL ? 'md:grid-cols-2 md:items-start md:gap-12' : ''
