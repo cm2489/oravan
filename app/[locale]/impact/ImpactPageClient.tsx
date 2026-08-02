@@ -66,9 +66,20 @@ export default function ImpactPageClient() {
     format.dateTime(new Date(iso), { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-h2 font-extrabold text-ink">{t('title')}</h1>
-      <p className="mt-2 text-ink-2">{t('sub')}</p>
+    // max-w-5xl + text-h1: the sitewide rail. This page ran max-w-3xl +
+    // text-h2 from its first commit — the only surface off the grid, flagged
+    // P1 in the 2026-08-01 critique (its h1 rendered smaller than section
+    // headings elsewhere).
+    // max-w-5xl + text-h1: the sitewide rail. This page ran max-w-3xl +
+    // text-h2 from its first commit — the only surface off the grid, flagged
+    // P1 in the 2026-08-01 critique (its h1 rendered smaller than section
+    // headings elsewhere). Widening the rail obliges the reading caps below:
+    // prose takes max-w-read / max-w-note per DESIGN.md's measure tokens so
+    // no line runs the new width; record rows and the stat cards keep the
+    // full rail like every listing surface.
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
+      <p className="mt-2 max-w-read text-ink-2">{t('sub')}</p>
 
       {/* 1. WHAT YOU FOLLOW — the saved topics, shown as what they are: a
              list this device kept. Each chip goes to /bills, which opens
@@ -89,7 +100,7 @@ export default function ImpactPageClient() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-ink-2">{tBills('interestsNote')}</p>
+          <p className="mt-3 max-w-note text-xs text-ink-2">{tBills('interestsNote')}</p>
           <p className="mt-3">
             <Link
               href="/bills"
@@ -131,7 +142,7 @@ export default function ImpactPageClient() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-ink-2">{t('readsNote')}</p>
+          <p className="mt-3 max-w-note text-xs text-ink-2">{t('readsNote')}</p>
         </section>
       )}
 
@@ -203,7 +214,7 @@ export default function ImpactPageClient() {
       {(hasAnything || erased) && (
         <section className="mt-12 rounded-control bg-wash p-6">
           <h2 className="text-h3 font-extrabold">{t('eraseTitle')}</h2>
-          <p className="mt-1 text-sm text-ink-2">{t('eraseBody')}</p>
+          <p className="mt-1 max-w-note text-sm text-ink-2">{t('eraseBody')}</p>
           {!confirming ? (
             <button
               type="button"
