@@ -55,6 +55,16 @@ function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
 }
 
+/**
+ * The rate-limit fallback: a static template with [bracket] slots, honestly
+ * labeled as NOT AI-drafted — same degradation the citizen ActionPanel
+ * ships, built from the same messages (this route has no
+ * NextIntlClientProvider, so the {citation} slot is filled by hand).
+ */
+function fallbackFor(dict: typeof en, s: Stance, citation: string) {
+  return dict.bill.fallbackScript[s].replace('{citation}', citation);
+}
+
 // Office-hours status depends on the visitor's real clock — same hydration
 // gate components/OfficeHoursNote.tsx uses, reimplemented locally since
 // that component is coupled to next-intl's useTranslations and this route
@@ -92,6 +102,10 @@ export function ActionPanelWidget({
 
   const [stance, setStance] = useState<Stance | null>(null);
   const [drafts, setDrafts] = useState<Partial<Record<Stance, string>>>({});
+  // Rate-limit fallbacks in their OWN map, never `drafts`: a fallback in
+  // drafts would suppress AI regeneration forever AND put the AI chip on
+  // non-AI text (the label travels with the content — both directions).
+  const [fallbacks, setFallbacks] = useState<Partial<Record<Stance, string>>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<'generic' | 'rate' | null>(null);
   const [genLine, setGenLine] = useState<1 | 2 | 3>(1);
@@ -102,7 +116,11 @@ export function ActionPanelWidget({
   const [reps, setReps] = useState<Legislator[]>([]);
   const [repsError, setRepsError] = useState(false);
 
-  const script = stance ? (drafts[stance] ?? '') : '';
+  // AI draft wins when it exists; the fallback template fills the slot on
+  // rate limit so the review step and the step-5 tel: links stay mounted.
+  const aiDraft = stance ? drafts[stance] : undefined;
+  const isFallback = !aiDraft && !!stance && !!fallbacks[stance];
+  const script = aiDraft ?? (stance ? (fallbacks[stance] ?? '') : '');
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -157,6 +175,12 @@ export function ActionPanelWidget({
         body: JSON.stringify({ slug: bill.slug, stance: s, locale }),
       });
       if (res.status === 429) {
+        // Token-path 429s are uniform and bare by design (no retryAfterSec),
+        // so there is no countdown here — just the honest fallback, never
+        // overwriting one the user may already have edited. 429 can only
+        // fire after ZIP submit (the !zipValue bail above), so reps are
+        // already fetched and the step-5 tel: links stay rendered.
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, bill.citation) }));
         setError('rate');
         return;
       }
@@ -315,17 +339,23 @@ export function ActionPanelWidget({
         </div>
       )}
       {error && (
-        <div className="re-error" role="alert" style={{ marginTop: 16 }}>
-          <span>{error === 'rate' ? t.bill.rateLimited : t.bill.scriptError}</span>
-          {error !== 'rate' && stance && (
-            <>
-              {' '}
-              <button type="button" className="re-btn re-toggle" onClick={() => void generate(stance, zip)}>
-                {t.bill.retry}
-              </button>
-            </>
-          )}
-        </div>
+        <>
+          <div className="re-error" role="alert" style={{ marginTop: 16 }}>
+            <span>{error === 'rate' ? t.bill.rateLimited : t.bill.scriptError}</span>
+            {error !== 'rate' && stance && (
+              <>
+                {' '}
+                <button type="button" className="re-btn re-toggle" onClick={() => void generate(stance, zip)}>
+                  {t.bill.retry}
+                </button>
+              </>
+            )}
+          </div>
+          {/* Static retry guidance as a SIBLING of the alert, never inside
+              it (a live region must stay quiet), and no countdown: the
+              token path's 429 is bare by design. */}
+          {error === 'rate' && <p className="re-note">{t.bill.rateRetryHint}</p>}
+        </>
       )}
 
       {/* Step 4 - review. The AI-disclosure chip renders immediately
@@ -334,17 +364,28 @@ export function ActionPanelWidget({
       {script && (
         <div style={{ marginTop: 16 }}>
           <div className="re-header" style={{ marginBottom: 6 }}>
-            <h2 className="re-title">{t.bill.scriptTitle}</h2>
-            <span className="bc-chip-ai">{t.bill.scriptDisclaimer}</span>
+            <h2 className="re-title">{isFallback ? t.bill.fallbackTitle : t.bill.scriptTitle}</h2>
+            {/* The AI chip must never ride non-AI content (S14: the label
+                travels with the content — both directions): the fallback
+                template carries a plain honest line instead. */}
+            {isFallback ? (
+              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{t.bill.fallbackDisclaimer}</span>
+            ) : (
+              <span className="bc-chip-ai">{t.bill.scriptDisclaimer}</span>
+            )}
           </div>
           <p className="re-note" style={{ marginTop: 0 }}>
             {t.bill.scriptHint}
           </p>
           <textarea
             value={script}
-            onChange={(e) => setDrafts((d) => (stance ? { ...d, [stance]: e.target.value } : d))}
+            onChange={(e) => {
+              if (!stance) return;
+              if (isFallback) setFallbacks((f) => ({ ...f, [stance]: e.target.value }));
+              else setDrafts((d) => ({ ...d, [stance]: e.target.value }));
+            }}
             rows={6}
-            aria-label={t.bill.scriptTitle}
+            aria-label={isFallback ? t.bill.fallbackTitle : t.bill.scriptTitle}
             className="ap-textarea"
           />
         </div>

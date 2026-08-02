@@ -138,6 +138,10 @@ test.describe('3-stance × 2-locale matrix', () => {
       'scriptDisclaimer',
       'scriptError',
       'rateLimited',
+      'fallbackTitle',
+      'fallbackDisclaimer',
+      'rateRetryIn',
+      'rateRetryHint',
       'callTitle',
       'startCall',
       'editScript',
@@ -163,6 +167,23 @@ test.describe('3-stance × 2-locale matrix', () => {
     }
     for (const stance of STANCES) {
       expect(es.bill.stance[stance], `es.bill.stance.${stance}`).not.toBe(en.bill.stance[stance]);
+    }
+  });
+
+  test('the rate-limit fallback template covers exactly the three stances in both locales', () => {
+    // Mirrors the stance-matrix pin above: the static fallback (the script
+    // slot's rate-limit degradation) must offer every stance lane in both
+    // locales, with real Spanish and the {citation} slot intact.
+    for (const messages of [en, es]) {
+      expect(Object.keys(messages.bill.fallbackScript).sort()).toEqual([...STANCES].sort());
+    }
+    for (const stance of STANCES) {
+      expect(
+        es.bill.fallbackScript[stance],
+        `es.bill.fallbackScript.${stance} must not be the English string`
+      ).not.toBe(en.bill.fallbackScript[stance]);
+      expect(en.bill.fallbackScript[stance]).toContain('{citation}');
+      expect(es.bill.fallbackScript[stance]).toContain('{citation}');
     }
   });
 

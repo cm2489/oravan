@@ -88,7 +88,11 @@ export function RepCard({ rep }: { rep: Legislator }) {
               <Phone className="h-4 w-4 shrink-0" aria-hidden />
               {t('dcOffice')}
             </span>
-            <span className="text-sm tabular-nums">{rep.phone}</span>
+            {/* whitespace-nowrap: the number must never break mid-number.
+                Under the longer ES label ("Oficina en Washington") at narrow
+                widths it is the LABEL that wraps to a second line, never
+                "202-225-" / "8050". */}
+            <span className="text-sm whitespace-nowrap tabular-nums">{rep.phone}</span>
           </a>
         )}
         {rep.offices.length > 0 && (

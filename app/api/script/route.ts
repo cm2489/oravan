@@ -34,7 +34,11 @@ import { noteScriptGeneration } from '@/lib/usage';
  *      tenancy-database health. The visitor's browser still makes this
  *      fetch directly (the iframe boundary doesn't change which machine
  *      originates the HTTP request), so this protects against a single
- *      abusive visitor whether or not a token is present.
+ *      abusive visitor whether or not a token is present. A CITIZEN-path
+ *      trip (no X-Oravan-Key) answers 429 with a Retry-After header and a
+ *      retryAfterSec body field — seconds-to-reset of the already-keyed
+ *      counter, nothing user-linkable — so the panel can degrade honestly;
+ *      a token-path trip stays the uniform bare 429 (see 4).
  *   2. `X-Oravan-Key` ABSENT -> today's citizen path, byte-for-byte
  *      unchanged. Must never regress — this is the site's own
  *      components/ActionPanel.tsx flow.
@@ -56,7 +60,9 @@ import { noteScriptGeneration } from '@/lib/usage';
  *      correct answer, not redundant belt-and-suspenders. Same uniform
  *      `429 {error:'rate_limited'}` regardless of which of the two
  *      limiters tripped — revealing which would help a prober map the
- *      tenant limiter's threshold.
+ *      tenant limiter's threshold. Citizen 429s carry Retry-After;
+ *      token-path 429s remain uniform and bare, whether the per-IP or the
+ *      tenant limiter tripped.
  *   5. Passes every check -> the EXISTING cache-get -> generate -> cache-set
  *      path below, completely unchanged. Response shape stays
  *      `{script, cached}` — no tenant metadata ever added to it.
@@ -76,11 +82,24 @@ const tenantDayLimiter = createTenantRateLimiter({ route: 'embed-script-day', ma
 
 export async function POST(req: NextRequest) {
   const ip = callerIp(req.headers);
-  if (await limiter.isLimited(ip)) {
-    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  // Hoisted above the per-IP gate (a pure header parse): the 429 shape below
+  // depends on whether this is the citizen path or the token path.
+  const oravanKey = readOravanKey(req.headers);
+  const gate = await limiter.check(ip);
+  if (gate.limited) {
+    // Token path: uniform bare 429 — indistinguishable from the tenant
+    // limiter's own trip below, by doctrine (§4 above).
+    if (oravanKey !== null) {
+      return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+    }
+    // Citizen path: expose the reset so the panel can degrade honestly.
+    const retryAfterSec = gate.retryAfterSec ?? 600;
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfterSec },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
+    );
   }
 
-  const oravanKey = readOravanKey(req.headers);
   if (oravanKey !== null) {
     const access = await resolveTenantAccess(oravanKey);
     if (!access.ok) {

@@ -125,7 +125,7 @@
     "website": "Sitio web oficial",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
-    "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Verifícalo, o busca a tu representante directamente en house.gov.",
+    "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Algunos códigos postales válidos — como los de apartados postales o exclusivos de empresas — no corresponden a ningún distrito. Revisa los dígitos, prueba con el código postal de tu casa, o busca a tu representante directamente en house.gov.",
     "party": {
       "Democrat": "Demócrata",
       "Republican": "Republicano/a",
@@ -221,6 +221,15 @@
     "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",
     "scriptError": "No pudimos redactar un guion ahora. Inténtalo en un minuto.",
     "rateLimited": "Has pedido varios guiones en poco tiempo. Respira y vuelve a intentarlo pronto.",
+    "fallbackTitle": "Un guion listo para usar",
+    "fallbackDisclaimer": "Una plantilla estándar — no es un borrador de IA. Llena los [corchetes] y está lista.",
+    "rateRetryIn": "Podrás pedir un nuevo borrador de IA en {time}.",
+    "rateRetryHint": "Esto suele resolverse en unos diez minutos. La plantilla y los números de teléfono funcionan ahora mismo.",
+    "fallbackScript": {
+      "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
+      "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",
+      "undecided": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Este proyecto de ley me preocupa y aún no tomo una posición. Pido que registren mi preocupación; estaré atento a la posición de la oficina antes de decidir. Gracias por su tiempo."
+    },
     "callTitle": "Haz tu llamada",
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
     "switchboard": "Centralita del Capitolio",
@@ -252,6 +261,7 @@
     "generatingHint": "Suele tardar unos diez segundos.",
     "retry": "Intentar de nuevo",
     "repsError": "No pudimos cargar a tus representantes en este momento.",
+    "repsLoading": "Buscando a tus representantes…",
     "whyLink": "¿Tu primera llamada? Dos minutos sobre por qué funciona",
     "callWhoOne": "Tu delegado/a es tu voz en la Cámara. Una llamada a su oficina cuenta.",
     "sec": {
