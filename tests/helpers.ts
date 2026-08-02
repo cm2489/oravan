@@ -67,7 +67,7 @@ export async function readJsonRpc(res: APIResponse): Promise<JsonRpcResponse> {
 
 // Each JSON-RPC call below presents itself as a distinct caller: as of S11
 // the MCP route enforces real anonymous rate limits (60/min per caller), and
-// this suite's ~50 calls across two projects would trip them from one shared
+// this suite's ~50 calls across the projects (three since webkit-320) would trip them from one shared
 // address. The limiter itself is pinned separately (tests/ratelimit.unit.
 // spec.ts) plus a dedicated same-caller 429 e2e in tests/mcp.spec.ts —
 // every other test here states its own caller and tests its own concern.

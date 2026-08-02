@@ -6,8 +6,12 @@
 import sharp from 'sharp';
 import { readFile, mkdir } from 'node:fs/promises';
 
-const INK = '#2A2318';
-const PAPER = '#F3ECDD';
+// Variant-B tokens (re-keyed 2026-08-02 — these shipped the retired Field
+// Notebook values for a week after the #104 refresh, so installed PWA/home-
+// screen icons wore the old identity). Keep in lockstep with globals.css:
+// --color-ink, --color-paper.
+const INK = '#16191b';
+const PAPER = '#ffffff';
 
 const markMaster = await readFile('assets/brand/oravan-mark.svg', 'utf8');
 const paperMark = markMaster.replace(/currentColor/g, PAPER);

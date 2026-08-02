@@ -43,3 +43,11 @@ next-env.d.ts
 # Playwright test artifacts
 test-results/
 playwright-report/
+
+# Impeccable design-tooling state (owner decision 2026-08-02: critique
+# snapshots ARE tracked — they carry the teardown campaign's trend lines —
+# while machine-local state stays out of the tree)
+.impeccable/hook.cache.json
+.impeccable/config.local.json
+.impeccable/design.json
+.impeccable/live/

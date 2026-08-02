@@ -16,7 +16,8 @@ const TAGLINES: Record<string, { tag: string; sub: string }> = {
 //
 // The lockup is MONOCHROME on this dark ground, matching the footer's treatment:
 // `go` (#0f6c4a) sits at 2.75:1 on ink and must never carry the mark there. The
-// dark-ground green token, `go-bright`, is spent on the tagline only (10.3:1 on ink).
+// dark-ground green token, `go-bright`, is spent on the tagline only (9.48:1 on
+// ink — an earlier comment here claimed 10.3:1; recomputed 2026-08-02).
 const INK = '#16191b'; // --color-ink
 const PAPER = '#ffffff'; // --color-paper
 const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green

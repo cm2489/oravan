@@ -21,6 +21,18 @@ export default defineConfig({
   projects: [
     { name: 'webkit-mobile', use: { ...devices['iPhone 13'] } },
     { name: 'webkit-desktop', use: { ...devices['Desktop Safari'] } },
+    // WCAG 1.4.10 reflow is specified AT 320px and neither project above
+    // runs there — a reflow bug shipped once because of exactly that gap
+    // (see tests/landing.spec.ts). This project runs the @reflow-tagged
+    // subset at the criterion's own width (owner decision, 2026-08-02,
+    // prelaunch teardown Phase 0). Tag a test @reflow when its assertions
+    // are meaningful at 320 (overflow, touch targets, keyboard reach) —
+    // not every spec belongs here; the tag is the budget.
+    {
+      name: 'webkit-320',
+      grep: /@reflow/,
+      use: { ...devices['iPhone 13'], viewport: { width: 320, height: 844 } },
+    },
   ],
   // Dedicated port so a dev server on :3000/:3200 never shadows the build under test.
   //

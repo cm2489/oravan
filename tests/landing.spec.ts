@@ -13,7 +13,7 @@ test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
 });
 
-test('no horizontal overflow on either landing locale', async ({ page }) => {
+test('no horizontal overflow on either landing locale @reflow', async ({ page }) => {
   for (const path of ['/', '/es']) {
     await page.goto(path);
     const overflow = await page.evaluate(
