@@ -200,7 +200,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const tShared = await getTranslations();
   const format = await getFormatter();
   const top = getTopActions(4, locale);
-  const news = getNewsBills(locale, 6);
+  const newsRaw = getNewsBills(locale, 7);
   const total = getAllBills().length;
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
@@ -227,12 +227,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // classes below can never disagree with the crown's presence.
   const crowned = Boolean(feature?.last_action_date);
 
-  // The hero's specimen keys on the same bill the week's panel features, so
-  // the front door's example and its headline act are the same fact. Falls
-  // back through the week's shortlist and then the news lens; a bill with no
-  // decode is never shown as a decode.
-  const specimenBill = feature ?? top[0] ?? news[0] ?? null;
+  // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
+  // 2026-08-02, finding #8: the featured bill appeared in the hero card,
+  // the green crown, AND the first news card — "the site looks like it has
+  // one story"). The specimen now prefers a DECODED bill that is not the
+  // crown's feature (shortlist first, then news), falling back to the
+  // feature only when nothing else carries a decode — an empty hero card
+  // is worse than a repeated one. The news lens likewise drops the feature:
+  // it is fetched one over and filtered, so the crown's bill never leads
+  // the coverage grid it already headlines 500px above.
+  // Candidates are the week's shortlist ONLY: NewsBill is a teaser (slug/
+  // identifier/headline) without the decode fields SpecimenAside renders —
+  // the old `?? news[0]` fallback only ever typechecked because the ??-chain
+  // never reached it, and would have crashed if it had. On a corpus where
+  // no shortlisted bill carries a decode, the hero simply has no card —
+  // the existing honest-quiet behavior.
+  const featureSlug = feature ? billSlug(feature) : null;
+  const specimenBill =
+    top.find((b) => billSlug(b) !== featureSlug && b.ai_headline) ?? feature ?? null;
   const specimen = specimenBill?.ai_headline ? specimenBill : null;
+  // NewsBill carries its slug directly; filter the crown's bill out of the
+  // coverage grid it already headlines 500px above.
+  const news = newsRaw.filter((b) => b.slug !== featureSlug).slice(0, 6);
 
   /*
    * A bill's own calendar date, e.g. "Jul 20, 2026" / "20 jul 2026".
@@ -454,8 +470,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     {/* Live-layer recency (v2 slice S5): only when a recorded
                         update exists — never a synthesized date. ink-pale on
                         ink-deep is 10.82:1. */}
+                    {/* ml-auto: the dates form an aligned right column
+                        instead of floating after variable-length deks (an
+                        outside craft review measured the ragged edges,
+                        2026-08-02); on narrow screens the row wraps and the
+                        date leads its own line unchanged. */}
                     {latestUpdateDay(m.id) && (
-                      <span className="text-xs font-semibold text-ink-pale tabular-nums">
+                      <span className="ml-auto text-xs font-semibold text-ink-pale tabular-nums">
                         {t('momentsUpdated', {
                           date: billDate(latestUpdateDay(m.id) as string),
                         })}

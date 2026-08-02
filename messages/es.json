@@ -817,5 +817,9 @@
       },
       "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
     }
+  },
+  "langNote": {
+    "cta": "Ver Oravan en español",
+    "dismiss": "No volver a mostrar este aviso"
   }
 }
