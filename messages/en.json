@@ -804,6 +804,7 @@
       },
       "quietToday": "Nothing recorded yet today.",
       "quietDay": "Nothing recorded.",
+      "quietRun": "Nothing recorded across {count} days.",
       "checkGapNote": "we have not been able to check for new activity since {date}",
       "overflow": "{count, plural, one {# further recorded action this day} other {# further recorded actions this day}}",
       "sourcesLabel": "Sources",

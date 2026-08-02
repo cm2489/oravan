@@ -2,7 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
-import { linkHost, timelineDays } from '@/lib/moments-ui';
+import { collapseQuietDays, linkHost, timelineDays } from '@/lib/moments-ui';
 import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updates';
 
 /*
@@ -135,6 +135,18 @@ export function MomentTimeline({
       timeZone: 'UTC',
     });
 
+  // A quiet run's span, oldest day first — chronological reading order
+  // ("July 24 – August 1, 2026"), even though the ledger itself stays newest
+  // first: the run row sits where its newest day sat. Same UTC pinning as
+  // fmtDay, for the same west-of-Greenwich reason.
+  const fmtRange = (from: string, to: string) =>
+    format.dateTimeRange(new Date(from), new Date(to), {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+
   return (
     <div className="mt-6">
       {hasAi && (
@@ -145,8 +157,27 @@ export function MomentTimeline({
         </p>
       )}
 
-      {days.map((day) =>
-        day.quiet ? (
+      {collapseQuietDays(days).map((row) => {
+        if (row.kind === 'quietRun') {
+          /* A quiet RUN: two or more consecutive quiet, non-today days folded
+             into one spanned ink line (see collapseQuietDays for the rules —
+             today never folds, a singleton stays a plain quiet day). Same
+             non-shape as the quiet day: NOT a heading, NOT interactive, no
+             id — a quiet stretch still earns no rung in the outline and adds
+             no focus stop. The sentence carries the day count so the span
+             survives screen readers even if the dash range reads awkwardly. */
+          return (
+            <p
+              key={`${row.from}--${row.to}`}
+              className="flex flex-wrap items-baseline gap-x-3 border-t border-line py-1 text-sm text-ink-2"
+            >
+              <span className="font-semibold tabular-nums">{fmtRange(row.from, row.to)}</span>
+              <span>{t('moments.updates.quietRun', { count: row.count })}</span>
+            </p>
+          );
+        }
+        const day = row.day;
+        return day.quiet ? (
           /* A quiet day: one ink line, computed at render, never a stored
              fake update. No heading — a day with nothing in it does not earn
              a rung in the document outline. */
@@ -191,8 +222,8 @@ export function MomentTimeline({
               </p>
             )}
           </div>
-        )
-      )}
+        );
+      })}
     </div>
   );
 }
