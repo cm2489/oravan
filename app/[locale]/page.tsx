@@ -14,6 +14,7 @@ import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { floorCalendarChamber } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
@@ -222,6 +223,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // unbroken paper column, which is the point.
   const feature = selectFloorVoteFeature(top);
   const listed = top.filter((b) => b !== feature);
+  // The selector guarantees the feature's own last action says "Placed on …
+  // Calendar", so the chamber is read out of that sentence — the same
+  // derivation the bill page's amber gate uses — and the panel's claim names
+  // the TRUE chamber (a House bill can stand on the Senate's calendar).
+  const featureChamber = feature ? floorCalendarChamber(feature.last_action_text) : null;
   // The week wears its green crown (masthead fused onto the panel) exactly
   // when the panel itself renders — same condition, one name, so the seam
   // classes below can never disagree with the crown's presence.
@@ -504,7 +510,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             The Stamp lives here now — still once per page, still the sole
             printed sync date; it certifies the whole week, panel included. */}
         {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
-            selectFloorVoteFeature() above holds the cap. The date printed is
+            selectFloorVoteFeature() above holds the cap AND the calendar gate
+            (the record's own "Placed on … Calendar" sentence — home.weekNote
+            promises exactly that fact, so a cloture motion or a rejected
+            motion to proceed can never wear the crown). The date printed is
             the calendar-PLACEMENT date the corpus actually holds — no bill in
             data/bills.json carries a forward-looking scheduled-vote date, so
             no mark here claims one. */}
@@ -541,7 +550,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               headingLevel={3}
               status={feature.status}
               dateLabel={billDate(feature.last_action_date)}
-              calendarLabel={t('floorCalendar')}
+              calendarLabel={tShared(
+                featureChamber === 'senate' ? 'bill.floor.calendarSenate' : 'bill.floor.calendarHouse'
+              )}
               identifier={formatCitation(feature.bill_type, feature.bill_number)}
               headline={feature.ai_headline ?? feature.short_title ?? feature.title}
               href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
