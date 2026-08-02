@@ -117,12 +117,13 @@ export function coverageTier(articles) {
 
 /* ------------------------------------------------------------------ *
  * Import-free copy #2 — the amber gate's placed-on-calendar test.
- * SOURCE OF TRUTH: app/[locale]/bills/[id]/page.tsx `floorCalendarChamber`.
+ * SOURCE OF TRUTH: lib/journey.ts `floorCalendarChamber`.
  * That regex is deliberately stricter than `status === "floor_vote"`
- * (253 bills carry the status; only the ones whose own last action says
- * Congress placed them on a calendar earn the claim), and this report
- * ranks on the same evidence the page is willing to print in amber.
- * Pinned by tests/moment-candidates.unit.spec.ts.
+ * (hundreds of bills carry the status; only the ones whose own last
+ * action says Congress placed them on a calendar earn the claim), and
+ * this report ranks on the same evidence the page is willing to print
+ * in amber. Pinned by tests/moment-candidates.unit.spec.ts and, corpus-
+ * wide, by tests/journey.unit.spec.ts.
  * ------------------------------------------------------------------ */
 
 /** @param {string | null} actionText @returns {'house' | 'senate' | null} */

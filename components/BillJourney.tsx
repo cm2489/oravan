@@ -1,13 +1,14 @@
 import { useTranslations } from 'next-intl';
 import { Chip } from '@/components/system';
-import type { BillStatus } from '@/lib/types';
+import type { JourneyState } from '@/lib/journey';
 
 /*
- * The path-to-law stepper, computed entirely from data (bill type -> origin
- * chamber, status -> current position). Never AI-generated, so it cannot
- * hallucinate procedure. A single stored status can't distinguish which
- * chamber a floor calendar belongs to, so positions are deliberately
- * conservative: floor_vote pins to the origin-chamber vote step.
+ * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
+ * derivation lives in lib/journey.ts (`deriveJourney`), the one derivation
+ * the bill page and the homepage panel both consume: the current chamber is
+ * read out of the bill's own last-action sentence where the record says,
+ * never guessed from the bill type. Never AI-generated, so it cannot
+ * hallucinate procedure.
  *
  * SHAPE: the same 6px bar the gauge is drawn with, capped at rounded-stamp.
  * It is NOT the Gauge primitive, and that is deliberate: Gauge draws every
@@ -18,51 +19,32 @@ import type { BillStatus } from '@/lib/types';
  * which is exactly the information a first-time caller is looking for. The
  * reference mockup hand-writes this block for the same reason.
  *
- * COLOR: reached steps are `go`, unreached are the `line` track — the same
- * pair the Gauge primitive uses (4.70:1 against each other). Position is
- * carried by WEIGHT and by the "Right now:" sentence underneath, never by
- * color alone: the reference tinted the current label green, and green in
- * this system is spent on actions and the gauge, never on a label.
+ * COLOR: completed steps are `go`, the CURRENT step is a hollow `go` outline
+ * on paper (reached, not completed — a solid fill read as a finished stage
+ * that was simultaneously announced as current), unreached are the `line`
+ * track — the same go/line gauge pair, no new color. Position is carried by
+ * WEIGHT, by the visible "You are here" caption under the current label, and
+ * by the "Right now:" sentence underneath, never by color alone: the
+ * reference tinted the current label green, and green in this system is
+ * spent on actions and the gauge, never on a label.
  */
 
-const POSITION: Record<BillStatus, number> = {
-  introduced: 0,
-  committee: 1,
-  markup: 1,
-  floor_vote: 2,
-  passed_chamber: 3,
-  conference: 3,
-  signed: 4,
-  vetoed: 4,
-};
-
-const NOW_KEY: Record<BillStatus, string> = {
-  introduced: 'nowIntroduced',
-  committee: 'nowCommittee',
-  markup: 'nowCommittee',
-  floor_vote: 'nowFloor',
-  passed_chamber: 'nowPassed',
-  conference: 'nowConference',
-  signed: 'nowSigned',
-  vetoed: 'nowVetoed',
-};
-
-/** Statuses where the "changes send it back" trailer is still ahead. */
-const TRAILER_STATUSES = new Set<BillStatus>(['introduced', 'committee', 'markup', 'floor_vote', 'passed_chamber']);
-
 interface Props {
-  billType: string;
-  status: BillStatus;
+  journey: JourneyState;
   /** Short, already-localized introduced date, printed under step 1. */
   introducedLabel?: string;
   /** Short, already-localized last-action date, printed under the current step. */
   currentLabel?: string;
 }
 
-export function BillJourney({ billType, status, introducedLabel, currentLabel }: Props) {
+export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const t = useTranslations('bill.journey');
-  const chamber = billType.startsWith('h') ? 'House' : 'Senate';
+  // Display strings for the ICU selects: origin chamber and its opposite.
+  const chamber = journey.origin === 'house' ? 'House' : 'Senate';
   const other = chamber === 'House' ? 'Senate' : 'House';
+  // The chamber the "Right now" sentence speaks about — the CURRENT chamber
+  // for the floor keys (a House bill can stand on the Senate's calendar).
+  const nowChamber = journey.nowChamber === 'house' ? 'House' : 'Senate';
 
   const labels = [
     t('stepIntroduced'),
@@ -71,9 +53,8 @@ export function BillJourney({ billType, status, introducedLabel, currentLabel }:
     t('stepOther', { chamber: other }),
     t('stepPresident'),
   ];
-  const here = POSITION[status] ?? 1;
-  const isLaw = status === 'signed';
-  const isVetoed = status === 'vetoed';
+  const here = journey.step;
+  const { isLaw, isVetoed } = journey;
 
   return (
     <div>
@@ -85,7 +66,7 @@ export function BillJourney({ billType, status, introducedLabel, currentLabel }:
         {labels.map((label, i) => {
           const done = isLaw || i < here;
           const current = !isLaw && !isVetoed && i === here;
-          const note = i === 0 ? introducedLabel : current ? currentLabel : undefined;
+          const note = !current && i === 0 ? introducedLabel : undefined;
           return (
             <li
               key={i}
@@ -95,7 +76,7 @@ export function BillJourney({ billType, status, introducedLabel, currentLabel }:
               <span
                 aria-hidden
                 className={`absolute top-0.5 bottom-0.5 left-0 w-[6px] rounded-stamp md:top-0 md:right-1 md:bottom-auto md:h-[6px] md:w-auto ${
-                  done || current ? 'bg-go' : 'bg-line'
+                  done ? 'bg-go' : current ? 'border-2 border-go bg-paper' : 'bg-line'
                 }`}
               />
               <span
@@ -108,8 +89,13 @@ export function BillJourney({ billType, status, introducedLabel, currentLabel }:
                 }`}
               >
                 {label}
-                {current && <span className="sr-only"> — {t('youAreHere')}</span>}
               </span>
+              {current && (
+                <span className="block text-2xs font-bold text-ink">
+                  {t('youAreHere')}
+                  {currentLabel ? ` · ${currentLabel}` : ''}
+                </span>
+              )}
               {note && <span className="block text-2xs text-ink-2 tabular-nums">{note}</span>}
             </li>
           );
@@ -118,8 +104,8 @@ export function BillJourney({ billType, status, introducedLabel, currentLabel }:
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {t(NOW_KEY[status] ?? 'nowCommittee', { chamber, other })}
-          {TRAILER_STATUSES.has(status) && <> {t('backTrailer', { chamber, other })}</>}
+          {t(journey.nowKey, { chamber: nowChamber, other })}
+          {journey.showTrailer && <> {t('backTrailer', { chamber, other })}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>

@@ -80,7 +80,6 @@
     "aiMarker": "IA",
     "demoNoteLead": "No pasa nada más.",
     "demoNote": "Tu postura entra en el conteo de la oficina — nadie te debate ni te examina. El buzón de voz cuenta exactamente igual.",
-    "floorCalendar": "En el calendario del pleno",
     "floorCta": "Léelo en palabras sencillas",
     "aiReviewed": "Traducido por IA, verificado con el registro",
     "stampLabel": "Datos al",
@@ -171,7 +170,7 @@
     "bandSub": {
       "now": "Los proyectos más activos en el Congreso ahora mismo. Aquí una llamada pesa más.",
       "moving": "Avanzando por los comités y hacia el calendario.",
-      "radar": "Etapas tempranas: vale la pena seguirlos, con menos prisa."
+      "radar": "Más tranquilos ahora mismo — etapas tempranas, fechas de acción más antiguas o ya resueltos. Vale la pena seguirlos, con menos prisa."
     },
     "status": {
       "introduced": "Recién presentado",
@@ -271,6 +270,7 @@
       "now": "Ahora mismo:",
       "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
       "nowFloor": "está en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
+      "nowFloorActivity": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} está decidiendo si lo somete a votación.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
       "nowSigned": "el Presidente lo firmó. Ya es ley.",

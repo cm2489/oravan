@@ -80,7 +80,6 @@
     "aiMarker": "AI",
     "demoNoteLead": "Nothing else happens.",
     "demoNote": "Your position goes into the office's tally — nobody debates or quizzes you. Voicemail counts exactly the same.",
-    "floorCalendar": "On the floor calendar",
     "floorCta": "Read it in plain words",
     "aiReviewed": "Decoded by AI, checked against the record",
     "stampLabel": "Data as of",
@@ -171,7 +170,7 @@
     "bandSub": {
       "now": "The most active bills in Congress right now. A call lands hardest here.",
       "moving": "Advancing through committees and onto the calendar.",
-      "radar": "Earlier stages: worth watching, less time pressure."
+      "radar": "Quieter right now — earlier stages, older action dates, or already settled. Worth watching, less time pressure."
     },
     "status": {
       "introduced": "Just introduced",
@@ -271,6 +270,7 @@
       "now": "Right now:",
       "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
       "nowFloor": "it's on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar.",
+      "nowFloorActivity": "the {chamber, select, House {House} Senate {Senate} other {Senate}} is deciding whether to bring it to a vote.",
       "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
       "nowConference": "both chambers are reconciling their versions.",
       "nowSigned": "the President signed it. It's law.",
