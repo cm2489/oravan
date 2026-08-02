@@ -27,7 +27,7 @@ import { E2E_TENANT_TOKEN, E2E_TENANT_TOKEN_INACTIVE, E2E_TENANT_TOKEN_NO_TOS } 
  * file's own per-IP-limiter traffic never interferes with itself across
  * Playwright's parallel workers/projects (mirrors tests/helpers.ts's
  * nextMcpCallerIp, widened to a private /8 for a much larger address space
- * since this file's requests run across two projects × multiple tests).
+ * since this file's requests run across three projects × multiple tests).
  */
 
 const SLUG = 'sjres-99-119';

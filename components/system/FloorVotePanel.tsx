@@ -11,8 +11,9 @@ import { Chip } from './Chip';
  * bill with `status === "floor_vote"` AND a printed date can. Never two. A
  * quiet week has no panel at all and the page is an unbroken paper column.
  *
- * The cap is not taste, it is the entire mechanism. The corpus is HOT: 217 of
- * the 2,373 bills in `data/bills.json` currently carry `floor_vote`. Two
+ * The cap is not taste, it is the entire mechanism. The corpus is HOT: 319 of
+ * the 2,567 bills in `data/bills.json` carry `floor_vote` (as of the
+ * 2026-08-01 sync; the corpus moves nightly — recompute, don't trust). Two
  * panels and both read as wallpaper. At a squint a page changes shape exactly
  * once, and this is that change — so if you are adding a second full-bleed
  * band anywhere on the same page, you are taking meaning away from this one.
@@ -24,8 +25,8 @@ import { Chip } from './Chip';
  * ⚠️ THE DATE IS AN OPEN OWNER RULING. `data/bills.json` has no
  * forward-looking scheduled-vote date for ANY bill: `floor_vote` is derived
  * from action text like "Placed on Senate Legislative Calendar under General
- * Orders", and `last_action_date` is always in the past (0 of 217 are
- * future-dated). So "floor vote scheduled Thursday" CANNOT be built from live
+ * Orders", and `last_action_date` is always in the past (0 of 319 are
+ * future-dated, recomputed 2026-08-02). So "floor vote scheduled Thursday" CANNOT be built from live
  * data. Pass the calendar-PLACEMENT date and a label that claims only that
  * ("On the House floor calendar"). Do not synthesize or imply a scheduled
  * vote date. See DESIGN.md.
