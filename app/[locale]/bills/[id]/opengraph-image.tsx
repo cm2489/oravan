@@ -21,8 +21,9 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
  * so it never carries AllSides/lean labels (settled decision) and no advocacy
  * copy — citation, headline, status, freshness only. The AI headline is
  * labeled in-image so the disclosure travels with the picture — drawn as the
- * on-dark AI chip (paper outline, stamp radius scaled ~2x for the 1200px
- * canvas), never a pill: nothing in Oravan is a pill, this surface included.
+ * UNBOXED on-dark AI label (owner ruling 2026-08-01, #140: filled marker +
+ * tracked caption, no outline; the boxed chip is retired everywhere,
+ * this surface included). Never a pill: nothing in Oravan is a pill.
  */
 
 const INK = '#16191b'; // --color-ink
@@ -112,16 +113,29 @@ export default async function OgImage({
             {clamp(headline)}
           </div>
           {isAiHeadline && (
-            <div style={{ display: 'flex', marginTop: 30 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 30 }}>
               <div
                 style={{
                   display: 'flex',
-                  border: `3px solid ${PAPER}`,
-                  color: PAPER,
+                  background: PAPER,
+                  color: INK,
                   borderRadius: 6,
-                  padding: '10px 26px',
-                  fontSize: 27,
-                  fontWeight: 600,
+                  padding: '4px 12px',
+                  fontSize: 24,
+                  fontWeight: 800,
+                  letterSpacing: 1.2,
+                }}
+              >
+                {tAll('home.aiMarker')}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  color: PAPER_SOFT,
+                  fontSize: 24,
+                  fontWeight: 700,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
                 }}
               >
                 {t('aiDecoded')}

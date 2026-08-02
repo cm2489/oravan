@@ -147,7 +147,9 @@ test('anonymous rate limit is wired end-to-end: one caller cannot exceed 60 requ
 }) => {
   // Dedicated same-caller burst (every other test in this suite states a
   // distinct caller - see tests/helpers.ts). One fixed address per project
-  // so the two projects' bursts never pollute each other's counter. The
+  // so the projects' bursts never pollute each other's counter (three
+  // projects since webkit-320 landed; the split keys on the webkit-mobile
+  // name, so non-mobile projects share the second lane). The
   // e2e server runs the in-memory degradation path (no Upstash env in CI),
   // which is exactly the point: the 429 wiring must hold in degraded mode
   // too. Cross-instance durable semantics are pinned in

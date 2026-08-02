@@ -221,7 +221,7 @@ The go-mark is one 6px green bar used exactly two ways: as a **segment** of a ga
 
 `app/embed/embed.css` is **not** Tailwind and **not** `globals.css` — an iframe payload stays small and self-contained, so it **hand-copies** the palette. That copy is a standing lockstep obligation: **any change to the `@theme` color block in `app/globals.css` must land in `app/embed/embed.css` in the same PR.**
 
-> The re-key landed in #104 (`b74430f`) — `embed.css` carries the variant-B tokens; a stale ⚠ here previously claimed otherwise for a month (removed 2026-08-02: the constitution must never cry wolf). The embed's own architecture rules stand: every color flows through the private `--_*` tokens, component rules never use `@media (prefers-color-scheme)`, and the focus ring falls back to **ink**, not accent.
+> The re-key landed in #104 (`b74430f`) — `embed.css` carries the variant-B tokens. A stale ⚠ here claimed otherwise from its birth: `b74430f` itself added the warning in the same commit that performed the re-key, so it was false from day one and stood 8 days before removal (2026-08-02 — the constitution must never cry wolf). The embed's own architecture rules stand: every color flows through the private `--_*` tokens, component rules never use `@media (prefers-color-scheme)`, and the focus ring falls back to **ink**, not accent.
 
 The embed also uses **system fonts, not `next/font`** — it does not get Franklin or Besley, and it must not add a webfont link.
 

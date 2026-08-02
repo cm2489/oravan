@@ -70,15 +70,16 @@ export default function ImpactPageClient() {
     // text-h2 from its first commit — the only surface off the grid, flagged
     // P1 in the 2026-08-01 critique (its h1 rendered smaller than section
     // headings elsewhere).
-    // max-w-5xl + text-h1: the sitewide rail. This page ran max-w-3xl +
-    // text-h2 from its first commit — the only surface off the grid, flagged
-    // P1 in the 2026-08-01 critique (its h1 rendered smaller than section
-    // headings elsewhere). Widening the rail obliges the reading caps below:
-    // prose takes max-w-read / max-w-note per DESIGN.md's measure tokens so
-    // no line runs the new width; record rows and the stat cards keep the
-    // full rail like every listing surface.
+    // max-w-5xl + text-h1-bill: the sitewide rail and the sitewide title
+    // rung — every sibling page (bills, reps, moments, embeds) titles at
+    // text-h1-bill; bare text-h1 belongs to the home hero alone. This page
+    // ran max-w-3xl + text-h2 from its first commit — the only surface off
+    // the grid, flagged P1 in the 2026-08-01 critique. Widening the rail
+    // obliges the reading caps below: prose takes max-w-read / max-w-note
+    // per DESIGN.md's measure tokens so no line runs the new width; record
+    // rows and the stat cards keep the full rail like every listing surface.
     <div className="mx-auto max-w-5xl px-4 py-12">
-      <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
+      <h1 className="text-h1-bill font-extrabold text-ink">{t('title')}</h1>
       <p className="mt-2 max-w-read text-ink-2">{t('sub')}</p>
 
       {/* 1. WHAT YOU FOLLOW — the saved topics, shown as what they are: a
@@ -169,7 +170,7 @@ export default function ImpactPageClient() {
       {calls.length === 0 && !erased && (
         <div className="mt-10 rounded-control border border-line-strong bg-paper p-8 text-center">
           <h2 className="text-h3 font-extrabold">{t('emptyTitle')}</h2>
-          <p className="mt-2 text-ink-2">{t('emptyBody')}</p>
+          <p className="mx-auto mt-2 max-w-read text-ink-2">{t('emptyBody')}</p>
           <Link
             href="/bills"
             className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
@@ -226,7 +227,7 @@ export default function ImpactPageClient() {
             </button>
           ) : (
             <div className="mt-4">
-              <p className="text-sm font-medium">{t('eraseConfirm')}</p>
+              <p className="max-w-note text-sm font-medium">{t('eraseConfirm')}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
