@@ -31,8 +31,7 @@ import { Chip } from './Chip';
  * forward-looking scheduled-vote date for ANY bill: `floor_vote` is derived
  * from action text like "Placed on Senate Legislative Calendar under General
  * Orders", and `last_action_date` is always in the past (0 of 319 are
- * future-dated, recomputed 2026-08-02). So "floor vote scheduled
- * Thursday" CANNOT be built from live
+ * future-dated, recomputed 2026-08-02). So "floor vote scheduled Thursday" CANNOT be built from live
  * data. Pass the calendar-PLACEMENT date and a label that claims only that
  * ("On the House floor calendar"). Do not synthesize or imply a scheduled
  * vote date. See DESIGN.md.
