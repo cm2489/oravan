@@ -76,13 +76,20 @@ async function clickFirstBillCardIn(page: Page, sectionSelector: string) {
 // fetch and leaves nothing to wait on, so retry until the (mocked)
 // /api/script request actually goes out. A retry can only fire after a
 // lost click, so it never double-toggles a stance that already registered.
+//
+// BUDGETS RAISED 2026-08-02: 15s of 2s windows lost twice in one day on
+// webkit-mobile under full-suite load (PR #142 and #145 CI runs, both green
+// on rerun and everywhere else) — on a saturated 2-vCPU runner hydration
+// alone can outlast the old budget, and every burned rerun costs a full CI
+// build. 30s outer / 3s window holds the same semantics with headroom;
+// a real regression still fails, just 15 seconds later.
 async function declareStance(page: Page, stanceLabel: string) {
   const button = page.getByRole('radio', { name: stanceLabel });
   await expect(async () => {
-    const request = page.waitForRequest('**/api/script', { timeout: 2000 });
+    const request = page.waitForRequest('**/api/script', { timeout: 3000 });
     await button.click();
     await request;
-  }).toPass({ timeout: 15_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 async function expectCompletedScript(page: Page, scriptTitleLabel: string) {
