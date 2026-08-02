@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BillStatus } from '@/lib/types';
+import { floorCalendarChamber } from '@/lib/journey';
 import { isSignalFresh } from '@/lib/signal-window';
 import { Chip } from './Chip';
 
@@ -8,24 +9,29 @@ import { Chip } from './Chip';
  * easiest thing in the system to get wrong.
  *
  * DATA-GATED LOUDNESS. Exactly ONE bill per page takes this panel, and only a
- * bill with `status === "floor_vote"` AND a printed date can. Never two. A
- * quiet week has no panel at all and the page is an unbroken paper column.
+ * bill that earns the TRIAD can: `status === "floor_vote"`, a fresh printed
+ * date, AND the record's own placed-on-calendar sentence (the same gate
+ * scripts/moment-candidates.mjs `isOnFloorCalendar` applies — the status
+ * alone is looser than the claim, see lib/journey.ts). Never two. A quiet
+ * week has no panel at all and the page is an unbroken paper column.
  *
- * The cap is not taste, it is the entire mechanism. The corpus is HOT: 217 of
- * the 2,373 bills in `data/bills.json` currently carry `floor_vote`. Two
+ * The cap is not taste, it is the entire mechanism. The corpus is HOT: 319 of
+ * the 2,567 bills in `data/bills.json` carry `floor_vote` (as of the
+ * 2026-08-01 sync; the corpus moves nightly — recompute, don't trust). Two
  * panels and both read as wallpaper. At a squint a page changes shape exactly
  * once, and this is that change — so if you are adding a second full-bleed
  * band anywhere on the same page, you are taking meaning away from this one.
  *
  * Use `selectFloorVoteFeature()` below to pick the one. The component gates
- * itself on status and date, but it cannot see its siblings — the cap is the
- * caller's to hold, and that helper is how you hold it.
+ * itself on status and date, but it cannot see the action text or its
+ * siblings — the calendar half of the triad and the cap are the caller's to
+ * hold, and that helper is how you hold them.
  *
  * ⚠️ THE DATE IS AN OPEN OWNER RULING. `data/bills.json` has no
  * forward-looking scheduled-vote date for ANY bill: `floor_vote` is derived
  * from action text like "Placed on Senate Legislative Calendar under General
- * Orders", and `last_action_date` is always in the past (0 of 217 are
- * future-dated). So "floor vote scheduled Thursday" CANNOT be built from live
+ * Orders", and `last_action_date` is always in the past (0 of 319 are
+ * future-dated, recomputed 2026-08-02). So "floor vote scheduled Thursday" CANNOT be built from live
  * data. Pass the calendar-PLACEMENT date and a label that claims only that
  * ("On the House floor calendar"). Do not synthesize or imply a scheduled
  * vote date. See DESIGN.md.
@@ -183,6 +189,12 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
     // Past the published 14-day window that assertion stops being true, and
     // the honest quiet week is the correct output. See lib/urgency.mjs.
     if (!isSignalFresh(billDateOf(bill))) continue;
+    // And the record itself must say so: `floor_vote` also covers cloture
+    // motions and REJECTED motions to proceed, where "on the floor calendar"
+    // would be a false claim. Only a genuine "Placed on … Calendar" sentence
+    // earns the panel — the same triad the bill page's amber gate and
+    // scripts/moment-candidates.mjs `isOnFloorCalendar` apply.
+    if (floorCalendarChamber(billActionTextOf(bill)) === null) continue;
     const score = rank(bill);
     if (score > bestScore) {
       bestScore = score;
@@ -195,6 +207,11 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
 function billDateOf(bill: unknown): string | null {
   const b = bill as { last_action_date?: string | null; lastActionDate?: string | null };
   return b.last_action_date ?? b.lastActionDate ?? null;
+}
+
+function billActionTextOf(bill: unknown): string | null {
+  const b = bill as { last_action_text?: string | null; lastActionText?: string | null };
+  return b.last_action_text ?? b.lastActionText ?? null;
 }
 
 function defaultRank(bill: unknown): number {

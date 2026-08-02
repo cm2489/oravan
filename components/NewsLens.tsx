@@ -26,9 +26,13 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
   if (compact) {
     return (
       <section aria-labelledby="news">
-        <div className="flex items-center gap-2">
-          <Newspaper className="h-4 w-4 flex-none text-ink-2" aria-hidden />
-          <h2 id="news" className="text-xl font-extrabold text-ink">
+        {/* text-h2, not text-xl: an outside craft review (2026-08-02) caught
+            this compact variant's heading rendering 21px beside 34px sibling
+            h2s on /bills — same rank in the outline, same rung on the
+            ladder. Compactness stays in the rows, not the heading. */}
+        <div className="flex items-center gap-3">
+          <Newspaper className="h-5 w-5 flex-none text-ink-2" aria-hidden />
+          <h2 id="news" className="text-h2 font-extrabold text-ink">
             {t('heading')}
           </h2>
         </div>

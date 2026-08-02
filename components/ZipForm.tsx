@@ -35,7 +35,20 @@ import { setPrefs, usePrefs } from '@/lib/local';
 const FIELD_BASE =
   'min-h-12 w-full rounded-control px-4 py-3 text-lg text-ink tabular-nums placeholder:text-ink-2';
 
-export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
+export function ZipForm({
+  autoFocus = false,
+  onSaved,
+}: {
+  autoFocus?: boolean;
+  /**
+   * In-panel resolution (the bill page's call rail + call dialog): when
+   * present, a valid submit saves the ZIP and hands it to the caller INSTEAD
+   * of navigating to /reps — "the panel scrolls, the call stays". The home
+   * hero and /reps instances pass nothing and keep navigating (funnel I2's
+   * ZIP-first path is pinned on exactly that).
+   */
+  onSaved?: (zip: string) => void;
+}) {
   const t = useTranslations('home');
   const uid = useId();
   const fieldId = `zip-${uid}`;
@@ -69,6 +82,10 @@ export function ZipForm({ autoFocus = false }: { autoFocus?: boolean }) {
     }
     setError(null);
     setPrefs({ zip: clean });
+    if (onSaved) {
+      onSaved(clean);
+      return;
+    }
     router.push(`/reps?zip=${clean}`);
   }
 

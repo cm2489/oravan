@@ -14,6 +14,7 @@ import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { floorCalendarChamber } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
@@ -200,7 +201,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const tShared = await getTranslations();
   const format = await getFormatter();
   const top = getTopActions(4, locale);
-  const news = getNewsBills(locale, 6);
+  const newsRaw = getNewsBills(locale, 7);
   const total = getAllBills().length;
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
@@ -222,17 +223,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // unbroken paper column, which is the point.
   const feature = selectFloorVoteFeature(top);
   const listed = top.filter((b) => b !== feature);
+  // The selector guarantees the feature's own last action says "Placed on …
+  // Calendar", so the chamber is read out of that sentence — the same
+  // derivation the bill page's amber gate uses — and the panel's claim names
+  // the TRUE chamber (a House bill can stand on the Senate's calendar).
+  const featureChamber = feature ? floorCalendarChamber(feature.last_action_text) : null;
   // The week wears its green crown (masthead fused onto the panel) exactly
   // when the panel itself renders — same condition, one name, so the seam
   // classes below can never disagree with the crown's presence.
   const crowned = Boolean(feature?.last_action_date);
 
-  // The hero's specimen keys on the same bill the week's panel features, so
-  // the front door's example and its headline act are the same fact. Falls
-  // back through the week's shortlist and then the news lens; a bill with no
-  // decode is never shown as a decode.
-  const specimenBill = feature ?? top[0] ?? news[0] ?? null;
+  // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
+  // 2026-08-02, finding #8: the featured bill appeared in the hero card,
+  // the green crown, AND the first news card — "the site looks like it has
+  // one story"). The specimen now prefers a DECODED bill that is not the
+  // crown's feature (shortlist first, then news), falling back to the
+  // feature only when nothing else carries a decode — an empty hero card
+  // is worse than a repeated one. The news lens likewise drops the feature:
+  // it is fetched one over and filtered, so the crown's bill never leads
+  // the coverage grid it already headlines 500px above.
+  // Candidates are the week's shortlist ONLY: NewsBill is a teaser (slug/
+  // identifier/headline) without the decode fields SpecimenAside renders —
+  // the old `?? news[0]` fallback only ever typechecked because the ??-chain
+  // never reached it, and would have crashed if it had. On a corpus where
+  // no shortlisted bill carries a decode, the hero simply has no card —
+  // the existing honest-quiet behavior.
+  const featureSlug = feature ? billSlug(feature) : null;
+  const specimenBill =
+    top.find((b) => billSlug(b) !== featureSlug && b.ai_headline) ?? feature ?? null;
   const specimen = specimenBill?.ai_headline ? specimenBill : null;
+  // NewsBill carries its slug directly; filter the crown's bill out of the
+  // coverage grid it already headlines 500px above.
+  const news = newsRaw.filter((b) => b.slug !== featureSlug).slice(0, 6);
 
   /*
    * A bill's own calendar date, e.g. "Jul 20, 2026" / "20 jul 2026".
@@ -421,7 +443,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           // follows, the band drops its own bottom border and the two slabs
           // meet flush on the crown's single bright-green rule — no white
           // sliver. On a crownless week the band keeps both edges.
-          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-14`}
+          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-12`}
           aria-labelledby="moments-strip-title"
         >
           <div className="mx-auto max-w-5xl px-4">
@@ -454,8 +476,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     {/* Live-layer recency (v2 slice S5): only when a recorded
                         update exists — never a synthesized date. ink-pale on
                         ink-deep is 10.82:1. */}
+                    {/* ml-auto: the dates form an aligned right column
+                        instead of floating after variable-length deks (an
+                        outside craft review measured the ragged edges,
+                        2026-08-02); on narrow screens the row wraps and the
+                        date leads its own line unchanged. */}
                     {latestUpdateDay(m.id) && (
-                      <span className="text-xs font-semibold text-ink-pale tabular-nums">
+                      <span className="ml-auto text-xs font-semibold text-ink-pale tabular-nums">
                         {t('momentsUpdated', {
                           date: billDate(latestUpdateDay(m.id) as string),
                         })}
@@ -504,7 +531,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             The Stamp lives here now — still once per page, still the sole
             printed sync date; it certifies the whole week, panel included. */}
         {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
-            selectFloorVoteFeature() above holds the cap. The date printed is
+            selectFloorVoteFeature() above holds the cap AND the calendar gate
+            (the record's own "Placed on … Calendar" sentence — home.weekNote
+            promises exactly that fact, so a cloture motion or a rejected
+            motion to proceed can never wear the crown). The date printed is
             the calendar-PLACEMENT date the corpus actually holds — no bill in
             data/bills.json carries a forward-looking scheduled-vote date, so
             no mark here claims one. */}
@@ -541,7 +571,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               headingLevel={3}
               status={feature.status}
               dateLabel={billDate(feature.last_action_date)}
-              calendarLabel={t('floorCalendar')}
+              calendarLabel={tShared(
+                featureChamber === 'senate' ? 'bill.floor.calendarSenate' : 'bill.floor.calendarHouse'
+              )}
               identifier={formatCitation(feature.bill_type, feature.bill_number)}
               headline={feature.ai_headline ?? feature.short_title ?? feature.title}
               href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
@@ -768,7 +800,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           the not-tax-deductible line is the required truthful framing. Ruled
           paper, no new ground: this page still changes ground exactly
           once. */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-10 md:pt-16 md:pb-16">
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-8 md:pt-16 md:pb-16">
         <div
           className={`grid gap-10 border-t-[3px] border-ink pt-6 ${
             DONATE_URL ? 'md:grid-cols-2 md:items-start md:gap-12' : ''

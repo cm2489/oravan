@@ -84,28 +84,29 @@ test.describe('coverage tier copy is pinned to lib/coverage.ts', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 2 · Drift pin — the placed-on-calendar regex vs. the amber gate in
- *     app/[locale]/bills/[id]/page.tsx. That function is module-local
- *     (not exported), so the pin compares the regex literal in both
- *     sources: the report ranks on the same evidence the page is
- *     willing to print in amber, or the ranking is claiming something
- *     the site itself refuses to claim.
+ * 2 · Drift pin — the placed-on-calendar regex vs. the amber gate's
+ *     source of truth, lib/journey.ts `floorCalendarChamber` (moved
+ *     there from the bill page, which now imports it). The pin compares
+ *     the regex literal in both sources: the report ranks on the same
+ *     evidence the page is willing to print in amber, or the ranking is
+ *     claiming something the site itself refuses to claim. The corpus-
+ *     wide behavioral pin lives in tests/journey.unit.spec.ts.
  * ------------------------------------------------------------------ */
-test.describe('floor-calendar regex copy is pinned to the bill page', () => {
+test.describe('floor-calendar regex copy is pinned to lib/journey.ts', () => {
   const extract = (src: string) => /(\/placed on .*?\/i)\.exec/.exec(src)?.[1];
 
-  test('the report and the bill page carry the identical regex literal', () => {
-    const pagePattern = extract(readText('app/[locale]/bills/[id]/page.tsx'));
+  test('the report and lib/journey.ts carry the identical regex literal', () => {
+    const libPattern = extract(readText('lib/journey.ts'));
     const scriptPattern = extract(readText('scripts/moment-candidates.mjs'));
-    expect(pagePattern, 'no placed-on-calendar regex found in the bill page').toBeTruthy();
-    expect(scriptPattern).toBe(pagePattern);
+    expect(libPattern, 'no placed-on-calendar regex found in lib/journey.ts').toBeTruthy();
+    expect(scriptPattern).toBe(libPattern);
   });
 
   test('it reads the chamber out of the action text, and refuses everything else', () => {
     expect(floorCalendarChamber('Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toBe('senate');
     expect(floorCalendarChamber('Placed on the Union Calendar, Calendar No. 219.')).toBe('house');
     expect(floorCalendarChamber('Placed on the House Calendar, Calendar No. 8.')).toBe('house');
-    // The 14 bills the status field calls floor_vote without a calendar placement.
+    // The bills the status field calls floor_vote without a calendar placement.
     expect(floorCalendarChamber('Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 51.')).toBeNull();
     expect(floorCalendarChamber(null)).toBeNull();
   });

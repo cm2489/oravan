@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { createTranslator } from 'next-intl';
 import enMessages from '../messages/en.json';
 import esMessages from '../messages/es.json';
-import { momentDek, revisionReasons } from '../lib/moments-ui';
+import { collapseQuietDays, momentDek, revisionReasons } from '../lib/moments-ui';
+import type { UpdateDayGroup } from '../lib/moment-updates';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
 /*
@@ -60,6 +61,91 @@ test.describe('momentDek', () => {
         expect(dek.length, `${id}/${locale} dek too short`).toBeGreaterThan(20);
       }
     }
+  });
+});
+
+/*
+ * The quiet-run collapse (2026-08 review): ten consecutive "Nothing
+ * recorded." rows before the first real event is padding, not information, so
+ * consecutive quiet non-today days fold into one spanned row. These pin the
+ * rules the render leans on: today NEVER folds (its silence is a different
+ * sentence — a structural promise of MomentTimeline), a singleton quiet day
+ * renders exactly as before, and every emitted run has count >= 2 — the
+ * guarantee both locales' bare-{count} copy ("across {count} days") depends
+ * on for its grammar.
+ */
+test.describe('collapseQuietDays', () => {
+  /** A synthetic frame day — input is always timelineDays output, newest
+   *  first, so these arrays are written newest first too. */
+  const day = (d: string, quiet: boolean, isToday = false): UpdateDayGroup => ({
+    day: d,
+    updates: [],
+    rendered: [],
+    overflow: 0,
+    quiet,
+    isToday,
+  });
+
+  test('a quiet today stays its own row; the run behind it collapses', () => {
+    const today = day('2026-08-02', true, true);
+    const active = day('2026-07-29', false);
+    const rows = collapseQuietDays([
+      today,
+      day('2026-08-01', true),
+      day('2026-07-31', true),
+      day('2026-07-30', true),
+      active,
+    ]);
+    expect(rows).toEqual([
+      { kind: 'day', day: today },
+      { kind: 'quietRun', from: '2026-07-30', to: '2026-08-01', count: 3 },
+      { kind: 'day', day: active },
+    ]);
+  });
+
+  test('a singleton quiet day between active days stays a plain day row', () => {
+    const a = day('2026-08-01', false);
+    const q = day('2026-07-31', true);
+    const b = day('2026-07-30', false);
+    expect(collapseQuietDays([a, q, b])).toEqual([
+      { kind: 'day', day: a },
+      { kind: 'day', day: q },
+      { kind: 'day', day: b },
+    ]);
+  });
+
+  test('a run of exactly two collapses, oldest first in the span', () => {
+    const rows = collapseQuietDays([
+      day('2026-08-01', true),
+      day('2026-07-31', true),
+      day('2026-07-30', false),
+    ]);
+    expect(rows[0]).toEqual({ kind: 'quietRun', from: '2026-07-31', to: '2026-08-01', count: 2 });
+    const run = rows[0] as Extract<(typeof rows)[number], { kind: 'quietRun' }>;
+    expect(run.from < run.to).toBe(true);
+  });
+
+  test('no quiet days means no folding — every day passes through in order', () => {
+    const days = [day('2026-08-01', false), day('2026-07-31', false), day('2026-07-30', false)];
+    expect(collapseQuietDays(days)).toEqual(days.map((d) => ({ kind: 'day', day: d })));
+  });
+
+  test('every emitted run has count >= 2 — the bare-{count} copy leans on it', () => {
+    const rows = collapseQuietDays([
+      day('2026-08-02', true, true),
+      day('2026-08-01', true),
+      day('2026-07-31', true),
+      day('2026-07-30', false),
+      day('2026-07-29', true), // singleton — must NOT become a run
+      day('2026-07-28', false),
+      day('2026-07-27', true),
+      day('2026-07-26', true),
+    ]);
+    const runs = rows.filter((r) => r.kind === 'quietRun');
+    expect(runs.length).toBeGreaterThan(0);
+    for (const run of runs) expect(run.count).toBeGreaterThanOrEqual(2);
+    // The singleton stayed a day row.
+    expect(rows).toContainEqual({ kind: 'day', day: day('2026-07-29', true) });
   });
 });
 

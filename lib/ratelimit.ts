@@ -168,6 +168,12 @@ async function currentSalt(client: UpstashClient): Promise<string> {
 export interface RateLimiter {
   /** True when this caller is over the window's limit (request should 429). */
   isLimited(ip: string): Promise<boolean>;
+  /**
+   * Single counted check. retryAfterSec is non-null only when limited:
+   * seconds until the window resets (durable: TTL of the counter key;
+   * memory: oldest-hit expiry).
+   */
+  check(ip: string): Promise<{ limited: boolean; retryAfterSec: number | null }>;
 }
 
 let fallbackLogged = false;
@@ -195,6 +201,8 @@ function logFallbackOnce(): void {
  * (never itself written anywhere) — this core has no opinion on WHAT
  * identifies a caller, only on how a window is counted once something does.
  */
+type WindowCheck = { limited: boolean; retryAfterSec: number | null };
+
 function windowedCounterCore(opts: { max: number; windowSec: number }) {
   // In-memory fallback: the exact sliding-window the routes shipped with.
   // Raw identifiers here are compliant only because this never leaves
@@ -203,17 +211,22 @@ function windowedCounterCore(opts: { max: number; windowSec: number }) {
   const hits = new Map<string, number[]>();
   const windowMs = opts.windowSec * 1000;
 
-  function memoryLimited(memKey: string): boolean {
+  function memoryCheck(memKey: string): WindowCheck {
     const now = Date.now();
     const recent = (hits.get(memKey) ?? []).filter((t) => now - t < windowMs);
-    if (recent.length >= opts.max) return true;
+    if (recent.length >= opts.max) {
+      // Sliding window: a slot frees the moment the oldest recorded hit
+      // ages out of the window.
+      const retryAfterSec = Math.max(1, Math.ceil((recent[0] + windowMs - now) / 1000));
+      return { limited: true, retryAfterSec };
+    }
     recent.push(now);
     hits.set(memKey, recent);
     if (hits.size > 5000) hits.clear(); // crude memory cap
-    return false;
+    return { limited: false, retryAfterSec: null };
   }
 
-  async function durableLimited(upstash: UpstashClient, key: string): Promise<boolean> {
+  async function durableCheck(upstash: UpstashClient, key: string): Promise<WindowCheck> {
     // SET NX EX before INCR: the TTL is attached at creation, so a crash
     // between commands can never leave a TTL-less counter (which would let a
     // pseudonym outlive its window).
@@ -224,10 +237,21 @@ function windowedCounterCore(opts: { max: number; windowSec: number }) {
       // rare window-boundary race; re-attach the TTL.
       await upstash.cmd(['EXPIRE', key, String(opts.windowSec)]);
     }
-    return typeof count === 'number' && count > opts.max;
+    if (typeof count === 'number' && count > opts.max) {
+      // Fixed window ⇒ the counter key's remaining TTL IS the reset. This
+      // extra read fires ONLY on the limited path — zero extra commands for
+      // passing requests. Privacy: a read of an existing route+caller-hash
+      // key; nothing new stored, nothing logged.
+      const ttl = await upstash.cmd(['TTL', key]);
+      return {
+        limited: true,
+        retryAfterSec: typeof ttl === 'number' && ttl > 0 ? ttl : opts.windowSec,
+      };
+    }
+    return { limited: false, retryAfterSec: null };
   }
 
-  return { memoryLimited, durableLimited };
+  return { memoryCheck, durableCheck };
 }
 
 export function createRateLimiter(opts: {
@@ -239,6 +263,9 @@ export function createRateLimiter(opts: {
 
   return {
     async isLimited(ip: string): Promise<boolean> {
+      return (await this.check(ip)).limited;
+    },
+    async check(ip: string) {
       // Resolved per call, not captured at construction: route modules build
       // their limiters at import time, and env-at-import is a test-only
       // accident waiting to happen. Per-call resolution is two env reads -
@@ -246,16 +273,16 @@ export function createRateLimiter(opts: {
       const client = countersClient();
       if (!client) {
         logFallbackOnce();
-        return core.memoryLimited(ip);
+        return core.memoryCheck(ip);
       }
       try {
         const salt = await currentSalt(client);
         const key = counterKey(opts.route, callerHash(ip, salt));
-        return await core.durableLimited(client, key);
+        return await core.durableCheck(client, key);
       } catch (err) {
         // Fail open to in-memory for this request; never hard-fail the route.
         noteUpstashError('counters', err);
-        return core.memoryLimited(ip);
+        return core.memoryCheck(ip);
       }
     },
   };
@@ -298,14 +325,14 @@ export function createTenantRateLimiter(opts: {
       const client = countersClient();
       if (!client) {
         logFallbackOnce();
-        return core.memoryLimited(tenantId);
+        return core.memoryCheck(tenantId).limited;
       }
       try {
         const key = counterKey(opts.route, tenantId);
-        return await core.durableLimited(client, key);
+        return (await core.durableCheck(client, key)).limited;
       } catch (err) {
         noteUpstashError('counters', err);
-        return core.memoryLimited(tenantId);
+        return core.memoryCheck(tenantId).limited;
       }
     },
   };

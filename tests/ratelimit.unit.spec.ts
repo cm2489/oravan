@@ -199,6 +199,63 @@ test('callerIp derivation is unchanged from the pre-S11 routes', () => {
   expect(callerIp(new Headers())).toBe('unknown');
 });
 
+// --- check(): the reset-disclosing variant of isLimited ----------------------
+
+test('check(): passing requests return {limited:false, retryAfterSec:null} and never issue a TTL read', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+  const ip = '203.0.113.110';
+  for (let i = 0; i < 8; i += 1) {
+    const res = await limiter.check(ip);
+    expect(res.limited, `request ${i + 1} of 8 must pass`).toBe(false);
+    expect(res.retryAfterSec, 'reset info only exists on the limited path').toBeNull();
+  }
+  expect(
+    mock.commands.filter((c) => c[0] === 'TTL'),
+    'zero extra commands for passing requests'
+  ).toHaveLength(0);
+});
+
+test('check(): the limited request discloses seconds-to-reset via exactly one TTL read of the counter key', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+  const ip = '203.0.113.111';
+  for (let i = 0; i < 8; i += 1) expect((await limiter.check(ip)).limited).toBe(false);
+
+  const ninth = await limiter.check(ip);
+  expect(ninth.limited).toBe(true);
+  expect(ninth.retryAfterSec).not.toBeNull();
+  expect(ninth.retryAfterSec!).toBeGreaterThan(0);
+  expect(ninth.retryAfterSec!, 'fixed window: reset can never exceed the window').toBeLessThanOrEqual(600);
+  expect(
+    mock.commands.filter((c) => c[0] === 'TTL'),
+    'exactly one TTL read, on the limited path only'
+  ).toHaveLength(1);
+});
+
+test('check(): no-env memory path returns a sane retryAfterSec when limited, zero network calls', async () => {
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const limiter = createRateLimiter({ route: 'script', max: 2, windowSec: 600 });
+  const ip = '203.0.113.112';
+  expect((await limiter.check(ip)).limited).toBe(false);
+  expect((await limiter.check(ip)).limited).toBe(false);
+  const third = await limiter.check(ip);
+  expect(third.limited).toBe(true);
+  expect(third.retryAfterSec).not.toBeNull();
+  expect(third.retryAfterSec!).toBeGreaterThan(0);
+  expect(third.retryAfterSec!, 'sliding window: oldest-hit expiry bounds the reset').toBeLessThanOrEqual(600);
+  expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
+});
+
 // --- S19: createTenantRateLimiter -------------------------------------------
 
 test('tenant counter keys are RAW tenantId, not hashed/salted - the deliberate divergence from the caller-hash shape', async () => {

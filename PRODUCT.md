@@ -8,7 +8,7 @@ product
 
 ## Users
 
-U.S. residents who want Congress to hear them but have never called a congressional office. Bilingual by design: English and Spanish are equal first-class languages. Three audiences shape every decision: (1) first-time callers who are nervous and need the mechanics demystified; (2) Spanish-dominant residents underserved by every existing tool in this space; (3) at-risk users (immigrants, activists, marginalized groups) for whom a stored political profile is a real-world hazard. Mobile-first, often a few spare minutes, possibly a slow connection.
+U.S. residents who want Congress to hear them but have never called a congressional office. Bilingual by design: everything ships in English and Spanish together. English is the primary audience; Spanish (~5–7% of users) is a pass/fail quality gate, never a co-equal design driver (owner weighting, 2026-07). Three audiences shape every decision: (1) first-time callers who are nervous and need the mechanics demystified; (2) Spanish-dominant residents underserved by every existing tool in this space; (3) at-risk users (immigrants, activists, marginalized groups) for whom a stored political profile is a real-world hazard. Mobile-first, often a few spare minutes, possibly a slow connection.
 
 ## Product Purpose
 
@@ -18,7 +18,7 @@ Oravan (the speakers’ platform of the Roman Forum, where a citizen’s voice a
 
 **The lit platform at night.** A public place to stand and be heard, warmly lit against a dark civic landscape — trustworthy, always open. Three words: welcoming, plain-spoken, steady.
 
-- Night-navy ink and header (#11182E), warm paper surfaces, one amber "floor light" accent (#E8A317) reserved for orientation and warmth, never alarm.
+- Ink (#16191b) and paper (#ffffff) grounds with one green "go" accent (#0f6c4a) spent only on actions and the gauge; amber (#ffc845) carries exactly one dated floor-calendar fact, never alarm. (Re-keyed in the 2026-07 civic-wayfinding refresh — an earlier draft here described the retired night-navy/amber palette.)
 - Plain language is the product. 8th-grade reading level. The decoded translation always beats the official text for prominence.
 - Calm confidence, never urgency-theater. Anxiety is met with reassurance (voicemail is legitimate, staffers don't debate you).
 
@@ -35,5 +35,5 @@ Oravan (the speakers’ platform of the Roman Forum, where a citizen’s voice a
 2. **Decode, don't display.** Plain language leads; official text is the reference, not the voice.
 3. **Both languages are first-class.** Nothing ships in English that doesn't ship in Spanish.
 4. **Lower the call barrier.** Voicemail parity, after-hours framing, "a staffer just tallies your position" reassurance, edit-until-it-sounds-like-you scripts.
-5. **Honest about AI.** Every generated artifact is labeled and human-reviewed before it drives action.
+5. **Honest about AI.** Every generated artifact is labeled, and nothing publishes unless the automated gates pass (bilingual parity, the official record attached, forbidden-vocabulary lint, schema). The nightly decode path is not human-reviewed and the product never claims it is; what IS hand-reviewed (Big Question entries) says so because it is true. (Amended 2026-08-02 to match CLAUDE.md's 2026-07-25 correction — the previous "human-reviewed" wording here was the same false claim.)
 6. **Accessible by default.** WCAG AA contrast, keyboard-complete flows, visible focus, 44px targets, reduced-motion.

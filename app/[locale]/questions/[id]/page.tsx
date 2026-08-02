@@ -95,7 +95,6 @@ export default async function MomentPage({
   const freshness = getFreshness();
 
   const name = localeText(moment.name, locale);
-  const dek = momentDek(localeText(moment.summary, locale));
   const summary = localeText(moment.summary, locale);
   const isSettled = moment.state === 'settled';
   const isStale = moment.state === 'stale';
@@ -164,16 +163,7 @@ export default async function MomentPage({
       </p>
 
       <h1 className="mt-4 text-h1-bill font-extrabold text-ink">{name}</h1>
-      {/* AI labeled at FIRST contact: the dek below is the first sentence of
-          the AI-drafted summary, so the label goes above it, not beside the
-          passage 400px down. */}
-      <p className="mt-5">
-        <Chip tone="ai" marker={t('common.aiMarker')}>
-          {t('bill.aiChip')}
-        </Chip>
-      </p>
-      <p className="mt-4 max-w-read text-lede text-ink-2">{dek}</p>
-      <p className="mt-3 max-w-read text-xs text-ink-2">
+      <p className="mt-5 max-w-read text-xs text-ink-2">
         {dataAsOf}
         <StalenessNote checkedAt={freshness.checkedAt} />
       </p>
@@ -193,6 +183,16 @@ export default async function MomentPage({
           {isSettled ? t('moments.decidingSettled') : t('moments.decidingLive')}
         </h2>
         {isSettled && <p className="mt-4 max-w-read font-semibold text-ink">{t('moments.settledBanner')}</p>}
+        {/* AI labeled at FIRST contact — directly above the passage it
+            labels. This chip stood in the header over the dek; the dek was
+            the summary's own first sentence rendered twice within one mobile
+            screen (2026-08 review), so the duplicate render dropped and the
+            label moved down with the passage. */}
+        <p className="mt-4">
+          <Chip tone="ai" marker={t('common.aiMarker')}>
+            {t('bill.aiChip')}
+          </Chip>
+        </p>
         <p className="mt-4 max-w-read font-reading text-lg text-ink">{summary}</p>
         <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
       </section>

@@ -8,14 +8,29 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
 
 /*
  * Per-bill share card (WhatsApp/iMessage/Slack previews). Same brand idiom as
- * the locale-level card (app/[locale]/opengraph-image.tsx): iron-gall ground,
- * brass accents, the real mark/wordmark lockup, system sans.
+ * the locale-level card (app/[locale]/opengraph-image.tsx): ink ground,
+ * MONOCHROME paper lockup (`go` is 2.75:1 on ink and never carries the mark
+ * there), `go-bright` as the single dark-ground accent, system sans. Re-keyed
+ * to variant B 2026-08-02 — this card shipped the retired Field Notebook
+ * palette for a month after the #104 refresh, so every forwarded bill link
+ * previewed in the old identity while the site card previewed in the new one.
+ * Palette literals restated because Satori resolves no CSS vars; keep in
+ * lockstep with globals.css (--color-ink, --color-paper, --color-go-bright).
  *
  * Hard rules for this surface: a forwarded card is a redistribution surface,
  * so it never carries AllSides/lean labels (settled decision) and no advocacy
  * copy — citation, headline, status, freshness only. The AI headline is
- * labeled in-image so the disclosure travels with the picture.
+ * labeled in-image so the disclosure travels with the picture — drawn as the
+ * UNBOXED on-dark AI label (owner ruling 2026-08-01, #140: filled marker +
+ * tracked caption, no outline; the boxed chip is retired everywhere,
+ * this surface included). Never a pill: nothing in Oravan is a pill.
  */
+
+const INK = '#16191b'; // --color-ink
+const PAPER = '#ffffff'; // --color-paper
+const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(255,255,255,0.86)';
+const PAPER_MUTE = 'rgba(255,255,255,0.7)';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -64,24 +79,24 @@ export default async function OgImage({
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: '#1B1611',
-          color: '#F3ECDD',
+          background: INK,
+          color: PAPER,
           fontFamily: 'sans-serif',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <img src={markDataUri('#D9B65C')} width={60} height={60} alt="" />
-          <img src={wordmarkDataUri('#F3ECDD')} width={Math.round(44 * WORDMARK_RATIO)} height={44} alt="" />
+          <img src={markDataUri(PAPER)} width={60} height={60} alt="" />
+          <img src={wordmarkDataUri(PAPER)} width={Math.round(44 * WORDMARK_RATIO)} height={44} alt="" />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {bill && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontSize: 34 }}>
-              <span style={{ color: '#D9B65C', fontWeight: 700 }}>
+              <span style={{ color: GO_BRIGHT, fontWeight: 700 }}>
                 {formatCitation(bill.bill_type, bill.bill_number)}
               </span>
-              <span style={{ color: 'rgba(243,236,221,0.5)' }}>·</span>
-              <span style={{ color: 'rgba(243,236,221,0.88)', fontWeight: 600 }}>
+              <span style={{ color: PAPER_MUTE }}>·</span>
+              <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
                 {tAll(`bills.status.${bill.status}`)}
               </span>
             </div>
@@ -98,16 +113,29 @@ export default async function OgImage({
             {clamp(headline)}
           </div>
           {isAiHeadline && (
-            <div style={{ display: 'flex', marginTop: 30 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 30 }}>
               <div
                 style={{
                   display: 'flex',
-                  border: '3px solid #D9B65C',
-                  color: '#D9B65C',
-                  borderRadius: 999,
-                  padding: '10px 26px',
-                  fontSize: 27,
-                  fontWeight: 600,
+                  background: PAPER,
+                  color: INK,
+                  borderRadius: 6,
+                  padding: '4px 12px',
+                  fontSize: 24,
+                  fontWeight: 800,
+                  letterSpacing: 1.2,
+                }}
+              >
+                {tAll('home.aiMarker')}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  color: PAPER_SOFT,
+                  fontSize: 24,
+                  fontWeight: 700,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
                 }}
               >
                 {t('aiDecoded')}
@@ -116,7 +144,7 @@ export default async function OgImage({
           )}
         </div>
 
-        <div style={{ display: 'flex', fontSize: 26, color: 'rgba(243,236,221,0.7)' }}>{asOf}</div>
+        <div style={{ display: 'flex', fontSize: 26, color: PAPER_MUTE }}>{asOf}</div>
       </div>
     ),
     size

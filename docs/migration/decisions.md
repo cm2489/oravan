@@ -46,6 +46,10 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   - `docs/ideation/2026-07-02-monetization-strategy.md`
   - `docs/ideation/2026-07-05-build-gtm-strategy.md`
   - `docs/solutions/two-clock-district-boundaries.md`
+  - `docs/ideation/2026-07-26-truth-first-repositioning.md` (added 2026-08-02:
+    ported to main in teardown Phase 0 because DESIGN.md, the homepage, and
+    tests/funnel.spec.ts cite it; it is a dated record that discusses the
+    rename itself, so retired names appear verbatim by nature)
 
   Living docs are swept as planned: README, PRODUCT.md, STATUS.md, CLAUDE.md,
   DESIGN.md, `docs/press/embeds-launch-kit.md` (S5b rewrites it), and

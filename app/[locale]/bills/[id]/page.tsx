@@ -21,6 +21,7 @@ import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { deriveJourney, floorCalendarChamber } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -41,8 +42,9 @@ import { SITE_ORIGIN } from '@/lib/site';
  *
  * DATA-GATED LOUDNESS: at most one full-bleed green enamel band, and only
  * when this bill genuinely stands on a floor calendar with the date it got
- * there. See `floorCalendarChamber` below — the gate is stricter than
- * `status === "floor_vote"` on purpose.
+ * there. See `floorCalendarChamber` in lib/journey.ts — the gate is stricter
+ * than `status === "floor_vote"` on purpose, and the amber-gate rationale
+ * lives with the function.
  */
 
 /*
@@ -57,36 +59,6 @@ export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
     getAllBills().map((b) => ({ locale, id: billSlug(b) }))
   );
-}
-
-/*
- * THE AMBER GATE, and why it is narrower than the status field.
- *
- * `status: "floor_vote"` is DERIVED from action text, and the corpus proves
- * the derivation is looser than the claim amber makes. Of the 217 bills
- * carrying `floor_vote` right now, 203 say "Placed on <the Union / the House
- * / Senate Legislative> Calendar" — a real, dated calendar placement. The
- * other 14 do not: five of them read "Motion to proceed to consideration of
- * measure REJECTED in Senate". Printing "On the Senate floor calendar ·
- * Apr 29 2026" over a rejected motion is a false claim, and the color law's
- * "no date, no amber" rule exists to stop exactly this class of lie.
- *
- * So the band renders only when the bill's own last action says, in
- * Congress's words, that it was placed on a calendar — and the chamber is
- * read out of that same sentence rather than guessed from the bill type
- * (a House bill can sit on the Senate Legislative Calendar). Everything
- * else gets a paper page, which is the honest result.
- *
- * `last_action_date` is the PLACEMENT date. Nothing here claims a scheduled
- * vote date; the corpus holds none (see the ⚠️ ruling in DESIGN.md).
- */
-function floorCalendarChamber(actionText: string | null): 'house' | 'senate' | null {
-  if (!actionText) return null;
-  const match = /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.exec(
-    actionText
-  );
-  if (!match) return null;
-  return /senate/i.test(match[1]) ? 'senate' : 'house';
 }
 
 export async function generateMetadata({
@@ -431,8 +403,7 @@ export default async function BillPage({
               className="mt-4 rounded-control border-2 border-ink px-4 pt-4 pb-12"
             >
               <BillJourney
-                billType={bill.bill_type}
-                status={bill.status}
+                journey={deriveJourney(bill)}
                 introducedLabel={bill.introduced_date ? fmtShort(bill.introduced_date) : undefined}
                 currentLabel={
                   bill.last_action_date ? fmtShort(bill.last_action_date) : undefined

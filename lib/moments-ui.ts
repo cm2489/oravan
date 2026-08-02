@@ -2,8 +2,8 @@
  * Presentation-only helpers for the Moments UI. Deliberately separate from
  * lib/moments.ts (the data layer: pure lifecycle computation, gated by
  * scripts/check-moments.mjs and pinned by tests/moments.unit.spec.ts) — this
- * file has no CI gate and no pinned tests of its own, so it stays a thin
- * layer the pages can lean on without touching the tested surface.
+ * file is pinned by tests/moments-ui.unit.spec.ts and stays a thin layer the
+ * pages can lean on without touching the data layer's tested surface.
  */
 import { getBill } from './core/bills';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
@@ -103,6 +103,65 @@ export function timelineDays(
     : windowDays;
   const groups = groupUpdatesByDay(momentId, Math.max(windowDays, spanDays), now);
   return [...groups.slice(0, windowDays), ...groups.slice(windowDays).filter((d) => !d.quiet)];
+}
+
+/**
+ * One render row of the timeline: either a single day (active or quiet,
+ * exactly as `timelineDays` returned it) or a RUN — two or more consecutive
+ * quiet, non-today days folded into one spanned line. `from` is the OLDEST
+ * day of the run and `to` the NEWEST, and `count >= 2` always: a singleton
+ * quiet day stays a `day` row and renders exactly as before.
+ */
+export type TimelineRow =
+  | { kind: 'day'; day: UpdateDayGroup }
+  | { kind: 'quietRun'; from: string; to: string; count: number };
+
+/**
+ * Collapse consecutive quiet days into one spanned row. Every quiet day is
+ * still shown — condensed into its span, never dropped — so the §3 promise
+ * ("the days nothing was recorded are shown as they were") holds: the
+ * absence is still stated, it just stops repeating itself ten times before
+ * the first real event.
+ *
+ * TODAY NEVER COLLAPSES. "Today's silence and last Tuesday's silence are
+ * different sentences" is a structural promise (see MomentTimeline's header
+ * comment), so a quiet `isToday` day always stays its own row.
+ *
+ * Array adjacency == calendar adjacency here: the input is `timelineDays`
+ * output (newest first), whose window portion is a CONTIGUOUS span of days by
+ * construction and whose older tail keeps only non-quiet days — so no quiet
+ * run can cross the window/tail boundary or straddle a gap.
+ */
+export function collapseQuietDays(days: UpdateDayGroup[]): TimelineRow[] {
+  const rows: TimelineRow[] = [];
+  let run: UpdateDayGroup[] = [];
+
+  const flush = () => {
+    if (run.length === 0) return;
+    if (run.length === 1) {
+      rows.push({ kind: 'day', day: run[0] });
+    } else {
+      // Newest first on input, so the run's first element is its newest day.
+      rows.push({
+        kind: 'quietRun',
+        from: run[run.length - 1].day,
+        to: run[0].day,
+        count: run.length,
+      });
+    }
+    run = [];
+  };
+
+  for (const day of days) {
+    if (day.quiet && !day.isToday) {
+      run.push(day);
+    } else {
+      flush();
+      rows.push({ kind: 'day', day });
+    }
+  }
+  flush();
+  return rows;
 }
 
 /**

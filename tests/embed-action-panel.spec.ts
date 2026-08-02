@@ -172,7 +172,7 @@ test('Live: the editable textarea can actually be edited (a real review step, no
   await expect(textarea).toHaveValue('A fully edited, user-written version of the script.');
 });
 
-test('Live: rate-limited generate() shows the inline rateLimited message (widget-level degraded state)', async ({
+test('Live: rate-limited generate() degrades the script slot only — honest fallback, phones never leave', async ({
   page,
 }) => {
   await page.route('**/api/script', (route) =>
@@ -183,7 +183,23 @@ test('Live: rate-limited generate() shows the inline rateLimited message (widget
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   await expect(page.getByText(en.bill.rateLimited)).toBeVisible();
+  // The AI-labeled review step never renders on the degraded path...
   await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveCount(0);
+  await expect(page.getByText(en.bill.scriptDisclaimer)).toHaveCount(0);
+  await expect(page.locator('.bc-chip-ai')).toHaveCount(0);
+  // ...a static template fills the slot instead, honestly labeled as
+  // not-AI-drafted, and still a real editable review step.
+  const fallback = page.getByRole('textbox', { name: en.bill.fallbackTitle });
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toBeEditable();
+  await expect(fallback).toHaveValue(/S\.J\.Res\. 99/);
+  await expect(page.getByText(en.bill.fallbackDisclaimer)).toBeVisible();
+  // Honest retry guidance (no invented countdown — the token path's 429 is
+  // bare by design).
+  await expect(page.getByText(en.bill.rateRetryHint)).toBeVisible();
+  // And the phones NEVER leave: the reps fetched at ZIP submit keep their
+  // tel: links rendered below the (fallback) script.
+  expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
 });
 
 test('Live: brandless never hides the AI-disclosure chip (S14 precedent, no tier exception)', async ({ page }) => {

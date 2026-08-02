@@ -131,7 +131,7 @@ export function HomeScreencast() {
                   setPlaying(false);
                   setStep(n);
                 }}
-                className="group flex h-11 w-9 items-center justify-center"
+                className="group flex h-11 w-11 items-center justify-center"
               >
                 {/* small stamped bar, not a dot — the 44px hit area is the
                     button around it */}
