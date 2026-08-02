@@ -222,7 +222,7 @@ export function BillsBrowser({
           {pinned.map((m) => (
             <li key={m.id} className="mt-3 first:mt-0">
               <Link
-                href={`/moments/${m.id}`}
+                href={`/questions/${m.id}`}
                 className="on-dark group flex min-h-12 flex-col items-start gap-x-3 gap-y-2 rounded-control bg-ink-deep px-5 py-4 text-paper no-underline sm:flex-row sm:flex-wrap sm:items-baseline"
               >
                 <Chip tone="tag" ground="ink" className="shrink-0">

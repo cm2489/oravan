@@ -59,7 +59,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: hreflangAlternates(locale, `/moments/${id}`),
+    alternates: hreflangAlternates(locale, `/questions/${id}`),
     openGraph: {
       title,
       description,
@@ -151,7 +151,7 @@ export default async function MomentPage({
       {/* 1 · Moment header */}
       <p className="flex flex-wrap items-center gap-3 text-sm">
         <Link
-          href="/moments"
+          href="/questions"
           className="inline-flex min-h-11 items-center font-semibold text-ink-2 underline transition-colors hover:text-ink"
         >
           {t('moments.crumb')}
@@ -439,7 +439,7 @@ export default async function MomentPage({
         )}
 
         <p className="mt-5">
-          <Link href="/moments#how" className={`${CONTENT_LINK} text-sm`}>
+          <Link href="/questions#how" className={`${CONTENT_LINK} text-sm`}>
             {t('moments.howMadeLink')} →
           </Link>
         </p>
@@ -453,7 +453,7 @@ export default async function MomentPage({
 
       {/* 7 · Browse-all affordance (scarcity) */}
       <p className="mt-12 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line pt-4">
-        <Link href="/moments" className={CONTENT_LINK}>
+        <Link href="/questions" className={CONTENT_LINK}>
           {t('moments.browseAll')} →
         </Link>
         <span className="text-xs text-ink-2">{t('moments.scarcityNote', { count: liveCount })}</span>

@@ -33,13 +33,13 @@ const STATIC_PATHS = [
   '/privacy',
   '/terms',
   '/why-call',
-  '/impact',
+  '/record',
   '/citations',
   '/embeds',
   '/embeds/terms',
   '/partners',
   '/mcp',
-  '/moments',
+  '/questions',
 ] as const;
 
 function languagesFor(href: string): Record<string, string> {
@@ -85,7 +85,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // stamp — never an invented date, mirroring the bills loop above.
   for (const moment of getMoments()) {
     if (moment.state === 'retired') continue;
-    const href = `/moments/${moment.id}`;
+    const href = `/questions/${moment.id}`;
     const alternates = { languages: languagesFor(href) };
     const day = latestUpdateDay(moment.id) ?? latestVehicleAction(moment.vehicles);
     const lastModified = day ? new Date(day) : siteLastModified;

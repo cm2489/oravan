@@ -15,8 +15,8 @@ import { collapseQuietDays, revisionReasons, timelineDays, type TimelineRow } fr
 
 /*
  * e2e coverage for the Moments LIVE LAYER (v2 spec §7): the "Where it
- * stands" state summary and the "What's moved" timeline on /moments/[id],
- * plus the privacy line on /moments.
+ * stands" state summary and the "What's moved" timeline on /questions/[id],
+ * plus the privacy line on /questions.
  *
  * CORPUS-ROBUST throughout, the same discipline as tests/moments.spec.ts:
  * every expectation is derived from data/moment-updates.json through the
@@ -81,7 +81,7 @@ test.describe('"Where it stands" — the state summary', () => {
       page,
     }) => {
       const revision = getCurrentSummary(m.id);
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
 
       const heading = page.getByRole('heading', { level: 2, name: /^Where it stands/ });
       if (!revision) {
@@ -120,7 +120,7 @@ test.describe('"Where it stands" — the state summary', () => {
 
     test(`${m.id}: the revision history discloses only when there is history`, async ({ page }) => {
       const revisions = getRevisions(m.id);
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
 
       const toggle = page.getByText(/How this summary has changed/);
       if (revisions.length < 2) {
@@ -172,7 +172,7 @@ test.describe('"Where it stands" — the state summary', () => {
         const revisions = getRevisions(m.id);
         test.skip(revisions.length < 2, 'no prior revision to disclose');
 
-        await page.goto(locale === 'en' ? `/moments/${m.id}` : `/es/moments/${m.id}`);
+        await page.goto(locale === 'en' ? `/questions/${m.id}` : `/es/questions/${m.id}`);
         const messages = locale === 'en' ? en : es;
         const history = page.locator('details', {
           has: page.locator('summary', {
@@ -205,7 +205,7 @@ test.describe('"What\'s moved" — the timeline', () => {
       page,
     }) => {
       const days = timelineDays(m.id, WINDOW_DAYS);
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
 
       await expect(
         page.getByRole('heading', { level: 2, name: en.moments.updates.timelineHeading })
@@ -256,7 +256,7 @@ test.describe('"What\'s moved" — the timeline', () => {
     }) => {
       const days = timelineDays(m.id, WINDOW_DAYS);
       const quiet = days.filter((d) => d.quiet);
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
 
       const past = page.getByText(en.moments.updates.quietDay, { exact: true });
       const today = page.getByText(en.moments.updates.quietToday, { exact: true });
@@ -311,7 +311,7 @@ test.describe('"What\'s moved" — the timeline', () => {
     });
 
     test(`${m.id}: source links are https, open safely, and never carry a lean`, async ({ page }) => {
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
       const section = timelineSection(page);
 
       const external = section.locator('a[target="_blank"]');
@@ -331,7 +331,7 @@ test.describe('"What\'s moved" — the timeline', () => {
 
     test(`${m.id}: the overflow line states what the cap held back`, async ({ page }) => {
       const days = timelineDays(m.id, WINDOW_DAYS);
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
       const overflowing = days.filter((d) => d.overflow > 0);
       const line = timelineSection(page).getByText(/further recorded action/);
 
@@ -352,7 +352,7 @@ test.describe('the ES live layer', () => {
   for (const m of withUpdates) {
     test(`${m.id}: /es renders Spanish update text with no English chrome`, async ({ page }) => {
       const days = timelineDays(m.id, WINDOW_DAYS);
-      await page.goto(`/es/moments/${m.id}`);
+      await page.goto(`/es/questions/${m.id}`);
 
       await expect(
         page.getByRole('heading', { level: 2, name: es.moments.updates.timelineHeading })
@@ -402,7 +402,7 @@ test.describe('institutional context refs', () => {
 
   for (const m of carrying) {
     test(`${m.id}: the context_refs row names each source and links out`, async ({ page }) => {
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
       await expect(page.getByText(en.moments.updates.refsLabel, { exact: true })).toBeVisible();
       for (const ref of m.context_refs ?? []) {
         const link = page.locator(`a[href="${ref.url}"]`);
@@ -422,19 +422,19 @@ test.describe('institutional context refs', () => {
      Nothing here invents a reference to make a test green. */
   for (const m of moments.filter((mm) => (mm.context_refs?.length ?? 0) === 0)) {
     test(`${m.id}: no context_refs row when the moment carries none`, async ({ page }) => {
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
       await expect(page.getByText(en.moments.updates.refsLabel, { exact: true })).toHaveCount(0);
     });
   }
 });
 
-test.describe('the privacy line on /moments', () => {
+test.describe('the privacy line on /questions', () => {
   for (const { locale, prefix, messages } of [
     { locale: 'en', prefix: '', messages: en },
     { locale: 'es', prefix: '/es', messages: es },
   ] as const) {
     test(`${locale}: the index states that nobody is watching you read it`, async ({ page }) => {
-      await page.goto(`${prefix}/moments`);
+      await page.goto(`${prefix}/questions`);
       await expect(page.getByText(messages.moments.updates.privacyNote, { exact: true })).toBeVisible();
     });
   }
@@ -448,7 +448,7 @@ test.describe('live-layer accessibility', () => {
     const day = timelineDays(m.id, WINDOW_DAYS).find((d) => !d.quiet);
     test.skip(!day, 'no recorded day in the frame');
 
-    await page.goto(`/moments/${m.id}`);
+    await page.goto(`/questions/${m.id}`);
     const block = page.locator(`#moment-day-${day!.day}`);
     // Semantic structure: h3 then ol > li, not a stack of divs.
     await expect(block.locator('h3')).toHaveCount(1);

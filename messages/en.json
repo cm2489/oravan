@@ -251,7 +251,7 @@
     },
     "outcomeLogged": "Logged. Thank you for calling.",
     "savedOnDevice": "Saved only on this device.",
-    "viewImpact": "See your impact",
+    "viewImpact": "See your record",
     "copyScript": "Copy script",
     "scriptCopied": "Script copied",
     "closeBig": "Close",
@@ -482,7 +482,7 @@
   },
   "errorBoundary": {
     "title": "Something went wrong",
-    "body": "This page hit a snag. Reloading usually fixes it. If it keeps happening, erasing your saved data on the Impact page can clear it.",
+    "body": "This page hit a snag. Reloading usually fixes it. If it keeps happening, erasing your saved data on the My record page can clear it.",
     "retry": "Try again",
     "home": "Go home"
   },

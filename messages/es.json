@@ -251,7 +251,7 @@
     },
     "outcomeLogged": "Registrado. Gracias por llamar.",
     "savedOnDevice": "Guardado solo en este dispositivo.",
-    "viewImpact": "Ver tu impacto",
+    "viewImpact": "Ver tu historial",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
     "closeBig": "Cerrar",
@@ -482,7 +482,7 @@
   },
   "errorBoundary": {
     "title": "Algo salió mal",
-    "body": "Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, borrar tus datos guardados en la página Mi impacto puede solucionarlo.",
+    "body": "Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, borrar tus datos guardados en la página Mi historial puede solucionarlo.",
     "retry": "Intentar de nuevo",
     "home": "Ir al inicio"
   },

@@ -185,7 +185,7 @@ export default async function BillPage({
 
   // The bigger question this bill is a vehicle of, if any — live and stale
   // moments only (lib/moments.ts owns that rule). Read-time, off the same
-  // list /moments reads; on the overwhelming majority of bills this is empty
+  // list /questions reads; on the overwhelming majority of bills this is empty
   // and the header renders exactly as it did before.
   const parentMoments = getMomentsForBill(id);
 
@@ -263,7 +263,7 @@ export default async function BillPage({
               {parentMoments.map((m) => (
                 <li key={m.id}>
                   <Link
-                    href={`/moments/${m.id}`}
+                    href={`/questions/${m.id}`}
                     className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
                   >
                     {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}

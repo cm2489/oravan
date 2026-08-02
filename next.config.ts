@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'unitedstates.github.io', pathname: '/images/congress/**' },
     ],
   },
+  async redirects() {
+    // Route rename (owner decision, 2026-08): /moments → /questions,
+    // /impact → /record. `:path*` matches zero segments, so the bare paths
+    // are covered by the same rules as their children (and #fragments
+    // survive client-side). The /es sources must be explicit because these
+    // config redirects run BEFORE proxy.ts's locale negotiation; /en/*
+    // resolves transitively (proxy strips /en → bare path → 308) in two
+    // hops, accepted. permanent:true issues 308.
+    return [
+      { source: '/moments/:path*', destination: '/questions/:path*', permanent: true },
+      { source: '/es/moments/:path*', destination: '/es/questions/:path*', permanent: true },
+      { source: '/impact/:path*', destination: '/record/:path*', permanent: true },
+      { source: '/es/impact/:path*', destination: '/es/record/:path*', permanent: true },
+    ];
+  },
   async headers() {
     // Dev/HMR wants 'unsafe-eval' and other looseness this policy doesn't
     // grant - scope it to production (the same mode Playwright's webServer

@@ -38,9 +38,9 @@ import { LocaleSwitcher } from './LocaleSwitcher';
 const TABS = [
   { href: '/', key: 'home', icon: Home },
   { href: '/bills', key: 'bills', icon: ScrollText },
-  { href: '/moments', key: 'moments', icon: Newspaper },
+  { href: '/questions', key: 'moments', icon: Newspaper },
   { href: '/reps', key: 'reps', icon: Users },
-  { href: '/impact', key: 'impact', icon: Activity },
+  { href: '/record', key: 'impact', icon: Activity },
 ] as const;
 
 /**
@@ -59,9 +59,9 @@ const LINKS = [
   // back. Measured at 768/820px ES with all four non-wide labels + the
   // switch: 0px overflow, no wrap ("Momentos" is short; the bar absorbs it
   // without demoting anything).
-  { href: '/moments', key: 'moments', wide: false },
+  { href: '/questions', key: 'moments', wide: false },
   { href: '/reps', key: 'reps', wide: false },
-  { href: '/impact', key: 'impact', wide: false },
+  { href: '/record', key: 'impact', wide: false },
   { href: '/why-call', key: 'whyCall', wide: true },
 ] as const;
 

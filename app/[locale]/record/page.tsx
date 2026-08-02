@@ -6,7 +6,8 @@ import ImpactPageClient from './ImpactPageClient';
 // generateMetadata can only run in a Server Component module — this page's
 // content is entirely client-rendered from localStorage (no server data to
 // read), so the client component moved to its own file and this thin server
-// wrapper carries metadata + hreflang. Before this pass /impact had no
+// wrapper carries metadata + hreflang. Before this pass /record (then named
+// /impact) had no
 // generateMetadata at all (a 'use client' page can't export one in the same
 // module), so it had zero title override and zero hreflang alternates.
 export async function generateMetadata({
@@ -16,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'impact' });
-  return { title: t('title'), alternates: hreflangAlternates(locale, '/impact') };
+  return { title: t('title'), alternates: hreflangAlternates(locale, '/record') };
 }
 
 export default async function ImpactPage({ params }: { params: Promise<{ locale: string }> }) {

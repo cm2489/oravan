@@ -12,7 +12,7 @@ import { getMoments } from '../lib/moments';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/impact', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/moments'
+const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions'
 
 test.describe('sitemap.xml', () => {
   test('renders both locales for every static path and every bill', async ({ request }) => {
@@ -28,8 +28,8 @@ test.describe('sitemap.xml', () => {
     expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments) * 2);
 
     // A representative moment page, both locales.
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/moments/iran-war-powers</loc>`);
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/moments/iran-war-powers</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/questions/iran-war-powers</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/questions/iran-war-powers</loc>`);
 
     // Homepage, both locales. The en entry has no trailing slash — Next's
     // Metadata URL resolution collapses a bare "/" to the origin, and

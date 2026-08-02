@@ -143,7 +143,7 @@ test.describe('getMomentSearchTeasers — live only, localized, aliases carried'
     const live = getMoments().filter((m) => m.state === 'live');
     const teasers = getMomentSearchTeasers('en');
     expect(ids(teasers).sort()).toEqual(live.map((m) => m.id).sort());
-    // The rule app/[locale]/moments/page.tsx states in prose: stale still
+    // The rule app/[locale]/questions/page.tsx states in prose: stale still
     // renders on that page, and is dropped from the strip and from pinning.
     for (const m of getMoments()) {
       if (m.state !== 'live') expect(ids(teasers)).not.toContain(m.id);

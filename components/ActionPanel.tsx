@@ -702,7 +702,7 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                                     ? t('loggedTenth')
                                     : t('outcomeLogged')}{' '}
                               <Link
-                                href="/impact"
+                                href="/record"
                                 className="font-semibold text-go-deep underline"
                               >
                                 {t('viewImpact')}

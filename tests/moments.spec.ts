@@ -7,7 +7,7 @@ import { getBill, getTeasers } from '../lib/core';
 import { waitForFeedHydrated } from './helpers';
 
 /*
- * e2e coverage for the Moments UI (app/[locale]/moments/*, the homepage
+ * e2e coverage for the Moments UI (app/[locale]/questions/*, the homepage
  * strip). Corpus-robust throughout, the same discipline as tests/corpus.ts:
  * expectations are derived from data/moments.json + lib/moments.ts's own
  * lifecycle computation, never a hardcoded id or count, so a future moment
@@ -25,7 +25,7 @@ const LOCALES = [
   { locale: 'es' as const, prefix: '/es', messages: es, pick: (l: { en: string; es: string }) => l.es },
 ];
 
-test.describe('/moments index', () => {
+test.describe('/questions index', () => {
   for (const { locale, prefix, messages, pick } of LOCALES) {
     test(`${locale}: renders live Moments, the settled section (if any), and the scarcity note`, async ({
       page,
@@ -35,7 +35,7 @@ test.describe('/moments index', () => {
       const settled = all.filter((m) => m.state === 'settled');
       const liveCount = all.filter((m) => m.state === 'live').length;
 
-      await page.goto(`${prefix}/moments`);
+      await page.goto(`${prefix}/questions`);
       await expect(page.getByRole('heading', { level: 1, name: messages.moments.indexTitle })).toBeVisible();
 
       if (live.length > 0) {
@@ -69,21 +69,21 @@ test.describe('/moments index', () => {
     const live = getMoments().filter((m) => m.state === 'live' || m.state === 'stale');
     test.skip(live.length === 0, 'no live moment in the corpus right now');
     const m = live[0];
-    await page.goto('/moments');
+    await page.goto('/questions');
     await page.getByRole('link', { name: new RegExp(escapeRegex(m.name.en)) }).click();
-    await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+    await expect(page).toHaveURL(new RegExp(`/questions/${m.id}$`));
     await expect(page.getByRole('heading', { level: 1 })).toContainText(m.name.en);
   });
 });
 
-test.describe('/moments/[id] detail page', () => {
+test.describe('/questions/[id] detail page', () => {
   const moments: MomentWithState[] = getMoments();
 
   for (const m of moments) {
     test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real bill page`, async ({
       page,
     }) => {
-      await page.goto(`/moments/${m.id}`);
+      await page.goto(`/questions/${m.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(m.name.en);
 
       // AI labeling — the existing bill.aiChip idiom, reused verbatim.
@@ -148,7 +148,7 @@ test.describe('/moments/[id] detail page', () => {
           // The backlink IS the return trip: clicking it must land on this
           // moment's page, which is where the next vehicle is read from.
           await backlink.click();
-          await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+          await expect(page).toHaveURL(new RegExp(`/questions/${m.id}$`));
         } else {
           await page.goBack();
         }
@@ -161,21 +161,21 @@ test.describe('/moments/[id] detail page', () => {
   }) => {
     const settled = getMoments().find((m) => m.state === 'settled');
     test.skip(!settled, 'no settled moment in the corpus right now');
-    await page.goto(`/moments/${settled!.id}`);
+    await page.goto(`/questions/${settled!.id}`);
     await expect(page.getByText(en.moments.settledBadge, { exact: true }).first()).toBeVisible();
     await expect(page.getByText(en.moments.decidingSettled)).toBeVisible();
   });
 });
 
 test.describe('ES locale renders ES content end to end', () => {
-  test('/es/moments and /es/moments/[id] render Spanish chrome and Spanish moment text', async ({ page }) => {
-    await page.goto('/es/moments');
+  test('/es/questions and /es/questions/[id] render Spanish chrome and Spanish moment text', async ({ page }) => {
+    await page.goto('/es/questions');
     await expect(page.getByRole('heading', { level: 1, name: es.moments.indexTitle })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: en.moments.indexTitle })).toHaveCount(0);
 
     const m = getMoments()[0];
     test.skip(!m, 'no moments in the corpus');
-    await page.goto(`/es/moments/${m.id}`);
+    await page.goto(`/es/questions/${m.id}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(m.name.es);
     await expect(page.getByText(es.bill.aiChip, { exact: true })).toBeVisible();
     // No English chrome leaks onto the ES page.
@@ -214,7 +214,7 @@ test.describe('homepage Big Questions band', () => {
         const first = liveMoments[0];
         const name = locale === 'es' ? first.name.es : first.name.en;
         await strip.getByRole('link', { name: new RegExp(escapeRegex(name)) }).click();
-        await expect(page).toHaveURL(new RegExp(`${prefix || ''}/moments/${first.id}$`));
+        await expect(page).toHaveURL(new RegExp(`${prefix || ''}/questions/${first.id}$`));
       } else {
         await expect(strip).toHaveCount(0);
       }
@@ -226,14 +226,16 @@ test.describe('homepage Big Questions band', () => {
  * test-honesty-010 — the always-visible route into the feature had no test at
  * all. Nothing asserted the header carried this entry, in either nav or either
  * language, so the 2026-07-31 label change (Moments -> Big Questions / Grandes
- * preguntas; the /moments ROUTE and every internal name deliberately unchanged,
- * spec §0.2) could have silently broken it. Exactly one "Primary" landmark is
+ * preguntas) could have silently broken it. The route itself was renamed
+ * /moments -> /questions afterward (owner decision, 2026-08); the labels AND
+ * every internal name (message keys, lib modules, moment ids) are still
+ * unchanged. Exactly one "Primary" landmark is
  * in the tree at a time (components/Header.tsx): the thumb bar on phones, which
  * carries `navShort`, and the row nav above 48rem, which carries `nav`.
  */
 test.describe('header nav carries the Big Questions label', () => {
   for (const { locale, prefix, messages } of LOCALES) {
-    test(`${locale}: the primary nav reaches /moments under its renamed label`, async ({
+    test(`${locale}: the primary nav reaches /questions under its renamed label`, async ({
       page,
       isMobile,
     }) => {
@@ -241,11 +243,11 @@ test.describe('header nav carries the Big Questions label', () => {
       const label = isMobile ? messages.common.navShort.moments : messages.common.nav.moments;
       const link = page.getByRole('link', { name: label, exact: true });
       await expect(link).toBeVisible();
-      await expect(link).toHaveAttribute('href', `${prefix}/moments`);
+      await expect(link).toHaveAttribute('href', `${prefix}/questions`);
       // The retired label is gone from every nav on the page, both locales.
       await expect(page.getByRole('link', { name: /^(Moments|Momentos)$/ })).toHaveCount(0);
       await link.click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/moments$`));
+      await expect(page).toHaveURL(new RegExp(`${prefix}/questions$`));
     });
   }
 });
@@ -254,7 +256,7 @@ test.describe('accessibility basics', () => {
   test('vehicle CTA meets the 44px touch target and is keyboard-focusable @reflow', async ({ page }) => {
     const m = getMoments()[0];
     test.skip(!m, 'no moments in the corpus');
-    await page.goto(`/moments/${m.id}`);
+    await page.goto(`/questions/${m.id}`);
     const cta = page.getByRole('link', { name: en.moments.readCall }).first();
     await expect(cta).toBeVisible();
     const box = await cta.boundingBox();
@@ -266,7 +268,7 @@ test.describe('accessibility basics', () => {
   test('a moment index card is keyboard-focusable', async ({ page }) => {
     const m = getMoments()[0];
     test.skip(!m, 'no moments in the corpus');
-    await page.goto('/moments');
+    await page.goto('/questions');
     const card = page.getByRole('link', { name: new RegExp(escapeRegex(m.name.en)) });
     await card.focus();
     await expect(card).toBeFocused();
@@ -308,7 +310,7 @@ test.describe('bills search pins a live Moment', () => {
     await waitForFeedHydrated(page);
     await page.getByRole('searchbox').fill(alias);
 
-    const pin = page.locator(`a[href="/moments/${m.id}"]`);
+    const pin = page.locator(`a[href="/questions/${m.id}"]`);
     await expect(pin).toBeVisible();
     await expect(pin).toContainText(m.name.en);
     await expect(pin).toContainText(en.moments.searchPinLabel);
@@ -322,7 +324,7 @@ test.describe('bills search pins a live Moment', () => {
     if (unrendered) await expect(pin).not.toContainText(unrendered, { ignoreCase: true });
 
     await pin.click();
-    await expect(page).toHaveURL(new RegExp(`/moments/${m.id}$`));
+    await expect(page).toHaveURL(new RegExp(`/questions/${m.id}$`));
     await expect(page.getByRole('heading', { level: 1 })).toContainText(m.name.en);
   });
 
@@ -347,6 +349,6 @@ test.describe('bills search pins a live Moment', () => {
 
     // Zero bills, and the count line says so - the pin is not a bill result.
     await expect(page.getByText(en.bills.noResults)).toBeVisible();
-    await expect(page.locator(`a[href="/moments/${m.id}"]`)).toBeVisible();
+    await expect(page.locator(`a[href="/questions/${m.id}"]`)).toBeVisible();
   });
 });
