@@ -66,10 +66,6 @@ export default function ImpactPageClient() {
     format.dateTime(new Date(iso), { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    // max-w-5xl + text-h1: the sitewide rail. This page ran max-w-3xl +
-    // text-h2 from its first commit — the only surface off the grid, flagged
-    // P1 in the 2026-08-01 critique (its h1 rendered smaller than section
-    // headings elsewhere).
     // max-w-5xl + text-h1-bill: the sitewide rail and the sitewide title
     // rung — every sibling page (bills, reps, moments, embeds) titles at
     // text-h1-bill; bare text-h1 belongs to the home hero alone. This page
