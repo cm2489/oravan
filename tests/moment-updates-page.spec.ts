@@ -11,7 +11,7 @@ import {
   isAiSummary,
 } from '../lib/moment-updates';
 import { createTranslator } from 'next-intl';
-import { revisionReasons, timelineDays } from '../lib/moments-ui';
+import { collapseQuietDays, revisionReasons, timelineDays, type TimelineRow } from '../lib/moments-ui';
 
 /*
  * e2e coverage for the Moments LIVE LAYER (v2 spec §7): the "Where it
@@ -45,6 +45,20 @@ const fmtDay = (day: string, locale: 'en' | 'es') =>
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(day));
+
+/** A "run sentence" regex derived from the message itself, so the leak
+ *  checks below never hand-type copy — {count} matches any digits. */
+const quietRunPattern = (msg: string) =>
+  new RegExp(
+    '^' + msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\{count\\}', '\\d+') + '$'
+  );
+
+/** The quiet runs the component folds — derived through the SAME helper it
+ *  renders with, so the expectation and the render cannot drift. */
+const quietRuns = (days: Parameters<typeof collapseQuietDays>[0]) =>
+  collapseQuietDays(days).filter(
+    (r): r is Extract<TimelineRow, { kind: 'quietRun' }> => r.kind === 'quietRun'
+  );
 
 /** The phrases the page prints after the reason label — same map, same ICU
  *  formatter, same message files the page itself renders through. */
@@ -250,11 +264,49 @@ test.describe('"What\'s moved" — the timeline', () => {
       if (quiet.length === 0) {
         await expect(past).toHaveCount(0);
         await expect(today).toHaveCount(0);
+        await expect(page.getByText(quietRunPattern(en.moments.updates.quietRun))).toHaveCount(0);
         return;
       }
-      // A quiet day is computed, never a stored fake update — so the ledger
-      // shows every day in the frame, with nothing padded into the gaps.
-      expect(await past.count() + (await today.count())).toBe(quiet.length);
+      // A quiet day is computed, never a stored fake update — and a stretch
+      // of two or more consecutive quiet, non-today days folds into ONE
+      // spanned row, while a singleton renders exactly as before. Derived
+      // through the same helper the component renders with, so the two
+      // cannot drift. (The suite's ET-midnight exposure — see the header
+      // comment — extends to run boundaries here: the same accepted risk.)
+      const rows = collapseQuietDays(days);
+      const singles = rows.filter((r) => r.kind === 'day' && r.day.quiet && !r.day.isToday);
+      const runs = quietRuns(days);
+      await expect(past).toHaveCount(singles.length);
+
+      // Two equal-length runs print IDENTICAL sentences, so count per
+      // distinct sentence (the Map/toHaveCount idiom the revision-history
+      // test established) rather than asserting visibility one by one —
+      // a bare toBeVisible() on a multi-match is a strict-mode violation.
+      const perSentence = new Map<string, number>();
+      for (const run of runs) {
+        const sentence = en.moments.updates.quietRun.replace('{count}', String(run.count));
+        perSentence.set(sentence, (perSentence.get(sentence) ?? 0) + 1);
+      }
+      for (const [sentence, n] of perSentence) {
+        await expect(page.getByText(sentence, { exact: true })).toHaveCount(n);
+      }
+      // Each run prints its span, oldest day first. The expected string comes
+      // from Intl's own formatRange (the fmtDay discipline): the en dash —
+      // and, in some ICU builds, thin spaces — will never match a hand-typed
+      // range. Ranges are unique per run, so exact text is safe here.
+      for (const run of runs) {
+        await expect(
+          page.getByText(
+            new Intl.DateTimeFormat('en', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            }).formatRange(new Date(run.from), new Date(run.to)),
+            { exact: true }
+          )
+        ).toBeVisible();
+      }
       if (quiet.some((d) => d.isToday)) await expect(today).toHaveCount(1);
     });
 
@@ -319,6 +371,20 @@ test.describe('the ES live layer', () => {
       // Zero English chrome from this feature's own namespace.
       await expect(page.getByText(en.moments.updates.timelineHeading, { exact: true })).toHaveCount(0);
       await expect(page.getByText(en.moments.updates.quietDay, { exact: true })).toHaveCount(0);
+      // The English run sentence never leaks onto /es — and when the frame
+      // holds a run, its Spanish sentence is what actually renders.
+      await expect(page.getByText(quietRunPattern(en.moments.updates.quietRun))).toHaveCount(0);
+      const runs = quietRuns(days);
+      if (runs.length > 0) {
+        await expect(
+          page
+            .getByText(
+              es.moments.updates.quietRun.replace('{count}', String(runs[0].count)),
+              { exact: true }
+            )
+            .first()
+        ).toBeVisible();
+      }
       await expect(page.getByText(en.moments.updates.sourcesLabel, { exact: true })).toHaveCount(0);
       await expect(page.getByRole('heading', { name: /^Where it stands/ })).toHaveCount(0);
       const current = getCurrentSummary(m.id);

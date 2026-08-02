@@ -13,7 +13,7 @@
       "moments": "Big Questions"
     },
     "footer": {
-      "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no tracking: your data never leaves your device.",
+      "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no ads, no trackers — nothing about you is ever stored on our servers.",
       "privacy": "Privacy",
       "aiNote": "AI-drafted content is always clearly marked — review it before you use it.",
       "terms": "Terms",
@@ -70,7 +70,7 @@
     "privacyBody": "No cookies that follow you, no political profile stored on any server — everything personal lives in your browser.",
     "privacyCta": "Read our privacy promise",
     "supportTitle": "Free for everyone. Funded by people who use it.",
-    "supportBody": "No ads, no trackers, no profiles — what you read, where you stand, and who you call stays in your browser, never on our servers. Reader support pays for the hosting and data that keep it that way.",
+    "supportBody": "No ads, no trackers, no profiles — reader support is what pays for the hosting and data that keep it that way.",
     "supportCta": "Support Oravan",
     "supportNote": "Personal support — not tax-deductible.",
     "momentsTitle": "Big Questions",
@@ -158,7 +158,7 @@
     "title": "Active bills, decoded",
     "sub": "Every bill moving through Congress right now, translated into plain language by AI. Filter by what matters to you.",
     "searchLabel": "Search bills",
-    "searchPlaceholder": "Search bills — topic, keyword, or number",
+    "searchPlaceholder": "Search by topic or number",
     "all": "All topics",
     "noResults": "No bills match. Try clearing a filter.",
     "showingCount": "{shown} of {total} bills",
@@ -311,7 +311,7 @@
     "officialDisclosure": "Read the official text",
     "trackerLabel": "Where this bill is in the process",
     "stampLabel": "Data as of",
-    "footNote": "The panel scrolls · the call stays",
+    "footNote": "This panel follows as you scroll — your call is always in reach",
     "floor": {
       "calendarHouse": "On the House floor calendar",
       "calendarSenate": "On the Senate floor calendar",
@@ -366,7 +366,7 @@
   },
   "coverage": {
     "heading": "How it's being covered",
-    "subhead": "Real reporting on this bill, with each outlet's political lean labeled where AllSides has rated it.",
+    "subhead": "Coverage of this bill from across the press — each outlet's political lean labeled where AllSides has rated it, and marked \"Not rated\" where it hasn't.",
     "leanNote": "Lean labels describe the news outlet, not this bill or any party. Ratings by AllSides.",
     "lean": {
       "left": "Leans left",
@@ -433,6 +433,8 @@
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
     "p5": "This matters because political beliefs are sensitive data. The safest database is the one that doesn't exist, so we didn't build one.",
     "contact": "Questions? Oravan is built in the open — every line of code is inspectable.",
+    "builtBy": "Oravan is built and run by Colby Maxwell. The full source code is public:",
+    "repoLinkLabel": "github.com/cm2489/oravan",
     "p7": "One optional exception to \"we never ask\": if your ZIP code covers more than one congressional district, you can type your street address to pin down yours. It goes to our server once, is passed straight to the U.S. Census Bureau's public geocoder (so your device never contacts census.gov directly), and is never stored or written to any log. Only the district number comes back."
   },
   "about": {
@@ -708,7 +710,7 @@
     "newsroomsBody": "Drop a representative lookup or a plain-language bill card into any article — two script tags, no account, no tracking of your readers, ever. Spanish isn't a translation layer here: every surface ships in English and Spanish as equals, so an es-first outlet embeds an es-first widget. Theme it to your section colors, or use brandless chrome so the widget reads as part of your page.",
     "newsroomsCta": "Build your embed",
     "librariesTitle": "Libraries and civic programs",
-    "librariesBody": "Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, plain language reviewed by people. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone.",
+    "librariesBody": "Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, and plain language that never publishes without passing automated checks against the official record. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone.",
     "orgsTitle": "Organizations and licensed use",
     "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
     "licensingTitle": "Licensing and pricing",
@@ -752,7 +754,7 @@
     "emptyBody": "A Big Question opens only when a real, callable bill meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",
     "scarcityNote": "{count, plural, =1 {1 live Big Question} other {# live Big Questions}} today — never more than 6.",
-    "cardVehicleCount": "{count, plural, one {# vehicle} other {# vehicles}}",
+    "cardVehicleCount": "{count, plural, one {# bill} other {# bills}}",
     "cardUpdated": "Updated {date}",
     "liveBadge": "Live",
     "settledBadge": "Settled",
@@ -761,7 +763,7 @@
     "decidingSettled": "What Congress decided",
     "settledBanner": "This question is settled — here's what happened. This page stays as the record and won't reopen.",
     "staleBanner": "This Big Question's scheduled review ({date}) passed without renewal — it may not reflect where things stand right now.",
-    "vehiclesHeading": "The vehicles",
+    "vehiclesHeading": "The bills",
     "vehiclesLede": "The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.",
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
     "readCall": "Read + call",
@@ -814,6 +816,7 @@
       },
       "quietToday": "Nothing recorded yet today.",
       "quietDay": "Nothing recorded.",
+      "quietRun": "Nothing recorded across {count} days.",
       "checkGapNote": "we have not been able to check for new activity since {date}",
       "overflow": "{count, plural, one {# further recorded action this day} other {# further recorded actions this day}}",
       "sourcesLabel": "Sources",
@@ -827,5 +830,9 @@
       },
       "privacyNote": "Nobody is watching you read this — no account, no tracking, no feed tuned to you, which is why the same page can be shared across the spectrum."
     }
+  },
+  "langNote": {
+    "cta": "Ver Oravan en español",
+    "dismiss": "No volver a mostrar este aviso"
   }
 }

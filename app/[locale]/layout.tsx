@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { SITE_ORIGIN } from '@/lib/site';
 import { Header } from '@/components/Header';
+import { LocalePreferenceNote } from '@/components/LocalePreferenceNote';
 import { Footer } from '@/components/Footer';
 import '../globals.css';
 
@@ -99,6 +100,10 @@ export default async function LocaleLayout({
         </a>
         <NextIntlClientProvider>
           <Header />
+          {/* Client-side language suggestion for Spanish-preferring browsers
+              on the EN locale — see the component for why this is not a
+              server redirect (localeDetection: false is deliberate). */}
+          <LocalePreferenceNote />
           <main id="main" className="flex-1 pb-24 md:pb-0">
             {children}
           </main>
