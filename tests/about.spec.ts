@@ -22,7 +22,7 @@ for (const [locale, prefix, messages] of [
     await expect(page.getByText(messages.about.intro)).toBeVisible();
   });
 
-  test(`${locale}: no horizontal overflow on the About page`, async ({ page }) => {
+  test(`${locale}: no horizontal overflow on the About page @reflow`, async ({ page }) => {
     await page.goto(`${prefix}/about`);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth

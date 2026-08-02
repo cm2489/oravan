@@ -118,7 +118,7 @@ Two **sizes** are exempt because they are floors, not spacing choices: `min-h-11
 
 Exactly **one** bill per page takes the full-bleed green enamel panel (`components/system/FloorVotePanel.tsx`), and only a bill with `status === "floor_vote"` **and a printed date** can. Never two. A quiet week has **no** green panel at all, and the page is an unbroken paper column.
 
-This is not a stylistic preference — it is the entire mechanism. The corpus is **hot**: **217 of the 2,373 bills** in `data/bills.json` currently carry `status: "floor_vote"`. Stack two panels and both read as wallpaper; stack ten and the page has no signal left. Capping at one is what makes the one mean something.
+This is not a stylistic preference — it is the entire mechanism. The corpus is **hot**: **319 of the 2,567 bills** in `data/bills.json` carry `status: "floor_vote"` (as of the 2026-08-01 sync — the corpus moves nightly, so recompute rather than trust these figures). Stack two panels and both read as wallpaper; stack ten and the page has no signal left. Capping at one is what makes the one mean something.
 
 At a squint, a page changes shape for its **content** exactly once, and the green panel is that change. Everything else — privacy, specimens, the ledger, the coverage table — is ruled paper. The footer is a dark mass but reads as the back cover, because nothing follows it.
 
@@ -130,7 +130,7 @@ Build against **live data in `data/`**, never against the mockups' fiction.
 
 > ### ⚠️ OPEN OWNER RULING — the printed date
 >
-> The color law says amber carries a floor-calendar fact *with the date printed*. **`data/bills.json` has no forward-looking scheduled-vote date for any of its 2,373 bills.** `status: "floor_vote"` is derived from action text like *"Placed on Senate Legislative Calendar under General Orders"*, and `last_action_date` is always in the past — 0 of the 217 are future-dated, and 0 mention "scheduled" or "set for".
+> The color law says amber carries a floor-calendar fact *with the date printed*. **`data/bills.json` has no forward-looking scheduled-vote date for any of its 2,567 bills.** `status: "floor_vote"` is derived from action text like *"Placed on Senate Legislative Calendar under General Orders"*, and `last_action_date` is always in the past — 0 of the 319 are future-dated (recomputed 2026-08-02), and 0 mention "scheduled" or "set for".
 >
 > So *"House floor vote scheduled Thu, Jul 24"* **cannot be built from live data.** The strongest derivable claim is *"On the House floor calendar · Jul 20, 2026"* (`last_action_date`), which keeps the amber chip, the printed date, and the one-panel cap intact but states a weaker fact.
 >
@@ -221,7 +221,7 @@ The go-mark is one 6px green bar used exactly two ways: as a **segment** of a ga
 
 `app/embed/embed.css` is **not** Tailwind and **not** `globals.css` — an iframe payload stays small and self-contained, so it **hand-copies** the palette. That copy is a standing lockstep obligation: **any change to the `@theme` color block in `app/globals.css` must land in `app/embed/embed.css` in the same PR.**
 
-> ⚠️ **Currently out of lockstep.** `embed.css` still holds the retired Field Notebook palette (`#f3ecdd`, `#2a2318`, `#82632a`, `#fbf8f0`, `#1b1611`, `#e4d9c0`). It must be re-keyed to the variant-B tokens by whoever owns `app/embed/`. The embed's own architecture rules still stand: every color flows through the private `--_*` tokens, component rules never use `@media (prefers-color-scheme)`, and the focus ring falls back to **ink**, not accent.
+> The re-key landed in #104 (`b74430f`) — `embed.css` carries the variant-B tokens; a stale ⚠ here previously claimed otherwise for a month (removed 2026-08-02: the constitution must never cry wolf). The embed's own architecture rules stand: every color flows through the private `--_*` tokens, component rules never use `@media (prefers-color-scheme)`, and the focus ring falls back to **ink**, not accent.
 
 The embed also uses **system fonts, not `next/font`** — it does not get Franklin or Besley, and it must not add a webfont link.
 
