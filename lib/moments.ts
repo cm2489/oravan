@@ -161,7 +161,7 @@ export function isSettled(id: string, now: number = Date.now()): boolean {
  * take a moment off every surface. Stale STAYS: the review tripwire already
  * renders its own caveat on the moment page, and silently withdrawing the
  * route as well would be a second editorial act nobody asked for. Same
- * live-or-stale set /moments's own index section uses.
+ * live-or-stale set /questions's own index section uses.
  */
 export function momentsForBill(moments: MomentWithState[], slug: string): MomentWithState[] {
   return moments.filter(

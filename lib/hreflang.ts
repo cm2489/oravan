@@ -3,7 +3,7 @@
  *
  * PR #30 gave the bill detail page a canonical + language alternates, but
  * every other page type (home, /bills, /reps, /about, /privacy, /terms,
- * /why-call, /impact) shipped with none at all — not "slightly wrong," just
+ * /why-call, /record) shipped with none at all — not "slightly wrong," just
  * absent. This is the fix, generalized: given a locale and the bare href a
  * next-intl <Link>/getPathname call would take ('/', '/bills',
  * '/bills/hr-5582-119', ...), it returns Next's Metadata['alternates']

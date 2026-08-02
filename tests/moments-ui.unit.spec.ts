@@ -10,7 +10,7 @@ import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 /*
  * lib/moments-ui.ts shipped with no tests of its own, and it cost us: the
  * first-sentence regex cut on the first abbreviation, so the Iran moment's dek
- * rendered as the bare string "U.S." on /moments, in the homepage strip, and —
+ * rendered as the bare string "U.S." on /questions, in the homepage strip, and —
  * worst — as the page's own <meta description> and og:description.
  *
  * These pin the two rules that fix stayed on: abbreviations do not end
@@ -72,7 +72,7 @@ test.describe('isSignalFresh', () => {
   });
 
   test('rejects a date past the published window', () => {
-    // The two that were rendering amber on /moments/iran-war-powers.
+    // The two that were rendering amber on /questions/iran-war-powers.
     expect(isSignalFresh('2026-06-24', now)).toBe(false);
     expect(isSignalFresh('2026-06-16', now)).toBe(false);
   });
@@ -111,7 +111,7 @@ test.describe('revisionReasons', () => {
   /** What the page actually prints after "Rewritten because" / "Se reescribió
    *  porque" — the real ICU formatter, in the real locale, off the real
    *  message files. The key is composed at runtime here exactly as
-   *  app/[locale]/moments/[id]/page.tsx composes it; the cast is what the
+   *  app/[locale]/questions/[id]/page.tsx composes it; the cast is what the
    *  page's own untyped `getTranslations` gives it for free. */
   const render = (tokens: string[], locale: 'en' | 'es') => {
     const t = createTranslator({ locale, messages: MESSAGES[locale] }) as unknown as (

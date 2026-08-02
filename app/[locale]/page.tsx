@@ -430,7 +430,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {t('momentsTitle')}
               </h2>
               <Link
-                href="/moments"
+                href="/questions"
                 className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go-bright underline underline-offset-4 hover:text-paper"
               >
                 {t('momentsCta')}
@@ -442,7 +442,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {liveMoments.map((m) => (
                 <li key={m.id} className="border-b-[1.5px] border-line-strong">
                   <Link
-                    href={`/moments/${m.id}`}
+                    href={`/questions/${m.id}`}
                     className="flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-1 py-5 text-paper no-underline hover:underline hover:decoration-go-bright hover:decoration-[3px]"
                   >
                     <span className="text-lg font-bold">
@@ -470,7 +470,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <p className="mt-4 text-sm font-semibold text-ink-pale">
               {tShared('moments.scarcityNote', { count: liveMoments.length })}
             </p>
-            {/* The dek under each entry is AI-drafted summary text; /moments
+            {/* The dek under each entry is AI-drafted summary text; /questions
                 labels it, so the front door must too. At the band's FOOT and
                 in sentence case (owner, 2026-08-01 — the bold-uppercase
                 version at the top read as shouting); every entry still lands

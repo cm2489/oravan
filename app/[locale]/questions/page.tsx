@@ -35,7 +35,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'moments' });
-  return { title: t('indexTitle'), alternates: hreflangAlternates(locale, '/moments') };
+  return { title: t('indexTitle'), alternates: hreflangAlternates(locale, '/questions') };
 }
 
 export default async function MomentsPage({ params }: { params: Promise<{ locale: string }> }) {

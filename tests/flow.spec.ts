@@ -47,7 +47,7 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   // reading history, this same bill now appears twice on the page — once as
   // "you read it", once as "you called about it" — and a page-wide text
   // match would be ambiguous about which one it proved.
-  await page.goto('/impact');
+  await page.goto('/record');
   await expect(
     page.locator('section[aria-labelledby="history"]').getByText('S.J.Res. 99', { exact: false })
   ).toBeVisible();
@@ -94,7 +94,7 @@ test('spanish bill page serves translated decoded content', async ({ page }) => 
 });
 
 /*
- * THE CIVIC RECORD (repositioning spec §4). /impact stopped being a call
+ * THE CIVIC RECORD (repositioning spec §4). /record stopped being a call
  * scoreboard: reading a bill now leaves a row of its own, alongside the
  * topics you follow and above the calls you made.
  *
@@ -122,7 +122,7 @@ for (const locale of ['en', 'es'] as const) {
     page,
   }) => {
     await visitAndWaitForReceipt(page, at(BILL));
-    await page.goto(at('/impact'));
+    await page.goto(at('/record'));
 
     const reads = page.locator('section[aria-labelledby="reads"]');
     await expect(page.getByRole('heading', { name: m.impact.readsTitle })).toBeVisible();
@@ -159,7 +159,7 @@ for (const locale of ['en', 'es'] as const) {
         ])
       );
     });
-    await page.goto(at('/impact'));
+    await page.goto(at('/record'));
 
     // All three sections are present, in the spec's order.
     await expect(page.getByRole('heading', { name: m.impact.followTitle })).toBeVisible();

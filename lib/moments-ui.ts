@@ -14,7 +14,7 @@ import { getLiveMoments, type Localized, type MomentVehicle } from './moments';
  * have been involved…", "H.R. 8800 would…", "Sen. Smith said…" all put a
  * period-plus-space *inside* the first sentence, and the naive
  * /^.*?[.!?](?:\s|$)/ this replaced stopped at the first one — so the Iran
- * moment's dek rendered as the literal two-letter string "U.S." on /moments,
+ * moment's dek rendered as the literal two-letter string "U.S." on /questions,
  * in the homepage strip, and (worst) as the page's <meta description> and
  * og:description. English only: the Spanish summary opens "Fuerzas de Estados
  * Unidos…" and was unaffected, which is exactly why it survived review.
@@ -141,7 +141,7 @@ export function latestVehicleAction(vehicles: MomentVehicle[]): string | null {
  * `changed_because` is the collector's own audit trail, not prose. Its values
  * are machine tokens — 'seed', 'updates:+2', 'reanchor:12d',
  * 'status:sjres-185-119 floor_vote→committee' — and the revision-history
- * disclosure printed them verbatim, so /moments/government-funding-deadline
+ * disclosure printed them verbatim, so /questions/government-funding-deadline
  * read "Rewritten because seed" in English and the IDENTICAL untranslated
  * "Se reescribió porque seed" in Spanish: an English token inside Spanish
  * chrome, past next-intl entirely, live in production. The status form is
@@ -243,12 +243,12 @@ export interface MomentSearchTeaser {
 /**
  * The live moments a query may pin, pre-localized for one locale.
  *
- * LIVE ONLY. `stale` still renders on /moments (with its own badge) and is
+ * LIVE ONLY. `stale` still renders on /questions (with its own badge) and is
  * dropped from the homepage strip and search pinning — the rule
- * app/[locale]/moments/page.tsx already states in the comment above its own
+ * app/[locale]/questions/page.tsx already states in the comment above its own
  * filter. Pinning a moment whose scheduled review lapsed would push an
  * unrenewed claim in front of someone who asked about something else;
- * /moments is a page you chose to visit, a pin is not. `settled` and
+ * /questions is a page you chose to visit, a pin is not. `settled` and
  * `retired` are excluded by the same call.
  *
  * The clock is a defaulted parameter (the idiom of lib/moments.ts and

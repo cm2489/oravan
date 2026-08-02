@@ -15,7 +15,7 @@ export interface MomentTeaser {
 }
 
 /**
- * The /moments index card — name, dek, vehicle count, updated date (spec
+ * The /questions index card — name, dek, vehicle count, updated date (spec
  * §4.2 index anatomy). Settled and stale states get a quieter pill instead
  * of the ordinary category pill's neighbor being silent about it — never a
  * lean label, never a stance (moments carry neither, per spec §3.3).
@@ -34,7 +34,7 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
 
   return (
     <Link
-      href={`/moments/${moment.id}`}
+      href={`/questions/${moment.id}`}
       className="group block rounded-control border border-line-strong bg-paper p-5 transition-colors hover:border-ink"
     >
       <div className="flex flex-wrap items-center gap-2">

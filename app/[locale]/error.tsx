@@ -9,10 +9,12 @@ import { Link } from '@/i18n/navigation';
  * caught below the layout, so the header, the footer and the language switch
  * all survive and the visitor is still somewhere rather than staring at white.
  *
- * The Impact link is not decoration. The most likely cause of a client throw on
- * this site is a malformed localStorage entry (lib/local.ts now guards the
- * shapes it knows, but the erase control is the user-facing escape hatch), and
- * /impact is where "erase everything on this device" lives.
+ * The most likely cause of a client throw on this site is a malformed
+ * localStorage entry (lib/local.ts now guards the shapes it knows, but the
+ * erase control is the user-facing escape hatch), and /record is where "erase
+ * everything on this device" lives. This boundary renders only retry + home;
+ * the escape hatch is reached via the surviving header nav, not a boundary
+ * link.
  *
  * ⚠️ The Spanish strings for `errorBoundary` are NOT yet reviewed by a native
  * speaker — see the standing ES review gap in docs/es-script-spotcheck.md. They

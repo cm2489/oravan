@@ -134,10 +134,10 @@ for (const { locale, prefix, messages } of LOCALES) {
       const band = page.locator('section[aria-labelledby="moments-strip-title"]');
       await expect(band).toBeVisible();
 
-      // The ONLY click. `/moments` (the band's see-all CTA) has no trailing
+      // The ONLY click. `/questions` (the band's see-all CTA) has no trailing
       // slash, so this selector can only pick an entry link.
-      await band.locator('a[href*="/moments/"]').first().click();
-      await expect(page).toHaveURL(/\/moments\/[^/]+$/);
+      await band.locator('a[href*="/questions/"]').first().click();
+      await expect(page).toHaveURL(/\/questions\/[^/]+$/);
 
       // Proof at the destination: the hand-authored answer to the question,
       // under its own heading, with the page's AI label visible. Note the
