@@ -251,7 +251,7 @@ test.describe('header nav carries the Big Questions label', () => {
 });
 
 test.describe('accessibility basics', () => {
-  test('vehicle CTA meets the 44px touch target and is keyboard-focusable', async ({ page }) => {
+  test('vehicle CTA meets the 44px touch target and is keyboard-focusable @reflow', async ({ page }) => {
     const m = getMoments()[0];
     test.skip(!m, 'no moments in the corpus');
     await page.goto(`/moments/${m.id}`);
