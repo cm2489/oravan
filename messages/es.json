@@ -806,6 +806,7 @@
       },
       "quietToday": "Todavía no hay nada registrado hoy.",
       "quietDay": "Nada registrado.",
+      "quietRun": "Nada registrado durante {count} días.",
       "checkGapNote": "no hemos podido comprobar si hay actividad nueva desde el {date}",
       "overflow": "{count, plural, one {# acción registrada más este día} other {# acciones registradas más este día}}",
       "sourcesLabel": "Fuentes",
@@ -819,5 +820,9 @@
       },
       "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
     }
+  },
+  "langNote": {
+    "cta": "Ver Oravan en español",
+    "dismiss": "No volver a mostrar este aviso"
   }
 }
