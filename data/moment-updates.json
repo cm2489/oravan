@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-01T09:47:28.328Z"
+    "generated_at": "2026-08-03T10:57:51.247Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -470,6 +470,39 @@
         "changed_because": [
           "status:sjres-185-119 committee→floor_vote",
           "status:sjres-172-119 committee→floor_vote"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_0a0117c8",
+        "generated_at": "2026-08-03T10:57:57.761Z",
+        "as_of_day": "2026-08-03",
+        "text": {
+          "en": "H. Con. Res. 89, directing the President under section 5(c) of the War Powers Resolution to remove United States Armed Forces from hostilities with Iran, has passed one chamber. On July 22, 2026, the House scheduled the measure. On July 23, 2026, the House agreed to the resolution by the Yeas and Nays, 214 to 208 (Roll no. 282). That same day it was received in the Senate and referred to the Committee on Foreign Relations. Separately, S.J.Res. 185 and S.J.Res. 172 remain on the floor calendar, and H. Con. Res. 38 remains in committee. No new action is recorded on those three measures in the last 14 days.",
+          "es": "La H. Con. Res. 89, que ordena al Presidente, conforme a la sección 5(c) de la Resolución de Poderes de Guerra, retirar a las Fuerzas Armadas de Estados Unidos de las hostilidades con Irán, fue aprobada por una cámara. El 22 de julio de 2026, la Cámara programó la medida. El 23 de julio de 2026, la Cámara aprobó la resolución por votación nominal de 214 a 208 (votación núm. 282). Ese mismo día fue recibida en el Senado y remitida al Comité de Relaciones Exteriores. Por separado, la S.J.Res. 185 y la S.J.Res. 172 permanecen en el calendario del pleno, y la H. Con. Res. 38 permanece en comité. No se registra ninguna acción nueva sobre estas tres medidas en los últimos 14 días."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_19ae0eba",
+            "u_c95bb4da",
+            "u_7b6f9d34"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
       }
