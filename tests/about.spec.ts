@@ -20,6 +20,17 @@ for (const [locale, prefix, messages] of [
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.getByRole('heading', { name: messages.about.fundingTitle })).toBeVisible();
     await expect(page.getByText(messages.about.intro)).toBeVisible();
+    // The operator paragraph (2026-08-02) — and the raw-key guard. A key
+    // requested from the wrong namespace renders as its literal path
+    // ("about.builtBy"): that exact defect shipped to main when these two
+    // keys landed under `privacy` while the page reads `about`. Assert the
+    // real strings render AND no namespace.key literal survives anywhere on
+    // the page.
+    await expect(page.getByText(messages.about.builtBy)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: messages.about.repoLinkLabel })
+    ).toHaveAttribute('href', 'https://github.com/cm2489/oravan');
+    expect(await page.locator('main').innerText()).not.toMatch(/\babout\.[a-zA-Z]+\b/);
   });
 
   test(`${locale}: no horizontal overflow on the About page @reflow`, async ({ page }) => {

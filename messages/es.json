@@ -433,8 +433,6 @@
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies que te identifiquen. Lo único que se guarda es tu preferencia de idioma.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
     "contact": "¿Preguntas? Oravan se construye a la vista de todos — cada línea de código es inspeccionable.",
-    "builtBy": "Oravan lo construye y mantiene Colby Maxwell. Todo el código fuente es público:",
-    "repoLinkLabel": "github.com/cm2489/oravan",
     "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
   },
   "about": {
@@ -445,7 +443,9 @@
     "fundingSupportBody": "Si Oravan te resulta útil, puedes colaborar para mantenerlo en marcha. Las contribuciones ayudan a cubrir el alojamiento y el mantenimiento y no son deducibles de impuestos.",
     "fundingSupportCta": "Apoya a Oravan",
     "accountabilityTitle": "Independiente y accesible",
-    "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, el enlace de comentarios al final de cualquier página llega a una persona real, o escríbenos a hello@oravan.org."
+    "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, el enlace de comentarios al final de cualquier página llega a una persona real, o escríbenos a hello@oravan.org.",
+    "builtBy": "Oravan lo construye y mantiene Colby Maxwell. Todo el código fuente es público:",
+    "repoLinkLabel": "github.com/cm2489/oravan"
   },
   "citations": {
     "title": "Cita a Oravan",
