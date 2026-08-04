@@ -433,8 +433,6 @@
     "p4": "No analytics trackers, no advertising pixels, no cookies used to identify you. The only cookie-like storage is your language preference.",
     "p5": "This matters because political beliefs are sensitive data. The safest database is the one that doesn't exist, so we didn't build one.",
     "contact": "Questions? Oravan is built in the open — every line of code is inspectable.",
-    "builtBy": "Oravan is built and run by Colby Maxwell. The full source code is public:",
-    "repoLinkLabel": "github.com/cm2489/oravan",
     "p7": "One optional exception to \"we never ask\": if your ZIP code covers more than one congressional district, you can type your street address to pin down yours. It goes to our server once, is passed straight to the U.S. Census Bureau's public geocoder (so your device never contacts census.gov directly), and is never stored or written to any log. Only the district number comes back."
   },
   "about": {
@@ -445,7 +443,9 @@
     "fundingSupportBody": "If Oravan is useful to you, you can chip in to keep it running. Contributions support hosting and upkeep and are not tax-deductible.",
     "fundingSupportCta": "Support Oravan",
     "accountabilityTitle": "Independent, and reachable",
-    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person, or email us at hello@oravan.org."
+    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person, or email us at hello@oravan.org.",
+    "builtBy": "Oravan is built and run by Colby Maxwell. The full source code is public:",
+    "repoLinkLabel": "github.com/cm2489/oravan"
   },
   "citations": {
     "title": "Cite Oravan",
