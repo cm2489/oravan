@@ -7,7 +7,7 @@ import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
 import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
 
 /*
- * THE JOURNEY DERIVATION — fixtures plus a live-corpus sweep.
+ * THE JOURNEY DERIVATION — fixtures plus the .mjs parity pin (the live-corpus sweep moved to the nightly sync — see below).
  *
  * The sweep is the anti-re-inversion tripwire: the stepper once guessed the
  * chamber from the bill type, so a House bill under Senate cloture printed
@@ -121,6 +121,18 @@ test.describe('deriveJourney', () => {
     expect(journey).toMatchObject({ step: 3, current: 'senate', onCalendar: true, nowKey: 'nowFloor', nowChamber: 'senate' });
   });
 
+  test('an unclassifiable floor text NEVER guesses a chamber (owner ruling 2026-08-04)', () => {
+    // Neither matcher classifies this invented text. The old behavior fell
+    // back to the origin chamber — a guess rendered as fact. Now: neutral
+    // key, no chamber claim in the sentence, origin slot for structure only.
+    const journey = j('hr', 'floor_vote', 'Considered as unfinished business.');
+    expect(journey).toMatchObject({
+      step: 2,
+      onCalendar: false,
+      nowKey: 'nowFloorActivityNeutral',
+    });
+  });
+
   test('origin-chamber calendar placements stay at the origin vote step', () => {
     expect(j('hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.')).toMatchObject({ step: 2, current: 'house', onCalendar: true, nowKey: 'nowFloor' });
     expect(j('s', 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toMatchObject({ step: 2, current: 'senate', onCalendar: true, nowKey: 'nowFloor' });
@@ -144,32 +156,15 @@ test.describe('deriveJourney', () => {
  *     so nightly data movement cannot silently re-invert the chamber
  *     derivation: a novel floor text fails here, loudly.
  * ------------------------------------------------------------------ */
-test.describe('live-corpus sweep, every floor_vote bill', () => {
-  test('the corpus is non-trivial (the sweep below would otherwise prove nothing)', () => {
-    expect(floorVote.length).toBeGreaterThan(50);
-  });
-
-  test('every floor_vote action text is classified by one of the two matchers', () => {
-    for (const b of floorVote) {
-      const cal = floorCalendarChamber(b.last_action_text);
-      const act = floorActionChamber(b.last_action_text);
-      expect(
-        cal !== null || act !== null,
-        `${slugOf(b)}: unclassified floor text — extend floorActionChamber rather than letting the stepper guess: ${b.last_action_text}`
-      ).toBe(true);
-    }
-  });
-
-  test('onCalendar mirrors the calendar matcher, and the record always beats the bill type', () => {
-    for (const b of floorVote) {
-      const journey = deriveJourney(b as Parameters<typeof deriveJourney>[0]);
-      const cal = floorCalendarChamber(b.last_action_text);
-      expect(journey.onCalendar, slugOf(b)).toBe(cal !== null);
-      const derived = cal ?? floorActionChamber(b.last_action_text);
-      if (derived) expect(journey.current, slugOf(b)).toBe(derived);
-    }
-  });
-});
+/* The live-corpus sweep MOVED to the nightly sync (owner ruling
+ * 2026-08-04): scripts/check-journey-corpus.mjs, wired into
+ * sync-bills.yml. It tests DATA, and data changes nightly — in this
+ * PR-blocking suite a novel floor text landed by the sync could red the
+ * CI of unrelated PRs. The fixtures above and the parity pin below test
+ * CODE and stay. deriveJourney's neutral no-chamber branch (an
+ * unclassified text renders nowFloorActivityNeutral, never a guessed
+ * chamber) is pinned in suite 3.
+ * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
  * 5 · HOMEPAGE GATE — the green panel's claim ("this bill stands on the

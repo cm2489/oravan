@@ -283,6 +283,7 @@
       "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
       "nowFloor": "it's on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar.",
       "nowFloorActivity": "the {chamber, select, House {House} Senate {Senate} other {Senate}} is deciding whether to bring it to a vote.",
+      "nowFloorActivityNeutral": "it's moving on the floor — the official record hasn't said yet which chamber acts next.",
       "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
       "nowConference": "both chambers are reconciling their versions.",
       "nowSigned": "the President signed it. It's law.",

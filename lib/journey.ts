@@ -59,9 +59,11 @@ export function floorCalendarChamber(actionText: string | null): Chamber | null 
  * The activity matcher for floor_vote bills WITHOUT a calendar placement —
  * cloture motions, rejected motions to proceed, House rule resolutions,
  * postponed proceedings. Ordered rules, first hit wins; every live corpus
- * text is pinned by fixture in tests/journey.unit.spec.ts, and the corpus
- * sweep there fails CI when a novel text shape matches nothing, so a wrong
- * or missing rule surfaces as a red test, never a shipped guess.
+ * text is pinned by fixture in tests/journey.unit.spec.ts. Novel shapes are
+ * caught by the NIGHTLY corpus check (scripts/check-journey-corpus.mjs,
+ * wired into sync-bills.yml — it fires where the data changes, never on
+ * unrelated PRs), and until a matcher rule lands the stepper renders
+ * chamber-free neutral copy instead of a guess.
  */
 export function floorActionChamber(actionText: string | null): Chamber | null {
   if (!actionText) return null;
@@ -84,8 +86,11 @@ export function floorActionChamber(actionText: string | null): Chamber | null {
   const hasSenate = /senate/i.test(actionText);
   const hasHouse = /house/i.test(actionText);
   if (hasSenate !== hasHouse) return hasSenate ? 'senate' : 'house';
-  // (7) The record does not say. Callers fall back to the origin chamber;
-  //     the corpus sweep makes sure this branch is never silently reached.
+  // (7) The record does not say — and deriveJourney renders the
+  //     chamber-free neutral copy rather than guessing (owner ruling
+  //     2026-08-04). The nightly corpus check
+  //     (scripts/check-journey-corpus.mjs) flags novel shapes so this
+  //     branch stays rare, but reaching it is honest, never a lie.
   return null;
 }
 
@@ -95,6 +100,7 @@ export type JourneyNowKey =
   | 'nowCommittee'
   | 'nowFloor'
   | 'nowFloorActivity'
+  | 'nowFloorActivityNeutral'
   | 'nowPassed'
   | 'nowConference'
   | 'nowSigned'
@@ -162,7 +168,24 @@ export function deriveJourney(
           nowKey: 'nowFloor',
         };
       }
-      const act = floorActionChamber(bill.last_action_text) ?? origin;
+      const act = floorActionChamber(bill.last_action_text);
+      // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unclassifiable
+      // floor text used to fall back to the ORIGIN chamber — the silent-lie
+      // class the whole derivation exists to end. Now it renders the
+      // chamber-free key instead: the step math stays at the origin slot
+      // (structure needs a position) but no rendered sentence names a
+      // chamber the record did not. The corpus tripwire that catches novel
+      // shapes moved to the nightly sync (scripts/check-journey-corpus.mjs)
+      // — it fires where the data changes, never on unrelated PRs.
+      if (act === null) {
+        return {
+          ...base,
+          step: 2,
+          current: origin,
+          nowChamber: origin,
+          nowKey: 'nowFloorActivityNeutral',
+        };
+      }
       return {
         ...base,
         step: act === origin ? 2 : 3,
