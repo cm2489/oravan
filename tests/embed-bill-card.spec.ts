@@ -52,7 +52,12 @@ test('ES: Spanish labels, no English leakage, ES-prefixed canonical link-out', a
     page.getByText('El Senado busca restablecer extensiones automáticas de permisos de trabajo')
   ).toBeVisible();
   await expect(page.getByText(es.og.aiDecoded, { exact: true })).toBeVisible();
-  await expect(page.getByText(es.bills.status.floor_vote, { exact: true })).toBeVisible();
+  // floor_activity, not floor_vote (label gate, 2026-08-04): S.J.Res. 99's
+  // record is a REJECTED motion to proceed — printing "En el calendario del
+  // pleno" over it was the overclaim the statusKeyFor gate ended. This
+  // fixture now pins the honest label on the partner-facing card.
+  await expect(page.getByText(es.bills.status.floor_activity, { exact: true })).toBeVisible();
+  await expect(page.getByText(es.bills.status.floor_vote, { exact: true })).toHaveCount(0);
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toHaveCount(0);
   await expect(page.getByText(en.embed.poweredBy, { exact: true })).toHaveCount(0);
 
