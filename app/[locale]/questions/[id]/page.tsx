@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
@@ -74,12 +75,10 @@ export async function generateMetadata({
       locale: locale === 'es' ? 'es_ES' : 'en_US',
       alternateLocale: locale === 'es' ? 'en_US' : 'es_ES',
     },
-    // 'summary', not 'summary_large_image' (Phase-1 P1, honest half): this
-    // route ships no OG image, and large-card metadata over a missing image
-    // renders a broken gray placeholder on X/Slack. The compact card is the
-    // truthful claim until a real per-question card exists (Wave-B decision:
-    // whether to build one like the bill cards).
-    twitter: { card: 'summary' },
+    // summary_large_image is TRUE again (Wave B ruling #3, 2026-08-04): the
+    // per-question OG card ships beside this file — the same commit that
+    // makes the claim makes it honest.
+    twitter: { card: 'summary_large_image' },
   };
 }
 
@@ -371,6 +370,7 @@ export default async function MomentPage({
                 headline={bill.ai_headline}
                 title={bill.short_title ?? bill.title}
                 status={bill.status}
+                statusKey={statusKeyFor(bill.status, bill.last_action_text)}
                 tags={bill.issue_tags ?? []}
                 lastActionDate={bill.last_action_date}
                 coverageCount={coverageCount}

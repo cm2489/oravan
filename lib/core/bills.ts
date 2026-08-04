@@ -7,6 +7,7 @@
  * in the way. Nothing here changes shape or behavior — see lib/core/index.ts.
  */
 import bills from '@/data/bills.json';
+import { statusKeyFor } from '../journey';
 import billsEs from '@/data/bills-es.json';
 import { formatCitation } from '../format';
 import { bandFloors, bandForEff } from '../taxonomy';
@@ -87,6 +88,7 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
       status: b.status,
       tags: b.issue_tags ?? [],
       band: terminal ? 'radar' : bandForEff(eff, floors),
+      statusKey: statusKeyFor(b.status, b.last_action_text),
       lastActionDate: b.last_action_date,
     };
   });
@@ -145,6 +147,7 @@ export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
       title: b.short_title ?? b.title,
       status: b.status,
       tags: b.issue_tags ?? [],
+      statusKey: statusKeyFor(b.status, b.last_action_text),
       lastActionDate: b.last_action_date,
       coverageTier: tier as 'cross' | 'neutral',
       sourceCount: sources,

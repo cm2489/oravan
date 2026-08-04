@@ -58,6 +58,9 @@ export interface BillTeaser {
   headline: string | null;
   title: string;
   status: BillStatus;
+  /** The label-gated key (lib/journey statusKeyFor): `floor_activity` for
+   *  floor_vote bills whose record shows activity, not a placement. */
+  statusKey: BillStatus | 'floor_activity';
   tags: string[];
   lastActionDate: string | null;
 }

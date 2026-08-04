@@ -14,7 +14,7 @@ import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { floorCalendarChamber } from '@/lib/journey';
+import { floorCalendarChamber, statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
@@ -146,7 +146,7 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
       <div className="flex flex-1 flex-col p-4 md:p-6">
         <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
           {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
-          {tShared(`bills.status.${bill.status}`)}
+          {tShared(`bills.status.${statusKeyFor(bill.status, bill.last_action_text)}`)}
         </p>
         <p className="mt-2 font-reading text-base text-ink-2">{official}</p>
         <p className="mt-4 border-t-[1.5px] border-line pt-4 text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
@@ -651,7 +651,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {b.issue_tags?.[0] && (
                         <Chip tone="tag">{tShared(`categories.${b.issue_tags[0]}`)}</Chip>
                       )}
-                      <span>{tShared(`bills.status.${b.status}`)}</span>
+                      <span>{tShared(`bills.status.${statusKeyFor(b.status, b.last_action_text)}`)}</span>
                       {b.last_action_date && (
                         <span className="tabular-nums">
                           {tShared('bills.updated', { date: billDate(b.last_action_date) })}

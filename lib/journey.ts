@@ -94,6 +94,25 @@ export function floorActionChamber(actionText: string | null): Chamber | null {
   return null;
 }
 
+
+/**
+ * THE STATUS-LABEL GATE (owner ruling 2026-08-04, Wave B #1). The corpus
+ * derives `floor_vote` looser than the label "On the floor calendar"
+ * claims: 23 of 319 carry cloture/rejected-motion texts, not placements.
+ * Every surface that prints a status label routes through this key so the
+ * label can never outrun the record: genuinely placed bills keep
+ * `floor_vote` ("On the floor calendar"), activity-only bills print
+ * `floor_activity` ("Floor activity"). Same gate, citizen site, embeds,
+ * and MCP alike.
+ */
+export function statusKeyFor(
+  status: Bill['status'],
+  lastActionText: string | null
+): Bill['status'] | 'floor_activity' {
+  if (status !== 'floor_vote') return status;
+  return floorCalendarChamber(lastActionText) ? 'floor_vote' : 'floor_activity';
+}
+
 /** The message key the stepper's "Right now:" sentence reads. */
 export type JourneyNowKey =
   | 'nowIntroduced'

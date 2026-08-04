@@ -178,6 +178,7 @@
       "committee": "In committee",
       "markup": "In markup",
       "floor_vote": "On the floor calendar",
+      "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
       "conference": "In conference",
       "signed": "Signed into law",
@@ -535,7 +536,8 @@
     "errorLabel": "Check this"
   },
   "og": {
-    "aiDecoded": "AI-decoded"
+    "aiDecoded": "AI-decoded",
+    "aiDrafted": "AI-drafted summary"
   },
   "freshness": {
     "dataAsOf": "Data as of {date}",
@@ -832,7 +834,8 @@
         "gao": "Government Accountability Office"
       },
       "privacyNote": "Nobody is watching you read this — no account, no tracking, no feed tuned to you, which is why the same page can be shared across the spectrum."
-    }
+    },
+    "kicker": "Big Question"
   },
   "langNote": {
     "cta": "Ver Oravan en español",

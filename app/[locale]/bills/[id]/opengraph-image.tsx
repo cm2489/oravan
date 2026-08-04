@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { statusKeyFor } from '@/lib/journey';
 import { getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
@@ -97,7 +98,7 @@ export default async function OgImage({
               </span>
               <span style={{ color: PAPER_MUTE }}>·</span>
               <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
-                {tAll(`bills.status.${bill.status}`)}
+                {tAll(`bills.status.${statusKeyFor(bill.status, bill.last_action_text)}`)}
               </span>
             </div>
           )}

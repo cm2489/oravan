@@ -178,6 +178,7 @@
       "committee": "En comité",
       "markup": "En revisión",
       "floor_vote": "En el calendario del pleno",
+      "floor_activity": "Actividad en el pleno",
       "passed_chamber": "Aprobado por una cámara",
       "conference": "En comisión mixta",
       "signed": "Promulgado como ley",
@@ -535,7 +536,8 @@
     "errorLabel": "Revisa esto"
   },
   "og": {
-    "aiDecoded": "Descifrado con IA"
+    "aiDecoded": "Descifrado con IA",
+    "aiDrafted": "Resumen redactado con IA"
   },
   "freshness": {
     "dataAsOf": "Datos al {date}",
@@ -832,7 +834,8 @@
         "gao": "Oficina de Rendición de Cuentas del Gobierno"
       },
       "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
-    }
+    },
+    "kicker": "Gran pregunta"
   },
   "langNote": {
     "cta": "Ver Oravan en español",
