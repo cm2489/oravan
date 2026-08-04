@@ -1,6 +1,6 @@
-# Pre-launch teardown — Phase 1 report (v1)
+# Pre-launch teardown — Phase 1 report (v2)
 
-*2026-08-03. Campaign plan: `~/.claude/plans/hazy-sprouting-hummingbird.md`. This v1 carries the full evaluation sweep (11 surface units, critique /40 + audit /20, dual-viewport, snapshots in `.impeccable/critique/`), the triaged detector sweep, and the 2026-08-02 blind-panel cross-reference. Pending for v2: the live competitor benchmark (plan §1C) and the two scripted walkthroughs (§1D — partially covered by the blind panel).*
+*2026-08-03. Campaign plan: `~/.claude/plans/hazy-sprouting-hummingbird.md`. This v1 carries the full evaluation sweep (11 surface units, critique /40 + audit /20, dual-viewport, snapshots in `.impeccable/critique/`), the triaged detector sweep, and the 2026-08-02 blind-panel cross-reference. v2 (2026-08-04) adds the benchmark + walkthrough addendum at the foot of this file.*
 
 ## Scoreboard
 
@@ -258,3 +258,147 @@ Six zero-context reviewers scored 7.5–8.5/10 before this sweep; all 22 of thei
 2. The record-truth CI corpus tripwire (reds CI on unclassifiable action text) — accept or soften.
 3. DESIGN.md machine-readable frontmatter (activates the detector's design-system rules).
 4. ES native-review packet — now including the sweep's flagged draft strings.
+
+---
+
+# v2 addendum — competitive benchmark + scripted walkthroughs (2026-08-04)
+
+*Phase 1C/1D complete: six live site teardowns (5calls, Resistbot, GovTrack, VOTE411, The Marshall Project, Stripe Press) + two scripted persona walkthroughs, synthesized blind to everything but the results. Screenshots in the session scratchpad.*
+
+## Site scores (/10 per lens)
+
+| Site | First impr. | Task flow | Mobile | Type craft | Trust | Spanish |
+|---|---|---|---|---|---|---|
+| The Marshall Project — https:/ | 9 | 8.5 | 9 | 9.5 | 9 | 3 |
+| https://www.vote411.org (VOTE4 | 8 | 7.5 | 7 | 7.5 | 7.5 | 7 |
+| https://resist.bot (Resistbot  | 8 | 5 | 8 | 7 | 8 | — |
+| 5calls.org | 7 | 9 | 7 | 6 | 7 | — |
+| https://press.stripe.com (Stri | 10 | 8 | 8 | 10 | 9 | — |
+| https://www.govtrack.us | 6.5 | 7.5 | 6 | 6.5 | 7 | — |
+
+## The gap matrix — one call per dimension
+
+### Task funnel length
+- **5calls.org**: 3 interactions from landing to a dialable number (ZIP 78501 → issue → giant tel: link). Search accepts bill numbers: 'H.R. 7757' filters the 47-issue list to one. The shortest funnel measured.
+- **Resistbot**: 1 click to a hard identity wall (/auth/signin, email+code) for web chat; petition sign is 2 clicks to the same wall. Zero anonymous web completions exist — the real accountless path is SMS (keyword + 50409), untestable f
+- **GovTrack**: 4 interactions from home to a dialable DC number + script (search → bill → 'Call or Write' → ZIP). One resilience failure: Enter in the address field silently did nothing on one of two runs — only the explicit 'Find My R
+- **VOTE411**: 5 interactions (4 address fields + submit) and 2 page loads before any personalization — 5x Oravan's input burden; payoff is street-level ballot precision fanned into a 6-module dashboard.
+- **CALL: MATCH — Oravan already sits at best-in-class length (invariants I1/I2 hold; only 5calls' 3-tap path is shorter, and it buys that with a fixed advocacy stance). Close the two walkthrough snags (P1 dead click, P3 step-order wobble) rather than restructure. One small STEAL folded in: accept bare bill-number lookup ('H.R. 6500') in /bills search, S — it is how journalists and staffers arrive, and both**
+
+### Script quality
+- **5calls.org**: Static ~80-word script, one [NAME] placeholder, auto-filled city and named target ('demand Senator Cornyn oppose H.R. 7757'). NOT editable (no textarea/contenteditable), no stance choice — the only path is the site's 'op
+- **GovTrack**: Support AND oppose templates rendered side by side unconditionally on every /comment page — the UI itself certifies no house position — plus a staffer-dialogue simulation and chamber-aware ask verb (cosponsor vs oppose v
+- **Oravan (walkthroughs)**: 3 stances including 'I'm concerned' (relief moment for the nervous persona), AI-drafted editable script ('Edit anything. It works best when it sounds like you'), Copy, office-hours awareness, staffer-expectation guidance
+- **CALL: STEAL (M) — GovTrack's both-sides display as visible neutrality proof: render the unselected stance scripts as collapsed ghosts beneath the chosen one, keeping Oravan's personal editable script while the UI certifies no position. Secondary S steal from 5calls: name the specific live target inside the script once chamber routing exists. Oravan otherwise wins this dimension outright — but the P1 scr**
+
+### Bill-status communication
+- **5calls.org**: Chamber status designed into the contact panel: because KOSA passed the House, the House rep row is greyed with 'House reps are not currently relevant to this issue' and only senators are dialable — wasted calls designed
+- **GovTrack**: Icon timeline (completed step + greyed future steps) but with generic boilerplate identical on every bill; 'Prognosis: 1% chance of being enacted' with a methodology link; call flow reads bill state to pick WHICH rep and
+- **Oravan (walkthroughs)**: 'You are here · Aug 3, 2026' stepper + bill-specific narrative ('Right now: the Senate is deciding whether to bring it to a vote…') + latest action with CR citation — strictly more informative than GovTrack's timeline. G
+- **CALL: STEAL (S) — chamber-aware rep routing. Oravan's pipeline already knows chamber via the 'You are here' tracker; route it into the rep list ('your House rep already voted on this — your senators are the live target'). Both incumbents prove the pattern and both reviewers independently called it the cheapest high-leverage borrow in the whole benchmark. Second-order steals: a coarse three-band enactmen**
+
+### Plain-language depth
+- **GovTrack**: 'Summary' = the CRS digest verbatim: 15,264 words for H.R. 1 at ~22-word average sentences, published Oct 6 2025 — months after introduction. Small bills like H.R. 547 get NO summary at all, just the sponsor-written titl
+- **5calls.org**: 515-word cited background brief per issue plus narrative updates explaining WHY the moment matters ('Senate co-authors declared the House version unacceptable') — but written from one advocacy position; there is no 'supp
+- **Marshall Project**: The reading ceiling for civic content: 4,737 words, zero ad slots, zero inline interrupts, single text column — a genre benchmark, not a bill product.
+- **Oravan (walkthroughs)**: 55-second Q&A decode ('What does this do? / Who does it affect? / Why does it matter?') across all 2,574 tracked bills, AI-labeled with the official Congress.gov text linked, in EN and ES. The nervous persona chose and u
+- **CALL: STEAL (S) — the claim, not the content: state the live decoded-bill count and the defensible headline 'every bill decoded, within a day' at the point of first input, VOTE411-style ('16,040 candidates and 8,445 races' inline is a trust signal and expectation-setter). Oravan already wins the substance against GovTrack's no-summary small bills and months-late digests — it just never says so anywhere **
+
+### Bilingual support
+- **5calls.org**: None: html lang='en', zero hreflang alternates, /es/ 404, no toggle, no Spanish scripts (reviewer probed landing, an issue page, about, and site-wide alternates; did not crawl all 47 issues — templates carry no language 
+- **GovTrack**: None: 'Español' appears nowhere, /es 404 — the 20-year incumbent has no answer for Spanish-dominant constituents in the very district (TX-15) ZIP 78501 resolves to. Score -1.
+- **Resistbot**: None found. Score -1.
+- **Marshall Project**: Token: ~4 ESPAÑOL-tagged articles ever (latest Dec 2025), /espanol and /tag/en-espanol both 404, no chrome translation, no toggle. Score 3.
+- **CALL: STEAL, defensively (S-M) — Oravan owns this dimension outright (no major call-tool competitor has ANY Spanish; name that wedge in positioning against GovTrack). Protect the moat: fix the P1 persistence and record-title findings first, then steal VOTE411's two good moves — an ES-specific trust anchor (Spanish-language sources on decodes or a VE-Y-VOTA-style escalation line on call pages, M) treatin**
+
+### Mobile experience
+- **5calls.org**: Issue page is 5,803px at 390x844 (6.9 screens); the phone number sits 4.2 screens down, the script at 4.7, with no jump link or sticky call bar — users re-scroll ~4 screens per rep contact cycle. Local-office tel links a
+- **Resistbot**: 175x50px sticky 'Sign Petition' pill fixed 20px above the viewport bottom (thumb zone) for the whole read; nav condenses 7 items to 3 + hamburger; no overflow. Anti-lesson: a 9,860-CSS-px mobile landing (11+ viewports).
+- **GovTrack**: Flow worked identically at 390x844 with no overflow — but a GLP-1 belly-patch photo ad rendered directly beneath the Prognosis chip, and guidance sits below a ~630px map.
+- **VOTE411**: Floating chat bubble (~60px) covered the 'Monday, October 5' registration-deadline text and section-heading letters on 3 of 4 captured pages; MENU toggle only 26px tall. Inputs (50px) and Submit (46px) pass the 44px bar.
+- **CALL: STEAL (S) — Marshall's mobile h1 breathing room: nudge line-height from 1.06 to ~1.12-1.15; costs nothing, reads noticeably calmer. Fix the P2 panel-fade discoverability. CONSCIOUSLY DECLINE overlay/floating patterns beyond the existing FAB: Marshall's 12-13%-of-viewport newsletter bar taxes the experience its brand sells, and VOTE411's bubble covered a registration deadline — instead adopt the ru**
+
+### Trust/privacy story
+- **5calls.org**: Trust via longevity and humans: named founders with personal emails, 501(c)(4) footer disclosure, open-source GitHub org, live public dashboard, 13.9M calls since 2017. But voicemail guidance tells users to 'leave your f
+- **Resistbot**: A named 'User Bill of Rights': 6 plain-language principles (~450 words), 'no trackers or use of Google Analytics', 'we rely on your membership, not your data', linked in every footer — undercut by the identity wall befor
+- **GovTrack**: Ads on the civic record: sidebar display, mid-content interstitial, sticky bottom banner; a GLP-1 photo ad under the Prognosis chip on mobile; 'Hide The Ads ▶' paid upsell as the FIRST header element; emoji sentiment (an
+- **VOTE411**: Strong visible copy ('Your address is not stored', LWV nonpartisan disclaimer at the point of candidate data) — while the same pages load The Trade Desk ad pixels (cookie_sync=1), AddToAny, OpenWidget, and AccessiBe: 4 t
+- **CALL: STEAL (S) — placement and naming: put a 4-6 word version of 'Free, nonpartisan. No accounts, no ads, no trackers' in the header slot (Marshall's move), surface it on bill pages where the GovTrack-ads comparison actually happens, and give the existing privacy promise a named, linkable identity (Resistbot's move) without changing its substance. CONSCIOUSLY DECLINE: communal call tallies and per-user**
+
+### Typographic craft
+- **Marshall Project**: Three voices: Miller serif display (55/66), Utopia text (23/36.8, ~72 cpl — past the classic 66), and GT Pressura Mono as a UTILITY voice for ALL metadata — kickers, decks, bylines, datelines, nav. A fixed two-line mono 
+- **Stripe Press**: One family (Ivar) in three optical sizes + italic as the only secondary voice; only 4 distinct text sizes measured on a book page; section labels are italic + hairline rule, not size jumps; 17px/25.5 body at ~55 cpl. Dis
+- **VOTE411**: Condensed all-caps 'rift' at 84px/700 with a single yellow accent word — an instantly recognizable civic-poster voice carried identically onto /es; craft slips exist (text clipped behind a card edge, tiny footer legalese
+- **Resistbot**: Three voices from minimal ingredients: Hubot Sans UI, rounded mono chips for bot keywords (SIGN PVMWIZ), and a serif face for the letter body — the 'document' reads distinct from the 'interface' (which face actually rend
+- **CALL: STEAL (S) — extend the existing mono stamp into a full utility voice for every piece of metadata (bill number, status, dates, AI chip) formatted as a fixed-position, fixed-order provenance ritual — same order, same voice, every page — which is what makes it read as institutional habit rather than a badge; reviewer priced it at ~zero layout cost. Companion S steals: Resistbot-style chip tokens for **
+
+### Motion
+- **Stripe Press**: Book-open transition runs ~1.2s (spine-to-cover rotation + full-page palette crossfade) but the text panel is fully legible by ~400ms — mid-transition frames prove content arrives first and theater finishes around it; th
+- **Other five sites**: Effectively static; no motion behavior measured or reported by reviewers.
+- **Oravan (comparisons)**: Near-zero motion — instant SSG navigations; nothing currently to block. Future motion surfaces exist: script generation waits (a measured 9s AI-draft wait in the walkthrough) and decode loading.
+- **CALL: STEAL-AS-RULE (S) — codify Stripe Press's contract now, before any reveal animation ships: content readable within ~400ms, ornament may continue to ~1.2s, state committed to the URL before the animation ends, prefers-reduced-motion honored. CONSCIOUSLY DECLINE the WebGL-shelf-level theater itself: it shipped with a blank no-JS page and invisible focus — both direct violations of Oravan's accessibi**
+
+## Top steals (effortized)
+
+- **[S]** Chamber-aware call routing: read bill stage into the rep list — grey/demote the chamber that already voted ('your House rep already voted on this — your senators are the live target') and pick the ask verb (cosponsor/oppose/vote). The pipeline already knows chamber via the 'You are here' tracker; two reviewers independently called this the cheapest high-leverage borrow. Also fixes today's equal-weight three-rep list on Senate-floor bills like H.R. 6500. *(from 5calls.org + GovTrack)*
+- **[S]** Move the trust line to the header: a 4-6 word version of 'Free, nonpartisan. No accounts, no ads, no trackers' in the masthead on every page, and visible on bill pages — the exact surface where GovTrack shows a GLP-1 ad under its Prognosis chip. Today Oravan's best trust asset lives on the last screen. *(from Marshall Project (placement) + GovTrack (the contrast))*
+- **[S]** Make the number the CTA: render the primary tel: link at display size (5calls: ~40px+, 277x45 tap target) so the next physical action is unmistakable from across the room. Oravan currently sets numbers at body size, visually equal-weight with guidance text. *(from 5calls.org)*
+- **[S]** Extend the 'DATA AS OF' mono stamp into a full utility voice + fixed-order provenance ritual for all metadata (bill number, status, dates, AI chip), and style phone numbers/copyable script lines as chip-shaped tokens. Marshall-grade editorial texture at ~zero layout cost. *(from Marshall Project + Resistbot)*
+- **[S]** State the corpus at the point of first input: live decoded-bill count plus the defensible headline 'every bill decoded, within a day' — counter-positioned against GovTrack's no-summary small bills and months-late 15,264-word CRS digests. VOTE411 proves the inline pattern ('16,040 candidates and 8,445 races'). *(from VOTE411 (pattern) + GovTrack (the gap))*
+- **[S]** Bare bill-number lookup ('H.R. 6500', 'S. 1874') in /bills search — how journalists and staffers arrive; both incumbents support it, no evidence Oravan does. *(from GovTrack + 5calls.org)*
+- **[S]** Two e2e regression gates minted from incumbent failures: (a) Enter always submits the ZIP form (GovTrack's silent Enter failure at the moment of highest intent); (b) no /es page ever renders 'null'/'undefined' or an untranslated fallback heading (VOTE411's 84px 'EN NULL'). *(from GovTrack + VOTE411 (anti-lessons))*
+- **[S]** Mobile h1 breathing room: nudge line-height from the measured 1.06 to ~1.12-1.15 for 3-line-wrapping bill titles. *(from Marshall Project)*
+- **[S]** Codify the motion contract before any reveal animation ships (script generation, decode loading): content readable ≤400ms, ornament to ~1.2s, state in the URL before the animation ends, reduced-motion honored. *(from Stripe Press)*
+- **[S]** Name the privacy promise: give the existing (already better-placed) privacy copy a named, linkable identity a la 'User Bill of Rights' — memorable and shareable without changing substance. *(from Resistbot)*
+- **[M]** Both-sides scripts as visible neutrality proof: render the unselected stance scripts as collapsed ghosts beneath the chosen one, so the UI certifies no house position while keeping Oravan's personal, editable draft. *(from GovTrack)*
+- **[M]** Coarse enactment odds as expectation-setting: a three-band label (long-shot / in play / likely) derived from status + cosponsor counts with a methodology note — truth-first protection against burning the one call on messaging-bill theater; no new data source needed. *(from GovTrack)*
+- **[M]** AI-decoded, gate-checked dated 'what changed' log per bill — the nonpartisan version of 5calls' Updates stack (vote tallies, 2-3 sources per entry, newest first) that communicates WHY this moment matters. Runs through the existing publish gates. *(from 5calls.org)*
+- **[M]** State-tagged relevance after ZIP: a 'bills your delegation is voting on' surface computed client-side from the localStorage ZIP — 5calls proves one ZIP entry personalizing content reads as magic, not surveillance, and it needs no server-side storage. *(from 5calls.org)*
+- **[M]** ES-specific trust anchor on /es surfaces: at least one credibility element built FOR the Spanish audience (Spanish-language sources on decodes, or a VE-Y-VOTA-style escalation line on call pages) rather than pure string parity. *(from VOTE411)*
+
+## Where Oravan already wins
+
+- Bilingual moat: the only real Spanish product in the space — full EN/ES parity verified end-to-end (decode → stance → TX-15 reps → call logging → record, 0px overflow at 390px) vs -1 scores for 5calls, GovTrack, and Resistbot, ~4 token articles at Marshall, and VOTE411's 84px 'NULL' dynamic-boundary leaks. Worth naming explicitly in positioning against the incumbent.
+- Accountless action: ZIP → 3 reps with DC + local numbers in 1 click, no identity — vs Resistbot, where the web path is 1-2 clicks to an email sign-in wall with zero anonymous completions. A structural moat worth marketing explicitly ('no sign-up, no phone number').
+- Script experience: 3 stances including 'I'm concerned', an editable AI draft, office-hours awareness, staffer-expectation guidance, and a labeled template fallback that carried the entire funnel through total API failure — vs 5calls' single uneditable ~80-word oppose-only script.
+- The nonpartisan lane is genuinely unoccupied: 5calls is advocacy-as-product (10 of 12 top titles are directive verbs, ActBlue donate, no 'support' path exists), and Resistbot publishes its own skew (GOP senators 2-5% response vs 74-83% for Democrats). Oravan's truth-first bill framing + user-chosen stance serves the whole electorate.
+- Plain-language coverage: a 55-second decode across all 2,574 tracked bills vs GovTrack's verbatim 15,264-word CRS digest published months late — and NO summary at all on small bills.
+- Status narrative: 'You are here · Aug 3 2026' + bill-specific 'Right now: the Senate is deciding…' + CR citation is strictly more informative than GovTrack's generic boilerplate timeline.
+- Clean civic record: no ads, no trackers — vs GovTrack's GLP-1 ad beneath the Prognosis chip and 'Hide The Ads' paid upsell, and VOTE411's Trade Desk cookie_sync pixels loading under 'your address is not stored' copy.
+- Mobile action reach: the follow-along panel + 'Make the call' FAB keep the number ≤1 gesture away vs 5calls' phone number 4.2 screens down with no jump link or sticky bar; 0px horizontal overflow in every mobile test.
+- Accessibility floor beats the craft ceiling: semantic HTML, visible focus, 44px targets, no-JS-readable SSG content — vs Stripe Press's visually blank no-JS page and 'outline: 3px none' focus. A competitive asset, not table stakes.
+- Privacy promise verifiably kept: /record shows exactly the truth — the one read, 'No calls logged yet', 'Stored only in this browser', and 'Erase all my data'. The promise made at the ZIP box is confirmed at journey's end; the nervous-caller walkthrough is a PASS with the decisive reassurances placed exactly where fear occurs.
+- Anxiety engineering as product craft: 'nobody debates or quizzes you' before commitment, 'What you'll hear first' and 'Nervous? Call after hours' beside the script, 'Tonight works as well as right now' at the dial point, and 'Couldn't get through' offered as a loggable outcome (permission to fail).
+- Reading measure and restraint: 51 cpl Besley desktop beats Marshall's 72; one quiet 'Support Oravan' link per page vs Resistbot's coin economy threaded through advocacy surfaces — the audit priced that gamification at a point of trust.
+
+## Walkthrough findings (the next wave input)
+
+*Environmental caveat on the 429 finding: eight parallel agents shared one IP during the runs, so the limiter tripping is partly an artifact — but the Wave-A fallback script should have surfaced on 429 and neither persona describes seeing it. Verify the fallback path renders before treating that item as done.*
+
+- **[P1]** 'Start the call' with no ZIP saved is a silent dead click — verified in a clean profile: no modal, no scroll cue, no message. The loudest button on the page does nothing for anyone who taps it first. Fix: scroll/focus the ZIP field.
+- **[P1]** Split-ZIP 10001 shows FOUR reps (Goldman AND Nadler) under copy reading 'Call any of your three' with no 'which one is mine?' disambiguation or address-refinement offer in the panel, and the modal leads with Goldman, who may be the wrong member. This is exactly the nervous caller's fear (calling the wrong office and being corrected) — the existing /api/district refinement never surfaces here. Reviewer flag: refinement may exist on another surface (/reps); not found from this panel, repo not checked.
+- **[P1]** AI script generation failed on every persona attempt, both walkthroughs, both servers — /api/script returned 429 rate_limited (retryAfterSec 486), then 502 generation_failed after the window cleared — and the error card invites a 'Try again' that keeps failing while promising 'in a minute' (the countdown later said 8:01). The labeled template fallback is load-bearing and worked (in good Spanish too); lead with it or soften the retry promise. Flagged caveats: the 429 pool was shared across parallel benchmark agents (a solo visitor may not hit it); the 502 root cause is unverified (possibly missing/invalid local ANTHROPIC_API_KEY); Spanish AI-script quality remains entirely untested.
+- **[P1]** Spanish is a mode you must re-enter: bare / serves English even to an es-MX Accept-Language browser, and choosing Español never updates the NEXT_LOCALE cookie (stays 'en' forever), so every bare-URL entry restarts in English with the banner reappearing. Reviewer verdict: the single biggest Spanish-experience defect.
+- **[P1]** /es/record renders stored English bill titles verbatim ('S. 1874 · Bill would extend nurse training funding through 2030 with increases') instead of resolving by bill id + current locale — the Spanish headline demonstrably exists on /es/bills. A bilingual-parity hard-rule breach on the surface meant to celebrate the user's history; bites any user who reads a bill in EN then checks their record in ES.
+- **[P2]** Stance buttons ('Where do you stand?') say nothing about the tap being local-only/reversible — the persona feared pressing would submit a position somewhere. A one-line 'saved only on this device' at the buttons closes it; also a small 'what will THAT generate?' pause at the unusual 'I'm concerned' option.
+- **[P2]** The sticky call panel's internal scroll hides the ZIP form under a fade — both personas (EN and ES) had to discover that the panel scrolls internally before finding where to enter the ZIP/código postal.
+- **[P2]** The dial-point modal never addresses the 'I'm on my laptop, phone in hand' case — desktop tel: links often do nothing or open FaceTime, and there is no 'dial this from your phone' hint beyond Copy number.
+- **[P2]** Official-record English leaks on /es with no gloss: 'Última acción: 3 de agosto de 2026 — Motion to proceed to measure considered in Senate. (CR S4414)' — defensible as record fidelity, but the Spanish reader gets no hint why the language switched or what the token 'CR S4414' means.
+- **[P2]** Port-3000 dev server: a 500 cascade after compile error "Export localeText doesn't exist" (app/[locale]/questions/[id]/opengraph-image.tsx importing from @/lib/moments) took every route down permanently — including a blank 'My record' at the persona's single worst trust moment ('what do you have on me?'). NOT reproducible on a freshly started server (all 200s), so likely transient Turbopack/dev-compilation state — unverified either way; restart :3000 and re-test /record once.
+- **[P3]** Bills-index status chips ('ON THE FLOOR CALENDAR', 'PASSED ONE CHAMBER') are unexplained procedural jargon at list level; the translating green banner only appears later, on the bill page.
+- **[P3]** '2574 of 2574 bills' triggers an overwhelm spike before the eye lands on the six-item 'Deciding now' rail; the rail's 'A call lands hardest here' framing rescued the choice.
+- **[P3]** Cold-visitor nav opacity: 'My record' (whose record — mine or politicians'?), 'Big Questions' (carries no meaning without its subtitle), and repeated 'decoded' product jargon each cost a first-timer a beat of confusion.
+- **[P3]** Funnel-order wobble: the homepage says step 1 is your ZIP ('Find your three'); why-call's only CTA says 'Find a bill worth calling about' — a 'which comes first?' beat before trusting the funnel to converge (it does).
+- **[P3]** Hero ZIP microcopy answers the privacy question the visitor hadn't asked yet but not 'what happens after I press this?' — the nervous persona detoured to Why call? instead of typing.
+- **[P3]** 'Never stored on our servers' hair-split: the ZIP IS saved in localStorage (device-side, consistent with the server-only promise, and /record is honest about it), but a wary reader could take 'never stored' as absolute. Tighten the phrasing.
+- **[P3]** ES entry banner ambiguity: the X and 'No volver a mostrar este aviso' sit together — unclear whether X dismisses once or forever, and whether dismissing kills the only obvious road to Spanish.
+- **[P3]** Three different AI-label wordings across ES surfaces — 'TRADUCIDO POR IA, VERIFICADO CON EL REGISTRO' (home cards), 'DESCIFRADO CON IA · VERIFICADO CON EL REGISTRO' (bill page), 'REDACTADO POR IA A PARTIR DEL REGISTRO PÚBLICO' (questions) — possibly intentional distinctions, but briefly read as different trust levels.
+- **[P3]** Spanish machine-tell tail: 'Citas y correcciones' (reads as 'appointments' for a beat; expected 'Fuentes'/'Referencias'), 'Widgets', 'robocalls extranjeras', 'ZIP' anglicism, comité/comisión flips on adjacent timeline entries, and the calque 'Número de Votación de Registro 192' vs 'votación registrada 192' for the same fact.
+- **[P3]** Environment/orchestration housekeeping (not site defects, action needed): port-3000 dev server is still down and needs a manual restart; the reviewer's port-3001 replacement server (background task b9adccaih, log at scratchpad/benchmark/dev3001.log) is still running and should be stopped; two walkthrough agents shared one browser-profile directory and screenshot prefix, contaminating mid-walk localStorage evidence (site exonerated after six isolation tests) — separate profile dirs per agent before the next benchmark run. One unresolved automation-only flag: a scripted click on 'Empezar la llamada' timed out once; unconfirmed whether a real user could hit it.
+
+## The two walks, verbatim verdicts
+
+**Spanish-dominant visitor. My browser is set to es-MX (Accept:** The Spanish funnel is real, complete, and mostly excellent — but Spanish is a mode you must re-enter, not a first-class door. A Spanish-dominant visitor completes the entire journey in Spanish: decode (hr-6500-119, high-quality idiomatic decode), stance, ZIP 78501 → correct TX-15 reps with local numbers, script (template), call logging, and a Spanish civic record — with zero layout strain at 1280px or 390px (0px overflow everywhere tested) and repeatedly warm, human microcopy ("Respira y vuelve a intentarlo pronto", "Tú acabas de hacerla"). The four failures that matter, in order: (1) Language
+
+**The nervous first-time caller: has never phoned a congressio:** PASS for the nervous first-time caller — the funnel is genuinely anxiety-lowering and I reached verified tel: links (15 rendered anchors, e.g. tel:+12022257944 for Goldman DC, plus district offices) in 4 pages and about 6 interactions from a cold landing, with the decisive reassurances placed exactly where fear occurs: 'nobody debates or quizzes you' before commitment, 'What you'll hear first' and 'Nervous? Call after hours' beside the script, 'Tonight works as well as right now' at the dial point, and 'Couldn't get through' offered as a loggable outcome (permission to fail). The privacy promi
+
