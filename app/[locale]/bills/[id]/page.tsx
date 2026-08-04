@@ -21,7 +21,7 @@ import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { deriveJourney, floorCalendarChamber } from '@/lib/journey';
+import { deriveJourney, floorCalendarChamber, liveCallTarget } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -404,6 +404,7 @@ export default async function BillPage({
               identifier={citation}
               title={bill.ai_headline ?? bill.short_title ?? bill.title}
               recordLabels={recordLabels}
+              liveTarget={liveCallTarget(bill)}
             />
           </div>
 

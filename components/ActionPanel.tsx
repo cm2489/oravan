@@ -40,6 +40,10 @@ interface Props {
    *  so a call logged here can print in whichever language the civic record
    *  is later read in — see lib/local.ts's CallRecord comment. */
   recordLabels: { en: string; es: string };
+  /** Chamber-aware call routing (lib/journey.ts liveCallTarget): which
+   *  chamber holds the live decision, when the record says. null = no
+   *  routing, the list renders as it always has. */
+  liveTarget: { chamber: 'house' | 'senate'; afterVote: boolean } | null;
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -104,7 +108,7 @@ function Failure({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ActionPanel({ slug, identifier, title, recordLabels }: Props) {
+export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget }: Props) {
   const t = useTranslations('bill');
   // The not-found register reuses /reps's own strings verbatim (ZipForm
   // already crosses into 'home' the same way) — the two surfaces can't drift.
@@ -191,16 +195,32 @@ export function ActionPanel({ slug, identifier, title, recordLabels }: Props) {
   }, [error, retryAt]);
 
   const multiDistrict = lookup.status === 'ready' && lookup.multiDistrict;
-  // In a split ZIP the senators are the two certainly-yours rows, so they
-  // lead — the walkthrough's call modal led with a House member who may not
-  // be the caller's own, which is exactly the nervous caller's fear (calling
-  // the wrong office). Single-district order is untouched.
+  // ORDERING, two rules composed (demote, never bury — nobody loses a dial):
+  //  1. In a split ZIP the senators are the two certainly-yours rows, so
+  //     they lead — the walkthrough's call modal led with a House member who
+  //     may not be the caller's own, exactly the nervous caller's fear.
+  //  2. Chamber routing: the chamber holding the live decision leads
+  //     (lib/journey.ts liveCallTarget — the 5calls/GovTrack steal).
+  //  Certainty outranks routing: in a split ZIP the senators stay first even
+  //  when the House holds the bill, because "which House member is mine?" is
+  //  unresolved and the refinement CTA sits right below.
+  const liveChamber = liveTarget?.chamber ?? null;
+  const liveTargetKey = liveTarget
+    ? liveTarget.chamber === 'senate'
+      ? liveTarget.afterVote
+        ? 'liveSenateAfterHouse'
+        : 'liveSenateFloor'
+      : liveTarget.afterVote
+        ? 'liveHouseAfterSenate'
+        : 'liveHouseFloor'
+    : null;
+  const rank = (r: Legislator) => {
+    if (multiDistrict) return r.type === 'sen' ? 0 : 1;
+    if (liveChamber) return (r.type === 'sen' ? 'senate' : 'house') === liveChamber ? 0 : 1;
+    return 0;
+  };
   const reps =
-    lookup.status === 'ready'
-      ? multiDistrict
-        ? [...lookup.reps].sort((a, b) => Number(a.type !== 'sen') - Number(b.type !== 'sen'))
-        : lookup.reps
-      : [];
+    lookup.status === 'ready' ? [...lookup.reps].sort((a, b) => rank(a) - rank(b)) : [];
   const vacancies = lookup.status === 'ready' ? lookup.vacancies : [];
   const notFound = lookup.status === 'ready' && reps.length === 0 && vacancies.length === 0;
 
@@ -640,6 +660,15 @@ export function ActionPanel({ slug, identifier, title, recordLabels }: Props) {
               </div>
             )}
 
+            {/* The routing fact, when the record supplies one: who holds the
+                live decision. A procedural statement from the stored record
+                (liveCallTarget) — never a guess, and never a removal: every
+                office below keeps its dial. */}
+            {liveTargetKey && reps.length > 0 && (
+              <p className="mt-4 max-w-note text-sm font-semibold text-ink">
+                {t(liveTargetKey)}
+              </p>
+            )}
             {reps.length > 0 && (
               <p
                 ref={repsHeadingRef}
@@ -901,6 +930,10 @@ export function ActionPanel({ slug, identifier, title, recordLabels }: Props) {
             </button>
           </div>
 
+          {/* The routing fact at the dial moment: same line the rail carries. */}
+          {liveTargetKey && reps.length > 0 && (
+            <p className="mt-5 max-w-note text-sm font-semibold text-ink">{t(liveTargetKey)}</p>
+          )}
           {/* The same split-ZIP disambiguation the rail carries, at the dial
               moment itself: senators already lead the list (sorted above);
               this line answers "which House member is mine?" before a wrong

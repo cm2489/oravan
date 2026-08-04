@@ -96,6 +96,13 @@ export function BillsBrowser({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    // Bare bill-number lookup (2026-08 benchmark steal, from GovTrack +
+    // 5calls — it is how journalists and staffers arrive): "HR 6500",
+    // "h.r.6500" and "H.R. 6500" all match the citation by comparing both
+    // sides with dots/spaces stripped. Guarded on the query actually
+    // containing a digit so ordinary word searches never take the
+    // punctuation-stripped path ("care" must not match "S. 2071 · CARE").
+    const qCite = /\d/.test(q) ? q.replace(/[.\s]/g, '') : null;
     return bills.filter((b) => {
       if (active.length && !b.tags.some((tag) => active.includes(tag))) return false;
       if (!q) return true;
@@ -103,6 +110,7 @@ export function BillsBrowser({
         b.title.toLowerCase().includes(q) ||
         (b.headline ?? '').toLowerCase().includes(q) ||
         b.identifier.toLowerCase().includes(q) ||
+        (qCite !== null && b.identifier.toLowerCase().replace(/[.\s]/g, '').includes(qCite)) ||
         // The placeholder promises topic search - match localized tag names
         b.tags.some((tag) => t(`categories.${tag}`).toLowerCase().includes(q))
       );
@@ -128,6 +136,11 @@ export function BillsBrowser({
     for (const b of bills) for (const tag of b.tags) count.set(tag, (count.get(tag) ?? 0) + 1);
     return [...CATEGORIES].sort((a, b) => (count.get(b) ?? 0) - (count.get(a) ?? 0));
   }, [bills]);
+
+  // The honest decode count for the trust line: bills carrying an AI
+  // headline in this payload (2,572 of 2,574 at the time of writing — never
+  // "every bill", because the corpus genuinely holds undecoded stragglers).
+  const decodedCount = useMemo(() => bills.filter((b) => b.headline).length, [bills]);
 
   return (
     <div>
@@ -169,6 +182,14 @@ export function BillsBrowser({
             </kbd>
           )}
         </div>
+        {/* The corpus, stated at the point of first input (2026-08 benchmark
+            steal — VOTE411 proves the inline pattern; GovTrack's no-summary
+            small bills and months-late digests are the foil). The count is
+            LIVE (bills with a decode in this very payload), never a
+            hardcoded claim that drifts from the data. */}
+        <p className="mt-2 max-w-note text-sm text-ink-2">
+          {t('bills.searchTrust', { decoded: decodedCount })}
+        </p>
       </div>
 
       {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}

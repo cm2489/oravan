@@ -183,3 +183,31 @@ test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, 
   await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
   await expect(page.getByText('Cherfilus-McCormick')).toHaveCount(0);
 });
+
+/*
+ * Two 2026-08 benchmark gates in one flow. (1) Enter submits the rail ZIP
+ * form — GovTrack's silent-Enter failure at the moment of highest intent is
+ * the anti-lesson. (2) Chamber-aware routing (lib/journey.ts
+ * liveCallTarget): S.J.Res. 99's floor activity sits in the Senate (the CR
+ * S-page in its own last action), so the live-call line names the senators
+ * and they lead the list — the House member keeps her dial, demoted never
+ * buried.
+ */
+test('Enter submits the rail ZIP form, and chamber routing names the senators as the live call', async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  await page.getByLabel(en.home.zipLabel).fill('78501');
+  await page.getByLabel(en.home.zipLabel).press('Enter');
+
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
+
+  await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();
+  const firstRow = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold').first();
+  await expect(firstRow).not.toHaveText('Monica De La Cruz');
+});

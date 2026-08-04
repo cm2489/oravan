@@ -201,3 +201,31 @@ test.describe('3-stance × 2-locale matrix', () => {
     expect(es.walkthrough.phone.scriptSnippet).not.toContain('ZIP]');
   });
 });
+
+/*
+ * The VOTE411 anti-lesson gate (2026-08 benchmark): their Spanish ballot
+ * page rendered an 84px "EN NULL" where a dynamic boundary leaked. No /es
+ * surface here may ever print a raw null/undefined/NaN. Swept across every
+ * ES surface class; the split-ZIP lookup and the record page are included
+ * because dynamic boundaries are exactly where such leaks live.
+ */
+test('no /es page ever renders a raw null/undefined/NaN (VOTE411 anti-lesson gate)', async ({
+  page,
+}) => {
+  const routes = [
+    '/es',
+    '/es/bills',
+    '/es/bills/sjres-99-119',
+    '/es/reps',
+    '/es/reps?zip=10001',
+    '/es/record',
+    '/es/questions',
+    '/es/why-call',
+    '/es/privacy',
+  ];
+  for (const path of routes) {
+    await page.goto(path);
+    const text = await page.locator('body').innerText();
+    expect(text, `${path} leaked a raw JS value`).not.toMatch(/\b(null|undefined|NaN)\b/);
+  }
+});

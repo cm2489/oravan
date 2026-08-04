@@ -181,6 +181,15 @@ Accessibility floor, non-negotiable: semantic HTML, visible focus, AA contrast, 
 
 State changes (background, border, color, text-decoration-color) ease at 150ms. Nothing else moves.
 
+**The motion contract** (2026-08 benchmark, codified from Stripe Press's book-open — adopted as *rule*, its WebGL theater consciously declined). Any future reveal animation — the script-generation wait, decode loading, anything — ships under all four clauses or not at all:
+
+1. **Content readable ≤400ms.** The information arrives first; ornament may finish around it.
+2. **Ornament ends by ~1.2s.** Nothing decorative outlives a breath.
+3. **State commits to the URL before the animation ends.** A reload mid-animation lands on the destination, never the departure.
+4. **Reduced-motion is a first-class path**, not a disabled one: crossfade or instant, same information, same order.
+
+Stripe Press shipped its transition with a blank no-JS page and invisible focus — both direct violations of this file's accessibility floor. The contract exists so borrowing the polish can never borrow the failure.
+
 ---
 
 ## No

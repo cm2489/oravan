@@ -113,6 +113,45 @@ export function statusKeyFor(
   return floorCalendarChamber(lastActionText) ? 'floor_vote' : 'floor_activity';
 }
 
+/**
+ * CHAMBER-AWARE CALL ROUTING (2026-08 benchmark steal, from 5calls +
+ * GovTrack — both incumbents grey or re-target the chamber that already
+ * voted; two independent reviewers called it the cheapest high-leverage
+ * borrow in the whole benchmark). Answers ONE question for the rep list:
+ * whose phone is the live decision right now?
+ *
+ * Deliberately narrower than deriveJourney — it returns non-null ONLY where
+ * the record itself places the bill in a chamber's hands TODAY:
+ *
+ *   floor_vote with a readable chamber → that chamber (the record's own
+ *     sentence), afterVote=false.
+ *   passed_chamber → the OTHER chamber (corpus-verified: these actions read
+ *     "Received in the Senate…"), afterVote=true — the 5calls KOSA case:
+ *     "the House has already voted; your senators are the live call."
+ *
+ * Everything else is null and the rep list renders exactly as before:
+ * committee/markup/introduced (a committee holds it, not a floor — demoting
+ * senators on every committee-stage House bill would re-shape most of the
+ * corpus on a weaker claim), conference (both chambers again), signed/
+ * vetoed (Congress is done), and the unclassifiable floor texts (NEVER
+ * guess a chamber — owner ruling 2026-08-04). Demote, never bury: consumers
+ * reorder and annotate; no office ever loses its dial.
+ */
+export function liveCallTarget(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text'>
+): { chamber: Chamber; afterVote: boolean } | null {
+  if (bill.status === 'floor_vote') {
+    const chamber =
+      floorCalendarChamber(bill.last_action_text) ?? floorActionChamber(bill.last_action_text);
+    return chamber ? { chamber, afterVote: false } : null;
+  }
+  if (bill.status === 'passed_chamber') {
+    const other: Chamber = bill.bill_type.startsWith('h') ? 'senate' : 'house';
+    return { chamber: other, afterVote: true };
+  }
+  return null;
+}
+
 /** The message key the stepper's "Right now:" sentence reads. */
 export type JourneyNowKey =
   | 'nowIntroduced'

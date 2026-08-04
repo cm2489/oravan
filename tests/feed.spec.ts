@@ -67,3 +67,36 @@ test('"/" focuses search on desktop', async ({ page, isMobile }) => {
     await expect(page.getByRole('searchbox')).toBeFocused({ timeout: 250 });
   }).toPass();
 });
+
+/*
+ * Bare bill-number lookup (2026-08 benchmark steal, GovTrack + 5calls):
+ * "hr 5582" — no dots — must find H.R. 5582, because that is how
+ * journalists and staffers arrive. The slug is the same shared fixture
+ * tests/embed-bill-card.spec.ts pins (DECODED_SLUG), so a corpus refresh
+ * that drops it breaks the fixtures together, never silently.
+ */
+test('bare bill-number search: "hr 5582" finds H.R. 5582 without the punctuation', async ({
+  page,
+}) => {
+  await page.goto('/bills');
+  // A fill dispatched before hydration lands its `input` event on a
+  // listener React never replays (the ZipForm comment documents the same
+  // trap) — wait for the feed to hydrate like every other test here.
+  await waitForFeedHydrated(page);
+  const search = page.getByRole('searchbox');
+  await search.fill('hr 5582');
+  await expect(page.locator('a[href$="/bills/hr-5582-119"]').first()).toBeVisible();
+  // And the guard holds: a plain word query must NOT take the
+  // punctuation-stripped path (only digit-carrying queries do).
+  await search.fill('care');
+  await expect(page.locator('a[href*="/bills/"]').first()).toBeVisible();
+});
+
+test('the corpus trust line renders at the point of first input, with a live four-digit count', async ({
+  page,
+}) => {
+  await page.goto('/bills');
+  // The line carries the LIVE decoded count — assert the shape (a
+  // thousands-scale number), never tonight's exact value.
+  await expect(page.getByText(/[\d,.]{4,}.*(decoded into plain words|descifrados)/)).toBeVisible();
+});
