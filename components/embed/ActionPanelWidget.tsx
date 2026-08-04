@@ -185,12 +185,19 @@ export function ActionPanelWidget({
         return;
       }
       if (!res.ok) {
+        // Same honest fallback the 429 branch seeds (2026-08-04 walkthrough
+        // wave): a generic failure left `script` empty here long after the
+        // main panel fixed it, so an outage emptied the script slot AND made
+        // the shared `scriptError` copy ("the template below works") a lie
+        // on this surface. Never overwrites a user-edited fallback.
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, bill.citation) }));
         setError('generic');
         return;
       }
       const data = (await res.json()) as { script: string };
       setDrafts((d) => ({ ...d, [s]: data.script }));
     } catch {
+      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, bill.citation) }));
       setError('generic');
     } finally {
       setLoading(false);

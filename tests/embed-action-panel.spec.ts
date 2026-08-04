@@ -202,6 +202,29 @@ test('Live: rate-limited generate() degrades the script slot only — honest fal
   expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
 });
 
+test('Live: a GENERIC /api/script failure seeds the same honest fallback — outage never empties the script slot', async ({
+  page,
+}) => {
+  // 2026-08-04 walkthrough wave: the main panel gained this in Phase-1 and
+  // the widget didn't, so a 5xx outage emptied the embed's script slot and
+  // made the shared scriptError copy ("the template below works") a lie here.
+  await page.route('**/api/script', (route) =>
+    route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'generation_failed' }) })
+  );
+  await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await page.getByLabel(en.home.zipLabel).fill('78501');
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+  await expect(page.getByText(en.bill.scriptError)).toBeVisible();
+  const fallback = page.getByRole('textbox', { name: en.bill.fallbackTitle });
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveValue(/S\.J\.Res\. 99/);
+  await expect(page.getByText(en.bill.fallbackDisclaimer)).toBeVisible();
+  // Never the AI label on non-AI text.
+  await expect(page.getByText(en.bill.scriptDisclaimer)).toHaveCount(0);
+  expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
+});
+
 test('Live: brandless never hides the AI-disclosure chip (S14 precedent, no tier exception)', async ({ page }) => {
   await mockScript(page);
   await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN, brandless: '1' }));

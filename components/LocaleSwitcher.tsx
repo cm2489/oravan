@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
+import { rememberLocaleChoice, type LocaleChoice } from '@/lib/locale-pref';
 
 /*
  * THE LANGUAGE SWITCH — both languages, always visible, in their own words.
@@ -62,6 +63,10 @@ export function LocaleSwitcher() {
             locale={current ? undefined : code}
             lang={code}
             hrefLang={code}
+            // An explicit toggle is REMEMBERED (lib/locale-pref.ts) so the
+            // "¿Prefieres español?" note can offer the way back on the next
+            // bare-URL entry. Never a redirect — see that module's header.
+            onClick={() => rememberLocaleChoice(code as LocaleChoice)}
             aria-current={current ? 'page' : undefined}
             aria-label={current ? undefined : t('switchLocale')}
             className={[

@@ -36,6 +36,10 @@ interface Props {
   slug: string;
   identifier: string;
   title: string;
+  /** Both locales' record labels, computed by the bill page at render time
+   *  so a call logged here can print in whichever language the civic record
+   *  is later read in — see lib/local.ts's CallRecord comment. */
+  recordLabels: { en: string; es: string };
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -79,7 +83,14 @@ type RepLookup =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; reps: Legislator[]; vacancies: { state: string; district: number }[] };
+  | {
+      status: 'ready';
+      reps: Legislator[];
+      vacancies: { state: string; district: number }[];
+      /** ZIP spans >1 House district — /api/reps has always disclosed this;
+       *  the panel ignored it until the 2026-08-04 walkthrough P1. */
+      multiDistrict: boolean;
+    };
 
 /** Failure, expressed three ways: a 3px rule, a bold label, and role="alert". */
 function Failure({ children }: { children: React.ReactNode }) {
@@ -93,7 +104,7 @@ function Failure({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ActionPanel({ slug, identifier, title }: Props) {
+export function ActionPanel({ slug, identifier, title, recordLabels }: Props) {
   const t = useTranslations('bill');
   // The not-found register reuses /reps's own strings verbatim (ZipForm
   // already crosses into 'home' the same way) — the two surfaces can't drift.
@@ -179,7 +190,17 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     return () => clearInterval(id);
   }, [error, retryAt]);
 
-  const reps = lookup.status === 'ready' ? lookup.reps : [];
+  const multiDistrict = lookup.status === 'ready' && lookup.multiDistrict;
+  // In a split ZIP the senators are the two certainly-yours rows, so they
+  // lead — the walkthrough's call modal led with a House member who may not
+  // be the caller's own, which is exactly the nervous caller's fear (calling
+  // the wrong office). Single-district order is untouched.
+  const reps =
+    lookup.status === 'ready'
+      ? multiDistrict
+        ? [...lookup.reps].sort((a, b) => Number(a.type !== 'sen') - Number(b.type !== 'sen'))
+        : lookup.reps
+      : [];
   const vacancies = lookup.status === 'ready' ? lookup.vacancies : [];
   const notFound = lookup.status === 'ready' && reps.length === 0 && vacancies.length === 0;
 
@@ -191,7 +212,14 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     setLookup({ status: 'loading' });
     fetch(`/api/reps?zip=${zip}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => setLookup({ status: 'ready', reps: d.reps, vacancies: d.vacancies ?? [] }))
+      .then((d) =>
+        setLookup({
+          status: 'ready',
+          reps: d.reps,
+          vacancies: d.vacancies ?? [],
+          multiDistrict: d.multiDistrict ?? false,
+        })
+      )
       .catch(() => setLookup({ status: 'error' }));
   }, [zip]);
 
@@ -314,6 +342,8 @@ export function ActionPanel({ slug, identifier, title }: Props) {
     upsertCall({
       billSlug: slug,
       billLabel,
+      labelEn: recordLabels.en,
+      labelEs: recordLabels.es,
       repBioguide: rep.bioguide,
       repName: rep.name,
       stance,
@@ -463,7 +493,12 @@ export function ActionPanel({ slug, identifier, title }: Props) {
               (retryAt !== null && retryRemainingSec !== null ? (
                 retryRemainingSec > 0 ? (
                   <p className="mt-2 text-sm text-ink-2 tabular-nums">
-                    {t('rateRetryIn', { time: formatRetryTime(retryRemainingSec) })}
+                    {/* The template pointer rides WITH the countdown (2026-08-04
+                        walkthrough P1): both personas read the ticking clock as
+                        "nothing works for 8 minutes" because the works-right-now
+                        sentence only existed in the no-countdown hint. */}
+                    {t('rateRetryIn', { time: formatRetryTime(retryRemainingSec) })}{' '}
+                    {t('rateTemplateNow')}
                   </p>
                 ) : (
                   <div className="mt-2">
@@ -611,7 +646,26 @@ export function ActionPanel({ slug, identifier, title }: Props) {
                 tabIndex={-1}
                 className="mt-4 max-w-note font-semibold text-ink outline-none"
               >
-                {reps.some((r) => r.type === 'sen') ? t('callWho') : t('callWhoOne')}
+                {/* A split ZIP never says "your three" over four names: the
+                    multi-district line owns the count question and hands the
+                    existing /reps refinement flow in (2026-08-04 walkthrough
+                    P1 — the disambiguation existed one surface away and this
+                    panel never offered it). */}
+                {multiDistrict
+                  ? t('callWhoMulti')
+                  : reps.some((r) => r.type === 'sen')
+                    ? t('callWho')
+                    : t('callWhoOne')}
+              </p>
+            )}
+            {multiDistrict && reps.length > 0 && zip && (
+              <p className="mt-2 max-w-note text-sm">
+                <Link
+                  href={`/reps?zip=${zip}`}
+                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                >
+                  {t('refineDistrictCta')}
+                </Link>
               </p>
             )}
             <ul className="mt-3 grid list-none gap-3">
@@ -847,6 +901,21 @@ export function ActionPanel({ slug, identifier, title }: Props) {
             </button>
           </div>
 
+          {/* The same split-ZIP disambiguation the rail carries, at the dial
+              moment itself: senators already lead the list (sorted above);
+              this line answers "which House member is mine?" before a wrong
+              office can be dialed. */}
+          {multiDistrict && reps.length > 0 && zip && (
+            <p className="mt-5 max-w-note text-sm text-ink-2">
+              {t('callWhoMulti')}{' '}
+              <Link
+                href={`/reps?zip=${zip}`}
+                className="font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+              >
+                {t('refineDistrictCta')}
+              </Link>
+            </p>
+          )}
           {reps.length > 0 && (
             <div className="mt-5 grid gap-2">
               {reps.map(

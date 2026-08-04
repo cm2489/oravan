@@ -114,6 +114,58 @@ async function visitAndWaitForReceipt(page: Page, url: string) {
   await expect.poll(() => readCount(page)).toBe(1);
 }
 
+/*
+ * Write-time bilingual labels (2026-08-04 walkthrough P1): /es/record used
+ * to print stored English titles verbatim for interactions made on EN pages
+ * — a bilingual-parity breach on the surface meant to celebrate the user's
+ * history. Both locales' labels are captured when the row is written (the
+ * record's contents are never resolved over the network — they are private
+ * to the device), so the record prints in whichever language it is read in.
+ * The ES headline literal is the same fixture tests/embed-bill-card.spec.ts
+ * pins for this slug — a corpus refresh that breaks one breaks both.
+ */
+test('a bill read in ENGLISH prints its SPANISH headline on /es/record', async ({ page }) => {
+  await visitAndWaitForReceipt(page, BILL); // the EN page
+  await page.goto('/es' + '/record');
+  const reads = page.locator('section[aria-labelledby="reads"]');
+  await expect(reads.locator(`a[href$="/bills/${BILL_SLUG}"]`)).toContainText(
+    'El Senado busca restablecer'
+  );
+  // And back on the EN record, the same row prints English.
+  await page.goto('/record');
+  await expect(
+    page
+      .locator('section[aria-labelledby="reads"]')
+      .locator(`a[href$="/bills/${BILL_SLUG}"]`)
+  ).not.toContainText('El Senado');
+});
+
+test('legacy rows without bilingual labels still print their stored label on /es/record', async ({
+  page,
+}) => {
+  await page.goto('/es/record');
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'oravan.calls',
+      JSON.stringify([
+        {
+          billSlug: 'sjres-99-119',
+          billLabel: 'S.J.Res. 99 · legacy stored label',
+          repBioguide: 'D000399',
+          repName: 'Monica De La Cruz',
+          stance: 'support',
+          outcome: 'contact',
+          at: '2026-07-01T12:00:00.000Z',
+        },
+      ])
+    );
+  });
+  await page.reload();
+  await expect(
+    page.locator('section[aria-labelledby="history"]').getByText('legacy stored label', { exact: false })
+  ).toBeVisible();
+});
+
 for (const locale of ['en', 'es'] as const) {
   const m = locale === 'en' ? en : es;
   const at = (path: string) => (locale === 'es' ? '/es' + path : path);

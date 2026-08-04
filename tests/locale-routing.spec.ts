@@ -12,7 +12,14 @@ import { expect, test } from '@playwright/test';
  *
  * The switcher case proves the flip side: turning OFF passive detection does
  * NOT break an EXPLICIT language choice — LocaleSwitcher still navigates to
- * the other locale (and next-intl still writes the cookie on that click).
+ * the other locale.
+ *
+ * 2026-08-04: `localeCookie: false` joined `localeDetection: false`. The
+ * cookie was written but never read (pure vestige) and written WRONG — an
+ * explicit Español toggle measurably left it at 'en'. The explicit choice
+ * is remembered on-device instead (lib/locale-pref.ts,
+ * tests/locale-preference.spec.ts), and the main site now sets the same
+ * number of cookies as the embeds: zero — pinned below.
  */
 
 test.describe('locale routing — URLs authoritative (localeDetection off)', () => {
@@ -57,5 +64,20 @@ test.describe('locale routing — URLs authoritative (localeDetection off)', () 
     await page.getByRole('link', { name: 'View in English' }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+
+  test('zero cookies on the main site — no NEXT_LOCALE, not even on an explicit toggle', async ({
+    page,
+    request,
+  }) => {
+    for (const path of ['/', '/es', '/es/bills']) {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect(res.headers()['set-cookie'], `${path} set a cookie`).toBeUndefined();
+    }
+    await page.goto('/');
+    await page.getByRole('link', { name: 'En español', exact: true }).click();
+    await expect(page).toHaveURL(/\/es$/);
+    await page.goto('/es/bills');
+    expect(await page.context().cookies()).toHaveLength(0);
   });
 });

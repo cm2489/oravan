@@ -390,6 +390,10 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
       await expect(page.getByText(messages.bill.rateLimited)).toBeVisible();
       const countdown = page.getByText(retryInPattern(messages.bill.rateRetryIn));
       await expect(countdown).toBeVisible();
+      // The works-right-now pointer must survive ALONGSIDE the countdown
+      // (2026-08-04 walkthrough P1: it used to exist only in the
+      // no-countdown hint, so a disclosed reset read as "dead for 8:01").
+      await expect(page.getByText(messages.bill.rateTemplateNow)).toBeVisible();
       await expect(
         page.getByRole('alert').filter({ hasText: retryInPattern(messages.bill.rateRetryIn) })
       ).toHaveCount(0);
