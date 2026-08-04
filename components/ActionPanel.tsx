@@ -272,12 +272,20 @@ export function ActionPanel({ slug, identifier, title }: Props) {
         return;
       }
       if (!res.ok) {
+        // Same honest fallback the 429 branch seeds (Phase-1 P1): a generic
+        // API failure previously left `script` empty, and every call
+        // affordance on the page is gated behind it — an outage took the
+        // phone numbers down with it, against funnel invariant I2. The
+        // template is static, labeled not-AI-generated, and never
+        // overwrites a draft the user already edited.
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
         setError('generic');
         return;
       }
       const data = await res.json();
       setDrafts((d) => ({ ...d, [s]: data.script }));
     } catch {
+      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
       setError('generic');
     } finally {
       setLoading(false);

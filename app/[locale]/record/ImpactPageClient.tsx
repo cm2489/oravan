@@ -208,46 +208,65 @@ export default function ImpactPageClient() {
         </section>
       )}
 
+      {/* ERASE FLOW FOCUS + ANNOUNCEMENT (Phase-1 P1). Two focus drops
+          fixed: opening the confirm unmounted the trigger (focus fell to
+          <body>), so the confirm button takes focus on mount; confirming
+          unmounted both buttons, so focus moves to the status line. The
+          status <p role=status> is now ALWAYS mounted and filled on erase —
+          a live region that mounts with its text is the classic pattern
+          screen readers fail to announce. */}
       {(hasAnything || erased) && (
         <section className="mt-12 rounded-control bg-wash p-6">
           <h2 className="text-h3 font-extrabold">{t('eraseTitle')}</h2>
           <p className="mt-1 max-w-note text-sm text-ink-2">{t('eraseBody')}</p>
           {!confirming ? (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-paper px-4 py-2.5 font-bold text-ink hover:bg-wash"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-              {t('erase')}
-            </button>
+            !erased && (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-paper px-4 py-2.5 font-bold text-ink hover:bg-wash"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                {t('erase')}
+              </button>
+            )
           ) : (
             <div className="mt-4">
               <p className="max-w-note text-sm font-medium">{t('eraseConfirm')}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
+                  ref={(el) => el?.focus()}
                   onClick={onErase}
                   className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-ink-deep px-4 py-2.5 font-bold text-paper"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                   {t('confirmErase')}
                 </button>
+                {/* Cancel takes bg-paper: its border-line-strong edge sat
+                    directly on the wash panel at 2.97:1 — the exact
+                    enabled-control case the contrast ledger marks FAIL
+                    (line-strong needs paper on at least one side). */}
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
-                  className="min-h-12 rounded-control border-2 border-line-strong px-4 py-2.5 font-bold text-ink hover:border-ink"
+                  className="min-h-12 rounded-control border-2 border-line-strong bg-paper px-4 py-2.5 font-bold text-ink hover:border-ink"
                 >
                   {t('cancel')}
                 </button>
               </div>
             </div>
           )}
-          {erased && (
-            <p className="mt-3 text-sm font-medium" role="status">
-              {t('erased')}
-            </p>
-          )}
+          <p
+            className="mt-3 text-sm font-medium"
+            role="status"
+            tabIndex={-1}
+            ref={(el) => {
+              if (erased && el && document.activeElement === document.body) el.focus();
+            }}
+          >
+            {erased ? t('erased') : ''}
+          </p>
         </section>
       )}
     </div>

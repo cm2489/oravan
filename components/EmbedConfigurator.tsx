@@ -285,25 +285,41 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
     return () => window.removeEventListener('message', onMessage);
   }, [widget]);
 
+  // THE PREVIEW DEBOUNCE (Phase-1 P1; first logged in the 2026-07-25 audit
+  // as design-debt-configurator-iframe-remount). key={previewSrc} remounts
+  // the iframe per URL change — correct for discrete changes, but a color-
+  // picker DRAG fires an input event per frame, and each one cost a full
+  // widget document load plus a visible white flash (browser-verified: a
+  // 10-event burst = 10 loads). The three continuous inputs (accent,
+  // surface, ink) settle for 150ms before they reach the preview URL; every
+  // discrete control (widget, radius, mode, …) still swaps immediately. The
+  // copy-paste snippet below deliberately keeps the LIVE values — what you
+  // copy is what you set, never a value still in flight.
+  const [settledColors, setSettledColors] = useState({ accent, surfaceInput, inkInput });
+  useEffect(() => {
+    const id = setTimeout(() => setSettledColors({ accent, surfaceInput, inkInput }), 150);
+    return () => clearTimeout(id);
+  }, [accent, surfaceInput, inkInput]);
+
   const previewSrc = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;
     const params = new URLSearchParams({ locale });
     if (widget === 'bill-card' && slug) params.set('slug', slug);
     // Every widget takes the same validated theme params (S5a + brand-preview).
-    params.set('accent', accent);
+    params.set('accent', settledColors.accent);
     params.set('radius', radius);
     params.set('font', font);
     if (mode !== 'auto') params.set('mode', mode);
     if (pairActive) {
-      params.set('surface', surfaceInput);
-      params.set('ink', inkInput);
+      params.set('surface', settledColors.surfaceInput);
+      params.set('ink', settledColors.inkInput);
     }
     if (brandless) params.set('brandless', '1');
     // Relative on purpose: the live preview must show THIS deployment's
     // widget (localhost, preview deploys, prod alike). Only the copy-paste
     // snippet below carries the absolute production origin.
     return `/embed/${widget}?${params.toString()}`;
-  }, [widget, locale, slug, accent, radius, font, mode, pairActive, surfaceInput, inkInput, brandless]);
+  }, [widget, locale, slug, settledColors, radius, font, mode, pairActive, brandless]);
 
   const snippet = useMemo(() => {
     if (widget === 'bill-card' && !slug) return null;

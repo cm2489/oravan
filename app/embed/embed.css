@@ -231,6 +231,15 @@ body {
   background: var(--_ink-hover);
 }
 
+/* Unpressed toggles share .re-btn but sit transparent with inherited-ink
+   text: the shared hover's dark fill erased their own label (measured
+   1.58:1 light / 1.37:1 dark — Phase-1 P1, desktop-pointer-only, the class
+   the 390-only detector missed). Higher specificity on purpose: the quiet
+   fill keeps the label ink-on-light in both modes. */
+.re-btn.re-toggle:hover {
+  background: var(--_line-faint);
+}
+
 .re-toggle {
   background: transparent;
   color: inherit;

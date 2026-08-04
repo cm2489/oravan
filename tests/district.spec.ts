@@ -45,7 +45,9 @@ test('split ZIP: address refinement narrows to the one real district', async ({ 
   await page.goto(`/reps?zip=${SPLIT_ZIP}`);
 
   // Default view: the multi-district note and BOTH candidate districts.
-  await expect(page.getByText(/spans more than one congressional district/)).toBeVisible();
+  // Copy pluralized 2026-08-04 (Wave A): "spans {two|N} congressional
+  // districts" replaced "more than one" — the note now states the count.
+  await expect(page.getByText(/spans (two|\d+) congressional districts/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'NY district 10' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'NY district 12' })).toBeVisible();
   await expect(page.getByText('Daniel S. Goldman')).toBeVisible();
@@ -127,5 +129,5 @@ test('single-district ZIP never offers the address form', async ({ page }) => {
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
   // Not rendered at all for single-district ZIPs (not just hidden).
   await expect(page.getByLabel('Street address')).toHaveCount(0);
-  await expect(page.getByText(/spans more than one/)).toHaveCount(0);
+  await expect(page.getByText(/spans (two|\d+) congressional districts/)).toHaveCount(0);
 });

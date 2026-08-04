@@ -281,10 +281,13 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
     await setColor(page, 'oravan-surface', '#0f1a2b');
     await setColor(page, 'oravan-ink', '#f5f7fa');
     await page.getByLabel(en.embeds.modeLabel).selectOption('dark');
-    const previewSrc = await page.locator('iframe[title]').first().getAttribute('src');
-    expect(previewSrc).toContain('surface=%230f1a2b');
-    expect(previewSrc).toContain('ink=%23f5f7fa');
-    expect(previewSrc).toContain('mode=dark');
+    // Color inputs settle for 150ms before reaching the preview URL (the
+    // Wave-A drag debounce), so poll rather than one-shot-read the src —
+    // the retrying assertion is also what documents the settling behavior.
+    const frame = page.locator('iframe[title]').first();
+    await expect(frame).toHaveAttribute('src', /surface=%230f1a2b/);
+    await expect(frame).toHaveAttribute('src', /ink=%23f5f7fa/);
+    await expect(frame).toHaveAttribute('src', /mode=dark/);
   });
 
   test('ES locale renders the new control labels', async ({ page }) => {

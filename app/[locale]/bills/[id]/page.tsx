@@ -48,12 +48,18 @@ import { SITE_ORIGIN } from '@/lib/site';
  */
 
 /*
- * Every bill/moment is enumerated by generateStaticParams below, so an id
- * that is not in that list does not exist. Without this, Next serves an
- * unknown slug as a cached 200 carrying the site's own <title> — a soft 404
- * that crawlers index as a real Oravan page. false makes the router 404 it.
+ * TRUE 404s INSIDE THE LOCALE BOUNDARY (Phase-1 P1 pair, 2026-08-04).
+ * `dynamicParams = false` rejected unknown slugs at the ROUTING layer —
+ * above the locale boundary — so a Spanish visitor following a dropped bill
+ * link got the bare English root not-found (no chrome, lang="en"): the
+ * bilingual-parity hard rule broken exactly where a re-synced corpus
+ * produces dead links. `true` + the getBill()/getMoments() notFound() guard
+ * below keeps the SAME anti-soft-404 posture (notFound() sends a real 404
+ * status, never a cached 200 with the site's own title — the original
+ * comment's fear) while rendering app/[locale]/not-found.tsx with header,
+ * footer, and the right lang.
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
