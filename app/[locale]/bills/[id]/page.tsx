@@ -168,12 +168,23 @@ export default async function BillPage({
     ? displayTitle
     : `${citation} — ${displayTitle}`;
   // The reading-history label, built by the SAME rule (and the same middot)
-  // ActionPanel:171 uses for call-log labels — the civic record prints read
+  // ActionPanel uses for call-log labels — the civic record prints read
   // rows directly above call rows, and two labelling idioms in one list
   // would read as two different products.
-  const recordLabel = norm(displayTitle).includes(norm(citation))
-    ? displayTitle
-    : `${citation} · ${displayTitle}`;
+  //
+  // BOTH locales' labels, at render time (2026-08-04 walkthrough P1:
+  // /es/record printed stored English titles verbatim). The record lives
+  // only in localStorage, so the locale it will one day be READ in is
+  // unknowable at write time — capture both here, where the counterpart
+  // corpus is already on disk, rather than ever resolving labels over the
+  // network from a page whose contents are private to the device.
+  const recordLabelFor = (l: string) => {
+    const b = localizeBill(raw, l);
+    const dt = b.ai_headline ?? b.short_title ?? b.title;
+    return norm(dt).includes(norm(citation)) ? dt : `${citation} · ${dt}`;
+  };
+  const recordLabels = { en: recordLabelFor('en'), es: recordLabelFor('es') };
+  const recordLabel = recordLabelFor(locale);
   // Canonical, slug-only share URL: no query params, no stance, no
   // locale-tracking params. The origin lives in lib/site.ts (rename in flight).
   const shareUrl = `${SITE_ORIGIN}${getPathname({ locale, href: `/bills/${id}` })}`;
@@ -352,7 +363,7 @@ export default async function BillPage({
             {/* Records this bill in the visitor's own reading history
                 (localStorage, this device only). Renders no markup — see
                 components/ReadReceipt.tsx. */}
-            <ReadReceipt slug={id} label={recordLabel} />
+            <ReadReceipt slug={id} label={recordLabel} labels={recordLabels} />
             <div className="border-t-[3px] border-ink pt-4">
               <h2 id="decoded" className="text-h2 font-extrabold text-ink">
                 {t('bill.decoded')}
@@ -392,6 +403,7 @@ export default async function BillPage({
               slug={id}
               identifier={citation}
               title={bill.ai_headline ?? bill.short_title ?? bill.title}
+              recordLabels={recordLabels}
             />
           </div>
 

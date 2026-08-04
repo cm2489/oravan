@@ -34,13 +34,29 @@ import { upsertRead } from '@/lib/local';
  * lands and leaves inside one tick never read anything, and should not get
  * a row.
  */
-export function ReadReceipt({ slug, label }: { slug: string; label: string }) {
+export function ReadReceipt({
+  slug,
+  label,
+  labels,
+}: {
+  slug: string;
+  label: string;
+  /** Both locales' labels, captured at write time so the record can render
+   *  in whichever language it is later read in — see lib/local.ts. */
+  labels: { en: string; es: string };
+}) {
   useEffect(() => {
     const id = window.setTimeout(() => {
-      upsertRead({ billSlug: slug, billLabel: label, at: new Date().toISOString() });
+      upsertRead({
+        billSlug: slug,
+        billLabel: label,
+        labelEn: labels.en,
+        labelEs: labels.es,
+        at: new Date().toISOString(),
+      });
     }, 0);
     return () => window.clearTimeout(id);
-  }, [slug, label]);
+  }, [slug, label, labels]);
 
   return null;
 }

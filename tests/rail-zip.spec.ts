@@ -122,6 +122,50 @@ test('reps lookup failure in the rail: Failure + retry recovers without leaving 
   await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
 });
 
+/*
+ * Split ZIP in the rail (2026-08-04 walkthrough P1): 10001 spans NY-10
+ * (Goldman) and NY-12 (Nadler), so four names render — and the old copy
+ * said "your three" with no "which one is mine?" help, while the call
+ * dialog led with a House member who may not be the caller's own. The
+ * multi-district line owns the count, the senators lead the list, and the
+ * existing /reps refinement flow is offered from the panel itself.
+ */
+test('split ZIP (10001): honest multi-district copy, senators lead, refinement offered', async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  await page.getByLabel(en.home.zipLabel).fill('10001');
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+
+  // Never "your three" over four names.
+  await expect(page.getByText(en.bill.callWhoMulti)).toBeVisible();
+  await expect(page.getByText(en.bill.callWho, { exact: true })).toHaveCount(0);
+
+  // Four rows, with BOTH ambiguous House members demoted below the two
+  // certainly-yours senators.
+  const rowNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  await expect(rowNames).toHaveCount(4);
+  const names = await rowNames.allTextContents();
+  expect(names.findIndex((n) => /Goldman|Nadler/.test(n))).toBeGreaterThanOrEqual(2);
+
+  // The refinement hand-off: the same ?zip flow /reps already owns.
+  const refine = page.getByRole('link', { name: en.bill.refineDistrictCta }).first();
+  await expect(refine).toBeVisible();
+  await expect(refine).toHaveAttribute('href', /\/reps\?zip=10001/);
+
+  // The dial moment carries the same disambiguation: the dialog's first
+  // dial link is a senator, and the note + refinement render in-mode.
+  await page.getByRole('button', { name: en.bill.startCall }).click();
+  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
+  await expect(dialog.getByText(en.bill.callWhoMulti)).toBeVisible();
+  await expect(dialog.getByRole('link', { name: en.bill.refineDistrictCta })).toBeVisible();
+  await expect(dialog.locator('a[href^="tel:"]').first()).not.toContainText(/Goldman|Nadler/);
+});
+
 test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, no departed member', async ({
   page,
 }) => {

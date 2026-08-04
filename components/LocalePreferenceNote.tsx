@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
+import { readLocaleChoice, rememberLocaleChoice } from '@/lib/locale-pref';
 
 /*
  * "¿Prefieres español?" — the language-preference note (blind teardown
@@ -37,13 +38,23 @@ const DISMISS_KEY = 'oravan.esNote.dismissed';
 
 /** Browser-only check, SSR-safe: the server snapshot is always false, so the
  *  static HTML never carries the note and hydration cannot mismatch — it
- *  appears in the first client render for a Spanish-preferring browser. */
+ *  appears in the first client render for a Spanish-preferring browser.
+ *
+ *  An explicit language choice (lib/locale-pref.ts) outranks the browser's
+ *  own configuration in BOTH directions (2026-08-04 walkthrough P1 —
+ *  "Spanish is a mode you must re-enter"): a visitor who chose Español gets
+ *  the one-tap way back on every bare-URL entry even from an
+ *  English-configured browser, and one who explicitly chose English is not
+ *  re-suggested Spanish just because their OS speaks it. */
 function readPrefersEs(): boolean {
   try {
     if (window.localStorage.getItem(DISMISS_KEY)) return false;
   } catch {
     // storage blocked: suggest anyway this session, never persist
   }
+  const chosen = readLocaleChoice();
+  if (chosen === 'es') return true;
+  if (chosen === 'en') return false;
   return (navigator.languages ?? [navigator.language]).some((l) =>
     (l || '').toLowerCase().startsWith('es')
   );
@@ -78,6 +89,7 @@ export function LocalePreferenceNote() {
             href={pathname}
             locale="es"
             hrefLang="es"
+            onClick={() => rememberLocaleChoice('es')}
             className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
           >
             {t('cta')}

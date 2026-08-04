@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { PhoneCall, MessageCircle, Voicemail, Trash2, ArrowRight } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { eraseAll, removeCall, removeRead, useCalls, usePrefs, useReads } from '@/lib/local';
 
@@ -41,6 +41,7 @@ const ROW_DELETE =
   'flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-control p-2.5 text-ink-2 hover:bg-wash hover:text-ink';
 
 export default function ImpactPageClient() {
+  const locale = useLocale();
   const t = useTranslations('impact');
   const tBill = useTranslations('bill');
   const tBills = useTranslations('bills');
@@ -64,6 +65,12 @@ export default function ImpactPageClient() {
   const voicemails = calls.filter((c) => c.outcome === 'voicemail').length;
   const day = (iso: string) =>
     format.dateTime(new Date(iso), { month: 'short', day: 'numeric', year: 'numeric' });
+  // The row label in the language the record is being READ in, not the one
+  // the interaction happened in (2026-08-04 walkthrough P1: /es/record
+  // printed stored English titles verbatim). Rows written before both
+  // labels were captured fall back to the interaction-time label.
+  const rowLabel = (r: { billLabel: string; labelEn?: string; labelEs?: string }) =>
+    (locale === 'es' ? r.labelEs : r.labelEn) ?? r.billLabel;
 
   return (
     // max-w-5xl + text-h1-bill: the sitewide rail and the sitewide title
@@ -123,7 +130,7 @@ export default function ImpactPageClient() {
               <li key={r.billSlug} className={ROW}>
                 <div>
                   <Link href={`/bills/${r.billSlug}`} className={ROW_LINK}>
-                    {r.billLabel}
+                    {rowLabel(r)}
                   </Link>
                   <p className="mt-1 text-sm text-ink-2 tabular-nums">{day(r.at)}</p>
                 </div>
@@ -187,7 +194,7 @@ export default function ImpactPageClient() {
               <li key={c.at} className={ROW}>
                 <div>
                   <Link href={`/bills/${c.billSlug}`} className={ROW_LINK}>
-                    {c.billLabel}
+                    {rowLabel(c)}
                   </Link>
                   <p className="mt-1 text-sm text-ink-2">
                     {c.repName} · {tBill(`outcome.${c.outcome}`)} · {day(c.at)}

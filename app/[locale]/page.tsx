@@ -6,6 +6,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
 import { HomeScreencast } from '@/components/HomeScreencast';
 import { NewsLens } from '@/components/NewsLens';
+import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
@@ -392,7 +393,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 page says "Ver en español" — hence lang/hreflang on the link,
                 not the page. Complements the header pill, never replaces it. */}
             <p className="mt-4 max-w-note text-sm">
-              <Link
+              {/* RememberLocaleLink, not Link: an explicit language choice is
+                  recorded on-device (lib/locale-pref.ts) so the preference
+                  note can offer the way back on the next bare-URL entry. */}
+              <RememberLocaleLink
                 href="/"
                 locale={locale === 'es' ? 'en' : 'es'}
                 lang={locale === 'es' ? 'en' : 'es'}
@@ -401,7 +405,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               >
                 {t('heroLocaleLink')}
                 <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
+              </RememberLocaleLink>
             </p>
           </div>
 

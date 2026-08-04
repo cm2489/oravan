@@ -17,7 +17,16 @@ export interface Prefs {
 
 export interface CallRecord {
   billSlug: string;
+  /** The label in the locale the interaction happened in — and the only
+   *  label rows written before 2026-08 carry (render fallback). */
   billLabel: string;
+  /** Both locales' labels, captured AT WRITE TIME from the bill page's own
+   *  server-rendered data — so /es/record can print the Spanish headline for
+   *  a call logged on the English page WITHOUT ever fetching the record's
+   *  contents over the network (the record never leaves this device, and a
+   *  render-time lookup request would leak exactly which bills it holds). */
+  labelEn?: string;
+  labelEs?: string;
   repBioguide: string;
   repName: string;
   stance: Stance;
@@ -35,6 +44,9 @@ export interface CallRecord {
 export interface ReadRecord {
   billSlug: string;
   billLabel: string;
+  /** Same write-time bilingual pair as CallRecord — see that comment. */
+  labelEn?: string;
+  labelEs?: string;
   at: string; // ISO timestamp
 }
 
