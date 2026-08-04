@@ -30,6 +30,8 @@ export interface BillCardData {
   headline: string | null;
   officialTitle: string;
   status: BillStatus;
+  /** Label-gated key (lib/journey statusKeyFor) — see the page's comment. */
+  statusKey: BillStatus | 'floor_activity';
 }
 
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
@@ -139,7 +141,7 @@ export function BillCardWidget({
       </div>
 
       <article className="bc-card">
-        <p className="bc-status">{t.bills.status[bill.status]}</p>
+        <p className="bc-status">{t.bills.status[bill.statusKey] ?? t.bills.status[bill.status]}</p>
         <h1 className="bc-headline">{displayHeadline}</h1>
         {bill.headline && <span className="bc-chip-ai">{t.og.aiDecoded}</span>}
         <p className="bc-freshness">{dataAsOfText}</p>

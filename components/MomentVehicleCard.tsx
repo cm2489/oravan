@@ -52,6 +52,7 @@ export function MomentVehicleCard({
   lastActionDate,
   coverageCount,
   role,
+  statusKey,
   ctaLabel,
   calendarLabel,
 }: {
@@ -60,6 +61,11 @@ export function MomentVehicleCard({
   headline: string | null;
   title: string;
   status: BillStatus;
+  /** Label-gated key (lib/journey statusKeyFor). Drives BOTH the printed
+      status and the amber calendar chip: an activity-only floor_vote bill
+      (cloture, rejected motion) must never wear the placement claim —
+      the same gate the homepage crown enforces (Wave B #1). */
+  statusKey: BillStatus | 'floor_activity';
   tags: string[];
   lastActionDate: string | null;
   coverageCount?: number;
@@ -77,14 +83,14 @@ export function MomentVehicleCard({
   // and the date has to still be inside the 14-day window this page publishes
   // to the reader a few hundred pixels below ("Why this Moment exists").
   // Amber on a 39-day-old placement contradicted our own stated rule in view.
-  const onCalendar = status === 'floor_vote' && isSignalFresh(lastActionDate);
+  const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate);
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can
   // never start with a floating "·" (the /es long-status failure shape).
   const meta: { key: string; node: ReactNode }[] = [
     { key: 'id', node: <span className="tabular-nums normal-case">{identifier}</span> },
   ];
-  if (!onCalendar) meta.push({ key: 'status', node: t(`bills.status.${status}`) });
+  if (!onCalendar) meta.push({ key: 'status', node: t(`bills.status.${statusKey}`) });
   if (coverageCount != null && coverageCount > 0) {
     meta.push({ key: 'coverage', node: t('news.sources', { count: coverageCount }) });
   }

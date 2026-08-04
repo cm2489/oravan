@@ -178,6 +178,7 @@
       "committee": "En comité",
       "markup": "En revisión",
       "floor_vote": "En el calendario del pleno",
+      "floor_activity": "Actividad en el pleno",
       "passed_chamber": "Aprobado por una cámara",
       "conference": "En comisión mixta",
       "signed": "Promulgado como ley",
@@ -283,6 +284,7 @@
       "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
       "nowFloor": "está en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
       "nowFloorActivity": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} está decidiendo si lo somete a votación.",
+      "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
       "nowSigned": "el Presidente lo firmó. Ya es ley.",
@@ -534,7 +536,8 @@
     "errorLabel": "Revisa esto"
   },
   "og": {
-    "aiDecoded": "Descifrado con IA"
+    "aiDecoded": "Descifrado con IA",
+    "aiDrafted": "Resumen redactado con IA"
   },
   "freshness": {
     "dataAsOf": "Datos al {date}",
@@ -831,7 +834,8 @@
         "gao": "Oficina de Rendición de Cuentas del Gobierno"
       },
       "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
-    }
+    },
+    "kicker": "Gran pregunta"
   },
   "langNote": {
     "cta": "Ver Oravan en español",

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { statusKeyFor } from '@/lib/journey';
 import { headers } from 'next/headers';
 import { after } from 'next/server';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
@@ -79,6 +80,9 @@ export default async function BillCardEmbedPage({
         headline: bill.ai_headline,
         officialTitle: bill.short_title ?? bill.title,
         status: bill.status,
+        // Label gate (Wave B #1): partner sites must never print the
+        // placement claim over an activity-only record either.
+        statusKey: statusKeyFor(bill.status, bill.last_action_text),
       }
     : null;
 

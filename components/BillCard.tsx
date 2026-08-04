@@ -61,7 +61,7 @@ export function BillCard({
           <span aria-hidden> ·</span>
         </span>
         <span className="whitespace-nowrap">
-          {t(`bills.status.${bill.status}`)}
+          {t(`bills.status.${bill.statusKey}`)}
           {coverageCount != null && <span aria-hidden> ·</span>}
         </span>
         {coverageCount != null && (

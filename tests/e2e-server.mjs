@@ -144,10 +144,18 @@ const upstash = createServer((req, res) => {
 
 upstash.listen(0, '127.0.0.1', () => {
   const { port } = upstash.address();
+  // HERMETIC SANDBOX (2026-08-04): the suite's contract is "no live
+  // ANTHROPIC_API_KEY in this sandbox" — three embed-script tests assert
+  // the 502 that contract produces. A developer's ambient key (shell env
+  // OR .env.local, which `next start` loads on its own) silently flipped
+  // those tests red and made e2e runs spend real API money. Strip the key
+  // here AND pass the empty-string override (a set-but-empty env var beats
+  // .env.local in Next's precedence, so the child can't resurrect it).
   const child = spawn('sh', ['-c', `npm run build && npx next start -p ${PORT}`], {
     stdio: 'inherit',
     env: {
       ...process.env,
+      ANTHROPIC_API_KEY: '',
       UPSTASH_TENANCY_REST_URL: `http://127.0.0.1:${port}`,
       UPSTASH_TENANCY_REST_TOKEN: 'e2e-fixture-token',
     },

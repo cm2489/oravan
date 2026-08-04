@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { statusKeyFor } from '@/lib/journey';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
@@ -250,6 +251,7 @@ export default async function RepsPage({
                     identifier: formatCitation(b.bill_type, b.bill_number),
                     headline: b.ai_headline,
                     title: b.short_title ?? b.title,
+                    statusKey: statusKeyFor(b.status, b.last_action_text),
                     status: b.status,
                     tags: b.issue_tags ?? [],
                     lastActionDate: b.last_action_date,

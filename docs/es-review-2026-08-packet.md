@@ -1,0 +1,38 @@
+# Spanish native-review packet — 2026-08-04
+
+For: one native Spanish reader, ~2–3 hours, alongside the name spot-check session.
+
+## Instructions
+
+The site is 100% tú-form, plain register (8th-grade), Latin-American-neutral. For each row: read the English for INTENT (never translate literally — rewrite as a person would say it), then judge the current Spanish. Mark each: ✅ ships / ✏️ reword (write your version in the last column) / ❓ unsure. Anything that smells like a translation is a fail even if grammatical. Also flag any missing inverted punctuation, register slips (usted), or Spain-only idiom.
+
+Then the standing script spot-check: `docs/es-script-spotcheck.md` — generate two call scripts at /es (support + oppose on any bill) and judge them by the same standard.
+
+| Key | EN (intent) | Current ES | What to check | Your verdict |
+|---|---|---|---|---|
+| `bill.journey.nowFloorActivity`  | the {chamber, select, House {House} Senate {Senate} other {Senate}} is deciding whether to bring it to a vote. | {chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} está decidiendo si lo somete a votación. | New journey state (Aug 2): does it read like a person wrote it? Chamber grammar. | |
+| `bills.bandSub.radar`  | Quieter right now — earlier stages, older action dates, or already settled. Worth watching, less time pressure. | Más tranquilos ahora mismo — etapas tempranas, fechas de acción más antiguas o ya resueltos. Vale la pena seguirlos, con menos prisa. | Rewritten radar-bucket subtitle (Aug 2). | |
+| `home.heroSub`  | Understanding what Congress is doing shouldn't take a law degree. Oravan decodes every active bill into plain English and Spanish, checks it against the official record, and hands you a 30-second script for telling your representatives what matters to you. | Entender lo que hace el Congreso no debería requerir un título en derecho. Oravan descifra cada proyecto de ley activo en palabras claras — inglés y español —, lo coteja con el registro oficial y te da un guion de 30 segundos para decirles a tus representantes qué te importa. | The hero paragraph (Aug 1 rewrite) — the single most-read Spanish sentence on the site. | |
+| `home.heroAiLead`  | AI drafts the plain words here, and says so | La IA redacta aquí las palabras claras, y lo dice | AI credit line, part 1. | |
+| `home.heroAiMeta`  | Nothing publishes without automated checks · the official record is always attached | Nada se publica sin pasar controles automáticos · el registro oficial siempre va adjunto | AI credit line, part 2 (middot fragments — do they read as metadata?). | |
+| `home.screencastTitle`  | Watch the whole thing | Míralo de principio a fin | Player header. | |
+| `home.screencastDur`  | About 30 seconds | Unos 30 segundos | Duration claim. | |
+| `home.screencastStepAria`  | Step {n} of {total}: {title} | Paso {n} de {total}: {title} | Screen-reader step label — grammar with interpolations. | |
+| `home.weekNoteQuiet`  | The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week. | El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila. | Quiet-week honesty note. | |
+| `reps.sub`  | Every US resident has one House representative and two senators. Here are yours, with every number that reaches them. | Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos sus números de contacto. | Rewritten (was a calque: "para alcanzarlos"). | |
+| `reps.nextSub`  | Here's what's worth a call to them this week. | Lo que vale una llamada esta semana. | Rewritten (was "Esto vale la pena llamarles"). | |
+| `reps.multiDistrict`  | Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same either way. | Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso. | NEW plural form (Aug 4) — check the {count, plural} grammar reads naturally at 2 and at 6. | |
+| `home.zipLookupFailed`  | The lookup didn't go through — that's on our end, not your ZIP. Try again in a moment. | La búsqueda no se completó — es cosa nuestra, no de tu código postal. Inténtalo de nuevo en un momento. | NEW (Aug 4): failure honesty — tone check ("es cosa nuestra"). | |
+| `common.footer.mission`  | Oravan is free, nonpartisan civic infrastructure. No accounts, no ads, no trackers — nothing about you is ever stored on our servers. | Oravan es infraestructura cívica gratuita y no partidista. Sin cuentas, sin anuncios, sin rastreadores — nada sobre ti se guarda jamás en nuestros servidores. | Rewritten footer claim (storage truth). | |
+| `partners.librariesBody`  | Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, and plain language that never publishes without passing automated checks against the official record. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone. | Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, y lenguaje claro que nunca se publica sin pasar controles automáticos contra el registro oficial. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono. | Rewritten automated-gates claim — the sentence a librarian reads. | |
+| `coverage.subhead`  | Coverage of this bill from across the press — each outlet's political lean labeled where AllSides has rated it, and marked "Not rated" where it hasn't. | Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como "Sin calificar" donde no. | Rewritten coverage framing. | |
+| `bill.footNote`  | This panel follows as you scroll — your call is always in reach | Este panel te sigue mientras lees — tu llamada siempre queda a mano | Rewritten panel note (was "El panel se desplaza · la llamada se queda"). | |
+| `home.supportBody`  | No ads, no trackers, no profiles — reader support is what pays for the hosting and data that keep it that way. | Sin anuncios, sin rastreadores, sin perfiles — el apoyo de los lectores es lo que paga el alojamiento y los datos que lo mantienen así. | Trimmed support-band mission line. | |
+| `common.footer.aiNote`  | AI-drafted content is always clearly marked — review it before you use it. | El contenido redactado por IA siempre está claramente marcado: revísalo antes de usarlo. | usted→tú fix ("revísalo") — confirm register consistency. | |
+| `errorBoundary.body`  | This page hit a snag. Reloading usually fixes it. If it keeps happening, erasing your saved data on the My record page can clear it. | Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, borrar tus datos guardados en la página Mi historial puede solucionarlo. | Standing machine-drafted error copy (pre-campaign flag, never reviewed). | |
+| `errorBoundary.title`  | Something went wrong | Algo salió mal | Same. | |
+| `bills.showFewer`  | Show fewer | Ver menos | NEW (Aug 4): "Ver menos" — fine? or "Mostrar menos"? | |
+
+## Return
+
+Send the marked-up file to hello@oravan.org or straight back to Colby. Corrections land as one PR, verified by the es-parity suite.
