@@ -305,13 +305,20 @@ export function BillsBrowser({
                 <BillCard key={b.slug} bill={b} emphasis={band === 'now'} />
               ))}
             </div>
-            {!isOpen && all.length > BAND_CAP && (
+            {/* A DISCLOSURE, never an unmounting button (Phase-1 P1): the
+                old {!isOpen && <button>} unmounted itself on activation,
+                dropping keyboard focus to <body> at the top of a 246-screen
+                band. Staying mounted keeps focus where the user put it,
+                aria-expanded names the state, and the flipped label restores
+                the collapse path the old control never had. */}
+            {all.length > BAND_CAP && (
               <button
                 type="button"
-                onClick={() => setExpanded((e) => ({ ...e, [band]: true }))}
+                aria-expanded={isOpen}
+                onClick={() => setExpanded((e) => ({ ...e, [band]: !isOpen }))}
                 className={`mt-6 ${GHOST_BTN}`}
               >
-                {t('bills.showAll', { count: all.length })}
+                {isOpen ? t('bills.showFewer') : t('bills.showAll', { count: all.length })}
               </button>
             )}
           </section>

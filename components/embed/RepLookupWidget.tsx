@@ -62,7 +62,10 @@ function format(template: string, vars: Record<string, string | number>) {
   );
 }
 
-type Status = 'idle' | 'loading' | 'notFound' | 'error';
+// 'error' = the visitor's input is malformed (format), and ONLY that —
+// aria-invalid keys on it. 'lookupFailed' = our lookup broke (API/network);
+// never the visitor's fault, never aria-invalid.
+type Status = 'idle' | 'loading' | 'notFound' | 'error' | 'lookupFailed';
 type Vacancy = { state: string; district: number };
 
 export function RepLookupWidget({
@@ -111,8 +114,11 @@ export function RepLookupWidget({
     try {
       const res = await fetch(`/api/reps?zip=${value}`);
       if (!res.ok) {
+        // Server/API failure is NOT the visitor's ZIP (Phase-1 P1: a 500
+        // rendered "That doesn't look like a US ZIP code" with aria-invalid
+        // on a correct input — the user is blamed and told the wrong fix).
         setReps(null);
-        setStatus('error');
+        setStatus('lookupFailed');
         return;
       }
       const data = (await res.json()) as {
@@ -135,7 +141,7 @@ export function RepLookupWidget({
       setStatus('idle');
     } catch {
       setReps(null);
-      setStatus('error');
+      setStatus('lookupFailed');
     }
   }, []);
 
@@ -241,6 +247,11 @@ export function RepLookupWidget({
       {status === 'error' && (
         <p id="re-zip-error" role="alert" className="re-error">
           {t.home.zipInvalid}
+        </p>
+      )}
+      {status === 'lookupFailed' && (
+        <p role="alert" className="re-error">
+          {t.home.zipLookupFailed}
         </p>
       )}
       {status === 'loading' && (

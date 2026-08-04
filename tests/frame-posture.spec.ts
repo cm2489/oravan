@@ -116,6 +116,11 @@ test.describe(
       reps: '/reps',
       terms: '/terms',
       'why-call': '/why-call',
+      // The locale catch-all (true 404s inside the locale boundary): a path
+      // no real route claims. The 404 response still carries the site-wide
+      // frame-ancestors lock — CSP headers are path-pattern-based, never
+      // status-based.
+      '[...rest]': '/definitely-not-a-real-page-frame-posture-probe',
     };
     const API_ROUTES: Record<string, string> = {
       // Brand-preview build: POST-only (stateless homepage → theme suggestion).
