@@ -1,0 +1,138 @@
+name: Moment watch
+
+# Delivery for the Big Question candidate shortlist (owner decision, 2026-08-05).
+#
+# WHY: scripts/moment-candidates.mjs has produced a complete, correct ranked
+# report since it was written, and was referenced by no workflow and no npm
+# script. It ran only when someone typed it, and nobody did — so 38 qualified
+# candidates sat unread while the two live Moments aged. The report was never
+# the missing piece; delivery was.
+#
+# TWO CADENCES, ONE FILE. `github.event.schedule` selects the mode:
+#   - nightly  -> --mode=push    : opens ONE issue per NEWLY-qualifying bill,
+#                                  and stays silent when nothing crossed the
+#                                  floor. Silence is the signal.
+#   - Mondays  -> --mode=weekly  : updates ONE standing issue with the whole
+#                                  shortlist, what changed, what is expiring,
+#                                  and every below-the-floor exclusion with its
+#                                  reason, so the floor stays auditable.
+#
+# COST: $0. Zero network, zero AI, zero paid API — scripts/moment-watch.mjs
+# reads only files already in the repo. Actions minutes are free on a public
+# repo (standard runners).
+#
+# THE BOUNDARY IS UNCHANGED. This never drafts a Moment. The scaffold in each
+# issue carries only facts copied from the official record; every user-facing
+# sentence is left empty for the owner to write in both languages, which is
+# what keeps `moments.howMadeBody` true.
+
+on:
+  schedule:
+    - cron: '20 11 * * *' # 11:20 UTC daily = 7:20am ET — after the 07:30 UTC
+      #                     nightly sync has committed, so the watcher always
+      #                     reads fresh bill statuses and coverage. Lands in
+      #                     time to be reviewed with morning coffee.
+    - cron: '0 13 * * 1' # 13:00 UTC Monday = 9:00am ET — the weekly review.
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'push | weekly'
+        required: false
+        default: 'push'
+
+permissions:
+  contents: write # commits data/candidates-seen.json
+  issues: write # opens/updates the candidate issues
+
+concurrency:
+  # Shared with sync-bills.yml / newsdesk.yml / hot-bills.yml /
+  # refresh-legislators.yml so a seen-set commit can never race their commits
+  # to data/. This workflow only ever writes data/candidates-seen.json, but the
+  # push itself still has to be serialised against theirs.
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+        # No npm ci: scripts/moment-watch.mjs and the moment-candidates.mjs it
+        # imports are stdlib-only by design (zero network, zero AI). Installing
+        # dependencies here would add a minute to a job that needs none.
+
+      - name: Select mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 13 * * 1" ]; then
+            echo "mode=weekly" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=push" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build report
+        id: report
+        # Writes new_count to $GITHUB_OUTPUT. Does NOT advance the seen-set —
+        # that happens only after an issue is actually opened, so a failure
+        # between here and there can never silently swallow a candidate.
+        run: |
+          node scripts/moment-watch.mjs --mode=${{ steps.mode.outputs.mode }} > /tmp/report.md
+          node scripts/moment-watch.mjs --mode=${{ steps.mode.outputs.mode }} --json > /tmp/report.json
+          cat /tmp/report.json
+
+      - name: Open an issue per new candidate
+        if: steps.mode.outputs.mode == 'push' && steps.report.outputs.new_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # One issue per candidate, not one rolling issue: each can be closed
+        # independently as it is accepted or declined, and closing IS the
+        # decline action.
+        run: |
+          for slug in $(node -e "console.log(require('/tmp/report.json').newly.join(' '))"); do
+            node scripts/moment-watch.mjs --mode=push --only="$slug" > "/tmp/$slug.md"
+            gh issue create \
+              --title "Big Question candidate: $slug" \
+              --label moment-candidate \
+              --body-file "/tmp/$slug.md"
+          done
+
+      - name: Update the standing weekly issue
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Updates in place rather than opening a new issue each Monday: the
+        # thread becomes a running record and notifications stay quiet.
+        run: |
+          existing=$(gh issue list --label moment-review --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file /tmp/report.md
+            gh issue comment "$existing" --body "Refreshed $(date -u +%Y-%m-%d)."
+          else
+            gh issue create --title "Moment review (standing)" --label moment-review --body-file /tmp/report.md
+          fi
+
+      - name: Commit the seen-set
+        if: steps.mode.outputs.mode == 'push'
+        # Only after the issues exist. Rebase-and-retry mirrors the other data
+        # workflows: a nightly sync commit may have landed while this ran.
+        run: |
+          node scripts/moment-watch.mjs --mode=push --commit-seen > /dev/null
+          if git diff --quiet -- data/candidates-seen.json; then
+            echo "seen-set unchanged"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/candidates-seen.json
+          git commit -m "chore(data): moment candidates seen-set $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            echo "push race, retrying ($i)"
+          done
+          exit 1

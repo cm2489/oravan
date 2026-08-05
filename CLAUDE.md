@@ -13,6 +13,14 @@ Read README.md first; its **Design principles** section is the product constitut
 - Never log or expose secrets. The only *runtime* secrets are `ANTHROPIC_API_KEY`, `GITHUB_FEEDBACK_TOKEN` (issues-only fine-grained PAT for beta feedback intake), `STRIPE_WEBHOOK_SECRET` (webhook signature verification, S18 — unset everywhere until the owner arms billing; the route refuses with 503 without it), and the Upstash REST tokens `UPSTASH_COUNTERS_REST_TOKEN` / `UPSTASH_CACHE_REST_TOKEN` / `UPSTASH_TENANCY_REST_TOKEN` (three physically separate databases: short-lived rate-limit counters vs. content cache vs. durable tenant config, a reconstructable cache of Stripe's state — never merged, never called "anonymized"); `BLOB_READ_WRITE_TOKEN` (Vercel Blob `oravan-blob`, private store — same-origin portrait mirror/proxy only, armed 2026-07-12; also a nightly-sync Actions secret); `CONGRESS_API_KEY` and the optional `NEWS_API_KEY` are build-time only (nightly sync scripts), never shipped to the client.
 - Claude opens PRs but **never merges** — Colby merges.
 
+## Constitutional conflicts
+
+When something useful conflicts with a rule in this file or with README's **Design principles**, **say so in bold, name the exact rule, and state what it would cost to change it** — at the moment it comes up, before building around it. Never silently narrow a proposal to fit a rule, and never quietly break one. Both hide the decision from Colby, and the decision is his.
+
+Applies to: the hard rules above, README Design principles 1–6, and the named invariants in `tests/funnel.spec.ts`.
+
+The same duty covers **shipped claims that have quietly stopped being true.** A rule that the code no longer honors is a conflict, not a detail — surface it the same way. Added 2026-08-05 after three went unflagged in one session: the `/citations` "no advocacy language" gate (a prompt instruction, never a gate), the House-has-no-vote problem in any non-bill vehicle, and coverage staleness (88.5% of `data/coverage.json` entries older than 30 days behind a page that reads as nightly-fresh).
+
 ## Architecture in one breath
 
 Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database; ~1,000 SSG pages; the only dynamic routes are `app/api/script` (Anthropic, cached + rate-limited), `app/api/reps` (pure lookup), `app/api/district` (stateless Census-geocoder proxy for split-ZIP address refinement — address never stored or logged), `app/api/feedback` (beta feedback → GitHub issue; only the volunteered text, no identifiers), `app/api/mcp/[transport]` (the MCP server: 5 read-only tools, rate-limited, citation envelope), `app/api/stripe/webhook` (S18 tenant provisioning; 503-dark until `STRIPE_WEBHOOK_SECRET` exists), and `app/api/tenant/impressions` (S20; token-authenticated, a tenant reads only its own daily/monthly aggregates, best-effort by design). `proxy.ts` does locale negotiation only.
