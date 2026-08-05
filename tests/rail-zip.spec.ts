@@ -186,8 +186,8 @@ test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, 
 
 /*
  * Two 2026-08 benchmark gates in one flow. (1) Enter submits the rail ZIP
- * form — GovTrack's silent-Enter failure at the moment of highest intent is
- * the anti-lesson. (2) Chamber-aware routing (lib/journey.ts
+ * form — a silent Enter at the moment of highest intent is the exact
+ * failure this gate exists to prevent. (2) Chamber-aware routing (lib/journey.ts
  * liveCallTarget): S.J.Res. 99's floor activity sits in the Senate (the CR
  * S-page in its own last action), so the live-call line names the senators
  * and they lead the list — the House member keeps her dial, demoted never

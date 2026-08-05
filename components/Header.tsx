@@ -87,8 +87,8 @@ export function Header() {
             <OravanLockup markRem={2.5} markClassName="text-go" />
           </Link>
 
-          {/* THE TRUST LINE (2026-08 pick A1, stolen from The Marshall
-              Project's masthead — the mission sentence lives in the chrome).
+          {/* THE TRUST LINE (2026-08 design pick A1): the product's
+              posture stated in the chrome itself, on every page.
               Wide bars only: the 390px bar keeps its one-row, 56px budget
               untouched, and the phone already carries the promise in the
               hero. EN ONLY in this inline slot — measured on the production

@@ -58,7 +58,7 @@ test('footer privacy link is reachable and clickable on mobile', async ({ page, 
   await expect(page).toHaveURL(/\/privacy/);
 });
 
-test('Enter in the hero ZIP field submits (GovTrack anti-lesson gate, 2026-08 benchmark)', async ({
+test('Enter in the hero ZIP field always submits (2026-08 gate)', async ({
   page,
 }) => {
   // The incumbent's address field silently swallowed Enter on one of two

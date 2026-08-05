@@ -242,10 +242,10 @@ export default async function BillPage({
             folded into a disclosure. */}
         <header className="pt-6 pb-4">
           <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
-          {/* THE PROVENANCE RITUAL (2026-08 pick C1, stolen from The
-              Marshall Project — one utility voice for ALL metadata, same
-              order every page: bill · congress · status · latest action ·
-              the AI label). The stamp voice extended, no new font. The old
+          {/* THE PROVENANCE RITUAL (2026-08 design pick C1): one utility
+              voice for ALL metadata, same order every page — bill ·
+              congress · status · latest action · the AI label. The stamp
+              voice extended, no new font. The old
               AI chip's whole sentence rides here VERBATIM in its own span:
               funnel invariant I1 pins `bill.aiLabel` on this page, and this
               position is first-contact, above the fold at 390px. Status

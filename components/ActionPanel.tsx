@@ -206,7 +206,7 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   //     they lead — the walkthrough's call modal led with a House member who
   //     may not be the caller's own, exactly the nervous caller's fear.
   //  2. Chamber routing: the chamber holding the live decision leads
-  //     (lib/journey.ts liveCallTarget — the 5calls/GovTrack steal).
+  //     (lib/journey.ts liveCallTarget).
   //  Certainty outranks routing: in a split ZIP the senators stay first even
   //  when the House holds the bill, because "which House member is mine?" is
   //  unresolved and the refinement CTA sits right below.
@@ -611,10 +611,9 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
               {scriptCopied ? t('scriptCopied') : ''}
             </span>
 
-            {/* BOTH-SIDES GHOSTS (2026-08 pick D1, stolen from GovTrack —
-                its call page renders support AND oppose templates
-                unconditionally, so the UI itself certifies no house
-                position). The unselected stances' STATIC templates sit
+            {/* BOTH-SIDES GHOSTS (2026-08 design pick D1): every stance's
+                template is rendered unconditionally, so the UI itself
+                certifies no house position. The unselected stances' STATIC templates sit
                 collapsed beneath the chosen draft: rendered every time,
                 never AI (so no AI label rides them), and expanding one
                 never switches the stance — the radio group above stays the
@@ -773,10 +772,10 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {rep.phone && (
                         <>
-                          {/* THE NUMBER IS THE CTA (2026-08 pick B1, stolen
-                              from 5calls — their number is the largest
-                              object on the screen; ours was body-size,
-                              equal-weight with guidance text). */}
+                          {/* THE NUMBER IS THE CTA (2026-08 design pick
+                              B1): the number is the physical next action,
+                              so it renders at display scale — it was
+                              body-size, equal-weight with guidance text. */}
                           <a
                             href={telHref(rep.phone)}
                             className="ring-gap inline-flex min-h-14 items-center gap-3 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
