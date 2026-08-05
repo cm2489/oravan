@@ -1,7 +1,7 @@
 'use client';
 
 import { Home, ScrollText, Users, Activity, Newspaper } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { OravanLockup } from './brand/OravanLockup';
 import { LocaleSwitcher } from './LocaleSwitcher';
@@ -71,6 +71,7 @@ function isActive(pathname: string, href: string) {
 
 export function Header() {
   const t = useTranslations('common');
+  const locale = useLocale();
   const pathname = usePathname();
 
   return (
@@ -85,6 +86,24 @@ export function Header() {
                 mobile bar and the 64px desktop one. */}
             <OravanLockup markRem={2.5} markClassName="text-go" />
           </Link>
+
+          {/* THE TRUST LINE (2026-08 design pick A1): the product's
+              posture stated in the chrome itself, on every page.
+              Wide bars only: the 390px bar keeps its one-row, 56px budget
+              untouched, and the phone already carries the promise in the
+              hero. EN ONLY in this inline slot — measured on the production
+              build at the 1024 content rail: EN bar totals 963px of 992
+              usable, but the Spanish nav alone is 686px, so the inline
+              variant can never fit /es (the squeeze crushed the language
+              switcher to 25px cells and swallowed its clicks). Spanish
+              carries the SAME two sentences in the sub-bar below. */}
+          {locale === 'en' && (
+            <p className="hidden border-l-[1.5px] border-line pl-3 text-xs leading-tight text-ink-2 lg:block">
+              {t('trustLine1')}
+              <br />
+              {t('trustLine2')}
+            </p>
+          )}
 
           <nav
             aria-label={t('nav.primaryLabel')}
@@ -111,6 +130,16 @@ export function Header() {
             <LocaleSwitcher />
           </div>
         </div>
+        {/* The Spanish trust line — same sentences, the sub-bar placement
+            (see the EN inline note above for the measured 686px-nav reason).
+            Wide screens only, matching the EN variant's scope. */}
+        {locale === 'es' && (
+          <div className="hidden border-t border-line bg-wash lg:block">
+            <p className="mx-auto max-w-5xl px-4 py-1 text-center text-2xs font-semibold tracking-[0.06em] text-ink-2">
+              {t('trustLine1')} {t('trustLine2')}
+            </p>
+          </div>
+        )}
       </header>
 
       {/* The thumb bar. Paper, not ink: the footer is the page's only dark

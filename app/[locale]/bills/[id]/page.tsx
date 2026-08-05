@@ -21,7 +21,7 @@ import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { deriveJourney, floorCalendarChamber, liveCallTarget } from '@/lib/journey';
+import { deriveJourney, floorCalendarChamber, liveCallTarget, statusKeyFor } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -161,6 +161,8 @@ export default async function BillPage({
   const citation = formatCitation(bill.bill_type, bill.bill_number);
   const displayTitle = bill.ai_headline ?? bill.short_title ?? bill.title;
   const hasDecode = Boolean(bill.ai_summary || bill.ai_sections);
+  // The provenance ritual's status fragment, through the label gate.
+  const statusKey = statusKeyFor(bill.status, bill.last_action_text);
   // Headlines often already name the bill; don't repeat the citation (same
   // rule the action panel uses for call-log labels).
   const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
@@ -240,25 +242,41 @@ export default async function BillPage({
             folded into a disclosure. */}
         <header className="pt-6 pb-4">
           <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
-          <p className="mt-3 text-sm font-semibold text-ink-2 tabular-nums">
-            <span>{citation}</span>
+          {/* THE PROVENANCE RITUAL (2026-08 design pick C1): one utility
+              voice for ALL metadata, same order every page — bill ·
+              congress · status · latest action · the AI label. The stamp
+              voice extended, no new font. The old
+              AI chip's whole sentence rides here VERBATIM in its own span:
+              funnel invariant I1 pins `bill.aiLabel` on this page, and this
+              position is first-contact, above the fold at 390px. Status
+              routes through statusKeyFor — the label can never outrun the
+              record. */}
+          <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase">
+            <span className="tabular-nums">{citation}</span>
             <span aria-hidden> · </span>
             <span>{t('bill.congressLabel', { congress: bill.congress_number })}</span>
-            {bill.short_title && (
+            <span aria-hidden> · </span>
+            <span>{t(`bills.status.${statusKey}`)}</span>
+            {bill.last_action_date && (
               <>
                 <span aria-hidden> · </span>
-                <span className="font-normal">{`“${bill.short_title}”`}</span>
+                <span className="tabular-nums">
+                  {t('bill.lastAction')} {fmtShort(bill.last_action_date)}
+                </span>
+              </>
+            )}
+            {hasDecode && (
+              <>
+                <span aria-hidden> · </span>
+                <span>{t('bill.aiLabel')}</span>
               </>
             )}
           </p>
-          {(hasDecode || (bill.issue_tags ?? []).length > 0) && (
+          {bill.short_title && (
+            <p className="mt-2 text-sm text-ink-2">{`“${bill.short_title}”`}</p>
+          )}
+          {(bill.issue_tags ?? []).length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              {/* AI content is labeled at FIRST contact, never in a footnote. */}
-              {hasDecode && (
-                <Chip tone="ai" marker={t('bill.aiMarker')}>
-                  {t('bill.aiLabel')}
-                </Chip>
-              )}
               {(bill.issue_tags ?? []).slice(0, 2).map((tag) => (
                 <Chip key={tag} tone="tag">
                   {t(`categories.${tag}`)}

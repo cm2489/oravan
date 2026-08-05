@@ -148,6 +148,12 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   // focus somewhere sensible once the lookup settles — but ONLY then, never
   // on an ordinary page load with a saved ZIP.
   const zipJustSaved = useRef(false);
+  // E1 (2026-08 pick): the rail's scroll-fade hint. Shown while the body
+  // genuinely overflows AND the visitor has never scrolled it; the first
+  // real scroll retires it for the rest of the visit.
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const scrolledOnce = useRef(false);
   // The dialog is mounted ONLY while open (see render below). Mounting it
   // whenever a script exists would put a second copy of the script, the
   // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
@@ -200,7 +206,7 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   //     they lead — the walkthrough's call modal led with a House member who
   //     may not be the caller's own, exactly the nervous caller's fear.
   //  2. Chamber routing: the chamber holding the live decision leads
-  //     (lib/journey.ts liveCallTarget — the 5calls/GovTrack steal).
+  //     (lib/journey.ts liveCallTarget).
   //  Certainty outranks routing: in a split ZIP the senators stay first even
   //  when the House holds the bill, because "which House member is mine?" is
   //  unresolved and the refinement CTA sits right below.
@@ -274,6 +280,33 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
     }
     el?.focus();
   }, [lookup, callOpen]);
+
+  // Re-measure the hint whenever the panel's content changes shape (a
+  // script arriving, reps loading). Deferred a frame so the measurement
+  // never writes state mid-commit (the FloatingCallButton idiom); the
+  // scroll listener retires it on the first genuine scroll.
+  useEffect(() => {
+    const el = scrollBodyRef.current;
+    if (!el) return;
+    const frame = requestAnimationFrame(() => {
+      if (scrolledOnce.current) return;
+      setShowScrollHint(el.scrollHeight - el.clientHeight > 40 && el.scrollTop < 8);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [script, loading, lookup, stance, error]);
+
+  useEffect(() => {
+    const el = scrollBodyRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollTop > 8 && !scrolledOnce.current) {
+        scrolledOnce.current = true;
+        setShowScrollHint(false);
+      }
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   async function generate(s: Stance) {
     // Clock read up front (event-handler time): a 429 below anchors its
@@ -417,8 +450,13 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
       {/* The body scrolls; the foot below does not. The alpha ramp on the
           last 28px says "this continues" — it is a mask on real content, not
           a painted band — and it lifts while anything inside is focused so a
-          focus ring is never dimmed. */}
-      <div className="grid min-h-0 content-start gap-6 p-4 md:p-6 min-[62rem]:overflow-y-auto min-[62rem]:[mask-image:linear-gradient(to_bottom,#000_calc(100%-28px),transparent_100%)] min-[62rem]:[scrollbar-gutter:stable] min-[62rem]:has-[:focus-visible]:[mask-image:none]">
+          focus ring is never dimmed. The relative wrapper exists for the E1
+          scroll hint below, which must sit OVER the fade without scrolling
+          with the content. */}
+      <div className="relative flex min-h-0 flex-col">
+        <div
+          ref={scrollBodyRef}
+          className="grid min-h-0 content-start gap-6 p-4 md:p-6 min-[62rem]:overflow-y-auto min-[62rem]:[mask-image:linear-gradient(to_bottom,#000_calc(100%-28px),transparent_100%)] min-[62rem]:[scrollbar-gutter:stable] min-[62rem]:has-[:focus-visible]:[mask-image:none]">
         <div>
           <p className="max-w-note text-sm text-ink-2">{t('actSub')}</p>
         </div>
@@ -572,6 +610,31 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             <span role="status" aria-live="polite" className="sr-only">
               {scriptCopied ? t('scriptCopied') : ''}
             </span>
+
+            {/* BOTH-SIDES GHOSTS (2026-08 design pick D1): every stance's
+                template is rendered unconditionally, so the UI itself
+                certifies no house position. The unselected stances' STATIC templates sit
+                collapsed beneath the chosen draft: rendered every time,
+                never AI (so no AI label rides them), and expanding one
+                never switches the stance — the radio group above stays the
+                only stance control. */}
+            {stance && (
+              <div className="mt-3 grid max-w-note gap-1.5">
+                {STANCES.filter((s) => s !== stance).map((s) => (
+                  <details
+                    key={s}
+                    className="rounded-control border-[1.5px] border-line bg-wash px-4 py-1"
+                  >
+                    <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-ink-2 hover:text-ink">
+                      {t('ghostSummary', { stance: t(`stance.${s}`) })}
+                    </summary>
+                    <p className="pb-3 font-reading text-sm whitespace-pre-wrap text-ink-2">
+                      {fallbackFor(t, s, identifier)}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -709,12 +772,18 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {rep.phone && (
                         <>
+                          {/* THE NUMBER IS THE CTA (2026-08 design pick
+                              B1): the number is the physical next action,
+                              so it renders at display scale — it was
+                              body-size, equal-weight with guidance text. */}
                           <a
                             href={telHref(rep.phone)}
-                            className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-4 py-2.5 font-bold text-paper no-underline tabular-nums hover:border-go-deep hover:bg-go-deep"
+                            className="ring-gap inline-flex min-h-14 items-center gap-3 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
                           >
-                            <Phone className="h-4 w-4 flex-none" aria-hidden />
-                            {rep.phone}
+                            <Phone className="h-5 w-5 flex-none" aria-hidden />
+                            <span className="text-h3 leading-none font-extrabold tabular-nums">
+                              {rep.phone}
+                            </span>
                           </a>
                           <button
                             type="button"
@@ -823,6 +892,21 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
               )}
             </ul>
           </div>
+        )}
+        </div>
+
+        {/* E1 (2026-08 pick): the fade said "this continues" only to eyes
+            that already knew panels can scroll — both walkthrough personas
+            had to discover it. One quiet mark over the fade until the first
+            scroll; decorative (aria-hidden), because the content below the
+            fold was never hidden from assistive tech to begin with. */}
+        {showScrollHint && (
+          <p
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-1 hidden text-center text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase min-[62rem]:block"
+          >
+            ↓ {t('railMoreHint')}
+          </p>
         )}
       </div>
 
@@ -957,13 +1041,16 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                     <a
                       key={rep.bioguide}
                       href={telHref(rep.phone)}
-                      className="ring-gap flex min-h-12 items-center justify-between gap-3 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                      className="ring-gap flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
                     >
                       <span className="inline-flex items-center gap-2">
                         <Phone className="h-4 w-4 flex-none" aria-hidden />
                         {rep.name}
                       </span>
-                      <span className="text-sm tabular-nums">{rep.phone}</span>
+                      {/* B1: the number at display scale — see the rail note. */}
+                      <span className="text-h3 leading-none font-extrabold tabular-nums">
+                        {rep.phone}
+                      </span>
                     </a>
                   )
               )}
@@ -1020,11 +1107,14 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                 <p className="max-w-note text-sm text-ink-2">{t('switchboardNote')}</p>
                 <a
                   href="tel:+12022243121"
-                  className="ring-gap mt-2 inline-flex min-h-12 flex-wrap items-center gap-2 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                  className="ring-gap mt-2 inline-flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
                 >
-                  <Phone className="h-4 w-4 flex-none" aria-hidden />
+                  <Phone className="h-5 w-5 flex-none" aria-hidden />
                   {t('switchboard')}
-                  <span className="text-sm tabular-nums">(202) 224-3121</span>
+                  {/* B1: the number at display scale — see the rail note. */}
+                  <span className="text-h3 leading-none font-extrabold tabular-nums">
+                    (202) 224-3121
+                  </span>
                 </a>
               </div>
             </div>

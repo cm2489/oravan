@@ -145,6 +145,8 @@ test.describe('3-stance × 2-locale matrix', () => {
       'rateTemplateNow',
       'callWhoMulti',
       'refineDistrictCta',
+      'ghostSummary',
+      'railMoreHint',
       'callTitle',
       'startCall',
       'editScript',

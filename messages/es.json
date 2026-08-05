@@ -40,7 +40,9 @@
       "moments": "Preguntas"
     },
     "aiMarker": "IA",
-    "localeGroupLabel": "Idioma / Language"
+    "localeGroupLabel": "Idioma / Language",
+    "trustLine1": "Gratis. No partidista.",
+    "trustLine2": "Sin cuentas, sin anuncios, sin rastreadores."
   },
   "home": {
     "heroTitle": "Entiéndelo en palabras claras.",
@@ -246,6 +248,8 @@
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
     "liveSenateAfterHouse": "La Cámara ya votó este proyecto — el Senado decide ahora. Tus senadores son la llamada que cuenta.",
     "liveHouseAfterSenate": "El Senado ya votó este proyecto — la Cámara decide ahora. Tu representante es la llamada que cuenta.",
+    "ghostSummary": "El guion de “{stance}” — cada postura tiene el suyo",
+    "railMoreHint": "Más",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
     "afterHoursBody": "Los mensajes de voz se cuentan exactamente igual que las llamadas en vivo. Llamar por la tarde-noche o el fin de semana y dejar un mensaje cuenta lo mismo. Menciona tu código postal para que sepan que eres su constituyente.",
     "officeHoursTitle": "Horario habitual de las oficinas",
