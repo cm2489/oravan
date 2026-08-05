@@ -2,8 +2,7 @@
  * Pure office-hours math for the S7 "before you dial" honesty check. Scoped
  * to Eastern Time (the DC office's own timezone) on purpose: district
  * offices span every US timezone (flow I8), and Oravan has no per-office
- * hours data to do better than a generic guide - see docs/ideation/
- * 2026-07-05-build-gtm-strategy.md §5. This never claims a specific office
+ * hours data to do better than a generic guide - see the project records §5. This never claims a specific office
  * is open or closed - only whether *right now* falls inside the typical
  * Mon-Fri Congressional business-hours window, so the caller can read the
  * after-hours case as "voicemail is likely, and that's a fine first call"

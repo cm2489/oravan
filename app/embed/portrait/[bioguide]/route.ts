@@ -3,7 +3,7 @@ import { BIOGUIDE_RE, mirroredPortraitBlobUrl } from '@/lib/core/portraits';
 
 /*
  * Same-origin portrait proxy for the embed (S15, the portrait companion to
- * F3; docs/ideation/2026-07-02-embeds-spec.md §2.3 item 3). The browser
+ * F3; the project records §2.3 item 3). The browser
  * NEVER talks to Vercel Blob directly — only to this route, on the embed's
  * own origin — so the embed CSP's `img-src 'self'` (next.config.ts) needs
  * no third-party allowance, and the "zero third-party requests" claim holds

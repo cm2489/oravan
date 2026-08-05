@@ -22,7 +22,7 @@ const useHydrated = () =>
  * office hours (Eastern only - see lib/office-hours.ts for the scoping
  * rationale). The after-hours case points AT voicemail as the plus ("the
  * gentlest first call"), never as an apology - offices tally a voicemail
- * exactly like a live call (docs/ideation/2026-07-05-build-gtm-strategy.md
+ * exactly like a live call (the project records (kept out of this repo)
  * §5). No fake per-office data: this is a generic, honest guide only.
  *
  * COLOR: this note used to sit on a warm amber-ish ground. Amber is now spent

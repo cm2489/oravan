@@ -114,11 +114,8 @@ export function statusKeyFor(
 }
 
 /**
- * CHAMBER-AWARE CALL ROUTING (2026-08 benchmark steal, from 5calls +
- * GovTrack — both incumbents grey or re-target the chamber that already
- * voted; two independent reviewers called it the cheapest high-leverage
- * borrow in the whole benchmark). Answers ONE question for the rep list:
- * whose phone is the live decision right now?
+ * CHAMBER-AWARE CALL ROUTING (2026-08). Answers ONE question for the rep
+ * list: whose phone is the live decision right now?
  *
  * Deliberately narrower than deriveJourney — it returns non-null ONLY where
  * the record itself places the bill in a chamber's hands TODAY:
@@ -126,8 +123,8 @@ export function statusKeyFor(
  *   floor_vote with a readable chamber → that chamber (the record's own
  *     sentence), afterVote=false.
  *   passed_chamber → the OTHER chamber (corpus-verified: these actions read
- *     "Received in the Senate…"), afterVote=true — the 5calls KOSA case:
- *     "the House has already voted; your senators are the live call."
+ *     "Received in the Senate…"), afterVote=true — "the House has already
+ *     voted; your senators are the live call."
  *
  * Everything else is null and the rep list renders exactly as before:
  * committee/markup/introduced (a committee holds it, not a floor — demoting

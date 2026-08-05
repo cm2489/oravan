@@ -7,7 +7,7 @@
  * doc comment for the scope decision and its follow-up.
  *
  * Every tool's payload nests the citation envelope under `meta` (matching
- * docs/ideation/2026-07-02-mcp-spec.md §2's illustrated shape) rather than
+ * the project records §2's illustrated shape) rather than
  * spreading the 5 fields at the top level, so envelope fields can never
  * collide with a tool's own data fields.
  */
@@ -72,7 +72,7 @@ export interface Envelope {
 // disclosure a Spanish-locale agent reads in English isn't a disclosure at
 // all to the person on the other end. Bilingual parity is a CLAUDE.md hard
 // rule; a redistributed surface like this one holds to the *higher* bar
-// (docs/ideation/2026-07-05-build-gtm-strategy.md). "CC BY 4.0" and
+// (project records, not in this repo). "CC BY 4.0" and
 // "Congress.gov" stay untranslated in the Spanish text on purpose - a
 // license identifier and a proper noun, not prose - the same convention the
 // rest of the corpus follows for bill citations and source names.
@@ -358,7 +358,7 @@ export function parseCitation(input: string): { billType: string; billNumber: nu
 const REPS_PATH = '/reps';
 
 /**
- * ZIP-only in this release. docs/ideation/2026-07-02-mcp-spec.md §2 specs
+ * ZIP-only in this release. the project records §2 specs
  * an optional `address` param routed through the existing stateless Census-
  * geocoder proxy (app/api/district) for split-ZIP refinement, but also
  * explicitly permits shipping ZIP-only with a `refine_hint` when that adds
@@ -379,8 +379,7 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     .flatMap((d) => repsForDistrict(d))
     .filter((r) => (seen.has(r.bioguide) ? false : (seen.add(r.bioguide), true)))
     .map((r) => ({ ...r, portrait_url: portraitUrl(r.bioguide) }));
-  // A vacant House seat (S24 groundwork, docs/ideation/2026-07-05-build-gtm-
-  // strategy.md §9.1(f)) is named explicitly here rather than left as "one
+  // A vacant House seat (S24 groundwork, the project records §9.1(f)) is named explicitly here rather than left as "one
   // fewer representative than expected" - an agent reading this response has
   // no other way to distinguish a vacancy from, say, a data gap. Fact only
   // (state + district); `since` is pipeline bookkeeping, not surfaced here
@@ -441,7 +440,7 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
   const band = getTeasers(locale).find((t) => t.slug === slug)?.band ?? 'radar';
   const hasAiContent = Boolean(localized.ai_headline);
 
-  // NOT in scope, by settled decision (docs/ideation/2026-07-02-mcp-spec.md
+  // NOT in scope, by settled decision (the project records (kept out of this repo)
   // §2): this tool never drafts a call script. That's the product's only
   // per-call Anthropic cost and its highest platform-policy risk surface -
   // exposing it over a keyless MCP tool would also bypass "AI content is

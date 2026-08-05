@@ -96,8 +96,8 @@ export function BillsBrowser({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // Bare bill-number lookup (2026-08 benchmark steal, from GovTrack +
-    // 5calls — it is how journalists and staffers arrive): "HR 6500",
+    // Bare bill-number lookup (2026-08) — it is how journalists and
+    // staffers arrive: "HR 6500",
     // "h.r.6500" and "H.R. 6500" all match the citation by comparing both
     // sides with dots/spaces stripped. Guarded on the query actually
     // containing a digit so ordinary word searches never take the
@@ -182,11 +182,10 @@ export function BillsBrowser({
             </kbd>
           )}
         </div>
-        {/* The corpus, stated at the point of first input (2026-08 benchmark
-            steal — VOTE411 proves the inline pattern; GovTrack's no-summary
-            small bills and months-late digests are the foil). The count is
-            LIVE (bills with a decode in this very payload), never a
-            hardcoded claim that drifts from the data. */}
+        {/* The corpus, stated at the point of first input (2026-08): the
+            inline count is both a trust signal and an expectation-setter.
+            The count is LIVE (bills with a decode in this very payload),
+            never a hardcoded claim that drifts from the data. */}
         <p className="mt-2 max-w-note text-sm text-ink-2">
           {t('bills.searchTrust', { decoded: decodedCount })}
         </p>

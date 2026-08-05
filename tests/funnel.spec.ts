@@ -10,7 +10,7 @@ import { mockScriptApi } from './helpers';
  *
  * This file used to enforce a single governing invariant: "<=3 clicks to a
  * completed call script." The truth-first repositioning (decided 2026-07-26,
- * spec docs/ideation/2026-07-26-truth-first-repositioning.md §3) demoted the
+ * spec the project records §3) demoted the
  * call to the natural next step after engagement, which means that invariant
  * had to be REWRITTEN DELIBERATELY rather than quietly broken. It is not
  * dropped and it is not weakened - it is renamed I2 and joined by a new

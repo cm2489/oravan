@@ -4,8 +4,7 @@ import es from '../messages/es.json';
 import { callTool } from './helpers';
 
 /*
- * S23 — the citability/correction page (docs/ideation/2026-07-05-build-gtm-
- * strategy.md §1.3 S23). Covers the sprint's own done-criteria: the page
+ * S23 — the citability/correction page (the project records §1.3 S23). Covers the sprint's own done-criteria: the page
  * renders in both locales, the footer link is present on bill pages (not
  * just the homepage), and the correction path resolves to the existing
  * feedback intake rather than a parallel one.

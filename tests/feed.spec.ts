@@ -69,7 +69,7 @@ test('"/" focuses search on desktop', async ({ page, isMobile }) => {
 });
 
 /*
- * Bare bill-number lookup (2026-08 benchmark steal, GovTrack + 5calls):
+ * Bare bill-number lookup (2026-08):
  * "hr 5582" — no dots — must find H.R. 5582, because that is how
  * journalists and staffers arrive. The slug is the same shared fixture
  * tests/embed-bill-card.spec.ts pins (DECODED_SLUG), so a corpus refresh

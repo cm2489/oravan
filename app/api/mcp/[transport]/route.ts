@@ -12,7 +12,7 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
  * refinement inside lookup_representatives) is deliberately deferred - see
  * lib/core/mcp.ts's lookupRepresentatives doc comment.
  *
- * Exactly these 5, per docs/ideation/2026-07-02-mcp-spec.md §2 and the
+ * Exactly these 5, per the project records §2 and the
  * settled S10 scope call (KTD-6, closed under R16): lookup_representatives,
  * get_bill, search_bills, whats_moving, get_representative.
  *   - get_bill_coverage is cut. Not registered, not aliased - a request for

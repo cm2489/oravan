@@ -25,7 +25,7 @@ export const SITE_ORIGIN = 'https://oravan.org';
  *
  * Always link out (target="_blank", rel="noopener noreferrer") — never
  * iframe a payment page in, and never add a payment field anywhere on
- * Oravan's own infra. See docs/ideation/2026-07-05-build-gtm-strategy.md §6
+ * Oravan's own infra. See the project records §6
  * (historical record; its HCB-specific plan is superseded by the denial).
  */
 export const DONATE_URL: string | null = 'https://buy.stripe.com/00w8wIcX74px0CH8EJ8k804';

@@ -2,7 +2,7 @@ import manifest from '@/data/portrait-manifest.json';
 
 /*
  * Mirrored-portrait manifest reader (S15, the portrait companion to F3;
- * docs/ideation/2026-07-02-embeds-spec.md §2.3 item 3). The MAIN site
+ * the project records §2.3 item 3). The MAIN site
  * (components/RepCard.tsx) still hotlinks `unitedstates.github.io` via
  * `lib/core/reps.ts`'s portraitUrl() through next/image's own optimization
  * proxy — a deliberate, out-of-scope-for-S15 choice: the citizen site never

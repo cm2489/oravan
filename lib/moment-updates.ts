@@ -6,7 +6,7 @@
  *
  * ---------------------------------------------------------------------------
  * THE EDITORIAL LAW this file renders under (owner-settled 2026-07-25,
- * docs/ideation/2026-07-25-moments-v2.md §2):
+ * the project records §2):
  *
  *   "Truth about the record, attribution about the spin. When the record
  *    speaks, we say it plainly — numbers, dates, tallies, text — even when

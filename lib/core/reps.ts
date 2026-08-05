@@ -24,7 +24,7 @@ export function repsForDistrict(d: District): Legislator[] {
 /**
  * The seat's vacancy record, or undefined when it currently has a
  * representative. data/vacancies.json is derived by scripts/vacancy_diff.py
- * from seat sets alone (docs/ideation/2026-07-05-build-gtm-strategy.md
+ * from seat sets alone (the project records (kept out of this repo)
  * §9.1(f)) - repsForDistrict above never needs to change: an empty `rep`
  * filter result already reflects a vacant seat correctly, this just names
  * it explicitly so every surface can say so instead of quietly showing

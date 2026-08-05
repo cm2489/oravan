@@ -1,6 +1,6 @@
 /**
  * Moment candidates — the read-only shortlist report (spec §7.4,
- * docs/ideation/2026-07-26-truth-first-repositioning.md).
+ * the project records (kept out of this repo)).
  *
  *   node scripts/moment-candidates.mjs                    # ranked markdown
  *   node scripts/moment-candidates.mjs --json             # same run, machine-readable

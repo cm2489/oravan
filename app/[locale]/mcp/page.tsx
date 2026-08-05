@@ -14,9 +14,8 @@ import {
 } from '@/lib/core/mcp';
 
 /*
- * S12 — the public MCP server docs page (docs/ideation/2026-07-05-build-gtm-
- * strategy.md §1.3 S12; canonical-source playbook item 11 in
- * docs/ideation/2026-07-02-mcp-spec.md §4). Low-key, citizen-site register,
+ * S12 — the public MCP server docs page (the project records §1.3 S12; canonical-source playbook item 11 in
+ * the project records §4). Low-key, citizen-site register,
  * same as every other page: what the server is, its literal endpoint (not
  * printed anywhere else a person can read), the 5 tools, an example client
  * config, the privacy posture, and the citation envelope.

@@ -51,8 +51,7 @@ jobs:
         #     "Open an issue" step below surfaces it loudly instead of
         #     letting it commit silently.
         #   - more than 5 new vacancies in one run is treated as a
-        #     truncated/broken upstream fetch, not reality (docs/ideation/
-        #     2026-07-05-build-gtm-strategy.md §9.1(f)) - process-data.py
+        #     truncated/broken upstream fetch, not reality (the project records §9.1(f)) - process-data.py
         #     exits 1 here, so nothing below this step runs and nothing
         #     commits.
         run: python3 scripts/process-data.py --download

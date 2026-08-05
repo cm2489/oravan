@@ -216,7 +216,7 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
 
 /* ------------------------------------------------------------------ *
  * 5 · liveCallTarget — chamber-aware call routing (2026-08 benchmark
- *     steal). Non-null ONLY where the record places the bill in a
+ *     2026-08). Non-null ONLY where the record places the bill in a
  *     chamber's hands today; everything else renders the rep list
  *     exactly as before. Never guesses (owner ruling 2026-08-04).
  * ------------------------------------------------------------------ */

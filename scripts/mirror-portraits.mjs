@@ -2,7 +2,7 @@
  * Mirrors public-domain congressional portraits (the unitedstates/images
  * project) into Vercel Blob so the embed can serve them same-origin,
  * instead of hotlinking a third party from inside the iframe (S15, the
- * portrait companion to F3; docs/ideation/2026-07-02-embeds-spec.md §2.3
+ * portrait companion to F3; the project records §2.3
  * item 3).
  *
  * SAFE BEFORE THE SECRET EXISTS - mirrors sync-bills.yml's NEWS_API_KEY-gated

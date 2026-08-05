@@ -29,15 +29,9 @@ const PATTERNS = [
 const ALLOWLIST = [
   { path: 'lib/local.ts', max: 4, note: 'M2/M2-bis: legacy localStorage migration keys, both pre-migration generations' },
   { prefix: 'docs/migration/', max: Infinity, note: 'M0/R1: verbatim migration history' },
-  { path: 'docs/plans/2026-07-06-002-oravan-migration-kickoff.md', max: Infinity, note: 'M0: migration kickoff, verbatim' },
-  { path: 'docs/plans/2026-07-03-001-feat-launch-buildout-plan.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/plans/2026-07-06-state-expansion-triage-spec.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-01-post-june-audit-ideation.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-02-embeds-spec.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-02-mcp-spec.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-02-monetization-strategy.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-05-build-gtm-strategy.md', max: Infinity, note: 'R1: dated historical record' },
-  { path: 'docs/ideation/2026-07-26-truth-first-repositioning.md', max: Infinity, note: 'R1: dated historical record — ported to main 2026-08-02 (teardown Phase 0); discusses the rename itself' },
+  // 2026-08-05: the ideation/plans/press/teardown docs moved out of this
+  // public repo (owner ruling — business strategy is not open source), so
+  // their allowlist entries go with them; a stale entry fails this gate.
   { path: 'docs/solutions/two-clock-district-boundaries.md', max: Infinity, note: 'R1: dated historical record' },
 ];
 

@@ -11,7 +11,7 @@ NC, OH, UT, FL, TN with new maps locked in for Nov 2026; LA and AL mid-fight)
 makes it tempting to treat "the boundaries changed" and "who represents a ZIP
 code changed" as the same event. They are not. Conflating them is the
 concrete risk this doc closes off, in code and in writing, per
-`docs/ideation/2026-07-05-build-gtm-strategy.md` §9.1(f) and S24.
+the project records §9.1(f) and S24.
 
 ## The structural fact
 
