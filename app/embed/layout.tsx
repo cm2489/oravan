@@ -17,7 +17,7 @@ import './embed.css';
  * segment, so this layout has none of the [locale] plumbing.
  *
  * noindex here is PERMANENT by construction (an iframe-only page is thin,
- * duplicate content per docs/ideation/2026-07-02-embeds-spec.md §2.2) -
+ * duplicate content per the project records §2.2) -
  * this is NOT the citizen site's temporary launch-gate noindex in
  * app/[locale]/layout.tsx, which CI's "Launch-gate reminder" step tracks
  * separately by grepping that exact file path.

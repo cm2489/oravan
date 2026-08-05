@@ -4,9 +4,8 @@ import { expect, test } from '@playwright/test';
 import { startCrossOriginHost } from './helpers';
 
 /*
- * S17 - the frame-ancestors split posture (docs/ideation/2026-07-05-build-
- * gtm-strategy.md, ledger items F1 and F2; see also
- * docs/plans/2026-07-03-001-feat-launch-buildout-plan.md's U15 unit).
+ * S17 - the frame-ancestors split posture (the project records, ledger items F1 and F2; see also
+ * the project records U15 unit).
  *
  * S13 shipped the embed route's OWN minimal CSP (`frame-ancestors *`, tight
  * everywhere else) but deliberately deferred the other half: the rest of the

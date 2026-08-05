@@ -1,7 +1,7 @@
 """Vacancy derivation for the weekly legislators refresh.
 
-Spec: docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f), sprint items 1
-and 4; docs/plans/2026-07-03-001-feat-launch-buildout-plan.md's
+Spec: the project records §9.1(f), sprint items 1
+and 4; the project records
 "specific data-model footgun" note.
 
 The upstream unitedstates/congress-legislators feed has no explicit "vacant"
@@ -33,8 +33,7 @@ from typing import Dict, Iterable, List, Tuple
 
 Seat = Tuple[str, int]
 
-# ">5 seats vanish at once" heuristic named in docs/ideation/2026-07-05-
-# build-gtm-strategy.md §9.1(f): that's not five members independently
+# ">5 seats vanish at once" heuristic named in the project records §9.1(f): that's not five members independently
 # resigning in the same week, it's almost certainly a truncated or broken
 # upstream fetch. Fail loud instead of committing a corrupted roster.
 ANOMALOUS_SHRINK_THRESHOLD = 5

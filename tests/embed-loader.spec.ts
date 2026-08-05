@@ -11,7 +11,7 @@ import { E2E_TENANT_TOKEN, E2E_TENANT_TOKEN_DOMAIN_GATED } from './fixtures/e2e-
  * assertions live: zero cookies anywhere in the flow, and zero requests to
  * any origin other than this app's own - the widget's "collects nothing,
  * calls no one else" claim, test-asserted rather than just documented
- * (docs/ideation/2026-07-02-embeds-spec.md §2.3).
+ * (the project records §2.3).
  *
  * The host page is served from a throwaway plain-http server on its own
  * ephemeral port - a genuine cross-origin page relative to the app under

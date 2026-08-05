@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 /**
  * Renders in the rep grid, in the House-member slot, when a district's seat
  * currently has no occupant (S24 groundwork,
- * docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f) — GovTrack's
+ * the project records §9.1(f) — the established
  * plain-vacancy pattern). Never shows the departed member and never invents
  * an "election pending" claim: a seat can be vacant with no successor
  * scheduled at all (the FL-20 case, whose new map eliminates the district

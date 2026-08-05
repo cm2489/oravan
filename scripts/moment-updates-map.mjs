@@ -1,6 +1,6 @@
 /**
  * Pure mapping logic for scripts/moment-updates.mjs — the Moments v2 live-layer
- * collector (docs/ideation/2026-07-25-moments-v2.md §5–§6).
+ * collector (the project records §5–§6).
  *
  * WHY THIS FILE EXISTS AS A SEPARATE MODULE (deviation from the slice brief,
  * deliberate): the brief named one file, `scripts/moment-updates.mjs`. That
@@ -25,7 +25,6 @@
  *    facts. When the record is silent — motive, likelihood, what it really
  *    means — Oravan's voice stops, and named sources speak or nobody does.
  *    Speculation never wears our voice."
- *
  * §2.5 — "what the lint cannot catch, the structure does" — is the clause this
  * file answers. The lint can police the WORDS of an update; only the selection
  * rule can police WHICH events become updates at all. So every selection

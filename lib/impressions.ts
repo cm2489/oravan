@@ -4,9 +4,8 @@ import { activeTenantForImpression } from './tenancy';
 import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from './upstash';
 
 /*
- * Impression counting — the F6 ingestion point (docs/ideation/2026-07-05-
- * build-gtm-strategy.md §1.1's F6 row and §1.3's S20 entry;
- * docs/ideation/2026-07-02-embeds-spec.md §2.3 item 5, corrected in this
+ * Impression counting — the F6 ingestion point (the project records §1.1's F6 row and §1.3's S20 entry;
+ * the project records §2.3 item 5, corrected in this
  * same sprint to describe what actually shipped). This module is the ONLY
  * place impression keys are built — it is the FOURTH registry
  * scripts/check-key-namespaces.mjs gates on, alongside lib/ratelimit.ts

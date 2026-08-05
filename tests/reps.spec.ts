@@ -23,7 +23,7 @@ test('unknown ZIP gets a recoverable error', async ({ page }) => {
 });
 
 /*
- * S24 groundwork (docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)):
+ * S24 groundwork (the project records §9.1(f)):
  * FL-20 is a real, currently-vacant House seat already baked into
  * data/legislators.json (Cherfilus-McCormick resigned Apr 21, 2026, and
  * Florida's new map eliminates the district outright - no special election

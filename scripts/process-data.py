@@ -3,7 +3,7 @@
 With --download, fetches the public-domain sources first (CI mode);
 otherwise expects the raw files already present in data/.
 
-Vacancy handling (docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)):
+Vacancy handling (the project records §9.1(f)):
 see scripts/vacancy_diff.py for why this exists and how it's derived. The
 short version - a departed member just disappears from
 legislators-current.json with no "vacant" marker, so this script diffs seat

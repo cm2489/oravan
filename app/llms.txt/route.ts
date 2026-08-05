@@ -9,7 +9,7 @@ import { SITE_ORIGIN } from '@/lib/site';
  * the same pre-13.3 pattern Next itself used for robots.txt/sitemap.xml
  * before those got first-class support.
  *
- * Per docs/ideation/2026-07-05-build-gtm-strategy.md §1.3 (S22): ship this
+ * Per the project records §1.3 (S22): ship this
  * because it's a few hours of one-time cost, for completeness — not because
  * any major AI lab has confirmed support for it (none had, as of Q1 2026,
  * per Search Engine Land's reporting). Nothing here claims otherwise, and

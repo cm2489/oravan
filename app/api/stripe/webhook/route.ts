@@ -21,7 +21,7 @@ import {
  * required for signature verification and is already load-bearing in
  * lib/ratelimit.ts, and no route in this codebase declares an Edge runtime.
  *
- * Events handled (minimum — see docs/ideation/2026-07-02-embeds-spec.md §3,
+ * Events handled (minimum — see the project records §3,
  * "Tenancy without accounts creep", for the full table):
  *   checkout.session.completed    -> provisionFromCheckout (guarded: only
  *                                     subscription-mode sessions with a
@@ -42,7 +42,7 @@ import {
  * this file — the webhook payload itself already carries every field these
  * three events need; reaching for it would also collide with the parked
  * constitutional question on persistent tenant identity (a billing-portal
- * "manage subscription" flow) — see docs/ideation/2026-07-02-embeds-spec.md
+ * "manage subscription" flow) — see the project records (kept out of this repo)
  * §3 again.
  *
  * S19 addition: checkout.session.completed also threads tosAcceptedAt

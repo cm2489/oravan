@@ -6,9 +6,8 @@ import { dataAsOfString } from '@/lib/freshness';
 import { AI_LABEL_TEXT, LICENSE_AI_CONTENT, LICENSE_PUBLIC_DOMAIN, SOURCE } from '@/lib/core/mcp';
 
 /*
- * S23 — the citability/correction page (docs/ideation/2026-07-05-build-gtm-
- * strategy.md §1.3 S23; canonical-source playbook item 10 in
- * docs/ideation/2026-07-02-mcp-spec.md §4). Trust infrastructure for
+ * S23 — the citability/correction page (the project records §1.3 S23; canonical-source playbook item 10 in
+ * the project records §4). Trust infrastructure for
  * reporters and librarians: how to cite Oravan, what's official record vs.
  * AI-drafted, and how to report — and what happens after confirming — an
  * error. Nonpartisan register throughout, no marketing language, same as

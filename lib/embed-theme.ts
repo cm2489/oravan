@@ -1,6 +1,6 @@
 /**
  * Embed theming validation (S14). CSS custom properties are the ONLY
- * tenant-facing theming mechanism (docs/ideation/2026-07-02-embeds-spec.md
+ * tenant-facing theming mechanism (the project records (kept out of this repo)
  * §3.4) — no arbitrary tenant CSS or JS, ever; that's the script-injection
  * door the spec explicitly closes. Every knob here is either a strict
  * format regex (accent: a hex color and nothing else) or a closed enum

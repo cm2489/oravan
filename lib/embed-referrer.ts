@@ -2,8 +2,8 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
 
 /*
  * Embed referrer-domain nomination — the F3 ingestion point
- * (docs/ideation/2026-07-05-build-gtm-strategy.md §1.1's F3 row and §8 item
- * 3; docs/ideation/2026-07-02-embeds-spec.md §2.3 item 5's antecedent).
+ * (the project records §1.1's F3 row and §8 item
+ * 3; the project records §2.3 item 5's antecedent).
  * This module is the ONLY place domain-nomination keys are built — it is
  * the THIRD registry scripts/check-key-namespaces.mjs gates on, alongside
  * lib/ratelimit.ts (caller-keyed) and lib/scriptcache.ts (content-keyed).
@@ -17,7 +17,7 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * actual demand-test verdict (KTD-8/AE4) requires Colby to visit the
  * nominated domain and see the widget live before it counts toward the
  * ≥2/20 gate; that confirmation step is a manual GTM process, not code (see
- * docs/ideation/2026-07-05-build-gtm-strategy.md §8's "Referer-nominated +
+ * the project records §8's "Referer-nominated +
  * manually-confirmed installs" line). This module's job ends at "nominate
  * and count" — it has no opinion on, and no path to, "confirmed".
  *

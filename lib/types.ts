@@ -97,7 +97,7 @@ export interface District {
 
 /**
  * A House seat with no current occupant (S24 groundwork,
- * docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)). Derived purely
+ * the project records §9.1(f)). Derived purely
  * from seat sets by scripts/vacancy_diff.py - never from a departed
  * member's own stale term data, so this type has no room for a name or
  * bioguide to leak in by accident. `since` is when the weekly refresh first

@@ -17,7 +17,7 @@ const useHydrated = () =>
 
 /*
  * "Nothing moved" and "we couldn't check" are DIFFERENT SENTENCES
- * (docs/ideation/2026-07-25-moments-v2.md §3) — and this component exists
+ * (the project records §3) — and this component exists
  * because only one of them is knowable at build time.
  *
  * The quiet-day lines themselves ("nothing recorded yet today" vs. a past

@@ -17,9 +17,7 @@ import {
 import type { FeedTeaser } from '@/lib/types';
 
 /*
- * S16 — the public embed configurator (docs/ideation/2026-07-05-build-gtm-
- * strategy.md §1.3 S16; product surface spec'd in docs/ideation/2026-07-02-
- * embeds-spec.md §3.3: "the public configurator page (pick widget, pick
+ * S16 — the public embed configurator (the project records §1.3 S16; product surface spec'd in the project records §3.3: "the public configurator page (pick widget, pick
  * bill, pick locale, copy the snippet) is the entire onboarding"). Pure
  * client composition — no accounts, no server round-trip of its own; the
  * only network activity is the live-preview <iframe> itself loading the

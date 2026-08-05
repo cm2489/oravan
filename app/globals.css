@@ -193,7 +193,7 @@
   --text-h2-loud--line-height: 1.1;
   --text-h2-loud--letter-spacing: -0.01em;
   --text-h1-bill: clamp(1.75rem, 5.5vw, 3.5rem);  /* 28 -> 56; mobile-density pass 2026-07-29: floor 32->28, desktop unchanged */
-  --text-h1-bill--line-height: 1.12; /* 1.06 -> 1.12, 2026-08 benchmark steal (Marshall Project): a 3-line-wrapping bill title at 390px needs the air; costs nothing, reads noticeably calmer */
+  --text-h1-bill--line-height: 1.12; /* 1.06 -> 1.12 (2026-08): a 3-line-wrapping bill title at 390px needs the air; costs nothing, reads noticeably calmer */
   --text-h1-bill--letter-spacing: -0.02em;
   --text-h1: clamp(2rem, 7vw, 4.25rem);           /* 32 -> 68; mobile-density pass 2026-07-29: floor 40->32 (a 390px phone hit the 40px floor), desktop unchanged */
   --text-h1--line-height: 1.04;

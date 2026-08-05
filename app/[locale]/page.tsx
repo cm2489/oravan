@@ -24,7 +24,7 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
 /*
  * THE HOME SURFACE — hero C, the truth-first flip (owner decisions of record,
- * 2026-07-31; spec docs/ideation/2026-07-26-truth-first-repositioning.md §0).
+ * 2026-07-31; spec the project records §0).
  *
  * The arc is UNDERSTAND -> ACT -> TRUST -> SUPPORT. Understanding is the front
  * door; the call is the natural next step, demoted but never buried. Four

@@ -6,7 +6,7 @@ or directly:
     python3 scripts/test_vacancy_diff.py
 
 Fixtures match the three named in the sprint spec
-(docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)): a departed member
+(the project records §9.1(f)): a departed member
 with no successor, a chronic vacant-no-successor seat spanning multiple
 runs, and an anomalous shrink that should fail loud rather than commit.
 """

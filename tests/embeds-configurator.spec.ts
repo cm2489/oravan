@@ -18,7 +18,7 @@ async function gotoEmbeds(page: Page) {
 
 /*
  * S16 — the embeds configurator + public docs page
- * (docs/ideation/2026-07-05-build-gtm-strategy.md §1.3 S16). This suite
+ * (the project records §1.3 S16). This suite
  * covers the page's own UI behavior (widget switching, bill search, theme
  * controls, snippet/copy, a11y, discoverability). The sprint's own
  * cold-walkthrough Done criterion — the generated snippet actually working

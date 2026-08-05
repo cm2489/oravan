@@ -148,8 +148,7 @@ if (coverage && typeof coverage === 'object' && !Array.isArray(coverage)) {
 
 // --- moment updates: the live layer must not silently lose its record -------
 //
-// THE EDITORIAL LAW this guards (v2 spec §2, docs/ideation/
-// 2026-07-25-moments-v2.md): "Truth about the record… When the record is
+// THE EDITORIAL LAW this guards (v2 spec §2, the project records): "Truth about the record… When the record is
 // silent — motive, likelihood, what it really means — Oravan's voice stops."
 // A nightly run that quietly halves the timeline, or lands a future-dated
 // update, or ships an EN line with no ES sibling, is the live layer telling a

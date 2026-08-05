@@ -16,7 +16,7 @@ follow the kickoff's manual-actions master list.
   archived and the old Vercel project decommissioned at Sprint 8 cutover,
   releasing oravan.org to this project. Brand kit remains readable for S1/S2.
 - **M0 — Migration docs: COMMIT + EXEMPT.** The kickoff plan
-  (`docs/plans/2026-07-06-002-oravan-migration-kickoff.md`) and
+  (project records, not in this repo) and
   `docs/migration/**` are tracked in-repo as verbatim migration history; they
   necessarily contain the banned strings and are a documented allowlist entry
   in the S3 CI naming gate.
@@ -37,22 +37,22 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
 
 - **R1 — S3 docs sweep scope: EXEMPT DATED RECORDS.** Dated historical docs
   keep "Rostra"/"Cabina" verbatim, as file-level allowlist entries:
-  - `docs/plans/2026-07-03-001-feat-launch-buildout-plan.md`
-  - `docs/plans/2026-07-06-state-expansion-triage-spec.md` (dated pre-rename
+  - the project records (kept out of this repo)
+  - the project records (kept out of this repo) (dated pre-rename
     spec; may be re-classified living at S3 review)
-  - `docs/ideation/2026-07-01-post-june-audit-ideation.md`
-  - `docs/ideation/2026-07-02-embeds-spec.md`
-  - `docs/ideation/2026-07-02-mcp-spec.md`
-  - `docs/ideation/2026-07-02-monetization-strategy.md`
-  - `docs/ideation/2026-07-05-build-gtm-strategy.md`
+  - the project records (kept out of this repo)
+  - the project records (kept out of this repo)
+  - the project records (kept out of this repo)
+  - the project records (kept out of this repo)
+  - the project records (kept out of this repo)
   - `docs/solutions/two-clock-district-boundaries.md`
-  - `docs/ideation/2026-07-26-truth-first-repositioning.md` (added 2026-08-02:
+  - the project records (kept out of this repo) (added 2026-08-02:
     ported to main in teardown Phase 0 because DESIGN.md, the homepage, and
     tests/funnel.spec.ts cite it; it is a dated record that discusses the
     rename itself, so retired names appear verbatim by nature)
 
   Living docs are swept as planned: README, PRODUCT.md, STATUS.md, CLAUDE.md,
-  DESIGN.md, `docs/press/embeds-launch-kit.md` (S5b rewrites it), and
+  DESIGN.md, the project records (kept out of this repo) (S5b rewrites it), and
   `docs/solutions/vercel-bot-push-blocked-deploys.md` (operational — must track
   the live sync-bot name, so swept, not exempted).
 - **R2 — Immutable history: EXEMPT, confirmed in writing.** Git history
@@ -247,7 +247,7 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
 ## Standing S3 allowlist (grows only by written entry here)
 
 1. `lib/local.ts` — `cabina.prefs` / `cabina.calls` legacy-key literals (M2).
-2. `docs/plans/2026-07-06-002-oravan-migration-kickoff.md` + `docs/migration/**` (M0).
+2. the project records (kept out of this repo) + `docs/migration/**` (M0).
 3. The two Sprint-8-staged workflow lines (`refresh-legislators.yml` `--repo
    cm2489/rostra` literals) IF held rather than TODO-marked — finalized in S3.
 4. The eight R1 dated historical docs listed above.

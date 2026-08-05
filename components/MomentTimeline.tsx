@@ -7,7 +7,7 @@ import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updat
 
 /*
  * "What's moved" — the dated timeline of a Moment's recorded activity
- * (docs/ideation/2026-07-25-moments-v2.md §3, §7). A SERVER component: it
+ * (the project records §3, §7). A SERVER component: it
  * ships zero client JavaScript, because a ledger of days that already
  * happened has nothing to react to. The one clock-dependent sentence on this
  * surface ("we have not been able to check since…") lives in its own client

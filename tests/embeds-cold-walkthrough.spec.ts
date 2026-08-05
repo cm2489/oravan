@@ -3,7 +3,7 @@ import en from '../messages/en.json';
 import { startCrossOriginHost } from './helpers';
 
 /*
- * S16's own Done criterion (docs/ideation/2026-07-05-build-gtm-strategy.md
+ * S16's own Done criterion (the project records (kept out of this repo)
  * §1.3 S16: "a cold walkthrough (no prior context) succeeds using only
  * public docs"). This is that walkthrough, automated: read the ACTUAL
  * snippet the public configurator (/embeds) renders — not a hand-typed

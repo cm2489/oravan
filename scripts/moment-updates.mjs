@@ -1,6 +1,6 @@
 /**
  * The Moments v2 live-layer collector — writes data/moment-updates.json
- * (docs/ideation/2026-07-25-moments-v2.md §5–§6).
+ * (the project records §5–§6).
  *
  *   MOMENT_UPDATES_MODE=incremental node --env-file=.env.local scripts/moment-updates.mjs   # hourly, in newsdesk.yml
  *   MOMENT_UPDATES_MODE=nightly     node --env-file=.env.local scripts/moment-updates.mjs   # nightly, in sync-bills.yml

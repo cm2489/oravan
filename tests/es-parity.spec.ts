@@ -205,13 +205,13 @@ test.describe('3-stance × 2-locale matrix', () => {
 });
 
 /*
- * The VOTE411 anti-lesson gate (2026-08 benchmark): their Spanish ballot
- * page rendered an 84px "EN NULL" where a dynamic boundary leaked. No /es
- * surface here may ever print a raw null/undefined/NaN. Swept across every
+ * The dynamic-boundary gate (2026-08). Localized pages in the wild
+ * routinely print a raw "NULL" at display size where a dynamic boundary
+ * leaks. No /es surface here may ever print a raw null/undefined/NaN. Swept across every
  * ES surface class; the split-ZIP lookup and the record page are included
  * because dynamic boundaries are exactly where such leaks live.
  */
-test('no /es page ever renders a raw null/undefined/NaN (VOTE411 anti-lesson gate)', async ({
+test('no /es page ever renders a raw null/undefined/NaN', async ({
   page,
 }) => {
   const routes = [

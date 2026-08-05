@@ -124,7 +124,7 @@ test.describe('lookup_representatives', () => {
     expect(result.content?.[0]?.text).toMatch(/No se encontraron datos/i);
   });
 
-  // S24 groundwork (docs/ideation/2026-07-05-build-gtm-strategy.md §9.1(f)):
+  // S24 groundwork (the project records §9.1(f)):
   // FL-20 is a real, currently-vacant seat baked into data/legislators.json;
   // ZIP 33313 maps to it alone. An agent reading this response must see the
   // vacancy explicitly, not infer it from a shorter-than-expected list.

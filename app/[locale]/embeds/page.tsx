@@ -7,14 +7,12 @@ import { getTeasers } from '@/lib/core';
 import { EmbedConfigurator } from '@/components/EmbedConfigurator';
 
 /*
- * S16 — the embeds configurator + public docs page (docs/ideation/2026-07-05-
- * build-gtm-strategy.md §1.3 S16; product spec: docs/ideation/2026-07-02-
- * embeds-spec.md §3.3, §2.3, §3.4). Public, bilingual, and noindex-gated the
+ * S16 — the embeds configurator + public docs page (the project records §1.3 S16; product spec: the project records §3.3, §2.3, §3.4). Public, bilingual, and noindex-gated the
  * same way every other page is right now — this page sets no `robots`
  * metadata of its own, so it inherits app/[locale]/layout.tsx's site-wide
  * launch-gate noindex (still on) rather than trying to lift it locally.
  *
- * This is also the artifact KTD-8's outreach (docs/press/embeds-launch-kit.md)
+ * This is also the artifact KTD-8's outreach (project records, not in this repo)
  * sends recipients to, and the page tests/embeds-cold-walkthrough.spec.ts
  * drives to prove a fresh visitor can go from this page's own generated
  * snippet to a working embed with no other context.

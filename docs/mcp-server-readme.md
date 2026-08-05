@@ -2,9 +2,9 @@
 
 **Status:** live, free, read-only. **Endpoint:** `https://oravan.org/api/mcp/mcp` (Streamable HTTP). **Docs page:** `https://oravan.org/mcp`. **Repository:** `https://github.com/cm2489/oravan`. **Registry:** `org.oravan/mcp` on the Official MCP Registry (`registry.modelcontextprotocol.io`).
 
-This file is a standalone description of the server for anywhere that isn't `oravan.org` itself — directory listings, crawlers, and claim/enrich forms (PulseMCP, Glama, Smithery, Awesome MCP Servers, mcp.so). It uses the same framing and tool descriptions the live server and `docs/ideation/2026-07-02-mcp-spec.md` §2 use — nothing here is written fresh for a pitch. Descriptions below match `lib/core/mcp.ts`'s `TOOL_INFO` export as of 2026-07-11; if that changes, this file needs a matching update (it's a static copy for external redistribution, not an importable module).
+This file is a standalone description of the server for anywhere that isn't `oravan.org` itself — directory listings, crawlers, and claim/enrich forms (PulseMCP, Glama, Smithery, Awesome MCP Servers, mcp.so). It uses the same framing and tool descriptions the live server and the project records §2 use — nothing here is written fresh for a pitch. Descriptions below match `lib/core/mcp.ts`'s `TOOL_INFO` export as of 2026-07-11; if that changes, this file needs a matching update (it's a static copy for external redistribution, not an importable module).
 
-**Avoid list, honored here on purpose:** no *advocacy*, *mobilize*, *campaign*, *pressure*, or *flood* language anywhere in this file, per `docs/ideation/2026-07-05-build-gtm-strategy.md` §5. This is nonpartisan civic information infrastructure, not an action or persuasion tool.
+**Avoid list, honored here on purpose:** no *advocacy*, *mobilize*, *campaign*, *pressure*, or *flood* language anywhere in this file, per the project records §5. This is nonpartisan civic information infrastructure, not an action or persuasion tool.
 
 ## What it is
 

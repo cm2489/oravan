@@ -4,7 +4,7 @@
 for Colby's native-speaker spot-check (interim substitute per U7, same
 constraint as the S6 call-script pass in `docs/es-script-spotcheck.md`) — a
 rubric, pass/fail criteria, and a log section for the dated result. Per
-`docs/ideation/2026-07-05-build-gtm-strategy.md` §1.3 S23: "close the standing
+the project records §1.3 S23: "close the standing
 ES redistribution bar flag before MCP and embeds put more Spanish AI-generated
 text in front of third parties."
 

@@ -2,7 +2,7 @@
 
 Read-only recon snapshot compiled by the naming-sprint hand-off agent. Every fact below was
 verified against the working tree, GitHub, or Vercel on 2026-07-06. The kickoff prompt
-(`docs/plans/2026-07-06-002-oravan-migration-kickoff.md`) depends on this file.
+(project records, not in this repo) depends on this file.
 
 ## 1. Naming decision (why Oravan)
 
@@ -28,7 +28,7 @@ verified against the working tree, GitHub, or Vercel on 2026-07-06. The kickoff 
 - "rostra": **406 hits** repo-wide (excl node_modules/.next/.claude/package-lock). Distribution:
   docs 176, app/ 41, tests/ 41, messages/en.json 38, messages/es.json 38 (strict parity),
   components/ 24, lib/ 17, public/embed.js 10, scripts/ 6, package.json 1 (`"name": "rostra"`).
-  One FILENAME carries it: `docs/plans/2026-07-03-001-feat-rostra-launch-buildout-plan.md`
+  One FILENAME carries it: the project records (kept out of this repo)
   (needs `git mv`).
 - "cabina": **13 hits in 10 files.** Load-bearing ones:
   - `lib/site.ts:10` — `SITE_ORIGIN = 'https://cabina-nine.vercel.app'` (drives sitemap,
@@ -64,7 +64,7 @@ verified against the working tree, GitHub, or Vercel on 2026-07-06. The kickoff 
 - Fonts: next/font/google — Bricolage Grotesque (--font-display) + Public Sans (--font-body),
   applied in `app/[locale]/layout.tsx:2,12,13`.
 - Placeholder logo: `components/Header.tsx:3,29` renders lucide `PhoneCall` as the logo chip —
-  flagged unfinished in docs/plans/2026-07-03-001:294-295. Replace with the real mark.
+  flagged unfinished in the project records Replace with the real mark.
 
 ## 4. Portable Oravan brand kit (~/Projects/oravan)
 
@@ -139,5 +139,5 @@ verified against the working tree, GitHub, or Vercel on 2026-07-06. The kickoff 
 - i18n: 21 namespaces in messages/{en,es}.json, `embeds` namespace (50 keys) is the public
   configurator page. Hardcoded aria-labels bypass i18n: Header.tsx:33,65 ("Primary"),
   Footer.tsx:26 ("Footer").
-- GTM surfaces today are docs-stage only: docs/press/embeds-launch-kit.md, GTM/monetization
+- GTM surfaces today are docs-stage only: the project records (kept out of this repo), GTM/monetization
   ideation docs; no /pricing, /partners, /newsroom routes exist.

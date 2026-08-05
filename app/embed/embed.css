@@ -1,7 +1,7 @@
 /*
  * Styles for the app/embed/* subtree only. Deliberately NOT Tailwind and
  * NOT the citizen site's globals.css: an iframe payload should be small
- * and self-contained (docs/ideation/2026-07-02-embeds-spec.md §5 - "system
+ * and self-contained (the project records §5 - "system
  * fonts, no client framework bloat"), and this keeps it that way rather
  * than pulling in the whole app theme for one widget. The default palette
  * below is the same variant-B palette as app/globals.css's @theme block,

@@ -406,8 +406,7 @@ test('AE5 (rep-lookup/bill-card optional-token path, S20): a token-bearing free-
 });
 
 /*
- * S20 (F6) - THE NAMED ACCEPTANCE TEST (docs/ideation/2026-07-05-build-gtm-
- * strategy.md's own S20 row: "a spoofed-traffic fixture confirms only a
+ * S20 (F6) - THE NAMED ACCEPTANCE TEST (the project records own S20 row: "a spoofed-traffic fixture confirms only a
  * daily bucket survives, no caller-level trace"). A burst of forged
  * requests with varied, spoofed x-forwarded-for values hits a token-bearing
  * rep-lookup load and an authorized action-panel load repeatedly - proving

@@ -18,7 +18,7 @@ const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-repr
  * constitutional - a host page can set the *default* locale via the
  * `?locale=` query param, but can never remove Spanish).
  *
- * ZIP-ONLY, hard rule (F2, docs/ideation/2026-07-05-build-gtm-strategy.md):
+ * ZIP-ONLY, hard rule (F2, the project records (kept out of this repo)):
  * street-address refinement never renders in this iframe. A split ZIP shows
  * every candidate district's reps (senators are unaffected either way,
  * exactly like the main /reps page's graceful fallback) plus a link-out to
