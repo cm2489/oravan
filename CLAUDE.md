@@ -13,6 +13,11 @@ Read README.md first; its **Design principles** section is the product constitut
 - Never log or expose secrets. The only *runtime* secrets are `ANTHROPIC_API_KEY`, `GITHUB_FEEDBACK_TOKEN` (issues-only fine-grained PAT for beta feedback intake), `STRIPE_WEBHOOK_SECRET` (webhook signature verification, S18 — unset everywhere until the owner arms billing; the route refuses with 503 without it), and the Upstash REST tokens `UPSTASH_COUNTERS_REST_TOKEN` / `UPSTASH_CACHE_REST_TOKEN` / `UPSTASH_TENANCY_REST_TOKEN` (three physically separate databases: short-lived rate-limit counters vs. content cache vs. durable tenant config, a reconstructable cache of Stripe's state — never merged, never called "anonymized"); `BLOB_READ_WRITE_TOKEN` (Vercel Blob `oravan-blob`, private store — same-origin portrait mirror/proxy only, armed 2026-07-12; also a nightly-sync Actions secret); `CONGRESS_API_KEY` and the optional `NEWS_API_KEY` are build-time only (nightly sync scripts), never shipped to the client.
 - Claude opens PRs but **never merges** — Colby merges.
 
+## How work is handed back
+
+- **Anything Colby has to do himself gets stated in bold, as a numbered step-by-step sequence** — every command, every click, in the order they must happen, with any blocking dependency between steps called out. Never a prose paragraph he has to reverse-engineer into actions. If a step can't be verified in advance, say so on that step rather than after the list.
+- **Anything visual — mockups, drafts, renders, comparisons, reports — opens in its own tab, formatted.** Publish it as an Artifact and hand over the URL. **Never hand back a Markdown file as a deliverable**, and never make him read a design out of terminal output or a scratchpad path. Scratchpad files are working state, not deliverables.
+
 ## Constitutional conflicts
 
 When something useful conflicts with a rule in this file or with README's **Design principles**, **say so in bold, name the exact rule, and state what it would cost to change it** — at the moment it comes up, before building around it. Never silently narrow a proposal to fit a rule, and never quietly break one. Both hide the decision from Colby, and the decision is his.
