@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { deriveJourney, floorActionChamber, floorCalendarChamber } from '../lib/journey';
+import { deriveJourney, floorActionChamber, floorCalendarChamber, liveCallTarget } from '../lib/journey';
+import type { BillStatus } from '../lib/types';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
 // The import-free copy the .mjs report carries — pinned corpus-wide in suite 6.
 import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
@@ -209,6 +210,58 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
       expect(scriptFloorCalendarChamber(b.last_action_text), slugOf(b)).toBe(
         floorCalendarChamber(b.last_action_text)
       );
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5 · liveCallTarget — chamber-aware call routing (2026-08 benchmark
+ *     steal). Non-null ONLY where the record places the bill in a
+ *     chamber's hands today; everything else renders the rep list
+ *     exactly as before. Never guesses (owner ruling 2026-08-04).
+ * ------------------------------------------------------------------ */
+test.describe('liveCallTarget', () => {
+  const bill = (bill_type: string, status: BillStatus, last_action_text: string | null) => ({
+    bill_type,
+    status,
+    last_action_text,
+  });
+
+  test('floor calendar placement routes to that chamber, wherever the bill started', () => {
+    expect(
+      liveCallTarget(bill('hr', 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.'))
+    ).toEqual({ chamber: 'senate', afterVote: false });
+    expect(
+      liveCallTarget(bill('hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.'))
+    ).toEqual({ chamber: 'house', afterVote: false });
+  });
+
+  test('floor activity routes by the record sentence, not the bill type', () => {
+    expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT))).toEqual({
+      chamber: 'senate',
+      afterVote: false,
+    });
+  });
+
+  test('an unclassifiable floor text routes NOWHERE — never a guess', () => {
+    expect(liveCallTarget(bill('hr', 'floor_vote', 'Considered as unfinished business.'))).toBeNull();
+    expect(liveCallTarget(bill('s', 'floor_vote', null))).toBeNull();
+  });
+
+  test('passed_chamber: the OTHER chamber is the live call, and the vote already happened', () => {
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.'))).toEqual({
+      chamber: 'senate',
+      afterVote: true,
+    });
+    expect(liveCallTarget(bill('sjres', 'passed_chamber', 'Received in the House.'))).toEqual({
+      chamber: 'house',
+      afterVote: true,
+    });
+  });
+
+  test('every other stage renders the list untouched: committee, conference, signed, vetoed, introduced', () => {
+    for (const status of ['introduced', 'committee', 'markup', 'conference', 'signed', 'vetoed'] as const) {
+      expect(liveCallTarget(bill('hr', status, 'whatever the record says'))).toBeNull();
     }
   });
 });

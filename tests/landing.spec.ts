@@ -57,3 +57,15 @@ test('footer privacy link is reachable and clickable on mobile', async ({ page, 
   await link.click();
   await expect(page).toHaveURL(/\/privacy/);
 });
+
+test('Enter in the hero ZIP field submits (GovTrack anti-lesson gate, 2026-08 benchmark)', async ({
+  page,
+}) => {
+  // The incumbent's address field silently swallowed Enter on one of two
+  // runs — at the moment of highest intent. Ours must submit either way:
+  // hydrated (onSubmit) or not (the form's own action="/reps" method=get).
+  await page.goto('/');
+  await page.getByLabel('Your ZIP code').fill('78501');
+  await page.getByLabel('Your ZIP code').press('Enter');
+  await expect(page).toHaveURL(/\/reps\?zip=78501/);
+});
