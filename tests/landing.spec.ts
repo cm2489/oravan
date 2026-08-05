@@ -69,3 +69,42 @@ test('Enter in the hero ZIP field submits (GovTrack anti-lesson gate, 2026-08 be
   await page.getByLabel('Your ZIP code').press('Enter');
   await expect(page).toHaveURL(/\/reps\?zip=78501/);
 });
+
+test('A1 trust line: in the header chrome on wide screens, absent from the phone bar, no overflow at 1024', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/');
+  const line = page.locator('header').getByText('Free. Nonpartisan.');
+  if (isMobile) {
+    await expect(line).toBeHidden();
+    return;
+  }
+  await expect(line).toBeVisible();
+  // The lg breakpoint's tightest width: the bar must hold its one row.
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await expect(line).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+  ).toBe(true);
+});
+
+test('A1-es: the Spanish trust line takes the sub-bar (the 686px nav can never fit it inline) and the switcher keeps full-size cells', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/es');
+  const line = page.locator('header').getByText(/Gratis\. No partidista\./);
+  if (isMobile) {
+    await expect(line).toBeHidden();
+    return;
+  }
+  await expect(line).toBeVisible();
+  // The regression that found this: the inline variant crushed the language
+  // switcher to 25px cells and swallowed its clicks. Both cells must hold
+  // their full tap width.
+  const cells = page.locator('header [role="group"] a');
+  for (const box of await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width))) {
+    expect(box).toBeGreaterThan(60);
+  }
+});

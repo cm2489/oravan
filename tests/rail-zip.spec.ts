@@ -211,3 +211,71 @@ test('Enter submits the rail ZIP form, and chamber routing names the senators as
   const firstRow = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold').first();
   await expect(firstRow).not.toHaveText('Monica De La Cruz');
 });
+
+/*
+ * 2026-08 mockup picks (owner: A1/B1/C1/D1/E1). The three that live on this
+ * page's rail are pinned here; A1 is pinned in landing.spec.
+ */
+
+test('C1 provenance ritual: one fixed-order metadata line under the h1 — citation, gated status, latest action, the AI label', async ({
+  page,
+}) => {
+  await page.goto(BILL);
+  const header = page.locator('main header');
+  await expect(header.getByText('S.J.Res. 99')).toBeVisible();
+  // The status fragment routes through statusKeyFor: S.J.Res. 99 carries
+  // floor ACTIVITY, so the ritual may never print "On the floor calendar".
+  await expect(header.getByText(en.bills.status.floor_activity, { exact: true })).toBeVisible();
+  await expect(header.getByText(en.bills.status.floor_vote, { exact: true })).toHaveCount(0);
+  await expect(header.getByText(new RegExp(en.bill.lastAction))).toBeVisible();
+  // Funnel invariant I1's own string, in its first-contact position.
+  await expect(header.getByText(en.bill.aiLabel, { exact: true })).toBeVisible();
+});
+
+test("D1 both-sides ghosts: the unselected stances' templates render collapsed — the UI certifies no house position", async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  const summaryFor = (s: string) => en.bill.ghostSummary.replace('{stance}', s);
+  await expect(page.getByText(summaryFor(en.bill.stance.oppose))).toBeVisible();
+  await expect(page.getByText(summaryFor(en.bill.stance.undecided))).toBeVisible();
+  // Never a ghost of the stance already open above it.
+  await expect(page.getByText(summaryFor(en.bill.stance.support))).toHaveCount(0);
+
+  // Expanding shows the STATIC template (citation interpolated) and never
+  // the AI disclaimer — the label may not ride non-AI text.
+  const ghost = page.locator('details', { hasText: summaryFor(en.bill.stance.oppose) }).first();
+  await ghost.locator('summary').click();
+  await expect(ghost.getByText(/S\.J\.Res\. 99/)).toBeVisible();
+  await expect(ghost.getByText(en.bill.scriptDisclaimer)).toHaveCount(0);
+});
+
+test('E1 scroll hint: rides the fade while the rail overflows unscrolled, retires on the first scroll', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!!isMobile, 'the rail only scrolls internally on the desk layout');
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  // The hint's real window: a stance just picked, the script mounted, the
+  // ZIP block now below the rail's fold — BEFORE any in-panel interaction.
+  // (A ZIP submit would end the window on purpose: filling the field
+  // scrolls it into view, and the post-submit focus move scrolls again —
+  // either genuine scroll retires the hint, which is the design.)
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  const rail = page.locator('section[aria-labelledby="act"]');
+  const scrollBody = rail.locator('[class*="overflow-y-auto"]').first();
+  const overflows = await scrollBody.evaluate((el) => el.scrollHeight - el.clientHeight > 40);
+  test.skip(!overflows, 'panel content fits this viewport — nothing to hint');
+
+  const hint = rail.getByText(`↓ ${en.bill.railMoreHint}`);
+  await expect(hint).toBeVisible();
+  await scrollBody.evaluate((el) => el.scrollTo({ top: 200 }));
+  await expect(hint).toBeHidden();
+});

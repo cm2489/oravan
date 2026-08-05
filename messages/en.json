@@ -40,7 +40,9 @@
       "moments": "Questions"
     },
     "aiMarker": "AI",
-    "localeGroupLabel": "Language / Idioma"
+    "localeGroupLabel": "Language / Idioma",
+    "trustLine1": "Free. Nonpartisan.",
+    "trustLine2": "No accounts, no ads, no trackers."
   },
   "home": {
     "heroTitle": "Understand it in plain words.",
@@ -246,6 +248,8 @@
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
     "liveSenateAfterHouse": "The House has already voted on this bill — the Senate decides next. Your senators are the live call.",
     "liveHouseAfterSenate": "The Senate has already voted on this bill — the House decides next. Your House member is the live call.",
+    "ghostSummary": "The “{stance}” script — every stance gets one",
+    "railMoreHint": "More",
     "afterHoursTitle": "Nervous? Call after hours.",
     "afterHoursBody": "Voicemails are tallied exactly like live calls. Calling evenings or weekends and leaving a message counts just as much. Mention your ZIP code so they know you're a constituent.",
     "officeHoursTitle": "Typical office hours",
