@@ -1,8 +1,9 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, useSyncExternalStore } from 'react';
 import { ChevronDown, ExternalLink, Info } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '@/lib/freshness-state';
 import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
 /*
@@ -23,11 +24,40 @@ import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
 const LEAN_POSITION: Record<Lean, 0 | 1 | 2> = { left: 0, center: 1, right: 2 };
 
+// Same hydration gate as StalenessNote/MomentQuietNote: false on the server
+// and the hydration render, true after — no state in an effect, no mismatch.
+const emptySubscribe = () => () => {};
+const useHydrated = () =>
+  useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+
+/**
+ * The newest `publishedAt` across a bill's stored articles, or null when none
+ * of them carries a usable date. Null prints no age line at all — a missing
+ * date must never be rendered as a recent one. Dates are stored as
+ * `YYYY-MM-DD` (scripts/sync-coverage.mjs slices the API timestamp), so the
+ * string compare is the date compare.
+ */
+function newestPublishedAt(articles: CoverageArticle[]): string | null {
+  let newest: string | null = null;
+  for (const { publishedAt } of articles) {
+    if (!publishedAt || !Number.isFinite(new Date(publishedAt).getTime())) continue;
+    if (newest === null || publishedAt > newest) newest = publishedAt;
+  }
+  return newest;
+}
+
 export function CoverageSection({ articles, tier }: { articles: CoverageArticle[]; tier: CoverageTier }) {
   const t = useTranslations('coverage');
+  const format = useFormatter();
   const locale = useLocale();
   // No coverage -> render nothing (the graceful-empty path).
   if (articles.length === 0) return null;
+
+  const newestAt = newestPublishedAt(articles);
 
   return (
     <section aria-labelledby="coverage-heading" className="pt-8 md:pt-12">
@@ -35,6 +65,27 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
         {t('heading')}
       </h2>
       <p className="mt-2 max-w-read text-ink-2">{t('subhead')}</p>
+      {/* THE AGE OF WHAT THIS SECTION IS ACTUALLY SHOWING.
+          The bill page prints a "Data as of" stamp ~20 lines above this
+          section, and that stamp tracks the Congress.gov BILL sync — it says
+          nothing about when these articles were gathered, and a reader has no
+          way to tell the two dates apart. So the section states its own age,
+          from the dates already stored on the articles: one line, one date,
+          the same shape as the tracker's "Last action" line above it. */}
+      {newestAt && (
+        <p className="mt-2 max-w-note text-sm text-ink-2">
+          <span className="font-semibold text-ink">{t('newestLabel')}:</span>{' '}
+          <time dateTime={newestAt} className="tabular-nums">
+            {format.dateTime(new Date(newestAt), {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              timeZone: 'UTC',
+            })}
+          </time>
+          <CoverageAgeNote newestAt={newestAt} />
+        </p>
+      )}
       {/* ES readers land on a predominantly English press corpus; flag it up
           front so a language switch isn't a surprise after the click (S6). */}
       {locale === 'es' && <p className="mt-2 max-w-read text-sm text-ink-2">{t('foreignLanguageNote')}</p>}
@@ -55,6 +106,34 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
       <p className="mt-4 max-w-note text-sm text-ink-2">{t('leanNote')}</p>
     </section>
   );
+}
+
+/*
+ * The age caveat, built on StalenessNote's pattern (R2 / KTD-2) and for the
+ * same reason: this is one of ~1,000 statically generated pages, so a verdict
+ * baked at build time would freeze at the moment of the deploy and an article
+ * set would keep reading as recent forever. It is re-diffed against the
+ * VISITOR's clock and renders nothing pre-hydration, so the prerendered HTML
+ * never carries a clock-dependent claim. One line, one date — the caveat
+ * continues the sentence the date is already in rather than opening a second.
+ *
+ * WHAT IT DELIBERATELY DOES NOT SAY: anything about what the press has
+ * published. scripts/sync-coverage.mjs re-queries only the COVERAGE_TOP_N
+ * (150) most urgent eligible bills each night and carries every other bill's
+ * stored articles forward untouched — and stops early when the news API's
+ * daily quota runs out. So for most bills carrying this section nobody has
+ * looked recently, and "no newer coverage exists" would be a claim the
+ * pipeline cannot support. "Newer coverage may exist that we haven't
+ * collected" is the strongest true version, and it is the same shape as
+ * freshness.staleNote's "newer activity in Congress may not be shown yet".
+ */
+function CoverageAgeNote({ newestAt }: { newestAt: string }) {
+  const t = useTranslations('coverage');
+  const hydrated = useHydrated();
+
+  if (!hydrated || freshnessAgeDays(newestAt) <= COVERAGE_AGE_NOTE_DAYS) return null;
+
+  return <span role="status"> — {t('ageNote')}</span>;
 }
 
 function CoverageRow({ article }: { article: CoverageArticle }) {

@@ -383,6 +383,8 @@
   "coverage": {
     "heading": "How it's being covered",
     "subhead": "Coverage of this bill from across the press — each outlet's political lean labeled where AllSides has rated it, and marked \"Not rated\" where it hasn't.",
+    "newestLabel": "Newest of these articles",
+    "ageNote": "newer coverage may exist that we haven't collected",
     "leanNote": "Lean labels describe the news outlet, not this bill or any party. Ratings by AllSides.",
     "lean": {
       "left": "Leans left",
@@ -399,7 +401,7 @@
   },
   "news": {
     "heading": "In the news",
-    "subhead": "Bills drawing real coverage across the press right now.",
+    "subhead": "Bills covered by more than one outlet, ranked by how widely — not by how recently.",
     "sources": "{count, plural, one {# outlet} other {# outlets}}"
   },
   "why": {
@@ -472,7 +474,7 @@
     "urlBody": "Every bill gets one permanent address in each language, built only from its own bill type, number, and Congress — never from its status. A citation written the day a bill is introduced still resolves after it's signed, fails, or expires; the address is never reused or reassigned.",
     "urlExampleLabel": "Example — H.R. 1787, the same bill used in Oravan's own demo material:",
     "asOfTitle": "\"Data as of\" freshness",
-    "asOfBody": "Every page states the date of Oravan's last successful nightly sync with Congress.gov — not a live feed, and not the date you happen to load the page. Cite that date, not today's date, as the moment the underlying facts were last checked. It's the same value as the {asOfField} field in every MCP tool response.",
+    "asOfBody": "Every page states the date of Oravan's last successful nightly sync with Congress.gov — not a live feed, and not the date you happen to load the page. Cite that date, not today's date, as the moment the underlying facts were last checked. It's the same value as the {asOfField} field in every MCP tool response. One exception: the news articles in a bill's \"How it's being covered\" section don't come from Congress.gov, and a bill's articles are re-checked only on nights when it ranks among the most urgent — so the stamp says nothing about their age. That section prints the date of the newest article it holds; cite that date instead.",
     "sourceTitle": "Where the data comes from",
     "sourceBody": "Bill status, dates, sponsor, and text come from Congress.gov. Member and district-office data comes from the public-domain unitedstates/congress-legislators project. Both refresh only through Oravan's own nightly sync. The MCP citation envelope states the source in whichever language a query requested — both language versions are shown below, since this page is read by both:",
     "aiTitle": "The AI-content policy",

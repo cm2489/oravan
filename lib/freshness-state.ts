@@ -22,6 +22,28 @@ export const FRESHNESS_CLAIM_WINDOW_DAYS = 5;
  *  behind schedule. */
 export const FRESHNESS_DEAD_WINDOW_DAYS = 21;
 
+/*
+ * How old a bill's NEWEST stored news article can be before the "Read"
+ * section adds its age caveat. Deliberately a separate, much wider window
+ * than the two above, and deliberately NOT a sync signal:
+ *
+ *  - The two constants above measure whether OUR nightly job ran. This one
+ *    measures how long ago the PRESS last wrote about one bill, which is a
+ *    far slower clock — a bill can go a fortnight without a story and the
+ *    section is still telling the truth about how it is being covered.
+ *  - 30 days is where the measured corpus separates cleanly: of the 95 bills
+ *    whose coverage actually renders (2 outlets or more), 76 have nothing
+ *    newer than 30 days and the oldest is 386 days (recomputed 2026-08-06 —
+ *    the file moves nightly, so recompute rather than trust the figures).
+ *    A tighter window would fire on almost every bill and become wallpaper,
+ *    which is the same failure the one-green-panel cap exists to prevent.
+ *
+ * Lives here, not in lib/coverage.ts, for the reason in this file's header:
+ * lib/coverage.ts imports data/coverage.json, and the caveat has to re-diff
+ * against the visitor's own clock in a client component.
+ */
+export const COVERAGE_AGE_NOTE_DAYS = 30;
+
 /** Age of `checkedAt` in days, as of `now`. Unparseable input reads as
  *  infinitely old rather than throwing, so a corrupted timestamp fails
  *  toward "stale", never toward a false "fresh". */
