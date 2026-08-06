@@ -80,6 +80,7 @@ import {
   cg,
   fetchRecentlyUpdated,
   slugOf,
+  toISODateTime,
   updateSlug,
 } from './congress-fetch.mjs';
 import { parseForceSlugs } from './decode-gate.mjs';
@@ -117,17 +118,12 @@ if (forceSlugs.size) {
   console.log(`FORCE_DECODE_SLUGS active (gate bypassed for): ${[...forceSlugs].join(', ')}`);
 }
 
-// Congress.gov's fromDateTime is picky in BOTH directions. A bare date
-// ("2026-06-04", the shape its own bill-list updateDate uses) 400s - the
-// 2026-06-25/07-01 outage. A fractional-seconds timestamp
-// ("2026-07-16T17:54:26.862Z", the shape Date.toISOString() emits) ALSO
-// 400s - the 2026-07-17/07-22 outage, triggered the first time a clean
-// (unfrozen) run persisted raw runStart as the cursor. Live-verified
-// 2026-07-22: .862Z -> 400, seconds-precision -> 200. Always normalize to
-// seconds-precision ISO-8601 before anything becomes the next cursor.
-function toISODateTime(d) {
-  return /T/.test(d) ? d.replace(/\.\d+(?=Z$|[+-]\d\d:\d\d$)/, '') : `${d}T00:00:00Z`;
-}
+// toISODateTime (the fromDateTime cursor normalizer that closed the
+// 2026-06-25/07-01 and 2026-07-17/07-22 outages) moved to
+// congress-fetch.mjs on 2026-08-06, unchanged byte for byte, and is now
+// imported above. It moved because scripts/sync-nominations.mjs needs the
+// exact same normalization and a second copy would be free to re-learn both
+// outages on its own. The full explanation lives with the function.
 
 // ---- main ----
 const since = state.lastSync;
