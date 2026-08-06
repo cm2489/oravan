@@ -11,6 +11,21 @@ on:
       force_decode_slugs:
         description: 'Comma-separated slugs to bypass the priority gate for (e.g. hr-1234-119,s-45-119)'
         default: ''
+      coverage_top_n:
+        # The one-time wide refresh lever (owner directive, 2026-08-05). Leave
+        # blank for the nightly default of 600.
+        #
+        # SIZING IT: TheNewsAPI Basic allows 2,500 requests/day and the run
+        # spends one per bill, so 2400 is the largest value that fits a single
+        # day with headroom — it does NOT cover the full ~2,507-bill eligible
+        # set in one pass. That is fine and deliberate: one wide run plus the
+        # 50/50 least-recently-checked rotation reaches the whole corpus within
+        # a couple of nights, and the run commits what it has if quota is hit.
+        description: 'One-off COVERAGE_TOP_N override (blank = 600 nightly; 2400 = widest single-day refresh on the Basic tier)'
+        default: ''
+      coverage_tail_share:
+        description: 'One-off COVERAGE_TAIL_SHARE override (blank = 0.5; set 0 for pure urgency order)'
+        default: ''
 
 permissions:
   contents: write
@@ -59,10 +74,24 @@ jobs:
         run: node scripts/backfill-search-inputs.mjs
       - name: Sync coverage
         # No-op unless NEWS_API_KEY is set, so this is safe before the secret exists.
+        #
+        # The two COVERAGE_* vars are blank on every scheduled run, so the
+        # script's own defaults apply (600 bills, 50/50 urgency/least-recently-
+        # checked). They exist for the manual wide-refresh dispatch — see the
+        # workflow_dispatch inputs above. An empty env var is treated as unset
+        # by the script's `?? default` reads only because we omit it entirely
+        # when blank, which the `|| ''` fallback below preserves.
         env:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node scripts/sync-coverage.mjs
+        run: |
+          if [ -n "${{ inputs.coverage_top_n }}" ]; then
+            export COVERAGE_TOP_N="${{ inputs.coverage_top_n }}"
+          fi
+          if [ -n "${{ inputs.coverage_tail_share }}" ]; then
+            export COVERAGE_TAIL_SHARE="${{ inputs.coverage_tail_share }}"
+          fi
+          node scripts/sync-coverage.mjs
       - name: Collect Moment updates (Moments v2 live layer, nightly)
         # Nightly mode = the incremental pass PLUS press clusters, retention
         # pruning, and the "Where it stands" state summaries. Runs AFTER the
