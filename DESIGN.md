@@ -242,4 +242,4 @@ Every user-facing string goes through `messages/en.json` **and** `messages/es.js
 
 Spanish runs longer than English — size controls for the longer label (the language switch is sized for the Spanish word, not the English one), and never let a fixed width decide.
 
-AI content is **labeled at first contact** and human-reviewed before it drives a call. The label sits with the content, above the fold — never in a footnote.
+AI content is **labeled at first contact**, and a call script is read — and editable — by the caller before it drives a call. That last clause is scoped to call scripts on purpose: decodes and Moment update summaries publish behind automated gates with no human step, so the label is the whole disclosure there. The label sits with the content, above the fold — never in a footnote.
