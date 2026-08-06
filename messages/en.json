@@ -498,9 +498,11 @@
   },
   "errorBoundary": {
     "title": "Something went wrong",
-    "body": "This page hit a snag. Reloading usually fixes it. If it keeps happening, erasing your saved data on the My record page can clear it.",
+    "body": "This page hit a snag. Reloading usually fixes it. If it keeps happening, something saved on this device may be the cause.",
     "retry": "Try again",
-    "home": "Go home"
+    "home": "Go home",
+    "eraseHelp": "Erasing clears your ZIP, interests, reading history, and call history from this browser. Nothing about you is stored anywhere else, so there is nothing else to clear.",
+    "erase": "Erase saved data on this device"
   },
   "categories": {
     "jobs_economy": "Jobs & the economy",
