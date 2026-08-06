@@ -64,41 +64,123 @@ test.describe('the CI gate', () => {
  * as a literal here on purpose: this file is excluded from the gate's own
  * scan set (tests/ builds hostile fixtures by design), so it can spell out
  * what the gate may only assemble from fragments.
+ *
+ * NOT global. It was declared /gi until 2026-08-06 and then reused in
+ * .not.toMatch() inside a three-iteration loop below, where a global
+ * regex's lastIndex survives between calls and can silently skip a match —
+ * a latent false green in the one file whose entire job is not to be one.
  */
-const RETIRED = /human[\s-]?review|reviewed by (a|the) (human|person)|revisad[oa]s? por (una? )?persona|revisión humana/gi;
+const RETIRED = /human[\s-]?review|reviewed by (a|the) (human|person)|revisad[oa]s? por (una? )?persona|revisión humana/i;
 
 /**
  * A retired-claim mention is legitimate in a constitution document only when
- * its surrounding paragraph marks it as an AMENDMENT RECORD (the file
- * quoting what it used to say), a DENIAL ("the decode path is not
- * human-reviewed"), or an EXPLICIT SCOPE — Moments and call scripts, the two
- * places human review genuinely happens.
+ * ITS OWN SENTENCE marks it as an AMENDMENT RECORD (the file quoting what it
+ * used to say), a DENIAL ("the decode path is not human-reviewed"), or an
+ * EXPLICIT SCOPE — Moments and call scripts, the two places human review
+ * genuinely happens.
+ *
+ * "Its own sentence" is the 2026-08-06 correction, and it is the whole test.
+ * This used to test a ±2-line window, which meant that in a markdown
+ * principles list — where consecutive lines are consecutive principles —
+ * any principle could borrow its neighbour's amendment parenthetical. It
+ * also meant DENIAL's bare `\bnever\b` matched DESIGN.md's own trailing
+ * "never in a footnote" and excused the live claim in front of it. Run
+ * against the four pre-fix documents this test reported ZERO violations:
+ * it would not have caught a single claim it was written for. PRE_FIX below
+ * is that proof, kept as a fixture so it cannot quietly stop being one.
  */
-const AMENDMENT = /amended|previously|corrected|used to|no longer|inherited the false claim|never did/i;
-const DENIAL = /\bis not\b|\bnever\b|\bno human step\b|\bwithout\b/i;
-const SCOPE = /moment|big question|call script|caller|guion|gran pregunta/i;
+const AMENDMENT = /amended|corrected|reworded|retired|previously|inherited the false claim|no longer|never did|\bused to\b|\bit (said|claimed|read)\b/i;
+const DENIAL = /\b(is|are|was|were|has|have|had)\s+not\b|\bnever\s+(been\s+)?(human|review|claim|did|does|do)/i;
+const SCOPE = /\bmoments?\b|big question|call script|\bcaller\b|guion|gran(des)? pregunta/i;
+
+/*
+ * The claim unit: reassemble wrapped lines into a paragraph, then take the
+ * one sentence the mention sits in. Markdown block starts (list items,
+ * numbered items, headings) end a paragraph — that boundary is what stops
+ * principle 4 speaking for principle 5. Mirrors paragraphsOf/splitSentences
+ * in scripts/check-claim-truth.mjs; duplicated rather than imported for the
+ * same reason RETIRED is duplicated — this file is outside the gate's scan
+ * set and states its expectations in the open, and importing the gate would
+ * execute its tree scan on import.
+ */
+const MD_BLOCK_START = /^\s{0,3}([-*+]\s|\d+[.)]\s|#{1,6}\s|>|\|)/;
+
+function claimSentences(text: string): { line: number; sentence: string }[] {
+  const lines = text.split('\n');
+  const out: { line: number; sentence: string }[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (!lines[i].trim()) {
+      i++;
+      continue;
+    }
+    let end = i;
+    while (end + 1 < lines.length && lines[end + 1].trim() && !MD_BLOCK_START.test(lines[end + 1])) end++;
+    const paragraph = lines
+      .slice(i, end + 1)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    for (const sentence of paragraph.split(/(?<=[.!?])\s+/)) {
+      if (RETIRED.test(sentence)) out.push({ line: i + 1, sentence: sentence.trim() });
+    }
+    i = end + 1;
+  }
+  return out;
+}
+
+const legitimate = (sentence: string) =>
+  AMENDMENT.test(sentence) || DENIAL.test(sentence) || SCOPE.test(sentence);
 
 test.describe('the four constitution documents agree on what guards a publish', () => {
   test('every human-review mention is an amendment record, a denial, or explicitly scoped', () => {
     let mentions = 0;
     for (const file of CONSTITUTION) {
-      const lines = read(file).split('\n');
-      lines.forEach((line, i) => {
-        if (!new RegExp(RETIRED.source, 'i').test(line)) return;
+      for (const { line, sentence } of claimSentences(read(file))) {
         mentions++;
-        const context = lines.slice(Math.max(0, i - 2), i + 3).join('\n');
-        const ok = AMENDMENT.test(context) || DENIAL.test(context) || SCOPE.test(context);
         expect(
-          ok,
-          `${file}:${i + 1} makes a bare human-review claim. It must read as an amendment record, ` +
-            `a denial, or be explicitly scoped to Moments or call scripts:\n  ${line.trim().slice(0, 200)}`
+          legitimate(sentence),
+          `${file}:${line} makes a bare human-review claim. It must read as an amendment record, ` +
+            `a denial, or be explicitly scoped to Moments or call scripts:\n  ${sentence.slice(0, 200)}`
         ).toBe(true);
-      });
+      }
     }
     // A zero here would mean the amendment records themselves were deleted,
     // which is how the history of a correction gets lost.
     expect(mentions, 'the amendment records must still be in the files').toBeGreaterThan(0);
   });
+
+  /*
+   * The pre-fix documents, verbatim, as a standing proof that the test above
+   * has teeth. Held as literals rather than read from `git show origin/main:`
+   * on purpose: origin/main will one day carry the CORRECTED text, and a
+   * regression fixture that quietly turns into a copy of the fix proves
+   * nothing. Each entry is exactly what shipped before 2026-08-06.
+   */
+  const PRE_FIX = [
+    {
+      what: 'README.md principle 5, under principle 4 and its amendment parenthetical',
+      text: [
+        '4. **Truth first; the call is the natural next step.** Oravan leads as an unbiased, plain-words account of what Congress is actually doing. *(Amended 2026-07-26; previously "The call moment is the product.")*',
+        '5. **Honest about AI.** Every generated summary and script is labeled, editable, and reviewed by the human before any call.',
+      ].join('\n'),
+    },
+    {
+      what: 'DESIGN.md\'s labeling rule, whose own trailing "never in a footnote" excused it',
+      text: 'AI content is **labeled at first contact** and human-reviewed before it drives a call. The label sits with the content, above the fold — never in a footnote.',
+    },
+  ];
+
+  for (const { what, text } of PRE_FIX) {
+    test(`the check is RED against the pre-fix wording: ${what}`, () => {
+      const found = claimSentences(text);
+      expect(found, 'the pre-fix claim must still be found at all').toHaveLength(1);
+      expect(
+        legitimate(found[0].sentence),
+        `this shipped as a live false claim and must be rejected, not excused:\n  ${found[0].sentence}`
+      ).toBe(false);
+    });
+  }
 
   test('README, CLAUDE and PRODUCT name the SAME three gates, and never the vocabulary lint', () => {
     for (const file of ['README.md', 'CLAUDE.md', 'PRODUCT.md'] as const) {

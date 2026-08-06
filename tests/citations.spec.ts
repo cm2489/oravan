@@ -137,6 +137,17 @@ test.describe('AI-provenance copy on /citations says what actually runs', () => 
       expect(body, `${lang}: advocacy is not one of the decode gates`).not.toMatch(
         /no advocacy language|sin lenguaje de campaña/i
       );
+      // 2026-08-06, second pass. The copy used to name the schema gate as
+      // one "that fails the whole sync rather than ship a partial record".
+      // The promise was true — the bill is simply not added — but the
+      // mechanism was not: scripts/bill-decode.mjs throws 'bad decode
+      // shape' per bill, scripts/sync-bills.mjs catches it and drops that
+      // bill, and only a mostly-failed run exits 1. The one check that
+      // fails the whole sync is scripts/verify-sync.mjs, and it runs on the
+      // corpus before the commit, not on a single decode.
+      expect(body, `${lang}: the schema check does not fail the whole sync on one bad decode`).not.toMatch(
+        /fails the whole sync|hace fallar toda la sincronización/i
+      );
     }
 
     // The three gates that ARE real, named in both languages.
