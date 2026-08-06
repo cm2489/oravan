@@ -226,6 +226,7 @@
     "scriptHint": "Edita lo que quieras — funciona mejor cuando suena como tú. Los [corchetes] son para que los llenes.",
     "scriptDisclaimer": "Borrador de IA. Revísalo y edítalo antes de llamar.",
     "scriptError": "No pudimos redactar un guion ahora. La plantilla lista de abajo funciona mientras tanto.",
+    "scriptNotCallable": "Oravan no tiene guion para este caso. Un guion necesita un registro que muestre una decisión que el Senado todavía pueda tomar y que diga lo suficiente al respecto como para redactarlo. Es una negativa, no una falla pasajera — volver a intentarlo no lo cambia.",
     "rateLimited": "Has pedido varios guiones en poco tiempo. Respira y vuelve a intentarlo pronto.",
     "fallbackTitle": "Un guion listo para usar",
     "fallbackDisclaimer": "Una plantilla estándar — no es un borrador de IA. Llena los [corchetes] y está lista.",
@@ -236,6 +237,11 @@
       "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",
       "undecided": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Este proyecto de ley me preocupa y aún no tomo una posición. Pido que registren mi preocupación; estaré atento a la posición de la oficina antes de decidir. Gracias por su tiempo."
+    },
+    "fallbackScriptNomination": {
+      "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Apoyo esta nominación y pido al senador que vote a favor de confirmarla. Gracias por su tiempo.",
+      "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Me opongo a esta nominación y pido al senador que vote en contra de confirmarla. Gracias por su tiempo.",
+      "undecided": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Esta nominación me preocupa y aún no tomo una posición. Pido que registren mi preocupación; estaré atento a la posición del senador antes de decidir. Gracias por su tiempo."
     },
     "callTitle": "Haz tu llamada",
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
@@ -314,6 +320,7 @@
     "loggedFifth": "Cinco llamadas registradas. Cinco veces que alzaste la voz y quedó contada.",
     "loggedTenth": "Diez llamadas. Los nervios se fueron; la voz se quedó.",
     "generating1": "Leyendo el proyecto de ley para que tú no tengas que hacerlo…",
+    "generatingNomination1": "Leyendo el registro del Senado para que tú no tengas que hacerlo…",
     "generating2": "Poniéndolo en tus palabras…",
     "generating3": "Recortándolo a treinta segundos…",
     "startCall": "Empezar la llamada",
@@ -868,6 +875,12 @@
     "readRecord": "Leer el registro",
     "recordHeading": "El registro del Senado",
     "recordLede": "La ficha de Congress.gov para esta nominación, palabra por palabra y en inglés, tal como el Senado la publica. Oravan no escribió ni reescribió nada de lo que sigue.",
+    "closedTitle": "No hay llamada que hacer",
+    "closed": {
+      "confirmed": "El Senado votó a favor de confirmar esta nominación. Una nominación confirmada está terminada — ya no queda ninguna llamada que hacer.",
+      "returned": "El Senado devolvió esta nominación al Presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
+      "withdrawn": "El Presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
+    },
     "receivedLabel": "Enviada al Senado",
     "lastActionLabel": "Última acción",
     "viewOfficial": "Verla en Congress.gov",

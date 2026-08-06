@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { mockScriptApi, seedZip } from './helpers';
+import { mockScriptApi, mockScriptApiFailure, seedZip } from './helpers';
 
 /*
  * THE SENATE NOMINATION SURFACE, END TO END.
@@ -34,6 +34,24 @@ const CONFIRMED = ALL.find((n) => n.status === 'confirmed' && n.nominee_descript
 
 const liveSlug = LIVE ? nominationSlug(LIVE) : null;
 const confirmedSlug = CONFIRMED ? nominationSlug(CONFIRMED) : null;
+
+/** One representative of EACH terminal status the corpus actually holds. The
+ *  three are different sentences ("confirmed" is a Senate vote, "returned"
+ *  and "withdrawn" are not), so each is driven rather than assumed to follow
+ *  from the first. */
+const TERMINAL = (['confirmed', 'returned', 'withdrawn'] as const)
+  .map((status) => ({ status, record: ALL.find((n) => n.status === status && n.nominee_description) }))
+  .filter((x): x is { status: 'confirmed' | 'returned' | 'withdrawn'; record: (typeof ALL)[number] } =>
+    Boolean(x.record)
+  );
+
+/*
+ * TX-15 (78501): two senators + one House member, and — load-bearing for the
+ * "no 'bill' anywhere in the rail" assertions below — not one of the three
+ * offices it resolves is a legislator named Bill. A ZIP whose senator is
+ * Bill Cassidy would fail those tests on a true first name.
+ */
+const ZIP = '78501';
 
 test.describe('the nomination page', () => {
   test('renders the Senate record verbatim, and says it is not rewritten', async ({ page }) => {
@@ -103,7 +121,7 @@ test.describe('the nomination page', () => {
     test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
     await mockScriptApi(page);
     await page.goto(`/nominations/${liveSlug}`);
-    await seedZip(page, '78501'); // TX-15: two senators + one House member
+    await seedZip(page, ZIP); // TX-15: two senators + one House member
     await page.reload();
     // The rep list lives in the panel's step 2, which only renders once a
     // stance is chosen — the same order call-action.spec.ts drives.
@@ -148,7 +166,7 @@ test.describe('the nomination page', () => {
     test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
     await mockScriptApi(page);
     await page.goto(`/nominations/${liveSlug}`);
-    await seedZip(page, '78501');
+    await seedZip(page, ZIP);
     await page.reload();
     await page.getByRole('radio', { name: en.bill.stance.support }).click();
     const script = page.getByRole('textbox', { name: en.bill.scriptTitle });
@@ -157,27 +175,174 @@ test.describe('the nomination page', () => {
   });
 
   /*
-   * A FINISHED NOMINATION MAKES NO CLAIM. liveCallTargetForNomination returns
-   * null for confirmed/returned/withdrawn/unclassified, so the page must carry
-   * none of the routing copy — the manufactured urgency this product refuses,
-   * caught at the surface rather than only at the unit level.
+   * A FINISHED NOMINATION HAS NO CALL APPARATUS AT ALL (2026-08-06 blocker 1b).
+   *
+   * The first version of this test asserted only that the ROUTING COPY was
+   * absent — and it passed while the page below it still offered a stance
+   * control, an AI script slot, a ready-made template and three dials on a
+   * nomination the Senate confirmed 18 months earlier. Absence of the routing
+   * sentence was never the property that mattered; absence of the ACTION was.
+   *
+   * The bill path's own precedent for a terminal state is a plain past-tense
+   * sentence that says what happened (lib/journey.ts's nowSigned / nowVetoed,
+   * with showTrailer false — the forward-looking apparatus turns off and the
+   * record speaks). This is that, applied where the call would have been.
    */
-  test('a confirmed nomination never reads as a live call', async ({ page }) => {
+  for (const { status, record } of TERMINAL) {
+    test(`a ${status} nomination offers no script and no stance control, and says what happened`, async ({
+      page,
+    }) => {
+      await mockScriptApi(page);
+      await page.goto(`/nominations/${nominationSlug(record)}`);
+      await seedZip(page, ZIP);
+      await page.reload();
+
+      // What happened, in plain words, standing where the rail stood.
+      await expect(
+        page.getByRole('heading', { name: en.nominations.closedTitle })
+      ).toBeVisible();
+      await expect(page.getByText(en.nominations.closed[status])).toBeVisible();
+
+      // …and NONE of the apparatus. Each of these is a separate promise the
+      // page was breaking: a position to take, words to read, a fallback
+      // template, and a number to dial about a decision already made.
+      await expect(page.getByRole('radiogroup')).toHaveCount(0);
+      await expect(page.getByRole('radio')).toHaveCount(0);
+      await expect(page.getByText(en.bill.actTitle)).toHaveCount(0);
+      await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveCount(0);
+      await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toHaveCount(0);
+      await expect(page.getByText(en.bill.fallbackTitle)).toHaveCount(0);
+      await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: en.bill.startCall })).toHaveCount(0);
+
+      // The routing copy stays absent too — the original assertion, kept.
+      for (const copy of [
+        en.bill.liveSenateNomination,
+        en.bill.nominationHow,
+        en.bill.nominationHousePress,
+      ]) {
+        await expect(page.getByText(copy)).toHaveCount(0);
+      }
+    });
+  }
+
+  test('the closed panel speaks Spanish on /es', async ({ page }) => {
     test.skip(!CONFIRMED, 'no confirmed-and-described nomination in the current corpus');
-    await mockScriptApi(page);
-    await page.goto(`/nominations/${confirmedSlug}`);
-    await seedZip(page, '78501');
+    await page.goto(`/es/nominations/${confirmedSlug}`);
+    await expect(page.getByRole('heading', { name: es.nominations.closedTitle })).toBeVisible();
+    await expect(page.getByText(es.nominations.closed.confirmed)).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+  });
+
+  /*
+   * THE FALLBACK TEMPLATE IS KIND-AWARE (2026-08-06 blocker 1a).
+   *
+   * `bill.fallbackScript.*` says "this bill" / "este proyecto de ley", and the
+   * panel seeded it on every nomination whose script request failed — a
+   * nomination called a bill, in a script written for the reader to say out
+   * loud. The assertion is deliberately made over the WHOLE rail rather than
+   * over the textarea alone: `bill.generating1` ("Reading the bill so you
+   * don't have to…") carried the same lie one state earlier, and a
+   * textarea-only test would have shipped past it.
+   */
+  for (const { locale, prefix, messages, word } of [
+    { locale: 'en', prefix: '', messages: en, word: /\bbills?\b/i },
+    { locale: 'es', prefix: '/es', messages: es, word: /\bproyectos?\b/i },
+  ] as const) {
+    test(`${locale}: nothing in a nomination's call rail calls it a bill`, async ({ page }) => {
+      test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+      // A 502 is the path that seeds the fallback template — the exact state
+      // the reproduction hit with the API unmocked.
+      await mockScriptApiFailure(page, 502, { error: 'generation_failed' });
+      await page.goto(`${prefix}/nominations/${liveSlug}`);
+      await seedZip(page, ZIP);
+      await page.reload();
+      await page.getByRole('radio', { name: messages.bill.stance.support }).click();
+
+      const template = page.getByRole('textbox', { name: messages.bill.fallbackTitle });
+      await expect(template).toBeVisible();
+      // The words the caller would actually say.
+      expect(await template.inputValue()).not.toMatch(word);
+      // …and every other string in the rail, including the collapsed
+      // both-sides ghost templates (textContent, not innerText, so a closed
+      // <details> is still read).
+      const rail = page.locator('section[aria-labelledby="act"]');
+      expect(await rail.evaluate((el) => el.textContent ?? '')).not.toMatch(word);
+    });
+  }
+
+  /*
+   * THE REFUSAL IS NOT A FAILURE (2026-08-06 blocker 2). The route answers 422
+   * `not_callable` when it has DECIDED there is no call to make; the panel
+   * could not tell that from an outage and told the reader to try again, with
+   * a ready-made template underneath. Nothing had gone wrong, and both of
+   * those were false.
+   */
+  test('a 422 not_callable reads as a refusal — no retry, no template, no dial', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await mockScriptApiFailure(page, 422, { error: 'not_callable' });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, ZIP);
     await page.reload();
-    await expect(page.getByText(en.nominations.status.confirmed).first()).toBeVisible();
     await page.getByRole('radio', { name: en.bill.stance.support }).click();
-    await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
-    for (const copy of [
-      en.bill.liveSenateNomination,
-      en.bill.nominationHow,
-      en.bill.nominationHousePress,
-    ]) {
-      await expect(page.getByText(copy)).toHaveCount(0);
-    }
+
+    await expect(page.getByText(en.bill.scriptNotCallable)).toBeVisible();
+    // Not the outage message, and not its retry affordance.
+    await expect(page.getByText(en.bill.scriptError)).toHaveCount(0);
+    await expect(page.getByText(en.bill.rateLimited)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: en.bill.retry })).toHaveCount(0);
+    // And no template: handing over words to read is exactly the thing the
+    // route just refused to do.
+    await expect(page.getByText(en.bill.fallbackTitle)).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toHaveCount(0);
+    await expect(page.locator('section[aria-labelledby="act"] a[href^="tel:"]')).toHaveCount(0);
+  });
+
+  /*
+   * …AND THE GENUINE FAILURE PATH IS UNTOUCHED. "Couldn't draft a script right
+   * now" is the correct sentence for its own case, and the template it hands
+   * over is the right answer to an outage — it just has to be the right
+   * template. Both halves are asserted here so a future refusal branch cannot
+   * quietly swallow the outage branch.
+   */
+  test('a 5xx still reads as transient, with a retry and a nomination-worded template', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await mockScriptApiFailure(page, 502, { error: 'generation_failed' });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, ZIP);
+    await page.reload();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+
+    await expect(page.getByText(en.bill.scriptError)).toBeVisible();
+    await expect(page.getByRole('button', { name: en.bill.retry })).toBeVisible();
+    await expect(page.getByText(en.bill.scriptNotCallable)).toHaveCount(0);
+    const template = page.getByRole('textbox', { name: en.bill.fallbackTitle });
+    await expect(template).toBeVisible();
+    expect(await template.inputValue()).toContain('nomination before the Senate');
+    // The dial comes back with it — an outage must never take the phones down
+    // (funnel invariant I2, and the reason the fallback exists at all).
+    await expect(
+      page.locator('section[aria-labelledby="act"] a[href^="tel:"]').first()
+    ).toBeVisible();
+  });
+
+  test('a 429 still rate-limits, and seeds the nomination template', async ({ page }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await mockScriptApiFailure(page, 429, { error: 'rate_limited', retryAfterSec: 480 });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, ZIP);
+    await page.reload();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+
+    await expect(page.getByText(en.bill.rateLimited)).toBeVisible();
+    await expect(page.getByText(en.bill.scriptNotCallable)).toHaveCount(0);
+    const template = page.getByRole('textbox', { name: en.bill.fallbackTitle });
+    await expect(template).toBeVisible();
+    expect(await template.inputValue()).toContain('nomination before the Senate');
   });
 
   test('/es renders Spanish chrome around the English government record', async ({ page }) => {

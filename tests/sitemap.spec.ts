@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { getAllBills } from '../lib/core';
-import { getMoments } from '../lib/moments';
+import { getAllNominations, nominationSlug } from '../lib/core/nominations';
+import { getMoments, vehicleKind } from '../lib/moments';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -14,8 +15,32 @@ import { getMoments } from '../lib/moments';
 const SITE_ORIGIN = 'https://oravan.org';
 const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions'
 
+/**
+ * The nomination slugs app/sitemap.ts actually lists: ONLY those a non-retired
+ * moment cites, de-duplicated (two moments may cite one nomination; the
+ * sitemap's Map collapses them to one pair of entries).
+ *
+ * Derived here the same way the route derives it rather than hardcoded, so
+ * this arithmetic tracks the file. Until 2026-08-06 the loc-count assertion
+ * below simply omitted this term, and the first nomination vehicle to land
+ * would have turned it red — reporting a sitemap defect where the sitemap was
+ * doing exactly what its own comment says it does.
+ */
+function citedNominationSlugs(): Set<string> {
+  const slugs = new Set<string>();
+  for (const m of getMoments()) {
+    if (m.state === 'retired') continue;
+    for (const v of m.vehicles) {
+      if (vehicleKind(v) === 'nomination') slugs.add(v.slug);
+    }
+  }
+  return slugs;
+}
+
 test.describe('sitemap.xml', () => {
-  test('renders both locales for every static path and every bill', async ({ request }) => {
+  test('renders both locales for every static path, every bill, and every cited nomination', async ({
+    request,
+  }) => {
     const res = await request.get('/sitemap.xml');
     expect(res.status()).toBe(200);
     expect(res.headers()['content-type']).toContain('xml');
@@ -24,8 +49,23 @@ test.describe('sitemap.xml', () => {
     const totalBills = getAllBills().length;
     // Moments (v2 slice S5): every non-retired moment ships, both locales.
     const totalMoments = getMoments().filter((m) => m.state !== 'retired').length;
+    const cited = citedNominationSlugs();
     const locCount = (body.match(/<loc>/g) ?? []).length;
-    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments) * 2);
+    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments + cited.size) * 2);
+
+    // Every cited nomination is listed, both locales…
+    for (const slug of cited) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/nominations/${slug}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/nominations/${slug}</loc>`);
+    }
+    // …and an UNCITED one is not, which is the half that matters: 857 records
+    // have reachable pages and every uncited one self-reports noindex, so
+    // listing them would be a sitemap arguing with its own pages.
+    const uncited = getAllNominations()
+      .map(nominationSlug)
+      .find((slug) => !cited.has(slug));
+    expect(uncited, 'the corpus should hold at least one uncited nomination').toBeDefined();
+    expect(body).not.toContain(`<loc>${SITE_ORIGIN}/nominations/${uncited}</loc>`);
 
     // A representative moment page, both locales.
     expect(body).toContain(`<loc>${SITE_ORIGIN}/questions/iran-war-powers</loc>`);

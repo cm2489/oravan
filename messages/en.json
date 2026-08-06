@@ -226,6 +226,7 @@
     "scriptHint": "Edit anything. It works best when it sounds like you, and the [brackets] are yours to fill in.",
     "scriptDisclaimer": "AI-drafted. Review and edit before you call.",
     "scriptError": "Couldn't draft a script right now. The ready-made template below works in the meantime.",
+    "scriptNotCallable": "Oravan has no script for this one. A script needs a record that shows a decision the Senate can still make and says enough about it to put words to. That is a refusal, not a hiccup — trying again won't change it.",
     "rateLimited": "You've requested several scripts in a short time. Take a breath and try again soon.",
     "fallbackTitle": "A ready-made script",
     "fallbackDisclaimer": "A standard template — not AI-drafted. Fill in the [brackets] and it's ready.",
@@ -236,6 +237,11 @@
       "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I support this bill, and I'm asking the office to record my position in favor. Thank you for your time.",
       "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I oppose this bill, and I'm asking the office to record my position against it. Thank you for your time.",
       "undecided": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I have concerns about this bill and haven't settled on a position. Please log my concern; I'm watching for the office's position before I decide. Thank you for your time."
+    },
+    "fallbackScriptNomination": {
+      "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I support this nomination, and I'm asking the senator to vote to confirm. Thank you for your time.",
+      "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I oppose this nomination, and I'm asking the senator to vote against confirming. Thank you for your time.",
+      "undecided": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I have concerns about this nomination and haven't settled on a position. Please log my concern; I'm watching for the senator's position before I decide. Thank you for your time."
     },
     "callTitle": "Place your call",
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
@@ -314,6 +320,7 @@
     "loggedFifth": "Five calls logged. Five times you've spoken up and had it counted.",
     "loggedTenth": "Ten calls. The nerves faded; the voice stayed.",
     "generating1": "Reading the bill so you don't have to…",
+    "generatingNomination1": "Reading the Senate's record so you don't have to…",
     "generating2": "Putting it in your words…",
     "generating3": "Trimming it to thirty seconds…",
     "startCall": "Start the call",
@@ -868,6 +875,12 @@
     "readRecord": "Read the record",
     "recordHeading": "The Senate's record",
     "recordLede": "Congress.gov's own entry for this nomination, word for word. Nothing below was written or rewritten by Oravan.",
+    "closedTitle": "No call to make",
+    "closed": {
+      "confirmed": "The Senate voted to confirm this nomination. A confirmed nomination is finished — there is no call left to make on it.",
+      "returned": "The Senate returned this nomination to the President without confirming it. There is no call left to make on it.",
+      "withdrawn": "The President withdrew this nomination. There is no call left to make on it."
+    },
     "receivedLabel": "Sent to the Senate",
     "lastActionLabel": "Latest action",
     "viewOfficial": "See it on Congress.gov",

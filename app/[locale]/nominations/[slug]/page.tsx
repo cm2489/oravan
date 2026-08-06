@@ -6,7 +6,11 @@ import { Link } from '@/i18n/navigation';
 import { ActionPanel } from '@/components/ActionPanel';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
-import { getNomination, type Nomination } from '@/lib/core/nominations';
+import {
+  getNomination,
+  isTerminalNominationStatus,
+  type Nomination,
+} from '@/lib/core/nominations';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { liveCallTargetForNomination } from '@/lib/journey';
@@ -33,13 +37,21 @@ import { getMomentsForNomination } from '@/lib/moments';
  * decode and an unexplained absence reads as a gap in our pipeline rather than
  * as a choice.
  *
- * THE RAIL IS components/ActionPanel.tsx, UNCHANGED. That is deliberate and it
- * is what N3 built toward: the panel already branches on
+ * THE RAIL IS components/ActionPanel.tsx. Most of what it needed was already
+ * written, tested and shipped dark by N3: the panel branches on
  * `liveTarget.soleChamber` for all three nomination sentences (how confirmation
  * works, the Senate-is-the-call line, and the honest account of what a House
  * call can do), and its `rank()` deliberately ignores that field so the House
- * member keeps his row, his dial and his outcome buttons. Every nomination
- * behavior this page needs was already written, tested, and shipped dark.
+ * member keeps his row, his dial and his outcome buttons.
+ *
+ * This header read "UNCHANGED" until 2026-08-06, and that was the shape of two
+ * defects rather than an achievement. The panel's static fallback template says
+ * "I support this bill" in so many words, and its 422 branch could not tell the
+ * route's deliberate refusal from an outage — so a nomination inherited a
+ * bill's script and a hiccup's error message. It now takes a `kind` prop and
+ * distinguishes the refusal; see fallbackFor() and the `refused` error state
+ * there. And a nomination the Senate has finished with gets no rail at all —
+ * see ClosedPanel below.
  *
  * ── WHICH NOMINATIONS GET A PAGE, AND WHY THERE IS NO generateStaticParams ──
  *
@@ -73,6 +85,56 @@ import { getMomentsForNomination } from '@/lib/moments';
  */
 
 const WRAP = 'mx-auto w-full max-w-5xl px-4';
+
+/** The same 8px-box-with-a-2px-edge geometry components/ActionPanel.tsx states
+ *  for its own title bar. Restated rather than imported so this server page
+ *  does not reach into a `'use client'` module for a string; the two must stay
+ *  equal, because the closed panel below IS the call rail's other state and a
+ *  different corner would read as a different object. */
+const INNER_RADIUS = 'calc(var(--radius-control)-2px)';
+
+/*
+ * THE CLOSED RECORD — what stands where the call rail stands once the Senate
+ * is done, and the reason it is a whole different panel rather than a disabled
+ * one (blocker 1b, 2026-08-06).
+ *
+ * Before this, ActionPanel rendered on every nomination in the corpus,
+ * confirmed ones included. On PN11-1 — Scott Bessent, Secretary of the
+ * Treasury, confirmed 2025-01-27 — a reader could pick a position, receive a
+ * ready-to-read script, and be handed three phone numbers, eighteen months
+ * after the vote. That is the manufactured action app/api/script's own comment
+ * says it refuses to write, rebuilt one layer up out of the panel's fallback
+ * path.
+ *
+ * The precedent is the bill path's terminal handling: lib/journey.ts maps
+ * `signed`/`vetoed` to a plain past-tense sentence (nowSigned: "the President
+ * signed it. It's law.") and sets `showTrailer: false` — the record speaks and
+ * the forward-looking apparatus turns off. This is that rule applied to the
+ * one surface where the apparatus is a call: no stance control, no AI script,
+ * no fallback template, no dial, and the sentence saying what happened
+ * standing exactly where the ask used to be.
+ *
+ * It keeps the rail's silhouette (2px ink edge, ink title bar) on purpose. The
+ * page is a desk in both states, and a reader who has seen a live nomination
+ * should recognize this panel as the same thing, closed.
+ */
+function ClosedPanel({ title, body }: { title: string; body: string }) {
+  return (
+    <section
+      aria-labelledby="closed"
+      className="w-full rounded-control border-2 border-ink bg-paper"
+    >
+      <h2
+        id="closed"
+        className="bg-ink-deep px-5 py-3 text-xs leading-tight font-bold tracking-[0.06em] text-paper uppercase"
+        style={{ borderRadius: `${INNER_RADIUS} ${INNER_RADIUS} 0 0` }}
+      >
+        {title}
+      </h2>
+      <p className="max-w-note p-4 text-md text-ink md:p-6">{body}</p>
+    </section>
+  );
+}
 
 /**
  * The page's headline: Congress.gov's description sentence, VERBATIM, English
@@ -149,6 +211,18 @@ export default async function NominationPage({
    * nomination copy, and no implication that a call still matters.
    */
   const liveTarget = liveCallTargetForNomination(nomination);
+
+  /*
+   * IS THERE A CALL TO MAKE AT ALL? Asked of the TERMINAL SET, not of
+   * `liveTarget`, and the difference is deliberate: liveCallTargetForNomination
+   * also returns null for `unclassified`, which means the record did not state
+   * a stage — not that the nomination is over. Those keep the rail (the call
+   * may well be worth making; app/api/script refuses to put words in the
+   * caller's mouth about a stage it cannot read, and the panel says so through
+   * `bill.scriptNotCallable`). Only confirmed / returned / withdrawn are
+   * finished, and only they lose the apparatus.
+   */
+  const closed = isTerminalNominationStatus(nomination.status);
 
   /*
    * The civic-record label, in BOTH locales at render time (the /es/record
@@ -312,17 +386,31 @@ export default async function NominationPage({
             </p>
           </section>
 
-          {/* THE CALL RAIL — components/ActionPanel.tsx, unmodified. See the
-              file header for why nothing about it needed to change. */}
-          <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
-            <ActionPanel
-              slug={slug}
-              identifier={nomination.citation}
-              title={headline}
-              recordLabels={recordLabels}
-              liveTarget={liveTarget}
-            />
-          </div>
+          {/* THE CALL RAIL — or, once the Senate is done, the closed panel
+              that stands in its place. See ClosedPanel above for why a
+              finished nomination gets no apparatus at all. */}
+          {closed ? (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
+              <ClosedPanel
+                title={t('nominations.closedTitle')}
+                body={t(`nominations.closed.${nomination.status}`)}
+              />
+            </div>
+          ) : (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
+              <ActionPanel
+                slug={slug}
+                identifier={nomination.citation}
+                title={headline}
+                recordLabels={recordLabels}
+                liveTarget={liveTarget}
+                /* The kind is stated, never derived from `liveTarget` — see
+                   the prop's own comment. On this page liveTarget is null for
+                   `unclassified` too, and that record is still a nomination. */
+                kind="nomination"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { getLiveMoments, getMoments, type MomentWithState } from '../lib/moments';
+import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
 import { getBill, getTeasers } from '../lib/core';
 import { waitForFeedHydrated } from './helpers';
@@ -80,7 +80,7 @@ test.describe('/questions/[id] detail page', () => {
   const moments: MomentWithState[] = getMoments();
 
   for (const m of moments) {
-    test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real bill page`, async ({
+    test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real page`, async ({
       page,
     }) => {
       await page.goto(`/questions/${m.id}`);
@@ -122,20 +122,30 @@ test.describe('/questions/[id] detail page', () => {
       // chrome (messages.coverage.lean.*, "AllSides") stays on the bill page only.
       expect(await page.getByText(/Leans left|Leans right|AllSides/i).count()).toBe(0);
 
-      // Every vehicle both names its bill and resolves — click through and
-      // confirm the real bill page renders (not a 404, not a stub).
+      // Every vehicle both names its record and resolves — click through and
+      // confirm the real page renders (not a 404, not a stub).
       //
-      // And the round trip: the bill page must say which bigger question it
-      // is a vehicle of (spec §7.2). Only live and stale moments backlink
-      // (lib/moments.ts), so a settled or retired moment naturally takes the
-      // goBack() path instead — the same corpus-robust idiom the rest of
-      // this file uses, no hardcoded expectation about today's data.
+      // ROUTED BY KIND, not by the shape of the slug: a bill vehicle must
+      // resolve to /bills/<slug> and a nomination vehicle to
+      // /nominations/<slug>, each through lib/moments.ts's one normalizer.
+      // Asserting /bills/ for every vehicle was correct only while every
+      // vehicle was a bill; the first nomination Moment to merge would have
+      // failed this test on a link that was working.
+      //
+      // And the round trip: the vehicle's page must say which bigger question
+      // it is a vehicle of (spec §7.2) — a claim both page types make, and one
+      // this assertion now proves of both. Only live and stale moments
+      // backlink (lib/moments.ts), so a settled or retired moment naturally
+      // takes the goBack() path instead — the same corpus-robust idiom the
+      // rest of this file uses, no hardcoded expectation about today's data.
       const backlinks = m.state === 'live' || m.state === 'stale';
       for (const v of m.vehicles) {
-        const billLink = page.locator(`a[href="/bills/${v.slug}"]`).first();
-        await expect(billLink).toBeVisible();
-        await billLink.click();
-        await expect(page).toHaveURL(new RegExp(`/bills/${v.slug}$`));
+        const href =
+          vehicleKind(v) === 'nomination' ? `/nominations/${v.slug}` : `/bills/${v.slug}`;
+        const vehicleLink = page.locator(`a[href="${href}"]`).first();
+        await expect(vehicleLink, `${m.id} → ${href}`).toBeVisible();
+        await vehicleLink.click();
+        await expect(page).toHaveURL(new RegExp(`${escapeRegex(href)}$`));
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
         if (backlinks) {

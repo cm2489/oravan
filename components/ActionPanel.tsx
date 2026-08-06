@@ -5,6 +5,12 @@ import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { liveCallKey, type LiveCallTarget } from '@/lib/journey';
+// TYPE-ONLY, and it must stay type-only: lib/moments.ts imports
+// data/moments.json and the whole bill corpus behind it, and this is a CLIENT
+// component. `import type` is erased at compile time, so naming the
+// discriminator here costs the bundle nothing — the same reason lib/journey.ts
+// takes VehicleKind this way rather than restating the union.
+import type { VehicleKind } from '@/lib/moments';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { OfficeHoursNote } from './OfficeHoursNote';
@@ -48,6 +54,22 @@ interface Props {
    *  fall behind a field the derivation grows — `soleChamber` was added on
    *  2026-08-06 and this prop said nothing about it until it did. */
   liveTarget: LiveCallTarget | null;
+  /**
+   * WHAT KIND OF THING IS BEING CALLED ABOUT — and it is a prop rather than
+   * something derived from `liveTarget`, deliberately.
+   *
+   * `liveTarget.soleChamber` already says "nomination" everywhere it is
+   * non-null, and reading the kind off it would have been free. It is also
+   * exactly wrong: liveCallTargetForNomination returns NULL for a nomination
+   * that is confirmed, returned, withdrawn or unclassified — so the derived
+   * kind would silently flip to "bill" on precisely the records where the
+   * panel's copy is most likely to be read and most obviously false. A
+   * confirmed nomination is still a nomination.
+   *
+   * Absent means 'bill', the same default lib/moments.ts's `vehicleKind`
+   * states for the wire format, so every existing bill call site is unchanged.
+   */
+  kind?: VehicleKind;
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -69,10 +91,29 @@ type Translate = ReturnType<typeof useTranslations>;
 /**
  * The rate-limit fallback: a static template with [bracket] slots, honestly
  * labeled as NOT AI-drafted. Built from messages so both locales carry it,
- * with the bill's citation interpolated — the one fact it needs.
+ * with the vehicle's citation interpolated — the one fact it needs.
+ *
+ * KIND-AWARE, and it was not until 2026-08-06. `bill.fallbackScript.*` says
+ * "I support this bill" / "Apoyo este proyecto de ley" in so many words, and
+ * this function handed that template to every nomination whose script request
+ * failed — 685 terminal records among them. Two lies in one textarea: a
+ * nomination called a bill, in words written for the reader to say out loud to
+ * a Senate office.
+ *
+ * The nomination template is worded for the SENATE, which is the chamber
+ * actually being called: it names the confirmation vote as the ask, exactly
+ * as lib/nomination-script.ts's AUDIENCE_LINES.senator instructs the model to,
+ * and for the same reason — advice and consent is the Senate's alone, so a
+ * chamber-neutral nomination script cannot say the one true thing about the
+ * call. The panel requests no `audience` from /api/script, which that route
+ * documents as meaning 'senator' (the owner's 2026-08-06 ruling as a default),
+ * so the AI draft and this template address the same office. A reader dialing
+ * the House row is told what to say there by `bill.nominationHousePress`,
+ * which is the only place that account belongs.
  */
-function fallbackFor(t: Translate, s: Stance, citation: string) {
-  return t(`fallbackScript.${s}`, { citation });
+function fallbackFor(t: Translate, s: Stance, citation: string, kind: VehicleKind) {
+  const key = kind === 'nomination' ? 'fallbackScriptNomination' : 'fallbackScript';
+  return t(`${key}.${s}`, { citation });
 }
 
 /** m:ss for the rate-limit countdown line. */
@@ -112,7 +153,14 @@ function Failure({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget }: Props) {
+export function ActionPanel({
+  slug,
+  identifier,
+  title,
+  recordLabels,
+  liveTarget,
+  kind = 'bill',
+}: Props) {
   const t = useTranslations('bill');
   // The not-found register reuses /reps's own strings verbatim (ZipForm
   // already crosses into 'home' the same way) — the two surfaces can't drift.
@@ -132,7 +180,22 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   const [retryAt, setRetryAt] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<'generic' | 'rate' | null>(null);
+  /*
+   * THREE OUTCOMES, NOT TWO — and the third one is not a failure.
+   *
+   *   rate     the limiter tripped. Transient; a countdown and a template.
+   *   generic  something broke. Transient; retry and a template.
+   *   refused  the ROUTE DECIDED there is no call to make (422 not_callable).
+   *
+   * `refused` landed 2026-08-06. Until then a 422 fell into the `!res.ok`
+   * branch below and rendered `scriptError` — "Couldn't draft a script right
+   * now. The ready-made template below works in the meantime." Nothing had
+   * gone wrong, nothing would change on a retry, and the template it pointed
+   * at was a call script for a decision the Senate had already made. A
+   * deliberate refusal reported as a hiccup is the same class of untruth as
+   * manufactured urgency, just pointed the other way.
+   */
+  const [error, setError] = useState<'generic' | 'rate' | 'refused' | null>(null);
   const [lookup, setLookup] = useState<RepLookup>({ status: 'idle' });
   const prefs = usePrefs();
   const zip = prefs.zip ?? null;
@@ -178,7 +241,14 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   // The AI draft wins whenever it exists; the fallback template fills the
   // slot on rate limit so every `script &&` gate below — the review step,
   // the call section with the rep tel: links, the foot, the modal — stays
-  // mounted. The phones never leave the DOM over a script-slot failure.
+  // mounted. The phones never leave the DOM over a script-slot FAILURE.
+  //
+  // They do leave on a `refused` (422), and that is the intended difference:
+  // no fallback is seeded there, so `script` stays empty and the dial does not
+  // render. The foot's own comment states the rule this follows — "offering a
+  // dial with nothing to say is the thing that makes a first-time caller hang
+  // up" — and on a refusal there is, by the route's own decision, nothing to
+  // say. An outage is the opposite case and keeps its phones.
   const aiDraft = stance ? drafts[stance] : undefined;
   const isFallback = !aiDraft && !!stance && !!fallbacks[stance];
   const script = aiDraft ?? (stance ? (fallbacks[stance] ?? '') : '');
@@ -191,7 +261,7 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   // it, their edited script IS the script — offer nothing extra (the same
   // philosophy as generate()'s draft-exists early return).
   const fallbackPristine =
-    !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier);
+    !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier, kind);
   const retryRemainingSec =
     retryAt === null ? null : Math.max(0, Math.ceil((retryAt - nowMs) / 1000));
 
@@ -366,8 +436,26 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
         setRetryAt(sec ? calledAt + sec * 1000 : null);
         // Seed the honest fallback template for this stance — never
         // overwriting one the user may already have edited.
-        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier, kind) }));
         setError('rate');
+        return;
+      }
+      /*
+       * THE ROUTE'S ONE DELIBERATE REFUSAL, and it must not be read as an
+       * outage. app/api/script answers 422 `not_callable` — and 422 for
+       * nothing else — when it has decided there is no call to make: a
+       * nomination past advice and consent, one whose stage the record does
+       * not state, or one of the 14 records carrying no description sentence
+       * to ground a script in. Status alone is the check because that route
+       * is the only thing that answers this fetch and it has exactly one 422.
+       *
+       * No fallback is seeded on this path, on purpose. Every other branch
+       * here hands over a template because the reader still has a call to
+       * make and only our machinery failed; here the machinery worked and the
+       * answer is that there is nothing to say.
+       */
+      if (res.status === 422) {
+        setError('refused');
         return;
       }
       if (!res.ok) {
@@ -377,14 +465,14 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
         // phone numbers down with it, against funnel invariant I2. The
         // template is static, labeled not-AI-generated, and never
         // overwrites a draft the user already edited.
-        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
+        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier, kind) }));
         setError('generic');
         return;
       }
       const data = await res.json();
       setDrafts((d) => ({ ...d, [s]: data.script }));
     } catch {
-      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
+      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier, kind) }));
       setError('generic');
     } finally {
       setLoading(false);
@@ -536,7 +624,13 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
           <div role="status">
             <p className="flex items-center gap-2 text-ink-2">
               <Sparkles className="h-4 w-4 flex-none animate-pulse" aria-hidden />
-              {t(`generating${genLine}`)}
+              {/* Line 1 names what is being read, so it is the one line of
+                  the three that a nomination has to say differently: there
+                  is no bill here, and no decode either — the model is given
+                  the Senate's own description sentence (see
+                  lib/nomination-script.ts). Lines 2 and 3 describe the
+                  drafting itself and are true of both kinds. */}
+              {t(kind === 'nomination' && genLine === 1 ? 'generatingNomination1' : `generating${genLine}`)}
             </p>
             <p className="mt-0.5 text-sm text-ink-2">{t('generatingHint')}</p>
             <div className="mt-2 h-[6px] max-w-note overflow-hidden rounded-stamp bg-line">
@@ -544,7 +638,22 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             </div>
           </div>
         )}
-        {error && (
+        {/* THE REFUSAL, IN ITS OWN REGISTER. Not `Failure`: that component is
+            the panel's failure vocabulary — the alert rule, the bold alert
+            label, role="alert" — and the color law above says alert is
+            "failure only". Nothing failed here, so this is an ink note with
+            role="status", the same voice `concernNote` and the office-hours
+            note speak in. No retry button and no template ride with it,
+            because both would contradict the sentence itself. */}
+        {error === 'refused' && (
+          <div
+            role="status"
+            className="rounded-control border-l-[3px] border-ink bg-wash px-4 py-3"
+          >
+            <p className="max-w-note text-sm text-ink">{t('scriptNotCallable')}</p>
+          </div>
+        )}
+        {(error === 'rate' || error === 'generic') && (
           <div>
             <Failure>
               <span className="font-bold text-alert">
@@ -647,7 +756,7 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                       {t('ghostSummary', { stance: t(`stance.${s}`) })}
                     </summary>
                     <p className="pb-3 font-reading text-sm whitespace-pre-wrap text-ink-2">
-                      {fallbackFor(t, s, identifier)}
+                      {fallbackFor(t, s, identifier, kind)}
                     </p>
                   </details>
                 ))}
