@@ -51,8 +51,15 @@ function checkRepoData() {
     bill: new Map(bills.map((b) => [b.full_identifier, b.status])),
     nomination: new Map(nominations.map((n) => [nominationSlug(n), n.status])),
   };
-  return checkMoments(moments, slugsByKind, (v: { slug: string; kind?: string }) =>
-    statusByKind[gateVehicleKind(v)]?.get(v.slug),
+  // The callable-record set, wired exactly as the CI script wires it.
+  const describedNominationSlugs = new Set(
+    nominations.filter((n) => n.nominee_description?.trim()).map(nominationSlug),
+  );
+  return checkMoments(
+    moments,
+    slugsByKind,
+    (v: { slug: string; kind?: string }) => statusByKind[gateVehicleKind(v)]?.get(v.slug),
+    { describedNominationSlugs },
   );
 }
 
@@ -293,6 +300,11 @@ const FIXTURE_STATUSES: Record<string, Record<string, string>> = {
 };
 const statusFor = (v: { slug: string; kind?: string }): string | undefined =>
   FIXTURE_STATUSES[gateVehicleKind(v)]?.[v.slug];
+/* Both fixture nominations carry Congress.gov's description sentence — the
+   callable-record rule's default answer is "yes", so every fixture written
+   before that rule existed keeps meaning what it meant. The rule's own tests
+   below hand in a narrower set. */
+const DESCRIBED = new Set(['pn-730-18-119', 'pn-932-119']);
 
 const validMoment = () => ({
   name: { en: 'The example question', es: 'La cuestión de ejemplo' },
@@ -317,8 +329,11 @@ const validMoment = () => ({
   status: 'live',
 });
 
-const run = (moments: Record<string, unknown>) =>
-  checkMoments(moments, SLUGS_BY_KIND, statusFor, { now: NOW });
+const run = (moments: Record<string, unknown>, described: Set<string> = DESCRIBED) =>
+  checkMoments(moments, SLUGS_BY_KIND, statusFor, {
+    now: NOW,
+    describedNominationSlugs: described,
+  });
 
 test.describe('checkMoments (fixtures)', () => {
   test('a fully valid moment produces zero violations', () => {
@@ -420,6 +435,98 @@ test.describe('checkMoments (fixtures)', () => {
     const live = validMoment() as Record<string, unknown>;
     live.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
     expect(run({ m: live }).warnings).toEqual([]);
+  });
+
+  /* ---- the callable-record rule (2026-08-06) ----------------------------
+   *
+   * `moments.howMadeRule3` tells every reader of /questions that by the time a
+   * question opens its page and call script already work, and
+   * `moments.vehiclesLedeNominations` promises support and oppose scripts one
+   * tap away. Nothing enforced either one for a nomination: a record with no
+   * `nominee_description` — 14 of the 857 civilian records, one of them live —
+   * passed VEHICLE_KINDS and the terminal set and landed on a page with no
+   * dial, no stance control and no script, because that sentence is the only
+   * thing a nomination script is ever grounded in.
+   *
+   * The promise is now a rule. These are the tests that keep it one.
+   * ---------------------------------------------------------------------- */
+
+  test('a nomination vehicle whose record carries no description FAILS', () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
+    // Same fixture, same live status — only the description is missing.
+    const v = run({ m: nom }, new Set(['pn-932-119'])).violations;
+    expect(
+      v.some((x: string) => x.includes('pn-730-18-119') && x.includes('nominee_description')),
+      'the gate must name the slug and the field that is missing',
+    ).toBe(true);
+    // …and it must NOT be reported as an unknown slug: the record exists, and
+    // sending the author to hunt for a typo would be the wrong instruction.
+    expect(v.some((x: string) => x.includes('does not exist'))).toBe(false);
+  });
+
+  test('a described nomination vehicle still passes, and a bill is never asked', () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
+    expect(run({ m: nom }).violations).toEqual([]);
+    // The rule is nominations-only. A bill's callability is structural (every
+    // corpus bill has a page and a script), so an empty nomination set must
+    // not touch it.
+    expect(run({ m: validMoment() }, new Set()).violations).toEqual([]);
+  });
+
+  test('the rule FAILS CLOSED when the caller never wired the set', () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
+    // Not "passes because nobody asked" — a gate that quietly stops checking
+    // is the failure mode this project writes tripwires for.
+    const v = checkMoments({ m: nom }, SLUGS_BY_KIND, statusFor, { now: NOW }).violations;
+    expect(v.some((x: string) => x.includes('describedNominationSlugs'))).toBe(true);
+  });
+
+  /* The rule against the REAL corpus, not a fixture: the one live
+     description-less record is the trap this was armed for, and it must be
+     refused by the same wiring scripts/check-moments.mjs runs in CI. */
+  test('the real corpus’s live description-less record cannot be a vehicle', () => {
+    const real = JSON.parse(
+      readFileSync(join(__dirname, '..', 'data/nominations.json'), 'utf8'),
+    ) as Nomination[];
+    const orphan = real.find(
+      (n) => !n.nominee_description && !TERMINAL_NOMINATION_STATUSES.has(n.status),
+    );
+    test.skip(!orphan, 'no live description-less nomination in the current corpus');
+    const slug = nominationSlug(orphan!);
+
+    const m = validMoment() as Record<string, unknown>;
+    m.vehicles = [{ ...validMoment().vehicles[0], slug, kind: 'nomination' }];
+    const v = checkMoments(
+      { m },
+      { ...SLUGS_BY_KIND, nomination: new Set(real.map(nominationSlug)) },
+      () => orphan!.status,
+      {
+        now: NOW,
+        describedNominationSlugs: new Set(
+          real.filter((n) => n.nominee_description?.trim()).map(nominationSlug),
+        ),
+      },
+    ).violations;
+    expect(v.some((x: string) => x.includes(slug) && x.includes('nominee_description'))).toBe(true);
+  });
+
+  test('an unclassified nomination warns — no script can ever arrive there', () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-unclassified-119', kind: 'nomination' }];
+    const { violations, warnings } = checkMoments(
+      { m: nom },
+      { ...SLUGS_BY_KIND, nomination: new Set(['pn-unclassified-119']) },
+      () => 'unclassified',
+      { now: NOW, describedNominationSlugs: new Set(['pn-unclassified-119']) },
+    );
+    // A warning, not a violation: status is derived from the Senate's own
+    // sentence and moves with every sync, so a hard rule would redden CI on
+    // unrelated PRs — the same softening terminality already takes.
+    expect(violations).toEqual([]);
+    expect(warnings.some((w: string) => w.includes('unclassified'))).toBe(true);
   });
 
   test('an empty vehicles array fails — no moment without a real vehicle', () => {

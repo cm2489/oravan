@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { liveCallTargetForNomination } from '../lib/journey';
 import en from '../messages/en.json';
@@ -561,6 +561,135 @@ test.describe('the nomination page', () => {
    * test defend the defect, and asserting 404 would fail on every route in the
    * app rather than on the one thing this spec is about.
    */
+  /*
+   * ── THE SHARE CARD MAY NOT PROMISE A CALL THE PAGE DOES NOT HAVE ─────────
+   *
+   * generateMetadata returned `nominations.metaDescription` — "…and the call
+   * that goes with it" — unconditionally, on 686 of the corpus's 857 records
+   * where the page below carries no dial, no stance control and no script.
+   * `robots: { index: cited }` limits SEARCH exposure and touches nothing
+   * else: this string is what a link preview and a share card render, on every
+   * paste into a message or a post, indexed or not.
+   */
+  const metaDescription = (page: Page) =>
+    page.locator('meta[name="description"]').getAttribute('content');
+
+  test('a live, described nomination keeps the description that promises a call', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await page.goto(`/nominations/${liveSlug}`);
+    expect(await metaDescription(page)).toBe(en.nominations.metaDescription);
+  });
+
+  for (const { status } of TERMINAL) {
+    test(`a ${status} nomination's share card promises no call`, async ({ page }) => {
+      const record = TERMINAL.find((x) => x.status === status)!.record;
+      await page.goto(`/nominations/${nominationSlug(record)}`);
+      const description = await metaDescription(page);
+      expect(
+        description,
+        'the finished record must not be shared as "…and the call that goes with it"'
+      ).not.toBe(en.nominations.metaDescription);
+      expect(description).toBe(en.nominations.metaDescriptionNoCall);
+    });
+  }
+
+  test('a record with no description promises no call either, in both languages', async ({
+    page,
+  }) => {
+    test.skip(!NO_DESCRIPTION, 'no live description-less nomination in the current corpus');
+    const slug = nominationSlug(NO_DESCRIPTION!);
+    await page.goto(`/nominations/${slug}`);
+    expect(await metaDescription(page)).not.toBe(en.nominations.metaDescription);
+    expect(await metaDescription(page)).toBe(en.nominations.metaDescriptionNoCall);
+
+    await page.goto(`/es/nominations/${slug}`);
+    expect(await metaDescription(page)).not.toBe(es.nominations.metaDescription);
+    expect(await metaDescription(page)).toBe(es.nominations.metaDescriptionNoCall);
+  });
+
+  /*
+   * ── NO COPY ON THIS PAGE MAY ASSERT A LAYOUT ─────────────────────────────
+   *
+   * `nominations.noScriptBody` ended "…is beside this, in full" (ES: "está al
+   * lado, completo"). Below 62rem the desk grid collapses to ONE column and
+   * the record renders ABOVE the panel, so the sentence was false on every
+   * phone — the majority reading. The fix is not a better spatial word; it is
+   * a sentence that does not depend on where the browser put things.
+   *
+   * Both halves are asserted, because either alone is weak: the geometry proves
+   * an adjacency claim would be false, and the vocabulary sweep proves none is
+   * being made.
+   */
+  test('the no-script panel makes no claim about where the record sits', async ({ page }) => {
+    test.skip(!NO_DESCRIPTION, 'no live description-less nomination in the current corpus');
+    const slug = nominationSlug(NO_DESCRIPTION!);
+    // Comfortably under the 62rem (992px) breakpoint where the desk collapses.
+    await page.setViewportSize({ width: 800, height: 900 });
+    await page.goto(`/nominations/${slug}`);
+
+    const record = page.getByRole('heading', { name: en.nominations.recordHeading });
+    const panel = page.getByRole('heading', { name: en.nominations.noScriptTitle });
+    const recordBox = (await record.boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    // Stacked, not side by side: the record ends above where the panel starts.
+    expect(recordBox.y + recordBox.height).toBeLessThan(panelBox.y);
+
+    for (const [lang, body] of [
+      ['en', en.nominations.noScriptBody],
+      ['es', es.nominations.noScriptBody],
+    ] as const) {
+      expect(
+        body,
+        `${lang}: this sentence renders in one column on a phone, so it may not place the record`
+      ).not.toMatch(/beside|alongside|next to|to the (left|right)|al lado|a la (izquierda|derecha)/i);
+    }
+  });
+
+  /*
+   * ── THE "NOTHING BELOW IS OURS" CLAIM WAS FALSE, AND THE FIX IS PRECISION ─
+   *
+   * `nominations.recordLede` read "Nothing below was written or rewritten by
+   * Oravan." Everything between it and the bottom of that column contradicts
+   * it: the Executive Calendar chip, both <dt> labels, the staleness note and
+   * the data-as-of line are Oravan's own English, and the dates are formatted
+   * by us (in Spanish on /es, so not even the government's characters). The
+   * TRUE and worth-saying claim — the Senate's action text is reproduced word
+   * for word — is what the lede now makes.
+   *
+   * So the test asserts the contradiction is real, then asserts the sentence
+   * no longer denies it.
+   */
+  test('the record lede does not deny authorship of the chrome it sits above', async ({ page }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await page.goto(`/nominations/${liveSlug}`);
+
+    const lede = page.getByText(en.nominations.recordLede);
+    await expect(lede).toBeVisible();
+    const ledeBox = (await lede.boundingBox())!;
+
+    // Oravan-authored English, rendered BELOW that sentence — the labels come
+    // straight out of messages/en.json, so their authorship is not arguable.
+    for (const label of [en.nominations.receivedLabel, en.nominations.lastActionLabel]) {
+      const el = page.getByText(label, { exact: true }).first();
+      await expect(el).toBeVisible();
+      expect((await el.boundingBox())!.y, `"${label}" must sit below the lede`).toBeGreaterThan(
+        ledeBox.y
+      );
+    }
+
+    for (const [lang, text] of [
+      ['en', en.nominations.recordLede],
+      ['es', es.nominations.recordLede],
+    ] as const) {
+      expect(
+        text,
+        `${lang}: the section below carries Oravan's own labels, notes and date formatting`
+      ).not.toMatch(/nothing below|nada de lo que sigue|nada de lo siguiente/i);
+    }
+  });
+
   test('an unknown nomination lands on the locale-correct not-found page', async ({ page }) => {
     await page.goto('/es/nominations/pn-0-119');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');

@@ -9,7 +9,8 @@
  *
  * Validates data/moments.json: schema, bilingual parity, vehicle resolution
  * against data/bills.json (or data/nominations.json, for a vehicle whose
- * `kind` says so), qualifying-signal shape, dates, the 6-live cap, and the
+ * `kind` says so), the callable-record rule for nomination vehicles,
+ * qualifying-signal shape, dates, the 6-live cap, and the
  * forbidden-vocabulary lint in both languages. Exits 1 on any violation;
  * warnings (terminal vehicles, elapsed review_by) print without failing — see
  * lib/moments-gate.mjs's header for why those are soft.
@@ -136,6 +137,24 @@ if (nominationSlugs.size !== nominations.length) {
   process.exit(1);
 }
 
+/*
+ * THE CALLABLE-RECORD SET — the nominations whose Congress.gov record actually
+ * carries the description sentence, which is the only thing a nomination's call
+ * script is ever grounded in (lib/nomination-script.ts's header).
+ *
+ * Built as a SECOND set rather than by narrowing `nominationSlugs` above, so
+ * the gate can tell the two failures apart: a slug nobody has ever heard of is
+ * "does not exist in data/nominations.json — never invent nomination facts",
+ * and a real record with nothing to write a script from gets its own sentence
+ * naming the field. Collapsing them would have told an author to go looking for
+ * a typo in a slug that is correct.
+ */
+const describedNominationSlugs = new Set(
+  nominations
+    .filter((n) => typeof n.nominee_description === 'string' && n.nominee_description.trim() !== '')
+    .map(storedNominationSlug)
+);
+
 const slugsByKind = {
   bill: new Set(bills.map((x) => x.full_identifier)),
   nomination: nominationSlugs,
@@ -181,7 +200,9 @@ for (const [lang, doc] of Object.entries(messages)) {
   walk(doc.nominations, 'nominations');
 }
 
-const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor);
+const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor, {
+  describedNominationSlugs,
+});
 
 for (const w of warnings) console.warn(`::warning::check-moments: ${w}`);
 violations.push(...chromeViolations);

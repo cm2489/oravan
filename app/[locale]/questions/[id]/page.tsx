@@ -28,7 +28,7 @@ import {
   isAiSummary,
 } from '@/lib/moment-updates';
 import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments, vehicleKind } from '@/lib/moments';
-import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
+import { linkHost, momentDek, nominationCtaKey, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -424,7 +424,14 @@ export default async function MomentPage({
                   receivedDate={nomination.received_date}
                   execCalendarNumber={nomination.exec_calendar_number}
                   role={localeText(v.role, locale)}
-                  ctaLabel={isSettled ? t('nominations.readRecord') : t('moments.readCall')}
+                  /* "Read + call" is a promise about the page this button
+                     opens, so it is asked of the RECORD, not just of the
+                     moment's state — a nomination the Senate has finished
+                     with, or one its record never described, opens a page
+                     whose entire rail is "No call to make". See
+                     nominationCtaKey; `moments.vehiclesLedeNominations` makes
+                     the same distinction in prose directly above this grid. */
+                  ctaLabel={t(nominationCtaKey(nomination, isSettled))}
                   noDecodeNote={t('nominations.noDecodeNote')}
                 />
               );

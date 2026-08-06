@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { createTranslator } from 'next-intl';
 import enMessages from '../messages/en.json';
 import esMessages from '../messages/es.json';
-import { collapseQuietDays, momentDek, revisionReasons } from '../lib/moments-ui';
+import { collapseQuietDays, momentDek, nominationCtaKey, revisionReasons } from '../lib/moments-ui';
+import { getAllNominations } from '../lib/core/nominations';
+import { nominationHasCallScript } from '../lib/journey';
 import type { UpdateDayGroup } from '../lib/moment-updates';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
@@ -188,6 +190,91 @@ test.describe('isSignalFresh', () => {
  * unknown token maps to nothing at all, and no token text survives into
  * either locale's output.
  */
+/*
+ * WHAT A NOMINATION CARD'S BUTTON PROMISES.
+ *
+ * /questions/[id] labeled every nomination card's green phone-icon CTA
+ * `moments.readCall` — "Read + call" — for any moment that was not settled.
+ * On a nomination the Senate has finished with, or one Congress.gov never
+ * described, that button opens a page whose entire rail is the sentence "No
+ * call to make". `moments.vehiclesLedeNominations`, printed directly above the
+ * grid, made the same promise in prose.
+ *
+ * UNREACHABLE BY DOM TEST TODAY, on purpose: data/moments.json holds zero
+ * nomination vehicles and must stay byte-identical to main (the no-migration
+ * keystone). So the decision is a pure function and this is where it is pinned
+ * — the first nomination Moment is the run where it stops being latent, and
+ * that run must not be the one that discovers the bug.
+ */
+test.describe('nominationCtaKey', () => {
+  const DESCRIBED = 'Jane Doe, of Ohio, to be United States District Judge.';
+
+  test('a live, described nomination is the only case that may say "Read + call"', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(nominationCtaKey({ status, nominee_description: DESCRIBED }, false), status).toBe(
+        'moments.readCall',
+      );
+    }
+  });
+
+  test('a finished nomination says "Read the record" — the page has no call on it', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(nominationCtaKey({ status, nominee_description: DESCRIBED }, false), status).toBe(
+        'nominations.readRecord',
+      );
+    }
+  });
+
+  test('a record with no description says "Read the record" too', () => {
+    expect(nominationCtaKey({ status: 'received', nominee_description: null }, false)).toBe(
+      'nominations.readRecord',
+    );
+    // …and `unclassified`, whose page keeps a rail that can only ever refuse.
+    expect(nominationCtaKey({ status: 'unclassified', nominee_description: DESCRIBED }, false)).toBe(
+      'nominations.readRecord',
+    );
+  });
+
+  test('a settled moment is a record in every card, whatever its vehicle can still do', () => {
+    expect(nominationCtaKey({ status: 'exec_calendar', nominee_description: DESCRIBED }, true)).toBe(
+      'nominations.readRecord',
+    );
+  });
+
+  test('both keys resolve in both languages — no card ever prints a raw key', () => {
+    const messagesFor: Record<'en' | 'es', Record<string, unknown>> = {
+      en: enMessages as unknown as Record<string, unknown>,
+      es: esMessages as unknown as Record<string, unknown>,
+    };
+    for (const locale of ['en', 'es'] as const) {
+      const t = createTranslator({
+        locale,
+        messages: messagesFor[locale],
+      }) as unknown as (key: string) => string;
+      for (const key of ['moments.readCall', 'nominations.readRecord'] as const) {
+        const text = t(key);
+        expect(text.length, `${key}/${locale}`).toBeGreaterThan(0);
+        expect(text, `${key}/${locale}`).not.toBe(key);
+      }
+    }
+  });
+
+  /* THE REAL CORPUS, swept: every nomination Congress.gov describes and the
+     Senate can still act on may carry the call label; nothing else may. */
+  test('the whole committed corpus agrees with the route’s own refusal rule', () => {
+    const all = getAllNominations();
+    expect(all.length).toBeGreaterThan(0);
+    for (const n of all) {
+      const expected = nominationHasCallScript(n) ? 'moments.readCall' : 'nominations.readRecord';
+      expect(nominationCtaKey(n, false), n.citation).toBe(expected);
+    }
+    // The corpus really does contain both answers — a sweep that only ever
+    // sees one of them proves nothing.
+    expect(all.some((n) => nominationCtaKey(n, false) === 'moments.readCall')).toBe(true);
+    expect(all.some((n) => nominationCtaKey(n, false) === 'nominations.readRecord')).toBe(true);
+  });
+});
+
 test.describe('revisionReasons', () => {
   const MESSAGES: Record<'en' | 'es', Record<string, unknown>> = {
     en: enMessages,

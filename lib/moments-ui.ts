@@ -6,7 +6,8 @@
  * pages can lean on without touching the data layer's tested surface.
  */
 import { getBill } from './core/bills';
-import { getNomination } from './core/nominations';
+import { getNomination, type Nomination } from './core/nominations';
+import { nominationHasCallScript } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
 
@@ -205,6 +206,36 @@ export function latestVehicleAction(vehicles: MomentVehicle[]): string | null {
     if (d && (!latest || d > latest)) latest = d;
   }
   return latest;
+}
+
+/**
+ * WHAT A NOMINATION CARD'S BUTTON IS ALLOWED TO PROMISE.
+ *
+ * `moments.readCall` reads "Read + call" / "Leer y llamar", and that is a
+ * promise about the page the button opens, not about the card. On a nomination
+ * it is true only when a call script is actually waiting there — which is
+ * `nominationHasCallScript`, app/api/script's own refusal conjunction
+ * (lib/journey.ts). The grid otherwise labels a green phone-icon button
+ * "Read + call" over a page whose whole rail is the sentence "No call to make".
+ *
+ * Latent when this landed — data/moments.json holds no nomination vehicle —
+ * which is exactly why it is a function with a test rather than a ternary in a
+ * page: the first nomination Moment is the run where it stops being latent.
+ * lib/moments-gate.mjs now refuses a vehicle whose record carries no
+ * description, so the `nominee_description` half should be unreachable on a
+ * gated moment; it is still asked here because a CTA label must not depend on
+ * a gate two files away staying correct.
+ *
+ * `settled` keeps the rule the bill card already followed: a settled moment is
+ * a record in every card it holds, whatever its vehicle can still do.
+ */
+export function nominationCtaKey(
+  nomination: Pick<Nomination, 'status' | 'nominee_description'>,
+  settled: boolean,
+): 'moments.readCall' | 'nominations.readRecord' {
+  return !settled && nominationHasCallScript(nomination)
+    ? 'moments.readCall'
+    : 'nominations.readRecord';
 }
 
 /*

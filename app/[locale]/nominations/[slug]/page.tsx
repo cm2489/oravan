@@ -13,7 +13,7 @@ import {
 } from '@/lib/core/nominations';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { liveCallTargetForNomination } from '@/lib/journey';
+import { liveCallTargetForNomination, nominationHasCallScript } from '@/lib/journey';
 import { getMomentsForNomination } from '@/lib/moments';
 
 /*
@@ -206,7 +206,32 @@ export async function generateMetadata({
   const cited = getMomentsForNomination(slug).length > 0;
   return {
     title,
-    description: t('metaDescription'),
+    /*
+     * THE DESCRIPTION IS BRANCHED, because one of the two is always false.
+     *
+     * `metaDescription` ends "…and the call that goes with it", and on the
+     * corpus of 2026-08-06 that is false on 686 of 857 records: the 685 the
+     * Senate has finished with (527 confirmed + 91 returned + 67 withdrawn),
+     * every one of which renders NoAskPanel below, plus the one live record
+     * Congress.gov never described. None of them carries a dial, a stance
+     * control or a script.
+     *
+     * `robots: { index: cited }` below does NOT cover this. It limits SEARCH
+     * exposure, and this string's real audience is the link preview and the
+     * share card — every paste into a message, a post, or a chat renders it,
+     * indexed or not.
+     *
+     * The predicate is nominationHasCallScript, which is app/api/script's own
+     * refusal conjunction (lib/journey.ts) rather than the page body's
+     * `closed || noScript`, and it is wider by exactly one case: an
+     * `unclassified` record keeps its rail but can never receive a script, so
+     * promising "the call that goes with it" there would be false too. The
+     * body branch answers "does the rail render"; this one answers "is a
+     * script ever coming back", which is what the sentence claims.
+     */
+    description: t(
+      nominationHasCallScript(nomination) ? 'metaDescription' : 'metaDescriptionNoCall'
+    ),
     alternates: hreflangAlternates(locale, `/nominations/${slug}`),
     // See the header: reachable, but not part of the curated index unless a
     // Moment cites it.

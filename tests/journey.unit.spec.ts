@@ -8,6 +8,7 @@ import {
   liveCallKey,
   liveCallTarget,
   liveCallTargetForNomination,
+  nominationHasCallScript,
   type LiveCallKey,
 } from '../lib/journey';
 import type { BillStatus } from '../lib/types';
@@ -363,6 +364,67 @@ test.describe('liveCallTargetForNomination', () => {
     );
     const expected = NOMINATION_STATUSES.filter((s) => !TERMINAL_NOMINATION_STATUSES.has(s));
     expect(routed).toEqual(expected);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 7b · nominationHasCallScript — what a surface may PROMISE, as
+ *      opposed to where a call would go.
+ *
+ *      The defect it was extracted for: /nominations/[slug]'s
+ *      generateMetadata returned "…and the call that goes with it"
+ *      unconditionally, on 686 of 857 records with no dial, no stance
+ *      control and no script. robots noindex does not reach a link
+ *      preview or a share card, so that sentence shipped anyway.
+ *
+ *      It must equal app/api/script's own refusal conjunction, or a
+ *      page will promise a script the route refuses.
+ * ------------------------------------------------------------------ */
+test.describe('nominationHasCallScript', () => {
+  const DESCRIBED = 'Jane Doe, of Ohio, to be United States District Judge.';
+
+  test('true only where the route would actually answer with one', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(
+        nominationHasCallScript({ status, nominee_description: DESCRIBED }),
+        status
+      ).toBe(true);
+    }
+  });
+
+  test('a finished nomination has none — the record, not the rail, decides', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(nominationHasCallScript({ status, nominee_description: DESCRIBED }), status).toBe(false);
+    }
+  });
+
+  test('a record with no description has none, at every live stage', () => {
+    for (const status of ['received', 'exec_calendar', 'scheduled'] as const) {
+      expect(nominationHasCallScript({ status, nominee_description: null }), status).toBe(false);
+    }
+  });
+
+  /*
+   * THE `unclassified` CASE IS THE WHOLE REASON THIS IS NOT `closed ||
+   * noScript`. That record KEEPS its call rail on the page (deliberately — the
+   * route's 422 refusal is the honest answer there, and the rail is what keeps
+   * the refusal state reachable), so a predicate written off the panel branch
+   * would have called it callable and promised a script that never arrives.
+   */
+  test('unclassified has none even though its page still renders the rail', () => {
+    expect(nominationHasCallScript({ status: 'unclassified', nominee_description: DESCRIBED })).toBe(false);
+  });
+
+  /* The drift pin, in the same shape suite 7 uses: this must stay the
+     conjunction of the routing set and a present description, so a tenth
+     status cannot quietly become callable. */
+  test('it is exactly liveCallTargetForNomination ∧ a description', () => {
+    for (const s of NOMINATION_STATUSES) {
+      const status = s as NominationStatus;
+      const routed = liveCallTargetForNomination({ status }) !== null;
+      expect(nominationHasCallScript({ status, nominee_description: DESCRIBED }), s).toBe(routed);
+      expect(nominationHasCallScript({ status, nominee_description: null }), s).toBe(false);
+    }
   });
 });
 

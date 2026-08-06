@@ -281,6 +281,39 @@ export function liveCallTargetForNomination(
   }
 }
 
+/*
+ * IS A CALL SCRIPT EVER COMING BACK FOR THIS NOMINATION — the predicate that
+ * answers what a surface may PROMISE, as distinct from where a call would go.
+ *
+ * It is app/api/script's nomination branch stated as one expression, so a meta
+ * description, a card's button and the route can never answer differently. The
+ * route refuses (422 `not_callable`) on exactly these two conditions, in this
+ * order, each with its own comment there:
+ *
+ *   1. liveCallTargetForNomination is null — the record shows no decision the
+ *      Senate can still make. That covers confirmed / returned / withdrawn AND
+ *      `unclassified`.
+ *   2. the record carries no `nominee_description` — Congress.gov's own
+ *      sentence is the ONLY thing a nomination script is ever grounded in
+ *      (lib/nomination-script.ts's header; there is no decode to fall back on,
+ *      by design), and 14 of the 857 civilian records carry none.
+ *
+ * DELIBERATELY WIDER THAN THE NOMINATION PAGE'S OWN `closed || noScript` PANEL
+ * BRANCH, and the whole gap is `unclassified`: that record KEEPS the call rail
+ * on purpose (see that page's comment — the route's refusal is the honest
+ * answer there, and the rail is the only thing that keeps the refusal state
+ * reachable), yet no script can ever arrive in it. So "does the rail render"
+ * is not the question a share card or a CTA label is asking. This is.
+ *
+ * Added 2026-08-06 after the page description promised "…and the call that
+ * goes with it" unconditionally, on 686 records where no call script exists.
+ */
+export function nominationHasCallScript(
+  nomination: Pick<Nomination, 'status' | 'nominee_description'>
+): boolean {
+  return liveCallTargetForNomination(nomination) !== null && !!nomination.nominee_description;
+}
+
 /** The message keys a surface may print for a live call target. */
 export type LiveCallKey =
   | 'liveSenateFloor'
