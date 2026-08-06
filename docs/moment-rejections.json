@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "date": "2026-08-05",
+    "topic": "Senate confirmation votes (judicial and executive nominations)",
+    "why_no_vehicle": "NOT the usual reason, and the distinction is load-bearing. Congress HAS written a vehicle: every nomination carries a PN number, a committee referral, a calendar position, and a recorded Senate vote. Oravan cannot represent it — the corpus ingests bill types only, so there is nothing for a Moment to point at. Searched data/bills.json on 2026-08-05 and found five bill types and no nomination type; searched the ingestion path and found no /nomination fetch. This is an architecture finding about Oravan, not a finding about Congress, and it must not be counted toward the February 2027 re-scope evidence that Congress has failed to legislate on a question.",
+    "evidence": [
+      "data/bills.json bill_type distribution, measured 2026-08-05: hr 1755, s 723, sjres 50, hjres 42, hconres 4 — 2,574 records, zero nominations",
+      "scripts/congress-fetch.mjs — ingests the Congress.gov /bill collection only; no /nomination or /treaty path exists",
+      "https://www.congress.gov/nominations — the Senate nominations collection Oravan does not read",
+      "CLAUDE.md hard rule as worded on 2026-08-05: \"no Moment without a legislative vehicle\". A nomination is not legislation, so confirmations were excluded by the rule's wording rather than by its intent — the intent is that every Moment route to a real, checkable government action, which a nomination satisfies completely."
+    ],
+    "revisit_when": "A vehicle `kind` discriminator ships and data/moments.json can carry a non-bill vehicle with its chamber. At that point this entry is answered by opening the Moment — never by editing or deleting this record."
+  }
+]
