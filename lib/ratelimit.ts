@@ -53,6 +53,22 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * by createRateLimiter — a tenant-keyed counter and a caller-hash-keyed one
  * never share a route label.
  *
+ * 'reps' is the ZIP -> representatives lookup. It is the ONE route label
+ * here whose requests fire on PAGE RENDER rather than on an explicit user
+ * action (components/ActionPanel.tsx, components/embed/ActionPanelWidget.tsx
+ * and components/embed/RepLookupWidget.tsx all fetch it from an effect when
+ * a ZIP is already stored), so its ceiling is deliberately the loosest of
+ * the per-IP limiters — see app/api/reps/route.ts for the measured sizing.
+ * Only the caller hash reaches this key. This is the first route label whose
+ * request carries a ZIP, and the ZIP must never reach a counters key — so
+ * scripts/check-key-namespaces.mjs's CONTENT_IDENTIFIER gained `\bzip\b`
+ * with this change (rule 3 previously listed slug/stance/locale/bill/topic/
+ * query but not a ZIP, so interpolating one into a key builder in THIS file
+ * would have passed every rule), seeded into that gate's self-test so it
+ * stays tested rather than trusted. The gate reads this file's comments too,
+ * which is why the hazard is described here in words and never spelled as a
+ * template interpolation.
+ *
  * S20 adds three: 'embed-impression-token' is a per-IP (createRateLimiter)
  * cap around the tenancy-database lookup that a token param on rep-lookup/
  * bill-card now triggers — cost-containment only (a garbage token is never
@@ -63,6 +79,7 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  */
 export type RouteName =
   | 'script'
+  | 'reps'
   | 'district'
   | 'feedback'
   | 'mcp-min'
