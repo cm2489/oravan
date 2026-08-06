@@ -5,6 +5,13 @@ attention and **no legislative vehicle to call about** — the questions this
 platform looked at and declined to open as a Moment, with the reason written
 down at the time.
 
+**Two reason classes live in this file, and they are not interchangeable** (added 2026-08-05, when the first entry turned out to be the second kind):
+
+1. **Congress wrote no vehicle.** The original and expected case. A long run of these is a finding about the *scope* — the evidence the February 2027 re-scope decision turns on.
+2. **A vehicle exists; Oravan could not represent it.** A finding about *this codebase*, not about Congress. Senate confirmations are the first: every nomination has a PN number, a committee, a calendar position, and a recorded vote, and the corpus ingested bill types only.
+
+Counting the second kind toward the first would read as "Congress isn't legislating" when it means "we hadn't built it yet." Each entry's `why_no_vehicle` must make its class unmistakable in its opening sentence. Whether that deserves a dedicated `reason_class` field is an open question for the owner; the lint does not enforce one today.
+
 It exists because the boundary is only credible if the refusals are visible.
 "No Moment without a real bill" is easy to say and impossible to audit from
 the outside; a dated list of the topics that failed the test is the audit. A
