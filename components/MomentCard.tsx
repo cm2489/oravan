@@ -9,7 +9,10 @@ export interface MomentTeaser {
   name: string;
   dek: string;
   category: Category;
-  vehicleCount: number;
+  /** Vehicle counts BY KIND, not one total. See `vehicleCountLine` below:
+   *  there is no sentence that is true of a mixed moment and also short. */
+  billCount: number;
+  nominationCount: number;
   updatedDate: string | null;
   state: MomentState;
 }
@@ -32,6 +35,31 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
   const t = useTranslations();
   const format = useFormatter();
 
+  /*
+   * THE COUNT LINE, AND WHY IT IS THREE STRINGS RATHER THAN ONE.
+   *
+   * `cardVehicleCount` has always read "2 bills". A moment may now carry a
+   * Senate nomination as well (lib/moments.ts VEHICLE_KINDS), and on a moment
+   * holding one bill and one nomination BOTH of the obvious single strings are
+   * false: "2 bills" names a bill that does not exist, and "2 vehicles" is
+   * jargon no reader outside this repo uses. So the mixed case gets its own
+   * sentence naming both, and the two pure cases keep saying exactly what they
+   * hold.
+   *
+   * Kind-count zero is never printed — the pure branches are the ones that
+   * carry no zero at all, rather than a plural rule that has to render "0
+   * nominations".
+   */
+  const countLine =
+    moment.billCount > 0 && moment.nominationCount > 0
+      ? t('moments.cardMixedCount', {
+          bills: moment.billCount,
+          nominations: moment.nominationCount,
+        })
+      : moment.nominationCount > 0
+        ? t('moments.cardNominationCount', { count: moment.nominationCount })
+        : t('moments.cardVehicleCount', { count: moment.billCount });
+
   return (
     <Link
       href={`/questions/${moment.id}`}
@@ -48,7 +76,7 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
       <p className="mt-2 max-w-read text-sm text-ink-2">{moment.dek}</p>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
         <span>
-          {t('moments.cardVehicleCount', { count: moment.vehicleCount })}
+          {countLine}
           {moment.updatedDate && <span aria-hidden> ·</span>}
         </span>
         {moment.updatedDate && (

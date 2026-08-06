@@ -4,7 +4,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
-import { getMoments, type MomentWithState } from '@/lib/moments';
+import { getMoments, vehicleKind, type MomentWithState } from '@/lib/moments';
 import { latestVehicleAction, momentDek } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -19,7 +19,11 @@ function toTeaser(m: MomentWithState, locale: string): MomentTeaser {
     name: localeText(m.name, locale),
     dek: momentDek(localeText(m.summary, locale)),
     category: m.category,
-    vehicleCount: m.vehicles.length,
+    // BY KIND, not a total — see MomentCard's countLine: no single sentence is
+    // true of a moment holding both a bill and a nomination. Counted through
+    // the one normalizer (absent `kind` means 'bill'), never off the slug.
+    billCount: m.vehicles.filter((v) => vehicleKind(v) === 'bill').length,
+    nominationCount: m.vehicles.filter((v) => vehicleKind(v) === 'nomination').length,
     // A recorded live-layer update is a stronger recency claim than a
     // vehicle's last action date (it is OUR record of the event, dated to
     // the legislative day); fall back to the bill-derived date otherwise.

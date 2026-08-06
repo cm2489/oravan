@@ -172,6 +172,13 @@ for (const [lang, doc] of Object.entries(messages)) {
     }
   };
   walk(doc.moments, 'moments');
+  // The `nominations` namespace is Moments chrome too — it renders inside the
+  // vehicles grid on /questions/[id] and on the nomination page that grid
+  // links to, in the same voice, so it takes the same lint. Adding the
+  // namespace without adding it here would have re-opened exactly the gap the
+  // 2026-07-25 audit closed: a rule that governs the paragraph but not the
+  // heading above it is half a rule.
+  walk(doc.nominations, 'nominations');
 }
 
 const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor);

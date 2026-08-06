@@ -53,6 +53,14 @@ export const QUALIFYING_SIGNAL_TYPES = [
   'tier0_floor',
   'tier0_scheduled',
   'tier0_most_viewed',
+  /* The nomination analogue of `tier0_floor`, added 2026-08-06 with the
+     nomination surface. A bill reaching a floor calendar and a nomination
+     reaching the Senate EXECUTIVE Calendar are the same class of fact — the
+     chamber has scheduled it for itself — but they are different calendars
+     with different names, and folding a nomination into `tier0_floor` would
+     make the label on /questions ("On the floor schedule") false about the
+     record it stands over. Same reason the two corpora are two files. */
+  'tier0_exec_calendar',
   'press',
 ] as const;
 
@@ -275,18 +283,30 @@ export function isSettled(id: string, now: number = Date.now()): boolean {
  * route as well would be a second editorial act nobody asked for. Same
  * live-or-stale set /questions's own index section uses.
  *
- * The kind guard on the vehicle match is a no-op TODAY — `slug` here is
- * always a bill's full_identifier, and the `pn-…` namespace can never equal
- * one — and it is written down anyway, because "this is a BILL backlink"
- * stops being obvious the moment a moment can carry a nomination. The
- * invariant belongs in the code that depends on it, not in the reader's head.
+ * The kind guard on the vehicle match is a no-op TODAY — the two namespaces
+ * are structurally disjoint, so a `pn-…` slug can never equal a bill's
+ * full_identifier — and it is written down anyway, because "which KIND of
+ * backlink is this" stops being obvious the moment a moment can carry either.
+ * The invariant belongs in the code that depends on it, not in the reader's
+ * head.
  */
-export function momentsForBill(moments: MomentWithState[], slug: string): MomentWithState[] {
+export function momentsForVehicle(
+  moments: MomentWithState[],
+  slug: string,
+  kind: VehicleKind
+): MomentWithState[] {
   return moments.filter(
     (m) =>
       (m.state === 'live' || m.state === 'stale') &&
-      m.vehicles.some((v) => v.slug === slug && vehicleKind(v) === 'bill')
+      m.vehicles.some((v) => v.slug === slug && vehicleKind(v) === kind)
   );
+}
+
+/** The bill-kind backlink — the shape tests/moments-backlink.unit.spec.ts
+ *  pins, kept as its own name because that is what every bill-side caller
+ *  reads and because "for a bill" is the claim those call sites are making. */
+export function momentsForBill(moments: MomentWithState[], slug: string): MomentWithState[] {
+  return momentsForVehicle(moments, slug, 'bill');
 }
 
 /**
@@ -302,4 +322,17 @@ export function momentsForBill(moments: MomentWithState[], slug: string): Moment
  */
 export function getMomentsForBill(slug: string, now: number = Date.now()): MomentWithState[] {
   return momentsForBill(getMoments(now), slug);
+}
+
+/**
+ * The same backlink for a SENATE NOMINATION — the nomination page's "part of
+ * a bigger question" line, and (see app/[locale]/nominations/[slug]/page.tsx)
+ * the thing that decides whether that page is part of this site's curated
+ * index or merely a reachable record.
+ */
+export function getMomentsForNomination(
+  slug: string,
+  now: number = Date.now()
+): MomentWithState[] {
+  return momentsForVehicle(getMoments(now), slug, 'nomination');
 }

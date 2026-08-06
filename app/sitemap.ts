@@ -1,9 +1,12 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills } from '@/lib/core';
+// Imported DIRECTLY, never through the lib/core barrel — that module's header
+// forbids the barrel so no bundle pays for data/nominations.json by accident.
+import { getNomination } from '@/lib/core/nominations';
 import { getFreshness } from '@/lib/freshness';
 import { absoluteUrl } from '@/lib/hreflang';
-import { getMoments } from '@/lib/moments';
+import { getMoments, vehicleKind } from '@/lib/moments';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { latestVehicleAction } from '@/lib/moments-ui';
 
@@ -95,6 +98,37 @@ export default function sitemap(): MetadataRoute.Sitemap {
         lastModified,
         alternates,
       });
+    }
+  }
+
+  /*
+   * Senate nominations — ONLY the ones a non-retired moment actually cites.
+   *
+   * The corpus holds 857 records and every one of them has a reachable page,
+   * but a page being reachable is not the same as this site claiming it. The
+   * uncited ones self-report `noindex` (see the nomination page's header), so
+   * listing them here would tell a crawler to go look at 1,714 URLs whose own
+   * head tags say not to index them — a sitemap arguing with its own pages.
+   *
+   * Read off the moments file rather than off a nomination flag, because
+   * "this site publishes it" is a fact about curation, not about the Senate.
+   * lastModified prefers the record's own last action, then the corpus stamp
+   * — never an invented date, mirroring both loops above.
+   */
+  const citedNominations = new Map<string, string | null>();
+  for (const moment of getMoments()) {
+    if (moment.state === 'retired') continue;
+    for (const v of moment.vehicles) {
+      if (vehicleKind(v) !== 'nomination') continue;
+      citedNominations.set(v.slug, getNomination(v.slug)?.last_action_date ?? null);
+    }
+  }
+  for (const [slug, day] of citedNominations) {
+    const href = `/nominations/${slug}`;
+    const alternates = { languages: languagesFor(href) };
+    const lastModified = day ? new Date(day) : siteLastModified;
+    for (const locale of routing.locales) {
+      entries.push({ url: absoluteUrl(locale, href), lastModified, alternates });
     }
   }
 

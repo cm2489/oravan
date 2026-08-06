@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { NOMINATION_PROMPT_VERSION } from './nomination-script';
 import { PROMPT_VERSION } from './scriptprompt';
 import { cacheClient, keyPrefix, noteUpstashError } from './upstash';
 
@@ -10,6 +11,12 @@ import { cacheClient, keyPrefix, noteUpstashError } from './upstash';
  * Key registry — the only shape ever written to the cache database:
  *
  *   <env>:script:<slug>:<stance>:<lang>:<version>
+ *
+ * ONE key shape, both vehicle kinds. A Senate nomination's script is cached
+ * under the identical five segments (slug = `pn-…`); everything specific to a
+ * nomination — including WHICH AUDIENCE the script was written for — lives
+ * inside `version`, via nominationContentVersion() below. See its doc comment
+ * for why that is deliberate rather than a shortcut.
  *
  * version = first 12 hex chars of sha256(PROMPT_VERSION + bill.ai_summary).
  * The pre-S11 key (slug:stance:lang) had no content component, so a corrected
@@ -51,6 +58,40 @@ export interface ScriptKeyParts {
  */
 export function contentVersion(summary: string): string {
   return createHash('sha256').update(`${PROMPT_VERSION}\n${summary}`).digest('hex').slice(0, 12);
+}
+
+/**
+ * The same hash for a SENATE NOMINATION — and the reason the audience goes
+ * INSIDE it rather than beside it in the key.
+ *
+ * A nomination script has one axis a bill script does not: who it is being
+ * read to (lib/nomination-script.ts NOMINATION_AUDIENCES — the senator who
+ * votes, or the representative who does not). Two different scripts therefore
+ * exist for the same (slug, stance, lang), and the cache must not serve one
+ * for the other.
+ *
+ * The obvious fix — a sixth key segment — is the wrong one. The key shape
+ * above IS the registry scripts/check-key-namespaces.mjs gates on, and it has
+ * a pinned fixture asserting exactly five segments; growing it for a case the
+ * bill path will never use would make every future reader of that gate ask
+ * which shape is current. Folding the audience into the version hash keeps
+ * ONE key shape for both kinds, and makes a collision structurally impossible
+ * rather than merely unlikely.
+ *
+ * NOMINATION_PROMPT_VERSION is folded in for the same reason PROMPT_VERSION is
+ * above, and it is a SEPARATE lineage: editing the bill prompt must not
+ * invalidate every nomination script, or vice versa.
+ *
+ * @param record   Congress.gov's own description sentence — the only
+ *                 substantive input to the prompt, so the only thing whose
+ *                 change should invalidate the script.
+ * @param audience one of NOMINATION_AUDIENCES.
+ */
+export function nominationContentVersion(record: string, audience: string): string {
+  return createHash('sha256')
+    .update(`${NOMINATION_PROMPT_VERSION}\n${audience}\n${record}`)
+    .digest('hex')
+    .slice(0, 12);
 }
 
 // --- cache-database key builder (the whole registry) -------------------------

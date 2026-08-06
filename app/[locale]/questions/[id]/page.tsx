@@ -7,10 +7,15 @@ import { statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
+import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
+// Imported DIRECTLY, never through the lib/core barrel — that module's header
+// forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
+// accident. This page renders one, so it pays for it deliberately.
+import { getNomination } from '@/lib/core/nominations';
 import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -22,7 +27,7 @@ import {
   getRevisions,
   isAiSummary,
 } from '@/lib/moment-updates';
-import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments } from '@/lib/moments';
+import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments, vehicleKind } from '@/lib/moments';
 import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
@@ -134,13 +139,53 @@ export default async function MomentPage({
   // model-written; the official title it falls back to is not (see the chip
   // beside the grid below). Resolved through the SAME localize call the cards
   // render with, so the answer is about this locale's headlines, not English's.
+  //
+  // A NOMINATION CARD CONTRIBUTES FALSE, and does so by construction rather
+  // than by exclusion: its headline is Congress.gov's own description
+  // sentence, verbatim, and Oravan writes no decode for one (see
+  // lib/nomination-script.ts's header). getBill() misses on a `pn-…` slug, so
+  // the expression below already answers false — which is exactly right, and
+  // is the reason this stayed data-gated rather than growing a kind branch.
+  // A nomination-only Moment therefore carries no AI chip over its grid,
+  // because there is no AI text under it to label.
   const vehicleHeadlinesAreAi = moment.vehicles.some((v) => {
     const raw = getBill(v.slug);
     return raw ? Boolean(localizeBill(raw, locale).ai_headline) : false;
   });
 
+  /*
+   * WHAT THE GRID IS CALLED, AND WHAT IT PROMISES.
+   *
+   * "The bills" and its lede ("Each opens the full plain-language decode…")
+   * are both false over a nomination: it is not a bill, and it carries no
+   * decode by design (lib/nomination-script.ts's header). A single neutral
+   * word for both would have been the easy fix and the wrong one — this
+   * product names things concretely, and "the vehicles" is repo jargon no
+   * reader outside this file uses.
+   *
+   * So the heading and its lede are chosen by what the moment actually holds,
+   * the same three-way MomentCard's count line uses and for the same reason:
+   * a mixed moment has no true short sentence that names only one kind.
+   */
+  const kinds = new Set(moment.vehicles.map(vehicleKind));
+  const vehiclesKey =
+    kinds.has('bill') && kinds.has('nomination')
+      ? { heading: 'vehiclesHeadingMixed', lede: 'vehiclesLedeMixed' }
+      : kinds.has('nomination')
+        ? { heading: 'vehiclesHeadingNominations', lede: 'vehiclesLedeNominations' }
+        : { heading: 'vehiclesHeading', lede: 'vehiclesLede' };
+
   // Citation + Congress.gov actions page per vehicle, resolved here so the
   // timeline stays a pure renderer and never reaches into the bill corpus.
+  //
+  // NOMINATION SLUGS ARE SKIPPED — getBill() misses, and that is the correct
+  // outcome rather than a gap to fill: the live layer that feeds this timeline
+  // is bill-only end to end (scripts/moment-updates-map.mjs's momentVehicles()
+  // filters to kind==='bill', and lib/moment-updates-gate.mjs requires every
+  // stored vehicle to resolve in data/bills.json), so no nomination can ever
+  // have a row here to caption. A nomination-only Moment renders the empty
+  // ledger this section already renders when no revision exists, which is
+  // honest rather than empty-shaped.
   const timelineVehicles: Record<string, TimelineVehicle | undefined> = {};
   for (const v of moment.vehicles) {
     const raw = getBill(v.slug);
@@ -334,9 +379,9 @@ export default async function MomentPage({
       {/* 5 · The vehicles */}
       <section className="mt-12 border-t border-line pt-4" aria-labelledby="vehicles-h">
         <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
-          {t('moments.vehiclesHeading')}
+          {t(`moments.${vehiclesKey.heading}`)}
         </h2>
-        <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.vehiclesLede')}</p>
+        <p className="mt-2 max-w-read text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
         {/* Every card below leads with an AI-decoded headline, and the card's
             CTA is the phone call — so this was the one place on the site where
             unlabeled AI text sat directly on the control that drives a call
@@ -356,6 +401,34 @@ export default async function MomentPage({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {moment.vehicles.map((v) => {
+            /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
+               through the one normalizer (lib/moments.ts vehicleKind — absent
+               means 'bill', stated in exactly one place), never on the shape
+               of the slug. MomentNominationCard is MomentVehicleCard's
+               sibling and not its generalization; the reasoning is in its own
+               header. Both render at identical weight with the identical
+               green CTA, so a mixed grid never reads as recommending one
+               vehicle over the other. */
+            if (vehicleKind(v) === 'nomination') {
+              const nomination = getNomination(v.slug);
+              if (!nomination) return null;
+              return (
+                <MomentNominationCard
+                  key={v.slug}
+                  slug={v.slug}
+                  citation={nomination.citation}
+                  description={nomination.nominee_description}
+                  organization={nomination.organization}
+                  status={nomination.status}
+                  lastActionDate={nomination.last_action_date}
+                  receivedDate={nomination.received_date}
+                  execCalendarNumber={nomination.exec_calendar_number}
+                  role={localeText(v.role, locale)}
+                  ctaLabel={isSettled ? t('nominations.readRecord') : t('moments.readCall')}
+                  noDecodeNote={t('nominations.noDecodeNote')}
+                />
+              );
+            }
             const raw = getBill(v.slug);
             if (!raw) return null;
             const bill = localizeBill(raw, locale);
