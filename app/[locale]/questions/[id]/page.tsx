@@ -28,7 +28,7 @@ import {
   isAiSummary,
 } from '@/lib/moment-updates';
 import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments, vehicleKind } from '@/lib/moments';
-import { linkHost, momentDek, nominationCtaKey, revisionReasons } from '@/lib/moments-ui';
+import { bothNoteKey, linkHost, momentDek, nominationCtaKey, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -460,7 +460,14 @@ export default async function MomentPage({
           })}
         </div>
 
-        <p className="mt-6 max-w-read text-sm text-ink-2">{t('moments.bothNote')}</p>
+        {/* "Every link above opens the same call flow" was printed here
+            unconditionally — true of every bill card (the bill page always
+            mounts ActionPanel) and false of a nomination card whose page has
+            no call script waiting on it. Asked of the SET, because that is
+            what the sentence quantifies over; the per-card version of the
+            same question is `nominationCtaKey` on the grid above. A bill-only
+            moment keeps `moments.bothNote` byte for byte — see bothNoteKey. */}
+        <p className="mt-6 max-w-read text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
       </section>
 
       {/* 6 · Why this Moment exists */}

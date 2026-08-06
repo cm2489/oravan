@@ -807,6 +807,7 @@
     "vehiclesLedeNominations": "Las nominaciones ante el Senado por las que realmente pasa esta cuestión. Cada una abre el registro del propio Senado — y, cuando ese registro muestra una decisión que el Senado todavía puede tomar, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
     "vehiclesLedeMixed": "Los proyectos de ley y las nominaciones ante el Senado por los que realmente pasa esta cuestión. Cada uno abre el registro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.",
     "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
+    "bothNoteSomeNoCall": "Ningún lado está preseleccionado. Cuando en un registro todavía queda una llamada que hacer, se abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",
     "readBill": "Leer el proyecto de ley",
     "partOf": "Parte de una pregunta más amplia: {name}",

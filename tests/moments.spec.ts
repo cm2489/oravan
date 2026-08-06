@@ -4,6 +4,8 @@ import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
 import { getBill, getTeasers } from '../lib/core';
+import { getNomination } from '../lib/core/nominations';
+import { nominationHasCallScript } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -164,6 +166,48 @@ test.describe('/questions/[id] detail page', () => {
         }
       }
     });
+  }
+
+  /*
+   * THE NOTE UNDER THE GRID PROMISES ONLY WHAT ITS CARDS DELIVER.
+   *
+   * `moments.bothNote` ("…Every link above opens the same call flow…") was
+   * rendered unconditionally. True of every bill card — the bill page always
+   * mounts ActionPanel — and false of a nomination card whose page has no call
+   * script waiting on it: no dial, no stance control, a rail that reads "No
+   * call to make".
+   *
+   * The expectation is derived from the RECORD through /api/script's own
+   * refusal rule (`nominationHasCallScript`), never through lib/moments-ui.ts's
+   * `bothNoteKey` — that would only assert the page agrees with itself. Today
+   * every moment is bill-only, so this pins the unchanged sentence; the first
+   * nomination Moment to merge flips the same assertion without an edit.
+   */
+  for (const m of moments) {
+    for (const { locale, prefix, messages } of LOCALES) {
+      test(`${m.id}/${locale}: the vehicles note promises only what its cards deliver`, async ({
+        page,
+      }) => {
+        const someNoCall = m.vehicles.some((v) => {
+          if (vehicleKind(v) !== 'nomination') return false;
+          const n = getNomination(v.slug);
+          // An unresolved slug renders no card, so it puts no link above the
+          // note to make a claim about.
+          return n ? !nominationHasCallScript(n) : false;
+        });
+
+        await page.goto(`${prefix}/questions/${m.id}`);
+        const grid = page.locator('section[aria-labelledby="vehicles-h"]');
+        await expect(
+          grid.getByText(messages.moments.bothNote, { exact: true }),
+          'the unconditional promise',
+        ).toHaveCount(someNoCall ? 0 : 1);
+        await expect(
+          grid.getByText(messages.moments.bothNoteSomeNoCall, { exact: true }),
+          'the kind-aware variant',
+        ).toHaveCount(someNoCall ? 1 : 0);
+      });
+    }
   }
 
   test('settled vs. live framing differs on the page (corpus-robust: skips if no settled moment exists)', async ({

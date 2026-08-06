@@ -807,6 +807,7 @@
     "vehiclesLedeNominations": "The Senate nominations this question actually runs through. Each opens the Senate's own record — and, where that record shows a decision the Senate can still make, the call flow, with support and oppose scripts equally one tap away.",
     "vehiclesLedeMixed": "The bills and Senate nominations this question actually runs through. Each opens the record and the call flow — support and oppose scripts are equally one tap away.",
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
+    "bothNoteSomeNoCall": "No side is pre-selected. Where a record still has a call to make, the same call flow opens, with support and oppose scripts equally available.",
     "readCall": "Read + call",
     "readBill": "Read the bill",
     "partOf": "Part of a bigger question: {name}",
