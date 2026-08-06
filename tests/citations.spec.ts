@@ -110,3 +110,76 @@ test("the page quotes the live MCP envelope's localized source/ai_label text ver
     await expect(page.getByText(metaEs.ai_label)).toBeVisible();
   }
 });
+
+/*
+ * 2026-08-06 — the claim-truth pass. citations.aiBody is the page's fullest
+ * statement of HOW a decode comes to be published, and until now nothing
+ * pinned a word of it. It shipped a false gate ("no advocacy language" /
+ * "sin lenguaje de campaña" — that lint runs on Big Questions, never on the
+ * decode path) for as long as anyone had been reading it.
+ *
+ * These pin the corrected copy in both languages, in the JSON *and* on the
+ * rendered page — a JSON-only assertion would still pass if the paragraph
+ * stopped rendering — and they guard the carve-out next door from being
+ * collaterally deleted by the next person cleaning up review language.
+ */
+test.describe('AI-provenance copy on /citations says what actually runs', () => {
+  test('aiBody names the real gates and no longer names an advocacy gate, both locales', () => {
+    for (const [lang, body] of [
+      ['en', en.citations.aiBody],
+      ['es', es.citations.aiBody],
+    ] as const) {
+      // The retired review claim, in either language, must be gone.
+      expect(body, `${lang}: no human-review claim on the decode path`).not.toMatch(
+        /human[\s-]?review|revisad[oa] por una persona|revisión humana/i
+      );
+      // The lint that never ran on decodes must not be listed as a gate.
+      expect(body, `${lang}: advocacy is not one of the decode gates`).not.toMatch(
+        /no advocacy language|sin lenguaje de campaña/i
+      );
+    }
+
+    // The three gates that ARE real, named in both languages.
+    expect(en.citations.aiBody).toContain('both languages present');
+    expect(en.citations.aiBody).toContain('the official record attached');
+    expect(en.citations.aiBody).toContain('automated gates pass');
+    expect(es.citations.aiBody).toContain('los dos idiomas presentes');
+    expect(es.citations.aiBody).toContain('el registro oficial adjunto');
+    expect(es.citations.aiBody).toContain('controles automáticos');
+
+    // And the replacement sentence: where the nonpartisan constraint really
+    // lives — a drafting instruction on decodes, an enforced check on Big
+    // Questions. Dropping the false claim without saying this would leave
+    // the page quieter but no more honest.
+    expect(en.citations.aiBody).toMatch(/drafting instruction to the model/i);
+    expect(en.citations.aiBody).toMatch(/Big Questions/);
+    expect(es.citations.aiBody).toMatch(/instrucción de redacción al modelo/i);
+    expect(es.citations.aiBody).toMatch(/Grandes preguntas/);
+  });
+
+  test('the call-script carve-out survived the cleanup — it is TRUE and must not be collaterally deleted', () => {
+    // A caller really does read and can edit the script before dialing, and
+    // the MCP server really does refuse to generate one so an agent cannot
+    // skip that. This is the one review claim the product is entitled to.
+    expect(en.citations.aiCallScript).toMatch(/read and can edit the script before placing a call/i);
+    expect(en.citations.aiCallScript).toMatch(/never generates one/i);
+    expect(es.citations.aiCallScript).toMatch(/leer y puede editar el guion antes de marcar/i);
+    expect(es.citations.aiCallScript).toMatch(/nunca genera uno/i);
+  });
+
+  for (const [locale, prefix, messages] of [
+    ['en', '', en],
+    ['es', '/es', es],
+  ] as const) {
+    test(`${locale}: the corrected aiBody and the call-script carve-out both RENDER on the page`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/citations`);
+      // Whole-paragraph exact text: pinning the JSON alone would still pass
+      // if the <p> were dropped from the page, which is the failure mode a
+      // trust page can least afford.
+      await expect(page.getByText(messages.citations.aiBody)).toBeVisible();
+      await expect(page.getByText(messages.citations.aiCallScript)).toBeVisible();
+    });
+  }
+});

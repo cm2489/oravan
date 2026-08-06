@@ -189,7 +189,7 @@ export default async function MomentPage({
       {/* 2 · The Moment entry's own summary — the page's one reading passage,
           and so the one place Besley is spent. Provenance, spelled out because
           this page renders two passages with DIFFERENT provenance and the
-          comment used to say only "human-reviewed": this one comes from
+          comment here used to name only one of them: this one comes from
           data/moments.json, which is hand-authored and merged by the owner —
           the explicit carve-out in CLAUDE.md's 2026-07-25 amendment, and what
           moments.howMadeBody promises. The "Where it stands" revision further
