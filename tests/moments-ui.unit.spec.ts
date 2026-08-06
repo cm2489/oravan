@@ -12,7 +12,7 @@ import {
   revisionReasons,
 } from '../lib/moments-ui';
 import { getAllNominations, getNomination, nominationSlug, type Nomination } from '../lib/core/nominations';
-import { getMoments, type MomentVehicle } from '../lib/moments';
+import { getMoments, vehicleKind, type MomentVehicle } from '../lib/moments';
 import { nominationHasCallScript } from '../lib/journey';
 import type { UpdateDayGroup } from '../lib/moment-updates';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
@@ -428,6 +428,178 @@ test.describe('bothNoteKey', () => {
       // …and the half that is the whole point of the sentence is still there.
       expect(variant.startsWith(shared.split('.')[0]), locale).toBe(true);
     }
+  });
+});
+
+/*
+ * WHAT THE LEDE OVER A MIXED GRID PROMISES.
+ *
+ * `moments.vehiclesLedeMixed` printed "Each opens the record and the call
+ * flow — support and oppose scripts are equally one tap away." "Each"
+ * quantifies over every card in that grid. True of a bill (the bill page
+ * always mounts ActionPanel, settled or not) and false of a nomination the
+ * Senate has finished with, or one its record never described: that page's
+ * whole rail is "No call to make", with no stance control and no script. The
+ * seventh string of this defect class, and the one the sixth fix named and
+ * left behind.
+ *
+ * CORRECTED IN PLACE, no variant — the one difference from `moments.bothNote`.
+ * app/[locale]/questions/[id]/page.tsx prints this key only when
+ * `kinds.has('bill') && kinds.has('nomination')`, so every set that reaches it
+ * carries a nomination and there is no bill-only render to keep byte-
+ * identical. `moments.vehiclesLede` is the bill path's own sentence, and it is
+ * asserted untouched below.
+ *
+ * DERIVED FROM THE RECORD. The premise — that a mixed grid can really hold a
+ * card with no call flow behind it — is computed from data/nominations.json
+ * through `nominationHasCallScript`, app/api/script's own 422 refusal
+ * conjunction, never from the message this block is about. The routing is
+ * computed through `vehicleKind`, the same normalizer the page reads, so a set
+ * this block calls mixed is one the page would call mixed too.
+ *
+ * UNREACHABLE BY DOM TEST TODAY, for the reason the two blocks above are:
+ * data/moments.json holds zero nomination vehicles and must stay byte-
+ * identical to main, so no shipped moment is mixed. The sets below are built
+ * in the test, from real corpus slugs.
+ */
+test.describe('moments.vehiclesLedeMixed', () => {
+  const nominations = getAllNominations();
+  const callable = nominations.find((n) => nominationHasCallScript(n));
+  const notCallable = nominations.find((n) => !nominationHasCallScript(n));
+
+  /* A REAL bill-only vehicle set, off the shipped corpus — the bill half of
+     every mixed set below is the exact input today's pages carry. */
+  const bills: MomentVehicle[] = getMoments()[0]?.vehicles ?? [];
+
+  /** A vehicle as data/moments.json would carry one. `role` is required by the
+   *  type and never read here — the lede is about what a card opens. */
+  const nom = (n: Nomination): MomentVehicle => ({
+    slug: nominationSlug(n),
+    role: { en: 'role', es: 'papel' },
+    kind: 'nomination',
+  });
+
+  /* app/[locale]/questions/[id]/page.tsx's own three-way choice, restated from
+     `vehicleKind` rather than imported: the page's version is an inline
+     ternary, and a test that reached for the page's own helper would only be
+     watching it agree with itself. */
+  const ledeKeyFor = (vehicles: MomentVehicle[]): string => {
+    const kinds = new Set(vehicles.map(vehicleKind));
+    if (kinds.has('bill') && kinds.has('nomination')) return 'moments.vehiclesLedeMixed';
+    return kinds.has('nomination') ? 'moments.vehiclesLedeNominations' : 'moments.vehiclesLede';
+  };
+
+  /** The universal this fix removed, and the condition that replaced it — the
+   *  same clause `moments.bothNoteSomeNoCall` established one commit earlier. */
+  const FALSE_UNIVERSAL = {
+    en: 'Each opens the record and the call flow',
+    es: 'Cada uno abre el registro y el flujo de llamada',
+  } as const;
+  const CONDITION = {
+    en: 'where that record still has a call to make',
+    es: 'cuando en ese registro todavía queda una llamada que hacer',
+  } as const;
+  /** The half that is true of every card of either kind, and so the half the
+   *  sentence is still allowed to state flat. */
+  const ALWAYS_TRUE = { en: 'Each opens the record', es: 'Cada uno abre el registro' } as const;
+
+  const lede = (locale: 'en' | 'es', key: string): string => {
+    const t = createTranslator({
+      locale,
+      messages: (locale === 'en' ? enMessages : esMessages) as unknown as Record<string, unknown>,
+    }) as unknown as (k: string) => string;
+    return t(key);
+  };
+
+  test('a mixed grid can really hold a card with no call flow behind it', () => {
+    // The premise, taken from the record. Without it every assertion below is
+    // vacuous, so this failing is the honest signal that the corpus moved
+    // rather than a silent green.
+    expect(notCallable, 'no non-callable nomination in the corpus').toBeTruthy();
+    expect(callable, 'no callable nomination in the corpus').toBeTruthy();
+    expect(bills.length, 'no bill vehicles in data/moments.json').toBeGreaterThan(0);
+    expect(ledeKeyFor([...bills, nom(notCallable!)])).toBe('moments.vehiclesLedeMixed');
+  });
+
+  test('one sentence has to cover both kinds of nomination record', () => {
+    test.skip(!callable || !notCallable, 'corpus lacks one of the two record kinds');
+    // The page holds ONE mixed lede and no callability branch, so the same
+    // sentence prints over a grid whose nomination can be called and over a
+    // grid whose nomination cannot. That is why it may not quantify.
+    expect(ledeKeyFor([...bills, nom(callable!)])).toBe('moments.vehiclesLedeMixed');
+    expect(ledeKeyFor([...bills, nom(notCallable!)])).toBe('moments.vehiclesLedeMixed');
+  });
+
+  test('the mixed lede does not promise a call flow behind every card', () => {
+    test.skip(!notCallable, 'no non-callable nomination in the corpus');
+    const key = ledeKeyFor([...bills, nom(notCallable!)]);
+    for (const locale of ['en', 'es'] as const) {
+      const text = lede(locale, key);
+      expect(text.length, `${key}/${locale}`).toBeGreaterThan(0);
+      expect(text, `${key}/${locale}`).not.toBe(key);
+      expect(text, `${locale}: a call flow is promised behind every card`).not.toContain(
+        FALSE_UNIVERSAL[locale],
+      );
+      expect(text, `${locale}: the call flow carries no condition`).toContain(CONDITION[locale]);
+    }
+  });
+
+  test('the half that is true of every card survives', () => {
+    for (const locale of ['en', 'es'] as const) {
+      // A bill's page and a nomination's page each open a record, always.
+      // Only the call flow was ever the conditional half, and precision about
+      // one half is not licence to hedge the other into uselessness.
+      expect(lede(locale, 'moments.vehiclesLedeMixed'), locale).toContain(ALWAYS_TRUE[locale]);
+    }
+  });
+
+  test('the bill path’s own lede is untouched, and nothing that renders today moved', () => {
+    // `moments.vehiclesLede` prints over a bill-only grid, where a call flow
+    // behind every card is true. A nomination-only defect does not get to
+    // rewrite it — byte for byte as origin/main ships it.
+    expect(enMessages.moments.vehiclesLede).toBe(
+      'The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.',
+    );
+    expect(esMessages.moments.vehiclesLede).toBe(
+      'Los proyectos de ley por los que realmente pasa esta cuestión. Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.',
+    );
+    for (const m of getMoments()) {
+      expect(ledeKeyFor(m.vehicles), m.id).toBe('moments.vehiclesLede');
+    }
+  });
+
+  test('the three sentences that can face an uncallable card condition it the same way', () => {
+    // The nominations lede was corrected first and the note under the grid
+    // second; a third vocabulary here would read to a translator as a third
+    // rule. The bill-only lede is not in this set and needs no condition.
+    for (const locale of ['en', 'es'] as const) {
+      const conditional = locale === 'en' ? /\bwhere\b/i : /\bcuando\b/i;
+      for (const key of [
+        'moments.vehiclesLedeMixed',
+        'moments.vehiclesLedeNominations',
+        'moments.bothNoteSomeNoCall',
+      ] as const) {
+        expect(lede(locale, key), `${key}/${locale}`).toMatch(conditional);
+      }
+      expect(lede(locale, 'moments.vehiclesLedeMixed'), locale).not.toBe(
+        lede(locale, 'moments.vehiclesLedeNominations'),
+      );
+    }
+  });
+
+  /* THE WHOLE COMMITTED CORPUS, swept: every record the route would refuse is
+     a record that reaches this sentence through a mixed set, so there is no
+     nomination anywhere in data/nominations.json that would have made the
+     removed universal true again. */
+  test('every record the route refuses reaches this sentence', () => {
+    expect(nominations.length).toBeGreaterThan(0);
+    const refused = nominations.filter((n) => !nominationHasCallScript(n));
+    expect(refused.length, 'the corpus contains records the route refuses').toBeGreaterThan(0);
+    for (const n of refused) {
+      expect(ledeKeyFor([...bills, nom(n)]), n.citation).toBe('moments.vehiclesLedeMixed');
+    }
+    // Both answers really occur — a sweep that only ever sees one proves nothing.
+    expect(nominations.some((n) => nominationHasCallScript(n))).toBe(true);
   });
 });
 

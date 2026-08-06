@@ -173,8 +173,20 @@ export function nominationSlug(item) {
  * ("PN129-7 — Nomination of Amy Henninger for Department of Defense"), and
  * the part-less /nomination/119th-congress/137 ("PN137 — 29 nominees for
  * Army"). Those three cover both branches of this function and pin the
- * unpadded part. Nothing renders this field yet; a human should click one
- * before any surface links to it.
+ * unpadded part.
+ *
+ * ⚠️ THE CAVEAT THIS NOTE CARRIED HAS BEEN CROSSED (amended 2026-08-06). It
+ * read "Nothing renders this field yet; a human should click one before any
+ * surface links to it." Both halves are now wrong in the way that matters:
+ * app/[locale]/nominations/[slug]/page.tsx renders `congress_gov_url` as the
+ * reader-facing outbound link under `nominations.viewOfficial` ("See it on
+ * Congress.gov"), on all 857 records — and the human click the note asked for
+ * has still NOT happened. So every one of those links ships on indexed-title
+ * evidence alone, never on a fetch or a click, and scripts/check-nominations.mjs
+ * only re-derives the string from this same builder, which cannot catch a
+ * wrong shape. OWNER ITEM, open: click one partitioned and one part-less
+ * nomination URL by hand. Until then this is the weakest verified claim on
+ * the nomination surface, and it is a claim a reader acts on.
  *
  * @param {number | string} number
  * @param {string | null} [partNumber]

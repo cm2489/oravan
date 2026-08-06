@@ -166,6 +166,28 @@ export default async function MomentPage({
    * So the heading and its lede are chosen by what the moment actually holds,
    * the same three-way MomentCard's count line uses and for the same reason:
    * a mixed moment has no true short sentence that names only one kind.
+   *
+   * WHAT EACH LEDE MAY PROMISE (2026-08-06). All three say a card opens a
+   * record, which is true of every card of either kind. Only the CALL FLOW is
+   * conditional, and only on a nomination: the Senate has finished with one,
+   * or its record never described it, and the page behind that card is a rail
+   * reading "No call to make" — `nominationHasCallScript`, app/api/script's
+   * own 422 refusal conjunction (lib/journey.ts), is the predicate for it, and
+   * `nominationCtaKey` below asks the same one per card.
+   *
+   *   - `vehiclesLede` (bill-only) promises the call flow flat, and may: a
+   *     bill's page always mounts ActionPanel, settled or not.
+   *   - `vehiclesLedeNominations` and `vehiclesLedeMixed` carry the condition.
+   *     The mixed one said "Each opens the record and the call flow" until
+   *     this change, which is the same false universal the nominations lede
+   *     dropped one commit earlier and `moments.bothNoteSomeNoCall` dropped
+   *     the commit after. Corrected IN PLACE rather than behind a variant,
+   *     because the ternary above prints it only on a set that holds a
+   *     nomination — there is no bill-only render of it to protect.
+   *
+   * The condition is written as a RULE, not as an observation about this
+   * grid, so it does not read as a hint that some card here is callable on a
+   * set where none is. Pinned in tests/moments-ui.unit.spec.ts.
    */
   const kinds = new Set(moment.vehicles.map(vehicleKind));
   const vehiclesKey =

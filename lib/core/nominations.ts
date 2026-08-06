@@ -12,20 +12,36 @@
  * DELIBERATELY NOT RE-EXPORTED FROM lib/core/index.ts. That barrel exists so
  * `import { x } from '@/lib/core'` gets everything lib/data.ts used to
  * export; adding this module would pull data/nominations.json (~520 KB) into
- * every bundle that touches the barrel — including the MCP route — for a
- * dataset nothing renders yet. Callers import 'lib/core/nominations'
- * directly, exactly as the barrel's own header describes for the rep-only
- * case. Revisit when a surface actually ships.
+ * every bundle that touches the barrel — including the MCP route, which
+ * renders no nomination and should carry none of this. Callers import
+ * 'lib/core/nominations' directly, exactly as the barrel's own header
+ * describes for the rep-only case. The reason held when nothing rendered a
+ * nomination and it holds now that something does: the cost of the barrel is
+ * paid by every bundle, and only the nomination surfaces need the corpus.
  *
- * WHO IMPORTS THIS, AND WHY (amended 2026-08-06 — this header previously read
- * "NOTHING IN THE APP IMPORTS THIS YET", which stopped being true the moment
- * the vehicle `kind` discriminator landed): lib/moments.ts and
- * lib/moments-ui.ts, both directly, for the status and last-action lookups a
- * nomination VEHICLE would need. Nothing RENDERS a nomination yet — no page,
- * no route, no MCP tool — and no moment carries one, so those two lookups are
- * unreached on today's corpus. They are wired because the CI gate now accepts
- * such a vehicle, and a gate that admits a record the reader cannot resolve
- * would let a confirmed nomination read as live forever.
+ * WHO IMPORTS THIS, AND WHY (amended 2026-08-06, second time — this header
+ * has now been wrong twice about its own reach, first reading "NOTHING IN THE
+ * APP IMPORTS THIS YET" and then "Nothing RENDERS a nomination yet". Both
+ * stopped being true in the same day's work; a stale law is how the next
+ * drift gets justified, so if you add a caller, amend this list in the same
+ * change):
+ *
+ *   VALUES —
+ *     app/[locale]/nominations/[slug]/page.tsx  the nomination page itself
+ *     app/api/script/route.ts                   the nomination call script
+ *     app/[locale]/questions/[id]/page.tsx      a nomination VEHICLE's card
+ *     app/sitemap.ts                            the page's sitemap entry
+ *     lib/moments.ts, lib/moments-ui.ts         status + callability lookups
+ *
+ *   TYPES ONLY (no data/nominations.json in their bundles) —
+ *     lib/journey.ts, lib/nomination-script.ts, components/MomentNominationCard.tsx
+ *
+ * Still true, and the part that keeps the moments lookups honest: NO MCP TOOL
+ * exposes a nomination, and no moment in data/moments.json carries one — so
+ * lib/moments.ts's and lib/moments-ui.ts's lookups are unreached on today's
+ * corpus. They are wired because the CI gate now accepts such a vehicle, and
+ * a gate that admits a record the reader cannot resolve would let a confirmed
+ * nomination read as live forever.
  */
 import nominations from '@/data/nominations.json';
 import {

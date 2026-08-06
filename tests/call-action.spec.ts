@@ -473,13 +473,15 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
  * ⚠️ READ THIS BEFORE TRUSTING THE NAME. This drives a BILL — S.J.Res. 99,
  * whose own last action carries a Congressional Record S-page, so
  * liveCallTarget returns `{chamber:'senate', afterVote:false, soleChamber:false}`.
- * It is NOT nomination-backed, because as of N3 nothing in the app renders a
- * nomination: `liveCallTargetForNomination` has no caller, there is no
- * /nominations route, and ActionPanel is mounted from exactly one page
- * (app/[locale]/bills/[id]/page.tsx:425). A genuinely nomination-backed E2E
- * cannot be written until a surface exists to serve one, and faking one
- * through a query param or a test-only route would put a test hook in
- * shipped code.
+ * It is NOT nomination-backed, and the reason CHANGED under this comment
+ * (amended 2026-08-06): it used to read that nothing in the app rendered a
+ * nomination — no caller for `liveCallTargetForNomination`, no /nominations
+ * route, ActionPanel mounted from exactly one page. All three stopped being
+ * true when app/[locale]/nominations/[slug]/page.tsx landed, which calls that
+ * predicate, is that route, and mounts that panel. A nomination-backed E2E
+ * is therefore no longer impossible, and one exists: tests/nominations.spec.ts
+ * drives the real page, the House member's own script slot included. This one
+ * stays bill-backed on purpose, for the reason in the next paragraph.
  *
  * What it therefore pins is the part that IS shared, byte for byte:
  * `soleChamber` never reaches ActionPanel's `rank()`, so a nomination sorts
@@ -489,10 +491,12 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
  * the one office with no vote at all, which is exactly when burying him would
  * be easiest to justify and worst to do.
  *
- * The remaining nomination-only surface — the copy — is pinned at unit level
- * in tests/journey.unit.spec.ts (suite 7: liveCallKey picks
+ * The nomination-only copy is pinned twice: at unit level in
+ * tests/journey.unit.spec.ts (suite 7: liveCallKey picks
  * `liveSenateNomination`, never one of the four relational keys, and picks
- * nothing at all for a reader with no senator).
+ * nothing at all for a reader with no senator), and in the DOM in
+ * tests/nominations.spec.ts, which now that the page exists asserts the rail
+ * never calls a nomination a bill, in both languages.
  */
 test('Senate routing demotes the House member without burying him — rail and call mode', async ({
   page,
