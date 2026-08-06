@@ -14,6 +14,8 @@
  */
 import momentsJson from '@/data/moments.json';
 import { getBill } from './core/bills';
+import { getNomination } from './core/nominations';
+import { TERMINAL_NOMINATION_STATUSES } from './nomination-status.mjs';
 import { TERMINAL_STATUSES } from './urgency.mjs';
 import type { Category } from './taxonomy';
 
@@ -62,12 +64,70 @@ export interface QualifyingSignal {
   refs: string[];
 }
 
+/**
+ * What KIND of thing a moment's vehicle is — the discriminator that decides
+ * which corpus its slug resolves in, which terminal-status set ends its life,
+ * and (see lib/journey.ts's VOTING_CHAMBERS) which chamber can vote on it.
+ *
+ * MUST match lib/moments-gate.mjs's VEHICLE_KINDS — pinned equal by
+ * tests/moments.unit.spec.ts AND asserted at runtime by
+ * scripts/check-moments.mjs, the same belt-and-braces the terminal-status and
+ * signal-type sets get. The gate keeps its own copy because that module stays
+ * import-free (see its header).
+ *
+ * The two namespaces are structurally disjoint — every bill slug is
+ * `hr-…`/`s-…`/`hjres-…`/`sjres-…`/`hconres-…`/`sconres-…`, every nomination
+ * slug is `pn-…` (lib/core/nominations.ts) — so a mis-kinded vehicle cannot
+ * silently resolve against the wrong corpus. It fails the gate loudly.
+ */
+export const VEHICLE_KINDS = ['bill', 'nomination'] as const;
+
+export type VehicleKind = (typeof VEHICLE_KINDS)[number];
+
 export interface MomentVehicle {
-  /** A bill's full_identifier in data/bills.json — the moment may not exist without it. */
+  /** The vehicle's identifier in ITS corpus: a bill's `full_identifier` in
+   *  data/bills.json, or a nomination's slug in data/nominations.json. The
+   *  moment may not exist without one that resolves. */
   slug: string;
   /** What a yes vote does and what a no vote does, in parallel neutral clauses. */
   role: Localized;
+  /**
+   * OPTIONAL ON THE WIRE, and absent means 'bill'.
+   *
+   * That default is the whole no-migration guarantee: every vehicle authored
+   * before 2026-08-06 is a bill, so the field simply does not appear in
+   * data/moments.json and does not need to. Making it required would force a
+   * rewrite of the file for zero information gained, and would put a
+   * hand-editable `kind: "bill"` on every future entry for a reader to get
+   * wrong. Never make it required.
+   *
+   * Read it through `vehicleKind()` below, never directly — that is what
+   * keeps "absent means bill" stated exactly once.
+   */
+  kind?: VehicleKind;
 }
+
+/**
+ * THE ONE normalizer. Every consumer — the lifecycle computation, the gate's
+ * slug resolution, the index card's freshness date, the collector's scope
+ * filter — goes through this, so the "absent means bill" rule lives in one
+ * place instead of being re-derived (and eventually re-derived WRONG) at each
+ * call site.
+ */
+export const vehicleKind = (v: Pick<MomentVehicle, 'kind'>): VehicleKind => v.kind ?? 'bill';
+
+/**
+ * The terminal-status set that ends a vehicle's life, BY KIND. There is no
+ * one set: `confirmed` ends a nomination and means nothing on a bill, `signed`
+ * ends a bill and means nothing on a nomination. Reusing either set across
+ * kinds would make a finished vehicle read as live forever — the manufactured
+ * urgency this product refuses — so the lookup is explicit and total over
+ * VEHICLE_KINDS (TypeScript fails the build if a kind is added without one).
+ */
+const TERMINAL_STATUSES_BY_KIND: Record<VehicleKind, ReadonlySet<string>> = {
+  bill: TERMINAL_STATUSES,
+  nomination: TERMINAL_NOMINATION_STATUSES,
+};
 
 export type ContextRefKind = 'crs' | 'cbo' | 'gao';
 
@@ -125,10 +185,16 @@ const DAY_MS = 86_400_000;
 
 /**
  * The lifecycle computation, pure and clock-injectable so tests can pin it.
- * `statusFor` maps a vehicle slug to its current bill status (undefined when
- * the slug is unknown — an unknown vehicle can never read as terminal, so a
+ * `statusFor` maps a VEHICLE (not a bare slug — the slug alone cannot say
+ * which corpus to look in) to its current status, returning undefined when
+ * the slug is unknown. An unknown vehicle can never read as terminal, so a
  * broken slug fails toward "live", where CI and review will catch it, never
- * toward a silent "settled").
+ * toward a silent "settled".
+ *
+ * Terminality is per-kind: a bill dies at signed/vetoed, a nomination at
+ * confirmed/returned/withdrawn (TERMINAL_STATUSES_BY_KIND above). The two
+ * vocabularies do not overlap, so asking the wrong set would answer "not
+ * terminal" for every finished vehicle.
  *
  * Precedence: retired (owner decision) > settled (the normal death) > stale
  * (review_by elapsed) > live. An unparseable review_by fails toward 'stale',
@@ -136,13 +202,16 @@ const DAY_MS = 86_400_000;
  */
 export function computeMomentState(
   moment: Pick<MomentEntry, 'status' | 'vehicles' | 'review_by'>,
-  statusFor: (slug: string) => string | undefined,
+  statusFor: (vehicle: MomentVehicle) => string | undefined,
   now: number = Date.now(),
 ): MomentState {
   if (moment.status === 'retired') return 'retired';
-  const statuses = moment.vehicles.map((v) => statusFor(v.slug));
   const settled =
-    statuses.length > 0 && statuses.every((s) => s !== undefined && TERMINAL_STATUSES.has(s));
+    moment.vehicles.length > 0 &&
+    moment.vehicles.every((v) => {
+      const status = statusFor(v);
+      return status !== undefined && TERMINAL_STATUSES_BY_KIND[vehicleKind(v)].has(status);
+    });
   if (settled) return 'settled';
   const reviewBy = new Date(moment.review_by).getTime();
   // The review_by day itself still counts as reviewed; stale starts the day after.
@@ -150,7 +219,23 @@ export function computeMomentState(
   return 'live';
 }
 
-const corpusStatus = (slug: string): string | undefined => getBill(slug)?.status;
+/*
+ * The corpus binding, kind-dispatched. data/nominations.json (~520 KB) is
+ * imported DIRECTLY from lib/core/nominations rather than through the
+ * lib/core barrel — exactly as that module's header prescribes — so the
+ * bundles that never touch moments (the MCP route among them) still never
+ * see it.
+ *
+ * It is wired here in the same change that taught scripts/check-moments.mjs
+ * to accept a nomination vehicle, and that pairing is deliberate: a gate that
+ * admits a vehicle the reader cannot resolve would let a CONFIRMED nomination
+ * read as live forever, which is the exact failure this file's header exists
+ * to prevent. Gate and reader learn the kind together or neither does.
+ */
+const corpusStatus = (vehicle: MomentVehicle): string | undefined =>
+  vehicleKind(vehicle) === 'nomination'
+    ? getNomination(vehicle.slug)?.status
+    : getBill(vehicle.slug)?.status;
 
 function withState(id: string, entry: MomentEntry, now: number): MomentWithState {
   return { id, ...entry, state: computeMomentState(entry, corpusStatus, now) };
@@ -189,11 +274,18 @@ export function isSettled(id: string, now: number = Date.now()): boolean {
  * renders its own caveat on the moment page, and silently withdrawing the
  * route as well would be a second editorial act nobody asked for. Same
  * live-or-stale set /questions's own index section uses.
+ *
+ * The kind guard on the vehicle match is a no-op TODAY — `slug` here is
+ * always a bill's full_identifier, and the `pn-…` namespace can never equal
+ * one — and it is written down anyway, because "this is a BILL backlink"
+ * stops being obvious the moment a moment can carry a nomination. The
+ * invariant belongs in the code that depends on it, not in the reader's head.
  */
 export function momentsForBill(moments: MomentWithState[], slug: string): MomentWithState[] {
   return moments.filter(
     (m) =>
-      (m.state === 'live' || m.state === 'stale') && m.vehicles.some((v) => v.slug === slug)
+      (m.state === 'live' || m.state === 'stale') &&
+      m.vehicles.some((v) => v.slug === slug && vehicleKind(v) === 'bill')
   );
 }
 

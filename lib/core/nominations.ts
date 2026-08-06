@@ -11,15 +11,21 @@
  *
  * DELIBERATELY NOT RE-EXPORTED FROM lib/core/index.ts. That barrel exists so
  * `import { x } from '@/lib/core'` gets everything lib/data.ts used to
- * export; adding this module would pull data/nominations.json (~370 KB) into
+ * export; adding this module would pull data/nominations.json (~520 KB) into
  * every bundle that touches the barrel — including the MCP route — for a
  * dataset nothing renders yet. Callers import 'lib/core/nominations'
  * directly, exactly as the barrel's own header describes for the rep-only
  * case. Revisit when a surface actually ships.
  *
- * NOTHING IN THE APP IMPORTS THIS YET. N1 ships dark on purpose: the data
- * source and its gates land first, so the UI step that follows is reviewed
- * against a corpus that already exists and already passes.
+ * WHO IMPORTS THIS, AND WHY (amended 2026-08-06 — this header previously read
+ * "NOTHING IN THE APP IMPORTS THIS YET", which stopped being true the moment
+ * the vehicle `kind` discriminator landed): lib/moments.ts and
+ * lib/moments-ui.ts, both directly, for the status and last-action lookups a
+ * nomination VEHICLE would need. Nothing RENDERS a nomination yet — no page,
+ * no route, no MCP tool — and no moment carries one, so those two lookups are
+ * unreached on today's corpus. They are wired because the CI gate now accepts
+ * such a vehicle, and a gate that admits a record the reader cannot resolve
+ * would let a confirmed nomination read as live forever.
  */
 import nominations from '@/data/nominations.json';
 import {

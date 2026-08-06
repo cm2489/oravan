@@ -8,14 +8,25 @@
  *   node scripts/check-moments.mjs
  *
  * Validates data/moments.json: schema, bilingual parity, vehicle resolution
- * against data/bills.json, qualifying-signal shape, dates, the 6-live cap,
- * and the forbidden-vocabulary lint in both languages. Exits 1 on any
- * violation; warnings (terminal vehicles, elapsed review_by) print without
- * failing — see lib/moments-gate.mjs's header for why those are soft.
+ * against data/bills.json (or data/nominations.json, for a vehicle whose
+ * `kind` says so), qualifying-signal shape, dates, the 6-live cap, and the
+ * forbidden-vocabulary lint in both languages. Exits 1 on any violation;
+ * warnings (terminal vehicles, elapsed review_by) print without failing — see
+ * lib/moments-gate.mjs's header for why those are soft.
  */
 import { readFileSync } from 'node:fs';
-import { checkMoments, lintForbidden, SIGNAL_TYPES, TERMINAL_VEHICLE_STATUSES } from '../lib/moments-gate.mjs';
+import {
+  checkMoments,
+  lintForbidden,
+  SIGNAL_TYPES,
+  TERMINAL_NOMINATION_VEHICLE_STATUSES,
+  TERMINAL_VEHICLE_STATUSES,
+  VEHICLE_KINDS,
+  vehicleKind,
+} from '../lib/moments-gate.mjs';
+import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
+import { nominationSlug } from './nominations-fetch.mjs';
 
 // The gate's import-free copy of the terminal set must never drift from the
 // real one (also pinned in tests/moments.unit.spec.ts, but a check script
@@ -27,45 +38,113 @@ if (a !== b) {
   process.exit(1);
 }
 
+// And the nomination half of the same set, against lib/nomination-status.mjs.
+// A drift here would let a CONFIRMED nomination vehicle skip the terminal
+// warning — the quiet direction, since the warning is the only thing that
+// tells a reviewer a newly-opened moment is already over.
+const na = [...TERMINAL_NOMINATION_VEHICLE_STATUSES].sort().join(',');
+const nb = [...TERMINAL_NOMINATION_STATUSES].sort().join(',');
+if (na !== nb) {
+  console.error(`::error::check-moments: lib/moments-gate.mjs TERMINAL_NOMINATION_VEHICLE_STATUSES (${na}) drifted from lib/nomination-status.mjs TERMINAL_NOMINATION_STATUSES (${nb})`);
+  process.exit(1);
+}
+
 /*
- * Same pin, one file over: the gate's SIGNAL_TYPES against lib/moments.ts's
- * QUALIFYING_SIGNAL_TYPES — the copy the UI enumerates. It matters more than
- * the terminal one because its failure is silent: the gate would accept a
- * type app/[locale]/questions/[id]/page.tsx has no label for, and that page
- * falls through to printing the raw slug in both languages rather than
- * throwing.
+ * Same pin, one file over: the gate's copies of the enumerable constants
+ * against lib/moments.ts's — QUALIFYING_SIGNAL_TYPES (the set the UI
+ * enumerates) and VEHICLE_KINDS (the set that decides which corpus a vehicle
+ * slug is looked up in). Both matter for the same reason the terminal set
+ * does, and the signal-type one matters MORE because its failure is silent:
+ * the gate would accept a type app/[locale]/questions/[id]/page.tsx has no
+ * label for, and that page falls through to printing the raw slug in both
+ * languages rather than throwing.
  *
  * lib/moments.ts is TypeScript, and this script runs on bare node with no TS
- * loader, so the constant is read out of the SOURCE TEXT — the same
+ * loader, so the constants are read out of the SOURCE TEXT — the same
  * stdlib-only scan scripts/check-server-json.mjs uses for lib/site.ts's
  * SITE_ORIGIN. A regex over source is exactly as brittle as it sounds, which
- * is why an unparseable file is a hard failure below rather than a skip: a
- * drift check that quietly stops checking is worse than none.
+ * is why an unparseable declaration is a hard failure below rather than a
+ * skip: a drift check that quietly stops checking is worse than none.
  *
- * Compared in ORDER, unlike the terminal set above — both sides are ordered
+ * Compared in ORDER, unlike the terminal sets above — both sides are ordered
  * lists (not Sets), so an in-order compare keeps the two declarations
  * readable side by side in a diff.
  */
 const momentsTs = readFileSync(new URL('../lib/moments.ts', import.meta.url), 'utf8');
-const declaration = /export const QUALIFYING_SIGNAL_TYPES = \[([^\]]*)\] as const;/.exec(momentsTs);
-if (!declaration) {
-  console.error("::error::check-moments: could not find `export const QUALIFYING_SIGNAL_TYPES = [...] as const;` in lib/moments.ts — the signal-type drift check cannot run. If the declaration moved or changed shape, update this scan; do not delete it.");
-  process.exit(1);
-}
-const tsSignalTypes = [...declaration[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-const c = SIGNAL_TYPES.join(',');
-const d = tsSignalTypes.join(',');
-if (c !== d) {
-  console.error(`::error::check-moments: lib/moments-gate.mjs SIGNAL_TYPES (${c}) drifted from lib/moments.ts QUALIFYING_SIGNAL_TYPES (${d})`);
-  process.exit(1);
+const readTsStringList = (name) => {
+  const declaration = new RegExp(`export const ${name} = \\[([^\\]]*)\\] as const;`).exec(momentsTs);
+  if (!declaration) {
+    console.error(`::error::check-moments: could not find \`export const ${name} = [...] as const;\` in lib/moments.ts — that drift check cannot run. If the declaration moved or changed shape, update this scan; do not delete it.`);
+    process.exit(1);
+  }
+  return [...declaration[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+};
+for (const [name, gateCopy] of [
+  ['QUALIFYING_SIGNAL_TYPES', SIGNAL_TYPES],
+  ['VEHICLE_KINDS', VEHICLE_KINDS],
+]) {
+  const c = gateCopy.join(',');
+  const d = readTsStringList(name).join(',');
+  if (c !== d) {
+    console.error(`::error::check-moments: lib/moments-gate.mjs copy (${c}) drifted from lib/moments.ts ${name} (${d})`);
+    process.exit(1);
+  }
 }
 
 const read = (p) => JSON.parse(readFileSync(new URL(`../${p}`, import.meta.url), 'utf8'));
 const moments = read('data/moments.json');
 const bills = read('data/bills.json');
+const nominations = read('data/nominations.json');
 
-const billSlugs = new Set(bills.map((x) => x.full_identifier));
-const statusBySlug = new Map(bills.map((x) => [x.full_identifier, x.status]));
+/*
+ * The slug of one STORED nomination row.
+ *
+ * scripts/nominations-fetch.mjs's nominationSlug takes an API LIST ITEM
+ * ({number, partNumber, congress}), not a data/nominations.json row
+ * ({pn_number, part_number, congress_number}) — and because it reads missing
+ * fields rather than throwing on them, handing it a stored row returns the
+ * cheerful garbage "pn-undefined-119" for EVERY record, collapsing the whole
+ * corpus into a one-element set. (Written that way here first, on 2026-08-06,
+ * and caught only by seeding a vehicle by hand.) The same three-line adapter
+ * appears at scripts/check-nominations.mjs:157 and scripts/sync-nominations.mjs:78;
+ * it is repeated rather than shared because both of those are N1's and this
+ * gate must not reach across into them, but the collapse tripwire below is
+ * what makes the repetition safe.
+ */
+const storedNominationSlug = (n) =>
+  nominationSlug({ number: n.pn_number, partNumber: n.part_number, congress: n.congress_number });
+
+/*
+ * One slug set and one status lookup PER KIND. Both are built unconditionally
+ * even though data/moments.json holds no nomination vehicle today: a gate
+ * that only wires up the corpus it currently needs is a gate that fails open
+ * the first time the data changes.
+ *
+ * Importing scripts/nominations-fetch.mjs costs nothing here — its
+ * CONGRESS_API_KEY is checked by cg() at first fetch, never at import.
+ */
+const nominationSlugs = new Set(nominations.map(storedNominationSlug));
+
+/* THE COLLAPSE TRIPWIRE. Every stored nomination has a distinct slug —
+   scripts/check-nominations.mjs proves that against the same file — so any
+   shortfall here means the adapter above stopped reading the row's fields and
+   this gate is now validating vehicles against a corpus of one. That is a
+   fail-OPEN, and it is invisible until somebody authors the vehicle it lets
+   through wrong, which is exactly how long it went unnoticed the first time. */
+if (nominationSlugs.size !== nominations.length) {
+  console.error(`::error::check-moments: ${nominations.length} nominations collapsed to ${nominationSlugs.size} distinct slug(s) — the stored-row slug adapter is reading the wrong fields, so nomination vehicles would be validated against a corpus that is not there. Fix the adapter; do not delete this check.`);
+  process.exit(1);
+}
+
+const slugsByKind = {
+  bill: new Set(bills.map((x) => x.full_identifier)),
+  nomination: nominationSlugs,
+};
+const statusByKind = {
+  bill: new Map(bills.map((x) => [x.full_identifier, x.status])),
+  nomination: new Map(nominations.map((n) => [storedNominationSlug(n), n.status])),
+};
+const statusFor = (vehicle) => statusByKind[vehicleKind(vehicle)]?.get(vehicle.slug);
 
 /*
  * The chrome copy gets the SAME vocabulary lint as the curated content.
@@ -95,7 +174,7 @@ for (const [lang, doc] of Object.entries(messages)) {
   walk(doc.moments, 'moments');
 }
 
-const { violations, warnings } = checkMoments(moments, billSlugs, (slug) => statusBySlug.get(slug));
+const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor);
 
 for (const w of warnings) console.warn(`::warning::check-moments: ${w}`);
 violations.push(...chromeViolations);

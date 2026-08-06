@@ -6,8 +6,9 @@
  * pages can lean on without touching the data layer's tested surface.
  */
 import { getBill } from './core/bills';
+import { getNomination } from './core/nominations';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
-import { getLiveMoments, type Localized, type MomentVehicle } from './moments';
+import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
 
 /*
  * Sentence-final punctuation is ambiguous in legislative prose. "U.S. forces
@@ -181,16 +182,26 @@ export function linkHost(url: string): string {
 }
 
 /**
- * The most recent last_action_date across a moment's vehicle bills — the
- * "updated" date shown on the index card. Read-time, off the live corpus,
- * like every other freshness signal on the site (never stored). A vehicle
- * slug that doesn't resolve (should never happen past the CI gate)
- * contributes nothing rather than throwing.
+ * The most recent last_action_date across a moment's vehicles — the "updated"
+ * date shown on the index card. Read-time, off the live corpus, like every
+ * other freshness signal on the site (never stored). A vehicle slug that
+ * doesn't resolve (should never happen past the CI gate) contributes nothing
+ * rather than throwing.
+ *
+ * KIND-DISPATCHED, because the two corpora are two files: a `pn-…` slug
+ * simply is not in data/bills.json. Left bill-only, a nomination vehicle
+ * would contribute no date at all and the card would silently print the date
+ * of whatever OTHER vehicle happened to be a bill — or, on a nomination-only
+ * moment, print nothing while the record moved yesterday. Both are quiet
+ * freshness lies, which is the one thing a freshness signal may not be.
  */
 export function latestVehicleAction(vehicles: MomentVehicle[]): string | null {
   let latest: string | null = null;
   for (const v of vehicles) {
-    const d = getBill(v.slug)?.last_action_date;
+    const d =
+      vehicleKind(v) === 'nomination'
+        ? getNomination(v.slug)?.last_action_date
+        : getBill(v.slug)?.last_action_date;
     if (d && (!latest || d > latest)) latest = d;
   }
   return latest;

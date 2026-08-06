@@ -9,29 +9,51 @@ import es from '../messages/es.json';
 import {
   CATEGORIES as GATE_CATEGORIES,
   SIGNAL_TYPES as GATE_SIGNAL_TYPES,
+  TERMINAL_NOMINATION_VEHICLE_STATUSES,
   TERMINAL_VEHICLE_STATUSES,
+  VEHICLE_KINDS as GATE_VEHICLE_KINDS,
   checkMoments,
   lintForbidden,
+  vehicleKind as gateVehicleKind,
 } from '../lib/moments-gate.mjs';
+import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
+import {
+  STORED_NOMINATION_STATUSES,
+  getNomination,
+  nominationSlug,
+  type Nomination,
+} from '../lib/core/nominations';
 import { CATEGORIES } from '../lib/taxonomy';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
 import {
   QUALIFYING_SIGNAL_TYPES,
+  VEHICLE_KINDS,
   computeMomentState,
   getLiveMoments,
   getMoment,
   getMoments,
   isSettled,
+  vehicleKind,
 } from '../lib/moments';
 
-/** The exact real-data run the CI gate performs (scripts/check-moments.mjs). */
+/** The exact real-data run the CI gate performs (scripts/check-moments.mjs) —
+ *  both corpora, kind-dispatched, exactly as that script wires them. */
 function checkRepoData() {
   const read = (p: string) => JSON.parse(readFileSync(join(__dirname, '..', p), 'utf8'));
   const moments = read('data/moments.json');
   const bills: { full_identifier: string; status: string }[] = read('data/bills.json');
-  const billSlugs = new Set(bills.map((b) => b.full_identifier));
-  const statusBySlug = new Map(bills.map((b) => [b.full_identifier, b.status]));
-  return checkMoments(moments, billSlugs, (slug: string) => statusBySlug.get(slug));
+  const nominations: Nomination[] = read('data/nominations.json');
+  const slugsByKind = {
+    bill: new Set(bills.map((b) => b.full_identifier)),
+    nomination: new Set(nominations.map(nominationSlug)),
+  };
+  const statusByKind: Record<string, Map<string, string>> = {
+    bill: new Map(bills.map((b) => [b.full_identifier, b.status])),
+    nomination: new Map(nominations.map((n) => [nominationSlug(n), n.status])),
+  };
+  return checkMoments(moments, slugsByKind, (v: { slug: string; kind?: string }) =>
+    statusByKind[gateVehicleKind(v)]?.get(v.slug),
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -99,6 +121,100 @@ test.describe('real data/moments.json passes the CI gate', () => {
     expect(GATE_SIGNAL_TYPES).toEqual([...QUALIFYING_SIGNAL_TYPES]);
   });
 
+  /*
+   * The fourth constant in the family, landed 2026-08-06 with the vehicle
+   * `kind` discriminator. Drift here is not silent but it IS destructive: the
+   * gate looks a vehicle's slug up in the corpus its kind names, so a kind
+   * the gate knows and lib/moments.ts does not (or the reverse) means one
+   * side resolves a vehicle the other rejects.
+   */
+  test("the gate's vehicle-kind copy matches lib/moments.ts exactly", () => {
+    expect(GATE_VEHICLE_KINDS).toEqual([...VEHICLE_KINDS]);
+  });
+
+  /*
+   * The kinds are pinned above; the DEFAULT is pinned here, and separately,
+   * because it is the whole no-migration guarantee. `kind` is optional on the
+   * wire and its absence means 'bill' — the five vehicles in the two live
+   * moments carry no `kind` at all and must keep resolving as bills. Both
+   * copies of the normalizer are checked on the same inputs: a default that
+   * disagrees across the gate/reader boundary would let the gate validate a
+   * vehicle against one corpus while the page read it out of the other.
+   */
+  test("'kind' is optional and its absence means bill — in BOTH copies of the normalizer", () => {
+    for (const v of [{}, { kind: undefined }] as { kind?: 'bill' | 'nomination' }[]) {
+      expect(vehicleKind(v)).toBe('bill');
+      expect(gateVehicleKind(v)).toBe('bill');
+    }
+    for (const kind of VEHICLE_KINDS) {
+      expect(vehicleKind({ kind })).toBe(kind);
+      expect(gateVehicleKind({ kind })).toBe(kind);
+    }
+  });
+
+  /* The vehicles actually committed today carry no `kind` — which is what
+     makes this change a zero-diff one on data/moments.json. If a nomination
+     vehicle ever lands, this test is the place that says so out loud. */
+  test('every vehicle in the shipped corpus is an implicit bill', () => {
+    for (const m of getMoments()) {
+      for (const v of m.vehicles) {
+        expect(v.kind, `${m.id} ← ${v.slug}`).toBeUndefined();
+        expect(vehicleKind(v)).toBe('bill');
+      }
+    }
+  });
+
+  /*
+   * GATE AND READER MUST AGREE ON THE NAMESPACE.
+   *
+   * lib/moments.ts's corpusStatus resolves a nomination vehicle through
+   * getNomination; scripts/check-moments.mjs admits one by looking its slug
+   * up in a set built from the same file. Neither branch is REACHED today —
+   * no moment carries a nomination — so what is pinned here is the property
+   * that makes reaching it safe: a slug the gate would admit is a slug the
+   * reader can resolve, to a status inside the stored vocabulary. If those
+   * two ever disagreed, a vehicle would pass CI and then read as live
+   * forever, which is the failure the whole discriminator exists to prevent.
+   *
+   * Sampled rather than swept — getNomination is a linear find and the sweep
+   * over all 857 is quadratic for no extra coverage; scripts/check-nominations.mjs
+   * already proves slug uniqueness across the whole file.
+   */
+  test('every sampled nomination slug resolves through the reader, with a stored status', () => {
+    const corpus: Nomination[] = JSON.parse(
+      readFileSync(join(__dirname, '..', 'data/nominations.json'), 'utf8'),
+    );
+    expect(corpus.length).toBeGreaterThan(500);
+    let checked = 0;
+    for (let i = 0; i < corpus.length; i += 23) {
+      const slug = nominationSlug(corpus[i]);
+      expect(slug, corpus[i].citation).toMatch(/^pn-\d+(-\d+)?-\d+$/);
+      const resolved = getNomination(slug);
+      expect(resolved, slug).toBeDefined();
+      expect(resolved!.citation).toBe(corpus[i].citation);
+      expect(STORED_NOMINATION_STATUSES, slug).toContain(resolved!.status);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  /* The nomination half of the terminal-status pin above. Same belt-and-
+     braces: also asserted at runtime by scripts/check-moments.mjs. */
+  test("the gate's terminal-nomination copy matches lib/nomination-status.mjs exactly", () => {
+    expect([...TERMINAL_NOMINATION_VEHICLE_STATUSES].sort()).toEqual(
+      [...TERMINAL_NOMINATION_STATUSES].sort(),
+    );
+  });
+
+  /* The two terminal vocabularies must stay DISJOINT. If they ever share a
+     word, "which set do I ask?" stops being answerable from the kind alone
+     and every terminality decision in this file becomes ambiguous. */
+  test('the bill and nomination terminal vocabularies share no word', () => {
+    for (const s of TERMINAL_NOMINATION_STATUSES) {
+      expect([...TERMINAL_STATUSES], s).not.toContain(s);
+    }
+  });
+
   /* A signal type with no label is a slug on the page, in both languages —
      so the labels are pinned to the set, not to whatever the corpus happens
      to use today (tests/moments.spec.ts only covers types in live data). */
@@ -164,12 +280,19 @@ test.describe('forbidden-vocabulary lint', () => {
  * 3 · checkMoments against fixtures — parity, vehicles, schema, cap.
  * ------------------------------------------------------------------ */
 const NOW = new Date('2026-07-23T12:00:00Z').getTime();
-const SLUGS = new Set(['test-bill-1', 'test-bill-2']);
-const FIXTURE_STATUSES: Record<string, string> = {
-  'test-bill-1': 'committee',
-  'test-bill-2': 'signed',
+/* Two corpora, because the gate resolves a vehicle in the one its kind names.
+   The nomination fixtures use the real `pn-…` shape so the disjointness the
+   design leans on is visible in the fixture itself. */
+const SLUGS_BY_KIND: Record<string, Set<string>> = {
+  bill: new Set(['test-bill-1', 'test-bill-2']),
+  nomination: new Set(['pn-730-18-119', 'pn-932-119']),
 };
-const statusFor = (slug: string): string | undefined => FIXTURE_STATUSES[slug];
+const FIXTURE_STATUSES: Record<string, Record<string, string>> = {
+  bill: { 'test-bill-1': 'committee', 'test-bill-2': 'signed' },
+  nomination: { 'pn-730-18-119': 'exec_calendar', 'pn-932-119': 'confirmed' },
+};
+const statusFor = (v: { slug: string; kind?: string }): string | undefined =>
+  FIXTURE_STATUSES[gateVehicleKind(v)]?.[v.slug];
 
 const validMoment = () => ({
   name: { en: 'The example question', es: 'La cuestión de ejemplo' },
@@ -195,7 +318,7 @@ const validMoment = () => ({
 });
 
 const run = (moments: Record<string, unknown>) =>
-  checkMoments(moments, SLUGS, statusFor, { now: NOW });
+  checkMoments(moments, SLUGS_BY_KIND, statusFor, { now: NOW });
 
 test.describe('checkMoments (fixtures)', () => {
   test('a fully valid moment produces zero violations', () => {
@@ -247,6 +370,56 @@ test.describe('checkMoments (fixtures)', () => {
     ghost.vehicles[0].slug = 'ghost-bill-99';
     const v = run({ m: ghost }).violations;
     expect(v.some((x: string) => x.includes('ghost-bill-99') && x.includes('does not exist'))).toBe(true);
+  });
+
+  /* ---- the vehicle `kind` discriminator (2026-08-06) ---- */
+
+  test('a vehicle with no kind is validated against data/bills.json — the no-migration default', () => {
+    // The shipped shape: no `kind` key at all. It must keep passing, and a
+    // nomination slug must NOT pass under it.
+    expect(run({ m: validMoment() }).violations).toEqual([]);
+    const wrongCorpus = validMoment();
+    wrongCorpus.vehicles[0].slug = 'pn-932-119';
+    expect(
+      run({ m: wrongCorpus }).violations.some((x: string) => x.includes('data/bills.json')),
+    ).toBe(true);
+  });
+
+  test("kind: 'nomination' resolves against data/nominations.json instead", () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
+    expect(run({ m: nom }).violations).toEqual([]);
+
+    // ...and a BILL slug is not a nomination, which is the same test read backwards.
+    const crossed = validMoment() as Record<string, unknown>;
+    crossed.vehicles = [{ ...validMoment().vehicles[0], kind: 'nomination' }];
+    expect(
+      run({ m: crossed }).violations.some((x: string) => x.includes('data/nominations.json')),
+    ).toBe(true);
+  });
+
+  test('an unknown kind fails, and never falls back to a corpus', () => {
+    const typo = validMoment() as Record<string, unknown>;
+    typo.vehicles = [{ ...validMoment().vehicles[0], kind: 'nominaton' }];
+    const v = run({ m: typo }).violations;
+    expect(v.some((x: string) => x.includes('.kind') && x.includes('nominaton'))).toBe(true);
+    // The slug is a real bill, but the kind is unreadable — so the gate must
+    // NOT quietly validate it as one. Exactly one violation, about the kind.
+    expect(v.filter((x: string) => x.includes('does not exist'))).toEqual([]);
+  });
+
+  test('terminality is per-kind: confirmed warns on a nomination, not on a bill', () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-932-119', kind: 'nomination' }];
+    const { violations, warnings } = run({ m: nom });
+    expect(violations).toEqual([]);
+    expect(warnings.some((w: string) => w.includes('pn-932-119') && w.includes('confirmed'))).toBe(true);
+
+    // A nomination on the Executive Calendar is live business, so no warning —
+    // and `signed`/`vetoed` are not in its vocabulary at all.
+    const live = validMoment() as Record<string, unknown>;
+    live.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
+    expect(run({ m: live }).warnings).toEqual([]);
   });
 
   test('an empty vehicles array fails — no moment without a real vehicle', () => {
@@ -337,10 +510,31 @@ test.describe('checkMoments (fixtures)', () => {
  *     computed from TERMINAL_STATUSES at read time, never stored.
  * ------------------------------------------------------------------ */
 test.describe('computeMomentState', () => {
-  const fixture = (over: Partial<{ status: 'live' | 'retired'; review_by: string; slugs: string[] }> = {}) => ({
+  /* `slugs` are bill vehicles (no `kind`, the shipped shape); `pnSlugs` are
+     nomination vehicles. Both go in the same `vehicles` array, because a
+     moment may mix them and the every()-terminal rule has to hold across the
+     mix. */
+  const fixture = (
+    over: Partial<{
+      status: 'live' | 'retired';
+      review_by: string;
+      slugs: string[];
+      pnSlugs: string[];
+    }> = {},
+  ) => ({
     status: over.status ?? ('live' as const),
     review_by: over.review_by ?? '2026-08-22',
-    vehicles: (over.slugs ?? ['a']).map((slug) => ({ slug, role: { en: 'x', es: 'x' } })),
+    vehicles: [
+      ...(over.slugs ?? (over.pnSlugs ? [] : ['a'])).map((slug) => ({
+        slug,
+        role: { en: 'x', es: 'x' },
+      })),
+      ...(over.pnSlugs ?? []).map((slug) => ({
+        slug,
+        role: { en: 'x', es: 'x' },
+        kind: 'nomination' as const,
+      })),
+    ],
   });
   const statuses: Record<string, string> = {
     a: 'committee',
@@ -348,10 +542,48 @@ test.describe('computeMomentState', () => {
     signedBill: 'signed',
     vetoedBill: 'vetoed',
   };
-  const lookup = (slug: string) => statuses[slug];
+  /* The nomination corpus is a SEPARATE table, keyed the same way, so the
+     lookup can only answer for the kind it was asked about. `pnConfirmed`
+     deliberately shares nothing with the bill table: reading a nomination out
+     of the bill map is the bug this dispatch exists to make impossible. */
+  const pnStatuses: Record<string, string> = {
+    pnPending: 'exec_calendar',
+    pnConfirmed: 'confirmed',
+    pnWithdrawn: 'withdrawn',
+  };
+  const lookup = (v: { slug: string; kind?: string }) =>
+    v.kind === 'nomination' ? pnStatuses[v.slug] : statuses[v.slug];
 
   test('sanity: the terminal set this file computes against is signed+vetoed', () => {
     expect([...TERMINAL_STATUSES].sort()).toEqual(['signed', 'vetoed']);
+  });
+
+  /* ---- the kind discriminator ---- */
+
+  test('a nomination vehicle is terminal on its OWN vocabulary, never the bill one', () => {
+    expect(computeMomentState(fixture({ pnSlugs: ['pnConfirmed'] }), lookup, NOW)).toBe('settled');
+    expect(computeMomentState(fixture({ pnSlugs: ['pnWithdrawn'] }), lookup, NOW)).toBe('settled');
+    expect(computeMomentState(fixture({ pnSlugs: ['pnPending'] }), lookup, NOW)).toBe('live');
+  });
+
+  test('a mixed moment settles only when BOTH kinds are terminal in their own vocabulary', () => {
+    expect(
+      computeMomentState(fixture({ slugs: ['signedBill'], pnSlugs: ['pnConfirmed'] }), lookup, NOW),
+    ).toBe('settled');
+    expect(
+      computeMomentState(fixture({ slugs: ['signedBill'], pnSlugs: ['pnPending'] }), lookup, NOW),
+    ).toBe('live');
+    expect(
+      computeMomentState(fixture({ slugs: ['a'], pnSlugs: ['pnConfirmed'] }), lookup, NOW),
+    ).toBe('live');
+  });
+
+  test("a bill's status is never read out of the nomination corpus, or the reverse", () => {
+    // 'confirmed' is not a bill status and 'signed' is not a nomination status.
+    // Each slug exists ONLY in the other kind's table, so a dispatch that
+    // ignored `kind` would find it and settle the moment. Both must read live.
+    expect(computeMomentState(fixture({ slugs: ['pnConfirmed'] }), lookup, NOW)).toBe('live');
+    expect(computeMomentState(fixture({ pnSlugs: ['signedBill'] }), lookup, NOW)).toBe('live');
   });
 
   test('live: any non-terminal vehicle and an unexpired review_by', () => {

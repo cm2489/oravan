@@ -1,4 +1,10 @@
 import type { Bill } from './types';
+// TYPE-ONLY, and it must stay type-only: lib/moments.ts imports
+// data/moments.json and the whole bill corpus behind it, and this module is
+// read by the embed and MCP surfaces that must not pull either. `import type`
+// is erased at compile time, so VOTING_CHAMBERS below costs nothing at
+// runtime and still fails the build if VEHICLE_KINDS grows a member.
+import type { VehicleKind } from './moments';
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -17,6 +23,36 @@ import type { Bill } from './types';
  */
 
 export type Chamber = 'house' | 'senate';
+
+/*
+ * WHICH CHAMBERS CAN VOTE ON A VEHICLE, BY KIND — and why this is a constant
+ * rather than a stored field.
+ *
+ * A bill's chamber is a fact about the RECORD and is read out of the record:
+ * floorCalendarChamber() below parses it from Congress's own sentence, and
+ * deriveJourney() refuses to guess when the sentence is silent (rule 7 /
+ * lines 227-243). Nothing about a bill's type tells you where it stands, so
+ * nothing about a bill's chamber may be written down in advance.
+ *
+ * A nomination's is the opposite kind of fact. Advice and consent belongs to
+ * the Senate alone — Article II, Section 2, Clause 2 — so "the Senate" is not
+ * an observation about any particular nomination, it is the shape of the
+ * power. The House has no vote, ever, on any of them.
+ *
+ * Storing a `chamber` on the vehicle would erase that difference: it would
+ * invite a hand-authored `chamber: "house"` on a nomination and give the gate
+ * nothing to reject it with, because a stored field is just a string. Derived
+ * from the kind, "House" is unrepresentable.
+ *
+ * NOTHING READS THIS YET (the discriminator ships one step ahead of the
+ * surface that renders it, the same way data/nominations.json did). It is
+ * declared here, beside the bill-side derivation it contrasts with, so the
+ * next reader finds both halves of the rule in one place.
+ */
+export const VOTING_CHAMBERS: Record<VehicleKind, readonly Chamber[]> = {
+  bill: ['house', 'senate'],
+  nomination: ['senate'],
+};
 
 /*
  * THE AMBER GATE, and why it is narrower than the status field.

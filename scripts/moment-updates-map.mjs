@@ -10,10 +10,10 @@
  * the same way twice: scripts/newsdesk.mjs / scripts/newsdesk-match.mjs, and
  * scripts/check-moments.mjs / lib/moments-gate.mjs. So the runner keeps the
  * spec's filename and this module holds every pure transform the suite
- * exercises. Its imports are limited to two modules that are themselves
+ * exercises. Its imports are limited to three modules that are themselves
  * import-clean (newsdesk-match.mjs — node:crypto only; moment-updates-gate.mjs
- * — the v1 vocabulary table only), so the whole chain loads under Playwright's
- * transform.
+ * — the v1 vocabulary table only; moments-gate.mjs — zero imports by design),
+ * so the whole chain loads under Playwright's transform.
  *
  * ---------------------------------------------------------------------------
  * THE EDITORIAL LAW (owner-settled 2026-07-25, v2 spec §2) — this module is
@@ -35,6 +35,7 @@
  * ---------------------------------------------------------------------------
  */
 import { findCitations, parseFeed } from './newsdesk-match.mjs';
+import { vehicleKind } from '../lib/moments-gate.mjs';
 import {
   RECORD_EVENT_CLASSES,
   TEXT_MAX_CHARS,
@@ -97,6 +98,21 @@ export function slugParts(slug) {
  * retired moment would write rows the very next prune throws away — and the
  * gate fails a stored-retired entry anyway.
  *
+ * BILL VEHICLES ONLY, explicitly (2026-08-06, when `kind` arrived). Every
+ * consumer downstream of this function is bill-shaped and would break, not
+ * degrade, on a `pn-…` slug: the caller feeds each pair to `cg('/bill/…')`,
+ * congressGovUrlForSlug above builds a /bill/ URL from the slug's own parts,
+ * and lib/moment-updates-gate.mjs requires every stored `update.vehicle` to
+ * resolve in data/bills.json. Filtering HERE is what keeps all of that true
+ * without a schema bump on data/moment-updates.json — a nomination-only
+ * moment simply renders no "What's moved" timeline, which is exactly what
+ * that section already does when no revision exists (app/[locale]/questions/
+ * [id]/page.tsx:210-228) and is honest rather than empty-shaped.
+ *
+ * `vehicleKind` is imported rather than inlined so "absent means bill" is
+ * read from the one place that defines it. It is a no-op on today's corpus:
+ * no vehicle in data/moments.json carries a `kind` at all.
+ *
  * @param {Record<string, any>} moments parsed data/moments.json
  * @returns {{momentId: string, slug: string}[]}
  */
@@ -105,7 +121,7 @@ export function momentVehicles(moments) {
   for (const [momentId, moment] of Object.entries(moments ?? {})) {
     if (!moment || moment.status === 'retired') continue;
     for (const v of moment.vehicles ?? []) {
-      if (v?.slug) out.push({ momentId, slug: v.slug });
+      if (v?.slug && vehicleKind(v) === 'bill') out.push({ momentId, slug: v.slug });
     }
   }
   return out;
