@@ -28,10 +28,18 @@ name: Moment watch
 
 on:
   schedule:
-    - cron: '20 11 * * *' # 11:20 UTC daily = 7:20am ET — after the 07:30 UTC
-      #                     nightly sync has committed, so the watcher always
-      #                     reads fresh bill statuses and coverage. Lands in
-      #                     time to be reviewed with morning coffee.
+    - cron: '20 11 * * *' # 11:20 UTC daily = 7:20am ET — after the nightly sync
+      #                     has committed, so the watcher always reads fresh
+      #                     bill statuses and coverage. Lands in time to be
+      #                     reviewed with morning coffee.
+      #
+      #                     SIZED AGAINST OBSERVED TIMES, NOT NOMINAL ONES:
+      #                     sync-bills is nominally '30 7 * * *' but GitHub has
+      #                     been starting it ~10:05 UTC and it runs ~12 min. A
+      #                     cron here drifts the same way, landing ~13:50 — still
+      #                     after the sync's real window, still before hot-bills
+      #                     at 17:00. Don't re-derive this slot from the nominal
+      #                     07:30; the margin is against the observed 10:05-10:17.
     - cron: '0 13 * * 1' # 13:00 UTC Monday = 9:00am ET — the weekly review.
   workflow_dispatch:
     inputs:
@@ -75,6 +83,23 @@ jobs:
           else
             echo "mode=push" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Ensure this workflow's own labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A workflow that opens labelled issues must own its labels. `gh issue
+        # create --label X` fails hard when X does not exist, and that has now
+        # bitten this repo TWICE: #40 shipped `--label data-vacancy` without
+        # creating it, the learning went into STATUS.md, and this workflow then
+        # shipped two uncreated labels anyway. A process control that fails
+        # after being written down becomes a mechanism. --force is idempotent,
+        # and it puts the colour and description under version control, which
+        # creating them by hand does not.
+        run: |
+          gh label create moment-candidate --color 0E8A16 --force \
+            --description "A bill cleared the Moment notification floor - owner decides"
+          gh label create moment-review --color 1D76DB --force \
+            --description "The standing weekly Moment shortlist digest"
 
       - name: Build report
         id: report
@@ -121,14 +146,32 @@ jobs:
         if: steps.mode.outputs.mode == 'push'
         # Only after the issues exist. Rebase-and-retry mirrors the other data
         # workflows: a nightly sync commit may have landed while this ran.
+        #
+        # THE AUTHOR IS LOAD-BEARING, NOT COSMETIC. Vercel's GitHub integration
+        # only auto-deploys a push whose commit author has a linked Vercel
+        # account; a github-actions[bot] author is silently ignored. This repo
+        # already paid ten days of broken deploys for that lesson — see
+        # docs/solutions/vercel-bot-push-blocked-deploys.md. Every sibling data
+        # workflow commits as oravan-sync for exactly this reason; so does this.
+        #
+        # TWO DELIBERATE DIVERGENCES from the sibling data workflows, both safe
+        # because of WHAT this workflow writes:
+        #   - no scripts/verify-deploy.mjs poll. data/candidates-seen.json is
+        #     never read at build time, never rendered, and never read by a test
+        #     — nothing about a deploy of it can be verified or needs to be.
+        #   - no `gh workflow run ci.yml` dispatch, and no `actions: write`.
+        #     The siblings dispatch CI because a bot push to data/ suppresses
+        #     `on: push` and their corpus changes can redden tests. This file is
+        #     invisible to the suite, so a CI run against it would prove nothing.
+        # If this workflow ever writes anything the app reads, both come back.
         run: |
           node scripts/moment-watch.mjs --mode=push --commit-seen > /dev/null
           if git diff --quiet -- data/candidates-seen.json; then
             echo "seen-set unchanged"
             exit 0
           fi
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name  "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
           git add data/candidates-seen.json
           git commit -m "chore(data): moment candidates seen-set $(date -u +%Y-%m-%d)"
           for i in 1 2 3; do
