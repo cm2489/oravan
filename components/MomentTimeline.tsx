@@ -34,7 +34,7 @@ import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updat
  *     these pages are static) renders the government's verbatim text INSTEAD
  *     of Oravan's one-liner, with no data migration and no redeploy of the
  *     data file — flip the env var, rebuild, and the voice is gone.
- *  2. ATTRIBUTION, NEVER LEAN. `source.leans` exists in the data (the press
+ *  2. ATTRIBUTION, NEVER LEAN. `source.lean_set` exists in the data (the press
  *     guardrail needs it at write time) and is DELIBERATELY never rendered
  *     here — no lean labels, no AllSides chrome, no party-coded anything on a
  *     Moment surface (v1 spec §3.3, pinned by tests/moments.spec.ts). A press

@@ -64,8 +64,25 @@ export interface UpdateSource {
   outlets?: string[];
   /** Display names the attribution lint checks the text against. */
   outlet_names?: string[];
-  /** AllSides leans of `outlets`, in the same order. Never rendered as a badge. */
-  leans?: MediaLean[];
+  /**
+   * The SET of distinct AllSides leans present in this cluster — deduped and
+   * sorted, so `['center', 'left', 'right']` however many outlets carried
+   * each. It is NOT parallel to `outlets` and DO NOT ZIP IT: three outlets can
+   * produce one entry, and unrated outlets contribute none at all. The name
+   * says `_set` because this field sits between `outlets` and `outlet_names`,
+   * which ARE positional and same-length by construction, and a plural
+   * `leans` there read like a third parallel array. (Corrected 2026-08-06:
+   * the doc claimed same-order-as-`outlets`, which the collector never
+   * produced — see scripts/moment-updates-map.mjs's pressClusterToCandidate.)
+   *
+   * The only thing that consumes lean at all is the write-time publishability
+   * guardrail (`clusterIsPublishable`), which asks a set question — "is every
+   * partisan lean here on ONE side?" — so a set is what the field should be.
+   * Never rendered: no lean badge, no AllSides chrome, ever (v1 spec §3.3,
+   * pinned by tests/moments.spec.ts and documented in components/
+   * MomentTimeline.tsx's ATTRIBUTION, NEVER LEAN promise).
+   */
+  lean_set?: MediaLean[];
 }
 
 export interface RollCall {
