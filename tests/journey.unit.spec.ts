@@ -1,8 +1,26 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { deriveJourney, floorActionChamber, floorCalendarChamber, liveCallTarget } from '../lib/journey';
+import {
+  deriveJourney,
+  floorActionChamber,
+  floorCalendarChamber,
+  liveCallKey,
+  liveCallTarget,
+  liveCallTargetForNomination,
+  type LiveCallKey,
+} from '../lib/journey';
 import type { BillStatus } from '../lib/types';
+import type { NominationStatus } from '../lib/core/nominations';
+// The nomination vocabulary, from the ONE copy — see lib/nomination-status.mjs's
+// header. Imported from the .mjs directly rather than through
+// lib/core/nominations so this spec does not pull data/nominations.json.
+import {
+  NOMINATION_STATUSES,
+  TERMINAL_NOMINATION_STATUSES,
+} from '../lib/nomination-status.mjs';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
 // The import-free copy the .mjs report carries — pinned corpus-wide in suite 6.
 import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
@@ -219,6 +237,12 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
  *     2026-08). Non-null ONLY where the record places the bill in a
  *     chamber's hands today; everything else renders the rep list
  *     exactly as before. Never guesses (owner ruling 2026-08-04).
+ *
+ *     EVERY non-null assertion here spells out `soleChamber: false` —
+ *     `toEqual` is exact, so this suite is the regression guard on the
+ *     2026-08-06 additive field: a bill that ever came back
+ *     soleChamber:true would print a nomination's "the House has no vote"
+ *     framing over a bill the House votes on, and this is what stops it.
  * ------------------------------------------------------------------ */
 test.describe('liveCallTarget', () => {
   const bill = (bill_type: string, status: BillStatus, last_action_text: string | null) => ({
@@ -230,16 +254,17 @@ test.describe('liveCallTarget', () => {
   test('floor calendar placement routes to that chamber, wherever the bill started', () => {
     expect(
       liveCallTarget(bill('hr', 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.'))
-    ).toEqual({ chamber: 'senate', afterVote: false });
+    ).toEqual({ chamber: 'senate', afterVote: false, soleChamber: false });
     expect(
       liveCallTarget(bill('hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.'))
-    ).toEqual({ chamber: 'house', afterVote: false });
+    ).toEqual({ chamber: 'house', afterVote: false, soleChamber: false });
   });
 
   test('floor activity routes by the record sentence, not the bill type', () => {
     expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT))).toEqual({
       chamber: 'senate',
       afterVote: false,
+      soleChamber: false,
     });
   });
 
@@ -252,16 +277,140 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.'))).toEqual({
       chamber: 'senate',
       afterVote: true,
+      soleChamber: false,
     });
     expect(liveCallTarget(bill('sjres', 'passed_chamber', 'Received in the House.'))).toEqual({
       chamber: 'house',
       afterVote: true,
+      soleChamber: false,
     });
   });
 
   test('every other stage renders the list untouched: committee, conference, signed, vetoed, introduced', () => {
     for (const status of ['introduced', 'committee', 'markup', 'conference', 'signed', 'vetoed'] as const) {
       expect(liveCallTarget(bill('hr', status, 'whatever the record says'))).toBeNull();
+    }
+  });
+
+  /*
+   * The sweep, not just the fixtures: NO bill in the live corpus may ever
+   * come back non-relational. The fixtures above pin the shapes we know; this
+   * pins the ones tomorrow's sync invents.
+   */
+  test('no bill in the live corpus routes as soleChamber — the field is nomination-only', () => {
+    for (const b of corpus) {
+      const target = liveCallTarget({
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+      });
+      if (target) expect(target.soleChamber, slugOf(b)).toBe(false);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 7 · liveCallTargetForNomination + liveCallKey — the Senate-default
+ *     routing (owner ruling 2026-08-06: "nominations should be directed
+ *     to senate only … the focus should be on the senator as a default").
+ *
+ *     The two things this suite exists to stop:
+ *       (a) a FINISHED nomination reading as a live Senate call — the
+ *           exact failure lib/nomination-status.mjs was split off from the
+ *           bill mapper to prevent, re-entering through the routing layer;
+ *       (b) a nomination sentence being shown to a reader who has no
+ *           senator to call (DC, PR, VI, GU, AS, MP).
+ * ------------------------------------------------------------------ */
+test.describe('liveCallTargetForNomination', () => {
+  const SENATE_CALL = { chamber: 'senate', afterVote: false, soleChamber: true };
+
+  test('every live stage is the Senate, non-relational, and never "after" a vote', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(liveCallTargetForNomination({ status }), status).toEqual(SENATE_CALL);
+    }
+  });
+
+  test('committee stages route too — unlike a bill, because there is no other chamber to demote', () => {
+    // The bill rule (suite 5) returns null at committee stage to avoid
+    // demoting the other chamber's offices on a weak claim. A nomination has
+    // no other chamber, and `received`/`hearing`/`reported` ARE Senate
+    // committee stages, so naming the Senate there is a fact, not a guess.
+    expect(liveCallTargetForNomination({ status: 'received' })).toEqual(SENATE_CALL);
+    expect(liveCallTarget({ bill_type: 'hr', status: 'committee', last_action_text: null })).toBeNull();
+  });
+
+  test('terminal statuses route NOWHERE — a confirmed nomination can never read as live', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(liveCallTargetForNomination({ status }), status).toBeNull();
+    }
+  });
+
+  test('unclassified routes NOWHERE — the record did not say, so nothing is claimed', () => {
+    expect(liveCallTargetForNomination({ status: 'unclassified' })).toBeNull();
+  });
+
+  /*
+   * THE DRIFT PIN. lib/journey.ts enumerates the live statuses by hand
+   * (import-free-at-runtime posture) rather than importing the .mjs set. If
+   * the Senate's vocabulary grows a tenth member and only one of the two
+   * files learns it, this fails — and it fails toward the safe answer being
+   * asserted, not assumed: a new status must route nowhere until someone
+   * decides it should.
+   */
+  test('the routing set is exactly NOMINATION_STATUSES minus the terminal ones', () => {
+    const routed = NOMINATION_STATUSES.filter(
+      (s) => liveCallTargetForNomination({ status: s as NominationStatus }) !== null
+    );
+    const expected = NOMINATION_STATUSES.filter((s) => !TERMINAL_NOMINATION_STATUSES.has(s));
+    expect(routed).toEqual(expected);
+  });
+});
+
+test.describe('liveCallKey', () => {
+  const withSenator = { hasSenator: true };
+  const noSenator = { hasSenator: false };
+
+  test('the four relational bill keys are unchanged by the new field', () => {
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: false }, withSenator)).toBe('liveSenateFloor');
+    expect(liveCallKey({ chamber: 'house', afterVote: false, soleChamber: false }, withSenator)).toBe('liveHouseFloor');
+    expect(liveCallKey({ chamber: 'senate', afterVote: true, soleChamber: false }, withSenator)).toBe('liveSenateAfterHouse');
+    expect(liveCallKey({ chamber: 'house', afterVote: true, soleChamber: false }, withSenator)).toBe('liveHouseAfterSenate');
+    expect(liveCallKey(null, withSenator)).toBeNull();
+  });
+
+  test('a nomination gets its own non-relational key, never one of the four', () => {
+    const key = liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, withSenator);
+    expect(key).toBe('liveSenateNomination');
+    expect(key).not.toBe('liveSenateFloor');
+    expect(key).not.toBe('liveSenateAfterHouse');
+  });
+
+  test('a reader with no senator is told nothing about senators (DC, PR, VI, GU, AS, MP)', () => {
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, noSenator)).toBeNull();
+  });
+
+  /*
+   * The keys are message keys, so they have to EXIST — in both locales, or
+   * the panel renders a raw key at the highest-intent moment on one of them.
+   * check-messages-parity guards en/es against each other; nothing guarded
+   * either against this union until here.
+   */
+  test('every key in the union resolves in both locales', () => {
+    const keys: LiveCallKey[] = [
+      'liveSenateFloor',
+      'liveHouseFloor',
+      'liveSenateAfterHouse',
+      'liveHouseAfterSenate',
+      'liveSenateNomination',
+    ];
+    for (const k of keys) {
+      expect(typeof en.bill[k], `en.bill.${k}`).toBe('string');
+      expect(typeof es.bill[k], `es.bill.${k}`).toBe('string');
+    }
+    // The nomination annex copy the panel renders beside the routing line.
+    for (const k of ['nominationHow', 'nominationHousePress'] as const) {
+      expect(typeof en.bill[k], `en.bill.${k}`).toBe('string');
+      expect(typeof es.bill[k], `es.bill.${k}`).toBe('string');
     }
   });
 });

@@ -5,6 +5,14 @@ import type { Bill } from './types';
 // is erased at compile time, so VOTING_CHAMBERS below costs nothing at
 // runtime and still fails the build if VEHICLE_KINDS grows a member.
 import type { VehicleKind } from './moments';
+// TYPE-ONLY for the same reason, and a stricter one: lib/core/nominations.ts
+// imports data/nominations.json (~520 KB) at module scope, and that module's
+// own header says it is deliberately kept out of the lib/core barrel so no
+// surface pays for the corpus by accident. `import type` is erased, so
+// liveCallTargetForNomination below can name a Nomination's status field
+// without any of this module's readers — embed, MCP, the bill page — pulling
+// a byte of the nomination corpus.
+import type { Nomination } from './core/nominations';
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -150,6 +158,36 @@ export function statusKeyFor(
 }
 
 /**
+ * Where the live decision sits, for the rep list to route on.
+ *
+ * TWO BOOLEANS, AND THE DIFFERENCE BETWEEN THEM IS THE WHOLE POINT.
+ *
+ * `afterVote` is RELATIONAL: it says the OTHER chamber has already had its
+ * turn. Every one of the four bill routing keys is relational in exactly that
+ * way — "the House has already voted, the Senate decides next" only means
+ * anything because both chambers get a turn on a bill.
+ *
+ * `soleChamber` is NON-RELATIONAL: the other chamber has no vote on this
+ * object AT ALL. Not "not yet" — not ever. On a nomination the House never
+ * gets a turn (VOTING_CHAMBERS above, Article II §2 cl. 2), so every
+ * relational sentence is false about it forever, and a fifth relational
+ * branch would have been a fifth way to imply a House turn that is not
+ * coming. Hence a third field rather than a fifth branch.
+ *
+ * Every BILL caller gets `soleChamber: false`, so the four relational keys
+ * are untouched — tests/journey.unit.spec.ts asserts that on every bill case
+ * it already pinned, which is the regression guard on this field.
+ */
+export interface LiveCallTarget {
+  chamber: Chamber;
+  /** RELATIONAL: the other chamber has already had its turn. */
+  afterVote: boolean;
+  /** NON-RELATIONAL: the other chamber has no vote on this object at all —
+   *  not "not yet". True only for nominations. */
+  soleChamber: boolean;
+}
+
+/**
  * CHAMBER-AWARE CALL ROUTING (2026-08). Answers ONE question for the rep
  * list: whose phone is the live decision right now?
  *
@@ -172,17 +210,119 @@ export function statusKeyFor(
  */
 export function liveCallTarget(
   bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text'>
-): { chamber: Chamber; afterVote: boolean } | null {
+): LiveCallTarget | null {
   if (bill.status === 'floor_vote') {
     const chamber =
       floorCalendarChamber(bill.last_action_text) ?? floorActionChamber(bill.last_action_text);
-    return chamber ? { chamber, afterVote: false } : null;
+    return chamber ? { chamber, afterVote: false, soleChamber: false } : null;
   }
   if (bill.status === 'passed_chamber') {
     const other: Chamber = bill.bill_type.startsWith('h') ? 'senate' : 'house';
-    return { chamber: other, afterVote: true };
+    return { chamber: other, afterVote: true, soleChamber: false };
   }
   return null;
+}
+
+/**
+ * THE SAME QUESTION, ASKED OF A NOMINATION — and it has only one answer.
+ *
+ * A bill's routing has to be read out of the record because a bill can be in
+ * either chamber's hands. A nomination cannot: advice and consent is the
+ * Senate's alone from the moment the President sends it until it is
+ * confirmed, returned, or withdrawn. So this function derives NOTHING about
+ * the chamber — the chamber is the shape of the power, not an observation —
+ * and the only thing it has to decide is whether the nomination is still
+ * live.
+ *
+ * WHY EVERY LIVE STAGE ROUTES, INCLUDING COMMITTEE. liveCallTarget above
+ * returns null for a bill in committee, because routing a committee-stage
+ * bill to a chamber would demote the OTHER chamber's offices on a claim the
+ * record does not support. There is no other chamber here. `received`,
+ * `hearing` and `reported` are all Senate committee stages, and naming the
+ * Senate at those stages is not a guess about which chamber is acting — it is
+ * the only chamber there is. `afterVote` is false at every stage for the same
+ * structural reason: there is no prior chamber vote to be after.
+ *
+ * WHY `unclassified` ROUTES NOWHERE. lib/nomination-status.mjs returns it
+ * when no rule matches the Senate's own sentence, and its header is explicit
+ * that reaching that branch is honest while guessing past it is a lie. An
+ * unmatched sentence may well be a thirty-fourth shape that means the
+ * nomination is FINISHED; calling it a live Senate call would be the
+ * manufactured urgency this product refuses. Null, and the rep list renders
+ * exactly as it always has.
+ *
+ * TERMINAL statuses (confirmed / returned / withdrawn) route nowhere for the
+ * plain reason that nothing a caller says can move them.
+ *
+ * The switch enumerates the LIVE statuses and defaults to null — never the
+ * other way round. lib/nomination-status.mjs's own header says the Senate is
+ * free to invent a thirty-fourth action shape tomorrow, and when the
+ * vocabulary grows, a new member must default to NO routing claim rather than
+ * silently inheriting "your senators are the live call". The list is
+ * enumerated here rather than imported from the .mjs so this module keeps its
+ * import-free-at-runtime posture; tests/journey.unit.spec.ts pins the two
+ * against each other over NOMINATION_STATUSES so they cannot drift.
+ */
+export function liveCallTargetForNomination(
+  nomination: Pick<Nomination, 'status'>
+): LiveCallTarget | null {
+  switch (nomination.status) {
+    case 'received':
+    case 'hearing':
+    case 'reported':
+    case 'exec_calendar':
+    case 'floor':
+    case 'scheduled':
+      return { chamber: 'senate', afterVote: false, soleChamber: true };
+    // confirmed | returned | withdrawn (past advice and consent) and
+    // unclassified (the record did not say) — see the header.
+    default:
+      return null;
+  }
+}
+
+/** The message keys a surface may print for a live call target. */
+export type LiveCallKey =
+  | 'liveSenateFloor'
+  | 'liveHouseFloor'
+  | 'liveSenateAfterHouse'
+  | 'liveHouseAfterSenate'
+  | 'liveSenateNomination';
+
+/**
+ * THE ROUTING-COPY GATE — the same job statusKeyFor does for status labels:
+ * one place where a message key is chosen, so no surface can print a sentence
+ * the record (or the reader's own delegation) does not support.
+ *
+ * `hasSenator` is not a nicety. Every Senate-side sentence in this set is a
+ * claim about THE READER'S OWN SENATORS, and six jurisdictions — DC, PR, VI,
+ * GU, AS, MP — send a delegate to the House and no senator at all (537 rows
+ * in data/legislators.json = 431 seated representatives + 100 senators + 6
+ * delegates; 57 DC ZIPs alone in data/zip-districts.json). "Your senators are
+ * the live call" is simply false for those readers, and on a NOMINATION it is
+ * false in the worst way: the Senate is the only chamber that acts, so the
+ * sentence would name the one set of offices that reader does not have while
+ * their delegate's dial sits underneath it.
+ *
+ * ⚠️ OPEN OWNER RULING (2026-08-06). The gate is applied to the NOMINATION key
+ * only, deliberately and narrowly. The four bill keys have shipped ungated
+ * since 2026-08 and carry the same defect at lower volume — a DC reader on a
+ * Senate-held bill is told today that "your senators are the live call". That
+ * is a shipped claim that is not true, it is named here rather than quietly
+ * fixed because changing it changes copy already in front of readers in both
+ * languages, and it needs the owner's call on what those six jurisdictions
+ * should be told instead. Do not delete this note without that ruling.
+ */
+export function liveCallKey(
+  target: LiveCallTarget | null,
+  reader: { hasSenator: boolean }
+): LiveCallKey | null {
+  if (!target) return null;
+  if (target.soleChamber) return reader.hasSenator ? 'liveSenateNomination' : null;
+  if (target.chamber === 'senate') {
+    return target.afterVote ? 'liveSenateAfterHouse' : 'liveSenateFloor';
+  }
+  return target.afterVote ? 'liveHouseAfterSenate' : 'liveHouseFloor';
 }
 
 /** The message key the stepper's "Right now:" sentence reads. */

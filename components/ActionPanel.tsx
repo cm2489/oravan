@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { liveCallKey, type LiveCallTarget } from '@/lib/journey';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { OfficeHoursNote } from './OfficeHoursNote';
@@ -40,10 +41,13 @@ interface Props {
    *  so a call logged here can print in whichever language the civic record
    *  is later read in — see lib/local.ts's CallRecord comment. */
   recordLabels: { en: string; es: string };
-  /** Chamber-aware call routing (lib/journey.ts liveCallTarget): which
-   *  chamber holds the live decision, when the record says. null = no
-   *  routing, the list renders as it always has. */
-  liveTarget: { chamber: 'house' | 'senate'; afterVote: boolean } | null;
+  /** Chamber-aware call routing (lib/journey.ts liveCallTarget /
+   *  liveCallTargetForNomination): which chamber holds the live decision,
+   *  when the record says. null = no routing, the list renders as it always
+   *  has. The shape is imported rather than restated so the panel can never
+   *  fall behind a field the derivation grows — `soleChamber` was added on
+   *  2026-08-06 and this prop said nothing about it until it did. */
+  liveTarget: LiveCallTarget | null;
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -210,16 +214,15 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   //  Certainty outranks routing: in a split ZIP the senators stay first even
   //  when the House holds the bill, because "which House member is mine?" is
   //  unresolved and the refinement CTA sits right below.
+  //
+  //  A NOMINATION CHANGES THE COPY AND NOTHING ELSE. `rank` below is
+  //  deliberately untouched by `soleChamber`: it still returns only 0 or 1
+  //  and still filters nothing, so on a nomination the senators sort first
+  //  and the House member keeps his row, his dial, and his outcome buttons.
+  //  "Demote, never bury" then holds by construction rather than by promise —
+  //  the owner ruling of 2026-08-04, and the reason a nomination needed a
+  //  third boolean instead of a fifth branch.
   const liveChamber = liveTarget?.chamber ?? null;
-  const liveTargetKey = liveTarget
-    ? liveTarget.chamber === 'senate'
-      ? liveTarget.afterVote
-        ? 'liveSenateAfterHouse'
-        : 'liveSenateFloor'
-      : liveTarget.afterVote
-        ? 'liveHouseAfterSenate'
-        : 'liveHouseFloor'
-    : null;
   const rank = (r: Legislator) => {
     if (multiDistrict) return r.type === 'sen' ? 0 : 1;
     if (liveChamber) return (r.type === 'sen' ? 'senate' : 'house') === liveChamber ? 0 : 1;
@@ -229,6 +232,21 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
     lookup.status === 'ready' ? [...lookup.reps].sort((a, b) => rank(a) - rank(b)) : [];
   const vacancies = lookup.status === 'ready' ? lookup.vacancies : [];
   const notFound = lookup.status === 'ready' && reps.length === 0 && vacancies.length === 0;
+  // Which offices this reader actually has. Both feed copy that NAMES an
+  // office, so both are read off the resolved list rather than assumed: a
+  // delegate jurisdiction has no senator at all, and four House seats are
+  // vacant today (data/vacancies.json). liveCallKey holds the senator half of
+  // that rule for every routing sentence; the House-pressure note below holds
+  // its own half, because it is the only copy that speaks TO the House row.
+  const hasSenator = reps.some((r) => r.type === 'sen');
+  const liveTargetKey = liveCallKey(liveTarget, { hasSenator });
+  // The nomination annex: the two extra sentences a nomination needs and a
+  // bill does not — how confirmation works at all, and what a House member
+  // honestly can and cannot do about one. Gated on the House row EXISTING,
+  // never on the routing alone: telling a reader in a vacant district what to
+  // ask their representative would name an office that is not there.
+  const showNominationNote = !!liveTarget?.soleChamber && !!liveTargetKey;
+  const showHousePressNote = showNominationNote && reps.some((r) => r.type === 'rep');
 
   const fetchReps = useCallback(() => {
     if (!zip) {
@@ -726,11 +744,27 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             {/* The routing fact, when the record supplies one: who holds the
                 live decision. A procedural statement from the stored record
                 (liveCallTarget) — never a guess, and never a removal: every
-                office below keeps its dial. */}
+                office below keeps its dial.
+
+                ON A NOMINATION this becomes three beats, in the order a
+                reader who has never met one needs them: how confirmation
+                works (quiet, ink-2 — it is context, not the action), then the
+                Senate call in the same bold voice every other routing
+                sentence uses, then the honest account of what a House call
+                can and cannot do. The Senate line stays the loudest thing
+                here, which is the "Senate by default" half of the owner's
+                2026-08-06 ruling; the House note is quiet and below it, which
+                is the "demote, never bury" half. */}
+            {showNominationNote && (
+              <p className="mt-4 max-w-note text-sm text-ink-2">{t('nominationHow')}</p>
+            )}
             {liveTargetKey && reps.length > 0 && (
               <p className="mt-4 max-w-note text-sm font-semibold text-ink">
                 {t(liveTargetKey)}
               </p>
+            )}
+            {showHousePressNote && (
+              <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
             )}
             {reps.length > 0 && (
               <p
@@ -1014,9 +1048,18 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             </button>
           </div>
 
-          {/* The routing fact at the dial moment: same line the rail carries. */}
+          {/* The routing fact at the dial moment: same line the rail carries.
+              The nomination's House-pressure note rides along, because THIS is
+              where the second dial is about to be pressed and "what do I even
+              say to a House office about a nomination?" is a question the
+              rail's copy may already have scrolled past. The how-it-works
+              explainer does NOT ride along: the mode is for dialing, and the
+              procedure is context the reader has by now. */}
           {liveTargetKey && reps.length > 0 && (
             <p className="mt-5 max-w-note text-sm font-semibold text-ink">{t(liveTargetKey)}</p>
+          )}
+          {showHousePressNote && (
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
           )}
           {/* The same split-ZIP disambiguation the rail carries, at the dial
               moment itself: senators already lead the list (sorted above);
