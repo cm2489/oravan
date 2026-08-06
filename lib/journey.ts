@@ -304,21 +304,49 @@ export type LiveCallKey =
  * sentence would name the one set of offices that reader does not have while
  * their delegate's dial sits underneath it.
  *
- * ⚠️ OPEN OWNER RULING (2026-08-06). The gate is applied to the NOMINATION key
- * only, deliberately and narrowly. The four bill keys have shipped ungated
- * since 2026-08 and carry the same defect at lower volume — a DC reader on a
- * Senate-held bill is told today that "your senators are the live call". That
- * is a shipped claim that is not true, it is named here rather than quietly
- * fixed because changing it changes copy already in front of readers in both
- * languages, and it needs the owner's call on what those six jurisdictions
- * should be told instead. Do not delete this note without that ruling.
+ * THE GATE COVERS ALL FIVE KEYS as of 2026-08-06, and this note replaces the
+ * one that deferred it. The four bill keys had shipped ungated since 2026-08:
+ * a DC reader on a Senate-held bill was told "your senators are the live call"
+ * on every bill page, which is the same defect as the nomination one and
+ * strictly larger, since every reader with a ZIP reaches a bill page. It is
+ * fixed in the same change as the nomination work because it lives in this
+ * function and in components/ActionPanel.tsx — landing it separately would
+ * have been a guaranteed conflict in one component for no gain.
+ *
+ * WHY THE TWO HOUSE KEYS ARE GATED ON `hasSenator` TOO, which reads odd until
+ * you check the data: the six jurisdictions with no senator are exactly the six
+ * that send a non-voting delegate or resident commissioner. Verified against
+ * data/legislators.json on 2026-08-06 — DC, PR, VI, GU, AS and MP each hold
+ * zero senators and one House-type member, and no state holds fewer than two
+ * senators, so `hasSenator === false` identifies a delegate jurisdiction and
+ * nothing else. "Your House member is the live call" names an office with no
+ * vote on passage there, so all four relational sentences are false for that
+ * reader, for one underlying reason, and one boolean is the honest gate for all
+ * of them.
+ *
+ * WHAT THOSE READERS GET INSTEAD: nothing new, deliberately. `bill.callWhoOne`
+ * — "Your delegate is your voice in the House. One call to their office
+ * counts." — already renders for exactly this reader (ActionPanel picks it when
+ * no senator is in the resolved list) and is the honest who-to-call sentence.
+ * The WHEN is not lost either: the journey stepper on the bill page is
+ * server-rendered from the record and knows nothing about the ZIP, so the stage
+ * still shows. A delegate-specific routing sentence was considered and NOT
+ * written, because it would have to make a claim about what a delegate can and
+ * cannot vote on — a rule with real exceptions (committee votes, the Committee
+ * of the Whole) that this codebase has never verified. Absence is a finding;
+ * an unverified constitutional claim in a reader's highest-intent moment is
+ * not.
  */
 export function liveCallKey(
   target: LiveCallTarget | null,
   reader: { hasSenator: boolean }
 ): LiveCallKey | null {
   if (!target) return null;
-  if (target.soleChamber) return reader.hasSenator ? 'liveSenateNomination' : null;
+  // The reader gate runs BEFORE the record gate, because it is the stronger
+  // claim: every key below names an office, and a sentence about an office the
+  // reader does not have is false no matter what the record says.
+  if (!reader.hasSenator) return null;
+  if (target.soleChamber) return 'liveSenateNomination';
   if (target.chamber === 'senate') {
     return target.afterVote ? 'liveSenateAfterHouse' : 'liveSenateFloor';
   }

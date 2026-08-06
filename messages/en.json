@@ -243,6 +243,11 @@
       "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I oppose this nomination, and I'm asking the senator to vote against confirming. Thank you for your time.",
       "undecided": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I have concerns about this nomination and haven't settled on a position. Please log my concern; I'm watching for the senator's position before I decide. Thank you for your time."
     },
+    "fallbackScriptNominationHouse": {
+      "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I know the House has no vote on it. I support this nomination, and I'm asking my representative to press our state's senators to vote to confirm. Thank you for your time.",
+      "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I know the House has no vote on it. I oppose this nomination, and I'm asking my representative to press our state's senators to vote against confirming. Thank you for your time.",
+      "undecided": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}, a nomination before the Senate. I know the House has no vote on it. I have concerns about this nomination and haven't settled on a position. Please log my concern, and please ask my representative to raise it with our state's senators. Thank you for your time."
+    },
     "callTitle": "Place your call",
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
     "switchboard": "Capitol switchboard",
@@ -257,6 +262,9 @@
     "nominationHow": "A nomination starts with the President, who picks someone for a government job. From there it belongs to the Senate: a committee reviews the nominee, then the full Senate votes on whether to confirm. The House has no vote on nominations at all.",
     "liveSenateNomination": "Only the Senate votes on a nomination — your senators are the live call.",
     "nominationHousePress": "Your House member gets no vote here and no formal role — the Senate decides this one alone. What a representative can do is speak up: they share a state with your two senators, and they can press them on a nomination, publicly or privately. So if you call their office, say it plainly — that you know the House has no vote on this, and you're asking your representative to press your state's senators on it. The office logs your call like any other; it just doesn't count toward the Senate's tally.",
+    "nominationHouseScriptCta": "Draft what to say to this office",
+    "nominationHouseScriptTitle": "Your script for your House member",
+    "nominationHouseFallbackTitle": "A ready-made script for your House member",
     "ghostSummary": "The “{stance}” script — every stance gets one",
     "railMoreHint": "More",
     "afterHoursTitle": "Nervous? Call after hours.",
@@ -881,6 +889,8 @@
       "returned": "The Senate returned this nomination to the President without confirming it. There is no call left to make on it.",
       "withdrawn": "The President withdrew this nomination. There is no call left to make on it."
     },
+    "noScriptTitle": "No description on the record",
+    "noScriptBody": "The Senate's entry for this nomination carries no description — nothing that says who it is for or what post it fills. That sentence is the only thing a call script here is ever built from, so Oravan offers none rather than inventing words about a record that says nothing. The nomination is still before the Senate; what the Senate has published about it is beside this, in full.",
     "receivedLabel": "Sent to the Senate",
     "lastActionLabel": "Latest action",
     "viewOfficial": "See it on Congress.gov",

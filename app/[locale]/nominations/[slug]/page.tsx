@@ -50,8 +50,16 @@ import { getMomentsForNomination } from '@/lib/moments';
  * route's deliberate refusal from an outage — so a nomination inherited a
  * bill's script and a hiccup's error message. It now takes a `kind` prop and
  * distinguishes the refusal; see fallbackFor() and the `refused` error state
- * there. And a nomination the Senate has finished with gets no rail at all —
- * see ClosedPanel below.
+ * there. And a nomination with no ask to make — one the Senate has finished
+ * with, or one the record describes too thinly to write a script from — gets no
+ * rail at all; see NoAskPanel below.
+ *
+ * The rail also carries the SECOND nomination audience as of 2026-08-06: the
+ * House member's own script, reached from the House member's own row. The
+ * `house` audience had shipped in lib/nomination-script.ts and in the route
+ * three commits earlier with nothing asking for it, so the page told a reader
+ * their representative could press their senators and then handed them a script
+ * addressed to a senator. See HouseScriptSlot in components/ActionPanel.tsx.
  *
  * ── WHICH NOMINATIONS GET A PAGE, AND WHY THERE IS NO generateStaticParams ──
  *
@@ -94,9 +102,19 @@ const WRAP = 'mx-auto w-full max-w-5xl px-4';
 const INNER_RADIUS = 'calc(var(--radius-control)-2px)';
 
 /*
- * THE CLOSED RECORD — what stands where the call rail stands once the Senate
- * is done, and the reason it is a whole different panel rather than a disabled
- * one (blocker 1b, 2026-08-06).
+ * THE PANEL WITH NO ASK — what stands where the call rail stands when this page
+ * has no ask to make, and the reason it is a whole different panel rather than
+ * a disabled rail (blocker 1b, 2026-08-06).
+ *
+ * TWO CALLERS, ONE RULE. The Senate is done with this nomination (below), or
+ * the record carries no description and so there are no words to put in a
+ * caller's mouth (see `noScript` in the page body). Different sentences,
+ * identical conclusion: nothing on this page should ask the reader to take a
+ * position, and nothing should hand them a dial. The panel takes its title and
+ * its body as props precisely so the two cases can say different true things
+ * inside the same object.
+ *
+ * ── THE FIRST CALLER: THE CLOSED RECORD ────────────────────────────────────
  *
  * Before this, ActionPanel rendered on every nomination in the corpus,
  * confirmed ones included. On PN11-1 — Scott Bessent, Secretary of the
@@ -117,15 +135,33 @@ const INNER_RADIUS = 'calc(var(--radius-control)-2px)';
  * It keeps the rail's silhouette (2px ink edge, ink title bar) on purpose. The
  * page is a desk in both states, and a reader who has seen a live nomination
  * should recognize this panel as the same thing, closed.
+ *
+ * ── THE SECOND CALLER: NOTHING TO WRITE A SCRIPT FROM ──────────────────────
+ *
+ * 14 of the 859 civilian records — the Foreign Service promotion lists — carry
+ * no description sentence, and that sentence is the only thing a nomination
+ * script is ever grounded in (lib/nomination-script.ts's header; there is no
+ * decode to fall back on, by design). app/api/script therefore answers 422 for
+ * them, correctly. The page nonetheless rendered the full rail on the live ones,
+ * so the only thing a reader could do there was pick a position and be told no —
+ * an honest refusal at the end of a control that could never do anything else.
+ *
+ * The panel's own rule settles it, and it is a rule about the READER rather
+ * than about the record: "offering a dial with nothing to say is the thing that
+ * makes a first-time caller hang up" (components/ActionPanel.tsx, the foot). No
+ * words, no apparatus. What this case must NOT do is borrow the closed
+ * record's sentences — the Senate can still act on these, and
+ * `nominations.closed.*` would be false. Hence a second title and body rather
+ * than a second use of the first.
  */
-function ClosedPanel({ title, body }: { title: string; body: string }) {
+function NoAskPanel({ title, body }: { title: string; body: string }) {
   return (
     <section
-      aria-labelledby="closed"
+      aria-labelledby="no-ask"
       className="w-full rounded-control border-2 border-ink bg-paper"
     >
       <h2
-        id="closed"
+        id="no-ask"
         className="bg-ink-deep px-5 py-3 text-xs leading-tight font-bold tracking-[0.06em] text-paper uppercase"
         style={{ borderRadius: `${INNER_RADIUS} ${INNER_RADIUS} 0 0` }}
       >
@@ -148,9 +184,10 @@ function ClosedPanel({ title, body }: { title: string; body: string }) {
  * that legible to a Spanish reader rather than broken.
  *
  * The 14 civilian records with no description (all Foreign Service promotion
- * lists) fall back to the citation. They can never reach the call path anyway
- * — app/api/script refuses them, since the description is the only thing a
- * script could be grounded in.
+ * lists) fall back to the citation. They never reach the call path: the live
+ * ones are gated out of the rail here (`noScript`) and app/api/script refuses
+ * them besides, since the description is the only thing a script could be
+ * grounded in.
  */
 function headlineFor(n: Nomination, untitled: string): string {
   return n.nominee_description ?? untitled;
@@ -223,6 +260,26 @@ export default async function NominationPage({
    * finished, and only they lose the apparatus.
    */
   const closed = isTerminalNominationStatus(nomination.status);
+
+  /*
+   * …AND IS THERE ANYTHING TO SAY IF THERE IS? The 14 description-less records
+   * (all Foreign Service promotion lists; exactly one of them is live in the
+   * corpus of 2026-08-06, the other 13 already confirmed) can never receive a
+   * script — see NoAskPanel's second half.
+   *
+   * GATED ON `liveTarget`, NOT ON `closed`, and that is the load-bearing line:
+   * an `unclassified` nomination has a null liveTarget, so a description-less
+   * unclassified record falls through to the RAIL and keeps the route's 422
+   * refusal as its answer. Two reasons, both deliberate. First, the copy below
+   * says the nomination is still before the Senate, which is exactly what a
+   * non-null liveTarget asserts and exactly what `unclassified` does not.
+   * Second, `unclassified` is the one status that keeps the rail on purpose
+   * (see the block above), and it is what keeps components/ActionPanel.tsx's
+   * `refused` branch — blocker 2 of 2026-08-06 — reachable at all. Gating this
+   * on `closed` instead would have retired that branch in the same stroke that
+   * fixed this one.
+   */
+  const noScript = !closed && !!liveTarget && !nomination.nominee_description;
 
   /*
    * The civic-record label, in BOTH locales at render time (the /es/record
@@ -386,14 +443,19 @@ export default async function NominationPage({
             </p>
           </section>
 
-          {/* THE CALL RAIL — or, once the Senate is done, the closed panel
-              that stands in its place. See ClosedPanel above for why a
-              finished nomination gets no apparatus at all. */}
-          {closed ? (
+          {/* THE CALL RAIL — or, when this page has no ask to make, the panel
+              that stands in its place: the Senate is finished with this one, or
+              the record says too little to write a script from. See NoAskPanel
+              above for why neither gets the apparatus. */}
+          {closed || noScript ? (
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
-              <ClosedPanel
-                title={t('nominations.closedTitle')}
-                body={t(`nominations.closed.${nomination.status}`)}
+              <NoAskPanel
+                title={t(closed ? 'nominations.closedTitle' : 'nominations.noScriptTitle')}
+                body={
+                  closed
+                    ? t(`nominations.closed.${nomination.status}`)
+                    : t('nominations.noScriptBody')
+                }
               />
             </div>
           ) : (

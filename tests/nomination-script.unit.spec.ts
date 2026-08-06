@@ -6,7 +6,7 @@ import {
   type NominationAudience,
 } from '../lib/nomination-script';
 import { buildScriptPrompt, PROMPT_VERSION } from '../lib/scriptprompt';
-import { contentVersion, nominationContentVersion } from '../lib/scriptcache';
+import { contentVersion, nominationContentVersion, scriptKey } from '../lib/scriptcache';
 import { STORED_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
@@ -169,6 +169,24 @@ test.describe('nominationContentVersion', () => {
     expect(nominationContentVersion(record, 'senator')).not.toBe(
       nominationContentVersion(record, 'house')
     );
+  });
+
+  /*
+   * …AND THE KEY THE CACHE IS ACTUALLY READ AND WRITTEN WITH DIFFERS, which is
+   * the claim that matters and is one composition step away from the one above.
+   * Asserted the day the panel started REQUESTING the house audience
+   * (2026-08-06): until then the branch was unreachable, so a collision between
+   * the two audiences was a latent bug rather than a live one. Both halves are
+   * pinned — the keys differ, and they differ ONLY in the version segment, so
+   * the five-segment shape scripts/check-key-namespaces.mjs gates on is
+   * untouched.
+   */
+  test('the composed cache key differs by audience, and only in the version segment', () => {
+    const base = { slug: 'pn-852-1-119', stance: 'support', lang: 'en' as const };
+    const senator = scriptKey({ ...base, version: nominationContentVersion(record, 'senator') });
+    const house = scriptKey({ ...base, version: nominationContentVersion(record, 'house') });
+    expect(senator).not.toBe(house);
+    expect(senator.slice(0, senator.lastIndexOf(':'))).toBe(house.slice(0, house.lastIndexOf(':')));
   });
 
   test('it is stable for the same inputs and moves when the record does', () => {

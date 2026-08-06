@@ -385,8 +385,44 @@ test.describe('liveCallKey', () => {
     expect(key).not.toBe('liveSenateAfterHouse');
   });
 
-  test('a reader with no senator is told nothing about senators (DC, PR, VI, GU, AS, MP)', () => {
-    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, noSenator)).toBeNull();
+  /*
+   * THE GATE COVERS ALL FIVE KEYS, not just the nomination one.
+   *
+   * N3 gated only `liveSenateNomination` on `hasSenator`, and the four
+   * relational bill keys — which shipped long before it — kept telling a DC
+   * reader "your senators are the live call" on every bill page. The two HOUSE
+   * keys are gated on the same boolean deliberately: the six jurisdictions with
+   * no senator are exactly the six that send a non-voting delegate or resident
+   * commissioner (data/legislators.json, 2026-08-06: DC, PR, VI, GU, AS, MP
+   * have zero senators and one House-type member each; no state has one), so
+   * "your House member is the live call" names an office with no vote on
+   * passage. All four sentences are false for that reader, and the boolean that
+   * identifies them is the one already here.
+   *
+   * Enumerated exhaustively rather than sampled: the failure this stops is a
+   * branch keeping its key when the gate moves, and a sample cannot see that.
+   */
+  test('NO routing sentence is offered to a reader with no senator (DC, PR, VI, GU, AS, MP)', () => {
+    for (const chamber of ['senate', 'house'] as const) {
+      for (const afterVote of [false, true]) {
+        for (const soleChamber of [false, true]) {
+          expect(
+            liveCallKey({ chamber, afterVote, soleChamber }, noSenator),
+            `${chamber}/afterVote=${afterVote}/soleChamber=${soleChamber}`
+          ).toBeNull();
+        }
+      }
+    }
+  });
+
+  test('the same reader WITH a senator still gets every one of them', () => {
+    // The other half of the gate: it must key on the reader, never quietly
+    // retire a sentence for everybody.
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: false }, withSenator)).toBe('liveSenateFloor');
+    expect(liveCallKey({ chamber: 'house', afterVote: false, soleChamber: false }, withSenator)).toBe('liveHouseFloor');
+    expect(liveCallKey({ chamber: 'senate', afterVote: true, soleChamber: false }, withSenator)).toBe('liveSenateAfterHouse');
+    expect(liveCallKey({ chamber: 'house', afterVote: true, soleChamber: false }, withSenator)).toBe('liveHouseAfterSenate');
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, withSenator)).toBe('liveSenateNomination');
   });
 
   /*

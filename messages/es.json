@@ -243,6 +243,11 @@
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Me opongo a esta nominación y pido al senador que vote en contra de confirmarla. Gracias por su tiempo.",
       "undecided": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Esta nominación me preocupa y aún no tomo una posición. Pido que registren mi preocupación; estaré atento a la posición del senador antes de decidir. Gracias por su tiempo."
     },
+    "fallbackScriptNominationHouse": {
+      "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Sé que la Cámara no la vota. Apoyo esta nominación y pido a mi representante que presione a los senadores de nuestro estado para que voten a favor de confirmarla. Gracias por su tiempo.",
+      "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Sé que la Cámara no la vota. Me opongo a esta nominación y pido a mi representante que presione a los senadores de nuestro estado para que voten en contra de confirmarla. Gracias por su tiempo.",
+      "undecided": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}, una nominación ante el Senado. Sé que la Cámara no la vota. Esta nominación me preocupa y aún no tomo una posición. Pido que registren mi preocupación y que mi representante la plantee a los senadores de nuestro estado. Gracias por su tiempo."
+    },
     "callTitle": "Haz tu llamada",
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
     "switchboard": "Centralita del Capitolio",
@@ -257,6 +262,9 @@
     "nominationHow": "Una nominación empieza con el Presidente, que elige a alguien para un cargo del gobierno. A partir de ahí le corresponde al Senado: un comité revisa a la persona nominada y luego el pleno del Senado vota su confirmación. La Cámara no vota las nominaciones, en ningún caso.",
     "liveSenateNomination": "Solo el Senado vota una nominación — tus senadores son la llamada que cuenta ahora.",
     "nominationHousePress": "Tu representante en la Cámara no tiene voto aquí ni ningún papel formal — esto lo decide el Senado solo. Lo que sí puede hacer es alzar la voz: comparte estado con tus dos senadores y puede presionarlos sobre una nominación, en público o en privado. Así que si llamas a su oficina, dilo con claridad — que sabes que la Cámara no vota esto y que le pides a tu representante que presione a los senadores de tu estado. La oficina registra tu llamada como cualquier otra; simplemente no cuenta para la votación del Senado.",
+    "nominationHouseScriptCta": "Redactar qué decir en esta oficina",
+    "nominationHouseScriptTitle": "Tu guion para tu representante en la Cámara",
+    "nominationHouseFallbackTitle": "Un guion listo para tu representante en la Cámara",
     "ghostSummary": "El guion de “{stance}” — cada postura tiene el suyo",
     "railMoreHint": "Más",
     "afterHoursTitle": "¿Nervios? Llama fuera de horario.",
@@ -881,6 +889,8 @@
       "returned": "El Senado devolvió esta nominación al Presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
       "withdrawn": "El Presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
     },
+    "noScriptTitle": "El registro no incluye descripción",
+    "noScriptBody": "La ficha del Senado para esta nominación no incluye descripción — nada que diga a quién corresponde ni qué cargo cubre. Esa frase es lo único con lo que se arma un guion de llamada aquí, así que Oravan no ofrece ninguno en vez de inventar palabras sobre un registro que no dice nada. La nominación sigue ante el Senado; lo que el Senado ha publicado sobre ella está al lado, completo.",
     "receivedLabel": "Enviada al Senado",
     "lastActionLabel": "Última acción",
     "viewOfficial": "Verla en Congress.gov",

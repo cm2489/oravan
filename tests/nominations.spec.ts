@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
+import { liveCallTargetForNomination } from '../lib/journey';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mockScriptApi, mockScriptApiFailure, seedZip } from './helpers';
@@ -31,6 +32,20 @@ const LIVE = ALL.find(
 /** …and one that is over. Nothing a caller says moves a confirmed nomination,
  *  so every routing claim on its page must be absent. */
 const CONFIRMED = ALL.find((n) => n.status === 'confirmed' && n.nominee_description);
+
+/*
+ * …and one the Senate can still act on that carries NO description sentence —
+ * the 14 Foreign Service promotion lists, of which exactly one is live in the
+ * corpus of 2026-08-06 (the other 13 are already confirmed and take the closed
+ * path instead). The predicate is the page's own gate, `liveCallTargetForNomination`,
+ * rather than a hand-listed status set: `unclassified` must NOT be picked up
+ * here, because that record keeps its rail on purpose (the route's 422 refusal
+ * is the honest answer there) and picking it would quietly retire the refusal
+ * path this suite pins below.
+ */
+const NO_DESCRIPTION = ALL.find(
+  (n) => !n.nominee_description && liveCallTargetForNomination(n) !== null
+);
 
 const liveSlug = LIVE ? nominationSlug(LIVE) : null;
 const confirmedSlug = CONFIRMED ? nominationSlug(CONFIRMED) : null;
@@ -157,6 +172,114 @@ test.describe('the nomination page', () => {
   });
 
   /*
+   * THE HOUSE SCRIPT IS REACHABLE, AND IT IS REACHABLE FROM THE HOUSE ROW
+   * (2026-08-06, the second half of the owner's ruling).
+   *
+   * `lib/nomination-script.ts` shipped a `house` audience, `/api/script`
+   * validated it and rode it inside the cache version — and the panel asked for
+   * no audience at all, so the branch was dead code. A reader told "your
+   * representative can press your senators" was then handed a script that says
+   * "the senator", to read to a House office. The WHY had shipped and the HOW
+   * had not.
+   *
+   * What this pins is the whole chain in one drive: the senator request goes
+   * out with `audience: 'senator'` (the default, now stated), the House row
+   * carries its own control, pressing it asks for `audience: 'house'`, and the
+   * two scripts coexist — the senator's is not overwritten, because the Senate
+   * stays the default action and the House script is an addition to it, never a
+   * mode switch.
+   */
+  test('the House row hands over a House-audience script, and the senator script survives it', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    const audiences: string[] = [];
+    await page.route('**/api/script', (route) => {
+      const body = route.request().postDataJSON() as { audience?: string };
+      const audience = body.audience ?? '(none requested)';
+      audiences.push(audience);
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          script:
+            audience === 'house'
+              ? 'HOUSE AUDIENCE DRAFT. I know the House gets no vote on this one.'
+              : 'SENATOR AUDIENCE DRAFT. Please vote to confirm.',
+          cached: false,
+        }),
+      });
+    });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, ZIP);
+    await page.reload();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+
+    // `exact` on both, and it is not pedantry: the two accessible names share a
+    // prefix ("Your script" / "Your script for your House member"), so
+    // Playwright's default substring match resolves the senator locator to both
+    // textareas the moment the House slot opens.
+    const senatorScript = page.getByRole('textbox', { name: en.bill.scriptTitle, exact: true });
+    await expect(senatorScript).toHaveValue(/SENATOR AUDIENCE DRAFT/);
+
+    // The control lives IN the House member's own row — the place the reader
+    // is looking when they decide to call that office — not in a chooser above
+    // the stance control that would make the Senate a decision rather than the
+    // default.
+    const houseRow = page
+      .locator('section[aria-labelledby="act"] ul > li')
+      .filter({ hasText: 'Monica De La Cruz' });
+    await houseRow.getByRole('button', { name: en.bill.nominationHouseScriptCta }).click();
+
+    const houseScript = houseRow.getByRole('textbox', {
+      name: en.bill.nominationHouseScriptTitle,
+      exact: true,
+    });
+    await expect(houseScript).toHaveValue(/HOUSE AUDIENCE DRAFT/);
+    // It is a draft the reader can edit before reading it aloud, like every
+    // other script on this site (README design principle 5).
+    await expect(houseScript).toBeEditable();
+    await expect(senatorScript).toHaveValue(/SENATOR AUDIENCE DRAFT/);
+    expect(audiences).toEqual(['senator', 'house']);
+  });
+
+  /*
+   * …AND THE WORDS THEMSELVES NEVER HAND THE HOUSE A VOTE IT DOES NOT HAVE.
+   * The test above drives mocked model output; this one drives the SHIPPED
+   * static template, which is the text a reader actually gets whenever the
+   * model is unreachable — the state the original defect was reproduced in.
+   */
+  test('the House template asks for pressure, never for a vote the House does not have', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    await mockScriptApiFailure(page, 502, { error: 'generation_failed' });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, ZIP);
+    await page.reload();
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+
+    const houseRow = page
+      .locator('section[aria-labelledby="act"] ul > li')
+      .filter({ hasText: 'Monica De La Cruz' });
+    await houseRow.getByRole('button', { name: en.bill.nominationHouseScriptCta }).click();
+
+    const template = houseRow.getByRole('textbox', {
+      name: en.bill.nominationHouseFallbackTitle,
+    });
+    await expect(template).toBeVisible();
+    const words = await template.inputValue();
+    // The one sentence that must be there: the caller says out loud that they
+    // know the House has no vote, so the office knows why the call was made.
+    expect(words).toContain('the House has no vote');
+    expect(words).toContain('press our state');
+    // And the senator template's ask must never be what a House caller reads.
+    expect(words).not.toContain('asking the senator to vote');
+    // Not AI, and labeled as not AI — the labeling rule cuts both ways.
+    await expect(houseRow.getByText(en.bill.fallbackDisclaimer)).toBeVisible();
+    await expect(houseRow.getByText(en.bill.scriptDisclaimer)).toHaveCount(0);
+  });
+
+  /*
    * FUNNEL INVARIANT I2, ASKED OF A NOMINATION: from the record, a completed
    * call script in ONE more interaction. This is the mechanical answer to
    * "does a nomination Moment survive the call funnel" — funnel.spec.ts itself
@@ -226,6 +349,58 @@ test.describe('the nomination page', () => {
     });
   }
 
+  /*
+   * A RECORD WITH NO DESCRIPTION GETS NO CONTROL THAT CAN ONLY REFUSE
+   * (2026-08-06, N5).
+   *
+   * The 14 Foreign Service promotion lists carry no description sentence, and
+   * that sentence is the only thing a nomination script is ever grounded in —
+   * so /api/script answers 422 for them by design. The page nonetheless offered
+   * a stance control, which meant the only thing a reader could do here was
+   * press a button and be told no. The panel's own rule decides it: "offering a
+   * dial with nothing to say is the thing that makes a first-time caller hang
+   * up" — no words, no apparatus.
+   *
+   * What it must NOT do is read as finished. The Senate can still act on this
+   * one, and `nominations.closed.*` would be a false sentence here.
+   */
+  test('a nomination the record does not describe offers no stance control, no script and no dial', async ({
+    page,
+  }) => {
+    test.skip(!NO_DESCRIPTION, 'no live description-less nomination in the current corpus');
+    await mockScriptApi(page);
+    await page.goto(`/nominations/${nominationSlug(NO_DESCRIPTION!)}`);
+    await seedZip(page, ZIP);
+    await page.reload();
+
+    await expect(page.getByRole('heading', { name: en.nominations.noScriptTitle })).toBeVisible();
+    await expect(page.getByText(en.nominations.noScriptBody)).toBeVisible();
+
+    await expect(page.getByRole('radiogroup')).toHaveCount(0);
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await expect(page.getByText(en.bill.actTitle)).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toHaveCount(0);
+    await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: en.bill.startCall })).toHaveCount(0);
+
+    // Live, not closed: the Senate's own record still stands on the left, and
+    // none of the finished-record sentences may appear.
+    await expect(page.getByText(en.nominations.recordHeading)).toBeVisible();
+    await expect(page.getByText(en.nominations.closedTitle)).toHaveCount(0);
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      await expect(page.getByText(en.nominations.closed[status])).toHaveCount(0);
+    }
+  });
+
+  test('the same record says it in Spanish on /es', async ({ page }) => {
+    test.skip(!NO_DESCRIPTION, 'no live description-less nomination in the current corpus');
+    await page.goto(`/es/nominations/${nominationSlug(NO_DESCRIPTION!)}`);
+    await expect(page.getByRole('heading', { name: es.nominations.noScriptTitle })).toBeVisible();
+    await expect(page.getByText(es.nominations.noScriptBody)).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+  });
+
   test('the closed panel speaks Spanish on /es', async ({ page }) => {
     test.skip(!CONFIRMED, 'no confirmed-and-described nomination in the current corpus');
     await page.goto(`/es/nominations/${confirmedSlug}`);
@@ -263,6 +438,19 @@ test.describe('the nomination page', () => {
       await expect(template).toBeVisible();
       // The words the caller would actually say.
       expect(await template.inputValue()).not.toMatch(word);
+
+      // The House row's own script is opened here rather than in a test of its
+      // own, so its strings — a CTA, a title and a three-stance template, in
+      // both languages — are inside the rail sweep below. They are the newest
+      // copy on this surface and therefore the likeliest to reintroduce the
+      // word.
+      await page
+        .getByRole('button', { name: messages.bill.nominationHouseScriptCta })
+        .first()
+        .click();
+      await expect(
+        page.getByRole('textbox', { name: messages.bill.nominationHouseFallbackTitle })
+      ).toBeVisible();
       // …and every other string in the rail, including the collapsed
       // both-sides ghost templates (textContent, not innerText, so a closed
       // <details> is still read).
