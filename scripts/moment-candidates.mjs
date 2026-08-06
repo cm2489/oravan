@@ -410,10 +410,17 @@ export function renderMarkdown(report) {
   });
 
   const rejected = report.rejections.entries;
-  out.push(`## Previously rejected — no legislative vehicle: ${rejected.length} topic${rejected.length === 1 ? '' : 's'}`);
+  /* The heading used to assert "no legislative vehicle" for every entry. That
+     became false on 2026-08-05, when the first logged rejection was Senate
+     confirmations — where Congress HAS written a vehicle and Oravan simply
+     could not represent it. Two different findings live in this file now, and
+     only one of them is evidence about Congress; conflating them would corrupt
+     the Feb 2027 re-scope read. The heading no longer names a cause, and each
+     entry states its own. */
+  out.push(`## Previously declined as a Moment: ${rejected.length} topic${rejected.length === 1 ? '' : 's'}`);
   out.push('');
   if (rejected.length === 0) {
-    out.push('_None logged yet. `docs/moment-rejections.json` records the topics that had real public attention and no bill to call about — a year of it is the evidence for the Feb 2027 re-scope decision._');
+    out.push('_None logged yet. `docs/moment-rejections.json` records topics that had real public attention and were declined — most because Congress wrote no vehicle to call about, which is the finding the Feb 2027 re-scope decision turns on. Each entry states its own reason; they are not interchangeable._');
   } else {
     for (const r of rejected) {
       out.push(`- **${r.topic}** — ${r.date}: ${r.why_no_vehicle}`);
