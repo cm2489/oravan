@@ -118,14 +118,19 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
  * continues the sentence the date is already in rather than opening a second.
  *
  * WHAT IT DELIBERATELY DOES NOT SAY: anything about what the press has
- * published. scripts/sync-coverage.mjs re-queries only the COVERAGE_TOP_N
- * (150) most urgent eligible bills each night and carries every other bill's
- * stored articles forward untouched — and stops early when the news API's
- * daily quota runs out. So for most bills carrying this section nobody has
- * looked recently, and "no newer coverage exists" would be a claim the
- * pipeline cannot support. "Newer coverage may exist that we haven't
- * collected" is the strongest true version, and it is the same shape as
- * freshness.staleNote's "newer activity in Congress may not be shown yet".
+ * published. Re-checked as of #158: scripts/sync-coverage.mjs now reaches
+ * COVERAGE_TOP_N (600) eligible bills a night out of ~2,500 — half the budget
+ * in pure urgency order, half rotating through whatever has gone longest
+ * without a look (the `_checkedAt` map) — carries every bill it doesn't reach
+ * forward untouched, and stops early when the news API's daily quota runs out.
+ * That rotation means every bill eventually gets a turn, which the earlier
+ * urgency-only selection did not; it does NOT mean any given bill was looked
+ * at recently, and it never means the collection is exhaustive (a night keeps
+ * at most COVERAGE_PER_BILL articles that clear the Haiku relevance gate). So
+ * "no newer coverage exists" remains a claim this pipeline cannot support.
+ * "Newer coverage may exist that we haven't collected" is the strongest true
+ * version, and it is the same shape as freshness.staleNote's "newer activity
+ * in Congress may not be shown yet".
  */
 function CoverageAgeNote({ newestAt }: { newestAt: string }) {
   const t = useTranslations('coverage');

@@ -30,11 +30,16 @@ export const FRESHNESS_DEAD_WINDOW_DAYS = 21;
  *  - The two constants above measure whether OUR nightly job ran. This one
  *    measures how long ago the PRESS last wrote about one bill, which is a
  *    far slower clock — a bill can go a fortnight without a story and the
- *    section is still telling the truth about how it is being covered.
+ *    section is still telling the truth about how it is being covered. Note
+ *    this is also a different clock from sync-coverage.mjs's `_checkedAt`
+ *    rotation (#158), which records when we last LOOKED: widening the sweep
+ *    moves that one and leaves this one alone, because it cannot make an
+ *    outlet publish.
  *  - 30 days is where the measured corpus separates cleanly: of the 95 bills
  *    whose coverage actually renders (2 outlets or more), 76 have nothing
- *    newer than 30 days and the oldest is 386 days (recomputed 2026-08-06 —
- *    the file moves nightly, so recompute rather than trust the figures).
+ *    newer than 30 days and the oldest is 386 days (re-measured 2026-08-06
+ *    against the post-#158 corpus — the file moves nightly, so recompute
+ *    rather than trust the figures).
  *    A tighter window would fire on almost every bill and become wallpaper,
  *    which is the same failure the one-green-panel cap exists to prevent.
  *
