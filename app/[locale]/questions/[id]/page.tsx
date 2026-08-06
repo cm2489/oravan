@@ -22,13 +22,11 @@ import {
   getRevisions,
   isAiSummary,
 } from '@/lib/moment-updates';
-import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
+import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments } from '@/lib/moments';
 import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
-
-const SIGNAL_TYPES: QualifyingSignalType[] = ['tier0_floor', 'tier0_scheduled', 'tier0_most_viewed', 'press'];
 
 /* Content links are green — green means GO, and a link goes somewhere.
    Navigation chrome (the crumb) stays ink, per the color law's split. */
@@ -397,7 +395,7 @@ export default async function MomentPage({
           {/* the signal is a LABEL — an ink mark. The evidence beside it is a
               set of links, so it is set as links, in the go tone. */}
           <Chip tone="tag">
-            {SIGNAL_TYPES.includes(moment.qualifying_signal.type)
+            {QUALIFYING_SIGNAL_TYPES.includes(moment.qualifying_signal.type)
               ? t(`moments.signalType.${moment.qualifying_signal.type}`)
               : moment.qualifying_signal.type}
           </Chip>

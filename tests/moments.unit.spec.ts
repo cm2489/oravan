@@ -1,18 +1,28 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 // Relative import of the import-free gate module (lib/moments-gate.mjs, the
 // logic scripts/check-moments.mjs executes in CI) — the checks tested here
 // are the checks that gate every moments PR.
 import {
   CATEGORIES as GATE_CATEGORIES,
+  SIGNAL_TYPES as GATE_SIGNAL_TYPES,
   TERMINAL_VEHICLE_STATUSES,
   checkMoments,
   lintForbidden,
 } from '../lib/moments-gate.mjs';
 import { CATEGORIES } from '../lib/taxonomy';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
-import { computeMomentState, getLiveMoments, getMoment, getMoments, isSettled } from '../lib/moments';
+import {
+  QUALIFYING_SIGNAL_TYPES,
+  computeMomentState,
+  getLiveMoments,
+  getMoment,
+  getMoments,
+  isSettled,
+} from '../lib/moments';
 
 /** The exact real-data run the CI gate performs (scripts/check-moments.mjs). */
 function checkRepoData() {
@@ -73,6 +83,34 @@ test.describe('real data/moments.json passes the CI gate', () => {
 
   test("the gate's terminal-status copy matches lib/urgency.mjs exactly", () => {
     expect([...TERMINAL_VEHICLE_STATUSES].sort()).toEqual([...TERMINAL_STATUSES].sort());
+  });
+
+  /*
+   * The signal-type set is the third hand-duplicated constant in this family,
+   * and until 2026-08-06 it was the only one with no pin — while carrying the
+   * quietest failure of the three: the gate would accept a type the UI has no
+   * label for, and app/[locale]/questions/[id]/page.tsx falls through to
+   * printing the raw slug rather than throwing. Order matters here (unlike
+   * the terminal statuses, which are a Set): both copies are ordered lists
+   * and the page renders nothing from the order, but keeping them identical
+   * makes a diff between the two files readable line-for-line.
+   */
+  test("the gate's signal-type copy matches lib/moments.ts exactly", () => {
+    expect(GATE_SIGNAL_TYPES).toEqual([...QUALIFYING_SIGNAL_TYPES]);
+  });
+
+  /* A signal type with no label is a slug on the page, in both languages —
+     so the labels are pinned to the set, not to whatever the corpus happens
+     to use today (tests/moments.spec.ts only covers types in live data). */
+  test('every signal type has an EN and ES label', () => {
+    for (const type of QUALIFYING_SIGNAL_TYPES) {
+      expect(en.moments.signalType, `en ${type}`).toHaveProperty(type);
+      expect(es.moments.signalType, `es ${type}`).toHaveProperty(type);
+      const enLabel = (en.moments.signalType as Record<string, string>)[type];
+      const esLabel = (es.moments.signalType as Record<string, string>)[type];
+      expect(enLabel.trim().length, `en ${type}`).toBeGreaterThan(0);
+      expect(esLabel.trim().length, `es ${type}`).toBeGreaterThan(0);
+    }
   });
 });
 

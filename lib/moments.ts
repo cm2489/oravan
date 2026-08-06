@@ -27,7 +27,34 @@ export interface LocalizedList {
   es: string[];
 }
 
-export type QualifyingSignalType = 'tier0_floor' | 'tier0_scheduled' | 'tier0_most_viewed' | 'press';
+/**
+ * The qualifying-signal types a moment may cite — MUST match
+ * lib/moments-gate.mjs's SIGNAL_TYPES (pinned equal by
+ * tests/moments.unit.spec.ts AND asserted at runtime by
+ * scripts/check-moments.mjs, the same belt-and-braces the terminal-status set
+ * gets; the gate keeps its own copy because that module stays import-free —
+ * see its header).
+ *
+ * This was a bare string union until 2026-08-06. A union has no runtime value,
+ * so every caller that needed to ENUMERATE the members — the questions page's
+ * "is this a type we have a label for?" check — hand-copied the list, giving
+ * three copies and no pin between any of them. A missed copy degrades
+ * silently: the page falls through to printing the raw slug (`tier0_floor`)
+ * where a translated label belongs, in both languages, with nothing red.
+ * Declaring the array and deriving the union gives one enumerable source and
+ * keeps the type exactly as narrow as before.
+ *
+ * Every member needs a `moments.signalType.<member>` string in BOTH
+ * messages/en.json and messages/es.json before it can ship.
+ */
+export const QUALIFYING_SIGNAL_TYPES = [
+  'tier0_floor',
+  'tier0_scheduled',
+  'tier0_most_viewed',
+  'press',
+] as const;
+
+export type QualifyingSignalType = (typeof QUALIFYING_SIGNAL_TYPES)[number];
 
 export interface QualifyingSignal {
   type: QualifyingSignalType;
