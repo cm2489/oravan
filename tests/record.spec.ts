@@ -174,12 +174,35 @@ test('the next write persists the filtered list, so the bad row is gone for good
  * boundary a render throw does. It is poisoned exactly ONCE: a trigger that
  * kept firing would make the retry fail for its own reason and prove
  * nothing about recovery.
+ *
+ * IT IS ARMED FOR THE RECORD ROUTE, not for "whichever storage listener
+ * registers next". Every surface that reads the local store subscribes
+ * through this same line — the home hero's ZipForm does it at hydration — so
+ * a trigger that fired on the first subscribe anywhere was really a race,
+ * and the header-nav case below lost it whenever the crash was installed
+ * before the home page finished hydrating. Measured on this tree
+ * (2026-08-07): `page.goto('/')` resolves 20-40ms BEFORE ZipForm subscribes,
+ * so the home page swallowed the one armed crash — and React recovers from a
+ * hydration-time effect throw by re-rendering the tree, silently, with no
+ * boundary rendered anywhere. /record then loaded in perfect health and the
+ * spec failed on a missing boundary. That is the CI red on PR #164, and it
+ * was never a CI-only fault: 2 of 10 runs failed locally at 4 workers, and
+ * 20 of 20 failed run serially, where nothing slows the paste down.
+ *
+ * Reading `location.pathname` makes WHERE the crash lands a property of the
+ * trigger instead of a property of the timing — 20 of 20 serial runs land it
+ * on /record after the change. The two `goto` cases above are unaffected
+ * (they are already on /record when the page hydrates), and the recipe below
+ * is unchanged for a human, who still pastes this on any page and clicks
+ * through.
  */
-const CRASH_ONCE_ON_SUBSCRIBE = () => {
+const CRASH_ONCE_ON_RECORD_SUBSCRIBE = () => {
   const add = window.addEventListener.bind(window);
   let armed = true;
+  // /record and /es/record — the civic record in either locale, and nothing else.
+  const onRecordPage = () => /(^|\/)record\/?$/.test(window.location.pathname);
   window.addEventListener = function (this: Window, type: string, ...rest: unknown[]) {
-    if (type === 'storage' && armed) {
+    if (type === 'storage' && armed && onRecordPage()) {
       armed = false;
       throw new Error('e2e: forced client crash');
     }
@@ -198,7 +221,7 @@ for (const locale of ['en', 'es'] as const) {
       'oravan.calls': JSON.stringify([CALL]),
       'oravan.prefs': JSON.stringify({ zip: '78501', interests: ['health'] }),
     });
-    await page.addInitScript(CRASH_ONCE_ON_SUBSCRIBE);
+    await page.addInitScript(CRASH_ONCE_ON_RECORD_SUBSCRIBE);
     await page.goto(RECORD);
 
     // The dead end, reproduced: the broken page IS the page the old copy
@@ -225,13 +248,22 @@ for (const locale of ['en', 'es'] as const) {
  * page"). Worth its own case because it is also the recipe a human follows to
  * see this by hand — paste the crash into the console on any page, then click
  * the record link in the nav — and a hand-off recipe that has never been run
- * is a guess.
+ * is a guess. The paste survives the page it is pasted on precisely because
+ * the trigger is armed for /record (see its comment): on any other page it
+ * hands every `storage` listener straight through, so a reader can arm it
+ * wherever they happen to be standing.
  */
 test('the escape hatch is there when the crash arrives via the header nav', async ({ page }) => {
   await seed(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
   await page.goto('/');
-  // After the home page has hydrated, exactly as a console paste would be.
-  await page.evaluate(CRASH_ONCE_ON_SUBSCRIBE);
+  // The home page's hydration probe. The seeded ZIP reaches this field only
+  // from the client store, so the field carrying it is proof the hero has
+  // hydrated — which is what makes the next line "a console paste on a
+  // settled page" rather than a claim about it. `goto` alone does NOT get
+  // there: it resolves 20-40ms before this page's own subscribe, which is
+  // what the sentence that used to sit on this line got wrong.
+  await expect(page.getByLabel(en.home.zipLabel)).toHaveValue('78501');
+  await page.evaluate(CRASH_ONCE_ON_RECORD_SUBSCRIBE);
 
   // Both navs are in the DOM and exactly one is ever displayed (Header.tsx's
   // "TWO NAVS, ONE AT A TIME"), so a role query resolves the visible one:
