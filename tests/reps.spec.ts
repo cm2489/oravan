@@ -85,3 +85,121 @@ test.describe('vacant seat (FL-20)', () => {
     expect(body.vacancies).toEqual([]);
   });
 });
+
+/*
+ * Per-caller rate limit (fix/api-reps-rate-limit). /api/reps was the one
+ * dynamic route with no limiter at all, and it is the only one the site
+ * fires on PAGE RENDER rather than an explicit user action - so its ceiling
+ * is the loosest here (300/10min, measured against a full instrumented suite
+ * run; see app/api/reps/route.ts for the number's derivation).
+ *
+ * Every request below carries a distinct synthetic x-forwarded-for so this
+ * block's own limiter traffic never interferes with itself across
+ * Playwright's parallel workers/projects - and, more importantly, never
+ * touches the 'unknown' counter every BROWSER test in this suite shares
+ * (page fixtures send no x-forwarded-for). Mirrors nextIp in
+ * tests/embed-brand-route.spec.ts and tests/embed-script-route.spec.ts, in a
+ * third private range so the three files can never collide.
+ */
+const REPS_MAX = 300;
+
+function nextIp(): string {
+  const octet = () => Math.floor(Math.random() * 254) + 1;
+  return `172.19.${octet()}.${octet()}`;
+}
+
+test.describe('per-caller rate limit', () => {
+  test(`the ${REPS_MAX + 1}th request from one caller is 429, uniform body; a fresh caller is unaffected`, async ({
+    request,
+  }) => {
+    const ip = nextIp();
+    // Batched rather than 300 sequential round-trips: the handler is a pure
+    // in-memory lookup and the window is a plain counter, so concurrency
+    // changes nothing about the count - only how long this test takes.
+    for (let sent = 0; sent < REPS_MAX; sent += 30) {
+      const batch = await Promise.all(
+        Array.from({ length: Math.min(30, REPS_MAX - sent) }, () =>
+          request.get('/api/reps?zip=78501', { headers: { 'x-forwarded-for': ip } })
+        )
+      );
+      for (const res of batch) {
+        expect(res.status(), `all ${REPS_MAX} requests inside the window must be served`).toBe(200);
+      }
+    }
+
+    const overLimit = await request.get('/api/reps?zip=78501', {
+      headers: { 'x-forwarded-for': ip },
+    });
+    expect(overLimit.status()).toBe(429);
+    expect(await overLimit.json()).toEqual({ error: 'rate_limited' });
+
+    // A different caller is untouched by that caller's saturation - the
+    // counter is per-caller-hash, not global.
+    const fresh = await request.get('/api/reps?zip=78501', {
+      headers: { 'x-forwarded-for': nextIp() },
+    });
+    expect(fresh.status()).toBe(200);
+    expect((await fresh.json()).reps.length).toBeGreaterThan(0);
+
+    /*
+     * PRIVACY PROBE (CLAUDE.md: no logs linking a network address to a
+     * political position). The 429 is the moment the route knows both a
+     * caller AND their ZIP, so it is the moment worth pinning: neither the
+     * body nor ANY response header may carry the ZIP or anything
+     * caller-derived. Also asserts the shape stays the bare uniform 429 -
+     * no Retry-After, no retryAfterSec (that disclosure is /api/script's
+     * deliberate citizen-path exception, not the house shape).
+     */
+    const raw = await overLimit.text();
+    expect(raw).toBe('{"error":"rate_limited"}');
+    expect(raw).not.toContain('78501');
+    expect(raw).not.toContain(ip);
+    const headers = overLimit.headers();
+    expect(headers['retry-after']).toBeUndefined();
+    for (const [name, value] of Object.entries(headers)) {
+      expect(value, `header "${name}" must not echo the ZIP`).not.toContain('78501');
+      expect(value, `header "${name}" must not echo the caller`).not.toContain(ip);
+      expect(value, `header "${name}" must not echo a caller hash`).not.toMatch(/[0-9a-f]{64}/);
+    }
+  });
+
+  test('a valid ZIP under the limit is answered normally, with the ZIP never echoed anywhere but the payload', async ({
+    request,
+  }) => {
+    const res = await request.get('/api/reps?zip=78501', {
+      headers: { 'x-forwarded-for': nextIp() },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect((body.reps as Array<{ name: string }>).map((r) => r.name)).toEqual(
+      expect.arrayContaining(['Monica De La Cruz', 'John Cornyn', 'Ted Cruz'])
+    );
+    for (const [name, value] of Object.entries(res.headers())) {
+      expect(value, `header "${name}" must not echo the ZIP`).not.toContain('78501');
+    }
+  });
+
+  test('a malformed ZIP is still judged on its merits, not rate-limited', async ({ request }) => {
+    const res = await request.get('/api/reps?zip=abcde', {
+      headers: { 'x-forwarded-for': nextIp() },
+    });
+    expect(res.status()).toBe(400);
+    expect(await res.json()).toEqual({ error: 'bad_zip' });
+  });
+
+  test('X-Oravan-Key stays inert here: present or absent, the same response', async ({
+    request,
+  }) => {
+    // The dormant tenancy hook (S18/S19) is recognized by this route as it is
+    // by /api/district and /api/feedback - and must not change a byte.
+    const ip = nextIp();
+    const without = await request.get('/api/reps?zip=78501', {
+      headers: { 'x-forwarded-for': ip },
+    });
+    const with_ = await request.get('/api/reps?zip=78501', {
+      headers: { 'x-forwarded-for': ip, 'x-oravan-key': 'rk_not_a_real_token' },
+    });
+    expect(with_.status()).toBe(without.status());
+    expect(await with_.text()).toBe(await without.text());
+  });
+});

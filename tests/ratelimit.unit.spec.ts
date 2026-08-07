@@ -115,6 +115,47 @@ test('counter keys are hash-only and window-scoped: sha256(ip+salt), TTL attache
   expect(mock.exec(['TTL', key])).toBeLessThanOrEqual(600);
 });
 
+/*
+ * The 'reps' route label (fix/api-reps-rate-limit). /api/reps is the first
+ * rate-limited route whose REQUEST carries a ZIP — the one identifier that is
+ * simultaneously the caller's own lookup key and a location, i.e. exactly the
+ * "network address linked to a political position" CLAUDE.md forbids. The
+ * route only ever hands callerIp() to the limiter, and this pins that the
+ * resulting key is hash-only: a ZIP cannot be in it, because there is no door
+ * for one (counterKey takes a route label and a hash, nothing else).
+ */
+test("counterKey('reps', hash) is hash-only: a ZIP can never reach a counters key", async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  // The exact construction app/api/reps/route.ts builds at module scope.
+  const limiter = createRateLimiter({ route: 'reps', max: 300, windowSec: 600 });
+  const ip = '203.0.113.120';
+  await limiter.isLimited(ip);
+
+  const key = mock.keys().find((k) => k.includes(':rl:reps:'))!;
+  expect(key).toBeDefined();
+  // dev:rl:reps:<64 hex> - nothing else. The raw IP never appears.
+  expect(key).toMatch(/^dev:rl:reps:[0-9a-f]{64}$/);
+  expect(key).not.toContain(ip);
+  // The builder's own contract, independent of any limiter run.
+  const salt = parseSaltRecord(mock.store.get(saltKey())!.value)!.v;
+  expect(key).toBe(counterKey('reps', callerHash(ip, salt)));
+
+  // No ZIP, anywhere on the wire - not a real one the site serves, not the
+  // multi-district/vacant/DC fixtures tests/reps.spec.ts drives, not a
+  // malformed one. Checked over every COMMAND, not just the keys that stuck.
+  const wire = mock.commands.map((c) => c.join(' ')).join('\n');
+  for (const zip of ['78501', '33313', '20002', '00000', 'not-a-zip']) {
+    expect(wire, `counters wire surface must not carry ZIP "${zip}"`).not.toContain(zip);
+  }
+  // Same window discipline as every other caller-hash counter: TTL attached
+  // at creation, so a pseudonym can't outlive its window.
+  expect(mock.exec(['TTL', key])).toBeGreaterThan(0);
+  expect(mock.exec(['TTL', key])).toBeLessThanOrEqual(600);
+});
+
 test('graceful degradation: no env -> in-memory limiter, zero network calls, no crash, single startup line', async () => {
   // No setUpstashEnv() here - this is the local-dev/CI/preview-without-env path.
   const mock = new MockUpstash();
