@@ -23,13 +23,32 @@ import { absoluteUrl } from './hreflang';
 import { formatCitation } from './format';
 import { getFreshness } from './freshness';
 import { SITE_ORIGIN } from './site';
+import type { Locale } from './core/mcp';
 import type { Bill } from './types';
 
 const ORG_NAME = 'Oravan';
 const ORG_ID = `${SITE_ORIGIN}/#organization`;
 
-const AI_DISCLOSURE =
-  'AI-drafted plain-language summary, human-reviewed before publication. Not the official bill text — see the linked official source.';
+/*
+ * Corrected 2026-08-06, twice over.
+ *
+ * (1) It said "human-reviewed before publication", which the decode path has
+ *     never done — the nightly sync commits decodes straight to main. Same
+ *     false claim AI_LABEL_TEXT shed on 2026-07-25; this sibling was missed
+ *     because nothing pinned the literal. It now matches that constant's
+ *     verb, which is the true one: automatically checked.
+ *
+ * (2) It was a bare English string emitted into BOTH locales' bill pages,
+ *     while the page around it is fully localized — a bilingual-parity break
+ *     on a machine-read, redistributed surface (crawlers and AI systems are
+ *     exactly who reads JSON-LD). buildBillJsonLd already knows the locale,
+ *     so the disclosure is keyed by it like every other localized constant
+ *     in lib/core/mcp.ts. An es bill page now discloses in Spanish.
+ */
+const AI_DISCLOSURE: Record<Locale, string> = {
+  en: 'AI-drafted plain-language summary, automatically checked before publication. Not the official bill text — see the linked official source.',
+  es: 'Resumen en lenguaje sencillo redactado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley — consulta la fuente oficial enlazada.',
+};
 
 function organizationNode() {
   return {
@@ -57,7 +76,7 @@ function laterOf(a: string | null, b: string | null): string | null {
 export async function buildBillJsonLd(bill: Bill, locale: string, slug: string) {
   const href = `/bills/${slug}`;
   const url = absoluteUrl(locale, href);
-  const inLanguage = locale === 'es' ? 'es' : 'en';
+  const inLanguage: Locale = locale === 'es' ? 'es' : 'en';
   const headline = (bill.ai_headline ?? bill.short_title ?? bill.title).slice(0, 110);
   const description = (bill.ai_summary ?? bill.title).slice(0, 300);
   // Never invented: introduced_date is the closest real anchor to
@@ -87,7 +106,7 @@ export async function buildBillJsonLd(bill: Bill, locale: string, slug: string) 
           additionalProperty: {
             '@type': 'PropertyValue',
             name: 'contentDisclosure',
-            value: AI_DISCLOSURE,
+            value: AI_DISCLOSURE[inLanguage],
           },
         }
       : {}),

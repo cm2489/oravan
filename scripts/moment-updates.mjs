@@ -41,10 +41,16 @@
  *
  * CONSTITUTIONAL POSTURE, written down because this is the nearest the
  * product comes to the line (v2 spec §6): the hard rule is "AI content is
- * always labeled and human-reviewed before it drives a call." An update never
- * drives a call — the phone CTA lives exclusively on the hand-authored vehicle
- * cards. Every AI line is labeled `ai: true` in the data, chipped in the UI,
- * shipped beside the record it decodes, and lands in git as a reviewable diff.
+ * always labeled, and never publishes unless the automated gates pass"
+ * (CLAUDE.md, amended 2026-07-25 — this comment quoted the older, retired
+ * "human-reviewed before it drives a call" wording until 2026-08-06, which
+ * overstated what runs here). What actually holds on this path: an update
+ * never drives a call — the phone CTA lives exclusively on the hand-authored
+ * vehicle cards — every AI line is labeled `ai: true` in the data, chipped in
+ * the UI, lint-gated in both languages before it can land (the one path where
+ * the forbidden-vocabulary lint really does run), shipped beside the record it
+ * decodes, and committed to git as a diff anyone can read after the fact. It
+ * is not read by a person before it publishes, and nothing here says it is.
  * ---------------------------------------------------------------------------
  *
  * SPEND (v2 spec §6; per-token prices re-checked against the current model
@@ -92,6 +98,7 @@ import {
   mondayOfWeekET,
 } from './newsdesk-match.mjs';
 import {
+  MAX_REVISIONS,
   RETENTION_DAYS,
   SCHEMA_VERSION,
   TEXT_MAX_CHARS,
@@ -150,42 +157,67 @@ const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
 
 /**
  * The UI's own plain-language status vocabulary (messages/*.json,
- * bills.status.*), loaded once per run. The summary prompt speaks in these
- * phrases so the page and the prose can never disagree about what a status
- * is called — and so the raw enum never reaches the model (first proof run
- * leaked "floor_vote" into published-candidate prose in both languages).
- * Fallback: the token with underscores spaced, still never shown as an enum.
+ * bills.status.*), read on FIRST USE and memoized for the rest of the run.
+ * The summary prompt speaks in these phrases so the page and the prose can
+ * never disagree about what a status is called — and so the raw enum never
+ * reaches the model (first proof run leaked "floor_vote" into
+ * published-candidate prose in both languages). Fallback: the token with
+ * underscores spaced, still never shown as an enum.
+ *
+ * Lazy rather than eager for the same reason main() exists: importing this
+ * module must perform no I/O, so tests/moment-updates-runner.unit.spec.ts can
+ * drive the safety branches with no filesystem and no network.
  */
-const STATUS_PHRASES = {
-  en: readJSON('messages/en.json').bills?.status ?? {},
-  es: readJSON('messages/es.json').bills?.status ?? {},
+let statusPhrases = null;
+const statusPhrase = (status, lang) => {
+  statusPhrases ??= {
+    en: readJSON('messages/en.json').bills?.status ?? {},
+    es: readJSON('messages/es.json').bills?.status ?? {},
+  };
+  return statusPhrases[lang]?.[status] ?? String(status).replace(/_/g, ' ');
 };
-const statusPhrase = (status, lang) =>
-  STATUS_PHRASES[lang]?.[status] ?? String(status).replace(/_/g, ' ');
+
+// The run's clock. Pure arithmetic, so it is safe at module scope: every step
+// of one run reads the same instant, which is what makes a run's stamps and
+// its retention floor agree with each other.
 const now = new Date();
 const nowISO = now.toISOString();
 const todayET = etDay(now);
 const todayUTC = nowISO.slice(0, 10);
 const retentionFloor = shiftDay(todayET, -RETENTION_DAYS);
 
-console.log(`moment-updates: mode=${MODE}, ET day ${todayET}`);
+/**
+ * The run's loaded state. DECLARED here because the collector steps below read
+ * it as ambient context; ASSIGNED in loadRunState(), called only from main(),
+ * because a bare `import` of this module must not open data/, shell out to
+ * git, or construct an API client. Anything a test needs to drive is a
+ * parameter of the function it drives — never one of these.
+ */
+let moments;
+let billBySlug;
+let originalText;
+let store;
+let vehicles;
+let vehicleSlugs;
+let knownIds;
 
-// ---- load ----
-const moments = readJSON('data/moments.json');
-const bills = readJSON('data/bills.json');
-const billBySlug = new Map(bills.map((b) => [b.full_identifier, b]));
-const originalText = existsSync(UPDATES_PATH) ? readFileSync(UPDATES_PATH, 'utf8') : null;
-const store = originalText ? JSON.parse(originalText) : { _meta: { schema: SCHEMA_VERSION, generated_at: nowISO } };
+function loadRunState() {
+  moments = readJSON('data/moments.json');
+  const bills = readJSON('data/bills.json');
+  billBySlug = new Map(bills.map((b) => [b.full_identifier, b]));
+  originalText = existsSync(UPDATES_PATH) ? readFileSync(UPDATES_PATH, 'utf8') : null;
+  store = originalText ? JSON.parse(originalText) : { _meta: { schema: SCHEMA_VERSION, generated_at: nowISO } };
 
-const vehicles = momentVehicles(moments);
-const vehicleSlugs = [...new Set(vehicles.map((v) => v.slug))];
-console.log(`scope: ${vehicles.length} (moment, vehicle) pair(s), ${vehicleSlugs.length} distinct vehicle(s)`);
+  vehicles = momentVehicles(moments);
+  vehicleSlugs = [...new Set(vehicles.map((v) => v.slug))];
+  console.log(`scope: ${vehicles.length} (moment, vehicle) pair(s), ${vehicleSlugs.length} distinct vehicle(s)`);
 
-/** Every id already stored, so "what is new" is a diff and never a guess. */
-const knownIds = new Set();
-for (const [key, entry] of Object.entries(store)) {
-  if (key === '_meta') continue;
-  for (const u of entry?.updates ?? []) knownIds.add(u.id);
+  // Every id already stored, so "what is new" is a diff and never a guess.
+  knownIds = new Set();
+  for (const [key, entry] of Object.entries(store)) {
+    if (key === '_meta') continue;
+    for (const u of entry?.updates ?? []) knownIds.add(u.id);
+  }
 }
 
 /** Tag a candidate with its moment and collect it. */
@@ -522,7 +554,14 @@ function decodePayload(candidate) {
   };
 }
 
-async function decodeUpdates(anthropic, batch) {
+/**
+ * Exported for tests/moment-updates-runner.unit.spec.ts: every exit from this
+ * function is a degrade-to-safe path (an outage, unparseable output, a
+ * hallucinated index), and a silent regression in any of them would put
+ * invented content into the store instead of the government's own sentence.
+ * `anthropic` is a parameter precisely so a test can inject a throwing client.
+ */
+export async function decodeUpdates(anthropic, batch) {
   if (batch.length === 0 || !anthropic) return new Map();
 
   const items = batch.map((c, i) => `${i}. ${JSON.stringify(decodePayload(c))}`).join('\n');
@@ -572,7 +611,7 @@ Output STRICT JSON only — an array like [{"i":0,"en":"…","es":"…"}] — no
 }
 
 /** Lint one bilingual pair against the gate. Returns failure strings. */
-function lintPair(text, klass, outletNames) {
+export function lintPair(text, klass, outletNames) {
   const failures = [];
   for (const lang of ['en', 'es']) {
     const value = text?.[lang] ?? '';
@@ -610,7 +649,12 @@ function changedBecause(entry, statuses, previous) {
   return reasons;
 }
 
-async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs) {
+/**
+ * Exported for the unit suite: the lint-rejection branch below is the whole of
+ * the "there is no fallback for a summary" doctrine, and until now it was a
+ * comment with nothing behind it.
+ */
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -754,165 +798,246 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
  * deploy storm. The comparison serializes with the file's EXISTING
  * generated_at in place, so a run that found nothing produces a byte-identical
  * string and writes nothing at all.
+ *
+ * `sink` is the only reason this takes a third argument: it runs 24x a day and
+ * went untested for exactly one reason — the only way to observe it was to let
+ * it overwrite the repo's real data file. The default IS the real write, so
+ * production behaviour is unchanged; a test passes a recorder instead and can
+ * then assert the thing that matters, which is that a no-op writes NOTHING.
+ *
+ * @param {Record<string, any>} next the entries, without _meta
+ * @param {string|null} previousText the file's current bytes, or null if absent
+ * @param {{ path?: string, sink?: (path: string, text: string) => void }} [opts]
+ * @returns {boolean} whether anything was written
  */
-function writeIfChanged(next, previousText) {
+export function writeIfChanged(next, previousText, { path = UPDATES_PATH, sink = writeFileSync } = {}) {
   const priorStamp = previousText ? JSON.parse(previousText)?._meta?.generated_at : null;
   const shaped = (stamp) => `${JSON.stringify({ _meta: { schema: SCHEMA_VERSION, generated_at: stamp }, ...next }, null, 2)}\n`;
   if (previousText !== null && shaped(priorStamp ?? nowISO) === previousText) {
-    console.log('DONE: no change — data/moment-updates.json left untouched (no restamp, no commit, no deploy)');
+    console.log(`DONE: no change — ${path} left untouched (no restamp, no commit, no deploy)`);
     return false;
   }
   const finalText = shaped(nowISO);
-  writeFileSync(UPDATES_PATH, finalText);
-  console.log(`DONE: wrote ${UPDATES_PATH} (${Buffer.byteLength(finalText)} bytes)`);
+  sink(path, finalText);
+  console.log(`DONE: wrote ${path} (${Buffer.byteLength(finalText)} bytes)`);
   return true;
+}
+
+/**
+ * Attach the final bilingual pair to every admitted candidate, and label it.
+ *
+ * This is where the editorial law lands on machine text: a decoded line is
+ * accepted ONLY if it clears the gate's own lint, and a line that hedges is
+ * not repaired and gets no second attempt — the government's own sentence
+ * takes its place, labelled `ai: false`. Overflow past the batch cap never saw
+ * the model at all and takes the same fallback.
+ *
+ * Mutates the candidates (they are this run's in-flight objects) and returns
+ * the counts the run log prints. Exported because the rejection branch is the
+ * one that keeps a forecast out of Oravan's voice, and forecasts have reached
+ * production prose here twice.
+ */
+export function assignUpdateText(batch, overflow, decodedByIndex) {
+  let aiCount = 0;
+  let fallbackCount = 0;
+  for (const [i, c] of batch.entries()) {
+    const proposed = decodedByIndex.get(i);
+    const failures = proposed ? lintPair(proposed, c.class, c.source?.outlet_names ?? []) : ['no line returned'];
+    if (failures.length === 0) {
+      c.text = proposed;
+      c.ai = true;
+      aiCount++;
+    } else {
+      if (proposed) console.warn(`  decode REJECTED ${c.id} (${c.class} ${c.vehicle} ${c.day}): ${failures.join('; ')}`);
+      c.text = fallbackTextFor(c);
+      c.ai = false;
+      fallbackCount++;
+    }
+  }
+  for (const c of overflow) {
+    c.text = fallbackTextFor(c);
+    c.ai = false;
+    fallbackCount++;
+  }
+  return { aiCount, fallbackCount };
 }
 
 /* ------------------------------------------------------------------ *
  * main
  * ------------------------------------------------------------------ */
 
-const candidates = [];
-candidates.push(...collectStatusChanges());
-candidates.push(...(await collectVehicleActions()));
-candidates.push(...(await collectTier0()));
-if (MODE === 'nightly') candidates.push(...collectPressClusters());
+async function main() {
+  console.log(`moment-updates: mode=${MODE}, ET day ${todayET}`);
+  loadRunState();
 
-// One event seen from two angles (the bills.json diff and the actions
-// endpoint) must render once, not twice — the action is the richer record.
-const afterSuppression = suppressRedundantStatusChanges(candidates);
+  const candidates = [];
+  candidates.push(...collectStatusChanges());
+  candidates.push(...(await collectVehicleActions()));
+  candidates.push(...(await collectTier0()));
+  if (MODE === 'nightly') candidates.push(...collectPressClusters());
 
-const seen = new Set();
-const fresh = [];
-for (const c of afterSuppression) {
-  if (knownIds.has(c.id) || seen.has(c.id)) continue;
-  seen.add(c.id);
-  fresh.push(c);
-}
-console.log(`${candidates.length} candidate(s) collected, ${fresh.length} not already stored`);
+  // One event seen from two angles (the bills.json diff and the actions
+  // endpoint) must render once, not twice — the action is the richer record.
+  const afterSuppression = suppressRedundantStatusChanges(candidates);
 
-// Daily event ceiling, counted off the STORED file's recorded_at (§6) — no new
-// Actions cache has to exist for it to hold across runs.
-const recordedToday = dailyEventCount(store, todayUTC);
-const dailyRoom = Math.max(0, DAILY_EVENTS - recordedToday);
-if (fresh.length > dailyRoom) {
-  console.warn(
-    `daily ceiling: ${recordedToday} event(s) already recorded on ${todayUTC}; admitting ${dailyRoom} of ${fresh.length} — the rest re-collect on the next run`,
-  );
-}
-const admitted = fresh.slice(0, dailyRoom);
-
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ maxRetries: 8 }) : null;
-if (!anthropic) console.warn('ANTHROPIC_API_KEY unset — every update carries the verbatim record with ai:false');
-
-const batch = admitted.slice(0, BATCH_CAP);
-const overflow = admitted.slice(BATCH_CAP);
-if (overflow.length) {
-  console.warn(
-    `batch cap: ${overflow.length} event(s) past MOMENT_UPDATE_BATCH_CAP=${BATCH_CAP} are STORED with the verbatim record — never dropped, because the store keeps every qualified event (§3)`,
-  );
-}
-const decodedByIndex = await decodeUpdates(anthropic, batch);
-console.log(
-  `decode: ${batch.length} event(s) batched${batch.length ? '' : ' (skipped — empty batch, zero API calls)'}, ${decodedByIndex.size} line(s) returned`,
-);
-
-let aiCount = 0;
-let fallbackCount = 0;
-for (const [i, c] of batch.entries()) {
-  const proposed = decodedByIndex.get(i);
-  const failures = proposed ? lintPair(proposed, c.class, c.source?.outlet_names ?? []) : ['no line returned'];
-  if (failures.length === 0) {
-    c.text = proposed;
-    c.ai = true;
-    aiCount++;
-  } else {
-    if (proposed) console.warn(`  decode REJECTED ${c.id} (${c.class} ${c.vehicle} ${c.day}): ${failures.join('; ')}`);
-    c.text = fallbackTextFor(c);
-    c.ai = false;
-    fallbackCount++;
+  const seen = new Set();
+  const fresh = [];
+  for (const c of afterSuppression) {
+    if (knownIds.has(c.id) || seen.has(c.id)) continue;
+    seen.add(c.id);
+    fresh.push(c);
   }
-}
-for (const c of overflow) {
-  c.text = fallbackTextFor(c);
-  c.ai = false;
-  fallbackCount++;
-}
-console.log(`text: ${aiCount} AI-decoded, ${fallbackCount} verbatim-record fallback`);
+  console.log(`${candidates.length} candidate(s) collected, ${fresh.length} not already stored`);
 
-// A fallback can itself fail the lint: the speculation layer is NOT
-// quote-exempt, so a record sentence carrying a forecast construction has
-// nowhere left to go. Drop it loudly rather than redden CI on a nightly
-// commit — the event is still one tap away on Congress.gov, and the day's
-// honest overflow line links there.
-const storable = admitted.filter((c) => {
-  const failures = lintPair(c.text, c.class, c.source?.outlet_names ?? []);
-  if (failures.length === 0) return true;
-  console.error(
-    `  DROPPED ${c.id} (${c.class} ${c.vehicle} ${c.day}) — even the verbatim record fails the lint: ${failures.join('; ')}`,
+  // Daily event ceiling, counted off the STORED file's recorded_at (§6) — no new
+  // Actions cache has to exist for it to hold across runs.
+  const recordedToday = dailyEventCount(store, todayUTC);
+  const dailyRoom = Math.max(0, DAILY_EVENTS - recordedToday);
+  if (fresh.length > dailyRoom) {
+    console.warn(
+      `daily ceiling: ${recordedToday} event(s) already recorded on ${todayUTC}; admitting ${dailyRoom} of ${fresh.length} — the rest re-collect on the next run`,
+    );
+  }
+  const admitted = fresh.slice(0, dailyRoom);
+
+  const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ maxRetries: 8 }) : null;
+  if (!anthropic) console.warn('ANTHROPIC_API_KEY unset — every update carries the verbatim record with ai:false');
+
+  const batch = admitted.slice(0, BATCH_CAP);
+  const overflow = admitted.slice(BATCH_CAP);
+  if (overflow.length) {
+    console.warn(
+      `batch cap: ${overflow.length} event(s) past MOMENT_UPDATE_BATCH_CAP=${BATCH_CAP} are STORED with the verbatim record — never dropped, because the store keeps every qualified event (§3)`,
+    );
+  }
+  const decodedByIndex = await decodeUpdates(anthropic, batch);
+  console.log(
+    `decode: ${batch.length} event(s) batched${batch.length ? '' : ' (skipped — empty batch, zero API calls)'}, ${decodedByIndex.size} line(s) returned`,
   );
-  return false;
-});
 
-// ---- merge ----
-const touched = new Set();
-for (const c of storable) {
-  const momentId = c[MOMENT_KEY];
-  delete c[MOMENT_KEY];
-  if (!store[momentId]) store[momentId] = { updates: [], summary_revisions: [] };
-  store[momentId].updates = dedupeUpdates(store[momentId].updates ?? [], [c]);
-  touched.add(momentId);
-}
-console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s)`);
+  const { aiCount, fallbackCount } = assignUpdateText(batch, overflow, decodedByIndex);
+  console.log(`text: ${aiCount} AI-decoded, ${fallbackCount} verbatim-record fallback`);
 
-// ---- nightly: prune, then summarize ----
-if (MODE === 'nightly') {
-  for (const momentId of Object.keys(store)) {
-    if (momentId === '_meta') continue;
-    const moment = moments[momentId];
-    const pruned = pruneEntry(store[momentId], { now, retired: !moment || moment.status === 'retired' });
-    if (pruned === null) {
-      // A retired (or deleted) moment's updates leave the file entirely: git
-      // history IS the archive, and a second archive nothing renders is dead
-      // weight (v2 spec §4).
-      delete store[momentId];
-      console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
-    } else {
-      store[momentId] = pruned;
+  // A fallback can itself fail the lint: the speculation layer is NOT
+  // quote-exempt, so a record sentence carrying a forecast construction has
+  // nowhere left to go. Drop it loudly rather than redden CI on a nightly
+  // commit — the event is still one tap away on Congress.gov, and the day's
+  // honest overflow line links there.
+  const storable = admitted.filter((c) => {
+    const failures = lintPair(c.text, c.class, c.source?.outlet_names ?? []);
+    if (failures.length === 0) return true;
+    console.error(
+      `  DROPPED ${c.id} (${c.class} ${c.vehicle} ${c.day}) — even the verbatim record fails the lint: ${failures.join('; ')}`,
+    );
+    return false;
+  });
+
+  // ---- merge ----
+  const touched = new Set();
+  for (const c of storable) {
+    const momentId = c[MOMENT_KEY];
+    delete c[MOMENT_KEY];
+    if (!store[momentId]) store[momentId] = { updates: [], summary_revisions: [] };
+    store[momentId].updates = dedupeUpdates(store[momentId].updates ?? [], [c]);
+    touched.add(momentId);
+  }
+  console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s)`);
+
+  // ---- nightly: prune, then summarize ----
+  if (MODE === 'nightly') {
+    for (const momentId of Object.keys(store)) {
+      if (momentId === '_meta') continue;
+      const moment = moments[momentId];
+      // THE ORDERING HERE IS LOAD-BEARING — prune runs BEFORE the summary loop
+      // below and must stay there. generateStateSummary builds its prompt from
+      // `entry.updates` and grounds the revision in `recent.map(u => u.id)`;
+      // pruning afterwards would let the model summarize updates that are
+      // about to be deleted and make changedBecause's `updates:+N` a count of
+      // events on their way out of the file.
+      //
+      // What was wrong was only the arithmetic. The prune filled the revision
+      // list to MAX_REVISIONS and the loop below then appended tonight's, so a
+      // moment sitting at the cap committed 31 — one past what
+      // check-moment-updates accepts, which reddened main AFTER the nightly
+      // had already committed and deployed (2026-08-06). reserveRevisions
+      // holds the slot open instead. Exactly 1: this loop visits each moment
+      // once per run, so at most one revision is appended per moment per run.
+      const pruned = pruneEntry(store[momentId], {
+        now,
+        retired: !moment || moment.status === 'retired',
+        reserveRevisions: 1,
+      });
+      if (pruned === null) {
+        // A retired (or deleted) moment's updates leave the file entirely: git
+        // history IS the archive, and a second archive nothing renders is dead
+        // weight (v2 spec §4).
+        delete store[momentId];
+        console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
+      } else {
+        store[momentId] = pruned;
+      }
     }
+
+    let summaries = 0;
+    for (const [momentId, moment] of Object.entries(moments)) {
+      if (moment?.status === 'retired') continue;
+      if (summaries >= SUMMARY_DAILY_CAP) break;
+      const entry = store[momentId];
+      if (!entry) continue;
+
+      const statuses = {};
+      for (const v of moment.vehicles ?? []) {
+        const status = billBySlug.get(v.slug)?.status;
+        if (status) statuses[v.slug] = status;
+      }
+      if (Object.keys(statuses).length === 0) continue;
+      if (!summaryNeedsRefresh(entry, statuses, now)) {
+        console.log(`  summary ${momentId}: nothing moved — not regenerated`);
+        continue;
+      }
+      if (!anthropic) {
+        console.warn(`  summary ${momentId}: needs a refresh but ANTHROPIC_API_KEY is unset — skipped`);
+        continue;
+      }
+      const contextRefs = (moment.context_refs ?? []).map((r) => r?.url).filter(Boolean);
+      const revision = await generateStateSummary(anthropic, momentId, entry, statuses, contextRefs);
+      if (!revision) continue;
+      // Belt and braces. The reserveRevisions above is the belt — it holds the
+      // slot this append needs. This slice is the braces: if a second append
+      // path is ever added, or the prune is ever skipped for a moment this
+      // loop still reaches, the cap the CI gate enforces still holds at the
+      // only line that grows the array.
+      entry.summary_revisions = [...(entry.summary_revisions ?? []), revision].slice(-MAX_REVISIONS);
+      summaries++;
+      console.log(`  summary ${momentId}: ${revision.id} (${revision.changed_because.join(', ')})`);
+    }
+    console.log(`summaries: ${summaries} revision(s) written (cap ${SUMMARY_DAILY_CAP})`);
   }
 
-  let summaries = 0;
-  for (const [momentId, moment] of Object.entries(moments)) {
-    if (moment?.status === 'retired') continue;
-    if (summaries >= SUMMARY_DAILY_CAP) break;
-    const entry = store[momentId];
-    if (!entry) continue;
-
-    const statuses = {};
-    for (const v of moment.vehicles ?? []) {
-      const status = billBySlug.get(v.slug)?.status;
-      if (status) statuses[v.slug] = status;
-    }
-    if (Object.keys(statuses).length === 0) continue;
-    if (!summaryNeedsRefresh(entry, statuses, now)) {
-      console.log(`  summary ${momentId}: nothing moved — not regenerated`);
-      continue;
-    }
-    if (!anthropic) {
-      console.warn(`  summary ${momentId}: needs a refresh but ANTHROPIC_API_KEY is unset — skipped`);
-      continue;
-    }
-    const contextRefs = (moment.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-    const revision = await generateStateSummary(anthropic, momentId, entry, statuses, contextRefs);
-    if (!revision) continue;
-    entry.summary_revisions = [...(entry.summary_revisions ?? []), revision];
-    summaries++;
-    console.log(`  summary ${momentId}: ${revision.id} (${revision.changed_because.join(', ')})`);
-  }
-  console.log(`summaries: ${summaries} revision(s) written (cap ${SUMMARY_DAILY_CAP})`);
+  // ---- write ----
+  const entries = Object.fromEntries(Object.entries(store).filter(([k]) => k !== '_meta'));
+  writeIfChanged(entries, originalText);
 }
 
-// ---- write ----
-const entries = Object.fromEntries(Object.entries(store).filter(([k]) => k !== '_meta'));
-writeIfChanged(entries, originalText);
+/*
+ * Run-directly guard, the same shape scripts/moment-candidates.mjs uses and
+ * for the same reason: argv[1] is this file when node executes it, and the
+ * Playwright CLI when tests/moment-updates-runner.unit.spec.ts imports it.
+ * The guard alone would not be enough — every module-scope read of data/ and
+ * the Anthropic client moved inside main() too, so a bare import does no I/O.
+ *
+ * Anchored on the path separator rather than a bare endsWith: this repo also
+ * ships scripts/check-moment-updates.mjs, whose filename ENDS WITH this one's,
+ * so an unanchored suffix test is a collision waiting to happen.
+ *
+ * NOT `await main()`, deliberately: a top-level await anywhere in this module
+ * makes it un-`require()`-able, and Playwright's transform requires it. The
+ * explicit .catch keeps what the old top-level await gave us — the stack on
+ * stderr and a non-zero exit — without the top-level await itself.
+ */
+if (/(^|\/)moment-updates\.mjs$/.test(process.argv[1] ?? '')) {
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}

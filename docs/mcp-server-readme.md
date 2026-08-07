@@ -2,7 +2,7 @@
 
 **Status:** live, free, read-only. **Endpoint:** `https://oravan.org/api/mcp/mcp` (Streamable HTTP). **Docs page:** `https://oravan.org/mcp`. **Repository:** `https://github.com/cm2489/oravan`. **Registry:** `org.oravan/mcp` on the Official MCP Registry (`registry.modelcontextprotocol.io`).
 
-This file is a standalone description of the server for anywhere that isn't `oravan.org` itself — directory listings, crawlers, and claim/enrich forms (PulseMCP, Glama, Smithery, Awesome MCP Servers, mcp.so). It uses the same framing and tool descriptions the live server and the project records §2 use — nothing here is written fresh for a pitch. Descriptions below match `lib/core/mcp.ts`'s `TOOL_INFO` export as of 2026-07-11; if that changes, this file needs a matching update (it's a static copy for external redistribution, not an importable module).
+This file is a standalone description of the server for anywhere that isn't `oravan.org` itself — directory listings, crawlers, and claim/enrich forms (PulseMCP, Glama, Smithery, Awesome MCP Servers, mcp.so). It uses the same framing and tool descriptions the live server and the project records §2 use — nothing here is written fresh for a pitch. Descriptions below match `lib/core/mcp.ts`'s `TOOL_INFO` export as of 2026-08-06; if that changes, this file needs a matching update (it's a static copy for external redistribution, not an importable module). `get_bill`'s description and the `ai_label` envelope string are quoted **verbatim** from the live server and pinned by `tests/mcp-docs.spec.ts`, so those two can no longer go stale unnoticed — they carry the provenance claims, which is exactly where a stale copy does damage. The other four tool entries are deliberate plain-English paraphrases of the same behaviour, for readers of directory listings.
 
 **Avoid list, honored here on purpose:** no *advocacy*, *mobilize*, *campaign*, *pressure*, or *flood* language anywhere in this file, per the project records §5. This is nonpartisan civic information infrastructure, not an action or persuasion tool.
 
@@ -12,7 +12,7 @@ Oravan is nonpartisan civic information infrastructure: official U.S. federal go
 
 **Why an agent would call this instead of Congress.gov's API or a generic legislative-document server:**
 
-- **Pre-decoded plain language, in English and Spanish.** Congress.gov returns bill XML and status codes; Oravan returns a structured, pre-generated, human-review-gated plain-language decode in one call, in Spanish too — a bilingual decoded federal-bill corpus with no equivalent free source.
+- **Pre-decoded plain language, in English and Spanish.** Congress.gov returns bill XML and status codes; Oravan returns a structured, pre-generated, gate-checked plain-language decode in one call, in Spanish too — a bilingual decoded federal-bill corpus with no equivalent free source.
 - **Representative lookup that actually resolves.** ZIP-to-district mapping across all 435 U.S. House districts, with district-office phone numbers — the number a constituent should actually call — not just a Washington, D.C. line.
 - **Urgency ranking, not just an archive.** `whats_moving` answers "what's active in Congress this week," scored by an explicit, disclosed urgency model — not a raw, undifferentiated bill list.
 - **One round trip, composite answers.** A ZIP code resolves to representatives and their offices in a single call; a bill slug or citation resolves to a full plain-language decode in a single call.
@@ -42,7 +42,9 @@ All five are `readOnlyHint: true`, `openWorldHint: false` — nothing here write
 
 ### `get_bill`
 
-`{ slug?, citation?, locale? }` → the full plain-language decode of a federal bill by slug (e.g. `"hr-2701-119"`) or citation (e.g. `"H.R. 2701"`). Returns the AI-generated summary (headline, tl;dr, what/who/why/cost — human-reviewed before publish and clearly labeled when present), the official status in plain language, an urgency band, sponsor, key dates, the official Congress.gov page, and an `act_url` to Oravan's on-site call flow. This tool never drafts a phone script — script generation only happens on-site, behind a human-review step, never over this API.
+`{ slug?, citation?, locale? }` — description quoted verbatim from the live server's `tools/list`:
+
+> Get the full plain-language decode of a federal bill by slug (e.g. `"hr-2701-119"`) or citation (e.g. `"H.R. 2701"` — resolves to the most recent Congress on a match). Returns the AI-generated summary (headline, tl;dr, what/who/why/cost — automatically checked before publish and clearly labeled when present), the official status in plain language, an urgency band, sponsor, key dates, the official Congress.gov page, and an `act_url` to Oravan's on-site call flow. This tool never drafts a phone script — script generation happens only on-site, where the caller reads and can edit the script before dialing; that is not available over this API.
 
 ### `search_bills`
 
@@ -65,7 +67,7 @@ Every tool response nests a `meta` object:
   "as_of": "2026-07-11",
   "source": "Congress.gov and unitedstates/congress-legislators, via Oravan's nightly sync",
   "canonical_url": "https://oravan.org/bills/hr-2701-119",
-  "ai_label": "This plain-language content is AI-generated and human-reviewed before publish. It is not the official bill text.",
+  "ai_label": "This plain-language content is AI-generated and automatically checked before publish. It is not the official bill text.",
   "license": "CC BY 4.0 (Oravan's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov)."
 }
 ```
@@ -80,7 +82,7 @@ No accounts, no API key — anyone can call it. Anonymous use is rate-limited (6
 
 ## Not exposed over MCP, on purpose
 
-Oravan's on-site AI call-script generator (`draft_call_script`) is deliberately not a tool here. It is the product's only per-call AI-generation cost and its highest platform-policy-review surface, and exposing it here would bypass the constitutional rule that AI content is human-reviewed before it drives a call. `get_bill`'s `act_url` field links out to the on-site flow instead, where that review step is enforced.
+Oravan's on-site AI call-script generator (`draft_call_script`) is deliberately not a tool here. It is the product's only per-call AI-generation cost and its highest platform-policy-review surface, and exposing it here would skip the one human step the product actually has: on-site, the caller reads the script and can edit it before dialing. An agent calling an API is not that caller. `get_bill`'s `act_url` field links out to the on-site flow instead, where that step is where it belongs.
 
 ## Contact
 
