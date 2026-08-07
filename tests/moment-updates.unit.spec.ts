@@ -1170,7 +1170,8 @@ test.describe('checkMomentUpdates (fixtures)', () => {
           refs: ['https://a.example/one', 'https://b.example/two'],
           outlets: ['reuters.com', 'apnews.com'],
           outlet_names: ['Reuters', 'The Associated Press'],
-          leans: ['center', 'center'],
+          // A SET, not a per-outlet column: two center outlets, one entry.
+          lean_set: ['center'],
         },
         ...over,
       });

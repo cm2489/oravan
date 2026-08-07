@@ -121,6 +121,30 @@ jobs:
         # loud ::warning once real lead time is needed (~2026-12-01) rather
         # than failing the pipeline for a month first. See
         # lib/rollover-tripwire.mjs.
+        #
+        # `if: always()` DELIBERATELY decouples this step from everything
+        # above it. Without it, GitHub's default `if: success()` chains a
+        # hard, dated, non-negotiable deadline (Jan 3, 2027) to two unrelated
+        # external dependencies that sit upstream in this same job:
+        # process-data.py's download, and - worse - the redistricting-watch
+        # step, which exits 1 by design when EVERY tracked state comes back
+        # missing. That anomaly means "Redistricting Data Hub restructured
+        # their sitemap", i.e. someone else changed their website. It stays
+        # broken until a human notices, and every week it stays broken is a
+        # week the rollover warning is silently skipped - exactly the
+        # forgotten-mandatory-edit failure this tripwire exists to prevent.
+        #
+        # Safe because the script cannot fail the workflow: it calls
+        # rolloverWarning() and prints either a ::warning or a "not yet due"
+        # line, with no process.exit and no throw path
+        # (scripts/check-rollover-tripwire.mjs, lib/rollover-tripwire.mjs).
+        # So running it unconditionally can only ADD a warning to a run that
+        # was already failing for other reasons; it can never turn a red run
+        # green or a green run red. Reordering the steps was the alternative
+        # and was rejected: it would churn step order for no other reason,
+        # and would still leave whichever step ended up last coupled to the
+        # ones before it. Pinned by tests/rollover-tripwire.unit.spec.ts.
+        if: always()
         run: node scripts/check-rollover-tripwire.mjs
       - name: Commit data
         id: commit

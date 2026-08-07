@@ -518,9 +518,11 @@
   },
   "errorBoundary": {
     "title": "Algo salió mal",
-    "body": "Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, borrar tus datos guardados en la página Mi historial puede solucionarlo.",
+    "body": "Esta página tuvo un problema. Recargar suele resolverlo. Si sigue pasando, puede que la causa sea algo guardado en este dispositivo.",
     "retry": "Intentar de nuevo",
-    "home": "Ir al inicio"
+    "home": "Ir al inicio",
+    "eraseHelp": "Borrar elimina de este navegador tu código postal, tus intereses, tu historial de lectura y tu historial de llamadas. No se guarda nada sobre ti en ningún otro lugar, así que no queda nada más por borrar.",
+    "erase": "Borrar los datos guardados en este dispositivo"
   },
   "categories": {
     "jobs_economy": "Empleo y economía",

@@ -634,7 +634,19 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
       refs: outlets.map((d) => byDomain.get(d)),
       outlets,
       outlet_names: outlets.map(outletDisplayName),
-      leans: [...new Set(leans.filter(Boolean))].sort(),
+      // Deliberately a SET, not a fourth column. `refs`, `outlets` and
+      // `outlet_names` above are all positional and same-length by
+      // construction; this one is deduped and sorted, so it is shorter
+      // whenever two outlets share a lean and shorter still when an outlet is
+      // unrated (leanOf returns null and it drops out entirely). The only
+      // consumer is clusterIsPublishable, three lines up, which asks a set
+      // question. Named `lean_set` so nobody writes
+      // `outlets.map((o, i) => ({ o, lean: lean_set[i] }))` and silently
+      // mis-attributes a lean to an outlet on a Moment surface — the exact
+      // thing components/MomentTimeline.tsx's ATTRIBUTION, NEVER LEAN promise
+      // forbids. Pinned by a non-parallelism assertion in
+      // tests/moment-updates-collect.unit.spec.ts.
+      lean_set: [...new Set(leans.filter(Boolean))].sort(),
     },
     record: null,
     ai: false,
