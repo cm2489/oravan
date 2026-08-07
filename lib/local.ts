@@ -112,15 +112,37 @@ function write(key: string, value: unknown) {
 /**
  * Snapshot cache so useSyncExternalStore gets referentially-stable values.
  *
- * `isValid` is not optional politeness — it is the only thing standing between
+ * `coerce` is not optional politeness — it is the only thing standing between
  * a malformed entry and a blank page. JSON.parse's try/catch catches *syntax*
  * errors, but `null`, `5`, `"x"` and `{}` are all syntactically valid JSON that
  * sailed through the `as T` cast into every consumer. A single
  * `localStorage.setItem('oravan.prefs', 'null')` was enough to throw in
  * ZipForm and unmount the whole tree — and localStorage is the only persistence
  * this product has, so this layer has to be total.
+ *
+ * IT COERCES RATHER THAN VALIDATES, and that distinction is the repair. A
+ * boolean predicate can only accept or reject the stored value WHOLE, so the
+ * list stores were guarded by `Array.isArray` alone: `[null]` was "valid", and
+ * /record's own `calls.filter(c => c.outcome === 'contact')` threw on it and
+ * took the page down — including the erase control that is the way out.
+ * Tightening that to "reject the array unless every row is readable" would
+ * only trade the crash for silent data loss: one interrupted write, and a
+ * reader's entire civic record reads as empty. So the list coercers return the
+ * rows they CAN read and drop the ones they cannot. `null` from a coercer
+ * means "nothing salvageable here" — only then does the fallback apply.
+ *
+ * REFERENTIAL STABILITY SURVIVES THE CHANGE because this cache is keyed on the
+ * RAW STRING, not on the parsed value: a filtered array is built once per
+ * distinct stored string and handed back by identity on every call after. That
+ * is a hard requirement of useSyncExternalStore, not a nicety — a getSnapshot
+ * that returns a fresh array each time is an infinite render loop, which
+ * presents as a hung page rather than as an error anyone can read.
+ *
+ * The repair is durable, not per-paint: every writer below builds its next
+ * value from the snapshot, so the first write after a filtered read persists
+ * the cleaned list and the unreadable row is gone from the device for good.
  */
-function makeSnapshot<T>(key: string, fallback: T, isValid: (v: unknown) => boolean) {
+function makeSnapshot<T>(key: string, fallback: T, coerce: (v: unknown) => T | null) {
   let cache: { raw: string | null; value: T } | null = null;
   return () => {
     let raw: string | null = null;
@@ -130,12 +152,17 @@ function makeSnapshot<T>(key: string, fallback: T, isValid: (v: unknown) => bool
       /* blocked */
     }
     if (!cache || cache.raw !== raw) {
+      // Nothing stored is not something to coerce: an absent key returns the
+      // shared `fallback` constant itself, which is also what the server
+      // snapshot returns — so hydration on a fresh device sees one identity
+      // rather than two equal-but-distinct empty values.
       let value = fallback;
-      try {
-        const parsed = raw ? JSON.parse(raw) : fallback;
-        value = isValid(parsed) ? (parsed as T) : fallback;
-      } catch {
-        /* corrupted entry */
+      if (raw !== null) {
+        try {
+          value = coerce(JSON.parse(raw)) ?? fallback;
+        } catch {
+          /* corrupted entry */
+        }
       }
       cache = { raw, value };
     }
@@ -146,10 +173,93 @@ function makeSnapshot<T>(key: string, fallback: T, isValid: (v: unknown) => bool
 const EMPTY_PREFS: Prefs = {};
 const EMPTY_CALLS: CallRecord[] = [];
 const EMPTY_READS: ReadRecord[] = [];
-const isPlainObject = (v: unknown) => typeof v === 'object' && v !== null && !Array.isArray(v);
-const prefsSnapshot = makeSnapshot<Prefs>(PREFS_KEY, EMPTY_PREFS, isPlainObject);
-const callsSnapshot = makeSnapshot<CallRecord[]>(CALLS_KEY, EMPTY_CALLS, Array.isArray);
-const readsSnapshot = makeSnapshot<ReadRecord[]>(READS_KEY, EMPTY_READS, Array.isArray);
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const isOptionalString = (v: unknown) => v === undefined || typeof v === 'string';
+/** `at` is rendered through `Intl` (`format.dateTime(new Date(at))`), which
+ *  throws on a date it cannot parse — so "is a string" is not enough here.
+ *  It is also the React key of every call row, hence the non-empty check. */
+const isTimestamp = (v: unknown): v is string =>
+  typeof v === 'string' && v.length > 0 && !Number.isNaN(Date.parse(v));
+
+/* The two closed vocabularies, as exhaustive maps: adding a stance or an
+   outcome to lib/types.ts without teaching this guard about it is a type
+   error rather than a row that silently stops being readable. Both are
+   written only by this app's own code, so a value outside them is damage, not
+   a newer dialect. `Object.hasOwn`, never `in` — every object inherits
+   `constructor` and `toString`, and either would sail through `in`. */
+const STANCES: Record<Stance, true> = { support: true, oppose: true, undecided: true };
+const OUTCOMES: Record<CallOutcome, true> = { contact: true, voicemail: true, unavailable: true };
+
+/**
+ * Row-level guards. Exported because they are the whole safety story of this
+ * module and they are testable with no React and no window — see
+ * tests/local.unit.spec.ts. They ask for exactly what /record dereferences and
+ * nothing more: a row is kept if it can be rendered, not if it is pristine.
+ */
+export function isCallRecord(v: unknown): v is CallRecord {
+  return (
+    isPlainObject(v) &&
+    typeof v.billSlug === 'string' &&
+    v.billSlug.length > 0 &&
+    typeof v.billLabel === 'string' &&
+    isOptionalString(v.labelEn) &&
+    isOptionalString(v.labelEs) &&
+    typeof v.repBioguide === 'string' &&
+    typeof v.repName === 'string' &&
+    typeof v.stance === 'string' &&
+    Object.hasOwn(STANCES, v.stance) &&
+    typeof v.outcome === 'string' &&
+    Object.hasOwn(OUTCOMES, v.outcome) &&
+    isTimestamp(v.at)
+  );
+}
+
+export function isReadRecord(v: unknown): v is ReadRecord {
+  return (
+    isPlainObject(v) &&
+    typeof v.billSlug === 'string' &&
+    v.billSlug.length > 0 &&
+    typeof v.billLabel === 'string' &&
+    isOptionalString(v.labelEn) &&
+    isOptionalString(v.labelEs) &&
+    isTimestamp(v.at)
+  );
+}
+
+const sanitizeList =
+  <T>(guard: (v: unknown) => v is T) =>
+  (v: unknown): T[] | null =>
+    Array.isArray(v) ? v.filter(guard) : null;
+
+export const sanitizeCalls = sanitizeList(isCallRecord);
+export const sanitizeReads = sanitizeList(isReadRecord);
+
+/**
+ * Prefs repairs its two known fields in place rather than rebuilding the
+ * object, so an entry written by a newer build (a field this one has never
+ * heard of) survives the round trip that `setPrefs`'s spread already promised
+ * it would. A non-string `zip` or a non-array `interests` is dropped, and a
+ * mixed `interests` array keeps its readable topics: BillsBrowser calls
+ * `interests.includes()` during render, so a number there is the same class of
+ * blank page as a `null` call row.
+ */
+export function sanitizePrefs(v: unknown): Prefs | null {
+  if (!isPlainObject(v)) return null;
+  const out: Record<string, unknown> = { ...v };
+  if (typeof out.zip !== 'string') delete out.zip;
+  if (Array.isArray(out.interests)) {
+    out.interests = out.interests.filter((c) => typeof c === 'string');
+  } else {
+    delete out.interests;
+  }
+  return out as Prefs;
+}
+
+const prefsSnapshot = makeSnapshot<Prefs>(PREFS_KEY, EMPTY_PREFS, sanitizePrefs);
+const callsSnapshot = makeSnapshot<CallRecord[]>(CALLS_KEY, EMPTY_CALLS, sanitizeCalls);
+const readsSnapshot = makeSnapshot<ReadRecord[]>(READS_KEY, EMPTY_READS, sanitizeReads);
 
 export function usePrefs(): Prefs {
   return useSyncExternalStore(subscribe, prefsSnapshot, () => EMPTY_PREFS);
