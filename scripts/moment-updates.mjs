@@ -41,10 +41,16 @@
  *
  * CONSTITUTIONAL POSTURE, written down because this is the nearest the
  * product comes to the line (v2 spec §6): the hard rule is "AI content is
- * always labeled and human-reviewed before it drives a call." An update never
- * drives a call — the phone CTA lives exclusively on the hand-authored vehicle
- * cards. Every AI line is labeled `ai: true` in the data, chipped in the UI,
- * shipped beside the record it decodes, and lands in git as a reviewable diff.
+ * always labeled, and never publishes unless the automated gates pass"
+ * (CLAUDE.md, amended 2026-07-25 — this comment quoted the older, retired
+ * "human-reviewed before it drives a call" wording until 2026-08-06, which
+ * overstated what runs here). What actually holds on this path: an update
+ * never drives a call — the phone CTA lives exclusively on the hand-authored
+ * vehicle cards — every AI line is labeled `ai: true` in the data, chipped in
+ * the UI, lint-gated in both languages before it can land (the one path where
+ * the forbidden-vocabulary lint really does run), shipped beside the record it
+ * decodes, and committed to git as a diff anyone can read after the fact. It
+ * is not read by a person before it publishes, and nothing here says it is.
  * ---------------------------------------------------------------------------
  *
  * SPEND (v2 spec §6; per-token prices re-checked against the current model

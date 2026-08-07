@@ -189,11 +189,12 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
     description:
       'Get the full plain-language decode of a federal bill by slug (e.g. "hr-2701-119") or ' +
       'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
-      'AI-generated summary (headline, tl;dr, what/who/why/cost - human-reviewed before publish and ' +
-      'clearly labeled when present), the official status in plain language, an urgency band, ' +
-      "sponsor, key dates, the official Congress.gov page, and an act_url to Oravan's on-site call " +
-      'flow. This tool never drafts a phone script - script generation only happens on-site, behind ' +
-      'a human-review step, never over this API.',
+      'AI-generated summary (headline, tl;dr, what/who/why/cost - automatically checked before ' +
+      'publish and clearly labeled when present), the official status in plain language, an urgency ' +
+      "band, sponsor, key dates, the official Congress.gov page, and an act_url to Oravan's on-site " +
+      'call flow. This tool never drafts a phone script - script generation happens only on-site, ' +
+      'where the caller reads and can edit the script before dialing; that is not available over ' +
+      'this API.',
   },
   search_bills: {
     title: 'Search bills',
@@ -443,9 +444,13 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
   // NOT in scope, by settled decision (the project records (kept out of this repo)
   // §2): this tool never drafts a call script. That's the product's only
   // per-call Anthropic cost and its highest platform-policy risk surface -
-  // exposing it over a keyless MCP tool would also bypass "AI content is
-  // human-reviewed before it drives a call" (CLAUDE.md). `act_url` below is
-  // the deliberate replacement, every time.
+  // exposing it over a keyless MCP tool would also skip the one review step
+  // the product actually has: on-site, the caller reads the script and can
+  // edit it before dialing (citations.aiCallScript). An agent calling an API
+  // is not that caller. `act_url` below is the deliberate replacement, every
+  // time. (Reworded 2026-08-06: this used to quote a CLAUDE.md rule about AI
+  // content being "human-reviewed before it drives a call" that the file no
+  // longer carries in that form - see its 2026-07-25 amendment.)
   return {
     bill: {
       slug,

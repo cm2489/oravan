@@ -33,7 +33,7 @@ export function GET() {
 
 > Free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, get a call script, and call Congress. No account required.
 
-Oravan publishes a plain-language, AI-drafted and human-reviewed decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
+Oravan publishes a plain-language, AI-drafted and automatically checked decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
 
 ## Pages
 
@@ -53,7 +53,7 @@ The same corpus, decoded independently in Spanish, is available under ${SITE_ORI
 
 ## Notes for automated and AI systems
 
-- Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, reviewed by a human before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
+- Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
 - No user data is collected server-side. Nothing on this site reflects a visitor's identity, location, or behavior — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;

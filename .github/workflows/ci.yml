@@ -39,6 +39,17 @@ jobs:
       - name: Zero-survivor naming gate (retired names; self-tests before scanning)
         # Exemptions are founder-decided in writing only — docs/migration/decisions.md.
         run: node scripts/check-naming.mjs
+      - name: Publication-provenance claims are true (self-tests before scanning)
+        # Root cause this exists to prevent: CLAUDE.md's 2026-07-25 amendment
+        # retired "human-reviewed before publish" (the nightly decode path has
+        # no human step) and was applied to four strings while four more kept
+        # shipping the false claim until 2026-08-06 — because NO TEST PINNED ANY
+        # OF THEM and nobody had enumerated which surfaces make a publication
+        # claim at all. R1 is that enumeration; a phrase denylist alone would
+        # miss a reworded false claim.
+        run: |
+          node scripts/check-claim-truth.mjs --self-test
+          node scripts/check-claim-truth.mjs
       - name: public/ ships only allowlisted files
         run: node scripts/check-public-allowlist.mjs
       - name: MCP registry server.json validates (S12; self-tests before scanning)
