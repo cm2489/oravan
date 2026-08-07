@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
@@ -131,4 +133,93 @@ test('the citations page links to the MCP docs page (not the site-wide footer/he
   await expect(link).toHaveAttribute('href', '/mcp');
   await link.click();
   await expect(page).toHaveURL(/\/mcp$/);
+});
+
+/*
+ * 2026-08-06 — the claim-truth pass. Two gaps closed here.
+ *
+ * (1) get_bill's description told every agent that decodes are
+ *     "human-reviewed before publish". The nightly sync commits them
+ *     straight to main. The test above pinned only a 60-character PREFIX of
+ *     each description, and the false clause sat well past character 60, so
+ *     it sailed through CI until 2026-08-06, long after CLAUDE.md retired the
+ *     claim. The wire format itself is now pinned.
+ *
+ * (2) docs/mcp-server-readme.md is a hand-maintained copy of these same
+ *     descriptions, redistributed to third-party directories (PulseMCP,
+ *     Glama, Smithery, mcp.so). Nothing checked it against the server, so
+ *     it carried the retired claim to strangers. It is now compared to the
+ *     live response.
+ */
+
+/**
+ * Markdown prose and a JSON-RPC string are allowed to differ in punctuation
+ * and wrapping and nothing else. Normalizing here rather than loosening the
+ * comparison keeps the test meaningful: a test that fails on a curly dash is
+ * a test somebody deletes.
+ */
+function normalizeQuoted(s: string): string {
+  return s
+    .replace(/`/g, '')
+    .replace(/[–—]/g, '-')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const RETIRED_REVIEW_CLAIM = /human[\s-]?review|reviewed by (a|the) (human|person)/i;
+
+test('the get_bill wire format states the provenance the pipeline actually has', async ({ request }) => {
+  const rpc = await mcpRpc(request, 'tools/list', {}, 3);
+  const tools = rpc.result?.tools as Array<{ name: string; description?: string }>;
+  const getBill = tools.find((t) => t.name === 'get_bill');
+  expect(getBill?.description, 'get_bill must be advertised').toBeTruthy();
+  const description = getBill!.description!;
+
+  // The false claim, on the exact surface an agent reads.
+  expect(description).not.toMatch(RETIRED_REVIEW_CLAIM);
+  // The true one, in the same verb AI_LABEL_TEXT uses.
+  expect(description).toContain('automatically checked before publish');
+  // The script carve-out is real and stays: on-site, the caller reads and
+  // can edit before dialing, and no agent can reach that generator.
+  expect(description).toContain('never drafts a phone script');
+  expect(description).toContain('reads and can edit the script before dialing');
+
+  // The 60-char prefix the docs-page test slices must stay byte-identical —
+  // it is what pins the rendered page to the live server.
+  expect(description.slice(0, 60)).toBe('Get the full plain-language decode of a federal bill by slug');
+
+  // No tool description anywhere may carry the retired claim.
+  for (const tool of tools) {
+    expect(tool.description ?? '', `${tool.name}`).not.toMatch(RETIRED_REVIEW_CLAIM);
+  }
+});
+
+test('docs/mcp-server-readme.md quotes the live server, not a stale copy of it', async ({ request }) => {
+  const readme = readFileSync(join(process.cwd(), 'docs/mcp-server-readme.md'), 'utf8');
+
+  const rpc = await mcpRpc(request, 'tools/list', {}, 4);
+  const tools = rpc.result?.tools as Array<{ name: string; description?: string }>;
+  const liveDescription = tools.find((t) => t.name === 'get_bill')!.description!;
+
+  // The doc marks exactly one description as verbatim, as a blockquote under
+  // ### `get_bill`. Only that one is compared: the other four entries are
+  // deliberate plain-English paraphrases for directory readers, and the
+  // readme says so. get_bill is the one that carries the provenance claim.
+  const quoted = readme
+    .split('\n')
+    .filter((l) => l.startsWith('> '))
+    .map((l) => l.slice(2))
+    .join(' ');
+  expect(quoted, 'the readme must carry a verbatim get_bill blockquote').toBeTruthy();
+  expect(normalizeQuoted(quoted)).toBe(normalizeQuoted(liveDescription));
+
+  // The envelope's ai_label is the other redistributed provenance string.
+  const result = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'en' });
+  const { ai_label: aiLabel } = result.structuredContent!.meta as { ai_label: string };
+  expect(normalizeQuoted(readme)).toContain(normalizeQuoted(aiLabel));
+
+  // And nothing anywhere in the file may make the retired claim.
+  expect(readme).not.toMatch(RETIRED_REVIEW_CLAIM);
 });

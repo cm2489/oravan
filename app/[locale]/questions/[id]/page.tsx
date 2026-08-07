@@ -251,8 +251,15 @@ export default async function MomentPage({
         </p>
       )}
 
-      {/* 2 · AI-drafted, human-reviewed summary — the page's one reading
-          passage, and so the one place Besley is spent. */}
+      {/* 2 · The Moment entry's own summary — the page's one reading passage,
+          and so the one place Besley is spent. Provenance, spelled out because
+          this page renders two passages with DIFFERENT provenance and the
+          comment here used to name only one of them: this one comes from
+          data/moments.json, which is hand-authored and merged by the owner —
+          the explicit carve-out in CLAUDE.md's 2026-07-25 amendment, and what
+          moments.howMadeBody promises. The "Where it stands" revision further
+          down is the opposite: machine-written, gate-checked, published with
+          no human step. Never let the two blur. */}
       <section aria-labelledby="deciding" className="mt-12 border-t-[3px] border-ink pt-4">
         <h2 id="deciding" className="text-h2 font-extrabold text-ink">
           {isSettled ? t('moments.decidingSettled') : t('moments.decidingLive')}

@@ -16,6 +16,24 @@ import es from '../messages/es.json';
 
 const SITE_ORIGIN = 'https://oravan.org';
 
+/*
+ * The AI-content disclosure lib/jsonld.ts emits, pinned literally and per
+ * locale. Re-declared here rather than imported: lib/jsonld.ts is
+ * 'server-only' and does not resolve in Playwright's plain Node runner, and
+ * a second copy is the point — it fails loudly when the shipped string
+ * changes, which a shared import would not.
+ *
+ * Two things this pins, both of which were broken before 2026-08-06: the
+ * verb (it claimed human review the decode path has never done), and the
+ * existence of an `es` string at all (one bare English constant was emitted
+ * into BOTH locales' pages — a bilingual-parity break on a surface built for
+ * machines to redistribute).
+ */
+const EXPECTED_DISCLOSURE = {
+  en: 'AI-drafted plain-language summary, automatically checked before publication. Not the official bill text — see the linked official source.',
+  es: 'Resumen en lenguaje sencillo redactado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley — consulta la fuente oficial enlazada.',
+} as const;
+
 async function readJsonLd(page: Page, scriptId: string): Promise<Record<string, unknown>> {
   const raw = await page.locator(`script#${scriptId}`).textContent();
   expect(raw, `#${scriptId} must be present`).toBeTruthy();
@@ -48,9 +66,16 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
 
     // AI content is always labeled (hard rule) — carried as an honestly-named
     // additionalProperty since schema.org has no ratified "AI-generated" term.
+    //
+    // Pinned to the LITERAL disclosure as of 2026-08-06, not merely its shape.
+    // The shape-only assertion here is exactly why this string kept saying
+    // "human-reviewed before publication" until 2026-08-06, well after CLAUDE.md
+    // retired that claim: a `name: 'contentDisclosure'` match is true of a
+    // truthful disclosure and a false one alike.
     expect(article!.additionalProperty).toMatchObject({
       '@type': 'PropertyValue',
       name: 'contentDisclosure',
+      value: EXPECTED_DISCLOSURE.en,
     });
 
     // FAQPage: the decode structure (what/who/why/cost) genuinely supports
@@ -90,6 +115,37 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
     expect(names).toContain(es.bill.sec.why);
     // No English question label leaks into the ES graph.
     expect(names).not.toContain(en.bill.sec.what);
+
+    // Bilingual parity reaches the machine-read layer too: an ES bill page
+    // discloses its AI provenance in Spanish, not in English.
+    expect(article!.additionalProperty).toMatchObject({
+      '@type': 'PropertyValue',
+      name: 'contentDisclosure',
+      value: EXPECTED_DISCLOSURE.es,
+    });
+    expect((article!.additionalProperty as Record<string, unknown>).value).not.toBe(
+      EXPECTED_DISCLOSURE.en
+    );
+  });
+
+  test('the disclosure claims only what the pipeline actually does, in both locales', async ({ page }) => {
+    // The regression this guards: CLAUDE.md retired "human-reviewed before
+    // publish" on 2026-07-25 because the nightly sync commits decodes
+    // straight to main. This constant kept saying it until 2026-08-06.
+    for (const [prefix, expected] of [
+      ['/bills/hr-5582-119', EXPECTED_DISCLOSURE.en],
+      ['/es/bills/sjres-99-119', EXPECTED_DISCLOSURE.es],
+    ] as const) {
+      await page.goto(prefix);
+      const doc = await readJsonLd(page, 'bill-jsonld');
+      const graph = doc['@graph'] as Array<Record<string, unknown>>;
+      const article = graph.find((n) => n['@type'] === 'Article')!;
+      const value = (article.additionalProperty as Record<string, unknown>).value as string;
+      expect(value).toBe(expected);
+      expect(value, `${prefix}: no retired human-review claim`).not.toMatch(
+        /human[\s-]?review|revisad[oa] por una persona|revisión humana/i
+      );
+    }
   });
 
   test('undecoded bill: Article only, no fabricated FAQ, still real dates', async ({ page }) => {

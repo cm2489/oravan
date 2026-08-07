@@ -98,7 +98,17 @@ const CLIENT_MODULE = 'lib/upstash.ts';
 // Identifier fragments that mark CONTENT (never allowed near counters or
 // domain-nomination keys) and CALLER material (never allowed near cache or
 // domain-nomination keys).
-const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation/i;
+// `\bzip\b` added with the 'reps' route label (fix/api-reps-rate-limit):
+// /api/reps is the first rate-limited route whose request carries a ZIP, and
+// a ZIP is the one identifier that is BOTH the caller's own lookup key and a
+// location — precisely the "network address linked to a political position"
+// the constitution forbids. CALLER_MATERIAL already named it, but
+// CALLER_MATERIAL is deliberately NOT applied to the counters registry
+// (caller material is that registry's whole point), so before this a
+// `${zip}` interpolation in lib/ratelimit.ts would have passed every rule.
+// Naming it here closes that hole without weakening anything: no counters/
+// domain/impression key has any business carrying a ZIP.
+const CONTENT_IDENTIFIER = /slug|stance|locale|\blang\b|bill|tool|summary|title|topic|query|citation|\bzip\b/i;
 // `useragent`/`\bua\b` added with the mcp-client handshake shape (2026-07):
 // a client SOFTWARE name is allowed into the usage registry, but the
 // adjacent temptation — User-Agent header material — is caller material in
@@ -412,6 +422,15 @@ const SELF_TEST_FIXTURES = [
     name: 'bill slug interpolated into a counters key',
     file: COUNTERS_REGISTRY,
     text: 'const k = `${keyPrefix()}:rl:${opts.route}:${slug}`;',
+    rule: 'counters-content',
+  },
+  {
+    // The 'reps' route label's own hazard (fix/api-reps-rate-limit): the ZIP
+    // /api/reps reads must never become a counter-key segment. Seeded so the
+    // CONTENT_IDENTIFIER addition above stays tested, not trusted.
+    name: 'a ZIP interpolated into a counters key',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:rl:${opts.route}:${zip}:${callerHash}`;',
     rule: 'counters-content',
   },
   {

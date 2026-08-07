@@ -136,3 +136,32 @@ test.describe('llms.txt', () => {
     expect(body).toContain(`${SITE_ORIGIN}/feed/whats-moving.xml`);
   });
 });
+
+/*
+ * 2026-08-06 — the claim-truth pass. llms.txt is written for machines that
+ * redistribute what it says, and it carried the retired "human-reviewed"
+ * claim in TWO places: the corpus sentence at the top and the /bills note
+ * under "Notes for automated and AI systems". The original 2026-07-25 audit
+ * found and fixed neither. Both are pinned now.
+ */
+test.describe('llms.txt states the provenance the pipeline actually has', () => {
+  test('neither the corpus sentence nor the /bills note claims human review', async ({ request }) => {
+    const body = await (await request.get('/llms.txt')).text();
+
+    expect(body, 'no retired human-review claim anywhere in llms.txt').not.toMatch(
+      /human[\s-]?review|reviewed by (a|the) (human|person)/i
+    );
+
+    // Both sentences, individually, must say what actually guards a publish.
+    const corpusSentence = body.split('\n').find((l) => l.startsWith('Oravan publishes a plain-language'));
+    expect(corpusSentence, 'the corpus sentence must exist').toBeTruthy();
+    expect(corpusSentence!).toContain('AI-drafted and automatically checked');
+
+    const billsNote = body.split('\n').find((l) => l.startsWith('- Content under /bills'));
+    expect(billsNote, 'the /bills note must exist').toBeTruthy();
+    expect(billsNote!).toContain('automatically checked before publication');
+
+    // Unchanged and still true: the official source is linked from every page.
+    expect(billsNote!).toContain('the official source is linked from every bill page');
+  });
+});
