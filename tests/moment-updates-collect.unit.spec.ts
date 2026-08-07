@@ -76,7 +76,7 @@ type Update = {
   occurred_precision: string;
   recorded_at: string;
   text: Localized | null;
-  source: { kind: string; refs: string[]; outlets?: string[]; outlet_names?: string[]; leans?: (string | null)[] };
+  source: { kind: string; refs: string[]; outlets?: string[]; outlet_names?: string[]; lean_set?: string[] };
   record: {
     action_text: string;
     action_code: string | null;
@@ -701,7 +701,7 @@ test.describe('press clusters', () => {
     expect(c.source.outlet_names).toEqual(['Juancole', 'Khaama']);
     expect(c.source.refs).toHaveLength(2);
     for (const r of c.source.refs) expect(r).toMatch(/^https:\/\//);
-    expect(c.source.leans).toEqual([]);
+    expect(c.source.lean_set).toEqual([]);
   });
 
   test('a SINGLE-LEAN day is refused outright', () => {
@@ -730,14 +730,36 @@ test.describe('press clusters', () => {
     expect(clusterIsPublishable(['left'])).toBe(false);
   });
 
-  test('leans are recorded, deduped and sorted, when the outlets are rated', () => {
+  test('lean_set is recorded, deduped and sorted, when the outlets are rated', () => {
     const cross = build('2026-07-24', [
       { source: 'foxnews.com', url: 'https://foxnews.com/a', publishedAt: '2026-07-24' },
       { source: 'truthout.org', url: 'https://truthout.org/b', publishedAt: '2026-07-24' },
       { source: 'npr.org', url: 'https://npr.org/c', publishedAt: '2026-07-24' },
     ])!;
-    expect(cross.source.leans).toEqual(['center', 'left', 'right']);
+    expect(cross.source.lean_set).toEqual(['center', 'left', 'right']);
     expect(cross.source.outlet_names).toEqual(['Fox News', 'NPR', 'Truthout']);
+  });
+
+  test('lean_set is a SET, not a fourth parallel column — never zip it against outlets', () => {
+    // `refs`, `outlets` and `outlet_names` are positional and same-length by
+    // construction; `lean_set` deliberately is not, which is why it carries
+    // `_set` in its name. Four outlets, two of them AllSides-left, collapse to
+    // three distinct leans. Asserted as a PROPERTY rather than as a value, so
+    // a future "fix" that makes this positional has to argue with a test that
+    // explains why it isn't — mis-zipping would attach a lean to the wrong
+    // outlet on a Moment surface, which components/MomentTimeline.tsx's
+    // ATTRIBUTION, NEVER LEAN promise forbids outright.
+    const shared = build('2026-07-24', [
+      { source: 'foxnews.com', url: 'https://foxnews.com/a', publishedAt: '2026-07-24' },
+      { source: 'truthout.org', url: 'https://truthout.org/b', publishedAt: '2026-07-24' },
+      { source: 'cnn.com', url: 'https://cnn.com/c', publishedAt: '2026-07-24' },
+      { source: 'npr.org', url: 'https://npr.org/d', publishedAt: '2026-07-24' },
+    ])!;
+    expect(shared.source.outlets).toHaveLength(4);
+    expect(shared.source.outlet_names).toHaveLength(4);
+    expect(shared.source.refs).toHaveLength(4);
+    expect(shared.source.lean_set!.length).not.toBe(shared.source.outlets!.length);
+    expect(shared.source.lean_set).toEqual(['center', 'left', 'right']);
   });
 
   test('leanOf reads the AllSides table through the shared normalizer', () => {
