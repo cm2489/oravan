@@ -7,10 +7,15 @@ import { statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
+import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
+// Imported DIRECTLY, never through the lib/core barrel — that module's header
+// forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
+// accident. This page renders one, so it pays for it deliberately.
+import { getNomination } from '@/lib/core/nominations';
 import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -22,13 +27,11 @@ import {
   getRevisions,
   isAiSummary,
 } from '@/lib/moment-updates';
-import { getMoment, getMoments, type QualifyingSignalType } from '@/lib/moments';
-import { linkHost, momentDek, revisionReasons } from '@/lib/moments-ui';
+import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments, vehicleKind } from '@/lib/moments';
+import { bothNoteKey, linkHost, momentDek, nominationCtaKey, revisionReasons } from '@/lib/moments-ui';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
-
-const SIGNAL_TYPES: QualifyingSignalType[] = ['tier0_floor', 'tier0_scheduled', 'tier0_most_viewed', 'press'];
 
 /* Content links are green — green means GO, and a link goes somewhere.
    Navigation chrome (the crumb) stays ink, per the color law's split. */
@@ -136,13 +139,75 @@ export default async function MomentPage({
   // model-written; the official title it falls back to is not (see the chip
   // beside the grid below). Resolved through the SAME localize call the cards
   // render with, so the answer is about this locale's headlines, not English's.
+  //
+  // A NOMINATION CARD CONTRIBUTES FALSE, and does so by construction rather
+  // than by exclusion: its headline is Congress.gov's own description
+  // sentence, verbatim, and Oravan writes no decode for one (see
+  // lib/nomination-script.ts's header). getBill() misses on a `pn-…` slug, so
+  // the expression below already answers false — which is exactly right, and
+  // is the reason this stayed data-gated rather than growing a kind branch.
+  // A nomination-only Moment therefore carries no AI chip over its grid,
+  // because there is no AI text under it to label.
   const vehicleHeadlinesAreAi = moment.vehicles.some((v) => {
     const raw = getBill(v.slug);
     return raw ? Boolean(localizeBill(raw, locale).ai_headline) : false;
   });
 
+  /*
+   * WHAT THE GRID IS CALLED, AND WHAT IT PROMISES.
+   *
+   * "The bills" and its lede ("Each opens the full plain-language decode…")
+   * are both false over a nomination: it is not a bill, and it carries no
+   * decode by design (lib/nomination-script.ts's header). A single neutral
+   * word for both would have been the easy fix and the wrong one — this
+   * product names things concretely, and "the vehicles" is repo jargon no
+   * reader outside this file uses.
+   *
+   * So the heading and its lede are chosen by what the moment actually holds,
+   * the same three-way MomentCard's count line uses and for the same reason:
+   * a mixed moment has no true short sentence that names only one kind.
+   *
+   * WHAT EACH LEDE MAY PROMISE (2026-08-06). All three say a card opens a
+   * record, which is true of every card of either kind. Only the CALL FLOW is
+   * conditional, and only on a nomination: the Senate has finished with one,
+   * or its record never described it, and the page behind that card is a rail
+   * reading "No call to make" — `nominationHasCallScript`, app/api/script's
+   * own 422 refusal conjunction (lib/journey.ts), is the predicate for it, and
+   * `nominationCtaKey` below asks the same one per card.
+   *
+   *   - `vehiclesLede` (bill-only) promises the call flow flat, and may: a
+   *     bill's page always mounts ActionPanel, settled or not.
+   *   - `vehiclesLedeNominations` and `vehiclesLedeMixed` carry the condition.
+   *     The mixed one said "Each opens the record and the call flow" until
+   *     this change, which is the same false universal the nominations lede
+   *     dropped one commit earlier and `moments.bothNoteSomeNoCall` dropped
+   *     the commit after. Corrected IN PLACE rather than behind a variant,
+   *     because the ternary above prints it only on a set that holds a
+   *     nomination — there is no bill-only render of it to protect.
+   *
+   * The condition is written as a RULE, not as an observation about this
+   * grid, so it does not read as a hint that some card here is callable on a
+   * set where none is. Pinned in tests/moments-ui.unit.spec.ts.
+   */
+  const kinds = new Set(moment.vehicles.map(vehicleKind));
+  const vehiclesKey =
+    kinds.has('bill') && kinds.has('nomination')
+      ? { heading: 'vehiclesHeadingMixed', lede: 'vehiclesLedeMixed' }
+      : kinds.has('nomination')
+        ? { heading: 'vehiclesHeadingNominations', lede: 'vehiclesLedeNominations' }
+        : { heading: 'vehiclesHeading', lede: 'vehiclesLede' };
+
   // Citation + Congress.gov actions page per vehicle, resolved here so the
   // timeline stays a pure renderer and never reaches into the bill corpus.
+  //
+  // NOMINATION SLUGS ARE SKIPPED — getBill() misses, and that is the correct
+  // outcome rather than a gap to fill: the live layer that feeds this timeline
+  // is bill-only end to end (scripts/moment-updates-map.mjs's momentVehicles()
+  // filters to kind==='bill', and lib/moment-updates-gate.mjs requires every
+  // stored vehicle to resolve in data/bills.json), so no nomination can ever
+  // have a row here to caption. A nomination-only Moment renders the empty
+  // ledger this section already renders when no revision exists, which is
+  // honest rather than empty-shaped.
   const timelineVehicles: Record<string, TimelineVehicle | undefined> = {};
   for (const v of moment.vehicles) {
     const raw = getBill(v.slug);
@@ -343,9 +408,9 @@ export default async function MomentPage({
       {/* 5 · The vehicles */}
       <section className="mt-12 border-t border-line pt-4" aria-labelledby="vehicles-h">
         <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
-          {t('moments.vehiclesHeading')}
+          {t(`moments.${vehiclesKey.heading}`)}
         </h2>
-        <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.vehiclesLede')}</p>
+        <p className="mt-2 max-w-read text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
         {/* Every card below leads with an AI-decoded headline, and the card's
             CTA is the phone call — so this was the one place on the site where
             unlabeled AI text sat directly on the control that drives a call
@@ -365,6 +430,41 @@ export default async function MomentPage({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {moment.vehicles.map((v) => {
+            /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
+               through the one normalizer (lib/moments.ts vehicleKind — absent
+               means 'bill', stated in exactly one place), never on the shape
+               of the slug. MomentNominationCard is MomentVehicleCard's
+               sibling and not its generalization; the reasoning is in its own
+               header. Both render at identical weight with the identical
+               green CTA, so a mixed grid never reads as recommending one
+               vehicle over the other. */
+            if (vehicleKind(v) === 'nomination') {
+              const nomination = getNomination(v.slug);
+              if (!nomination) return null;
+              return (
+                <MomentNominationCard
+                  key={v.slug}
+                  slug={v.slug}
+                  citation={nomination.citation}
+                  description={nomination.nominee_description}
+                  organization={nomination.organization}
+                  status={nomination.status}
+                  lastActionDate={nomination.last_action_date}
+                  receivedDate={nomination.received_date}
+                  execCalendarNumber={nomination.exec_calendar_number}
+                  role={localeText(v.role, locale)}
+                  /* "Read + call" is a promise about the page this button
+                     opens, so it is asked of the RECORD, not just of the
+                     moment's state — a nomination the Senate has finished
+                     with, or one its record never described, opens a page
+                     whose entire rail is "No call to make". See
+                     nominationCtaKey; `moments.vehiclesLedeNominations` makes
+                     the same distinction in prose directly above this grid. */
+                  ctaLabel={t(nominationCtaKey(nomination, isSettled))}
+                  noDecodeNote={t('nominations.noDecodeNote')}
+                />
+              );
+            }
             const raw = getBill(v.slug);
             if (!raw) return null;
             const bill = localizeBill(raw, locale);
@@ -389,7 +489,14 @@ export default async function MomentPage({
           })}
         </div>
 
-        <p className="mt-6 max-w-read text-sm text-ink-2">{t('moments.bothNote')}</p>
+        {/* "Every link above opens the same call flow" was printed here
+            unconditionally — true of every bill card (the bill page always
+            mounts ActionPanel) and false of a nomination card whose page has
+            no call script waiting on it. Asked of the SET, because that is
+            what the sentence quantifies over; the per-card version of the
+            same question is `nominationCtaKey` on the grid above. A bill-only
+            moment keeps `moments.bothNote` byte for byte — see bothNoteKey. */}
+        <p className="mt-6 max-w-read text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
       </section>
 
       {/* 6 · Why this Moment exists */}
@@ -404,7 +511,7 @@ export default async function MomentPage({
           {/* the signal is a LABEL — an ink mark. The evidence beside it is a
               set of links, so it is set as links, in the go tone. */}
           <Chip tone="tag">
-            {SIGNAL_TYPES.includes(moment.qualifying_signal.type)
+            {QUALIFYING_SIGNAL_TYPES.includes(moment.qualifying_signal.type)
               ? t(`moments.signalType.${moment.qualifying_signal.type}`)
               : moment.qualifying_signal.type}
           </Chip>

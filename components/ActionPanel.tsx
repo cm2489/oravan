@@ -4,6 +4,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { liveCallKey, type LiveCallTarget } from '@/lib/journey';
+// TYPE-ONLY, and it must stay type-only: lib/moments.ts imports
+// data/moments.json and the whole bill corpus behind it, and this is a CLIENT
+// component. `import type` is erased at compile time, so naming the
+// discriminator here costs the bundle nothing — the same reason lib/journey.ts
+// takes VehicleKind this way rather than restating the union.
+import type { VehicleKind } from '@/lib/moments';
+// Type-only for the same reason: lib/nomination-script.ts's runtime exports
+// pull the prompt builder and its constants, and a client bundle has no use for
+// either. The panel only needs to name which of the two audiences it is asking
+// /api/script for, and that name must be the route's own union rather than a
+// string literal restated here — the route rejects an unrecognized audience
+// with a 400 rather than defaulting it, so a typo would be a dead control.
+import type { NominationAudience } from '@/lib/nomination-script';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { OfficeHoursNote } from './OfficeHoursNote';
@@ -40,10 +54,29 @@ interface Props {
    *  so a call logged here can print in whichever language the civic record
    *  is later read in — see lib/local.ts's CallRecord comment. */
   recordLabels: { en: string; es: string };
-  /** Chamber-aware call routing (lib/journey.ts liveCallTarget): which
-   *  chamber holds the live decision, when the record says. null = no
-   *  routing, the list renders as it always has. */
-  liveTarget: { chamber: 'house' | 'senate'; afterVote: boolean } | null;
+  /** Chamber-aware call routing (lib/journey.ts liveCallTarget /
+   *  liveCallTargetForNomination): which chamber holds the live decision,
+   *  when the record says. null = no routing, the list renders as it always
+   *  has. The shape is imported rather than restated so the panel can never
+   *  fall behind a field the derivation grows — `soleChamber` was added on
+   *  2026-08-06 and this prop said nothing about it until it did. */
+  liveTarget: LiveCallTarget | null;
+  /**
+   * WHAT KIND OF THING IS BEING CALLED ABOUT — and it is a prop rather than
+   * something derived from `liveTarget`, deliberately.
+   *
+   * `liveTarget.soleChamber` already says "nomination" everywhere it is
+   * non-null, and reading the kind off it would have been free. It is also
+   * exactly wrong: liveCallTargetForNomination returns NULL for a nomination
+   * that is confirmed, returned, withdrawn or unclassified — so the derived
+   * kind would silently flip to "bill" on precisely the records where the
+   * panel's copy is most likely to be read and most obviously false. A
+   * confirmed nomination is still a nomination.
+   *
+   * Absent means 'bill', the same default lib/moments.ts's `vehicleKind`
+   * states for the wire format, so every existing bill call site is unchanged.
+   */
+  kind?: VehicleKind;
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -65,10 +98,45 @@ type Translate = ReturnType<typeof useTranslations>;
 /**
  * The rate-limit fallback: a static template with [bracket] slots, honestly
  * labeled as NOT AI-drafted. Built from messages so both locales carry it,
- * with the bill's citation interpolated — the one fact it needs.
+ * with the vehicle's citation interpolated — the one fact it needs.
+ *
+ * KIND-AWARE, and it was not until 2026-08-06. `bill.fallbackScript.*` says
+ * "I support this bill" / "Apoyo este proyecto de ley" in so many words, and
+ * this function handed that template to every nomination whose script request
+ * failed — 685 terminal records among them. Two lies in one textarea: a
+ * nomination called a bill, in words written for the reader to say out loud to
+ * a Senate office.
+ *
+ * The nomination template is worded for the SENATE, which is the chamber this
+ * slot is about: it names the confirmation vote as the ask, exactly as
+ * lib/nomination-script.ts's AUDIENCE_LINES.senator instructs the model to, and
+ * for the same reason — advice and consent is the Senate's alone, so a
+ * chamber-neutral nomination script cannot say the one true thing about the
+ * call. The panel asks /api/script for `audience: 'senator'` here, so the AI
+ * draft and this template address the same office. The House member's own words
+ * are houseFallbackFor() below, reached from his own row.
  */
-function fallbackFor(t: Translate, s: Stance, citation: string) {
-  return t(`fallbackScript.${s}`, { citation });
+function fallbackFor(t: Translate, s: Stance, citation: string, kind: VehicleKind) {
+  const key = kind === 'nomination' ? 'fallbackScriptNomination' : 'fallbackScript';
+  return t(`${key}.${s}`, { citation });
+}
+
+/**
+ * The same static template for the OTHER audience a nomination has — the House
+ * member, who holds no vote on it.
+ *
+ * It is a separate family of strings rather than a parameterization of the one
+ * above, for the reason lib/nomination-script.ts gives for forking the prompt
+ * rather than flagging it: the ask is a different ask. The senator template
+ * asks for a vote; this one says out loud that the House has no vote here and
+ * asks the representative to press the two senators he shares a state with —
+ * the owner's 2026-08-06 ruling, in the same words `bill.nominationHousePress`
+ * gives the reader a paragraph earlier. A caller who reads the senator template
+ * to a House office is asking for something that office cannot do, which is the
+ * defect this whole slot exists to close.
+ */
+function houseFallbackFor(t: Translate, s: Stance, citation: string) {
+  return t(`fallbackScriptNominationHouse.${s}`, { citation });
 }
 
 /** m:ss for the rate-limit countdown line. */
@@ -108,7 +176,138 @@ function Failure({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget }: Props) {
+/**
+ * THE HOUSE MEMBER'S OWN WORDS, IN THE HOUSE MEMBER'S OWN ROW.
+ *
+ * lib/nomination-script.ts shipped a `house` audience on 2026-08-06 and
+ * app/api/script validated it and rode it inside the cache version — and the
+ * panel asked for no audience at all, so the branch was dead code from the hour
+ * it landed. The reader was told, in `bill.nominationHousePress`, that their
+ * representative can press their senators, and then handed a script that says
+ * "the senator" to read to that representative's office. The WHY had shipped
+ * and the HOW had not.
+ *
+ * WHY IT LIVES IN THE ROW rather than as a control above the stance question:
+ * the owner's ruling is "the focus should be on the senator as a default", and
+ * a chooser in front of the stance control would turn the default into a
+ * decision the reader has to make before they can act. Here the Senate script
+ * is simply what you get; the House words are one press away AT THE MOMENT the
+ * reader is looking at that office's number and deciding whether to dial it.
+ * The rail's `rank()` already puts this row second, so the ordering carries the
+ * hierarchy and the copy does not have to.
+ *
+ * It is the panel's own script vocabulary at row scale — the label above the
+ * words every time (AI on an AI draft, the honest not-AI line on the static
+ * template), an editable textarea because every script on this site is the
+ * reader's to edit before they read it aloud (README design principle 5), a
+ * copy button, and the same three-outcome error model the main slot uses. What
+ * it deliberately does NOT carry is the rate-limit countdown: one ticker per
+ * panel is enough, and the main slot owns it.
+ */
+function HouseScriptSlot({
+  t,
+  script,
+  isFallback,
+  loading,
+  error,
+  copied,
+  onGenerate,
+  onChange,
+  onCopy,
+}: {
+  t: Translate;
+  script: string;
+  isFallback: boolean;
+  loading: boolean;
+  error: 'generic' | 'rate' | 'refused' | null;
+  copied: boolean;
+  onGenerate: () => void;
+  onChange: (text: string) => void;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="mt-3 border-t-[1.5px] border-line pt-3">
+      {!script && !loading && !error && (
+        <button type="button" onClick={onGenerate} className={GHOST}>
+          <Sparkles className="h-4 w-4 flex-none" aria-hidden />
+          {t('nominationHouseScriptCta')}
+        </button>
+      )}
+      {loading && (
+        <p role="status" className="flex items-center gap-2 text-sm text-ink-2">
+          <Sparkles className="h-4 w-4 flex-none animate-pulse" aria-hidden />
+          {/* The main slot's line 2, reused rather than restated: it describes
+              the drafting itself, which is the same act here, and a second
+              sentence saying the same thing in different words is how two
+              copies of one idea start to drift. No rotation — this wait sits
+              inside a row, not on the whole panel. */}
+          {t('generating2')}
+        </p>
+      )}
+      {/* The route's deliberate refusal keeps its own register here too — no
+          alert vocabulary, no retry, no template. See the main slot's note. */}
+      {error === 'refused' && (
+        <p role="status" className="max-w-note text-sm text-ink">
+          {t('scriptNotCallable')}
+        </p>
+      )}
+      {(error === 'rate' || error === 'generic') && (
+        <Failure>
+          <span className="font-bold text-alert">
+            {error === 'rate' ? t('rateLimited') : t('scriptError')}
+          </span>
+          {error === 'generic' && (
+            <button type="button" onClick={onGenerate} className={GHOST}>
+              <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
+              {t('retry')}
+            </button>
+          )}
+        </Failure>
+      )}
+      {script && (
+        <div className={error ? 'mt-3' : undefined}>
+          <p className="text-sm font-bold text-ink">
+            {isFallback ? t('nominationHouseFallbackTitle') : t('nominationHouseScriptTitle')}
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-ink-2">
+            {isFallback ? t('fallbackDisclaimer') : t('scriptDisclaimer')}
+          </p>
+          <textarea
+            value={script}
+            onChange={(e) => onChange(e.target.value)}
+            rows={6}
+            aria-label={
+              isFallback ? t('nominationHouseFallbackTitle') : t('nominationHouseScriptTitle')
+            }
+            className="mt-2 w-full rounded-control border-2 border-ink bg-paper p-3 font-reading text-md text-ink"
+          />
+          <div className="mt-2">
+            <button type="button" onClick={onCopy} className={GHOST}>
+              {copied ? (
+                <Check className="h-4 w-4 flex-none" aria-hidden />
+              ) : (
+                <Copy className="h-4 w-4 flex-none" aria-hidden />
+              )}
+              {copied ? t('scriptCopied') : t('copyScript')}
+            </button>
+          </div>
+          <span role="status" aria-live="polite" className="sr-only">
+            {copied ? t('scriptCopied') : ''}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ActionPanel({
+  slug,
+  identifier,
+  title,
+  recordLabels,
+  liveTarget,
+  kind = 'bill',
+}: Props) {
   const t = useTranslations('bill');
   // The not-found register reuses /reps's own strings verbatim (ZipForm
   // already crosses into 'home' the same way) — the two surfaces can't drift.
@@ -128,7 +327,42 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   const [retryAt, setRetryAt] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<'generic' | 'rate' | null>(null);
+  /*
+   * THREE OUTCOMES, NOT TWO — and the third one is not a failure.
+   *
+   *   rate     the limiter tripped. Transient; a countdown and a template.
+   *   generic  something broke. Transient; retry and a template.
+   *   refused  the ROUTE DECIDED there is no call to make (422 not_callable).
+   *
+   * `refused` landed 2026-08-06. Until then a 422 fell into the `!res.ok`
+   * branch below and rendered `scriptError` — "Couldn't draft a script right
+   * now. The ready-made template below works in the meantime." Nothing had
+   * gone wrong, nothing would change on a retry, and the template it pointed
+   * at was a call script for a decision the Senate had already made. A
+   * deliberate refusal reported as a hiccup is the same class of untruth as
+   * manufactured urgency, just pointed the other way.
+   */
+  const [error, setError] = useState<'generic' | 'rate' | 'refused' | null>(null);
+  /*
+   * THE HOUSE MEMBER'S SLOT — its own draft, its own template, its own error,
+   * kept beside the senator's rather than replacing them. That separation IS
+   * the owner's "Senate as the default" ruling expressed in state: asking for
+   * the House words can never cost the reader the Senate script they already
+   * have in front of them, and switching between the two is not a mode.
+   *
+   * Keyed by stance like the maps above, so switching stance re-offers the
+   * control rather than showing yesterday's words under today's position. NOT
+   * keyed by legislator: the script addresses "Representative" / "your office"
+   * and names no one (lib/nomination-script.ts AUDIENCE_LINES.house), so in a
+   * split ZIP every House row shows the same drafted words, which is correct —
+   * two different scripts for two offices being asked for the identical thing
+   * would be two chances to get one of them wrong.
+   */
+  const [houseDrafts, setHouseDrafts] = useState<Partial<Record<Stance, string>>>({});
+  const [houseFallbacks, setHouseFallbacks] = useState<Partial<Record<Stance, string>>>({});
+  const [houseLoading, setHouseLoading] = useState(false);
+  const [houseError, setHouseError] = useState<'generic' | 'rate' | 'refused' | null>(null);
+  const [houseCopied, setHouseCopied] = useState(false);
   const [lookup, setLookup] = useState<RepLookup>({ status: 'idle' });
   const prefs = usePrefs();
   const zip = prefs.zip ?? null;
@@ -174,7 +408,14 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   // The AI draft wins whenever it exists; the fallback template fills the
   // slot on rate limit so every `script &&` gate below — the review step,
   // the call section with the rep tel: links, the foot, the modal — stays
-  // mounted. The phones never leave the DOM over a script-slot failure.
+  // mounted. The phones never leave the DOM over a script-slot FAILURE.
+  //
+  // They do leave on a `refused` (422), and that is the intended difference:
+  // no fallback is seeded there, so `script` stays empty and the dial does not
+  // render. The foot's own comment states the rule this follows — "offering a
+  // dial with nothing to say is the thing that makes a first-time caller hang
+  // up" — and on a refusal there is, by the route's own decision, nothing to
+  // say. An outage is the opposite case and keeps its phones.
   const aiDraft = stance ? drafts[stance] : undefined;
   const isFallback = !aiDraft && !!stance && !!fallbacks[stance];
   const script = aiDraft ?? (stance ? (fallbacks[stance] ?? '') : '');
@@ -187,7 +428,18 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   // it, their edited script IS the script — offer nothing extra (the same
   // philosophy as generate()'s draft-exists early return).
   const fallbackPristine =
-    !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier);
+    !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier, kind);
+  // The same three derivations for the House slot. Its script never feeds the
+  // `script &&` gates below — the rail, the foot and the modal all belong to
+  // the Senate default, and an addition must not be able to unlock them.
+  const houseAiDraft = stance ? houseDrafts[stance] : undefined;
+  const houseIsFallback = !houseAiDraft && !!stance && !!houseFallbacks[stance];
+  const houseScript = houseAiDraft ?? (stance ? (houseFallbacks[stance] ?? '') : '');
+  const setHouseScript = (text: string) => {
+    if (!stance) return;
+    if (houseIsFallback) setHouseFallbacks((f) => ({ ...f, [stance]: text }));
+    else setHouseDrafts((d) => ({ ...d, [stance]: text }));
+  };
   const retryRemainingSec =
     retryAt === null ? null : Math.max(0, Math.ceil((retryAt - nowMs) / 1000));
 
@@ -210,16 +462,15 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
   //  Certainty outranks routing: in a split ZIP the senators stay first even
   //  when the House holds the bill, because "which House member is mine?" is
   //  unresolved and the refinement CTA sits right below.
+  //
+  //  A NOMINATION CHANGES THE COPY AND NOTHING ELSE. `rank` below is
+  //  deliberately untouched by `soleChamber`: it still returns only 0 or 1
+  //  and still filters nothing, so on a nomination the senators sort first
+  //  and the House member keeps his row, his dial, and his outcome buttons.
+  //  "Demote, never bury" then holds by construction rather than by promise —
+  //  the owner ruling of 2026-08-04, and the reason a nomination needed a
+  //  third boolean instead of a fifth branch.
   const liveChamber = liveTarget?.chamber ?? null;
-  const liveTargetKey = liveTarget
-    ? liveTarget.chamber === 'senate'
-      ? liveTarget.afterVote
-        ? 'liveSenateAfterHouse'
-        : 'liveSenateFloor'
-      : liveTarget.afterVote
-        ? 'liveHouseAfterSenate'
-        : 'liveHouseFloor'
-    : null;
   const rank = (r: Legislator) => {
     if (multiDistrict) return r.type === 'sen' ? 0 : 1;
     if (liveChamber) return (r.type === 'sen' ? 'senate' : 'house') === liveChamber ? 0 : 1;
@@ -229,6 +480,31 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
     lookup.status === 'ready' ? [...lookup.reps].sort((a, b) => rank(a) - rank(b)) : [];
   const vacancies = lookup.status === 'ready' ? lookup.vacancies : [];
   const notFound = lookup.status === 'ready' && reps.length === 0 && vacancies.length === 0;
+  // Which offices this reader actually has. Both feed copy that NAMES an
+  // office, so both are read off the resolved list rather than assumed: a
+  // delegate jurisdiction has no senator at all, and four House seats are
+  // vacant today (data/vacancies.json). liveCallKey holds the senator half of
+  // that rule for every routing sentence; the House-pressure note below holds
+  // its own half, because it is the only copy that speaks TO the House row.
+  const hasSenator = reps.some((r) => r.type === 'sen');
+  const liveTargetKey = liveCallKey(liveTarget, { hasSenator });
+  // The nomination annex: the two extra sentences a nomination needs and a
+  // bill does not — how confirmation works at all, and what a House member
+  // honestly can and cannot do about one. Gated on the House row EXISTING,
+  // never on the routing alone: telling a reader in a vacant district what to
+  // ask their representative would name an office that is not there.
+  const showNominationNote = !!liveTarget?.soleChamber && !!liveTargetKey;
+  const showHousePressNote = showNominationNote && reps.some((r) => r.type === 'rep');
+  /*
+   * …and the words to go with that note, offered in the row itself. Gated on
+   * `kind` as well as on the routing, even though `soleChamber` is only ever
+   * true for a nomination today: the House audience exists ONLY in the
+   * nomination branch of app/api/script, and the bill branch would silently
+   * ignore the field and hand back a chamber-neutral bill script under a label
+   * promising House-specific words. The kind is the thing that makes the
+   * request meaningful, so the kind is what gates the control.
+   */
+  const showHouseScript = kind === 'nomination' && showNominationNote;
 
   const fetchReps = useCallback(() => {
     if (!zip) {
@@ -293,7 +569,10 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
       setShowScrollHint(el.scrollHeight - el.clientHeight > 40 && el.scrollTop < 8);
     });
     return () => cancelAnimationFrame(frame);
-  }, [script, loading, lookup, stance, error]);
+    // houseScript/houseError are in here for the same reason the rest are: the
+    // House slot opening inside a row changes the body's height, and a hint
+    // measured before it opened is a hint about a different panel.
+  }, [script, loading, lookup, stance, error, houseScript, houseError, houseLoading]);
 
   useEffect(() => {
     const el = scrollBodyRef.current;
@@ -308,25 +587,42 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  async function generate(s: Stance) {
-    // Clock read up front (event-handler time): a 429 below anchors its
-    // countdown to the moment the request went out — conservative by at
-    // most the round-trip. The purity lint flags ANY handler clock read in
-    // this component (probed: main's own copyNumber + Date.now() trips it
-    // identically — a whole-component compiler bailout, not this line);
-    // generate() only ever runs from click/key handlers, never render.
-    // eslint-disable-next-line react-hooks/purity -- event-handler clock read; never runs during render
-    const calledAt = Date.now();
-    setStance(s);
-    setError(null);
-    if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
-    setGenLine(1); // restart the rotating lines for this generation
-    setLoading(true);
+  /*
+   * ONE REQUEST, ONE CLASSIFICATION, TWO CALLERS.
+   *
+   * Extracted 2026-08-06 when the House slot landed, and extracted rather than
+   * copied for the same reason app/api/script extracted serveScript(): this is
+   * the block that decides what a response MEANS, and two copies of it would be
+   * two places for the 422-is-not-an-outage distinction to drift. Each caller
+   * keeps its own state handling, which genuinely differs — only the senator
+   * slot owns the countdown clock, and only it drives the panel's `script &&`
+   * gates.
+   *
+   * Total by construction: every failure, including a thrown fetch, comes back
+   * as an outcome rather than an exception, so neither caller can leave its
+   * loading flag stuck.
+   *
+   * `audience` is sent ONLY for a nomination. The bill path of that route reads
+   * no audience at all, so a bill request stays byte-for-byte the one this
+   * panel has always sent; and 'senator' is stated rather than left to the
+   * route's default, so the request says out loud which of the two scripts it
+   * is asking for.
+   */
+  type ScriptOutcome =
+    | { kind: 'draft'; script: string }
+    | { kind: 'rate'; retryAfterSec: number | null }
+    | { kind: 'refused' }
+    | { kind: 'generic' };
+
+  async function requestScript(
+    s: Stance,
+    audience: NominationAudience | null
+  ): Promise<ScriptOutcome> {
     try {
       const res = await fetch('/api/script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, stance: s, locale }),
+        body: JSON.stringify({ slug, stance: s, locale, ...(audience ? { audience } : {}) }),
       });
       if (res.status === 429) {
         // The citizen 429 may disclose seconds-to-reset; older mocks and the
@@ -344,33 +640,117 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
         } catch {
           /* bare 429 body — no reset info to show */
         }
-        setNowMs(calledAt);
-        setRetryAt(sec ? calledAt + sec * 1000 : null);
-        // Seed the honest fallback template for this stance — never
-        // overwriting one the user may already have edited.
-        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
-        setError('rate');
-        return;
+        return { kind: 'rate', retryAfterSec: sec };
       }
-      if (!res.ok) {
-        // Same honest fallback the 429 branch seeds (Phase-1 P1): a generic
-        // API failure previously left `script` empty, and every call
-        // affordance on the page is gated behind it — an outage took the
-        // phone numbers down with it, against funnel invariant I2. The
-        // template is static, labeled not-AI-generated, and never
-        // overwrites a draft the user already edited.
-        setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
-        setError('generic');
-        return;
-      }
+      /*
+       * THE ROUTE'S ONE DELIBERATE REFUSAL, and it must not be read as an
+       * outage. app/api/script answers 422 `not_callable` — and 422 for
+       * nothing else — when it has decided there is no call to make: a
+       * nomination past advice and consent, one whose stage the record does
+       * not state, or one of the 14 records carrying no description sentence
+       * to ground a script in. Status alone is the check because that route
+       * is the only thing that answers this fetch and it has exactly one 422.
+       */
+      if (res.status === 422) return { kind: 'refused' };
+      if (!res.ok) return { kind: 'generic' };
       const data = await res.json();
-      setDrafts((d) => ({ ...d, [s]: data.script }));
+      return { kind: 'draft', script: data.script };
     } catch {
-      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier) }));
-      setError('generic');
-    } finally {
-      setLoading(false);
+      return { kind: 'generic' };
     }
+  }
+
+  async function generate(s: Stance) {
+    // Clock read up front (event-handler time): a 429 below anchors its
+    // countdown to the moment the request went out — conservative by at
+    // most the round-trip. The purity lint flags ANY handler clock read in
+    // this component (probed: main's own copyNumber + Date.now() trips it
+    // identically — a whole-component compiler bailout, not this line);
+    // generate() only ever runs from click/key handlers, never render.
+    // eslint-disable-next-line react-hooks/purity -- event-handler clock read; never runs during render
+    const calledAt = Date.now();
+    setStance(s);
+    setError(null);
+    // The House slot's error belonged to the stance being left behind — its
+    // draft is keyed by stance and survives, but a failure message that
+    // outlived its request would be reported about words nobody asked for yet.
+    setHouseError(null);
+    if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
+    setGenLine(1); // restart the rotating lines for this generation
+    setLoading(true);
+    const outcome = await requestScript(s, kind === 'nomination' ? 'senator' : null);
+    // Seed the honest fallback template for this stance — never overwriting one
+    // the user may already have edited. On a rate limit AND on a generic
+    // failure (Phase-1 P1): a failure previously left `script` empty, and every
+    // call affordance on the page is gated behind it, so an outage took the
+    // phone numbers down with it, against funnel invariant I2. The template is
+    // static and labeled not-AI-generated.
+    const seedFallback = () =>
+      setFallbacks((f) => (f[s] ? f : { ...f, [s]: fallbackFor(t, s, identifier, kind) }));
+    switch (outcome.kind) {
+      case 'draft':
+        setDrafts((d) => ({ ...d, [s]: outcome.script }));
+        break;
+      case 'rate':
+        setNowMs(calledAt);
+        setRetryAt(outcome.retryAfterSec ? calledAt + outcome.retryAfterSec * 1000 : null);
+        seedFallback();
+        setError('rate');
+        break;
+      case 'refused':
+        // No fallback seeded here, on purpose. Every other branch hands over a
+        // template because the reader still has a call to make and only our
+        // machinery failed; here the machinery worked and the answer is that
+        // there is nothing to say.
+        setError('refused');
+        break;
+      case 'generic':
+        seedFallback();
+        setError('generic');
+        break;
+    }
+    setLoading(false);
+  }
+
+  /**
+   * The same act for the House audience, asked for from the House member's own
+   * row. Deliberately does NOT touch `stance`, `error`, `retryAt` or the
+   * countdown: the senator script is the page's action and this must never be
+   * able to disturb it — the reader pressed a button inside one row, not a mode
+   * switch. It cannot run before a stance exists, because the row it lives in
+   * only renders once there is a script.
+   */
+  async function generateHouseScript(s: Stance) {
+    setHouseError(null);
+    if (houseDrafts[s]) return; // already drafted (possibly edited) — restore, don't regenerate
+    setHouseLoading(true);
+    const outcome = await requestScript(s, 'house');
+    const seedFallback = () =>
+      setHouseFallbacks((f) => (f[s] ? f : { ...f, [s]: houseFallbackFor(t, s, identifier) }));
+    switch (outcome.kind) {
+      case 'draft':
+        setHouseDrafts((d) => ({ ...d, [s]: outcome.script }));
+        break;
+      case 'rate':
+        seedFallback();
+        setHouseError('rate');
+        break;
+      case 'refused':
+        setHouseError('refused');
+        break;
+      case 'generic':
+        seedFallback();
+        setHouseError('generic');
+        break;
+    }
+    setHouseLoading(false);
+  }
+
+  function copyHouseScript() {
+    navigator.clipboard?.writeText(houseScript).then(() => {
+      setHouseCopied(true);
+      setTimeout(() => setHouseCopied(false), 2000);
+    });
   }
 
   function copyNumber(phone: string) {
@@ -518,7 +898,13 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
           <div role="status">
             <p className="flex items-center gap-2 text-ink-2">
               <Sparkles className="h-4 w-4 flex-none animate-pulse" aria-hidden />
-              {t(`generating${genLine}`)}
+              {/* Line 1 names what is being read, so it is the one line of
+                  the three that a nomination has to say differently: there
+                  is no bill here, and no decode either — the model is given
+                  the Senate's own description sentence (see
+                  lib/nomination-script.ts). Lines 2 and 3 describe the
+                  drafting itself and are true of both kinds. */}
+              {t(kind === 'nomination' && genLine === 1 ? 'generatingNomination1' : `generating${genLine}`)}
             </p>
             <p className="mt-0.5 text-sm text-ink-2">{t('generatingHint')}</p>
             <div className="mt-2 h-[6px] max-w-note overflow-hidden rounded-stamp bg-line">
@@ -526,7 +912,22 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             </div>
           </div>
         )}
-        {error && (
+        {/* THE REFUSAL, IN ITS OWN REGISTER. Not `Failure`: that component is
+            the panel's failure vocabulary — the alert rule, the bold alert
+            label, role="alert" — and the color law above says alert is
+            "failure only". Nothing failed here, so this is an ink note with
+            role="status", the same voice `concernNote` and the office-hours
+            note speak in. No retry button and no template ride with it,
+            because both would contradict the sentence itself. */}
+        {error === 'refused' && (
+          <div
+            role="status"
+            className="rounded-control border-l-[3px] border-ink bg-wash px-4 py-3"
+          >
+            <p className="max-w-note text-sm text-ink">{t('scriptNotCallable')}</p>
+          </div>
+        )}
+        {(error === 'rate' || error === 'generic') && (
           <div>
             <Failure>
               <span className="font-bold text-alert">
@@ -629,7 +1030,7 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                       {t('ghostSummary', { stance: t(`stance.${s}`) })}
                     </summary>
                     <p className="pb-3 font-reading text-sm whitespace-pre-wrap text-ink-2">
-                      {fallbackFor(t, s, identifier)}
+                      {fallbackFor(t, s, identifier, kind)}
                     </p>
                   </details>
                 ))}
@@ -726,11 +1127,27 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             {/* The routing fact, when the record supplies one: who holds the
                 live decision. A procedural statement from the stored record
                 (liveCallTarget) — never a guess, and never a removal: every
-                office below keeps its dial. */}
+                office below keeps its dial.
+
+                ON A NOMINATION this becomes three beats, in the order a
+                reader who has never met one needs them: how confirmation
+                works (quiet, ink-2 — it is context, not the action), then the
+                Senate call in the same bold voice every other routing
+                sentence uses, then the honest account of what a House call
+                can and cannot do. The Senate line stays the loudest thing
+                here, which is the "Senate by default" half of the owner's
+                2026-08-06 ruling; the House note is quiet and below it, which
+                is the "demote, never bury" half. */}
+            {showNominationNote && (
+              <p className="mt-4 max-w-note text-sm text-ink-2">{t('nominationHow')}</p>
+            )}
             {liveTargetKey && reps.length > 0 && (
               <p className="mt-4 max-w-note text-sm font-semibold text-ink">
                 {t(liveTargetKey)}
               </p>
+            )}
+            {showHousePressNote && (
+              <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
             )}
             {reps.length > 0 && (
               <p
@@ -806,6 +1223,24 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
                         </a>
                       ))}
                     </div>
+
+                    {/* The number, then what to say into it, then how it went —
+                        the row's own read → act → log order, matching the
+                        panel's. Only on a nomination, and only on the office
+                        that has no vote on one. */}
+                    {showHouseScript && rep.type === 'rep' && stance && (
+                      <HouseScriptSlot
+                        t={t}
+                        script={houseScript}
+                        isFallback={houseIsFallback}
+                        loading={houseLoading}
+                        error={houseError}
+                        copied={houseCopied}
+                        onGenerate={() => generateHouseScript(stance)}
+                        onChange={setHouseScript}
+                        onCopy={copyHouseScript}
+                      />
+                    )}
 
                     {/* Step 4 - outcome (one record per rep; re-tap changes it) */}
                     <div className="mt-3">
@@ -1014,9 +1449,18 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
             </button>
           </div>
 
-          {/* The routing fact at the dial moment: same line the rail carries. */}
+          {/* The routing fact at the dial moment: same line the rail carries.
+              The nomination's House-pressure note rides along, because THIS is
+              where the second dial is about to be pressed and "what do I even
+              say to a House office about a nomination?" is a question the
+              rail's copy may already have scrolled past. The how-it-works
+              explainer does NOT ride along: the mode is for dialing, and the
+              procedure is context the reader has by now. */}
           {liveTargetKey && reps.length > 0 && (
             <p className="mt-5 max-w-note text-sm font-semibold text-ink">{t(liveTargetKey)}</p>
+          )}
+          {showHousePressNote && (
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
           )}
           {/* The same split-ZIP disambiguation the rail carries, at the dial
               moment itself: senators already lead the list (sorted above);
@@ -1038,20 +1482,42 @@ export function ActionPanel({ slug, identifier, title, recordLabels, liveTarget 
               {reps.map(
                 (rep) =>
                   rep.phone && (
-                    <a
-                      key={rep.bioguide}
-                      href={telHref(rep.phone)}
-                      className="ring-gap flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <Phone className="h-4 w-4 flex-none" aria-hidden />
-                        {rep.name}
-                      </span>
-                      {/* B1: the number at display scale — see the rail note. */}
-                      <span className="text-h3 leading-none font-extrabold tabular-nums">
-                        {rep.phone}
-                      </span>
-                    </a>
+                    <div key={rep.bioguide}>
+                      <a
+                        href={telHref(rep.phone)}
+                        className="ring-gap flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <Phone className="h-4 w-4 flex-none" aria-hidden />
+                          {rep.name}
+                        </span>
+                        {/* B1: the number at display scale — see the rail note. */}
+                        <span className="text-h3 leading-none font-extrabold tabular-nums">
+                          {rep.phone}
+                        </span>
+                      </a>
+                      {/* The House words ride HERE too, for the reason the
+                          House-pressure note above rides into this mode: this
+                          is where the second dial is about to be pressed, and
+                          the script in the tint block above it is the SENATOR's
+                          — read to a House office it asks for a vote that
+                          office does not have. Same state as the rail's copy,
+                          so a draft made in one place is already made in the
+                          other. */}
+                      {showHouseScript && rep.type === 'rep' && stance && (
+                        <HouseScriptSlot
+                          t={t}
+                          script={houseScript}
+                          isFallback={houseIsFallback}
+                          loading={houseLoading}
+                          error={houseError}
+                          copied={houseCopied}
+                          onGenerate={() => generateHouseScript(stance)}
+                          onChange={setHouseScript}
+                          onCopy={copyHouseScript}
+                        />
+                      )}
+                    </div>
                   )
               )}
             </div>

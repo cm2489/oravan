@@ -74,6 +74,34 @@ export async function fetchRecentlyUpdated(limit) {
   return items.filter((b) => BILL_TYPES.has((b.type ?? '').toLowerCase()));
 }
 
+/**
+ * Normalize any date-ish string into the ONLY shape Congress.gov's
+ * `fromDateTime` accepts: seconds-precision ISO-8601.
+ *
+ * It is picky in BOTH directions, and each direction has already cost a
+ * multi-day outage:
+ *   - A bare date ("2026-06-04", the shape its own bill-list `updateDate`
+ *     uses) 400s — the 2026-06-25/07-01 outage.
+ *   - A fractional-seconds timestamp ("2026-07-16T17:54:26.862Z", the shape
+ *     Date.toISOString() emits) ALSO 400s — the 2026-07-17/07-22 outage,
+ *     triggered the first time a clean (unfrozen) run persisted raw runStart
+ *     as the cursor.
+ * Live-verified 2026-07-22 on /bill: .862Z -> 400, seconds-precision -> 200.
+ * Re-verified 2026-08-06 on /nomination, which behaves identically:
+ * "2026-08-05" -> 400, "2026-08-05T00:00:00Z" -> 200.
+ *
+ * Always normalize before anything becomes a persisted cursor. Lifted here
+ * from scripts/sync-bills.mjs (unchanged, byte for byte) on 2026-08-06 so
+ * the nomination sync shares this one copy instead of carrying a second that
+ * can re-learn the outage independently.
+ *
+ * @param {string} d
+ * @returns {string} seconds-precision ISO-8601
+ */
+export function toISODateTime(d) {
+  return /T/.test(d) ? d.replace(/\.\d+(?=Z$|[+-]\d\d:\d\d$)/, '') : `${d}T00:00:00Z`;
+}
+
 // ---- status mapping (ported from the reference implementation) ----
 export function mapStatus(actionText) {
   const text = (actionText ?? '').toLowerCase().trim();

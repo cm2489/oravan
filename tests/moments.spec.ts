@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { getLiveMoments, getMoments, type MomentWithState } from '../lib/moments';
+import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
 import { getBill, getTeasers } from '../lib/core';
+import { getNomination } from '../lib/core/nominations';
+import { nominationHasCallScript } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -80,7 +82,7 @@ test.describe('/questions/[id] detail page', () => {
   const moments: MomentWithState[] = getMoments();
 
   for (const m of moments) {
-    test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real bill page`, async ({
+    test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real page`, async ({
       page,
     }) => {
       await page.goto(`/questions/${m.id}`);
@@ -122,20 +124,30 @@ test.describe('/questions/[id] detail page', () => {
       // chrome (messages.coverage.lean.*, "AllSides") stays on the bill page only.
       expect(await page.getByText(/Leans left|Leans right|AllSides/i).count()).toBe(0);
 
-      // Every vehicle both names its bill and resolves — click through and
-      // confirm the real bill page renders (not a 404, not a stub).
+      // Every vehicle both names its record and resolves — click through and
+      // confirm the real page renders (not a 404, not a stub).
       //
-      // And the round trip: the bill page must say which bigger question it
-      // is a vehicle of (spec §7.2). Only live and stale moments backlink
-      // (lib/moments.ts), so a settled or retired moment naturally takes the
-      // goBack() path instead — the same corpus-robust idiom the rest of
-      // this file uses, no hardcoded expectation about today's data.
+      // ROUTED BY KIND, not by the shape of the slug: a bill vehicle must
+      // resolve to /bills/<slug> and a nomination vehicle to
+      // /nominations/<slug>, each through lib/moments.ts's one normalizer.
+      // Asserting /bills/ for every vehicle was correct only while every
+      // vehicle was a bill; the first nomination Moment to merge would have
+      // failed this test on a link that was working.
+      //
+      // And the round trip: the vehicle's page must say which bigger question
+      // it is a vehicle of (spec §7.2) — a claim both page types make, and one
+      // this assertion now proves of both. Only live and stale moments
+      // backlink (lib/moments.ts), so a settled or retired moment naturally
+      // takes the goBack() path instead — the same corpus-robust idiom the
+      // rest of this file uses, no hardcoded expectation about today's data.
       const backlinks = m.state === 'live' || m.state === 'stale';
       for (const v of m.vehicles) {
-        const billLink = page.locator(`a[href="/bills/${v.slug}"]`).first();
-        await expect(billLink).toBeVisible();
-        await billLink.click();
-        await expect(page).toHaveURL(new RegExp(`/bills/${v.slug}$`));
+        const href =
+          vehicleKind(v) === 'nomination' ? `/nominations/${v.slug}` : `/bills/${v.slug}`;
+        const vehicleLink = page.locator(`a[href="${href}"]`).first();
+        await expect(vehicleLink, `${m.id} → ${href}`).toBeVisible();
+        await vehicleLink.click();
+        await expect(page).toHaveURL(new RegExp(`${escapeRegex(href)}$`));
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
         if (backlinks) {
@@ -154,6 +166,48 @@ test.describe('/questions/[id] detail page', () => {
         }
       }
     });
+  }
+
+  /*
+   * THE NOTE UNDER THE GRID PROMISES ONLY WHAT ITS CARDS DELIVER.
+   *
+   * `moments.bothNote` ("…Every link above opens the same call flow…") was
+   * rendered unconditionally. True of every bill card — the bill page always
+   * mounts ActionPanel — and false of a nomination card whose page has no call
+   * script waiting on it: no dial, no stance control, a rail that reads "No
+   * call to make".
+   *
+   * The expectation is derived from the RECORD through /api/script's own
+   * refusal rule (`nominationHasCallScript`), never through lib/moments-ui.ts's
+   * `bothNoteKey` — that would only assert the page agrees with itself. Today
+   * every moment is bill-only, so this pins the unchanged sentence; the first
+   * nomination Moment to merge flips the same assertion without an edit.
+   */
+  for (const m of moments) {
+    for (const { locale, prefix, messages } of LOCALES) {
+      test(`${m.id}/${locale}: the vehicles note promises only what its cards deliver`, async ({
+        page,
+      }) => {
+        const someNoCall = m.vehicles.some((v) => {
+          if (vehicleKind(v) !== 'nomination') return false;
+          const n = getNomination(v.slug);
+          // An unresolved slug renders no card, so it puts no link above the
+          // note to make a claim about.
+          return n ? !nominationHasCallScript(n) : false;
+        });
+
+        await page.goto(`${prefix}/questions/${m.id}`);
+        const grid = page.locator('section[aria-labelledby="vehicles-h"]');
+        await expect(
+          grid.getByText(messages.moments.bothNote, { exact: true }),
+          'the unconditional promise',
+        ).toHaveCount(someNoCall ? 0 : 1);
+        await expect(
+          grid.getByText(messages.moments.bothNoteSomeNoCall, { exact: true }),
+          'the kind-aware variant',
+        ).toHaveCount(someNoCall ? 1 : 0);
+      });
+    }
   }
 
   test('settled vs. live framing differs on the page (corpus-robust: skips if no settled moment exists)', async ({

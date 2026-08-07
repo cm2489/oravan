@@ -4,7 +4,16 @@ import { join } from 'node:path';
 import { createTranslator } from 'next-intl';
 import enMessages from '../messages/en.json';
 import esMessages from '../messages/es.json';
-import { collapseQuietDays, momentDek, revisionReasons } from '../lib/moments-ui';
+import {
+  bothNoteKey,
+  collapseQuietDays,
+  momentDek,
+  nominationCtaKey,
+  revisionReasons,
+} from '../lib/moments-ui';
+import { getAllNominations, getNomination, nominationSlug, type Nomination } from '../lib/core/nominations';
+import { getMoments, vehicleKind, type MomentVehicle } from '../lib/moments';
+import { nominationHasCallScript } from '../lib/journey';
 import type { UpdateDayGroup } from '../lib/moment-updates';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
@@ -188,6 +197,412 @@ test.describe('isSignalFresh', () => {
  * unknown token maps to nothing at all, and no token text survives into
  * either locale's output.
  */
+/*
+ * WHAT A NOMINATION CARD'S BUTTON PROMISES.
+ *
+ * /questions/[id] labeled every nomination card's green phone-icon CTA
+ * `moments.readCall` — "Read + call" — for any moment that was not settled.
+ * On a nomination the Senate has finished with, or one Congress.gov never
+ * described, that button opens a page whose entire rail is the sentence "No
+ * call to make". `moments.vehiclesLedeNominations`, printed directly above the
+ * grid, made the same promise in prose.
+ *
+ * UNREACHABLE BY DOM TEST TODAY, on purpose: data/moments.json holds zero
+ * nomination vehicles and must stay byte-identical to main (the no-migration
+ * keystone). So the decision is a pure function and this is where it is pinned
+ * — the first nomination Moment is the run where it stops being latent, and
+ * that run must not be the one that discovers the bug.
+ */
+test.describe('nominationCtaKey', () => {
+  const DESCRIBED = 'Jane Doe, of Ohio, to be United States District Judge.';
+
+  test('a live, described nomination is the only case that may say "Read + call"', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(nominationCtaKey({ status, nominee_description: DESCRIBED }, false), status).toBe(
+        'moments.readCall',
+      );
+    }
+  });
+
+  test('a finished nomination says "Read the record" — the page has no call on it', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(nominationCtaKey({ status, nominee_description: DESCRIBED }, false), status).toBe(
+        'nominations.readRecord',
+      );
+    }
+  });
+
+  test('a record with no description says "Read the record" too', () => {
+    expect(nominationCtaKey({ status: 'received', nominee_description: null }, false)).toBe(
+      'nominations.readRecord',
+    );
+    // …and `unclassified`, whose page keeps a rail that can only ever refuse.
+    expect(nominationCtaKey({ status: 'unclassified', nominee_description: DESCRIBED }, false)).toBe(
+      'nominations.readRecord',
+    );
+  });
+
+  test('a settled moment is a record in every card, whatever its vehicle can still do', () => {
+    expect(nominationCtaKey({ status: 'exec_calendar', nominee_description: DESCRIBED }, true)).toBe(
+      'nominations.readRecord',
+    );
+  });
+
+  test('both keys resolve in both languages — no card ever prints a raw key', () => {
+    const messagesFor: Record<'en' | 'es', Record<string, unknown>> = {
+      en: enMessages as unknown as Record<string, unknown>,
+      es: esMessages as unknown as Record<string, unknown>,
+    };
+    for (const locale of ['en', 'es'] as const) {
+      const t = createTranslator({
+        locale,
+        messages: messagesFor[locale],
+      }) as unknown as (key: string) => string;
+      for (const key of ['moments.readCall', 'nominations.readRecord'] as const) {
+        const text = t(key);
+        expect(text.length, `${key}/${locale}`).toBeGreaterThan(0);
+        expect(text, `${key}/${locale}`).not.toBe(key);
+      }
+    }
+  });
+
+  /* THE REAL CORPUS, swept: every nomination Congress.gov describes and the
+     Senate can still act on may carry the call label; nothing else may. */
+  test('the whole committed corpus agrees with the route’s own refusal rule', () => {
+    const all = getAllNominations();
+    expect(all.length).toBeGreaterThan(0);
+    for (const n of all) {
+      const expected = nominationHasCallScript(n) ? 'moments.readCall' : 'nominations.readRecord';
+      expect(nominationCtaKey(n, false), n.citation).toBe(expected);
+    }
+    // The corpus really does contain both answers — a sweep that only ever
+    // sees one of them proves nothing.
+    expect(all.some((n) => nominationCtaKey(n, false) === 'moments.readCall')).toBe(true);
+    expect(all.some((n) => nominationCtaKey(n, false) === 'nominations.readRecord')).toBe(true);
+  });
+});
+
+/*
+ * WHAT THE NOTE UNDER THE VEHICLES GRID PROMISES.
+ *
+ * /questions/[id] printed `moments.bothNote` unconditionally — "No side is
+ * pre-selected. Every link above opens the same call flow, with support and
+ * oppose scripts equally available." The second sentence quantifies over every
+ * card in the grid. True of a bill (the bill page always mounts ActionPanel);
+ * false of a nomination the Senate has finished with, or one its record never
+ * described, whose page's whole rail is "No call to make".
+ *
+ * THE SHARED STRING IS NOT EDITED. It is the bill path's sentence too, and
+ * there it is true — so the fix is an additive, kind-aware variant, and a
+ * bill-only moment must keep printing the original byte for byte. Both halves
+ * are asserted here; tests/moments.spec.ts asserts the same pair in the DOM.
+ *
+ * UNREACHABLE BY DOM TEST TODAY, for the reason `nominationCtaKey` above is:
+ * data/moments.json holds zero nomination vehicles and must stay byte-
+ * identical to main. The vehicle sets below are built in the test.
+ */
+test.describe('bothNoteKey', () => {
+  const nominations = getAllNominations();
+  const callable = nominations.find((n) => nominationHasCallScript(n));
+  const notCallable = nominations.find((n) => !nominationHasCallScript(n));
+
+  /** A vehicle as data/moments.json would carry one. `role` is required by the
+   *  type and never read here — the note is about callability, not about what
+   *  a yes vote does. */
+  const nom = (n: Nomination): MomentVehicle => ({
+    slug: nominationSlug(n),
+    role: { en: 'role', es: 'papel' },
+    kind: 'nomination',
+  });
+
+  /* A REAL bill-only vehicle set, off the shipped corpus — the exact input
+     today's pages hand this function. */
+  const bills: MomentVehicle[] = getMoments()[0]?.vehicles ?? [];
+
+  test('the corpus really does contain both kinds of nomination record', () => {
+    // Every test below is vacuous without them, so this failing is the honest
+    // signal that the fixtures moved, not a silent green.
+    expect(callable, 'no callable nomination in the corpus').toBeTruthy();
+    expect(notCallable, 'no non-callable nomination in the corpus').toBeTruthy();
+    expect(bills.length, 'no bill vehicles in data/moments.json').toBeGreaterThan(0);
+  });
+
+  test('every shipped moment is bill-only today, and keeps the sentence it ships with', () => {
+    for (const m of getMoments()) {
+      expect(bothNoteKey(m.vehicles), m.id).toBe('moments.bothNote');
+    }
+  });
+
+  test('the shared string is untouched, in both languages', () => {
+    // The bill path's sentence, byte for byte as origin/main ships it. A fix
+    // for a nomination-only defect may not quietly rewrite shared copy.
+    expect(enMessages.moments.bothNote).toBe(
+      'No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.',
+    );
+    expect(esMessages.moments.bothNote).toBe(
+      'Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.',
+    );
+  });
+
+  test('a nomination with no call script drops the promise — alone, and beside bills', () => {
+    test.skip(!notCallable, 'no non-callable nomination in the corpus');
+    expect(bothNoteKey([nom(notCallable!)])).toBe('moments.bothNoteSomeNoCall');
+    expect(bothNoteKey([...bills, nom(notCallable!)])).toBe('moments.bothNoteSomeNoCall');
+  });
+
+  test('one uncallable card is enough — the sentence quantifies over all of them', () => {
+    test.skip(!callable || !notCallable, 'corpus lacks one of the two record kinds');
+    expect(bothNoteKey([nom(callable!), nom(notCallable!)])).toBe('moments.bothNoteSomeNoCall');
+    expect(bothNoteKey([nom(notCallable!), nom(callable!)])).toBe('moments.bothNoteSomeNoCall');
+  });
+
+  test('a set whose every card can be called keeps the promise', () => {
+    test.skip(!callable, 'no callable nomination in the corpus');
+    expect(bothNoteKey([nom(callable!)])).toBe('moments.bothNote');
+    expect(bothNoteKey([...bills, nom(callable!)])).toBe('moments.bothNote');
+  });
+
+  test('the live description-less record is the trap this was armed for', () => {
+    // PN897-2: still before the Senate, and Congress.gov never described it —
+    // so /api/script refuses (422) and its page's rail is "No call to make",
+    // while its status alone reads as live business.
+    const orphan = getAllNominations().find(
+      (n) => !n.nominee_description && nominationCtaKey(n, false) === 'nominations.readRecord',
+    );
+    test.skip(!orphan, 'no description-less record in the corpus');
+    expect(bothNoteKey([nom(orphan!)])).toBe('moments.bothNoteSomeNoCall');
+  });
+
+  test('a slug that resolves to nothing claims nothing — the page renders no card for it', () => {
+    const ghost: MomentVehicle = {
+      slug: 'pn-0-119',
+      role: { en: 'role', es: 'papel' },
+      kind: 'nomination',
+    };
+    expect(getNomination(ghost.slug), 'fixture must be a slug the corpus really lacks').toBeUndefined();
+    expect(bothNoteKey([ghost])).toBe('moments.bothNote');
+  });
+
+  test('the kind is read through the normalizer, never off the shape of the slug', () => {
+    test.skip(!notCallable, 'no non-callable nomination in the corpus');
+    // No `kind` means BILL everywhere in this codebase (lib/moments.ts's
+    // vehicleKind) — the no-migration default. Such a vehicle misses
+    // data/bills.json, renders no card, and so makes no claim here either.
+    const untyped: MomentVehicle = { slug: nominationSlug(notCallable!), role: { en: 'r', es: 'p' } };
+    expect(bothNoteKey([untyped])).toBe('moments.bothNote');
+  });
+
+  test('the whole committed corpus agrees with the route’s own refusal rule', () => {
+    expect(nominations.length).toBeGreaterThan(0);
+    for (const n of nominations) {
+      const expected = nominationHasCallScript(n) ? 'moments.bothNote' : 'moments.bothNoteSomeNoCall';
+      expect(bothNoteKey([nom(n)]), n.citation).toBe(expected);
+    }
+    // Both answers really occur — a sweep that only ever sees one proves nothing.
+    expect(nominations.some((n) => bothNoteKey([nom(n)]) === 'moments.bothNote')).toBe(true);
+    expect(nominations.some((n) => bothNoteKey([nom(n)]) === 'moments.bothNoteSomeNoCall')).toBe(true);
+  });
+
+  test('both keys resolve in both languages, and they are not the same sentence', () => {
+    const messagesFor: Record<'en' | 'es', Record<string, unknown>> = {
+      en: enMessages as unknown as Record<string, unknown>,
+      es: esMessages as unknown as Record<string, unknown>,
+    };
+    for (const locale of ['en', 'es'] as const) {
+      const t = createTranslator({ locale, messages: messagesFor[locale] }) as unknown as (
+        key: string,
+      ) => string;
+      const shared = t('moments.bothNote');
+      const variant = t('moments.bothNoteSomeNoCall');
+      for (const [key, text] of [
+        ['moments.bothNote', shared],
+        ['moments.bothNoteSomeNoCall', variant],
+      ] as const) {
+        expect(text.length, `${key}/${locale}`).toBeGreaterThan(0);
+        expect(text, `${key}/${locale}`).not.toBe(key);
+      }
+      expect(variant, locale).not.toBe(shared);
+      // The half that was false is gone from the variant, in both languages.
+      expect(variant, locale).not.toContain('Every link above');
+      expect(variant, locale).not.toContain('Cada enlace de arriba');
+      // …and the half that is the whole point of the sentence is still there.
+      expect(variant.startsWith(shared.split('.')[0]), locale).toBe(true);
+    }
+  });
+});
+
+/*
+ * WHAT THE LEDE OVER A MIXED GRID PROMISES.
+ *
+ * `moments.vehiclesLedeMixed` printed "Each opens the record and the call
+ * flow — support and oppose scripts are equally one tap away." "Each"
+ * quantifies over every card in that grid. True of a bill (the bill page
+ * always mounts ActionPanel, settled or not) and false of a nomination the
+ * Senate has finished with, or one its record never described: that page's
+ * whole rail is "No call to make", with no stance control and no script. The
+ * seventh string of this defect class, and the one the sixth fix named and
+ * left behind.
+ *
+ * CORRECTED IN PLACE, no variant — the one difference from `moments.bothNote`.
+ * app/[locale]/questions/[id]/page.tsx prints this key only when
+ * `kinds.has('bill') && kinds.has('nomination')`, so every set that reaches it
+ * carries a nomination and there is no bill-only render to keep byte-
+ * identical. `moments.vehiclesLede` is the bill path's own sentence, and it is
+ * asserted untouched below.
+ *
+ * DERIVED FROM THE RECORD. The premise — that a mixed grid can really hold a
+ * card with no call flow behind it — is computed from data/nominations.json
+ * through `nominationHasCallScript`, app/api/script's own 422 refusal
+ * conjunction, never from the message this block is about. The routing is
+ * computed through `vehicleKind`, the same normalizer the page reads, so a set
+ * this block calls mixed is one the page would call mixed too.
+ *
+ * UNREACHABLE BY DOM TEST TODAY, for the reason the two blocks above are:
+ * data/moments.json holds zero nomination vehicles and must stay byte-
+ * identical to main, so no shipped moment is mixed. The sets below are built
+ * in the test, from real corpus slugs.
+ */
+test.describe('moments.vehiclesLedeMixed', () => {
+  const nominations = getAllNominations();
+  const callable = nominations.find((n) => nominationHasCallScript(n));
+  const notCallable = nominations.find((n) => !nominationHasCallScript(n));
+
+  /* A REAL bill-only vehicle set, off the shipped corpus — the bill half of
+     every mixed set below is the exact input today's pages carry. */
+  const bills: MomentVehicle[] = getMoments()[0]?.vehicles ?? [];
+
+  /** A vehicle as data/moments.json would carry one. `role` is required by the
+   *  type and never read here — the lede is about what a card opens. */
+  const nom = (n: Nomination): MomentVehicle => ({
+    slug: nominationSlug(n),
+    role: { en: 'role', es: 'papel' },
+    kind: 'nomination',
+  });
+
+  /* app/[locale]/questions/[id]/page.tsx's own three-way choice, restated from
+     `vehicleKind` rather than imported: the page's version is an inline
+     ternary, and a test that reached for the page's own helper would only be
+     watching it agree with itself. */
+  const ledeKeyFor = (vehicles: MomentVehicle[]): string => {
+    const kinds = new Set(vehicles.map(vehicleKind));
+    if (kinds.has('bill') && kinds.has('nomination')) return 'moments.vehiclesLedeMixed';
+    return kinds.has('nomination') ? 'moments.vehiclesLedeNominations' : 'moments.vehiclesLede';
+  };
+
+  /** The universal this fix removed, and the condition that replaced it — the
+   *  same clause `moments.bothNoteSomeNoCall` established one commit earlier. */
+  const FALSE_UNIVERSAL = {
+    en: 'Each opens the record and the call flow',
+    es: 'Cada uno abre el registro y el flujo de llamada',
+  } as const;
+  const CONDITION = {
+    en: 'where that record still has a call to make',
+    es: 'cuando en ese registro todavía queda una llamada que hacer',
+  } as const;
+  /** The half that is true of every card of either kind, and so the half the
+   *  sentence is still allowed to state flat. */
+  const ALWAYS_TRUE = { en: 'Each opens the record', es: 'Cada uno abre el registro' } as const;
+
+  const lede = (locale: 'en' | 'es', key: string): string => {
+    const t = createTranslator({
+      locale,
+      messages: (locale === 'en' ? enMessages : esMessages) as unknown as Record<string, unknown>,
+    }) as unknown as (k: string) => string;
+    return t(key);
+  };
+
+  test('a mixed grid can really hold a card with no call flow behind it', () => {
+    // The premise, taken from the record. Without it every assertion below is
+    // vacuous, so this failing is the honest signal that the corpus moved
+    // rather than a silent green.
+    expect(notCallable, 'no non-callable nomination in the corpus').toBeTruthy();
+    expect(callable, 'no callable nomination in the corpus').toBeTruthy();
+    expect(bills.length, 'no bill vehicles in data/moments.json').toBeGreaterThan(0);
+    expect(ledeKeyFor([...bills, nom(notCallable!)])).toBe('moments.vehiclesLedeMixed');
+  });
+
+  test('one sentence has to cover both kinds of nomination record', () => {
+    test.skip(!callable || !notCallable, 'corpus lacks one of the two record kinds');
+    // The page holds ONE mixed lede and no callability branch, so the same
+    // sentence prints over a grid whose nomination can be called and over a
+    // grid whose nomination cannot. That is why it may not quantify.
+    expect(ledeKeyFor([...bills, nom(callable!)])).toBe('moments.vehiclesLedeMixed');
+    expect(ledeKeyFor([...bills, nom(notCallable!)])).toBe('moments.vehiclesLedeMixed');
+  });
+
+  test('the mixed lede does not promise a call flow behind every card', () => {
+    test.skip(!notCallable, 'no non-callable nomination in the corpus');
+    const key = ledeKeyFor([...bills, nom(notCallable!)]);
+    for (const locale of ['en', 'es'] as const) {
+      const text = lede(locale, key);
+      expect(text.length, `${key}/${locale}`).toBeGreaterThan(0);
+      expect(text, `${key}/${locale}`).not.toBe(key);
+      expect(text, `${locale}: a call flow is promised behind every card`).not.toContain(
+        FALSE_UNIVERSAL[locale],
+      );
+      expect(text, `${locale}: the call flow carries no condition`).toContain(CONDITION[locale]);
+    }
+  });
+
+  test('the half that is true of every card survives', () => {
+    for (const locale of ['en', 'es'] as const) {
+      // A bill's page and a nomination's page each open a record, always.
+      // Only the call flow was ever the conditional half, and precision about
+      // one half is not licence to hedge the other into uselessness.
+      expect(lede(locale, 'moments.vehiclesLedeMixed'), locale).toContain(ALWAYS_TRUE[locale]);
+    }
+  });
+
+  test('the bill path’s own lede is untouched, and nothing that renders today moved', () => {
+    // `moments.vehiclesLede` prints over a bill-only grid, where a call flow
+    // behind every card is true. A nomination-only defect does not get to
+    // rewrite it — byte for byte as origin/main ships it.
+    expect(enMessages.moments.vehiclesLede).toBe(
+      'The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.',
+    );
+    expect(esMessages.moments.vehiclesLede).toBe(
+      'Los proyectos de ley por los que realmente pasa esta cuestión. Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.',
+    );
+    for (const m of getMoments()) {
+      expect(ledeKeyFor(m.vehicles), m.id).toBe('moments.vehiclesLede');
+    }
+  });
+
+  test('the three sentences that can face an uncallable card condition it the same way', () => {
+    // The nominations lede was corrected first and the note under the grid
+    // second; a third vocabulary here would read to a translator as a third
+    // rule. The bill-only lede is not in this set and needs no condition.
+    for (const locale of ['en', 'es'] as const) {
+      const conditional = locale === 'en' ? /\bwhere\b/i : /\bcuando\b/i;
+      for (const key of [
+        'moments.vehiclesLedeMixed',
+        'moments.vehiclesLedeNominations',
+        'moments.bothNoteSomeNoCall',
+      ] as const) {
+        expect(lede(locale, key), `${key}/${locale}`).toMatch(conditional);
+      }
+      expect(lede(locale, 'moments.vehiclesLedeMixed'), locale).not.toBe(
+        lede(locale, 'moments.vehiclesLedeNominations'),
+      );
+    }
+  });
+
+  /* THE WHOLE COMMITTED CORPUS, swept: every record the route would refuse is
+     a record that reaches this sentence through a mixed set, so there is no
+     nomination anywhere in data/nominations.json that would have made the
+     removed universal true again. */
+  test('every record the route refuses reaches this sentence', () => {
+    expect(nominations.length).toBeGreaterThan(0);
+    const refused = nominations.filter((n) => !nominationHasCallScript(n));
+    expect(refused.length, 'the corpus contains records the route refuses').toBeGreaterThan(0);
+    for (const n of refused) {
+      expect(ledeKeyFor([...bills, nom(n)]), n.citation).toBe('moments.vehiclesLedeMixed');
+    }
+    // Both answers really occur — a sweep that only ever sees one proves nothing.
+    expect(nominations.some((n) => nominationHasCallScript(n))).toBe(true);
+  });
+});
+
 test.describe('revisionReasons', () => {
   const MESSAGES: Record<'en' | 'es', Record<string, unknown>> = {
     en: enMessages,

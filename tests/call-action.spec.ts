@@ -466,6 +466,173 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
 });
 
 /*
+ * SENATE-DEFAULT ROUTING KEEPS THE HOUSE MEMBER (owner rulings 2026-08-04
+ * "demote, never bury" and 2026-08-06 "the focus should be on the senator as
+ * a default").
+ *
+ * ⚠️ READ THIS BEFORE TRUSTING THE NAME. This drives a BILL — S.J.Res. 99,
+ * whose own last action carries a Congressional Record S-page, so
+ * liveCallTarget returns `{chamber:'senate', afterVote:false, soleChamber:false}`.
+ * It is NOT nomination-backed, and the reason CHANGED under this comment
+ * (amended 2026-08-06): it used to read that nothing in the app rendered a
+ * nomination — no caller for `liveCallTargetForNomination`, no /nominations
+ * route, ActionPanel mounted from exactly one page. All three stopped being
+ * true when app/[locale]/nominations/[slug]/page.tsx landed, which calls that
+ * predicate, is that route, and mounts that panel. A nomination-backed E2E
+ * is therefore no longer impossible, and one exists: tests/nominations.spec.ts
+ * drives the real page, the House member's own script slot included. This one
+ * stays bill-backed on purpose, for the reason in the next paragraph.
+ *
+ * What it therefore pins is the part that IS shared, byte for byte:
+ * `soleChamber` never reaches ActionPanel's `rank()`, so a nomination sorts
+ * through the identical `liveChamber === 'senate'` path this bill takes. If
+ * the House member ever loses his row, his dial, or his position behind the
+ * senators here, he loses it on a nomination too — and on a nomination he is
+ * the one office with no vote at all, which is exactly when burying him would
+ * be easiest to justify and worst to do.
+ *
+ * The nomination-only copy is pinned twice: at unit level in
+ * tests/journey.unit.spec.ts (suite 7: liveCallKey picks
+ * `liveSenateNomination`, never one of the four relational keys, and picks
+ * nothing at all for a reader with no senator), and in the DOM in
+ * tests/nominations.spec.ts, which now that the page exists asserts the rail
+ * never calls a nomination a bill, in both languages.
+ */
+test('Senate routing demotes the House member without burying him — rail and call mode', async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  await seedZip(page, '78501'); // TX-15: two senators + one House member
+  await page.reload();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  // The routing sentence names the Senate as the live call.
+  await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();
+
+  // THE RAIL. Three rows, in that order, and the House member is the third —
+  // present, not filtered.
+  const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  await expect(railNames).toHaveCount(3);
+  await expect(railNames.nth(0)).toHaveText('John Cornyn');
+  await expect(railNames.nth(1)).toHaveText('Ted Cruz');
+  await expect(railNames.nth(2)).toHaveText('Monica De La Cruz');
+
+  // Demoted, never buried: the House row still carries a real, dialable
+  // number, not a name with the phone taken away.
+  const houseRow = page
+    .locator('section[aria-labelledby="act"] ul > li')
+    .filter({ hasText: 'Monica De La Cruz' });
+  await expect(houseRow.locator('a[href^="tel:"]').first()).toHaveAttribute(
+    'href',
+    /^tel:\+1\d{10}$/
+  );
+  // …and the outcome buttons, so a call to that office is still loggable.
+  await expect(houseRow.getByRole('button', { name: en.bill.outcome.voicemail })).toBeVisible();
+
+  // THE CALL MODE — the dial moment itself, where an ordering regression
+  // would do the most damage. Same order, same three dials.
+  await page.getByRole('button', { name: en.bill.startCall }).click();
+  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
+  await expect(dialog.getByText(en.bill.liveSenateFloor)).toBeVisible();
+  const dials = dialog.locator('a[href^="tel:"]');
+  await expect(dials).toHaveCount(3);
+  await expect(dials.nth(0)).toContainText('John Cornyn');
+  await expect(dials.nth(1)).toContainText('Ted Cruz');
+  await expect(dials.nth(2)).toContainText('Monica De La Cruz');
+});
+
+/*
+ * The nomination annex is DARK until a surface serves one: no page passes a
+ * soleChamber target today, so none of the three nomination strings may
+ * appear anywhere on a bill page. This is the tripwire on that — if a future
+ * change starts routing bills through the nomination branch, a reader would
+ * be told "the House has no vote on this" about a bill the House votes on,
+ * which is the single worst sentence this step could ship.
+ */
+test('no bill page ever shows the nomination copy', async ({ page }) => {
+  await mockScriptApi(page);
+  await page.goto(BILL);
+  await seedZip(page, '78501');
+  await page.reload();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  for (const copy of [
+    en.bill.liveSenateNomination,
+    en.bill.nominationHow,
+    en.bill.nominationHousePress,
+  ]) {
+    await expect(page.getByText(copy)).toHaveCount(0);
+  }
+});
+
+/*
+ * A READER WITH NO SENATOR IS NEVER TOLD THEIR SENATORS ARE THE CALL.
+ *
+ * N3 added `hasSenator` to liveCallKey and gated the NOMINATION key on it. The
+ * four pre-existing BILL keys were left ungated, and they had the same defect
+ * and had shipped with it: a reader in DC on this bill page was told "your
+ * senators are the live call" when they have none — 57 DC ZIPs alone, plus PR,
+ * VI, GU, AS and MP. Fixed in the same file and the same commit as the
+ * nomination work, because a second commit would have been a guaranteed
+ * conflict in one component.
+ *
+ * WHY THE TWO HOUSE KEYS ARE GATED ON THE SAME BOOLEAN, which reads odd until
+ * you check the data: the six jurisdictions with no senator are exactly the six
+ * that send a non-voting delegate or resident commissioner (verified against
+ * data/legislators.json on 2026-08-06 — no state has fewer than two senators,
+ * so `hasSenator === false` is a delegate jurisdiction and nothing else). "Your
+ * House member is the live call" names an office with no vote on passage there,
+ * so all four relational sentences are false for the same reader for the same
+ * underlying reason. The exhaustive proof is at unit level
+ * (tests/journey.unit.spec.ts, liveCallKey); this drives the one that actually
+ * reaches a reader today.
+ *
+ * NOTHING IS TAKEN AWAY. The delegate keeps the row, the dial and the outcome
+ * buttons, and `callWhoOne` — "Your delegate is your voice in the House" — is
+ * the honest sentence that stays. The bill's stage is still on the page in the
+ * journey stepper, which is server-rendered and knows nothing about the ZIP.
+ */
+test('a reader with no senator sees no routing sentence claiming senators are theirs', async ({
+  page,
+}) => {
+  await mockScriptApi(page);
+  await page.goto(BILL); // liveCallTarget: {chamber:'senate', afterVote:false}
+  await seedZip(page, '20001'); // DC-0: one delegate, no senator at all
+  await page.reload();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
+
+  // The office they do have is right there, dialable.
+  const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  await expect(railNames).toHaveCount(1);
+  await expect(railNames.nth(0)).toHaveText('Eleanor Holmes Norton');
+  await expect(page.locator('section[aria-labelledby="act"] a[href^="tel:"]').first()).toBeVisible();
+  // …and the honest who-to-call sentence for a delegate jurisdiction.
+  await expect(page.getByText(en.bill.callWhoOne)).toBeVisible();
+
+  // None of the five routing sentences may appear — the four relational bill
+  // ones and the nomination one.
+  for (const key of [
+    'liveSenateFloor',
+    'liveHouseFloor',
+    'liveSenateAfterHouse',
+    'liveHouseAfterSenate',
+    'liveSenateNomination',
+  ] as const) {
+    await expect(page.getByText(en.bill[key])).toHaveCount(0);
+  }
+
+  // Including at the dial moment, where the same line is repeated.
+  await page.getByRole('button', { name: en.bill.startCall }).click();
+  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(en.bill.liveSenateFloor)).toHaveCount(0);
+});
+
+/*
  * 2026-07 critique, top consensus P0: with no saved ZIP the call mode used to
  * be a dead end — the script and reassurance rendered, but zero phone
  * numbers, no ZIP form, and no explanation. The fix lives IN the mode: a ZIP

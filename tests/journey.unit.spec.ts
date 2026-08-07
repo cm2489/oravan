@@ -1,8 +1,27 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { deriveJourney, floorActionChamber, floorCalendarChamber, liveCallTarget } from '../lib/journey';
+import {
+  deriveJourney,
+  floorActionChamber,
+  floorCalendarChamber,
+  liveCallKey,
+  liveCallTarget,
+  liveCallTargetForNomination,
+  nominationHasCallScript,
+  type LiveCallKey,
+} from '../lib/journey';
 import type { BillStatus } from '../lib/types';
+import type { NominationStatus } from '../lib/core/nominations';
+// The nomination vocabulary, from the ONE copy — see lib/nomination-status.mjs's
+// header. Imported from the .mjs directly rather than through
+// lib/core/nominations so this spec does not pull data/nominations.json.
+import {
+  NOMINATION_STATUSES,
+  TERMINAL_NOMINATION_STATUSES,
+} from '../lib/nomination-status.mjs';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
 // The import-free copy the .mjs report carries — pinned corpus-wide in suite 6.
 import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
@@ -219,6 +238,12 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
  *     2026-08). Non-null ONLY where the record places the bill in a
  *     chamber's hands today; everything else renders the rep list
  *     exactly as before. Never guesses (owner ruling 2026-08-04).
+ *
+ *     EVERY non-null assertion here spells out `soleChamber: false` —
+ *     `toEqual` is exact, so this suite is the regression guard on the
+ *     2026-08-06 additive field: a bill that ever came back
+ *     soleChamber:true would print a nomination's "the House has no vote"
+ *     framing over a bill the House votes on, and this is what stops it.
  * ------------------------------------------------------------------ */
 test.describe('liveCallTarget', () => {
   const bill = (bill_type: string, status: BillStatus, last_action_text: string | null) => ({
@@ -230,16 +255,17 @@ test.describe('liveCallTarget', () => {
   test('floor calendar placement routes to that chamber, wherever the bill started', () => {
     expect(
       liveCallTarget(bill('hr', 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.'))
-    ).toEqual({ chamber: 'senate', afterVote: false });
+    ).toEqual({ chamber: 'senate', afterVote: false, soleChamber: false });
     expect(
       liveCallTarget(bill('hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.'))
-    ).toEqual({ chamber: 'house', afterVote: false });
+    ).toEqual({ chamber: 'house', afterVote: false, soleChamber: false });
   });
 
   test('floor activity routes by the record sentence, not the bill type', () => {
     expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT))).toEqual({
       chamber: 'senate',
       afterVote: false,
+      soleChamber: false,
     });
   });
 
@@ -252,16 +278,237 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.'))).toEqual({
       chamber: 'senate',
       afterVote: true,
+      soleChamber: false,
     });
     expect(liveCallTarget(bill('sjres', 'passed_chamber', 'Received in the House.'))).toEqual({
       chamber: 'house',
       afterVote: true,
+      soleChamber: false,
     });
   });
 
   test('every other stage renders the list untouched: committee, conference, signed, vetoed, introduced', () => {
     for (const status of ['introduced', 'committee', 'markup', 'conference', 'signed', 'vetoed'] as const) {
       expect(liveCallTarget(bill('hr', status, 'whatever the record says'))).toBeNull();
+    }
+  });
+
+  /*
+   * The sweep, not just the fixtures: NO bill in the live corpus may ever
+   * come back non-relational. The fixtures above pin the shapes we know; this
+   * pins the ones tomorrow's sync invents.
+   */
+  test('no bill in the live corpus routes as soleChamber — the field is nomination-only', () => {
+    for (const b of corpus) {
+      const target = liveCallTarget({
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+      });
+      if (target) expect(target.soleChamber, slugOf(b)).toBe(false);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 7 · liveCallTargetForNomination + liveCallKey — the Senate-default
+ *     routing (owner ruling 2026-08-06: "nominations should be directed
+ *     to senate only … the focus should be on the senator as a default").
+ *
+ *     The two things this suite exists to stop:
+ *       (a) a FINISHED nomination reading as a live Senate call — the
+ *           exact failure lib/nomination-status.mjs was split off from the
+ *           bill mapper to prevent, re-entering through the routing layer;
+ *       (b) a nomination sentence being shown to a reader who has no
+ *           senator to call (DC, PR, VI, GU, AS, MP).
+ * ------------------------------------------------------------------ */
+test.describe('liveCallTargetForNomination', () => {
+  const SENATE_CALL = { chamber: 'senate', afterVote: false, soleChamber: true };
+
+  test('every live stage is the Senate, non-relational, and never "after" a vote', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(liveCallTargetForNomination({ status }), status).toEqual(SENATE_CALL);
+    }
+  });
+
+  test('committee stages route too — unlike a bill, because there is no other chamber to demote', () => {
+    // The bill rule (suite 5) returns null at committee stage to avoid
+    // demoting the other chamber's offices on a weak claim. A nomination has
+    // no other chamber, and `received`/`hearing`/`reported` ARE Senate
+    // committee stages, so naming the Senate there is a fact, not a guess.
+    expect(liveCallTargetForNomination({ status: 'received' })).toEqual(SENATE_CALL);
+    expect(liveCallTarget({ bill_type: 'hr', status: 'committee', last_action_text: null })).toBeNull();
+  });
+
+  test('terminal statuses route NOWHERE — a confirmed nomination can never read as live', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(liveCallTargetForNomination({ status }), status).toBeNull();
+    }
+  });
+
+  test('unclassified routes NOWHERE — the record did not say, so nothing is claimed', () => {
+    expect(liveCallTargetForNomination({ status: 'unclassified' })).toBeNull();
+  });
+
+  /*
+   * THE DRIFT PIN. lib/journey.ts enumerates the live statuses by hand
+   * (import-free-at-runtime posture) rather than importing the .mjs set. If
+   * the Senate's vocabulary grows a tenth member and only one of the two
+   * files learns it, this fails — and it fails toward the safe answer being
+   * asserted, not assumed: a new status must route nowhere until someone
+   * decides it should.
+   */
+  test('the routing set is exactly NOMINATION_STATUSES minus the terminal ones', () => {
+    const routed = NOMINATION_STATUSES.filter(
+      (s) => liveCallTargetForNomination({ status: s as NominationStatus }) !== null
+    );
+    const expected = NOMINATION_STATUSES.filter((s) => !TERMINAL_NOMINATION_STATUSES.has(s));
+    expect(routed).toEqual(expected);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 7b · nominationHasCallScript — what a surface may PROMISE, as
+ *      opposed to where a call would go.
+ *
+ *      The defect it was extracted for: /nominations/[slug]'s
+ *      generateMetadata returned "…and the call that goes with it"
+ *      unconditionally, on 686 of 857 records with no dial, no stance
+ *      control and no script. robots noindex does not reach a link
+ *      preview or a share card, so that sentence shipped anyway.
+ *
+ *      It must equal app/api/script's own refusal conjunction, or a
+ *      page will promise a script the route refuses.
+ * ------------------------------------------------------------------ */
+test.describe('nominationHasCallScript', () => {
+  const DESCRIBED = 'Jane Doe, of Ohio, to be United States District Judge.';
+
+  test('true only where the route would actually answer with one', () => {
+    for (const status of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled'] as const) {
+      expect(
+        nominationHasCallScript({ status, nominee_description: DESCRIBED }),
+        status
+      ).toBe(true);
+    }
+  });
+
+  test('a finished nomination has none — the record, not the rail, decides', () => {
+    for (const status of ['confirmed', 'returned', 'withdrawn'] as const) {
+      expect(nominationHasCallScript({ status, nominee_description: DESCRIBED }), status).toBe(false);
+    }
+  });
+
+  test('a record with no description has none, at every live stage', () => {
+    for (const status of ['received', 'exec_calendar', 'scheduled'] as const) {
+      expect(nominationHasCallScript({ status, nominee_description: null }), status).toBe(false);
+    }
+  });
+
+  /*
+   * THE `unclassified` CASE IS THE WHOLE REASON THIS IS NOT `closed ||
+   * noScript`. That record KEEPS its call rail on the page (deliberately — the
+   * route's 422 refusal is the honest answer there, and the rail is what keeps
+   * the refusal state reachable), so a predicate written off the panel branch
+   * would have called it callable and promised a script that never arrives.
+   */
+  test('unclassified has none even though its page still renders the rail', () => {
+    expect(nominationHasCallScript({ status: 'unclassified', nominee_description: DESCRIBED })).toBe(false);
+  });
+
+  /* The drift pin, in the same shape suite 7 uses: this must stay the
+     conjunction of the routing set and a present description, so a tenth
+     status cannot quietly become callable. */
+  test('it is exactly liveCallTargetForNomination ∧ a description', () => {
+    for (const s of NOMINATION_STATUSES) {
+      const status = s as NominationStatus;
+      const routed = liveCallTargetForNomination({ status }) !== null;
+      expect(nominationHasCallScript({ status, nominee_description: DESCRIBED }), s).toBe(routed);
+      expect(nominationHasCallScript({ status, nominee_description: null }), s).toBe(false);
+    }
+  });
+});
+
+test.describe('liveCallKey', () => {
+  const withSenator = { hasSenator: true };
+  const noSenator = { hasSenator: false };
+
+  test('the four relational bill keys are unchanged by the new field', () => {
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: false }, withSenator)).toBe('liveSenateFloor');
+    expect(liveCallKey({ chamber: 'house', afterVote: false, soleChamber: false }, withSenator)).toBe('liveHouseFloor');
+    expect(liveCallKey({ chamber: 'senate', afterVote: true, soleChamber: false }, withSenator)).toBe('liveSenateAfterHouse');
+    expect(liveCallKey({ chamber: 'house', afterVote: true, soleChamber: false }, withSenator)).toBe('liveHouseAfterSenate');
+    expect(liveCallKey(null, withSenator)).toBeNull();
+  });
+
+  test('a nomination gets its own non-relational key, never one of the four', () => {
+    const key = liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, withSenator);
+    expect(key).toBe('liveSenateNomination');
+    expect(key).not.toBe('liveSenateFloor');
+    expect(key).not.toBe('liveSenateAfterHouse');
+  });
+
+  /*
+   * THE GATE COVERS ALL FIVE KEYS, not just the nomination one.
+   *
+   * N3 gated only `liveSenateNomination` on `hasSenator`, and the four
+   * relational bill keys — which shipped long before it — kept telling a DC
+   * reader "your senators are the live call" on every bill page. The two HOUSE
+   * keys are gated on the same boolean deliberately: the six jurisdictions with
+   * no senator are exactly the six that send a non-voting delegate or resident
+   * commissioner (data/legislators.json, 2026-08-06: DC, PR, VI, GU, AS, MP
+   * have zero senators and one House-type member each; no state has one), so
+   * "your House member is the live call" names an office with no vote on
+   * passage. All four sentences are false for that reader, and the boolean that
+   * identifies them is the one already here.
+   *
+   * Enumerated exhaustively rather than sampled: the failure this stops is a
+   * branch keeping its key when the gate moves, and a sample cannot see that.
+   */
+  test('NO routing sentence is offered to a reader with no senator (DC, PR, VI, GU, AS, MP)', () => {
+    for (const chamber of ['senate', 'house'] as const) {
+      for (const afterVote of [false, true]) {
+        for (const soleChamber of [false, true]) {
+          expect(
+            liveCallKey({ chamber, afterVote, soleChamber }, noSenator),
+            `${chamber}/afterVote=${afterVote}/soleChamber=${soleChamber}`
+          ).toBeNull();
+        }
+      }
+    }
+  });
+
+  test('the same reader WITH a senator still gets every one of them', () => {
+    // The other half of the gate: it must key on the reader, never quietly
+    // retire a sentence for everybody.
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: false }, withSenator)).toBe('liveSenateFloor');
+    expect(liveCallKey({ chamber: 'house', afterVote: false, soleChamber: false }, withSenator)).toBe('liveHouseFloor');
+    expect(liveCallKey({ chamber: 'senate', afterVote: true, soleChamber: false }, withSenator)).toBe('liveSenateAfterHouse');
+    expect(liveCallKey({ chamber: 'house', afterVote: true, soleChamber: false }, withSenator)).toBe('liveHouseAfterSenate');
+    expect(liveCallKey({ chamber: 'senate', afterVote: false, soleChamber: true }, withSenator)).toBe('liveSenateNomination');
+  });
+
+  /*
+   * The keys are message keys, so they have to EXIST — in both locales, or
+   * the panel renders a raw key at the highest-intent moment on one of them.
+   * check-messages-parity guards en/es against each other; nothing guarded
+   * either against this union until here.
+   */
+  test('every key in the union resolves in both locales', () => {
+    const keys: LiveCallKey[] = [
+      'liveSenateFloor',
+      'liveHouseFloor',
+      'liveSenateAfterHouse',
+      'liveHouseAfterSenate',
+      'liveSenateNomination',
+    ];
+    for (const k of keys) {
+      expect(typeof en.bill[k], `en.bill.${k}`).toBe('string');
+      expect(typeof es.bill[k], `es.bill.${k}`).toBe('string');
+    }
+    // The nomination annex copy the panel renders beside the routing line.
+    for (const k of ['nominationHow', 'nominationHousePress'] as const) {
+      expect(typeof en.bill[k], `en.bill.${k}`).toBe('string');
+      expect(typeof es.bill[k], `es.bill.${k}`).toBe('string');
     }
   });
 });

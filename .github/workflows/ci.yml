@@ -81,6 +81,19 @@ jobs:
         # fails before the e2e suite spends its minutes; exits 0 when the
         # file doesn't exist yet (slice S3 is what first writes it).
         run: node scripts/check-moment-updates.mjs
+      - name: Senate-nomination data gate (identity, status mapping, calendar numbers, civilian-only)
+        # Structural checks are HARD here: they test our own code against the
+        # data it produced (slug identity, stored status == what the mapper
+        # derives, the terminal-set drift pin), so they can only break if a
+        # change in this repo broke them.
+        #
+        # The one soft check is the sweep for action text no rule classifies,
+        # which prints ::warning:: here and fails only under --strict in the
+        # nightly sync step. That split IS owner ruling 2026-08-04 (the
+        # journey-corpus sweep): a novel Senate sentence landed by the sync
+        # must not red the CI of unrelated PRs, and an unclassified record is
+        # honest anyway — it renders neutral, claim-free copy.
+        run: node scripts/check-nominations.mjs
       - run: npm run typecheck
       - run: npm run lint
       - name: Detect docs-only PR diff (founder-approved fast path, 2026-07-07)

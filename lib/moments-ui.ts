@@ -6,8 +6,10 @@
  * pages can lean on without touching the data layer's tested surface.
  */
 import { getBill } from './core/bills';
+import { getNomination, type Nomination } from './core/nominations';
+import { nominationHasCallScript } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
-import { getLiveMoments, type Localized, type MomentVehicle } from './moments';
+import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
 
 /*
  * Sentence-final punctuation is ambiguous in legislative prose. "U.S. forces
@@ -181,19 +183,108 @@ export function linkHost(url: string): string {
 }
 
 /**
- * The most recent last_action_date across a moment's vehicle bills — the
- * "updated" date shown on the index card. Read-time, off the live corpus,
- * like every other freshness signal on the site (never stored). A vehicle
- * slug that doesn't resolve (should never happen past the CI gate)
- * contributes nothing rather than throwing.
+ * The most recent last_action_date across a moment's vehicles — the "updated"
+ * date shown on the index card. Read-time, off the live corpus, like every
+ * other freshness signal on the site (never stored). A vehicle slug that
+ * doesn't resolve (should never happen past the CI gate) contributes nothing
+ * rather than throwing.
+ *
+ * KIND-DISPATCHED, because the two corpora are two files: a `pn-…` slug
+ * simply is not in data/bills.json. Left bill-only, a nomination vehicle
+ * would contribute no date at all and the card would silently print the date
+ * of whatever OTHER vehicle happened to be a bill — or, on a nomination-only
+ * moment, print nothing while the record moved yesterday. Both are quiet
+ * freshness lies, which is the one thing a freshness signal may not be.
  */
 export function latestVehicleAction(vehicles: MomentVehicle[]): string | null {
   let latest: string | null = null;
   for (const v of vehicles) {
-    const d = getBill(v.slug)?.last_action_date;
+    const d =
+      vehicleKind(v) === 'nomination'
+        ? getNomination(v.slug)?.last_action_date
+        : getBill(v.slug)?.last_action_date;
     if (d && (!latest || d > latest)) latest = d;
   }
   return latest;
+}
+
+/**
+ * WHAT A NOMINATION CARD'S BUTTON IS ALLOWED TO PROMISE.
+ *
+ * `moments.readCall` reads "Read + call" / "Leer y llamar", and that is a
+ * promise about the page the button opens, not about the card. On a nomination
+ * it is true only when a call script is actually waiting there — which is
+ * `nominationHasCallScript`, app/api/script's own refusal conjunction
+ * (lib/journey.ts). The grid otherwise labels a green phone-icon button
+ * "Read + call" over a page whose whole rail is the sentence "No call to make".
+ *
+ * Latent when this landed — data/moments.json holds no nomination vehicle —
+ * which is exactly why it is a function with a test rather than a ternary in a
+ * page: the first nomination Moment is the run where it stops being latent.
+ * lib/moments-gate.mjs now refuses a vehicle whose record carries no
+ * description, so the `nominee_description` half should be unreachable on a
+ * gated moment; it is still asked here because a CTA label must not depend on
+ * a gate two files away staying correct.
+ *
+ * `settled` keeps the rule the bill card already followed: a settled moment is
+ * a record in every card it holds, whatever its vehicle can still do.
+ */
+export function nominationCtaKey(
+  nomination: Pick<Nomination, 'status' | 'nominee_description'>,
+  settled: boolean,
+): 'moments.readCall' | 'nominations.readRecord' {
+  return !settled && nominationHasCallScript(nomination)
+    ? 'moments.readCall'
+    : 'nominations.readRecord';
+}
+
+/**
+ * WHAT THE NOTE UNDER THE VEHICLES GRID IS ALLOWED TO PROMISE.
+ *
+ * `moments.bothNote` — "No side is pre-selected. Every link above opens the
+ * same call flow…" — rendered UNCONDITIONALLY under the grid, and the second
+ * sentence is a universal claim about every card in it. It is true of a bill
+ * (the bill page always mounts ActionPanel, settled or not) and false of a
+ * nomination the Senate has finished with, or one its record never described:
+ * that page's whole rail is "No call to make", with no stance control and no
+ * script. Same defect class as the five strings the commit before this one
+ * fixed, and reachable the same way — terminality is warn-only for the
+ * settled-moment lifecycle (lib/moments-gate.mjs), so a live nomination
+ * vehicle that any nightly sync confirms lands here.
+ *
+ * THE NOTE IS ABOUT THE SET, so the question is asked of the set: does the
+ * grid hold a nomination card whose page has no call script waiting on it —
+ * `nominationHasCallScript`, app/api/script's own refusal conjunction
+ * (lib/journey.ts), the same predicate `nominationCtaKey` above asks per card.
+ * One "no" is enough; the note's sentence is a claim about all of them.
+ *
+ * `moments.bothNote` IS NOT EDITED, and a bill-only moment must keep printing
+ * it byte for byte: it is shared with the bill path, where it is true, and
+ * changing shared copy to fix a nomination-only defect is the owner's call,
+ * not this function's. So the variant is additive and narrow.
+ *
+ * A SLUG THAT DOES NOT RESOLVE CONTRIBUTES NOTHING — deliberately, not
+ * defensively. app/[locale]/questions/[id]/page.tsx renders no card at all for
+ * one (`if (!nomination) return null`), so it puts no link above this note to
+ * make a claim about. The kind is read through `vehicleKind`, never off the
+ * shape of the slug, so a `pn-…` vehicle authored without `kind` is a bill
+ * here exactly as it is everywhere else — and misses `getBill`, renders no
+ * card, and again claims nothing.
+ *
+ * Latent on today's corpus for the same reason `nominationCtaKey` is:
+ * data/moments.json holds no nomination vehicle and must stay byte-identical
+ * to main. That is why the decision is a pure function with tests
+ * (tests/moments-ui.unit.spec.ts) rather than a ternary in a page.
+ */
+export function bothNoteKey(
+  vehicles: MomentVehicle[],
+): 'moments.bothNote' | 'moments.bothNoteSomeNoCall' {
+  const someNoCall = vehicles.some((v) => {
+    if (vehicleKind(v) !== 'nomination') return false;
+    const nomination = getNomination(v.slug);
+    return nomination ? !nominationHasCallScript(nomination) : false;
+  });
+  return someNoCall ? 'moments.bothNoteSomeNoCall' : 'moments.bothNote';
 }
 
 /*

@@ -1,7 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { startCrossOriginHost } from './helpers';
+
+/** A real nomination URL for the frame-posture probe below, resolved off the
+ *  committed corpus so a confirmed-and-rotated fixture can never turn this
+ *  security check into a 404 that happens to carry the right header anyway.
+ *  The corpus is never empty (scripts/check-nominations.mjs fails the build if
+ *  it is), so the fallback is unreachable and exists only to keep this total. */
+function nominationProbePath(): string {
+  const first = getAllNominations()[0];
+  return first ? `/nominations/${nominationSlug(first)}` : '/nominations/pn-0-119';
+}
 
 /*
  * S17 - the frame-ancestors split posture (the project records, ledger items F1 and F2; see also
@@ -105,6 +116,14 @@ test.describe(
       embeds: '/embeds', // S16's configurator + docs page
       record: '/record',
       mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
+      // The Senate nomination record + call page (2026-08-06). It mounts the
+      // SAME ActionPanel the bill page does — stance selection, the generated
+      // script, the dials — so it takes the identical locked-down posture, and
+      // for the identical reason: a framed call surface is a clickjacking
+      // target. The probe path is a real corpus slug, resolved at run time
+      // below rather than pinned, because nominations confirm and the corpus
+      // turns over.
+      nominations: nominationProbePath(),
       questions: '/questions/iran-war-powers', // the discovery layer (2026-07-23) - standard locked-down posture
       // S6: per-locale PWA manifest (a route handler, not a page). Non-embed,
       // so next.config.ts's site-wide block locks it to 'self' like everything

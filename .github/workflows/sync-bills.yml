@@ -63,6 +63,39 @@ jobs:
         # floorActionChamber); the site renders neutral no-chamber copy for
         # that bill in the meantime — never a guessed chamber.
         run: node scripts/check-journey-corpus.mjs
+      - name: Sync Senate nominations
+        # A SEPARATE script and a SEPARATE step, on the sync-coverage.mjs
+        # precedent: the bill corpus is the product's spine, and a
+        # nomination-side outage (a Congress.gov field change, a rate limit,
+        # a novel record shape) must never be able to cost a night of bill
+        # statuses. continue-on-error for the same reason the Moment-updates
+        # step below has it — this data is additive.
+        #
+        # Cost: ONE free Congress.gov request on a normal night (95
+        # nominations changed on the busiest measured day, 2026-08-06;
+        # limit=250 covers it). No Anthropic key, no AI, no spend. The
+        # one-time backfill (9 requests) already ran and is committed, so
+        # this runs the incremental cursor path from day one.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/sync-nominations.mjs
+      - name: Nomination-corpus tripwire (unclassified action text fails the sync, not PRs)
+        # --strict turns the unclassified sweep from a warning into a
+        # failure. Owner ruling 2026-08-04, same shape as the journey-corpus
+        # step above: the sweep fires where the data changes. A novel Senate
+        # sentence fails THIS run loudly (extend mapNominationStatus in
+        # lib/nomination-status.mjs); the record meanwhile carries the
+        # honest `unclassified` status and renders neutral, chamber-free
+        # copy — never a guessed one.
+        #
+        # continue-on-error so the verdict is recorded and visible without
+        # costing the bill sync its night. That does mean an unclassified
+        # record still gets committed by the step below, which is correct:
+        # `unclassified` is an honest state, and a stale corpus would be a
+        # worse trade than a record that declines to make a claim.
+        continue-on-error: true
+        run: node scripts/check-nominations.mjs --strict
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
         # generation existed (~1,090 at introduction; 835 left after night one,
@@ -163,9 +196,10 @@ jobs:
           # resolved - the 2026-06-22 failure, there in the other workflow).
           # Rebase onto the latest main and retry; safe because this workflow
           # only touches bills.json/bills-es.json/sync-state.json/
-          # coverage.json/portrait-manifest.json/moment-updates.json, disjoint
-          # from refresh-legislators.yml's files. `git add data/` stages all of
-          # them, including whatever the Moment-updates step wrote.
+          # coverage.json/portrait-manifest.json/moment-updates.json/
+          # nominations.json, disjoint from refresh-legislators.yml's files.
+          # `git add data/` stages all of them, including whatever the
+          # Moment-updates and nomination steps wrote.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

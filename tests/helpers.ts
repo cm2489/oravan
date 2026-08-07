@@ -36,6 +36,27 @@ export async function mockScriptApi(page: Page) {
   );
 }
 
+/**
+ * Mock the AI script endpoint with a chosen FAILURE, so the panel's
+ * degradation paths can be driven without a real outage.
+ *
+ * ActionPanel distinguishes three of them and the difference is the whole
+ * point: `422 {error:'not_callable'}` is the route DECIDING there is no call
+ * to make (app/api/script/route.ts), `429` is a rate limit, and a 5xx is a
+ * genuine failure. The body shapes are the route's own — kept here rather
+ * than hand-rolled per spec so a change to the route's response shape has one
+ * place to break instead of five.
+ */
+export async function mockScriptApiFailure(
+  page: Page,
+  status: number,
+  body: Record<string, unknown>
+) {
+  await page.route('**/api/script', (route) =>
+    route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  );
+}
+
 /*
  * MCP JSON-RPC test helpers, shared by tests/mcp.spec.ts (protocol-level
  * scaffold checks) and tests/mcp-tools.spec.ts (the 5 tools themselves).
