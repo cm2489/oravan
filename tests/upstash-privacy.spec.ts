@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { NextRequest } from 'next/server';
 import { POST as districtPost } from '../app/api/district/route';
+import { GET as repsGet } from '../app/api/reps/route';
 import { noteImpression, noteImpressionForToken } from '../lib/impressions';
 import { createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
@@ -26,9 +28,13 @@ import censusNoMatch from './fixtures/census-no-match.json';
  * Asserted over every COMMAND that would cross the wire, not just the keys
  * that stuck - the mock records the full REST surface.
  *
- * Coverage shape: the district route is the REAL handler - the route that
+ * Coverage shape: the district route is a REAL handler - the route that
  * touches the most radioactive input (a street address) - driven directly
- * with only the network edges mocked. The script and MCP routes cannot be
+ * with only the network edges mocked. /api/reps joined it as the second real
+ * handler here when it gained a limiter (fix/api-reps-rate-limit): its input
+ * is a ZIP, coarser than an address but still a location the caller is
+ * asking about, and it is the first counters-keyed route to carry one.
+ * The script and MCP routes cannot be
  * require()d in a unit spec (they pull ESM-only deps: @anthropic-ai/sdk,
  * mcp-handler - the same limitation tests/mcp.spec.ts documents), so their
  * traffic is driven through the exact modules those routes feed:
@@ -60,6 +66,13 @@ const SLUG = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`.toL
 
 const CALLER_IPS = ['198.51.100.201', '198.51.100.202', '198.51.100.203'];
 const ADDRESS = '421 Privacy Invariant Avenue';
+// Real ZIPs the corpus actually answers for, so the burst below carries the
+// production input shape rather than an invented one. A ZIP is the sharpest
+// input this whole family has after a street address: it is simultaneously
+// the caller's own lookup key AND a location, so a counters key that carried
+// one would be precisely the "network address linked to a political position"
+// CLAUDE.md forbids.
+const REPS_ZIPS = ['78501', '33313', '20002'];
 
 test.beforeAll(() => {
   // Works with a statically imported route because lib/ratelimit.ts and
@@ -107,6 +120,21 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
   );
   expect(districtRes.status, 'district (no-match fixture)').toBe(404);
 
+  // The REAL reps route, with a ZIP in the query string - the second route
+  // in this file driven as the actual handler rather than through the
+  // modules it feeds (it imports only next/server + lib/core, so unlike
+  // script/MCP it can be require()d here). A real NextRequest, not a plain
+  // Request: this handler reads req.nextUrl, which only NextRequest has.
+  // Three real ZIPs across three callers, so both the ZIP and the caller vary.
+  for (const [i, zip] of REPS_ZIPS.entries()) {
+    const repsRes = await repsGet(
+      new NextRequest(`http://localhost/api/reps?zip=${zip}`, {
+        headers: { 'x-forwarded-for': CALLER_IPS[i] },
+      })
+    );
+    expect(repsRes.status, `reps lookup for ${zip}`).toBe(200);
+  }
+
   // MCP-shaped traffic: the exact two limiters the route builds. By
   // construction the tool name/slug can never reach them - this pins that
   // the keys they DO write stay hash-only.
@@ -120,9 +148,10 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
   const counterCommandText = counters.commands.map((c) => c.join(' ')).join('\n');
   const cacheCommandText = cache.commands.map((c) => c.join(' ')).join('\n');
 
-  // The district route really did take the durable path (guards against
-  // this spec silently degrading to in-memory and proving nothing).
+  // The district and reps routes really did take the durable path (guards
+  // against this spec silently degrading to in-memory and proving nothing).
   expect(counterCommandText).toContain(':rl:district:');
+  expect(counterCommandText).toContain(':rl:reps:');
 
   // 1. No counters key (or any counters command) carries a slug / stance /
   //    locale / tool substring. Route labels are the only non-hash segment.
@@ -138,7 +167,9 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
     /:(en|es)(?=:|\s|$)/
   );
   for (const key of counters.keys()) {
-    expect(key).toMatch(/^dev:(salt:current|rl:(script|district|feedback|mcp-min|mcp-day):[0-9a-f]{64})$/);
+    expect(key).toMatch(
+      /^dev:(salt:current|rl:(script|reps|district|feedback|mcp-min|mcp-day):[0-9a-f]{64})$/
+    );
   }
 
   // 2. No cache key carries IP-derived material: not the IPs, not their
@@ -160,10 +191,15 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
     expect(cacheCommandText, 'cache wire surface must not carry a caller IP').not.toContain(ip);
   }
 
-  // 3. No key - and no command - ANYWHERE contains address-derived material.
+  // 3. No key - and no command - ANYWHERE contains address-derived material,
+  //    which now explicitly includes the ZIPs the reps route was just driven
+  //    with (the district route's own body ZIP, 10001, was already covered).
   for (const wire of [counterCommandText, cacheCommandText]) {
     expect(wire).not.toContain('Privacy Invariant');
     expect(wire).not.toContain('10001');
+    for (const zip of REPS_ZIPS) {
+      expect(wire, `no wire surface may carry the looked-up ZIP "${zip}"`).not.toContain(zip);
+    }
   }
 
   // And cross-instance sharing did its job: a fresh cache instance (a

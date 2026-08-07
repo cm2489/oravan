@@ -33,6 +33,9 @@ import {
   summaryNeedsRefresh,
   updateId,
 } from '../lib/moment-updates-gate.mjs';
+// The nightly dead-man's-switch's moment-updates block, extracted so it can be
+// driven here — scripts/verify-sync.mjs now only supplies the bytes.
+import { verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 import {
   RENDER_DAY_CAP as READER_RENDER_DAY_CAP,
   RETENTION_DAYS as READER_RETENTION_DAYS,
@@ -801,8 +804,92 @@ test.describe('pruneEntry', () => {
     expect(pruned.summary_revisions.at(-1)!.id).toBe(`s_${MAX_REVISIONS + 4}`);
   });
 
+  // reserveRevisions exists because the nightly collector prunes BEFORE it
+  // summarizes (scripts/moment-updates.mjs — the ordering is load-bearing and
+  // documented at that call site), so a prune that fills the cap exactly hands
+  // the summary step nowhere to put tonight's revision.
+  test('reserveRevisions leaves room for the append, and keeps the NEWEST', () => {
+    const summary_revisions = Array.from({ length: MAX_REVISIONS }, (_, i) => ({ id: `s_${i}` }));
+    const pruned = pruneEntry({ updates: [], summary_revisions }, { now: PRUNE_NOW, reserveRevisions: 1 })!;
+    expect(pruned.summary_revisions).toHaveLength(MAX_REVISIONS - 1);
+    // Newest survives, oldest goes — retention forgets the past, never the present.
+    expect(pruned.summary_revisions.at(-1)!.id).toBe(`s_${MAX_REVISIONS - 1}`);
+    expect(pruned.summary_revisions.some((r: { id: string }) => r.id === 's_0')).toBe(false);
+  });
+
+  test('reserveRevisions omitted still trims to MAX_REVISIONS — no other caller changed', () => {
+    const summary_revisions = Array.from({ length: MAX_REVISIONS }, (_, i) => ({ id: `s_${i}` }));
+    const pruned = pruneEntry({ updates: [], summary_revisions }, { now: PRUNE_NOW })!;
+    expect(pruned.summary_revisions).toHaveLength(MAX_REVISIONS);
+    expect(pruned.summary_revisions.at(-1)!.id).toBe(`s_${MAX_REVISIONS - 1}`);
+  });
+
   test('a retired moment loses its entry outright — git history is the archive', () => {
     expect(pruneEntry({ updates: [{ id: 'u_1' }], summary_revisions: [] }, { retired: true })).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 9b · prune -> append -> gate, composed. The nightly's actual sequence.
+ *
+ * The bug this pins (found 2026-08-06): the nightly collector prunes at the
+ * top of its `if (MODE === 'nightly')` block and appends a summary revision
+ * further down the SAME block, so at the cap the run wrote 31 revisions —
+ * one past what checkMomentUpdates accepts. Nothing caught it: the gate does
+ * not run inside the nightly job, verify-sync.mjs (which does) had no
+ * revision-count check, so the bad file passed verification, committed, and
+ * deployed. main only went red afterwards, on the CI run the data push
+ * dispatches — and stayed red until the next night's prune trimmed it.
+ *
+ * Phrased as "the gate is happy", not as an arithmetic assertion, because the
+ * arithmetic is not the promise: what the pipeline owes is a file its own CI
+ * gate accepts.
+ * ------------------------------------------------------------------ */
+test.describe('the nightly sequence: prune, then append one revision', () => {
+  /** MAX_REVISIONS gate-valid revisions, oldest first, newest yesterday. */
+  const revisionsAtCap = () =>
+    Array.from({ length: MAX_REVISIONS }, (_, i) => {
+      const day = shiftDay('2026-07-25', -(MAX_REVISIONS - i));
+      return makeRevision({ id: `s_${i.toString(16).padStart(8, '0')}`, generated_at: `${day}T03:00:00Z`, as_of_day: day });
+    });
+
+  test('an entry at the cap survives tonight\'s summary with ZERO gate violations', () => {
+    const entry = { updates: [makeUpdate()], summary_revisions: revisionsAtCap() };
+
+    // Exactly what scripts/moment-updates.mjs does, in that order.
+    const pruned = pruneEntry(entry, { now: NOW, reserveRevisions: 1 })!;
+    const tonight = makeRevision({ id: 's_ffffffff', generated_at: '2026-07-25T04:00:00Z', as_of_day: '2026-07-25' });
+    const after = { ...pruned, summary_revisions: [...pruned.summary_revisions, tonight] };
+
+    expect(runGate({ _meta: { schema: SCHEMA_VERSION, generated_at: '2026-07-25T04:00:00Z' }, 'example-moment': after }).violations).toEqual([]);
+  });
+
+  /*
+   * The other half of the fix, and the half that converts this whole class of
+   * bug from "reddens main after deploying" into "the nightly fails loudly and
+   * commits nothing". check-moment-updates.mjs runs in ci.yml — for the
+   * nightly that is AFTER the data commit has landed. verify-sync.mjs runs
+   * between the collector and the commit step in sync-bills.yml, and had no
+   * revision-count check at all.
+   */
+  const verify = (file: Record<string, unknown>) =>
+    verifyMomentUpdates({ updates: file, moments: MOMENTS, before: null, fileBytes: 1024, now: NOW });
+
+  test('verify-sync REFUSES a file at MAX_REVISIONS + 1 — nothing gets committed', () => {
+    const overCap = [...revisionsAtCap(), makeRevision({ id: 's_ffffffff', generated_at: '2026-07-25T04:00:00Z', as_of_day: '2026-07-25' })];
+    const { failures } = verify(wrap([makeUpdate()], overCap));
+    expect(failures.some((f: string) => f.includes(`31 summary revisions exceeds the ${MAX_REVISIONS}-revision cap`))).toBe(true);
+  });
+
+  test('verify-sync accepts the same file at exactly MAX_REVISIONS', () => {
+    expect(verify(wrap([makeUpdate()], revisionsAtCap())).failures).toEqual([]);
+  });
+
+  test('verify-sync also catches the per-day storage ceiling the gate fails on', () => {
+    const { failures } = verify(wrap(busyDay(HARD_DAY_CEILING + 1)));
+    expect(failures.some((f: string) => f.includes(`${HARD_DAY_CEILING}-per-day storage ceiling`))).toBe(true);
+    // ...and does not fire on a merely busy day, which is legal storage.
+    expect(verify(wrap(busyDay(HARD_DAY_CEILING))).failures).toEqual([]);
   });
 });
 

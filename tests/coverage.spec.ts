@@ -3,6 +3,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
 import { coverageTier, getCoverage } from '../lib/coverage';
+import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 
 /*
  * Data-driven: the nightly sync rewrites data/coverage.json, so the suite finds
@@ -14,6 +15,23 @@ const slugs = Object.keys(coverageData).filter((k) => !k.startsWith('_'));
 const shownSlug = slugs.find((s) => getCoverage(s).length > 0);
 const oneSidedSlug = slugs.find((s) => coverageTier(getCoverage(s)) === 'one_sided');
 const thinSlug = slugs.find((s) => getCoverage(s).length === 0); // stored but < 2 outlets
+
+/* Age fixtures for the "state the age of what you're showing" pair. The bill
+ * page prints a "Data as of" stamp that tracks the Congress.gov BILL sync
+ * ~20 lines above this section; nothing in that stamp is about these
+ * articles, so the section has to state its own age. Data-driven like the
+ * rest of this file: the nightly sync rewrites the corpus, and every one of
+ * these ages moves with it. */
+function newestPublishedAt(slug: string): string | null {
+  const dates = getCoverage(slug)
+    .map((a) => a.publishedAt)
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  return dates.at(-1) ?? null;
+}
+const datedSlugs = slugs.filter((s) => newestPublishedAt(s) !== null);
+const staleSlug = datedSlugs.find((s) => freshnessAgeDays(newestPublishedAt(s)!) > COVERAGE_AGE_NOTE_DAYS);
+const recentSlug = datedSlugs.find((s) => freshnessAgeDays(newestPublishedAt(s)!) <= COVERAGE_AGE_NOTE_DAYS);
 
 const section = (page: import('@playwright/test').Page) =>
   page.locator('section[aria-labelledby="coverage-heading"]');
@@ -82,6 +100,42 @@ for (const { locale, prefix, messages } of [
     expect(attribution.length).toBeGreaterThan(dash.length); // an outlet is named
   });
 }
+
+test('the section states the age of what it is showing, in both languages', async ({ page }) => {
+  test.skip(!datedSlugs[0], 'no dated coverage in current data');
+  const slug = datedSlugs[0];
+  const newest = newestPublishedAt(slug)!;
+  for (const { prefix, messages } of [
+    { prefix: '', messages: en },
+    { prefix: '/es', messages: es },
+  ] as const) {
+    await page.goto(`${prefix}/bills/${slug}`);
+    const line = section(page).locator(`time[datetime="${newest}"]`);
+    await expect(line).toHaveCount(1);
+    // The label sits with the date, so a reader can't mistake it for the
+    // page's sync stamp.
+    await expect(section(page).getByText(messages.coverage.newestLabel)).toBeVisible();
+  }
+});
+
+test('coverage older than the age window carries the caveat; recent coverage does not', async ({
+  page,
+}) => {
+  test.skip(!staleSlug && !recentSlug, 'no dated coverage in current data');
+  if (staleSlug) {
+    await page.goto(`/bills/${staleSlug}`);
+    // Hydration-gated on purpose (StalenessNote's pattern): a clock verdict
+    // baked into an SSG page freezes at deploy time. So wait for React.
+    await expect(section(page).getByText(en.coverage.ageNote)).toBeVisible({ timeout: 10_000 });
+  }
+  if (recentSlug) {
+    await page.goto(`/bills/${recentSlug}`);
+    await expect(section(page).locator('time').first()).toBeVisible();
+    // Give hydration the same window before asserting the absence.
+    await page.waitForTimeout(1000);
+    await expect(section(page).getByText(en.coverage.ageNote)).toHaveCount(0);
+  }
+});
 
 test('one-sided coverage is shown WITH a disclaimer (not hidden)', async ({ page }) => {
   test.skip(!oneSidedSlug, 'no one-sided coverage in current data');

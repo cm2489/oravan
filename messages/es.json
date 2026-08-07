@@ -383,6 +383,8 @@
   "coverage": {
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como \"Sin calificar\" donde no.",
+    "newestLabel": "El más reciente de estos artículos",
+    "ageNote": "puede existir cobertura más reciente que no hemos recopilado",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {
       "left": "Tiende a la izquierda",
@@ -399,7 +401,7 @@
   },
   "news": {
     "heading": "En las noticias",
-    "subhead": "Proyectos de ley que la prensa está cubriendo de verdad, ahora mismo.",
+    "subhead": "Proyectos de ley cubiertos por más de un medio, ordenados por la amplitud de la cobertura, no por lo reciente que sea.",
     "sources": "{count, plural, one {# medio} other {# medios}}"
   },
   "why": {
@@ -472,11 +474,11 @@
     "urlBody": "Cada proyecto de ley tiene una sola dirección permanente en cada idioma, construida solo a partir de su tipo, número y Congreso — nunca de su estado. Una cita escrita el día en que se presenta un proyecto sigue funcionando después de que se firme, fracase o expire; la dirección nunca se reutiliza ni se reasigna.",
     "urlExampleLabel": "Ejemplo — H.R. 1787, el mismo proyecto que usa el material de demostración de Oravan:",
     "asOfTitle": "El sello de \"datos actualizados al\"",
-    "asOfBody": "Cada página indica la fecha de la última sincronización nocturna exitosa de Oravan con Congress.gov — no es un feed en vivo, ni la fecha en que abriste la página. Cita esa fecha, no la de hoy, como el momento en que se verificaron por última vez los hechos. Es el mismo valor que el campo {asOfField} en cada respuesta del servidor MCP.",
+    "asOfBody": "Cada página indica la fecha de la última sincronización nocturna exitosa de Oravan con Congress.gov — no es un feed en vivo, ni la fecha en que abriste la página. Cita esa fecha, no la de hoy, como el momento en que se verificaron por última vez los hechos. Es el mismo valor que el campo {asOfField} en cada respuesta del servidor MCP. Una excepción: los artículos de la sección «Cómo lo están cubriendo» no provienen de Congress.gov. La cobertura se vuelve a revisar en su propia rotación — los proyectos más urgentes cada noche, y los demás por turnos — así que el sello no dice nada sobre la antigüedad de esos artículos. Esa sección indica la fecha del artículo más reciente que tiene; cita esa fecha.",
     "sourceTitle": "De dónde vienen los datos",
     "sourceBody": "El estado, las fechas, el patrocinador y el texto de cada proyecto vienen de Congress.gov. Los datos de representantes y oficinas distritales vienen del proyecto de dominio público unitedstates/congress-legislators. Ambos se actualizan solo mediante la sincronización nocturna propia de Oravan. El envoltorio de citación del MCP describe la fuente en el idioma que pida cada consulta — a continuación se muestran ambas versiones, ya que esta página la leen personas en los dos idiomas:",
     "aiTitle": "La política de contenido con IA",
-    "aiBody": "En la página de un proyecto de ley aparecen dos tipos de texto, y nunca se presentan igual. El registro oficial — título, estado, patrocinador, fechas, última acción, el enlace a Congress.gov — se copia, no se genera. La capa en lenguaje sencillo — el titular, el resumen y las secciones qué/quién/por qué/costo — la redacta la IA, y ningún campo se publica sin pasar controles automáticos: los dos idiomas presentes, el registro oficial adjunto, sin lenguaje de campaña, y un esquema que hace fallar toda la sincronización antes que publicar un registro incompleto. Dondequiera que aparezca contenido redactado por IA — el sitio, el servidor MCP, un widget — lleva esta etiqueta, en el idioma de la solicitud; ambas versiones se muestran abajo:",
+    "aiBody": "En la página de un proyecto de ley aparecen dos tipos de texto, y nunca se presentan igual. El registro oficial — título, estado, patrocinador, fechas, última acción, el enlace a Congress.gov — se copia, no se genera. La capa en lenguaje sencillo — el titular, el resumen y las secciones qué/quién/por qué/costo — la redacta la IA, y ningún campo se publica sin pasar controles automáticos: los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen — si a un resumen le falta un campo obligatorio se descarta en lugar de guardarse a medias, y todo el corpus se vuelve a revisar antes de que la sincronización nocturna pueda publicar nada. La neutralidad se sostiene de dos maneras distintas, y no las mezclamos: en los resúmenes de proyectos de ley es una instrucción de redacción al modelo; en las Grandes preguntas es un control de vocabulario que bloquea la publicación. Dondequiera que aparezca contenido redactado por IA — el sitio, el servidor MCP, un widget — lleva esta etiqueta, en el idioma de la solicitud; ambas versiones se muestran abajo:",
     "aiCallScript": "Los guiones de llamada siguen una regla aún más estricta: se redactan solo dentro del propio sitio de Oravan, y quien llama debe leer y puede editar el guion antes de marcar. El servidor MCP de Oravan nunca genera uno — en su lugar, devuelve un enlace al flujo del sitio, para que ese paso de revisión humana no pueda saltárselo un agente.",
     "licenseTitle": "Licencias",
     "licenseOfficialLabel": "Los datos oficiales subyacentes — dominio público de EE. UU., en ambos idiomas:",
