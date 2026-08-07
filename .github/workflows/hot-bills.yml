@@ -75,8 +75,28 @@ jobs:
               exit 0
             fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
-            git fetch origin main
-            git rebase origin/main
+            # Guarded: a bare `git fetch` under `bash -e` kills the step on the
+            # spot, which would make these five attempts as decorative as
+            # sync-bills.yml's were on 2026-08-07.
+            if ! git fetch origin main; then
+              echo "fetch failed (attempt $i) - retrying"
+              continue
+            fi
+            if git rebase origin/main; then
+              continue
+            fi
+            # A stopped rebase is NOT retryable: every later iteration fails
+            # identically until the attempts run out, which is how run
+            # 31194836148 burned all five in sync-bills.yml and left a
+            # misleading "push rejected" as its last word. Fail here instead,
+            # naming the files. Nothing is auto-resolvable in this job - it
+            # never writes data/sync-state.json, the one flat key-value file
+            # with a deterministic union (scripts/merge-sync-state.mjs, wired
+            # into sync-bills.yml only).
+            conflicted="$(git diff --name-only --diff-filter=U | sort | tr '\n' ' ' | sed 's/ $//')"
+            git rebase --abort || true
+            echo "::error::rebase conflict in: ${conflicted:-<unknown>} - a human must resolve it. The hot-bill refresh this run collected is NOT committed."
+            exit 1
           done
           exit 1
       - name: Verify the deploy landed
