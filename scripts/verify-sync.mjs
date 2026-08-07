@@ -21,9 +21,12 @@
  *   - data/moment-updates.json (the v2 live layer) doesn't parse, isn't an
  *     object, carries an unknown _meta.schema, references a moment that
  *     doesn't exist in data/moments.json, lost >50% of its updates overnight,
- *     broke EN/ES parity, went future-dated, or blew the size ceiling. Every
- *     part of it is skipped cleanly when the file doesn't exist — on HEAD or
- *     in the working tree.
+ *     broke EN/ES parity, went future-dated, blew the size ceiling, or blew
+ *     one of the retention caps (revisions per moment, updates per moment,
+ *     updates per day). Every part of it is skipped cleanly when the file
+ *     doesn't exist — on HEAD or in the working tree. The judgement lives in
+ *     lib/verify-moment-updates.mjs; see that file's header for why the
+ *     retention caps are checked here as well as in check-moment-updates.mjs.
  *
  * Cursor-age threshold (2026-07-16, audit §5 item 4). This check used to be
  * a non-blocking ::warning, on the theory that the cursor would sit weeks
@@ -46,7 +49,7 @@
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { SCHEMA_VERSION, SIZE_FAIL_BYTES } from '../lib/moment-updates-gate.mjs';
+import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 
 const CURSOR_MAX_AGE_DAYS = 10;
 
@@ -159,81 +162,18 @@ if (coverage && typeof coverage === 'object' && !Array.isArray(coverage)) {
 // ALL OF IT is tolerant of the file not existing — on HEAD (the collector,
 // slice S3, is what first writes it) and in the working tree (a branch that
 // predates the live layer must still verify cleanly).
-const MOMENT_UPDATES_PATH = 'data/moment-updates.json';
+//
+// The judgement itself lives in lib/verify-moment-updates.mjs — the same split
+// scripts/check-moment-updates.mjs uses, so the whole block is reachable from
+// tests/moment-updates.unit.spec.ts. This file supplies the bytes.
 if (!existsSync(MOMENT_UPDATES_PATH)) {
   console.log(`${MOMENT_UPDATES_PATH} not present — skipping the moment-updates checks`);
 } else {
   const updates = parse(MOMENT_UPDATES_PATH, readFileSync(MOMENT_UPDATES_PATH, 'utf8'));
-  if (updates !== null && (typeof updates !== 'object' || Array.isArray(updates))) {
-    fail(`${MOMENT_UPDATES_PATH} is not an object keyed by moment id`);
-  } else if (updates !== null) {
-    if (updates._meta?.schema !== SCHEMA_VERSION) {
-      fail(
-        `${MOMENT_UPDATES_PATH} _meta.schema is ${JSON.stringify(updates._meta?.schema)}, not the known schema version ${SCHEMA_VERSION}`
-      );
-    }
-
-    // Size ceiling — the same number the gate fails at, imported not copied.
-    const bytes = statSync(MOMENT_UPDATES_PATH).size;
-    if (bytes >= SIZE_FAIL_BYTES) {
-      fail(`${MOMENT_UPDATES_PATH} is ${bytes} bytes, at or past the ${SIZE_FAIL_BYTES}-byte ceiling — retention pruning has stopped working`);
-    }
-
-    const entries = Object.entries(updates).filter(([k]) => k !== '_meta');
-    const countUpdates = (obj) =>
-      Object.entries(obj ?? {})
-        .filter(([k]) => k !== '_meta')
-        .reduce((n, [, e]) => n + (Array.isArray(e?.updates) ? e.updates.length : 0), 0);
-    const total = countUpdates(updates);
-
-    // Every id resolves in the hand-authored file. moments.json and
-    // moment-updates.json are deliberately separate owners (auto-commits and
-    // hand edits never contend for one file); an orphan here means one of
-    // them moved without the other.
-    const momentsForUpdates = parse('data/moments.json', readFileSync('data/moments.json', 'utf8'));
-    if (momentsForUpdates && typeof momentsForUpdates === 'object') {
-      const orphans = entries.map(([id]) => id).filter((id) => !momentsForUpdates[id]);
-      if (orphans.length) {
-        fail(
-          `${MOMENT_UPDATES_PATH}: ${orphans.length} entr(ies) reference moments that don't exist in data/moments.json (first: ${orphans[0]})`
-        );
-      }
-    }
-
-    // EN/ES parity over every rendered string — update one-liners AND summary
-    // revisions. The bilingual hard rule does not get a machine-authored
-    // exemption.
-    const parityGaps = [];
-    const futureDated = [];
-    const nowMs = Date.now();
-    for (const [id, entry] of entries) {
-      for (const u of entry?.updates ?? []) {
-        if (!u?.text?.en?.trim() || !u?.text?.es?.trim()) parityGaps.push(`${id}/${u?.id} update text`);
-        for (const field of ['day', 'occurred_at', 'recorded_at']) {
-          const t = Date.parse(u?.[field]);
-          if (Number.isFinite(t) && t > nowMs + 86_400_000) futureDated.push(`${id}/${u?.id}.${field}=${u[field]}`);
-        }
-      }
-      for (const r of entry?.summary_revisions ?? []) {
-        if (!r?.text?.en?.trim() || !r?.text?.es?.trim()) parityGaps.push(`${id}/${r?.id} summary revision`);
-      }
-    }
-    if (parityGaps.length) {
-      fail(
-        `EN/ES parity broke in ${MOMENT_UPDATES_PATH}: ${parityGaps.length} string(s) missing a sibling (first: ${parityGaps[0]})`
-      );
-    }
-    if (futureDated.length) {
-      fail(
-        `${MOMENT_UPDATES_PATH}: ${futureDated.length} future-dated field(s) — nothing claims a date the record does not support (first: ${futureDated[0]})`
-      );
-    }
-
-    // Update-count vs the committed file. Retention prunes gradually; an
-    // overnight cliff means the collector replaced the file with a partial
-    // result. Same idiom as the coverage-shrink check above.
+  if (updates !== null) {
+    let before = null;
     try {
-      const before = JSON.parse(
+      before = JSON.parse(
         execSync(`git show HEAD:${MOMENT_UPDATES_PATH}`, {
           encoding: 'utf8',
           maxBuffer: 512 * 1024 * 1024,
@@ -244,19 +184,20 @@ if (!existsSync(MOMENT_UPDATES_PATH)) {
           stdio: ['ignore', 'pipe', 'ignore'],
         })
       );
-      const beforeTotal = countUpdates(before);
-      if (beforeTotal >= 10 && total < beforeTotal * 0.5) {
-        fail(`${MOMENT_UPDATES_PATH} shrank ${beforeTotal} -> ${total} updates (>50% overnight) — a partial collector run replaced the file`);
-      } else if (beforeTotal >= 10 && total < beforeTotal * 0.8) {
-        warn(`${MOMENT_UPDATES_PATH} shrank ${beforeTotal} -> ${total} updates (>20% overnight) — worth a look`);
-      } else {
-        console.log(`moment updates: ${beforeTotal} -> ${total} across ${entries.length} moment(s)`);
-      }
     } catch {
       // Expected on the branch that first adds the file, and on a shallow
       // checkout — never a failure.
-      console.log(`no HEAD:${MOMENT_UPDATES_PATH} to compare against (first commit of the live layer?) — ${total} update(s) now`);
     }
+
+    const { failures, warnings, notes } = verifyMomentUpdates({
+      updates,
+      moments: parse('data/moments.json', readFileSync('data/moments.json', 'utf8')),
+      before,
+      fileBytes: statSync(MOMENT_UPDATES_PATH).size,
+    });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
   }
 }
 
