@@ -44,6 +44,11 @@ next-env.d.ts
 test-results/
 playwright-report/
 
+# Nightly-sync salvage drop (sync-bills.yml writes the un-pushed commit here
+# when the commit step loses its race, for the upload-artifact step to collect).
+# Runner-only; must never be committed by a stray `git add -A`.
+salvage/
+
 # Impeccable design-tooling state (owner decision 2026-08-02: critique
 # snapshots ARE tracked — they carry the teardown campaign's trend lines —
 # while machine-local state stays out of the tree)

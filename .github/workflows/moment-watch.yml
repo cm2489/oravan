@@ -174,8 +174,23 @@ jobs:
           git config user.email "223600121+cm2489@users.noreply.github.com"
           git add data/candidates-seen.json
           git commit -m "chore(data): moment candidates seen-set $(date -u +%Y-%m-%d)"
+          # A stopped rebase is NOT retryable: the `&&` chain used to swallow
+          # the conflict and every later iteration then failed identically on
+          # "rebase in progress" until the attempts ran out - the shape that
+          # cost run 31194836148 its whole night in sync-bills.yml. Fail on the
+          # spot instead, naming the file. There is nothing auto-resolvable
+          # here: this job writes only data/candidates-seen.json, never
+          # data/sync-state.json, so it has no flat key-value state for
+          # scripts/merge-sync-state.mjs to union (see sync-bills.yml).
           for i in 1 2 3; do
-            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
-            echo "push race, retrying ($i)"
+            if git pull --rebase origin "${GITHUB_REF_NAME}"; then
+              if git push; then exit 0; fi
+              echo "push race, retrying ($i)"
+              continue
+            fi
+            conflicted="$(git diff --name-only --diff-filter=U | sort | tr '\n' ' ' | sed 's/ $//')"
+            git rebase --abort || true
+            echo "::error::rebase conflict in: ${conflicted:-<unknown>} - a human must resolve it. The seen-set this run collected is NOT committed."
+            exit 1
           done
           exit 1

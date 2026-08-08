@@ -190,6 +190,38 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): nightly bill sync $(date -u +%F)"
+
+          # Everything above this line has already been PAID FOR. Nothing below
+          # may throw it away quietly. See `abandon` and the salvage step.
+          abandon() {
+            trap - EXIT   # never re-enter through the trap below
+            local sha
+            sha="$(git rev-parse HEAD)"
+            echo "::error::THE SYNC ITSELF SUCCEEDED - only the commit failed. $1"
+            echo "::error::Discarded commit ${sha}: a full night of bills, coverage (PAID TheNewsAPI requests, one per bill - a wide run is ~2,400 and exhausts the daily quota), nominations, Moment updates and portraits. Re-running does NOT get the quota back."
+            echo "::error::The commit is preserved verbatim as the 'discarded-sync-${GITHUB_RUN_ID}' artifact on this run. Recover with: gh run download ${GITHUB_RUN_ID} -n discarded-sync-${GITHUB_RUN_ID} && git fetch ./discarded-commit.bundle main:salvaged && git cherry-pick salvaged"
+            echo "--- what was in the discarded commit ---"
+            git show --stat --oneline "${sha}" | head -20
+            mkdir -p salvage
+            git bundle create salvage/discarded-commit.bundle main --not origin/main || \
+              echo "::warning::could not bundle the discarded commit; the data is lost with this runner"
+            git show --stat --oneline "${sha}" > salvage/discarded-commit.txt || true
+            exit 1
+          }
+
+          # THE RETRIES WERE NEVER THE BACKSTOP THEY LOOKED LIKE. This step runs
+          # under `bash -e`, so on 2026-08-07 the failing `git rebase` ended the
+          # script on attempt 1 - the `for i in 1 2 3 4 5` loop read as resilient
+          # and was decorative, which is worse than no loop at all, because it
+          # stopped anyone from asking whether the retry actually worked.
+          # So, belt and braces: every git call in the loop below is guarded
+          # (`if`/`|| true`) so the loop genuinely gets its five attempts, AND
+          # this trap catches anything unguarded that still manages to kill the
+          # step - the night's paid work gets salvaged instead of vanishing with
+          # the runner. No backticks in the message: a trap string is re-parsed
+          # as a command when it fires, so a backtick would run as a subshell.
+          trap 'rc=$?; [ "$rc" -eq 0 ] || abandon "the step exited unexpectedly with status ${rc} - a git command failed under bash -e. This is a BUG in the commit step, not a data problem."' EXIT
+
           # The scheduled run's checked-out base can be stale by the time this
           # job starts (queued behind refresh-legislators.yml in the shared
           # data-sync concurrency group, whose push lands after our SHA was
@@ -200,16 +232,88 @@ jobs:
           # nominations.json, disjoint from refresh-legislators.yml's files.
           # `git add data/` stages all of them, including whatever the
           # Moment-updates and nomination steps wrote.
+          #
+          # That reasoning covered a racing DATA WORKFLOW only - a
+          # fast-forward problem. It did NOT survive a CONTENT conflict, and
+          # on 2026-08-07 (run 31194836148) one arrived: PR #166 merged
+          # mid-run and added `nominationsLastSync` to data/sync-state.json
+          # while this run's own commit rewrote lastSync/lastRun in the same
+          # file. `git rebase` stopped mid-rebase - and note that the retry
+          # loop never even got its five attempts: this step runs under
+          # `bash -e`, so the failing `git rebase` killed the script on
+          # attempt 1. Either way a 2,400-bill coverage pass (339 bills, 661
+          # articles, the day's whole TheNewsAPI quota, ending in a 429 storm)
+          # was thrown away.
+          #
+          # Now that feature branches touch that file at all, any long sync
+          # overlapping any such merge fails that way. So: a conflict CONFINED
+          # to data/sync-state.json is resolved by union
+          # (scripts/merge-sync-state.mjs - flat file, independent keys,
+          # newest timestamp wins per key) and the rebase continues. A
+          # conflict in ANY other file still fails loudly and immediately -
+          # bills.json and coverage.json are corpora, not key-value state, and
+          # nothing here is allowed to guess at one.
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
-            git fetch origin main
-            git rebase origin/main
+            if ! git fetch origin main; then
+              echo "fetch failed (attempt $i) - retrying"
+              continue
+            fi
+            if git rebase origin/main; then
+              continue
+            fi
+
+            conflicted="$(git diff --name-only --diff-filter=U | sort | tr '\n' ' ' | sed 's/ $//')"
+            echo "rebase stopped on a conflict in: ${conflicted:-<unknown>}"
+            if [ "$conflicted" != "data/sync-state.json" ]; then
+              git rebase --abort || true
+              abandon "rebase hit a conflict this workflow must NOT resolve automatically, in: ${conflicted:-<unknown>}. Only data/sync-state.json is a flat key-value file with a deterministic union; every other data/ file is a corpus and needs a human."
+            fi
+
+            if ! node scripts/merge-sync-state.mjs; then
+              git rebase --abort || true
+              abandon "data/sync-state.json conflicted in a way that has no deterministic union (see the merge-sync-state error above)."
+            fi
+            if ! git add data/sync-state.json; then
+              git rebase --abort || true
+              abandon "could not stage the resolved data/sync-state.json."
+            fi
+
+            # If the union left the replayed commit with nothing new in it,
+            # `git rebase --continue` refuses ("nothing to commit"); skipping
+            # is then correct and loses nothing, because the index already
+            # matches HEAD.
+            if git diff --cached --quiet; then
+              echo "the resolved commit is empty against the new main - skipping it"
+              if ! GIT_EDITOR=true git rebase --skip; then
+                git rebase --abort || true
+                abandon "git rebase --skip failed after resolving data/sync-state.json."
+              fi
+            elif ! GIT_EDITOR=true git rebase --continue; then
+              git rebase --abort || true
+              abandon "git rebase --continue failed after resolving data/sync-state.json."
+            fi
           done
-          exit 1
+          abandon "all five push attempts failed - either main kept moving under us, or the remote was unreachable. The per-attempt reason is in the log above."
+      - name: Salvage the sync the commit step could not land
+        # Run 31194836148 did every expensive thing right and then lost all of
+        # it at the push, and the failure looked at a glance like "the sync
+        # broke". It didn't. When the commit step gives up it now bundles the
+        # un-pushed commit here, so the night's paid work (a wide coverage pass
+        # is ~2,400 PAID TheNewsAPI requests and the whole daily quota) can be
+        # replayed onto main by hand instead of re-bought. Recovery commands
+        # are in the step's own ::error:: annotations.
+        if: always() && steps.commit.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: discarded-sync-${{ github.run_id }}
+          path: salvage/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Verify the deploy landed
         # The push above triggers Vercel's git-integration deploy (the commit
         # author is linked, so it is no longer BLOCKED). Deploys can still fail
