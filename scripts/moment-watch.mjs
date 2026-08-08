@@ -515,10 +515,16 @@ async function main(argv) {
      mark candidates as delivered, or the very first accidental invocation
      silently swallows the backlog. */
   if (has('commit-seen')) {
-    writeFileSync(
-      path(SEEN_PATH),
-      `${JSON.stringify({ _meta: { schema: 1, updated: new Date(now).toISOString(), note: 'Slugs already surfaced by scripts/moment-watch.mjs. Removing a slug re-notifies it.' }, slugs: qualifyingSlugs.sort() }, null, 2)}\n`
-    );
+    /* Only touch the file when the set itself moves: _meta.updated changes on
+       every write, so an unconditional rewrite would hand the workflow a
+       timestamp-only diff to commit — and therefore deploy — nightly. */
+    const nextSlugs = [...qualifyingSlugs].sort();
+    if (JSON.stringify(nextSlugs) !== JSON.stringify([...seen.slugs].sort())) {
+      writeFileSync(
+        path(SEEN_PATH),
+        `${JSON.stringify({ _meta: { schema: 1, updated: new Date(now).toISOString(), note: 'Slugs already surfaced by scripts/moment-watch.mjs. Removing a slug re-notifies it.' }, slugs: nextSlugs }, null, 2)}\n`
+      );
+    }
   }
 
   // Consumed by .github/workflows/moment-watch.yml to decide whether to open an issue.

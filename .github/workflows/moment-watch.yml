@@ -220,7 +220,12 @@ jobs:
         #     silently pay for a second full set of drafts to write /dev/null.
         run: |
           node scripts/moment-watch.mjs --mode=push --commit-seen --no-draft > /dev/null
-          if git diff --quiet -- data/candidates-seen.json; then
+          # `git diff` exits 0 for an UNTRACKED file, and the first run that
+          # ever writes the seen-set is exactly that state — this guard used to
+          # skip the commit forever, so the same candidates re-filed nightly
+          # (#167–#169 became #173–#175). status --porcelain sees new and
+          # modified alike.
+          if [ -z "$(git status --porcelain -- data/candidates-seen.json)" ]; then
             echo "seen-set unchanged"
             exit 0
           fi
