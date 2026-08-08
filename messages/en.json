@@ -835,7 +835,7 @@
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Big Question retires when the question is settled — every bill signed, vetoed, or dead, and every nomination confirmed, returned, or withdrawn. Settled Big Questions stay readable, marked resolved; they never reopen.",
     "browseAll": "Browse all Big Questions",
-    "aiNote": "Every Big Question summary is AI-drafted from the public record and labeled. Nothing publishes until it passes automated checks — both languages, the record attached, no advocacy language.",
+    "aiNote": "Every Big Question's name and summary are AI-drafted from the public record and labeled. Nothing publishes until it passes automated checks — both languages, the record attached, no advocacy language.",
     "searchPinLabel": "Big Question",
     "searchPinCta": "See the whole question",
     "updates": {

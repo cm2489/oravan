@@ -422,9 +422,9 @@ const R3_ALLOWLIST = [
   },
   {
     path: 'CLAUDE.md',
-    max: 3,
+    max: 4,
     allow: [AMENDMENT_RECORD, MOMENTS_SCOPED],
-    note: 'the 2026-07-25 amendment quotes the retired wording (1), and the sentence after it carves out the one thing that IS reviewed — a Moment entry, hand-authored and owner-merged (2)',
+    note: 'the 2026-07-25 amendment quotes the retired wording (1), and the sentence after it carves out the one thing that IS reviewed — a Moment entry, hand-authored and owner-merged (2). Raised 3→4 on 2026-08-07: the carve-out itself was amended when scripts/moment-draft.mjs began writing a Moment\'s first draft, and that amendment has to quote the shipped `moments.howMadeBody` wording it is keeping true (1)',
   },
   {
     path: 'PRODUCT.md',
@@ -767,8 +767,8 @@ function selfTest() {
     scriptPrompt: '- Strictly nonpartisan tone: no party language, no attacks, no alarmism, no advocacy-group jargon.',
     decodePrompt: 'Strictly nonpartisan, no advocacy, no preamble, no markdown.',
     momentsAiNoteEn:
-      'Every Big Question summary is AI-drafted from the public record and labeled. Nothing publishes until it ' +
-      'passes automated checks — both languages, the record attached, no advocacy language.',
+      "Every Big Question's name and summary are AI-drafted from the public record and labeled. Nothing publishes " +
+      'until it passes automated checks — both languages, the record attached, no advocacy language.',
     momentsLintHeader:
       ' *     forbidden-vocabulary lint over name/summary/role in BOTH languages — the versioned word list from ' +
       'the spec, so refusals are legible as mechanics. The lint is the tripwire; owner review is the real gate.',

@@ -17,14 +17,39 @@ name: Moment watch
 #                                  and every below-the-floor exclusion with its
 #                                  reason, so the floor stays auditable.
 #
-# COST: $0. Zero network, zero AI, zero paid API — scripts/moment-watch.mjs
-# reads only files already in the repo. Actions minutes are free on a public
-# repo (standard runners).
+# COST: NOT $0 any more, as of 2026-08-07. This header advertised "$0. Zero
+# network, zero AI, zero paid API" and that stopped being true the moment
+# scripts/moment-draft.mjs started writing the first draft of each scaffold's
+# prose with claude-sonnet-5. The real number, so nobody has to guess:
 #
-# THE BOUNDARY IS UNCHANGED. This never drafts a Moment. The scaffold in each
-# issue carries only facts copied from the official record; every user-facing
-# sentence is left empty for the owner to write in both languages, which is
-# what keeps `moments.howMadeBody` true.
+#   ONE call per candidate whose scaffold a run actually RENDERS, plus at most
+#   one retry when a field fails the lint. Measured on the s-3172-119
+#   candidate: ~1,230 input + ~480 output tokens per call (chars / 3.6, which
+#   allows for Sonnet 5's heavier tokenizer — an estimate, NOT a count_tokens
+#   measurement) = ~$0.011 at list ($3 / $15 per MTok), ~$0.007 at the
+#   introductory rate that runs to 2026-08-31.
+#
+#     quiet night, nothing crossed the floor .... $0.00  (no call is made)
+#     3-candidate night (today's backlog) ....... ~$0.03, ~$0.07 if all retried
+#     hard per-run ceiling, MOMENT_DRAFT_CAP=10 . ~$0.22
+#     realistic month, 10 pushes + 4 digests .... ~$0.25
+#
+#   Three things deliberately spend nothing: `--json` (it renders no
+#   scaffold), a weekly digest with nothing above the floor, and the seen-set
+#   commit (it passes --no-draft AND is not given the key). The API key is
+#   scoped to the two steps that render an issue body, never to the whole job.
+#
+# Actions minutes are still free on a public repo (standard runners).
+#
+# THE BOUNDARY MOVED, and it is worth stating precisely. This still proposes
+# nothing and publishes nothing: no step here writes data/moments.json, and a
+# Big Question exists only when the owner edits a draft and opens a PR that
+# scripts/check-moments.mjs then gates. What changed is that the three prose
+# slots arrive filled with a labelled, lint-checked AI first draft instead of
+# empty — the owner's ruling of 2026-08-07: "I want to review and edit the
+# writing and the choice of what goes up. I don't actually want to write
+# them." `moments.howMadeBody`'s "reviewed by a person before it publishes"
+# stays true, because that review and that merge are the whole job.
 
 on:
   schedule:
@@ -69,9 +94,20 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-        # No npm ci: scripts/moment-watch.mjs and the moment-candidates.mjs it
-        # imports are stdlib-only by design (zero network, zero AI). Installing
-        # dependencies here would add a minute to a job that needs none.
+          cache: npm
+
+      - run: npm ci --omit=dev
+        # This job WAS dependency-free — moment-watch.mjs and the
+        # moment-candidates.mjs it imports are stdlib-only, and the old comment
+        # here said installing anything "would add a minute to a job that needs
+        # none". Drafting needs @anthropic-ai/sdk, so it needs one now.
+        # `--omit=dev` because nothing in this job builds, types, or tests:
+        # it skips Playwright's browser download and sharp, which are the two
+        # slow installs in this lockfile.
+        #
+        # scripts/moment-watch.mjs imports the SDK DYNAMICALLY and treats a
+        # failed import as "no drafting today", so if this step is ever
+        # removed or fails the watcher still delivers the shortlist.
 
       - name: Select mode
         id: mode
@@ -106,8 +142,12 @@ jobs:
         # Writes new_count to $GITHUB_OUTPUT. Does NOT advance the seen-set —
         # that happens only after an issue is actually opened, so a failure
         # between here and there can never silently swallow a candidate.
+        #
+        # --json ONLY, and no API key on this step. It used to also render the
+        # markdown digest here, which was dead output in push mode (the loop
+        # below re-renders per candidate) — harmless when rendering was free,
+        # and a full duplicate set of drafting calls now that it is not.
         run: |
-          node scripts/moment-watch.mjs --mode=${{ steps.mode.outputs.mode }} > /tmp/report.md
           node scripts/moment-watch.mjs --mode=${{ steps.mode.outputs.mode }} --json > /tmp/report.json
           cat /tmp/report.json
 
@@ -115,9 +155,14 @@ jobs:
         if: steps.mode.outputs.mode == 'push' && steps.report.outputs.new_count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
+          # The ONLY steps that get the key are the two that render an issue
+          # body. Absent it, scripts/moment-draft.mjs falls back to the blank
+          # scaffold and the issue still opens — the degrade path, wired as the
+          # default rather than as a promise.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         # One issue per candidate, not one rolling issue: each can be closed
         # independently as it is accepted or declined, and closing IS the
-        # decline action.
+        # decline action. Each --only render is also exactly one drafting call.
         run: |
           for slug in $(node -e "console.log(require('/tmp/report.json').newly.join(' '))"); do
             node scripts/moment-watch.mjs --mode=push --only="$slug" > "/tmp/$slug.md"
@@ -131,9 +176,15 @@ jobs:
         if: steps.mode.outputs.mode == 'weekly'
         env:
           GH_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         # Updates in place rather than opening a new issue each Monday: the
         # thread becomes a running record and notifications stay quiet.
+        #
+        # The digest renders here, not in "Build report", so the drafting spend
+        # happens once and only for the candidates this digest actually
+        # scaffolds. Nothing above the floor => no scaffold => no call.
         run: |
+          node scripts/moment-watch.mjs --mode=weekly > /tmp/report.md
           existing=$(gh issue list --label moment-review --state open --limit 1 --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue edit "$existing" --body-file /tmp/report.md
@@ -164,8 +215,11 @@ jobs:
         #     `on: push` and their corpus changes can redden tests. This file is
         #     invisible to the suite, so a CI run against it would prove nothing.
         # If this workflow ever writes anything the app reads, both come back.
+        #   - --no-draft, and no ANTHROPIC_API_KEY on this step. The render this
+        #     invocation produces is thrown away; without both of those it would
+        #     silently pay for a second full set of drafts to write /dev/null.
         run: |
-          node scripts/moment-watch.mjs --mode=push --commit-seen > /dev/null
+          node scripts/moment-watch.mjs --mode=push --commit-seen --no-draft > /dev/null
           if git diff --quiet -- data/candidates-seen.json; then
             echo "seen-set unchanged"
             exit 0
