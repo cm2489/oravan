@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-03T10:57:51.247Z"
+    "generated_at": "2026-08-08T22:22:26.167Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -164,6 +164,29 @@
         },
         "changed_because": [
           "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_f546ebe6",
+        "generated_at": "2026-08-08T22:22:32.877Z",
+        "as_of_day": "2026-08-08",
+        "text": {
+          "en": "H.R. 9770 stands passed by one chamber. No action has been recorded on this bill in the last 14 days. That means the bill has cleared the chamber where it started, and it now waits for the other chamber to take it up. There is no committee action, no floor vote, and no new text to report in this window. The record shows no further movement beyond the one-chamber passage already on file. Until new action is recorded, the bill's status remains unchanged from where it stands now.",
+          "es": "El proyecto H.R. 9770 se encuentra aprobado por una cámara. No se ha registrado ninguna acción sobre este proyecto en los últimos 14 días. Esto significa que el proyecto superó la cámara donde se originó y ahora espera que la otra cámara lo considere. No hay acción de comité, ni votación en el pleno, ni texto nuevo que reportar en este período. El registro no muestra avances adicionales más allá de la aprobación por una cámara ya documentada. Hasta que se registre una nueva acción, el estado del proyecto sigue igual a como se encuentra ahora."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
       }
