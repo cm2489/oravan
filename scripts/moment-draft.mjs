@@ -73,8 +73,10 @@ import { lintRevisionText } from '../lib/moment-updates-gate.mjs';
 export const DRAFT_MODEL = 'claude-sonnet-5';
 
 /** Bumped whenever the prompt below changes in a way that changes output.
- *  Printed in the issue so a bad batch of drafts is attributable. */
-export const DRAFT_PROMPT_VERSION = 1;
+ *  Printed in the issue so a bad batch of drafts is attributable.
+ *  v2 (2026-08-09): names are bare noun phrases — the "The <subject>
+ *  question" wrapper is retired by owner ruling. */
+export const DRAFT_PROMPT_VERSION = 2;
 
 /** The three slots a scaffold leaves empty. Order is display order. */
 export const DRAFT_FIELDS = ['name', 'summary', 'role'];
@@ -217,7 +219,7 @@ ${recordLines(g).map((l) => `- ${l}`).join('\n')}
 
 WRITE THREE THINGS, each in English and Spanish:
 
-1. "name" — what a reader would call the question this measure puts to Congress. A short noun phrase, 4 to 9 words, sentence case, no question mark, usually beginning "The ". Name the QUESTION, not the bill and not a side.
+1. "name" — what a reader would call the question this measure puts to Congress. A short BARE noun phrase, 2 to 7 words, sentence case, no question mark, and no wrapper: write "Syria sanctions repeal", never "The Syria sanctions repeal question" — the page already frames every name as a Big Question, in both languages (owner ruling, 2026-08-09). Name the QUESTION, not the bill and not a side.
 
 2. "summary" — 70 to 110 words per language, for someone reading at an 8th-grade level. Open with what is actually before Congress and where it sits right now, then what the measure would do as far as the record states it, then what a yes and a no each mean. Both answers are legitimate; write so a reader on either side recognizes their own position.
 
@@ -234,7 +236,7 @@ HARD RULES:
 - Plain text. No markdown, no headings, no meta-commentary about this draft.
 
 SHAPE (placeholders in angle brackets — never copy these words, they are not facts):
-{"name":{"en":"The <subject> question","es":"La cuestión de <subject>"},"summary":{"en":"<70-110 words>","es":"<70-110 words>"},"role":{"en":"<2-3 sentences>","es":"<2-3 sentences>"}}
+{"name":{"en":"<subject>","es":"<sujeto>"},"summary":{"en":"<70-110 words>","es":"<70-110 words>"},"role":{"en":"<2-3 sentences>","es":"<2-3 sentences>"}}
 
 Output STRICT JSON only — no prose, no markdown fences, no other text.`;
 }
