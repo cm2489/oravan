@@ -21,6 +21,27 @@
  * on its own, which is why tests/claim-truth.spec.ts also asserts the
  * constitution documents agree with each other, and why R3 exists.
  *
+ * Amended 2026-08-09, after an adversarial pass walked four rewrites straight
+ * through the gate. Both holes were the same shape — a rule that checks for
+ * the presence of something true instead of the absence of something false:
+ *
+ *   R1b. The positive half only asked whether an approved automated-checks
+ *        verb was PRESENT. It never asked what else the sentence claimed, so
+ *        a surface could name the real gate and bolt a brand-new human step
+ *        onto it: "…no field publishes unless automated gates pass; an
+ *        editor signs off on every decode before it goes live" passed
+ *        cleanly, as did "our team reviews each summary first", "vetted by a
+ *        person", and ES "supervisado por una persona". None of those are
+ *        RETIRED wordings, and RETIRED can only ever list wordings this repo
+ *        has already used. An oversight claim inside an enumerated anchor is
+ *        now a failure unless that anchor is explicitly allowed one.
+ *
+ *   R4.  R2 fires on the literal word "advocacy". The OTHER gate claim
+ *        retired from CLAUDE.md on 2026-08-06 — that a forbidden-vocabulary
+ *        lint runs on decodes; it runs on Big Questions only — could have
+ *        walked back into shipped copy under its own name with nothing to
+ *        stop it. R4 is R2's shape for that claim.
+ *
  * Modeled structurally on scripts/check-naming.mjs, deliberately: patterns
  * assembled from fragments so this file carries no banned literal and needs
  * no self-exemption; a `max`-counted allowlist with written justifications
@@ -90,6 +111,58 @@ const APPROVED = {
 };
 
 /**
+ * R1b — A HUMAN IN THE PUBLISH PATH, in any wording.
+ *
+ * RETIRED is a list of sentences this repo has actually written, which means
+ * it can only ever be one wording behind. This is the general case: a HUMAN
+ * AGENT and an OVERSIGHT VERB in the same sentence of an enumerated anchor.
+ * The nightly decode path has no human step at all, so on every anchor but
+ * the ones explicitly allowed one (see ANCHORS' `oversightOk`), that
+ * conjunction is a false claim no matter how it is phrased.
+ *
+ * TWO FACTORS, not one, because each factor alone is honest copy this repo
+ * really ships:
+ *   - agent alone — about.accountabilityBody's "reaches a real person" is
+ *     about the feedback link, not the publish path;
+ *   - verb alone — citations.aiBody's "the whole corpus is re-checked" /
+ *     "todo el corpus se vuelve a revisar" is scripts/verify-sync.mjs, and
+ *     `revisar` is simply the Spanish for what that script does.
+ * Only the conjunction puts a person in front of a publish.
+ *
+ * WHAT IS DELIBERATELY NOT AN AGENT: bare "we"/"our"/"nosotros". The site
+ * says "we won't blur them" one clause away from the word "check" in
+ * citations.aiBody, and a rule that fires there cries wolf on the single
+ * most carefully-audited string in the repo. First-person only counts when
+ * it is welded directly to an oversight verb ("we review each summary"),
+ * which the WE_OVERSIGHT patterns below match on their own.
+ *
+ * WHAT IS DELIBERATELY NOT A VERB: "check"/"verificar". Those are the
+ * APPROVED automated mechanism — banning them beside an agent would fight
+ * the positive half of R1.
+ */
+const HUMAN_AGENT = {
+  en: /\b(editors?|editorial|copy[-\s]?desk|persons?|people|humans?|staff|our\s+team|reviewers?|moderators?|someone|owner|founder|by\s+hand)\b/i,
+  es: /\b(editor(a|es|as)?|personas?|humanos?|humanas?|equipo|revisor(a|es|as)?|moderador(a|es)?|alguien|due[ñn][oa]|fundador(a)?|a\s+mano)\b/i,
+};
+const OVERSIGHT_VERB = {
+  en: /\b(sign(s|ed)?[\s-]off|review(s|ed|ing)?|vet(s|ted|ting)?|approv(e|es|ed|al)|oversee(s|n)?|oversight|proofread(s|ing)?|edits?|edited|clears?\s+(it|them|each|every))\b/i,
+  es: /\b(revisa(n|do|da|dos|das|r)?|revisi[óo]n|supervisa(n|do|da|dos|das|r)?|supervisi[óo]n|aprueba(n)?|aproba(do|da|dos|das|ci[óo]n)|firma(n|do)?|visto\s+bueno|edita(n|do|da)?)\b/i,
+};
+const WE_OVERSIGHT = [
+  /\bwe\s+(personally\s+|each\s+)?(review|vet|approve|proofread|sign\s+off|edit)\b/i,
+  /\b(revisamos|supervisamos|aprobamos|editamos|firmamos)\b/i,
+];
+
+/** R1b's rule over one anchor's text. Returns the offending sentences. Pure. */
+function oversightHits(text) {
+  return sentencesOf(text).filter(
+    (s) =>
+      WE_OVERSIGHT.some((re) => re.test(s)) ||
+      (['en', 'es'].some((l) => HUMAN_AGENT[l].test(s) && OVERSIGHT_VERB[l].test(s)))
+  );
+}
+
+/**
  * R2's two factors. Neither alone is a defect: the repo legitimately writes
  * "no advocacy language" as a DESIGN RULE (CLAUDE.md, AGENTS.md) and as a
  * PROMPT INSTRUCTION (lib/scriptprompt.ts, scripts/bill-decode.mjs), and it
@@ -102,6 +175,32 @@ const APPROVED = {
  * and a rule that cries wolf gets disabled.
  */
 const ADVOCACY = [/\badvocacy\b/i, /\blenguaje\s+de\s+campa[ñn]a\b/i];
+
+/*
+ * R4's first factor — the OTHER retired gate claim. CLAUDE.md's AI-content
+ * rule listed a "forbidden-vocabulary lint" among the gates a decode must
+ * pass until 2026-08-06, when it was retired rather than widened:
+ * `lintForbidden` (lib/moments-gate.mjs) is wired into check-moments.mjs and
+ * check-moment-updates.mjs and nowhere else, and running it over the decoded
+ * corpus rejects ~27% of correct, neutral legislative description ("block"
+ * on the CRA disapproval resolutions, "attack" on a fisheries bill), a third
+ * of it in one language only — which would break EN/ES parity outright.
+ *
+ * R2 fires on the literal word "advocacy", so it would not have caught this
+ * claim coming back under its own name. R4 is R2's shape for it: the token
+ * beside a publish-gate token, in one sentence.
+ */
+const VOCAB_LINT = [
+  /forbidden[-\s]?vocabulary/i,
+  /vocabulary\s+(lint|check|screen|gate|filter|list)/i,
+  /banned[-\s]?(word|words|vocabulary)\b/i,
+  /word\s?list\s+(lint|check|gate)/i,
+  /vocabulario\s+prohibido/i,
+  /control\s+de\s+vocabulario/i,
+  /lint\s+(de\s+)?vocabulario/i,
+  /(lista|listas)\s+de\s+palabras\s+prohibidas/i,
+  /palabras\s+prohibidas/i,
+];
 const GATE_CLAIM = [
   /\bpublish(es|ed|ing)?\b/i,
   /\bpublication\b/i,
@@ -209,6 +308,26 @@ function lineStartingWith(text, prefix) {
  * `moments.aiNote` is on the list even though Moments carry the stricter,
  * genuinely-linted guarantee: the list is about surfaces that make the
  * claim, not surfaces suspected of lying.
+ *
+ * `oversightOk: true` is R1b's allowlist — the surfaces where a claim that a
+ * PERSON is in the publish path is TRUE. Exactly two are on it, both in the
+ * Moments namespace: a Big Question's copy is AI-drafted
+ * (scripts/moment-draft.mjs) and then edited and merged by the owner before
+ * anything reaches data/moments.json, which is CLAUDE.md's 2026-07-25
+ * carve-out as amended 2026-08-07. Everything else on this list describes
+ * the nightly decode path, which has no human step whatsoever.
+ *
+ * WHERE `moments.howMadeBody` IS, and why it is not here. It carries the
+ * fullest true human-review claim on the site — "checked by an automated
+ * gate, then reviewed by a person before it publishes" / "revisada por una
+ * persona" — and it is exempt STRUCTURALLY, in two independent places that
+ * this change leaves exactly as it found them: it is not enumerated in
+ * ANCHORS, so R1/R1b never read it at all; and the per-key message scan
+ * below skips the whole `moments.` namespace (MOMENTS_NAMESPACE), so R2/R3
+ * never read it either — which is the only reason its ES value, a verbatim
+ * RETIRED match, does not fail this gate today. Adding it here would demand
+ * an APPROVED verb it has no reason to carry. Both exemptions are asserted
+ * in --self-test so a future edit cannot quietly remove them.
  */
 const ANCHORS = [
   { id: 'messages/en.json citations.aiBody', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'citations.aiBody' },
@@ -217,8 +336,8 @@ const ANCHORS = [
   { id: 'messages/es.json home.heroAiMeta', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'home.heroAiMeta' },
   { id: 'messages/en.json bills.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'bills.aiNote' },
   { id: 'messages/es.json bills.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'bills.aiNote' },
-  { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote' },
-  { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote' },
+  { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote', oversightOk: true },
+  { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote', oversightOk: true },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.en', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'en:'] },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.es', lang: 'es', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'es:'] },
   { id: 'lib/core/mcp.ts TOOL_INFO.get_bill.description', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['TOOL_INFO', 'get_bill:', 'description:'] },
@@ -226,10 +345,26 @@ const ANCHORS = [
   { id: 'lib/jsonld.ts AI_DISCLOSURE.es', lang: 'es', kind: 'ts', file: 'lib/jsonld.ts', anchors: ['AI_DISCLOSURE', 'es:'] },
   { id: 'app/llms.txt/route.ts corpus sentence', lang: 'en', kind: 'line', file: 'app/llms.txt/route.ts', prefix: 'Oravan publishes a plain-language' },
   { id: 'app/llms.txt/route.ts /bills note', lang: 'en', kind: 'line', file: 'app/llms.txt/route.ts', prefix: '- Content under /bills' },
+  /*
+   * Enumerated 2026-08-09. This line told machines the corpus was "decoded
+   * independently in Spanish" — a second, Spanish-native decode that has
+   * never existed. Every Spanish field is an AI translation of the English
+   * decode, written in the same scripts/bill-decode.mjs call. llms.txt is
+   * the one surface built to be copied wholesale by systems that will not
+   * come back to check, so it gets a pin like the two above it.
+   */
+  { id: 'app/llms.txt/route.ts Spanish section', lang: 'en', kind: 'line', file: 'app/llms.txt/route.ts', prefix: 'The same corpus' },
 ];
 
-/** R1's rule, run against one anchor's extracted text. Pure — self-tested. */
-function checkAnchorText(text, lang) {
+/**
+ * R1 + R1b, run against one anchor's extracted text. Pure — self-tested.
+ *
+ * `oversightOk` is the explicit allowlist for R1b, and it is a property of
+ * the SURFACE rather than of the wording: an oversight claim is true on a
+ * Moments surface and false everywhere else, and no regex can tell those
+ * apart from the sentence alone.
+ */
+function checkAnchorText(text, lang, { oversightOk = false } = {}) {
   const problems = [];
   if (!text) {
     problems.push('anchor not found — the enumerated surface moved or was deleted; re-enumerate it in ANCHORS');
@@ -243,6 +378,14 @@ function checkAnchorText(text, lang) {
       `names no approved provenance mechanism (${lang}) — a publication claim must say what actually guards it, ` +
         'not merely drop the false part'
     );
+  }
+  if (!oversightOk) {
+    for (const s of oversightHits(text)) {
+      problems.push(
+        'R1b: puts a person in the publish path — the nightly decode path has no human step, and this surface is ' +
+          `not on the oversightOk allowlist: ${s.slice(0, 140)}`
+      );
+    }
   }
   return problems;
 }
@@ -412,6 +555,38 @@ const CALL_SCRIPT_SCOPED = {
   name: 'true and call-script-scoped',
   re: /call script|\bcaller\b|guion(es)? de llamada|\bel guion\b/i,
 };
+
+// ---------------------------------------------------------------------------
+// R4 — the forbidden-vocabulary lint named AS a publish gate, outside Moments
+// ---------------------------------------------------------------------------
+
+/*
+ * Same two-factor shape as R2, plus TWO written escapes, because unlike
+ * "advocacy" this claim is TRUE somewhere and is QUOTED AS HISTORY in
+ * several places:
+ *
+ *   - MOMENTS_SCOPED — on Big Questions the lint really does block the
+ *     publish, and citations.aiBody says so in both languages ("on Big
+ *     Questions it's an enforced vocabulary check that blocks the publish").
+ *     R2 gets this escape from the `moments.` namespace skip instead; R4
+ *     needs it in the sentence, because the true sentence lives in the
+ *     `citations.` namespace.
+ *   - AMENDMENT_RECORD — CLAUDE.md, README and PRODUCT.md have to be able to
+ *     write down which gate they retired and why. A sentence marked as a
+ *     correction is not making the claim.
+ *
+ * Defined here rather than beside R2 because it borrows both categories,
+ * which R3 declares just above.
+ */
+function vocabLintHits(text) {
+  return sentencesOf(text).filter(
+    (s) =>
+      VOCAB_LINT.some((re) => re.test(s)) &&
+      GATE_CLAIM.some((re) => re.test(s)) &&
+      !MOMENTS_SCOPED.re.test(s) &&
+      !AMENDMENT_RECORD.re.test(s)
+  );
+}
 
 const R3_ALLOWLIST = [
   {
@@ -677,6 +852,55 @@ function selfTest() {
     return anyRawLine === false && value !== null && checkAnchorText(value, 'en').length > 0;
   });
 
+  /*
+   * --- R1b violations: a NEW human step bolted onto a TRUE automated claim --
+   *
+   * All four of these passed this gate on 2026-08-09, verbatim. Each names
+   * the real mechanism (so R1's positive half is satisfied) and each uses a
+   * wording RETIRED does not list (so R1's negative half never fires). That
+   * is the whole hole, and it is why R1b is two-factor rather than a longer
+   * list of phrases: the next wording is always one thesaurus away.
+   */
+  const r1b = (text, lang) => checkAnchorText(text, lang).some((p) => p.startsWith('R1b'));
+
+  seed('R1b/en: an editor signs off, alongside a correct automated-gates claim', () =>
+    r1b(
+      'The plain-language layer is AI-drafted, and no field publishes unless automated gates pass; an editor signs off on every decode before it goes live.',
+      'en'
+    )
+  );
+  seed('R1b/en: "our team reviews each summary first"', () =>
+    r1b('Nothing publishes without automated checks — our team reviews each summary first.', 'en')
+  );
+  seed('R1b/en: "vetted by a person", a wording RETIRED does not and cannot list', () =>
+    r1b(
+      'Every summary is automatically checked before publication. Every summary is vetted by a person before publication.',
+      'en'
+    )
+  );
+  seed('R1b/es: "supervisado por una persona", the same trick in Spanish', () =>
+    r1b(
+      'Ningún campo se publica sin pasar controles automáticos. Cada resumen es supervisado por una persona antes de publicarse.',
+      'es'
+    )
+  );
+  seed('R1b: oversightOk is a property of the SURFACE — the same sentence fails on an anchor that lacks it', () => {
+    const claimed =
+      'Nothing publishes until it passes automated checks, and a person reviews and merges every entry before it goes live.';
+    return (
+      checkAnchorText(claimed, 'en').some((p) => p.startsWith('R1b')) &&
+      checkAnchorText(claimed, 'en', { oversightOk: true }).length === 0
+    );
+  });
+
+  // --- R4 violations -------------------------------------------------------
+  seed('R4/en: the retired forbidden-vocabulary lint, named as a decode publish gate', () =>
+    vocabLintHits('No decode publishes until it clears the forbidden-vocabulary lint.').length > 0
+  );
+  seed('R4/es: the same retired claim in Spanish', () =>
+    vocabLintHits('Ningún resumen se publica sin pasar el control de vocabulario prohibido.').length > 0
+  );
+
   // --- R2 violations -------------------------------------------------------
   seed('R2/en: advocacy named as one of the publish gates, same sentence', () =>
     twoFactorHits(
@@ -752,13 +976,31 @@ function selfTest() {
   // any of them it is crying wolf, and a gate people disable is worse than
   // no gate at all.
   const REAL = {
+    /*
+     * Extended 2026-08-09 to carry the three clauses R1b and R4 could most
+     * plausibly cry wolf on, all of them real shipped text: "we won't blur
+     * them" a few words from "check" (first person beside an automated
+     * verb), "se vuelve a revisar" (the Spanish for what verify-sync.mjs
+     * does to the corpus, with no person anywhere near it), and the TRUE
+     * Big-Questions vocabulary sentence that R4 must leave alone.
+     */
     aiBodyEn:
       'The plain-language layer is AI-drafted, and no field publishes unless automated gates pass: both languages ' +
       'present, the official record attached, and a schema check on every decode — a decode that comes back ' +
-      'missing a required field is discarded rather than stored half-written.',
+      'missing a required field is discarded rather than stored half-written, and the whole corpus is re-checked ' +
+      'before the nightly sync is allowed to publish anything. The Spanish version of that layer is an AI ' +
+      'translation of the English decode, produced in the same model call rather than a second reading of the ' +
+      "bill, and it clears the same checks. Nonpartisan wording is held two different ways, and we won't blur " +
+      "them: on bill decodes it's a drafting instruction to the model, and on Big Questions it's an enforced " +
+      'vocabulary check that blocks the publish.',
     aiBodyEs:
       'La capa en lenguaje sencillo la redacta la IA, y ningún campo se publica sin pasar controles automáticos: ' +
-      'los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen.',
+      'los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen — y ' +
+      'todo el corpus se vuelve a revisar antes de que la sincronización nocturna pueda publicar nada. La versión ' +
+      'en español de esa capa es una traducción hecha por IA del resumen en inglés, y pasa los mismos controles. ' +
+      'La neutralidad se sostiene de dos maneras distintas: en los resúmenes de proyectos de ley es una ' +
+      'instrucción de redacción al modelo; en las Grandes preguntas es un control de vocabulario que bloquea la ' +
+      'publicación.',
     heroEn: 'Nothing publishes without automated checks · the official record is always attached',
     labelEs:
       'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. ' +
@@ -819,6 +1061,43 @@ function selfTest() {
     const hits = retiredHits(line, { markdown: true });
     return hits.length > 0 && hits.every((h) => MOMENTS_SCOPED.re.test(h.context));
   });
+  clean('R4: the TRUE Big-Questions vocabulary sentence in real aiBody copy, both languages', () =>
+    vocabLintHits(REAL.aiBodyEn).length === 0 && vocabLintHits(REAL.aiBodyEs).length === 0
+  );
+  clean('R4: lib/moments-gate.mjs names the lint without claiming it gates a decode publish', () =>
+    vocabLintHits(REAL.momentsLintHeader).length === 0
+  );
+  clean('R4: a constitution document may record WHICH gate it retired', () =>
+    vocabLintHits(
+      'Amended 2026-08-06: the gate list above also named a "forbidden-vocabulary lint", which has never run on ' +
+        'the decode path and never gated a publish there.'
+    ).length === 0
+  );
+  clean('R1b: moments.aiNote is allowlisted, so the one TRUE oversight claim on the site can be written down', () => {
+    const allowed = ANCHORS.filter((a) => a.oversightOk);
+    const trueClaim =
+      "Every Big Question's name and summary are AI-drafted and labeled. Nothing publishes until it passes " +
+      'automated checks, and a person edits and merges every entry first.';
+    return (
+      allowed.length === 2 &&
+      allowed.every((a) => a.path?.startsWith(MOMENTS_NAMESPACE)) &&
+      checkAnchorText(trueClaim, 'en', { oversightOk: true }).length === 0
+    );
+  });
+  clean('R1b/R3: moments.howMadeBody keeps BOTH structural exemptions — unenumerated in R1, namespace-skipped in R3', () => {
+    // Its ES value is a verbatim RETIRED match, and it is TRUE: the owner
+    // edits and merges every Big Question before it reaches data/moments.json
+    // (CLAUDE.md 2026-07-25, as amended 2026-08-07). Losing either exemption
+    // would red this gate on an honest sentence, so both are asserted here.
+    const esReal =
+      'Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada ' +
+      `por un control automático y luego ${REVISAD}a por una persona antes de publicarse.`;
+    return (
+      !ANCHORS.some((a) => a.path === 'moments.howMadeBody') &&
+      'moments.howMadeBody'.startsWith(MOMENTS_NAMESPACE) &&
+      retiredHits(esReal).length > 0
+    );
+  });
   clean("R3: PRODUCT.md's real denial is a denial in its own sentence", () => {
     const line = `The nightly decode path is not ${HUMAN}-${REVIEW}ed and the product never claims it is; what IS hand-reviewed (Big Question entries) says so because it is true.`;
     const hits = retiredHits(line, { markdown: true });
@@ -853,7 +1132,7 @@ function scanTree() {
       fail(`R1 ${a.id}: could not read the surface (${err.message})`, a.file);
       continue;
     }
-    for (const problem of checkAnchorText(text, a.lang)) fail(`R1 ${a.id}: ${problem}`, a.file);
+    for (const problem of checkAnchorText(text, a.lang, a)) fail(`R1 ${a.id}: ${problem}`, a.file);
   }
 
   const files = execSync('git ls-files', { encoding: 'utf8' }).trim().split('\n');
@@ -873,6 +1152,14 @@ function scanTree() {
     for (const sentence of twoFactorHits(content)) {
       fail(
         `R2 names advocacy as a publish gate outside Moments — that lint runs on Big Questions only: ${sentence.slice(0, 160)}`,
+        file
+      );
+    }
+
+    for (const sentence of vocabLintHits(content)) {
+      fail(
+        'R4 names a forbidden-vocabulary lint as a publish gate outside Moments — that lint runs on Big Questions ' +
+          `only (CLAUDE.md, retired 2026-08-06): ${sentence.slice(0, 160)}`,
         file
       );
     }
@@ -906,6 +1193,13 @@ function scanTree() {
       if (key.startsWith(MOMENTS_NAMESPACE)) continue;
       for (const sentence of twoFactorHits(value)) {
         fail(`R2 ${key} names advocacy as a publish gate outside the Moments namespace: ${sentence.slice(0, 160)}`, file);
+      }
+      for (const sentence of vocabLintHits(value)) {
+        fail(
+          `R4 ${key} names a forbidden-vocabulary lint as a publish gate, and the sentence is neither ` +
+            `Moments-scoped nor a correction: ${sentence.slice(0, 160)}`,
+          file
+        );
       }
       const allowance = R3_KEY_ALLOWLIST.find((e) => e.key === key);
       const hits = retiredHits(value);

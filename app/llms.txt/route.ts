@@ -20,6 +20,16 @@ import { SITE_ORIGIN } from '@/lib/site';
  * basePath resolve to (lib/core/mcp.ts) - one literal, not a third
  * hand-typed copy of the URL.
  *
+ * Corrected 2026-08-09: the "## Spanish" section said the corpus was
+ * "decoded independently in Spanish". No pipeline has ever done that. The
+ * Spanish plain-language layer is an AI translation of the English decode,
+ * produced inside the same scripts/bill-decode.mjs call (its second prompt
+ * says "ES_SUMMARY is the full summary translation"), and the one backfill
+ * that ever wrote Spanish separately, scripts/translate-summaries.mjs, is
+ * EN→ES as well. The sentence now says that, and it is enumerated in
+ * scripts/check-claim-truth.mjs so the claim cannot drift back unnoticed —
+ * this file is read by machines that redistribute what it says.
+ *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
  * messages/en.json + es.json — the bilingual-parity rule this file is not
@@ -49,7 +59,7 @@ Oravan publishes a plain-language, AI-drafted and automatically checked decoded 
 
 ## Spanish
 
-The same corpus, decoded independently in Spanish, is available under ${SITE_ORIGIN}/es — for example ${SITE_ORIGIN}/es/bills.
+The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example ${SITE_ORIGIN}/es/bills. The Spanish plain-language layer is an AI translation of the English decode, produced in the same model call rather than by decoding the bill a second time, and it clears the same automated checks — a decode whose Spanish is missing is discarded, never published in English alone.
 
 ## Notes for automated and AI systems
 

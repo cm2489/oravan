@@ -164,4 +164,30 @@ test.describe('llms.txt states the provenance the pipeline actually has', () => 
     // Unchanged and still true: the official source is linked from every page.
     expect(billsNote!).toContain('the official source is linked from every bill page');
   });
+
+  /*
+   * 2026-08-09. A third sentence, missed by the 2026-08-06 pass because it
+   * makes a provenance claim about the SPANISH corpus rather than about
+   * review: "The same corpus, decoded independently in Spanish". There has
+   * never been an independent Spanish decode — scripts/bill-decode.mjs
+   * produces every Spanish field as a translation of the English summary in
+   * its second prompt ("ES_SUMMARY is the full summary translation"), and
+   * the one backfill that ever wrote Spanish on its own,
+   * scripts/translate-summaries.mjs, is EN→ES too. llms.txt is written to be
+   * copied by machines that will not come back to check.
+   */
+  test('the Spanish section says the Spanish layer is a translation, not a second decode', async ({ request }) => {
+    const body = await (await request.get('/llms.txt')).text();
+
+    expect(body, 'the retired independent-Spanish-decode claim must be gone').not.toMatch(
+      /decoded independently in Spanish|independent(ly)? decoded in Spanish/i
+    );
+
+    const spanishSection = body.split('\n').find((l) => l.startsWith('The same corpus'));
+    expect(spanishSection, 'the Spanish section must exist').toBeTruthy();
+    expect(spanishSection!).toContain('AI translation of the English decode');
+    // And it must still name the mechanism that IS real, per the same rule
+    // the other two sentences follow (scripts/check-claim-truth.mjs R1).
+    expect(spanishSection!).toContain('automated checks');
+  });
 });

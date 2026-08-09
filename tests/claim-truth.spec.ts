@@ -51,11 +51,15 @@ test.describe('the CI gate', () => {
     const result = runGate('--self-test');
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toMatch(/all \d+ seeded violations caught/);
-    // The seeded set must cover all three rule paths plus the two cases a
-    // plain phrase-ban cannot reach (a reworded claim with no banned phrase,
-    // and a claim straddling a `+` concatenation boundary).
+    // The seeded set must cover all five rule paths plus the cases a plain
+    // phrase-ban cannot reach: a reworded claim with no banned phrase, a
+    // claim straddling a `+` concatenation boundary, and — added 2026-08-09
+    // — a NEW human-oversight step bolted onto an otherwise-true automated
+    // claim (R1b) and the retired forbidden-vocabulary lint returning as a
+    // named decode gate (R4). Four R1b rewrites walked through this gate
+    // untouched on 2026-08-09; they are seeded fixtures now.
     const caught = Number(result.stdout.match(/all (\d+) seeded violations caught/)![1]);
-    expect(caught).toBeGreaterThanOrEqual(9);
+    expect(caught).toBeGreaterThanOrEqual(16);
   });
 });
 
