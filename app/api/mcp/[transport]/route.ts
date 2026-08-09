@@ -130,8 +130,28 @@ const handler = createMcpHandler(
  */
 const HANDSHAKE_SCAN_CAP = 1;
 
-const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 60 });
-const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
+/*
+ * The two windows, named once so a Retry-After header can never disagree
+ * with the window it is reporting on. That is not hypothetical: the day
+ * limiter's 429 shipped a hardcoded `retry-after: 3600` against an 86,400s
+ * window, telling a throttled agent to come back in an hour when the counter
+ * would not reset for up to a day — so it retried, uselessly, all day.
+ */
+const MCP_MINUTE_WINDOW_SEC = 60;
+const MCP_DAY_WINDOW_SEC = 86400;
+
+const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: MCP_MINUTE_WINDOW_SEC });
+const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: MCP_DAY_WINDOW_SEC });
+
+/**
+ * Seconds-to-reset as an HTTP header value: the limiter's own computed reset
+ * when it has one, the full window when it doesn't (the fail-open paths never
+ * compute one), clamped into (0, window] so the header can never promise a
+ * reset later than the window itself or a nonsensical 0.
+ */
+function retryAfterHeader(retryAfterSec: number | null, windowSec: number): string {
+  return String(Math.max(1, Math.min(retryAfterSec ?? windowSec, windowSec)));
+}
 
 /*
  * MCP client-software handshake counter (2026-07). WHY HANDSHAKES, NOT TOOL
@@ -201,16 +221,26 @@ async function limitedPost(req: Request): Promise<Response> {
   readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
+  // The minute window keeps isLimited(): its window IS 60s, so the constant
+  // and the truth already agree to within one window, and check()'s extra
+  // TTL read would buy at most 59 seconds of precision on the route's
+  // hottest limiter. The day window is the opposite trade — a caller told
+  // the wrong hour on an 86,400s window retries all day for nothing — so it
+  // pays the one TTL read (limited path only) to answer accurately.
   if (await minuteLimiter.isLimited(ip)) {
     return NextResponse.json(
       { error: 'rate_limited' },
-      { status: 429, headers: { 'retry-after': '60' } }
+      { status: 429, headers: { 'retry-after': String(MCP_MINUTE_WINDOW_SEC) } }
     );
   }
-  if (await dayLimiter.isLimited(ip)) {
+  const day = await dayLimiter.check(ip);
+  if (day.limited) {
     return NextResponse.json(
       { error: 'rate_limited' },
-      { status: 429, headers: { 'retry-after': '3600' } }
+      {
+        status: 429,
+        headers: { 'retry-after': retryAfterHeader(day.retryAfterSec, MCP_DAY_WINDOW_SEC) },
+      }
     );
   }
   // AFTER the rate-limit gates on purpose: a 429'd request never counts,

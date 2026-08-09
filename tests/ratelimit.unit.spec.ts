@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 // runner - same pattern as the other unit specs.
 import {
   __resetFallbackLogForTests,
+  __resetSaltMemoForTests,
   callerHash,
   callerIp,
   counterKey,
@@ -27,6 +28,19 @@ test.describe.configure({ mode: 'serial' }); // shared env + global-fetch swaps
 
 let restoreFetch: (() => void) | null = null;
 let restoreEnv: (() => void) | null = null;
+
+/*
+ * The salt memo lives in lib/ratelimit.ts's module scope, which outlives an
+ * individual test (and, in a Playwright worker, an individual spec FILE) —
+ * so without this every test after the first would silently reuse the
+ * previous test's salt against a brand-new mock store and assert against a
+ * database that was never written to. Same convention as
+ * __resetFallbackLogForTests: an explicit seam, reset where it matters,
+ * rather than a production module that behaves differently under test.
+ */
+test.beforeEach(() => {
+  __resetSaltMemoForTests();
+});
 
 test.afterEach(() => {
   restoreFetch?.();
@@ -65,6 +79,12 @@ test('salt lifecycle: atomic create (SET NX EX 24h), >=128-bit CSPRNG hex, share
   const a = createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 });
   const b = createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 });
   await a.isLimited('203.0.113.60');
+  // A SECOND SERVERLESS INSTANCE, which is what `b` has always stood for
+  // here — and an instance starts with an empty salt memo, because the memo
+  // is module scope in a process this one doesn't share. Dropping it is what
+  // keeps the next line a real "b independently agreed on the salt" proof
+  // rather than "b read a's memo".
+  __resetSaltMemoForTests();
   await b.isLimited('203.0.113.60');
 
   // Exactly one salt exists, created with SET ... NX EX 86400.
@@ -83,6 +103,10 @@ test('salt lifecycle: atomic create (SET NX EX 24h), >=128-bit CSPRNG hex, share
   const other = new MockUpstash();
   restoreFetch();
   restoreFetch = installUpstashFetch({ [COUNTERS_URL]: other });
+  // A different counters database is a different deployment, i.e. a
+  // different process with its own empty memo — mirrored here, otherwise the
+  // memo would answer for a store this limiter has never touched.
+  __resetSaltMemoForTests();
   await createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 }).isLimited('203.0.113.60');
   const otherRecord = parseSaltRecord(other.store.get(saltKey())!.value);
   expect(otherRecord!.v).not.toBe(record!.v);
@@ -295,6 +319,139 @@ test('check(): no-env memory path returns a sane retryAfterSec when limited, zer
   expect(third.retryAfterSec!).toBeGreaterThan(0);
   expect(third.retryAfterSec!, 'sliding window: oldest-hit expiry bounds the reset').toBeLessThanOrEqual(600);
   expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
+});
+
+// --- the salt memo -----------------------------------------------------------
+
+/*
+ * WHY THIS FAMILY EXISTS. currentSalt used to GET the salt on EVERY request,
+ * so the durable path cost three serialized REST round-trips (GET salt, SET
+ * NX, INCR) in front of every rate-limited route — including /api/reps,
+ * which fires on page render rather than on a user action, so a slow
+ * counters database stalled the rep panel before failing open.
+ *
+ * The memo is only defensible because it cannot extend a pseudonym's life:
+ * rotation (24h) is the privacy mechanism, and these tests pin both bounds
+ * that keep the memo inside it — a 60s wall-clock ceiling AND the stored
+ * record's own expiry, whichever is sooner — plus the absence signal that
+ * drops the memo the moment the database misbehaves.
+ */
+const saltGets = (mock: MockUpstash) =>
+  mock.commands.filter((c) => c[0] === 'GET' && c[1] === saltKey()).length;
+
+test('the salt is read once per instance, not once per request — and the extra round-trip really is gone', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'reps', max: 300, windowSec: 600 });
+  const ip = '203.0.113.130';
+  await limiter.isLimited(ip);
+
+  // The cold request pays for the salt exactly once: one GET (miss), one
+  // SET NX to create it.
+  expect(saltGets(mock), 'the first request reads the salt').toBe(1);
+  const afterCold = mock.commands.length;
+
+  for (let i = 0; i < 9; i += 1) expect(await limiter.isLimited(ip)).toBe(false);
+
+  expect(saltGets(mock), 'no request after the first one may re-read the salt').toBe(1);
+  expect(
+    mock.commands.filter((c) => c[0] === 'SET' && c[1] === saltKey()),
+    'and none of them may try to create a second salt'
+  ).toHaveLength(1);
+  // Two commands per warm request — SET NX + INCR — where it used to be
+  // three. This is the whole point of the memo, asserted as a number rather
+  // than as a claim in a comment.
+  expect(mock.commands.length - afterCold).toBe(18);
+
+  // Still the same salt, still hash-only, still the right counter.
+  const salt = parseSaltRecord(mock.store.get(saltKey())!.value)!.v;
+  expect(mock.keys().filter((k) => k.includes(':rl:reps:'))).toEqual([
+    counterKey('reps', callerHash(ip, salt)),
+  ]);
+});
+
+test('the memo expires: 60s on, the next request re-reads the salt', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.131';
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+  expect(saltGets(mock), 'inside the window, one read covers both').toBe(1);
+
+  // 61 seconds later — far short of the counter window (600s) and the salt's
+  // own TTL (86400s), so nothing else in the mock changes state.
+  const realNow = Date.now;
+  try {
+    Date.now = () => realNow() + 61_000;
+    await limiter.isLimited(ip);
+  } finally {
+    Date.now = realNow;
+  }
+  expect(saltGets(mock), 'past the window, the salt is read again').toBe(2);
+});
+
+test('the memo can never outlive the salt record itself, even inside the 60s window', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  // A record whose stated creation time is already 24h old: its 24h life is
+  // over even though this store still hands it back. The memo's second bound
+  // (creation + SALT_TTL_SECONDS, applied with Math.min) must refuse to
+  // serve it from memory at all — which is what makes the normal-case
+  // extension of a salt's effective life exactly zero seconds rather than
+  // "up to 60".
+  const aged = {
+    v: 'a'.repeat(32),
+    t: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  };
+  mock.exec(['SET', saltKey(), JSON.stringify(aged), 'EX', '86400']);
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.132';
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+
+  expect(saltGets(mock), 'an expired-by-its-own-clock salt is never served from the memo').toBe(3);
+});
+
+test('absence signal: a counters-database error drops the memo instead of holding it across a possible rotation', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.133';
+  await limiter.isLimited(ip);
+  expect(saltGets(mock)).toBe(1);
+
+  // The database goes away mid-life. The request fails open to in-memory
+  // (pinned elsewhere in this file); what matters here is that the memo does
+  // not survive it — the failure might BE the rotation. The failing request
+  // itself never reaches the wire in a recordable way (the mock rejects
+  // before executing), so the count below is what proves the memo was
+  // dropped: without the drop, the recovered request would still be riding
+  // the pre-error memo and this would read 1.
+  mock.failWithStatus = 503;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    expect(await limiter.isLimited(ip), 'fails open, never throws').toBe(false);
+  } finally {
+    console.error = realError;
+  }
+
+  mock.failWithStatus = null;
+  await limiter.isLimited(ip);
+  expect(saltGets(mock), 'the recovered request re-reads rather than trusting a pre-error memo').toBe(
+    2
+  );
 });
 
 // --- S19: createTenantRateLimiter -------------------------------------------
