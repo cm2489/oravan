@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { BILL_TYPES, mapStatus } from '../scripts/congress-fetch.mjs';
 import { TRACKED_TYPES, findCitations } from '../scripts/newsdesk-match.mjs';
@@ -82,5 +84,53 @@ test.describe('floor-activity status mapping (the buried-vote bug)', () => {
 
   test('plain referral is untouched', () => {
     expect(mapStatus('Referred to the House Committee on Foreign Affairs.')).toBe('committee');
+  });
+});
+
+/*
+ * Hot-bill schedule phasing (2026-08-08). The refresh job used to run at
+ * '0 17' / '0 22' UTC. Congress.gov publishes day D's floor actions on D+1
+ * between 13:35 and 14:00 UTC (measured 6/6 consecutive legislative days
+ * from senate.gov's per-day floor XML Last-Modified headers, 13:35:27 to
+ * 13:55:29; corroborated by this repo's corpus, absent from 08:30-10:10 UTC
+ * commits and present in 12:15-17:42 ones), so the first pass sat three
+ * hours behind a record that was already published.
+ *
+ * These pin the PROPERTIES the re-phasing bought, not the literal strings,
+ * so a future retune only has to keep the reasoning true:
+ *   - nothing fires before the publication band has closed (GitHub cron on
+ *     this repo drifts +17 min to +3h27m but NEVER fires early, so the
+ *     earliest safe minute is the invariant that matters);
+ *   - no slot sits at :00 or :30, where the scheduler's backlog - and
+ *     therefore its drift - is worst.
+ * The workflow's own schedule comment carries the full derivation.
+ */
+test.describe('hot-bills.yml is phased to the floor-record publication window', () => {
+  const yml = readFileSync(join(process.cwd(), '.github/workflows/hot-bills.yml'), 'utf8');
+  const crons = [...yml.matchAll(/-\s*cron:\s*'(\d+)\s+(\d+)\s+\*\s+\*\s+\*'/g)].map((m) => ({
+    minute: Number(m[1]),
+    hour: Number(m[2]),
+    utcMinutes: Number(m[2]) * 60 + Number(m[1]),
+  }));
+
+  test('the workflow still schedules exactly two daily passes', () => {
+    expect(crons).toHaveLength(2);
+  });
+
+  test('the earliest pass fires at or after 13:47 UTC - the latest observed publication (13:55) is covered by drift, never by firing early', () => {
+    const earliest = Math.min(...crons.map((c) => c.utcMinutes));
+    expect(earliest).toBeGreaterThanOrEqual(13 * 60 + 47);
+  });
+
+  test('no pass sits on the top of the hour or the half hour', () => {
+    for (const c of crons) {
+      expect(c.minute % 30, `cron minute ${c.minute}`).not.toBe(0);
+    }
+  });
+
+  test('both passes stay clear of the 07:30 UTC nightly sync', () => {
+    for (const c of crons) {
+      expect(Math.abs(c.utcMinutes - (7 * 60 + 30)), `cron ${c.hour}:${c.minute}`).toBeGreaterThan(60);
+    }
   });
 });

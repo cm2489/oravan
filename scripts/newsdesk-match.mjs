@@ -307,6 +307,73 @@ export function hashHeadline(title, outlet) {
   return createHash('sha1').update(normalizeHeadlineKey(title, outlet)).digest('hex');
 }
 
+// ---- tier-0 refresh windows (the floor-publication buckets) -------------
+/*
+ * WHY THREE WINDOWS INSTEAD OF ONE PER DAY (2026-08-08).
+ *
+ * Congress.gov publishes day D's floor actions on D+1, between 13:35 and
+ * 14:00 UTC. Measured over 6/6 consecutive legislative days from
+ * senate.gov's per-day floor XML `Last-Modified` headers: 13:35:27 through
+ * 13:55:29, no day outside that band. This repo's own corpus history says
+ * the same thing independently: commits made at 08:30-10:10 UTC carry no
+ * trace of the previous day's floor actions, commits at 12:15-17:42 do.
+ *
+ * The tier-0 dedupe key used to be (slug, UTC day), i.e. ONE refresh per
+ * bill per day. That is a freshness cap, not just a cost control: any run
+ * before ~14:00 UTC — and the hourly newsdesk schedule has several — spends
+ * the bill's only slot on the PRE-publication record, so the floor action
+ * that lands at 13:47 waits until tomorrow to be picked up.
+ *
+ * So the day is split into three windows, each of which gets its own slot:
+ *   pre     00:00-13:59  catches an early API flip (seen as early as 12:15 UTC)
+ *   record  14:00-18:59  the guaranteed window — opens after the latest
+ *                        observed publication (13:55) plus margin
+ *   session 19:00-23:59  evening updates during late sessions
+ *
+ * Cost note: this buys more FREE congress.gov refreshes and cannot raise
+ * Anthropic spend. The decode budgets (TIER0_DECODE_CAP per run,
+ * TIER0_DAILY_DECODE_CAP per UTC day) are accounted entirely separately
+ * from this key — see rollDailyDecodes below, and the wiring half of
+ * tests/newsdesk-match.unit.spec.ts.
+ */
+export function floorBucket(d = new Date()) {
+  const h = d.getUTCHours();
+  return h < 14 ? 'pre' : h < 19 ? 'record' : 'session';
+}
+
+/** Dedupe key for one tier-0 (government-feed) bill refresh: (slug, UTC
+ *  day, floor window). Only the HASH enters the cache — never feed content
+ *  (the never-republish rule). The window is passed in rather than read
+ *  from the clock so a run that straddles a boundary spends and marks the
+ *  SAME slot it opened with. */
+export function tier0SeenKey(slug, dayUTC, bucket = floorBucket()) {
+  return hashHeadline(`tier0:${slug}`, `${dayUTC}#${bucket}`);
+}
+
+// ---- the decode budget's daily rollover ---------------------------------
+/** Roll the persisted tier-0/press decode counters forward for `todayUTC`.
+ *
+ *  Keyed by UTC DATE ALONE. It deliberately takes no floor-window argument:
+ *  the seen-key above is per (day, window), but the SPEND ceiling is per
+ *  day, so tripling the key's granularity buys extra free congress.gov
+ *  refreshes and cannot buy a single extra Anthropic decode. A bucket
+ *  transition must never reset these counts — that is the whole cost
+ *  invariant, and tests/newsdesk-match.unit.spec.ts pins it.
+ *
+ *  Returns a fresh object (never mutates the argument). A cache written
+ *  before the tier-0 budget existed has no tier0Count; it defaults to 0
+ *  rather than resetting the day. */
+export function rollDailyDecodes(dailyDecodes, todayUTC) {
+  if (!dailyDecodes || dailyDecodes.date !== todayUTC) {
+    return { date: todayUTC, count: 0, tier0Count: 0 };
+  }
+  return {
+    ...dailyDecodes,
+    count: dailyDecodes.count ?? 0,
+    tier0Count: dailyDecodes.tier0Count ?? 0,
+  };
+}
+
 // ---- the no-change-no-commit guard --------------------------------------
 /** Given the syncOneBill outcome strings from this run's ON-FIRE actions,
  *  did anything actually mutate bills/es? Only 'refreshed' and 'added'

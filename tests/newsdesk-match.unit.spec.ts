@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 // Pure, I/O-free module (no CONGRESS_API_KEY/ANTHROPIC_API_KEY, no network)
 // - see scripts/newsdesk-match.mjs's header comment for the full match
@@ -12,6 +14,7 @@ import {
   extractMostViewedSlugs,
   extractNicknameTokens,
   findCitations,
+  floorBucket,
   hashHeadline,
   looksLegislative,
   matchLocal,
@@ -19,7 +22,9 @@ import {
   mondayOfWeekET,
   parseFeed,
   prunePendingOutlets,
+  rollDailyDecodes,
   summarizePendingOutlets,
+  tier0SeenKey,
 } from '../scripts/newsdesk-match.mjs';
 
 test.describe('findCitations (t1 explicit bill-number citations)', () => {
@@ -460,6 +465,148 @@ test.describe('hashHeadline (seen-headlines dedupe key)', () => {
 
   test('different outlets for the same title hash differently (per-outlet dedupe)', () => {
     expect(hashHeadline('Some Title', 'cbsnews.com')).not.toBe(hashHeadline('Some Title', 'foxnews.com'));
+  });
+});
+
+/*
+ * Tier-0 floor windows (2026-08-08). The throttle used to be one refresh
+ * per bill per UTC day, which capped freshness rather than cost:
+ * Congress.gov publishes day D's floor actions on D+1 between 13:35 and
+ * 14:00 UTC (6/6 consecutive legislative days by senate.gov Last-Modified;
+ * corroborated by this repo's corpus - absent at 08:30-10:10 UTC commits,
+ * present at 12:15-17:42), so an early-morning run spent the day's only
+ * slot on the pre-publication record. See floorBucket's comment in
+ * scripts/newsdesk-match.mjs.
+ */
+test.describe('floorBucket (which publication window a run is spending)', () => {
+  const at = (hour: number, minute = 0) =>
+    floorBucket(new Date(Date.UTC(2026, 7, 12, hour, minute)));
+
+  test('pre: 00:00-13:59 UTC - before the observed publication band', () => {
+    expect(at(0)).toBe('pre');
+    expect(at(12, 15)).toBe('pre'); // earliest observed API flip
+    expect(at(13, 59)).toBe('pre');
+  });
+
+  test('record: 14:00-18:59 UTC - opens after the latest observed publication (13:55) plus margin', () => {
+    expect(at(14)).toBe('record');
+    expect(at(18, 59)).toBe('record');
+  });
+
+  test('session: 19:00-23:59 UTC - evening updates during late sessions', () => {
+    expect(at(19)).toBe('session');
+    expect(at(23, 59)).toBe('session');
+  });
+
+  test('defaults to now when called with no argument, and only ever returns one of the three windows', () => {
+    expect(['pre', 'record', 'session']).toContain(floorBucket());
+  });
+});
+
+test.describe('tier0SeenKey (the tier-0 refresh throttle)', () => {
+  const DAY = '2026-08-12';
+
+  test('same slug, same UTC day, DIFFERENT window -> a different key, so the refresh is allowed again', () => {
+    const pre = tier0SeenKey('hr-8884-119', DAY, 'pre');
+    const record = tier0SeenKey('hr-8884-119', DAY, 'record');
+    const session = tier0SeenKey('hr-8884-119', DAY, 'session');
+    expect(new Set([pre, record, session]).size).toBe(3);
+  });
+
+  test('same slug, same UTC day, SAME window -> the same key, so a second run in that window is throttled', () => {
+    expect(tier0SeenKey('hr-8884-119', DAY, 'record')).toBe(tier0SeenKey('hr-8884-119', DAY, 'record'));
+  });
+
+  test('same slug, same window, DIFFERENT UTC day -> a different key (the day still rolls)', () => {
+    expect(tier0SeenKey('hr-8884-119', DAY, 'record')).not.toBe(tier0SeenKey('hr-8884-119', '2026-08-13', 'record'));
+  });
+
+  test('different slugs never collide inside one window', () => {
+    expect(tier0SeenKey('hr-8884-119', DAY, 'record')).not.toBe(tier0SeenKey('s-8884-119', DAY, 'record'));
+  });
+
+  test('a tier-0 key never collides with a press headline key for the same text', () => {
+    expect(tier0SeenKey('hr-8884-119', DAY, 'record')).not.toBe(hashHeadline('hr-8884-119', DAY));
+  });
+
+  test('the window defaults to the current clock when omitted', () => {
+    expect(tier0SeenKey('hr-8884-119', DAY)).toBe(tier0SeenKey('hr-8884-119', DAY, floorBucket()));
+  });
+});
+
+/*
+ * COST INVARIANCE. Tripling the seen-key's granularity buys more FREE
+ * congress.gov refreshes. It must not buy one extra Anthropic decode: the
+ * decode budgets (TIER0_DECODE_CAP per run, TIER0_DAILY_DECODE_CAP per UTC
+ * day, plus the press pair) are accounted independently of the seen-key.
+ * Two halves, same shape as tests/rollover-tripwire.unit.spec.ts: the
+ * logic, then the wiring that decides whether the logic ever runs.
+ */
+test.describe('cost invariance: the daily decode budget is keyed by UTC day, never by floor window', () => {
+  test('rollDailyDecodes takes no window argument at all (arity 2: the counters, the day)', () => {
+    expect(rollDailyDecodes.length).toBe(2);
+  });
+
+  test('counts survive every window transition inside one UTC day', () => {
+    let daily = { date: '2026-08-12', count: 4, tier0Count: 11 };
+    // pre -> record -> session: three separate refresh slots, one budget.
+    for (let i = 0; i < 3; i++) daily = rollDailyDecodes(daily, '2026-08-12');
+    expect(daily).toEqual({ date: '2026-08-12', count: 4, tier0Count: 11 });
+  });
+
+  test('counts reset only when the UTC date itself changes', () => {
+    expect(rollDailyDecodes({ date: '2026-08-12', count: 4, tier0Count: 11 }, '2026-08-13'))
+      .toEqual({ date: '2026-08-13', count: 0, tier0Count: 0 });
+  });
+
+  test('a missing/cold cache starts the day at zero', () => {
+    expect(rollDailyDecodes(null, '2026-08-12')).toEqual({ date: '2026-08-12', count: 0, tier0Count: 0 });
+  });
+
+  test('a pre-tier-0 cache keeps its press count and gains a zeroed tier-0 count (no free day)', () => {
+    expect(rollDailyDecodes({ date: '2026-08-12', count: 7 }, '2026-08-12'))
+      .toEqual({ date: '2026-08-12', count: 7, tier0Count: 0 });
+  });
+
+  test('never mutates the persisted object it was handed', () => {
+    const persisted = { date: '2026-08-12', count: 4, tier0Count: 11 };
+    rollDailyDecodes(persisted, '2026-08-13');
+    expect(persisted).toEqual({ date: '2026-08-12', count: 4, tier0Count: 11 });
+  });
+});
+
+test.describe('cost invariance: the wiring in scripts/newsdesk.mjs', () => {
+  const src = readFileSync(join(process.cwd(), 'scripts/newsdesk.mjs'), 'utf8');
+
+  test('the rollover is called with the UTC day and nothing else', () => {
+    expect(src).toMatch(/cache\.dailyDecodes\s*=\s*rollDailyDecodes\(cache\.dailyDecodes,\s*todayUTC\)/);
+    // No second call site could sneak a window in.
+    expect(src.match(/rollDailyDecodes\(/g)).toHaveLength(1);
+  });
+
+  test('the decode gate reads the per-run counters and the daily counters - never the window, never the seen-key', () => {
+    const gate = src.slice(src.indexOf('const allowDecode'), src.indexOf('const result = await syncOneBill'));
+    expect(gate).toContain('TIER0_DAILY_DECODE_CAP');
+    expect(gate).toContain('NEWSDESK_DAILY_DECODE_CAP');
+    expect(gate).not.toMatch(/floorWindow|floorBucket|tier0Key|tier0SeenKey|cache\.seen/);
+  });
+
+  test('the counters are incremented only on a landed decode, and only by 1', () => {
+    expect(src).toMatch(/tier0DecodesThisRun\+\+;\s*cache\.dailyDecodes\.tier0Count\+\+;/);
+    expect(src).toMatch(/pressDecodesThisRun\+\+;\s*cache\.dailyDecodes\.count\+\+;/);
+    // Guarded by result.outcome === 'added' - a free refresh spends nothing.
+    expect(src).toMatch(/if \(result\.outcome === 'added'\) \{/);
+  });
+
+  test('the per-run and per-day caps keep their values (the window split raised no ceiling)', () => {
+    expect(src).toMatch(/TIER0_DECODE_CAP = Number\(process\.env\.NEWSDESK_TIER0_DECODE_CAP \?\? 6\)/);
+    expect(src).toMatch(/TIER0_DAILY_DECODE_CAP = Number\(process\.env\.NEWSDESK_TIER0_DAILY_DECODE_CAP \?\? 20\)/);
+    expect(src).toMatch(/NEWSDESK_DECODE_CAP = Number\(process\.env\.NEWSDESK_DECODE_CAP \?\? 3\)/);
+    expect(src).toMatch(/NEWSDESK_DAILY_DECODE_CAP = Number\(process\.env\.NEWSDESK_DAILY_DECODE_CAP \?\? 10\)/);
+  });
+
+  test('the run logs which window it is spending', () => {
+    expect(src).toMatch(/newsdesk tier-0 \[\$\{floorWindow\} window/);
   });
 });
 
