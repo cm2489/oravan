@@ -86,7 +86,7 @@
     "floorCta": "Léelo en palabras sencillas",
     "aiReviewed": "Traducido por IA, verificado con el registro",
     "stampLabel": "Datos al",
-    "weekNote": "El panel verde señala un solo hecho: este proyecto está en el calendario del pleno, con fecha. El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
+    "weekNote": "El panel verde señala un solo hecho con fecha: este proyecto está en el calendario del pleno, o tiene una votación pendiente en el pleno. El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteQuiet": "El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
@@ -355,6 +355,8 @@
     "floor": {
       "calendarHouse": "En el calendario del pleno de la Cámara",
       "calendarSenate": "En el calendario del pleno del Senado",
+      "pendingHouse": "Votación pendiente en el pleno de la Cámara",
+      "pendingSenate": "Votación pendiente en el pleno del Senado",
       "headlineHouse": "Este proyecto está en fila para una votación de toda la Cámara.",
       "headlineSenate": "Este proyecto está en fila para una votación de todo el Senado.",
       "meta": "Un proyecto en el calendario puede llamarse a votación con poco aviso, y las oficinas cuentan llamadas hasta que ocurre.",

@@ -5,6 +5,7 @@ import {
   deriveJourney,
   floorActionChamber,
   floorCalendarChamber,
+  floorPendingChamber,
   liveCallKey,
   liveCallTarget,
   liveCallTargetForNomination,
@@ -23,6 +24,9 @@ import {
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
+// The freshness half of the panel's triad, from the ONE copy — the corpus
+// sweep below has to apply the same window the selector does.
+import { isSignalFresh } from '../lib/urgency.mjs';
 // The import-free copy the .mjs report carries — pinned corpus-wide in suite 6.
 import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
 
@@ -119,6 +123,95 @@ test.describe('floorActionChamber', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b · floorPendingChamber — "is a floor vote still COMING, and where"
+ *      (owner ruling 2026-08-09). The gate the green crown gained so it
+ *      could stop running a day or two behind the week's real floor
+ *      fights. An ordered ALLOW-LIST with the settled guard first, so
+ *      the two failures it must never have are the two pinned hardest:
+ *      a dead motion reading as live, and a novel sentence walking
+ *      straight into the full-bleed panel.
+ * ------------------------------------------------------------------ */
+test.describe('floorPendingChamber', () => {
+  test('all four live shapes, with and without the Congressional-Record suffix', () => {
+    // Rule 1 — cloture presented. Both live variants: one bare, one with the
+    // "(CR SN)" tail that would defeat any `$`-anchored pattern.
+    expect(floorPendingChamber('Cloture motion on the motion to proceed to the measure presented in Senate.')).toBe('senate');
+    expect(floorPendingChamber(CLOTURE_TEXT)).toBe('senate');
+    expect(floorPendingChamber('Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)')).toBe('senate');
+    // Rule 2 — a motion to proceed MADE (not rejected).
+    expect(floorPendingChamber('Motion to proceed to consideration of measure made in Senate. (CR S4276)')).toBe('senate');
+    // Rule 3 — House rule XIX: the vote was deferred, not decided.
+    expect(floorPendingChamber('POSTPONED PROCEEDINGS - Pursuant to clause 1(c) of rule XIX, the Chair announced further proceedings on H.R. 8872 is postponed.')).toBe('house');
+    // Rule 4 — a rule reported sets the terms of a debate not yet held.
+    expect(floorPendingChamber('Rules Committee Resolution H. Res. 916 Reported to House. Rule provides for consideration of H.R. 4312, H.R. 1005, H.R. 1049, H.R. 1069, H.R. 2965 and H.R. 4305. The resolution provides for consideration of H.R. 4312, H.R. 1005, H.R. 1049, H.R. 1069, H.R. 2965, and H.R. 4305 under a closed rule with one hour of general debate and one motion to recommit on each bill.')).toBe('house');
+  });
+
+  test('THE SETTLED GUARD: a vote that already failed is never pending', () => {
+    // Every one of these is a real corpus sentence, and every one of them
+    // would be a lie under a green "a floor vote is pending" chip.
+    expect(floorPendingChamber('Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 47 - 45. Record Vote Number: 12. (CR S286)')).toBeNull();
+    expect(floorPendingChamber('Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 111. (CR S2106)')).toBeNull();
+    expect(floorPendingChamber('Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 46 - 48. Record Vote Number: 173. (consideration: CR S2816)')).toBeNull();
+    expect(floorPendingChamber('Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.')).toBeNull();
+    expect(floorPendingChamber('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.')).toBeNull();
+    // The guard's other three words, on invented texts — the corpus holds no
+    // instance yet, and the rule must be pinned before one arrives.
+    expect(floorPendingChamber('Cloture motion on the motion to proceed to the measure presented in Senate, then withdrawn.')).toBeNull();
+    expect(floorPendingChamber('Motion to proceed to consideration of measure made in Senate; motion failed.')).toBeNull();
+    expect(floorPendingChamber('Measure indefinitely postponed by Unanimous Consent in Senate.')).toBeNull();
+  });
+
+  test('THE SCHUMER MOTION is fail-closed on purpose (owner decision D4)', () => {
+    // A genuinely live motion to reconsider — but its sentence is ABOUT a
+    // cloture vote that was not invoked, and no reader could tell from it
+    // that anything is still ahead. Rule 0 catches it on "not invoked", and
+    // that is the ruling: one missed crown is cheaper than one wrong one.
+    expect(floorPendingChamber('Motion by Senator Schumer to reconsider, under the order of 10/9/2025, not having voted on the prevailing side, the vote by which the third cloture motion on the motion to proceed to S. 2882 was not invoked (Record Vote No. 557) entered in Senate.')).toBeNull();
+  });
+
+  test('FAIL-CLOSED on everything else — a deny-list would admit these', () => {
+    expect(floorPendingChamber(null)).toBeNull();
+    expect(floorPendingChamber('')).toBeNull();
+    expect(floorPendingChamber('Considered as unfinished business.')).toBeNull();
+    expect(floorPendingChamber('Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toBeNull();
+    // Cloture ALONE is not enough: the allow-list wants the presented form.
+    expect(floorPendingChamber('Cloture invoked in Senate by Yea-Nay Vote. 60 - 40.')).toBeNull();
+    // A shape nobody has seen. The whole design decision in one assertion.
+    expect(floorPendingChamber('Senate began consideration of the measure under a time agreement.')).toBeNull();
+  });
+
+  /*
+   * CORPUS-WIDE PIN. floorPendingChamber is a narrower reading of the same
+   * sentences floorActionChamber already parses, so wherever it speaks it
+   * must agree with the chamber that function reads — a pending claim
+   * pointed at the wrong chamber would put the crown's call in the wrong
+   * building. Runs over the live corpus so a nightly sync cannot break the
+   * agreement silently.
+   */
+  test('over the live corpus it is either silent or agrees with floorActionChamber', () => {
+    for (const b of floorVote) {
+      const pending = floorPendingChamber(b.last_action_text);
+      if (pending !== null) {
+        expect(pending, slugOf(b)).toBe(floorActionChamber(b.last_action_text));
+      }
+    }
+  });
+
+  /*
+   * MUTUAL EXCLUSIVITY. The crown prints ONE chip, and `kind` picks which
+   * sentence it says. If a text could satisfy both gates the label would be
+   * decided by the order of two `if`s rather than by the record.
+   */
+  test('no corpus text satisfies both the calendar gate and the pending gate', () => {
+    for (const b of corpus) {
+      if (floorCalendarChamber(b.last_action_text) !== null) {
+        expect(floorPendingChamber(b.last_action_text), slugOf(b)).toBeNull();
+      }
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 3 · deriveJourney — the full status behavior table.
  * ------------------------------------------------------------------ */
 test.describe('deriveJourney', () => {
@@ -187,33 +280,131 @@ test.describe('deriveJourney', () => {
  * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
- * 5 · HOMEPAGE GATE — the green panel's claim ("this bill stands on the
- *     floor calendar, dated" — home.weekNote's own words) must be TRUE.
+ * 5 · HOMEPAGE GATE — the green panel's claim ("this bill is on the
+ *     floor calendar, or a floor vote on it is pending" — home.weekNote's
+ *     own words since the 2026-08-09 ruling) must be TRUE, and the crown
+ *     must sit on the NEWEST such fact rather than the highest frozen
+ *     score.
  * ------------------------------------------------------------------ */
-test.describe('selectFloorVoteFeature calendar gate', () => {
-  test('whatever the live corpus elects, it carries a genuine calendar placement', () => {
-    const pick = selectFloorVoteFeature(corpus as Parameters<typeof selectFloorVoteFeature>[0]);
-    if (pick !== null) {
-      expect(floorCalendarChamber((pick as CorpusBill).last_action_text)).not.toBeNull();
-    }
+const DAY = 86_400_000;
+const dayOffset = (days: number) => new Date(Date.now() - days * DAY).toISOString().slice(0, 10);
+
+/** A candidate in the shape selectFloorVoteFeature reads. `urgency_score` is
+ *  present on every one deliberately: it is the STORED field the ranking used
+ *  to trust, and these fixtures set it to disagree with the read-time score so
+ *  a reintroduction of that read fails here. */
+const candidate = (
+  last_action_date: string,
+  last_action_text: string,
+  urgency_score = 0.5
+) => ({ status: 'floor_vote' as const, urgency_score, last_action_date, last_action_text });
+
+const CALENDAR_TEXT = 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
+const CLOTURE_NOT_INVOKED =
+  'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 47 - 45. Record Vote Number: 12. (CR S286)';
+
+test.describe('selectFloorVoteFeature floor gate', () => {
+  /*
+   * THE REGRESSION FIXTURE. Before the 2026-08-09 change this returned the
+   * DAY-OLD calendar placement, because the newest bill's placement sentence
+   * had already been overwritten by the cloture motion that is the actual
+   * news — the crown structurally lagged the floor by a day or two. It must
+   * now return the cloture-filed bill, labeled `pending`.
+   */
+  test('THE FLAGSHIP: a cloture motion filed TODAY outranks yesterday\'s calendar placement', () => {
+    const clotureFiled = candidate(dayOffset(0), CLOTURE_TEXT, 0.1);
+    const clotureDead = candidate(dayOffset(0), CLOTURE_NOT_INVOKED, 1);
+    const calendared = candidate(dayOffset(1), CALENDAR_TEXT, 1);
+    const pick = selectFloorVoteFeature([clotureFiled, clotureDead, calendared]);
+    expect(pick).not.toBeNull();
+    expect(pick?.bill).toBe(clotureFiled);
+    expect(pick?.kind).toBe('pending');
+    expect(pick?.chamber).toBe('senate');
   });
 
-  test('a fresh cloture bill is never featured; a fresh calendar-placed bill is', () => {
-    const fresh = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const cloture = {
-      status: 'floor_vote' as const,
-      urgency_score: 1,
-      last_action_date: fresh,
-      last_action_text: CLOTURE_TEXT,
-    };
-    const calendared = {
-      status: 'floor_vote' as const,
-      urgency_score: 0.5,
-      last_action_date: fresh,
-      last_action_text: 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.',
-    };
-    expect(selectFloorVoteFeature([cloture])).toBeNull();
-    expect(selectFloorVoteFeature([cloture, calendared])).toBe(calendared);
+  /*
+   * THE HONESTY GUARD — never relax this one. A cloture motion that was NOT
+   * INVOKED is a vote that already failed; crowning it would put the loudest
+   * surface on the site behind a false claim of live urgency.
+   */
+  test('a settled floor vote is never crowned, even alone and even today', () => {
+    expect(selectFloorVoteFeature([candidate(dayOffset(0), CLOTURE_NOT_INVOKED, 1)])).toBeNull();
+    expect(
+      selectFloorVoteFeature([
+        candidate(dayOffset(0), 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 111. (CR S2106)'),
+      ])
+    ).toBeNull();
+  });
+
+  test('an exact-date tie goes to the calendar placement — the plainer claim', () => {
+    const today = dayOffset(0);
+    const pending = candidate(today, CLOTURE_TEXT, 1);
+    const calendared = candidate(today, CALENDAR_TEXT, 0.1);
+    // Both orders, because a tie-break that only works one way is input order
+    // wearing a comment.
+    expect(selectFloorVoteFeature([pending, calendared])?.bill).toBe(calendared);
+    expect(selectFloorVoteFeature([calendared, pending])?.bill).toBe(calendared);
+    expect(selectFloorVoteFeature([calendared, pending])?.kind).toBe('calendar');
+  });
+
+  /*
+   * POOL INDEPENDENCE. The cap-to-one belongs to this function, never to a
+   * short candidate list: until 2026-08-09 the homepage handed it
+   * getTopActions(4), so a busy floor day could push the one eligible bill
+   * past rank 4 and the page showed NO crown at all.
+   */
+  test('an eligible bill at rank 9 still wins over eight settled ones', () => {
+    const settled = Array.from({ length: 8 }, (_, i) =>
+      candidate(dayOffset(0), CLOTURE_NOT_INVOKED, 1 - i * 0.01)
+    );
+    const eligible = candidate(dayOffset(3), CALENDAR_TEXT, 0.05);
+    const pick = selectFloorVoteFeature([...settled, eligible]);
+    expect(pick?.bill).toBe(eligible);
+    expect(pick?.kind).toBe('calendar');
+  });
+
+  test('the freshness half of the triad still holds: a stale floor fact is a quiet week', () => {
+    // 15 days: one past SIGNAL_WINDOW_DAYS.
+    expect(selectFloorVoteFeature([candidate(dayOffset(15), CALENDAR_TEXT, 1)])).toBeNull();
+    expect(selectFloorVoteFeature([candidate(dayOffset(15), CLOTURE_TEXT, 1)])).toBeNull();
+  });
+
+  test('a non-floor_vote status never takes the panel, whatever its text says', () => {
+    expect(
+      selectFloorVoteFeature([
+        { status: 'passed_chamber' as const, last_action_date: dayOffset(0), last_action_text: CALENDAR_TEXT },
+      ])
+    ).toBeNull();
+  });
+
+  /*
+   * THE LIVE-CORPUS SWEEP. Whatever today's data elects has to pass one of
+   * the two gates AND be the newest eligible fact in the corpus — the second
+   * half is what pins the ranking change against real data rather than
+   * fixtures.
+   */
+  test('whatever the live corpus elects passes a gate and carries the newest eligible date', () => {
+    const pick = selectFloorVoteFeature(corpus as ReadonlyArray<CorpusBill & { status: BillStatus }>);
+    if (pick === null) return;
+    const winner = pick.bill;
+    const calendar = floorCalendarChamber(winner.last_action_text);
+    const pending = floorPendingChamber(winner.last_action_text);
+    expect(calendar ?? pending, slugOf(winner)).not.toBeNull();
+    expect(pick.kind).toBe(calendar ? 'calendar' : 'pending');
+    expect(pick.chamber).toBe(calendar ?? pending);
+
+    for (const b of floorVote) {
+      const eligible =
+        isSignalFresh(b.last_action_date) &&
+        (floorCalendarChamber(b.last_action_text) !== null ||
+          floorPendingChamber(b.last_action_text) !== null);
+      if (!eligible) continue;
+      // ISO dates, so lexical order IS chronological order.
+      expect(
+        (winner.last_action_date ?? '') >= (b.last_action_date ?? ''),
+        `${slugOf(winner)} (${winner.last_action_date}) must not be older than ${slugOf(b)} (${b.last_action_date})`
+      ).toBe(true);
+    }
   });
 });
 

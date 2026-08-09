@@ -40,7 +40,7 @@ const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
 console.log(`hot-bill refresh: fetching up to ${FETCH_LIMIT} most-recently-updated bills`);
 const recent = await fetchRecentlyUpdated(FETCH_LIMIT);
 
-let refreshed = 0, newSkipped = 0, failed = 0;
+let refreshed = 0, newSkipped = 0, partialSkipped = 0, failed = 0;
 for (const u of recent) {
   const type = u.type.toLowerCase();
   const slug = updateSlug(u);
@@ -51,8 +51,11 @@ for (const u of recent) {
   }
   try {
     const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
-    refreshBillFields(existing, d);
-    refreshed++;
+    // A 200 with no readable latestAction leaves the bill exactly as it was
+    // rather than downgrading it to committee/null - counted and logged here
+    // because this workflow has no verify step that would catch it later.
+    if (refreshBillFields(existing, d) === 'refreshed') refreshed++;
+    else partialSkipped++;
   } catch (e) {
     failed++;
     console.error(`FAIL ${slug}: ${e.message}`);
@@ -61,6 +64,6 @@ for (const u of recent) {
 
 writeFileSync('data/bills.json', JSON.stringify(bills));
 console.log(
-  `DONE: ${refreshed} refreshed, ${newSkipped} new bill(s) skipped (nightly sync decodes those), ${failed} failed; corpus ${bills.length}`
+  `DONE: ${refreshed} refreshed, ${newSkipped} new bill(s) skipped (nightly sync decodes those), ${partialSkipped} skipped: partial payload (left untouched), ${failed} failed; corpus ${bills.length}`
 );
 if (failed > recent.length / 2) process.exit(1); // mostly-failed run: don't let CI commit garbage

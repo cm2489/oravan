@@ -86,7 +86,7 @@
     "floorCta": "Read it in plain words",
     "aiReviewed": "Decoded by AI, checked against the record",
     "stampLabel": "Data as of",
-    "weekNote": "The green panel marks one fact: this bill stands on the floor calendar, dated. The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
+    "weekNote": "The green panel marks one dated fact: this bill is on the floor calendar, or a floor vote on it is pending. The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
     "weekNoteQuiet": "The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
@@ -355,6 +355,8 @@
     "floor": {
       "calendarHouse": "On the House floor calendar",
       "calendarSenate": "On the Senate floor calendar",
+      "pendingHouse": "Floor vote pending in the House",
+      "pendingSenate": "Floor vote pending in the Senate",
       "headlineHouse": "This bill is queued for a vote of the full House.",
       "headlineSenate": "This bill is queued for a vote of the full Senate.",
       "meta": "A bill on the calendar can be called up with little notice, and offices tally until it is.",
