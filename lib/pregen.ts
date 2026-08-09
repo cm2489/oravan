@@ -26,10 +26,12 @@ export function planCombos(bills: Bill[], stances: Stance[], locales: Array<'en'
   const combos: Combo[] = [];
   for (const bill of bills) {
     const slug = billSlug(bill);
-    // Same formula app/api/script/route.ts uses — this IS the cache key's
+    // Same CALL app/api/script/route.ts makes — this IS the cache key's
     // content-version component, computed identically so a pregenerated
     // entry is a hit for the route's own lookup, never a permanent miss.
-    const version = contentVersion(bill.ai_summary ?? bill.title);
+    // Both sides hand over the whole bill and let contentVersion choose the
+    // fields, so adding a field to the key can't orphan this path by omission.
+    const version = contentVersion(bill);
     for (const stance of stances) {
       for (const lang of locales) {
         combos.push({ slug, stance, lang, version, bill });

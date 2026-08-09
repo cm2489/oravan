@@ -51,7 +51,7 @@ test.describe('planCombos', () => {
     const bill = makeBill();
     const combos = planCombos([bill], ['support', 'oppose', 'undecided'], ['en', 'es']);
     expect(combos).toHaveLength(6);
-    const version = contentVersion(bill.ai_summary ?? bill.title);
+    const version = contentVersion(bill);
     for (const combo of combos) {
       expect(combo.slug).toBe('hr-1234-119');
       expect(combo.version).toBe(version);
@@ -68,6 +68,23 @@ test.describe('planCombos', () => {
     const [a] = planCombos([original], ['support'], ['en']);
     const [b] = planCombos([corrected], ['support'], ['en']);
     expect(a.version).not.toBe(b.version);
+  });
+
+  test('a status move changes the version here too — this path cannot drift from the route', () => {
+    // The divergence that would matter most is silent: if this planner keyed on
+    // a different field set than app/api/script/route.ts, every entry it warms
+    // would be a permanent miss for the live lookup, with nothing to see but a
+    // cache that never hits. Both now call contentVersion(bill) with the whole
+    // bill, so a field added to the key reaches both at once.
+    const preVote = makeBill({ status: 'floor_vote', last_action_date: '2026-06-30' });
+    const postVote = makeBill({ status: 'passed_chamber', last_action_date: '2026-07-01' });
+    const [a] = planCombos([preVote], ['support'], ['en']);
+    const [b] = planCombos([postVote], ['support'], ['en']);
+    expect(a.version).not.toBe(b.version);
+    expect(a.version, 'and each still matches what the route would compute').toBe(
+      contentVersion(preVote)
+    );
+    expect(b.version).toBe(contentVersion(postVote));
   });
 
   test('multiple bills each produce their own combo set, in input order', () => {
