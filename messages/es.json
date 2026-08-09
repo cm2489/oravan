@@ -816,7 +816,7 @@
     "readBill": "Leer el proyecto de ley",
     "partOf": "Parte de una pregunta más amplia: {name}",
     "whyHeading": "Por qué existe esta Gran pregunta",
-    "whyCriteria": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, vigentes y con acción posible, cumplen criterios publicados: una señal de calendario del gobierno, o cobertura de prensa de medios de todo el espectro, dentro de los últimos 14 días.",
+    "whyCriteria": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, vigentes y con acción posible, cumplen criterios publicados: una señal de calendario del gobierno, o cobertura de prensa de medios de todo el espectro, dentro de los últimos 45 días.",
     "signalLabel": "La señal que califica",
     "signalType": {
       "tier0_floor": "En el calendario del pleno",
@@ -830,7 +830,7 @@
     "howMadeHeading": "Cómo se crean las Grandes preguntas",
     "howMadeBody": "Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada por un control automático y luego revisada por una persona antes de publicarse.",
     "howMadeRule1": "Algo todavía en marcha: al menos un proyecto de ley o una nominación ante el Senado, con seguimiento y sin haber llegado a su fin. El asunto todavía tiene que ser uno en el que una llamada pueda influir.",
-    "howMadeRule2": "Una señal reciente: apareció en los últimos 14 días en un calendario del gobierno (una votación en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov, el Calendario Ejecutivo del Senado) o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
+    "howMadeRule2": "Una señal reciente: apareció en los últimos 45 días en un calendario del gobierno (una votación en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov, el Calendario Ejecutivo del Senado) o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
     "howMadeRule3": "Una acción posible: la página y el guion de llamada ya funcionan — todo proyecto de ley del corpus cumple por construcción, y una nominación solo cumple cuando el registro del Senado incluye la frase descriptiva con la que se escribe su guion. El control automático rechaza la que no la tenga.",
     "howMadeRule4": "Un nombre neutral: una descripción del desacuerdo que cualquiera de los dos lados reconocería como justa, nunca la etiqueta propia de un lado.",
     "lifecycleLive": "Esta Gran pregunta se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado, y cada nominación confirmada, devuelta o retirada. Las Grandes preguntas resueltas siguen disponibles, marcadas como resueltas; nunca se reabren.",
