@@ -6,7 +6,7 @@ import { billSlug, getAllBills } from '@/lib/core';
 import { getNomination } from '@/lib/core/nominations';
 import { getFreshness } from '@/lib/freshness';
 import { absoluteUrl } from '@/lib/hreflang';
-import { getMoments, vehicleKind } from '@/lib/moments';
+import { getMoments, momentClaimsVehicles, vehicleKind } from '@/lib/moments';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { latestVehicleAction } from '@/lib/moments-ui';
 
@@ -117,7 +117,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
    */
   const citedNominations = new Map<string, string | null>();
   for (const moment of getMoments()) {
-    if (moment.state === 'retired') continue;
+    // momentClaimsVehicles, NOT `state !== 'retired'`. This is the same
+    // predicate the nomination page's `robots: { index: cited }` is computed
+    // from (lib/moments.ts, via getMomentsForNomination), and it has to be:
+    // skipping only `retired` here listed every SETTLED moment's nominations
+    // in sitemap.xml while their own pages served noindex — the sitemap
+    // arguing with its own pages, which is exactly what this block's comment
+    // above forbids. One predicate, both surfaces.
+    if (!momentClaimsVehicles(moment)) continue;
     for (const v of moment.vehicles) {
       if (vehicleKind(v) !== 'nomination') continue;
       citedNominations.set(v.slug, getNomination(v.slug)?.last_action_date ?? null);

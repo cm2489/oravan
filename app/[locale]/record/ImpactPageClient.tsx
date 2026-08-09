@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PhoneCall, MessageCircle, Voicemail, Trash2, ArrowRight } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { eraseAll, removeCall, removeRead, useCalls, usePrefs, useReads } from '@/lib/local';
+import { eraseAll, recordHref, removeCall, removeRead, useCalls, usePrefs, useReads } from '@/lib/local';
 
 /*
  * THE CIVIC RECORD (repositioning spec §4). Formerly "Your impact", which
@@ -129,7 +129,14 @@ export default function ImpactPageClient() {
             {reads.map((r) => (
               <li key={r.billSlug} className={ROW}>
                 <div>
-                  <Link href={`/bills/${r.billSlug}`} className={ROW_LINK}>
+                  {/* Reads are bill-only today — components/ReadReceipt.tsx is
+                      mounted on the bill page and nowhere else — so this is
+                      the same routing rule applied to a field that cannot
+                      currently carry a `pn-` slug. Routed through the shared
+                      helper anyway: the two record types share one stored
+                      field shape, and the day a nomination page mounts a read
+                      receipt this row should not be the thing that 404s. */}
+                  <Link href={recordHref(r.billSlug)} className={ROW_LINK}>
                     {rowLabel(r)}
                   </Link>
                   <p className="mt-1 text-sm text-ink-2 tabular-nums">{day(r.at)}</p>
@@ -193,7 +200,11 @@ export default function ImpactPageClient() {
             {calls.map((c) => (
               <li key={c.at} className={ROW}>
                 <div>
-                  <Link href={`/bills/${c.billSlug}`} className={ROW_LINK}>
+                  {/* recordHref, never a hardcoded /bills/: a call logged on a
+                      nomination page stores that nomination's `pn-…` slug in
+                      the same field, and this row linked every one of them to
+                      a bill page that does not exist. */}
+                  <Link href={recordHref(c.billSlug)} className={ROW_LINK}>
                     {rowLabel(c)}
                   </Link>
                   <p className="mt-1 text-sm text-ink-2">

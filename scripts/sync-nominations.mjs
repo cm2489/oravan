@@ -18,6 +18,14 @@
  * The workflow step is additionally `continue-on-error: true`, matching the
  * Moment-updates step for the same reason.
  *
+ * That `continue-on-error` is exactly why the structural gate had to move IN
+ * HERE (2026-08-09). It makes every verdict downstream of this script
+ * advisory, so a structurally corrupt corpus written to disk was committed
+ * and deployed no matter what scripts/check-nominations.mjs said about it.
+ * This script now runs those checks on the corpus it has built and refuses to
+ * WRITE a failing one — the bill sync keeps its night, and nothing corrupt
+ * can reach the commit, because nothing corrupt reaches the disk.
+ *
  * ── CIVILIAN ONLY ──────────────────────────────────────────────────────────
  * See scripts/nominations-fetch.mjs's header. 859 of the 119th Congress's
  * 2,039 nominations are civilian; the other 1,180 are bulk military
@@ -36,19 +44,32 @@
  * stall silently rewind the bill backlog scan or vice versa. When the key is
  * absent or empty this run does a FULL BACKFILL of the Congress instead.
  *
- * Unlike sync-bills.mjs, there is no freeze-on-incomplete-work high-water
- * mark, because there is no per-record work that can be left undone: every
- * record this run reads is fully resolved by reading it (no decode, no
- * budget, no gate). The one thing that CAN be incomplete is the paging
- * itself, so the cursor advances to the run start ONLY when the scan drained
+ * The cursor advances to the run start ONLY when the scan drained
  * (`complete`); otherwise it advances to the newest updateDate actually
  * read, so the next run resumes exactly there and never skips a window.
+ *
+ * Amended 2026-08-09: it does not advance AT ALL through a scan that read raw
+ * records and wrote none of them, and the high-water mark counts only records
+ * the run actually wrote. The old unconditional advance made the one silent,
+ * permanent failure this script has — an upstream shape change (a renamed
+ * `nominationType`) freezing the corpus forever while every night logged a
+ * clean success. See the guard above the write for the two conditions and why
+ * one is an error and the other only a warning.
+ *
+ * Per-record work CAN now be left undone, which is the other half of the same
+ * amendment: a reply carrying no readable `latestAction` is skipped whole
+ * rather than written (scripts/nominations-fetch.mjs's fail-closed guard), so
+ * a degraded night can no longer blank a confirmed nomination's official
+ * sentence and reopen its call rail.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { checkNominationCorpus } from './check-nominations.mjs';
 import { toISODateTime } from './congress-fetch.mjs';
 import {
   fetchNominationsSince,
+  nominationScanVerdict,
   nominationSlug,
+  readableNominationAction,
   refreshNominationFields,
   toNominationRecord,
 } from './nominations-fetch.mjs';
@@ -90,23 +111,46 @@ console.log(
     : 'nomination sync: no cursor — FULL BACKFILL of the 119th Congress'
 );
 
-const { items, rawSeen, complete } = await fetchNominationsSince(cursor, { maxRecords: MAX_RECORDS });
-console.log(`read ${rawSeen} raw records, ${items.length} civilian${complete ? '' : ' (scan capped — more upstream)'}`);
+const { items, rawSeen, complete, shape } = await fetchNominationsSince(cursor, { maxRecords: MAX_RECORDS });
+console.log(
+  `read ${rawSeen} raw records (${shape.civilian} civilian, ${shape.military} military` +
+    `${shape.unrecognized ? `, ${shape.unrecognized} UNRECOGNIZED` : ''})` +
+    `${complete ? '' : ' (scan capped — more upstream)'}`
+);
 
 let added = 0;
 let refreshed = 0;
+let skippedPartial = 0;
 let newestUpdate = null;
 for (const item of items) {
   const slug = nominationSlug(item);
   const known = bySlug.get(slug);
   if (known) {
-    refreshNominationFields(known, item);
-    refreshed++;
+    // A reply with no readable latestAction leaves the record byte-identical
+    // rather than blanking its official sentence and downgrading its status
+    // to `unclassified` — see refreshNominationFields' fail-closed guard.
+    if (refreshNominationFields(known, item) === 'refreshed') refreshed++;
+    else skippedPartial++;
   } else {
-    bySlug.set(slug, toNominationRecord(item));
-    added++;
+    // Same refusal one step earlier: an unreadable reply mints nothing at
+    // all, rather than a permanent record whose status was never read.
+    const record = toNominationRecord(item);
+    if (record) {
+      bySlug.set(slug, record);
+      added++;
+    } else {
+      skippedPartial++;
+    }
   }
-  if (item.updateDate && (!newestUpdate || item.updateDate > newestUpdate)) {
+  // The cursor high-water mark counts only records we actually WROTE. A
+  // skipped-partial record must not drag the cursor past itself: doing so
+  // would retire the one thing that brings it back, since the next run's
+  // window starts after the updateDate we just banked.
+  if (
+    item.updateDate &&
+    (!newestUpdate || item.updateDate > newestUpdate) &&
+    readableNominationAction(item)
+  ) {
     newestUpdate = item.updateDate;
   }
 }
@@ -129,10 +173,105 @@ if (out.length < before) {
   process.exit(1);
 }
 
-// Advance only as far as we actually read. See the header's cursor note.
-state.nominationsLastSync = toISODateTime(
-  complete ? runStart : (newestUpdate ?? cursor ?? runStart)
-);
+/* ── THE CURSOR MAY NOT ADVANCE THROUGH A SCAN THAT PRODUCED NOTHING ───────
+   The cursor is the only thing that decides which window the next run reads,
+   so advancing it is a claim: "everything before this point is handled." A
+   run that read raw records and wrote NONE of them cannot support that claim,
+   and advancing anyway is the one failure mode of this script that is both
+   permanent and completely silent — every night afterwards reads a window
+   starting after records it never ingested, finds nothing, advances again,
+   and logs a clean success over a corpus frozen forever.
+
+   TWO CONDITIONS, and they are different in kind.
+
+   (1) shape.unrecognized > 0 — EXACT, and an error. Every live record carries
+       nominationType.isCivilian XOR .isMilitary (re-measured over all 2,077
+       records of the 119th on 2026-08-09). A record carrying neither cannot
+       happen without an upstream change: a renamed field, a restructured
+       object, a dropped one. That is precisely the shape change that would
+       make isCivilianNomination return false across the board while every
+       log line still read like a quiet night. It is not a blip and it does
+       not heal itself, so the run exits non-zero at the very end (after the
+       write, which is deliberate — see the exit at the bottom of this file).
+
+   (2) rawSeen > 0 && added + refreshed === 0 — BROADER, and only a warning.
+       Everything else that can produce a scan with nothing to show for it:
+       a night of degraded replies (every record skipped_partial), or simply
+       a window in which only military bulk lists moved. The second is a
+       perfectly ordinary night, which is exactly why this cannot be an error
+       — a gate that fires on normal nights gets ignored, and then it is not
+       a gate. Holding the cursor is free either way: the window is
+       re-read next run, the ingest is idempotent, and MAX_RECORDS (2,500)
+       comfortably exceeds the whole Congress, so a held cursor cannot
+       snowball into an unreadable window.
+
+   No consecutive-zero counter is persisted for (2). It was considered and
+   rejected: a counter is a heuristic standing in for "did the filter break",
+   and condition (1) answers that question exactly, with no false positives to
+   train anyone to ignore it. A counter on top would fire on a quiet stretch
+   of military-only nights — real, harmless, and indistinguishable to it. */
+const verdict = nominationScanVerdict({
+  rawSeen,
+  added,
+  refreshed,
+  unrecognized: shape.unrecognized,
+});
+if (verdict === 'shape_changed') {
+  console.error(
+    `::error::sync-nominations: ${shape.unrecognized} of ${rawSeen} raw records carry a nominationType that is neither isCivilian nor isMilitary. ` +
+      'Congress.gov has changed the shape this sync filters on, so the civilian filter can no longer be trusted. ' +
+      'The cursor was NOT advanced, so nothing is lost — re-run after fixing nominationTypeOf in scripts/nominations-fetch.mjs.'
+  );
+} else if (verdict === 'stalled') {
+  console.warn(
+    `::warning::sync-nominations: read ${rawSeen} raw records and wrote none (${skippedPartial} skipped as unreadable, ${shape.civilian} civilian seen). ` +
+      'The cursor was NOT advanced, so this window is re-read next run. Normal when only military lists moved; investigate if it repeats.'
+  );
+}
+
+// Advance only as far as we actually read, and only through a scan that
+// produced something. See the header's cursor note and the block above.
+if (verdict === 'ok') {
+  state.nominationsLastSync = toISODateTime(
+    complete ? runStart : (newestUpdate ?? cursor ?? runStart)
+  );
+}
+
+/* ── THE STRUCTURAL GATE RUNS BEFORE THE WRITE, NOT AFTER THE COMMIT ───────
+   scripts/check-nominations.mjs's hard checks all test OUR CODE against data
+   it produced — slug identity, the citation arithmetic, the stored status
+   matching what the mapper derives, the URL builder, the civilian-only
+   tripwire. Until 2026-08-09 the only place they ran against FRESH data was a
+   sync-bills.yml step marked `continue-on-error: true`, which made every one
+   of them advisory exactly where it mattered: a structurally corrupt corpus
+   was written, committed and deployed, and the run stayed green. (The step's
+   own comment only ever justified advisory treatment for the unclassified
+   SWEEP, which is a different check and stays advisory below.)
+
+   Running the gate here instead of hardening that step is what lets both
+   promises hold at once. This script's header says nothing in the nomination
+   lane may cost the bill sync its night, and a hard workflow step would do
+   precisely that — the bill corpus is the product's spine and is already
+   committed by the time this runs. A corpus that never reaches disk cannot be
+   committed by anything downstream, so the harm is gone without the workflow
+   ever having to fail. It is the same posture scripts/verify-sync.mjs holds
+   for bills, in the lane that had no equivalent.
+
+   `--strict` is NOT passed: the unclassified sweep stays advisory here for
+   the reason its own gate documents (owner ruling 2026-08-04 — an honest
+   `unclassified` record must not cost the corpus its night), and keeps
+   failing loudly in its own workflow step. */
+const structural = checkNominationCorpus(out, state, { strict: false });
+for (const w of structural.warnings) console.warn(`::warning::${w}`);
+if (structural.errors.length) {
+  for (const e of structural.errors) console.error(`::error::${e}`);
+  console.error(
+    `::error::sync-nominations: ${structural.errors.length} structural failure(s) in the corpus this run built. ` +
+      'NOTHING was written — data/nominations.json and data/sync-state.json are untouched on disk, so the damaged corpus cannot be committed or deployed. ' +
+      'The previous corpus stands until this is fixed.'
+  );
+  process.exit(1);
+}
 
 writeFileSync('data/nominations.json', JSON.stringify(out));
 writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
@@ -140,8 +279,9 @@ writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 const counts = {};
 for (const n of out) counts[n.status] = (counts[n.status] ?? 0) + 1;
 console.log(
-  `DONE: ${added} added, ${refreshed} refreshed, corpus ${out.length} (was ${before}); ` +
-    `cursor -> ${state.nominationsLastSync}`
+  `DONE: ${added} added, ${refreshed} refreshed, ${skippedPartial} skipped (unreadable reply), ` +
+    `corpus ${out.length} (was ${before}); cursor -> ${state.nominationsLastSync}` +
+    `${verdict === 'ok' ? '' : ' (HELD — see the warning above)'}`
 );
 console.log(`STATUS: ${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 if (counts.unclassified) {
@@ -153,3 +293,20 @@ if (counts.unclassified) {
   // lib/nomination-status.mjs.
   console.log(`::warning::sync-nominations: ${counts.unclassified} record(s) carry action text no rule in lib/nomination-status.mjs classifies — run scripts/check-nominations.mjs to see them.`);
 }
+
+/* THE SHAPE TRIPWIRE EXITS NON-ZERO, and it does so HERE — after the write,
+   not instead of it. The two halves are separate decisions:
+
+     · The records this run DID read are real and were mapped normally, so
+       writing them is right; discarding them would throw away good data over
+       a problem they are not part of.
+     · The cursor is held (above), so nothing this run failed to see is
+       skipped, and the next run re-reads the same window.
+
+   What is left is the notification, and it has to be loud: an upstream field
+   rename is not self-healing and every night that passes with it unfixed is a
+   night the corpus silently stops growing. The workflow step is
+   `continue-on-error: true`, so this reddens the STEP and its annotation
+   without costing the bill sync its night — exactly the split this lane is
+   built on. */
+if (verdict === 'shape_changed') process.exit(1);

@@ -250,7 +250,11 @@ export async function POST(req: NextRequest) {
 
   // The audience rides INSIDE the version hash, so the key shape stays the
   // one shape check-key-namespaces.mjs gates on — see nominationContentVersion.
-  const version = nominationContentVersion(nomination.nominee_description, audience);
+  // The whole record goes in, not just the description: the prompt also reads
+  // the status and the last recorded action, and those are the fields that
+  // MOVE. nominationContentVersion picks them, so this call site cannot drift
+  // out of agreement with the key material any future caller writes.
+  const version = nominationContentVersion(nomination, audience);
   return serveScript({ slug, stance, lang, version }, () =>
     buildNominationScriptPrompt({ nomination, stance, audience, lang })
   );

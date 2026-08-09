@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   isCallRecord,
   isReadRecord,
+  recordHref,
   sanitizeCalls,
   sanitizePrefs,
   sanitizeReads,
@@ -140,5 +141,52 @@ test.describe('sanitizePrefs', () => {
 
   test('anything that is not an object yields null', () => {
     for (const bad of [null, 5, 'x', true, undefined, []]) expect(sanitizePrefs(bad)).toBeNull();
+  });
+});
+
+/*
+ * WHERE A STORED ROW LINKS TO.
+ *
+ * `billSlug` stopped being bills-only when nominations got a call rail:
+ * components/ActionPanel.tsx logs an outcome on a nomination page with that
+ * nomination's `pn-…` slug in the same field, and /record linked every row to
+ * `/bills/<slug>` — a guaranteed 404, reached from the reader's own civic
+ * record, on the one page whose whole job is to show them their work was
+ * real.
+ *
+ * The prefix is not a heuristic. scripts/nominations-fetch.mjs's
+ * nominationSlug() emits `pn-` on every nomination, congress-fetch.mjs's
+ * slugOf() emits one of six bill prefixes, and the disjointness is swept for
+ * over the whole corpus in tests/nomination-status.unit.spec.ts. That is what
+ * lets this be READ from rows already in a reader's browser rather than
+ * stored on new ones — a stored `kind` field would have had to default to
+ * `bill`, leaving every already-broken row broken forever.
+ */
+test.describe('recordHref', () => {
+  test('a nomination slug routes to the nomination page', () => {
+    expect(recordHref('pn-11-22-119')).toBe('/nominations/pn-11-22-119');
+    // The part-less shape — a nomination whose partNumber is "00".
+    expect(recordHref('pn-932-119')).toBe('/nominations/pn-932-119');
+  });
+
+  test('every bill slug prefix still routes to the bill page', () => {
+    for (const slug of [
+      'hr-1-119',
+      's-2-119',
+      'hjres-3-119',
+      'sjres-99-119',
+      'hconres-4-119',
+      'sconres-5-119',
+    ]) {
+      expect(recordHref(slug), slug).toBe(`/bills/${slug}`);
+    }
+  });
+
+  /* The prefix is matched at the START, so a bill whose slug merely CONTAINS
+     the letters is untouched. `pn` is not a bill type, but the assertion
+     costs nothing and pins that this is a namespace test rather than a
+     substring one. */
+  test('the match is anchored, not a substring search', () => {
+    expect(recordHref('hr-800-pn-119')).toBe('/bills/hr-800-pn-119');
   });
 });

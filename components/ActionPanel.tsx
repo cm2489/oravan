@@ -139,6 +139,36 @@ function houseFallbackFor(t: Translate, s: Stance, citation: string) {
   return t(`fallbackScriptNominationHouse.${s}`, { citation });
 }
 
+/**
+ * The THIRD nomination template, for a reader whose jurisdiction elects no
+ * senators — DC, PR, VI, GU, AS, MP (2026-08-09).
+ *
+ * Neither of the two above can be handed to this reader. fallbackFor's
+ * nomination template asks a SENATOR for a confirmation vote, and they have no
+ * senator to read it to. houseFallbackFor asks their representative to press
+ * "our state's senators", who do not exist either — the same sentence that
+ * makes `bill.nominationHousePress` false here.
+ *
+ * WHY A TEMPLATE AT ALL, rather than the empty script slot a 422 leaves. The
+ * empty slot is deliberate for a refusal and correct there: it un-mounts every
+ * `script &&` gate, dials included, because "offering a dial with nothing to
+ * say is the thing that makes a first-time caller hang up." But this reader is
+ * not in that case. The nomination is LIVE, their House office is real and
+ * reachable, and `bill.nominationNoSenator` tells them in so many words to call
+ * it and ask that the nomination be raised. Leaving them the sentence and
+ * taking away the phone number would be the panel contradicting its own copy —
+ * and it would bury the one office they have, on the one vehicle where burying
+ * it is easiest to justify and worst to do.
+ *
+ * So the ask is the honest one that remains: say it publicly. No vote is
+ * requested of anyone, because none is available to this reader — which is the
+ * standing rule that House-pressure copy must never imply a House member votes
+ * on or decides a confirmation.
+ */
+function noSenatorFallbackFor(t: Translate, s: Stance, citation: string) {
+  return t(`fallbackScriptNominationNoSenator.${s}`, { citation });
+}
+
 /** m:ss for the rate-limit countdown line. */
 function formatRetryTime(totalSec: number) {
   const m = Math.floor(totalSec / 60);
@@ -488,13 +518,64 @@ export function ActionPanel({
   // its own half, because it is the only copy that speaks TO the House row.
   const hasSenator = reps.some((r) => r.type === 'sen');
   const liveTargetKey = liveCallKey(liveTarget, { hasSenator });
-  // The nomination annex: the two extra sentences a nomination needs and a
-  // bill does not — how confirmation works at all, and what a House member
-  // honestly can and cannot do about one. Gated on the House row EXISTING,
-  // never on the routing alone: telling a reader in a vacant district what to
-  // ask their representative would name an office that is not there.
-  const showNominationNote = !!liveTarget?.soleChamber && !!liveTargetKey;
-  const showHousePressNote = showNominationNote && reps.some((r) => r.type === 'rep');
+  /*
+   * The nomination annex: the extra sentences a nomination needs and a bill
+   * does not — how confirmation works at all, and what the offices this
+   * reader actually has can honestly do about one.
+   *
+   * THE NO-SENATOR JURISDICTIONS ARE THE REASON THIS IS THREE FLAGS AND NOT
+   * TWO (2026-08-09). DC, Puerto Rico, the Virgin Islands, Guam, American
+   * Samoa and the Northern Mariana Islands elect a delegate or a resident
+   * commissioner and NO senators at all — so `hasSenator` is false, and
+   * liveCallKey (lib/journey.ts) correctly returns null rather than print a
+   * sentence naming an office the reader does not have.
+   *
+   * Gating the explainer on that null was the bug: a reader in ZIP 20001 lost
+   * BOTH nomination notes — the one explaining that only the Senate votes on
+   * confirmations, and the one about what a House office can do — and was
+   * left with a bare stance control and a dial, no explanation of any kind,
+   * while generate() went on requesting a SENATOR-audience script. The single
+   * reader who most needs the procedure spelled out got the least of it, and
+   * then got a script addressed to a Senate office beside a House delegate's
+   * phone number.
+   *
+   * `nominationHow` is now gated only on the routing and on there being some
+   * office to speak about — it is TRUE for every reader ("The House has no
+   * vote on nominations at all"), and it is most true for these ones.
+   */
+  const showNominationNote = !!liveTarget?.soleChamber && reps.length > 0;
+  /* The House-pressure note keeps BOTH of its old conditions and gains the
+     senator one explicitly. It tells the reader their representative "shares
+     a state with your two senators, and they can press them" — false in a
+     jurisdiction that elects none, which is precisely what showNoSenatorNote
+     below exists to say instead. Still gated on the House row EXISTING, never
+     on the routing alone: telling a reader in a vacant district what to ask
+     their representative would name an office that is not there. */
+  const showHousePressNote =
+    showNominationNote && hasSenator && reps.some((r) => r.type === 'rep');
+  /*
+   * "WE KNOW THIS READER HAS NO SENATORS" — as distinct from "we have not
+   * looked yet", which is what a bare `!hasSenator` means for the first
+   * moments of every page load.
+   *
+   * `reps` is `[]` until the /api/reps lookup RESOLVES, so `hasSenator` is
+   * false for every reader in every jurisdiction while it is in flight. A
+   * non-empty `reps` is therefore the proof that the question was actually
+   * asked and answered — `reps.length > 0` implies `lookup.status === 'ready'`
+   * by construction (see `reps` above).
+   *
+   * This distinction is load-bearing twice over, and one of them is a refusal
+   * that cannot be retried: `generate()` reads this to decide whether to skip
+   * the senator-audience request, and a stance chosen before the lookup landed
+   * would otherwise refuse the script for a reader who has two senators. Both
+   * the refusal and the note that explains it read this ONE boolean, so a
+   * reader can never be refused a script without the explanation on screen.
+   */
+  const knownNoSenator = reps.length > 0 && !hasSenator;
+  /* …and its counterpart for a reader with no senators to press. Strictly
+     exclusive with the House-pressure note above, so the two can never both
+     render. */
+  const showNoSenatorNote = showNominationNote && knownNoSenator;
   /*
    * …and the words to go with that note, offered in the row itself. Gated on
    * `kind` as well as on the routing, even though `soleChamber` is only ever
@@ -503,8 +584,16 @@ export function ActionPanel({
    * ignore the field and hand back a chamber-neutral bill script under a label
    * promising House-specific words. The kind is the thing that makes the
    * request meaningful, so the kind is what gates the control.
+   *
+   * `hasSenator` joins the conjunction for the same reason it gates the
+   * House-pressure note above, and it is the stronger case here: the House
+   * audience's whole ask, in the prompt (lib/nomination-script.ts's
+   * AUDIENCE_LINES) and in the offline template alike, is that the
+   * representative "press the two U.S. Senators from the caller's own state".
+   * A reader in DC or Puerto Rico has none, so that script would be asking
+   * their delegate to lean on senators who do not exist.
    */
-  const showHouseScript = kind === 'nomination' && showNominationNote;
+  const showHouseScript = kind === 'nomination' && showNominationNote && hasSenator;
 
   const fetchReps = useCallback(() => {
     if (!zip) {
@@ -676,6 +765,60 @@ export function ActionPanel({
     // outlived its request would be reported about words nobody asked for yet.
     setHouseError(null);
     if (drafts[s]) return; // a draft (possibly user-edited) already exists - restore, don't regenerate
+    /*
+     * NO SENATORS, NO SENATOR-AUDIENCE REQUEST (2026-08-09).
+     *
+     * On a nomination this used to send `audience: 'senator'` unconditionally,
+     * including for the six jurisdictions that elect none — DC, PR, VI, GU,
+     * AS, MP. The model dutifully wrote a script addressed to a Senate office
+     * ("I'm asking the senator to vote to confirm"), and the panel rendered it
+     * above a delegate's phone number, the only number that reader has. It
+     * would have been read to an office that cannot act on it, by someone told
+     * to expect it to work.
+     *
+     * This skips the request BEFORE the fetch rather than after: the request
+     * is the thing that is wrong, so no Anthropic call is made, no cache entry
+     * is written, and no rate-limit budget is spent on a script nobody can use.
+     *
+     * IT IS NOT AN ERROR, AND NOT THE 422 `refused` PATH — that one leaves the
+     * script slot empty on purpose, which un-mounts every `script &&` gate and
+     * takes the dials with it, because on a refusal there is by definition
+     * nothing to say. This reader is the opposite case: the nomination is
+     * LIVE, their House office is real and reachable, and `nominationNoSenator`
+     * tells them in so many words to call it and ask that the nomination be
+     * raised. Leaving them that sentence and taking away the phone number
+     * would be the panel contradicting its own copy, and would bury the one
+     * office they have on the one vehicle where burying it is worst.
+     *
+     * So the honest template is seeded instead (noSenatorFallbackFor —
+     * labelled as not AI-drafted, asking only that the office speak up, never
+     * that it vote), the dials stay mounted, and the rail's explanation is
+     * gated on this SAME boolean so the words and the script can never
+     * disagree about what this reader can do.
+     *
+     * `knownNoSenator`, NOT `!hasSenator` — see that constant. A bare
+     * `!hasSenator` is also true while the /api/reps lookup is still in
+     * flight, so a reader who picked a stance quickly would have been refused
+     * a script they were fully entitled to, with no way to retry: the refusal
+     * returns before `drafts[s]` is ever populated, so pressing the same
+     * stance again short-circuits on nothing and the panel stays empty.
+     *
+     * KNOWN RESIDUAL, not closed here. The mirror of that race is still open:
+     * a reader who picks a stance BEFORE the lookup resolves gets the senator
+     * request, and if the lookup then reveals a delegate jurisdiction the
+     * already-rendered script stays on screen. That is the pre-existing
+     * behaviour, not a new one, and closing it means either blocking the
+     * stance control on a network round-trip or tearing down a draft the
+     * reader may already have edited — both worse than the narrow window they
+     * fix. The window is small in practice (/api/reps is a same-origin pure
+     * lookup, resolved long before a human can read the page and choose a
+     * position), but it is a window, and it is written down here rather than
+     * left for someone to rediscover.
+     */
+    if (kind === 'nomination' && knownNoSenator) {
+      setFallbacks((f) => (f[s] ? f : { ...f, [s]: noSenatorFallbackFor(t, s, identifier) }));
+      return;
+    }
     setGenLine(1); // restart the rotating lines for this generation
     setLoading(true);
     const outcome = await requestScript(s, kind === 'nomination' ? 'senator' : null);
@@ -773,6 +916,10 @@ export function ActionPanel({
     const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
     const billLabel = norm(title).includes(norm(identifier)) ? title : `${identifier} · ${title}`;
     upsertCall({
+      // On a nomination page this is that nomination's `pn-…` slug, not a bill
+      // slug — the field name is historical (see CallRecord in lib/local.ts).
+      // /record must route it with recordHref(), never by prefixing `/bills/`,
+      // which is what sent every logged nomination call to a 404.
       billSlug: slug,
       billLabel,
       labelEn: recordLabels.en,
@@ -1149,6 +1296,17 @@ export function ActionPanel({
             {showHousePressNote && (
               <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
             )}
+            {/* The same beat for a reader whose jurisdiction elects no
+                senators. It takes the place of BOTH the routing sentence
+                above (liveCallKey returns null for them, correctly — every
+                one of its strings names a senator) and the House-pressure
+                note (whose ask is that a representative lean on senators the
+                reader does not have). Influence framing only: it must never
+                read as though a House vote on a confirmation exists, because
+                none does, for anyone. */}
+            {showNoSenatorNote && (
+              <p className="mt-4 max-w-note text-sm text-ink-2">{t('nominationNoSenator')}</p>
+            )}
             {reps.length > 0 && (
               <p
                 ref={repsHeadingRef}
@@ -1461,6 +1619,13 @@ export function ActionPanel({
           )}
           {showHousePressNote && (
             <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
+          )}
+          {/* Rides along at the dial moment for the same reason the
+              House-pressure note does: this is where the number is about to
+              be pressed, and "what do I even say?" is the question the rail's
+              copy may already have scrolled past. */}
+          {showNoSenatorNote && (
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationNoSenator')}</p>
           )}
           {/* The same split-ZIP disambiguation the rail carries, at the dial
               moment itself: senators already lead the list (sorted above);

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { getAllBills } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
-import { getMoments, vehicleKind } from '../lib/moments';
+import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -16,20 +16,28 @@ const SITE_ORIGIN = 'https://oravan.org';
 const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions'
 
 /**
- * The nomination slugs app/sitemap.ts actually lists: ONLY those a non-retired
- * moment cites, de-duplicated (two moments may cite one nomination; the
- * sitemap's Map collapses them to one pair of entries).
+ * The nomination slugs app/sitemap.ts actually lists: ONLY those a moment in a
+ * vehicle-claiming state cites, de-duplicated (two moments may cite one
+ * nomination; the sitemap's Map collapses them to one pair of entries).
  *
  * Derived here the same way the route derives it rather than hardcoded, so
  * this arithmetic tracks the file. Until 2026-08-06 the loc-count assertion
  * below simply omitted this term, and the first nomination vehicle to land
  * would have turned it red — reporting a sitemap defect where the sitemap was
  * doing exactly what its own comment says it does.
+ *
+ * AMENDED 2026-08-09: this said `m.state === 'retired'` too, which is how the
+ * route's bug got past it — the test reproduced the defect instead of
+ * catching it. A SETTLED moment's nominations were listed in sitemap.xml
+ * while their own pages served `robots: { index: false }`, because the page
+ * computes that from getMomentsForNomination, which counts live + stale only.
+ * Both now read momentClaimsVehicles, and the test below asserts the
+ * agreement directly rather than trusting two copies of a rule to match.
  */
 function citedNominationSlugs(): Set<string> {
   const slugs = new Set<string>();
   for (const m of getMoments()) {
-    if (m.state === 'retired') continue;
+    if (!momentClaimsVehicles(m)) continue;
     for (const v of m.vehicles) {
       if (vehicleKind(v) === 'nomination') slugs.add(v.slug);
     }
@@ -66,6 +74,29 @@ test.describe('sitemap.xml', () => {
       .find((slug) => !cited.has(slug));
     expect(uncited, 'the corpus should hold at least one uncited nomination').toBeDefined();
     expect(body).not.toContain(`<loc>${SITE_ORIGIN}/nominations/${uncited}</loc>`);
+
+    /*
+     * THE SITEMAP MAY NEVER LIST A PAGE THAT SAYS NOINDEX.
+     *
+     * Asserted against the page's OWN predicate — getMomentsForNomination is
+     * literally what app/[locale]/nominations/[slug]/page.tsx computes
+     * `robots: { index: cited }` from — rather than against a second copy of
+     * the rule. That is the check that would have caught the settled-moment
+     * bug: any nomination this sitemap lists must be one the page itself
+     * claims, whatever states exist now or get added later.
+     */
+    for (const slug of cited) {
+      expect(
+        getMomentsForNomination(slug).length,
+        `${slug} is in sitemap.xml but its page self-reports noindex`
+      ).toBeGreaterThan(0);
+    }
+    for (const nomination of getAllNominations()) {
+      const slug = nominationSlug(nomination);
+      if (getMomentsForNomination(slug).length > 0) {
+        expect(cited.has(slug), `${slug} is indexable but missing from sitemap.xml`).toBe(true);
+      }
+    }
 
     // A representative moment page, both locales.
     expect(body).toContain(`<loc>${SITE_ORIGIN}/questions/iran-war-powers</loc>`);

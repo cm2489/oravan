@@ -1,4 +1,9 @@
 import { createHash } from 'node:crypto';
+// TYPE-ONLY, and it must stay type-only: lib/core/nominations.ts imports
+// data/nominations.json (~520 KB) at module scope. `import type` is erased at
+// compile time, so this module still pulls zero bytes of that corpus — the
+// same constraint lib/nomination-script.ts's header names.
+import type { Nomination } from './core/nominations';
 import { NOMINATION_PROMPT_VERSION } from './nomination-script';
 import { PROMPT_VERSION } from './scriptprompt';
 // TYPE-ONLY import — erased at compile time, so this module still pulls zero
@@ -136,20 +141,69 @@ export function contentVersion(
  * above, and it is a SEPARATE lineage: editing the bill prompt must not
  * invalidate every nomination script, or vice versa.
  *
- * This one deliberately keeps its plain `\n` join rather than moving to
- * keyMaterial() alongside contentVersion. Two of its three parts are a single
- * digit and a fixed NOMINATION_AUDIENCES member, so an ambiguous split is
- * structurally impossible here — and rewriting the hash input would orphan
- * every live nomination entry to fix a collision that cannot occur.
+ * IT SHARES keyMaterial() WITH contentVersion ABOVE, and that reverses a note
+ * this comment briefly carried. The earlier version said the nomination hash
+ * "deliberately keeps its plain `\n` join", on the grounds that two of its
+ * three parts were a single digit and a fixed NOMINATION_AUDIENCES member, so
+ * an ambiguous split was structurally impossible. That was true of the three
+ * parts it hashed then. It is not true of the six it hashes now: the
+ * description sentence, the receiving body and the Senate's own action text
+ * are all free text and all adjacent, so ('ab','c') vs ('a','bc') is a real
+ * collision shape rather than a theoretical one. The length prefix is the
+ * cheap fix, and it is applied in the same change that made it necessary.
  *
- * @param record   Congress.gov's own description sentence — the only
- *                 substantive input to the prompt, so the only thing whose
- *                 change should invalidate the script.
- * @param audience one of NOMINATION_AUDIENCES.
+ * ── WHAT IS IN THE HASH, AND WHY IT IS THE WHOLE RECORD (2026-08-09) ───────
+ * It took `record: string` — Congress.gov's description sentence — and its
+ * comment called that "the only substantive input to the prompt". That was
+ * not true of the prompt it is supposed to track.
+ * lib/nomination-script.ts's buildNominationScriptPrompt also interpolates
+ * the receiving body, the status, and the Senate's own last recorded action:
+ *
+ *     Receiving body: ${nomination.organization}
+ *     Where it stands: ${nomination.status}
+ *     The Senate's own last recorded action: ${nomination.last_action_text}
+ *
+ * A nomination's DESCRIPTION never changes — it is one frozen sentence about
+ * a person and a post — while its status moves the whole way from `received`
+ * to `confirmed`. So the one field being hashed was the one field that never
+ * moves, and every field that does move was invisible to the key: a
+ * nomination that reached the Executive Calendar, or was confirmed outright,
+ * kept serving the script written when it was still sitting in committee, for
+ * the rest of the 24-hour TTL, while the redeployed page beside it said
+ * otherwise. The TTL was the only thing that ever cleared it.
+ *
+ * It now takes the NOMINATION rather than a pre-extracted string, for the
+ * reason contentVersion above does: the one way to guarantee every caller
+ * agrees on the key material is to give them one function that pulls the
+ * fields itself. A caller passing different material would not fail — it
+ * would silently write entries the route can never read.
+ *
+ * `citation` is deliberately NOT hashed even though the prompt interpolates
+ * it twice: it is derivable one-to-one from the slug, and the slug is already
+ * its own segment of the cache key (scriptKey below). Hashing it would add no
+ * discrimination the key does not already have.
+ *
+ * @param nomination the stored record — the fields below are read from it.
+ * @param audience   one of NOMINATION_AUDIENCES.
  */
-export function nominationContentVersion(record: string, audience: string): string {
+export function nominationContentVersion(
+  nomination: Pick<
+    Nomination,
+    'nominee_description' | 'organization' | 'status' | 'last_action_text'
+  >,
+  audience: string
+): string {
   return createHash('sha256')
-    .update(`${NOMINATION_PROMPT_VERSION}\n${audience}\n${record}`)
+    .update(
+      keyMaterial([
+        NOMINATION_PROMPT_VERSION,
+        audience,
+        nomination.nominee_description,
+        nomination.organization,
+        nomination.status,
+        nomination.last_action_text,
+      ])
+    )
     .digest('hex')
     .slice(0, 12);
 }

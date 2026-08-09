@@ -11,6 +11,7 @@ import {
   execCalendarNumber,
   isTerminalNominationStatus,
   mapNominationStatus,
+  ucAgreementDay,
 } from '../lib/nomination-status.mjs';
 // The bill mapper — imported ONLY to pin the bug that forced a separate one.
 import { mapStatus } from '../scripts/congress-fetch.mjs';
@@ -45,18 +46,49 @@ import { nominationSlug, type Nomination, type NominationStatus } from '../lib/c
 /* ------------------------------------------------------------------ *
  * 1 · THE FIXTURE TABLE — one row per distinct live action shape.
  * ------------------------------------------------------------------ */
-const LIVE_ACTIONS: [text: string, status: string][] = [
+/*
+ * `now` is present on exactly the rows whose verdict depends on the calendar.
+ * mapNominationStatus reads a clock for ONE rule — a unanimous-consent
+ * agreement claims `scheduled` only while the day it names is still ahead —
+ * so a UC fixture with a bare expectation would pass until that date arrived
+ * and then start failing forever, which is a test that expires rather than a
+ * test that holds. Pinning the clock per row is what lets the SAME live
+ * sentence be asserted in both of its true states.
+ */
+const LIVE_ACTIONS: [text: string, status: string, now?: number][] = [
   // ---- terminal ----
   ['Confirmed by the Senate by Voice Vote.', 'confirmed'],
   ['Confirmed by the Senate by Yea-Nay Vote. 51 - 44. Record Vote Number: 220.', 'confirmed'],
   ['Confirmed by the Senate by Yea-Nay Vote. 60 - 25. Record Vote Number: 213.', 'confirmed'],
   ['Returned to the President under the provisions of Senate Rule XXXI, paragraph 6 of the Standing Rules of the Senate.', 'returned'],
   ['Received message of withdrawal of nomination from the President.', 'withdrawn'],
-  // ---- scheduled: the only shape carrying a FUTURE date ----
-  ['By unanimous consent agreement, debate 8/6/2026.', 'scheduled'],
+  // ---- the tabled motion to reconsider: TERMINAL, and it never says so ----
+  //      The Senate's confirmation-locking ritual. Verified against PN11-22's
+  //      full action history (read live 2026-08-09): the sentence directly
+  //      beneath this one in Congress.gov's own record is "Confirmed by the
+  //      Senate by Yea-Nay Vote. 53 - 47. Record Vote Number: 37.", and
+  //      nothing follows it. Stored as `floor` until 2026-08-09, which put a
+  //      full call rail on a confirmation completed 18 months earlier.
+  ['Motion by Senator Thune to reconsider tabled in Senate by Yea-Nay Vote. 52 - 47. Record Vote Number: 38.', 'confirmed'],
+  // ---- scheduled: the only shape carrying a date, while it is still ahead ----
+  ['By unanimous consent agreement, debate 8/6/2026.', 'scheduled', Date.parse('2026-08-06T09:00:00Z')],
   // ---- live floor proceedings ----
   ['Cloture motion presented in Senate.', 'floor'],
-  ['Motion by Senator Thune to reconsider tabled in Senate by Yea-Nay Vote. 52 - 47. Record Vote Number: 38.', 'floor'],
+  // The SECOND live reconsider shape, and the counterexample that makes the
+  // rule above safe to write: this one reopens a FAILED CLOTURE and is
+  // emphatically live — on PN22-2 / PN26-1 / PN141-37 the record went on to a
+  // point of order, a ruling of the chair, "Upon reconsideration, cloture
+  // invoked", and "Considered by Senate". Reading it as a confirmation would
+  // be a fabricated claim about a named private citizen.
+  ['Motion by Senator Thune to reconsider the vote (Record Vote No. 522), by which cloture was not invoked on the nominations en bloc agreed to in Senate by Yea-Nay Vote. 51 - 47. Record Vote Number: 523.', 'floor'],
+  ['Upon reconsideration, cloture invoked in Senate by Yea-Nay Vote. 52 - 47. Record Vote Number: 525.', 'floor'],
+  // The same unanimous-consent sentence one day later — the agreement has
+  // lapsed, so `scheduled` ("Scheduled for a Senate vote") would be a promise
+  // about a day that is gone. `floor` still says the true thing.
+  ['By unanimous consent agreement, debate 8/6/2026.', 'floor', Date.parse('2026-08-07T09:00:00Z')],
+  // A unanimous-consent agreement that names no day at all — real, live, and
+  // no date to compare (measured shape, action code S05307).
+  ['By unanimous consent agreement, debate mandatory quorum required under Rule XXII waived.', 'floor'],
   // ---- Executive Calendar (three shapes: numbered, numbered + commitment
   //      rider, and the Privileged-Nomination section with NO number) ----
   ['Placed on Senate Executive Calendar. Calendar No. 901.', 'exec_calendar'],
@@ -102,9 +134,13 @@ test.describe('mapNominationStatus fixtures (verbatim live Congress.gov text)', 
   // The index prefixes the title because several live sentences are
   // identical for their first 64 characters (the referral rows differ only
   // in the senator's name), and Playwright refuses duplicate test titles.
-  LIVE_ACTIONS.forEach(([text, expected], i) => {
+  LIVE_ACTIONS.forEach(([text, expected, now], i) => {
     test(`#${i} ${expected} <- ${text.slice(0, 64)}${text.length > 64 ? '…' : ''}`, () => {
-      expect(mapNominationStatus(text)).toBe(expected);
+      // `now` only where the row's verdict depends on it; everywhere else the
+      // mapper's own default clock, because those rules must not read one.
+      expect(now === undefined ? mapNominationStatus(text) : mapNominationStatus(text, now)).toBe(
+        expected
+      );
     });
   });
 
@@ -167,12 +203,100 @@ test.describe('a confirmed nomination is never a live vote', () => {
     );
   });
 
-  test('a recorded vote that is NOT a confirmation is never read as one', () => {
-    // A reconsideration motion carries a yea-nay vote and a record vote
-    // number, and is emphatically not a confirmation.
+  /*
+   * THE OTHER DIRECTION OF THE SAME BUG, and the one that was live on
+   * production until 2026-08-09.
+   *
+   * Suite 2 above is about never reading a FINISHED nomination as live. This
+   * is about never reading a LIVE one as finished — the mirror error, and the
+   * worse one to get wrong by guessing, because `confirmed` renders as
+   * "Confirmed by the Senate" over a named private citizen's name.
+   *
+   * The whole rule turns on ONE word. Both sentences are verbatim live
+   * Congress.gov text, both are motions to reconsider by the same senator,
+   * both carry a yea-nay vote and a record vote number. Tabling one locks in
+   * the vote just taken; the other reopens a failed cloture and the Senate
+   * kept working on it for four more actions.
+   */
+  test('a tabled motion to reconsider is the confirmation-locking ritual, not live business', () => {
     expect(
       mapNominationStatus('Motion by Senator Thune to reconsider tabled in Senate by Yea-Nay Vote. 52 - 47. Record Vote Number: 38.')
-    ).toBe('floor');
+    ).toBe('confirmed');
+    expect(
+      isTerminalNominationStatus(
+        mapNominationStatus('Motion by Senator Thune to reconsider tabled in Senate by Yea-Nay Vote. 52 - 47. Record Vote Number: 38.')
+      )
+    ).toBe(true);
+  });
+
+  test('a motion to reconsider a FAILED CLOTURE is live, and is never read as a confirmation', () => {
+    const live =
+      'Motion by Senator Thune to reconsider the vote (Record Vote No. 522), by which cloture was not invoked on the nominations en bloc agreed to in Senate by Yea-Nay Vote. 51 - 47. Record Vote Number: 523.';
+    expect(mapNominationStatus(live)).toBe('floor');
+    expect(isTerminalNominationStatus(mapNominationStatus(live))).toBe(false);
+  });
+
+  /* The cloture carve-out asserted directly, so it cannot be dropped as
+     "redundant" by someone reading only the two sentences above. A tabled
+     reconsider that names cloture must NOT be read as a confirmation: what
+     was locked in would be the cloture question, not a confirmation vote. */
+  test('a tabled reconsider that names cloture is never read as a confirmation', () => {
+    expect(
+      mapNominationStatus('Motion by Senator Thune to reconsider the vote by which cloture was not invoked tabled in Senate by Yea-Nay Vote. 51 - 47.')
+    ).not.toBe('confirmed');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b · THE CLOCK. Exactly one rule may read it.
+ *
+ *      mapNominationStatus is otherwise a pure text→stage mapping, and it
+ *      has to stay that way: a second time-dependent rule would make a
+ *      stored status drift for a second reason, and
+ *      scripts/check-nominations.mjs's expected-drift carve-out knows
+ *      about exactly one.
+ * ------------------------------------------------------------------ */
+test.describe('only the unanimous-consent rule reads a clock', () => {
+  const FAR_PAST = Date.parse('1990-01-01T00:00:00Z');
+  const FAR_FUTURE = Date.parse('2090-01-01T00:00:00Z');
+
+  test('every non-UC live sentence maps the same at any moment in time', () => {
+    const nonUc = LIVE_ACTIONS.filter(([text]) => !/unanimous consent/i.test(text));
+    expect(nonUc.length).toBeGreaterThan(0);
+    for (const [text, expected] of nonUc) {
+      expect(mapNominationStatus(text, FAR_PAST), text).toBe(expected);
+      expect(mapNominationStatus(text, FAR_FUTURE), text).toBe(expected);
+    }
+  });
+
+  test('a UC agreement is `scheduled` up to and including its own day, then `floor`', () => {
+    const uc = 'By unanimous consent agreement, debate 8/6/2026.';
+    // The agreement names a DAY, so it has not lapsed until the day is over —
+    // late on the day itself it is still ahead.
+    expect(mapNominationStatus(uc, Date.parse('2026-08-06T00:00:00Z'))).toBe('scheduled');
+    expect(mapNominationStatus(uc, Date.parse('2026-08-06T23:59:59Z'))).toBe('scheduled');
+    expect(mapNominationStatus(uc, Date.parse('2026-08-07T00:00:00Z'))).toBe('floor');
+    expect(mapNominationStatus(uc, Date.parse('2030-01-01T00:00:00Z'))).toBe('floor');
+  });
+
+  test('ucAgreementDay reads the operative date out of every measured shape', () => {
+    const day = (t: string | null) => ucAgreementDay(t);
+    expect(day('By unanimous consent agreement, debate 8/6/2026.')).toBe(Date.UTC(2026, 7, 6));
+    expect(day('By unanimous consent agreement, vote 9/17/2025.')).toBe(Date.UTC(2025, 8, 17));
+    // The resolution number and the Congress number come FIRST in this one —
+    // the trailing group is the day, which is why the last match wins.
+    expect(
+      day('By unanimous consent agreement, debate pursuant to S. Res. 377, 119th Congress on 9/17/2025.')
+    ).toBe(Date.UTC(2025, 8, 17));
+    expect(
+      day('By unanimous consent agreement, debate mandatory quorum required under Rule XXII waived.')
+    ).toBeNull();
+    // A day the calendar does not have is not a date. Date.UTC would roll it
+    // into March and silently move a claim about WHEN the Senate acts.
+    expect(day('By unanimous consent agreement, debate 2/30/2026.')).toBeNull();
+    // Not a UC sentence at all.
+    expect(day('Confirmed by the Senate by Voice Vote.')).toBeNull();
+    expect(day(null)).toBeNull();
   });
 });
 
@@ -276,7 +400,23 @@ test.describe('the committed nomination corpus', () => {
 
   test('every stored status is what the mapper derives from that record’s own sentence', () => {
     for (const n of corpus) {
-      expect(n.status, n.citation).toBe(mapNominationStatus(n.last_action_text));
+      const mapped = mapNominationStatus(n.last_action_text);
+      /* THE ONE EXPECTED DRIFT, and the same carve-out
+         scripts/check-nominations.mjs makes, for the same reason. The mapper
+         reads a clock for exactly one rule: a unanimous-consent agreement is
+         `scheduled` only while the day it names is ahead. So a record stored
+         `scheduled` yesterday genuinely maps to `floor` today, through no
+         fault of anyone's code — and a flat equality here would red the CI of
+         an unrelated PR on whatever morning that happened (owner ruling
+         2026-08-04). Narrowed to the exact transition on a sentence that
+         really carries a UC day, so a genuine divergence in any other
+         direction still fails. */
+      const lapsedUc =
+        n.status === 'scheduled' &&
+        mapped === 'floor' &&
+        ucAgreementDay(n.last_action_text) !== null;
+      if (lapsedUc) continue;
+      expect(n.status, n.citation).toBe(mapped);
     }
   });
 
@@ -287,6 +427,32 @@ test.describe('the committed nomination corpus', () => {
     const confirmations = corpus.filter((n) => /\bconfirmed by the senate\b/i.test(n.last_action_text ?? ''));
     expect(confirmations.length).toBeGreaterThan(0);
     for (const n of confirmations) {
+      expect(n.status, n.citation).toBe('confirmed');
+      expect(isTerminalNominationStatus(n.status), n.citation).toBe(true);
+    }
+  });
+
+  /*
+   * The same property for the confirmation that never uses the word. A tabled
+   * motion to reconsider is the Senate's confirmation-locking ritual, and
+   * PN11-22 (Russell Vought, OMB) sat in this corpus as `floor` because of it
+   * — a full call rail, an /api/script spend, and a live-vehicle record for
+   * the Moments gate, all over a confirmation completed on 2025-02-06.
+   *
+   * Asserted against the DATA rather than the mapper, so the committed file
+   * itself can never carry that claim again whatever the mapper does. The
+   * cloture exclusion is repeated because a reconsider motion on a FAILED
+   * cloture is genuinely live and must keep its live status.
+   */
+  test('no record whose reconsider motion was tabled carries a live status', () => {
+    const tabled = corpus.filter(
+      (n) =>
+        /\bto reconsider\b[^.]*\btabled\b/i.test(n.last_action_text ?? '') &&
+        !/\bcloture\b/i.test(n.last_action_text ?? '')
+    );
+    // The corpus is allowed to hold none of these — the Senate records the
+    // ritual rarely. When it does hold one, it must be terminal.
+    for (const n of tabled) {
       expect(n.status, n.citation).toBe('confirmed');
       expect(isTerminalNominationStatus(n.status), n.citation).toBe(true);
     }
