@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { POST as districtPost } from '../app/api/district/route';
 import { GET as repsGet } from '../app/api/reps/route';
 import { noteImpression, noteImpressionForToken } from '../lib/impressions';
-import { createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
+import { __resetSaltMemoForTests, createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
 import { mintCapabilityToken, resolveTenantAccess, tenantKey, tokenHash, tokenIndexKey } from '../lib/tenancy';
 import { MCP_TOOL_NAMES, noteMcpToolCall, noteScriptGeneration } from '../lib/usage';
@@ -93,6 +93,20 @@ test.beforeAll(() => {
 test.afterAll(() => {
   restoreFetch();
   restoreEnv(); // other spec files in this worker assert the env-absent path
+});
+
+/*
+ * lib/ratelimit.ts memoizes the salt in module scope (one read per instance
+ * instead of one per request), and module scope outlives both a test and a
+ * spec file inside a Playwright worker. Three of the tests below stand up
+ * their OWN fresh mocks, and the first one reads the salt record straight out
+ * of its store - so a memo carried in from an earlier test (or an earlier
+ * FILE that drove a limiter) would let a limiter here run without ever
+ * writing the salt it is about to be asserted on. Reset per test; the memo's
+ * own behavior is pinned in tests/ratelimit.unit.spec.ts.
+ */
+test.beforeEach(() => {
+  __resetSaltMemoForTests();
 });
 
 test('a burst of script/district/MCP traffic leaves both databases clean', async () => {

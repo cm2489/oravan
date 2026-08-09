@@ -25,7 +25,11 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  * CSPRNG output (never date-derived), created atomically (SET NX) with a 24h
  * TTL, and watched by a loud-failure age verifier (scripts/verify-salt.mjs,
  * nightly). Rotation bounds every pseudonym's lifetime to ≤24h, so a counter
- * can never quietly become a stable identifier.
+ * can never quietly become a stable identifier. Each instance memoizes the
+ * salt it read rather than re-reading it per request, but that memo expires
+ * with the record itself — see SALT_MEMO_MAX_AGE_MS below for its two bounds
+ * and the single degenerate case (an unreadable creation timestamp) in which
+ * the ceiling becomes 24h + 60s instead of exactly 24h.
  *
  * No slug, stance, locale, tool name, or any other content identifier may
  * ever appear in a counters key. The RouteName union enforces that the one
@@ -101,6 +105,57 @@ export type RouteName =
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
 
+/*
+ * SALT MEMO WINDOW (fix/dynamic-surface-smalls). Read this next to the
+ * rotation semantics above before changing the number.
+ *
+ * THE COST IT REMOVES: currentSalt used to issue a fresh GET on EVERY
+ * request, so the durable path was three serialized REST round-trips —
+ * GET salt, SET NX, INCR. /api/reps is the route where that hurts, because
+ * it is the one limiter that fires on PAGE RENDER rather than on a user
+ * action (components/ActionPanel.tsx fetches it from an effect whenever a
+ * ZIP is already stored), so a slow counters database stalled the rep panel
+ * for up to three 2s timeouts (lib/upstash.ts's REQUEST_TIMEOUT_MS) before
+ * failing open. Memoizing the salt removes the first of the three.
+ *
+ * WHY 60 SECONDS, AND WHY THAT DOESN'T EXTEND A PSEUDONYM'S LIFE:
+ * rotation is the privacy mechanism — a salt lives 24h (SET NX EX 86400),
+ * which is what bounds every caller hash's linkable lifetime to ≤24h. A memo
+ * is only safe if it cannot push a salt past its own death, so this one is
+ * bounded TWICE and always takes the tighter bound:
+ *
+ *   1. Wall-clock: 60s. Even if bound 2 were defeated entirely (a skewed
+ *      clock, an unparseable timestamp), an instance can serve a dead salt
+ *      for at most 60s — 0.069% of the 86,400s rotation, i.e. a 24h window
+ *      becomes at most 24h 1min. That is immaterial against a bound whose
+ *      whole job is "a counter can never quietly become a stable
+ *      identifier"; it stays a day, not a week.
+ *   2. The record's OWN expiry: the stored record carries `t`, its creation
+ *      time, and it was written with a 24h TTL, so it truly dies at
+ *      t + SALT_TTL_SECONDS. The memo never outlives that instant, so in the
+ *      normal case the extension is exactly ZERO seconds — the memo expires
+ *      when the salt does, and the next request re-reads and picks up the
+ *      successor.
+ *
+ * Bound 2 can only ever TIGHTEN the window (it is applied with Math.min), so
+ * clock skew between instances cannot lengthen anything: the worst a skewed
+ * clock buys is falling back to bound 1.
+ *
+ * THE ABSENCE SIGNAL: a memo is also dropped on any counters-database error
+ * (see createRateLimiter's catch) and on any unparseable/missing record, so
+ * a stale memo is never held across a failure that might BE the rotation.
+ * That path costs nothing — it degrades to exactly the pre-memo behavior,
+ * one GET per request, until the database answers cleanly again.
+ *
+ * NOT memoized: the counter itself. SET NX + INCR stay two commands because
+ * the TTL-at-creation ordering is what keeps a pseudonym from outliving its
+ * window (see durableCheck), and this repo's client speaks one command per
+ * request — collapsing them would mean teaching lib/upstash.ts Upstash's
+ * pipeline endpoint, which is a bigger, less obviously-correct change than
+ * the round-trip it saves is worth.
+ */
+const SALT_MEMO_MAX_AGE_MS = 60_000;
+
 // --- counters-database key builders (the whole registry) --------------------
 
 export function saltKey(): string {
@@ -150,13 +205,56 @@ export function parseSaltRecord(raw: string): SaltRecord | null {
   }
 }
 
+/**
+ * Per-instance memo of the current salt. Keyed by the salt key itself, so a
+ * keyPrefix change (dev / preview / production) can never be served a
+ * neighbour's salt. Module scope = per serverless instance, exactly like the
+ * in-memory fallback window below: nothing here is ever written anywhere.
+ */
+let saltMemo: { key: string; value: string; expiresAtMs: number } | null = null;
+
+/** Test seam only — module scope outlives a spec file's mocks otherwise. */
+export function __resetSaltMemoForTests(): void {
+  saltMemo = null;
+}
+
+/**
+ * Memoize a salt for at most SALT_MEMO_MAX_AGE_MS, and never past the
+ * record's own 24h death (t + SALT_TTL_SECONDS). Math.min means bound 2 can
+ * only tighten the window, never lengthen it — a record with an unreadable
+ * or skewed `t` falls back to the 60s wall-clock bound rather than gaining
+ * anything from the confusion.
+ */
+function rememberSalt(key: string, record: SaltRecord): string {
+  const createdMs = Date.parse(record.t);
+  const recordDiesAtMs = Number.isFinite(createdMs)
+    ? createdMs + SALT_TTL_SECONDS * 1000
+    : Number.POSITIVE_INFINITY;
+  saltMemo = {
+    key,
+    value: record.v,
+    expiresAtMs: Math.min(Date.now() + SALT_MEMO_MAX_AGE_MS, recordDiesAtMs),
+  };
+  return record.v;
+}
+
+/** Drop the memo: the salt may be gone, and a guess is never better than a read. */
+function forgetSalt(): void {
+  saltMemo = null;
+}
+
 async function currentSalt(client: UpstashClient): Promise<string> {
-  const existing = await client.cmd(['GET', saltKey()]);
+  const key = saltKey();
+  const memo = saltMemo;
+  if (memo && memo.key === key && memo.expiresAtMs > Date.now()) return memo.value;
+
+  const existing = await client.cmd(['GET', key]);
   if (typeof existing === 'string') {
     const parsed = parseSaltRecord(existing);
-    if (parsed) return parsed.v;
+    if (parsed) return rememberSalt(key, parsed);
     // Unparseable record: don't guess, don't overwrite (the verifier will
     // fail loudly on it tonight). Treat as an error → fail open to memory.
+    forgetSalt();
     throw new Error('unusable salt record');
   }
   // No salt yet: create one atomically. SET NX means exactly one instance
@@ -167,16 +265,17 @@ async function currentSalt(client: UpstashClient): Promise<string> {
   };
   const created = await client.cmd([
     'SET',
-    saltKey(),
+    key,
     JSON.stringify(fresh),
     'NX',
     'EX',
     String(SALT_TTL_SECONDS),
   ]);
-  if (created === 'OK') return fresh.v;
-  const raced = await client.cmd(['GET', saltKey()]);
+  if (created === 'OK') return rememberSalt(key, fresh);
+  const raced = await client.cmd(['GET', key]);
   const parsed = typeof raced === 'string' ? parseSaltRecord(raced) : null;
-  if (parsed) return parsed.v;
+  if (parsed) return rememberSalt(key, parsed);
+  forgetSalt();
   throw new Error('salt create raced and re-read failed');
 }
 
@@ -298,6 +397,10 @@ export function createRateLimiter(opts: {
         return await core.durableCheck(client, key);
       } catch (err) {
         // Fail open to in-memory for this request; never hard-fail the route.
+        // Drop the salt memo first (the absence signal): whatever just failed
+        // might BE the rotation, and holding a memo across it is the one way
+        // a memoized salt could outlive the record it came from.
+        forgetSalt();
         noteUpstashError('counters', err);
         return core.memoryCheck(ip);
       }
@@ -330,10 +433,44 @@ export interface TenantRateLimiter {
   isLimited(tenantId: string): Promise<boolean>;
 }
 
+/*
+ * RATE LIMITS FAIL OPEN. SPEND BREAKERS FAIL CLOSED. (fix/dynamic-surface-smalls)
+ *
+ * Everything else in this module fails OPEN when the counters database
+ * errors — a route must never hard-fail because Upstash is unreachable, and
+ * the thing being protected is availability against a noisy caller. Letting
+ * a request through during an outage costs, at worst, some extra work.
+ *
+ * A SPEND breaker is not that. `brand-day` is a GLOBAL daily cap on an
+ * unauthenticated endpoint that spends real money per call (~$2/day at 250
+ * calls, app/api/brand/route.ts). Failing it open substitutes a per-INSTANCE
+ * in-memory counter for the global one, so during an Upstash outage the
+ * documented ~$2/day cap silently becomes ~$2/day PER SERVERLESS INSTANCE,
+ * multiplied by however many instances a distributed caller can cause to
+ * exist — precisely when nobody is watching. The honest answer for a guard
+ * whose state is unknown is to refuse the paid call: declining to spend is
+ * recoverable, and the caller-visible outcome is the same 429 the breaker
+ * already returns when it legitimately trips (the /embeds UI's existing
+ * "set the colors manually" path), so this costs no new copy in either
+ * language.
+ *
+ * `failClosed` applies to the ERROR path only — "configured, but this
+ * request could not reach it", which is the outage this exists for. The
+ * UNCONFIGURED path (no env at all: local dev, CI, previews without env)
+ * deliberately keeps the in-memory fallback: that is not an unknown state,
+ * it is a deployment that has opted out of durable counters entirely, it is
+ * already announced by logFallbackOnce()'s single startup line, and making
+ * it refuse would dark the feature on every developer's machine and in CI
+ * to guard against a misconfiguration that would equally have disabled every
+ * other limiter in the product. That asymmetry is a judgment call, so it is
+ * written down here rather than left to be rediscovered.
+ */
 export function createTenantRateLimiter(opts: {
   route: RouteName;
   max: number;
   windowSec: number;
+  /** Spend breakers only: an unreachable counters database means REFUSE. */
+  failClosed?: boolean;
 }): TenantRateLimiter {
   const core = windowedCounterCore(opts);
 
@@ -349,6 +486,10 @@ export function createTenantRateLimiter(opts: {
         return (await core.durableCheck(client, key)).limited;
       } catch (err) {
         noteUpstashError('counters', err);
+        // The one place in this module that does NOT fail open — see the
+        // doctrine comment above. Reported as "limited" because that is what
+        // the caller must do about it: not spend.
+        if (opts.failClosed) return true;
         return core.memoryCheck(tenantId).limited;
       }
     },
