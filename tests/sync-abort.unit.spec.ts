@@ -6,7 +6,11 @@ import { expect, test } from '@playwright/test';
 // that now wraps that script's body: without the guard, importing the module
 // runs a live sync and this whole file dies at import time on a missing
 // CONGRESS_API_KEY. If this spec ever fails to load, look there first.
-import { MOSTLY_FAILED_FLOOR, shouldAbortMostlyFailed } from '../scripts/sync-bills.mjs';
+import {
+  MOSTLY_FAILED_FLOOR,
+  mostlyFailedVerdict,
+  shouldAbortMostlyFailed,
+} from '../scripts/sync-bills.mjs';
 
 /*
  * Pins the minimum-sample floor on the nightly's "mostly failed" abort.
@@ -29,6 +33,10 @@ import { MOSTLY_FAILED_FLOOR, shouldAbortMostlyFailed } from '../scripts/sync-bi
 
 const abort = shouldAbortMostlyFailed as (failed: number, total: number) => boolean;
 const FLOOR = MOSTLY_FAILED_FLOOR as number;
+
+type Tallies = { ascendingFailed?: number; forceFailed?: number; windowSize?: number };
+type Verdict = { abort: boolean; underFloor: boolean; ignoredForceFailures: number };
+const verdict = mostlyFailedVerdict as (t: Tallies) => Verdict;
 
 test.describe('shouldAbortMostlyFailed (nightly "mostly failed" abort)', () => {
   test('the floor is 8 - retuning it is a deliberate act, not a drive-by', () => {
@@ -75,5 +83,68 @@ test.describe('shouldAbortMostlyFailed (nightly "mostly failed" abort)', () => {
     expect(abort(0, 1)).toBe(false);
     expect(abort(0, 500)).toBe(false);
     expect(abort(1, 500)).toBe(false);
+  });
+});
+
+/*
+ * The NUMERATOR's scope, which was the other half of the same bug.
+ *
+ * `failed` was compared against the ascending pass's `updated.length` while
+ * also absorbing failures from the force-slug direct-fetch loop - a loop that
+ * contributes nothing to that window. FORCE_DECODE_SLUGS is owner input for a
+ * manual catch-up run (or newsdesk.mjs's in-process trigger list), so a single
+ * typo'd or untracked slug counted against a denominator it was never part of:
+ * on a quiet night - window of 2, one bad slug - that alone satisfied "more
+ * than half" and ended a run whose backlog scan was perfectly healthy.
+ *
+ * Keeping the two tallies apart is now a property of the code (the verdict
+ * function takes forceFailed and provably never feeds it to the predicate)
+ * rather than a comment asking to be believed.
+ */
+test.describe('mostlyFailedVerdict (which failures the abort is allowed to judge)', () => {
+  test('a bad FORCE_DECODE_SLUGS entry cannot end a healthy night', () => {
+    // The exact shape: a big, healthy ascending window; the owner's force list
+    // has one dud in it.
+    const v = verdict({ ascendingFailed: 0, forceFailed: 1, windowSize: 10 });
+    expect(v.abort).toBe(false);
+    expect(v.ignoredForceFailures).toBe(1);
+    // Folded in the old way, this is 1 of 10 - still fine. The quiet-night
+    // shape below is where it actually cost a run.
+  });
+
+  test('force-slug failures are excluded even when they would have flipped the verdict', () => {
+    // 5 of 8 was an abort; 0 of 8 is not. Same run, and the only difference is
+    // whose failures get counted.
+    expect(verdict({ ascendingFailed: 0, forceFailed: 5, windowSize: 8 }).abort).toBe(false);
+    expect(abort(5, 8)).toBe(true); // what the old, conflated counter computed
+    // A whole force list that failed still can't end the night on its own.
+    expect(verdict({ ascendingFailed: 0, forceFailed: 40, windowSize: 40 }).abort).toBe(false);
+  });
+
+  test('a genuinely broken backlog scan still aborts, force list or not', () => {
+    expect(verdict({ ascendingFailed: 5, forceFailed: 0, windowSize: 8 }).abort).toBe(true);
+    expect(verdict({ ascendingFailed: 300, forceFailed: 2, windowSize: 500 }).abort).toBe(true);
+  });
+
+  test('the under-floor log fires on the same runs it always did', () => {
+    // Over half, under the floor: logged, never fatal.
+    const v = verdict({ ascendingFailed: 2, forceFailed: 0, windowSize: 3 });
+    expect(v.abort).toBe(false);
+    expect(v.underFloor).toBe(true);
+    // An aborting run is not ALSO reported as under-floor.
+    expect(verdict({ ascendingFailed: 5, forceFailed: 0, windowSize: 8 }).underFloor).toBe(false);
+    // A clean run is neither.
+    const clean = verdict({ ascendingFailed: 0, forceFailed: 0, windowSize: 12 });
+    expect(clean.abort).toBe(false);
+    expect(clean.underFloor).toBe(false);
+    // ...and force failures don't drag the under-floor log in either.
+    expect(verdict({ ascendingFailed: 0, forceFailed: 3, windowSize: 3 }).underFloor).toBe(false);
+  });
+
+  test('a night with nothing to judge is silent', () => {
+    const v = verdict({});
+    expect(v.abort).toBe(false);
+    expect(v.underFloor).toBe(false);
+    expect(v.ignoredForceFailures).toBe(0);
   });
 });

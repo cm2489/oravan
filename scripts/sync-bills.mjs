@@ -70,6 +70,44 @@
  * recent bill happened to get handled out of order. See
  * docs/solutions/pinned-sync-cursor.md for why an all-or-nothing cursor is
  * exactly the failure this preserves the fix for.
+ *
+ * A TRUNCATED WINDOW IS UNFINISHED WORK TOO (2026-08-09). The ascending
+ * pass fetches at most MAX_UPDATES (500) bills per run and processes
+ * `updated.slice(0, MAX_UPDATES)` - the OLDEST 500 of whatever Congress.gov
+ * reports since the cursor. Everything past that line used to be dropped on
+ * the floor: nothing set `frozen`, so a run that was otherwise clean
+ * persisted `runStart` as the new cursor and the deferred tail - bills the
+ * API had just told us about - fell permanently outside every future
+ * window, unless Congress.gov happened to touch them again. Not a corner
+ * case: a single missed nightly overflows the cap (measured live 2026-08-08
+ * against the tracked types - 24h ~337 bills, 2 days ~504, 3 days ~674), so
+ * every catch-up run silently ate ~174 bills. The window being cut short is
+ * now tracked in its own flag and folded into the SAME cursor decision as
+ * `frozen` (see resolveNextSync): the cursor advances only to the newest
+ * bill this run actually processed, so tomorrow's window reopens on the
+ * tail instead of stepping over it.
+ *
+ * It is a separate flag rather than a reuse of `frozen` for one concrete
+ * reason: `frozen` is read INSIDE the processing loop (`else if (!frozen...)`)
+ * to stop the high-water mark, so anything that sets it before or during the
+ * loop pins the cursor at `since` and stalls the backlog outright - the exact
+ * 24-day failure docs/solutions/pinned-sync-cursor.md exists for. Truncation
+ * is known before the loop runs. Two flags, one decision function, no
+ * ordering trap for whoever edits this next.
+ *
+ * WHAT IS ON DISK WHEN PASS 2 THROWS (2026-08-09). The corpus files are
+ * written TWICE now: once after the recent-first pass, once at the end.
+ * Pass 2's very first act is a paginated Congress.gov call, and cg()
+ * exhausting its five retries during a 5xx window throws out of the whole
+ * script - which used to discard everything pass 1 had already PAID
+ * Anthropic for (up to RECENT_DECODE_RESERVE new bills, two model calls
+ * each), because the only write was at the bottom of this file. The
+ * mid-run write persists the corpus ONLY - data/sync-state.json is
+ * deliberately left alone, because pass 2 is what earns the cursor and it
+ * did not run. So the crash leaves a corpus that gained bills and a cursor
+ * that did not move: the night's decodes land in sync-bills.yml's salvage
+ * bundle instead of dying with the runner, and re-running simply re-scans
+ * the same window and refreshes (free) the bills already in it.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { writeFileSync } from 'node:fs';
@@ -133,6 +171,83 @@ export function shouldAbortMostlyFailed(failed, total) {
   return total >= MOSTLY_FAILED_FLOOR && failed > total / 2;
 }
 
+/**
+ * The whole abort decision, numerator included - exported so the SCOPE of
+ * that numerator is a tested property of the code rather than a comment
+ * asking to be believed.
+ *
+ * The predicate above compares failures against `updated.length`, the
+ * ascending pass's window. The counter fed to it also absorbed failures
+ * from the force-slug direct-fetch loop, which is not part of that window
+ * at all: one bad FORCE_DECODE_SLUGS entry (a typo, a bill in a Congress we
+ * don't track) counted against a denominator it never contributed to, and
+ * on a quiet night - window of 2, one bad slug - that alone satisfied
+ * "more than half" and ended a run whose real work was fine. Force-slug
+ * failures are an owner-input problem, so they are counted, reported, and
+ * kept out of the arithmetic; they still can't freeze the cursor either
+ * (see the force loop below).
+ *
+ * @param {{ascendingFailed?: number, forceFailed?: number, windowSize?: number}} tallies
+ * @returns {{abort: boolean, underFloor: boolean, ignoredForceFailures: number}}
+ */
+export function mostlyFailedVerdict({ ascendingFailed = 0, forceFailed = 0, windowSize = 0 } = {}) {
+  const abort = shouldAbortMostlyFailed(ascendingFailed, windowSize);
+  return {
+    abort,
+    // Over half, but the sample is too small for "majority" to carry a
+    // signal - logged, never fatal. See MOSTLY_FAILED_FLOOR above.
+    underFloor: !abort && ascendingFailed > windowSize / 2,
+    ignoredForceFailures: forceFailed,
+  };
+}
+
+/**
+ * Where the ascending pass's cursor lands at the end of a run - the one
+ * place `state.lastSync` is decided, extracted pure so the arithmetic that
+ * governs whether a bill is EVER seen again can be unit-tested without a
+ * live sync.
+ *
+ * Three inputs can each stop the cursor short of "we're caught up":
+ *   - `frozen`: a bill INSIDE the processed window still needs work (decode
+ *     budget exhausted, or a new bill whose decode failed). Long-standing
+ *     behavior; the high-water mark stops at the bill before it.
+ *   - `truncated`: the window itself was cut short at MAX_UPDATES, so bills
+ *     Congress.gov reported were never processed. Added 2026-08-09 - see the
+ *     header comment. Same consequence, different cause, and both must pin
+ *     the cursor to the high-water mark rather than jump to `runStart`.
+ *   - neither: a genuinely complete run advances to `runStart`.
+ *
+ * `stalled` is reported (never acted on here) for the one shape that makes
+ * no forward progress: a truncated window whose high-water mark didn't get
+ * past `since`, i.e. 500+ tracked bills sharing the cursor's own timestamp.
+ * Congress.gov's bill-list `updateDate` is a bare DATE, so that means one
+ * calendar day overflowing the cap - well above the ~337/day measured, but
+ * possible, and it would re-scan the same window nightly forever. The caller
+ * warns; verify-sync.mjs's CURSOR_MAX_AGE_DAYS=10 fails the run outright
+ * within ten nights. Deliberately NOT "advance a second past `since` to
+ * break the tie": that would skip real bills, and nothing here knows the
+ * sub-day precision Congress.gov compares `fromDateTime` against.
+ *
+ * Both branches pass through toISODateTime because BOTH have shipped an
+ * outage: a bare-date cursor 400s (2026-06-25/07-01) and so do
+ * Date.toISOString() milliseconds, which `runStart` carries (07-17/07-22).
+ *
+ * @param {{since: string, highWater: string, runStart: string, frozen?: boolean, truncated?: boolean}} args
+ * @returns {{lastSync: string, reason: 'clean'|'frozen'|'truncated'|'frozen+truncated', stalled: boolean}}
+ */
+export function resolveNextSync({ since, highWater, runStart, frozen = false, truncated = false }) {
+  if (!frozen && !truncated) {
+    return { lastSync: toISODateTime(runStart), reason: 'clean', stalled: false };
+  }
+  const lastSync = toISODateTime(highWater);
+  const reason = frozen ? (truncated ? 'frozen+truncated' : 'frozen') : 'truncated';
+  return {
+    lastSync,
+    reason,
+    stalled: truncated && Date.parse(lastSync) <= Date.parse(toISODateTime(since)),
+  };
+}
+
 // Everything below runs ONLY when this file is executed as a script
 // (`node scripts/sync-bills.mjs`, which is how sync-bills.yml runs it) - the
 // same argv[1] guard scripts/moment-updates.mjs uses. Importing this module
@@ -177,6 +292,19 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
 
   const ctxBase = { bills, es, bySlug, anthropic, forceSlugs };
 
+  // The corpus pair, always written together: syncOneBill fills es[slug] and
+  // pushes the bill in the same synchronous breath after a decode returns, so
+  // any snapshot taken between bills already satisfies verify-sync.mjs's
+  // EN/ES parity check. Plain writeFileSync, matching every other script in
+  // scripts/ (and backfill-search-inputs.mjs's mid-run checkpoint precedent);
+  // there is no temp-file-and-rename convention in this repo to match, and
+  // inventing one here would leave a stray data/*.tmp for `git add data/` to
+  // sweep into the salvage commit on exactly the crash path this exists for.
+  const writeCorpus = () => {
+    writeFileSync('data/bills.json', JSON.stringify(bills));
+    writeFileSync('data/bills-es.json', JSON.stringify(es));
+  };
+
   // ---- Pass 1: recent-first (audit §5 item 2) ----------------------------
   // Guarantees this run always sees the most recently-touched bills in
   // Congress, no matter how deep the ascending backlog is. `handledSlugs`
@@ -204,12 +332,27 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   }
   console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} added+decoded, ${recentGated} gated (no real motion), ${recentDeferred} deferred (reserve exhausted), ${recentFailed} failed`);
 
+  // PERSIST WHAT PASS 1 ALREADY PAID FOR, before pass 2 gets the chance to
+  // throw. Corpus only - the cursor belongs to pass 2 and pass 2 hasn't run.
+  // See "WHAT IS ON DISK WHEN PASS 2 THROWS" in the header comment.
+  writeCorpus();
+  console.log(`recent-first pass persisted to data/ (corpus only; the cursor stays at ${since} until the backlog pass finishes)`);
+
   // ---- Pass 2: ascending backlog scan from the cursor ---------------------
   // Unchanged shape from before the two-pass fetch - see the header comment.
   // The freeze-on-incomplete-work cursor logic below is tied ONLY to this
   // pass; pass 1 above never touches `cursor`/`frozen`.
   const updated = [];
   let offset = 0;
+  // Did Congress.gov still have pages we chose not to fetch when we stopped?
+  // `pagination.next` at the moment the MAX_UPDATES cap ends the loop is the
+  // only honest answer: the cap, not the API, ended the scan.
+  let unfetchedPagesRemain = false;
+  // The API's own count for this window. Reported as-is and labelled as such
+  // in the truncation warning, because it counts EVERY bill type - including
+  // the hres/sres this pipeline deliberately doesn't track - so it is an
+  // upper bound on the deferred tail, never a measurement of it.
+  let reportedWindowTotal = null;
   for (;;) {
     const page = await cg(`/bill/${CONGRESS}`, {
       // Space, not "+": URLSearchParams turns the space into the "+" the API
@@ -221,8 +364,21 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     const items = page.bills ?? [];
     updated.push(...items.filter((b) => BILL_TYPES.has((b.type ?? '').toLowerCase())));
     offset += 250;
-    if (!page.pagination?.next || updated.length >= MAX_UPDATES) break;
+    if (Number.isFinite(page.pagination?.count)) reportedWindowTotal = page.pagination.count;
+    const morePages = Boolean(page.pagination?.next);
+    // Same two break conditions as before, split apart only so the cap-side
+    // exit can record whether anything was left unfetched behind it.
+    if (updated.length >= MAX_UPDATES) {
+      unfetchedPagesRemain = morePages;
+      break;
+    }
+    if (!morePages) break;
   }
+  // Bills the API handed us that this run will not process: the slice below
+  // takes the oldest MAX_UPDATES and stops. Anything past that line, plus any
+  // page we never fetched, is the deferred tail the cursor must not step over.
+  const deferredInWindow = Math.max(0, updated.length - MAX_UPDATES);
+  const windowTruncated = deferredInWindow > 0 || unfetchedPagesRemain;
   console.log(`${updated.length} updated bills (capped at ${MAX_UPDATES})`);
 
   let queued = 0, failed = 0;
@@ -275,7 +431,11 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // catch-up gap: "0 failed", bills absent). A force list is an explicit
   // owner order: any listed slug the passes didn't resolve gets fetched
   // directly by number. Failures log loudly but never freeze the cursor -
-  // a bad slug must not stall the nightly backlog.
+  // a bad slug must not stall the nightly backlog. They are counted in their
+  // OWN tally for the same reason they don't freeze anything: this loop is
+  // not part of the ascending window the abort at the bottom judges. See
+  // mostlyFailedVerdict.
+  let forceFailed = 0;
   for (const slug of forceSlugs) {
     if (handledSlugs.has(slug)) continue;
     const m = slug.match(/^([a-z]+)-(\d+)-\d+$/);
@@ -287,20 +447,43 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
     if (result.outcome === 'refreshed') refreshed++;
     else if (result.outcome === 'added') added++;
-    else if (result.outcome === 'failed') failed++;
+    else if (result.outcome === 'failed') forceFailed++;
     handledSlugs.add(slug);
   }
+  if (forceFailed) {
+    console.log(
+      `::warning::${forceFailed} FORCE_DECODE_SLUGS entr(ies) failed their direct fetch (reasons in the FAIL lines above; ${forceSlugs.size} slug(s) were listed, and any the two passes already resolved were never direct-fetched). Check the slugs. This does NOT count toward the mostly-failed abort and never freezes the cursor.`
+    );
+  }
 
-  // Clean run (nothing left behind) advances to runStart; otherwise advance to
-  // the high-water mark so we still make forward progress instead of re-scanning
-  // the same window forever. Both paths pass through toISODateTime: runStart
-  // carries Date.toISOString() milliseconds, which poison the next run's
-  // fromDateTime (the 07-17/07-22 outage).
-  state.lastSync = toISODateTime(frozen ? cursor : runStart);
+  // Where the cursor lands. A run that left nothing behind advances to
+  // runStart; a frozen one, or one whose window was truncated at MAX_UPDATES,
+  // advances only to the high-water mark - the newest bill this run actually
+  // processed - so the deferred tail re-enters tomorrow's window instead of
+  // falling out of every future one. The arithmetic (and why the two causes
+  // share one decision) is in resolveNextSync near the top of this file.
+  const next = resolveNextSync({ since, highWater: cursor, runStart, frozen, truncated: windowTruncated });
+  state.lastSync = next.lastSync;
   state.lastRun = runStart;
 
-  writeFileSync('data/bills.json', JSON.stringify(bills));
-  writeFileSync('data/bills-es.json', JSON.stringify(es));
+  if (windowTruncated) {
+    const why = [];
+    if (deferredInWindow) why.push(`${deferredInWindow} already-fetched bill(s) went unprocessed`);
+    if (unfetchedPagesRemain) why.push('Congress.gov still had pages this run never fetched');
+    if (reportedWindowTotal !== null) {
+      why.push(`the API reported ${reportedWindowTotal} record(s) in this window (ALL bill types, including the ones we don't track - an upper bound on the tail, not a count of it)`);
+    }
+    console.log(
+      `::warning::backlog window truncated at MAX_UPDATES=${MAX_UPDATES}: ${why.join('; ')}. The cursor advances only to ${next.lastSync} (the newest bill this run finished), so the deferred tail comes back tomorrow instead of being skipped forever. A cap hit on consecutive nights means the backlog is outrunning the cap - raise MAX_UPDATES for a catch-up run.`
+    );
+  }
+  if (next.stalled) {
+    console.log(
+      `::warning::the truncated window made NO forward progress: the cursor stays at ${next.lastSync} because every bill this run finished shares that timestamp (over ${MAX_UPDATES} tracked bills on one Congress.gov updateDate). Tomorrow re-scans the same window. Raise MAX_UPDATES to clear it; verify-sync.mjs fails the run outright once the cursor passes 10 days.`
+    );
+  }
+
+  writeCorpus();
   writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 
   // New bills seen this run, deduped across both passes: every new-bill slug
@@ -309,22 +492,23 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // resolves is NOT double-counted - see recentDeferred's comment above).
   const newSeen = added + gated + queued + newFailed;
   console.log(
-    `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${failed} failed (${newFailed} new); new bills seen this run: ${newSeen}; corpus ${bills.length}`
+    `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${failed} failed in the ascending pass (${newFailed} new), ${recentFailed} in the recent-first pass, ${forceFailed} force-slug; cursor -> ${state.lastSync} (${next.reason}); new bills seen this run: ${newSeen}; corpus ${bills.length}`
   );
-  // Mostly-failed run: don't let CI commit garbage. Compared against the
-  // ascending pass's own updated.length exactly as before the two-pass fetch -
-  // the recent-first pass's (much smaller, logged-separately) failures don't
-  // feed this check, though a force-slug direct-fetch failure above does
-  // increment `failed`. The minimum-sample floor - and why a single transient
-  // failure must not be allowed to end the night - is at
+  // Mostly-failed run: don't let CI commit garbage. Judged on the ascending
+  // pass ALONE - its own failures against its own window - so neither the
+  // recent-first pass (logged separately, different window) nor a bad
+  // FORCE_DECODE_SLUGS entry (owner input, not a window at all) can end a
+  // night whose backlog scan was healthy. The minimum-sample floor - and why
+  // a single transient failure must not be allowed to end the night - is at
   // shouldAbortMostlyFailed near the top of this file.
-  if (shouldAbortMostlyFailed(failed, updated.length)) {
+  const verdict = mostlyFailedVerdict({ ascendingFailed: failed, forceFailed, windowSize: updated.length });
+  if (verdict.abort) {
     console.error(
       `::error::mostly-failed run: ${failed} of ${updated.length} bills in the ascending pass failed. Nothing is committed tonight.`
     );
     process.exit(1);
   }
-  if (failed > updated.length / 2) {
+  if (verdict.underFloor) {
     console.log(
       `${failed} of ${updated.length} ascending-pass bills failed - over half, but under the ${MOSTLY_FAILED_FLOOR}-bill floor where "mostly failed" carries any signal, so this run continues to the gates.`
     );
