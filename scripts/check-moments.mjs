@@ -211,35 +211,59 @@ for (const [lang, doc] of Object.entries(messages)) {
  *   2. A depth-1 fetch of origin/main, because ci.yml checks out at depth 1
  *      and a PR run has no origin/main ref without it. FETCH_HEAD is exactly
  *      "main as of this run", which is the same baseline the merge will face.
- *   3. Neither — a LOUD warning and the rule is skipped, never guessed. On
- *      pushes to main both refs equal HEAD, every pair is on the baseline,
- *      and the rule is a deliberate no-op: enforcement lives at PR time, the
- *      only path a moment enters this file (bots never write it).
+ *   3. Neither — the rule is skipped, never guessed. On pushes to main both
+ *      refs equal HEAD, every pair is on the baseline, and the rule is a
+ *      deliberate no-op: enforcement lives at PR time, the only path a moment
+ *      enters this file (bots never write it).
+ *
+ * Step 3 used to be a warning EVERYWHERE, including in CI — which meant the
+ * one rule that needs main to exist was, on the runner that is the merge
+ * gate, enforced entirely by step 2's network call, and a skipped rule and a
+ * passed rule printed the same green check. --require-baseline makes an
+ * unresolvable baseline a hard failure; ci.yml passes it, and also fetches
+ * origin/main up front so step 1 answers offline and step 2 is a fallback
+ * again rather than the whole mechanism. The resolution PATH is printed
+ * either way, so a run says out loud which of the three it took.
  */
+const REQUIRE_BASELINE = process.argv.includes('--require-baseline');
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const git = (args, opts = {}) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], ...opts });
 function baselineVehiclePairs() {
   const ref = process.env.MOMENTS_BASE_REF ?? 'origin/main';
   let base;
+  let source;
   try {
     base = JSON.parse(git(['show', `${ref}:data/moments.json`]));
+    source = ref;
   } catch {
     try {
       git(['fetch', '--no-tags', '--depth=1', 'origin', 'main'], { stdio: 'ignore' });
       base = JSON.parse(git(['show', 'FETCH_HEAD:data/moments.json']));
+      source = 'FETCH_HEAD (fetched origin/main)';
     } catch {
-      return undefined;
+      return { pairs: undefined, source: null };
     }
   }
   const pairs = new Set();
   for (const [id, m] of Object.entries(base)) {
     for (const v of m?.vehicles ?? []) if (v?.slug) pairs.add(`${id}|${v.slug}`);
   }
-  return pairs;
+  return { pairs, source };
 }
-const baselineVehicles = baselineVehiclePairs();
+const { pairs: baselineVehicles, source: baselineSource } = baselineVehiclePairs();
 if (baselineVehicles === undefined) {
-  console.warn('::warning::check-moments: no baseline for data/moments.json (no origin/main ref and the fetch failed) — the new-vehicle terminality rule was SKIPPED, not passed');
+  const message =
+    'no baseline for data/moments.json (no origin/main ref and the fetch failed) — the new-vehicle terminality rule was SKIPPED, not passed';
+  if (REQUIRE_BASELINE) {
+    console.error(`::error::check-moments: ${message}. --require-baseline was passed, so this is a failure: fetch origin/main before this gate runs, or set MOMENTS_BASE_REF to a resolvable ref.`);
+    process.exit(1);
+  }
+  console.warn(`::warning::check-moments: ${message}`);
+} else {
+  // The line the CI wiring test greps for. It names the ref that answered, so
+  // "the baseline resolved" is a claim the log can be checked against rather
+  // than an assumption.
+  console.log(`check-moments: new-vehicle terminality baseline resolved from ${baselineSource} (${baselineVehicles.size} vehicle pair(s))`);
 }
 
 const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor, {
