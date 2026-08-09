@@ -16,7 +16,7 @@ These were settled by the owner over multiple rounds. **Do not re-derive them, d
 |---|---|---|---|
 | `go` | `#0f6c4a` | **GO** | Actions (buttons, the dial, content links) and the 6px gauge. **Nothing else.** Not a heading, not a rule, not a hover tint on a topic. |
 | `tint` | `#e7f2ec` | **YOURS** | What the user picked, typed, or was handed — a chosen stance, an editable script, a filled slot. **Never a topic tag, never a status, never decoration.** |
-| `urgent` | `#ffc845` | **one dated fact** | A bill standing on the floor calendar. Always with **ink** text. The date is always **printed** beside it. No date, no amber. |
+| `urgent` | `#ffc845` | **one dated fact** | One dated FLOOR fact — a calendar placement, or a pending floor vote. Always with **ink** text. The date is always **printed** beside it. No date, no amber. |
 | `alert` | `#8c3a1f` | **failure** | Failure, and only failure. Never a warning, never an emphasis. |
 | `ink` | `#16191b` | everything else | All other text, every component edge, every dark ground — **including every topic tag in every state** (rest, hover, active, visited). |
 
@@ -134,7 +134,9 @@ Build against **live data in `data/`**, never against the mockups' fiction.
 >
 > So *"House floor vote scheduled Thu, Jul 24"* **cannot be built from live data.** The strongest derivable claim is *"On the House floor calendar · Jul 20, 2026"* (`last_action_date`), which keeps the amber chip, the printed date, and the one-panel cap intact but states a weaker fact.
 >
-> `FloorVotePanel` therefore takes a caller-supplied, already-localized `dateLabel` and **refuses to render without one**. Until the owner rules, pass the calendar-placement date — do **not** synthesize or imply a scheduled vote date. The alternative is adding a scheduled-date field to the sync pipeline.
+> `FloorVotePanel` therefore takes a caller-supplied, already-localized `dateLabel` and **refuses to render without one**. Until the owner rules, pass the date of the action itself — do **not** synthesize or imply a scheduled vote date. The alternative is adding a scheduled-date field to the sync pipeline.
+>
+> **RULED 2026-08-09 — WHICH FACT, not which date.** The date question above is still open; *what the amber may assert* is now settled. The gate was calendar placements alone, and that made the crown structurally backward-looking: Congress overwrites `last_action_text`, so the moment a bill drew real floor action — a cloture motion filed, a motion to proceed made — its placement sentence vanished and the panel dropped it, running one to two days behind the week's actual floor fights. Amber may now carry **either** of two dated floor facts: *on the floor calendar*, or *a floor vote is pending*. `lib/journey.ts`'s `floorPendingChamber` is the second gate — an ordered **allow-list** with a settled-guard first, so a rejected motion to proceed or a cloture motion that was not invoked can never wear the crown, and a phrasing we have never seen fails closed to a quiet week rather than open to a false claim. Everything else in this ruling stands: still one dated fact, still printed, still capped at one panel per page, still no claim about *when* the vote happens.
 
 ---
 
