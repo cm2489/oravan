@@ -184,11 +184,26 @@ export function floorActionChamber(actionText: string | null): Chamber | null {
  * "(CR SN)", "(consideration: CR SN)" — so an anchored pattern would match
  * the fixture and miss the record.
  */
+/*
+ * THE SETTLED VOCABULARY — one constant, because two functions must never
+ * disagree about it.
+ *
+ * floorPendingChamber uses it as its rule-0 guard ("this already resolved, so
+ * nothing is pending"); floorSettledChamber below uses it as its ENTRY
+ * condition ("this already resolved, so say so"). Those are the two halves of
+ * one split, and the whole point of the split is that every floor text lands
+ * on exactly one side. Written twice, a word added to one copy would create
+ * texts that are neither pending nor settled — which is precisely the silent
+ * gap that let a rejected motion print "the Senate is deciding whether to
+ * bring it to a vote". Written once, the split stays total by construction.
+ */
+const FLOOR_SETTLED = /\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i;
+
 export function floorPendingChamber(actionText: string | null): Chamber | null {
   if (!actionText) return null;
   // (0) THE SETTLED GUARD, first and unconditional: the record says this
   //     already resolved, so nothing is pending no matter what else it says.
-  if (/\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i.test(actionText)) {
+  if (FLOOR_SETTLED.test(actionText)) {
     return null;
   }
   // (1) A cloture motion PRESENTED is the Senate scheduling its own vote.
@@ -205,6 +220,48 @@ export function floorPendingChamber(actionText: string | null): Chamber | null {
   if (/rules committee resolution .*reported to house/i.test(actionText)) return 'house';
   // Everything else: the record did not say a vote is coming, so we do not.
   return null;
+}
+
+/*
+ * THE OTHER HALF OF THE SPLIT — has the floor ALREADY answered, and where?
+ *
+ * floorPendingChamber says "a vote is still ahead". This says the opposite in
+ * the record's own words: the chamber took up the question of bringing this
+ * measure to a vote and the answer was no. Rejected motions to proceed,
+ * rejected discharge motions, cloture not invoked.
+ *
+ * WHY THIS FUNCTION HAD TO EXIST RATHER THAN REUSING floorActionChamber.
+ * deriveJourney used to print "the {chamber} is deciding whether to bring it
+ * to a vote" for every floor text floorActionChamber could pin a chamber on —
+ * and floorActionChamber answers a different question entirely. It asks
+ * "WHICH chamber does this sentence belong to", never "what did that chamber
+ * DO", so it happily classified all 18 of the corpus's failed-motion texts and
+ * the stepper announced a live deliberation over each one. S.J.Res. 172 —
+ * itself a vehicle of a live Big Question — printed "Right now: the Senate is
+ * deciding whether to bring it to a vote" three lines above its own record
+ * saying the discharge motion was rejected 47–48 on 2026-06-16. The chamber
+ * was right; the verb was a fabrication.
+ *
+ * THE GATE IS THE VOCABULARY, NOT THE CHAMBER. A text only reaches the chamber
+ * lookup once FLOOR_SETTLED has matched, so "Considered by Senate" — readable
+ * chamber, no settled word — does NOT get called a failed motion. It falls
+ * through to the caller's residual branch, exactly as it does today. Both
+ * directions fail closed: we never claim a vote is coming, and we never claim
+ * one died.
+ *
+ * MUTUALLY EXCLUSIVE WITH BOTH ITS NEIGHBOURS, by construction rather than by
+ * promise. Against floorPendingChamber: FLOOR_SETTLED is that function's
+ * rule 0, so a text cannot be both. Against floorCalendarChamber: the explicit
+ * guard below, so a live placement that happens to mention a rejected
+ * amendment somewhere in its sentence stays a placement. tests/journey.unit
+ * .spec.ts pins all three pairings over the live corpus.
+ */
+export function floorSettledChamber(actionText: string | null): Chamber | null {
+  if (!actionText) return null;
+  if (!FLOOR_SETTLED.test(actionText)) return null;
+  // A dated calendar placement is a live fact, whatever else the sentence says.
+  if (floorCalendarChamber(actionText)) return null;
+  return floorActionChamber(actionText);
 }
 
 /**
@@ -276,17 +333,109 @@ export interface LiveCallTarget {
  * guess a chamber — owner ruling 2026-08-04). Demote, never bury: consumers
  * reorder and annotate; no office ever loses its dial.
  */
+/**
+ * WHICH PASSAGE IS THIS — the four states `passed_chamber` collapses into,
+ * and the reason a bill type can no longer answer for them.
+ *
+ *   'first'  the ORIGINATING chamber passed it; the other chamber is next.
+ *            250 of the corpus's 274 passed_chamber records ("Received in the
+ *            Senate.", "Held at the desk.") plus the 18 that report the
+ *            origin chamber's own passage.
+ *   'back'   the SECOND chamber passed it WITH CHANGES, so it returns to the
+ *            originating chamber to concur before it can go anywhere.
+ *   'both'   the second chamber passed it WITHOUT amendment. The two chambers
+ *            hold identical text, Congress is finished, and the next signature
+ *            is the President's. NO chamber is a live call.
+ *   'second' the second chamber passed it and the sentence does not say
+ *            whether it was amended. We know both chambers have acted and
+ *            nothing more, so we claim nothing more.
+ *
+ * WHAT THIS REPLACED, AND WHY IT WAS WRONG. liveCallTarget derived the target
+ * chamber from `bill_type` alone: an `hr` bill routed to the Senate, always.
+ * That is a statement about where a bill STARTED masquerading as one about
+ * where it stands. H.R. 1276's last action on 2026-08-07 reads "Passed Senate
+ * without amendment by Unanimous Consent." — both chambers were done with it —
+ * and the page still printed "The House has already voted on this bill — the
+ * Senate decides next. Your senators are the live call." in the rail and in
+ * the call dialog, in both languages. Six corpus records passed by the second
+ * chamber were being described by the type of the paper they were written on;
+ * on the two amended ones (H.R. 6500, H.R. 5334) the named chamber was not
+ * merely stale but exactly backwards — the Senate had acted and the HOUSE held
+ * the next decision.
+ *
+ * FAIL-CLOSED, the same discipline as floorPendingChamber. Only a sentence
+ * that OPENS with Congress's own passage boilerplate is read at all; anything
+ * else returns 'first' and keeps the corpus-verified default that 250 records
+ * depend on. And a second-chamber passage whose amendment clause we cannot
+ * read returns 'second' — never 'both' — because "it goes to the President"
+ * and "it goes back to the House" are opposite claims and guessing between
+ * them is how this defect happened the first time. Every one of the 24 real
+ * passage sentences carries "without amendment", "with an amendment(s)", or
+ * "with an amendment and an amendment to the Title", so 'second' is
+ * unreachable on today's corpus and exists for the sentence Congress has not
+ * written yet.
+ */
+export type PassageStage = 'first' | 'back' | 'both' | 'second';
+
+export interface PassageState {
+  stage: PassageStage;
+  /** The chamber whose passage the last action reports, when it says. */
+  passedBy: Chamber | null;
+  /** The chamber that must act next — null when no chamber does. */
+  next: Chamber | null;
+}
+
+export function passageState(
+  bill: Pick<Bill, 'bill_type' | 'last_action_text'>
+): PassageState {
+  const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
+  const other: Chamber = origin === 'house' ? 'senate' : 'house';
+  const text = bill.last_action_text ?? '';
+  // Anchored: "Rule H. Res. 988 passed House." reports a RULE's passage, not
+  // this bill's, and an unanchored match would read it as one.
+  const passage = /^\s*Passed (House|Senate)\b/i.exec(text);
+  if (!passage) return { stage: 'first', passedBy: null, next: other };
+  const passedBy: Chamber = passage[1].toLowerCase() === 'senate' ? 'senate' : 'house';
+  // The originating chamber passing its own bill is the ordinary case, and an
+  // amendment adopted during that passage is just its own floor amendment —
+  // it changes nothing about who acts next.
+  if (passedBy === origin) return { stage: 'first', passedBy, next: other };
+  // Past here the SECOND chamber has passed it, and only the amendment clause
+  // decides between the President and a trip back.
+  if (/\bwithout amendment\b/i.test(text)) {
+    return { stage: 'both', passedBy, next: null };
+  }
+  if (/\bwith (?:an? )?amendments?\b/i.test(text)) {
+    return { stage: 'back', passedBy, next: origin };
+  }
+  return { stage: 'second', passedBy, next: null };
+}
+
 export function liveCallTarget(
   bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text'>
 ): LiveCallTarget | null {
   if (bill.status === 'floor_vote') {
+    // floorPendingChamber, NOT floorActionChamber. This is the strongest
+    // sentence on the page — "this bill is in the Senate's hands right now" —
+    // and floorActionChamber only ever knew WHICH chamber the sentence was
+    // about, never whether that chamber still had a decision to make. It
+    // therefore handed the live-call line to all 18 of the corpus's settled
+    // texts: S.J.Res. 103's own record says the motion to proceed was
+    // rejected 48–50 on 2026-03-25, and the rail called it live. A settled or
+    // unreadable text now falls through to null and the panel renders its
+    // ordinary who-to-call framing — the same quiet path a committee-stage
+    // bill has always taken.
     const chamber =
-      floorCalendarChamber(bill.last_action_text) ?? floorActionChamber(bill.last_action_text);
+      floorCalendarChamber(bill.last_action_text) ?? floorPendingChamber(bill.last_action_text);
     return chamber ? { chamber, afterVote: false, soleChamber: false } : null;
   }
   if (bill.status === 'passed_chamber') {
-    const other: Chamber = bill.bill_type.startsWith('h') ? 'senate' : 'house';
-    return { chamber: other, afterVote: true, soleChamber: false };
+    // `afterVote` stays true for every routed passage: in 'first' the
+    // originating chamber has voted, in 'back' the second chamber has. Both
+    // are the relational claim the copy makes ("the {other} has already
+    // voted"). 'both' and 'second' route nowhere — see passageState.
+    const { next } = passageState(bill);
+    return next ? { chamber: next, afterVote: true, soleChamber: false } : null;
   }
   return null;
 }
@@ -461,7 +610,11 @@ export type JourneyNowKey =
   | 'nowFloor'
   | 'nowFloorActivity'
   | 'nowFloorActivityNeutral'
+  | 'nowFloorMotionFailed'
   | 'nowPassed'
+  | 'nowPassedBack'
+  | 'nowPassedBoth'
+  | 'nowPassedSecond'
   | 'nowConference'
   | 'nowSigned'
   | 'nowVetoed';
@@ -528,6 +681,26 @@ export function deriveJourney(
           nowKey: 'nowFloor',
         };
       }
+      /*
+       * SETTLED BEFORE ACTIVE. `nowFloorActivity` says "the {chamber} is
+       * deciding whether to bring it to a vote", and until 2026-08-09 every
+       * chamber-classifiable floor text got it — including the 18 whose own
+       * words report that the deciding already happened and the answer was no.
+       * The chamber was never the problem; floorActionChamber reads it
+       * correctly off all of them. The tense was. So the settled texts branch
+       * out here, keeping the SAME step slot (the bill's position in the
+       * five-step structure did not change — only the sentence about it did).
+       */
+      const settled = floorSettledChamber(bill.last_action_text);
+      if (settled) {
+        return {
+          ...base,
+          step: settled === origin ? 2 : 3,
+          current: settled,
+          nowChamber: settled,
+          nowKey: 'nowFloorMotionFailed',
+        };
+      }
       const act = floorActionChamber(bill.last_action_text);
       // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unclassifiable
       // floor text used to fall back to the ORIGIN chamber — the silent-lie
@@ -554,11 +727,76 @@ export function deriveJourney(
         nowKey: 'nowFloorActivity',
       };
     }
-    case 'passed_chamber':
-      // Corpus-verified copy: nearly all passed_chamber actions read
-      // "Received in the Senate…" — origin passage, headed to the other
-      // chamber — so nowChamber stays origin and current is the other.
-      return { ...base, step: 3, current: other, nowKey: 'nowPassed' };
+    case 'passed_chamber': {
+      /*
+       * THE SAME RECORD THE RAIL READS (passageState), because the stepper was
+       * telling the same lie three lines further down the page. On H.R. 1276 —
+       * "Passed Senate without amendment", both chambers finished — the rail
+       * said "the Senate decides next" and the stepper said "it passed the
+       * House and now goes to the Senate". Fixing one and leaving the other
+       * would have left the page contradicting the record in a quieter voice.
+       *
+       * `showTrailer` is off for every second-chamber state: the trailer says
+       * "if the {other} changes it, it goes back to the {origin}" — a warning
+       * about something still ahead. Once the second chamber has acted that is
+       * either finished business or the thing that just happened.
+       */
+      const { stage, passedBy } = passageState(bill);
+      if (stage === 'first') {
+        // Corpus-verified copy: nearly all passed_chamber actions read
+        // "Received in the Senate…" — origin passage, headed to the other
+        // chamber — so nowChamber stays origin and current is the other.
+        return { ...base, step: 3, current: other, nowKey: 'nowPassed' };
+      }
+      if (stage === 'back') {
+        /*
+         * Back in the originating chamber's hands to concur in the second
+         * chamber's changes. Not step 4: the President is not next, the
+         * origin chamber is.
+         *
+         * `nowChamber` is the DESTINATION (the origin chamber), not the
+         * chamber that just acted — the one place in this switch where those
+         * differ, and it is forced by how the stepper feeds ICU.
+         * BillJourney passes `{ chamber: nowChamber, other }` where `other` is
+         * always the opposite of ORIGIN, not of nowChamber. In this state the
+         * amending chamber is by definition the non-origin one, so `other`
+         * already names it and `chamber` is free to carry the destination.
+         * nowPassedBack is written to that shape. Setting nowChamber to
+         * `passedBy` here instead renders "the Senate passed it with changes,
+         * so it goes back to the Senate."
+         */
+        return {
+          ...base,
+          step: 3,
+          current: origin,
+          nowChamber: origin,
+          nowKey: 'nowPassedBack',
+          showTrailer: false,
+        };
+      }
+      if (stage === 'both') {
+        // Identical text out of both chambers: the only step left is the desk.
+        return {
+          ...base,
+          step: 4,
+          current: passedBy ?? other,
+          nowChamber: passedBy ?? other,
+          nowKey: 'nowPassedBoth',
+          showTrailer: false,
+        };
+      }
+      // 'second' — both chambers have passed it and the record does not say
+      // whether the versions match, so the sentence says exactly that and
+      // names no next step. Unreachable on today's corpus (see passageState).
+      return {
+        ...base,
+        step: 3,
+        current: passedBy ?? other,
+        nowChamber: passedBy ?? other,
+        nowKey: 'nowPassedSecond',
+        showTrailer: false,
+      };
+    }
     case 'conference':
       return { ...base, step: 3, current: other, nowKey: 'nowConference', showTrailer: false };
     case 'signed':

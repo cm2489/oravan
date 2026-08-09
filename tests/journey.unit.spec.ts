@@ -6,10 +6,12 @@ import {
   floorActionChamber,
   floorCalendarChamber,
   floorPendingChamber,
+  floorSettledChamber,
   liveCallKey,
   liveCallTarget,
   liveCallTargetForNomination,
   nominationHasCallScript,
+  passageState,
   type LiveCallKey,
 } from '../lib/journey';
 import type { BillStatus } from '../lib/types';
@@ -212,6 +214,180 @@ test.describe('floorPendingChamber', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b · floorSettledChamber — the other half of the pending split
+ *      (2026-08-09 floor-truth fix). Where floorPendingChamber says a
+ *      vote is still ahead, this says the chamber already answered and
+ *      the answer was no.
+ * ------------------------------------------------------------------ */
+// S.J.Res. 172's exact live sentence — a vehicle of the live iran-war-powers
+// Big Question, whose page printed "the Senate is deciding whether to bring it
+// to a vote" three lines above this record refuting it.
+const DISCHARGE_REJECTED_TEXT =
+  'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.';
+// S.J.Res. 103's exact live sentence — the strongest live-call sentence on the
+// site used to print over this.
+const MOTION_REJECTED_TEXT =
+  'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 48 - 50. Record Vote Number: 72.';
+
+test.describe('floorSettledChamber', () => {
+  test('the corpus texts that report a dead motion, with the chamber the record names', () => {
+    expect(floorSettledChamber(DISCHARGE_REJECTED_TEXT)).toBe('senate');
+    expect(floorSettledChamber(MOTION_REJECTED_TEXT)).toBe('senate');
+    expect(
+      floorSettledChamber(
+        'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 47 - 45. Record Vote Number: 301.'
+      )
+    ).toBe('senate');
+  });
+
+  test('a live text is never called settled', () => {
+    expect(floorSettledChamber(CLOTURE_TEXT)).toBeNull();
+    expect(floorSettledChamber('Motion to proceed to consideration of measure made in Senate. (CR S4276)')).toBeNull();
+    expect(floorSettledChamber(null)).toBeNull();
+  });
+
+  /*
+   * THE GATE IS THE VOCABULARY, NOT THE CHAMBER — the distinction that keeps
+   * this function from repeating floorActionChamber's mistake in reverse.
+   * "Considered by Senate" has a perfectly readable chamber and says nothing
+   * about anything dying, so it must NOT be called a failed motion.
+   */
+  test('a readable chamber alone never earns the settled claim', () => {
+    expect(floorActionChamber('Considered by Senate.')).toBe('senate');
+    expect(floorSettledChamber('Considered by Senate.')).toBeNull();
+  });
+
+  /*
+   * TOTALITY AND EXCLUSIVITY, over the live corpus. The whole point of
+   * splitting one matcher into two is that every floor text lands on exactly
+   * one side — a text that is neither pending nor settled is the silent gap
+   * the old code fell into. FLOOR_SETTLED being shared between the two
+   * functions is what makes this hold; these assertions are what prove it did
+   * not get copy-pasted apart again.
+   */
+  test('no corpus text is both pending and settled, or both settled and on a calendar', () => {
+    for (const b of corpus) {
+      const settled = floorSettledChamber(b.last_action_text);
+      if (settled !== null) {
+        expect(floorPendingChamber(b.last_action_text), slugOf(b)).toBeNull();
+        expect(floorCalendarChamber(b.last_action_text), slugOf(b)).toBeNull();
+      }
+    }
+  });
+
+  /*
+   * TOTALITY — "every classifiable floor text is pending or settled" — is
+   * deliberately NOT asserted here. It is a claim about DATA, and the owner
+   * ruling of 2026-08-04 (see suite 4's note) moved data sweeps to the
+   * nightly sync so a novel action text landed by a sync cannot redden the CI
+   * of unrelated PRs. It lives in scripts/check-journey-corpus.mjs, beside the
+   * classifiability sweep it extends. The exclusivity assertions above stay,
+   * because those are claims about CODE: they hold whatever the sync lands.
+   */
+});
+
+/* ------------------------------------------------------------------ *
+ * 2c · passageState — which passage a `passed_chamber` record reports
+ *      (2026-08-09 floor-truth fix). The bill TYPE used to answer this,
+ *      which is a fact about where a bill started, not where it stands.
+ * ------------------------------------------------------------------ */
+test.describe('passageState', () => {
+  const p = (bill_type: string, last_action_text: string | null) =>
+    passageState({ bill_type, last_action_text } as Parameters<typeof passageState>[0]);
+
+  /*
+   * THE FLAGSHIP. H.R. 1276's own last action on 2026-08-07 says the SECOND
+   * chamber passed it without changes — both chambers are done — and the page
+   * printed "the Senate decides next. Your senators are the live call."
+   */
+  test('a House bill the Senate passed without amendment has no next chamber', () => {
+    expect(p('hr', 'Passed Senate without amendment by Unanimous Consent.')).toEqual({
+      stage: 'both',
+      passedBy: 'senate',
+      next: null,
+    });
+  });
+
+  /*
+   * THE CASE THAT WAS EXACTLY BACKWARDS, not merely stale: the Senate amended
+   * it, so the HOUSE holds the next decision, and the old code named the
+   * Senate. H.R. 6500's and H.R. 5334's exact shape.
+   */
+  test('an amended second-chamber passage routes BACK to the originating chamber', () => {
+    expect(
+      p('hr', 'Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.')
+    ).toEqual({ stage: 'back', passedBy: 'senate', next: 'house' });
+    // The mirror direction, which the corpus does not currently hold.
+    expect(p('s', 'Passed House with an amendment by Voice Vote.')).toEqual({
+      stage: 'back',
+      passedBy: 'house',
+      next: 'senate',
+    });
+  });
+
+  /*
+   * THE ORDINARY CASE, AND THE REGRESSION GUARD ON 268 RECORDS. An amendment
+   * clause on the ORIGINATING chamber's own passage is just its own floor
+   * amendment and must not trigger the return-trip reading.
+   */
+  test('origin-chamber passage keeps the other chamber as next, amended or not', () => {
+    expect(p('s', 'Passed Senate without amendment by Voice Vote.')).toEqual({
+      stage: 'first',
+      passedBy: 'senate',
+      next: 'house',
+    });
+    expect(p('s', 'Passed Senate with an amendment by Unanimous Consent. (text: CR S4493-4494)')).toEqual({
+      stage: 'first',
+      passedBy: 'senate',
+      next: 'house',
+    });
+    expect(p('hr', 'Received in the Senate.')).toMatchObject({ stage: 'first', next: 'senate' });
+    expect(p('s', 'Held at the desk.')).toMatchObject({ stage: 'first', next: 'house' });
+    expect(p('hr', null)).toMatchObject({ stage: 'first', next: 'senate' });
+  });
+
+  /*
+   * ANCHORED. "Rule H. Res. 988 passed House." (h.r. 4366's live text) reports
+   * a RULE resolution's passage, not this bill's — an unanchored match would
+   * read it as a second-chamber event on a House bill and invert the routing.
+   */
+  test('a passage sentence about something else is not read as this bill passing', () => {
+    expect(p('hr', 'Rule H. Res. 988 passed House.')).toMatchObject({
+      stage: 'first',
+      passedBy: null,
+      next: 'senate',
+    });
+  });
+
+  /*
+   * FAIL-CLOSED on the sentence Congress has not written yet: both chambers
+   * have acted, the amendment clause is unreadable, so we name no next step
+   * rather than guessing between the President and a trip back.
+   */
+  test('an unreadable second-chamber passage claims no next chamber', () => {
+    expect(p('hr', 'Passed Senate by Unanimous Consent.')).toEqual({
+      stage: 'second',
+      passedBy: 'senate',
+      next: null,
+    });
+  });
+
+  /*
+   * CORPUS SWEEP, narrow and cheap: whatever else moves nightly, a record
+   * whose text reports the SECOND chamber passing must never route to that
+   * same chamber. That is the precise shape of the shipped bug.
+   */
+  test('no corpus record routes the live call to the chamber that just passed it', () => {
+    for (const b of corpus.filter((x) => x.status === 'passed_chamber')) {
+      const state = passageState(b as Parameters<typeof passageState>[0]);
+      if (state.passedBy && state.next) {
+        expect(state.next, slugOf(b)).not.toBe(state.passedBy);
+      }
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 3 · deriveJourney — the full status behavior table.
  * ------------------------------------------------------------------ */
 test.describe('deriveJourney', () => {
@@ -249,6 +425,159 @@ test.describe('deriveJourney', () => {
   test('origin-chamber calendar placements stay at the origin vote step', () => {
     expect(j('hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.')).toMatchObject({ step: 2, current: 'house', onCalendar: true, nowKey: 'nowFloor' });
     expect(j('s', 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toMatchObject({ step: 2, current: 'senate', onCalendar: true, nowKey: 'nowFloor' });
+  });
+
+  /*
+   * FINDING 3 (2026-08-09). Every chamber-classifiable non-calendar floor text
+   * used to get "the {chamber} is deciding whether to bring it to a vote",
+   * including the 18 whose own words say the motion FAILED. S.J.Res. 172 is a
+   * vehicle of the live iran-war-powers Big Question, so this sentence sat on
+   * a surfaced page directly above the record refuting it.
+   */
+  test('a failed motion never reads as a live deliberation', () => {
+    const journey = j('sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT);
+    expect(journey).toMatchObject({
+      nowKey: 'nowFloorMotionFailed',
+      nowChamber: 'senate',
+      onCalendar: false,
+    });
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    // S.J.Res. 103's shape, the same verdict.
+    expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT).nowKey).toBe('nowFloorMotionFailed');
+  });
+
+  test('a genuinely pending floor vote keeps the live deliberation copy', () => {
+    expect(j('hr', 'floor_vote', CLOTURE_TEXT).nowKey).toBe('nowFloorActivity');
+    expect(
+      j('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)').nowKey
+    ).toBe('nowFloorActivity');
+  });
+
+  /*
+   * FINDING 1 (2026-08-09), stepper half. The rail and the stepper read the
+   * same record, and both were telling the same untruth about it.
+   */
+  test('a bill both chambers have passed goes to the desk, not back across the Capitol', () => {
+    const journey = j('hr', 'passed_chamber', 'Passed Senate without amendment by Unanimous Consent.');
+    expect(journey).toMatchObject({
+      step: 4,
+      nowKey: 'nowPassedBoth',
+      showTrailer: false,
+    });
+    expect(journey.nowKey).not.toBe('nowPassed');
+  });
+
+  test('an amended second-chamber passage sends it back to the originating chamber', () => {
+    expect(
+      j('hr', 'passed_chamber', 'Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 86 - 11. Record Vote Number: 224.')
+    ).toMatchObject({
+      step: 3,
+      current: 'house',
+      // The DESTINATION, not the chamber that just acted — see deriveJourney's
+      // comment on this branch, and the rendered-sentence pins below.
+      nowChamber: 'house',
+      nowKey: 'nowPassedBack',
+      showTrailer: false,
+    });
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE RENDERED SENTENCE, not just the state behind it.
+   *
+   * Every assertion above checks a JourneyState. None of them can see the
+   * defect this block exists for: nowPassedBack's first draft read "the
+   * {chamber} passed it with changes, so it goes back to the {other}", which
+   * renders as "the Senate passed it with changes, so it goes back to the
+   * Senate." The state was correct; the template read the wrong variable.
+   * BillJourney feeds ICU `{ chamber: nowChamber, other }` where `other` is
+   * the opposite of ORIGIN — never of nowChamber — and that asymmetry is
+   * invisible from the state object alone.
+   * ---------------------------------------------------------------- */
+
+  /** Mirror of components/BillJourney.tsx lines 42-47 + 107 — the exact
+   *  parameters the stepper hands the catalog. Drift here is the bug. */
+  const icuParams = (state: ReturnType<typeof deriveJourney>) => ({
+    chamber: state.nowChamber === 'house' ? 'House' : 'Senate',
+    other: state.origin === 'house' ? 'Senate' : 'House',
+  });
+
+  /** A minimal ICU `select` resolver: enough for this catalog's
+   *  `{name, select, House {…} Senate {…} other {…}}` shape and nothing more.
+   *  A few lines beats leaning on next-intl's formatter (a transitive dep),
+   *  and re-testing ICU is not the point — rendering the REAL catalog strings
+   *  with the REAL parameters is. */
+  const render = (template: string, params: Record<string, string>): string => {
+    let out = '';
+    for (let i = 0; i < template.length; ) {
+      if (template[i] !== '{') {
+        out += template[i++];
+        continue;
+      }
+      let depth = 0;
+      let j = i;
+      for (; j < template.length; j++) {
+        if (template[j] === '{') depth++;
+        else if (template[j] === '}' && --depth === 0) break;
+      }
+      const [name, , ...rest] = template.slice(i + 1, j).split(',');
+      const arms: Record<string, string> = {};
+      for (const m of rest.join(',').matchAll(/(\w+)\s*\{([^{}]*)\}/g)) arms[m[1]] = m[2];
+      out += arms[params[name.trim()]] ?? arms.other ?? '';
+      i = j + 1;
+    }
+    return out;
+  };
+
+  const sentence = (
+    catalog: typeof en | typeof es,
+    bill_type: string,
+    status: string,
+    text: string | null
+  ) => {
+    const state = j(bill_type, status, text);
+    const journey = catalog.bill.journey as Record<string, string>;
+    return render(journey[state.nowKey], icuParams(state));
+  };
+
+  test('the resolver itself agrees with a sentence the catalog already shipped', () => {
+    // nowPassed is untouched by this change, so it is the control: if the
+    // resolver were wrong, this would be wrong too.
+    expect(sentence(en, 's', 'passed_chamber', 'Received in the House.')).toBe(
+      'it passed the Senate and now goes to the House.'
+    );
+  });
+
+  test('an amended passage names the amending chamber and the destination — never the same one twice', () => {
+    expect(
+      sentence(en, 'hr', 'passed_chamber', 'Passed Senate with an amendment by Voice Vote.')
+    ).toBe('the Senate passed it with changes, so it goes back to the House.');
+    // The mirror direction, so a fix that merely hardcodes the common case fails.
+    expect(
+      sentence(en, 's', 'passed_chamber', 'Passed House with an amendment by Voice Vote.')
+    ).toBe('the House passed it with changes, so it goes back to the Senate.');
+    // …and in Spanish, where the same defect would ship silently.
+    expect(
+      sentence(es, 'hr', 'passed_chamber', 'Passed Senate with an amendment by Voice Vote.')
+    ).toBe('el Senado lo aprobó con cambios, así que regresa a la Cámara.');
+  });
+
+  test('a bill past both chambers points at the desk in both languages, naming no chamber as next', () => {
+    const text = 'Passed Senate without amendment by Unanimous Consent.';
+    expect(sentence(en, 'hr', 'passed_chamber', text)).toBe(
+      'both chambers have passed it. It goes to the President next.'
+    );
+    expect(sentence(es, 'hr', 'passed_chamber', text)).toBe(
+      'ambas cámaras lo han aprobado. Ahora pasa al Presidente.'
+    );
+  });
+
+  test('a failed motion reads as failed, in both languages, with the chamber the record named', () => {
+    expect(sentence(en, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
+      'the Senate has not agreed to take it up — the last motion to do so failed.'
+    );
+    expect(sentence(es, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
+      'el Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó.'
+    );
   });
 
   test('one pin per status', () => {
@@ -465,6 +794,31 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('s', 'floor_vote', null))).toBeNull();
   });
 
+  /*
+   * FINDING 2 (2026-08-09). The floor branch fell back to floorActionChamber,
+   * which only ever knew WHICH chamber a sentence was about — so all 18 of the
+   * corpus's settled texts drew "This bill is in the Senate's hands right now
+   * — your senators are the live call.", the strongest sentence on the page,
+   * over a motion the Senate had already voted down.
+   */
+  test('a settled floor motion makes NO live-floor claim', () => {
+    expect(liveCallTarget(bill('sjres', 'floor_vote', MOTION_REJECTED_TEXT))).toBeNull();
+    expect(liveCallTarget(bill('sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT))).toBeNull();
+    expect(
+      liveCallTarget(
+        bill('s', 'floor_vote', 'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 51 - 48. Record Vote Number: 88.')
+      )
+    ).toBeNull();
+  });
+
+  test('a pending floor vote still earns it — a cloture motion filed is a live call', () => {
+    expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT))).toEqual({
+      chamber: 'senate',
+      afterVote: false,
+      soleChamber: false,
+    });
+  });
+
   test('passed_chamber: the OTHER chamber is the live call, and the vote already happened', () => {
     expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.'))).toEqual({
       chamber: 'senate',
@@ -476,6 +830,29 @@ test.describe('liveCallTarget', () => {
       afterVote: true,
       soleChamber: false,
     });
+  });
+
+  /*
+   * FINDING 1 (2026-08-09). H.R. 1276's exact text: the bill TYPE said "route
+   * to the Senate", the RECORD said the Senate had already passed it without
+   * changes. No chamber is a live call on a measure headed for the desk.
+   */
+  test('a bill both chambers have passed routes NOWHERE — the President is next', () => {
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Passed Senate without amendment by Unanimous Consent.'))
+    ).toBeNull();
+  });
+
+  /*
+   * …and the case the old code got exactly backwards rather than merely
+   * stale: the Senate amended it, so the HOUSE decides next.
+   */
+  test('an amended second-chamber passage routes to the ORIGINATING chamber', () => {
+    expect(
+      liveCallTarget(
+        bill('hr', 'passed_chamber', 'Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.')
+      )
+    ).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
   });
 
   test('every other stage renders the list untouched: committee, conference, signed, vetoed, introduced', () => {

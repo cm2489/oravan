@@ -3,6 +3,7 @@ import coverageData from '../data/coverage.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mockScriptApi, seedZip } from './helpers';
+import { senateLiveBillSlugs } from './corpus';
 
 /*
  * The "surface the call" behavior: a floating Make-the-call button keeps the
@@ -133,6 +134,16 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
  * /api/script is mocked throughout.
  */
 const BILL = '/bills/sjres-99-119'; // same stable slug flow.spec.ts / es-parity.spec.ts drive
+
+/*
+ * The two ROUTING tests below drive a different bill, derived from the corpus.
+ * S.J.Res. 99's last action is a rejected motion to proceed, and since the
+ * 2026-08-09 floor-truth fix a settled motion correctly prints no live-call
+ * sentence at all — see senateLiveBillSlugs' own comment in tests/corpus.ts.
+ * Every other test in this file is about the call MOMENT, not the routing,
+ * and keeps the stable slug it shares with flow/es-parity/rail-zip.
+ */
+const SENATE_LIVE = senateLiveBillSlugs();
 const STANCES = ['support', 'oppose', 'undecided'] as const;
 
 // Fixed clocks, pinned against their Eastern-time weekday/hour (see
@@ -501,8 +512,10 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
 test('Senate routing demotes the House member without burying him — rail and call mode', async ({
   page,
 }) => {
+  // NOT the module-level BILL — see SENATE_LIVE's comment above.
+  test.skip(SENATE_LIVE.length === 0, 'no Senate-live bill in the corpus today');
   await mockScriptApi(page);
-  await page.goto(BILL);
+  await page.goto(`/bills/${SENATE_LIVE[0]}`);
   await seedZip(page, '78501'); // TX-15: two senators + one House member
   await page.reload();
   await page.getByRole('radio', { name: en.bill.stance.support }).click();
@@ -598,8 +611,12 @@ test('no bill page ever shows the nomination copy', async ({ page }) => {
 test('a reader with no senator sees no routing sentence claiming senators are theirs', async ({
   page,
 }) => {
+  test.skip(SENATE_LIVE.length === 0, 'no Senate-live bill in the corpus today');
   await mockScriptApi(page);
-  await page.goto(BILL); // liveCallTarget: {chamber:'senate', afterVote:false}
+  // A bill that genuinely routes to the Senate — otherwise this gate passes
+  // vacuously (no sentence to suppress) and would keep passing with the
+  // hasSenator check deleted, which is the one thing it exists to catch.
+  await page.goto(`/bills/${SENATE_LIVE[0]}`); // liveCallTarget: {chamber:'senate', afterVote:false}
   await seedZip(page, '20001'); // DC-0: one delegate, no senator at all
   await page.reload();
   await page.getByRole('radio', { name: en.bill.stance.support }).click();

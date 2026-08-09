@@ -26,7 +26,8 @@
  */
 import billsJson from '../data/bills.json';
 import syncState from '../data/sync-state.json';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
+import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgency.mjs';
+import { floorCalendarChamber, floorPendingChamber } from '../lib/journey';
 import { BAND_SIZES, bandFloors, bandForEff, type BandFloors } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
 
@@ -36,6 +37,7 @@ export interface CorpusBill {
   congress_number: number;
   status: string;
   last_action_date: string | null;
+  last_action_text: string | null;
   ai_headline: string | null;
   issue_tags?: string[];
   /** Read by mcp-tools.spec.ts to derive get_representative's sponsored
@@ -142,6 +144,53 @@ export function anyBandExceedsCapAt(at: number): boolean {
     counts[band] = (counts[band] ?? 0) + 1;
   }
   return Object.values(counts).some((n) => n > BAND_SIZES.now);
+}
+
+/**
+ * Bills carrying a DATED floor-calendar placement, split by the published
+ * signal window — the two sides of the bill page's green-panel gate.
+ *
+ * Derived rather than pinned because which placements are fresh moves with
+ * the clock AND with the nightly sync. The stale side is the larger by far
+ * (261 of 313 on 2026-08-09, the day the freshness half of that gate was
+ * added): a placement is a one-time event and the sentence over it —
+ * "This bill is queued for a vote of the full Senate" — is present tense.
+ */
+export function calendarPlacementSlugs(at: number): { fresh: string[]; stale: string[] } {
+  const fresh: string[] = [];
+  const stale: string[] = [];
+  for (const b of corpus) {
+    if (b.status !== 'floor_vote' || !b.last_action_date) continue;
+    if (floorCalendarChamber(b.last_action_text) === null) continue;
+    (isSignalFresh(b.last_action_date, at) ? fresh : stale).push(slugOf(b));
+  }
+  return { fresh: fresh.sort(), stale: stale.sort() };
+}
+
+/**
+ * DECODED bills whose record puts the live call in the Senate with no prior
+ * chamber vote — liveCallTarget → {chamber:'senate', afterVote:false}, the
+ * routing that prints `bill.liveSenateFloor`.
+ *
+ * Derived, not pinned, and that is the whole point. The routing specs used to
+ * drive S.J.Res. 99, whose last action is a REJECTED motion to proceed. Once
+ * the 2026-08-09 floor-truth fix stopped calling a dead motion a live call,
+ * that bill correctly prints no routing sentence at all — one spec would have
+ * failed and the other (the no-senator gate) would have started passing
+ * vacuously, which is worse. Naming a different bill would only re-arm the
+ * same trap on the next sync, so the specs ask the corpus for a bill that is
+ * genuinely in the Senate's hands.
+ */
+export function senateLiveBillSlugs(): string[] {
+  return corpus
+    .filter((b) => b.status === 'floor_vote' && b.ai_headline)
+    .filter(
+      (b) =>
+        floorCalendarChamber(b.last_action_text) === 'senate' ||
+        floorPendingChamber(b.last_action_text) === 'senate'
+    )
+    .map(slugOf)
+    .sort();
 }
 
 /** Generous bound on how far the assertion clock can sit from the clock

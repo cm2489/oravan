@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import syncState from '../data/sync-state.json';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
-import { anyNowAt, anyTopAt, newestActionDate, stableAcross } from './corpus';
+import { anyNowAt, anyTopAt, calendarPlacementSlugs, newestActionDate, stableAcross } from './corpus';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -205,5 +205,49 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     await page.clock.setFixedTime(STALE_CLOCK);
     await page.goto('/es/bills/hr-5582-119');
     await expect(page.getByText(/actividad más reciente del Congreso aún no se muestre/)).toBeVisible();
+  });
+});
+
+/*
+ * THE LOUDEST CLAIM ON THE PAGE HAS TO BE THE FRESHEST ONE (2026-08-09).
+ *
+ * The bill page's full-bleed green panel says "This bill is queued for a vote
+ * of the full Senate" — present tense — and its gate checked the status, the
+ * calendar sentence and the presence of a date, but never the AGE of that
+ * date. So it asserted live floor urgency off placements of unlimited age:
+ * /en/bills/s-1776-118 rendered it, amber chip and all, from a 118th-Congress
+ * placement dated 2024-09-24, for a Congress that has since ended. 261 of the
+ * corpus's 313 dated placements were outside the window.
+ *
+ * Corpus-derived on purpose: which bills are fresh changes nightly and with
+ * the clock, so the spec asks the data rather than naming a bill inside it,
+ * and skips-with-reason rather than gambling when the corpus cannot supply a
+ * side (tests/corpus.ts's own convention).
+ */
+test.describe('R2b: the green floor panel never fires off a stale placement', () => {
+  const PANEL = 'section.bg-go-deep';
+  const split = calendarPlacementSlugs(Date.now());
+  // A placement sitting exactly on the 14-day edge can flip between `next
+  // build` baking the page and this assertion running minutes later.
+  const SPLIT_STABLE = stableAcross((at) => calendarPlacementSlugs(at));
+
+  test('an aged calendar placement gets no green panel — the page falls to paper', async ({
+    page,
+  }) => {
+    test.skip(!SPLIT_STABLE, 'a placement sits on the freshness boundary — would be a coin flip');
+    test.skip(split.stale.length === 0, 'no aged calendar placement in the corpus today');
+    await page.goto(`/bills/${split.stale[0]}`);
+    await expect(page.locator(PANEL)).toHaveCount(0);
+    // The page itself is undiminished — the claim went, the bill did not.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  test('a placement inside the window still gets it — the gate is age, not silence', async ({
+    page,
+  }) => {
+    test.skip(!SPLIT_STABLE, 'a placement sits on the freshness boundary — would be a coin flip');
+    test.skip(split.fresh.length === 0, 'no fresh calendar placement in the corpus this week');
+    await page.goto(`/bills/${split.fresh[0]}`);
+    await expect(page.locator(PANEL)).toHaveCount(1);
   });
 });
