@@ -215,6 +215,24 @@ export function congressGovUrl(type, number) {
   return `https://www.congress.gov/bill/${CONGRESS}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
 }
 
+/** The `latestAction` we are willing to write a record from, or null when the
+ *  payload can't be read. ONE definition of "readable", shared by the refresh
+ *  path (refreshBillFields, below) and the new-bill path (syncOneBill in
+ *  scripts/bill-decode.mjs), so the two can't drift into disagreeing about
+ *  which payloads are trustworthy - the same "one copy" discipline this file
+ *  already enforces for status mapping and URL building.
+ *
+ *  Readable means it carries action TEXT. Everything either path derives -
+ *  status via mapStatus, the priority gate's verdict, urgency - is computed
+ *  from that text, so a payload without it supports no conclusion at all,
+ *  about either an existing bill or a new one. A bare actionDate with no text
+ *  is NOT readable: it can't produce a status, and pairing it with text we
+ *  didn't get would overstate freshness. */
+export function readableAction(detail) {
+  const action = detail?.latestAction;
+  return action?.text ? action : null;
+}
+
 /** Mutate an existing corpus bill's refreshable fields in place from a
  *  Congress.gov bill-detail payload (`cg('/bill/{congress}/{type}/{number}')`'s
  *  `.bill`). Free, no AI cost - the one place both scripts' "refresh" branch
@@ -251,8 +269,8 @@ export function congressGovUrl(type, number) {
  *  older stored text would overstate freshness, the one direction this file
  *  must never err in. It skips with everything else. */
 export function refreshBillFields(existing, detail) {
-  const action = detail?.latestAction;
-  if (!action?.text) return 'skipped_partial';
+  const action = readableAction(detail);
+  if (!action) return 'skipped_partial';
   const status = mapStatus(action.text);
   const lastActionDate = action.actionDate ?? existing.last_action_date ?? null;
   existing.status = status;

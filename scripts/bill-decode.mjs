@@ -21,6 +21,7 @@ import {
   cg,
   congressGovUrl,
   mapStatus,
+  readableAction,
   refreshBillFields,
   tagBill,
   updateSlug,
@@ -169,12 +170,13 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *
  * Returns one of:
  *   'refreshed' — an existing bill's fields were updated in place (free)
- *   'skipped_partial' — an existing bill was fetched fine, but the reply
- *                 carried no readable `latestAction` text, so NOTHING was
- *                 written (see refreshBillFields in congress-fetch.mjs for
- *                 why a partial payload must never be applied). Neither a
- *                 change nor a failure: idempotent, and the bill self-heals
- *                 on its next touch by either script.
+ *   'skipped_partial' — the bill was fetched fine, but Congress.gov's reply
+ *                 carried no readable `latestAction` text (readableAction in
+ *                 congress-fetch.mjs), so NOTHING was written: an existing
+ *                 bill was left byte-identical, and a brand-new one was NOT
+ *                 created and NOT decoded. Neither a change nor a failure —
+ *                 idempotent, nothing to retry, and the bill re-enters on
+ *                 its next real move via Congress.gov's own updateDate.
  *   'added'     — a brand-new bill was decoded and pushed into the corpus
  *   'gated'     — a brand-new bill was found but shows no real legislative
  *                 motion (and isn't force-bypassed) — NOT stored anywhere.
@@ -202,13 +204,46 @@ export async function syncOneBill(u, ctx) {
       // that happened to change nothing.
       return { outcome: refreshBillFields(existing, d), slug };
     }
-    const status = mapStatus(d.latestAction?.text);
+    // Same fail-closed posture as refreshBillFields, one step earlier and via
+    // the same shared predicate. A brand-new bill whose payload carries no
+    // readable latestAction is not a bill with nothing happening; it's a
+    // reply we can't read. Storing it would MINT a published record whose
+    // status was never read from the official record — mapStatus(undefined)
+    // invents 'committee' — with a null date and null text sitting beside
+    // it, and would spend a decode doing it. That is the same downgrade the
+    // refresh path used to commit, but with no prior value to contradict it,
+    // so it's harder to spot: it is what left hr-2-119, hr-5-119 and
+    // hr-10-119 in the corpus with null text AND null date.
+    //
+    // Nothing is stored, rather than stored with explicit nulls. There is no
+    // honest null for `status`: the whole read side (lib/urgency.mjs's
+    // STATUS_BASE, the feed, the bill page) expects one of the mapped
+    // strings, so a null-status record would have to be papered over
+    // downstream, and any placeholder we picked would be a claim about the
+    // official record we never actually read. This is the posture the decode
+    // path already takes on a bad decode shape — nothing partial ships, the
+    // bill is simply not added, and it re-enters cleanly on a later run.
+    //
+    // The guard sits BEFORE the priority gate on purpose: 'gated' asserts
+    // something about the BILL ("no real legislative motion"), and an
+    // unreadable payload cannot support that claim about anything. Non-forced
+    // bills only ever reached that verdict through mapStatus(undefined)'s
+    // invented 'committee' — accidentally harmless, for a reason that wasn't
+    // true. Forced slugs skipped the gate entirely and stored the nulls.
+    //
+    // Not a failure either: nothing was stored, so there is nothing to retry
+    // and nothing for the cursor to freeze on. Congress.gov's own updateDate
+    // resurfaces the bill the moment it really moves, exactly as it does for
+    // a gated one.
+    const action = readableAction(d);
+    if (!action) return { outcome: 'skipped_partial', slug };
+    const status = mapStatus(action.text);
     const forced = forceSlugs.has(slug);
     if (!forced && !passesGate(status)) {
       return { outcome: 'gated', slug, status };
     }
     if (!allowDecode) return { outcome: 'budget', slug };
-    const lastActionDate = d.latestAction?.actionDate ?? null;
+    const lastActionDate = action.actionDate ?? null;
     const bill = {
       full_identifier: slug,
       congress_number: CONGRESS,
@@ -220,7 +255,7 @@ export async function syncOneBill(u, ctx) {
       sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
       introduced_date: d.introducedDate ?? null,
       last_action_date: lastActionDate,
-      last_action_text: d.latestAction?.text ?? null,
+      last_action_text: action.text,
       status,
       issue_tags: tagBill(d.policyArea?.name),
       policy_area: d.policyArea?.name ?? null,

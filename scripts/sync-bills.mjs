@@ -164,10 +164,10 @@ for (const u of recentBills) {
   } else if (result.outcome === 'budget') {
     recentDeferred++; // new bill, gate cleared but reserve exhausted - left for pass 2 (same run) or next run
   } else if (result.outcome === 'skipped_partial') {
-    // Unreadable payload for a bill already in the corpus: nothing written,
-    // nothing lost. Deliberately NOT added to handledSlugs - the skip is not
-    // a resolution, so pass 2 may re-fetch it this same run and land a good
-    // payload the second time.
+    // Unreadable payload: nothing written either way - an existing bill was
+    // left untouched, a new one was not created. Deliberately NOT added to
+    // handledSlugs - the skip is not a resolution, so pass 2 may re-fetch it
+    // this same run and land a good payload the second time.
     partialSkipped++; recentPartial++;
   } else {
     recentFailed++; // logged only; deliberately NOT folded into the abort check below
@@ -229,10 +229,12 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
       queued++; // decode budget exhausted; revisit next run
       needsWork = true;
     } else if (result.outcome === 'skipped_partial') {
-      // Same shape as a transient refresh failure below, and treated the
-      // same by the cursor: the bill is already in the corpus and was left
-      // byte-identical, so there is nothing to retry and nothing to freeze
-      // for - Congress.gov's own updateDate resurfaces it on its next move.
+      // Treated by the cursor exactly like a gated bill: nothing was stored
+      // (an existing bill left byte-identical, a new one not created), so
+      // there is nothing to retry and nothing to freeze for - Congress.gov's
+      // own updateDate resurfaces it on its next real move. A new bill that
+      // skips here is therefore NOT counted in newSeen below: we never
+      // established a readable record to have seen.
       partialSkipped++;
     } else {
       failed++;
@@ -285,6 +287,8 @@ writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 // this run touched resolves to exactly one of added/gated/queued/newFailed
 // by the time we get here (a pass-1 'budget' deferral that pass 2 later
 // resolves is NOT double-counted - see recentDeferred's comment above).
+// The one exception is 'skipped_partial', counted in partialSkipped instead:
+// its payload was unreadable, so we can't honestly say we saw a bill at all.
 const newSeen = added + gated + queued + newFailed;
 console.log(
   `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${failed} failed (${newFailed} new); new bills seen this run: ${newSeen}; corpus ${bills.length}`

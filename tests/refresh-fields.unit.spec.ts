@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 // Pure, I/O-free module (no CONGRESS_API_KEY needed) — refreshBillFields only
 // maps an already-fetched bill-detail payload onto a corpus record.
-import { refreshBillFields } from '../scripts/congress-fetch.mjs';
+import { mapStatus, readableAction, refreshBillFields } from '../scripts/congress-fetch.mjs';
+import { passesGate } from '../scripts/decode-gate.mjs';
 import { anyDataChanged } from '../scripts/newsdesk-match.mjs';
 
 /*
@@ -119,6 +120,69 @@ test.describe('refreshBillFields — partial payloads never downgrade a bill', (
     })).toBe('refreshed');
     expect(bill.status).toBe('committee');
     expect(bill.last_action_date).toBe('2026-08-08');
+  });
+});
+
+/*
+ * The NEW-BILL half of the same guard (scripts/bill-decode.mjs's syncOneBill).
+ * Before it, `last_action_text: d.latestAction?.text ?? null` wrote straight
+ * through: a forced slug whose payload had no latestAction MINTED a published
+ * record with an invented 'committee' status, a null date and null text — and
+ * spent a decode doing it. That is how hr-2-119, hr-5-119 and hr-10-119 got
+ * into the corpus with null text AND null date.
+ *
+ * syncOneBill itself is network-bound (cg + Anthropic), so what is pinned here
+ * is the shared predicate BOTH paths now branch on — readableAction is one
+ * function with two call sites, so these pins govern the new-bill branch and
+ * the refresh branch alike.
+ */
+test.describe('readableAction — the one definition of a payload worth writing', () => {
+  test('a payload with action text is readable and hands back the action itself', () => {
+    const action = { text: 'Passed House by recorded vote.', actionDate: '2026-08-08' };
+    expect(readableAction({ latestAction: action })).toBe(action);
+  });
+
+  test('text without a date is still readable — the text is the record', () => {
+    expect(readableAction({ latestAction: { text: 'Passed House.' } })).toEqual({ text: 'Passed House.' });
+  });
+
+  test('every unreadable shape returns null, so neither path writes anything', () => {
+    expect(readableAction(undefined)).toBeNull(); // a reply with no .bill at all
+    expect(readableAction({})).toBeNull(); // no latestAction key
+    expect(readableAction({ latestAction: null })).toBeNull();
+    expect(readableAction({ latestAction: {} })).toBeNull();
+    expect(readableAction({ latestAction: { actionDate: '2026-08-08' } })).toBeNull(); // date only
+    expect(readableAction({ latestAction: { text: '' } })).toBeNull(); // empty text maps to 'committee'
+  });
+});
+
+test.describe('a new bill is never minted from an unreadable payload', () => {
+  test('the status such a record would have carried was invented, never read', () => {
+    // This is precisely what the old code stored: mapStatus of nothing is a
+    // real, gate-relevant status string with no official record behind it.
+    expect(mapStatus(undefined)).toBe('committee');
+    expect(mapStatus('')).toBe('committee');
+    // There is no honest null to store instead — the read side expects one of
+    // the mapped strings — so the record is not created at all.
+    expect(readableAction({ latestAction: {} })).toBeNull();
+  });
+
+  test('the guard runs BEFORE the priority gate, because "gated" is a claim the payload cannot support', () => {
+    // A non-forced new bill used to reach 'gated' only via that invented
+    // 'committee' — accidentally harmless, for a reason that was not true.
+    // 'gated' asserts the bill shows no real legislative motion; an
+    // unreadable payload asserts nothing about the bill at all.
+    expect(passesGate(mapStatus(undefined))).toBe(false); // the old accidental path
+    expect(readableAction({ latestAction: { actionDate: '2026-08-08' } })).toBeNull(); // the deliberate one
+  });
+
+  test('a readable payload still decides the gate on its real status — forced slugs decode as before', () => {
+    const floor = readableAction({ latestAction: { text: 'Placed on Senate Legislative Calendar under General Orders.' } });
+    expect(floor).not.toBeNull();
+    expect(passesGate(mapStatus(floor!.text))).toBe(true);
+    const referral = readableAction({ latestAction: { text: 'Referred to the Committee on Finance.' } });
+    expect(referral).not.toBeNull();
+    expect(passesGate(mapStatus(referral!.text))).toBe(false); // still gated, on a status we actually read
   });
 });
 

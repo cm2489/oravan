@@ -311,9 +311,9 @@ export function hashHeadline(title, outlet) {
 /** Given the syncOneBill outcome strings from this run's ON-FIRE actions,
  *  did anything actually mutate bills/es? Only 'refreshed' and 'added'
  *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed', and
- *  'skipped_partial' (an unreadable Congress.gov payload the refresh
- *  refused to apply — see refreshBillFields) don't. newsdesk.mjs only
- *  calls writeFileSync when this is true, so an
+ *  'skipped_partial' (an unreadable Congress.gov payload: no refresh
+ *  applied, no new bill created — see readableAction) don't.
+ *  newsdesk.mjs only calls writeFileSync when this is true, so an
  *  hourly run with nothing to do never produces a diff for the workflow's
  *  own `git diff --cached --quiet` step to (redundantly, but harmlessly)
  *  confirm. */
