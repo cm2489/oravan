@@ -30,6 +30,7 @@ import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
 import {
   PLACEHOLDER_ID,
+  PUBLISHED_SIGNAL_MAX_AGE_DAYS,
   REVIEW_WINDOW_DAYS,
   aliasesFor,
   blankStructure,
@@ -41,7 +42,7 @@ import {
   signalFor,
   structureFor,
 } from '../scripts/moment-scaffold.mjs';
-import { articlesFor, passesFloors, scaffoldFor } from '../scripts/moment-watch.mjs';
+import { FLOORS, articlesFor, passesFloors, scaffoldFor } from '../scripts/moment-watch.mjs';
 
 const read = (p: string) => JSON.parse(readFileSync(join(__dirname, '..', p), 'utf8'));
 
@@ -346,11 +347,26 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect([...emitted].sort()).not.toContain('tier0_most_viewed');
   });
 
-  test('a signal older than the published 14-day criterion is emitted AND flagged', () => {
+  test('a signal older than the published 45-day criterion is emitted AND flagged', () => {
     const stale = { ...ON_CALENDAR, lastActionDate: '2026-06-01' };
     const { signal, note } = signalFor(stale, [], { now: Date.parse('2026-08-01T00:00:00Z') });
     expect(signal.type).toBe('tier0_floor'); // still true of the record
     expect(note).toContain('moments.whyCriteria');
+  });
+
+  test('the published window, the watcher floor, and the copy agree — in both languages', () => {
+    // Owner ruling 2026-08-09: one number, everywhere a reader can compare.
+    // If any of these four move independently, the stale-signal note starts
+    // firing on real candidates again — that note is detection, this is the pin.
+    expect(PUBLISHED_SIGNAL_MAX_AGE_DAYS).toBe(FLOORS.maxLastActionAgeDays);
+    const en = read('messages/en.json').moments;
+    const es = read('messages/es.json').moments;
+    for (const s of [en.whyCriteria, en.howMadeRule2]) {
+      expect(s).toContain(`last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days`);
+    }
+    for (const s of [es.whyCriteria, es.howMadeRule2]) {
+      expect(s).toContain(`últimos ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} días`);
+    }
   });
 });
 

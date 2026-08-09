@@ -816,7 +816,7 @@
     "readBill": "Read the bill",
     "partOf": "Part of a bigger question: {name}",
     "whyHeading": "Why this Big Question exists",
-    "whyCriteria": "A Big Question opens only when a live, callable bill or Senate nomination meets published criteria: a government scheduling signal, or press coverage from outlets across the spectrum, within the last 14 days.",
+    "whyCriteria": "A Big Question opens only when a live, callable bill or Senate nomination meets published criteria: a government scheduling signal, or press coverage from outlets across the spectrum, within the last 45 days.",
     "signalLabel": "The qualifying signal",
     "signalType": {
       "tier0_floor": "On the floor schedule",
@@ -830,7 +830,7 @@
     "howMadeHeading": "How Big Questions get made",
     "howMadeBody": "A Big Question opens only when something real before Congress meets every rule below — checked by an automated gate, then reviewed by a person before it publishes.",
     "howMadeRule1": "Something still moving: at least one tracked bill or Senate nomination that has not reached its end. The question has to still be one a call can affect.",
-    "howMadeRule2": "A recent signal: it appeared in the last 14 days on a government schedule (a floor vote, the week's bill list, Congress.gov's most-viewed, the Senate Executive Calendar) or in press coverage from at least two outlets of differing leanings.",
+    "howMadeRule2": "A recent signal: it appeared in the last 45 days on a government schedule (a floor vote, the week's bill list, Congress.gov's most-viewed, the Senate Executive Calendar) or in press coverage from at least two outlets of differing leanings.",
     "howMadeRule3": "A callable action: the page and the call script already work — every corpus bill qualifies by construction, and a nomination qualifies only when the Senate's record carries the description sentence its script is written from. The gate rejects one that doesn't.",
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Big Question retires when the question is settled — every bill signed, vetoed, or dead, and every nomination confirmed, returned, or withdrawn. Settled Big Questions stay readable, marked resolved; they never reopen.",

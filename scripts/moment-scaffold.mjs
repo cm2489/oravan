@@ -80,13 +80,14 @@ export const REVIEW_WINDOW_DAYS = 30;
 
 /**
  * What `moments.whyCriteria` and `moments.howMadeRule2` promise readers about
- * a qualifying signal: "within the last 14 days". The watcher's own currency
- * floor is 45 days (FLOORS.maxLastActionAgeDays), so a candidate can clear the
- * floor with a signal older than the page's published promise. That is not
- * this module's call to make — it emits the true signal and NAMES the gap, so
- * the owner sees it before merging rather than after a reader does.
+ * a qualifying signal: "within the last 45 days" — set equal to the watcher's
+ * own currency floor (FLOORS.maxLastActionAgeDays) by owner ruling 2026-08-09,
+ * which closed the gap this note was built to name (the copy used to say 14).
+ * The note below stays as a tripwire: it can still fire on an out-of-band
+ * invocation (`--only` against an older record), and it fires again the day
+ * the two numbers drift apart — a drift test pins them equal.
  */
-export const PUBLISHED_SIGNAL_MAX_AGE_DAYS = 14;
+export const PUBLISHED_SIGNAL_MAX_AGE_DAYS = 45;
 
 /** The id a scaffold carries when nothing was derived — deliberately the
  *  screaming placeholder, and deliberately NOT a valid moment id, so a code
@@ -241,13 +242,13 @@ export function signalFor(c, articles = [], { now = Date.now() } = {}) {
 }
 
 /** Named when the signal is older than what the site promises readers. The
- *  signal stays — a placement is true until it moves — but the gap between the
- *  45-day notification floor and the published 14-day criterion is the owner's
- *  call, and it belongs in front of him, not in a code comment. */
+ *  signal stays — a placement is true until it moves — and since the 2026-08-09
+ *  ruling set the published criterion equal to the 45-day notification floor,
+ *  this fires only on out-of-band invocations or renewed drift. */
 function staleSignalNote(c, now) {
   const age = ageInDays(c?.lastActionDate, now);
   if (age <= PUBLISHED_SIGNAL_MAX_AGE_DAYS) return null;
-  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but \`moments.whyCriteria\` tells readers a Big Question opens on a signal "within the last 14 days" — check the record against that promise before merging.`;
+  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but \`moments.whyCriteria\` tells readers a Big Question opens on a signal "within the last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days" — check the record against that promise before merging.`;
 }
 
 /* ------------------------------------------------------------------ *
