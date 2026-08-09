@@ -132,18 +132,23 @@ export function expectDataStaleAt(at: number): boolean {
 }
 
 /** Mirror of /bills' band split (getTeasers): active bills band by floor,
- *  terminal bills pin to radar. True when any band would render its
- *  "Show all" button (more items than the BAND_CAP display slice). */
-export function anyBandExceedsCapAt(at: number): boolean {
+ *  terminal bills pin to radar. */
+export function bandCountsAt(at: number): Record<'now' | 'moving' | 'radar', number> {
   const floors = floorsAt(at);
-  const counts: Record<string, number> = {};
+  const counts = { now: 0, moving: 0, radar: 0 };
   for (const b of corpus) {
     const band = TERMINAL_STATUSES.has(b.status)
       ? 'radar'
       : bandForEff(effectiveUrgency(b.status, b.last_action_date, at), floors);
-    counts[band] = (counts[band] ?? 0) + 1;
+    counts[band] += 1;
   }
-  return Object.values(counts).some((n) => n > BAND_SIZES.now);
+  return counts;
+}
+
+/** True when any band would render its "Show all" button (more items than
+ *  the BAND_CAP display slice). */
+export function anyBandExceedsCapAt(at: number): boolean {
+  return Object.values(bandCountsAt(at)).some((n) => n > BAND_SIZES.now);
 }
 
 /**

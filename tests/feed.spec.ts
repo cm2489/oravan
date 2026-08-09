@@ -1,6 +1,39 @@
 import { expect, test } from '@playwright/test';
-import { anyBandExceedsCapAt, stableAcross } from './corpus';
+import { anyBandExceedsCapAt, bandCountsAt, stableAcross } from './corpus';
 import { waitForFeedHydrated } from './helpers';
+
+const BANDS = ['now', 'moving', 'radar'] as const;
+
+/*
+ * EVERY BAND THE DATA SUPPORTS ACTUALLY REACHES THE PAGE.
+ *
+ * The middle band went missing for a while and nothing here noticed: the
+ * floors were computed such that "moving" was unreachable, so /bills printed
+ * "Deciding now" straight into "On the radar" and 38 bills that outscored
+ * almost the whole corpus were filed as "quieter right now"
+ * (lib/taxonomy.ts's v3a note). The arithmetic guard for that lives in
+ * tests/taxonomy.unit.spec.ts — where it can fail on a floor bug the mirror
+ * below would faithfully reproduce. THIS spec covers the other half:
+ * BillsBrowser actually renders a section for each band the split populates.
+ */
+test('every band the corpus populates renders its own section', async ({ page }) => {
+  const presence = (at: number) =>
+    BANDS.map((b) => [b, bandCountsAt(at)[b] > 0] as const);
+  test.skip(
+    !stableAcross(presence),
+    'a band sits at the empty/non-empty boundary — expectation could flip between build and assert'
+  );
+  const counts = bandCountsAt(Date.now());
+  await page.goto('/bills');
+  await waitForFeedHydrated(page);
+  for (const band of BANDS) {
+    if (counts[band] === 0) continue;
+    await expect(
+      page.locator(`section[aria-labelledby="band-${band}"]`),
+      `the "${band}" band holds ${counts[band]} bills and must render`
+    ).toBeVisible();
+  }
+});
 
 test('feed renders capped bands with show-all expansion', async ({ page }) => {
   // "Show all" only renders on a band holding more items than the display

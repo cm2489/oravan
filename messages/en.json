@@ -309,6 +309,7 @@
       "stepVote": "{chamber, select, House {House} Senate {Senate} other {House}} vote",
       "stepOther": "{chamber, select, House {House} Senate {Senate} other {Senate}}",
       "stepPresident": "President's desk",
+      "stepBothChambers": "Adopted by both chambers",
       "now": "Right now:",
       "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
       "nowFloor": "it's on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar.",
@@ -323,6 +324,7 @@
       "nowSigned": "the President signed it. It's law.",
       "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
       "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
+      "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the President and does not become law.",
       "youAreHere": "You are here",
       "law": "Now law",
       "nowIntroduced": "it was just introduced and is headed to committee."
