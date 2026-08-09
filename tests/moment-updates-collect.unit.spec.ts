@@ -35,7 +35,10 @@ import {
   extractFloorFeedSlugs,
 } from '../scripts/newsdesk-match.mjs';
 import {
+  HARD_DAY_CEILING,
+  MAX_UPDATES_PER_MOMENT,
   RECORD_EVENT_CLASSES,
+  RENDER_DAY_CAP,
   computeUpdateId,
   dedupeUpdates,
   lintUpdateText,
@@ -54,6 +57,10 @@ const actionsOf = (file: string): Action[] => read(`tests/fixtures/${file}`).act
 const HR9770 = actionsOf('congress-actions-hr9770.json');
 const HCONRES89 = actionsOf('congress-actions-hconres89.json');
 const SJRES185 = actionsOf('congress-actions-sjres185.json');
+// Captured 2026-08-09, from the live /bill/119/s/4784/actions response, for
+// the motion-to-proceed miss below: six motions to proceed this table matched
+// none of, in a moment that was live on the site at the time.
+const S4784 = actionsOf('congress-actions-s4784.json');
 
 const find = (actions: Action[], needle: string) =>
   actions.find((a) => String(a.text ?? '').includes(needle)) as Action;
@@ -260,6 +267,87 @@ test.describe('classifyAction', () => {
     expect(milestoneOf({ text: 'Ordered to be Reported by Voice Vote.' })).toBe('committee_action');
     expect(milestoneOf({ text: 'Became Public Law No: 119-42.' })).toBe('enactment');
     expect(milestoneOf({ text: 'DEBATE - one hour of debate.' })).toBeNull();
+    expect(milestoneOf({ text: 'Motion to proceed to consideration of measure made in Senate.' })).toBe(
+      'motion_to_proceed',
+    );
+  });
+
+  /* ---------------------------------------------------------------- *
+   * Motions to proceed — the 2026-08-09 live miss.
+   * ---------------------------------------------------------------- */
+
+  test('the July 27 motion the shipped summary contradicted is selected', () => {
+    // What went wrong: this table matched no motion to proceed at all, so
+    // S. 4784's whole run of them was discarded as procedural noise. Nothing
+    // reached the timeline, and nothing reached the model that writes "Where
+    // it stands" — which published "No action on this bill has been recorded
+    // in the last 14 days" on /questions/annual-defense-policy while THIS
+    // action sat inside that window.
+    const july27 = find(S4784, 'made in Senate. (CR S4276)');
+    expect(july27.actionDate).toBe('2026-07-27');
+    expect(milestoneOf(july27)).toBe('motion_to_proceed');
+    expect(classifyAction(july27)).toBe('floor_action');
+  });
+
+  test('every motion to proceed in the s-4784 record is selected — six, not zero', () => {
+    const motions = S4784.filter((a) => /^Motion to proceed/i.test(String(a.text)));
+    expect(motions).toHaveLength(6);
+    for (const a of motions) {
+      expect(milestoneOf(a), String(a.text)).toBe('motion_to_proceed');
+      expect(classifyAction(a), String(a.text)).toBe('floor_action');
+    }
+    expect(motions.map((a) => String(a.actionDate))).toEqual([
+      '2026-07-27',
+      '2026-07-23',
+      '2026-07-23',
+      '2026-07-20',
+      '2026-07-14',
+      '2026-06-24',
+    ]);
+  });
+
+  test('outcome is not a filter — the same design that already selects a rejected cloture', () => {
+    // `cloture` matches "not invoked" as readily as "presented", and
+    // `enactment` lists `vetoed` beside `signed by president`. This table
+    // selects EVENTS, in either direction; a motion to proceed follows that
+    // design rather than a fail-closed one.
+    const notInvoked = find(S4784, 'not invoked in Senate');
+    expect(milestoneOf(notInvoked)).toBe('cloture');
+    expect(classifyAction(notInvoked)).toBe('vote');
+    expect(milestoneOf({ text: 'Vetoed by President.' })).toBe('enactment');
+
+    // A motion withdrawn is as dated an act of the Senate as a motion made —
+    // and S. 4784 made and withdrew one on the SAME day (July 23). Rendering
+    // the "made" without the "withdrawn" would be the more editorial choice.
+    const withdrawn = find(S4784, 'withdrawn in Senate');
+    expect(withdrawn.actionDate).toBe('2026-07-23');
+    expect(milestoneOf(withdrawn)).toBe('motion_to_proceed');
+    expect(classifyAction(withdrawn)).toBe('floor_action');
+
+    // The rejection form that carries NO roll call — the one the
+    // recorded-vote path in classifyAction could never rescue. This is
+    // sjres-182-119's own latest action in the committed corpus.
+    const voiceRejected = {
+      text: 'Motion to proceed to consideration of measure rejected in Senate by Voice Vote. (CR S2407)',
+    };
+    expect(milestoneOf(voiceRejected)).toBe('motion_to_proceed');
+    expect(classifyAction(voiceRejected)).toBe('floor_action');
+
+    // ...and the roll-call rejection, which the vote path already selected
+    // and still does. The pattern changes the key this row logs, never its
+    // class: a recorded vote is the record at its loudest, whatever matched.
+    const rollRejected = find(SJRES185, 'Record Vote Number: 192');
+    expect(milestoneOf(rollRejected)).toBe('motion_to_proceed');
+    expect(classifyAction(rollRejected)).toBe('vote');
+  });
+
+  test('a cloture motion ON a motion to proceed keeps the more specific cloture key', () => {
+    // The new pattern sits BELOW `cloture`, so nothing this table already
+    // accepted changes the key it logs — the change is purely additive.
+    expect(milestoneOf(find(S4784, 'Cloture motion on the motion to proceed'))).toBe('cloture');
+    expect(milestoneOf(find(S4784, 'Motion by Senator Thune to reconsider'))).toBe('cloture');
+    // "proceeded" is not "to proceed": debate bookkeeping stays noise.
+    expect(milestoneOf({ text: 'DEBATE - The House proceeded with one hour of debate.' })).toBeNull();
   });
 
   test('the whole hr-9770 fixture selects exactly the citizen-legible events', () => {
@@ -811,6 +899,11 @@ test.describe('fallback text', () => {
       [HR9770, 'hr-9770-119'],
       [HCONRES89, 'hconres-89-119'],
       [SJRES185, 'sjres-185-119'],
+      // The six newly-selected motions to proceed go through the SAME
+      // fallback path on a no-key run. A record sentence that failed the lint
+      // there would be dropped loudly by the runner — or, worse, redden CI on
+      // a nightly commit — so widening selection means proving these clean.
+      [S4784, 's-4784-119'],
     ] as const) {
       for (const a of actions) {
         const c = actionToCandidate({ momentId: 'm', vehicle, action: a, recordedAt: '2026-07-25T06:20:00Z' });
@@ -870,5 +963,59 @@ test.describe('dailyEventCount', () => {
   test('an empty or missing store counts zero rather than throwing', () => {
     expect(dailyEventCount({}, '2026-07-25')).toBe(0);
     expect(dailyEventCount(undefined, '2026-07-25')).toBe(0);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 13 · The day envelopes, against a real busy motion-to-proceed record.
+ * ------------------------------------------------------------------ */
+test.describe('day envelopes absorb the widened selection', () => {
+  // Adding a MILESTONE_PATTERNS entry means more matched actions per day, and
+  // two ceilings govern that: RENDER_DAY_CAP (a cap, not a quota — past it a
+  // day renders an honest overflow line) and HARD_DAY_CEILING (above it the
+  // gate FAILS and pruneEntry trims by class priority). S. 4784 is the
+  // worst real case this corpus has: three motions to proceed in one week,
+  // and a July 14 that carries a motion, a cloture vote, and a motion to
+  // reconsider that cloture vote all on the same legislative day.
+  const candidates = asUpdates(
+    dedupeUpdates(
+      [],
+      S4784.map((a) =>
+        actionToCandidate({
+          momentId: 'annual-defense-policy',
+          vehicle: 's-4784-119',
+          action: a,
+          billUrl: congressGovUrlForSlug('s-4784-119'),
+          recordedAt: '2026-08-09T06:20:00Z',
+        }),
+      ).filter(Boolean),
+    ),
+  );
+
+  const perDay = new Map<string, number>();
+  for (const c of candidates) perDay.set(c.day, (perDay.get(c.day) ?? 0) + 1);
+  const busiest = Math.max(...perDay.values());
+
+  test('the busiest day sits under BOTH ceilings, with room to spare', () => {
+    // 3 on 2026-07-14 — under the 5 that render, and a quarter of the 12-per-
+    // day storage ceiling. The widened pattern does not push any real day of
+    // this record into overflow, let alone into a gate violation.
+    expect(busiest).toBe(3);
+    expect(perDay.get('2026-07-14')).toBe(3);
+    expect(busiest).toBeLessThanOrEqual(RENDER_DAY_CAP);
+    expect(busiest).toBeLessThanOrEqual(HARD_DAY_CEILING);
+    // The July 23 make-then-withdraw pair is the only other multi-motion day.
+    expect(perDay.get('2026-07-23')).toBe(2);
+  });
+
+  test('the whole record stays far inside the per-moment retention cap', () => {
+    expect(candidates).toHaveLength(10);
+    expect(candidates.length).toBeLessThanOrEqual(MAX_UPDATES_PER_MOMENT);
+  });
+
+  test('six of the ten are the motions this table used to drop', () => {
+    const motions = candidates.filter((c) => /^Motion to proceed/i.test(c.record!.action_text));
+    expect(motions).toHaveLength(6);
+    for (const c of motions) expect(c.class).toBe('floor_action');
   });
 });
