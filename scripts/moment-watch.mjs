@@ -428,6 +428,24 @@ export function articlesFor(coverage, slug) {
  * twin. A collision is a fact about both candidates, and it is reported on
  * both issues, because they are read separately and days apart.
  *
+ * WHAT THIS DOES NOT COVER, stated plainly rather than left to be discovered.
+ * "One run" here means ONE PROCESS. The nightly workflow renders each issue in
+ * its own invocation (`--only=<slug>`, one per candidate, so the loop opens one
+ * issue per bill instead of N copies of a digest), and those processes cannot
+ * see each other's drafted names: each reads data/moments.json as it stands,
+ * which does not yet contain the id the previous issue proposed. So on the
+ * NIGHTLY path two companion candidates can still both propose one id, and
+ * neither issue will say so. This function fully covers the weekly digest and
+ * any hand-run `--mode=push` without `--only`, which are the invocations that
+ * render more than one scaffold at a time.
+ *
+ * Closing the nightly half needs the loop to carry the ids it has already
+ * handed out from one invocation to the next — a new flag on this script and
+ * matching plumbing in .github/workflows/moment-watch.yml — and even then the
+ * FIRST issue can never carry the note, because it has already been filed by
+ * the time the second is rendered. That is a design decision with a workflow
+ * change in it, so it is the owner's call, not a silent extension of this fix.
+ *
  * @param {Record<string, any>[]} rendering  candidates whose scaffold renders
  * @param {{ bySlug: Map<string, any>, coverage: Record<string, any>,
  *           drafts: Map<string, any>, now: number, takenIds: Set<string> }} args
