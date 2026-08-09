@@ -17,6 +17,7 @@ import {
   SIZE_FAIL_BYTES,
   SIZE_WARN_BYTES,
   SOURCE_KINDS,
+  SPECULATION_ES_TERMS,
   UPDATE_CLASSES,
   checkMomentUpdates,
   computeUpdateId,
@@ -576,6 +577,72 @@ test.describe('lintUpdateText', () => {
     for (const hedge of ['probablemente vota', 'podría votar', 'podrían votar', 'estaría listo', 'estarían listos', 'está previsto que vote', 'está a punto de votar']) {
       expect(lintUpdateText(`El Senado ${hedge}.`, 'es', 'vote').some((f) => f.includes('speculation')), hedge).toBe(true);
     }
+  });
+
+  /*
+   * THE UNACCENTED SPELLINGS, which the accent-exact pattern could not see.
+   *
+   * `SPECULATION.es.test('La medida podria aprobarse.')` was FALSE while the
+   * accented form was caught — so "podria", "podrian" and "estaria" sailed
+   * through layer 2 on the path where nobody reads the sentence before it
+   * publishes. Those are not exotic misspellings: they are how a
+   * diacritic-dropping model writes them, and they are the exact spellings
+   * scripts/moment-updates.mjs's OWN prompts use when listing the banned
+   * words to the model. Fixed 2026-08-09 by generating both spellings from
+   * one canonical term.
+   */
+  test('Spanish hedges fail in BOTH spellings, accented and not', () => {
+    const pairs: [string, string][] = [
+      ['podría votar', 'podria votar'],
+      ['podrían votar', 'podrian votar'],
+      ['estaría listo', 'estaria listo'],
+      ['estarían listos', 'estarian listos'],
+    ];
+    for (const [accented, bare] of pairs) {
+      for (const hedge of [accented, bare]) {
+        expect(
+          lintUpdateText(`El Senado ${hedge}.`, 'es', 'vote').some((f) => f.includes('speculation')),
+          hedge,
+        ).toBe(true);
+        expect(lintRevisionText(`La medida ${hedge}.`, 'es').some((f) => f.includes('speculation')), hedge).toBe(true);
+      }
+    }
+  });
+
+  /* The drift guard, and the reason the terms are a LIST rather than a regex
+     literal: every term added from here on gets both spellings for free, and
+     this test fails the day someone hand-writes a pattern that does not. */
+  test('EVERY term in SPECULATION_ES_TERMS matches accented AND de-accented', () => {
+    const deaccent = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    expect(SPECULATION_ES_TERMS.length).toBeGreaterThan(0);
+    for (const term of SPECULATION_ES_TERMS) {
+      for (const spelling of new Set([term, deaccent(term)])) {
+        expect(
+          lintRevisionText(`La medida ${spelling} algo.`, 'es').some((f) => f.includes('speculation')),
+          spelling,
+        ).toBe(true);
+      }
+    }
+    // At least one term must actually CARRY an accent, or the sweep above is
+    // asserting nothing about spelling.
+    expect(SPECULATION_ES_TERMS.some((t) => deaccent(t) !== t)).toBe(true);
+  });
+
+  test('the failure message names the term the author actually wrote', () => {
+    // Not a normalized probe: an author told their text trips on "podria"
+    // when they wrote "podría" is being sent to look for a string that is not
+    // there.
+    expect(lintRevisionText('La medida podría aprobarse.', 'es')[0]).toContain('"podría"');
+    expect(lintRevisionText('La medida podria aprobarse.', 'es')[0]).toContain('"podria"');
+  });
+
+  test('folding accents does not swallow ordinary Spanish written without them', () => {
+    // The nightly corpus is full of de-accented record prose; none of it is a
+    // hedge. "podríamos" is deliberately still not matched — this fixed
+    // SPELLING coverage, it did not widen the vocabulary.
+    expect(lintRevisionText('La Camara aprobo la medida por votacion nominal.', 'es')).toEqual([]);
+    expect(lintRevisionText('El comite se reunio el 14 de julio de 2026.', 'es')).toEqual([]);
+    expect(lintRevisionText('Podriamos decir que no.', 'es')).toEqual([]);
   });
 
   test('bare "may" is deliberately NOT a hedge — it collides with the month', () => {

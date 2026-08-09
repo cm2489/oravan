@@ -332,22 +332,34 @@ export function kebab(text) {
  * COLLISIONS MATTER MORE THAN THEY LOOK. Two entries with the same key in one
  * JSON object do not error — the last one silently REPLACES the first, so a
  * colliding id pasted into data/moments.json would delete a live Big Question
- * and pass every gate. `taken` is the existing key set; a hit gets the vehicle
- * slug appended and a note.
+ * and pass every gate. `taken` is the set of ids already claimed; a hit gets
+ * the vehicle slug appended and a note.
+ *
+ * `taken` IS NOT ONLY data/moments.json. The caller is expected to add each id
+ * it hands out, because the other way two candidates collide is inside a
+ * SINGLE run: House and Senate companions of the same measure draft to the
+ * same bare name, kebab to the same id, and neither issue said a word (fixed
+ * 2026-08-09 — see structuresFor in scripts/moment-watch.mjs).
+ *
+ * `base` is the id BEFORE any de-collision suffix — what the name actually
+ * kebabs to. A caller needs it to notice that two candidates in one run wanted
+ * the same address, which is a fact about both of them and not only about the
+ * one that happened to be second.
  *
  * @param {string} nameEn      the drafted name, or '' when nothing was drafted
  * @param {string} vehicleSlug the candidate's slug, the blank-path fallback
- * @param {Set<string>} taken  ids already in data/moments.json
- * @returns {{ id: string, derived: boolean, collided: boolean }}
+ * @param {Set<string>} taken  ids already claimed — the file's, plus this run's
+ * @returns {{ id: string, base: string, derived: boolean, collided: boolean }}
  */
 export function momentIdFor(nameEn, vehicleSlug, taken = new Set()) {
   const fallback = kebab(vehicleSlug) || 'candidate';
   let id = kebab(nameEn).replace(/^the-/, '').replace(/-question$/, '');
   const derived = id.length > 0;
   if (!derived) id = `question-${fallback}`;
+  const base = id;
   const collided = taken.has(id);
   if (collided) id = `${id}-${fallback}`;
-  return { id, derived, collided };
+  return { id, base, derived, collided };
 }
 
 /* ------------------------------------------------------------------ *
@@ -367,6 +379,7 @@ export function momentIdFor(nameEn, vehicleSlug, taken = new Set()) {
 export function blankStructure(notes = []) {
   return {
     id: PLACEHOLDER_ID,
+    idBase: PLACEHOLDER_ID,
     category: '',
     aliases: { en: [], es: [] },
     signal: { type: '', refs: [] },
@@ -411,7 +424,7 @@ export function structureFor(c, bill, { now = Date.now(), articles = [], takenId
 
   const opened = isoDay(now);
   const review_by = reviewByFor(opened);
-  const { id, derived, collided } = momentIdFor(nameEn, c?.slug, takenIds);
+  const { id, base: idBase, derived, collided } = momentIdFor(nameEn, c?.slug, takenIds);
 
   if (signalNote) notes.push(signalNote);
   if (aliasNote) notes.push(aliasNote);
@@ -423,7 +436,7 @@ export function structureFor(c, bill, { now = Date.now(), articles = [], takenId
   );
   if (collided) {
     notes.push(
-      `**That id already existed in \`data/moments.json\`, so the vehicle slug was appended.** Two entries with the same key do not error — the second silently replaces the first — so the collision is called out here rather than left to delete a live question quietly.`
+      `**\`${idBase}\` was already claimed — by an entry in \`data/moments.json\` or by another candidate in this same run — so the vehicle slug was appended.** Two entries with the same key do not error: the second silently replaces the first. The collision is called out here rather than left to delete a live question quietly.`
     );
   }
   notes.push(
@@ -433,5 +446,5 @@ export function structureFor(c, bill, { now = Date.now(), articles = [], takenId
     '`context_refs` is omitted rather than empty: it is optional, hand-curated, and host-allowlisted to CRS/CBO/GAO. Add one if you have a report worth linking — an empty array is a claim of grounding with no ground, which is why the old scaffold failed on it.'
   );
 
-  return { id, category, aliases, signal, opened, review_by, notes, gaps };
+  return { id, idBase, category, aliases, signal, opened, review_by, notes, gaps };
 }

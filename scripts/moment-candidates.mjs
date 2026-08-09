@@ -136,6 +136,38 @@ export function floorCalendarChamber(actionText) {
   return /senate/i.test(match[1]) ? 'senate' : 'house';
 }
 
+/* ------------------------------------------------------------------ *
+ * Import-free copy #2b — THE STATUS-LABEL GATE.
+ * SOURCE OF TRUTH: lib/journey.ts `statusKeyFor` (owner ruling
+ * 2026-08-04, Wave B #1). Pinned corpus-wide by tests/journey.unit.spec.ts.
+ *
+ * WHY A SECOND SCRIPT-SIDE COPY. The corpus derives `floor_vote` looser
+ * than the label "On the floor calendar" claims — 23 of 319 carry cloture
+ * or rejected-motion texts, not placements — so every surface that PRINTS
+ * a status label routes through this key. scripts/moment-draft.mjs did
+ * not: it looked `bills.status[c.status]` straight out of messages/*.json,
+ * and on 2026-08-09 the record block handed to the drafting model said
+ * BOTH "where it stands: On the floor calendar" AND "floor calendar: not
+ * on a floor calendar" about s-4668-119 (status floor_vote, last action a
+ * cloture motion). The model resolved the contradiction toward the label
+ * and the false sentence reached data/moments.json. A prompt is a printing
+ * surface; it goes through the same gate as a page.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The status key a label may be printed under: `floor_vote` only when the
+ * bill's own last action says a chamber placed it on a calendar, otherwise
+ * `floor_activity`. Every other status passes through untouched.
+ *
+ * @param {string} status                bill.status
+ * @param {string | null} lastActionText bill.last_action_text
+ * @returns {string} a `bills.status.*` message key
+ */
+export function statusKeyFor(status, lastActionText) {
+  if (status !== 'floor_vote') return status;
+  return floorCalendarChamber(lastActionText) ? 'floor_vote' : 'floor_activity';
+}
+
 /**
  * The bill page's full gate, not just the regex: the calendar sentence earns
  * the claim, the date earns the amber, and the status has to still be

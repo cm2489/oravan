@@ -269,6 +269,47 @@ test.describe('forbidden-vocabulary lint', () => {
     expect(lintForbidden('Los republicanos quieren eliminarla', 'es')).toContain('nombre de partido');
   });
 
+  /*
+   * THE ACCENTED PAST TENSE, which is the most natural way a Spanish sentence
+   * says any of these — and which the lint could NEVER match for the first
+   * three years of its life. JavaScript's `\b` is ASCII-only, so the trailing
+   * boundary in /\bluchó\b/ never fires after "ó" and the regex simply does
+   * not match "luchó por la enmienda". Five of the ten banned verbs passed in
+   * this form, on a path where nobody reads the sentence before it publishes
+   * (the nightly moment-updates revisions run this table through
+   * lintRevisionText and commit straight to `main`, so the lint IS the check).
+   * Fixed
+   * 2026-08-09 with Unicode lookarounds; these are the cases the ASCII
+   * boundary could not see.
+   */
+  test('flags the ACCENTED Spanish conjugations — the ones `\\b` could never match', () => {
+    expect(lintForbidden('El senador luchó por la enmienda', 'es')).toContain('luchar');
+    expect(lintForbidden('La medida salvó el programa', 'es')).toContain('salvar');
+    expect(lintForbidden('El comité bloqueó la propuesta', 'es')).toContain('bloquear');
+    expect(lintForbidden('El grupo atacó el proyecto', 'es')).toContain('ataque');
+    expect(lintForbidden('La senadora defendió la ley', 'es')).toContain('defender');
+    expect(lintForbidden('El Senado resistió el cambio', 'es')).toContain('resistir');
+  });
+
+  test('the accented forms are caught at every position in a sentence', () => {
+    // Start, middle, end, and before punctuation — the four places a boundary
+    // implementation can differ.
+    expect(lintForbidden('Bloqueó la medida', 'es')).toContain('bloquear');
+    expect(lintForbidden('El pleno la bloqueó ayer', 'es')).toContain('bloquear');
+    expect(lintForbidden('La medida se bloqueó', 'es')).toContain('bloquear');
+    expect(lintForbidden('¿Quién la bloqueó?', 'es')).toContain('bloquear');
+    expect(lintForbidden('La bloqueó, según el registro', 'es')).toContain('bloquear');
+  });
+
+  test('the Unicode boundary does not fire mid-word, in either direction', () => {
+    // The whole point of a boundary: a longer word CONTAINING one of these
+    // stems is not a hit. `\b` got this right for ASCII and the lookarounds
+    // must keep getting it right for accented neighbours.
+    expect(lintForbidden('desbloqueó el acceso', 'es')).toEqual([]);
+    expect(lintForbidden('la salvación del fondo', 'es')).toEqual([]);
+    expect(lintForbidden('los antidemócratas', 'es')).toEqual([]);
+  });
+
   test('quoted official titles are exempt, in both quote styles', () => {
     expect(lintForbidden('the "Stop Harmful Schemes Act" of 2026', 'en')).toEqual([]);
     expect(lintForbidden('la «Ley para Detener el Fraude» de 2026', 'es')).toEqual([]);

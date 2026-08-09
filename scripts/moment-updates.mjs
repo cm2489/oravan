@@ -5,6 +5,15 @@
  *   MOMENT_UPDATES_MODE=incremental node --env-file=.env.local scripts/moment-updates.mjs   # hourly, in newsdesk.yml
  *   MOMENT_UPDATES_MODE=nightly     node --env-file=.env.local scripts/moment-updates.mjs   # nightly, in sync-bills.yml
  *
+ * WHAT THE MODE ACTUALLY SELECTS, because both modes commit and deploy this
+ * file and the difference is easy to over-read: `nightly` additionally
+ * collects press clusters and writes state summaries (the two steps that cost
+ * money and that only make sense once a day). EVERYTHING ELSE runs in both —
+ * collection, the lint, the merge, and **the storage envelopes**. The prune
+ * used to be nightly-only, which left HARD_DAY_CEILING and
+ * MAX_UPDATES_PER_MOMENT unenforced on 24 of the day's 25 writes; see the
+ * prune loop in main() for what that cost (2026-08-09).
+ *
  * Needs CONGRESS_API_KEY. ANTHROPIC_API_KEY is optional — without it the
  * decode and summary steps are skipped and every update carries the verbatim
  * government record with `ai: false`.
@@ -810,7 +819,71 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
  * @param {{ path?: string, sink?: (path: string, text: string) => void }} [opts]
  * @returns {boolean} whether anything was written
  */
-export function writeIfChanged(next, previousText, { path = UPDATES_PATH, sink = writeFileSync } = {}) {
+/**
+ * Apply the storage envelopes to every moment in the store, IN EVERY MODE.
+ *
+ * Exported for one reason: this used to be an inline loop inside main()'s
+ * `if (MODE === 'nightly')` block, and "which modes enforce the envelopes" is
+ * exactly the kind of fact that cannot be asserted about an inline loop in an
+ * unexported async function. It is a wiring bug that only a wiring test can
+ * catch, so the wiring became a function. See the call site in main() for the
+ * full account of what nightly-only cost.
+ *
+ * MUTATES `store` — deleting the entry of a retired or removed moment and
+ * replacing every other with its pruned self — because that is what the loop
+ * it replaced did, and because the caller's next step is to serialize `store`.
+ * pruneEntry itself stays pure; this is the one place the mutation lives.
+ *
+ * `mode` selects ONLY `reserveRevisions`, and it must be 0 on the incremental
+ * path: reserving holds a slot open for a revision the run is about to append
+ * (the arithmetic fix for the night a moment at MAX_REVISIONS committed 31,
+ * one past what check-moment-updates accepts, reddening main after the nightly
+ * had already deployed — 2026-08-06). An incremental run appends no revision,
+ * so reserving there would evict the oldest surviving revision every hour to
+ * make room for nothing.
+ *
+ * @param {Record<string, any>} store   the parsed store, keyed by moment id
+ * @param {Record<string, any>} moments parsed data/moments.json
+ * @param {{ now: number|Date|string, mode: 'nightly'|'incremental' }} opts
+ * @returns {string[]} the moment ids whose entry was deleted, for the log
+ */
+export function pruneStore(store, moments, { now, mode }) {
+  const deleted = [];
+  for (const momentId of Object.keys(store)) {
+    if (momentId === '_meta') continue;
+    const moment = moments?.[momentId];
+    const pruned = pruneEntry(store[momentId], {
+      now,
+      retired: !moment || moment.status === 'retired',
+      reserveRevisions: mode === 'nightly' ? 1 : 0,
+    });
+    if (pruned === null) {
+      /* A retired (or deleted) moment's updates leave the file entirely: git
+         history IS the archive, and a second archive nothing renders is dead
+         weight (v2 spec §4). Doing this hourly rather than nightly also
+         SHORTENS the window in which check-moment-updates fails on a
+         stored-retired moment that still carries an entry — that is a
+         violation there, not a warning. */
+      delete store[momentId];
+      deleted.push(momentId);
+    } else {
+      store[momentId] = pruned;
+    }
+  }
+  return deleted;
+}
+
+/* The default sink is the real write, wrapped rather than passed bare. `fs`'s
+   own signature accepts a numeric file descriptor and an options argument this
+   contract does not have, so `sink = writeFileSync` made the inferred type of
+   the parameter wider than the documented one — and every test passing the
+   (path: string, text: string) recorder the JSDoc above describes failed
+   `tsc --noEmit` the moment anything else in the same spec imported node:fs.
+   The wrapper is the JSDoc contract, executable. Production behaviour is
+   byte-identical: this is still writeFileSync(path, text). */
+const defaultSink = (/** @type {string} */ p, /** @type {string} */ text) => writeFileSync(p, text);
+
+export function writeIfChanged(next, previousText, { path = UPDATES_PATH, sink = defaultSink } = {}) {
   const priorStamp = previousText ? JSON.parse(previousText)?._meta?.generated_at : null;
   const shaped = (stamp) => `${JSON.stringify({ _meta: { schema: SCHEMA_VERSION, generated_at: stamp }, ...next }, null, 2)}\n`;
   if (previousText !== null && shaped(priorStamp ?? nowISO) === previousText) {
@@ -943,41 +1016,54 @@ async function main() {
   }
   console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s)`);
 
-  // ---- nightly: prune, then summarize ----
-  if (MODE === 'nightly') {
-    for (const momentId of Object.keys(store)) {
-      if (momentId === '_meta') continue;
-      const moment = moments[momentId];
-      // THE ORDERING HERE IS LOAD-BEARING — prune runs BEFORE the summary loop
-      // below and must stay there. generateStateSummary builds its prompt from
-      // `entry.updates` and grounds the revision in `recent.map(u => u.id)`;
-      // pruning afterwards would let the model summarize updates that are
-      // about to be deleted and make changedBecause's `updates:+N` a count of
-      // events on their way out of the file.
-      //
-      // What was wrong was only the arithmetic. The prune filled the revision
-      // list to MAX_REVISIONS and the loop below then appended tonight's, so a
-      // moment sitting at the cap committed 31 — one past what
-      // check-moment-updates accepts, which reddened main AFTER the nightly
-      // had already committed and deployed (2026-08-06). reserveRevisions
-      // holds the slot open instead. Exactly 1: this loop visits each moment
-      // once per run, so at most one revision is appended per moment per run.
-      const pruned = pruneEntry(store[momentId], {
-        now,
-        retired: !moment || moment.status === 'retired',
-        reserveRevisions: 1,
-      });
-      if (pruned === null) {
-        // A retired (or deleted) moment's updates leave the file entirely: git
-        // history IS the archive, and a second archive nothing renders is dead
-        // weight (v2 spec §4).
-        delete store[momentId];
-        console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
-      } else {
-        store[momentId] = pruned;
-      }
-    }
+  /* ---- prune: EVERY MODE, and that is the fix ----------------------------
+   *
+   * THE ENVELOPES HELD ON 1 WRITE IN 25. This loop lived inside the
+   * `if (MODE === 'nightly')` block below, one statement further down, so
+   * pruneEntry — which enforces HARD_DAY_CEILING (12 updates per moment-day),
+   * MAX_UPDATES_PER_MOMENT (200), the retention window, the correction/
+   * revision referential-integrity rewrite, and the retired-moment deletion —
+   * ran on the nightly run only. The hourly newsdesk workflow runs this same
+   * script with MOMENT_UPDATES_MODE=incremental (cron '7 * * * *') and
+   * `git add data/` COMMITS AND DEPLOYS data/moment-updates.json exactly as
+   * the nightly does. So on 24 of the day's 25 writes the storage envelopes
+   * were not enforced at all, on the path that publishes.
+   *
+   * WHAT THAT ACTUALLY BREAKS, which is worse than an oversized file. A
+   * multi-vehicle moment on a busy day — iran-war-powers carries four
+   * vehicles — can cross 12 updates in one moment-day through increments
+   * alone, and `> HARD_DAY_CEILING` is a VIOLATION in
+   * scripts/check-moment-updates.mjs, not a warning. That gate is a required
+   * step on every PR and every push to main. The incremental run would commit
+   * and deploy the file, and the NEXT nightly (and every unrelated PR in
+   * between) would go red against data already in production — a scheduled,
+   * self-inflicted CI outage with no code change to blame it on. That is the
+   * same failure lib/moment-updates-gate.mjs's own REFERENTIAL INTEGRITY note
+   * describes, reached by a different door.
+   *
+   * WHY IT WAS NIGHTLY-ONLY: nothing found in code, comment, or spec says it
+   * had to be. It reads as incidental — the prune was written where the
+   * summary loop needed it (immediately before, see the ordering note below)
+   * and inherited that block's mode guard rather than choosing it. Nothing in
+   * pruneEntry is nightly-specific: it is pure, it takes `now`, it makes no
+   * API call and costs nothing, and an incremental run that trims nothing
+   * produces a byte-identical file that writeIfChanged declines to write. The
+   * one genuinely mode-specific input is `reserveRevisions`, handled below.
+   *
+   * THE ORDERING IS STILL LOAD-BEARING — this runs BEFORE the summary loop and
+   * must stay there. generateStateSummary builds its prompt from
+   * `entry.updates` and grounds the revision in `recent.map(u => u.id)`;
+   * pruning afterwards would let the model summarize updates that are about to
+   * be deleted and make changedBecause's `updates:+N` a count of events on
+   * their way out of the file. Hoisting the loop out of the mode guard keeps
+   * that order exactly — prune, then (nightly only) summarize.
+   * --------------------------------------------------------------------- */
+  for (const momentId of pruneStore(store, moments, { now, mode: MODE })) {
+    console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
+  }
 
+  // ---- nightly: summarize ----
+  if (MODE === 'nightly') {
     let summaries = 0;
     for (const [momentId, moment] of Object.entries(moments)) {
       if (moment?.status === 'retired') continue;
