@@ -1,7 +1,16 @@
 /**
- * Coverage search-query builder — shared by scripts/sync-coverage.mjs and the
- * eval harness (scripts/eval-coverage-queries.mjs), and pinned by
- * tests/coverage-query.unit.spec.ts.
+ * The pure, testable half of the nightly coverage sync — the same
+ * script/pure-sibling split scripts/newsdesk.mjs uses with
+ * newsdesk-match.mjs, and for the same reason: scripts/sync-coverage.mjs runs
+ * its work at module top level (and process.exit(0)s without NEWS_API_KEY),
+ * so nothing in it can be imported by a test. Anything here is I/O-free.
+ * Shared with the eval harness (scripts/eval-coverage-queries.mjs) and pinned
+ * by tests/coverage-query.unit.spec.ts.
+ *
+ * Contents: the search-query builder (below) and the TheNewsAPI rate-limit
+ * header reader (bottom).
+ *
+ * ---- The search-query builder ----
  *
  * Design (each rule is backed by live TheNewsAPI experiments, 2026-07-02):
  * - Citations must be press-style: "H.R. 8463" matched a real article that
@@ -91,4 +100,37 @@ export function queryFor(b) {
 
   clauses.push(citationClause(b));
   return clauses.join(' | ');
+}
+
+// ---- TheNewsAPI rate-limit header ---------------------------------------
+/**
+ * Read `x-ratelimit-remaining` off a response, and say honestly when it isn't
+ * there. (2026-08-09)
+ *
+ * THE BUG: sync-coverage.mjs read the header as
+ * `Number(res.headers.get('x-ratelimit-remaining'))`. A MISSING header makes
+ * that `Number(null)` — which is 0, and `Number.isFinite(0)` is true, so the
+ * absent header latched the throttle to "this window's budget is spent". From
+ * then on every single batch in the run took the proactive-throttle branch
+ * and slept 60 seconds before firing, forever, because the response that
+ * would reset the counter is itself only reached after the sleep. A CDN-cached
+ * 200, a provider revision that drops or renames the header, or a proxy that
+ * strips it is enough: the nightly coverage run doesn't fail, it just crawls,
+ * and then runs out of night.
+ *
+ * `null` means "the header told us nothing" — the caller must leave its
+ * existing budget estimate alone rather than assume zero. An empty string and
+ * a non-numeric value are treated the same way, because `Number('')` is also
+ * 0 and would latch identically.
+ *
+ * @param {Headers|{get: (name: string) => string|null}|null|undefined} headers
+ * @returns {number|null} the remaining count, or null when unreadable
+ */
+export function readRateLimitRemaining(headers) {
+  const raw = headers?.get?.('x-ratelimit-remaining');
+  if (raw === null || raw === undefined) return null;
+  const trimmed = String(raw).trim();
+  if (trimmed === '') return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
 }

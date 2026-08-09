@@ -16,7 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { queryFor } from './coverage-query.mjs';
+import { queryFor, readRateLimitRemaining } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -186,8 +186,13 @@ async function fetchArticles(query, publishedAfter) {
     else if (attempt > 0) await sleep(2000 * attempt);
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-      const rem = Number(res.headers.get('x-ratelimit-remaining'));
-      if (Number.isFinite(rem)) rlRemaining = rem;
+      // Only honor the header when it actually said something. A MISSING
+      // header used to read as `Number(null)` === 0 — finite, so it latched
+      // rlRemaining to "budget spent" and made every later batch sleep 60s
+      // before firing, permanently. readRateLimitRemaining returns null for
+      // absent/blank/non-numeric and we leave the estimate untouched.
+      const rem = readRateLimitRemaining(res.headers);
+      if (rem !== null) rlRemaining = rem;
       if (res.ok) {
         const data = await res.json();
         return dedupeArticles((data.data ?? []).map((a) => ({

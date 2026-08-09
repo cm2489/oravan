@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 // Same pattern as urgency.unit.spec.ts: pin the pure .mjs module the pipeline
 // ships. Each shape below encodes a live-verified TheNewsAPI behavior — see
 // the header comment in scripts/coverage-query.mjs before "fixing" a pin.
-import { pressCitation, queryFor } from '../scripts/coverage-query.mjs';
+import { pressCitation, queryFor, readRateLimitRemaining } from '../scripts/coverage-query.mjs';
 
 const bill = (over: Record<string, unknown>) => ({
   bill_type: 'hr', bill_number: 8463, congress_number: 119,
@@ -89,5 +91,69 @@ test.describe('unbackfilled fallback keeps the title arm (2026-07-03 regression)
   });
   test('generated inputs still take precedence over the title', () => {
     expect(queryFor(bill({ press_names: ['GEO Act'], title: 'Geothermal Energy Orderly Decisions Act of 2025' }))).toBe('"GEO Act" | "H.R. 8463"');
+  });
+});
+
+/*
+ * THE THROTTLE LATCH (2026-08-09).
+ *
+ * scripts/sync-coverage.mjs read its rate-limit budget as
+ * `Number(res.headers.get('x-ratelimit-remaining'))`. A MISSING header makes
+ * that `Number(null)` === 0, which passes `Number.isFinite`, so an absent
+ * header latched the throttle to "this window's budget is spent" — and every
+ * later batch in the run slept a full 60 seconds before firing, permanently,
+ * because only a response can reset the counter and no response arrives until
+ * after the sleep. A CDN-cached 200, a provider revision that renames the
+ * header, or a proxy that strips it is enough: the nightly coverage run never
+ * fails, it just crawls, and then runs out of night.
+ */
+test.describe('readRateLimitRemaining (absent is not zero)', () => {
+  const headers = (v: string | null) => ({ get: () => v });
+
+  test('an ABSENT header returns null so the caller leaves its budget alone - the latch', () => {
+    expect(readRateLimitRemaining(headers(null))).toBe(null);
+  });
+
+  test("a present '0' still latches - a real zero budget must still be honored", () => {
+    expect(readRateLimitRemaining(headers('0'))).toBe(0);
+  });
+
+  test("a present '42' records 42", () => {
+    expect(readRateLimitRemaining(headers('42'))).toBe(42);
+  });
+
+  test('a blank or non-numeric value reads as absent, not as zero (Number("") is 0 too)', () => {
+    expect(readRateLimitRemaining(headers(''))).toBe(null);
+    expect(readRateLimitRemaining(headers('   '))).toBe(null);
+    expect(readRateLimitRemaining(headers('unlimited'))).toBe(null);
+    expect(readRateLimitRemaining(headers('NaN'))).toBe(null);
+  });
+
+  test('surrounding whitespace on a real number is tolerated', () => {
+    expect(readRateLimitRemaining(headers(' 7 '))).toBe(7);
+  });
+
+  test('a response with no headers object at all degrades to null rather than throwing', () => {
+    expect(readRateLimitRemaining(undefined)).toBe(null);
+    expect(readRateLimitRemaining({} as { get: (n: string) => string | null })).toBe(null);
+  });
+
+  test('reads the header by its canonical lowercase name off a real Headers object', () => {
+    const h = new Headers({ 'X-RateLimit-Remaining': '13' });
+    expect(readRateLimitRemaining(h)).toBe(13);
+    expect(readRateLimitRemaining(new Headers())).toBe(null);
+  });
+});
+
+test.describe('sync-coverage.mjs honors the header only when it said something', () => {
+  const src = readFileSync(join(process.cwd(), 'scripts/sync-coverage.mjs'), 'utf8');
+
+  test('the raw Number(header) read is gone - that expression IS the bug', () => {
+    expect(src).not.toMatch(/Number\(res\.headers\.get\(/);
+  });
+
+  test('the budget is only overwritten on a non-null reading', () => {
+    expect(src).toMatch(/const rem = readRateLimitRemaining\(res\.headers\)/);
+    expect(src).toMatch(/if \(rem !== null\) rlRemaining = rem/);
   });
 });

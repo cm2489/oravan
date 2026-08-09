@@ -270,13 +270,52 @@ export function looksLegislative(headline) {
 
 // ---- the ≥2-outlet rule -------------------------------------------------
 /**
+ * The sentinel newsdesk.mjs files an article under when its outlet cannot be
+ * resolved to a real domain. Exactly one feed in the basket carries no domain
+ * of its own — the Google News aggregator, where attribution lives in a
+ * per-article `<source url="…">` tag — so a missing or unparseable tag there
+ * leaves the article with no outlet at all.
+ */
+export const UNRESOLVED_OUTLET = 'unknown';
+
+/**
+ * How many REAL, DISTINCT outlets have matched this slug.
+ *
+ * The unresolved sentinel is NOT an outlet; it is the absence of one, and
+ * counting it as a second distinct source is the hole this closes
+ * (2026-08-09). One newsroom's story arriving twice — once from that
+ * outlet's own feed, once as an unattributable Google News item — used to
+ * present as {'cbsnews.com', 'unknown'}, size 2, and satisfied a guardrail
+ * written to require TWO independent newsrooms. That is precisely the
+ * single-outlet prioritization channel decideFires exists to prevent, so an
+ * unresolved item may still contribute its headline (dedupe, the pending-hold
+ * log, a future run's evidence) but never corroboration.
+ *
+ * Filtering at COUNT time rather than at write time is deliberate: it also
+ * disarms the 'unknown' entries already persisted in the live
+ * .newsdesk-cache/seen.json `pendingOutlets` by earlier runs, which a
+ * stop-writing-it fix would have left armed until their 7-day TTL ran out.
+ */
+export function countDistinctOutlets(outlets) {
+  if (!outlets) return 0;
+  const real = new Set();
+  for (const o of outlets) {
+    const name = String(o ?? '').trim().toLowerCase();
+    if (name && name !== UNRESOLVED_OUTLET) real.add(name);
+  }
+  return real.size;
+}
+
+/**
  * Decide which bills fire this run.
  *   citationSlugs: Set<slug> matched by an explicit citation (t1) this run
  *     - fires on any single outlet, no corroboration needed.
  *   outletsBySlug: Map<slug, Set<outlet>> - outlets that matched this slug
  *     via t2/t3, ACCUMULATED across runs (the caller persists this in the
  *     seen-headlines cache) so corroboration can build up over multiple
- *     hourly polls, not just within one run's fetch window.
+ *     hourly polls, not just within one run's fetch window. Only REAL
+ *     outlets count toward the ≥2 (countDistinctOutlets); the
+ *     UNRESOLVED_OUTLET sentinel is skipped.
  *   tier0Slugs: Map<slug, sourceLabel> - slugs extracted from the
  *     government's own signal feeds (Congress.gov floor/most-viewed RSS,
  *     docs.house.gov floorschedule). These BYPASS the ≥2-outlet guardrail
@@ -303,7 +342,9 @@ export function decideFires(citationSlugs, outletsBySlug, tier0Slugs = new Map()
   }
   for (const [slug, outlets] of outletsBySlug) {
     if (fired.has(slug)) continue;
-    if (outlets && outlets.size >= 2) {
+    // countDistinctOutlets, not outlets.size: an unresolved-outlet item is
+    // not a second newsroom (see its comment above).
+    if (countDistinctOutlets(outlets) >= 2) {
       fired.add(slug);
       reason.set(slug, 'corroborated');
     }
@@ -386,6 +427,109 @@ export function rollDailyDecodes(dailyDecodes, todayUTC) {
     count: dailyDecodes.count ?? 0,
     tier0Count: dailyDecodes.tier0Count ?? 0,
   };
+}
+
+// ---- what the decode budget is actually charged for ---------------------
+/**
+ * Did this syncOneBill result SPEND on the model? (2026-08-09)
+ *
+ * The budget used to be charged on outcome === 'added' alone, i.e. on
+ * SUCCESS. A decode that reached the model and then threw — the shape check
+ * in bill-decode.mjs rejecting a reply with a missing tag, which for a given
+ * verbose bill is deterministic, not transient — came back 'failed' and cost
+ * the caps nothing, while having already paid for the decode call (and, past
+ * it, the search-inputs call). The bill then re-fired every hour, all day:
+ * unbounded paid retries of a failure that could not succeed. The cap has to
+ * price the attempt, because the attempt is what the invoice prices.
+ *
+ * syncOneBill therefore reports `decodeAttempted`, set immediately before the
+ * first Anthropic call, and this charges on it. The three free outcomes are
+ * never charged and never can be, because none of them reaches that line:
+ *   'refreshed' — an existing bill's fields, Congress.gov only
+ *   'gated'     — a new bill with no legislative motion, dropped before decode
+ *   'budget'    — the caps already said no this call
+ * and 'failed' splits: a failure BEFORE the first model call (a Congress.gov
+ * 500, a timeout) is free and stays free, so a transient upstream blip still
+ * retries next hour at no cost.
+ */
+export function chargeableDecode(result) {
+  return result?.decodeAttempted === true;
+}
+
+/** Dedupe key for "this slug already burned a decode and failed, today".
+ *
+ *  Keyed by UTC DAY, not by floor window: a deterministic decode failure
+ *  (the missing-tag case above) fails identically on every retry, so the two
+ *  extra tries a per-window key would allow are pure spend with no chance of
+ *  a different answer. The day boundary still grants one retry per day, which
+ *  is what covers the cases that AREN'T deterministic — a model-side change,
+ *  a bill whose text was truncated upstream and has since been republished.
+ *
+ *  Reuses the seen-set mechanics (hashHeadline over a namespaced pair) so it
+ *  rides the same actions/cache entry and the same 7-day GitHub eviction as
+ *  every other key in there, with no new persistence to keep. Distinct
+ *  namespace, so it can never collide with a headline or tier-0 key. */
+export function failedDecodeKey(slug, dayUTC) {
+  return hashHeadline(`faildecode:${slug}`, `${dayUTC}`);
+}
+
+// ---- the darkness tripwire ----------------------------------------------
+/**
+ * Fraction of the press basket that must come back empty before the run says
+ * so out loud. Half: individual feeds break constantly and alone (AP's RSS
+ * 404s, the Washington Post feed serves a 200 with a stub body — both found
+ * dead during the 2026-07-16 verification), and an hourly job that shouts at
+ * every one of those teaches its owner to ignore it. Half the basket at once
+ * is not a feed problem; it is a network, a DNS, or a runner problem.
+ */
+export const PRESS_SILENT_WARN_RATIO = 0.5;
+
+/**
+ * Consecutive fully-dark runs before the warning becomes a red build. Six:
+ * the schedule is hourly, so six is six hours of the newsdesk receiving
+ * literally nothing — past any upstream blip, any Cloudflare challenge wave,
+ * any Actions network incident, and into "this has been broken since before
+ * you went to bed". Below that a single ::warning:: is the honest signal;
+ * a job that reds on hour one trains its owner to click through, and a job
+ * that never reds hides a week-long outage behind a green check.
+ */
+export const FEED_DARK_ESCALATE_RUNS = 6;
+
+/**
+ * Classify one run's feed intake. Pure — the caller counts, this judges.
+ *
+ * `pressSilent` counts a press feed that threw OR returned zero items: the
+ * 200-with-a-stub-body case is invisible to Promise.allSettled and reads
+ * exactly like a quiet news hour, which is the half of this failure mode that
+ * has no error message at all. Tier-0 counts hard failures only — a floor
+ * feed with no items is a recess day, and the docs.house.gov look-ahead 404s
+ * legitimately on a no-session week (fetchTier0 returns [] there by design).
+ *
+ * `dark` is deliberately the strictest reading: EVERY tier-0 feed failed AND
+ * EVERY press feed came back silent, i.e. the run received nothing from
+ * anyone. That is the only state worth escalating on, because it is the only
+ * one that cannot be a coincidence of upstreams.
+ */
+export function assessFeeds({ tier0Total, tier0Failed, pressTotal, pressSilent }) {
+  const tier0Dark = tier0Total > 0 && tier0Failed >= tier0Total;
+  const pressDark = pressTotal > 0 && pressSilent >= pressTotal;
+  const pressDegraded =
+    pressTotal > 0 && pressSilent >= Math.ceil(pressTotal * PRESS_SILENT_WARN_RATIO);
+  return { tier0Dark, pressDark, pressDegraded, dark: tier0Dark && pressDark };
+}
+
+/** Advance the persisted consecutive-darkness counter. Returns a fresh
+ *  object (never mutates the argument), and `escalate` once the streak
+ *  reaches `escalateAfter` — staying true for every further dark run, so the
+ *  build stays red until someone fixes it rather than going quiet again on
+ *  hour seven. Any non-dark run resets the streak to 0: recovery is the
+ *  all-clear. A lost cache resets it too, which fails toward silence — the
+ *  counter is an escalation aid, never the only signal (the per-run
+ *  ::warning:: is emitted independently). */
+export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_RUNS) {
+  const previous = Number(prev?.consecutiveDark);
+  const consecutiveDark = dark ? (Number.isFinite(previous) && previous > 0 ? previous : 0) + 1 : 0;
+  return { consecutiveDark, escalate: consecutiveDark >= escalateAfter };
 }
 
 // ---- the no-change-no-commit guard --------------------------------------
@@ -556,13 +700,20 @@ export function prunePendingOutlets(pending, nowMs = Date.now()) {
 
 /** One-line, log-friendly summary of the guardrail's current holds — the
  *  soft matches waiting on a second distinct outlet. Only slugs (never
- *  headline text) appear, per the never-republish-feed-content rule. */
+ *  headline text) appear, per the never-republish-feed-content rule.
+ *
+ *  A "hold" is counted the same way decideFires counts a fire: by REAL
+ *  outlets. An entry sitting at {'cbsnews.com', 'unknown'} is one newsroom
+ *  waiting for a second, and the log has to say so — reading it as a
+ *  two-outlet entry that simply hasn't fired would make this line disagree
+ *  with the rule it reports on. */
 export function summarizePendingOutlets(pending, nowMs = Date.now()) {
   const holds = Object.entries(pending ?? {})
-    .filter(([, e]) => (e?.outlets?.length ?? 0) === 1)
+    .filter(([, e]) => countDistinctOutlets(e?.outlets) === 1)
     .map(([slug, e]) => {
       const ageDays = Math.max(0, Math.floor((nowMs - Date.parse(e.updated ?? '')) / 86_400_000));
-      return `${slug}<-${e.outlets[0]} (${Number.isFinite(ageDays) ? ageDays : '?'}d)`;
+      const only = e.outlets.find((o) => String(o ?? '').trim().toLowerCase() !== UNRESOLVED_OUTLET);
+      return `${slug}<-${only} (${Number.isFinite(ageDays) ? ageDays : '?'}d)`;
     });
   return holds.length
     ? `pending single-outlet holds (need a 2nd distinct outlet to fire): ${holds.join(', ')}`
