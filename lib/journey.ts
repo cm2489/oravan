@@ -138,6 +138,74 @@ export function floorActionChamber(actionText: string | null): Chamber | null {
   return null;
 }
 
+/*
+ * IS A FLOOR VOTE STILL COMING, AND IN WHICH CHAMBER — the second fact the
+ * green panel is allowed to state (owner ruling 2026-08-09).
+ *
+ * floorCalendarChamber above answers "was it PLACED on a calendar", and that
+ * is a pre-action fact: the moment a bill draws real floor action — a cloture
+ * motion filed, a motion to proceed made — Congress overwrites
+ * `last_action_text` and the placement sentence is gone. The crown was
+ * therefore structurally blind to the week's actual floor fights and ran one
+ * to two days behind them. This function is the other half: not "it was
+ * queued" but "a vote on it is still ahead".
+ *
+ * THE THREE BUCKETS, over the 26 floor_vote texts in data/bills.json that
+ * carry NO calendar placement (counts as of 2026-08-09; the corpus moves
+ * nightly — recompute, don't trust):
+ *
+ *   8  LIVE — a vote is still coming: 2 cloture motions presented, 1 motion
+ *      to proceed made in Senate, 2 POSTPONED PROCEEDINGS, 3 Rules Committee
+ *      resolutions reported to the House.
+ *   18 SETTLED — the vote already happened and went nowhere: rejected motions
+ *      to proceed, cloture not invoked, rejected discharge motions. A pending
+ *      claim over any of these is a lie, and rule 0 is what stops it.
+ *   0  UNCLASSIFIED — every remaining shape returns null and the crown simply
+ *      does not consider that bill.
+ *
+ * WHY AN ALLOW-LIST, ORDERED, WITH THE SETTLED GUARD FIRST. A deny-list would
+ * admit an unseen phrasing straight into the full-bleed green panel — the one
+ * surface on the site that shouts — and the Senate invents sentences we have
+ * never seen every week. Fail-closed means a novel text costs us a quiet
+ * week, which is honest; fail-open would cost a false claim of urgency in the
+ * loudest place we have. The settled guard runs BEFORE any chamber rule for
+ * the same reason: "Cloture on the motion to proceed to the measure NOT
+ * INVOKED in Senate" contains a cloture phrase, and matching it first would
+ * crown a dead motion.
+ *
+ * The corpus text "Motion by Senator Schumer to reconsider … the vote by
+ * which the third cloture motion … was not invoked … entered in Senate" is a
+ * genuinely live motion that rule 0 rejects on its "not invoked" clause. That
+ * is DELIBERATE (owner decision D4, 2026-08-09): the sentence is about a vote
+ * that already failed, a reader cannot tell from it whether anything is still
+ * ahead, and one missed crown is cheaper than one wrong one.
+ *
+ * NO `$` ANCHORS. Live texts carry trailing Congressional-Record suffixes —
+ * "(CR SN)", "(consideration: CR SN)" — so an anchored pattern would match
+ * the fixture and miss the record.
+ */
+export function floorPendingChamber(actionText: string | null): Chamber | null {
+  if (!actionText) return null;
+  // (0) THE SETTLED GUARD, first and unconditional: the record says this
+  //     already resolved, so nothing is pending no matter what else it says.
+  if (/\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i.test(actionText)) {
+    return null;
+  }
+  // (1) A cloture motion PRESENTED is the Senate scheduling its own vote.
+  if (/cloture motion .*presented in senate/i.test(actionText)) return 'senate';
+  // (2) A motion to proceed MADE (not rejected — rule 0 caught those).
+  if (/motion to proceed to consideration of (?:the )?measure made in senate/i.test(actionText)) {
+    return 'senate';
+  }
+  // (3) "POSTPONED PROCEEDINGS" (House rule XIX): the vote was deferred to a
+  //     later point in the same week's business — it is still ahead.
+  if (/postponed proceedings/i.test(actionText)) return 'house';
+  // (4) A Rules Committee resolution reported to the House sets the terms of
+  //     a floor debate that has not happened yet.
+  if (/rules committee resolution .*reported to house/i.test(actionText)) return 'house';
+  // Everything else: the record did not say a vote is coming, so we do not.
+  return null;
+}
 
 /**
  * THE STATUS-LABEL GATE (owner ruling 2026-08-04, Wave B #1). The corpus
