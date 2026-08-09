@@ -169,6 +169,12 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *
  * Returns one of:
  *   'refreshed' — an existing bill's fields were updated in place (free)
+ *   'skipped_partial' — an existing bill was fetched fine, but the reply
+ *                 carried no readable `latestAction` text, so NOTHING was
+ *                 written (see refreshBillFields in congress-fetch.mjs for
+ *                 why a partial payload must never be applied). Neither a
+ *                 change nor a failure: idempotent, and the bill self-heals
+ *                 on its next touch by either script.
  *   'added'     — a brand-new bill was decoded and pushed into the corpus
  *   'gated'     — a brand-new bill was found but shows no real legislative
  *                 motion (and isn't force-bypassed) — NOT stored anywhere.
@@ -191,8 +197,10 @@ export async function syncOneBill(u, ctx) {
     const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
     const existing = bySlug.get(slug);
     if (existing) {
-      refreshBillFields(existing, d);
-      return { outcome: 'refreshed', slug };
+      // The sentinel IS the outcome: a payload we refused to write surfaces
+      // to every caller as 'skipped_partial' instead of posing as a refresh
+      // that happened to change nothing.
+      return { outcome: refreshBillFields(existing, d), slug };
     }
     const status = mapStatus(d.latestAction?.text);
     const forced = forceSlugs.has(slug);

@@ -218,13 +218,46 @@ export function congressGovUrl(type, number) {
 /** Mutate an existing corpus bill's refreshable fields in place from a
  *  Congress.gov bill-detail payload (`cg('/bill/{congress}/{type}/{number}')`'s
  *  `.bill`). Free, no AI cost - the one place both scripts' "refresh" branch
- *  lives, so it can't drift between the nightly sync and the hot-bill pass. */
+ *  lives, so it can't drift between the nightly sync and the hot-bill pass.
+ *
+ *  Returns 'refreshed' when the payload was readable and the fields were
+ *  written, or 'skipped_partial' when it wasn't and NOTHING was touched. The
+ *  sentinel doubles as syncOneBill's outcome string (scripts/bill-decode.mjs),
+ *  so the refresh vocabulary can't drift apart from the sync vocabulary
+ *  either - every caller counts the skip and says so in its own run log.
+ *
+ *  A 200 whose `latestAction` carries no readable text is NOT a bill that
+ *  went quiet; it's a reply we can't read (a mid-update record, or a degraded
+ *  Congress.gov response). Every action-derived field below is computed from
+ *  that text, so writing them from an absent one silently REWROTE the record:
+ *  mapStatus(undefined) falls through to 'committee' and last_action_date was
+ *  assigned unconditionally to null, while last_action_text alone had a
+ *  `?? existing` fallback and kept its old value. That asymmetry is what made
+ *  the damage invisible - a bill sitting on the Senate calendar came out as
+ *  'committee', dated null, still carrying "Placed on Senate Legislative
+ *  Calendar" as its text: internally inconsistent, below every urgency floor,
+ *  dropped from the homepage "Act now" band, and shown to visitors as a quiet
+ *  week. Nothing in hot-bills.yml verifies the refresh afterwards, so nothing
+ *  would have caught it. So: no readable action, no write at all.
+ *
+ *  The one present-but-partial payload still written is text WITHOUT an
+ *  actionDate - the text is the record and maps to a status on its own. Its
+ *  date is PRESERVED rather than nulled, because the stored date is the date
+ *  of an action that really happened: keeping it can only understate this
+ *  bill's freshness (urgencyScore's recency bonus, lib/freshness.ts's
+ *  newestAction scan), never overstate it, while null erases the signal
+ *  outright. The mirror case - a date with NO text - deliberately gets no
+ *  such path: it can't produce a status, and pinning a newer date onto the
+ *  older stored text would overstate freshness, the one direction this file
+ *  must never err in. It skips with everything else. */
 export function refreshBillFields(existing, detail) {
-  const status = mapStatus(detail.latestAction?.text);
-  const lastActionDate = detail.latestAction?.actionDate ?? null;
+  const action = detail?.latestAction;
+  if (!action?.text) return 'skipped_partial';
+  const status = mapStatus(action.text);
+  const lastActionDate = action.actionDate ?? existing.last_action_date ?? null;
   existing.status = status;
   existing.last_action_date = lastActionDate;
-  existing.last_action_text = detail.latestAction?.text ?? existing.last_action_text;
+  existing.last_action_text = action.text;
   existing.urgency_score = urgencyScore(status, lastActionDate);
   const tags = tagBill(detail.policyArea?.name);
   if (tags.length) existing.issue_tags = tags;
@@ -233,4 +266,5 @@ export function refreshBillFields(existing, detail) {
   // URL builder was wrong (hconres/sconres, 2026-07-23) self-heal on their
   // next refresh.
   existing.congress_gov_url = congressGovUrl(existing.bill_type, existing.bill_number);
+  return 'refreshed';
 }
