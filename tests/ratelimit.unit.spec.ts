@@ -542,6 +542,127 @@ test('tenant limiter: an Upstash request error fails open to in-memory and is co
   expect(getUpstashErrorCounts().counters).toBeGreaterThan(errorsBefore);
 });
 
+// --- spend breakers fail CLOSED (the one inversion of the doctrine) ---------
+
+/*
+ * RATE LIMITS FAIL OPEN; SPEND BREAKERS FAIL CLOSED.
+ *
+ * Every other limiter in this module answers an Upstash outage by falling
+ * back to a per-instance in-memory window — the right call when the thing
+ * being protected is availability against a noisy caller.
+ *
+ * app/api/brand's 'brand-day' breaker is not that. It is a GLOBAL daily cap
+ * on an UNAUTHENTICATED endpoint that spends real money per call (~$2/day at
+ * 250 calls). Failing it open swaps the global counter for a per-INSTANCE
+ * one, so during an outage the documented ~$2/day ceiling silently becomes
+ * ~$2/day per serverless instance — times however many instances a
+ * distributed caller can cause to exist, exactly when nobody is watching.
+ * Declining to spend is recoverable; an unbounded bill is not.
+ */
+
+test('spend breaker (failClosed): an unreachable counters database REFUSES the paid call instead of falling back to a per-instance count', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const errorsBefore = getUpstashErrorCounts().counters;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 250,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    // Not "the 251st call" — the FIRST one. With the counter's state unknown
+    // there is no headroom to claim, so every call is refused for as long as
+    // the outage lasts.
+    for (let i = 1; i <= 3; i += 1) {
+      expect(await breaker.isLimited('brand-global'), `call ${i} must be refused`).toBe(true);
+    }
+  } finally {
+    console.error = realError;
+  }
+  // Still counted and logged like every other Upstash failure — failing
+  // closed is not the same as failing silently.
+  expect(getUpstashErrorCounts().counters).toBeGreaterThan(errorsBefore);
+});
+
+test('spend breaker (failClosed): a HEALTHY counters database is unaffected — normal counting, normal ceiling', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const breaker = createTenantRateLimiter({
+    route: 'brand-day',
+    max: 3,
+    windowSec: 86400,
+    failClosed: true,
+  });
+  for (let i = 1; i <= 3; i += 1) {
+    expect(await breaker.isLimited('brand-global'), `call ${i} of 3 must pass`).toBe(false);
+  }
+  expect(await breaker.isLimited('brand-global'), 'the 4th trips the real ceiling').toBe(true);
+});
+
+test('the doctrine, side by side: the SAME outage fails a rate limiter open and a spend breaker closed', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    // Availability guard: keeps serving (in-memory window still bounds abuse).
+    const rateLimit = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
+    expect(await rateLimit.isLimited('cus_doctrine'), 'a rate limit must fail OPEN').toBe(false);
+
+    // Money guard, identical outage, opposite answer.
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 250,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    expect(await breaker.isLimited('brand-global'), 'a spend breaker must fail CLOSED').toBe(true);
+  } finally {
+    console.error = realError;
+  }
+});
+
+test('spend breaker (failClosed): an UNCONFIGURED counters database keeps the in-memory fallback, so dev/CI are not darked', async () => {
+  // No setUpstashEnv() - the local-dev/CI/preview-without-env path. This is
+  // deliberately NOT the fail-closed case: "no counters database at all" is
+  // a known deployment shape announced by the single startup line, not the
+  // unknown state an outage creates, and refusing here would dark the
+  // feature on every developer's machine to guard against a
+  // misconfiguration that would equally have disabled every other limiter.
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const realLog = console.log;
+  console.log = () => {};
+  try {
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 2,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    expect(await breaker.isLimited('brand-global')).toBe(false);
+    expect(await breaker.isLimited('brand-global')).toBe(false);
+    expect(await breaker.isLimited('brand-global'), 'the in-memory ceiling still applies').toBe(true);
+  } finally {
+    console.log = realLog;
+  }
+  expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
+});
+
 test('composition: the tenant limiter and the per-IP caller limiter are completely independent counters', async () => {
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();

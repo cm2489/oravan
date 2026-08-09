@@ -433,10 +433,44 @@ export interface TenantRateLimiter {
   isLimited(tenantId: string): Promise<boolean>;
 }
 
+/*
+ * RATE LIMITS FAIL OPEN. SPEND BREAKERS FAIL CLOSED. (fix/dynamic-surface-smalls)
+ *
+ * Everything else in this module fails OPEN when the counters database
+ * errors — a route must never hard-fail because Upstash is unreachable, and
+ * the thing being protected is availability against a noisy caller. Letting
+ * a request through during an outage costs, at worst, some extra work.
+ *
+ * A SPEND breaker is not that. `brand-day` is a GLOBAL daily cap on an
+ * unauthenticated endpoint that spends real money per call (~$2/day at 250
+ * calls, app/api/brand/route.ts). Failing it open substitutes a per-INSTANCE
+ * in-memory counter for the global one, so during an Upstash outage the
+ * documented ~$2/day cap silently becomes ~$2/day PER SERVERLESS INSTANCE,
+ * multiplied by however many instances a distributed caller can cause to
+ * exist — precisely when nobody is watching. The honest answer for a guard
+ * whose state is unknown is to refuse the paid call: declining to spend is
+ * recoverable, and the caller-visible outcome is the same 429 the breaker
+ * already returns when it legitimately trips (the /embeds UI's existing
+ * "set the colors manually" path), so this costs no new copy in either
+ * language.
+ *
+ * `failClosed` applies to the ERROR path only — "configured, but this
+ * request could not reach it", which is the outage this exists for. The
+ * UNCONFIGURED path (no env at all: local dev, CI, previews without env)
+ * deliberately keeps the in-memory fallback: that is not an unknown state,
+ * it is a deployment that has opted out of durable counters entirely, it is
+ * already announced by logFallbackOnce()'s single startup line, and making
+ * it refuse would dark the feature on every developer's machine and in CI
+ * to guard against a misconfiguration that would equally have disabled every
+ * other limiter in the product. That asymmetry is a judgment call, so it is
+ * written down here rather than left to be rediscovered.
+ */
 export function createTenantRateLimiter(opts: {
   route: RouteName;
   max: number;
   windowSec: number;
+  /** Spend breakers only: an unreachable counters database means REFUSE. */
+  failClosed?: boolean;
 }): TenantRateLimiter {
   const core = windowedCounterCore(opts);
 
@@ -452,6 +486,10 @@ export function createTenantRateLimiter(opts: {
         return (await core.durableCheck(client, key)).limited;
       } catch (err) {
         noteUpstashError('counters', err);
+        // The one place in this module that does NOT fail open — see the
+        // doctrine comment above. Reported as "limited" because that is what
+        // the caller must do about it: not spend.
+        if (opts.failClosed) return true;
         return core.memoryCheck(tenantId).limited;
       }
     },
