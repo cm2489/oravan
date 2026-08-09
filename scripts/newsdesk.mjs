@@ -87,7 +87,11 @@
  * A bill fires only if (a) extracted from a tier-0 GOVERNMENT feed (no
  * outlet lean exists, so no corroboration applies - logged loudly), (b)
  * matched by an explicit citation from ANY outlet, or (c) matched by
- * t2/t3/nickname-bridge and corroborated by >=2 DISTINCT outlets,
+ * t2/t3/nickname-bridge and corroborated by >=2 DISTINCT REAL outlets -
+ * an article whose outlet can't be resolved to a domain (a Google News item
+ * with a missing/unparseable <source url>) contributes its headline but NOT
+ * corroboration, since counting it as a second newsroom let one outlet's
+ * story corroborate itself (2026-08-09; countDistinctOutlets) -
  * accumulated across runs via the seen-headlines cache (newsdesk-match.mjs's
  * decideFires; pending single-outlet holds expire after 7 days and are
  * summarized in every run's log). See that module's header comment for
@@ -118,7 +122,11 @@
  * so GitHub's own "evict caches unused for 7 days" policy ages out stale
  * state automatically with no TTL bookkeeping needed here. The same file
  * also carries `pendingOutlets` (the per-slug outlet sets the >=2-outlet
- * rule accumulates across runs) and `dailyDecodes` (the cost ceiling).
+ * rule accumulates across runs), `dailyDecodes` (the cost ceiling) and
+ * `feedHealth` (the consecutive-darkness streak). The `seen` set holds three
+ * namespaced key kinds, all hashes, never feed content: headline keys, tier-0
+ * (slug, day, window) refresh slots, and failedDecodeKey holds for a slug
+ * whose decode paid and failed today.
  * Cache miss (first run ever, an evicted cache, or a corrupt file)
  * degrades gracefully to empty state in loadCache(): a bill that's already
  * fresh just gets refreshed again (idempotent no-op), and an
@@ -149,6 +157,36 @@
  * free Congress.gov list request per run and no LLM calls of its own. See
  * the introducing PRs' reports for the full typical/busy/hard-ceiling cost
  * tables.
+ * Both budgets are charged on the ATTEMPT, not the success (2026-08-09).
+ * Until then only outcome 'added' was counted, so a decode that reached the
+ * model and then threw — bill-decode.mjs's shape check rejecting a reply with
+ * a missing tag, which is deterministic for a given verbose bill — spent two
+ * Sonnet calls, charged the caps nothing, and left its slug unmarked, so the
+ * same bill re-fired every hour for the rest of the day: unbounded paid
+ * retries of a failure that could not succeed, right through a ceiling
+ * described above as code-enforced. syncOneBill now reports `decodeAttempted`
+ * and chargeableDecode charges on it; the free outcomes (refreshed, gated,
+ * budget, and any failure before the first model call) never reach it. A slug
+ * that paid and failed also gets a failedDecodeKey held for the rest of the
+ * UTC day, so a deterministic failure costs at most one decode per day
+ * instead of one per hour.
+ *
+ * ---- Failure visibility (2026-08-09) ----
+ * Every feed here can throw, or serve a 200 with an empty/stub body, and the
+ * run still exits 0 looking exactly like a quiet news hour — the shape that
+ * would let a total ingest outage sit green for a week. So the run judges its
+ * own intake (assessFeeds): all tier-0 feeds failing, or half the press
+ * basket returning nothing, each emit a ::warning:: visible in the Actions
+ * summary. A FULLY dark run (every tier-0 feed failed AND every press feed
+ * silent — the only state that can't be an upstream coincidence) increments a
+ * consecutive-darkness counter persisted in the same cache file, and at
+ * FEED_DARK_ESCALATE_RUNS=6 in a row — six hours of receiving nothing at all —
+ * the run emits ::error:: and exits 1. One caveat, stated where it bites: a
+ * non-zero exit skips the newsdesk.yml steps after this script, including the
+ * sibling Moment-updates collector. That is the intended trade at six hours
+ * dark (a human is needed either way, and the collector is incremental — the
+ * next healthy run re-collects), and nothing is lost from THIS script, which
+ * by definition fired nothing and wrote nothing on a dark run.
  *
  * ---- Boundaries ----
  * NEVER writes data/coverage.json — that stays scripts/sync-coverage.mjs's
@@ -169,13 +207,17 @@ import { loadJSON, syncOneBill } from './bill-decode.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
 import {
   anyDataChanged,
+  assessFeeds,
   buildBillIndex,
   buildListIndex,
+  chargeableDecode,
   decideFires,
   extractBillsThisWeekSlugs,
   extractFloorFeedSlugs,
   extractMostViewedSlugs,
   extractNicknameTokens,
+  failedDecodeKey,
+  FEED_DARK_ESCALATE_RUNS,
   findCitations,
   floorBucket,
   hashHeadline,
@@ -187,8 +229,10 @@ import {
   PENDING_OUTLETS_TTL_DAYS,
   prunePendingOutlets,
   rollDailyDecodes,
+  rollFeedDarkness,
   summarizePendingOutlets,
   tier0SeenKey,
+  UNRESOLVED_OUTLET,
 } from './newsdesk-match.mjs';
 
 // ---- Press-fire decode budget (unchanged from the 2026-07-16 design) ----
@@ -313,13 +357,14 @@ function loadCache() {
       seen: new Set(raw.seen ?? []),
       pendingOutlets,
       dailyDecodes: raw.dailyDecodes ?? null, // {date: 'YYYY-MM-DD', count, tier0Count}
+      feedHealth: raw.feedHealth ?? null, // {consecutiveDark}
     };
   } catch {
     // Cache miss (first run, evicted, or corrupt) - degrade gracefully.
     // See the header comment: firing again on an already-handled bill is
     // idempotent, so losing this state costs a little redundant work, not
     // correctness.
-    return { seen: new Set(), pendingOutlets: {}, dailyDecodes: null };
+    return { seen: new Set(), pendingOutlets: {}, dailyDecodes: null, feedHealth: null };
   }
 }
 
@@ -329,6 +374,7 @@ function saveCache(cache) {
     seen: [...cache.seen],
     pendingOutlets: cache.pendingOutlets,
     dailyDecodes: cache.dailyDecodes,
+    feedHealth: cache.feedHealth,
   }));
 }
 
@@ -403,9 +449,11 @@ const tier0Key = (slug) => tier0SeenKey(slug, todayUTC, floorWindow);
 console.log(`newsdesk tier-0 [${floorWindow} window, ${todayUTC}]: fetching ${TIER0_SOURCES.length} government signal feeds`);
 const tier0Results = await Promise.allSettled(TIER0_SOURCES.map(fetchTier0));
 const tier0Slugs = new Map(); // slug -> source label (first source to carry it wins)
+let tier0Failed = 0; // hard failures only - an empty floor feed is a recess day
 tier0Results.forEach((r, i) => {
   const { label } = TIER0_SOURCES[i];
   if (r.status !== 'fulfilled') {
+    tier0Failed++;
     console.error(`  tier-0 ${label} FAILED: ${r.reason?.message ?? r.reason}`);
     return;
   }
@@ -417,14 +465,45 @@ tier0Results.forEach((r, i) => {
 console.log(`newsdesk: fetching ${SOURCES.length} press feeds`);
 const results = await Promise.allSettled(SOURCES.map(fetchFeed));
 const items = [];
+// "Silent" = threw OR returned zero items. The second half matters as much as
+// the first: a 200 with an empty/stub body (the shape that killed
+// feeds.washingtonpost.com's politics feed) never reaches Promise.allSettled's
+// rejected branch and is indistinguishable from a quiet news hour unless it is
+// counted here. A US-politics RSS feed with zero items is broken, not calm.
+let pressSilent = 0;
 results.forEach((r, i) => {
   if (r.status === 'fulfilled') {
     items.push(...r.value);
-    console.log(`  ${SOURCES[i].name}: ${r.value.length} items`);
+    if (r.value.length === 0) pressSilent++;
+    console.log(`  ${SOURCES[i].name}: ${r.value.length} items${r.value.length === 0 ? ' (EMPTY - counted as silent)' : ''}`);
   } else {
+    pressSilent++;
     console.error(`  ${SOURCES[i].name} FAILED: ${r.reason?.message ?? r.reason}`);
   }
 });
+
+// ---- the darkness tripwire ----------------------------------------------
+// Every feed above can fail, or serve a stub body, and the run still walks to
+// a clean exit 0 that reads exactly like an ordinary quiet hour - which is
+// how a total ingest outage stays invisible behind a wall of green checks.
+// Judge the intake, say so out loud, and persist a streak so a sustained
+// blackout eventually reds the build (assessFeeds / rollFeedDarkness).
+const health = assessFeeds({
+  tier0Total: TIER0_SOURCES.length,
+  tier0Failed,
+  pressTotal: SOURCES.length,
+  pressSilent,
+});
+if (health.tier0Dark) {
+  console.log(`::warning::newsdesk: ALL ${TIER0_SOURCES.length} tier-0 government feeds failed this run - the highest-precision signal is dark (no floor schedule, no most-viewed, no look-ahead)`);
+}
+if (health.pressDegraded) {
+  console.log(`::warning::newsdesk: ${pressSilent} of ${SOURCES.length} press feeds returned nothing (failed or empty body) - corroboration recall is degraded this run`);
+}
+cache.feedHealth = rollFeedDarkness(cache.feedHealth, health.dark);
+if (health.dark) {
+  console.log(`::warning::newsdesk: FULLY DARK run - zero tier-0 feeds and zero press items. Consecutive dark runs: ${cache.feedHealth.consecutiveDark}/${FEED_DARK_ESCALATE_RUNS}`);
+}
 
 // Dedupe against the seen-headlines cache: skip anything already processed
 // in a previous run (see the header comment's Dedupe section).
@@ -437,9 +516,17 @@ const t3Items = []; // parallel to t3Batch
 const localOutletsBySlug = new Map(); // this run's t2/t3/bridge outlet contributions, per slug
 const bridgeItems = []; // legislative-looking headlines t1/t2 missed entirely - nickname-bridge input
 
+// An article whose outlet can't be resolved to a real domain is still
+// recorded - it is evidence, and its headline still has to be deduped - but
+// it is filed under UNRESOLVED_OUTLET, which countDistinctOutlets refuses to
+// count toward the >=2-outlet rule. Before 2026-08-09 it went in as the
+// literal string 'unknown' and counted as a whole second newsroom, so one
+// outlet's story arriving twice (its own feed, plus the same story as an
+// unattributable Google News item) cleared a guardrail that exists to require
+// two independent ones. See countDistinctOutlets in newsdesk-match.mjs.
 const addLocalOutlet = (slug, it) => {
   if (!localOutletsBySlug.has(slug)) localOutletsBySlug.set(slug, new Set());
-  localOutletsBySlug.get(slug).add(it.outlet ?? 'unknown');
+  localOutletsBySlug.get(slug).add(it.outlet ?? UNRESOLVED_OUTLET);
 };
 
 for (const it of newItems) {
@@ -535,14 +622,32 @@ let tier0DecodesThisRun = 0;
 for (const slug of fired) {
   const [type, number] = slug.split('-');
   const isTier0 = (reason.get(slug) ?? '').startsWith('tier0');
-  const allowDecode = isTier0
+  // Per-slug daily backoff: this slug already paid for a decode today and the
+  // decode failed. A failure inside decode() - the shape check rejecting a
+  // reply with a missing tag - is deterministic for a given bill, so retrying
+  // it this hour buys the same failure at the same price. Suppressing only
+  // the DECODE (not the whole sync) keeps a free refresh available if the
+  // bill reaches the corpus by some other path in the meantime.
+  const decodeFailedToday = cache.seen.has(failedDecodeKey(slug, todayUTC));
+  const allowDecode = !decodeFailedToday && (isTier0
     ? tier0DecodesThisRun < TIER0_DECODE_CAP && cache.dailyDecodes.tier0Count < TIER0_DAILY_DECODE_CAP
-    : pressDecodesThisRun < NEWSDESK_DECODE_CAP && cache.dailyDecodes.count < NEWSDESK_DAILY_DECODE_CAP;
+    : pressDecodesThisRun < NEWSDESK_DECODE_CAP && cache.dailyDecodes.count < NEWSDESK_DAILY_DECODE_CAP);
   const result = await syncOneBill({ type, number }, { allowDecode, forceSlugs, bills, es, bySlug, anthropic });
   outcomes.push(result.outcome);
-  if (result.outcome === 'added') {
+  // Charged on the ATTEMPT, not the success: a decode that reached the model
+  // and then threw spent exactly what a decode that landed spent. Before
+  // 2026-08-09 only 'added' was charged, so a deterministic decode failure
+  // cost the caps nothing and re-fired every hour, all day - unbounded paid
+  // retries of something that could not succeed. The free outcomes
+  // (refreshed/gated/budget, and a failure before the first model call) never
+  // set decodeAttempted, so none of them can be charged. See chargeableDecode.
+  if (chargeableDecode(result)) {
     if (isTier0) { tier0DecodesThisRun++; cache.dailyDecodes.tier0Count++; }
     else { pressDecodesThisRun++; cache.dailyDecodes.count++; }
+    if (result.outcome !== 'added') {
+      // Paid and failed - hold this slug's decode for the rest of the UTC day.
+      cache.seen.add(failedDecodeKey(slug, todayUTC));
+    }
   }
   if (result.outcome === 'refreshed' || result.outcome === 'added') {
     delete cache.pendingOutlets[slug]; // corroboration spent - a future re-fire needs fresh corroboration
@@ -558,7 +663,12 @@ for (const slug of fired) {
       cache.seen.add(tier0Key(slug));
     }
   }
-  console.log(`  ${slug}: ${result.outcome} (${reason.get(slug)})`);
+  const note = decodeFailedToday
+    ? ' [decode suppressed: an earlier decode of this bill failed today - retries tomorrow]'
+    : chargeableDecode(result) && result.outcome !== 'added'
+      ? ' [decode attempted and failed - charged against the cap, held until tomorrow]'
+      : '';
+  console.log(`  ${slug}: ${result.outcome} (${reason.get(slug)})${note}`);
 }
 
 // ---- persist: cache always, data files only if something actually changed ----
@@ -581,4 +691,13 @@ if (anyDataChanged(outcomes)) {
   console.log(`DONE: ${refreshedCount} refreshed, ${addedCount} added+decoded; corpus ${bills.length}`);
 } else {
   console.log('DONE: no data changes this run - nothing written (the workflow commit step will no-op)');
+}
+
+// LAST, and after saveCache: the streak has to survive the failure it causes,
+// or the next run starts over at 1 and the build never actually reds. The
+// workflow's cache-save step is `if: always()`, and the write above already
+// happened, so both halves of that hold.
+if (cache.feedHealth.escalate) {
+  console.log(`::error::newsdesk has been fully dark for ${cache.feedHealth.consecutiveDark} consecutive hourly runs (>=${FEED_DARK_ESCALATE_RUNS}) - every tier-0 government feed failed and every press feed returned nothing, for ${cache.feedHealth.consecutiveDark} hours straight. This is an ingest outage, not a quiet news day: no bill can trigger a refresh or a decode while it lasts. Check network egress from the runner, then each feed URL in scripts/newsdesk.mjs's SOURCES/TIER0_SOURCES.`);
+  process.exit(1);
 }

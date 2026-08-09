@@ -299,11 +299,20 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *                 whether this was a new-bill decode failure (must retry)
  *                 or an existing bill's transient refresh failure
  *                 (idempotent, self-heals on its next update).
+ *
+ * Every result also carries `decodeAttempted`: true once this call has
+ * reached the first Anthropic request, false otherwise. It is the ONLY
+ * honest answer to "did this call cost money", and the outcome string is
+ * not: 'failed' covers both a free Congress.gov timeout and a decode that
+ * paid for two Sonnet calls and then failed its shape check. Callers that
+ * charge a spend budget must charge on this, not on 'added' — see
+ * chargeableDecode in scripts/newsdesk-match.mjs for the failure this fixed.
  */
 export async function syncOneBill(u, ctx) {
   const { allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic } = ctx;
   const type = u.type.toLowerCase();
   const slug = updateSlug(u);
+  let decodeAttempted = false;
   try {
     const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
     const existing = bySlug.get(slug);
@@ -311,7 +320,7 @@ export async function syncOneBill(u, ctx) {
       // The sentinel IS the outcome: a payload we refused to write surfaces
       // to every caller as 'skipped_partial' instead of posing as a refresh
       // that happened to change nothing.
-      return { outcome: refreshBillFields(existing, d), slug };
+      return { outcome: refreshBillFields(existing, d), slug, decodeAttempted };
     }
     // Same fail-closed posture as refreshBillFields, one step earlier and via
     // the same shared predicate. A brand-new bill whose payload carries no
@@ -345,13 +354,13 @@ export async function syncOneBill(u, ctx) {
     // resurfaces the bill the moment it really moves, exactly as it does for
     // a gated one.
     const action = readableAction(d);
-    if (!action) return { outcome: 'skipped_partial', slug };
+    if (!action) return { outcome: 'skipped_partial', slug, decodeAttempted };
     const status = mapStatus(action.text);
     const forced = forceSlugs.has(slug);
     if (!forced && !passesGate(status)) {
-      return { outcome: 'gated', slug, status };
+      return { outcome: 'gated', slug, status, decodeAttempted };
     }
-    if (!allowDecode) return { outcome: 'budget', slug };
+    if (!allowDecode) return { outcome: 'budget', slug, decodeAttempted };
     const lastActionDate = action.actionDate ?? null;
     const bill = {
       full_identifier: slug,
@@ -393,7 +402,11 @@ export async function syncOneBill(u, ctx) {
     // as it does for a gated one. Callers count the skip and name it in their
     // run log, so a night that refuses N bills says so out loud.
     const text = await fetchBillText(type, u.number);
-    if (text === null) return { outcome: 'skipped_no_text', slug };
+    if (text === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
+    // Set BEFORE the await, not after: a throw inside decode() (its shape
+    // check, a parse failure, an SDK error past the retries) still means the
+    // request was issued and billed.
+    decodeAttempted = true;
     const dec = await decode(anthropic, bill, text);
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
@@ -410,10 +423,10 @@ export async function syncOneBill(u, ctx) {
     es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
     bills.push(bill);
     bySlug.set(slug, bill);
-    return { outcome: 'added', slug };
+    return { outcome: 'added', slug, decodeAttempted };
   } catch (e) {
     console.error(`FAIL ${slug}: ${e.message}`);
-    return { outcome: 'failed', slug, isNew: !bySlug.has(slug) };
+    return { outcome: 'failed', slug, isNew: !bySlug.has(slug), decodeAttempted };
   }
 }
 

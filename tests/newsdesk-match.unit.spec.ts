@@ -6,13 +6,18 @@ import { expect, test } from '@playwright/test';
 // design this pins.
 import {
   anyDataChanged,
+  assessFeeds,
   buildBillIndex,
   buildListIndex,
+  chargeableDecode,
+  countDistinctOutlets,
   decideFires,
   extractBillsThisWeekSlugs,
   extractFloorFeedSlugs,
   extractMostViewedSlugs,
   extractNicknameTokens,
+  failedDecodeKey,
+  FEED_DARK_ESCALATE_RUNS,
   findCitations,
   floorBucket,
   hashHeadline,
@@ -23,8 +28,10 @@ import {
   parseFeed,
   prunePendingOutlets,
   rollDailyDecodes,
+  rollFeedDarkness,
   summarizePendingOutlets,
   tier0SeenKey,
+  UNRESOLVED_OUTLET,
 } from '../scripts/newsdesk-match.mjs';
 
 test.describe('findCitations (t1 explicit bill-number citations)', () => {
@@ -289,6 +296,72 @@ test.describe('decideFires (the >=2-outlet corroboration rule)', () => {
     const outlets = new Map([['s-2-119', new Set(['cbsnews.com'])]]); // still only 1 outlet
     const { fired } = decideFires(new Set(), outlets, tier0);
     expect(fired).toEqual(new Set(['hr-8800-119']));
+  });
+});
+
+/*
+ * THE UNRESOLVED-OUTLET HOLE (2026-08-09).
+ *
+ * The corroboration rule counts DISTINCT outlets, and an article whose outlet
+ * could not be resolved to a domain was filed under the synthetic name
+ * 'unknown' — which the Set then counted as a whole second newsroom. Exactly
+ * one feed in the basket can produce that: Google News, which carries no
+ * domain of its own and attributes per article via a <source url="…"> tag. So
+ * one outlet's story arriving twice — once from that outlet's own feed, once
+ * as the same story with an unparseable Google News source tag — presented as
+ * {'cbsnews.com', 'unknown'} and CLEARED a guardrail whose entire purpose is
+ * to require two independent newsrooms before a soft match can act. That is
+ * the single-outlet prioritization channel decideFires's header comment says
+ * must never exist.
+ */
+test.describe('unresolved outlets never corroborate (the self-corroboration hole)', () => {
+  test('the sentinel is not counted as an outlet', () => {
+    expect(countDistinctOutlets(new Set(['cbsnews.com', UNRESOLVED_OUTLET]))).toBe(1);
+    expect(countDistinctOutlets(new Set([UNRESOLVED_OUTLET]))).toBe(0);
+    expect(countDistinctOutlets(new Set(['cbsnews.com', 'foxnews.com']))).toBe(2);
+  });
+
+  test('empty, null and blank entries are not outlets either', () => {
+    expect(countDistinctOutlets(null)).toBe(0);
+    expect(countDistinctOutlets(new Set())).toBe(0);
+    expect(countDistinctOutlets(new Set([null, '', '   ']))).toBe(0);
+  });
+
+  test('casing/whitespace variants of one domain are still ONE outlet', () => {
+    expect(countDistinctOutlets(new Set(['CBSNews.com', 'cbsnews.com', ' cbsnews.com ']))).toBe(1);
+    expect(countDistinctOutlets(new Set(['UNKNOWN', 'unknown']))).toBe(0);
+  });
+
+  test('the same story via its own feed + an unattributable Google News item does NOT fire', () => {
+    const outlets = new Map([['hr-9001-119', new Set(['cbsnews.com', UNRESOLVED_OUTLET])]]);
+    const { fired } = decideFires(new Set(), outlets);
+    expect(fired.size).toBe(0);
+  });
+
+  test('two REAL outlets still fire, unresolved item present or not', () => {
+    const clean = new Map([['hr-9002-119', new Set(['cbsnews.com', 'foxnews.com'])]]);
+    expect(decideFires(new Set(), clean).fired).toEqual(new Set(['hr-9002-119']));
+
+    const withUnknown = new Map([
+      ['hr-9003-119', new Set(['cbsnews.com', 'foxnews.com', UNRESOLVED_OUTLET])],
+    ]);
+    const { fired, reason } = decideFires(new Set(), withUnknown);
+    expect(fired).toEqual(new Set(['hr-9003-119']));
+    expect(reason.get('hr-9003-119')).toBe('corroborated');
+  });
+
+  test('an unresolved-only hold still reads as a hold in the log, not as a fired pair', () => {
+    // Counting at read time also disarms the 'unknown' entries already
+    // persisted in the live cache by earlier runs.
+    const now = Date.parse('2026-08-09T12:00:00Z');
+    const summary = summarizePendingOutlets({
+      'hr-9004-119': {
+        outlets: [UNRESOLVED_OUTLET, 'npr.org'],
+        updated: new Date(now - 2 * 86_400_000).toISOString(),
+      },
+    }, now);
+    expect(summary).toContain('hr-9004-119<-npr.org (2d)');
+    expect(summary).not.toContain(UNRESOLVED_OUTLET);
   });
 });
 
@@ -632,11 +705,34 @@ test.describe('cost invariance: the wiring in scripts/newsdesk.mjs', () => {
     expect(gate).not.toMatch(/floorWindow|floorBucket|tier0Key|tier0SeenKey|cache\.seen/);
   });
 
-  test('the counters are incremented only on a landed decode, and only by 1', () => {
+  test('the counters are incremented once per CHARGED decode, and only by 1', () => {
     expect(src).toMatch(/tier0DecodesThisRun\+\+;\s*cache\.dailyDecodes\.tier0Count\+\+;/);
     expect(src).toMatch(/pressDecodesThisRun\+\+;\s*cache\.dailyDecodes\.count\+\+;/);
-    // Guarded by result.outcome === 'added' - a free refresh spends nothing.
-    expect(src).toMatch(/if \(result\.outcome === 'added'\) \{/);
+    // Guarded by chargeableDecode, NOT by outcome === 'added' (2026-08-09).
+    // Charging on success alone let a decode that reached the model and then
+    // threw cost the caps nothing while costing real money - see the
+    // chargeableDecode suite below.
+    expect(src).toMatch(/if \(chargeableDecode\(result\)\) \{/);
+    expect(src).not.toMatch(/if \(result\.outcome === 'added'\) \{\s*if \(isTier0\)/);
+  });
+
+  test('a paid failure is held for the rest of the UTC day, and only a paid one', () => {
+    // The hold is written inside the charged branch, so a failure BEFORE the
+    // first model call (a Congress.gov timeout - free) never blocks the retry.
+    const charged = src.slice(src.indexOf('if (chargeableDecode(result)) {'), src.indexOf('if (result.outcome === \'refreshed\''));
+    expect(charged).toMatch(/cache\.seen\.add\(failedDecodeKey\(slug, todayUTC\)\)/);
+    expect(charged).toMatch(/result\.outcome !== 'added'/);
+    // Keyed by UTC day only - never by floor window.
+    expect(src.match(/failedDecodeKey\([^)]*\)/g)?.every((c) => /failedDecodeKey\(slug, todayUTC\)/.test(c))).toBe(true);
+  });
+
+  test('the failure hold can only SUBTRACT decodes - it is ANDed into allowDecode, never a new budget', () => {
+    const gate = src.slice(src.indexOf('const allowDecode'), src.indexOf('const result = await syncOneBill'));
+    expect(gate).toContain('!decodeFailedToday');
+    // Still no window, no seen-key, no cache read inside the gate itself:
+    // decodeFailedToday is resolved above it, so the cost invariant pinned by
+    // the previous test holds unchanged.
+    expect(gate).not.toMatch(/floorWindow|floorBucket|tier0Key|tier0SeenKey|cache\.seen/);
   });
 
   test('the per-run and per-day caps keep their values (the window split raised no ceiling)', () => {
@@ -648,6 +744,202 @@ test.describe('cost invariance: the wiring in scripts/newsdesk.mjs', () => {
 
   test('the run logs which window it is spending', () => {
     expect(src).toMatch(/newsdesk tier-0 \[\$\{floorWindow\} window/);
+  });
+});
+
+/*
+ * PAYING FOR FAILURE (2026-08-09).
+ *
+ * The caps used to be charged on outcome === 'added', i.e. on SUCCESS. A
+ * decode that reached the model and then threw - bill-decode.mjs's shape
+ * check rejecting a reply with a missing tag, deterministic for a given
+ * verbose bill - had already spent a Sonnet call, charged the caps nothing,
+ * and left its slug unmarked, so the same bill re-fired on the next hourly
+ * run and every one after it: 24 paid attempts a day at a failure that could
+ * not succeed, straight through a ceiling the header calls code-enforced.
+ * The invoice prices attempts, so the cap has to price attempts.
+ */
+test.describe('chargeableDecode (the caps price the attempt, not the win)', () => {
+  test('a landed decode is charged', () => {
+    expect(chargeableDecode({ outcome: 'added', slug: 'hr-1-119', decodeAttempted: true })).toBe(true);
+  });
+
+  test('a decode that reached the model and THEN threw is charged - this is the whole fix', () => {
+    expect(chargeableDecode({ outcome: 'failed', slug: 'hr-2-119', isNew: true, decodeAttempted: true })).toBe(true);
+  });
+
+  test('a failure BEFORE the first model call is free and stays free (a transient upstream blip must still retry)', () => {
+    expect(chargeableDecode({ outcome: 'failed', slug: 'hr-3-119', isNew: true, decodeAttempted: false })).toBe(false);
+  });
+
+  test('the free outcomes are never charged: refreshed, gated, budget', () => {
+    for (const outcome of ['refreshed', 'gated', 'budget']) {
+      expect(chargeableDecode({ outcome, slug: 'hr-4-119', decodeAttempted: false }), outcome).toBe(false);
+    }
+  });
+
+  test('a result from a caller that never set the flag is not charged (no phantom spend)', () => {
+    expect(chargeableDecode({ outcome: 'refreshed', slug: 'hr-5-119' })).toBe(false);
+    expect(chargeableDecode(undefined)).toBe(false);
+    expect(chargeableDecode(null)).toBe(false);
+  });
+
+  test('only a real boolean true charges - a truthy accident does not', () => {
+    expect(chargeableDecode({ outcome: 'added', decodeAttempted: 1 as unknown as boolean })).toBe(false);
+  });
+});
+
+test.describe('failedDecodeKey (one paid failure per slug per UTC day, not per hour)', () => {
+  test('the same slug on the same day is the same key - the 2nd..24th run of the day is suppressed', () => {
+    expect(failedDecodeKey('hr-8283-119', '2026-08-09')).toBe(failedDecodeKey('hr-8283-119', '2026-08-09'));
+  });
+
+  test('the day rolls, so tomorrow gets exactly one fresh attempt', () => {
+    expect(failedDecodeKey('hr-8283-119', '2026-08-09')).not.toBe(failedDecodeKey('hr-8283-119', '2026-08-10'));
+  });
+
+  test('different slugs never collide', () => {
+    expect(failedDecodeKey('hr-8283-119', '2026-08-09')).not.toBe(failedDecodeKey('s-8283-119', '2026-08-09'));
+  });
+
+  test('never collides with a tier-0 refresh slot or a headline key for the same slug/day', () => {
+    const keys = new Set([
+      failedDecodeKey('hr-8283-119', '2026-08-09'),
+      tier0SeenKey('hr-8283-119', '2026-08-09', 'record'),
+      tier0SeenKey('hr-8283-119', '2026-08-09', 'pre'),
+      hashHeadline('hr-8283-119', '2026-08-09'),
+    ]);
+    expect(keys.size).toBe(4);
+  });
+});
+
+/*
+ * CALLING DARKNESS QUIET (2026-08-09).
+ *
+ * Promise.allSettled swallowed every feed failure into a console.error, and a
+ * feed that answers 200 with an empty/stub body never even reaches the
+ * rejected branch. Both shapes exit 0 looking exactly like a quiet news hour,
+ * so a total ingest outage could sit behind green checks indefinitely. These
+ * pin the judgment; the escalation streak is what turns a blip into a build.
+ */
+test.describe('assessFeeds (the intake tripwire)', () => {
+  const run = (tier0Failed: number, pressSilent: number) =>
+    assessFeeds({ tier0Total: 4, tier0Failed, pressTotal: 9, pressSilent });
+
+  test('a healthy run warns about nothing', () => {
+    expect(run(0, 0)).toEqual({ tier0Dark: false, pressDark: false, pressDegraded: false, dark: false });
+  });
+
+  test('one or two dead feeds are normal weather, not a warning', () => {
+    // AP's RSS 404s and the Washington Post politics feed serves a stub body;
+    // both were found dead during the 2026-07-16 basket verification. An
+    // hourly job that shouts at that teaches its owner to ignore it.
+    expect(run(1, 2).tier0Dark).toBe(false);
+    expect(run(1, 2).pressDegraded).toBe(false);
+    expect(run(3, 4).pressDegraded).toBe(false); // 3 of 4 tier-0 is still not all
+    expect(run(3, 4).dark).toBe(false);
+  });
+
+  test('ALL tier-0 feeds failing is called out on its own - the highest-precision signal is gone', () => {
+    expect(run(4, 0).tier0Dark).toBe(true);
+    expect(run(4, 0).dark).toBe(false); // press still answering: degraded, not dark
+  });
+
+  test('half the press basket silent is called out on its own', () => {
+    expect(run(0, 5).pressDegraded).toBe(true);
+    expect(run(0, 4).pressDegraded).toBe(false);
+    expect(run(0, 5).dark).toBe(false); // tier-0 still answering
+  });
+
+  test('FULLY dark means every tier-0 feed failed AND every press feed was silent', () => {
+    const r = run(4, 9);
+    expect(r).toEqual({ tier0Dark: true, pressDark: true, pressDegraded: true, dark: true });
+  });
+
+  test('a press feed that returns 200 with zero items counts as silent - the outage with no error message', () => {
+    // The caller counts threw-OR-empty into pressSilent; this pins that a
+    // basket of nothing-but-empty-bodies is dark, not quiet.
+    expect(assessFeeds({ tier0Total: 4, tier0Failed: 4, pressTotal: 9, pressSilent: 9 }).dark).toBe(true);
+  });
+
+  test('an empty source list can never read as dark (no feeds configured is not an outage)', () => {
+    expect(assessFeeds({ tier0Total: 0, tier0Failed: 0, pressTotal: 0, pressSilent: 0 }).dark).toBe(false);
+  });
+});
+
+test.describe('rollFeedDarkness (a blip warns; a blackout reds the build)', () => {
+  test('the streak climbs one run at a time and does not escalate early', () => {
+    let state = rollFeedDarkness(null, true);
+    expect(state).toEqual({ consecutiveDark: 1, escalate: false });
+    for (let i = 2; i < FEED_DARK_ESCALATE_RUNS; i++) {
+      state = rollFeedDarkness(state, true);
+      expect(state.consecutiveDark).toBe(i);
+      expect(state.escalate).toBe(false);
+    }
+  });
+
+  test(`escalates at exactly ${FEED_DARK_ESCALATE_RUNS} consecutive dark runs - six hourly runs is six hours dark`, () => {
+    const state = rollFeedDarkness({ consecutiveDark: FEED_DARK_ESCALATE_RUNS - 1 }, true);
+    expect(state).toEqual({ consecutiveDark: FEED_DARK_ESCALATE_RUNS, escalate: true });
+  });
+
+  test('stays escalated past the threshold - the build stays red until someone fixes it', () => {
+    expect(rollFeedDarkness({ consecutiveDark: 40 }, true).escalate).toBe(true);
+  });
+
+  test('ONE healthy run is the all-clear: the streak resets and the build goes green', () => {
+    expect(rollFeedDarkness({ consecutiveDark: FEED_DARK_ESCALATE_RUNS + 3 }, false))
+      .toEqual({ consecutiveDark: 0, escalate: false });
+  });
+
+  test('a cold/corrupt cache starts the streak at 1, never mid-way to a red', () => {
+    expect(rollFeedDarkness(null, true).consecutiveDark).toBe(1);
+    expect(rollFeedDarkness({}, true).consecutiveDark).toBe(1);
+    expect(rollFeedDarkness({ consecutiveDark: 'lots' as unknown as number }, true).consecutiveDark).toBe(1);
+    expect(rollFeedDarkness({ consecutiveDark: -5 }, true).consecutiveDark).toBe(1);
+  });
+
+  // Named for its function rather than the generic phrasing the decode-budget
+  // rollover above already uses: the two pin the same property of two
+  // different rollers, and identical bare titles make a grep-level duplicate
+  // check unreadable even though Playwright keys uniqueness on the full
+  // describe path and accepts both.
+  test('rollFeedDarkness never mutates the persisted object it was handed', () => {
+    const persisted = { consecutiveDark: 2 };
+    rollFeedDarkness(persisted, true);
+    expect(persisted).toEqual({ consecutiveDark: 2 });
+  });
+
+  test('the threshold itself is a warning-first choice, not a hair trigger', () => {
+    expect(FEED_DARK_ESCALATE_RUNS).toBeGreaterThanOrEqual(3);
+  });
+});
+
+test.describe('the darkness tripwire is wired into scripts/newsdesk.mjs', () => {
+  const src = readFileSync(join(process.cwd(), 'scripts/newsdesk.mjs'), 'utf8');
+
+  test('an empty press body counts as silent, not as a quiet hour', () => {
+    expect(src).toMatch(/if \(r\.value\.length === 0\) pressSilent\+\+/);
+    expect(src).toMatch(/pressSilent\+\+;\s*console\.error/);
+  });
+
+  test('warnings use the ::warning:: annotation so they surface in the Actions summary', () => {
+    expect(src).toContain('::warning::newsdesk');
+  });
+
+  test('the escalation is an ::error:: and a non-zero exit', () => {
+    expect(src).toContain('::error::newsdesk has been fully dark');
+    expect(src).toMatch(/if \(cache\.feedHealth\.escalate\) \{[\s\S]*?process\.exit\(1\)/);
+  });
+
+  test('the streak is persisted BEFORE the exit, or the counter could never reach the threshold', () => {
+    // The call site, not the function definition.
+    expect(src.indexOf('\nsaveCache(cache);')).toBeGreaterThan(0);
+    expect(src.indexOf('\nsaveCache(cache);')).toBeLessThan(src.indexOf('cache.feedHealth.escalate'));
+  });
+
+  test('the streak survives a run that fires nothing - it is keyed off intake, not off outcomes', () => {
+    expect(src.indexOf('cache.feedHealth = rollFeedDarkness')).toBeLessThan(src.indexOf('const { fired, reason } = decideFires'));
   });
 });
 

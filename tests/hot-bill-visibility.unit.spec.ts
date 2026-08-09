@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { BILL_TYPES, mapStatus } from '../scripts/congress-fetch.mjs';
+import {
+  BILL_TYPES,
+  RECENT_WINDOW_MAX_STALE_DAYS,
+  assessRecentWindow,
+  mapStatus,
+} from '../scripts/congress-fetch.mjs';
 import { TRACKED_TYPES, findCitations } from '../scripts/newsdesk-match.mjs';
 
 /*
@@ -23,6 +28,106 @@ test.describe('Congress.gov sort-parameter encoding (the inert recent-pass bug)'
     const broken = new URL('https://api.congress.gov/v3/bill/119');
     broken.searchParams.set('sort', 'updateDate+desc');
     expect(broken.search).toContain('sort=updateDate%2Bdesc');
+  });
+});
+
+/*
+ * THE TRIPWIRE THE ABOVE TEST CANNOT BE (2026-08-09).
+ *
+ * The pin above proves the sort STRING is right in this repo's source. It
+ * cannot prove the sort was HONORED on the wire - and honoring is what broke
+ * for a week in July 2026. Congress.gov ignored the ignored form silently: a
+ * 200, a full page of well-formed bills, no error anywhere. scripts/
+ * hot-bills.mjs consumed it blind, refreshed the OLDEST hundred bills of the
+ * Congress twice a day, printed "100 refreshed", and exited 0 green from
+ * 07-16 to 07-23. Only the DATES in the page can tell the difference, so the
+ * job now reads them before spending ~100 detail requests on the window.
+ */
+test.describe('assessRecentWindow (the recent-window recency tripwire)', () => {
+  const now = Date.parse('2026-08-09T12:00:00Z');
+  const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString().slice(0, 10);
+  const page = (...dates: string[]) => dates.map((updateDate, i) => ({ type: 'HR', number: `${i}`, updateDate }));
+
+  test('a genuinely recent window passes and reports how fresh it is', () => {
+    const r = assessRecentWindow(page(daysAgo(0), daysAgo(3), daysAgo(9)), { now });
+    expect(r.ok).toBe(true);
+    expect(r.newest).toBe(daysAgo(0));
+    expect(r.staleDays).toBe(0);
+    expect(r.reason).toBe(null);
+  });
+
+  test('the NEWEST entry decides, not the order the page arrived in', () => {
+    // Defensive: the predicate must not itself assume the sort worked.
+    const r = assessRecentWindow(page(daysAgo(400), daysAgo(2), daysAgo(600)), { now });
+    expect(r.ok).toBe(true);
+    expect(r.newest).toBe(daysAgo(2));
+  });
+
+  test('the July 2026 regression is caught: a page of Jan-2025 resolutions', () => {
+    // Live-verified during the incident: the ignored sort returned bills last
+    // touched ~18 months earlier.
+    const r = assessRecentWindow(page('2025-01-14', '2025-01-13', '2025-01-09'), { now });
+    expect(r.ok).toBe(false);
+    expect(r.newest).toBe('2025-01-14');
+    expect(r.staleDays).toBeGreaterThan(500);
+    expect(r.reason).toContain('not sorted newest-first');
+  });
+
+  test('a long recess is NOT an outage - the threshold is generous on purpose', () => {
+    // Congress goes quiet for weeks; updateDate does not stop moving across
+    // ~19,000 bills for a month. Anything inside the limit must pass.
+    expect(assessRecentWindow(page(daysAgo(RECENT_WINDOW_MAX_STALE_DAYS - 1)), { now }).ok).toBe(true);
+    expect(assessRecentWindow(page(daysAgo(RECENT_WINDOW_MAX_STALE_DAYS)), { now }).ok).toBe(true);
+    expect(assessRecentWindow(page(daysAgo(RECENT_WINDOW_MAX_STALE_DAYS + 1)), { now }).ok).toBe(false);
+  });
+
+  test('the threshold is weeks, not days - it must never red on an ordinary quiet stretch', () => {
+    expect(RECENT_WINDOW_MAX_STALE_DAYS).toBeGreaterThanOrEqual(14);
+  });
+
+  test('an empty window fails - "no bills at all" is never a healthy answer here', () => {
+    expect(assessRecentWindow([], { now })).toEqual({
+      ok: false, newest: null, staleDays: null, reason: 'the window came back empty',
+    });
+    expect(assessRecentWindow(undefined, { now }).ok).toBe(false);
+  });
+
+  test('a window with no parseable updateDate fails rather than passing on a guess', () => {
+    const r = assessRecentWindow([{ type: 'HR', number: '1' }, { type: 'S', number: '2', updateDate: 'soon' }], { now });
+    expect(r.ok).toBe(false);
+    expect(r.reason).toContain('no parseable updateDate');
+  });
+
+  test('full ISO timestamps and bare dates both parse, and bare dates are read as UTC', () => {
+    expect(assessRecentWindow([{ updateDate: '2026-08-09T11:00:00Z' }], { now }).ok).toBe(true);
+    // A bare date must not be read in local time, or a westward runner would
+    // score today's page as tomorrow's.
+    expect(assessRecentWindow([{ updateDate: '2026-08-09' }], { now }).staleDays).toBe(0);
+  });
+
+  test('a future-dated update never reads as stale (the check is one-directional)', () => {
+    expect(assessRecentWindow([{ updateDate: '2026-09-01' }], { now })).toMatchObject({ ok: true, staleDays: 0 });
+  });
+});
+
+test.describe('hot-bills.mjs refuses to spend on a stale window', () => {
+  const src = readFileSync(join(process.cwd(), 'scripts/hot-bills.mjs'), 'utf8');
+
+  test('the window is checked BEFORE the refresh loop and before the write', () => {
+    const check = src.indexOf('assessRecentWindow(recent');
+    expect(check).toBeGreaterThan(src.indexOf('await fetchRecentlyUpdated'));
+    expect(check).toBeLessThan(src.indexOf('for (const u of recent)'));
+    // The call site, not the import.
+    expect(check).toBeLessThan(src.indexOf("writeFileSync('data/bills.json'"));
+  });
+
+  test('a bad window is an ::error:: and a non-zero exit - not a warning it writes over', () => {
+    expect(src).toMatch(/if \(!window\.ok\) \{[\s\S]*?::error::[\s\S]*?process\.exit\(1\)/);
+  });
+
+  test('the comment cites the July 2026 incident it exists for', () => {
+    expect(src).toMatch(/2026-07-16/);
+    expect(src).toMatch(/congress-fetch\.mjs/);
   });
 });
 

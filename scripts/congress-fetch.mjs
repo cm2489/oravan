@@ -79,6 +79,75 @@ export async function fetchRecentlyUpdated(limit) {
 }
 
 /**
+ * How stale the NEWEST bill in a "most recently updated" window may be before
+ * the window itself is treated as broken rather than the Congress as quiet.
+ *
+ * 30 days, and the generosity is deliberate. Congress recesses for weeks at a
+ * time, and this window spans the whole 119th Congress, so a real lull can
+ * push the newest updateDate out by days. But it cannot push it out by a
+ * month: `updateDate` moves on cosponsor additions, committee referrals, and
+ * text publication across ~19,000 bills, none of which stop entirely for
+ * thirty days. The failure this guards against was never subtle — see below.
+ */
+export const RECENT_WINDOW_MAX_STALE_DAYS = Number(
+  process.env.CONGRESS_RECENT_MAX_STALE_DAYS ?? 30
+);
+
+/**
+ * Is a fetchRecentlyUpdated() page actually recent? (2026-08-09)
+ *
+ * THE INCIDENT THIS EXISTS FOR (documented in fetchRecentlyUpdated's own
+ * comment, lines 65-71 above): from 2026-07-16 to 2026-07-23 the sort value
+ * reached Congress.gov percent-encoded as `updateDate%2Bdesc`, which the API
+ * silently IGNORES — no error, no warning, a 200 with a full page of bills.
+ * Every "recent-first" fetch for a week returned the OLDEST bills of the
+ * Congress instead of the newest (live-verified: Jan-2025 resolutions where
+ * today's floor bills belonged). scripts/hot-bills.mjs consumed that page
+ * blind, dutifully refreshed a hundred eighteen-month-old resolutions twice a
+ * day, reported "100 refreshed", and exited 0 green the entire time. Nothing
+ * in the pipeline was capable of noticing, because a wrong-but-well-formed
+ * page is indistinguishable from a right one unless someone reads the DATES.
+ *
+ * So read the dates. Pure and I/O-free; pinned by
+ * tests/hot-bill-visibility.unit.spec.ts.
+ *
+ * @returns {{ok: boolean, newest: string|null, staleDays: number|null, reason: string|null}}
+ */
+export function assessRecentWindow(items, {
+  maxStaleDays = RECENT_WINDOW_MAX_STALE_DAYS,
+  now = Date.now(),
+} = {}) {
+  const list = Array.isArray(items) ? items : [];
+  if (list.length === 0) {
+    return { ok: false, newest: null, staleDays: null, reason: 'the window came back empty' };
+  }
+  let newestMs = -Infinity;
+  let newest = null;
+  for (const b of list) {
+    const raw = b?.updateDate;
+    // Congress.gov emits both 'YYYY-MM-DD' and full ISO timestamps here;
+    // normalize the bare date so it parses as UTC rather than local.
+    const ms = Date.parse(typeof raw === 'string' && !raw.includes('T') ? `${raw}T00:00:00Z` : raw);
+    if (Number.isFinite(ms) && ms > newestMs) { newestMs = ms; newest = raw; }
+  }
+  if (newest === null) {
+    return { ok: false, newest: null, staleDays: null, reason: 'no parseable updateDate in the window' };
+  }
+  // Negative (a future-dated update) is fine — clamp so it can never read as
+  // stale; the check is one-directional by design.
+  const staleDays = Math.max(0, Math.floor((now - newestMs) / 86_400_000));
+  if (staleDays > maxStaleDays) {
+    return {
+      ok: false,
+      newest,
+      staleDays,
+      reason: `the newest updateDate in the window is ${staleDays} days old (limit ${maxStaleDays}) - this window is not sorted newest-first`,
+    };
+  }
+  return { ok: true, newest, staleDays, reason: null };
+}
+
+/**
  * Normalize any date-ish string into the ONLY shape Congress.gov's
  * `fromDateTime` accepts: seconds-precision ISO-8601.
  *
