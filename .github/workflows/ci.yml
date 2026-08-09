@@ -150,8 +150,10 @@ jobs:
         # Node (readFileSync + spawnSync), takes no `page` fixture, and so
         # launches no browser. PW_NO_WEBSERVER skips the `next build && next
         # start` the config otherwise stands up; one project instead of two
-        # stops it running twice for no reason. Measured: ~6s, and the
-        # Playwright browser-install step above it stays skipped.
+        # stops it running twice for no reason. Measured locally with
+        # PLAYWRIGHT_BROWSERS_PATH pointed at an empty directory — proving the
+        # browser-install step above it can stay skipped — at 10 tests in ~10s
+        # on a loaded machine.
         if: steps.paths.outputs.docs_only == 'true'
         env:
           PW_NO_WEBSERVER: '1'
