@@ -222,3 +222,58 @@ test.describe('the four constitution documents agree on what guards a publish', 
     expect(labelLine!, 'no blanket human-review claim over all AI content').not.toMatch(RETIRED);
   });
 });
+
+/*
+ * GATE-COVERAGE: everything above polices markdown-only edits to the four
+ * constitution documents — and it lived in the Playwright job, which ci.yml's
+ * docs-only fast path skips precisely because a PR touched nothing but
+ * markdown. The exact change class these tests exist for was the one class
+ * that never gated: re-adding "human-reviewed" to README principle 5 in a
+ * docs-only PR would have shipped green, which is the original 2026-07-25
+ * failure with the correction now written down as well.
+ *
+ * ci.yml runs this file on that path now. This test is what keeps it there —
+ * same wiring-by-source-read posture as tests/rollover-tripwire.unit.spec.ts,
+ * for the same reason: workflow YAML is not executable from here, and a
+ * deleted step is indistinguishable from a step that has not fired yet.
+ */
+test.describe('the docs-only fast path still runs this file', () => {
+  const CI = join(ROOT, '.github/workflows/ci.yml');
+
+  test('ci.yml runs tests/claim-truth.spec.ts on the docs-only path', () => {
+    const yml = readFileSync(CI, 'utf8');
+    const at = yml.indexOf('npx playwright test tests/claim-truth.spec.ts');
+    expect(at, 'the docs-only constitution step must exist').toBeGreaterThan(-1);
+
+    // And it must be gated ON docs_only rather than off it — an `!=` here
+    // would restore the gap while looking like the fix.
+    const step = yml.slice(0, at);
+    const conditionAt = step.lastIndexOf('steps.paths.outputs.docs_only');
+    expect(conditionAt).toBeGreaterThan(-1);
+    expect(step.slice(conditionAt), 'the step runs WHEN the diff is docs-only').toMatch(
+      /steps\.paths\.outputs\.docs_only == 'true'/
+    );
+  });
+
+  test('the cheap invocation is the one that was measured: no webServer, one project', () => {
+    // This spec takes no `page` fixture, so it launches no browser and needs
+    // no build. If a future edit adds a page-driven test here it will fail on
+    // connection-refused rather than silently pass — but the honest fix then
+    // is to move that test, not to drag a `next build` onto the fast path.
+    const yml = readFileSync(CI, 'utf8');
+    const at = yml.indexOf('npx playwright test tests/claim-truth.spec.ts');
+    const window = yml.slice(Math.max(0, at - 400), at + 200);
+    expect(window).toMatch(/PW_NO_WEBSERVER: '1'/);
+    expect(yml.slice(at, at + 200)).toMatch(/--project=webkit-desktop/);
+  });
+
+  test('no test in this file takes a browser fixture, which is what makes that invocation honest', () => {
+    const self = readFileSync(join(ROOT, 'tests/claim-truth.spec.ts'), 'utf8');
+    const fixtured = [...self.matchAll(/\(\s*\{\s*(page|browser|context|request|browserName)\b/g)];
+    expect(
+      fixtured.map((m) => m[1]),
+      'a destructured Playwright fixture here means the docs-only run needs a built server after ' +
+        'all, and the fast path would be running a test that cannot pass. Move that test instead.'
+    ).toEqual([]);
+  });
+});

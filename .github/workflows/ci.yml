@@ -34,8 +34,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: EN/ES message-key parity (bilingual hard rule)
-        run: node scripts/check-messages-parity.mjs
+      - name: EN/ES message parity — keys AND ICU arguments (bilingual hard rule)
+        # Self-test first, same convention as the naming/claim-truth/namespace
+        # gates below: the ICU half is a hand-written tokenizer, and a
+        # tokenizer that has quietly stopped parsing finds nothing and passes.
+        run: |
+          node scripts/check-messages-parity.mjs --self-test
+          node scripts/check-messages-parity.mjs
       - name: Zero-survivor naming gate (retired names; self-tests before scanning)
         # Exemptions are founder-decided in writing only — docs/migration/decisions.md.
         run: node scripts/check-naming.mjs
@@ -67,11 +72,26 @@ jobs:
         run: |
           node scripts/check-embed-fingerprinting.mjs --self-test
           node scripts/check-embed-fingerprinting.mjs
-      - name: Moments curation gate (schema, EN/ES parity, vocabulary lint, live cap)
+      - name: Resolve origin/main (the Moments new-vehicle baseline)
+        # actions/checkout lands a PR at depth 1 with no origin/main ref, so
+        # the new-vehicle terminality rule's baseline (check-moments.mjs's
+        # `git show origin/main:data/moments.json`) had nothing to resolve
+        # against and depended entirely on the gate's own in-gate fallback
+        # fetch — a rule enforced only by a network call nobody tested. This
+        # step creates the remote-tracking ref up front, so the gate takes its
+        # free offline path and `--require-baseline` below can be a HARD
+        # failure rather than the warning it used to fall back to.
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+      - name: Moments curation gate (schema, EN/ES parity, vocabulary lint, live cap, new-vehicle terminality)
         # Was only running transitively via tests/moments.unit.spec.ts in the
         # Playwright job — wiring it here fails fast on a bad data/moments.json
         # before the e2e suite spends its minutes (v2 spec slice S1).
-        run: node scripts/check-moments.mjs
+        #
+        # --require-baseline: in CI an unresolvable baseline is an ERROR, not
+        # the local warning. Without it, the one rule that needs main to exist
+        # would go quiet exactly where it is the merge gate — a skipped rule
+        # and a passed rule printed the same green check.
+        run: node scripts/check-moments.mjs --require-baseline
       - name: Moment-updates gate (the editorial law — record anchoring, speculation lint, attribution, caps)
         # The v2 live layer's write-time constitution (v2 spec §2): every
         # non-press update ships the government's verbatim text, record
@@ -115,6 +135,27 @@ jobs:
           fi
           echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
           echo "docs_only=$DOCS_ONLY"
+      - name: Constitution consistency (the one spec the docs-only fast path used to skip)
+        # THE GAP THIS CLOSES: tests/claim-truth.spec.ts is the only thing that
+        # polices edits to README/CLAUDE/PRODUCT/DESIGN — that the four
+        # documents name the SAME three publish gates, that no retired
+        # human-review claim comes back, that DESIGN.md keeps its review clause
+        # scoped to the call script. It lived in the Playwright job, which the
+        # docs-only fast path skips. So the exact change class those tests
+        # police — a markdown-only edit to the constitution — was the one class
+        # that never gated. Re-adding "human-reviewed" to principle 5 in a
+        # docs-only PR would have shipped green.
+        #
+        # Cheap because it is honest about what it needs: this spec is pure
+        # Node (readFileSync + spawnSync), takes no `page` fixture, and so
+        # launches no browser. PW_NO_WEBSERVER skips the `next build && next
+        # start` the config otherwise stands up; one project instead of two
+        # stops it running twice for no reason. Measured: ~6s, and the
+        # Playwright browser-install step above it stays skipped.
+        if: steps.paths.outputs.docs_only == 'true'
+        env:
+          PW_NO_WEBSERVER: '1'
+        run: npx playwright test tests/claim-truth.spec.ts --project=webkit-desktop
       - name: Resolve Playwright version (browser-cache key)
         id: pw
         if: steps.paths.outputs.docs_only != 'true'
