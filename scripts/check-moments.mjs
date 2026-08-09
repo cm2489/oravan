@@ -15,7 +15,9 @@
  * warnings (terminal vehicles, elapsed review_by) print without failing — see
  * lib/moments-gate.mjs's header for why those are soft.
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   checkMoments,
   lintForbidden,
@@ -200,8 +202,49 @@ for (const [lang, doc] of Object.entries(messages)) {
   walk(doc.nominations, 'nominations');
 }
 
+/*
+ * The baseline for the new-vehicle terminality rule (owner ruling 2026-08-09):
+ * data/moments.json as main has it, so the gate can tell a vehicle being ADDED
+ * from one that already persists on a settled moment. Resolution order:
+ *
+ *   1. MOMENTS_BASE_REF, or the local `origin/main` ref — free, offline.
+ *   2. A depth-1 fetch of origin/main, because ci.yml checks out at depth 1
+ *      and a PR run has no origin/main ref without it. FETCH_HEAD is exactly
+ *      "main as of this run", which is the same baseline the merge will face.
+ *   3. Neither — a LOUD warning and the rule is skipped, never guessed. On
+ *      pushes to main both refs equal HEAD, every pair is on the baseline,
+ *      and the rule is a deliberate no-op: enforcement lives at PR time, the
+ *      only path a moment enters this file (bots never write it).
+ */
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+const git = (args, opts = {}) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], ...opts });
+function baselineVehiclePairs() {
+  const ref = process.env.MOMENTS_BASE_REF ?? 'origin/main';
+  let base;
+  try {
+    base = JSON.parse(git(['show', `${ref}:data/moments.json`]));
+  } catch {
+    try {
+      git(['fetch', '--no-tags', '--depth=1', 'origin', 'main'], { stdio: 'ignore' });
+      base = JSON.parse(git(['show', 'FETCH_HEAD:data/moments.json']));
+    } catch {
+      return undefined;
+    }
+  }
+  const pairs = new Set();
+  for (const [id, m] of Object.entries(base)) {
+    for (const v of m?.vehicles ?? []) if (v?.slug) pairs.add(`${id}|${v.slug}`);
+  }
+  return pairs;
+}
+const baselineVehicles = baselineVehiclePairs();
+if (baselineVehicles === undefined) {
+  console.warn('::warning::check-moments: no baseline for data/moments.json (no origin/main ref and the fetch failed) — the new-vehicle terminality rule was SKIPPED, not passed');
+}
+
 const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor, {
   describedNominationSlugs,
+  baselineVehicles,
 });
 
 for (const w of warnings) console.warn(`::warning::check-moments: ${w}`);

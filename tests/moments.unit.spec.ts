@@ -437,6 +437,49 @@ test.describe('checkMoments (fixtures)', () => {
     expect(run({ m: live }).warnings).toEqual([]);
   });
 
+  /* ---- the new-vehicle terminality rule (owner ruling 2026-08-09) -------
+   * A baseline tells the gate which (momentId, slug) pairs already exist on
+   * main. Terminal + on the baseline = settled persistence, warns as ever.
+   * Terminal + NOT on the baseline = a moment whose call is over at birth —
+   * hard failure, unless _terminal_ok carries a reason. */
+  const terminalNom = () => {
+    const nom = validMoment() as Record<string, unknown>;
+    nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-932-119', kind: 'nomination' }];
+    return nom;
+  };
+  const runWithBaseline = (moments: Record<string, unknown>, baselineVehicles: Set<string>) =>
+    checkMoments(moments, SLUGS_BY_KIND, statusFor, { now: NOW, describedNominationSlugs: DESCRIBED, baselineVehicles });
+
+  test('a newly added terminal vehicle fails when a baseline is provided', () => {
+    const fresh = runWithBaseline({ m: terminalNom() }, new Set());
+    expect(fresh.violations.some((x: string) => x.includes('pn-932-119') && x.includes('newly added'))).toBe(true);
+
+    // The SAME pair on the baseline: settled persistence — warning, as ever.
+    const settled = runWithBaseline({ m: terminalNom() }, new Set(['m|pn-932-119']));
+    expect(settled.violations).toEqual([]);
+    expect(settled.warnings.some((w: string) => w.includes('pn-932-119') && w.includes('confirmed'))).toBe(true);
+  });
+
+  test('_terminal_ok downgrades a new terminal vehicle to a warning carrying the reason', () => {
+    const nom = terminalNom();
+    (nom.vehicles as Record<string, unknown>[])[0]._terminal_ok = 'retrospective moment: settled before it opened';
+    const r = runWithBaseline({ m: nom }, new Set());
+    expect(r.violations).toEqual([]);
+    expect(r.warnings.some((w: string) => w.includes('accepted by _terminal_ok'))).toBe(true);
+  });
+
+  test('an empty _terminal_ok is a violation in its own right', () => {
+    const nom = terminalNom();
+    (nom.vehicles as Record<string, unknown>[])[0]._terminal_ok = '';
+    expect(run({ m: nom }).violations.some((x: string) => x.includes('_terminal_ok'))).toBe(true);
+  });
+
+  test('without a baseline the gate behaves exactly as before: warning only', () => {
+    const { violations, warnings } = run({ m: terminalNom() });
+    expect(violations).toEqual([]);
+    expect(warnings.some((w: string) => w.includes('confirmed'))).toBe(true);
+  });
+
   /* ---- the callable-record rule (2026-08-06) ----------------------------
    *
    * `moments.howMadeRule3` tells every reader of /questions that by the time a
