@@ -123,11 +123,57 @@ function parseTagged(text) {
 
 const normCost = (s) => (s === 'NONE' || !s ? null : s);
 
-function normChips(s) {
+// The prompt asks for chips of at most 45 characters; the validator allows 48.
+// That 3-character slack is deliberate tolerance and is left alone here.
+const CHIP_MAX = 48;
+
+function parseChips(s) {
   if (s === 'NONE' || !s) return null;
   const chips = s.split('|').map((c) => c.trim()).filter(Boolean);
-  if (chips.length < 1 || chips.length > 3 || chips.some((c) => c.length > 48)) return null;
+  if (chips.length < 1 || chips.length > 3 || chips.some((c) => c.length > CHIP_MAX)) return null;
   return chips;
+}
+
+/**
+ * Both languages' cost chips, or none in either. Never one language's chips
+ * beside the other language's null.
+ *
+ * The prompt states this contract itself — "Same count and order in
+ * ES_COST_CHIPS. If a fact can't fit 45 chars, output NONE for both chip tags
+ * (prose is the fallback)" — but the validator used to enforce it one language
+ * at a time. Spanish renders the same fact longer, so the ordinary outcome was
+ * an EN chip that fit beside an ES twin that didn't: the ES chips were nulled
+ * and the EN chips stored, and the bill shipped with a scannable chip row in
+ * English and a wall of prose in Spanish. Measured 2026-08-09 on the committed
+ * corpus: of the 917 bills carrying chips in either language, 157 diverge (146
+ * EN-only, 11 ES-only) — 16% — and of the 906 carrying EN chips, 146 have no
+ * ES counterpart.
+ *
+ * The count check is belt-and-braces: zero bills currently diverge on count
+ * where both languages have chips. It is here because the prompt promises it
+ * and enforcing a promise costs nothing.
+ *
+ * ON THE CEILING, deliberately NOT made language-aware. The alternative was a
+ * higher ES ceiling to keep more Spanish chips alive, and it was rejected on
+ * three grounds. First, 48 is a SCANNABILITY budget, not a layout guard: the
+ * Chip shell is `inline-flex w-fit` inside a `flex-wrap` list with no
+ * `whitespace-nowrap` (components/system/Chip.tsx), so a longer chip wraps
+ * rather than breaking the page — nothing is protected by the number except
+ * the chip's reason for existing. A fact needing 58 characters is not a chip,
+ * and the prompt already names the right answer for it: prose. Second, giving
+ * Spanish a longer ceiling would ship ES readers a different, worse-scanning
+ * artifact under the same name, which is not what bilingual parity means.
+ * Third, no honest ES ceiling can be derived from the committed data: every
+ * over-length ES chip was nulled by this very bug, so the stored ES lengths
+ * are censored at 48 (stored ES chips average 34.8 chars vs EN's 32.5 — a 7%
+ * gap that measures only the survivors, not the real inflation). Picking a
+ * number would be a guess dressed as a measurement.
+ */
+export function normChipPair(enRaw, esRaw) {
+  const en = parseChips(enRaw);
+  const es = parseChips(esRaw);
+  if (!en || !es || en.length !== es.length) return { en: null, es: null };
+  return { en, es };
 }
 
 /** Decode ONE bill from its own text. `text` is required and is always the
@@ -185,18 +231,20 @@ Output exactly this tagged format, each tag on its own line followed by its cont
   if (!p.HEADLINE_EN || !p.TLDR || !p.WHAT || !p.WHO || !p.WHY || !p.ES_SUMMARY) {
     throw new Error('bad decode shape');
   }
+  // Chips are decided for BOTH languages at once — see normChipPair.
+  const chips = normChipPair(p.COST_CHIPS, p.ES_COST_CHIPS);
   return {
     ai_summary,
     ai_headline: p.HEADLINE_EN.slice(0, 110),
     ai_sections: {
       tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY,
-      cost: normCost(p.COST), costChips: normChips(p.COST_CHIPS),
+      cost: normCost(p.COST), costChips: chips.en,
     },
     es_headline: p.HEADLINE_ES.slice(0, 110),
     es_summary: p.ES_SUMMARY,
     es_sections: {
       tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY,
-      cost: normCost(p.ES_COST), costChips: normChips(p.ES_COST_CHIPS),
+      cost: normCost(p.ES_COST), costChips: chips.es,
     },
   };
 }
