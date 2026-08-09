@@ -163,7 +163,7 @@ test('only the language line changes between locales — the record input stays 
  *     shape scripts/check-key-namespaces.mjs gates on.
  * ------------------------------------------------------------------ */
 test.describe('nominationContentVersion', () => {
-  const record = NOMINATION.nominee_description;
+  const record = NOMINATION;
 
   test('the two audiences never share a version', () => {
     expect(nominationContentVersion(record, 'senator')).not.toBe(
@@ -193,8 +193,67 @@ test.describe('nominationContentVersion', () => {
     expect(nominationContentVersion(record, 'senator')).toBe(
       nominationContentVersion(record, 'senator')
     );
-    expect(nominationContentVersion(record + ' (corrected)', 'senator')).not.toBe(
-      nominationContentVersion(record, 'senator')
+    expect(
+      nominationContentVersion(
+        { ...record, nominee_description: `${record.nominee_description} (corrected)` },
+        'senator'
+      )
+    ).not.toBe(nominationContentVersion(record, 'senator'));
+  });
+
+  /*
+   * EVERY FIELD THE PROMPT INTERPOLATES IS KEY MATERIAL — the 2026-08-09 fix.
+   *
+   * The hash took only the description, which is the ONE field that never
+   * changes: it is a frozen sentence about a person and a post. Meanwhile
+   * buildNominationScriptPrompt writes the receiving body, the status and the
+   * Senate's own last action into the prompt, and the status moves the whole
+   * way from `received` to `confirmed`. So a nomination that reached the
+   * Executive Calendar — or was confirmed outright — kept serving the script
+   * written while it sat in committee for the rest of the 24-hour TTL, beside
+   * a redeployed page that said otherwise.
+   *
+   * Driven off the field list rather than written out one test per field, so
+   * a field added to the prompt and forgotten here shows up as a missing row
+   * rather than as a silent gap.
+   */
+  const MOVING_FIELDS = [
+    ['status', { status: 'confirmed' as const }],
+    ['last_action_text', { last_action_text: 'Confirmed by the Senate by Voice Vote.' }],
+    ['organization', { organization: 'Department of State' }],
+    ['nominee_description', { nominee_description: 'Someone else, of Ohio, to be something.' }],
+  ] as const;
+
+  for (const [field, patch] of MOVING_FIELDS) {
+    test(`a change to ${field} is a clean cache miss`, () => {
+      expect(nominationContentVersion({ ...record, ...patch }, 'senator')).not.toBe(
+        nominationContentVersion(record, 'senator')
+      );
+    });
+  }
+
+  /*
+   * The null marker, and why it is not `?? ''`. `last_action_text` is nullable,
+   * and a record with no recorded action is a different fact from one whose
+   * action text came back empty. Folding both to '' would key them the same.
+   */
+  test('a null field and an empty-string field are different key material', () => {
+    expect(nominationContentVersion({ ...record, last_action_text: null }, 'senator')).not.toBe(
+      nominationContentVersion({ ...record, last_action_text: '' }, 'senator')
+    );
+  });
+
+  /*
+   * Length-prefixed parts, so a boundary cannot be forged. Without it,
+   * ('ab','c') and ('a','bc') hash the same input, and both halves here are
+   * strings a real record can carry — the description sentence and the
+   * Senate's action text sit next to each other in the hash.
+   */
+  test('shifting a character across a field boundary is still a different key', () => {
+    const a = { ...record, nominee_description: 'ab', last_action_text: 'c' };
+    const b = { ...record, nominee_description: 'a', last_action_text: 'bc' };
+    expect(nominationContentVersion(a, 'senator')).not.toBe(
+      nominationContentVersion(b, 'senator')
     );
   });
 
@@ -207,11 +266,14 @@ test.describe('nominationContentVersion', () => {
   test('the bill and nomination version hashes are separate lineages', () => {
     expect(typeof PROMPT_VERSION).toBe('string');
     expect(typeof NOMINATION_PROMPT_VERSION).toBe('string');
-    // A bill whose whole substantive content IS this record — the closest the
-    // bill hash can come to the nomination hash's input, and still a miss.
+    /* A bill whose whole substantive content IS this nomination's record — the
+       closest the bill hash can come to the nomination hash's input, and still
+       a miss. Both hashes take an OBJECT now (#185 for the bill, this PR for
+       the nomination), so the fixture spells out the bill fields rather than
+       passing the sentence twice. */
     const asBill = {
-      title: record,
-      ai_summary: record,
+      title: record.nominee_description,
+      ai_summary: record.nominee_description,
       status: 'committee' as const,
       last_action_date: null,
     };

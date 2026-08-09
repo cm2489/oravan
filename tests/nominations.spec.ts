@@ -172,6 +172,103 @@ test.describe('the nomination page', () => {
   });
 
   /*
+   * A READER WITH NO SENATORS IS EXPLAINED TO, NOT LEFT IN THE DARK AND THEN
+   * HANDED A SCRIPT FOR AN OFFICE THEY DO NOT HAVE (2026-08-09).
+   *
+   * DC, PR, VI, GU, AS and MP elect a delegate or resident commissioner and no
+   * senators at all, so liveCallKey returns null for them — correctly, since
+   * every one of its strings names a senator. But BOTH nomination notes were
+   * gated on that null, so this reader lost the explanation of how
+   * confirmation works AND the account of what their own office can do, and
+   * was left with a bare stance control. Meanwhile generate() still requested
+   * `audience: 'senator'`, so the panel then put a script addressed to a
+   * Senate office directly above a delegate's phone number — the only number
+   * that reader has.
+   *
+   * Three things are asserted, and the third is the one that costs money and
+   * credibility if it regresses: NO /api/script request is made at all.
+   */
+  test('a reader with no senators gets the explanation, and no senator script is requested', async ({
+    page,
+  }) => {
+    test.skip(!LIVE, 'no live-and-described nomination in the current corpus');
+    const requests: unknown[] = [];
+    await page.route('**/api/script', (route) => {
+      requests.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ script: 'A script that should never have been asked for.' }),
+      });
+    });
+    await page.goto(`/nominations/${liveSlug}`);
+    await seedZip(page, '20001'); // DC-0: one delegate, no senator at all
+    /* Wait for the REPS LOOKUP before choosing a stance, deliberately. The
+       panel refuses the senator request on `knownNoSenator`, which is false
+       while /api/reps is still in flight — a reader is never refused on an
+       unanswered question. Clicking before the response landed would
+       therefore be testing the in-flight window, not the behaviour this test
+       is about, and would be racy on a loaded machine either way. */
+    const repsLoaded = page.waitForResponse((r) => r.url().includes('/api/reps'));
+    await page.reload();
+    await repsLoaded;
+    await page.getByRole('radio', { name: en.bill.stance.support }).click();
+
+    // The office they DO have is present and dialable — nothing is taken away.
+    const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+    await expect(railNames).toHaveCount(1);
+    await expect(railNames.nth(0)).toHaveText('Eleanor Holmes Norton');
+    await expect(
+      page.locator('section[aria-labelledby="act"] a[href^="tel:"]').first()
+    ).toBeVisible();
+
+    // The explainer that used to vanish, and the note written for this reader.
+    await expect(page.getByText(en.bill.nominationHow)).toBeVisible();
+    await expect(page.getByText(en.bill.nominationNoSenator).first()).toBeVisible();
+
+    // The two sentences that would be FALSE here must not appear:
+    // `liveSenateNomination` names senators they do not have, and
+    // `nominationHousePress` asks them to have their delegate press senators
+    // they do not have either.
+    await expect(page.getByText(en.bill.liveSenateNomination)).toHaveCount(0);
+    await expect(page.getByText(en.bill.nominationHousePress)).toHaveCount(0);
+
+    // THE ONE THAT MATTERS: no script was requested. The skip happens before
+    // the fetch, so no Anthropic call, no cache write, no rate-limit budget is
+    // spent on a script addressed to an office this reader has no access to.
+    expect(requests).toEqual([]);
+
+    /*
+     * …and the reader is not left holding a sentence that tells them to call
+     * with no number to call and no words to say. The honest template is
+     * seeded instead, which is also what keeps every `script &&` gate mounted
+     * — the delegate's dial among them. Labelled as the ready-made template it
+     * is, never as an AI draft.
+     */
+    const box = page.getByRole('textbox', { name: en.bill.fallbackTitle }).first();
+    await expect(box).toBeVisible();
+    await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveCount(0);
+    await expect(box).toHaveValue(en.bill.fallbackScriptNominationNoSenator.support.replace('{citation}', LIVE!.citation));
+
+    /*
+     * THE STANDING RULE, asserted on the words the reader would actually read
+     * aloud: the ask is that the office SPEAK, never that it vote. No member
+     * of the House votes on a confirmation, and this reader has no senator to
+     * ask either — so neither the senator template's ask nor the House
+     * template's ("press our state's senators") may appear here.
+     */
+    const value = await box.inputValue();
+    expect(value).toContain('say so publicly');
+    expect(value).not.toMatch(/vote to confirm|vote against confirming/i);
+    expect(value).not.toMatch(/press (our|your) state's senators/i);
+
+    // And the dial the template exists to keep on the page.
+    await expect(
+      page.locator('section[aria-labelledby="act"] a[href^="tel:"]').first()
+    ).toBeVisible();
+  });
+
+  /*
    * THE HOUSE SCRIPT IS REACHABLE, AND IT IS REACHABLE FROM THE HOUSE ROW
    * (2026-08-06, the second half of the owner's ruling).
    *

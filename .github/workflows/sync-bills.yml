@@ -76,11 +76,27 @@ jobs:
         # limit=250 covers it). No Anthropic key, no AI, no spend. The
         # one-time backfill (9 requests) already ran and is committed, so
         # this runs the incremental cursor path from day one.
+        #
+        # THE STRUCTURAL GATE IS INSIDE THIS STEP (2026-08-09), not the one
+        # below. scripts/sync-nominations.mjs runs check-nominations.mjs's
+        # hard checks over the corpus it has just built and refuses to WRITE a
+        # failing one — see that script's pre-write gate. It had to move there
+        # because of the `continue-on-error` on this very step: every verdict
+        # reached after the corpus is on disk is advisory by construction, so
+        # a structurally corrupt nominations.json was committed and deployed
+        # no matter what the step below said about it. A corpus that never
+        # reaches disk cannot be committed by the commit step, so the bill
+        # sync still keeps its night and nothing corrupt can ship.
         continue-on-error: true
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
         run: node scripts/sync-nominations.mjs
       - name: Nomination-corpus tripwire (unclassified action text fails the sync, not PRs)
+        # SCOPE: this step is the UNCLASSIFIED SWEEP and nothing else. The
+        # structural checks are hard, and they already ran with the power to
+        # stop the write, inside the sync step above; by the time this runs
+        # the corpus on disk has necessarily passed them.
+        #
         # --strict turns the unclassified sweep from a warning into a
         # failure. Owner ruling 2026-08-04, same shape as the journey-corpus
         # step above: the sweep fires where the data changes. A novel Senate
@@ -93,7 +109,11 @@ jobs:
         # costing the bill sync its night. That does mean an unclassified
         # record still gets committed by the step below, which is correct:
         # `unclassified` is an honest state, and a stale corpus would be a
-        # worse trade than a record that declines to make a claim.
+        # worse trade than a record that declines to make a claim. That
+        # trade-off is the ONLY thing this step's continue-on-error now
+        # excuses — which is what its comment always claimed, and what was
+        # untrue while the same flag was also making every structural check
+        # advisory.
         continue-on-error: true
         run: node scripts/check-nominations.mjs --strict
       - name: Backfill coverage search inputs
