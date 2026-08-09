@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { BillStatus } from '@/lib/types';
-import { floorCalendarChamber } from '@/lib/journey';
-import { isSignalFresh } from '@/lib/signal-window';
+import { floorCalendarChamber, floorPendingChamber, type Chamber } from '@/lib/journey';
+import { effectiveUrgency, isSignalFresh } from '@/lib/signal-window';
 import { Chip } from './Chip';
 
 /*
@@ -10,31 +10,46 @@ import { Chip } from './Chip';
  *
  * DATA-GATED LOUDNESS. Exactly ONE bill per page takes this panel, and only a
  * bill that earns the TRIAD can: `status === "floor_vote"`, a fresh printed
- * date, AND the record's own placed-on-calendar sentence (the same gate
- * scripts/moment-candidates.mjs `isOnFloorCalendar` applies — the status
- * alone is looser than the claim, see lib/journey.ts). Never two. A quiet
- * week has no panel at all and the page is an unbroken paper column.
+ * date, AND one of the record's own FLOOR facts — a placed-on-calendar
+ * sentence (floorCalendarChamber) or a still-pending floor vote
+ * (floorPendingChamber). Never two. A quiet week has no panel at all and the
+ * page is an unbroken paper column.
  *
- * The cap is not taste, it is the entire mechanism. The corpus is HOT: 319 of
- * the 2,567 bills in `data/bills.json` carry `floor_vote` (as of the
- * 2026-08-01 sync; the corpus moves nightly — recompute, don't trust). Two
+ * THE PENDING HALF IS NEW (owner ruling 2026-08-09) and it exists because the
+ * calendar half alone was structurally backward-looking: Congress overwrites
+ * `last_action_text`, so the moment a bill drew REAL floor action — cloture
+ * filed, motion to proceed made — its placement sentence vanished and the
+ * crown dropped it, one to two days behind the week's actual votes. The
+ * status alone is still looser than either claim (it also covers rejected
+ * motions and cloture not invoked), so the gate stays a gate; it now just
+ * admits both true facts instead of only the earlier one. See lib/journey.ts.
+ * scripts/moment-candidates.mjs `isOnFloorCalendar` is unchanged and still
+ * calendar-only — the Moments watcher asks a different question.
+ *
+ * The cap is not taste, it is the entire mechanism. The corpus is HOT: 339 of
+ * the 2,666 bills in `data/bills.json` carry `floor_vote` (as of the
+ * 2026-08-09 sync; the corpus moves nightly — recompute, don't trust). Two
  * panels and both read as wallpaper. At a squint a page changes shape exactly
  * once, and this is that change — so if you are adding a second full-bleed
  * band anywhere on the same page, you are taking meaning away from this one.
  *
  * Use `selectFloorVoteFeature()` below to pick the one. The component gates
  * itself on status and date, but it cannot see the action text or its
- * siblings — the calendar half of the triad and the cap are the caller's to
+ * siblings — the floor-fact half of the triad and the cap are the caller's to
  * hold, and that helper is how you hold them.
  *
- * ⚠️ THE DATE IS AN OPEN OWNER RULING. `data/bills.json` has no
- * forward-looking scheduled-vote date for ANY bill: `floor_vote` is derived
- * from action text like "Placed on Senate Legislative Calendar under General
- * Orders", and `last_action_date` is always in the past (0 of 319 are
- * future-dated, recomputed 2026-08-02). So "floor vote scheduled Thursday" CANNOT be built from live
- * data. Pass the calendar-PLACEMENT date and a label that claims only that
- * ("On the House floor calendar"). Do not synthesize or imply a scheduled
- * vote date. See DESIGN.md.
+ * ⚠️ THE DATE IS AN OPEN OWNER RULING, and the 2026-08-09 pending ruling did
+ * NOT reopen it. `data/bills.json` still has no forward-looking scheduled-vote
+ * date for ANY bill: `floor_vote` is derived from action text like "Placed on
+ * Senate Legislative Calendar under General Orders" or "Cloture motion …
+ * presented in Senate", and `last_action_date` is always in the past (0 of 339
+ * are future-dated, recomputed 2026-08-09). So "floor vote scheduled Thursday"
+ * CANNOT be built from live data. Pass the date of the action itself — the
+ * calendar PLACEMENT, or the day the pending motion was filed — with a label
+ * that claims only that ("On the House floor calendar" / "Floor vote pending in
+ * the Senate"). "Pending" says a vote is still ahead, which the record
+ * supports; it never says WHEN, which the record does not. Do not synthesize or
+ * imply a scheduled vote date. See DESIGN.md.
  *
  * PARENT CONTRACT — this panel is full-bleed, so it renders full-width with
  * its own inner max-width wrapper. It must be a direct child of a FULL-WIDTH
@@ -61,8 +76,11 @@ export interface FloorVotePanelProps {
    */
   dateLabel: string;
   /**
-   * The claim the date supports, e.g. "On the House floor calendar". Must
-   * claim only what the data supports — see the ruling note above.
+   * The claim the date supports, e.g. "On the House floor calendar" or
+   * "Floor vote pending in the Senate". Must claim only what the data
+   * supports — see the ruling note above. The prop name is historical: it
+   * carries whichever of the two floor facts `selectFloorVoteFeature`
+   * actually found, and the caller reads that from the returned `kind`.
    */
   calendarLabel: string;
   /** e.g. "H.R. 1234". Set in tabular numerals. */
@@ -175,38 +193,84 @@ export function FloorVotePanel({
 }
 
 /**
+ * WHICH FLOOR FACT the crowned bill stands on. `calendar` is a placement the
+ * record printed ("Placed on … Calendar"); `pending` is a floor vote still
+ * ahead of it (cloture filed, motion to proceed made, proceedings postponed,
+ * a rule reported). Two different sentences, and the caller must print the
+ * one that matches.
+ */
+export type FloorFeatureKind = 'calendar' | 'pending';
+
+export interface FloorFeature<T> {
+  bill: T;
+  kind: FloorFeatureKind;
+  /** Read out of the record's own sentence, never guessed from the bill type
+   *  — a House bill can stand on the Senate's calendar. */
+  chamber: Chamber;
+}
+
+/**
  * Picks the ONE bill that may take the panel, or null on a quiet week.
  *
  * The cap-to-one is load-bearing and no component can enforce it alone, so
  * enforce it here, at the data layer: call this once per page and render at
- * most what it returns. Ranking defaults to `urgency_score` (higher wins),
- * falling back to the most recent last-action date, then to input order.
+ * most what it returns.
+ *
+ * ONE CALL, ONE TRUTH. It returns the bill together with the fact it earned
+ * the panel on and the chamber that fact names, because the caller must never
+ * re-derive either: the homepage used to re-run floorCalendarChamber over the
+ * winner's text to label the chip, which meant two functions had to agree
+ * forever about a bill only one of them had chosen.
+ *
+ * RANKING IS READ-TIME AND DATE-FIRST (2026-08-09):
+ *   (a) `last_action_date` descending — the newest genuine floor signal wins.
+ *       This is the whole point of the change: the crown must track the week.
+ *   (b) an exact-date tie goes to `calendar` over `pending` — a printed
+ *       placement is the stronger, plainer claim.
+ *   (c) still tied → `effectiveUrgency(status, last_action_date)`, recomputed
+ *       here. It replaced a read of the STORED `urgency_score`, which is
+ *       frozen at sync time (docs/solutions/stale-urgency-freeze.md) and
+ *       disagreed with the read-time score on 304 of the corpus's 339
+ *       floor_vote bills as of 2026-08-09. NOTE: with eligibility fixed at
+ *       `floor_vote`, (c) is a formality — the curve is a pure function of
+ *       status and date, so anything reaching it is already equal on both.
+ *       It stays as the explicit total order, and so that widening
+ *       eligibility later cannot silently fall through to input order.
  */
 export function selectFloorVoteFeature<T extends { status: BillStatus }>(
-  bills: readonly T[],
-  rank: (bill: T) => number = defaultRank
-): T | null {
-  let best: T | null = null;
-  let bestScore = Number.NEGATIVE_INFINITY;
+  bills: readonly T[]
+): FloorFeature<T> | null {
+  let best: FloorFeature<T> | null = null;
   for (const bill of bills) {
     if (bill.status !== 'floor_vote') continue;
-    // The panel asserts the bill is standing on the floor calendar *now*.
-    // Past the published 14-day window that assertion stops being true, and
-    // the honest quiet week is the correct output. See lib/urgency.mjs.
+    // The panel asserts the bill's floor fact is true *now*. Past the
+    // published 14-day window that assertion stops being true, and the honest
+    // quiet week is the correct output. See lib/urgency.mjs.
     if (!isSignalFresh(billDateOf(bill))) continue;
-    // And the record itself must say so: `floor_vote` also covers cloture
-    // motions and REJECTED motions to proceed, where "on the floor calendar"
-    // would be a false claim. Only a genuine "Placed on … Calendar" sentence
-    // earns the panel — the same triad the bill page's amber gate and
-    // scripts/moment-candidates.mjs `isOnFloorCalendar` apply.
-    if (floorCalendarChamber(billActionTextOf(bill)) === null) continue;
-    const score = rank(bill);
-    if (score > bestScore) {
-      bestScore = score;
-      best = bill;
-    }
+    // And the record itself must say one of the two things: `floor_vote` also
+    // covers rejected motions to proceed and cloture NOT invoked, where both
+    // "on the floor calendar" and "a vote is pending" would be false claims.
+    const text = billActionTextOf(bill);
+    const calendar = floorCalendarChamber(text);
+    const chamber = calendar ?? floorPendingChamber(text);
+    if (chamber === null) continue;
+    const candidate: FloorFeature<T> = {
+      bill,
+      kind: calendar ? 'calendar' : 'pending',
+      chamber,
+    };
+    if (best === null || beats(candidate, best)) best = candidate;
   }
   return best;
+}
+
+/** Strictly better than the incumbent on the three ordered keys above. */
+function beats<T extends { status: BillStatus }>(a: FloorFeature<T>, b: FloorFeature<T>): boolean {
+  const dateA = billDateOf(a.bill) ?? '';
+  const dateB = billDateOf(b.bill) ?? '';
+  if (dateA !== dateB) return dateA > dateB;
+  if (a.kind !== b.kind) return a.kind === 'calendar';
+  return urgencyOf(a.bill) > urgencyOf(b.bill);
 }
 
 function billDateOf(bill: unknown): string | null {
@@ -219,14 +283,6 @@ function billActionTextOf(bill: unknown): string | null {
   return b.last_action_text ?? b.lastActionText ?? null;
 }
 
-function defaultRank(bill: unknown): number {
-  const b = bill as {
-    urgency_score?: number;
-    last_action_date?: string | null;
-    lastActionDate?: string | null;
-  };
-  if (typeof b.urgency_score === 'number') return b.urgency_score;
-  const date = b.last_action_date ?? b.lastActionDate;
-  const ms = date ? Date.parse(date) : Number.NaN;
-  return Number.isNaN(ms) ? 0 : ms;
+function urgencyOf(bill: { status: BillStatus }): number {
+  return effectiveUrgency(bill.status, billDateOf(bill));
 }

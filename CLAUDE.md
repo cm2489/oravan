@@ -17,6 +17,17 @@ Read README.md first; its **Design principles** section is the product constitut
 
 - **Anything Colby has to do himself gets stated in bold, as a numbered step-by-step sequence** — every command, every click, in the order they must happen, with any blocking dependency between steps called out. Never a prose paragraph he has to reverse-engineer into actions. If a step can't be verified in advance, say so on that step rather than after the list.
 - **Anything visual — mockups, drafts, renders, comparisons, reports — opens in its own tab, formatted.** Publish it as an Artifact and hand over the URL. **Never hand back a Markdown file as a deliverable**, and never make him read a design out of terminal output or a scratchpad path. Scratchpad files are working state, not deliverables.
+- **Review window (standing rule, ruled 2026-08-09):** whenever Colby needs to put eyes on something running, Claude spins up the dev server(s), publishes a summary artifact saying what to look at and why, and opens a new Chrome window with one tab per stop, in walk order. Never a bare URL list in terminal output.
+
+## How big work is delegated
+
+Adopted 2026-08-09, on the owner's directive to hand off larger chunks of work with less back-and-forth. The operating contract for any multi-PR, multi-day, or "bring this to done" handoff:
+
+- **Lifecycle:** brief → plan with a definition of done per step → Colby approves the plan → execution (ultracode multi-agent orchestration) → mandatory verification pass → report artifact + PRs → Colby merges, with a recommended merge order stated once at wrap-up, never mid-session.
+- **Models:** the orchestrating Claude runs on Fable 5 and keeps the judgment work — synthesis, design rulings, final review. Subagents default to Opus 5; a subagent moves up only when its task genuinely requires it, and every exception is recorded in the report with its reason.
+- **Every brief states:** the goal; the definition of done — *verified* done (CI green, tests passing, live checks), never "work completed"; **decision boundaries** — what Claude decides alone vs. what parks for Colby; a budget/scale ceiling for anything with a bill (paid API calls, Actions minutes); and the deliverable format. A brief missing one of these gets the gap asked about at plan time, not discovered mid-run.
+- **Parking lot:** when a thread blocks on Colby mid-run, Claude parks that thread, keeps working everything else, and batches the questions for wrap-up. Constitutional conflicts and money decisions are the exceptions — they surface immediately (see "Constitutional conflicts"); nothing else interrupts the run.
+- **Checkpoints:** on runs longer than one sitting, a checkpoint artifact stays current as phases complete, so Colby can peek at progress without interrupting.
 
 ## Constitutional conflicts
 

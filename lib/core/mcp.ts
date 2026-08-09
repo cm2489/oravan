@@ -1,10 +1,26 @@
 /*
  * MCP tool data-shaping (S10). Pure functions over lib/core + baked JSON -
- * the same corpus the site itself reads, so an agent's answer and a
- * visitor's page always agree. No network calls happen here; the one
- * network-shaped feature the spec allows (Census address refinement) is
- * deliberately NOT implemented in this release - see lookupRepresentatives'
- * doc comment for the scope decision and its follow-up.
+ * the same corpus the site itself reads, through the same scoring path, so
+ * neither surface carries a second copy of the data or of the urgency model.
+ * No network calls happen here; the one network-shaped feature the spec
+ * allows (Census address refinement) is deliberately NOT implemented in this
+ * release - see lookupRepresentatives' doc comment for the scope decision
+ * and its follow-up.
+ *
+ * PURE OVER THE DATA, NOT OVER THE CLOCK. Corrected 2026-08-08: this comment
+ * said "an agent's answer and a visitor's page always agree", and the
+ * time-dependent code below makes that false. whatsMoving cuts on
+ * `Date.now() - days`; getBillDetail reads `urgency_band` out of getTeasers;
+ * searchBills sorts by, and shapeBillTeaser stamps, `urgency_score` - and
+ * every one of those is lib/urgency.mjs's effectiveUrgency, whose freshness
+ * bonus and staleness decay move with elapsed days. whatsMoving's empty
+ * result is then judged by emptyStateVerdict. All of them default to the
+ * real clock. app/api/mcp/[transport]/route.ts is `force-dynamic`, so here
+ * that clock is request time; the site's pages are statically generated, so
+ * there it was build time. Identical inputs, two evaluation instants: the
+ * answers can differ, and when they do this one is the fresher of the two,
+ * never the staler. See that route's header for the full statement and why
+ * the behaviour was left alone.
  *
  * Every tool's payload nests the citation envelope under `meta` (matching
  * the project records §2's illustrated shape) rather than

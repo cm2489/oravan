@@ -108,3 +108,34 @@ test('A1-es: the Spanish trust line takes the sub-bar (the 686px nav can never f
     expect(box).toBeGreaterThan(60);
   }
 });
+
+/*
+ * THE LOCALE TRAP (2026-08-09 crown rewiring). The homepage filters the
+ * crowned bill out of the plain ruled listing beneath it, and that filter used
+ * to be REFERENCE equality (`top.filter((b) => b !== feature)`).
+ * `localizeBill()` returns a FRESH object for /es, and since the crown's
+ * candidate pool is now built independently of the 4-card shortlist, the two
+ * are never the same object — so on Spanish, and only on Spanish, the crowned
+ * bill wore the crown AND appeared again in the list 200px below it. An
+ * English-only smoke test cannot see that, which is the entire reason this
+ * drives both locales; the fix is slug equality, and this is its pin.
+ */
+test('the crowned bill appears exactly once in the week, in both locales', async ({ page }) => {
+  for (const path of ['/', '/es']) {
+    await page.goto(path);
+    const week = page.locator('section[aria-labelledby="top-actions"]');
+    // The FloorVotePanel's own full-bleed enamel section. Absent on a quiet
+    // week, which is a valid state and not this test's subject.
+    const crown = week.locator('section.bg-go-deep');
+    if ((await crown.count()) === 0) {
+      test.skip(true, `quiet week: no green crown rendered on ${path}`);
+      return;
+    }
+    const headline = (await crown.getByRole('heading').first().innerText()).trim();
+    expect(headline.length, `${path}: the crown must carry a headline`).toBeGreaterThan(0);
+    await expect(
+      week.getByText(headline, { exact: true }),
+      `${path}: "${headline}" is crowned, so it must not also be listed below`
+    ).toHaveCount(1);
+  }
+});

@@ -7,10 +7,31 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
 /*
  * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
  * pure functions, which read the same baked JSON the site's own pages read -
- * an agent's answer and a visitor's page can never disagree. No tool here
+ * one corpus, one urgency model, no second copy of the data. No tool here
  * makes an outbound network call; the one the spec allows (Census address
  * refinement inside lookup_representatives) is deliberately deferred - see
  * lib/core/mcp.ts's lookupRepresentatives doc comment.
+ *
+ * SAME DATA, DIFFERENT CLOCK - and this comment used to get that wrong.
+ * It said "an agent's answer and a visitor's page can never disagree",
+ * which the `force-dynamic` below makes false. The facts are shared: the
+ * corpus, the decodes, and the envelope's `as_of` (lib/freshness.ts reads
+ * data/sync-state.json, a baked value) are byte-identical on both surfaces.
+ * What is NOT shared is when the clock is read. Every time-dependent
+ * derivation here runs at REQUEST time - whats_moving's N-day cutoff, the
+ * staleness-decayed urgency get_bill reports as a band and search_bills as
+ * a score (lib/urgency.mjs effectiveUrgency), and the quiet_week /
+ * data_stale verdict (lib/freshness-state.ts emptyStateVerdict) - while the
+ * site's pages are statically generated and evaluated the same functions at
+ * BUILD time. So they can disagree, in one direction only: this route's
+ * judgment is never older than the last build's. On a stalled pipeline
+ * whats_moving reports `data_stale` while a homepage built before the stall
+ * still shows a confident panel, and the MCP answer is the honest one.
+ *
+ * That asymmetry is a property of the wiring, not a promise about it, and
+ * closing it (baking the clock, or revalidating the pages) is a behaviour
+ * change nobody has decided on. Until someone does, this comment describes
+ * what actually runs.
  *
  * Exactly these 5, per the project records §2 and the
  * settled S10 scope call (KTD-6, closed under R16): lookup_representatives,
@@ -79,6 +100,9 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
  * (lib/core/mcp.ts), lookup_representatives' `refine_hint`, and every
  * toolError() message in lib/core/mcp-tools.ts - is now locale-paired.
  */
+/* The line the header's "different clock" note is about: every request runs
+ * the tool handlers fresh, so Date.now() inside them is the caller's now, not
+ * the last deploy's. Required anyway - a JSON-RPC POST cannot be prerendered. */
 export const dynamic = 'force-dynamic';
 
 const handler = createMcpHandler(

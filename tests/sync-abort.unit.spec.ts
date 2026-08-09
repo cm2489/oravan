@@ -1,0 +1,79 @@
+import { expect, test } from '@playwright/test';
+// Imported from the nightly script ITSELF, not a copy - this is the exact
+// predicate scripts/sync-bills.mjs evaluates at the end of every run.
+//
+// That import is also, on its own, a regression test for the argv[1] guard
+// that now wraps that script's body: without the guard, importing the module
+// runs a live sync and this whole file dies at import time on a missing
+// CONGRESS_API_KEY. If this spec ever fails to load, look there first.
+import { MOSTLY_FAILED_FLOOR, shouldAbortMostlyFailed } from '../scripts/sync-bills.mjs';
+
+/*
+ * Pins the minimum-sample floor on the nightly's "mostly failed" abort.
+ *
+ * The abort exists so a genuinely broken night can't be committed. What it
+ * actually did was end healthy nights: `failed > updated.length / 2` was
+ * evaluated against the ascending backlog pass's window, which - now that
+ * the cursor is caught up - is routinely one or two bills. One transient
+ * Congress.gov 500 then satisfied "more than half" and exited 1 from the
+ * FIRST step of sync-bills.yml, throwing away the AI decodes the run had
+ * already paid for and skipping nominations, coverage, Moment updates and
+ * portraits for the whole night.
+ *
+ * The floor makes "majority" mean something before it is allowed to cost a
+ * night. It deliberately does NOT make the abort the only guard - it never
+ * was: scripts/verify-sync.mjs still fails the run, before anything is
+ * committed, when the corpus doesn't parse, EN/ES parity breaks, the bill
+ * count drops, or lastRun didn't advance.
+ */
+
+const abort = shouldAbortMostlyFailed as (failed: number, total: number) => boolean;
+const FLOOR = MOSTLY_FAILED_FLOOR as number;
+
+test.describe('shouldAbortMostlyFailed (nightly "mostly failed" abort)', () => {
+  test('the floor is 8 - retuning it is a deliberate act, not a drive-by', () => {
+    // Pinned so a change to the constant has to come here and say why.
+    expect(FLOOR).toBe(8);
+  });
+
+  test('a quiet night with one transient failure does NOT end the run', () => {
+    // The exact shape of the bug: a 1-2 bill window, one flaky refresh.
+    expect(abort(1, 1)).toBe(false);
+    expect(abort(1, 2)).toBe(false);
+    expect(abort(2, 2)).toBe(false);
+    expect(abort(2, 3)).toBe(false);
+  });
+
+  test('a big pass that really did mostly fail still aborts', () => {
+    expect(abort(5, 8)).toBe(true);
+    expect(abort(51, 100)).toBe(true);
+    expect(abort(300, 500)).toBe(true);
+    // MAX_UPDATES is 500, so this is the largest window the sync can produce.
+    expect(abort(500, 500)).toBe(true);
+  });
+
+  test('at the floor exactly, the majority test resumes - and stays STRICTLY more than half', () => {
+    expect(abort(4, 8)).toBe(false); // exactly half, at the floor: not a majority
+    expect(abort(5, 8)).toBe(true); // one more than half: a majority
+    expect(abort(250, 500)).toBe(false); // exactly half, far above the floor
+    expect(abort(251, 500)).toBe(true);
+  });
+
+  test('one bill under the floor, nothing aborts - the trade this fix makes', () => {
+    // Stated plainly because it IS the cost: a 7-bill pass that failed
+    // outright rides on to the gates instead of exiting here. That is the
+    // intended trade - verify-sync.mjs (corpus parse, EN/ES parity, >2%
+    // count drop, lastRun advanced) is what fails such a night, and it runs
+    // before a single byte is committed.
+    expect(abort(7, 7)).toBe(false);
+    expect(abort(FLOOR - 1, FLOOR - 1)).toBe(false);
+    expect(abort(FLOOR, FLOOR)).toBe(true);
+  });
+
+  test('an empty or clean pass never aborts', () => {
+    expect(abort(0, 0)).toBe(false); // nothing updated tonight - nothing to judge
+    expect(abort(0, 1)).toBe(false);
+    expect(abort(0, 500)).toBe(false);
+    expect(abort(1, 500)).toBe(false);
+  });
+});
