@@ -64,7 +64,10 @@ const WRAP = 'mx-auto w-full max-w-5xl px-4';
  * collapses to row 1 and a tall rail would blow row 1 open and strand the
  * reading column beside it. Two children — the narrative and the rail — need no
  * row arithmetic at all, and they keep each section's own `mt-12` rhythm
- * untouched, which a per-row grid would have replaced with the row gap.
+ * untouched, which a per-row grid would have replaced with the row gap. The
+ * rail is STICKY inside that single row — see its own comment below; two
+ * children in one row is exactly what makes the sticky box's grid area span
+ * the whole desk without `row-span-full`.
  */
 const DESK =
   'grid max-w-read gap-8 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8';
@@ -437,11 +440,30 @@ export default async function MomentPage({
           </section>
         </div>
 
-        {/* THE VEHICLES RAIL (5 · 6). The cards stack ONE per row here — the
-            rail is 20–25rem, which is one card wide — and the qualifying-signal
+        {/* THE VEHICLES RAIL (5 · 6). The cards stack ONE per row inside the
+            rail — 20–25rem is one card wide — and the qualifying-signal
             apparatus that says why this question exists at all sits directly
-            under them, where the reader is already looking at the receipts. */}
-        <div className="min-w-0 min-[62rem]:col-start-2 min-[62rem]:row-start-1">
+            under them, where the reader is already looking at the receipts.
+            The one-per-row rule is scoped to the rail's own breakpoint on the
+            grid below; it is NOT the tablet band's rule (see there).
+
+            STICKY, like every other rail on this site (bills/[id] line 436,
+            nominations/[slug] lines 476/487) and for the reason DESIGN.md
+            structural constraint 1 gives: a rail "holds to the page foot".
+            Pinned at row start with no sticky it terminated far above the
+            desk's foot and left the right column blank — measured at 1440×900
+            before this line existed: narrative 2816px vs rail 2291px on
+            iran-war-powers (525px of dead column), 2120 vs 1089 on
+            annual-defense-policy (1031px, and 4 of the 5 live moments carry
+            exactly one vehicle, so the one-card rail is the normal case).
+            `sticky` needs no `row-span-full` here: both children sit in row 1,
+            so the row — and therefore this item's grid area, which is what
+            bounds a sticky box — is already the full height of the taller
+            column. The rail travels down inside it and its foot lands on the
+            desk's foot. When a rail is TALLER than the viewport it pins for
+            the difference between the two columns and then scrolls on with the
+            page, so nothing in it is ever unreachable. */}
+        <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:self-start">
           {/* 5 · The vehicles */}
           <section className="border-t border-line pt-4" aria-labelledby="vehicles-h">
             <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
@@ -475,7 +497,17 @@ export default async function MomentPage({
               </Chip>
             </p>
 
-            <div className="mt-6 grid gap-4">
+            {/* TWO-UP UNTIL THE RAIL OPENS, one-up inside it. `sm:grid-cols-2`
+                is the utility this grid carried before the desk landed and it
+                is restored deliberately: the rail only exists at ≥62rem, so in
+                the 640–991px band there is no rail — just a 33rem column — and
+                dropping the second track there cost a multi-vehicle moment
+                real height. Measured on /questions/iran-war-powers at 768×1024
+                with the column gone: document 5516 → 6002px (+486), 5.39 →
+                5.86 screens of scroll, #vehicles-h→#why-h 1239 → 1712px.
+                `min-[62rem]:grid-cols-1` is what actually states "the rail is
+                one card wide", at the breakpoint where the rail is true. */}
+            <div className="mt-6 grid gap-4 grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
               {moment.vehicles.map((v) => {
                 /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
                    through the one normalizer (lib/moments.ts vehicleKind — absent
