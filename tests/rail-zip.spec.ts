@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mockScriptApi } from './helpers';
+import { senateLiveBillSlugs } from './corpus';
 
 /*
  * "The panel scrolls · the call stays" — and so does a ZIP submit (2026-08,
@@ -196,8 +197,14 @@ test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, 
 test('Enter submits the rail ZIP form, and chamber routing names the senators as the live call', async ({
   page,
 }) => {
+  // NOT the module-level BILL. S.J.Res. 99's last action is a rejected motion
+  // to proceed, and since the 2026-08-09 floor-truth fix a settled motion
+  // correctly prints no live-call sentence — so the routing half of this gate
+  // needs a bill genuinely in the Senate's hands (tests/corpus.ts).
+  const senateLive = senateLiveBillSlugs();
+  test.skip(senateLive.length === 0, 'no Senate-live bill in the corpus today');
   await mockScriptApi(page);
-  await page.goto(BILL);
+  await page.goto(`/bills/${senateLive[0]}`);
   await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
 
@@ -205,7 +212,7 @@ test('Enter submits the rail ZIP form, and chamber routing names the senators as
   await page.getByLabel(en.home.zipLabel).press('Enter');
 
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
+  await expect(page).toHaveURL(new RegExp(`/bills/${senateLive[0]}`));
 
   await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();
   const firstRow = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold').first();

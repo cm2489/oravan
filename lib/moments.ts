@@ -311,6 +311,27 @@ export function isSettled(id: string, now: number = Date.now()): boolean {
  * The invariant belongs in the code that depends on it, not in the reader's
  * head.
  */
+/**
+ * Does this moment's backlink amount to THIS SITE CLAIMING its vehicles?
+ *
+ * `live` and `stale` are the two states in which a moment is still putting a
+ * question to readers, so a vehicle it cites is part of the curated index. A
+ * `settled` moment's page persists as the fight's record — but the fight is
+ * over, and the vehicle pages it once pointed at go back to being merely
+ * reachable. `retired` 404s outright.
+ *
+ * EXPORTED BECAUSE TWO SURFACES HAVE TO AGREE, and for a while did not.
+ * app/[locale]/nominations/[slug]/page.tsx sets `robots: { index: cited }`
+ * from getMomentsForNomination — this predicate — while app/sitemap.ts's
+ * nomination loop skipped only `retired`. A settled moment's nomination was
+ * therefore listed in sitemap.xml pointing at a page whose own head tag said
+ * noindex: a sitemap arguing with its own pages, which is the exact
+ * contradiction that block's comment forbids. One predicate, read by both.
+ */
+export function momentClaimsVehicles(moment: Pick<MomentWithState, 'state'>): boolean {
+  return moment.state === 'live' || moment.state === 'stale';
+}
+
 export function momentsForVehicle(
   moments: MomentWithState[],
   slug: string,
@@ -318,7 +339,7 @@ export function momentsForVehicle(
 ): MomentWithState[] {
   return moments.filter(
     (m) =>
-      (m.state === 'live' || m.state === 'stale') &&
+      momentClaimsVehicles(m) &&
       m.vehicles.some((v) => v.slug === slug && vehicleKind(v) === kind)
   );
 }

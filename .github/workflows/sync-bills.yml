@@ -76,11 +76,27 @@ jobs:
         # limit=250 covers it). No Anthropic key, no AI, no spend. The
         # one-time backfill (9 requests) already ran and is committed, so
         # this runs the incremental cursor path from day one.
+        #
+        # THE STRUCTURAL GATE IS INSIDE THIS STEP (2026-08-09), not the one
+        # below. scripts/sync-nominations.mjs runs check-nominations.mjs's
+        # hard checks over the corpus it has just built and refuses to WRITE a
+        # failing one — see that script's pre-write gate. It had to move there
+        # because of the `continue-on-error` on this very step: every verdict
+        # reached after the corpus is on disk is advisory by construction, so
+        # a structurally corrupt nominations.json was committed and deployed
+        # no matter what the step below said about it. A corpus that never
+        # reaches disk cannot be committed by the commit step, so the bill
+        # sync still keeps its night and nothing corrupt can ship.
         continue-on-error: true
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
         run: node scripts/sync-nominations.mjs
       - name: Nomination-corpus tripwire (unclassified action text fails the sync, not PRs)
+        # SCOPE: this step is the UNCLASSIFIED SWEEP and nothing else. The
+        # structural checks are hard, and they already ran with the power to
+        # stop the write, inside the sync step above; by the time this runs
+        # the corpus on disk has necessarily passed them.
+        #
         # --strict turns the unclassified sweep from a warning into a
         # failure. Owner ruling 2026-08-04, same shape as the journey-corpus
         # step above: the sweep fires where the data changes. A novel Senate
@@ -93,7 +109,11 @@ jobs:
         # costing the bill sync its night. That does mean an unclassified
         # record still gets committed by the step below, which is correct:
         # `unclassified` is an honest state, and a stale corpus would be a
-        # worse trade than a record that declines to make a claim.
+        # worse trade than a record that declines to make a claim. That
+        # trade-off is the ONLY thing this step's continue-on-error now
+        # excuses — which is what its comment always claimed, and what was
+        # untrue while the same flag was also making every structural check
+        # advisory.
         continue-on-error: true
         run: node scripts/check-nominations.mjs --strict
       - name: Backfill coverage search inputs
@@ -299,6 +319,50 @@ jobs:
             fi
           done
           abandon "all five push attempts failed - either main kept moving under us, or the remote was unreachable. The per-attempt reason is in the log above."
+      - name: Package the sync a gate before the commit step threw away
+        # The salvage step below only ever fired for a FAILED commit step, and
+        # `salvage/` is written by that step's own abandon(). But a gate that
+        # fails BEFORE it - the journey/nomination tripwires, the search-input
+        # backfill, coverage, portraits, verify-sync, even the salt check,
+        # which has nothing to do with bill data at all - SKIPS the commit
+        # step, and a skipped step is not a failed one. So abandon() never
+        # ran, no bundle was ever written, and the night's paid work (the AI
+        # decodes scripts/sync-bills.mjs has already written to data/, plus
+        # whatever later steps completed) died with the runner. Widening the
+        # upload's `if:` alone would have uploaded an empty directory.
+        #
+        # This step writes the SAME payload for that path - a local commit,
+        # bundled for the upload below. It NEVER pushes; nothing here can put
+        # a byte on main.
+        #
+        # THE BUNDLE IS EVIDENCE, NOT A GREEN LIGHT. A gate failed, so fix
+        # what failed before replaying any of it: verify-sync.mjs failing
+        # means the corpus itself is suspect, while the salt check failing
+        # says nothing about the corpus at all. The judgement stays with a
+        # human - this step only refuses to let the runner delete the
+        # evidence.
+        if: always() && failure() && steps.commit.outcome != 'success' && steps.commit.outcome != 'failure'
+        run: |
+          if [ -z "$(git status --porcelain -- data/)" ]; then
+            echo "::notice::a gate failed before the commit step, but data/ is unchanged - nothing to salvage."
+            exit 0
+          fi
+          # Same linked author as the commit step: a salvaged commit that is
+          # later cherry-picked onto main must not be BLOCKED by Vercel for an
+          # unlinked author. See docs/solutions/vercel-bot-push-blocked-deploys.md.
+          git config user.name "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
+          git add data/
+          git commit -q -m "chore(data): salvaged nightly sync $(date -u +%F) (a gate failed; never pushed)"
+          sha="$(git rev-parse HEAD)"
+          echo "::error::A GATE BEFORE THE COMMIT STEP FAILED - the reason is in the failing step above. The night's work itself is NOT gone: it is preserved as the 'discarded-sync-${GITHUB_RUN_ID}' artifact on this run."
+          echo "::error::Fix the failing gate FIRST. Then, only if its failure was unrelated to the corpus: gh run download ${GITHUB_RUN_ID} -n discarded-sync-${GITHUB_RUN_ID} && git fetch ./discarded-commit.bundle main:salvaged && git cherry-pick salvaged"
+          echo "--- what is in the salvaged commit ---"
+          git show --stat --oneline "${sha}" | head -20
+          mkdir -p salvage
+          git bundle create salvage/discarded-commit.bundle main --not origin/main || \
+            echo "::warning::could not bundle the salvaged commit; the data is lost with this runner"
+          git show --stat --oneline "${sha}" > salvage/discarded-commit.txt || true
       - name: Salvage the sync the commit step could not land
         # Run 31194836148 did every expensive thing right and then lost all of
         # it at the push, and the failure looked at a glance like "the sync
@@ -307,7 +371,19 @@ jobs:
         # is ~2,400 PAID TheNewsAPI requests and the whole daily quota) can be
         # replayed onto main by hand instead of re-bought. Recovery commands
         # are in the step's own ::error:: annotations.
-        if: always() && steps.commit.outcome == 'failure'
+        #
+        # TWO paths reach this upload, and for most of the nightly's life only
+        # the first existed:
+        #   1. the commit step RAN and FAILED - abandon() wrote salvage/;
+        #   2. a gate BEFORE the commit step failed, so the commit step was
+        #      SKIPPED (outcome 'skipped', never 'failure') and the step above
+        #      wrote salvage/ instead. Path 2 was silently uncovered: the
+        #      condition tested only for 'failure', so every pre-commit gate
+        #      failure took the whole night's paid work down with the runner.
+        # The `!= 'success'` half of the condition is deliberately written as
+        # "not success" rather than "== 'skipped'" so a cancelled or otherwise
+        # unreported commit step still salvages rather than silently not.
+        if: always() && (steps.commit.outcome == 'failure' || (failure() && steps.commit.outcome != 'success'))
         uses: actions/upload-artifact@v7
         with:
           name: discarded-sync-${{ github.run_id }}

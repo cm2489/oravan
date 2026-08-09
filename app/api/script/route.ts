@@ -91,7 +91,30 @@ import { noteScriptGeneration } from '@/lib/usage';
  * tenant traffic exists yet. See the S19 PR body for the full reasoning.
  */
 
+// 60s: the largest function duration valid on every Vercel plan tier, and
+// comfortably above this route's own worst-case generation bound below — so
+// serveScript's 502 {error:'generation_failed'} path wins and the panel gets a
+// readable body, instead of the platform killing the function into a bodiless
+// 504 that no client code here ever authored.
+export const maxDuration = 60;
+
 const anthropic = new Anthropic();
+
+/*
+ * Bound on ONE generation attempt, and the reason maxDuration alone would not
+ * have been enough. The SDK's defaults for a non-streaming create are a
+ * 10-MINUTE timeout with 2 retries — up to ~30 minutes of wall clock — so the
+ * catch below could never fire first: no function duration Vercel allows comes
+ * close, and every slow call would still land as a platform 504.
+ *
+ * 15s x 3 attempts + the SDK's <=1.5s exponential backoff = <=46.5s worst
+ * case, ~13s under maxDuration. A 520-token script (SCRIPT_MAX_TOKENS, thinking
+ * disabled) generates in single-digit seconds, so 15s is headroom rather than a
+ * leash — and keeping the 2 retries preserves the cover against a transient
+ * 429 or an overloaded upstream.
+ */
+const GENERATION_TIMEOUT_MS = 15_000;
+const GENERATION_MAX_RETRIES = 2;
 
 const cache = createScriptCache();
 
@@ -157,9 +180,12 @@ export async function POST(req: NextRequest) {
    */
   const bill = getBill(slug);
   if (bill) {
-    // Content-version key component (§9.1(d)): a corrected ai_summary changes
-    // the version, so a stale script can never be served against it.
-    const version = contentVersion(bill.ai_summary ?? bill.title);
+    // Content-version key component (§9.1(d)): a corrected ai_summary — or a
+    // status move, which reaches the generated prompt as `Current status:` —
+    // changes the version, so a stale script can never be served against it.
+    // The whole bill goes in: contentVersion picks the fields, so this call
+    // site and the nightly warmer's cannot drift onto different key material.
+    const version = contentVersion(bill);
     // Prompt builder lives in lib/scriptprompt (shared by other trusted
     // server-side callers of this exact bill/stance/locale shape) so there
     // is only ever one script prompt in the codebase, never a second copy
@@ -224,7 +250,11 @@ export async function POST(req: NextRequest) {
 
   // The audience rides INSIDE the version hash, so the key shape stays the
   // one shape check-key-namespaces.mjs gates on — see nominationContentVersion.
-  const version = nominationContentVersion(nomination.nominee_description, audience);
+  // The whole record goes in, not just the description: the prompt also reads
+  // the status and the last recorded action, and those are the fields that
+  // MOVE. nominationContentVersion picks them, so this call site cannot drift
+  // out of agreement with the key material any future caller writes.
+  const version = nominationContentVersion(nomination, audience);
   return serveScript({ slug, stance, lang, version }, () =>
     buildNominationScriptPrompt({ nomination, stance, audience, lang })
   );
@@ -250,12 +280,18 @@ async function serveScript(
   if (cached) return NextResponse.json({ script: cached, cached: true });
 
   try {
-    const msg = await anthropic.messages.create({
-      model: SCRIPT_MODEL,
-      max_tokens: SCRIPT_MAX_TOKENS,
-      thinking: { type: 'disabled' },
-      messages: [{ role: 'user', content: buildPrompt() }],
-    });
+    const msg = await anthropic.messages.create(
+      {
+        model: SCRIPT_MODEL,
+        max_tokens: SCRIPT_MAX_TOKENS,
+        thinking: { type: 'disabled' },
+        messages: [{ role: 'user', content: buildPrompt() }],
+      },
+      // Without this the SDK waits out its 10-minute default and the platform
+      // kills the function first — see GENERATION_TIMEOUT_MS above. A timeout
+      // throws here, which is what routes a slow upstream into the 502 below.
+      { timeout: GENERATION_TIMEOUT_MS, maxRetries: GENERATION_MAX_RETRIES }
+    );
     const script = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
     if (!script) throw new Error('empty');
     await cache.set(key, script); // never throws
