@@ -110,6 +110,48 @@ export function getTopActions(n = 5, locale = 'en'): Bill[] {
 }
 
 /**
+ * THE CROWN'S CANDIDATE POOL — every decoded floor_vote bill that clears the
+ * SAME "Act now" floor getTopActions uses, newest floor action first, with NO
+ * top-N truncation.
+ *
+ * Why it is not just getTopActions(4) (which is what the homepage used to
+ * hand selectFloorVoteFeature): the shortlist is a rank-4 cut across every
+ * status, so on a busy floor week — several bills drawing cloture motions the
+ * same day — the one bill actually standing on a calendar or facing a pending
+ * vote could sit at rank 9 and the page would show NO crown at all. A cap
+ * that exists to make the panel mean something was quietly deciding whether
+ * the panel appeared. The cap-to-one still holds; it is enforced where it
+ * belongs, in selectFloorVoteFeature, which reads this whole list and returns
+ * at most one bill.
+ *
+ * The FLOOR is deliberately shared, not re-implemented: same scoreActiveBills,
+ * same `floors.nowFloor`, same `ai_headline` requirement. A quiet week returns
+ * an empty list here for exactly the reason it returns an empty shortlist
+ * there, and a third independent copy of the scoring is the drift
+ * docs/solutions/stale-urgency-freeze.md closed once already.
+ *
+ * NOTE THAT THIS FLOOR IS TIGHTER THAN THE PANEL'S OWN FRESHNESS WINDOW, and
+ * that is deliberate rather than an oversight. `nowFloor` sits at 0.95 on the
+ * 2026-08-09 corpus, and a `floor_vote` bill scores 1.0 inside 3 days, 0.95
+ * inside 7, and 0.9 after — so the pool is in practice "a floor action in the
+ * last week", while selectFloorVoteFeature's isSignalFresh would accept 14
+ * days. The crown is the WEEK's masthead; a bill whose last floor action was
+ * eleven days ago is not what the week is about, and the same floor governed
+ * the old getTopActions(4) pool, so nothing narrowed here.
+ *
+ * 21 bills on the 2026-08-09 corpus (339 active floor_vote bills, 21 of them
+ * over the floor; every one of the 339 carries a decode). The corpus moves
+ * nightly — recompute, don't trust.
+ */
+export function getFloorFeatureCandidates(locale = 'en'): Bill[] {
+  const { activeBills, floors } = scoreActiveBills();
+  return activeBills
+    .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline && s.raw.status === 'floor_vote')
+    .sort((a, b) => (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
+    .map(({ raw }) => localizeBill(raw, locale));
+}
+
+/**
  * Whether ANY active bill clears the "Act now" floor - decoded or not. The
  * quiet-week claim must key on this, not on getTopActions() being empty:
  * getTopActions also filters on ai_headline, so an undecoded bill that
