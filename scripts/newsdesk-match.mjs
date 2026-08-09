@@ -82,8 +82,22 @@ export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 's
 // between "U" and "S"). HJRES/SJRES are tried before the shorter HR/S
 // alternatives at each scan position so "H.J.Res. 45" resolves as hjres,
 // not as a stray "H." partial.
+//
+// The (?<!['’]) guard is what stops an English possessive from being read as
+// a Senate bill. An apostrophe is a non-word character, so \b fires happily
+// between it and the trailing "s" of "Trump's" — leaving the bare `S\.?`
+// alternative to eat that "s", `\s?` to eat the space, and the next number in
+// the headline to become a bill number ("Trump's 2026 budget request" ->
+// s-2026-119, "Speaker's 4 must-pass bills" -> s-4-119). That is a t1
+// citation, which short-circuits corroboration in decideFires AND rides
+// forceSlugs past the decode gate, so a headline-shaped possessive could
+// force a refresh/decode of an arbitrary slug. The lookbehind sits before the
+// whole alternation, so it protects every type token, not just S. Straight
+// (U+0027, what &apos; decodes to) and curly (U+2019, &#8217;) apostrophes
+// only — a LEFT quote is deliberately not listed, because "‘S. 2026’ passes"
+// is a real citation we still want.
 const CITATION_RE =
-  /\b(H\.?\s?Con\.?\s?Res\.?|S\.?\s?Con\.?\s?Res\.?|H\.?\s?J\.?\s?Res\.?|S\.?\s?J\.?\s?Res\.?|H\.?\s?R\.?|S\.?)\s?(\d{1,5})\b/gi;
+  /(?<!['’])\b(H\.?\s?Con\.?\s?Res\.?|S\.?\s?Con\.?\s?Res\.?|H\.?\s?J\.?\s?Res\.?|S\.?\s?J\.?\s?Res\.?|H\.?\s?R\.?|S\.?)\s?(\d{1,5})\b/gi;
 
 function normalizeType(raw) {
   return raw.replace(/[^a-zA-Z]/g, '').toLowerCase();
