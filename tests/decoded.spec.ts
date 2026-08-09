@@ -29,6 +29,36 @@ test('senate bill journeys start in the Senate', async ({ page }) => {
   await expect(page.getByText(/it passed the Senate and now goes to the House/)).toBeVisible();
 });
 
+/*
+ * A CONCURRENT RESOLUTION NEVER VISITS THE PRESIDENT.
+ *
+ * hconres/sconres are not presented under Article I §7 — both chambers adopt
+ * the text and that is the end of it. The stepper printed "President's desk"
+ * on all six of them until 2026-08-09, in both languages, under a header that
+ * promises it cannot hallucinate procedure. sconres-38-119 is a budget
+ * resolution on the Senate floor calendar; the predicate itself is pinned
+ * corpus-wide in tests/bill-journey.unit.spec.ts.
+ */
+test('a concurrent resolution ends at adoption, not the President', async ({ page }) => {
+  await page.goto('/bills/sconres-38-119');
+  await expect(page.getByText('Adopted by both chambers')).toBeVisible();
+  await expect(page.getByText("President's desk")).toHaveCount(0);
+  await expect(page.getByText(/never goes to the President and does not become law/)).toBeVisible();
+});
+
+test('a concurrent resolution ends at adoption in Spanish too', async ({ page }) => {
+  await page.goto('/es/bills/hconres-113-119');
+  await expect(page.getByText('Aprobación en ambas cámaras')).toBeVisible();
+  await expect(page.getByText('Escritorio del Presidente')).toHaveCount(0);
+  await expect(page.getByText(/nunca llega al Presidente y no se convierte en ley/)).toBeVisible();
+});
+
+test('an ordinary bill still ends at the President', async ({ page }) => {
+  await page.goto('/bills/hr-5582-119');
+  await expect(page.getByText("President's desk")).toBeVisible();
+  await expect(page.getByText(/before reaching the President/)).toBeVisible();
+});
+
 test('spanish bill page renders translated sections and journey', async ({ page }) => {
   await page.goto('/es/bills/hr-5582-119');
   await expect(page.getByRole('heading', { name: '¿Qué hace esto?' })).toBeVisible();
