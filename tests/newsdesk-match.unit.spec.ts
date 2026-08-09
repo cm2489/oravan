@@ -88,6 +88,47 @@ test.describe('findCitations (t1 explicit bill-number citations)', () => {
   test('no citation-shaped text yields an empty array', () => {
     expect(findCitations('Local bakery wins county fair blue ribbon')).toEqual([]);
   });
+
+  // An apostrophe is a non-word character, so \b used to fire between it and
+  // the trailing "s" of a possessive, handing the bare S alternative that "s"
+  // and the next number in the headline. A t1 citation short-circuits
+  // corroboration (decideFires) and rides forceSlugs past the decode gate, so
+  // these were force-refreshable arbitrary slugs, not cosmetic misses.
+  test('an English possessive is not a Senate bill (straight apostrophe)', () => {
+    expect(findCitations("Trump's 2026 budget request")).toEqual([]);
+    expect(findCitations("Speaker's 4 must-pass bills")).toEqual([]);
+  });
+
+  test('an English possessive is not a Senate bill (curly apostrophe)', () => {
+    expect(findCitations('Johnson’s 2026 spending plan')).toEqual([]);
+    expect(findCitations('the Speaker’s 4 must-pass bills')).toEqual([]);
+  });
+
+  test('the real citations the possessive guard must NOT cost us', () => {
+    expect(findCitations('S. 2026 passes committee')).toEqual([
+      { type: 's', number: '2026', slug: 's-2026-119' },
+    ]);
+    // bare type token, no dot - matched before the guard, still matched after
+    expect(findCitations('Senate passes S 2026')).toEqual([
+      { type: 's', number: '2026', slug: 's-2026-119' },
+    ]);
+    expect(findCitations('HR 3633 heads to the floor')).toEqual([
+      { type: 'hr', number: '3633', slug: 'hr-3633-119' },
+    ]);
+    // a LEFT curly quote is not a possessive - a quoted citation still cites
+    expect(findCitations('‘S. 2026’ passes committee')).toEqual([
+      { type: 's', number: '2026', slug: 's-2026-119' },
+    ]);
+  });
+
+  test('a possessive earlier in the headline does not swallow a real citation later', () => {
+    expect(findCitations("Trump's 2026 budget request hits H.R. 3633")).toEqual([
+      { type: 'hr', number: '3633', slug: 'hr-3633-119' },
+    ]);
+    expect(findCitations('Johnson’s 2026 spending plan and S. 45 advance')).toEqual([
+      { type: 's', number: '45', slug: 's-45-119' },
+    ]);
+  });
 });
 
 const BILLS = [
