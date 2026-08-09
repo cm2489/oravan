@@ -444,8 +444,9 @@ export default async function MomentPage({
             rail — 20–25rem is one card wide — and the qualifying-signal
             apparatus that says why this question exists at all sits directly
             under them, where the reader is already looking at the receipts.
-            The one-per-row rule is scoped to the rail's own breakpoint on the
-            grid below; it is NOT the tablet band's rule (see there).
+            One-per-row is the RAIL's rule and not the whole page's: the grid
+            below resolves its own track count from the width it is handed, so
+            the same string is two-up in the tablet band (see there).
 
             STICKY, like every other rail on this site (bills/[id] line 436,
             nominations/[slug] lines 476/487) and for the reason DESIGN.md
