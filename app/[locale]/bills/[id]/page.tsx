@@ -24,6 +24,7 @@ import { hreflangAlternates } from '@/lib/hreflang';
 import { deriveJourney, floorCalendarChamber, liveCallTarget, statusKeyFor } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
+import { isSignalFresh } from '@/lib/signal-window';
 import { SITE_ORIGIN } from '@/lib/site';
 
 /*
@@ -194,11 +195,27 @@ export default async function BillPage({
   // Article (+ FAQPage when the decode structure supports it) — lib/jsonld.ts.
   const jsonLd = await buildBillJsonLd(bill, locale, id);
 
-  // The one loud band, or nothing at all. Both halves of the gate are
-  // load-bearing: the calendar sentence earns the claim, the date earns the
-  // amber. A quiet bill is an unbroken paper column, which is the point.
+  /*
+   * The one loud band, or nothing at all. THREE halves of the gate now, and
+   * every one of them is load-bearing: the calendar sentence earns the claim,
+   * the date earns the amber, and `isSignalFresh` earns the present tense.
+   *
+   * That third one was missing until 2026-08-09, and it was the whole defect.
+   * The band asserts "This bill is queued for a vote of the full Senate" —
+   * a claim about right now — over placements of literally unlimited age:
+   * /en/bills/s-1776-118 rendered it, with an amber chip, off a 118th-Congress
+   * placement dated 2024-09-24, for a Congress that has since ended. 261 of
+   * the corpus's 313 dated calendar placements sit outside the 14-day window,
+   * so the loudest surface on the page was mostly making a claim its own date
+   * refuted. Same lib the homepage crown gates on (lib/signal-window.ts →
+   * lib/urgency.mjs), so the two surfaces cannot disagree about what "now"
+   * means; the window's rationale lives with isSignalFresh itself.
+   *
+   * An aged placement falls to the page's ordinary paper state, which is the
+   * honest result and needs no new copy.
+   */
   const calendarChamber =
-    bill.status === 'floor_vote' && bill.last_action_date
+    bill.status === 'floor_vote' && bill.last_action_date && isSignalFresh(bill.last_action_date)
       ? floorCalendarChamber(bill.last_action_text)
       : null;
 
@@ -441,6 +458,7 @@ export default async function BillPage({
             >
               <BillJourney
                 journey={deriveJourney(bill)}
+                billType={bill.bill_type}
                 introducedLabel={bill.introduced_date ? fmtShort(bill.introduced_date) : undefined}
                 currentLabel={
                   bill.last_action_date ? fmtShort(bill.last_action_date) : undefined

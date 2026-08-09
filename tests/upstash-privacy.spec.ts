@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { POST as districtPost } from '../app/api/district/route';
 import { GET as repsGet } from '../app/api/reps/route';
 import { noteImpression, noteImpressionForToken } from '../lib/impressions';
-import { createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
+import { __resetSaltMemoForTests, createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
 import { mintCapabilityToken, resolveTenantAccess, tenantKey, tokenHash, tokenIndexKey } from '../lib/tenancy';
 import { MCP_TOOL_NAMES, noteMcpToolCall, noteScriptGeneration } from '../lib/usage';
@@ -55,12 +55,15 @@ let restoreEnv: () => void;
 
 // Real corpus entry, so the slug/stance/locale in the burst are the
 // production shapes, not invented ones.
-const bills = JSON.parse(readFileSync('data/bills.json', 'utf8')) as Array<{
-  bill_type: string;
-  bill_number: number;
-  congress_number: number;
-  ai_summary?: string;
-}>;
+// contentVersion reads title/status/last_action_date alongside ai_summary, so
+// the fixture carries them rather than a summary-shaped stand-in.
+const bills = JSON.parse(readFileSync('data/bills.json', 'utf8')) as Array<
+  Parameters<typeof contentVersion>[0] & {
+    bill_type: string;
+    bill_number: number;
+    congress_number: number;
+  }
+>;
 const bill = bills.find((b) => b.ai_summary)!;
 const SLUG = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`.toLowerCase();
 
@@ -92,6 +95,20 @@ test.afterAll(() => {
   restoreEnv(); // other spec files in this worker assert the env-absent path
 });
 
+/*
+ * lib/ratelimit.ts memoizes the salt in module scope (one read per instance
+ * instead of one per request), and module scope outlives both a test and a
+ * spec file inside a Playwright worker. Three of the tests below stand up
+ * their OWN fresh mocks, and the first one reads the salt record straight out
+ * of its store - so a memo carried in from an earlier test (or an earlier
+ * FILE that drove a limiter) would let a limiter here run without ever
+ * writing the salt it is about to be asserted on. Reset per test; the memo's
+ * own behavior is pinned in tests/ratelimit.unit.spec.ts.
+ */
+test.beforeEach(() => {
+  __resetSaltMemoForTests();
+});
+
 test('a burst of script/district/MCP traffic leaves both databases clean', async () => {
   // --- the burst --------------------------------------------------------------
 
@@ -99,7 +116,7 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
   // three stances x two locales, miss then hit, real summary.
   const scriptLimiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
   const scriptCache = createScriptCache();
-  const version = contentVersion(bill.ai_summary!);
+  const version = contentVersion(bill);
   for (const [i, stance] of (['support', 'oppose', 'undecided'] as const).entries()) {
     for (const lang of ['en', 'es'] as const) {
       expect(await scriptLimiter.isLimited(CALLER_IPS[i])).toBe(false);
@@ -287,7 +304,7 @@ test('AE5 (embed-originating path): a tenant-authenticated script request leaves
     // fork a parallel implementation" (S19 design §1) actually true, not
     // just asserted.
     const embedScriptCache = createScriptCache();
-    const version = contentVersion(bill.ai_summary!);
+    const version = contentVersion(bill);
     const parts = { slug: SLUG, stance: 'support' as const, lang: 'en' as const, version };
     expect(await embedScriptCache.get(parts), 'fresh cache instance for this test - must start as a miss').toBeNull();
     await embedScriptCache.set(parts, 'generated script for the embed-originating request');

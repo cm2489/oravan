@@ -26,8 +26,15 @@ import {
  *   checkout.session.completed    -> provisionFromCheckout (guarded: only
  *                                     subscription-mode sessions with a
  *                                     subscription id and a recognized
- *                                     metadata.tier act; anything else is a
- *                                     silent no-op, acknowledged 200)
+ *                                     metadata.tier act. A session that is
+ *                                     not a subscription checkout at all is
+ *                                     a silent no-op, acknowledged 200. A
+ *                                     session that IS one but carries an
+ *                                     absent/unrecognized tier is the
+ *                                     opposite — logged, claim released,
+ *                                     400 — because that is a paying
+ *                                     customer going unprovisioned and a
+ *                                     200 would bury it. See the case body.)
  *   customer.subscription.updated -> updateSubscriptionStatus (active/
  *                                     trialing keep the token; anything else
  *                                     revokes it)
@@ -86,6 +93,21 @@ function normalizeDomainList(raw: string | null): string[] {
     if (domain && !out.includes(domain)) out.push(domain);
   }
   return out;
+}
+
+/**
+ * Render a rejected `metadata.tier` for one log line: printable ASCII only,
+ * length-capped, and quoted so leading/trailing whitespace is visible (the
+ * difference between "pro" and " pro " is otherwise invisible in a log, and
+ * is exactly the kind of Dashboard typo this line exists to diagnose). The
+ * sanitizing is not paranoia about the owner — it is that this value arrives
+ * over the network inside a webhook payload, and a newline in a log line is
+ * a forged log line.
+ */
+function formatTierForLog(tier: string | null): string {
+  if (tier === null) return '(absent)';
+  const printable = tier.replace(/[^\x20-\x7e]/g, '').slice(0, 32);
+  return printable.length > 0 ? JSON.stringify(printable) : '(unprintable)';
 }
 
 let unsetSecretLogged = false;
@@ -149,34 +171,72 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = extractCheckoutSession(event.raw);
+
+      // NOT A SUBSCRIPTION CHECKOUT — a setup-mode session, a one-time
+      // payment, or one carrying no subscription/customer id. Stripe
+      // legitimately sends these and will keep sending them, so they stay a
+      // silent acknowledged no-op ("defends against a stray session type").
+      // This half MUST NOT become an error: a non-2xx here would put
+      // Stripe's three-day retry schedule behind events that are correctly
+      // ignorable, and an endpoint that keeps failing gets disabled — which
+      // would break the real provisioning this route exists for.
       if (
-        session?.mode === 'subscription' &&
-        session.subscription &&
-        session.customer &&
-        session.tier &&
-        isRecognizedTier(session.tier)
+        !session ||
+        session.mode !== 'subscription' ||
+        !session.subscription ||
+        !session.customer
       ) {
-        ok = await provisionFromCheckout({
-          tenantId: session.customer,
-          subscriptionId: session.subscription,
-          tier: session.tier,
-          orgName: session.orgName ?? '',
-          domainAllowlist: normalizeDomainList(session.domain),
-          // Checkout doesn't carry the freshly-created subscription's own
-          // status; the immediately-following customer.subscription.*
-          // event corrects this if the plan actually started in a
-          // non-active state (e.g. a trial).
-          subscriptionStatus: 'active',
-          // undefined (not passed) when Stripe's payload carried no
-          // consent acceptance — provisionFromCheckout treats that as "this
-          // checkout didn't tell us", never as "not accepted".
-          ...(session.tosAcceptedAt ? { tosAcceptedAt: session.tosAcceptedAt } : {}),
-        });
+        break;
       }
-      // Anything that fails the guard (wrong mode, missing subscription,
-      // unrecognized/absent tier) is a silent no-op — acknowledged, not an
-      // error, per the design's "defends against a stray session type"
-      // framing.
+
+      // A REAL subscription checkout whose tier this route cannot recognize
+      // — metadata.tier absent, or spelled something other than the exact
+      // lowercase list (the live hazard is a Dashboard Payment Link
+      // configured with "Pro"). This is a PAYING CUSTOMER, and provisioning
+      // them is the entire job of this endpoint, so it must never be the
+      // silent 200 it used to be: that answer consumed the 7-day
+      // idempotency claim, logged nothing, and left no recovery path — a
+      // Dashboard "Resend" (good for 15 days) would hit the claim and be
+      // told 'duplicate'. Release the claim, say so in the log, and refuse.
+      if (!session.tier || !isRecognizedTier(session.tier)) {
+        // Event id + the offending tier ONLY. No customer id, no
+        // subscription id, no email — nothing that identifies a person, and
+        // the tier is owner-configured plan metadata, not user data. Quoted
+        // and sanitized so "Pro" vs "pro" vs " pro " is visible at a glance
+        // and a hostile metadata value can't forge log lines.
+        console.error(
+          `stripe webhook: unrecognized tier ${formatTierForLog(session.tier)} on subscription checkout ${event.id} — not provisioned, claim released, refusing so Stripe retries`
+        );
+        await releaseStripeEventClaim(event.id);
+        // 400, not 500. Stripe retries EVERY non-2xx identically (its docs:
+        // "your endpoint previously replied with a non-2xx status code"),
+        // so the status buys no difference in recovery — it buys diagnosis.
+        // Stripe's own dashboard glosses 4xx as "the destination server
+        // can't or won't process the request", which is exactly true here:
+        // nothing broke on our side, the payload is unusable as delivered.
+        // 500 is reserved, below, for the genuine "processing failed" case,
+        // and collapsing the two would make an unprovisionable payload
+        // indistinguishable from a transient database failure in the one
+        // dashboard the owner debugs from.
+        return NextResponse.json({ error: 'unrecognized_tier' }, { status: 400 });
+      }
+
+      ok = await provisionFromCheckout({
+        tenantId: session.customer,
+        subscriptionId: session.subscription,
+        tier: session.tier,
+        orgName: session.orgName ?? '',
+        domainAllowlist: normalizeDomainList(session.domain),
+        // Checkout doesn't carry the freshly-created subscription's own
+        // status; the immediately-following customer.subscription.*
+        // event corrects this if the plan actually started in a
+        // non-active state (e.g. a trial).
+        subscriptionStatus: 'active',
+        // undefined (not passed) when Stripe's payload carried no
+        // consent acceptance — provisionFromCheckout treats that as "this
+        // checkout didn't tell us", never as "not accepted".
+        ...(session.tosAcceptedAt ? { tosAcceptedAt: session.tosAcceptedAt } : {}),
+      });
       break;
     }
     case 'customer.subscription.updated': {

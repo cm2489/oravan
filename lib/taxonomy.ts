@@ -61,14 +61,57 @@ export interface BandFloors {
  *  history above. Pinned in tests/taxonomy.unit.spec.ts. */
 export const ABSOLUTE_FLOORS: BandFloors = { nowFloor: 0.75, movingFloor: 0.5 };
 
-/** Per-band urgency floors, read off the urgency-sorted active bills, raised
- *  to the absolute floor whenever rank alone would set the bar too low. */
+/*
+ * v3a (2026-08-09). THE MIDDLE BAND CAME BACK.
+ *
+ * v3 read the moving floor off a FIXED rank — the 18th bill, `now`'s 6 plus
+ * `moving`'s 12 — which silently assumed the "now" band ends at rank 6. It
+ * does not. Bands are compared by VALUE precisely so tied bills share a band
+ * (see the note at the end of the history above), so a tie block straddling
+ * rank 6 pulls every tied bill into "now" and can swallow rank 18 whole. When
+ * that happened the derived movingFloor came out EQUAL to nowFloor, and
+ * bandForEff tests `eff >= nowFloor` first — so "moving" became unreachable
+ * and the middle band vanished from /bills without erroring. On the corpus of
+ * 2026-08-09, 21 active bills tied at eff 0.95: bands read now 21 / moving 0 /
+ * radar 2,645, and 38 bills that outscored 98% of the corpus rendered under
+ * "On the radar — quieter right now".
+ *
+ * THE FIX: start the moving rank window where the "now" band actually ends,
+ * not where rank alone predicted it would. `firstBelowNow` is the first bill
+ * the now-floor does not claim; the moving floor is the 12th bill from there.
+ *
+ * Why that and not an epsilon (nowFloor - 0.001): an epsilon only rescues
+ * bills within a hair of the top block. Today's next distinct score is 0.90,
+ * a full 0.05 below, so every epsilon small enough to be honest leaves the
+ * band exactly as empty as the bug did. The rank window is also what v3
+ * actually meant — "moving" is the next twelve — and it REDUCES to the old
+ * expression whenever nothing ties across the cutoff (no ties ⇒
+ * firstBelowNow === 6 ⇒ the floor is still read at rank 18), so the ordinary
+ * week is untouched.
+ *
+ * The strict ordering movingFloor < nowFloor is structural here, not clamped
+ * after the fact: `at(movingRank) <= sortedEffs[firstBelowNow] < nowFloor`
+ * because the array descends, and the absolute fallback 0.5 is below the
+ * absolute nowFloor 0.75 that every nowFloor is raised to. Pinned in
+ * tests/taxonomy.unit.spec.ts, including on the degenerate all-tied corpus.
+ */
+
+/** Per-band urgency floors, read off the urgency-sorted (DESCENDING) active
+ *  bills, raised to the absolute floor whenever rank alone would set the bar
+ *  too low. The two floors are always strictly ordered — see v3a above. */
 export function bandFloors(sortedEffs: number[]): BandFloors {
   const n = sortedEffs.length;
   const at = (i: number) => sortedEffs[Math.min(i, n - 1)] ?? -Infinity;
+  const nowFloor = Math.max(at(BAND_SIZES.now - 1), ABSOLUTE_FLOORS.nowFloor);
+  // Where "now" really ends: the first bill its floor does not claim. -1 means
+  // the floor claims every active bill, so there is nothing left to move and
+  // the absolute minimum is the honest bar.
+  const firstBelowNow = sortedEffs.findIndex((e) => e < nowFloor);
+  if (firstBelowNow === -1) return { nowFloor, movingFloor: ABSOLUTE_FLOORS.movingFloor };
+  const movingRank = firstBelowNow + BAND_SIZES.moving - 1;
   return {
-    nowFloor: Math.max(at(BAND_SIZES.now - 1), ABSOLUTE_FLOORS.nowFloor),
-    movingFloor: Math.max(at(BAND_SIZES.now + BAND_SIZES.moving - 1), ABSOLUTE_FLOORS.movingFloor),
+    nowFloor,
+    movingFloor: Math.max(at(movingRank), ABSOLUTE_FLOORS.movingFloor),
   };
 }
 

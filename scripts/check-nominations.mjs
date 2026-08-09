@@ -9,8 +9,9 @@
  * on bare node with no TS loader, like the other check-*.mjs gates.
  *
  * ── WHAT IS HARD, AND WHAT ONLY WARNS, AND WHY THE SPLIT EXISTS ────────────
- * Every check below is a HARD failure except one: the sweep for action text
- * no rule in lib/nomination-status.mjs classifies.
+ * Every check below is a HARD failure except two: the sweep for action text no
+ * rule in lib/nomination-status.mjs classifies, and the lapsed unanimous-
+ * consent drift described in check 3.
  *
  * The hard checks all test OUR CODE against data it produced — slug identity,
  * the stored status matching what the mapper returns for the stored sentence,
@@ -34,10 +35,22 @@
  * `floorVote.length < 50` floor: a sweep over an empty file is not a clean
  * sweep, it is no sweep.
  *
+ * ── WHERE ELSE THESE CHECKS RUN (2026-08-09) ───────────────────────────────
+ * checkNominationCorpus() below is exported, and scripts/sync-nominations.mjs
+ * calls it on the corpus it has just built BEFORE writing anything to disk.
+ * That is the only place the structural checks meet fresh nightly data with
+ * the power to stop it: the sync's own workflow step is `continue-on-error`
+ * (nothing in the nomination lane may cost the bill sync its night), so a
+ * corpus that reached disk would have been committed and deployed whatever
+ * this gate said about it. A corpus that never reaches disk cannot be. This
+ * file stays the PR-CI entry point and the CLI; the rules have one
+ * definition, so the two runs cannot drift.
+ *
  * NAMING: "nomination" here always means a SENATE nomination (PN), never the
  * "domain nomination" family in lib/embed-referrer.ts.
  */
 import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import {
   NOMINATION_STATUSES,
   STORED_NOMINATION_STATUSES,
@@ -45,10 +58,9 @@ import {
   UNCLASSIFIED_NOMINATION_STATUS,
   execCalendarNumber,
   mapNominationStatus,
+  ucAgreementDay,
 } from '../lib/nomination-status.mjs';
 import { congressGovNominationUrl, nominationSlug } from './nominations-fetch.mjs';
-
-const STRICT = process.argv.includes('--strict');
 
 /* A sweep over a near-empty corpus proves nothing. 500 is well under the 857
    civilian nominations the 119th Congress held on 2026-08-06 and well over
@@ -69,175 +81,265 @@ const MILITARY_ORGANIZATIONS = new Set([
   'Coast Guard', 'Navy', 'Air Force', 'Army', 'Space Force', 'Marine Corps',
 ]);
 
-const errors = [];
-const warnings = [];
-const fail = (msg) => errors.push(msg);
+/**
+ * EVERY CHECK IN THIS FILE, over an in-memory corpus — the one definition,
+ * shared by the CLI at the bottom and by scripts/sync-nominations.mjs's
+ * pre-write gate (see the header).
+ *
+ * Returns rather than exits, because one of its two callers has a corpus to
+ * NOT write and a cursor to leave alone. The CLI does the exiting.
+ *
+ * @param {unknown} corpus  the parsed data/nominations.json array
+ * @param {object} state    the parsed data/sync-state.json object
+ * @param {{ strict?: boolean, now?: number }} [opts]
+ * @returns {{ errors: string[], warnings: string[], unclassified: object[] }}
+ */
+export function checkNominationCorpus(corpus, state, opts = {}) {
+  const STRICT = opts.strict === true;
+  const now = opts.now ?? Date.now();
+  const errors = [];
+  const warnings = [];
+  const unclassified = [];
+  const fail = (msg) => errors.push(msg);
 
-/* ---- 0. The constant sets must not have drifted apart. -------------------
-   Same belt-and-braces check-moments.mjs runs on TERMINAL_VEHICLE_STATUSES:
-   a runtime assertion so the gate does not depend on a test it never runs. */
-for (const s of TERMINAL_NOMINATION_STATUSES) {
-  if (!NOMINATION_STATUSES.includes(s)) {
-    fail(`TERMINAL_NOMINATION_STATUSES member "${s}" is not in NOMINATION_STATUSES — lib/nomination-status.mjs's two sets have drifted`);
+  /* ---- 0. The constant sets must not have drifted apart. -------------------
+     Same belt-and-braces check-moments.mjs runs on TERMINAL_VEHICLE_STATUSES:
+     a runtime assertion so the gate does not depend on a test it never runs. */
+  for (const s of TERMINAL_NOMINATION_STATUSES) {
+    if (!NOMINATION_STATUSES.includes(s)) {
+      fail(`TERMINAL_NOMINATION_STATUSES member "${s}" is not in NOMINATION_STATUSES — lib/nomination-status.mjs's two sets have drifted`);
+    }
   }
-}
-if (STORED_NOMINATION_STATUSES.length !== NOMINATION_STATUSES.length + 1) {
-  fail(`STORED_NOMINATION_STATUSES should be the ${NOMINATION_STATUSES.length} classified statuses plus "${UNCLASSIFIED_NOMINATION_STATUS}"; it has ${STORED_NOMINATION_STATUSES.length} members`);
-}
+  if (STORED_NOMINATION_STATUSES.length !== NOMINATION_STATUSES.length + 1) {
+    fail(`STORED_NOMINATION_STATUSES should be the ${NOMINATION_STATUSES.length} classified statuses plus "${UNCLASSIFIED_NOMINATION_STATUS}"; it has ${STORED_NOMINATION_STATUSES.length} members`);
+  }
 
-/* ---- 1. The file parses and is big enough to prove something. ---- */
-let corpus;
-try {
-  corpus = JSON.parse(readFileSync(new URL('../data/nominations.json', import.meta.url), 'utf8'));
-} catch (e) {
-  console.error(`::error::check-nominations: data/nominations.json is missing or unparseable (${e.message}). It is written by scripts/sync-nominations.mjs and committed; a gate that skips when its data is absent is not a gate.`);
-  process.exit(1);
-}
-if (!Array.isArray(corpus)) {
-  console.error('::error::check-nominations: data/nominations.json is not an array');
-  process.exit(1);
-}
-if (corpus.length < MIN_CORPUS) {
-  console.error(`::error::check-nominations: only ${corpus.length} nominations — below the ${MIN_CORPUS} floor, so the sweeps below would prove nothing. Check the sync output.`);
-  process.exit(1);
-}
+  /* ---- 1. The corpus is an array, and big enough to prove something. ----
+     Both are returned immediately rather than accumulated: every check below
+     reads records out of it, and reporting 800 consequential failures over a
+     corpus that is the wrong TYPE buries the one fact that matters. */
+  if (!Array.isArray(corpus)) {
+    return { errors: [...errors, 'data/nominations.json is not an array'], warnings, unclassified };
+  }
+  if (corpus.length < MIN_CORPUS) {
+    return {
+      errors: [
+        ...errors,
+        `only ${corpus.length} nominations — below the ${MIN_CORPUS} floor, so the sweeps below would prove nothing. Check the sync output.`,
+      ],
+      warnings,
+      unclassified,
+    };
+  }
 
-/* ---- 1b. The persisted cursor is in the ONLY shape Congress.gov accepts.
-   Checked HERE and not in scripts/verify-sync.mjs (which pins the bill
-   cursor `lastSync` the same way) precisely so a corrupted nomination
-   cursor fails in the nomination lane instead of reddening the bill sync.
-   Congress.gov 400s on both a bare date and a fractional-seconds timestamp;
-   that has already cost two multi-day outages on the bill side. */
-try {
-  const state = JSON.parse(readFileSync(new URL('../data/sync-state.json', import.meta.url), 'utf8'));
-  const cursor = state.nominationsLastSync;
+  /* ---- 1b. The persisted cursor is in the ONLY shape Congress.gov accepts.
+     Checked HERE and not in scripts/verify-sync.mjs (which pins the bill
+     cursor `lastSync` the same way) precisely so a corrupted nomination
+     cursor fails in the nomination lane instead of reddening the bill sync.
+     Congress.gov 400s on both a bare date and a fractional-seconds timestamp;
+     that has already cost two multi-day outages on the bill side. */
+  const cursor = state?.nominationsLastSync;
   if (cursor !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(cursor)) {
     fail(`sync-state.json nominationsLastSync (${JSON.stringify(cursor)}) is not a seconds-precision ISO-8601 datetime (YYYY-MM-DDTHH:MM:SSZ) — Congress.gov 400s on both bare-date and fractional-seconds fromDateTime cursors`);
   }
-} catch (e) {
-  fail(`data/sync-state.json is unreadable (${e.message})`);
+
+  /* ---- 2. Per-record structure and identity. ---- */
+  const REQUIRED_STRINGS = ['citation', 'part_number', 'congress_gov_url'];
+  const NULLABLE_STRINGS = [
+    'nominee_description', 'organization', 'received_date', 'last_action_date',
+    'last_action_text', 'update_date',
+  ];
+  const seenSlugs = new Map();
+
+  for (const n of corpus) {
+    const id = n?.citation ?? '(no citation)';
+    if (!n || typeof n !== 'object') {
+      fail(`a corpus entry is not an object`);
+      continue;
+    }
+    for (const k of REQUIRED_STRINGS) {
+      if (typeof n[k] !== 'string' || !n[k]) fail(`${id}: ${k} must be a non-empty string`);
+    }
+    for (const k of NULLABLE_STRINGS) {
+      if (n[k] !== null && typeof n[k] !== 'string') fail(`${id}: ${k} must be a string or null`);
+    }
+    if (!Number.isInteger(n.pn_number)) fail(`${id}: pn_number must be an integer`);
+    if (!Number.isInteger(n.congress_number)) fail(`${id}: congress_number must be an integer`);
+    if (n.exec_calendar_number !== null && !Number.isInteger(n.exec_calendar_number)) {
+      fail(`${id}: exec_calendar_number must be an integer or null`);
+    }
+
+    // Identity is the citation, and the slug must reproduce its arithmetic —
+    // `PN{number}` when the part is zero, `PN{number}-{part}` with leading
+    // zeros stripped otherwise. A drift here silently collapses distinct
+    // people who share a PN number (see nominationSlug's doc comment).
+    const part = Number(n.part_number);
+    const expectedCitation = `PN${n.pn_number}${Number.isInteger(part) && part > 0 ? `-${part}` : ''}`;
+    if (n.citation !== expectedCitation) {
+      fail(`${id}: citation disagrees with (pn_number=${n.pn_number}, part_number=${n.part_number}), which would build "${expectedCitation}"`);
+    }
+    const slug = nominationSlug({
+      number: n.pn_number, partNumber: n.part_number, congress: n.congress_number,
+    });
+    if (!/^pn-\d+(-\d+)?-\d+$/.test(slug)) fail(`${id}: malformed slug "${slug}"`);
+    if (seenSlugs.has(slug)) {
+      fail(`duplicate slug "${slug}": ${seenSlugs.get(slug)} and ${id} are stored as different records`);
+    }
+    seenSlugs.set(slug, id);
+
+    const expectedUrl = congressGovNominationUrl(n.pn_number, n.part_number, n.congress_number);
+    if (n.congress_gov_url !== expectedUrl) {
+      fail(`${id}: congress_gov_url is "${n.congress_gov_url}", builder says "${expectedUrl}"`);
+    }
+
+    /* ---- 3. Status: stored value must be what the mapper says TODAY. ----
+       This is the code<->data pin. It cannot be broken by novel Senate
+       vocabulary (an unseen sentence maps to `unclassified` on both sides);
+       it breaks when someone edits a rule in lib/nomination-status.mjs
+       without re-running the sync, which would leave the file asserting a
+       status the code no longer derives. */
+    if (!STORED_NOMINATION_STATUSES.includes(n.status)) {
+      fail(`${id}: status "${n.status}" is not in STORED_NOMINATION_STATUSES`);
+    }
+    const mapped = mapNominationStatus(n.last_action_text, now);
+    if (n.status !== mapped) {
+      /* THE ONE EXPECTED DRIFT, and the only reason this comparison is not a
+         flat equality. mapNominationStatus reads a clock for exactly one rule
+         (rule 4): a unanimous-consent agreement claims `scheduled` only while
+         the day it names is still ahead, and falls to `floor` once that day
+         has passed. So a record stored as `scheduled` yesterday genuinely
+         maps to `floor` today, through no fault of anyone's code.
+
+         Treating that as a hard failure would red the CI of unrelated PRs on
+         whatever morning a UC date lapsed — precisely the failure owner
+         ruling 2026-08-04 exists to prevent. It is narrowed to the exact
+         transition (scheduled -> floor, on a sentence that really does carry
+         a UC day) so a genuine mapper/corpus divergence in any other
+         direction still fails hard.
+
+         The next sync run heals it. What does NOT heal it is a record
+         Congress.gov never touches again: the nightly pass only refreshes
+         records whose updateDate moved, so a lapsed agreement on an inert
+         nomination keeps its stale `scheduled` until something else brings
+         the record back into the window. That is a real, known gap — it is
+         why this is a warning that stays visible rather than a silence. */
+      const lapsedUc =
+        n.status === 'scheduled' &&
+        mapped === 'floor' &&
+        ucAgreementDay(n.last_action_text) !== null;
+      if (lapsedUc) {
+        warnings.push(
+          `check-nominations: ${id} is stored "scheduled" but its unanimous-consent date has now passed, so the mapper reads it as "floor". Expected staleness — the next sync run that touches this record heals it. If it persists, Congress.gov has stopped updating the record and the stale "Scheduled for a Senate vote" claim needs a look: ${n.last_action_text}`
+        );
+      } else {
+        fail(`${id}: stored status "${n.status}" but mapNominationStatus("${(n.last_action_text ?? '').slice(0, 70)}...") now returns "${mapped}" — re-run scripts/sync-nominations.mjs`);
+      }
+    }
+
+    /* ---- 4. THE ONE THAT MATTERS. A finished nomination must never carry a
+       live status. The bill mapper gets this wrong on 511 live records
+       (congress-fetch.mjs:103 matches `yea-nay vote` and returns floor_vote
+       for "Confirmed by the Senate by Yea-Nay Vote"), which is why nominations
+       have their own mapper at all. Asserted here against the STORED data,
+       independently of the mapper, so the corpus itself can never publish a
+       pending-vote claim over a finished one. */
+    const text = n.last_action_text ?? '';
+    if (/\bconfirmed by the senate\b/i.test(text) && n.status !== 'confirmed') {
+      fail(`${id}: record says "Confirmed by the Senate" but status is "${n.status}" — a live claim over a finished nomination`);
+    }
+    if (/\breturned to the president\b/i.test(text) && n.status !== 'returned') {
+      fail(`${id}: record says "Returned to the President" but status is "${n.status}"`);
+    }
+    if (/\bwithdrawal\b/i.test(text) && n.status !== 'withdrawn') {
+      fail(`${id}: record says the nomination was withdrawn but status is "${n.status}"`);
+    }
+    /* The tabled motion to reconsider — the Senate's confirmation-locking
+       ritual (lib/nomination-status.mjs rule 3b, verified against PN11-22's
+       full action history). Asserted against the DATA for the same reason as
+       the three above: this sentence announces a FINISHED nomination without
+       ever using the word "confirmed", which is exactly how PN11-22 sat in
+       the corpus as `floor` — a live call rail over a confirmation the Senate
+       completed 18 months earlier. The cloture carve-out is repeated here
+       because a reconsider motion on a FAILED CLOTURE is genuinely live (see
+       that rule for both live sentences, verbatim). */
+    if (/\bto reconsider\b[^.]*\btabled\b/i.test(text) && !/\bcloture\b/i.test(text) && n.status !== 'confirmed') {
+      fail(`${id}: record says a motion to reconsider was tabled — the Senate's confirmation-locking ritual — but status is "${n.status}", a live claim over a finished nomination`);
+    }
+
+    /* ---- 5. The calendar number is a printed fact or it is absent. ----
+       "Calendar No. DESK" is the Senate's own placeholder for a placement with
+       no number yet; Number('DESK') is NaN, and a NaN that reached a surface
+       would print "Calendar No. NaN" beside a real Senate claim. */
+    const expectedCalendar = execCalendarNumber(n.last_action_text);
+    if (n.exec_calendar_number !== expectedCalendar) {
+      fail(`${id}: exec_calendar_number is ${n.exec_calendar_number}, the record text yields ${expectedCalendar}`);
+    }
+    if (n.exec_calendar_number !== null && n.status !== 'exec_calendar') {
+      fail(`${id}: carries calendar number ${n.exec_calendar_number} but status is "${n.status}"`);
+    }
+
+    /* ---- 6. Civilian-only tripwire. See MILITARY_ORGANIZATIONS above. ---- */
+    if (n.organization && MILITARY_ORGANIZATIONS.has(n.organization)) {
+      fail(`${id}: organization "${n.organization}" is a uniformed service — the civilian-only filter in scripts/nominations-fetch.mjs has stopped working`);
+    }
+
+    if (n.status === UNCLASSIFIED_NOMINATION_STATUS) unclassified.push(n);
+  }
+
+  /* ---- 7. THE CORPUS TRIPWIRE (warn in CI, fail under --strict). ---- */
+  for (const n of unclassified) {
+    const msg = `check-nominations: unclassified action text on ${n.citation} — add a rule to lib/nomination-status.mjs's mapNominationStatus; until then this record renders neutral, claim-free copy: ${n.last_action_text}`;
+    (STRICT ? errors : warnings).push(msg);
+  }
+
+  return { errors, warnings, unclassified };
 }
 
-/* ---- 2. Per-record structure and identity. ---- */
-const REQUIRED_STRINGS = ['citation', 'part_number', 'congress_gov_url'];
-const NULLABLE_STRINGS = [
-  'nominee_description', 'organization', 'received_date', 'last_action_date',
-  'last_action_text', 'update_date',
-];
-const seenSlugs = new Map();
-const unclassified = [];
+/* ── CLI ────────────────────────────────────────────────────────────────────
+   Guarded so importing this module (scripts/sync-nominations.mjs does, and so
+   does the unit suite) runs no I/O and exits nothing.
 
-for (const n of corpus) {
-  const id = n?.citation ?? '(no citation)';
-  if (!n || typeof n !== 'object') {
-    fail(`a corpus entry is not an object`);
-    continue;
-  }
-  for (const k of REQUIRED_STRINGS) {
-    if (typeof n[k] !== 'string' || !n[k]) fail(`${id}: ${k} must be a non-empty string`);
-  }
-  for (const k of NULLABLE_STRINGS) {
-    if (n[k] !== null && typeof n[k] !== 'string') fail(`${id}: ${k} must be a string or null`);
-  }
-  if (!Number.isInteger(n.pn_number)) fail(`${id}: pn_number must be an integer`);
-  if (!Number.isInteger(n.congress_number)) fail(`${id}: congress_number must be an integer`);
-  if (n.exec_calendar_number !== null && !Number.isInteger(n.exec_calendar_number)) {
-    fail(`${id}: exec_calendar_number must be an integer or null`);
-  }
+   pathToFileURL rather than a bare path compare, because import.meta.url is a
+   file: URL and process.argv[1] is a filesystem path — they are only
+   comparable once both are URLs.
 
-  // Identity is the citation, and the slug must reproduce its arithmetic —
-  // `PN{number}` when the part is zero, `PN{number}-{part}` with leading
-  // zeros stripped otherwise. A drift here silently collapses distinct
-  // people who share a PN number (see nominationSlug's doc comment).
-  const part = Number(n.part_number);
-  const expectedCitation = `PN${n.pn_number}${Number.isInteger(part) && part > 0 ? `-${part}` : ''}`;
-  if (n.citation !== expectedCitation) {
-    fail(`${id}: citation disagrees with (pn_number=${n.pn_number}, part_number=${n.part_number}), which would build "${expectedCitation}"`);
-  }
-  const slug = nominationSlug({
-    number: n.pn_number, partNumber: n.part_number, congress: n.congress_number,
-  });
-  if (!/^pn-\d+(-\d+)?-\d+$/.test(slug)) fail(`${id}: malformed slug "${slug}"`);
-  if (seenSlugs.has(slug)) {
-    fail(`duplicate slug "${slug}": ${seenSlugs.get(slug)} and ${id} are stored as different records`);
-  }
-  seenSlugs.set(slug, id);
+   The argv[1] existence check is not defensive padding: `node --input-type=
+   module -e '…'` leaves it UNDEFINED, and pathToFileURL(undefined) throws
+   ERR_INVALID_ARG_TYPE. Without it, importing this module from an inline
+   script crashed before the import could resolve. */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const STRICT = process.argv.includes('--strict');
 
-  const expectedUrl = congressGovNominationUrl(n.pn_number, n.part_number, n.congress_number);
-  if (n.congress_gov_url !== expectedUrl) {
-    fail(`${id}: congress_gov_url is "${n.congress_gov_url}", builder says "${expectedUrl}"`);
+  let corpus;
+  try {
+    corpus = JSON.parse(readFileSync(new URL('../data/nominations.json', import.meta.url), 'utf8'));
+  } catch (e) {
+    console.error(`::error::check-nominations: data/nominations.json is missing or unparseable (${e.message}). It is written by scripts/sync-nominations.mjs and committed; a gate that skips when its data is absent is not a gate.`);
+    process.exit(1);
+  }
+  let state;
+  try {
+    state = JSON.parse(readFileSync(new URL('../data/sync-state.json', import.meta.url), 'utf8'));
+  } catch (e) {
+    console.error(`::error::check-nominations: data/sync-state.json is unreadable (${e.message})`);
+    process.exit(1);
   }
 
-  /* ---- 3. Status: stored value must be what the mapper says TODAY. ----
-     This is the code<->data pin. It cannot be broken by novel Senate
-     vocabulary (an unseen sentence maps to `unclassified` on both sides);
-     it breaks when someone edits a rule in lib/nomination-status.mjs
-     without re-running the sync, which would leave the file asserting a
-     status the code no longer derives. */
-  if (!STORED_NOMINATION_STATUSES.includes(n.status)) {
-    fail(`${id}: status "${n.status}" is not in STORED_NOMINATION_STATUSES`);
-  }
-  const mapped = mapNominationStatus(n.last_action_text);
-  if (n.status !== mapped) {
-    fail(`${id}: stored status "${n.status}" but mapNominationStatus("${(n.last_action_text ?? '').slice(0, 70)}...") now returns "${mapped}" — re-run scripts/sync-nominations.mjs`);
-  }
+  const { errors, warnings, unclassified } = checkNominationCorpus(corpus, state, { strict: STRICT });
 
-  /* ---- 4. THE ONE THAT MATTERS. A finished nomination must never carry a
-     live status. The bill mapper gets this wrong on 511 live records
-     (congress-fetch.mjs:103 matches `yea-nay vote` and returns floor_vote
-     for "Confirmed by the Senate by Yea-Nay Vote"), which is why nominations
-     have their own mapper at all. Asserted here against the STORED data,
-     independently of the mapper, so the corpus itself can never publish a
-     pending-vote claim over a finished one. */
-  const text = n.last_action_text ?? '';
-  if (/\bconfirmed by the senate\b/i.test(text) && n.status !== 'confirmed') {
-    fail(`${id}: record says "Confirmed by the Senate" but status is "${n.status}" — a live claim over a finished nomination`);
-  }
-  if (/\breturned to the president\b/i.test(text) && n.status !== 'returned') {
-    fail(`${id}: record says "Returned to the President" but status is "${n.status}"`);
-  }
-  if (/\bwithdrawal\b/i.test(text) && n.status !== 'withdrawn') {
-    fail(`${id}: record says the nomination was withdrawn but status is "${n.status}"`);
-  }
+  for (const w of warnings) console.warn(`::warning::${w}`);
+  for (const e of errors) console.error(`::error::${e}`);
 
-  /* ---- 5. The calendar number is a printed fact or it is absent. ----
-     "Calendar No. DESK" is the Senate's own placeholder for a placement with
-     no number yet; Number('DESK') is NaN, and a NaN that reached a surface
-     would print "Calendar No. NaN" beside a real Senate claim. */
-  const expectedCalendar = execCalendarNumber(n.last_action_text);
-  if (n.exec_calendar_number !== expectedCalendar) {
-    fail(`${id}: exec_calendar_number is ${n.exec_calendar_number}, the record text yields ${expectedCalendar}`);
+  if (errors.length) {
+    console.error(`check-nominations: ${errors.length} failure(s) over ${Array.isArray(corpus) ? corpus.length : 0} nominations.`);
+    process.exit(1);
   }
-  if (n.exec_calendar_number !== null && n.status !== 'exec_calendar') {
-    fail(`${id}: carries calendar number ${n.exec_calendar_number} but status is "${n.status}"`);
-  }
-
-  /* ---- 6. Civilian-only tripwire. See MILITARY_ORGANIZATIONS above. ---- */
-  if (n.organization && MILITARY_ORGANIZATIONS.has(n.organization)) {
-    fail(`${id}: organization "${n.organization}" is a uniformed service — the civilian-only filter in scripts/nominations-fetch.mjs has stopped working`);
-  }
-
-  if (n.status === UNCLASSIFIED_NOMINATION_STATUS) unclassified.push(n);
+  const counts = {};
+  for (const n of corpus) counts[n.status] = (counts[n.status] ?? 0) + 1;
+  const pending = corpus.filter((n) => !TERMINAL_NOMINATION_STATUSES.has(n.status)).length;
+  console.log(
+    `check-nominations passed${STRICT ? ' (strict)' : ''}: ${corpus.length} civilian nominations, ` +
+      `${pending} pending, ${unclassified.length} unclassified. ` +
+      Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' ')
+  );
 }
-
-/* ---- 7. THE CORPUS TRIPWIRE (warn in CI, fail under --strict). ---- */
-for (const n of unclassified) {
-  const msg = `check-nominations: unclassified action text on ${n.citation} — add a rule to lib/nomination-status.mjs's mapNominationStatus; until then this record renders neutral, claim-free copy: ${n.last_action_text}`;
-  (STRICT ? errors : warnings).push(msg);
-}
-
-for (const w of warnings) console.warn(`::warning::${w}`);
-for (const e of errors) console.error(`::error::${e}`);
-
-if (errors.length) {
-  console.error(`check-nominations: ${errors.length} failure(s) over ${corpus.length} nominations.`);
-  process.exit(1);
-}
-const counts = {};
-for (const n of corpus) counts[n.status] = (counts[n.status] ?? 0) + 1;
-const pending = corpus.filter((n) => !TERMINAL_NOMINATION_STATUSES.has(n.status)).length;
-console.log(
-  `check-nominations passed${STRICT ? ' (strict)' : ''}: ${corpus.length} civilian nominations, ` +
-    `${pending} pending, ${unclassified.length} unclassified. ` +
-    Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' ')
-);

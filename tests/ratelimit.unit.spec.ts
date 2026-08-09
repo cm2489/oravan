@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 // runner - same pattern as the other unit specs.
 import {
   __resetFallbackLogForTests,
+  __resetSaltMemoForTests,
   callerHash,
   callerIp,
   counterKey,
@@ -27,6 +28,19 @@ test.describe.configure({ mode: 'serial' }); // shared env + global-fetch swaps
 
 let restoreFetch: (() => void) | null = null;
 let restoreEnv: (() => void) | null = null;
+
+/*
+ * The salt memo lives in lib/ratelimit.ts's module scope, which outlives an
+ * individual test (and, in a Playwright worker, an individual spec FILE) —
+ * so without this every test after the first would silently reuse the
+ * previous test's salt against a brand-new mock store and assert against a
+ * database that was never written to. Same convention as
+ * __resetFallbackLogForTests: an explicit seam, reset where it matters,
+ * rather than a production module that behaves differently under test.
+ */
+test.beforeEach(() => {
+  __resetSaltMemoForTests();
+});
 
 test.afterEach(() => {
   restoreFetch?.();
@@ -65,6 +79,12 @@ test('salt lifecycle: atomic create (SET NX EX 24h), >=128-bit CSPRNG hex, share
   const a = createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 });
   const b = createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 });
   await a.isLimited('203.0.113.60');
+  // A SECOND SERVERLESS INSTANCE, which is what `b` has always stood for
+  // here — and an instance starts with an empty salt memo, because the memo
+  // is module scope in a process this one doesn't share. Dropping it is what
+  // keeps the next line a real "b independently agreed on the salt" proof
+  // rather than "b read a's memo".
+  __resetSaltMemoForTests();
   await b.isLimited('203.0.113.60');
 
   // Exactly one salt exists, created with SET ... NX EX 86400.
@@ -83,6 +103,10 @@ test('salt lifecycle: atomic create (SET NX EX 24h), >=128-bit CSPRNG hex, share
   const other = new MockUpstash();
   restoreFetch();
   restoreFetch = installUpstashFetch({ [COUNTERS_URL]: other });
+  // A different counters database is a different deployment, i.e. a
+  // different process with its own empty memo — mirrored here, otherwise the
+  // memo would answer for a store this limiter has never touched.
+  __resetSaltMemoForTests();
   await createRateLimiter({ route: 'feedback', max: 8, windowSec: 600 }).isLimited('203.0.113.60');
   const otherRecord = parseSaltRecord(other.store.get(saltKey())!.value);
   expect(otherRecord!.v).not.toBe(record!.v);
@@ -297,6 +321,139 @@ test('check(): no-env memory path returns a sane retryAfterSec when limited, zer
   expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
 });
 
+// --- the salt memo -----------------------------------------------------------
+
+/*
+ * WHY THIS FAMILY EXISTS. currentSalt used to GET the salt on EVERY request,
+ * so the durable path cost three serialized REST round-trips (GET salt, SET
+ * NX, INCR) in front of every rate-limited route — including /api/reps,
+ * which fires on page render rather than on a user action, so a slow
+ * counters database stalled the rep panel before failing open.
+ *
+ * The memo is only defensible because it cannot extend a pseudonym's life:
+ * rotation (24h) is the privacy mechanism, and these tests pin both bounds
+ * that keep the memo inside it — a 60s wall-clock ceiling AND the stored
+ * record's own expiry, whichever is sooner — plus the absence signal that
+ * drops the memo the moment the database misbehaves.
+ */
+const saltGets = (mock: MockUpstash) =>
+  mock.commands.filter((c) => c[0] === 'GET' && c[1] === saltKey()).length;
+
+test('the salt is read once per instance, not once per request — and the extra round-trip really is gone', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'reps', max: 300, windowSec: 600 });
+  const ip = '203.0.113.130';
+  await limiter.isLimited(ip);
+
+  // The cold request pays for the salt exactly once: one GET (miss), one
+  // SET NX to create it.
+  expect(saltGets(mock), 'the first request reads the salt').toBe(1);
+  const afterCold = mock.commands.length;
+
+  for (let i = 0; i < 9; i += 1) expect(await limiter.isLimited(ip)).toBe(false);
+
+  expect(saltGets(mock), 'no request after the first one may re-read the salt').toBe(1);
+  expect(
+    mock.commands.filter((c) => c[0] === 'SET' && c[1] === saltKey()),
+    'and none of them may try to create a second salt'
+  ).toHaveLength(1);
+  // Two commands per warm request — SET NX + INCR — where it used to be
+  // three. This is the whole point of the memo, asserted as a number rather
+  // than as a claim in a comment.
+  expect(mock.commands.length - afterCold).toBe(18);
+
+  // Still the same salt, still hash-only, still the right counter.
+  const salt = parseSaltRecord(mock.store.get(saltKey())!.value)!.v;
+  expect(mock.keys().filter((k) => k.includes(':rl:reps:'))).toEqual([
+    counterKey('reps', callerHash(ip, salt)),
+  ]);
+});
+
+test('the memo expires: 60s on, the next request re-reads the salt', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.131';
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+  expect(saltGets(mock), 'inside the window, one read covers both').toBe(1);
+
+  // 61 seconds later — far short of the counter window (600s) and the salt's
+  // own TTL (86400s), so nothing else in the mock changes state.
+  const realNow = Date.now;
+  try {
+    Date.now = () => realNow() + 61_000;
+    await limiter.isLimited(ip);
+  } finally {
+    Date.now = realNow;
+  }
+  expect(saltGets(mock), 'past the window, the salt is read again').toBe(2);
+});
+
+test('the memo can never outlive the salt record itself, even inside the 60s window', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  // A record whose stated creation time is already 24h old: its 24h life is
+  // over even though this store still hands it back. The memo's second bound
+  // (creation + SALT_TTL_SECONDS, applied with Math.min) must refuse to
+  // serve it from memory at all — which is what makes the normal-case
+  // extension of a salt's effective life exactly zero seconds rather than
+  // "up to 60".
+  const aged = {
+    v: 'a'.repeat(32),
+    t: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  };
+  mock.exec(['SET', saltKey(), JSON.stringify(aged), 'EX', '86400']);
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.132';
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+  await limiter.isLimited(ip);
+
+  expect(saltGets(mock), 'an expired-by-its-own-clock salt is never served from the memo').toBe(3);
+});
+
+test('absence signal: a counters-database error drops the memo instead of holding it across a possible rotation', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const limiter = createRateLimiter({ route: 'script', max: 100, windowSec: 600 });
+  const ip = '203.0.113.133';
+  await limiter.isLimited(ip);
+  expect(saltGets(mock)).toBe(1);
+
+  // The database goes away mid-life. The request fails open to in-memory
+  // (pinned elsewhere in this file); what matters here is that the memo does
+  // not survive it — the failure might BE the rotation. The failing request
+  // itself never reaches the wire in a recordable way (the mock rejects
+  // before executing), so the count below is what proves the memo was
+  // dropped: without the drop, the recovered request would still be riding
+  // the pre-error memo and this would read 1.
+  mock.failWithStatus = 503;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    expect(await limiter.isLimited(ip), 'fails open, never throws').toBe(false);
+  } finally {
+    console.error = realError;
+  }
+
+  mock.failWithStatus = null;
+  await limiter.isLimited(ip);
+  expect(saltGets(mock), 'the recovered request re-reads rather than trusting a pre-error memo').toBe(
+    2
+  );
+});
+
 // --- S19: createTenantRateLimiter -------------------------------------------
 
 test('tenant counter keys are RAW tenantId, not hashed/salted - the deliberate divergence from the caller-hash shape', async () => {
@@ -383,6 +540,127 @@ test('tenant limiter: an Upstash request error fails open to in-memory and is co
   expect(await limiter.isLimited(tenantId)).toBe(false);
   expect(await limiter.isLimited(tenantId), 'in-memory fallback still enforces the limit').toBe(true);
   expect(getUpstashErrorCounts().counters).toBeGreaterThan(errorsBefore);
+});
+
+// --- spend breakers fail CLOSED (the one inversion of the doctrine) ---------
+
+/*
+ * RATE LIMITS FAIL OPEN; SPEND BREAKERS FAIL CLOSED.
+ *
+ * Every other limiter in this module answers an Upstash outage by falling
+ * back to a per-instance in-memory window — the right call when the thing
+ * being protected is availability against a noisy caller.
+ *
+ * app/api/brand's 'brand-day' breaker is not that. It is a GLOBAL daily cap
+ * on an UNAUTHENTICATED endpoint that spends real money per call (~$2/day at
+ * 250 calls). Failing it open swaps the global counter for a per-INSTANCE
+ * one, so during an outage the documented ~$2/day ceiling silently becomes
+ * ~$2/day per serverless instance — times however many instances a
+ * distributed caller can cause to exist, exactly when nobody is watching.
+ * Declining to spend is recoverable; an unbounded bill is not.
+ */
+
+test('spend breaker (failClosed): an unreachable counters database REFUSES the paid call instead of falling back to a per-instance count', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const errorsBefore = getUpstashErrorCounts().counters;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 250,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    // Not "the 251st call" — the FIRST one. With the counter's state unknown
+    // there is no headroom to claim, so every call is refused for as long as
+    // the outage lasts.
+    for (let i = 1; i <= 3; i += 1) {
+      expect(await breaker.isLimited('brand-global'), `call ${i} must be refused`).toBe(true);
+    }
+  } finally {
+    console.error = realError;
+  }
+  // Still counted and logged like every other Upstash failure — failing
+  // closed is not the same as failing silently.
+  expect(getUpstashErrorCounts().counters).toBeGreaterThan(errorsBefore);
+});
+
+test('spend breaker (failClosed): a HEALTHY counters database is unaffected — normal counting, normal ceiling', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  const breaker = createTenantRateLimiter({
+    route: 'brand-day',
+    max: 3,
+    windowSec: 86400,
+    failClosed: true,
+  });
+  for (let i = 1; i <= 3; i += 1) {
+    expect(await breaker.isLimited('brand-global'), `call ${i} of 3 must pass`).toBe(false);
+  }
+  expect(await breaker.isLimited('brand-global'), 'the 4th trips the real ceiling').toBe(true);
+});
+
+test('the doctrine, side by side: the SAME outage fails a rate limiter open and a spend breaker closed', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    // Availability guard: keeps serving (in-memory window still bounds abuse).
+    const rateLimit = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
+    expect(await rateLimit.isLimited('cus_doctrine'), 'a rate limit must fail OPEN').toBe(false);
+
+    // Money guard, identical outage, opposite answer.
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 250,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    expect(await breaker.isLimited('brand-global'), 'a spend breaker must fail CLOSED').toBe(true);
+  } finally {
+    console.error = realError;
+  }
+});
+
+test('spend breaker (failClosed): an UNCONFIGURED counters database keeps the in-memory fallback, so dev/CI are not darked', async () => {
+  // No setUpstashEnv() - the local-dev/CI/preview-without-env path. This is
+  // deliberately NOT the fail-closed case: "no counters database at all" is
+  // a known deployment shape announced by the single startup line, not the
+  // unknown state an outage creates, and refusing here would dark the
+  // feature on every developer's machine to guard against a
+  // misconfiguration that would equally have disabled every other limiter.
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+  __resetFallbackLogForTests();
+
+  const realLog = console.log;
+  console.log = () => {};
+  try {
+    const breaker = createTenantRateLimiter({
+      route: 'brand-day',
+      max: 2,
+      windowSec: 86400,
+      failClosed: true,
+    });
+    expect(await breaker.isLimited('brand-global')).toBe(false);
+    expect(await breaker.isLimited('brand-global')).toBe(false);
+    expect(await breaker.isLimited('brand-global'), 'the in-memory ceiling still applies').toBe(true);
+  } finally {
+    console.log = realLog;
+  }
+  expect(mock.commands, 'must not touch the REST surface without env').toHaveLength(0);
 });
 
 test('composition: the tenant limiter and the per-IP caller limiter are completely independent counters', async () => {

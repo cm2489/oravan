@@ -21,6 +21,7 @@ import {
   cg,
   congressGovUrl,
   mapStatus,
+  readableAction,
   refreshBillFields,
   tagBill,
   updateSlug,
@@ -35,19 +36,68 @@ import { generateSearchInputs } from './search-inputs.mjs';
 // would add unbounded thinking spend to batch calls.
 export const DECODE_MODEL = 'claude-sonnet-5';
 
+const formattedTextUrl = (v) =>
+  (v?.formats ?? []).find((f) => f?.type === 'Formatted Text')?.url ?? null;
+
+/**
+ * The version of a bill we decode from: the CURRENT one — Congress.gov's
+ * /text `textVersions` array as returned, first entry carrying a Formatted
+ * Text URL. Null when the bill has no retrievable text at all.
+ *
+ * This used to iterate `[...versions].reverse()`, which took the LAST entry
+ * and therefore decoded almost every bill from the text as INTRODUCED, no
+ * matter how far it had since moved. Live-verified against the API on
+ * 2026-08-09, 67 multi-version bills of the 119th:
+ *
+ *   s/1199    Engrossed in Senate@2026-04-29 | Reported@2025-07-30 | Introduced@2025-03-27
+ *   hr/2701   Placed on Calendar Senate@2025-12-09 | Engrossed in House@2025-09-15
+ *             | Reported in House@2025-09-09 | Introduced in House@2025-04-07
+ *
+ * The array is ordered MOST-ADVANCED FIRST. It is NOT simply date-descending,
+ * and a future reader must not "fix" it by sorting on `date`: the two
+ * terminal texts of an enacted bill sit outside the date order entirely —
+ * `Enrolled Bill` is pinned FIRST and carries `date: null`, and `Public Law`
+ * is pinned LAST despite holding the NEWEST date (hr/1: Enrolled@null |
+ * Engrossed Amendment Senate@2025-07-01 | ... | Reported@2025-05-20 |
+ * Public Law@2025-07-05). Measured 2026-08-09: Enrolled first in 25/25 and
+ * Public Law last in 25/25 enacted bills sampled, and entry [0] was the
+ * most-advanced text in 42/42 in-progress multi-version bills. So entry [0]
+ * is the current text in every observed shape, and the old reverse() landed
+ * on `Introduced` for everything still moving — while accidentally landing
+ * on the correct `Public Law` for bills already enacted, which is why the
+ * damage never showed up in the enacted records anyone spot-checked.
+ *
+ * Versions with no Formatted Text URL are skipped, not treated as the end of
+ * the list — the pick is "the newest version we can actually read".
+ */
+export function pickTextVersion(versions) {
+  return (versions ?? []).find((v) => formattedTextUrl(v)) ?? null;
+}
+
+/**
+ * The current text of one bill as plain words, or null when Congress.gov
+ * publishes NO text for it yet (the caller refuses to decode on null — see
+ * syncOneBill). Throws when a version exists but its document can't be
+ * fetched, which is a retryable failure rather than a text-less bill.
+ *
+ * Only the current version is fetched. The old loop fell through to the next
+ * version on a non-ok response, which — now that we start from the newest
+ * rather than the oldest — would quietly decode a SUPERSEDED document
+ * whenever the current one's HTML lagged, reintroducing exactly the staleness
+ * above with no marker on the record to show it. Nothing distinguishes a
+ * summary of last month's text from a summary of this week's once it is
+ * stored, so a text we can't fetch is refused and retried, never approximated
+ * from an older one.
+ */
 async function fetchBillText(type, number) {
   const data = await cg(`/bill/${CONGRESS}/${type}/${number}/text`);
-  const versions = data.textVersions ?? [];
-  for (const v of [...versions].reverse()) {
-    const fmt = (v.formats ?? []).find((f) => f.type === 'Formatted Text');
-    if (fmt?.url) {
-      const res = await fetch(fmt.url);
-      if (!res.ok) continue;
-      const html = await res.text();
-      return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000);
-    }
-  }
-  return null;
+  const version = pickTextVersion(data.textVersions);
+  if (!version) return null;
+  const url = formattedTextUrl(version);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`bill text ${res.status} for ${type}/${number} (${version.type})`);
+  const html = await res.text();
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000);
 }
 
 const DECODE_TAGS = [
@@ -73,13 +123,63 @@ function parseTagged(text) {
 
 const normCost = (s) => (s === 'NONE' || !s ? null : s);
 
-function normChips(s) {
+// The prompt asks for chips of at most 45 characters; the validator allows 48.
+// That 3-character slack is deliberate tolerance and is left alone here.
+const CHIP_MAX = 48;
+
+function parseChips(s) {
   if (s === 'NONE' || !s) return null;
   const chips = s.split('|').map((c) => c.trim()).filter(Boolean);
-  if (chips.length < 1 || chips.length > 3 || chips.some((c) => c.length > 48)) return null;
+  if (chips.length < 1 || chips.length > 3 || chips.some((c) => c.length > CHIP_MAX)) return null;
   return chips;
 }
 
+/**
+ * Both languages' cost chips, or none in either. Never one language's chips
+ * beside the other language's null.
+ *
+ * The prompt states this contract itself — "Same count and order in
+ * ES_COST_CHIPS. If a fact can't fit 45 chars, output NONE for both chip tags
+ * (prose is the fallback)" — but the validator used to enforce it one language
+ * at a time. Spanish renders the same fact longer, so the ordinary outcome was
+ * an EN chip that fit beside an ES twin that didn't: the ES chips were nulled
+ * and the EN chips stored, and the bill shipped with a scannable chip row in
+ * English and a wall of prose in Spanish. Measured 2026-08-09 on the committed
+ * corpus: of the 917 bills carrying chips in either language, 157 diverge (146
+ * EN-only, 11 ES-only) — 16% — and of the 906 carrying EN chips, 146 have no
+ * ES counterpart.
+ *
+ * The count check is belt-and-braces: zero bills currently diverge on count
+ * where both languages have chips. It is here because the prompt promises it
+ * and enforcing a promise costs nothing.
+ *
+ * ON THE CEILING, deliberately NOT made language-aware. The alternative was a
+ * higher ES ceiling to keep more Spanish chips alive, and it was rejected on
+ * three grounds. First, 48 is a SCANNABILITY budget, not a layout guard: the
+ * Chip shell is `inline-flex w-fit` inside a `flex-wrap` list with no
+ * `whitespace-nowrap` (components/system/Chip.tsx), so a longer chip wraps
+ * rather than breaking the page — nothing is protected by the number except
+ * the chip's reason for existing. A fact needing 58 characters is not a chip,
+ * and the prompt already names the right answer for it: prose. Second, giving
+ * Spanish a longer ceiling would ship ES readers a different, worse-scanning
+ * artifact under the same name, which is not what bilingual parity means.
+ * Third, no honest ES ceiling can be derived from the committed data: every
+ * over-length ES chip was nulled by this very bug, so the stored ES lengths
+ * are censored at 48 (stored ES chips average 34.8 chars vs EN's 32.5 — a 7%
+ * gap that measures only the survivors, not the real inflation). Picking a
+ * number would be a guess dressed as a measurement.
+ */
+export function normChipPair(enRaw, esRaw) {
+  const en = parseChips(enRaw);
+  const es = parseChips(esRaw);
+  if (!en || !es || en.length !== es.length) return { en: null, es: null };
+  return { en, es };
+}
+
+/** Decode ONE bill from its own text. `text` is required and is always the
+ *  document — it used to fall back to `bill.title` when fetchBillText came
+ *  back null, which produced a normal-looking, unlabeled AI summary of a
+ *  document the model had never read. See syncOneBill's null-text refusal. */
 async function decode(anthropic, bill, text) {
   const sum = await anthropic.messages.create({
     model: DECODE_MODEL, max_tokens: 900, thinking: { type: 'disabled' },
@@ -88,7 +188,7 @@ async function decode(anthropic, bill, text) {
 Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}
 
 Full text (may be truncated):
-${text ?? bill.title}` }],
+${text}` }],
   });
   const ai_summary = sum.content[0].text.trim();
 
@@ -131,18 +231,20 @@ Output exactly this tagged format, each tag on its own line followed by its cont
   if (!p.HEADLINE_EN || !p.TLDR || !p.WHAT || !p.WHO || !p.WHY || !p.ES_SUMMARY) {
     throw new Error('bad decode shape');
   }
+  // Chips are decided for BOTH languages at once — see normChipPair.
+  const chips = normChipPair(p.COST_CHIPS, p.ES_COST_CHIPS);
   return {
     ai_summary,
     ai_headline: p.HEADLINE_EN.slice(0, 110),
     ai_sections: {
       tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY,
-      cost: normCost(p.COST), costChips: normChips(p.COST_CHIPS),
+      cost: normCost(p.COST), costChips: chips.en,
     },
     es_headline: p.HEADLINE_ES.slice(0, 110),
     es_summary: p.ES_SUMMARY,
     es_sections: {
       tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY,
-      cost: normCost(p.ES_COST), costChips: normChips(p.ES_COST_CHIPS),
+      cost: normCost(p.ES_COST), costChips: chips.es,
     },
   };
 }
@@ -169,6 +271,19 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *
  * Returns one of:
  *   'refreshed' — an existing bill's fields were updated in place (free)
+ *   'skipped_partial' — the bill was fetched fine, but Congress.gov's reply
+ *                 carried no readable `latestAction` text (readableAction in
+ *                 congress-fetch.mjs), so NOTHING was written: an existing
+ *                 bill was left byte-identical, and a brand-new one was NOT
+ *                 created and NOT decoded. Neither a change nor a failure —
+ *                 idempotent, nothing to retry, and the bill re-enters on
+ *                 its next real move via Congress.gov's own updateDate.
+ *   'skipped_no_text' — a brand-new bill cleared the gate, but Congress.gov
+ *                 publishes no readable text version for it yet, so NOTHING
+ *                 was written and no decode was spent: we will not summarize
+ *                 a document we could not read. Like 'gated' and unlike
+ *                 'failed' — nothing stored, nothing to retry, and the bill
+ *                 re-enters via its own updateDate when its text lands.
  *   'added'     — a brand-new bill was decoded and pushed into the corpus
  *   'gated'     — a brand-new bill was found but shows no real legislative
  *                 motion (and isn't force-bypassed) — NOT stored anywhere.
@@ -178,7 +293,9 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *                 re-evaluates against its then-current status.
  *   'budget'    — a brand-new bill cleared the gate (or was forced) but
  *                 `allowDecode` was false this call
- *   'failed'    — the fetch or decode threw; `isNew` tells the caller
+ *   'failed'    — the fetch or decode threw (including a text version that
+ *                 exists but whose document couldn't be fetched — retryable,
+ *                 unlike 'skipped_no_text'); `isNew` tells the caller
  *                 whether this was a new-bill decode failure (must retry)
  *                 or an existing bill's transient refresh failure
  *                 (idempotent, self-heals on its next update).
@@ -200,16 +317,51 @@ export async function syncOneBill(u, ctx) {
     const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
     const existing = bySlug.get(slug);
     if (existing) {
-      refreshBillFields(existing, d);
-      return { outcome: 'refreshed', slug, decodeAttempted };
+      // The sentinel IS the outcome: a payload we refused to write surfaces
+      // to every caller as 'skipped_partial' instead of posing as a refresh
+      // that happened to change nothing.
+      return { outcome: refreshBillFields(existing, d), slug, decodeAttempted };
     }
-    const status = mapStatus(d.latestAction?.text);
+    // Same fail-closed posture as refreshBillFields, one step earlier and via
+    // the same shared predicate. A brand-new bill whose payload carries no
+    // readable latestAction is not a bill with nothing happening; it's a
+    // reply we can't read. Storing it would MINT a published record whose
+    // status was never read from the official record — mapStatus(undefined)
+    // invents 'committee' — with a null date and null text sitting beside
+    // it, and would spend a decode doing it. That is the same downgrade the
+    // refresh path used to commit, but with no prior value to contradict it,
+    // so it's harder to spot: it is what left hr-2-119, hr-5-119 and
+    // hr-10-119 in the corpus with null text AND null date.
+    //
+    // Nothing is stored, rather than stored with explicit nulls. There is no
+    // honest null for `status`: the whole read side (lib/urgency.mjs's
+    // STATUS_BASE, the feed, the bill page) expects one of the mapped
+    // strings, so a null-status record would have to be papered over
+    // downstream, and any placeholder we picked would be a claim about the
+    // official record we never actually read. This is the posture the decode
+    // path already takes on a bad decode shape — nothing partial ships, the
+    // bill is simply not added, and it re-enters cleanly on a later run.
+    //
+    // The guard sits BEFORE the priority gate on purpose: 'gated' asserts
+    // something about the BILL ("no real legislative motion"), and an
+    // unreadable payload cannot support that claim about anything. Non-forced
+    // bills only ever reached that verdict through mapStatus(undefined)'s
+    // invented 'committee' — accidentally harmless, for a reason that wasn't
+    // true. Forced slugs skipped the gate entirely and stored the nulls.
+    //
+    // Not a failure either: nothing was stored, so there is nothing to retry
+    // and nothing for the cursor to freeze on. Congress.gov's own updateDate
+    // resurfaces the bill the moment it really moves, exactly as it does for
+    // a gated one.
+    const action = readableAction(d);
+    if (!action) return { outcome: 'skipped_partial', slug, decodeAttempted };
+    const status = mapStatus(action.text);
     const forced = forceSlugs.has(slug);
     if (!forced && !passesGate(status)) {
       return { outcome: 'gated', slug, status, decodeAttempted };
     }
     if (!allowDecode) return { outcome: 'budget', slug, decodeAttempted };
-    const lastActionDate = d.latestAction?.actionDate ?? null;
+    const lastActionDate = action.actionDate ?? null;
     const bill = {
       full_identifier: slug,
       congress_number: CONGRESS,
@@ -221,14 +373,36 @@ export async function syncOneBill(u, ctx) {
       sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
       introduced_date: d.introducedDate ?? null,
       last_action_date: lastActionDate,
-      last_action_text: d.latestAction?.text ?? null,
+      last_action_text: action.text,
       status,
       issue_tags: tagBill(d.policyArea?.name),
       policy_area: d.policyArea?.name ?? null,
       urgency_score: urgencyScore(status, lastActionDate),
       congress_gov_url: congressGovUrl(type, u.number),
     };
+    // No text, no decode. fetchBillText returns null when Congress.gov
+    // publishes no readable text version for this bill at all, and the decode
+    // used to paper over that by feeding the model `bill.title` instead — one
+    // sentence of formal long title, from which it produced a full
+    // plain-language summary that reads exactly like every other decode. The
+    // model has no way to say "I was not given the bill", so it wrote what a
+    // bill of that name usually contains: sconres-39-119's shipped summary
+    // states that a budget resolution "typically breaks down spending limits
+    // by category ... and it may include instructions", as fact, about a
+    // document nobody read. That is a fabricated record wearing the same
+    // AI label as a real one, on the same page as the official citation.
+    //
+    // Store nothing rather than store that — the identical posture the
+    // unreadable-payload guard above takes, and for the identical reason:
+    // there is no honest partial version of "here is what this bill does".
+    // Not a failure either: the payload was fine and the bill is real, it
+    // simply has no text yet. So there is nothing to retry and nothing for
+    // the cursor to freeze on — Congress.gov bumps the bill's updateDate when
+    // its text is published, and the update feed resurfaces it then, exactly
+    // as it does for a gated one. Callers count the skip and name it in their
+    // run log, so a night that refuses N bills says so out loud.
     const text = await fetchBillText(type, u.number);
+    if (text === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     // Set BEFORE the await, not after: a throw inside decode() (its shape
     // check, a parse failure, an SDK error past the retries) still means the
     // request was issued and billed.

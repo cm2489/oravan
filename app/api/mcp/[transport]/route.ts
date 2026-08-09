@@ -7,10 +7,31 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
 /*
  * Oravan's MCP server (S10). Five read-only tools over lib/core/mcp.ts's
  * pure functions, which read the same baked JSON the site's own pages read -
- * an agent's answer and a visitor's page can never disagree. No tool here
+ * one corpus, one urgency model, no second copy of the data. No tool here
  * makes an outbound network call; the one the spec allows (Census address
  * refinement inside lookup_representatives) is deliberately deferred - see
  * lib/core/mcp.ts's lookupRepresentatives doc comment.
+ *
+ * SAME DATA, DIFFERENT CLOCK - and this comment used to get that wrong.
+ * It said "an agent's answer and a visitor's page can never disagree",
+ * which the `force-dynamic` below makes false. The facts are shared: the
+ * corpus, the decodes, and the envelope's `as_of` (lib/freshness.ts reads
+ * data/sync-state.json, a baked value) are byte-identical on both surfaces.
+ * What is NOT shared is when the clock is read. Every time-dependent
+ * derivation here runs at REQUEST time - whats_moving's N-day cutoff, the
+ * staleness-decayed urgency get_bill reports as a band and search_bills as
+ * a score (lib/urgency.mjs effectiveUrgency), and the quiet_week /
+ * data_stale verdict (lib/freshness-state.ts emptyStateVerdict) - while the
+ * site's pages are statically generated and evaluated the same functions at
+ * BUILD time. So they can disagree, in one direction only: this route's
+ * judgment is never older than the last build's. On a stalled pipeline
+ * whats_moving reports `data_stale` while a homepage built before the stall
+ * still shows a confident panel, and the MCP answer is the honest one.
+ *
+ * That asymmetry is a property of the wiring, not a promise about it, and
+ * closing it (baking the clock, or revalidating the pages) is a behaviour
+ * change nobody has decided on. Until someone does, this comment describes
+ * what actually runs.
  *
  * Exactly these 5, per the project records §2 and the
  * settled S10 scope call (KTD-6, closed under R16): lookup_representatives,
@@ -79,6 +100,9 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
  * (lib/core/mcp.ts), lookup_representatives' `refine_hint`, and every
  * toolError() message in lib/core/mcp-tools.ts - is now locale-paired.
  */
+/* The line the header's "different clock" note is about: every request runs
+ * the tool handlers fresh, so Date.now() inside them is the caller's now, not
+ * the last deploy's. Required anyway - a JSON-RPC POST cannot be prerendered. */
 export const dynamic = 'force-dynamic';
 
 const handler = createMcpHandler(
@@ -130,8 +154,28 @@ const handler = createMcpHandler(
  */
 const HANDSHAKE_SCAN_CAP = 1;
 
-const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: 60 });
-const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: 86400 });
+/*
+ * The two windows, named once so a Retry-After header can never disagree
+ * with the window it is reporting on. That is not hypothetical: the day
+ * limiter's 429 shipped a hardcoded `retry-after: 3600` against an 86,400s
+ * window, telling a throttled agent to come back in an hour when the counter
+ * would not reset for up to a day — so it retried, uselessly, all day.
+ */
+const MCP_MINUTE_WINDOW_SEC = 60;
+const MCP_DAY_WINDOW_SEC = 86400;
+
+const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: MCP_MINUTE_WINDOW_SEC });
+const dayLimiter = createRateLimiter({ route: 'mcp-day', max: 1000, windowSec: MCP_DAY_WINDOW_SEC });
+
+/**
+ * Seconds-to-reset as an HTTP header value: the limiter's own computed reset
+ * when it has one, the full window when it doesn't (the fail-open paths never
+ * compute one), clamped into (0, window] so the header can never promise a
+ * reset later than the window itself or a nonsensical 0.
+ */
+function retryAfterHeader(retryAfterSec: number | null, windowSec: number): string {
+  return String(Math.max(1, Math.min(retryAfterSec ?? windowSec, windowSec)));
+}
 
 /*
  * MCP client-software handshake counter (2026-07). WHY HANDSHAKES, NOT TOOL
@@ -201,16 +245,26 @@ async function limitedPost(req: Request): Promise<Response> {
   readOravanKey(req.headers); // dormant tenancy hook (S18/S19): recognized, no behavior yet
 
   const ip = callerIp(req.headers);
+  // The minute window keeps isLimited(): its window IS 60s, so the constant
+  // and the truth already agree to within one window, and check()'s extra
+  // TTL read would buy at most 59 seconds of precision on the route's
+  // hottest limiter. The day window is the opposite trade — a caller told
+  // the wrong hour on an 86,400s window retries all day for nothing — so it
+  // pays the one TTL read (limited path only) to answer accurately.
   if (await minuteLimiter.isLimited(ip)) {
     return NextResponse.json(
       { error: 'rate_limited' },
-      { status: 429, headers: { 'retry-after': '60' } }
+      { status: 429, headers: { 'retry-after': String(MCP_MINUTE_WINDOW_SEC) } }
     );
   }
-  if (await dayLimiter.isLimited(ip)) {
+  const day = await dayLimiter.check(ip);
+  if (day.limited) {
     return NextResponse.json(
       { error: 'rate_limited' },
-      { status: 429, headers: { 'retry-after': '3600' } }
+      {
+        status: 429,
+        headers: { 'retry-after': retryAfterHeader(day.retryAfterSec, MCP_DAY_WINDOW_SEC) },
+      }
     );
   }
   // AFTER the rate-limit gates on purpose: a 429'd request never counts,

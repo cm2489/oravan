@@ -19,18 +19,44 @@ const DEFAULT_TOLERANCE_SEC = 300; // Stripe's own documented default (5 min)
 
 interface ParsedSignatureHeader {
   timestamp: number;
-  v1: string;
+  /** EVERY v1 signature in the header, in header order — see below. */
+  v1: string[];
 }
 
+/*
+ * WHY THIS COLLECTS ALL v1 SIGNATURES, NOT THE FIRST ONE.
+ *
+ * A `Stripe-Signature` header carries ONE v1 signature per currently-active
+ * signing secret, and during a secret roll there is deliberately more than
+ * one. Stripe's own documentation (docs.stripe.com/webhooks, "Roll endpoint
+ * signing secrets periodically"): rolling a secret lets you "delay its
+ * expiration for up to 24 hours... During this time, multiple secrets are
+ * active for the endpoint. Stripe generates one signature per secret until
+ * expiration." Its manual-verification steps say `v1` "corresponds to the
+ * signature (or signatures)" and, at step 4, "use a constant-time-string
+ * comparison to compare the expected signature to EACH of the received
+ * signatures."
+ *
+ * Keeping only the first one made the roll procedure a 24-hour outage: the
+ * signature computed under the NEW secret can arrive in any position, so
+ * once the server is updated to the new secret, every event whose new-secret
+ * signature is not first fails verification — and this route answers a
+ * verification failure with 400, which Stripe retries for three days. The
+ * fix restores the documented behavior: compute the HMAC once, compare it
+ * against each candidate in constant time, and pass on any match.
+ */
+const MAX_V1_SIGNATURES = 10;
+
 /**
- * Parse a `Stripe-Signature` header: `t=<unix_ts>,v1=<hex_hmac>[,v0=...]`.
- * Only `v1` is ever used (v0 is Stripe's deprecated SHA-1 scheme). Returns
- * null on any malformed shape rather than guessing.
+ * Parse a `Stripe-Signature` header: `t=<unix_ts>,v1=<hex_hmac>[,v1=...][,v0=...]`.
+ * Only `v1` is ever used (v0 is Stripe's deprecated SHA-1 scheme, and its own
+ * docs say to ignore every non-v1 scheme to prevent downgrade attacks).
+ * Returns null on any malformed shape rather than guessing.
  */
 function parseSignatureHeader(header: string | null): ParsedSignatureHeader | null {
   if (typeof header !== 'string' || header.length === 0) return null;
   let timestamp: number | null = null;
-  let v1: string | null = null;
+  const v1: string[] = [];
   for (const part of header.split(',')) {
     const eq = part.indexOf('=');
     if (eq === -1) continue;
@@ -39,12 +65,17 @@ function parseSignatureHeader(header: string | null): ParsedSignatureHeader | nu
     if (key === 't' && timestamp === null) {
       const n = Number(value);
       if (Number.isFinite(n)) timestamp = n;
-    } else if (key === 'v1' && v1 === null) {
-      v1 = value;
+    } else if (key === 'v1' && v1.length < MAX_V1_SIGNATURES) {
+      // A malformed sibling must NOT invalidate a well-formed signature next
+      // to it (that would reintroduce the roll outage from the other side),
+      // so a non-hex candidate is skipped rather than fatal. The cap bounds
+      // the work an attacker can buy with a long header; Stripe itself never
+      // sends more than one per active secret, and at most two are ever
+      // active at once.
+      if (value.length > 0 && /^[0-9a-f]+$/i.test(value)) v1.push(value);
     }
   }
-  if (timestamp === null || v1 === null || v1.length === 0) return null;
-  if (!/^[0-9a-f]+$/i.test(v1)) return null; // not hex — can't be a valid HMAC digest
+  if (timestamp === null || v1.length === 0) return null;
   return { timestamp, v1 };
 }
 
@@ -71,16 +102,28 @@ export function verifyStripeSignature(
   // Replay window BEFORE the expensive HMAC compute — cheap rejection first.
   if (Math.abs(nowSec - parsed.timestamp) > toleranceSec) return false;
 
+  // Computed ONCE, then compared against every candidate: the secret and the
+  // payload are the same for all of them, only the header value differs.
   const expectedHex = createHmac('sha256', secret)
     .update(`${parsed.timestamp}.${rawBody}`)
     .digest('hex');
   const expected = Buffer.from(expectedHex, 'hex');
-  const provided = Buffer.from(parsed.v1, 'hex');
-  // Guard buffer-length equality first: timingSafeEqual throws RangeError on
-  // mismatched-length buffers, which would otherwise crash the handler on a
-  // malformed/truncated header instead of cleanly rejecting it.
-  if (expected.length !== provided.length) return false;
-  return timingSafeEqual(expected, provided);
+
+  let matched = false;
+  for (const candidate of parsed.v1) {
+    const provided = Buffer.from(candidate, 'hex');
+    // Guard buffer-length equality first: timingSafeEqual throws RangeError
+    // on mismatched-length buffers, which would otherwise crash the handler
+    // on a malformed/truncated header instead of cleanly rejecting it.
+    // (Buffer.from silently truncates odd-length hex, so this catches that
+    // too.) `continue`, not `return false` — one bad candidate must never
+    // veto a good one sitting after it.
+    if (expected.length !== provided.length) continue;
+    // No early break: the loop's work stays independent of WHICH secret
+    // matched, and the candidate list is capped at MAX_V1_SIGNATURES anyway.
+    if (timingSafeEqual(expected, provided)) matched = true;
+  }
+  return matched;
 }
 
 // --- minimal, hand-written event shapes (no `stripe` SDK types) ------------

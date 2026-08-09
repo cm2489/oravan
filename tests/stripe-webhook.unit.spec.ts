@@ -169,6 +169,107 @@ test('verifyStripeSignature: replay tolerance is exact at the 300s boundary (Str
   );
 });
 
+// --- secret rolls: MULTIPLE v1 signatures in one header ---------------------
+
+/*
+ * THE 24-HOUR OUTAGE THIS FAMILY EXISTS TO PREVENT.
+ *
+ * Stripe's documented secret-roll procedure keeps the previous secret alive
+ * for up to 24 hours and, during that window, "generates one signature per
+ * secret" — so the header carries `t=...,v1=<sig_A>,v1=<sig_B>` and its own
+ * verification steps say to compare against EACH of the received signatures.
+ * This parser used to keep the FIRST v1 and discard the rest, so as soon as
+ * the server was updated to the new secret, every event whose new-secret
+ * signature was not in the first slot failed verification — a 400, which
+ * Stripe then retries for three days. Rolling a secret is a security
+ * operation; it must not be the thing that takes billing down.
+ *
+ * Position is what these tests vary, because position is exactly what the
+ * old code was sensitive to and what Stripe makes no promises about.
+ */
+function signPayloadMultiSecret(
+  secrets: string[],
+  payload: string,
+  timestamp: number = Math.floor(Date.now() / 1000)
+): string {
+  const sigs = secrets.map(
+    (s) => `v1=${createHmac('sha256', s).update(`${timestamp}.${payload}`).digest('hex')}`
+  );
+  return `t=${timestamp},${sigs.join(',')}`;
+}
+
+const OLD_SECRET = 'whsec_test_being_rolled_away';
+
+test('verifyStripeSignature: a single v1 signature still verifies (the everyday, non-rolling case)', () => {
+  const payload = '{"id":"evt_single"}';
+  const header = signPayloadMultiSecret([TEST_SECRET], payload);
+  expect(header.match(/v1=/g), 'fixture sanity: exactly one v1').toHaveLength(1);
+  expect(verifyStripeSignature(payload, header, TEST_SECRET)).toBe(true);
+});
+
+test('verifyStripeSignature: mid-roll header verifies when our secret signed the SECOND v1 — the discarded slot', () => {
+  const payload = '{"id":"evt_roll"}';
+  // The server has been updated to TEST_SECRET; Stripe still signs with the
+  // expiring OLD_SECRET too, and puts that one first. This is the exact
+  // shape that used to fail.
+  const header = signPayloadMultiSecret([OLD_SECRET, TEST_SECRET], payload);
+  expect(verifyStripeSignature(payload, header, TEST_SECRET)).toBe(true);
+  // ...and the reverse order, for the server that hasn't rotated yet: both
+  // halves of a roll have to keep working, or the roll is still an outage.
+  expect(verifyStripeSignature(payload, header, OLD_SECRET)).toBe(true);
+});
+
+test('verifyStripeSignature: our secret in the FIRST slot is not vetoed by a junk sibling after it', () => {
+  const payload = '{"id":"evt_roll_first"}';
+  const good = signPayloadMultiSecret([TEST_SECRET], payload);
+  // A well-formed-but-wrong signature, a wrong-length one, and a non-hex one
+  // all trailing the real thing. None may turn a valid request into a 400.
+  const header = `${good},v1=${'0'.repeat(64)},v1=ab,v1=not-hex-zz`;
+  expect(verifyStripeSignature(payload, header, TEST_SECRET)).toBe(true);
+});
+
+test('verifyStripeSignature: multiple v1 signatures, none of them ours -> rejected', () => {
+  const payload = '{"id":"evt_roll_none"}';
+  const header = signPayloadMultiSecret([OLD_SECRET, 'whsec_test_third_party'], payload);
+  expect(verifyStripeSignature(payload, header, TEST_SECRET)).toBe(false);
+});
+
+test('verifyStripeSignature: a tampered body is rejected even when several v1 signatures are offered', () => {
+  const payload = '{"id":"evt_roll_tamper"}';
+  const header = signPayloadMultiSecret([OLD_SECRET, TEST_SECRET], payload);
+  // Same header, different bytes: no candidate can match, and offering more
+  // candidates must not become a way to get a forged payload accepted.
+  expect(verifyStripeSignature('{"id":"evt_roll_tamper_EVIL"}', header, TEST_SECRET)).toBe(false);
+});
+
+test('verifyStripeSignature: a header of only malformed v1 values is rejected without throwing', () => {
+  const payload = '{"id":"evt_roll_malformed"}';
+  const t = Math.floor(Date.now() / 1000);
+  for (const header of [
+    `t=${t},v1=,v1=`,
+    `t=${t},v1=zz,v1=not-hex`,
+    `t=${t},v1=ab,v1=abc`, // valid hex, impossible digest lengths
+    `t=${t},v0=${'a'.repeat(64)}`, // v0 only — the deprecated scheme is never honored
+  ]) {
+    expect(() => verifyStripeSignature(payload, header, TEST_SECRET), header).not.toThrow();
+    expect(verifyStripeSignature(payload, header, TEST_SECRET), header).toBe(false);
+  }
+});
+
+test('verifyStripeSignature: a flood of junk v1 candidates is bounded and still rejects', () => {
+  const payload = '{"id":"evt_roll_flood"}';
+  const t = Math.floor(Date.now() / 1000);
+  const junk = Array.from({ length: 500 }, () => `v1=${'1'.repeat(64)}`).join(',');
+  const header = `t=${t},${junk}`;
+  expect(() => verifyStripeSignature(payload, header, TEST_SECRET)).not.toThrow();
+  expect(verifyStripeSignature(payload, header, TEST_SECRET)).toBe(false);
+
+  // The cap is a work bound, not a correctness hole in the honest direction:
+  // a real signature within the first MAX_V1_SIGNATURES still verifies.
+  const real = createHmac('sha256', TEST_SECRET).update(`${t}.${payload}`).digest('hex');
+  expect(verifyStripeSignature(payload, `t=${t},v1=${'1'.repeat(64)},v1=${real}`, TEST_SECRET)).toBe(true);
+});
+
 // --- S19: extractCheckoutSession's tosAcceptedAt field ----------------------
 
 test('extractCheckoutSession: consent.terms_of_service="accepted" -> tosAcceptedAt is the injected "now", never invented from nothing', () => {
@@ -402,16 +503,136 @@ test('checkout.session.completed guard: non-subscription mode is a silent no-op 
   expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
 });
 
-test('checkout.session.completed guard: unrecognized/missing tier is a silent no-op (200, zero writes)', async () => {
+/*
+ * AN UNPROVISIONED PAYING CUSTOMER MUST NOT BE A SILENT 200.
+ *
+ * This case used to be lumped in with "a stray session type" and answered
+ * 200 {ok:true}: nothing logged, and the 7-day idempotency claim consumed.
+ * That combination is what made it unrecoverable rather than merely wrong —
+ * Stripe's Dashboard "Resend" (good for 15 days) is the intended recovery
+ * for a mis-provisioned event, and it would have hit the standing claim and
+ * come back 'duplicate' without ever provisioning anyone. Meanwhile the
+ * customer's card is being charged monthly.
+ *
+ * The realistic trigger is not exotic: a Payment Link configured in the
+ * Dashboard with metadata tier "Pro" instead of the exact lowercase "pro",
+ * or a link created before the tier metadata existed at all.
+ */
+const UNRECOGNIZED_TIERS = [
+  ['a wrong-case tier ("Pro" vs "pro")', 'Pro'],
+  ['an unknown tier', 'enterprise'],
+  ['a tier with stray whitespace', ' pro '],
+  ['no tier metadata at all', null],
+] as const;
+
+for (const [index, [label, tier]] of UNRECOGNIZED_TIERS.entries()) {
+  test(`checkout.session.completed: ${label} on a real subscription checkout is refused loudly, not swallowed`, async () => {
+    process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+    restoreEnv = setUpstashEnv();
+    const mock = new MockUpstash();
+    restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+    const payload = checkoutSessionCompletedPayload({
+      eventId: `evt_guard_tier_${index}`,
+      tier,
+    });
+    const header = signPayload(TEST_SECRET, payload);
+
+    const errors: string[] = [];
+    const realError = console.error;
+    console.error = (...args: unknown[]) => errors.push(args.join(' '));
+    let res: Awaited<ReturnType<typeof POST>>;
+    try {
+      res = await POST(stripeRequest(payload, header));
+    } finally {
+      console.error = realError;
+    }
+
+    // Non-2xx, so Stripe retries and its own failure alerting engages.
+    expect(res.status, 'a paying customer going unprovisioned must not read as success').toBe(400);
+    expect(await res.json()).toEqual({ error: 'unrecognized_tier' });
+    // Still nothing provisioned - refusing must not half-write a tenant.
+    expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
+
+    // The owner can actually find out. Event id + the offending tier, and
+    // nothing that identifies a person.
+    expect(errors, 'the failure must be logged, not swallowed').toHaveLength(1);
+    expect(errors[0]).toContain('evt_guard_tier');
+    expect(errors[0]).toContain(tier === null ? '(absent)' : tier);
+    expect(errors[0], 'no customer identifier in the log line').not.toContain('cus_');
+    expect(errors[0], 'no subscription identifier in the log line').not.toContain('sub_');
+  });
+}
+
+test('checkout.session.completed: the unrecognized-tier refusal RELEASES the claim, so a Dashboard resend can still provision', async () => {
   process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();
   restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
 
-  const payload = checkoutSessionCompletedPayload({ eventId: 'evt_guard_tier', tier: 'enterprise' });
-  const res = await POST(stripeRequest(payload, signPayload(TEST_SECRET, payload)));
-  expect(res.status).toBe(200);
+  // The event Stripe delivers while the Payment Link is misconfigured.
+  const broken = checkoutSessionCompletedPayload({
+    eventId: 'evt_tier_recovery',
+    customer: 'cus_tier_recovery',
+    tier: 'Pro',
+  });
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    expect((await POST(stripeRequest(broken, signPayload(TEST_SECRET, broken)))).status).toBe(400);
+  } finally {
+    console.error = realError;
+  }
   expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
+
+  // THE RECOVERY PATH, which the silent 200 destroyed. The owner fixes the
+  // tier and replays the SAME event id (Dashboard "Resend" / `stripe events
+  // resend`). If the refusal had kept the claim, this would come back
+  // 'duplicate' and the customer would stay unprovisioned for 7 days.
+  const fixed = checkoutSessionCompletedPayload({
+    eventId: 'evt_tier_recovery',
+    customer: 'cus_tier_recovery',
+    tier: 'pro',
+  });
+  const retry = await POST(stripeRequest(fixed, signPayload(TEST_SECRET, fixed)));
+  expect(retry.status, 'the claim must have been released - this is a fresh delivery').toBe(200);
+  expect(await retry.json()).toEqual({ ok: true });
+  expect(parseTenantRecord(mock.store.get(tenantKey('cus_tier_recovery'))!.value)!.tier).toBe('pro');
+});
+
+test('checkout.session.completed: a session that is not a subscription checkout stays a silent 200 - only the money case is loud', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = TEST_SECRET;
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [TENANCY_URL]: mock });
+
+  // Stripe legitimately sends these forever. Answering non-2xx would put its
+  // three-day retry schedule behind events we are right to ignore, and an
+  // endpoint that keeps failing gets disabled - which would break the real
+  // provisioning this route exists for. Note the missing tier in each: it is
+  // the SUBSCRIPTION-ness, not the tier, that decides loud vs silent.
+  const cases = [
+    { eventId: 'evt_quiet_mode', mode: 'payment', tier: null },
+    { eventId: 'evt_quiet_setup', mode: 'setup', tier: null },
+    { eventId: 'evt_quiet_nosub', subscription: null, tier: null },
+    { eventId: 'evt_quiet_nocus', customer: null, tier: null },
+  ] as const;
+
+  const errors: string[] = [];
+  const realError = console.error;
+  console.error = (...args: unknown[]) => errors.push(args.join(' '));
+  try {
+    for (const c of cases) {
+      const payload = checkoutSessionCompletedPayload(c);
+      const res = await POST(stripeRequest(payload, signPayload(TEST_SECRET, payload)));
+      expect(res.status, c.eventId).toBe(200);
+      expect(await res.json(), c.eventId).toEqual({ ok: true });
+    }
+  } finally {
+    console.error = realError;
+  }
+  expect(mock.keys().filter((k) => k.startsWith('dev:tenant:'))).toHaveLength(0);
+  expect(errors, 'an ignorable session type must not shout in the logs either').toHaveLength(0);
 });
 
 // --- subscription lifecycle sync (route level) ------------------------------

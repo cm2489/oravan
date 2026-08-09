@@ -175,6 +175,15 @@ test('the next write persists the filtered list, so the bad row is gone for good
  * kept firing would make the retry fail for its own reason and prove
  * nothing about recovery.
  *
+ * AND IT ASKS FIRST. The boundary's erase used to be a one-click wipe, which
+ * is the worst place on the site for one: this boundary fires most often for
+ * reasons that are not stored data at all (a chunk fetch that 404s after a
+ * deploy), so the copy's own advice would talk a reader into destroying a
+ * real civic record to fix something a reload fixes. It now runs the exact
+ * two-step /record runs, reusing /record's own strings — the cases below
+ * click through both steps, and the case after them pins that ONE click
+ * still leaves the device untouched.
+ *
  * IT IS ARMED FOR THE RECORD ROUTE, not for "whichever storage listener
  * registers next". Every surface that reads the local store subscribes
  * through this same line — the home hero's ZipForm does it at hydration — so
@@ -228,7 +237,12 @@ for (const locale of ['en', 'es'] as const) {
     // sent the reader to.
     await expect(page.getByRole('heading', { level: 1, name: m.errorBoundary.title })).toBeVisible();
 
+    // Two steps, the same two /record uses — and the second one is the record
+    // page's own button, in this locale, which is what makes "reuse, don't
+    // re-translate" a fact rather than a claim in the source comment.
     await page.getByRole('button', { name: m.errorBoundary.erase }).click();
+    await expect(page.getByText(m.impact.eraseConfirm)).toBeVisible();
+    await page.getByRole('button', { name: m.impact.confirmErase }).click();
 
     // Recovered onto the real page, with the device wiped — the promise the
     // copy makes, end to end.
@@ -277,5 +291,60 @@ test('the escape hatch is there when the crash arrives via the header nav', asyn
 
   await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
   await page.getByRole('button', { name: en.errorBoundary.erase }).click();
+  await page.getByRole('button', { name: en.impact.confirmErase }).click();
   await expect(page.getByRole('heading', { level: 1, name: en.impact.title })).toBeVisible();
+});
+
+/*
+ * THE PANIC BUTTON ASKS FIRST — the half of the escape hatch that is about
+ * NOT losing data.
+ *
+ * A single click used to be the whole flow, and the boundary is exactly
+ * where that is most expensive: it renders for any client throw, and the
+ * commonest one on a static site has nothing to do with localStorage (a
+ * chunk fetch that 404s against a build that just replaced this one). A
+ * reader following the on-screen advice then wipes every call they have
+ * logged, everything they have read, their ZIP and their topics — to fix a
+ * problem that a reload fixes and an erase does not.
+ *
+ * Three claims, in the order they matter: one interaction destroys nothing;
+ * the question that appears is the one /record asks, word for word, so the
+ * reader is told the same thing about the same irreversible act wherever
+ * they meet it; and backing out leaves the device whole and the escape hatch
+ * still reachable.
+ */
+test('the boundary erase takes two interactions, and cancelling leaves the record intact', async ({
+  page,
+}) => {
+  const stored = {
+    'oravan.calls': JSON.stringify([CALL]),
+    'oravan.prefs': JSON.stringify({ zip: '78501', interests: ['health'] }),
+  };
+  await seed(page, stored);
+  await page.addInitScript(CRASH_ONCE_ON_RECORD_SUBSCRIBE);
+  await page.goto('/record');
+  await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
+
+  // INTERACTION ONE: the destructive-looking button. It must ask, not act.
+  await page.getByRole('button', { name: en.errorBoundary.erase }).click();
+  await expect(page.getByText(en.impact.eraseConfirm)).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      ['oravan.calls', 'oravan.prefs'].map((k) => localStorage.getItem(k))
+    ),
+    'one click must not have touched the device'
+  ).toEqual([stored['oravan.calls'], stored['oravan.prefs']]);
+  // Still on the boundary, too: asking is not recovering.
+  await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
+
+  // CANCEL: the way out of the way out. Nothing erased, hatch still open.
+  await page.getByRole('button', { name: en.impact.cancel }).click();
+  await expect(page.getByText(en.impact.eraseConfirm)).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      ['oravan.calls', 'oravan.prefs'].map((k) => localStorage.getItem(k))
+    ),
+    'cancelling must leave the record exactly as it was'
+  ).toEqual([stored['oravan.calls'], stored['oravan.prefs']]);
+  await expect(page.getByRole('button', { name: en.errorBoundary.erase })).toBeVisible();
 });

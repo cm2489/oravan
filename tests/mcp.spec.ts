@@ -155,7 +155,11 @@ test('anonymous rate limit is wired end-to-end: one caller cannot exceed 60 requ
   // too. Cross-instance durable semantics are pinned in
   // tests/ratelimit.unit.spec.ts against the mocked REST surface.
   const ip = test.info().project.name === 'webkit-mobile' ? '192.0.2.61' : '192.0.2.62';
-  let last: { status: number; body: string } = { status: 0, body: '' };
+  let last: { status: number; body: string; retryAfter: string | null } = {
+    status: 0,
+    body: '',
+    retryAfter: null,
+  };
   for (let i = 0; i < 61; i += 1) {
     const res = await request.post(MCP_ENDPOINT, {
       headers: {
@@ -165,10 +169,34 @@ test('anonymous rate limit is wired end-to-end: one caller cannot exceed 60 requ
       },
       data: { jsonrpc: '2.0', id: 1000 + i, method: 'tools/list', params: {} },
     });
-    last = { status: res.status(), body: await res.text() };
+    last = {
+      status: res.status(),
+      body: await res.text(),
+      retryAfter: res.headers()['retry-after'] ?? null,
+    };
   }
   // On a retry the counter is already saturated, so earlier calls in the
   // burst may 429 too - the invariant is that the 61st call never succeeds.
   expect(last.status).toBe(429);
   expect(JSON.parse(last.body)).toMatchObject({ error: 'rate_limited' });
+
+  /*
+   * A 429 has to say WHEN, and say it honestly: a Retry-After longer than
+   * the window it guards is a lie that costs an agent every retry until the
+   * window it was never told about actually resets. The day limiter shipped
+   * exactly that (a hardcoded 3600 against an 86,400s window) until
+   * fix/dynamic-surface-smalls; it now returns the limiter's own computed
+   * reset, clamped into (0, window].
+   *
+   * This burst can only reach the MINUTE window - the day window is 1,000
+   * requests and no harness here pays for that - so what is pinned here is
+   * the minute window's own contract: a positive Retry-After that never
+   * exceeds its 60s window. The day window's accuracy rides on
+   * RateLimiter.check(), pinned directly in tests/ratelimit.unit.spec.ts.
+   */
+  expect(last.retryAfter, 'a 429 must tell the caller when to come back').not.toBeNull();
+  const retryAfterSec = Number(last.retryAfter);
+  expect(Number.isInteger(retryAfterSec)).toBe(true);
+  expect(retryAfterSec).toBeGreaterThan(0);
+  expect(retryAfterSec, 'never longer than the window it guards').toBeLessThanOrEqual(60);
 });

@@ -6,6 +6,7 @@
  *   node scripts/moment-watch.mjs --mode=weekly   # Monday: the full shortlist + what changed
  *   node scripts/moment-watch.mjs --mode=push --json
  *   node scripts/moment-watch.mjs --mode=push --commit-seen   # persist the seen-set
+ *   node scripts/moment-watch.mjs --mode=push --commit-seen --filed=hr-1-119,s-2-119
  *   node scripts/moment-watch.mjs --mode=weekly --now=2026-08-05T12:00:00Z
  *
  * WHY THIS EXISTS. scripts/moment-candidates.mjs has been a complete, correct
@@ -159,6 +160,52 @@ export function passesFloors(c, { now, openSlots }) {
   }
 
   return { pass: why.length === 0, why };
+}
+
+/**
+ * The slugs a `--commit-seen` run is allowed to write.
+ *
+ * THE INVARIANT. A slug may enter the committed seen-set ONLY if its issue
+ * actually exists — created by this run, or already open/closed from an
+ * earlier one. Before this function existed the seen-set was simply
+ * "everything above the floor", which is correct only when every issue got
+ * filed.
+ *
+ * WHICH IS NOT THE INCIDENT, and the distinction matters. #167–#169 really did
+ * re-file as #173–#175, but the cause was the untracked-file guard in
+ * .github/workflows/moment-watch.yml — `git diff` exits 0 for a file git has
+ * never seen — fixed in #176. What this function closes is the OTHER route to
+ * the identical outcome, which #176 did not touch and which has not been
+ * observed to fire: the issue loop ran `gh issue create` bare under `bash -e`,
+ * so one failed call would kill the step, the commit step would never run, and
+ * the next night would re-file every candidate — including the ones whose
+ * issues had just been created. Same destination, different door.
+ *
+ * Committing "everything qualifying" after a partial loop would have been the
+ * mirror-image bug: the failed candidate marked delivered and silently
+ * dropped. Hence an invariant rather than a patch.
+ *
+ * So the arithmetic is exactly: hold back the slugs this run OWED an issue and
+ * did not get one for; write everything else. Nothing more is held back, which
+ * is what stops a filed issue from ever re-filing, and nothing less, which is
+ * what stops a failed one from being swallowed.
+ *
+ * @param {object} args
+ * @param {string[]} args.qualifying  every slug above the floor right now
+ * @param {string[]} args.newly       the subset this run owed an issue
+ * @param {string[]|null} [args.filed]  the subset whose issue is confirmed to
+ *   exist. `null` — the flag absent — means the caller is not tracking
+ *   per-candidate delivery, and every qualifying slug is written: the exact
+ *   behaviour this script had before the flag, kept so a hand-run
+ *   `--commit-seen` is unchanged.
+ * @returns {string[]} sorted, ready to write
+ */
+export function seenSetAfter({ qualifying, newly, filed = null }) {
+  const sorted = [...qualifying].sort();
+  if (filed === null) return sorted;
+  const confirmed = new Set(filed);
+  const held = new Set(newly.filter((s) => !confirmed.has(s)));
+  return sorted.filter((s) => !held.has(s));
 }
 
 /** Previously-notified slugs. Missing file = first run, everything is new. */
@@ -445,6 +492,11 @@ async function main(argv) {
   const seen = readSeen();
   const seenSet = new Set(seen.slugs);
   let newly = qualifying.filter((c) => !seenSet.has(c.slug));
+  /* Captured BEFORE --only narrows `newly` below. The seen-set arithmetic at
+     the bottom has to reason about every slug this run OWES an issue, not the
+     one slug a render happened to be asked for — otherwise `--only` combined
+     with `--commit-seen` would mark the other candidates delivered. */
+  const newlySlugs = newly.map((c) => c.slug);
   const dropped = seen.slugs.filter((s) => !qualifyingSlugs.includes(s));
 
   /* --only=<slug> narrows the push body to one candidate so the workflow can
@@ -515,10 +567,23 @@ async function main(argv) {
      mark candidates as delivered, or the very first accidental invocation
      silently swallows the backlog. */
   if (has('commit-seen')) {
+    /* --filed=<slug,slug,…> is the delivery receipt: the slugs whose issue the
+       caller confirmed exists. Absent, every qualifying slug is written (the
+       pre-2026-08-08 behaviour); present, a newly-qualifying slug missing from
+       it is held back so the next run re-files it. `--filed=` with an EMPTY
+       value is meaningful and distinct from omitting the flag — it says "the
+       loop filed nothing", which is why this reads the raw arg rather than
+       coalescing it. See seenSetAfter for the invariant and the incident. */
+    const filedArg = arg('filed');
+    const filed = filedArg === undefined ? null : filedArg.split(',').map((s) => s.trim()).filter(Boolean);
+    const nextSlugs = seenSetAfter({ qualifying: qualifyingSlugs, newly: newlySlugs, filed });
+    const held = newlySlugs.filter((s) => !nextSlugs.includes(s));
+    if (held.length) {
+      console.error(`held out of the seen-set (no issue was filed, so they retry next run): ${held.join(', ')}`);
+    }
     /* Only touch the file when the set itself moves: _meta.updated changes on
        every write, so an unconditional rewrite would hand the workflow a
        timestamp-only diff to commit — and therefore deploy — nightly. */
-    const nextSlugs = [...qualifyingSlugs].sort();
     if (JSON.stringify(nextSlugs) !== JSON.stringify([...seen.slugs].sort())) {
       writeFileSync(
         path(SEEN_PATH),

@@ -15,7 +15,38 @@ export interface Prefs {
   interests?: string[];
 }
 
+/**
+ * The page a stored record's slug points at.
+ *
+ * `billSlug` STOPPED BEING BILLS-ONLY when nominations got a call rail:
+ * components/ActionPanel.tsx logs an outcome on a nomination page with the
+ * nomination's own `pn-…` slug in that field, and /record linked every row to
+ * `/bills/<slug>` — a guaranteed 404, reached from the reader's own civic
+ * record, on the page whose entire job is to show them their work was real.
+ *
+ * READ, DON'T STORE. The alternative was a `kind` field on the record, and it
+ * was rejected: every row already written — every call any beta reader has
+ * logged on a nomination — carries no such field, so a stored discriminator
+ * would need a default, the default would have to be `bill`, and the existing
+ * broken rows would stay broken forever. The prefix is not a heuristic; it is
+ * an enforced namespace. scripts/nominations-fetch.mjs's nominationSlug()
+ * emits `pn-` on every nomination and congress-fetch.mjs's slugOf() emits
+ * `hr-`/`s-`/`hjres-`/`sjres-`/`hconres-`/`sconres-` on every bill — a
+ * disjointness both corpora are swept for (tests/nomination-status.unit.spec.ts
+ * asserts it over all 878 records). So the prefix answers this exactly, for
+ * rows written before this function existed as well as after.
+ *
+ * The field keeps its name. Renaming it would orphan every stored row for a
+ * cosmetic gain; the name is a historical fact about the schema, and this
+ * comment is where that is written down.
+ */
+export function recordHref(slug: string): string {
+  return slug.startsWith('pn-') ? `/nominations/${slug}` : `/bills/${slug}`;
+}
+
 export interface CallRecord {
+  /** The vehicle's slug — a bill slug OR a `pn-…` nomination slug. Route it
+   *  with recordHref() above, never by hardcoding `/bills/`. */
   billSlug: string;
   /** The label in the locale the interaction happened in — and the only
    *  label rows written before 2026-08 carry (render fallback). */
