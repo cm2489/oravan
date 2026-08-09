@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-09T02:25:08.580Z"
+    "generated_at": "2026-08-09T08:18:50.192Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -612,7 +612,33 @@
         "ai": true
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [
+      {
+        "id": "s_26c7bc78",
+        "generated_at": "2026-08-09T08:18:57.401Z",
+        "as_of_day": "2026-08-09",
+        "text": {
+          "en": "S. 3172 sits on the Senate floor calendar. On July 27, 2026, the Committee on Foreign Relations reported the bill without amendment, without a written report, with Senator Risch handling the report. The same day, the bill was placed on the Senate Legislative Calendar under General Orders as Calendar No. 501. No other floor action has occurred on S. 3172 in the last 14 days. The bill has not received a floor vote. There is no roll-call tally to report at this stage, since the measure has not reached a vote on the Senate floor. Its position remains listing on the calendar awaiting further Senate action.",
+          "es": "El proyecto S. 3172 se encuentra en el calendario del pleno del Senado. El 27 de julio de 2026, el Comité de Relaciones Exteriores lo aprobó sin enmiendas y sin informe escrito, con el senador Risch a cargo del informe. Ese mismo día, el proyecto fue colocado en el Calendario Legislativo del Senado bajo Órdenes Generales, como Calendario Núm. 501. No se registró ninguna otra acción en el pleno sobre el S. 3172 en los últimos 14 días. El proyecto no ha recibido una votación en el pleno. No hay votación nominal que reportar en esta etapa, ya que la medida no ha llegado a una votación en el Senado. Su posición sigue siendo la de estar listado en el calendario, a la espera de una acción posterior del Senado."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_52b9130f",
+            "u_6a51c314"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      }
+    ]
   },
   "paying-college-athletes": {
     "updates": [
@@ -721,7 +747,32 @@
         "ai": true
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [
+      {
+        "id": "s_5d3739fb",
+        "generated_at": "2026-08-09T08:19:04.007Z",
+        "as_of_day": "2026-08-09",
+        "text": {
+          "en": "S. 4668 sits on the Senate floor calendar. The most recent action came on August 5, 2026, when a cloture motion on the motion to proceed to the measure was presented in the Senate, as recorded in the Congressional Record (CR S4449). No other floor action on this measure has occurred in the past 14 days. The bill has not advanced beyond this point since that filing. No vote tally on the cloture motion has been recorded in this window. The measure remains where it was placed on the calendar, with the cloture motion as the latest entry in its record.",
+          "es": "El S. 4668 se encuentra en el calendario del pleno del Senado. La acción más reciente ocurrió el 5 de agosto de 2026, cuando se presentó en el Senado una moción de cierre de debate sobre la moción para proceder a la medida, según consta en el Registro del Congreso (CR S4449). No se ha registrado ninguna otra acción sobre esta medida en los últimos 14 días. El proyecto no ha avanzado más allá de este punto desde esa presentación. No se ha registrado ninguna votación sobre la moción de cierre en este período. La medida permanece donde fue colocada en el calendario, con la moción de cierre como el registro más reciente."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_d6d43314"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      }
+    ]
   },
   "annual-defense-policy": {
     "updates": [
@@ -835,6 +886,29 @@
         "ai": true
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [
+      {
+        "id": "s_366592aa",
+        "generated_at": "2026-08-09T08:19:09.166Z",
+        "as_of_day": "2026-08-09",
+        "text": {
+          "en": "S. 4784 sits on the floor calendar. No action on this bill has been recorded in the last 14 days. The record shows no committee votes, no floor votes, and no roll-call tallies during this period. The bill's position has not changed from where it was placed on the calendar. There is nothing further in the official record to report about movement, scheduling, or debate on this measure over the past two weeks. The floor calendar placement remains the most recent recorded status for S. 4784 at this time.",
+          "es": "El proyecto S. 4784 se encuentra en el calendario del pleno. No se ha registrado ninguna acción sobre este proyecto en los últimos 14 días. El registro no muestra votaciones en comité, votaciones en el pleno, ni resultados de votación nominal durante este período. La posición del proyecto no ha cambiado desde que fue colocado en el calendario. No hay más información en el registro oficial sobre movimiento, programación o debate de esta medida durante las últimas dos semanas. La colocación en el calendario del pleno sigue siendo el estado registrado más reciente para el S. 4784."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      }
+    ]
   }
 }

@@ -10,12 +10,19 @@ import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
-import { billSlug, getAllBills, getNewsBills, getTopActions, hasActNow } from '@/lib/core';
+import {
+  billSlug,
+  getAllBills,
+  getFloorFeatureCandidates,
+  getNewsBills,
+  getTopActions,
+  hasActNow,
+} from '@/lib/core';
 import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { floorCalendarChamber, statusKeyFor } from '@/lib/journey';
+import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
 import { momentDek } from '@/lib/moments-ui';
@@ -46,13 +53,22 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  *    2026-07-31 FLIP MOVED IT ABOVE THE WEEK and changed nothing about that
  *    law: the colour law governs how many grounds a page has and what earns
  *    green, never their order. So the page still has two full-bleed grounds,
- *    still exactly one green one, and green still means only ever "a vote is
- *    on the calendar." (The site footer is the page's back cover and is exempt.)
+ *    still exactly one green one, and green still means only ever ONE DATED
+ *    FLOOR FACT from the record — the bill is on the floor calendar, or a
+ *    floor vote on it is still pending (owner ruling 2026-08-09; before it,
+ *    calendar placements only, which left the crown structurally blind to the
+ *    week's real floor fights). (The site footer is the page's back cover and
+ *    is exempt.)
  *
- * 2. EXACTLY ONE BILL takes that panel, chosen by selectFloorVoteFeature().
- *    The corpus is HOT — every bill in this week's shortlist currently
- *    carries `floor_vote` — so the cap is the entire mechanism. Everything
- *    else in the week is a plain ruled listing.
+ * 2. EXACTLY ONE BILL takes that panel, chosen by selectFloorVoteFeature()
+ *    over getFloorFeatureCandidates() — the WHOLE decoded floor_vote pool
+ *    above the "Act now" floor, not the 4-card shortlist. The corpus is HOT —
+ *    every bill in this week's shortlist currently carries `floor_vote` — so
+ *    the cap is the entire mechanism, but the cap belongs to the selector and
+ *    must never be smuggled in as a short candidate list: until 2026-08-09
+ *    the crown was picked out of getTopActions(4), so a busy floor day could
+ *    crowd out the one bill with a live floor fact and the page showed no
+ *    crown at all. Everything else in the week is a plain ruled listing.
  *
  * 3. EVERY CALLABLE BILL LINK stays inside section[aria-labelledby=
  *    "top-actions"]. The funnel and freshness specs both read that boundary,
@@ -84,6 +100,18 @@ const ROUTE = [
   { key: 3, seconds: 60 },
   { key: 4, seconds: 150 },
 ] as const;
+
+/*
+ * The crown's amber chip, one key per (fact × chamber) — a table rather than
+ * a ternary because there are four sentences now and every one of them is a
+ * claim about the record. `selectFloorVoteFeature` returns both coordinates
+ * from the one sentence it read, so nothing here decides anything; it only
+ * looks up the copy. All four keys exist in EN and ES (bill.floor.*).
+ */
+const FLOOR_LABEL_KEYS = {
+  calendar: { house: 'bill.floor.calendarHouse', senate: 'bill.floor.calendarSenate' },
+  pending: { house: 'bill.floor.pendingHouse', senate: 'bill.floor.pendingSenate' },
+} as const;
 
 // Homepage had zero metadata override before this pass — no canonical, no
 // hreflang alternates — so every locale's title/description fell through to
@@ -220,19 +248,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   // DATA-GATED LOUDNESS. One call, at the data layer, so the cap-to-one can
   // never be broken by a component that cannot see its siblings. `feature`
-  // is null on a week with no floor-calendar bill — and then the page is an
-  // unbroken paper column, which is the point.
-  const feature = selectFloorVoteFeature(top);
-  const listed = top.filter((b) => b !== feature);
-  // The selector guarantees the feature's own last action says "Placed on …
-  // Calendar", so the chamber is read out of that sentence — the same
-  // derivation the bill page's amber gate uses — and the panel's claim names
-  // the TRUE chamber (a House bill can stand on the Senate's calendar).
-  const featureChamber = feature ? floorCalendarChamber(feature.last_action_text) : null;
+  // is null on a week where the record shows no live floor fact — and then
+  // the page is an unbroken paper column, which is the point.
+  //
+  // THE POOL IS NOT THE SHORTLIST (2026-08-09). It reads every decoded
+  // floor_vote bill over the same "Act now" floor, untruncated, because a
+  // rank-4 cut across all statuses was silently deciding whether the crown
+  // appeared at all: on a busy cloture day the bill with the live floor fact
+  // can sit well below rank 4. The cap-to-one is unchanged — it lives in the
+  // selector, which reads the whole pool and returns at most one bill.
+  //
+  // ONE CALL, ONE TRUTH: the selector returns the bill, the FACT it earned
+  // the panel on (`kind`) and the chamber that fact names, all read from the
+  // same sentence. Nothing here re-derives any of the three.
+  const feature = selectFloorVoteFeature(getFloorFeatureCandidates(locale));
+  // Slug equality, NEVER reference equality. localizeBill() returns a fresh
+  // object on /es, and the pool is localized independently of `top`, so
+  // `b !== feature.bill` was true for the crown's own bill on the Spanish
+  // page — it wore the crown AND appeared again in the listing under it. An
+  // English-only check cannot see this; tests/landing.spec.ts drives both.
+  const featureSlug = feature ? billSlug(feature.bill) : null;
+  const listed = top.filter((b) => billSlug(b) !== featureSlug);
   // The week wears its green crown (masthead fused onto the panel) exactly
   // when the panel itself renders — same condition, one name, so the seam
   // classes below can never disagree with the crown's presence.
-  const crowned = Boolean(feature?.last_action_date);
+  const crowned = Boolean(feature?.bill.last_action_date);
 
   // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
   // 2026-08-02, finding #8: the featured bill appeared in the hero card,
@@ -249,9 +289,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // never reached it, and would have crashed if it had. On a corpus where
   // no shortlisted bill carries a decode, the hero simply has no card —
   // the existing honest-quiet behavior.
-  const featureSlug = feature ? billSlug(feature) : null;
   const specimenBill =
-    top.find((b) => billSlug(b) !== featureSlug && b.ai_headline) ?? feature ?? null;
+    top.find((b) => billSlug(b) !== featureSlug && b.ai_headline) ?? feature?.bill ?? null;
   const specimen = specimenBill?.ai_headline ? specimenBill : null;
   // NewsBill carries its slug directly; filter the crown's bill out of the
   // coverage grid it already headlines 500px above.
@@ -535,14 +574,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             The Stamp lives here now — still once per page, still the sole
             printed sync date; it certifies the whole week, panel included. */}
         {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
-            selectFloorVoteFeature() above holds the cap AND the calendar gate
-            (the record's own "Placed on … Calendar" sentence — home.weekNote
-            promises exactly that fact, so a cloture motion or a rejected
-            motion to proceed can never wear the crown). The date printed is
-            the calendar-PLACEMENT date the corpus actually holds — no bill in
-            data/bills.json carries a forward-looking scheduled-vote date, so
-            no mark here claims one. */}
-        {feature?.last_action_date ? (
+            selectFloorVoteFeature() above holds the cap AND the floor gate —
+            the record's own "Placed on … Calendar" sentence, OR a floor vote
+            still ahead of the bill (cloture filed, motion to proceed made,
+            proceedings postponed, a rule reported). home.weekNote promises
+            exactly those two facts and nothing else, so a REJECTED motion to
+            proceed or a cloture motion that was not invoked can never wear
+            the crown (lib/journey.ts's settled guard). The date printed is the
+            date of that action — no bill in data/bills.json carries a
+            forward-looking scheduled-vote date, so no mark here claims one. */}
+        {feature?.bill.last_action_date ? (
           // Seam 8B: flush against the band above (no margin), joined by the
           // crown's own 3px top rule in the band's bright link green — one
           // luminous line where ink meets enamel. When the band is absent
@@ -573,20 +614,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <FloorVotePanel
               flush
               headingLevel={3}
-              status={feature.status}
-              dateLabel={billDate(feature.last_action_date)}
-              calendarLabel={tShared(
-                featureChamber === 'senate' ? 'bill.floor.calendarSenate' : 'bill.floor.calendarHouse'
-              )}
-              identifier={formatCitation(feature.bill_type, feature.bill_number)}
-              headline={feature.ai_headline ?? feature.short_title ?? feature.title}
-              href={getPathname({ locale, href: `/bills/${billSlug(feature)}` })}
+              status={feature.bill.status}
+              dateLabel={billDate(feature.bill.last_action_date)}
+              // The chip prints the fact the selector actually found, in the
+              // chamber the record itself names (a House bill can stand on
+              // the Senate's calendar), so the two can never disagree.
+              calendarLabel={tShared(FLOOR_LABEL_KEYS[feature.kind][feature.chamber])}
+              identifier={formatCitation(feature.bill.bill_type, feature.bill.bill_number)}
+              headline={
+                feature.bill.ai_headline ?? feature.bill.short_title ?? feature.bill.title
+              }
+              href={getPathname({ locale, href: `/bills/${billSlug(feature.bill)}` })}
               ctaLabel={t('floorCta')}
               meta={
                 <>
-                  {feature.issue_tags?.[0] && (
+                  {feature.bill.issue_tags?.[0] && (
                     <Chip tone="tag" ground="go">
-                      {tShared(`categories.${feature.issue_tags[0]}`)}
+                      {tShared(`categories.${feature.bill.issue_tags[0]}`)}
                     </Chip>
                   )}
                   <Chip tone="ai" ground="go" marker={t('aiMarker')}>
@@ -682,7 +726,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               claim (owner finding 2026-08-01), so the panel-less week gets
               the sentence without the panel in it. */}
           <p className="mt-8 max-w-note text-sm text-ink-2">
-            {feature?.last_action_date ? t('weekNote') : t('weekNoteQuiet')}
+            {feature?.bill.last_action_date ? t('weekNote') : t('weekNoteQuiet')}
             <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
 
