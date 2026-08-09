@@ -207,7 +207,15 @@ test.describe('nominationContentVersion', () => {
   test('the bill and nomination version hashes are separate lineages', () => {
     expect(typeof PROMPT_VERSION).toBe('string');
     expect(typeof NOMINATION_PROMPT_VERSION).toBe('string');
-    expect(contentVersion(record)).not.toBe(nominationContentVersion(record, 'senator'));
+    // A bill whose whole substantive content IS this record — the closest the
+    // bill hash can come to the nomination hash's input, and still a miss.
+    const asBill = {
+      title: record,
+      ai_summary: record,
+      status: 'committee' as const,
+      last_action_date: null,
+    };
+    expect(contentVersion(asBill)).not.toBe(nominationContentVersion(record, 'senator'));
   });
 });
 
