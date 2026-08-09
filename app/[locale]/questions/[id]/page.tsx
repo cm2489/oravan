@@ -470,7 +470,7 @@ export default async function MomentPage({
             <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
               {t(`moments.${vehiclesKey.heading}`)}
             </h2>
-            <p className="mt-2 max-w-read text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
             {/* Every card below leads with an AI-decoded headline, and the card's
                 CTA is the phone call — so this was the one place on the site where
                 unlabeled AI text sat directly on the control that drives a call
@@ -493,7 +493,7 @@ export default async function MomentPage({
                 fell back to its official title — including a nomination card,
                 whose headline is Congress.gov's own sentence verbatim. */}
             <p className="mt-5">
-              <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+              <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
                 {t('moments.vehiclesAiNote')}
               </Chip>
             </p>
@@ -589,7 +589,7 @@ export default async function MomentPage({
                 what the sentence quantifies over; the per-card version of the
                 same question is `nominationCtaKey` on the grid above. A bill-only
                 moment keeps `moments.bothNote` byte for byte — see bothNoteKey. */}
-            <p className="mt-6 max-w-read text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
+            <p className="mt-6 max-w-note text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
           </section>
 
           {/* 6 · Why this Moment exists — in the rail, directly under the cards.
@@ -600,7 +600,7 @@ export default async function MomentPage({
             <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
               {t('moments.whyHeading')}
             </h2>
-            <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.whyCriteria')}</p>
+            <p className="mt-3 max-w-note text-sm text-ink-2">{t('moments.whyCriteria')}</p>
 
             <p className="mt-5 text-sm font-bold text-ink">{t('moments.signalLabel')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -635,7 +635,7 @@ export default async function MomentPage({
             {moment.context_refs && moment.context_refs.length > 0 && (
               <>
                 <p className="mt-5 text-sm font-bold text-ink">{t('moments.updates.refsLabel')}</p>
-                <ul className="mt-2 max-w-read list-none">
+                <ul className="mt-2 max-w-note list-none">
                   {moment.context_refs.map((ref) => (
                     <li
                       key={ref.url}
