@@ -56,13 +56,30 @@
  * fabricating. The prompt says so twice and FUTURE_VOTE below rejects the
  * constructions mechanically, in both languages, alongside the two lints.
  *
+ * NO INTERNAL ENUM EVER REACHES THE MODEL, and this is a rule with a body
+ * count. scripts/moment-updates.mjs's first live run leaked the raw token
+ * "floor_vote" into published prose in both languages. The record block then
+ * leaked a second one for months in a subtler shape — "press: neutral
+ * coverage across 3 outlet(s)" handed the model `neutral`, which is a verdict
+ * of OUR AllSides lookup table ("two or more outlets, none of them
+ * lean-rated") and not a description of anybody's reporting, and it shipped as
+ * a published characterization of the press. Both are the same failure: an
+ * internal classification read as a fact about the world. So the record block
+ * carries only facts a reader could check against the record printed beside
+ * it, every classification is stated as a fact about the table that produced
+ * it, and enumLeaks() below re-checks the finished block against the known
+ * enum vocabularies before a single token is spent (2026-08-09).
+ *
  * IMPORT DISCIPLINE, and no module-scope I/O: this file opens nothing, reads
  * no env, and constructs no client at import time — the Anthropic client is a
  * PARAMETER of every function that could spend money, which is what lets the
  * unit suite drive the outage, the garbage reply, and the dirty draft with
  * zero network. Same rule as scripts/moment-updates.mjs's exported halves.
+ * Two imports, both pure: the inherited lint, and the status-label gate that
+ * scripts/moment-candidates.mjs carries import-free from lib/journey.ts.
  */
 import { lintRevisionText } from '../lib/moment-updates-gate.mjs';
+import { statusKeyFor } from './moment-candidates.mjs';
 
 /**
  * Sonnet 5, matching scripts/moment-updates.mjs's summary model: this is the
@@ -75,8 +92,12 @@ export const DRAFT_MODEL = 'claude-sonnet-5';
 /** Bumped whenever the prompt below changes in a way that changes output.
  *  Printed in the issue so a bad batch of drafts is attributable.
  *  v2 (2026-08-09): names are bare noun phrases — the "The <subject>
- *  question" wrapper is retired by owner ruling. */
-export const DRAFT_PROMPT_VERSION = 2;
+ *  question" wrapper is retired by owner ruling.
+ *  v3 (2026-08-09): the RECORD BLOCK changed. The status label now routes
+ *  through statusKeyFor, so a cloture-motion bill no longer reads as "On the
+ *  floor calendar"; the press line no longer carries the coverage-tier enum.
+ *  Drafts written under v2 saw a different, and in two ways wronger, record. */
+export const DRAFT_PROMPT_VERSION = 3;
 
 /** The three slots a scaffold leaves empty. Order is display order. */
 export const DRAFT_FIELDS = ['name', 'summary', 'role'];
@@ -146,16 +167,32 @@ export function blankDraft(notes = []) {
 }
 
 /**
- * The complete, closed record a draft may be grounded in. Everything here is
+ * The complete, closed record a draft may be grounded in. Every fact here is
  * ALSO printed in the issue by scripts/moment-watch.mjs, which is the point:
  * "every claim is traceable to the record in the issue" is only checkable if
- * the model and the reader were handed the same facts.
+ * the model and the reader were handed the same facts. (The two RENDER
+ * differently — the issue prints a markdown block for a human, recordLines
+ * prints one fact per line for the prompt — but neither carries a fact the
+ * other does not.)
  *
  * `statusPhrases` is the UI's own `bills.status.*` vocabulary from
  * messages/*.json, passed in rather than read here (no module-scope I/O) and
- * never copied into a local table. The raw enum must never reach the model:
- * scripts/moment-updates.mjs's first live run leaked "floor_vote" into
- * published prose in both languages, and this is the same class of prompt.
+ * never copied into a local table.
+ *
+ * THE STATUS LABEL GOES THROUGH THE GATE, not straight into the phrase table.
+ * `bills.status[c.status]` was the bug: `floor_vote` is derived looser than
+ * "On the floor calendar" claims, so s-4668-119 (status floor_vote, last
+ * action a cloture motion) handed the model a record block that said BOTH
+ * "where it stands: On the floor calendar" AND "floor calendar: not on a
+ * floor calendar", and the draft resolved toward the label. statusKeyFor
+ * (lib/journey.ts, carried import-free in scripts/moment-candidates.mjs) is
+ * the gate every other status-printing surface routes through; a prompt is a
+ * printing surface.
+ *
+ * ONE DECISION, BOTH LINES. `floorCalendar` is derived from that same key
+ * rather than from `c.floorCalendar`, so the record block cannot contradict
+ * itself again from a different direction: the label and the calendar line
+ * are now two renderings of one answer.
  *
  * @param {Record<string, any>} c        one entry of buildReport().candidates
  * @param {Record<string, any>} [bill]   its data/bills.json row, for the two
@@ -164,42 +201,124 @@ export function blankDraft(notes = []) {
  *        messages/*.json `bills.status`, per language
  */
 export function groundFor(c, bill, statusPhrases = null) {
+  const lastActionText = bill?.last_action_text ?? null;
+  const statusKey = statusKeyFor(c.status, lastActionText);
   const phrase = (lang) =>
-    statusPhrases?.[lang]?.[c.status] ?? String(c.status ?? '').replace(/_/g, ' ');
+    statusPhrases?.[lang]?.[statusKey] ?? String(statusKey ?? '').replace(/_/g, ' ');
   return {
     slug: c.slug,
     citation: c.citation,
     title: bill?.title ?? null,
     headline: c.headline ?? null,
     status: c.status,
+    statusKey,
     statusEn: phrase('en'),
     statusEs: phrase('es'),
     lastActionDate: c.lastActionDate ?? null,
-    lastActionText: bill?.last_action_text ?? null,
+    lastActionText,
     tier: c.tier,
     outlets: c.outlets,
-    floorCalendar: Boolean(c.floorCalendar),
+    /** True iff the bill's OWN last action says a chamber placed it on a
+     *  calendar — the same answer statusKey gives, never a second one. */
+    floorCalendar: statusKey === 'floor_vote',
     floorChamber: c.floorChamber ?? null,
+    /** Whether ANY outlet covering this bill carries a lean rating in our own
+     *  media-bias table. A fact about the table, not about the press — see
+     *  recordLines for why the tier enum itself never travels. */
+    leanRated: (c.leans ?? []).some((l) => l === 'left' || l === 'right'),
     url: c.url ?? null,
   };
 }
 
 /**
- * The record, one fact per line. Rendered into the prompt AND into the issue
- * body, from this one function, so the two can never disagree about what the
- * draft was allowed to know.
+ * The record, one fact per line — the ENTIRE ground the prompt gives the
+ * model, and the thing enumLeaks() is run over before any of it is sent.
+ *
+ * THE PRESS LINE IS DELIBERATELY THIN. It used to read "press: neutral
+ * coverage across 3 outlet(s)", which handed over the internal tier enum as
+ * though it described the journalism. `neutral` is a verdict of our AllSides
+ * lookup — it means "two or more outlets and none of them is lean-rated in
+ * OUR table" — and a model told that a bill has "neutral coverage" will
+ * reasonably write that the press covered it neutrally, which is a claim
+ * nobody here is entitled to make and which duly shipped. What survives is
+ * what a reader could check: how many outlets, and whether our table rates
+ * any of them at all, said as a fact about the table.
+ *
+ * "(not on file)" rather than "(none on file)" is not a style edit: `none` is
+ * itself a coverage-tier value, and a placeholder shaped like an enum is
+ * exactly what the guard below exists to keep out of the block.
  */
 export function recordLines(g) {
   return [
     `citation: ${g.citation}`,
-    `official title: ${g.title ?? '(none on file)'}`,
-    `plain-language headline (AI-decoded, already published on the bill page): ${g.headline ?? '(none on file)'}`,
+    `official title: ${g.title ?? '(not on file)'}`,
+    `plain-language headline (AI-decoded, already published on the bill page): ${g.headline ?? '(not on file)'}`,
     `where it stands: EN "${g.statusEn}" / ES "${g.statusEs}"`,
-    `last action, ${g.lastActionDate ?? 'undated'}: ${g.lastActionText ?? '(none on file)'}`,
-    `press: ${g.tier} coverage across ${g.outlets} outlet(s)`,
+    `last action, ${g.lastActionDate ?? 'undated'}: ${g.lastActionText ?? '(not on file)'}`,
+    `news coverage: ${g.outlets} outlet(s) in Oravan's stored coverage for this bill; ` +
+      `Oravan's own media-bias table gives a lean rating to ${g.leanRated ? 'at least one' : 'zero'} of them. ` +
+      'That is a fact about that table, not a description of the reporting, and not something to write about.',
     `floor calendar: ${g.floorCalendar ? `on the ${g.floorChamber ?? 'unnamed'} floor calendar (a placement — the record states no date)` : 'not on a floor calendar'}`,
-    `official record: ${g.url ?? '(none on file)'}`,
+    `official record: ${g.url ?? '(not on file)'}`,
   ];
+}
+
+/**
+ * The internal vocabularies that must never travel to the model as facts.
+ *
+ * Every token here is a value some part of this repo stores in a field: bill
+ * statuses (data/bills.json `status`, plus `floor_activity`, which exists only
+ * as a derived message key), coverage tiers (scripts/moment-candidates.mjs
+ * coverageTier), qualifying-signal types (lib/moments-gate.mjs SIGNAL_TYPES),
+ * and stored moment statuses. Listed literally rather than imported: this
+ * guard has to keep working when a list moves, and the point is the SHAPE of
+ * the leak rather than any one list's current contents.
+ *
+ * SIX BILL STATUSES ARE DELIBERATELY ABSENT — introduced, committee, markup,
+ * conference, signed, vetoed. Each is its own published English label ("In
+ * committee", "In markup", "Signed into law"), so scanning for them would fire
+ * on the correct, human-facing rendering of exactly the fact the line is there
+ * to state. A guard that cannot tell the label from the enum is noise, and
+ * noise here degrades every draft to blank. The tokens that remain are the
+ * ones that CANNOT appear except by interpolating a stored value: the
+ * snake_case statuses, the tier words (which are our verdicts, not English
+ * descriptions of coverage), the signal types, and the stored moment statuses.
+ */
+export const INTERNAL_ENUM_TOKENS = [
+  // bill status (data/bills.json) + the derived label key — see the note above
+  'floor_vote', 'floor_activity', 'passed_chamber',
+  // coverage tier (scripts/moment-candidates.mjs coverageTier)
+  'cross', 'neutral', 'one_sided', 'none',
+  // qualifying-signal type (lib/moments-gate.mjs SIGNAL_TYPES)
+  'tier0_floor', 'tier0_scheduled', 'tier0_most_viewed', 'tier0_exec_calendar', 'press',
+  // stored moment status (lib/moments-gate.mjs)
+  'live', 'retired',
+];
+
+/**
+ * Does the finished record block leak an internal enum token?
+ *
+ * The VERBATIM spans — the citation, the official title, the decoded
+ * headline, Congress's own last-action sentence, the record URL — are removed
+ * before the scan, because those are somebody else's words passing through
+ * and a bill genuinely titled "…Cross-Border…" is not a leak. Everything
+ * left is text THIS FILE composed, where an enum token can only have arrived
+ * by being interpolated out of a stored field.
+ *
+ * Returns the leaked tokens, empty when clean. draftFor() refuses to spend on
+ * a leaking block — it degrades to the blank scaffold with the reason named,
+ * like every other refusal here, rather than throwing.
+ *
+ * @param {ReturnType<typeof groundFor>} g
+ * @returns {string[]}
+ */
+export function enumLeaks(g) {
+  const verbatim = [g.citation, g.title, g.headline, g.lastActionText, g.url].filter(isNonEmptyString);
+  let scanned = recordLines(g).join('\n');
+  for (const span of verbatim) scanned = scanned.split(span).join(' ');
+  return INTERNAL_ENUM_TOKENS.filter((token) =>
+    new RegExp(`(?<![\\p{L}\\p{N}_])${token}(?![\\p{L}\\p{N}_])`, 'iu').test(scanned),
+  );
 }
 
 /**
@@ -348,6 +467,20 @@ async function attemptDraft(anthropic, g) {
 export async function draftFor(anthropic, g, { attempts = 2 } = {}) {
   if (!anthropic) {
     return blankDraft(['`ANTHROPIC_API_KEY` is unset, so nothing was drafted — the scaffold above is the blank form it has always been.']);
+  }
+
+  /* THE ENUM GUARD, before a token is spent. A record block carrying an
+     internal classification has already produced published prose asserting
+     something nobody here can assert, twice. Refusing is cheap; the owner gets
+     the blank form and a note naming the token, which is a bug report he can
+     act on. Same posture as every other refusal in this file: a return, never
+     a throw, and the issue still opens. */
+  const leaks = enumLeaks(g);
+  if (leaks.length) {
+    return blankDraft([
+      `**nothing was drafted** — the record block leaked the internal token(s) \`${leaks.join('`, `')}\`, which are our own classifications rather than facts about this measure. ` +
+        'Drafting on a leaking block is how "neutral coverage" and "floor_vote" reached published prose, so the call was not made. Fix `recordLines` in `scripts/moment-draft.mjs`.',
+    ]);
   }
 
   const kept = {};

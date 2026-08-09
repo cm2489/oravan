@@ -9,6 +9,7 @@ import {
   liveCallTarget,
   liveCallTargetForNomination,
   nominationHasCallScript,
+  statusKeyFor,
   type LiveCallKey,
 } from '../lib/journey';
 import type { BillStatus } from '../lib/types';
@@ -23,8 +24,11 @@ import {
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
-// The import-free copy the .mjs report carries — pinned corpus-wide in suite 6.
-import { floorCalendarChamber as scriptFloorCalendarChamber } from '../scripts/moment-candidates.mjs';
+// The import-free copies the .mjs report carries — pinned corpus-wide in suite 6.
+import {
+  floorCalendarChamber as scriptFloorCalendarChamber,
+  statusKeyFor as scriptStatusKeyFor,
+} from '../scripts/moment-candidates.mjs';
 
 /*
  * THE JOURNEY DERIVATION — fixtures plus the .mjs parity pin (the live-corpus sweep moved to the nightly sync — see below).
@@ -230,6 +234,38 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
         floorCalendarChamber(b.last_action_text)
       );
     }
+  });
+
+  /*
+   * THE STATUS-LABEL GATE, same pin, added 2026-08-09 with the copy itself.
+   *
+   * scripts/moment-draft.mjs prints a status label into the prompt it sends
+   * the drafting model, and it used to read `bills.status[c.status]` straight
+   * out of messages/*.json — bypassing the gate every other status-printing
+   * surface routes through. On s-4668-119 (status floor_vote, last action a
+   * cloture motion) the record block therefore said BOTH "where it stands: On
+   * the floor calendar" and "floor calendar: not on a floor calendar", and the
+   * draft resolved toward the label: a false "sitting on the Senate floor
+   * calendar" sentence published in both languages. A prompt is a printing
+   * surface. The sweep is corpus-wide because the 23-of-319 split it turns on
+   * moves nightly.
+   */
+  test('statusKeyFor: the two answer identically over the WHOLE corpus', () => {
+    for (const b of corpus) {
+      expect(scriptStatusKeyFor(b.status, b.last_action_text), slugOf(b)).toBe(
+        statusKeyFor(b.status as BillStatus, b.last_action_text)
+      );
+    }
+  });
+
+  test('statusKeyFor still separates a placement from floor activity in this corpus', () => {
+    // If this ever hits zero the pin above proves nothing — the two copies
+    // would agree by never disagreeing with anything.
+    const downgraded = floorVote.filter(
+      (b) => scriptStatusKeyFor(b.status, b.last_action_text) === 'floor_activity'
+    );
+    expect(downgraded.length).toBeGreaterThan(0);
+    expect(downgraded.length).toBeLessThan(floorVote.length);
   });
 });
 

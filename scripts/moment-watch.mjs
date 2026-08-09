@@ -21,6 +21,13 @@
  * disagree with the report the owner reads. It adds exactly two things: a
  * qualification FLOOR, and a memory of what has already been shown.
  *
+ * THE MEMORY IS THE FRAGILE HALF, and both of its failures have now been
+ * written down as invariants rather than patched (see seenSetAfter): a slug
+ * enters the set only when its issue exists, and a slug LEAVES the set only on
+ * genuine signal loss — never because all six Moment slots happened to be
+ * full, which used to erase the file wholesale and re-fire every candidate the
+ * day a slot reopened.
+ *
  * NOT ZERO AI, as of 2026-08-07 — and the boundary moved with it. The scaffold
  * used to leave every user-facing sentence empty under the banner "facts only
  * — you write every sentence". The owner's ruling: *"I want to review and edit
@@ -61,6 +68,7 @@ import { join } from 'node:path';
 import { buildReport, STANDING_LINE, leanFor, normalizeSource } from './moment-candidates.mjs';
 import {
   DEFAULT_DRAFT_CAP,
+  DRAFT_FIELDS,
   DRAFT_LABEL,
   DRAFT_MODEL,
   DRAFT_PROMPT_VERSION,
@@ -190,6 +198,37 @@ export function passesFloors(c, { now, openSlots }) {
  * is what stops a filed issue from ever re-filing, and nothing less, which is
  * what stops a failed one from being swallowed.
  *
+ * ---------------------------------------------------------------------------
+ * THE SECOND INVARIANT: CAPACITY IS NOT FORGETTING (2026-08-09).
+ *
+ * The set used to be *replaced* by whatever qualified right now, and F4 —
+ * respectLiveCap — zeroes "qualifying" the moment all six Moment slots are
+ * full. Together those two say: **the night the owner fills the sixth slot,
+ * the watcher forgets every candidate it has ever issued**, and the next time
+ * a slot frees, all of them re-fire as new. Concretely, on the corpus this
+ * shipped against: seen = [s-3172-119, s-4668-119, s-4784-119], candidates
+ * hr-3633-119 and s-1525-119 above the floor; merge one Moment, slots fill,
+ * the next run computes qualifying = [] and commits `slugs: []`. Three issues
+ * the owner has already read come back the day a slot reopens.
+ *
+ * That is the same class of bug as the incident above — memory that fails
+ * silently — reached from the opposite side, so it gets the same treatment: a
+ * stated invariant rather than a patch.
+ *
+ *   A slug leaves the seen-set only on GENUINE SIGNAL LOSS. Having nowhere to
+ *   put a candidate is a fact about US, not about the candidate, and it may
+ *   never age a slug out.
+ *
+ * `withSignal` is the slug list that clears every floor EXCEPT the live-cap
+ * one (slugsWithSignal below). A previously-seen slug is retained iff it is
+ * still in that list; a slug that genuinely stopped qualifying — its placement
+ * went stale, its coverage thinned, it became a Moment vehicle — still leaves,
+ * which is F5 working as designed ("re-qualifying is itself news").
+ *
+ * A brand-new candidate seen for the first time on a slots-full night is
+ * deliberately NOT added: it never qualified, so it was never owed an issue,
+ * and adding it would mean it never fires at all once a slot opens.
+ *
  * @param {object} args
  * @param {string[]} args.qualifying  every slug above the floor right now
  * @param {string[]} args.newly       the subset this run owed an issue
@@ -198,14 +237,92 @@ export function passesFloors(c, { now, openSlots }) {
  *   per-candidate delivery, and every qualifying slug is written: the exact
  *   behaviour this script had before the flag, kept so a hand-run
  *   `--commit-seen` is unchanged.
+ * @param {string[]} [args.seen]      the committed seen-set this run read
+ * @param {string[]|null} [args.withSignal]  every slug clearing every floor
+ *   except the live cap. `null` means the caller is not distinguishing
+ *   capacity from signal, and nothing is retained — the pre-2026-08-09
+ *   behaviour, kept only so a partial caller degrades to the old arithmetic
+ *   instead of throwing. main() always passes it.
  * @returns {string[]} sorted, ready to write
  */
-export function seenSetAfter({ qualifying, newly, filed = null }) {
-  const sorted = [...qualifying].sort();
+export function seenSetAfter({ qualifying, newly, filed = null, seen = [], withSignal = null }) {
+  const stillHasSignal = withSignal === null ? null : new Set(withSignal);
+  const retained = stillHasSignal === null ? [] : seen.filter((s) => stillHasSignal.has(s));
+  const sorted = [...new Set([...qualifying, ...retained])].sort();
   if (filed === null) return sorted;
   const confirmed = new Set(filed);
   const held = new Set(newly.filter((s) => !confirmed.has(s)));
   return sorted.filter((s) => !held.has(s));
+}
+
+/**
+ * Every slug that clears every floor EXCEPT F4, the live cap — "this still
+ * looks like a Big Question, whether or not we have anywhere to put it".
+ *
+ * The ONE definition, so seenSetAfter's retention and the weekly digest's
+ * "dropped below the floor" line can never disagree about what a drop is.
+ * Infinity for openSlots rather than a flag on passesFloors: the cap gate is
+ * literally `openSlots <= 0`, so an unbounded slot count is the honest way to
+ * ask the question "would this pass if we had room?".
+ */
+export function slugsWithSignal(report, now) {
+  return report.candidates
+    .filter((c) => passesFloors(c, { now, openSlots: Number.POSITIVE_INFINITY }).pass)
+    .map((c) => c.slug);
+}
+
+/**
+ * The per-run drafting ceiling, from `MOMENT_DRAFT_CAP`.
+ *
+ * `Number(process.env.MOMENT_DRAFT_CAP ?? DEFAULT_DRAFT_CAP)` was a spend
+ * ceiling that a typo silently removed. `Number('ten')` is NaN, and every
+ * comparison against NaN is false, so `i >= cap` never fires and the cap is
+ * GONE — an unbounded night of drafting calls on a workflow whose whole cost
+ * story is "at most ten". The empty string is the mirror failure: `Number('')`
+ * is 0, so `MOMENT_DRAFT_CAP=` in an env block quietly disables drafting
+ * altogether and every scaffold ships blank with nobody told why. A ceiling
+ * that can be removed by accident is not a ceiling.
+ *
+ * So: an unset or empty value means the default, any finite integer ≥ 0 is
+ * honoured (0 included — "draft nothing tonight" is a legitimate instruction),
+ * and anything else falls back to the default with a warning naming the value.
+ * Never throws: this runs inside a job whose job is to deliver the shortlist.
+ *
+ * @param {string|undefined} raw
+ * @returns {{ cap: number, warning: string | null }}
+ */
+export function resolveDraftCap(raw) {
+  if (raw === undefined || String(raw).trim() === '') return { cap: DEFAULT_DRAFT_CAP, warning: null };
+  const n = Number(raw);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
+    return {
+      cap: DEFAULT_DRAFT_CAP,
+      warning: `MOMENT_DRAFT_CAP=${JSON.stringify(String(raw))} is not a whole number ≥ 0 — falling back to ${DEFAULT_DRAFT_CAP}. (An unusable value used to remove the spend ceiling entirely: NaN loses every comparison.)`,
+    };
+  }
+  return { cap: n, warning: null };
+}
+
+/**
+ * The one sentence the push issue says about the rejection log — DERIVED, not
+ * asserted. It read "and it is currently empty" on every issue this workflow
+ * has ever opened, which stopped being true at PR #158 and stayed wrong
+ * because nothing ever re-read the file. The log is the audit trail for
+ * "absence is a finding"; an issue that misreports its size is telling the
+ * owner that nobody is looking at it.
+ *
+ * @param {unknown} rejections  the parsed docs/moment-rejections.json (an
+ *        array), or anything else — a malformed file says so rather than
+ *        guessing a count.
+ */
+export function rejectionsSentence(rejections) {
+  if (!Array.isArray(rejections)) {
+    return 'that file is the audit trail for "absence is a finding" — it is not currently readable as a JSON array, which is worth a look on its own.';
+  }
+  if (rejections.length === 0) {
+    return 'that file is the audit trail for "absence is a finding", and it is currently empty.';
+  }
+  return `that file is the audit trail for "absence is a finding", and it currently holds ${rejections.length} ${rejections.length === 1 ? 'entry' : 'entries'}.`;
 }
 
 /** Previously-notified slugs. Missing file = first run, everything is new. */
@@ -290,6 +407,68 @@ export function articlesFor(coverage, slug) {
 }
 
 /**
+ * Every rendered candidate's structural half, derived IN SEQUENCE so that one
+ * run cannot hand out the same moment id twice.
+ *
+ * THE BUG THIS CLOSES. `takenIds` was a snapshot of `Object.keys(moments)`
+ * taken once and never extended, so it only ever knew about ids already IN the
+ * file. Two candidates in the same night — a House bill and its Senate
+ * companion, which is the ordinary way a measure reaches the floor — draft to
+ * the same bare name, kebab to the same id, and both scaffolds carried it with
+ * no collision note on either issue. Pasting both into data/moments.json is
+ * not an error: duplicate keys are legal JSON and the second silently REPLACES
+ * the first, so one of the two Big Questions the owner just wrote would
+ * disappear and every gate would pass.
+ *
+ * Two things fix it, and both are needed. Adding each id to `takenIds` as it
+ * is assigned makes momentIdFor de-collide the SECOND one (it gets its vehicle
+ * slug appended, exactly as a collision with the file does). Comparing the
+ * pre-suffix `idBase` afterwards is what tells the FIRST one — which took the
+ * bare id and would otherwise never learn anything happened — that it has a
+ * twin. A collision is a fact about both candidates, and it is reported on
+ * both issues, because they are read separately and days apart.
+ *
+ * @param {Record<string, any>[]} rendering  candidates whose scaffold renders
+ * @param {{ bySlug: Map<string, any>, coverage: Record<string, any>,
+ *           drafts: Map<string, any>, now: number, takenIds: Set<string> }} args
+ * @returns {Map<string, ReturnType<typeof structureFor>>} keyed by slug
+ */
+export function structuresFor(rendering, { bySlug, coverage, drafts = new Map(), now, takenIds = new Set() }) {
+  const structures = new Map();
+  /** idBase -> the slugs in THIS run that wanted it. */
+  const wanted = new Map();
+
+  for (const c of rendering) {
+    const structure = structureFor(c, bySlug.get(c.slug), {
+      now,
+      articles: articlesFor(coverage, c.slug),
+      takenIds,
+      nameEn: drafts.get(c.slug)?.name?.en ?? '',
+    });
+    /* The id is claimed the moment it is handed out — not when it is merged.
+       Nothing else in this run may derive it again. */
+    takenIds.add(structure.id);
+    structures.set(c.slug, structure);
+    if (!wanted.has(structure.idBase)) wanted.set(structure.idBase, []);
+    wanted.get(structure.idBase).push(c.slug);
+  }
+
+  for (const [idBase, slugs] of wanted) {
+    if (slugs.length < 2) continue;
+    for (const slug of slugs) {
+      const others = slugs.filter((s) => s !== slug);
+      structures.get(slug).notes.push(
+        `**Another candidate in this same run drafted to the same id \`${idBase}\`** (${others.map((s) => `\`${s}\``).join(', ')}). ` +
+          `Each has been given a distinct id — this one is \`${structures.get(slug).id}\` — but they are probably companion measures of one question: consider ONE Big Question with both as vehicles, rather than two. ` +
+          'Pasting two entries under one key is not an error in JSON; the second silently replaces the first.',
+      );
+    }
+  }
+
+  return structures;
+}
+
+/**
  * One candidate's block: the record, then the scaffold.
  *
  * `ground` adds the two record lines the draft is allowed to lean on that the
@@ -301,6 +480,30 @@ export function articlesFor(coverage, slug) {
  * function rendered before drafting existed.
  */
 function renderCandidate(c, { ground = null, draft = blankDraft(), structure = blankStructure() } = {}) {
+  /* PER FIELD, NOT PER DRAFT. `draft.drafted` is true when ANY of the three
+     prose fields survived the lint, which is the right flag for "does this
+     issue carry AI prose at all" and the wrong one for "is there prose left to
+     write" — the footer used both. A run where the summary was blanked for
+     forbidden vocabulary and name/role survived therefore printed "the empty
+     prose is what is left" nowhere and read as finished, with two empty
+     bilingual fields inside the fold. The drafting notes said so; the sentence
+     under the scaffold contradicted them. */
+  const blankProse = DRAFT_FIELDS.filter((f) => !(draft[f]?.en && draft[f]?.es));
+  const allBlank = blankProse.length === DRAFT_FIELDS.length;
+  const named = `**${blankProse.join('**, **')}** (both languages)`;
+  /* The two footers differ because the sentences around them do: one lists
+     what the entry still FAILS on, the other says the mechanical half is
+     already clean. Both have to name the same blanks. */
+  const gapTail = allBlank
+    ? ' — plus the empty prose, which is yours'
+    : blankProse.length
+      ? ` — plus the still-empty ${named}, which ${blankProse.length === 1 ? 'is' : 'are'} yours`
+      : '';
+  const cleanTail = allBlank
+    ? ' — the empty prose is what is left'
+    : blankProse.length
+      ? ` — the still-empty ${named} ${blankProse.length === 1 ? 'is' : 'are'} what is left`
+      : '';
   const bits = [
     `**${c.citation} — \`${c.slug}\`**`,
     '',
@@ -320,9 +523,11 @@ function renderCandidate(c, { ground = null, draft = blankDraft(), structure = b
     `- qualifying signal: ${structure.signal.type ? `\`${structure.signal.type}\`` : '**not derivable from this record — see below**'}${structure.signal.refs.length ? `\n${structure.signal.refs.map((r) => `  - ${r}`).join('\n')}` : ''}`,
     '',
     ...(draft.drafted ? [DRAFT_LABEL, ''] : []),
-    draft.drafted
-      ? '<details><summary>Paste-ready scaffold (AI first draft — edit every sentence before merging)</summary>'
-      : '<details><summary>Paste-ready scaffold (facts only — you write every sentence)</summary>',
+    draft.drafted && blankProse.length
+      ? `<details><summary>Paste-ready scaffold (PARTIAL AI first draft — ${blankProse.join(', ')} came back blank; edit every sentence before merging)</summary>`
+      : draft.drafted
+        ? '<details><summary>Paste-ready scaffold (AI first draft — edit every sentence before merging)</summary>'
+        : '<details><summary>Paste-ready scaffold (facts only — you write every sentence)</summary>',
     '',
     '```json',
     JSON.stringify(scaffoldFor(c, draft, structure), null, 2),
@@ -333,8 +538,8 @@ function renderCandidate(c, { ground = null, draft = blankDraft(), structure = b
     ...(draft.notes.length ? ['', 'Drafting notes:', ...draft.notes.map((n) => `- ${n}`)] : []),
     ...(draft.drafted ? ['', `<sub>Drafted by \`${DRAFT_MODEL}\`, prompt v${DRAFT_PROMPT_VERSION}, from the record above. Lint-checked in both languages (forbidden vocabulary, speculation, asserted vote timing) before it was shown — that check is the only automated guarantee here; accuracy is yours.</sub>`] : []),
     ...(structure.gaps.length
-      ? ['', `<sub>Pasted as-is this entry still fails \`check-moments\` on **${structure.gaps.join('**, **')}**${draft.drafted ? '' : ' — plus the empty prose, which is yours'}. Every other field is derived from the record above.</sub>`]
-      : ['', `<sub>Every non-prose field above is derived from the record and passes \`node scripts/check-moments.mjs\` as written${draft.drafted ? '' : ' — the empty prose is what is left'}.</sub>`]),
+      ? ['', `<sub>Pasted as-is this entry still fails \`check-moments\` on **${structure.gaps.join('**, **')}**${gapTail}. Every other field is derived from the record above.</sub>`]
+      : ['', `<sub>Every non-prose field above is derived from the record and passes \`node scripts/check-moments.mjs\` as written${cleanTail}.</sub>`]),
   ];
   return bits.join('\n');
 }
@@ -351,7 +556,7 @@ export function passingCandidates(report, now) {
   return report.candidates.filter((c) => passesFloors(c, { now, openSlots: report.moments.openSlots }).pass);
 }
 
-export function renderPush(newly, report, { grounds = new Map(), drafts = new Map(), structures = new Map() } = {}) {
+export function renderPush(newly, report, { grounds = new Map(), drafts = new Map(), structures = new Map(), rejections = [] } = {}) {
   const lines = [
     `## ${newly.length} new Big Question candidate${newly.length === 1 ? '' : 's'}`,
     '',
@@ -369,7 +574,7 @@ export function renderPush(newly, report, { grounds = new Map(), drafts = new Ma
     '',
     '### To decline',
     '',
-    'Close this issue and append the reason to `docs/moment-rejections.json` — that file is the audit trail for "absence is a finding", and it is currently empty.',
+    `Close this issue and append the reason to \`docs/moment-rejections.json\` — ${rejectionsSentence(rejections)}`,
   );
   return lines.join('\n');
 }
@@ -497,7 +702,13 @@ async function main(argv) {
      one slug a render happened to be asked for — otherwise `--only` combined
      with `--commit-seen` would mark the other candidates delivered. */
   const newlySlugs = newly.map((c) => c.slug);
-  const dropped = seen.slugs.filter((s) => !qualifyingSlugs.includes(s));
+  /* Every slug that still LOOKS like a Big Question, whether or not there is a
+     slot for it. Both the seen-set arithmetic and the digest's "dropped" line
+     read this rather than `qualifyingSlugs`, because the live cap zeroes
+     qualifying whenever all six slots are full — and "we have nowhere to put
+     it" is not a candidate dropping below the floor. See seenSetAfter. */
+  const withSignal = slugsWithSignal(report, now);
+  const dropped = seen.slugs.filter((s) => !withSignal.includes(s));
 
   /* --only=<slug> narrows the push body to one candidate so the workflow can
      open one issue per candidate instead of N copies of the same digest. It
@@ -529,10 +740,10 @@ async function main(argv) {
     ? { en: read('messages/en.json').bills?.status ?? {}, es: read('messages/es.json').bills?.status ?? {} }
     : null;
   const grounds = new Map(rendering.map((c) => [c.slug, groundFor(c, bySlug.get(c.slug), statusPhrases)]));
+  const { cap: draftCap, warning: capWarning } = resolveDraftCap(process.env.MOMENT_DRAFT_CAP);
+  if (capWarning) console.error(`::warning::moment-watch: ${capWarning}`);
   const drafts = rendering.length && !has('no-draft')
-    ? await draftAll(await anthropicClient(), [...grounds.values()], {
-        cap: Number(process.env.MOMENT_DRAFT_CAP ?? DEFAULT_DRAFT_CAP),
-      })
+    ? await draftAll(await anthropicClient(), [...grounds.values()], { cap: draftCap })
     : new Map();
 
   /* The structural half of the same scaffold — free, offline, and computed
@@ -542,23 +753,18 @@ async function main(argv) {
      asks the owner for sentences and nothing else.
      AFTER drafting, because the moment id is kebabed from the drafted name;
      with no draft it falls back to a placeholder that is still a valid slug. */
-  const takenIds = new Set(Object.keys(moments));
-  const structures = new Map(
-    rendering.map((c) => [
-      c.slug,
-      structureFor(c, bySlug.get(c.slug), {
-        now,
-        articles: articlesFor(coverage, c.slug),
-        takenIds,
-        nameEn: drafts.get(c.slug)?.name?.en ?? '',
-      }),
-    ])
-  );
+  const structures = structuresFor(rendering, {
+    bySlug,
+    coverage,
+    drafts,
+    now,
+    takenIds: new Set(Object.keys(moments)),
+  });
 
   if (has('json')) {
     console.log(JSON.stringify({ mode, generated: new Date(now).toISOString(), openSlots, qualifying: qualifyingSlugs, newly: newly.map((c) => c.slug), dropped, expiring: expiringMoments(moments, now) }, null, 2));
   } else if (mode === 'push') {
-    if (newly.length) console.log(renderPush(newly, report, { grounds, drafts, structures }));
+    if (newly.length) console.log(renderPush(newly, report, { grounds, drafts, structures, rejections }));
   } else {
     console.log(renderWeekly(report, { newly, dropped, expiring: expiringMoments(moments, now), now, grounds, drafts, structures }));
   }
@@ -576,10 +782,25 @@ async function main(argv) {
        coalescing it. See seenSetAfter for the invariant and the incident. */
     const filedArg = arg('filed');
     const filed = filedArg === undefined ? null : filedArg.split(',').map((s) => s.trim()).filter(Boolean);
-    const nextSlugs = seenSetAfter({ qualifying: qualifyingSlugs, newly: newlySlugs, filed });
+    const nextSlugs = seenSetAfter({
+      qualifying: qualifyingSlugs,
+      newly: newlySlugs,
+      filed,
+      seen: seen.slugs,
+      withSignal,
+    });
     const held = newlySlugs.filter((s) => !nextSlugs.includes(s));
     if (held.length) {
       console.error(`held out of the seen-set (no issue was filed, so they retry next run): ${held.join(', ')}`);
+    }
+    /* Loud, because it is the case that used to erase the file: everything the
+       set remembers is being kept on signal alone, with no open slot to
+       re-derive it from. */
+    const retainedOnSignal = nextSlugs.filter((s) => !qualifyingSlugs.includes(s));
+    if (retainedOnSignal.length) {
+      console.error(
+        `kept in the seen-set although nothing qualifies right now (no open Moment slot is not signal loss): ${retainedOnSignal.join(', ')}`,
+      );
     }
     /* Only touch the file when the set itself moves: _meta.updated changes on
        every write, so an unconditional rewrite would hand the workflow a

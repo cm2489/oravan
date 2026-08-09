@@ -18,17 +18,19 @@ import { expect, test } from '@playwright/test';
 import {
   DRAFT_FIELDS,
   DRAFT_LABEL,
+  INTERNAL_ENUM_TOKENS,
   blankDraft,
   draftAll,
   draftFor,
   draftPrompt,
+  enumLeaks,
   groundFor,
   lintField,
   recordLines,
   validateDraft,
 } from '../scripts/moment-draft.mjs';
 import { DRAFT_STANDING_LINE, renderPush, scaffoldFor } from '../scripts/moment-watch.mjs';
-import { STANDING_LINE } from '../scripts/moment-candidates.mjs';
+import { STANDING_LINE, statusKeyFor } from '../scripts/moment-candidates.mjs';
 
 /* ------------------------------------------------------------------ *
  * Fixtures — one candidate in buildReport()'s exact output shape, and
@@ -59,8 +61,25 @@ const BILL = {
 };
 
 const STATUS_PHRASES = {
-  en: { floor_vote: 'On the floor calendar' },
-  es: { floor_vote: 'En el calendario del pleno' },
+  en: { floor_vote: 'On the floor calendar', floor_activity: 'Floor activity' },
+  es: { floor_vote: 'En el calendario del pleno', floor_activity: 'Actividad en el pleno' },
+};
+
+/* s-4668-119's real shape at the time it shipped a false sentence: status
+ * `floor_vote`, last action a CLOTURE MOTION — an activity, not a placement.
+ * The candidate report already knows the difference (`floorCalendar: false`);
+ * the record block did not. */
+const CLOTURE_CANDIDATE = {
+  ...CANDIDATE,
+  slug: 's-4668-119',
+  citation: 'S. 4668',
+  floorCalendar: false,
+  floorChamber: null,
+};
+const CLOTURE_BILL = {
+  full_identifier: 's-4668-119',
+  title: 'A bill to do a thing.',
+  last_action_text: 'Cloture motion on the motion to proceed to the measure presented in Senate.',
 };
 
 const REPORT = { moments: { live: 2, cap: 6, openSlots: 4 }, candidates: [CANDIDATE] };
@@ -298,5 +317,159 @@ test.describe('the issue tells the truth about what it carries', () => {
     expect(prompt).toContain('On the floor calendar');
     expect(prompt).toContain('En el calendario del pleno');
     expect(recordLines(GROUND).join('\n')).not.toContain('floor_vote');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 4 · THE RECORD BLOCK IS THE WHOLE GROUND, so it may not contain a
+ * contradiction and it may not contain one of our own classifications.
+ * Both of these shipped as published sentences.
+ * ------------------------------------------------------------------ */
+
+test.describe('the record block cannot contradict itself about the floor', () => {
+  test('a cloture motion is NOT "On the floor calendar" — the status label goes through the gate', () => {
+    const g = groundFor(CLOTURE_CANDIDATE, CLOTURE_BILL, STATUS_PHRASES);
+    // The gate's own answer, and the record block's, are the same answer.
+    expect(statusKeyFor(CLOTURE_CANDIDATE.status, CLOTURE_BILL.last_action_text)).toBe('floor_activity');
+    expect(g.statusKey).toBe('floor_activity');
+    expect(g.statusEn).toBe('Floor activity');
+    expect(g.statusEs).toBe('Actividad en el pleno');
+
+    const block = recordLines(g).join('\n');
+    // THE BUG, verbatim: the block used to say both of these at once, and the
+    // draft resolved toward the label — "sitting on the Senate floor calendar"
+    // reached data/moments.json.
+    expect(block).not.toContain('On the floor calendar');
+    expect(block).toContain('floor calendar: not on a floor calendar');
+  });
+
+  test('a real placement still reads as a placement', () => {
+    const block = recordLines(GROUND).join('\n');
+    expect(GROUND.statusKey).toBe('floor_vote');
+    expect(block).toContain('where it stands: EN "On the floor calendar"');
+    expect(block).toContain('on the senate floor calendar');
+  });
+
+  test('the label and the calendar line are two renderings of ONE decision', () => {
+    for (const [c, bill] of [
+      [CANDIDATE, BILL],
+      [CLOTURE_CANDIDATE, CLOTURE_BILL],
+      // No bill row at all: thin, but still not self-contradictory.
+      [CLOTURE_CANDIDATE, undefined],
+      [{ ...CANDIDATE, status: 'passed_chamber', floorCalendar: false }, BILL],
+    ] as [Record<string, unknown>, Record<string, unknown> | undefined][]) {
+      const g = groundFor(c, bill, STATUS_PHRASES);
+      expect(g.floorCalendar, String(c.slug)).toBe(g.statusKey === 'floor_vote');
+    }
+  });
+});
+
+test.describe('no internal enum reaches the model as a fact', () => {
+  test('the coverage TIER is gone from the record block', () => {
+    // "press: neutral coverage across 3 outlet(s)" handed the model a verdict
+    // of OUR AllSides lookup — `neutral` means "no outlet here is lean-rated in
+    // our table" — and it shipped as a published characterization of the press.
+    const block = recordLines(GROUND).join('\n');
+    expect(GROUND.tier).toBe('neutral'); // the ground still knows it…
+    expect(block).not.toContain('neutral'); // …the prompt never learns it
+    expect(block).toContain('5 outlet(s) in Oravan');
+    expect(block).toContain('lean rating');
+    expect(block).toContain('fact about that table');
+  });
+
+  test('enumLeaks is clean on the record block this file actually builds', () => {
+    expect(enumLeaks(GROUND)).toEqual([]);
+    expect(enumLeaks(groundFor(CLOTURE_CANDIDATE, CLOTURE_BILL, STATUS_PHRASES))).toEqual([]);
+    // …including the no-bill-row path, where every value is a placeholder.
+    expect(enumLeaks(groundFor(CANDIDATE, undefined, STATUS_PHRASES))).toEqual([]);
+  });
+
+  test('enumLeaks CATCHES a re-added enum, in whatever field it comes back through', () => {
+    const leaky = { ...GROUND, statusEn: 'floor_vote', statusEs: 'floor_vote' };
+    expect(enumLeaks(leaky)).toContain('floor_vote');
+    expect(enumLeaks({ ...GROUND, floorChamber: 'one_sided' })).toContain('one_sided');
+  });
+
+  test("somebody else's words are not a leak — Congress may title a bill anything", () => {
+    // The verbatim spans (title, headline, last action, citation, URL) are
+    // removed before the scan: a bill genuinely called the "Cross-Border Act"
+    // is not this file interpolating a coverage tier.
+    const g = {
+      ...GROUND,
+      title: 'The Cross-Border Press Neutrality Act',
+      lastActionText: 'Placed on the Union Calendar; none of the amendments were live.',
+    };
+    expect(enumLeaks(g)).toEqual([]);
+  });
+
+  test('a leaking block refuses to spend, and says why', async () => {
+    const client = clientReturning(json(GOOD));
+    const draft = await draftFor(client, { ...GROUND, statusEn: 'floor_vote' });
+    expect(client.calls.length).toBe(0); // not one token
+    expect(draft.drafted).toBe(false);
+    expect(draft.notes.join(' ')).toContain('floor_vote');
+  });
+
+  test('the token list names the vocabularies, and only unambiguous ones', () => {
+    expect(INTERNAL_ENUM_TOKENS).toContain('floor_vote');
+    expect(INTERNAL_ENUM_TOKENS).toContain('one_sided');
+    expect(INTERNAL_ENUM_TOKENS).toContain('neutral');
+    // Deliberately absent: each of these IS its own published English label
+    // ("In committee", "In markup", "Signed into law"), so scanning for them
+    // would fire on the correct rendering of the fact the line exists to state.
+    for (const label of ['committee', 'markup', 'signed', 'introduced', 'conference', 'vetoed']) {
+      expect(INTERNAL_ENUM_TOKENS, label).not.toContain(label);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5 · The footer tells the truth PER FIELD. `drafted` is true when ANY
+ * field survived, which is the wrong question for "is there prose left
+ * to write".
+ * ------------------------------------------------------------------ */
+
+test.describe('a partially-drafted scaffold says which prose is still missing', () => {
+  const bodyFor = (draft: unknown) =>
+    renderPush([CANDIDATE], REPORT, {
+      grounds: new Map([[CANDIDATE.slug, GROUND]]),
+      drafts: new Map([[CANDIDATE.slug, draft]]),
+    });
+
+  test('one blanked field is named, in the footer AND on the fold', async () => {
+    const dirty = clone(GOOD);
+    dirty.summary.en = 'The measure would block the two sanctions laws from being enforced.';
+    const draft = await draftFor(clientReturning(json(dirty)), GROUND);
+    expect(draft.drafted).toBe(true);
+    expect(draft.summary).toEqual({ en: '', es: '' });
+
+    const body = bodyFor(draft);
+    // Before the fix this read as finished: `drafted` was true, so the footer
+    // dropped the empty-prose clause entirely and two blank bilingual fields
+    // sat inside the fold with only the drafting notes to say so.
+    expect(body).toContain('still-empty **summary** (both languages)');
+    expect(body).toContain('PARTIAL AI first draft');
+    expect(body).toContain('summary came back blank');
+  });
+
+  test('a fully drafted scaffold claims nothing is left, and a blank one claims everything is', async () => {
+    const full = await draftFor(clientReturning(json(GOOD)), GROUND);
+    const fullBody = bodyFor(full);
+    expect(fullBody).not.toContain('still-empty');
+    expect(fullBody).not.toContain('the empty prose');
+    expect(fullBody).toContain('AI first draft — edit every sentence before merging');
+
+    const blankBody = bodyFor(blankDraft());
+    expect(blankBody).toContain('the empty prose');
+    expect(blankBody).not.toContain('still-empty');
+  });
+
+  test('a field whose SPANISH is missing counts as blank, not as drafted', async () => {
+    // Parity is the unit: `drafted` would be true and `name.en` empty, so a
+    // per-language check is the only one that can be believed here.
+    const half = clone(GOOD);
+    half.name.es = '';
+    const draft = await draftFor(clientReturning(json(half)), GROUND);
+    expect(bodyFor(draft)).toContain('still-empty **name** (both languages)');
   });
 });
