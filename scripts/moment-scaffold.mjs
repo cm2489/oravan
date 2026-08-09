@@ -40,12 +40,15 @@
  *                    leave the field blank with the reason named, because the
  *                    category drives the whole taxonomy.
  *   qualifying_signal  the floor-calendar placement the watcher already tested
- *                    (`tier0_floor`, evidenced by the congress.gov record), or
- *                    cross-spectrum press (`press`, evidenced by the stored
- *                    article URLs of two lean-diverse outlets). Anything else
- *                    is structured-but-empty with the reason named. No member
- *                    of SIGNAL_TYPES is ever invented, and `tier0_scheduled`
- *                    is never emitted at all — see signalFor.
+ *                    (`tier0_floor`, evidenced by the congress.gov record),
+ *                    floor action stated in the record's own words
+ *                    (`tier0_floor_action`, evidenced by the record and its
+ *                    `/all-actions` page), or cross-spectrum press (`press`,
+ *                    evidenced by the stored article URLs of two lean-diverse
+ *                    outlets). Anything else is structured-but-empty with the
+ *                    reason named. No member of SIGNAL_TYPES is ever invented,
+ *                    and `tier0_scheduled` is never emitted at all — see
+ *                    signalFor.
  *   aliases ........ the citation, copied verbatim. Never composed. See aliasesFor.
  *   opened ......... the run's own date.
  *   review_by ...... opened + 30 days, which is the interval both live moments
@@ -179,11 +182,75 @@ export function leanDiverseRefs(articles, max = 4) {
   return picked.slice(0, max).map((p) => p.url);
 }
 
+/* ------------------------------------------------------------------ *
+ * Import-free copy #1 for this file — the floor-ACTION vocabulary.
+ *
+ * SOURCE OF TRUTH: lib/journey.ts `statusKeyFor` + `floorActionChamber`,
+ * which is what every SURFACE routes through to print "Floor activity"
+ * instead of "On the floor calendar". This module may not import that file
+ * (TypeScript, and this script runs on bare node — the same constraint
+ * scripts/moment-candidates.mjs solves with its own documented copies), so
+ * the patterns live here and tests/moment-scaffold.unit.spec.ts pins them
+ * against the real corpus.
+ *
+ * WHY A POSITIVE MATCHER RATHER THAN `statusKeyFor`'s ABSENCE TEST. The page
+ * label may be derived by absence — a `floor_vote` bill whose text is not a
+ * placement is "Floor activity" — because a label describes a bill that is
+ * already on screen. A qualifying signal is a CLAIM about why a Big Question
+ * exists at all, and this file's one rule is never to invent a fact to
+ * satisfy a schema. So the record has to SAY it, in its own words, and a
+ * missing or unrecognized sentence yields nothing (fail closed).
+ *
+ * THE LIST IS MEASURED, NOT GUESSED. Of the 339 `floor_vote` bills in
+ * data/bills.json on 2026-08-09, 26 carry no placement sentence — the exact
+ * population this matcher is for — and these six patterns cover 26 of 26:
+ *   11  Motion to proceed to consideration of measure made/rejected in Senate
+ *    6  Cloture motion … presented / cloture … not invoked, by Yea-Nay Vote
+ *    3  Motion to discharge Senate Committee on … rejected by Yea-Nay Vote
+ *    3  Rules Committee Resolution H. Res. N Reported to House. Rule provides
+ *       for consideration of …
+ *    2  POSTPONED PROCEEDINGS — Pursuant to clause 1(c) of rule XIX …
+ *    1  Motion by Senator … to reconsider …
+ * Every one of them is a chamber acting on the measure on its own floor.
+ * ------------------------------------------------------------------ */
+const FLOOR_ACTION_PATTERNS = [
+  /\bcloture\b/i,
+  /\bmotion to proceed\b/i,
+  /\bmotion to discharge\b/i,
+  /\bpostponed proceedings\b/i,
+  /\brule provides for consideration\b/i,
+  /\bmotion by senator\b/i,
+];
+
+/**
+ * Does the candidate's OWN last action say a chamber took floor action on the
+ * measure — as opposed to placing it on a calendar, which is `tier0_floor`?
+ *
+ * Three conditions, all required, all fail-closed:
+ *   1. the corpus derived `floor_vote` for it (which sync-bills derives FROM
+ *      the action text — see lib/journey.ts's header), so this is never a
+ *      committee-stage bill with a stray word in its sentence;
+ *   2. it is NOT a placement (`floorCalendar`, the strict gate in
+ *      scripts/moment-candidates.mjs) — a placement is the other type, and
+ *      the two must never both fire;
+ *   3. the last action TEXT matches one of the measured shapes above. With no
+ *      text on file this is false, and the caller emits nothing.
+ *
+ * @param {Record<string, any>} c            one entry of buildReport().candidates
+ * @param {string | null} [lastActionText]   the bill's own `last_action_text`
+ */
+export function floorActionInRecord(c, lastActionText = null) {
+  if (c?.status !== 'floor_vote') return false;
+  if (c?.floorCalendar) return false;
+  const text = String(lastActionText ?? '');
+  return text.trim().length > 0 && FLOOR_ACTION_PATTERNS.some((re) => re.test(text));
+}
+
 /**
  * The qualifying signal, from the evidence the watcher ALREADY tested to let
  * this candidate through the floor.
  *
- * TWO TYPES ARE DERIVABLE, in this order:
+ * THREE TYPES ARE DERIVABLE, in this order:
  *
  *  1. `tier0_floor` — the candidate's own last action says a chamber PLACED it
  *     on a calendar (scripts/moment-candidates.mjs `isOnFloorCalendar`, which
@@ -192,10 +259,24 @@ export function leanDiverseRefs(articles, max = 4) {
  *     The ref is the congress.gov record, which is where that sentence lives —
  *     exactly what both hand-authored moments cite for the same type.
  *
- *  2. `press` — cross-spectrum coverage, and ONLY tier `cross`. `neutral`
+ *  2. `tier0_floor_action` — the last action is the chamber MOVING on the
+ *     measure on the floor (a motion to proceed, a cloture filing, a rule
+ *     resolution), which is a different fact from a placement and, until
+ *     2026-08-09, had no type of its own. That gap is not theoretical: two
+ *     live moments were hand-filled with `tier0_floor` over exactly these
+ *     records, so /questions printed "On the floor schedule" while the vehicle
+ *     card beneath it printed "Floor activity" off the same sentence. The refs
+ *     are the record AND its `/all-actions` page, because the motions this
+ *     type points at are further down the list than the summary shows.
+ *
+ *  3. `press` — cross-spectrum coverage, and ONLY tier `cross`. `neutral`
  *     coverage can be five outlets wide and still have no partisan lean in it
  *     at all, so emitting `press` for it would put "Covered by outlets across
  *     the spectrum" on a page over a record that does not say so.
+ *
+ * Government signals outrank press, and a placement outranks activity: the
+ * first two are the chamber's own scheduling record, and 1 is the narrower
+ * claim, so a bill that somehow satisfied both would take the narrower one.
  *
  * EVERYTHING ELSE IS STRUCTURED-BUT-EMPTY, with the reason named. In
  * particular `tier0_scheduled` ("Scheduled for a floor vote") is NEVER emitted
@@ -206,9 +287,15 @@ export function leanDiverseRefs(articles, max = 4) {
  *
  * @param {Record<string, any>} c  one entry of buildReport().candidates
  * @param {{ url?: string, outlet?: string, lean?: string | null }[]} articles
+ * @param {{ now?: number, lastActionText?: string | null }} [opts]
+ *        `lastActionText` is the bill's own `last_action_text`, which the
+ *        candidate object does not carry (structureFor has the bill row and
+ *        passes it). Omitting it cannot produce a signal — see
+ *        floorActionInRecord — so a caller that forgets degrades to the empty
+ *        box the owner already knows how to fill, never to a wrong type.
  * @returns {{ signal: { type: string, refs: string[] }, note: string | null }}
  */
-export function signalFor(c, articles = [], { now = Date.now() } = {}) {
+export function signalFor(c, articles = [], { now = Date.now(), lastActionText = null } = {}) {
   const empty = { type: '', refs: [] };
   const types = '`' + SIGNAL_TYPES.join('` · `') + '`';
 
@@ -220,6 +307,20 @@ export function signalFor(c, articles = [], { now = Date.now() } = {}) {
       };
     }
     return { signal: { type: 'tier0_floor', refs: [c.url.trim()] }, note: staleSignalNote(c, now) };
+  }
+
+  if (floorActionInRecord(c, lastActionText)) {
+    if (!isHttps(c?.url)) {
+      return {
+        signal: empty,
+        note: `**\`qualifying_signal\` is empty and needs you.** The record shows floor action on the measure — “${lastActionText}” — which is a \`tier0_floor_action\` signal, but the candidate carries no https congress.gov URL to cite as its ref. Add the record link.`,
+      };
+    }
+    const record = c.url.trim();
+    return {
+      signal: { type: 'tier0_floor_action', refs: [record, `${record}/all-actions`] },
+      note: staleSignalNote(c, now),
+    };
   }
 
   if (c?.tier === 'cross') {
@@ -236,7 +337,7 @@ export function signalFor(c, articles = [], { now = Date.now() } = {}) {
   return {
     signal: empty,
     note:
-      `**\`qualifying_signal\` is empty and needs you.** Nothing on this record earns a type on its own: its own last action does not say a chamber placed it on a calendar (so \`tier0_floor\` would be a claim the record does not make — it cleared the notification floor on its \`${c?.status}\` status alone), and its coverage is \`${c?.tier}\`, not \`cross\` (so \`press\`, which means "across the spectrum", would be false). ` +
+      `**\`qualifying_signal\` is empty and needs you.** Nothing on this record earns a type on its own: its own last action neither says a chamber placed it on a calendar (so \`tier0_floor\` would be a claim the record does not make — it cleared the notification floor on its \`${c?.status}\` status alone) nor reads as floor action on the measure — ${lastActionText ? `it says “${lastActionText}”` : 'no last-action text was on file to read'} — so \`tier0_floor_action\` would be the same kind of claim; and its coverage is \`${c?.tier}\`, not \`cross\` (so \`press\`, which means "across the spectrum", would be false). ` +
       `Deliberately NOT auto-filled with \`tier0_scheduled\`: the corpus holds no scheduled-vote date and none is derivable from a status. Pick from ${types} and attach https refs.`,
   };
 }
@@ -403,7 +504,13 @@ export function structureFor(c, bill, { now = Date.now(), articles = [], takenId
     gaps.push('category');
   }
 
-  const { signal, note: signalNote } = signalFor(c, articles, { now });
+  /* The bill row is here and the candidate object is not, so this is the one
+     place that can hand signalFor the record sentence its floor-action
+     derivation reads. Absent (no row, no text) it degrades to the empty box. */
+  const { signal, note: signalNote } = signalFor(c, articles, {
+    now,
+    lastActionText: bill?.last_action_text ?? null,
+  });
   if (!SIGNAL_TYPES.includes(signal.type) || signal.refs.length === 0) gaps.push('qualifying_signal');
 
   const { aliases, note: aliasNote } = aliasesFor(c);
