@@ -12,11 +12,34 @@ name: Hot-bill refresh
 
 on:
   schedule:
-    # 17:00 and 22:00 UTC (~1pm/6pm ET) - both inside the US legislative day,
-    # after floor/committee activity has had time to post to Congress.gov,
-    # and well clear of the 07:30 UTC nightly sync on both sides.
-    - cron: '0 17 * * *'
-    - cron: '0 22 * * *'
+    # 13:47 and 22:47 UTC. Re-phased 2026-08-08 from '0 17'/'0 22'; the
+    # reasoning, so a future reader can re-derive it without re-measuring:
+    #
+    # 1. WHEN THE RECORD PUBLISHES. Congress.gov publishes day D's floor
+    #    actions on D+1 between 13:35 and 14:00 UTC. Measured over 6/6
+    #    consecutive legislative days from senate.gov's per-day floor XML
+    #    `Last-Modified` headers: 13:35:27 through 13:55:29, no day outside
+    #    that band. This repo's own corpus history agrees independently:
+    #    commits at 08:30-10:10 UTC carry no trace of the previous day's
+    #    floor actions; commits at 12:15-17:42 do. The old 17:00 slot ran
+    #    three hours after the record was already sitting there.
+    # 2. CRON DRIFT IS ONE-DIRECTIONAL. GitHub's scheduler on this repo has
+    #    drifted from +17 min to +3h27m (the old '0 22' once fired at 01:27
+    #    UTC) and is worst at the top of the hour - but it NEVER fires
+    #    early. So the earliest safe minute is the first one at or after the
+    #    latest observed publication plus margin: 13:47. Under typical drift
+    #    the job lands 14:04-14:30 UTC (~09:04-09:30 ET); under the worst
+    #    observed drift it still lands the same day, just later.
+    # 3. OFF-HOUR, OFF-:00/:30 ON PURPOSE. :47 dodges the top-of-hour and
+    #    half-hour queues where the scheduler's backlog (and therefore its
+    #    drift) is worst.
+    # 4. THE SECOND SLOT keeps its original 22:00-hour placement (~6pm ET,
+    #    late-session floor and committee activity that posts after the
+    #    morning record) and only takes the same :47 minute. 13:47 and
+    #    22:47 sit 9 hours apart and clear of the 07:30 UTC nightly sync on
+    #    both sides.
+    - cron: '47 13 * * *'
+    - cron: '47 22 * * *'
   workflow_dispatch:
 
 permissions:

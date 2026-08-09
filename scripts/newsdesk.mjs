@@ -27,6 +27,15 @@
  * This closed the 2026-07-23 gap where the week's biggest bills (NDAA
  * H.R.8800, the CR, the SAVE America Act) never triggered because
  * mainstream headlines use nicknames, not bill numbers.
+ * Tier-0 refresh cadence is once per bill per FLOOR WINDOW (2026-08-08),
+ * not once per bill per UTC day: Congress.gov publishes day D's floor
+ * actions on D+1 between 13:35 and 14:00 UTC, so a single daily slot spent
+ * by an early-morning run pushed that day's record to the next day. Three
+ * windows - pre (00:00-13:59), record (14:00-18:59), session
+ * (19:00-23:59) - each get their own slot; the measured evidence is in
+ * newsdesk-match.mjs's floorBucket comment. This changes only how often a
+ * FREE congress.gov refresh may happen; the decode budgets below are
+ * per-run and per-UTC-day and are untouched by it.
  *
  * ---- PRESS SOURCES: free RSS only, no paid APIs ----
  * NEWS_API_KEY / TheNewsAPI is deliberately NOT used here — that quota
@@ -168,6 +177,7 @@ import {
   extractMostViewedSlugs,
   extractNicknameTokens,
   findCitations,
+  floorBucket,
   hashHeadline,
   looksLegislative,
   matchLocal,
@@ -176,7 +186,9 @@ import {
   parseFeed,
   PENDING_OUTLETS_TTL_DAYS,
   prunePendingOutlets,
+  rollDailyDecodes,
   summarizePendingOutlets,
+  tier0SeenKey,
 } from './newsdesk-match.mjs';
 
 // ---- Press-fire decode budget (unchanged from the 2026-07-16 design) ----
@@ -370,18 +382,25 @@ const billIndex = buildBillIndex(bills);
 const cache = loadCache();
 
 const todayUTC = new Date().toISOString().slice(0, 10);
-if (!cache.dailyDecodes || cache.dailyDecodes.date !== todayUTC) {
-  cache.dailyDecodes = { date: todayUTC, count: 0, tier0Count: 0 }; // roll over at UTC midnight
-}
-cache.dailyDecodes.tier0Count ??= 0; // cache written before the tier-0 budget existed
+// Rolls at UTC midnight and at UTC midnight ONLY - never on a floor-window
+// transition (rollDailyDecodes takes no window argument by construction).
+// This is the cost invariant behind the three-window seen-key below.
+cache.dailyDecodes = rollDailyDecodes(cache.dailyDecodes, todayUTC);
 
 // ---- Tier-0: government signal feeds (fire without press corroboration) ----
-// Dedupe key is (slug, UTC day), NOT the feed item title: the floor feeds
-// republish the same bill numbers all day, and one refresh per bill per
-// day is the intended cadence. Only the key's HASH enters the cache -
+// Dedupe key is (slug, UTC day, floor window), NOT the feed item title: the
+// floor feeds republish the same bill numbers all day, so one refresh per
+// bill per window is the intended cadence. Three windows rather than one
+// per day because Congress.gov publishes day D's floor actions on D+1
+// between 13:35 and 14:00 UTC - a single daily slot spent by an early
+// morning run misses that day's record entirely. The measured evidence and
+// the window boundaries are in newsdesk-match.mjs's floorBucket comment.
+// The window is resolved ONCE here so a run that straddles a boundary
+// spends and marks the same slot. Only the key's HASH enters the cache -
 // never feed content (the never-republish rule).
-const tier0SeenKey = (slug) => hashHeadline(`tier0:${slug}`, todayUTC);
-console.log(`newsdesk tier-0: fetching ${TIER0_SOURCES.length} government signal feeds`);
+const floorWindow = floorBucket();
+const tier0Key = (slug) => tier0SeenKey(slug, todayUTC, floorWindow);
+console.log(`newsdesk tier-0 [${floorWindow} window, ${todayUTC}]: fetching ${TIER0_SOURCES.length} government signal feeds`);
 const tier0Results = await Promise.allSettled(TIER0_SOURCES.map(fetchTier0));
 const tier0Slugs = new Map(); // slug -> source label (first source to carry it wins)
 tier0Results.forEach((r, i) => {
@@ -390,8 +409,8 @@ tier0Results.forEach((r, i) => {
     console.error(`  tier-0 ${label} FAILED: ${r.reason?.message ?? r.reason}`);
     return;
   }
-  const fresh = r.value.filter((slug) => !cache.seen.has(tier0SeenKey(slug)));
-  console.log(`  tier-0 ${label}: ${r.value.length} bill(s), ${fresh.length} not yet handled today`);
+  const fresh = r.value.filter((slug) => !cache.seen.has(tier0Key(slug)));
+  console.log(`  tier-0 ${label}: ${r.value.length} bill(s), ${fresh.length} not yet handled in the ${floorWindow} window`);
   for (const slug of fresh) if (!tier0Slugs.has(slug)) tier0Slugs.set(slug, label);
 });
 
@@ -529,12 +548,14 @@ for (const slug of fired) {
     delete cache.pendingOutlets[slug]; // corroboration spent - a future re-fire needs fresh corroboration
   }
   if (isTier0) {
-    // Mark the (slug, day) pair handled ONLY when the sync actually landed
-    // (refreshed/added): a transient failure or a decode-cap 'budget'
-    // deferral leaves the key unseen so the next hourly run retries, while
-    // a handled bill won't re-fire from the same feeds until tomorrow.
+    // Mark the (slug, day, window) triple handled ONLY when the sync
+    // actually landed (refreshed/added): a transient failure or a
+    // decode-cap 'budget' deferral leaves the key unseen so the next hourly
+    // run retries, while a handled bill won't re-fire from the same feeds
+    // until the next floor window opens. Unchanged behavior per slot - the
+    // slot is just no longer the whole day.
     if (result.outcome === 'refreshed' || result.outcome === 'added') {
-      cache.seen.add(tier0SeenKey(slug));
+      cache.seen.add(tier0Key(slug));
     }
   }
   console.log(`  ${slug}: ${result.outcome} (${reason.get(slug)})`);
