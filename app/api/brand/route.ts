@@ -39,7 +39,10 @@ import { noteBrandPreview } from '@/lib/usage';
  *   - a GLOBAL daily breaker 250/day ('brand-day' via the tenant limiter
  *     keyed by the constant 'brand-global') — unauthenticated spending
  *     endpoint, no cross-user cache to blunt a distributed farm. Worst-case
- *     day ≈ 250 × ~$0.008 ≈ $2 on claude-sonnet-5.
+ *     day ≈ 250 × ~$0.008 ≈ $2 on claude-sonnet-5. It FAILS CLOSED: an
+ *     unreachable counters database refuses the paid call rather than
+ *     falling back to a per-instance count, which is what makes that $2 a
+ *     real ceiling instead of a per-instance one during an outage.
  *   - usage counter (noteBrandPreview) fires via after() on the actual-
  *     spend path only, mirroring /api/script's noteScriptGeneration.
  *
@@ -57,7 +60,19 @@ import { noteBrandPreview } from '@/lib/usage';
 const anthropic = new Anthropic();
 
 const limiter = createRateLimiter({ route: 'brand', max: 5, windowSec: 600 });
-const dayLimiter = createTenantRateLimiter({ route: 'brand-day', max: 250, windowSec: 86400 });
+// failClosed: this is a SPEND breaker, not a rate limit. If the counters
+// database can't be reached, its state is unknown, and the honest answer for
+// a money guard with unknown state is to refuse the paid call — otherwise an
+// Upstash outage silently converts one global ~$2/day cap into ~$2/day per
+// serverless instance on an unauthenticated endpoint. The per-IP limiter
+// above keeps its fail-OPEN behavior: it guards availability, not spend.
+// See lib/ratelimit.ts's "rate limits fail open, spend breakers fail closed".
+const dayLimiter = createTenantRateLimiter({
+  route: 'brand-day',
+  max: 250,
+  windowSec: 86400,
+  failClosed: true,
+});
 /** The global-breaker key: a constant, not caller/content material. */
 const GLOBAL_BUCKET = 'brand-global';
 

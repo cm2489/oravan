@@ -34,6 +34,17 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], viewport: { width: 320, height: 844 } },
     },
   ],
+  // PW_NO_WEBSERVER=1 skips standing the server up at all. It exists for ONE
+  // caller: ci.yml's docs-only fast path, which runs tests/claim-truth.spec.ts
+  // (pure Node — it reads the four constitution documents and shells out to a
+  // check script; it never touches `page`) on PRs that skip the build. Without
+  // it that one cheap spec would drag a full `next build && next start` behind
+  // it and the fast path would stop being fast.
+  //
+  // Not a footgun: setting it for a run that DOES need the server makes every
+  // page test fail on connection-refused, loudly and immediately. There is no
+  // wording of this variable that produces a false green.
+  //
   // Dedicated port so a dev server on :3000/:3200 never shadows the build under test.
   //
   // S19: the command is tests/e2e-server.mjs, not a direct `next build &&
@@ -45,10 +56,12 @@ export default defineConfig({
   // globalSetup hook runs, so globalSetup can't inject env the server
   // would see). Counters/cache stay unconfigured — nothing about any
   // pre-S19 test's behavior changes.
-  webServer: {
-    command: `npx tsx tests/e2e-server.mjs`,
-    port: PORT,
-    reuseExistingServer: false,
-    timeout: 240_000,
-  },
+  webServer: process.env.PW_NO_WEBSERVER
+    ? undefined
+    : {
+        command: `npx tsx tests/e2e-server.mjs`,
+        port: PORT,
+        reuseExistingServer: false,
+        timeout: 240_000,
+      },
 });
