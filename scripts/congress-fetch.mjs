@@ -21,16 +21,20 @@ export const CONGRESS = 119;
 export const BILL_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']);
 
 const API = 'https://api.congress.gov/v3';
-const KEY = process.env.CONGRESS_API_KEY;
-// Key is checked at first fetch, not at import: this module also exports
-// pure functions (mapStatus, urgencyScore, ...) that unit tests import
-// without any secrets. Sync scripts still fail on their first cg() call
-// with the same message.
+// Key is READ and checked at first fetch, not at import: this module also
+// exports pure functions (mapStatus, urgencyScore, readableAction, ...) that
+// unit tests import without any secrets. Sync scripts still fail on their
+// first cg() call with the same message. It used to be read at module scope
+// (`const KEY = process.env.CONGRESS_API_KEY`) and only CHECKED here, which
+// made the sentence above half true and forced any test driving a cg() caller
+// to win a module-evaluation-order race to set the env var first. Reading it
+// per call costs nothing - the value never changes inside a run.
 
 /** GET one Congress.gov endpoint, retrying on a bad status or a thrown/timed
  *  out request (a hung socket must retry, not kill the whole run - the
  *  2026-06-13 crash). */
 export async function cg(path, params = {}) {
+  const KEY = process.env.CONGRESS_API_KEY;
   if (!KEY) throw new Error('CONGRESS_API_KEY missing');
   const url = new URL(`${API}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);

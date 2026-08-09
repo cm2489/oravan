@@ -310,9 +310,16 @@ export function hashHeadline(title, outlet) {
 // ---- the no-change-no-commit guard --------------------------------------
 /** Given the syncOneBill outcome strings from this run's ON-FIRE actions,
  *  did anything actually mutate bills/es? Only 'refreshed' and 'added'
- *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed', and
+ *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed',
  *  'skipped_partial' (an unreadable Congress.gov payload: no refresh
- *  applied, no new bill created — see readableAction) don't.
+ *  applied, no new bill created — see readableAction) and 'skipped_no_text'
+ *  (a real bill Congress.gov publishes no text for yet, refused rather than
+ *  decoded from its title — see syncOneBill) don't.
+ *  A tier-0 fire that comes back 'skipped_no_text' therefore spends no
+ *  corroboration and is never marked seen, so the next hourly run retries it
+ *  — which is the wanted behavior here, not a leak: the retry is two free
+ *  Congress.gov calls, and it is what decodes the bill within the hour its
+ *  text is finally published.
  *  newsdesk.mjs only calls writeFileSync when this is true, so an
  *  hourly run with nothing to do never produces a diff for the workflow's
  *  own `git diff --cached --quiet` step to (redundantly, but harmlessly)
