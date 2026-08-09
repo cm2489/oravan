@@ -497,16 +497,29 @@ export default async function MomentPage({
               </Chip>
             </p>
 
-            {/* TWO-UP UNTIL THE RAIL OPENS, one-up inside it. `sm:grid-cols-2`
-                is the utility this grid carried before the desk landed and it
-                is restored deliberately: the rail only exists at ≥62rem, so in
-                the 640–991px band there is no rail — just a 33rem column — and
-                dropping the second track there cost a multi-vehicle moment
-                real height. Measured on /questions/iran-war-powers at 768×1024
-                with the column gone: document 5516 → 6002px (+486), 5.39 →
-                5.86 screens of scroll, #vehicles-h→#why-h 1239 → 1712px.
-                `min-[62rem]:grid-cols-1` is what actually states "the rail is
-                one card wide", at the breakpoint where the rail is true. */}
+            {/* THE TRACK COUNT IS THE CONTAINER'S TO DECIDE, not a breakpoint's.
+                `sm:grid-cols-2` came off when the desk landed, justified as
+                "the rail is one card wide" — but the rail only exists at
+                ≥62rem, and in the 640–991px band there is no rail, just a
+                33rem column, so multi-vehicle moments paid for a rule about a
+                rail that isn't there. Measured on /questions/iran-war-powers
+                at 768×1024, one column: document 6002px, 5.86 screens of
+                scroll, #vehicles-h→#why-h 1712px.
+
+                WHY auto-fit AND NOT `sm:grid-cols-2 min-[62rem]:grid-cols-1`.
+                That pair fixes the 4-vehicle moment and regresses every other
+                one: it halves the track for a lone card, which wraps taller
+                with a 272px hole beside it — 768×1024 document height with it
+                on, annual-defense-policy 4180 → 4434, government-funding
+                4044 → 4296, syria-sanctions 3916 → 4070. `auto-fit` collapses
+                the empty track, so a lone card keeps the whole 528px: same
+                width the fix band gives (iran 6002 → 5729), and the other four
+                measure byte-identical to one column. 4 of the 5 live moments
+                carry exactly one vehicle, so that IS the common case.
+
+                In the 20–25rem rail the 15rem minimum resolves to one 400px
+                track on its own — the rail is still one card wide, and now
+                nothing has to name a breakpoint to say so. */}
             <div className="mt-6 grid gap-4 grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
               {moment.vehicles.map((v) => {
                 /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
