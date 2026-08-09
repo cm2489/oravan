@@ -152,6 +152,7 @@ jobs:
           cat /tmp/report.json
 
       - name: Open an issue per new candidate
+        id: file
         if: steps.mode.outputs.mode == 'push' && steps.report.outputs.new_count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -163,14 +164,54 @@ jobs:
         # One issue per candidate, not one rolling issue: each can be closed
         # independently as it is accepted or declined, and closing IS the
         # decline action. Each --only render is also exactly one drafting call.
+        #
+        # THE LOOP SURVIVES ITS OWN FAILURES, and that is the whole point of
+        # its shape. It used to be a bare `create` under `bash -e`: one failed
+        # call would kill the step, the seen-set commit below would never run,
+        # and the next run would re-file EVERY candidate — including the ones
+        # whose issues had been created a second earlier. That is the same
+        # destination #167–#169 → #173–#175 reached through a different door
+        # (see the commit step below); this door was never observed to open,
+        # which is exactly why it stayed open through #176's fix.
+        # So each candidate is now recorded pass/fail without dying, `filed` is
+        # handed to --commit-seen as a delivery receipt, and the run is failed
+        # afterwards (the step after the commit) rather than here. A red run
+        # with the successes committed is strictly better than a red run that
+        # re-notifies work already delivered.
+        #
+        # The pre-check is the second line of defence. The seen-set is the
+        # first, but it is only as good as the commit that follows — a rebase
+        # conflict below exits 1 with the set uncommitted, on purpose. In that
+        # window the issue titles themselves are the record: they are exactly
+        # "Big Question candidate: <slug>", they are unique per candidate, and
+        # `--state all` counts a CLOSED one too, because closing an issue is
+        # how the owner declines a candidate. An already-existing issue counts
+        # as filed, spends no drafting call, and opens no duplicate.
         run: |
-          for slug in $(node -e "console.log(require('/tmp/report.json').newly.join(' '))"); do
-            node scripts/moment-watch.mjs --mode=push --only="$slug" > "/tmp/$slug.md"
-            gh issue create \
-              --title "Big Question candidate: $slug" \
-              --label moment-candidate \
-              --body-file "/tmp/$slug.md"
+          slugs="$(node -e "console.log(require('/tmp/report.json').newly.join(' '))")"
+          gh issue list --label moment-candidate --state all --limit 500 \
+            --json title --jq '.[].title' > /tmp/filed-titles.txt
+          filed=""
+          failed=""
+          for slug in $slugs; do
+            if grep -Fxq "Big Question candidate: $slug" /tmp/filed-titles.txt; then
+              echo "$slug already has an issue — counting it as filed, not re-filing it"
+              filed="${filed:+$filed,}$slug"
+              continue
+            fi
+            if node scripts/moment-watch.mjs --mode=push --only="$slug" > "/tmp/$slug.md" \
+              && gh issue create \
+                --title "Big Question candidate: $slug" \
+                --label moment-candidate \
+                --body-file "/tmp/$slug.md"; then
+              filed="${filed:+$filed,}$slug"
+            else
+              failed="${failed:+$failed,}$slug"
+              echo "::error::could not file the issue for ${slug} — it is held OUT of the seen-set and retries on the next run"
+            fi
           done
+          echo "filed=$filed" >> "$GITHUB_OUTPUT"
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
 
       - name: Update the standing weekly issue
         if: steps.mode.outputs.mode == 'weekly'
@@ -195,8 +236,17 @@ jobs:
 
       - name: Commit the seen-set
         if: steps.mode.outputs.mode == 'push'
-        # Only after the issues exist. Rebase-and-retry mirrors the other data
-        # workflows: a nightly sync commit may have landed while this ran.
+        env:
+          # The delivery receipt from the step above: the slugs whose issue is
+          # confirmed to exist. Read through the environment rather than
+          # interpolated into the script body, so nothing derived from data/
+          # can ever be spliced into a shell command. Empty when that step was
+          # skipped (nothing was newly qualifying), which is also correct —
+          # scripts/moment-watch.mjs holds back only slugs it OWED an issue.
+          FILED: ${{ steps.file.outputs.filed }}
+        # Only for the candidates whose issues exist. Rebase-and-retry mirrors
+        # the other data workflows: a nightly sync commit may have landed while
+        # this ran.
         #
         # THE AUTHOR IS LOAD-BEARING, NOT COSMETIC. Vercel's GitHub integration
         # only auto-deploys a push whose commit author has a linked Vercel
@@ -219,12 +269,28 @@ jobs:
         #     invocation produces is thrown away; without both of those it would
         #     silently pay for a second full set of drafts to write /dev/null.
         run: |
-          node scripts/moment-watch.mjs --mode=push --commit-seen --no-draft > /dev/null
-          # `git diff` exits 0 for an UNTRACKED file, and the first run that
-          # ever writes the seen-set is exactly that state — this guard used to
-          # skip the commit forever, so the same candidates re-filed nightly
-          # (#167–#169 became #173–#175). status --porcelain sees new and
-          # modified alike.
+          node scripts/moment-watch.mjs --mode=push --commit-seen --no-draft --filed="$FILED" > /dev/null
+          # TWO WAYS THE SEEN-SET FAILS TO REACH `main`, and every duplicate
+          # issue this workflow has ever opened comes from one of them.
+          #
+          #   1. WHAT ACTUALLY HAPPENED. This guard was `git diff`, which
+          #      exits 0 for an UNTRACKED file — and the first run that ever
+          #      writes the seen-set is exactly that state, so the commit was
+          #      skipped forever and the same candidates re-filed nightly:
+          #      #167–#169 came back as #173–#175. `status --porcelain` sees
+          #      new and modified alike (#176, 2026-08-08).
+          #   2. WHAT #176 LEFT OPEN. The issue loop above ran under `bash -e`
+          #      with a bare `gh issue create`, so one failed call would kill
+          #      the step and this one would never run at all — leaving every
+          #      candidate unseen, including those whose issues HAD been
+          #      created. Never observed; identical outcome (2026-08-08).
+          #
+          # They are closed differently on purpose: (1) was a wrong command,
+          # (2) was a wrong invariant. The invariant is now written down and
+          # enforced in one place — a slug is committed as seen only if its
+          # issue exists, which is what `--filed` carries
+          # (scripts/moment-watch.mjs seenSetAfter, pinned by
+          # tests/moment-watch-seen.unit.spec.ts).
           if [ -z "$(git status --porcelain -- data/candidates-seen.json)" ]; then
             echo "seen-set unchanged"
             exit 0
@@ -252,4 +318,23 @@ jobs:
             echo "::error::rebase conflict in: ${conflicted:-<unknown>} - a human must resolve it. The seen-set this run collected is NOT committed."
             exit 1
           done
+          exit 1
+
+      - name: Fail the run if any candidate could not be filed
+        # LAST, deliberately. The loop above swallows a per-candidate failure so
+        # that the commit step still runs and the successes are recorded; the
+        # run still has to go red, or a silently-half-delivered night looks like
+        # a quiet one. Putting the failure here rather than in the loop is what
+        # orders those two: commit what was delivered, THEN complain.
+        #
+        # No `if: always()` anywhere in this job, on purpose. Every step keeps
+        # GitHub's implicit `success()` gate, so a genuine failure earlier
+        # (report build, issue listing) skips the seen-set commit entirely and
+        # nothing is marked delivered — which is the safe direction. `always()`
+        # on the commit step would invert that.
+        if: steps.mode.outputs.mode == 'push' && steps.file.outputs.failed != ''
+        env:
+          FAILED: ${{ steps.file.outputs.failed }}
+        run: |
+          echo "::error::no issue was filed for: ${FAILED}. They were held out of the seen-set and will be retried on the next run; every candidate that WAS filed is committed and will not re-file."
           exit 1
