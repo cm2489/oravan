@@ -320,10 +320,13 @@ export function kebab(text) {
  * A moment id CANDIDATE from the drafted English name.
  *
  * The rule — kebab, drop a leading "the", drop a trailing "question" —
- * is not invented: it is read off the file. It reproduces both live ids from
- * their own names exactly ("The Iran war-powers question" -> `iran-war-powers`,
- * "The government funding deadline" -> `government-funding-deadline`), which
- * is what tests/moment-scaffold.unit.spec.ts pins it against.
+ * is not invented: it was read off the file back when names carried the
+ * "The <subject> question" wrapper, and it reproduced both live ids from
+ * their own names exactly. The wrapper was retired 2026-08-09 (names are
+ * bare noun phrases now; draft prompt v2), which makes both strips no-ops
+ * on a compliant draft — they are KEPT deliberately, so an old-style draft
+ * still derives the same id instead of a `the-…-question` near-duplicate.
+ * tests/moment-scaffold.unit.spec.ts pins both shapes.
  *
  * COLLISIONS MATTER MORE THAN THEY LOOK. Two entries with the same key in one
  * JSON object do not error — the last one silently REPLACES the first, so a
