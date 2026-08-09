@@ -339,7 +339,7 @@
     "preDialBody": "El personal atiende llamadas como esta todo el día, y no es un debate: unos treinta segundos y ya. Que conteste alguien en vivo o te salga el buzón de voz, ambos cuentan igual — cualquiera de los dos es un buen resultado.",
     "allBills": "Todos los proyectos",
     "aiMarker": "IA",
-    "aiLabel": "Descifrado con IA · verificado con el registro",
+    "aiLabel": "Traducido por IA · verificado con el registro",
     "aiLede": "La versión en lenguaje claro va primero. El texto oficial siempre es la referencia.",
     "congressLabel": "Congreso {congress}",
     "officialDisclosure": "Leer el texto oficial",
@@ -387,7 +387,7 @@
     },
     "phone": {
       "billId": "H.R. 1787",
-      "decodedChip": "Descifrado con IA",
+      "decodedChip": "Traducido por IA",
       "billHeadline": "La Casa de Moneda de EE. UU. acuñaría monedas de Roberto Clemente en 2027",
       "billTldr": "Tres monedas conmemorativas en 2027 — los recargos irían a su fundación, sin costo para los contribuyentes.",
       "scriptSnippet": "Hola, me llamo [TU NOMBRE] y soy constituyente de [TU CIUDAD O CÓDIGO POSTAL]. Llamo sobre la H.R. 1787, la Ley de la Moneda Conmemorativa de Roberto Clemente…",
@@ -496,7 +496,7 @@
     "sourceTitle": "De dónde vienen los datos",
     "sourceBody": "El estado, las fechas, el patrocinador y el texto de cada proyecto vienen de Congress.gov. Los datos de representantes y oficinas distritales vienen del proyecto de dominio público unitedstates/congress-legislators. Ambos se actualizan solo mediante la sincronización nocturna propia de Oravan. El envoltorio de citación del MCP describe la fuente en el idioma que pida cada consulta — a continuación se muestran ambas versiones, ya que esta página la leen personas en los dos idiomas:",
     "aiTitle": "La política de contenido con IA",
-    "aiBody": "En la página de un proyecto de ley aparecen dos tipos de texto, y nunca se presentan igual. El registro oficial — título, estado, patrocinador, fechas, última acción, el enlace a Congress.gov — se copia, no se genera. La capa en lenguaje sencillo — el titular, el resumen y las secciones qué/quién/por qué/costo — la redacta la IA, y ningún campo se publica sin pasar controles automáticos: los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen — si a un resumen le falta un campo obligatorio se descarta en lugar de guardarse a medias, y todo el corpus se vuelve a revisar antes de que la sincronización nocturna pueda publicar nada. La neutralidad se sostiene de dos maneras distintas, y no las mezclamos: en los resúmenes de proyectos de ley es una instrucción de redacción al modelo; en las Grandes preguntas es un control de vocabulario que bloquea la publicación. Dondequiera que aparezca contenido redactado por IA — el sitio, el servidor MCP, un widget — lleva esta etiqueta, en el idioma de la solicitud; ambas versiones se muestran abajo:",
+    "aiBody": "En la página de un proyecto de ley aparecen dos tipos de texto, y nunca se presentan igual. El registro oficial — título, estado, patrocinador, fechas, última acción, el enlace a Congress.gov — se copia, no se genera. La capa en lenguaje sencillo — el titular, el resumen y las secciones qué/quién/por qué/costo — la redacta la IA, y ningún campo se publica sin pasar controles automáticos: los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen — si a un resumen le falta un campo obligatorio se descarta en lugar de guardarse a medias, y todo el corpus se vuelve a revisar antes de que la sincronización nocturna pueda publicar nada. La versión en español de esa capa es una traducción hecha por IA del resumen en inglés, producida en la misma llamada al modelo y no en una segunda lectura del proyecto de ley, y pasa los mismos controles: el español es uno de esos campos obligatorios, así que un resumen sin él nunca se publica solo en inglés. La neutralidad se sostiene de dos maneras distintas, y no las mezclamos: en los resúmenes de proyectos de ley es una instrucción de redacción al modelo; en las Grandes preguntas es un control de vocabulario que bloquea la publicación. Dondequiera que aparezca contenido redactado por IA — el sitio, el servidor MCP, un widget — lleva esta etiqueta, en el idioma de la solicitud; ambas versiones se muestran abajo:",
     "aiCallScript": "Los guiones de llamada siguen una regla aún más estricta: se redactan solo dentro del propio sitio de Oravan, y quien llama debe leer y puede editar el guion antes de marcar. El servidor MCP de Oravan nunca genera uno — en su lugar, devuelve un enlace al flujo del sitio, para que ese paso de revisión humana no pueda saltárselo un agente.",
     "licenseTitle": "Licencias",
     "licenseOfficialLabel": "Los datos oficiales subyacentes — dominio público de EE. UU., en ambos idiomas:",
@@ -570,7 +570,7 @@
     "errorLabel": "Revisa esto"
   },
   "og": {
-    "aiDecoded": "Descifrado con IA",
+    "aiDecoded": "Traducido por IA",
     "aiDrafted": "Resumen redactado con IA"
   },
   "freshness": {
@@ -746,7 +746,7 @@
     "title": "Socios",
     "intro": "Los widgets de Oravan están hechos para vivir dentro de las páginas de otros — artículos de prensa, guías de biblioteca, el centro de acción de una organización. Todo lo de esta página se puede usar gratis hoy; aquí está lo que recibe cada tipo de socio, y dónde empieza el nivel con licencia.",
     "newsroomsTitle": "Redacciones en español y medios locales",
-    "newsroomsBody": "Inserta un buscador de representantes o una tarjeta de ley en lenguaje claro dentro de cualquier artículo — dos etiquetas de script, sin cuentas, sin rastrear a tus lectores, nunca. Aquí el español no es una capa de traducción: cada superficie sale en inglés y español como iguales, así que un medio que publica primero en español inserta un widget que habla primero en español. Dale tus colores de sección, o usa el marco sin marca para que el widget se lea como parte de tu página.",
+    "newsroomsBody": "Inserta un buscador de representantes o una tarjeta de ley en lenguaje claro dentro de cualquier artículo — dos etiquetas de script, sin cuentas, sin rastrear a tus lectores, nunca. Aquí el español va a la par del inglés, nunca como un añadido: cada texto de la interfaz se escribe en los dos idiomas, la capa en lenguaje claro de cada proyecto de ley la traduce la IA a partir del resumen en inglés, y ningún idioma se publica sin el otro — así que un medio que publica primero en español inserta un widget que habla primero en español, completo desde el primer día. Dale tus colores de sección, o usa el marco sin marca para que el widget se lea como parte de tu página.",
     "newsroomsCta": "Crea tu widget",
     "librariesTitle": "Bibliotecas y programas cívicos",
     "librariesBody": "Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, y lenguaje claro que nunca se publica sin pasar controles automáticos contra el registro oficial. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono.",
