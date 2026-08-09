@@ -15,15 +15,18 @@ import { expect, test } from '@playwright/test';
 // whose failure mode is "fewer events tonight, the rest tomorrow": bounded,
 // self-correcting, and already printed in the run log. A test there could not
 // catch anything a reader would ever see.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   assignUpdateText,
   decodeUpdates,
   generateStateSummary,
   lintPair,
+  pruneStore,
   writeIfChanged,
 } from '../scripts/moment-updates.mjs';
 import { actionToCandidate, fallbackTextFor } from '../scripts/moment-updates-map.mjs';
-import { SCHEMA_VERSION } from '../lib/moment-updates-gate.mjs';
+import { HARD_DAY_CEILING, MAX_REVISIONS, SCHEMA_VERSION } from '../lib/moment-updates-gate.mjs';
 
 /* ------------------------------------------------------------------ *
  * Fixtures — literals in the shape the Congress.gov actions endpoint
@@ -275,4 +278,152 @@ test.describe('writeIfChanged', () => {
     expect(changed).toBe(true);
     expect(wrote).toHaveLength(1);
   });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5 · pruneStore — the storage envelopes, and WHICH MODES ENFORCE THEM.
+ *
+ * This loop lived inside main()'s `if (MODE === 'nightly')` block, so
+ * HARD_DAY_CEILING, MAX_UPDATES_PER_MOMENT, the retention window and the
+ * retired-moment deletion were enforced on the nightly run only — while
+ * newsdesk.yml runs this same script hourly with
+ * MOMENT_UPDATES_MODE=incremental and `git add data/` commits and DEPLOYS
+ * data/moment-updates.json exactly as the nightly does. 24 of the day's 25
+ * writes went out with no envelope on them.
+ *
+ * The consequence is worse than a large file: `> HARD_DAY_CEILING` is a
+ * VIOLATION in scripts/check-moment-updates.mjs, which is a required step on
+ * every PR and every push to main. An hourly run could ship a file that
+ * reddens CI for everyone until the next nightly trimmed it — a scheduled,
+ * self-inflicted outage with no code change to blame.
+ *
+ * A wiring bug needs a wiring test, which is why the loop is now an exported
+ * function instead of eight lines inside an unexported async main().
+ * ------------------------------------------------------------------ */
+
+const LIVE_MOMENTS = { 'test-moment': { status: 'live' } };
+
+/** `count` updates, all on ONE moment-day — the shape a multi-vehicle moment
+ *  (iran-war-powers carries four) reaches on a busy day through increments. */
+function busyDay(count: number) {
+  return {
+    'test-moment': {
+      updates: Array.from({ length: count }, (_, i) => ({
+        id: `u_${String(i).padStart(8, '0')}`,
+        class: i === 0 ? 'vote' : 'floor_action',
+        vehicle: 'hr-9770-119',
+        day: '2026-07-24',
+        recorded_at: '2026-07-24T12:00:00Z',
+      })),
+      summary_revisions: [],
+    },
+  };
+}
+
+const NOW = Date.parse('2026-07-24T18:00:00Z');
+
+test.describe('pruneStore enforces the envelopes in EVERY mode', () => {
+  for (const mode of ['incremental', 'nightly'] as const) {
+    test(`${mode}: a 13-update day is trimmed to the 12-update hard ceiling`, () => {
+      const store = busyDay(13);
+      pruneStore(store, LIVE_MOMENTS, { now: NOW, mode });
+      expect(store['test-moment'].updates).toHaveLength(HARD_DAY_CEILING);
+      // And it sheds by class priority, so the roll-call vote is never what
+      // gets dropped — the property pruneEntry exists to guarantee.
+      expect(store['test-moment'].updates.some((u: { class: string }) => u.class === 'vote')).toBe(true);
+    });
+
+    test(`${mode}: a day inside the ceiling is left completely alone`, () => {
+      const store = busyDay(HARD_DAY_CEILING);
+      pruneStore(store, LIVE_MOMENTS, { now: NOW, mode });
+      expect(store['test-moment'].updates).toHaveLength(HARD_DAY_CEILING);
+    });
+
+    test(`${mode}: a retired moment's entry leaves the file`, () => {
+      const store = busyDay(2);
+      const deleted = pruneStore(store, { 'test-moment': { status: 'retired' } }, { now: NOW, mode });
+      expect(deleted).toEqual(['test-moment']);
+      expect(store['test-moment']).toBeUndefined();
+    });
+
+    test(`${mode}: an entry for a moment that no longer exists leaves too`, () => {
+      const store = busyDay(2);
+      expect(pruneStore(store, {}, { now: NOW, mode })).toEqual(['test-moment']);
+    });
+
+    test(`${mode}: _meta is never treated as a moment`, () => {
+      const store = { ...busyDay(1), _meta: { schema: SCHEMA_VERSION } } as Record<string, unknown>;
+      pruneStore(store, LIVE_MOMENTS, { now: NOW, mode });
+      expect(store._meta).toEqual({ schema: SCHEMA_VERSION });
+    });
+  }
+
+  test('the ONLY behavioural difference between the modes is the reserved revision slot', () => {
+    // Nightly is about to append one revision, so it prunes to MAX_REVISIONS-1
+    // to leave room (the 2026-08-06 off-by-one that committed 31). An
+    // incremental run appends nothing, so reserving would evict the oldest
+    // revision every hour to make room for nothing.
+    const revisions = Array.from({ length: MAX_REVISIONS }, (_, i) => ({
+      id: `s_${String(i).padStart(8, '0')}`,
+      grounded_in: { update_ids: [] },
+    }));
+    const entry = () => ({ 'test-moment': { updates: [], summary_revisions: [...revisions] } });
+
+    const incremental = entry();
+    pruneStore(incremental, LIVE_MOMENTS, { now: NOW, mode: 'incremental' });
+    expect(incremental['test-moment'].summary_revisions).toHaveLength(MAX_REVISIONS);
+
+    const nightly = entry();
+    pruneStore(nightly, LIVE_MOMENTS, { now: NOW, mode: 'nightly' });
+    expect(nightly['test-moment'].summary_revisions).toHaveLength(MAX_REVISIONS - 1);
+  });
+
+  test('an hourly prune that finds nothing to do changes nothing, so it cannot cause a deploy', () => {
+    // The write-discipline invariant this script is built around: a no-op run
+    // must produce byte-identical output. If pruneStore rewrote entries
+    // gratuitously, moving it onto the hourly path would have turned an
+    // hourly cron into an hourly deploy.
+    const store = busyDay(3);
+    const before = JSON.stringify(store);
+    pruneStore(store, LIVE_MOMENTS, { now: NOW, mode: 'incremental' });
+    expect(JSON.stringify(store)).toBe(before);
+  });
+});
+
+/* The wiring itself, pinned as text: the prune must sit OUTSIDE the nightly
+   guard, and BEFORE the summary loop (generateStateSummary grounds its
+   revision in `entry.updates`, so pruning afterwards would ground it in
+   events on their way out of the file). */
+test('the prune call is outside the nightly guard and before the summary loop', () => {
+  // Scoped to main()'s BODY on purpose: every one of these names also appears
+  // as a top-level `export function`, and indexing the whole file compares
+  // definitions rather than call sites — which is exactly how the first draft
+  // of this test passed for the wrong reason.
+  const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+  const mainAt = src.indexOf('\nasync function main() {');
+  expect(mainAt, 'main() not found').toBeGreaterThan(-1);
+  const body = src.slice(mainAt);
+
+  const prune = body.indexOf('pruneStore(store, moments,');
+  const guard = body.indexOf("if (MODE === 'nightly') {\n    let summaries");
+  const summary = body.indexOf('await generateStateSummary(');
+  for (const [name, i] of [['prune call', prune], ['nightly guard', guard], ['summary call', summary]] as [string, number][]) {
+    expect(i, `${name} not found inside main()`).toBeGreaterThan(-1);
+  }
+  // Outside the nightly guard — the whole fix.
+  expect(prune).toBeLessThan(guard);
+  // …and still before the summary, which grounds its revision in
+  // `entry.updates`; pruning afterwards would ground it in events on their
+  // way out of the file.
+  expect(prune).toBeLessThan(summary);
+});
+
+test('newsdesk.yml really does run this script and commit its output hourly', () => {
+  // The premise of the whole fix. If either half of this stops being true the
+  // reasoning above needs revisiting, not the test deleting.
+  const yml = readFileSync(join(process.cwd(), '.github/workflows/newsdesk.yml'), 'utf8');
+  expect(yml).toMatch(/MOMENT_UPDATES_MODE:\s*incremental/);
+  expect(yml).toMatch(/node scripts\/moment-updates\.mjs/);
+  expect(yml).toMatch(/git add data\//);
+  expect(yml).toMatch(/cron:\s*'7 \* \* \* \*'/);
 });
