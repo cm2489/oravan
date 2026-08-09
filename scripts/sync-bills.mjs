@@ -138,6 +138,7 @@ let added = 0;
 let refreshed = 0; // combined total across both passes (log-only, not gated)
 let gated = 0; // combined total across both passes - no real legislative motion
 let partialSkipped = 0; // combined - unreadable payload, bill left untouched
+let noTextSkipped = 0; // combined - real bill, no published text yet, so not decoded
 let newFailed = 0; // new-bill decode failures specifically (subset of `failed` below)
 
 const ctxBase = { bills, es, bySlug, anthropic, forceSlugs };
@@ -152,7 +153,7 @@ const handledSlugs = new Set();
 const recentDecodeCap = Math.min(RECENT_DECODE_RESERVE, MAX_NEW_DECODES);
 console.log(`recent-first pass: fetching up to ${RECENT_FETCH_LIMIT} most-recently-updated bills (decode reserve ${recentDecodeCap})`);
 const recentBills = await fetchRecentlyUpdated(RECENT_FETCH_LIMIT);
-let recentRefreshed = 0, recentAdded = 0, recentGated = 0, recentDeferred = 0, recentPartial = 0, recentFailed = 0;
+let recentRefreshed = 0, recentAdded = 0, recentGated = 0, recentDeferred = 0, recentPartial = 0, recentNoText = 0, recentFailed = 0;
 for (const u of recentBills) {
   const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < recentDecodeCap });
   if (result.outcome === 'refreshed') {
@@ -169,11 +170,18 @@ for (const u of recentBills) {
     // handledSlugs - the skip is not a resolution, so pass 2 may re-fetch it
     // this same run and land a good payload the second time.
     partialSkipped++; recentPartial++;
+  } else if (result.outcome === 'skipped_no_text') {
+    // A real bill with no published text yet: refused rather than decoded
+    // from its title. Handled exactly like 'gated' — a resolution, not a
+    // deferral — so it IS added to handledSlugs: pass 2 re-fetching it this
+    // same run would ask the same /text endpoint the same question and spend
+    // two more API calls to get the same empty answer.
+    noTextSkipped++; recentNoText++; handledSlugs.add(result.slug);
   } else {
     recentFailed++; // logged only; deliberately NOT folded into the abort check below
   }
 }
-console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} added+decoded, ${recentGated} gated (no real motion), ${recentDeferred} deferred (reserve exhausted), ${recentPartial} skipped (partial payload), ${recentFailed} failed`);
+console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} added+decoded, ${recentGated} gated (no real motion), ${recentDeferred} deferred (reserve exhausted), ${recentPartial} skipped (partial payload), ${recentNoText} skipped (no bill text published yet), ${recentFailed} failed`);
 
 // ---- Pass 2: ascending backlog scan from the cursor ---------------------
 // Unchanged shape from before the two-pass fetch - see the header comment.
@@ -236,6 +244,15 @@ for (const u of updated.slice(0, MAX_UPDATES)) {
       // skips here is therefore NOT counted in newSeen below: we never
       // established a readable record to have seen.
       partialSkipped++;
+    } else if (result.outcome === 'skipped_no_text') {
+      // Same cursor treatment as 'gated', for the same reason: the bill is
+      // real and its payload was readable, we simply refused to summarize a
+      // document Congress.gov hasn't published. Nothing was stored, so there
+      // is nothing to retry and nothing to freeze for - Congress.gov bumps
+      // updateDate when the text lands and the feed brings it back then.
+      // Counted in newSeen below (unlike 'skipped_partial'): we really did
+      // read this bill's record, so saying we saw it is honest.
+      noTextSkipped++; handledSlugs.add(result.slug);
     } else {
       failed++;
       // A new bill that failed to decode must be retried; a failed refresh of
@@ -267,6 +284,7 @@ for (const slug of forceSlugs) {
   if (result.outcome === 'refreshed') refreshed++;
   else if (result.outcome === 'added') added++;
   else if (result.outcome === 'skipped_partial') partialSkipped++;
+  else if (result.outcome === 'skipped_no_text') noTextSkipped++;
   else if (result.outcome === 'failed') failed++;
   handledSlugs.add(slug);
 }
@@ -289,9 +307,11 @@ writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 // resolves is NOT double-counted - see recentDeferred's comment above).
 // The one exception is 'skipped_partial', counted in partialSkipped instead:
 // its payload was unreadable, so we can't honestly say we saw a bill at all.
-const newSeen = added + gated + queued + newFailed;
+// 'skipped_no_text' IS counted: that bill's record read fine and the bill is
+// real - only its text is missing, so we saw it and declined to decode it.
+const newSeen = added + gated + queued + newFailed + noTextSkipped;
 console.log(
-  `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${failed} failed (${newFailed} new); new bills seen this run: ${newSeen}; corpus ${bills.length}`
+  `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${noTextSkipped} skipped: no bill text published yet (not decoded), ${failed} failed (${newFailed} new); new bills seen this run: ${newSeen}; corpus ${bills.length}`
 );
 // Mostly-failed run: don't let CI commit garbage. Scoped to the ascending
 // pass's own failed/updated.length exactly as before the two-pass fetch -

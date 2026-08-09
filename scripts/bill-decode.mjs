@@ -36,19 +36,68 @@ import { generateSearchInputs } from './search-inputs.mjs';
 // would add unbounded thinking spend to batch calls.
 export const DECODE_MODEL = 'claude-sonnet-5';
 
+const formattedTextUrl = (v) =>
+  (v?.formats ?? []).find((f) => f?.type === 'Formatted Text')?.url ?? null;
+
+/**
+ * The version of a bill we decode from: the CURRENT one — Congress.gov's
+ * /text `textVersions` array as returned, first entry carrying a Formatted
+ * Text URL. Null when the bill has no retrievable text at all.
+ *
+ * This used to iterate `[...versions].reverse()`, which took the LAST entry
+ * and therefore decoded almost every bill from the text as INTRODUCED, no
+ * matter how far it had since moved. Live-verified against the API on
+ * 2026-08-09, 67 multi-version bills of the 119th:
+ *
+ *   s/1199    Engrossed in Senate@2026-04-29 | Reported@2025-07-30 | Introduced@2025-03-27
+ *   hr/2701   Placed on Calendar Senate@2025-12-09 | Engrossed in House@2025-09-15
+ *             | Reported in House@2025-09-09 | Introduced in House@2025-04-07
+ *
+ * The array is ordered MOST-ADVANCED FIRST. It is NOT simply date-descending,
+ * and a future reader must not "fix" it by sorting on `date`: the two
+ * terminal texts of an enacted bill sit outside the date order entirely —
+ * `Enrolled Bill` is pinned FIRST and carries `date: null`, and `Public Law`
+ * is pinned LAST despite holding the NEWEST date (hr/1: Enrolled@null |
+ * Engrossed Amendment Senate@2025-07-01 | ... | Reported@2025-05-20 |
+ * Public Law@2025-07-05). Measured 2026-08-09: Enrolled first in 25/25 and
+ * Public Law last in 25/25 enacted bills sampled, and entry [0] was the
+ * most-advanced text in 42/42 in-progress multi-version bills. So entry [0]
+ * is the current text in every observed shape, and the old reverse() landed
+ * on `Introduced` for everything still moving — while accidentally landing
+ * on the correct `Public Law` for bills already enacted, which is why the
+ * damage never showed up in the enacted records anyone spot-checked.
+ *
+ * Versions with no Formatted Text URL are skipped, not treated as the end of
+ * the list — the pick is "the newest version we can actually read".
+ */
+export function pickTextVersion(versions) {
+  return (versions ?? []).find((v) => formattedTextUrl(v)) ?? null;
+}
+
+/**
+ * The current text of one bill as plain words, or null when Congress.gov
+ * publishes NO text for it yet (the caller refuses to decode on null — see
+ * syncOneBill). Throws when a version exists but its document can't be
+ * fetched, which is a retryable failure rather than a text-less bill.
+ *
+ * Only the current version is fetched. The old loop fell through to the next
+ * version on a non-ok response, which — now that we start from the newest
+ * rather than the oldest — would quietly decode a SUPERSEDED document
+ * whenever the current one's HTML lagged, reintroducing exactly the staleness
+ * above with no marker on the record to show it. Nothing distinguishes a
+ * summary of last month's text from a summary of this week's once it is
+ * stored, so a text we can't fetch is refused and retried, never approximated
+ * from an older one.
+ */
 async function fetchBillText(type, number) {
   const data = await cg(`/bill/${CONGRESS}/${type}/${number}/text`);
-  const versions = data.textVersions ?? [];
-  for (const v of [...versions].reverse()) {
-    const fmt = (v.formats ?? []).find((f) => f.type === 'Formatted Text');
-    if (fmt?.url) {
-      const res = await fetch(fmt.url);
-      if (!res.ok) continue;
-      const html = await res.text();
-      return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000);
-    }
-  }
-  return null;
+  const version = pickTextVersion(data.textVersions);
+  if (!version) return null;
+  const url = formattedTextUrl(version);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`bill text ${res.status} for ${type}/${number} (${version.type})`);
+  const html = await res.text();
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000);
 }
 
 const DECODE_TAGS = [
@@ -81,6 +130,10 @@ function normChips(s) {
   return chips;
 }
 
+/** Decode ONE bill from its own text. `text` is required and is always the
+ *  document — it used to fall back to `bill.title` when fetchBillText came
+ *  back null, which produced a normal-looking, unlabeled AI summary of a
+ *  document the model had never read. See syncOneBill's null-text refusal. */
 async function decode(anthropic, bill, text) {
   const sum = await anthropic.messages.create({
     model: DECODE_MODEL, max_tokens: 900, thinking: { type: 'disabled' },
@@ -89,7 +142,7 @@ async function decode(anthropic, bill, text) {
 Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}
 
 Full text (may be truncated):
-${text ?? bill.title}` }],
+${text}` }],
   });
   const ai_summary = sum.content[0].text.trim();
 
@@ -177,6 +230,12 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *                 created and NOT decoded. Neither a change nor a failure —
  *                 idempotent, nothing to retry, and the bill re-enters on
  *                 its next real move via Congress.gov's own updateDate.
+ *   'skipped_no_text' — a brand-new bill cleared the gate, but Congress.gov
+ *                 publishes no readable text version for it yet, so NOTHING
+ *                 was written and no decode was spent: we will not summarize
+ *                 a document we could not read. Like 'gated' and unlike
+ *                 'failed' — nothing stored, nothing to retry, and the bill
+ *                 re-enters via its own updateDate when its text lands.
  *   'added'     — a brand-new bill was decoded and pushed into the corpus
  *   'gated'     — a brand-new bill was found but shows no real legislative
  *                 motion (and isn't force-bypassed) — NOT stored anywhere.
@@ -186,7 +245,9 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  *                 re-evaluates against its then-current status.
  *   'budget'    — a brand-new bill cleared the gate (or was forced) but
  *                 `allowDecode` was false this call
- *   'failed'    — the fetch or decode threw; `isNew` tells the caller
+ *   'failed'    — the fetch or decode threw (including a text version that
+ *                 exists but whose document couldn't be fetched — retryable,
+ *                 unlike 'skipped_no_text'); `isNew` tells the caller
  *                 whether this was a new-bill decode failure (must retry)
  *                 or an existing bill's transient refresh failure
  *                 (idempotent, self-heals on its next update).
@@ -262,7 +323,29 @@ export async function syncOneBill(u, ctx) {
       urgency_score: urgencyScore(status, lastActionDate),
       congress_gov_url: congressGovUrl(type, u.number),
     };
+    // No text, no decode. fetchBillText returns null when Congress.gov
+    // publishes no readable text version for this bill at all, and the decode
+    // used to paper over that by feeding the model `bill.title` instead — one
+    // sentence of formal long title, from which it produced a full
+    // plain-language summary that reads exactly like every other decode. The
+    // model has no way to say "I was not given the bill", so it wrote what a
+    // bill of that name usually contains: sconres-39-119's shipped summary
+    // states that a budget resolution "typically breaks down spending limits
+    // by category ... and it may include instructions", as fact, about a
+    // document nobody read. That is a fabricated record wearing the same
+    // AI label as a real one, on the same page as the official citation.
+    //
+    // Store nothing rather than store that — the identical posture the
+    // unreadable-payload guard above takes, and for the identical reason:
+    // there is no honest partial version of "here is what this bill does".
+    // Not a failure either: the payload was fine and the bill is real, it
+    // simply has no text yet. So there is nothing to retry and nothing for
+    // the cursor to freeze on — Congress.gov bumps the bill's updateDate when
+    // its text is published, and the update feed resurfaces it then, exactly
+    // as it does for a gated one. Callers count the skip and name it in their
+    // run log, so a night that refuses N bills says so out loud.
     const text = await fetchBillText(type, u.number);
+    if (text === null) return { outcome: 'skipped_no_text', slug };
     const dec = await decode(anthropic, bill, text);
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
