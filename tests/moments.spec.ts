@@ -3,7 +3,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
-import { getBill, getTeasers } from '../lib/core';
+import { getTeasers } from '../lib/core';
 import { getNomination } from '../lib/core/nominations';
 import { nominationHasCallScript } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
@@ -99,14 +99,18 @@ test.describe('/questions/[id] detail page', () => {
 
       // The vehicles grid leads with AI-decoded headlines and its CTA is the
       // phone call — the one place unlabeled AI text sat directly on the
-      // control that drives a call (pre-launch audit, constitution-05). It
-      // now carries the same label /bills prints over the same sentences,
-      // and it is DATA-GATED: a grid whose decodes are all still pending
-      // renders official titles, which are not AI text, and claims nothing.
-      const decoded = m.vehicles.some((v) => Boolean(getBill(v.slug)?.ai_headline));
+      // control that drives a call (pre-launch audit, constitution-05).
+      //
+      // The label names BOTH pieces of model-written text on those cards as of
+      // 2026-08-09 — the decoded headline and the role sentence under it — and
+      // is therefore NO LONGER gated on a decode existing: the moments gate
+      // requires a non-empty `role` on every vehicle, so every one of these
+      // sections carries AI-drafted prose. Exactly one chip, on every moment.
       await expect(
-        page.locator('section[aria-labelledby="vehicles-h"]').getByText(en.bills.aiNote, { exact: true })
-      ).toHaveCount(decoded ? 1 : 0);
+        page
+          .locator('section[aria-labelledby="vehicles-h"]')
+          .getByText(en.moments.vehiclesAiNote, { exact: true })
+      ).toHaveCount(1);
 
       // Evidence: the qualifying-signal type and every clickable ref.
       await expect(page.getByRole('heading', { name: en.moments.whyHeading })).toBeVisible();

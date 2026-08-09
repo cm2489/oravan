@@ -219,6 +219,11 @@ const ANCHORS = [
   { id: 'messages/es.json bills.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'bills.aiNote' },
   { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote' },
   { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote' },
+  // The vehicles-section label on /questions/[id] (2026-08-09). It makes the
+  // same publication claim as the two above, over the decoded headline AND the
+  // role sentence on each card, so it is enumerated the same way.
+  { id: 'messages/en.json moments.vehiclesAiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.vehiclesAiNote' },
+  { id: 'messages/es.json moments.vehiclesAiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.vehiclesAiNote' },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.en', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'en:'] },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.es', lang: 'es', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'es:'] },
   { id: 'lib/core/mcp.ts TOOL_INFO.get_bill.description', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['TOOL_INFO', 'get_bill:', 'description:'] },

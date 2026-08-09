@@ -51,6 +51,27 @@ export interface LocalizedList {
  */
 export const QUALIFYING_SIGNAL_TYPES = [
   'tier0_floor',
+  /* FLOOR ACTION, which is not calendar placement — added 2026-08-09 after
+     two live moments printed "On the floor schedule" over records whose
+     LATEST action was a motion on the floor (S.4668: cloture motion on the
+     motion to proceed presented 2026-08-05; S.4784: motion to proceed made
+     2026-07-27). Both had been placed on the Senate calendar earlier, on
+     June 24 and June 15 — a true past fact and a false present tense, and
+     one that had aged out of the 45-day window the same page prints two
+     paragraphs below the chip. The bill corpus already draws this line:
+     `statusKeyFor` in lib/journey.ts returns `floor_activity` rather than
+     `floor_vote` when the last action of a floor_vote bill does not say a
+     chamber placed it on a calendar, so the vehicle card on those two pages
+     read "Floor activity" while the signal chip above it claimed a schedule.
+     One record, two labels, one of them wrong. Chamber-NEUTRAL on purpose,
+     unlike `tier0_exec_calendar` below, whose calendar only the Senate has:
+     the House takes floor action too, and a Senate-only label over a House
+     record would be the exact falsehood this type exists to retire.
+
+     NOTE FOR THE NEXT EDITOR: scripts/check-moments.mjs reads this array out
+     of the source text and treats every single-quoted span inside it as a
+     member, so comments in here carry no apostrophes and no quoted code. */
+  'tier0_floor_action',
   'tier0_scheduled',
   'tier0_most_viewed',
   /* The nomination analogue of `tier0_floor`, added 2026-08-06 with the
