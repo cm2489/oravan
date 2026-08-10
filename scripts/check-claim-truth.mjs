@@ -338,6 +338,21 @@ const ANCHORS = [
   { id: 'messages/es.json bills.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'bills.aiNote' },
   { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote', oversightOk: true },
   { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote', oversightOk: true },
+  // The vehicles-section label on /questions/[id] (2026-08-09). It makes the
+  // same publication claim as the two above, over the decoded headline AND the
+  // role sentence on each card, so it is enumerated the same way.
+  //
+  // NO `oversightOk`, deliberately, and this is the one place where being in
+  // the Moments namespace is NOT enough to earn it: the allowlist is about
+  // what a sentence CLAIMS, not where it lives. This one claims only that
+  // "nothing publishes until it passes automated checks" — true of every
+  // vehicle card, decoded nightly with no human step — so it must stay
+  // subject to R1b. `moments.aiNote` is allowlisted because it additionally
+  // says a person edits and merges the entry, which is true of Big Question
+  // copy alone. Adding the flag here would also break the --self-test that
+  // pins the allowlist at exactly two.
+  { id: 'messages/en.json moments.vehiclesAiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.vehiclesAiNote' },
+  { id: 'messages/es.json moments.vehiclesAiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.vehiclesAiNote' },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.en', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'en:'] },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.es', lang: 'es', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'es:'] },
   { id: 'lib/core/mcp.ts TOOL_INFO.get_bill.description', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['TOOL_INFO', 'get_bill:', 'description:'] },

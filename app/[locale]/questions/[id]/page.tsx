@@ -135,24 +135,6 @@ export default async function MomentPage({
   const currentIsAi = summaryRevision ? isAiSummary(summaryRevision) : false;
   const historyIsAi = priorRevisions.some(isAiSummary);
 
-  // Does the vehicles grid actually print AI text? A decoded headline is
-  // model-written; the official title it falls back to is not (see the chip
-  // beside the grid below). Resolved through the SAME localize call the cards
-  // render with, so the answer is about this locale's headlines, not English's.
-  //
-  // A NOMINATION CARD CONTRIBUTES FALSE, and does so by construction rather
-  // than by exclusion: its headline is Congress.gov's own description
-  // sentence, verbatim, and Oravan writes no decode for one (see
-  // lib/nomination-script.ts's header). getBill() misses on a `pn-…` slug, so
-  // the expression below already answers false — which is exactly right, and
-  // is the reason this stayed data-gated rather than growing a kind branch.
-  // A nomination-only Moment therefore carries no AI chip over its grid,
-  // because there is no AI text under it to label.
-  const vehicleHeadlinesAreAi = moment.vehicles.some((v) => {
-    const raw = getBill(v.slug);
-    return raw ? Boolean(localizeBill(raw, locale).ai_headline) : false;
-  });
-
   /*
    * WHAT THE GRID IS CALLED, AND WHAT IT PROMISES.
    *
@@ -254,12 +236,16 @@ export default async function MomentPage({
       {/* 2 · The Moment entry's own summary — the page's one reading passage,
           and so the one place Besley is spent. Provenance, spelled out because
           this page renders two passages with DIFFERENT provenance and the
-          comment here used to name only one of them: this one comes from
-          data/moments.json, which is hand-authored and merged by the owner —
-          the explicit carve-out in CLAUDE.md's 2026-07-25 amendment, and what
-          moments.howMadeBody promises. The "Where it stands" revision further
-          down is the opposite: machine-written, gate-checked, published with
-          no human step. Never let the two blur. */}
+          comment here has twice named it wrong: this one comes from
+          data/moments.json, whose name, summary and role sentences are AI
+          FIRST DRAFTS (scripts/moment-draft.mjs), which the owner edits and
+          merges by hand — CLAUDE.md's 2026-08-07 amendment, which retired the
+          "hand-authored" claim this comment used to make, and what
+          moments.howMadeBody still promises: an automated gate, then a person,
+          before it publishes. The "Where it stands" revision further down is
+          the one with NO human step at all: machine-written, gate-checked,
+          published by the collector. Never let the two blur — the difference
+          is the review and the merge, not the authorship. */}
       <section aria-labelledby="deciding" className="mt-12 border-t-[3px] border-ink pt-4">
         <h2 id="deciding" className="text-h2 font-extrabold text-ink">
           {isSettled ? t('moments.decidingSettled') : t('moments.decidingLive')}
@@ -414,19 +400,29 @@ export default async function MomentPage({
         {/* Every card below leads with an AI-decoded headline, and the card's
             CTA is the phone call — so this was the one place on the site where
             unlabeled AI text sat directly on the control that drives a call
-            (pre-launch audit 2026-07-25, constitution-05). The label is the
-            same sentence /bills prints over the same decoded headlines, in the
-            same chip, at first contact — above the grid, never in a footnote.
-            DATA-GATED like every other AI chip here: a vehicle whose decode is
-            still pending falls back to its official title, which is not AI
-            text, so a grid with no decode in it carries no label. */}
-        {vehicleHeadlinesAreAi && (
-          <p className="mt-5">
-            <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-              {t('bills.aiNote')}
-            </Chip>
-          </p>
-        )}
+            (pre-launch audit 2026-07-25, constitution-05).
+
+            THE LABEL COVERS THE ROLE SENTENCE TOO, and until 2026-08-09 it did
+            not. The chip printed `bills.aiNote` — a sentence about decoded
+            HEADLINES, data-gated on a decode existing — while the paragraph
+            directly under each headline (the vehicle's `role`: what a yes vote
+            does and what a no vote does) is model-written as well, and sits
+            closer to the green call CTA than the headline does. It is drafted
+            by scripts/moment-draft.mjs today (DRAFT_FIELDS, CLAUDE.md's
+            2026-08-07 amendment), and the two July moments' role clauses were
+            written in a PR the same way; the owner edits and merges them, which
+            is review, not authorship. So the note names both pieces, and it is
+            NO LONGER GATED ON THE DECODE: the gate requires a non-empty `role`
+            on every vehicle (lib/moments-gate.mjs), so this section always
+            carries AI-drafted prose, decode or no decode. The "where there is
+            one" clause is what keeps the headline half honest on a card that
+            fell back to its official title — including a nomination card,
+            whose headline is Congress.gov's own sentence verbatim. */}
+        <p className="mt-5">
+          <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+            {t('moments.vehiclesAiNote')}
+          </Chip>
+        </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {moment.vehicles.map((v) => {

@@ -148,8 +148,8 @@
       "es": "Derogación de sanciones a Siria"
     },
     "summary": {
-      "en": "Before Congress is S. 3172, a bill to repeal certain Acts that impose sanctions upon Syria. It sits on the Senate floor calendar under General Orders, Calendar No. 501, placed there on July 27, 2026. As the record states it, the measure would repeal two long-standing US sanctions laws on Syria. A yes vote would end those sanctions laws. A no vote would leave the existing sanctions laws on Syria in place. Coverage of the bill across five outlets has been described as neutral.",
-      "es": "Ante el Congreso está el S. 3172, un proyecto de ley para derogar ciertas leyes que imponen sanciones a Siria. Se encuentra en el calendario del pleno del Senado bajo Órdenes Generales, Calendario No. 501, colocado ahí el 27 de julio de 2026. Según lo que indica el expediente, la medida derogaría dos leyes de sanciones a Siria de larga data en Estados Unidos. Un voto a favor terminaría con esas leyes de sanciones. Un voto en contra dejaría vigentes las leyes de sanciones existentes sobre Siria. La cobertura del proyecto en cinco medios se ha descrito como neutral."
+      "en": "Before Congress is S. 3172, a bill to repeal certain Acts that impose sanctions upon Syria. It sits on the Senate floor calendar under General Orders, Calendar No. 501, placed there on July 27, 2026. As the record states it, the measure would repeal two long-standing US sanctions laws on Syria. A yes vote would end those sanctions laws. A no vote would leave the existing sanctions laws on Syria in place.",
+      "es": "Ante el Congreso está el S. 3172, un proyecto de ley para derogar ciertas leyes que imponen sanciones a Siria. Se encuentra en el calendario del pleno del Senado bajo Órdenes Generales, Calendario No. 501, colocado ahí el 27 de julio de 2026. Según lo que indica el expediente, la medida derogaría dos leyes de sanciones a Siria de larga data en Estados Unidos. Un voto a favor terminaría con esas leyes de sanciones. Un voto en contra dejaría vigentes las leyes de sanciones existentes sobre Siria."
     },
     "aliases": {
       "en": [
@@ -188,8 +188,8 @@
       "es": "Pago a atletas universitarios"
     },
     "summary": {
-      "en": "Before Congress is S. 4668, the Protect College Sports Act of 2026, sitting on the Senate floor calendar after a cloture motion on the motion to proceed was presented on August 5, 2026. As decoded from the bill page, the measure would set nationwide rules for paying college athletes. Beyond that headline, the record does not detail specific provisions. A yes vote moves the Senate toward taking up and acting on those nationwide rules. A no vote leaves current, non-uniform arrangements for paying college athletes in place, without a federal framework from this bill.",
-      "es": "Ante el Congreso está el S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, que se encuentra en el calendario del pleno del Senado tras una moción de cierre de debate sobre la moción para proceder, presentada el 5 de agosto de 2026. Según el titular en lenguaje sencillo ya publicado, la medida establecería reglas a nivel nacional para pagar a los atletas universitarios. Fuera de ese titular, el expediente no detalla disposiciones específicas. Un voto a favor avanza hacia que el Senado considere y actúe sobre esas reglas nacionales. Un voto en contra deja vigentes los arreglos actuales, no uniformes, para pagar a los atletas universitarios, sin un marco federal de esta ley."
+      "en": "Before Congress is S. 4668, the Protect College Sports Act of 2026. The Senate placed it on its legislative calendar on June 24, 2026, as Calendar No. 449; the latest action in the record is on the floor, where a motion to proceed to the measure was made on August 5, 2026 and a cloture motion on that motion — the step that ends debate — was presented the same day. As decoded from the bill page, the measure would set nationwide rules for paying college athletes. Beyond that headline, the record does not detail specific provisions. A yes vote moves the Senate toward taking up and acting on those nationwide rules. A no vote leaves current, non-uniform arrangements for paying college athletes in place, without a federal framework from this bill.",
+      "es": "Ante el Congreso está el S. 4668, la Ley de Protección de los Deportes Universitarios de 2026. El Senado lo colocó en su calendario legislativo el 24 de junio de 2026, como Calendario No. 449; la acción más reciente del expediente ocurrió en el pleno: el 5 de agosto de 2026 se presentó una moción para proceder a la medida y, ese mismo día, una moción de cierre de debate (cloture) sobre esa moción — el paso que pone fin al debate. Según el titular en lenguaje sencillo ya publicado, la medida establecería reglas a nivel nacional para pagar a los atletas universitarios. Fuera de ese titular, el expediente no detalla disposiciones específicas. Un voto a favor avanza hacia que el Senado considere y actúe sobre esas reglas nacionales. Un voto en contra deja vigentes los arreglos actuales, no uniformes, para pagar a los atletas universitarios, sin un marco federal de esta ley."
     },
     "aliases": {
       "en": [
@@ -204,8 +204,8 @@
       {
         "slug": "s-4668-119",
         "role": {
-          "en": "A yes vote on the cloture motion moves S. 4668 toward further Senate action on nationwide rules for paying college athletes. A no vote leaves the measure without that procedural step taken, keeping existing arrangements in place. The bill currently sits on the Senate floor calendar, not on a floor calendar for a specific vote.",
-          "es": "Un voto a favor de la moción de cierre de debate hace avanzar el S. 4668 hacia una mayor acción del Senado sobre reglas nacionales para pagar a los atletas universitarios. Un voto en contra deja la medida sin ese paso procesal, y mantiene vigentes los arreglos actuales. El proyecto se encuentra actualmente en el calendario del pleno del Senado, no en un calendario para una votación específica."
+          "en": "A yes vote on the cloture motion moves S. 4668 toward further Senate action on nationwide rules for paying college athletes. A no vote leaves the measure without that procedural step taken, keeping existing arrangements in place. The Senate placed the bill on its legislative calendar on June 24, 2026 (Calendar No. 449); its latest recorded action is the cloture motion presented on August 5, 2026, with no vote date in the record.",
+          "es": "Un voto a favor de la moción de cierre de debate hace avanzar el S. 4668 hacia una mayor acción del Senado sobre reglas nacionales para pagar a los atletas universitarios. Un voto en contra deja la medida sin ese paso procesal, y mantiene vigentes los arreglos actuales. El Senado colocó el proyecto en su calendario legislativo el 24 de junio de 2026 (Calendario No. 449); su acción más reciente registrada es la moción de cierre de debate presentada el 5 de agosto de 2026, sin fecha de votación en el expediente."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
         "_status_at_scaffold": "floor_vote",
@@ -213,9 +213,10 @@
       }
     ],
     "qualifying_signal": {
-      "type": "tier0_floor",
+      "type": "tier0_floor_action",
       "refs": [
-        "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4668/all-actions"
       ]
     },
     "opened": "2026-08-09",
@@ -228,8 +229,8 @@
       "es": "Política de defensa anual"
     },
     "summary": {
-      "en": "Before Congress is S. 4784, the National Defense Authorization Act for Fiscal Year 2027, now on the Senate's floor calendar. On July 27, 2026, a motion to proceed to consideration of the measure was made in the Senate. Earlier, on July 14, 2026, the Senate did not invoke cloture — the procedural step that ends debate and allows a final vote — on the motion to proceed, 50 to 46; the motion was later renewed. As described in its plain-language headline, the bill sets troop levels, pay raises, and weapons buys. A yes vote would move this defense policy measure forward toward passage. A no vote would leave the current motion to proceed unresolved and the measure without further Senate action at this time. Press coverage of the bill has been neutral across three outlets.",
-      "es": "Ante el Congreso está el proyecto S. 4784, la Ley de Autorización de Defensa Nacional para el Año Fiscal 2027, que ahora se encuentra en el calendario del pleno del Senado. El 27 de julio de 2026, se presentó una moción para proceder a la consideración de la medida en el Senado. Antes, el 14 de julio de 2026, el Senado no invocó la clausura (cloture) — el paso procesal que cierra el debate y permite una votación final — sobre la moción para proceder, por 50 votos a 46; la moción se renovó más tarde. Según su título en lenguaje sencillo, el proyecto establece niveles de tropas, aumentos salariales y compras de armamento. Un voto a favor haría avanzar esta medida de política de defensa hacia su aprobación. Un voto en contra dejaría la moción actual sin resolver y la medida sin más acción en el Senado por ahora. La cobertura de prensa sobre el proyecto ha sido neutral en tres medios."
+      "en": "Before Congress is S. 4784, the National Defense Authorization Act for Fiscal Year 2027. The Senate placed it on its legislative calendar on June 15, 2026, as Calendar No. 436. On July 14, 2026, the Senate did not invoke cloture — the procedural step that ends debate and allows a final vote — on the motion to proceed, 50 to 46. A motion to proceed to consideration of the measure was made again on July 27, 2026, and that is the latest action in the record. As described in its plain-language headline, the bill sets troop levels, pay raises, and weapons buys. A yes vote would move this defense policy measure forward toward passage. A no vote would leave the current motion to proceed unresolved and the measure without further Senate action at this time.",
+      "es": "Ante el Congreso está el proyecto S. 4784, la Ley de Autorización de Defensa Nacional para el Año Fiscal 2027. El Senado lo colocó en su calendario legislativo el 15 de junio de 2026, como Calendario No. 436. El 14 de julio de 2026, el Senado no invocó la clausura (cloture) — el paso procesal que cierra el debate y permite una votación final — sobre la moción para proceder, por 50 votos a 46. El 27 de julio de 2026 se volvió a presentar una moción para proceder a la consideración de la medida, y esa es la acción más reciente del expediente. Según su título en lenguaje sencillo, el proyecto establece niveles de tropas, aumentos salariales y compras de armamento. Un voto a favor haría avanzar esta medida de política de defensa hacia su aprobación. Un voto en contra dejaría la moción actual sin resolver y la medida sin más acción en el Senado por ahora."
     },
     "aliases": {
       "en": [
@@ -244,8 +245,8 @@
       {
         "slug": "s-4784-119",
         "role": {
-          "en": "A yes vote on the motion to proceed would allow the Senate to take up S. 4784 for consideration. A no vote would leave the measure without further floor action beyond its current placement on the calendar. The bill currently sits on the Senate's floor calendar, with its most recent recorded action being the motion to proceed made on July 27, 2026.",
-          "es": "Un voto a favor de la moción para proceder permitiría que el Senado tome en consideración el S. 4784. Un voto en contra dejaría la medida sin más acción en el pleno más allá de su ubicación actual en el calendario. El proyecto se encuentra actualmente en el calendario del pleno del Senado, y su acción más reciente registrada es la moción para proceder presentada el 27 de julio de 2026."
+          "en": "A yes vote on the motion to proceed would allow the Senate to take up S. 4784 for consideration. A no vote would leave the measure without further floor action beyond what the record already shows. The Senate placed the bill on its legislative calendar on June 15, 2026 (Calendar No. 436); its latest recorded action is the motion to proceed made on July 27, 2026, with no vote date in the record.",
+          "es": "Un voto a favor de la moción para proceder permitiría que el Senado tome en consideración el S. 4784. Un voto en contra dejaría la medida sin más acción en el pleno más allá de lo que ya muestra el expediente. El Senado colocó el proyecto en su calendario legislativo el 15 de junio de 2026 (Calendario No. 436); su acción más reciente registrada es la moción para proceder presentada el 27 de julio de 2026, sin fecha de votación en el expediente."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
         "_status_at_scaffold": "floor_vote",
@@ -253,9 +254,10 @@
       }
     ],
     "qualifying_signal": {
-      "type": "tier0_floor",
+      "type": "tier0_floor_action",
       "refs": [
-        "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4784/all-actions"
       ]
     },
     "opened": "2026-08-09",

@@ -35,6 +35,7 @@ import {
   aliasesFor,
   blankStructure,
   categoryFor,
+  floorActionInRecord,
   kebab,
   leanDiverseRefs,
   momentIdFor,
@@ -50,6 +51,7 @@ interface BillRow {
   full_identifier: string;
   status: string;
   issue_tags?: string[];
+  last_action_text?: string | null;
 }
 interface MomentRow {
   name: { en: string; es: string };
@@ -293,6 +295,102 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     }
   });
 
+  /* ---------------------------------------------------------------- *
+   * tier0_floor_action (2026-08-09). The gap this closes is not
+   * hypothetical: `paying-college-athletes` and `annual-defense-policy`
+   * were opened with `tier0_floor` over records whose last action was a
+   * MOTION, because the scaffold could derive nothing for them and the
+   * empty box got filled by hand. These fixtures are those two records,
+   * verbatim from congress.gov.
+   * ---------------------------------------------------------------- */
+  const CLOTURE_TEXT = 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)';
+  const MTP_TEXT = 'Motion to proceed to consideration of measure made in Senate. (CR S4276)';
+  const FLOOR_ACTION = {
+    slug: 's-4668-119',
+    citation: 'S. 4668',
+    status: 'floor_vote',
+    lastActionDate: '2026-08-05',
+    floorCalendar: false,
+    floorChamber: null,
+    tier: 'neutral',
+    outlets: 5,
+    url: 'https://www.congress.gov/bill/119th-congress/senate-bill/4668',
+  };
+  const NOW_FLOOR = Date.parse('2026-08-09T00:00:00Z');
+
+  test('floor action in the record is tier0_floor_action, evidenced by the record AND its actions page', () => {
+    const { signal, note } = signalFor(FLOOR_ACTION, [], { now: NOW_FLOOR, lastActionText: CLOTURE_TEXT });
+    expect(signal).toEqual({
+      type: 'tier0_floor_action',
+      refs: [FLOOR_ACTION.url, `${FLOOR_ACTION.url}/all-actions`],
+    });
+    expect(note).toBeNull();
+  });
+
+  test('a motion to proceed is the same signal — the type is about the floor, not about cloture', () => {
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, slug: 's-4784-119', url: 'https://www.congress.gov/bill/119th-congress/senate-bill/4784' },
+      [],
+      { now: NOW_FLOOR, lastActionText: MTP_TEXT },
+    );
+    expect(signal.type).toBe('tier0_floor_action');
+  });
+
+  test('a placement is never floor action — the narrower type wins, and tier0_floor is untouched', () => {
+    const { signal } = signalFor(ON_CALENDAR, [], {
+      now: NOW_NEAR,
+      lastActionText: 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 501.',
+    });
+    expect(signal).toEqual({ type: 'tier0_floor', refs: [ON_CALENDAR.url] });
+  });
+
+  test('with no last-action text on file nothing is derived — silence is not evidence', () => {
+    const { signal, note } = signalFor(FLOOR_ACTION, [], { now: NOW_FLOOR });
+    expect(signal).toEqual({ type: '', refs: [] });
+    expect(note).toContain('`qualifying_signal` is empty');
+    expect(note).toContain('no last-action text was on file');
+  });
+
+  test('a record that is neither placement nor floor action still yields the empty box, naming both', () => {
+    const committeeText = 'Committee on Foreign Relations. Hearings held.';
+    const { signal, note } = signalFor(
+      { ...FLOOR_ACTION, status: 'floor_vote' },
+      [],
+      { now: NOW_FLOOR, lastActionText: committeeText },
+    );
+    expect(signal).toEqual({ type: '', refs: [] });
+    expect(note).toContain('tier0_floor`');
+    expect(note).toContain('tier0_floor_action');
+    expect(note).toContain(committeeText);
+  });
+
+  /* The matcher is measured against the corpus, not guessed — the same
+     totality discipline categoryFor gets above. Two directions matter: it
+     must cover the whole population it exists for, and it must never fire
+     on a bill whose record says something else. */
+  test('the floor-action vocabulary is total over the corpus it is for, and fires nowhere else', () => {
+    const isPlacement = (t?: string | null) =>
+      /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.test(t ?? '');
+    let activityOnly = 0;
+    for (const b of bills) {
+      const placement = isPlacement(b.last_action_text);
+      const onFloor = b.status === 'floor_vote';
+      const derived = floorActionInRecord(
+        { status: b.status, floorCalendar: onFloor && placement },
+        b.last_action_text ?? null,
+      );
+      if (onFloor && !placement) {
+        activityOnly++;
+        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(true);
+      } else {
+        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
+      }
+    }
+    // Guards the guard: if the population ever empties, the loop above would
+    // pass vacuously and stop meaning anything.
+    expect(activityOnly).toBeGreaterThan(0);
+  });
+
   test('cross-spectrum coverage is press, with one https ref per lean-diverse outlet', () => {
     const articles = [
       { url: 'https://a.example/1', outlet: 'a.example', lean: 'left' },
@@ -339,12 +437,25 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
   });
 
   test('tier0_scheduled is never emitted — there is no scheduled-vote date to derive it from', () => {
+    // Wired the way structureFor wires it, so this runs the REAL floor-action
+    // path over the real candidates rather than a text-free shortcut of it.
     const emitted = new Set(
-      report.candidates.map((c) => signalFor(c, articlesFor(coverage, c.slug), { now: NOW }).signal.type),
+      report.candidates.map(
+        (c) =>
+          signalFor(c, articlesFor(coverage, c.slug), {
+            now: NOW,
+            lastActionText: billBySlug.get(c.slug)?.last_action_text ?? null,
+          }).signal.type,
+      ),
     );
     expect([...emitted].sort()).not.toContain('tier0_scheduled');
     expect([...emitted].sort()).not.toContain('tier0_exec_calendar');
     expect([...emitted].sort()).not.toContain('tier0_most_viewed');
+    // Closed set: only the three types this file can derive, plus the empty
+    // box. A new member appearing here is a fabrication until it is argued.
+    for (const type of emitted) {
+      expect(['', 'tier0_floor', 'tier0_floor_action', 'press']).toContain(type);
+    }
   });
 
   test('a signal older than the published 45-day criterion is emitted AND flagged', () => {
