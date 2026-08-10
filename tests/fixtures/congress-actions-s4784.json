@@ -1,0 +1,111 @@
+{
+  "actions": [
+    {
+      "actionDate": "2026-07-27",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S4276)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-23",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure withdrawn in Senate.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-23",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S4241-4242)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-20",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S4145)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-14",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S3919)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-14",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion by Senator Thune to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 195) entered in Senate.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-07-14",
+      "recordedVotes": [
+        {
+          "chamber": "Senate",
+          "congress": 119,
+          "date": "2026-07-14T19:39:15Z",
+          "rollNumber": 195,
+          "sessionNumber": 2,
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00195.xml"
+        }
+      ],
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture motion on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 50 - 46. Record Vote Number: 195. (CR S3918)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-06-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S3193)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-06-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S3193)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-06-15",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 436.",
+      "type": "Calendars"
+    },
+    {
+      "actionDate": "2026-06-15",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Committee on Armed Services. Original measure reported to Senate by Senator Wicker. With written report No. 119-127.",
+      "type": "Committee"
+    },
+    {
+      "actionCode": "14000",
+      "actionDate": "2026-06-15",
+      "sourceSystem": {
+        "name": "Library of Congress"
+      },
+      "text": "Committee on Armed Services. Original measure reported to Senate by Senator Wicker. With written report No. 119-127.",
+      "type": "Committee"
+    }
+  ]
+}

@@ -160,6 +160,36 @@ export const MILESTONE_PATTERNS = [
   // Scheduling: a calendar placement is the record saying "this can be called up".
   { key: 'calendar', re: /\bplaced on\b[^.]*\bcalendar\b|\bcalendar no\./i },
   { key: 'cloture', re: /\bcloture\b/i },
+  // The Senate's motion to proceed — how a measure gets called up off the
+  // calendar at all. Added 2026-08-09, after a live miss: S. 4784 filed SIX
+  // of them between June 24 and July 27 (five made, one withdrawn) and this
+  // table matched NONE of them, so the whole run was discarded as procedural
+  // noise. They never reached the timeline, and — because the "Where it
+  // stands" prompt is built from the stored updates and nothing else — they
+  // never reached the model either, which published "No action on this bill
+  // has been recorded in the last 14 days" on /questions/annual-defense-policy
+  // while the July 27 motion sat inside that window and the same page's own
+  // summary and role sentence named it. A same-page contradiction, produced
+  // by a gap in this table.
+  //
+  // OUTCOME-BLIND, and that is inherited rather than invented: `cloture`
+  // above matches "presented", "invoked" and "not invoked" alike, and
+  // `enactment` lists `vetoed` beside `signed by president`. This table
+  // selects EVENTS, in either direction. A motion withdrawn is as dated an
+  // act of the Senate as a motion made — and rendering S. 4784's July 23
+  // "made" while dropping the "withdrawn" of the same day would be the more
+  // editorial choice, not the safer one. Rejections carrying a roll call were
+  // already selected by the recorded-vote path in classifyAction; this is
+  // what catches the voice-vote and no-vote forms that were not
+  // ("Motion to proceed to consideration of measure rejected in Senate by
+  // Voice Vote. (CR S2407)", sjres-182-119's own latest action today).
+  //
+  // BELOW `cloture` deliberately: "Cloture motion on the motion to proceed to
+  // the measure presented in Senate." matches both patterns, and cloture is
+  // the more specific milestone that row records. Ordering it here means no
+  // action this table already accepted changes the key it logs — the change
+  // is purely additive.
+  { key: 'motion_to_proceed', re: /\bmotion to proceed\b/i },
   // Committee milestones that actually move a bill.
   { key: 'committee_action', re: /\bordered to be reported\b|\breported by\b|\bdischarged\b|\bmark-?up session held\b/i },
 ];
