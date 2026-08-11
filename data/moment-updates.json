@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-10T21:55:00.801Z"
+    "generated_at": "2026-08-11T08:58:33.445Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -516,6 +516,35 @@
             "u_c95bb4da",
             "u_7b6f9d34"
           ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_d82b5d57",
+        "generated_at": "2026-08-11T08:58:40.605Z",
+        "as_of_day": "2026-08-11",
+        "text": {
+          "en": "Where it stands: two joint resolutions on export control policy, S.J.Res. 185 and S.J.Res. 172, sit on the floor calendar. Neither has been scheduled for a vote in the last 14 days, and no floor action has been recorded in that time. Separately, H. Con. Res. 38 remains in committee, with no committee action logged in the last 14 days. H. Con. Res. 89 has passed one chamber; no further action on it has been recorded in the last 14 days. Nothing has moved on any of these four measures in the last two weeks.",
+          "es": "En qué situación está: dos resoluciones conjuntas sobre política de control de exportaciones, S.J.Res. 185 y S.J.Res. 172, están en el calendario del pleno. Ninguna ha sido programada para votación en los últimos 14 días, y no se ha registrado ninguna acción en el pleno en ese periodo. Por separado, H. Con. Res. 38 sigue en comité, sin acción de comité registrada en los últimos 14 días. H. Con. Res. 89 fue aprobado por una cámara; no se ha registrado ninguna acción adicional en los últimos 14 días. Nada se ha movido en estas cuatro medidas en las últimas dos semanas."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -1062,6 +1091,28 @@
         },
         "changed_because": [
           "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c21130cf",
+        "generated_at": "2026-08-11T08:58:46.165Z",
+        "as_of_day": "2026-08-11",
+        "text": {
+          "en": "S. 4784 stands on the floor calendar. No action on this bill has been recorded in the past 14 days. The measure remains at the same stage it reached before this period began, with no scheduled vote, hearing, or procedural step logged since then. Anyone tracking this bill will find its position unchanged from two weeks ago: it sits on the calendar, awaiting further floor action, with nothing new entered into the public record to report during this window.",
+          "es": "El proyecto S. 4784 se encuentra en el calendario del pleno. No se ha registrado ninguna accion sobre esta ley en los ultimos 14 dias. La medida permanece en la misma etapa que alcanzo antes de que comenzara este periodo, sin votacion, audiencia ni paso procesal programado desde entonces. Quien siga este proyecto encontrara su posicion sin cambios respecto a hace dos semanas: sigue en el calendario, a la espera de una futura accion en el pleno, sin nada nuevo incorporado al registro publico durante este periodo."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "updates:+6"
         ],
         "model": "claude-sonnet-5"
       }
