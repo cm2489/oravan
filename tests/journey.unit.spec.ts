@@ -29,7 +29,7 @@ import es from '../messages/es.json';
 import { selectFloorVoteFeature } from '../components/system/FloorVotePanel';
 // The freshness half of the panel's triad, from the ONE copy — the corpus
 // sweep below has to apply the same window the selector does.
-import { isSignalFresh } from '../lib/urgency.mjs';
+import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 // The import-free copies the .mjs report carries — pinned corpus-wide in suite 6.
 import {
   floorCalendarChamber as scriptFloorCalendarChamber,
@@ -69,6 +69,21 @@ const slugOf = (b: CorpusBill) => `${b.bill_type}-${b.bill_number}-${b.congress_
 // a Senate-only procedure on a House bill.
 const CLOTURE_TEXT =
   'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)';
+
+/*
+ * THE CLOCK'S TWO FIXTURE DATES (D3, 2026-08-11). deriveJourney and
+ * liveCallTarget now read `last_action_date` as well as the sentence, so every
+ * fixture below carries one — and it has to be RELATIVE to the run, never a
+ * literal, or the whole suite would quietly invert the day it aged past the
+ * window. `FRESH` is inside the 14-day window by a wide margin; `STALE` is a
+ * long way outside it, near the corpus's median demoted placement (140 days on
+ * the day this landed).
+ */
+const DAY_MS = 86_400_000;
+const dateDaysAgo = (days: number) =>
+  new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10);
+const FRESH = dateDaysAgo(2);
+const STALE = dateDaysAgo(140);
 
 /* ------------------------------------------------------------------ *
  * 1 · floorCalendarChamber fixtures (moved verbatim from the bill
@@ -395,8 +410,20 @@ test.describe('passageState', () => {
  * 3 · deriveJourney — the full status behavior table.
  * ------------------------------------------------------------------ */
 test.describe('deriveJourney', () => {
-  const j = (bill_type: string, status: string, last_action_text: string | null = null) =>
-    deriveJourney({ bill_type, status, last_action_text } as Parameters<typeof deriveJourney>[0]);
+  /* `last_action_date` defaults to FRESH: every fixture written before the
+     clock landed was implicitly asking "what does the record say about a bill
+     that is moving", and answering it with an undated record would have made
+     the whole suite assert the stale branch. The stale cases pass STALE
+     explicitly, right where they are read. */
+  const j = (
+    bill_type: string,
+    status: string,
+    last_action_text: string | null = null,
+    last_action_date: string | null = FRESH
+  ) =>
+    deriveJourney({ bill_type, status, last_action_text, last_action_date } as Parameters<
+      typeof deriveJourney
+    >[0]);
 
   test('THE FLAGSHIP: a House bill under Senate cloture is at the Senate step, not on a calendar', () => {
     // This exact assertion fails on the pre-fix stepper, which pinned
@@ -455,6 +482,87 @@ test.describe('deriveJourney', () => {
     expect(
       j('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)').nowKey
     ).toBe('nowFloorActivity');
+  });
+
+  /* ---------------------------------------------------------------- *
+   * D3 (2026-08-11) — THE CLOCK. #198 gave the bill page's green panel
+   * the freshness window and stopped at that one render site; the
+   * derivation underneath kept answering "it's on the Senate floor
+   * calendar" for placements of unlimited age. 306 of the corpus's 323
+   * dated placements were outside the window that day, median 140 days.
+   * ---------------------------------------------------------------- */
+  const CALENDAR_PLACEMENT =
+    'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
+
+  test('THE D3 FLAGSHIP: an aged placement keeps its step and its chamber, and loses the present tense', () => {
+    const stale = j('hr', 'floor_vote', CALENDAR_PLACEMENT, STALE);
+    expect(stale).toMatchObject({
+      // The POSITION is a fact about the record and does not move…
+      step: 3,
+      current: 'senate',
+      nowChamber: 'senate',
+      // …only the tense and the urgency permission do.
+      onCalendar: false,
+      nowKey: 'nowFloorStale',
+    });
+    // The same record, two days old, is untouched — the gate is age, not text.
+    expect(j('hr', 'floor_vote', CALENDAR_PLACEMENT, FRESH)).toMatchObject({
+      step: 3,
+      current: 'senate',
+      onCalendar: true,
+      nowKey: 'nowFloor',
+    });
+  });
+
+  test('an aged pending motion stops reading as a live deliberation', () => {
+    expect(j('hr', 'floor_vote', CLOTURE_TEXT, STALE)).toMatchObject({
+      step: 3,
+      current: 'senate',
+      nowChamber: 'senate',
+      nowKey: 'nowFloorActivityStale',
+    });
+  });
+
+  test('the window is the ONE window — SIGNAL_WINDOW_DAYS, not a second number', () => {
+    /*
+     * Read through the same constant the green panel and the homepage crown
+     * gate on: a literal 14 here would be a second definition of "now".
+     *
+     * ONE DAY EITHER SIDE, never the edge itself. Corpus dates are date-only
+     * (midnight UTC) while isSignalFresh measures in milliseconds, so a
+     * placement dated exactly SIGNAL_WINDOW_DAYS ago is inside the window only
+     * at exactly 00:00 UTC and outside it for the rest of the day — asserting
+     * that instant would be a clock-dependent coin flip, which is the flake
+     * class tests/corpus.ts's stability guard exists for.
+     */
+    expect(j('s', 'floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)).nowKey).toBe(
+      'nowFloor'
+    );
+    expect(j('s', 'floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)).nowKey).toBe(
+      'nowFloorStale'
+    );
+  });
+
+  test('an undated floor record is never live — the same rule amber has always run on', () => {
+    expect(j('s', 'floor_vote', CALENDAR_PLACEMENT, null).nowKey).toBe('nowFloorStale');
+  });
+
+  test('a settled motion is unaffected by the clock — it was already past tense', () => {
+    // FLOOR_SETTLED texts read "the last motion to do so failed", which is
+    // true at any age. Clocking them would say the same thing twice.
+    expect(j('sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
+    expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
+  });
+
+  test('nothing outside the floor branch is clocked', () => {
+    // passed_chamber is a relational fact about a vote that happened — 274 of
+    // the corpus's 275 records are outside the window, and clocking them would
+    // silence the routing on nearly all of them. Committee too.
+    expect(j('hr', 'passed_chamber', 'Received in the Senate.', STALE).nowKey).toBe('nowPassed');
+    expect(j('hr', 'committee', 'Referred to the Subcommittee on Health.', STALE).nowKey).toBe(
+      'nowCommittee'
+    );
+    expect(j('hr', 'signed', 'Became Public Law No: 119-1.', STALE).nowKey).toBe('nowSigned');
   });
 
   /*
@@ -536,9 +644,10 @@ test.describe('deriveJourney', () => {
     catalog: typeof en | typeof es,
     bill_type: string,
     status: string,
-    text: string | null
+    text: string | null,
+    date: string | null = FRESH
   ) => {
-    const state = j(bill_type, status, text);
+    const state = j(bill_type, status, text, date);
     const journey = catalog.bill.journey as Record<string, string>;
     return render(journey[state.nowKey], icuParams(state));
   };
@@ -581,6 +690,35 @@ test.describe('deriveJourney', () => {
     );
     expect(sentence(es, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
       'el Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó.'
+    );
+  });
+
+  /*
+   * THE TWO NEW SENTENCES, rendered — 312 bills read one of these on the day
+   * D3 landed, so a template that names the wrong chamber or reads as a
+   * present-tense claim would be the defect this change exists to end,
+   * shipped in its own fix. Both languages: the ES pair is an unreviewed
+   * draft, and a draft that renders wrong is worse than one that reads oddly.
+   */
+  test('an aged placement still names the calendar and the chamber, in the past tense, in both languages', () => {
+    expect(sentence(en, 'hr', 'floor_vote', CALENDAR_PLACEMENT, STALE)).toBe(
+      'it was placed on the Senate floor calendar, and the official record shows no floor action on it since.'
+    );
+    expect(sentence(es, 'hr', 'floor_vote', CALENDAR_PLACEMENT, STALE)).toBe(
+      'se incluyó en el calendario del pleno del Senado, y el registro oficial no muestra ninguna acción en el pleno desde entonces.'
+    );
+    // The House side, so a template that hardcodes one chamber fails.
+    expect(sentence(en, 'hr', 'floor_vote', 'Placed on the Union Calendar, Calendar No. 219.', STALE)).toBe(
+      'it was placed on the House floor calendar, and the official record shows no floor action on it since.'
+    );
+  });
+
+  test('an aged pending motion says the chamber acted, never that it is acting', () => {
+    expect(sentence(en, 'hr', 'floor_vote', CLOTURE_TEXT, STALE)).toBe(
+      'the Senate has taken floor action on it, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 'hr', 'floor_vote', CLOTURE_TEXT, STALE)).toBe(
+      'el Senado ha actuado en el pleno, y el registro oficial no muestra nada nuevo desde entonces.'
     );
   });
 
@@ -804,10 +942,19 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
  *     framing over a bill the House votes on, and this is what stops it.
  * ------------------------------------------------------------------ */
 test.describe('liveCallTarget', () => {
-  const bill = (bill_type: string, status: BillStatus, last_action_text: string | null) => ({
+  /* Fresh by default, for the same reason deriveJourney's fixture helper is —
+     these fixtures were all written to ask "where does the record put this
+     bill", and the clock (D3) is a separate question, asked explicitly below. */
+  const bill = (
+    bill_type: string,
+    status: BillStatus,
+    last_action_text: string | null,
+    last_action_date: string | null = FRESH
+  ) => ({
     bill_type,
     status,
     last_action_text,
+    last_action_date,
   });
 
   test('floor calendar placement routes to that chamber, wherever the bill started', () => {
@@ -853,6 +1000,53 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT))).toEqual({
       chamber: 'senate',
       afterVote: false,
+      soleChamber: false,
+    });
+  });
+
+  /*
+   * D3 (2026-08-11). The routing sentence is the strongest claim on the page —
+   * "this bill is in the Senate's hands right now — your senators are the live
+   * call" — and it was firing off 312 floor records outside the 14-day window,
+   * including a 118th-Congress placement from 2024-09-24. Demote, never bury:
+   * null here only drops the routing sentence and the reordering; every dial,
+   * the script and the call dialog are untouched (tests/call-action.spec.ts
+   * owns that half).
+   */
+  test('THE D3 GUARD: an aged floor signal routes NOWHERE, whatever the sentence says', () => {
+    const CAL = 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
+    expect(liveCallTarget(bill('hr', 'floor_vote', CAL, STALE))).toBeNull();
+    expect(liveCallTarget(bill('hr', 'floor_vote', CLOTURE_TEXT, STALE))).toBeNull();
+    // An undated floor record is never live.
+    expect(liveCallTarget(bill('s', 'floor_vote', CAL, null))).toBeNull();
+    // …and the same records inside the window still route, so the gate is age.
+    expect(liveCallTarget(bill('hr', 'floor_vote', CAL, FRESH))).toEqual({
+      chamber: 'senate',
+      afterVote: false,
+      soleChamber: false,
+    });
+  });
+
+  test('the routing clock is the SAME window the stepper reads', () => {
+    // One day either side of SIGNAL_WINDOW_DAYS, never the edge — see the
+    // stepper's own boundary test for why the exact day is unassertable.
+    const CAL = 'Placed on the Union Calendar, Calendar No. 219.';
+    expect(liveCallTarget(bill('hr', 'floor_vote', CAL, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)))).toEqual({
+      chamber: 'house',
+      afterVote: false,
+      soleChamber: false,
+    });
+    expect(liveCallTarget(bill('hr', 'floor_vote', CAL, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)))).toBeNull();
+  });
+
+  test('passed_chamber routing is NOT clocked — a chamber that voted stays voted', () => {
+    // Deliberate asymmetry, and the reason is in liveCallTarget's comment:
+    // "the House has already voted" is a fact about a past event, not a claim
+    // about this week. 274 of the corpus's 275 passed_chamber records sit
+    // outside the window; clocking them would silence nearly all of it.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', STALE))).toEqual({
+      chamber: 'senate',
+      afterVote: true,
       soleChamber: false,
     });
   });
@@ -910,9 +1104,49 @@ test.describe('liveCallTarget', () => {
         bill_type: b.bill_type,
         status: b.status as BillStatus,
         last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
       });
       if (target) expect(target.soleChamber, slugOf(b)).toBe(false);
     }
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE LIVE-CORPUS INVARIANT (D3). The fixtures above pin the shapes
+   * we know; this pins every record tomorrow's sync lands. Stated as an
+   * invariant rather than a count, because the count moves nightly —
+   * 312 demotions on 2026-08-11 (306 placements + 6 pending motions),
+   * and a number here would redden CI on a quiet legislative week.
+   * ---------------------------------------------------------------- */
+  test('no bill outside the signal window makes a live-floor claim, anywhere in the corpus', () => {
+    let demoted = 0;
+    for (const b of floorVote) {
+      const input = {
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      };
+      const { nowKey } = deriveJourney(input);
+      const fresh = isSignalFresh(b.last_action_date);
+      if (!fresh) {
+        // The stepper never speaks in the present tense…
+        expect(nowKey, slugOf(b)).not.toBe('nowFloor');
+        expect(nowKey, slugOf(b)).not.toBe('nowFloorActivity');
+        // …and the rail never routes a live decision.
+        expect(liveCallTarget(input), slugOf(b)).toBeNull();
+        if (nowKey === 'nowFloorStale' || nowKey === 'nowFloorActivityStale') demoted += 1;
+      }
+    }
+    /*
+     * The loop must actually have demoted something, or it passes vacuously —
+     * the same discipline the statusKeyFor split pin uses (suite 6). Only this
+     * side is asserted: aged placements only accumulate (306 of 323 on
+     * 2026-08-11, oldest 686 days), while the FRESH side legitimately empties
+     * out over a recess and asserting it here would redden the CI of unrelated
+     * PRs on a quiet legislative week. The fresh branch is pinned by fixture
+     * in suite 3 instead, where no data can silence it.
+     */
+    expect(demoted, 'no aged floor placement in the corpus — has the gate stopped firing?').toBeGreaterThan(0);
   });
 });
 
@@ -943,7 +1177,16 @@ test.describe('liveCallTargetForNomination', () => {
     // no other chamber, and `received`/`hearing`/`reported` ARE Senate
     // committee stages, so naming the Senate there is a fact, not a guess.
     expect(liveCallTargetForNomination({ status: 'received' })).toEqual(SENATE_CALL);
-    expect(liveCallTarget({ bill_type: 'hr', status: 'committee', last_action_text: null })).toBeNull();
+    expect(
+      liveCallTarget({
+        bill_type: 'hr',
+        status: 'committee',
+        last_action_text: null,
+        // Dated TODAY, so this reads as the structural refusal it is and not
+        // as the D3 freshness gate answering for it.
+        last_action_date: new Date().toISOString().slice(0, 10),
+      })
+    ).toBeNull();
   });
 
   test('terminal statuses route NOWHERE — a confirmed nomination can never read as live', () => {

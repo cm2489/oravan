@@ -185,10 +185,24 @@ export function calendarPlacementSlugs(at: number): { fresh: string[]; stale: st
  * vacuously, which is worse. Naming a different bill would only re-arm the
  * same trap on the next sync, so the specs ask the corpus for a bill that is
  * genuinely in the Senate's hands.
+ *
+ * THE FRESHNESS HALF, added 2026-08-11 with liveCallTarget's own clock: the
+ * routing now requires the floor signal to be inside the published window, so
+ * this mirror must too or the specs would drive a bill whose page prints no
+ * routing sentence — the same trap, re-armed by the clock instead of by the
+ * vocabulary. On the corpus that day it cut the pool from 177 slugs to 19.
+ *
+ * Freshness is judged at `now + CLOCK_SKEW_MS` rather than at `now`, and that
+ * is the whole flake guard: a signal fresh at the LATE end of the window was
+ * fresh at every earlier instant too (isSignalFresh only ever expires), so a
+ * bill this function returns was already live when `next build` baked its
+ * page, however many minutes ago that was. No spec needs a stability skip for
+ * it.
  */
-export function senateLiveBillSlugs(): string[] {
+export function senateLiveBillSlugs(at: number = Date.now()): string[] {
   return corpus
     .filter((b) => b.status === 'floor_vote' && b.ai_headline)
+    .filter((b) => isSignalFresh(b.last_action_date, at + CLOCK_SKEW_MS))
     .filter(
       (b) =>
         floorCalendarChamber(b.last_action_text) === 'senate' ||
