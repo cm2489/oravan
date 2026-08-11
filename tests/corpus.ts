@@ -173,6 +173,42 @@ export function calendarPlacementSlugs(at: number): { fresh: string[]; stale: st
 }
 
 /**
+ * Bills whose newest action is a PENDING floor vote and NOT a placement —
+ * cloture filed, a motion to proceed made, proceedings postponed, a rule
+ * reported — split by the same published signal window.
+ *
+ * The other half of the bill page's green-panel gate since 2026-08-11. The
+ * homepage crown has read this fact since the 2026-08-09 ruling; the bill page
+ * read only placements, so a crowned "Floor vote pending in the Senate" lost
+ * its band one click later. Derived, never pinned: the pending set is small
+ * (8 bills on 2026-08-11, 2 of them inside the window) and it turns over with
+ * every sync, so a named bill would be a trap by next week.
+ *
+ * `calendar` is excluded rather than merely losing the tie, because these
+ * slugs drive assertions about the PENDING copy specifically.
+ */
+export function floorPendingSlugs(at: number): { fresh: string[]; stale: string[] } {
+  const fresh: string[] = [];
+  const stale: string[] = [];
+  for (const b of corpus) {
+    if (b.status !== 'floor_vote' || !b.last_action_date) continue;
+    if (floorCalendarChamber(b.last_action_text) !== null) continue;
+    if (floorPendingChamber(b.last_action_text) === null) continue;
+    (isSignalFresh(b.last_action_date, at) ? fresh : stale).push(slugOf(b));
+  }
+  return { fresh: fresh.sort(), stale: stale.sort() };
+}
+
+/** The chamber the record names for a pending-floor bill, by slug — the specs
+ *  assert the chamber-specific sentence, and must read it out of the same
+ *  sentence the page does rather than guess it from the bill type (H.R. 3633
+ *  is a House bill standing on a SENATE cloture motion). */
+export function pendingChamberOf(slug: string): 'house' | 'senate' | null {
+  const bill = corpus.find((b) => slugOf(b) === slug);
+  return bill ? floorPendingChamber(bill.last_action_text) : null;
+}
+
+/**
  * DECODED bills whose record puts the live call in the Senate with no prior
  * chamber vote — liveCallTarget → {chamber:'senate', afterVote:false}, the
  * routing that prints `bill.liveSenateFloor`.
