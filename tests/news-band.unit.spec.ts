@@ -41,7 +41,6 @@ import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
  */
 
 const T = '2026-08-12';
-const NOW = Date.parse(`${T}T18:00:00Z`);
 const day = (offset: number) => new Date(Date.parse(`${T}T00:00:00Z`) + offset * 86_400_000).toISOString().slice(0, 10);
 
 type Lean = 'left' | 'center' | 'right';
@@ -291,12 +290,21 @@ test.describe('posture: the fallback is a decision, not an accident', () => {
     expect(FILE._meta.window_days).toBe(OUTLET_WINDOW_DAYS);
   });
 
-  test('a file no run has written yet is NOT live — the seed state falls back', () => {
+  test('a file no run has written yet is NOT live, however fresh its stamp', () => {
     // The state this branch merges in: the seed commit carries
     // source_status.press.status === "unknown" until the first hourly newsdesk
     // run replaces it. The band must render exactly what it rendered before the
-    // lamp existed, with no captions, rather than going dark.
-    expect(FILE._meta.source_status.press.status === 'unknown' || conversationPosture(NOW) === 'live').toBeTruthy();
+    // lamp existed, with no captions, rather than going dark — and the stamp
+    // must not be able to rescue it, which is what this asserts one second
+    // after the file's own fetched_at.
+    const justWritten = Date.parse(FILE._meta.fetched_at) + 1_000;
+    if (FILE._meta.source_status.press?.status === 'unknown') {
+      expect(conversationPosture(justWritten)).toBe('unknown');
+    } else {
+      // A real run has written it: then a stamp this fresh IS live, and the
+      // band is the lamp's. Both branches are legitimate states of main.
+      expect(conversationPosture(justWritten)).toBe('live');
+    }
   });
 
   test('the pool is empty whenever the posture is not live', () => {
