@@ -173,8 +173,13 @@ const handler = createMcpHandler(
 
 /*
  * Anonymous (keyless) rate limits per the S11 spec: 60 requests/min and
- * 1,000/day per caller, enforced with the same short-lived rate-limit
- * counters as the rest of the API surface (lib/ratelimit.ts — hashed
+ * 1,000 per counter window per caller — the window is the ceiling, NOT a
+ * calendar day. Counters restart when the hashing salt rotates, so a burst
+ * across that boundary can exceed either figure (see the MCP_DAY_WINDOW_SEC
+ * note below, and ROTATION RESETS EVERY COUNTER in lib/ratelimit.ts, for why
+ * that is the accepted price of the ≤24h pseudonym bound). Enforced with the
+ * same short-lived rate-limit counters as the rest of the API surface
+ * (lib/ratelimit.ts — hashed
  * caller only; a tool name never reaches a counter key, by construction:
  * the limiter API only accepts a caller IP and a closed route label).
  * Only POST carries JSON-RPC work, so only POST is limited; GET/DELETE
