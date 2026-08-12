@@ -569,7 +569,6 @@ export default async function BillPage({
             >
               <BillJourney
                 journey={deriveJourney(bill)}
-                billType={bill.bill_type}
                 introducedLabel={bill.introduced_date ? fmtShort(bill.introduced_date) : undefined}
                 currentLabel={
                   bill.last_action_date ? fmtShort(bill.last_action_date) : undefined
