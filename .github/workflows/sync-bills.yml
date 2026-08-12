@@ -425,7 +425,9 @@ jobs:
         # author is linked, so it is no longer BLOCKED). Deploys can still fail
         # or be dropped silently (PR #18's root cause hid for weeks behind
         # green checkmarks) - poll production until it serves the SHA we just
-        # pushed. Skips with a notice until the PROD_URL repo variable is set.
+        # pushed. A missing PROD_URL repo variable FAILS this step rather than
+        # skipping it (2026-08-12): the variable has been set since 07-11, so
+        # the old soft skip could only ever disarm this switch silently.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}

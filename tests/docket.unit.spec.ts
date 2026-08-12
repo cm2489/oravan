@@ -16,6 +16,9 @@ import {
 } from '../lib/docket.mjs';
 import { SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 import { floorPendingChamber } from '../lib/journey';
+// The TS door, for the one helper the evidence row calls. It imports
+// data/floor-signals.json, which is ~1 KB and (this week) empty of signals.
+import { coversDisplay } from '../lib/docket';
 import { billSlug, getFloorFeatureCandidates, getTopActions } from '../lib/core/bills';
 import { actNowPoolAt, corpus, decidingNowAt, docketedAt, rungAt, slugOf } from './corpus';
 
@@ -357,3 +360,54 @@ test.describe('the live corpus', () => {
  * lib/freshness.ts, which is `server-only`, so importing it under the unit
  * runner fails at module load. The pool those surfaces read is pinned above.
  */
+
+/* ------------------------------------------------------------------ *
+ * COVERAGE, IN THE SOURCE'S OWN WORDS (`coversDisplay`)
+ *
+ * `covers` and `covers_label` are stored side by side on purpose:
+ * scripts/floor-signals-parse.mjs derives the ISO date FROM the printed label
+ * and keeps the label "so the reader can check it". Until 2026-08-12 only the
+ * derivation reached a page — the homepage evidence row printed
+ * "for Aug 13, 2026" where the Daily Digest itself had printed
+ * "8 a.m., Thursday, August 13", dropping the hour and substituting our
+ * arithmetic for the document's sentence. The label wins where a surface shows
+ * coverage; the derived date is the fallback, and `covers` keeps its other job
+ * (signalIsLive's horizon) either way.
+ * ------------------------------------------------------------------ */
+test.describe('coversDisplay · the printed label beats the derived date', () => {
+  test('the source\'s own sentence is returned verbatim, and marked as verbatim', () => {
+    expect(
+      coversDisplay({ covers: '2026-08-13', coversLabel: '8 a.m., Thursday, August 13' })
+    ).toEqual({ label: '8 a.m., Thursday, August 13', verbatim: true });
+  });
+
+  test('with no printed label the ISO date is handed back for the caller to format', () => {
+    expect(coversDisplay({ covers: '2026-08-13', coversLabel: null })).toEqual({
+      iso: '2026-08-13',
+      verbatim: false,
+    });
+    // The House weekly schedule is exactly this case: a week-of date, no label.
+    expect(coversDisplay({ covers: '2026-08-10', coversLabel: '   ' })).toEqual({
+      iso: '2026-08-10',
+      verbatim: false,
+    });
+  });
+
+  test('an announcement that covers nothing prints no coverage at all', () => {
+    expect(coversDisplay({ covers: null, coversLabel: null })).toBeNull();
+  });
+
+  /*
+   * THE LABEL IS NEVER RE-FORMATTED — it is English verbatim, like the quote it
+   * sits under (ruling V4), so `verbatim: true` is what tells the render site to
+   * mark it lang="en" and keep a date formatter away from it. This pins the
+   * discriminant rather than the markup: the render itself is
+   * components/FloorEvidence.tsx, shared by the crown and the bill page, and
+   * data/floor-signals.json carries no signals this week to drive it end to end.
+   */
+  test('a label is never handed back as an ISO date to be formatted', () => {
+    const out = coversDisplay({ covers: '2026-08-13', coversLabel: '8 a.m., Thursday, August 13' });
+    expect(out?.verbatim).toBe(true);
+    expect(out && 'iso' in out).toBe(false);
+  });
+});

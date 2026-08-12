@@ -45,7 +45,7 @@ const CORPUS_STABLE = stableAcross((at) => [anyNowAt(at), anyTopAt(at)]);
 
 const LAST_RUN = new Date(syncState.lastRun).getTime();
 const FRESH_CLOCK = LAST_RUN + 60 * 60 * 1000; // 1h after the last check
-const STALE_CLOCK = LAST_RUN + 10 * 86_400_000; // past the 5d claim window
+const STALE_CLOCK = LAST_RUN + 10 * 86_400_000; // past the 3d claim window
 const DEAD_CLOCK = LAST_RUN + 30 * 86_400_000; // past the 21d dead window
 
 // 2026-07-16 (audit §5 item 4): emptyStateVerdict no longer looks only at
@@ -213,6 +213,54 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     await page.clock.setFixedTime(STALE_CLOCK);
     await page.goto('/es/bills/hr-5582-119');
     await expect(page.getByText(/actividad más reciente del Congreso aún no se muestre/)).toBeVisible();
+  });
+
+  /*
+   * PLACEMENT (2026-08-12). The homepage's loudest recency claims — the
+   * "Moving in Congress this week" masthead and home.topSub's "The bills
+   * moving right now" — used to be qualified by a caveat that sat one full
+   * green panel and the entire bill listing below them. It now rides the
+   * masthead sub itself. Both halves of that are pinned here, because both
+   * are rulings: WITH the claim (the move), and EXACTLY ONCE (the 2026-07
+   * unanimous critique that a repeated note "read as a malfunction banner on
+   * every core surface", recorded in components/StalenessNote.tsx's header).
+   *
+   * Branch-agnostic on purpose: the hot-week masthead is the green slab and
+   * the quiet-week one is paper, but only one renders and both carry the
+   * same topSub paragraph, so this needs no CORPUS_STABLE guard.
+   */
+  const CAVEAT = /newer activity in Congress may not be shown yet/;
+
+  test('homepage: no caveat at all while the check is current', async ({ page }) => {
+    await page.clock.setFixedTime(FRESH_CLOCK);
+    await page.goto('/');
+    await expect(page.getByText(CAVEAT)).toHaveCount(0);
+  });
+
+  test('homepage: the caveat rides the masthead claim, and appears exactly once', async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(STALE_CLOCK);
+    await page.goto('/');
+    // ONE per page — never a banner repeated per claim.
+    await expect(page.getByText(CAVEAT)).toHaveCount(1);
+    // And it is inside the masthead paragraph that makes the claim
+    // (home.topSub), not down by the week note.
+    const sub = page.locator('section[aria-labelledby="top-actions"] p', {
+      hasText: 'The bills moving right now',
+    });
+    await expect(sub.getByText(CAVEAT)).toBeVisible();
+  });
+
+  test('homepage (Spanish): same placement, localized caveat', async ({ page }) => {
+    await page.clock.setFixedTime(STALE_CLOCK);
+    await page.goto('/es');
+    const es = /actividad más reciente del Congreso aún no se muestre/;
+    await expect(page.getByText(es)).toHaveCount(1);
+    const sub = page.locator('section[aria-labelledby="top-actions"] p', {
+      hasText: 'Los proyectos de ley que avanzan ahora mismo',
+    });
+    await expect(sub.getByText(es)).toBeVisible();
   });
 });
 

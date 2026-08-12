@@ -274,7 +274,8 @@ jobs:
         # author is linked, so it is no longer BLOCKED). Deploys can still fail
         # or be dropped silently (PR #18's root cause hid for weeks behind
         # green checkmarks) - poll production until it serves the SHA we just
-        # pushed. Skips with a notice until the PROD_URL repo variable is set.
+        # pushed. A missing PROD_URL repo variable FAILS this step rather than
+        # skipping it (2026-08-12) - see scripts/verify-deploy.mjs's header.
         # Stdlib-only script: needs no npm ci, the runner's node suffices.
         if: steps.commit.outputs.changed == 'true'
         env:
