@@ -71,10 +71,17 @@ takes the label off. Nothing is written. **Re-applying the label is the retry.**
 | a gate violation | the entry does not satisfy the curation rules | fix it in the body, or let the next draft try |
 | the branch already exists | a PR for this question is open, or an earlier attempt left one behind | merge or delete it, then re-label |
 
-Two things go **red** rather than commenting, because both mean something is
-actually wrong: a label applied by anyone other than the owner, and a
-byte-fidelity failure (which would be a bug in `moment-approve.mjs`, not in your
-copy).
+Most refusals leave a **green** run — you asked a question and got an answer on
+the issue. Three go **red**, because each means something is actually wrong
+rather than merely unready:
+
+- a label applied by anyone other than the owner (label removed, comment posted);
+- a byte-fidelity failure, which would be a bug in `moment-approve.mjs` rather
+  than anything about your copy (the file is restored, and the label stays on so
+  the state is obvious);
+- `check-moments.mjs` failing on the working tree after the in-process gate
+  passed, which means one of the checks only the CLI runs is unhappy (comment
+  posted, file restored, label removed).
 
 ## Who can approve
 
