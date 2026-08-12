@@ -111,14 +111,43 @@ jobs:
 
       - name: Select mode
         id: mode
+        env:
+          # THROUGH THE ENVIRONMENT, never interpolated into the script body
+          # (2026-08-12). `${{ … }}` is substituted as TEXT before bash parses
+          # the line, so a raw expression in a `run:` body is source code and
+          # not a variable. Three of these four were GitHub-controlled and
+          # harmless, but `inputs.mode` is FREE TEXT a dispatcher types, and it
+          # was being spliced straight into a shell command on a job holding
+          # `contents: write` — a `mode` of `x"; …; echo "` executes. It also
+          # flowed into $GITHUB_OUTPUT unvalidated, where a newline would forge
+          # an output this step never set.
+          #
+          # Found by the run:-body ban in tests/moment-approve.unit.spec.ts,
+          # which is written across both Moment workflows rather than only the
+          # new one — the shape is what is banned, so the scope is every file
+          # the rule is true of.
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ inputs.mode }}
+        # The mode is now VALIDATED rather than echoed: scripts/moment-watch.mjs
+        # exits 2 on an unknown --mode, so an unusable value used to travel two
+        # steps before failing. A closed set here means the only values that can
+        # ever reach $GITHUB_OUTPUT are the two literals written below.
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 13 * * 1" ]; then
-            echo "mode=weekly" >> "$GITHUB_OUTPUT"
-          else
-            echo "mode=push" >> "$GITHUB_OUTPUT"
+          MODE=push
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            case "$INPUT_MODE" in
+              weekly) MODE=weekly ;;
+              push|'') MODE=push ;;
+              *)
+                echo "::error::unknown mode input — expected \"push\" or \"weekly\""
+                exit 1
+                ;;
+            esac
+          elif [ "$SCHEDULE" = "0 13 * * 1" ]; then
+            MODE=weekly
           fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
 
       - name: Ensure this workflow's own labels exist
         env:
@@ -136,6 +165,16 @@ jobs:
             --description "A bill cleared the Moment notification floor - owner decides"
           gh label create moment-review --color 1D76DB --force \
             --description "The standing weekly Moment shortlist digest"
+          # `approve-moment` is .github/workflows/moment-approve.yml's trigger,
+          # and it is created HERE rather than only there because of an ordering
+          # this repo has been bitten by twice: a label has to exist before
+          # anyone can apply it, and a workflow triggered BY that label only
+          # ever runs after the fact. This is the workflow that opens the issues
+          # the label goes on, so it is the one that has to own its existence.
+          # moment-approve.yml re-upserts it on every run, which keeps the
+          # colour and description under version control from both directions.
+          gh label create approve-moment --color 5319E7 --force \
+            --description "Owner-approved: publish this Big Question candidate"
 
       - name: Build report
         id: report
@@ -147,8 +186,14 @@ jobs:
         # markdown digest here, which was dead output in push mode (the loop
         # below re-renders per candidate) — harmless when rendering was free,
         # and a full duplicate set of drafting calls now that it is not.
+        env:
+          # Same rule as "Select mode" above: through the environment, not
+          # spliced into the command. This one inherited its taint from
+          # `inputs.mode` one step earlier; the mode is a closed set now, and
+          # this is the second lock on the same door.
+          MODE: ${{ steps.mode.outputs.mode }}
         run: |
-          node scripts/moment-watch.mjs --mode=${{ steps.mode.outputs.mode }} --json > /tmp/report.json
+          node scripts/moment-watch.mjs --mode="$MODE" --json > /tmp/report.json
           cat /tmp/report.json
 
       - name: Open an issue per new candidate
