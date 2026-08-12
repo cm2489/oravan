@@ -15,7 +15,7 @@ import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageTier, getCoverage } from '@/lib/coverage';
+import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
@@ -607,8 +607,17 @@ export default async function BillPage({
           </div>
         </div>
 
-        {/* Read — how the bill is being covered (third-party articles + lean) */}
-        <CoverageSection articles={coverage} tier={coverageTier(coverage)} />
+        {/* Read — how the bill is being covered (third-party articles + lean).
+            `checkedAt` is when the news sweep last LOOKED at this bill, read
+            here rather than inside the client component so data/coverage.json
+            never reaches the browser. It is a different clock from the "Data
+            as of" stamp above (the Congress.gov bill sync) and from the
+            article dates below (the press) — three clocks, three labels. */}
+        <CoverageSection
+          articles={coverage}
+          tier={coverageTier(coverage)}
+          checkedAt={coverageCheckedAt(id)}
+        />
       </div>
 
       {/* Keeps the call reachable while reading; yields whenever the rail is

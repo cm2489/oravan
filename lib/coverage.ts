@@ -23,6 +23,14 @@ const LEAN_BY_DOMAIN = mediaBias.outlets as unknown as Record<string, Lean>;
 /** Bill slug -> stored articles. '_'-prefixed keys are metadata, never slugs. */
 const COVERAGE = coverageData as unknown as Record<string, CoverageArticleRaw[]>;
 
+/** Bill slug -> the day the nightly sweep last LOOKED (scripts/sync-coverage.mjs's
+ *  `_checkedAt` rotation, #158). A '_'-prefixed metadata key, so getCoverage()
+ *  has always ignored it. */
+const CHECKED_AT = ((coverageData as unknown as Record<string, unknown>)._checkedAt ?? {}) as Record<
+  string,
+  string
+>;
+
 /**
  * Reduce an API source to a bare lowercase domain for matching: strip scheme,
  * any path, and a leading "www.". Pure — safe to unit-test in isolation.
@@ -86,6 +94,40 @@ export function newestArticleDate(articles: Pick<CoverageArticle, 'publishedAt'>
     if (a.publishedAt && (newest === null || a.publishedAt > newest)) newest = a.publishedAt;
   }
   return newest;
+}
+
+/**
+ * The day the nightly coverage sweep last LOOKED at a bill, as a bare
+ * `YYYY-MM-DD`, or null when the map has no entry for it.
+ *
+ * WHY THIS IS RENDERED AT ALL (2026-08-12). #158 started recording this and
+ * nothing ever showed it, so the "Read" section could only ever hedge — a bill
+ * whose newest article is 90 days old carried "newer coverage may exist that
+ * we haven't collected" whether the sweep had looked last night or last March,
+ * and a reader had no way to tell those apart. On the committed corpus that
+ * hedge is doing far more apologising than the pipeline now needs: every one
+ * of the 391 bills carrying stored articles has a check date, the whole map is
+ * within four days, and 903 bills were checked today.
+ *
+ * It does NOT replace the hedge, and must not be read as doing so — see
+ * components/CoverageSection.tsx's guard comment. "We looked on this day" and
+ * "nothing newer exists" are different claims; the sweep keeps at most
+ * COVERAGE_PER_BILL articles that clear a relevance gate and stops early on
+ * the news API's daily quota, so only the first is ever true. Both sentences
+ * coexist deliberately: one dates the look, the other bounds it.
+ *
+ * A DIFFERENT CLOCK from every other date in this section. The article dates
+ * are the press's; `checkedAt` on the bill page's stamp is the Congress.gov
+ * bill sync's; this one is the news sweep's. Three clocks, three labels, never
+ * merged (lib/freshness-state.ts's COVERAGE_AGE_NOTE_DAYS comment makes the
+ * same point about the age window).
+ *
+ * Malformed values return null rather than being printed: the map is machine-
+ * written and a date the reader can't trust is worse than no date at all.
+ */
+export function coverageCheckedAt(slug: string): string | null {
+  const day = CHECKED_AT[slug];
+  return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null;
 }
 
 /**
