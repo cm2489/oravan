@@ -133,7 +133,10 @@ test.describe('bilingual parity', () => {
   });
 
   test('the page chrome exists in both languages', () => {
-    for (const key of ['title', 'metaDescription', 'intro', 'scopeNote', 'indexLabel', 'fullGlossary'] as const) {
+    // `fullGlossary` was retired 2026-08-12 with the hover redesign: the term
+    // itself is now the link to its entry, so a second link inside the box was
+    // two links to one place.
+    for (const key of ['title', 'metaDescription', 'intro', 'scopeNote', 'indexLabel'] as const) {
       expect(en.glossary[key].trim().length, `en ${key}`).toBeGreaterThan(0);
       expect(es.glossary[key].trim().length, `es ${key}`).toBeGreaterThan(0);
       expect(es.glossary[key], `${key} was never translated`).not.toBe(en.glossary[key]);
@@ -354,7 +357,33 @@ test.describe('source wiring', () => {
     }
   });
 
-  test('the trigger is ink and never amber, and introduces no third radius', () => {
+  test('the term is a LINK with a described-by box — not a disclosure button', () => {
+    /*
+     * The 2026-08-12 redesign (owner review of PR #217). Pinned at source
+     * because the difference is a contract, not a style: `aria-expanded` on
+     * something whose activation NAVIGATES is a false promise to a screen
+     * reader, and a hover box that only mouse users can reach is the exact
+     * failure the issue's a11y constraint named.
+     */
+    const src = readText('components/GlossaryTerm.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(src, 'the term must render as a Link, not a button').toContain('<Link');
+    expect(src).toContain('href={glossaryHref(id)}');
+    expect(src, 'a navigating control is not a disclosure').not.toContain('aria-expanded');
+    expect(src).toContain('aria-describedby={open ? panelId : undefined}');
+    // Hover in, focus in, Escape out — all three, or the box is mouse-only.
+    expect(src).toContain('onPointerEnter');
+    expect(src).toContain('onPointerLeave');
+    expect(src).toContain('onFocus');
+    expect(src).toMatch(/e\.key !== 'Escape'/);
+    // Touch has no hover: a synthetic touch pointerenter must not open a box
+    // over the finger that asked to navigate.
+    expect(src).toMatch(/pointerType !== 'mouse'/);
+    // The box holds no interactive content — that is what makes describedby
+    // the honest wiring rather than a keyboard trap.
+    expect(src).not.toContain('fullGlossary');
+  });
+
+  test('the term is ink and never amber, and introduces no third radius', () => {
     // DESIGN.md's colour law: `urgent` carries ONE dated floor fact with the
     // date printed beside it, and a glossary entry is dateless by
     // construction. The shape law: two radii, assigned by scale — the panel is
