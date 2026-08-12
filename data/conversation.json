@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "schema": "conversation/v1",
+    "fetched_at": "2026-08-12T19:20:00.000Z",
+    "window_days": 7,
+    "source_status": {
+      "press": {
+        "status": "unknown",
+        "detail": "seed commit - no newsdesk run has written this file yet; the first hourly run replaces this whole block with what it observed",
+        "feeds_total": 0,
+        "feeds_silent": 0,
+        "checked_at": null
+      },
+      "most_viewed": {
+        "status": "unknown",
+        "detail": "seed commit - no newsdesk run has written this file yet",
+        "week": null,
+        "week_label": null,
+        "entries": 0,
+        "checked_at": null
+      },
+      "leans": {}
+    }
+  },
+  "slugs": {}
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>Most-Viewed Bills</title>
+<link>https://www.congress.gov/rss/</link>
+<atom:link rel="self" type="application/rss+xml" href="https://www.congress.gov/rss/most-viewed-bills.xml" />
+<description>Most-Viewed bills searched on congress.gov, compiled from weekly usage statistics.</description>
+<pubDate>Sun, 09 Aug 2026 00:00:00 -0400</pubDate>
+<item>
+    <title>Most-Viewed Bills - Week of August 9, 2026</title>
+    <description><![CDATA[<ol><li><a href='https://www.congress.gov/bill/119th-congress/house-bill/6509'>H.R.6509</a> [119th] - SAFE Drugs Act of 2025</li> <li><a href='https://www.congress.gov/bill/119th-congress/house-bill/3633'>H.R.3633</a> [119th] - Digital Asset Market Clarity Act</li> <li><a href='https://www.congress.gov/bill/119th-congress/senate-bill/2296'>S.2296</a> [119th] - National Defense Authorization Act for Fiscal Year 2026</li> <li><a href='https://www.congress.gov/bill/119th-congress/house-bill/22'>H.R.22</a> [119th] - SAVE Act</li> <li><a href='https://www.congress.gov/bill/119th-congress/house-bill/1'>H.R.1</a> [119th] - An act to provide for reconciliation pursuant to title II of H. Con. Res. 14.</li> <li><a href='https://www.congress.gov/bill/119th-congress/house-bill/8800'>H.R.8800</a> [119th] - National Defense Authorization Act for Fiscal Year 2027</li> <li><a href='https://www.congress.gov/bill/119th-congress/senate-bill/4668'>S.4668</a> [119th] - Protect College Sports Act of 2026</li> <li><a href='https://www.congress.gov/bill/119th-congress/house-bill/6500'>H.R.6500</a> [119th] - Continuing Appropriations and Extensions Act, 2027</li> <li><a href='https://www.congress.gov/bill/119th-congress/senate-resolution/817'>S.Res.817</a> [119th] - An executive resolution authorizing the en bloc consideration in Executive Session of certain nominations on the Executive Calendar.</li> <li><a href='https://www.congress.gov/bill/119th-congress/senate-bill/5025'>S.5025</a> [119th] - Lindsey O. Graham Sanctioning Russia Act of 2026</li> </ol>]]></description>
+    <link>https://www.congress.gov/most-viewed-bills</link>
+    <guid isPermaLink='false'>August 9, 2026</guid>
+</item>
+</channel>
+</rss>
