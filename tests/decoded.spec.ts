@@ -53,6 +53,39 @@ test('a concurrent resolution ends at adoption in Spanish too', async ({ page })
   await expect(page.getByText(/nunca llega al Presidente y no se convierte en ley/)).toBeVisible();
 });
 
+/*
+ * NEITHER DOES A PROPOSED CONSTITUTIONAL AMENDMENT.
+ *
+ * Article V: two thirds of both chambers propose, three quarters of the
+ * states ratify, the President never signs and cannot veto. The stepper
+ * promised a President's desk on all 16 of the corpus's amendment proposals
+ * until 2026-08-12 — the class the concurrent-resolution fix above named as
+ * its known limit and declined to guess at. hjres-1-119 is on the House
+ * Calendar, so it renders the trailer as well as the fifth step; the
+ * predicate and the corpus sweep are pinned in tests/bill-journey.unit.spec.ts.
+ */
+test('an Article V amendment proposal ends at the states, not the President', async ({ page }) => {
+  await page.goto('/bills/hjres-1-119');
+  await expect(page.getByText('Sent to the states')).toBeVisible();
+  await expect(page.getByText("President's desk")).toHaveCount(0);
+  await expect(page.getByText(/three quarters of them have to ratify it/)).toBeVisible();
+});
+
+test('an Article V amendment proposal ends at the states in Spanish too', async ({ page }) => {
+  await page.goto('/es/bills/hjres-1-119');
+  await expect(page.getByText('Enviada a los estados')).toBeVisible();
+  await expect(page.getByText('Escritorio del Presidente')).toHaveCount(0);
+  await expect(page.getByText(/tres cuartas partes de ellos tienen que ratificarla/)).toBeVisible();
+});
+
+/* An ORDINARY joint resolution — a CRA disapproval — genuinely is presented,
+ * so the title heuristic above must leave its own vehicle type alone. */
+test('an ordinary joint resolution still ends at the President', async ({ page }) => {
+  await page.goto('/bills/sjres-99-119');
+  await expect(page.getByText("President's desk")).toBeVisible();
+  await expect(page.getByText('Sent to the states')).toHaveCount(0);
+});
+
 test('an ordinary bill still ends at the President', async ({ page }) => {
   await page.goto('/bills/hr-5582-119');
   await expect(page.getByText("President's desk")).toBeVisible();
