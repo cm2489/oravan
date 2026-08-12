@@ -286,8 +286,8 @@
       {
         "slug": "hr-3633-119",
         "role": {
-          "en": "H.R. 3633 is the specific measure that would split crypto oversight between the SEC and the CFTC, as stated in its plain-language headline. A yes vote advances that split; a no vote leaves current oversight arrangements unchanged. The measure sits on the floor calendar, with a Senate cloture motion on the motion to proceed presented on August 8, 2026.",
-          "es": "El H.R. 3633 es la medida específica que dividiría la supervisión de las criptomonedas entre la SEC y la CFTC, según su título en lenguaje sencillo. Un voto a favor avanza esa división; un voto en contra deja sin cambios los arreglos actuales de supervisión. La medida está en el calendario del pleno, con una moción de cierre en el Senado sobre la moción para proceder, presentada el 8 de agosto de 2026."
+          "en": "H.R. 3633 is the specific measure that would split crypto oversight between the SEC and the CFTC, as stated in its plain-language headline. A yes vote advances that split; a no vote leaves current oversight arrangements unchanged. A Senate cloture motion on the motion to proceed was presented on August 8, 2026.",
+          "es": "El H.R. 3633 es la medida específica que dividiría la supervisión de las criptomonedas entre la SEC y la CFTC, según su título en lenguaje sencillo. Un voto a favor avanza esa división; un voto en contra deja sin cambios los arreglos actuales de supervisión. Una moción de cierre en el Senado sobre la moción para proceder fue presentada el 8 de agosto de 2026."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/house-bill/3633",
         "_status_at_scaffold": "floor_vote",
