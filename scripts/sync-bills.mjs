@@ -182,8 +182,9 @@ export function shouldAbortMostlyFailed(failed, total) {
  * The predicate above compares failures against `updated.length`, the
  * ascending pass's window. The counter fed to it also absorbed failures
  * from the force-slug direct-fetch loop, which is not part of that window
- * at all: one bad FORCE_DECODE_SLUGS entry (a typo, a bill in a Congress we
- * don't track) counted against a denominator it never contributed to, and
+ * at all: one bad FORCE_DECODE_SLUGS entry (a typo; before 2026-08-11 also a
+ * slug naming a Congress we don't track, which forceSlugTarget now skips
+ * before any fetch) counted against a denominator it never contributed to, and
  * on a quiet night - window of 2, one bad slug - that alone satisfied
  * "more than half" and ended a run whose real work was fine. Force-slug
  * failures are an owner-input problem, so they are counted, reported, and
