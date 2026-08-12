@@ -101,6 +101,87 @@ export const VOTING_CHAMBERS: Record<VehicleKind, readonly Chamber[]> = {
 };
 
 /*
+ * WHERE THE PATH ENDS — the fifth step's destination, and the two vehicles
+ * that never reach the President.
+ *
+ * This lookup moved here from components/BillJourney.tsx on 2026-08-12,
+ * unchanged in what it decided about concurrent resolutions and widened by
+ * one class. It belongs in this module for the reason the stepper's own
+ * header states: every derivation the strip renders lives in lib/journey.ts,
+ * and as of this change the answer is no longer readable from the bill TYPE
+ * alone — it needs the record's title — so it is a derivation, not a prop.
+ *
+ * 1 · CONCURRENT resolutions (hconres / sconres) — the 2026-08-09 fix (#199).
+ * Not presented to the President and cannot become law. It is the two
+ * chambers speaking to each other: budget resolutions, War Powers directives,
+ * adjournment. Both chambers adopt it and that is the end of the road;
+ * Article I, Section 7's presentment requirement never engages.
+ *
+ * 2 · ARTICLE V amendment proposals (hjres / sjres whose title proposes an
+ * amendment to the Constitution) — this change. Congress proposes by
+ * two-thirds of both chambers and the proposal goes to the STATES; three
+ * fourths of them must ratify. The President has no role — no signature, no
+ * veto — and the measure never becomes a law. #199 named this exact class as
+ * its documented known limit and declined to guess at it; the ruling that
+ * closed it (owner, D5, 2026-08-12) attached a flag-first condition, so the
+ * heuristic below was swept against the whole corpus before it was written
+ * and the sweep is pinned as an invariant in tests/bill-journey.unit.spec.ts.
+ *
+ * WHY A TITLE MATCH IS ADMISSIBLE HERE, when this file's whole discipline is
+ * to read the record rather than guess. It is not a guess about a bill's
+ * POSITION — those still come from Congress's own last-action sentence and
+ * still refuse to answer when the sentence is silent. It is a reading of the
+ * record's own official title, which for this class is a formula Congress
+ * writes the same way every time, and it was verified exhaustively rather
+ * than assumed: on the 2026-08-12 corpus, of 97 joint resolutions exactly 16
+ * carry the word "Constitution" in their title and all 16 are Article V
+ * proposals — 12 in the "Proposing an amendment to the Constitution…" shape
+ * and 4 in the "Proposing a balanced budget amendment to the Constitution…"
+ * shape, which is why the regex allows a qualifier between the verb and the
+ * noun. There are no false positives in that set and no Article V proposal
+ * outside it.
+ *
+ * FAIL TOWARD EXCLUSION. One record sits on the line and is deliberately NOT
+ * matched: hjres-80-119, "Establishing the ratification of the Equal Rights
+ * Amendment." It concerns a constitutional amendment but does not PROPOSE one
+ * under Article V, and what such a measure's path actually is has been
+ * litigated rather than settled. The default — presentment — is the ordinary
+ * rule, so a record this predicate is unsure about keeps the ordinary ending
+ * instead of acquiring a states step nobody verified. Same reason `''` and any
+ * unrecognized type return 'president'.
+ */
+const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
+
+/*
+ * The Article V title formula. `propos…` and "amendment to the Constitution"
+ * both required, within one sentence, allowing the qualifier Congress
+ * sometimes writes between them ("a balanced budget amendment to the
+ * Constitution"). `[^.]{0,60}` keeps the two halves inside the same clause so
+ * a title that merely mentions the Constitution somewhere after a proposing
+ * verb cannot drift into a match.
+ */
+const ARTICLE_V_TITLE = /\bpropos\w+\b[^.]{0,60}\bamendment to the Constitution\b/i;
+
+/** The fifth step's destination. Exhaustive: every vehicle ends at exactly
+ *  one of these. */
+export type JourneyEnding = 'president' | 'bothChambers' | 'states';
+
+/**
+ * Which of the three endings a vehicle has. `title` is optional and only ever
+ * consulted for joint resolutions; omitting it yields the ordinary presented
+ * path, which is what every non-Article-V joint resolution (CRA disapprovals,
+ * continuing resolutions, War Powers directives) genuinely has.
+ */
+export function journeyEnding(billType: string, title?: string | null): JourneyEnding {
+  const type = billType.toLowerCase();
+  if (NO_PRESENTMENT.has(type)) return 'bothChambers';
+  if ((type === 'hjres' || type === 'sjres') && ARTICLE_V_TITLE.test(title ?? '')) {
+    return 'states';
+  }
+  return 'president';
+}
+
+/*
  * The four chamber readers and FLOOR_SETTLED used to sit here; they are
  * re-exported at the top of this file from lib/floor-text.mjs (see that
  * import's header for why). Everything below reads them exactly as it did.
@@ -648,8 +729,11 @@ export type JourneyNowKey =
 
 export interface JourneyState {
   /** Index into the five stepper steps: introduced · origin committee ·
-   *  origin vote · other chamber · President's desk. */
+   *  origin vote · other chamber · the ending below. */
   step: 0 | 1 | 2 | 3 | 4;
+  /** What the fifth step IS for this vehicle — the President's desk, adoption
+   *  by both chambers, or ratification by the states. See journeyEnding. */
+  ending: JourneyEnding;
   /** The chamber the bill started in (from the bill type). */
   origin: Chamber;
   /** The chamber the bill stands in NOW, read from the record where the
@@ -682,7 +766,14 @@ export interface JourneyState {
  * default the stepper's old `POSITION[status] ?? 1` carried.
  */
 export function deriveJourney(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & {
+    /** OPTIONAL, and only ever read by journeyEnding — a joint resolution's
+     *  official title is what says whether it is an Article V amendment
+     *  proposal headed for the states. Every other field of the derivation
+     *  ignores it. Omitted, a joint resolution keeps the ordinary presented
+     *  ending, which is the right answer for all but that one class. */
+    title?: string | null;
+  }
 ): JourneyState {
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
@@ -694,6 +785,7 @@ export function deriveJourney(
     isLaw: false,
     isVetoed: false,
     showTrailer: true,
+    ending: journeyEnding(bill.bill_type, bill.title),
   };
   switch (bill.status) {
     case 'introduced':

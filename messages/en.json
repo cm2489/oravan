@@ -328,6 +328,7 @@
       "stepOther": "{chamber, select, House {House} Senate {Senate} other {Senate}}",
       "stepPresident": "President's desk",
       "stepBothChambers": "Adopted by both chambers",
+      "stepStates": "Sent to the states",
       "now": "Right now:",
       "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
       "nowFloor": "it's on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar.",
@@ -347,6 +348,7 @@
       "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
       "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
       "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the President and does not become law.",
+      "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the President: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
       "youAreHere": "You are here",
       "law": "Now law",
       "nowIntroduced": "it was just introduced and is headed to committee."
