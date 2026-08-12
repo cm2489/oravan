@@ -170,8 +170,22 @@ export interface CoverageArticle extends CoverageArticleRaw {
  *  'cross' = left and right both present · 'neutral' = 2+ center/unrated only ·
  *  'one_sided' = 2+ outlets all leaning one partisan way (shown, but disclaimed) ·
  *  'none' = too thin to surface.
+ *
+ * The runtime array is the source of truth and `CoverageTier` is derived from
+ * it, exactly like BILL_STATUSES above. Extracted from the union 2026-08-12:
+ * these four words are an INTERNAL VERDICT of our AllSides lookup, not a
+ * description of anybody's journalism, so scripts/moment-draft.mjs's
+ * enumLeaks() has to know all of them — and a hand-copied list that nothing
+ * pins is exactly how `tier0_floor_action` went missing from that guard for
+ * three days. tests/moment-draft.unit.spec.ts now pins the copy against this
+ * array. lib/coverage.ts's coverageTier() and its import-free twin in
+ * scripts/moment-candidates.mjs return these values as literals; the TYPE is
+ * what keeps the TS half honest, and the corpus-wide equality sweep in
+ * tests/moment-candidates.unit.spec.ts keeps the .mjs twin honest.
  */
-export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';
+export const COVERAGE_TIERS = ['cross', 'neutral', 'one_sided', 'none'] as const;
+
+export type CoverageTier = (typeof COVERAGE_TIERS)[number];
 
 /** A bill featured in the coverage-led "In the news" lens (cross/neutral only). */
 export interface NewsBill extends BillTeaser {

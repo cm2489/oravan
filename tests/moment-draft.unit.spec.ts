@@ -31,6 +31,28 @@ import {
 } from '../scripts/moment-draft.mjs';
 import { DRAFT_STANDING_LINE, renderPush, scaffoldFor } from '../scripts/moment-watch.mjs';
 import { STANDING_LINE, statusKeyFor } from '../scripts/moment-candidates.mjs';
+// The four REAL vocabularies INTERNAL_ENUM_TOKENS copies by hand, each from
+// its own source of truth. Both halves import cleanly here: Playwright
+// transpiles the TS, and lib/moments-gate.mjs is import-free .mjs by design.
+import { BILL_STATUSES, COVERAGE_TIERS } from '../lib/types';
+import { MOMENT_STATUSES, SIGNAL_TYPES } from '../lib/moments-gate.mjs';
+
+/**
+ * The six bill statuses deliberately left OUT of INTERNAL_ENUM_TOKENS: each is
+ * its own published English label ("In committee", "In markup", "Signed into
+ * law"), so scanning for it would fire on the correct, human-facing rendering
+ * of exactly the fact the record line exists to state. A guard that cannot
+ * tell the label from the enum is noise, and noise here degrades every draft
+ * to blank. Named once, used by both directions of the pin below.
+ */
+const EXCUSED_SINGLE_WORD_STATUSES = [
+  'committee',
+  'markup',
+  'signed',
+  'introduced',
+  'conference',
+  'vetoed',
+] as const;
 
 /* ------------------------------------------------------------------ *
  * Fixtures — one candidate in buildReport()'s exact output shape, and
@@ -447,9 +469,99 @@ test.describe('no internal enum reaches the model as a fact', () => {
     // Deliberately absent: each of these IS its own published English label
     // ("In committee", "In markup", "Signed into law"), so scanning for them
     // would fire on the correct rendering of the fact the line exists to state.
-    for (const label of ['committee', 'markup', 'signed', 'introduced', 'conference', 'vetoed']) {
+    for (const label of EXCUSED_SINGLE_WORD_STATUSES) {
       expect(INTERNAL_ENUM_TOKENS, label).not.toContain(label);
     }
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE PIN (2026-08-12). Everything above asserts what the list says;
+   * this asserts that it still covers what it CLAIMS to cover.
+   *
+   * scripts/moment-draft.mjs:INTERNAL_ENUM_TOKENS is a hand-written copy
+   * of four vocabularies, listed literally on purpose (the script runs
+   * under plain node in the moment-watch job and cannot import the
+   * TypeScript half at all). Hand-maintenance failed inside ONE DAY:
+   * `tier0_floor_action` joined SIGNAL_TYPES on 2026-08-09, the same day
+   * the guard shipped, and never reached the copy — and `tier0_floor`
+   * does not cover it, because enumLeaks matches with a
+   * `(?![\p{L}\p{N}_])` tail that treats `_` as a word character.
+   *
+   * WHY A PR TEST AND NOT A NIGHTLY SWEEP (owner ruling 2026-08-04, data
+   * tripwires fire at the sync): this vocabulary cannot drift from DATA.
+   * scripts/congress-fetch.mjs's mapStatus returns a closed set, coverage
+   * tiers are computed from a fixed table, signal types and moment
+   * statuses are written by hand into a gate. Only a CODE EDIT can move
+   * any of them — which is what a PR is.
+   *
+   * NO BUILD STEP NEEDED, and the report that claimed one was wrong twice
+   * over: Playwright transpiles TS in unit specs (this file imports both
+   * halves side by side), and scripts/check-moments.mjs already pins .mjs
+   * copies against TS `as const` arrays on bare node.
+   * ---------------------------------------------------------------- */
+  test('INTERNAL_ENUM_TOKENS is a SUPERSET of every real vocabulary it claims to cover', () => {
+    const claimed: string[] = [
+      ...BILL_STATUSES,
+      // The derived label keys — never stored on a bill, but they reach
+      // groundFor()'s statusKey and so could reach the record block.
+      'floor_activity',
+      'floor_vote_stale',
+      ...COVERAGE_TIERS,
+      ...SIGNAL_TYPES,
+      ...MOMENT_STATUSES,
+    ];
+    const missing = claimed.filter(
+      (token) =>
+        !INTERNAL_ENUM_TOKENS.includes(token) &&
+        // The six single-word bill statuses are excused BY NAME (see the
+        // test above): each is its own published English label, so scanning
+        // for it would fire on the correct rendering of the fact the record
+        // line exists to state. Every other member must be listed.
+        !(EXCUSED_SINGLE_WORD_STATUSES as readonly string[]).includes(token)
+    );
+    expect(
+      missing,
+      `add these to INTERNAL_ENUM_TOKENS in scripts/moment-draft.mjs (or excuse them by name, with a reason): ${missing.join(', ')}`
+    ).toEqual([]);
+  });
+
+  test('the excused list is exactly the single WORDS — anything snake_case must be listed', () => {
+    // The excuse is "this token is also a published English label", and that
+    // can only ever be true of a single word. A snake_case token cannot
+    // appear in prose by accident, so it can never earn the excuse.
+    for (const label of EXCUSED_SINGLE_WORD_STATUSES) {
+      expect(label, `${label} is excused but is not a bare word`).not.toContain('_');
+    }
+  });
+
+  test('no listed token is dead — every one of them is a value something really stores', () => {
+    // The other direction: a token that no vocabulary contains any more is a
+    // guard firing on nothing, and it makes the list read as broader than it
+    // is. `floor_activity` and `floor_vote_stale` are the two deliberate
+    // exceptions — derived message keys, not stored values.
+    const derivedKeys = ['floor_activity', 'floor_vote_stale'];
+    const real = new Set<string>([
+      ...BILL_STATUSES,
+      ...COVERAGE_TIERS,
+      ...SIGNAL_TYPES,
+      ...MOMENT_STATUSES,
+      ...derivedKeys,
+    ]);
+    for (const token of INTERNAL_ENUM_TOKENS) {
+      expect(real.has(token), `${token} is in INTERNAL_ENUM_TOKENS but no vocabulary contains it`).toBe(true);
+    }
+  });
+
+  test('the guard CATCHES the token that was missing for three days', () => {
+    // tier0_floor_action, added to SIGNAL_TYPES 2026-08-09 (e9ae091) and
+    // absent from the copy until 2026-08-12. Latent, never live — recordLines
+    // does not interpolate a signal type — so this is a regression pin, not a
+    // shipped-bug fixture.
+    expect(SIGNAL_TYPES).toContain('tier0_floor_action');
+    expect(enumLeaks({ ...GROUND, floorChamber: 'tier0_floor_action' })).toContain('tier0_floor_action');
+    // …and the word-boundary reason it needed listing separately: the shorter
+    // token does not cover the longer one.
+    expect(enumLeaks({ ...GROUND, floorChamber: 'tier0_floor_action' })).not.toContain('tier0_floor');
   });
 });
 

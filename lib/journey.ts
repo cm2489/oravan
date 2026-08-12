@@ -45,8 +45,13 @@ export {
   floorPendingChamber,
   floorSettledChamber,
 } from './floor-text.mjs';
+// floorActionChamber is re-exported above but NOT imported here any more:
+// since 2026-08-12 nothing in this file's derivation asks "which chamber does
+// this sentence belong to" without also asking what that chamber did.
+// floorSettledChamber still calls it internally (lib/floor-text.mjs), and
+// scripts/check-journey-corpus.mjs still sweeps with it — that is where a
+// chamber-nameable-but-unread sentence gets found now.
 import {
-  floorActionChamber,
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
@@ -710,25 +715,56 @@ export function deriveJourney(
           nowKey: 'nowFloorMotionFailed',
         };
       }
-      const act = floorActionChamber(bill.last_action_text);
-      // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unclassifiable
-      // floor text used to fall back to the ORIGIN chamber — the silent-lie
-      // class the whole derivation exists to end. Now it renders the
-      // chamber-free key instead: the step math stays at the origin slot
-      // (structure needs a position) but no rendered sentence names a
-      // chamber the record did not. The corpus tripwire that catches novel
-      // shapes moved to the nightly sync (scripts/check-journey-corpus.mjs)
-      // — it fires where the data changes, never on unrelated PRs.
-      if (act === null) {
+      /*
+       * THE RESIDUAL BRANCH READS floorPendingChamber, NOT floorActionChamber
+       * (owner ruling 2026-08-12, N9-A2) — the last place on this page where a
+       * sentence could outrun the record.
+       *
+       * floorActionChamber answers "WHICH chamber does this sentence belong
+       * to". It never answers "what did that chamber DO", and it is
+       * deliberately permissive: its rule 6 pins a chamber on any floor text
+       * that names exactly one. So every chamber-nameable floor sentence used
+       * to arrive here and get "the {chamber} is deciding whether to bring it
+       * to a vote" — a live-deliberation claim, asserted over a sentence no
+       * matcher in this repo has ever read. That is the same defect class #198
+       * removed from 18 settled texts (the S.J.Res. 172 case above): the
+       * chamber was right and the verb was a fabrication.
+       *
+       * floorPendingChamber is the fail-closed answer to the question this
+       * sentence actually makes: it is an ordered ALLOW-list guarded by
+       * FLOOR_SETTLED, so it says "a vote is still ahead, in this chamber"
+       * only for shapes somebody has read. Everything else returns null and
+       * falls to the chamber-free neutral copy below. That is D4's crown logic
+       * ("one missed crown is cheaper than one wrong one") extended from the
+       * crown to the stepper, and it is what let the nightly journey-corpus
+       * tripwire stop costing a whole night: with no surface able to speak
+       * about an unread text, a novel shape is an issue to file, not a run to
+       * kill (scripts/check-journey-corpus.mjs).
+       *
+       * MEASURED BEFORE AND AFTER on the committed corpus, 2026-08-12: of
+       * 2,723 bills, 356 are floor_vote and 8 reach this branch — all 8 match
+       * floorPendingChamber (2 cloture motions presented, 2 motions to proceed
+       * made / postponed proceedings, 3 Rules Committee resolutions reported,
+       * 1 more postponed proceeding), so ZERO rendered sentences change today.
+       * The untensed set is empty and the unclassified set is empty. This is a
+       * change of what CAN happen, not of what does. Re-measure rather than
+       * trust the number: the corpus moves nightly.
+       */
+      const pending = floorPendingChamber(bill.last_action_text);
+      // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unreadable floor
+      // text used to fall back to the ORIGIN chamber — the silent-lie class
+      // the whole derivation exists to end. Now it renders the chamber-free
+      // key instead: the step math stays at the origin slot (structure needs a
+      // position) but no rendered sentence names a chamber the record did not.
+      if (pending === null) {
         /*
          * NOT CLOCKED, and the reason is that there is nothing here to demote
          * TO. This branch's sentence names no chamber and no calendar — it
          * says only that the record has not said yet — so a stale variant
          * would be new copy in two languages for a state that is EMPTY on the
-         * corpus (0 bills on 2026-08-12: every unclassified floor text is
-         * caught by the nightly tripwire long before it reaches here). If that
-         * ever stops being true, this branch wants its own key, not a reused
-         * one.
+         * corpus (0 bills on 2026-08-12, both classes of it: nothing
+         * unclassified, nothing chamber-readable-but-untensed). If that ever
+         * stops being true, this branch wants its own key, not a reused one.
          */
         return {
           ...base,
@@ -747,12 +783,17 @@ export function deriveJourney(
        * deciding" while the rail beside it had gone quiet would be the page
        * contradicting itself in a quieter voice — the exact failure the
        * passed_chamber split was written to end.
+       *
+       * ONE READER, ONE ANSWER: this is the SAME function liveCallTarget gates
+       * on (`floorCalendarChamber ?? floorPendingChamber`) and the same one
+       * FloorVotePanel's crown gate uses, so the stepper, the rail and the
+       * crown can no longer disagree about whether a vote is ahead.
        */
       return {
         ...base,
-        step: act === origin ? 2 : 3,
-        current: act,
-        nowChamber: act,
+        step: pending === origin ? 2 : 3,
+        current: pending,
+        nowChamber: pending,
         nowKey: live ? 'nowFloorActivity' : 'nowFloorActivityStale',
       };
     }
