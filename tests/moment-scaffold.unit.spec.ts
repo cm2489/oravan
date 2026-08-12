@@ -57,6 +57,7 @@ interface MomentRow {
   name: { en: string; es: string };
   opened: string;
   review_by: string;
+  status: string;
   qualifying_signal: { type: string; refs: string[] };
 }
 
@@ -91,8 +92,33 @@ const describedNominationSlugs = new Set(
   nominations.filter((n) => n.nominee_description?.trim()).map(nominationSlug),
 );
 
+/**
+ * THE OPEN SLOT — the base copy a candidate is spliced into.
+ *
+ * data/moments.json reached the 6-live cap on 2026-08-12
+ * (`crypto-oversight-split-between-sec-and-cftc`). Splicing a candidate into a
+ * FULL file made every scaffold in this suite fail on
+ * "N live moments — the cap is 6", which is a violation about the FILE and
+ * says nothing at all about the scaffold these tests exist to prove.
+ *
+ * It is also a state the owner can never be pasting from.
+ * scripts/moment-watch.mjs's F4 floor ("no open Moment slots (6 live)") stops
+ * offering candidates the night the sixth slot fills and re-fires them the day
+ * one reopens, so a scaffold is only ever pasted into a file with room in it.
+ * The base models exactly that file: the real one, with live entries dropped
+ * from the end until one slot is open. Every entry-level rule still runs, over
+ * the real corpora, unchanged — only the capacity context is made realistic.
+ */
+const LIVE_CAP = 6; // source of truth: lib/moments-gate.mjs (`liveCount > 6`)
+const spliceBase: Record<string, MomentRow> = (() => {
+  const base = { ...momentsFile };
+  const liveIds = Object.keys(base).filter((id) => base[id]?.status === 'live');
+  for (const id of liveIds.slice(LIVE_CAP - 1)) delete base[id];
+  return base;
+})();
+
 function checkSpliced(entry: Record<string, unknown>): string[] {
-  const spliced = { ...momentsFile, ...entry };
+  const spliced = { ...spliceBase, ...entry };
   const { violations } = checkMoments(
     spliced,
     slugsByKind,

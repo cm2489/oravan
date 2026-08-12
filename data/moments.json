@@ -263,5 +263,46 @@
     "opened": "2026-08-09",
     "review_by": "2026-09-08",
     "status": "live"
+  },
+  "crypto-oversight-split-between-sec-and-cftc": {
+    "name": {
+      "en": "Crypto oversight split between SEC and CFTC",
+      "es": "División de la supervisión de criptomonedas entre la SEC y la CFTC"
+    },
+    "summary": {
+      "en": "Which federal agency should oversee crypto? That is the question H.R. 3633 — the Digital Asset Market Clarity Act — puts before the Senate; its plain-language headline says the bill would split crypto oversight between the SEC and the CFTC. Reaching a vote on it is the step in play: the latest action in the record is a cloture motion on the motion to proceed, presented in the Senate on August 8, 2026, with no vote date in the record.",
+      "es": "¿Qué agencia federal debe supervisar las criptomonedas? Esa es la pregunta que la H.R. 3633 — la Ley de Claridad del Mercado de Activos Digitales — plantea ante el Senado; su titular en lenguaje sencillo dice que el proyecto dividiría la supervisión de las criptomonedas entre la SEC y la CFTC. Llegar a una votación es el paso en juego: la acción más reciente del expediente es una moción de cierre de debate (cloture) sobre la moción para proceder, presentada en el Senado el 8 de agosto de 2026, sin fecha de votación en el expediente."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 3633"
+      ],
+      "es": [
+        "H.R. 3633"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "hr-3633-119",
+        "role": {
+          "en": "H.R. 3633 is the specific measure that would split crypto oversight between the SEC and the CFTC, as stated in its plain-language headline. A yes vote advances that split; a no vote leaves current oversight arrangements unchanged. The measure sits on the floor calendar, with a Senate cloture motion on the motion to proceed presented on August 8, 2026.",
+          "es": "El H.R. 3633 es la medida específica que dividiría la supervisión de las criptomonedas entre la SEC y la CFTC, según su título en lenguaje sencillo. Un voto a favor avanza esa división; un voto en contra deja sin cambios los arreglos actuales de supervisión. La medida está en el calendario del pleno, con una moción de cierre en el Senado sobre la moción para proceder, presentada el 8 de agosto de 2026."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/3633",
+        "_status_at_scaffold": "floor_vote",
+        "_last_action_at_scaffold": "2026-08-08"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "tier0_floor_action",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/house-bill/3633",
+        "https://www.congress.gov/bill/119th-congress/house-bill/3633/all-actions"
+      ]
+    },
+    "opened": "2026-08-09",
+    "review_by": "2026-09-08",
+    "status": "live"
   }
 }
