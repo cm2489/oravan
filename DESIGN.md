@@ -1,3 +1,175 @@
+---
+# MACHINE-READABLE LAYER — added 2026-08-12. The prose below is unchanged and
+# stays normative for MEANING; this block is the same system in the DESIGN.md
+# token schema (Stitch: name/description/colors/typography/rounded/spacing/
+# components — no other top-level group is valid), so the impeccable design
+# detector stops abstaining and enforces the palette, the type ladder and the
+# shape law on every edit. Values are copied from `app/globals.css` @theme and
+# are not a second source of truth: change globals.css and this block in the
+# same PR, the way `app/embed/embed.css` is already bound.
+#
+# WHAT THIS BLOCK CANNOT SAY. The schema holds values, not conditions. The
+# colour law's conditions — amber ONLY for one dated floor fact, ALWAYS with
+# ink text and the date PRINTED beside it, never without; `stale` is ink and
+# never amber — are prose below and types in `components/system/Chip.tsx`
+# (the `urgent` tone will not compile without a `dateLabel`). A value that
+# passes this block can still break the law.
+name: Oravan
+description: Plain-words truth about what Congress is doing, and the call you can make about it.
+colors:
+  paper: "#ffffff"        # the page, and text on any dark ground
+  wash: "#f3f6f4"         # recessed ground: notes, disabled, inset
+  ink: "#16191b"          # all other text, and every component edge
+  ink-2: "#4a544e"        # secondary text on paper or wash
+  ink-pale: "#c3cdc6"     # secondary text on an ink ground
+  ink-deep: "#16191b"     # ROLE TOKEN: dark enamel GROUND only. Same value as
+                          # ink on purpose — one dark, two names, two roles.
+  line: "#d7ded9"         # DECORATIVE separator only; never a component edge
+  line-strong: "#7e948a"  # every component edge
+  go: "#0f6c4a"           # GO: actions and the 6px gauge. Nothing else.
+  go-deep: "#0a4e35"      # pressed/hover go; the enamel panel ground
+  go-bright: "#5fd39a"    # go, on an ink ground
+  go-pale: "#c9ddd4"      # secondary text on the green enamel panel
+  tint: "#e7f2ec"         # YOURS: what the user chose, typed or was handed
+  urgent: "#ffc845"       # ONE dated floor fact, ink text, date printed
+  alert: "#8c3a1f"        # failure, and only failure
+typography:
+  # `scale` is the enumerated ladder: 12 · 13 · 14 · 16 · 18 · 21. Nothing is
+  # authored off it. The display steps below are fluid and declare their own
+  # endpoints, which is why they are roles rather than rungs.
+  scale:
+    "2xs": "0.75rem"
+    xs: "0.8125rem"
+    sm: "0.875rem"
+    md: "1rem"
+    lg: "1.125rem"
+    xl: "1.3125rem"
+  body:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  label:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  reading:
+    # The reading voice. Exactly two things: a bill's AI-decoded prose, and the
+    # words a caller says aloud. Set one rung up because a serif reads small;
+    # leading is unchanged. There is deliberately no display token for it.
+    fontFamily: "Besley, Georgia, Times New Roman, serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  lede:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "1.125rem"   # STEPS to 1.3125rem at 62rem; it never interpolates
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  h3:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.3125rem, 2.4vw, 1.625rem)"
+    fontWeight: 800
+    lineHeight: 1.25
+    letterSpacing: "normal"
+  h2:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.5rem, 3.5vw, 2.125rem)"
+    fontWeight: 800
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
+  h2-loud:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.5rem, 4vw, 2.5rem)"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.01em"
+  h1-bill:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.75rem, 5.5vw, 3.5rem)"
+    fontWeight: 800
+    lineHeight: 1.12
+    letterSpacing: "-0.02em"
+  h1:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(2rem, 7vw, 4.25rem)"
+    fontWeight: 800
+    lineHeight: 1.04
+    letterSpacing: "-0.02em"
+  embed-body:
+    # `app/embed/embed.css` is an iframe payload: system fonts, never next/font,
+    # never a webfont link. Declared so the detector knows the embed's stacks
+    # are the system by design, not drift off Franklin.
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  embed-citation:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.875rem"
+    fontWeight: 700
+    lineHeight: 1.6
+    letterSpacing: "normal"
+rounded:
+  # THE SHAPE LAW. Radius is assigned by SCALE, not by interactivity. There is
+  # no third radius and no pill: `rounded-full` is not part of this system, so
+  # no `full`/`pill` key exists here and any radius off these three is a
+  # finding. The inverted phrasing "panels 3px / controls 8px" is WRONG.
+  stamp: "3px"    # small marks: chips, tags, gauge, stamp, lang switch, pills, portraits
+  control: "8px"  # hand-sized: panels, cards, buttons, inputs, disclosures
+  hair: "2px"     # the focus indicator's own rounding and hairline inner rules ONLY
+spacing:
+  # Tailwind's 0.25rem step IS the scale; only these rungs are legal. 28/36/40/
+  # 44 (p-7/p-9/p-10/p-11) are OFF it. Every fluid clamp() must land on a rung
+  # at BOTH bounds. `min-h-11` (44px) and `min-h-12` (48px) are floors, not
+  # spacing choices, and are exempt.
+  "0.5": "2px"
+  "1": "4px"
+  "2": "8px"
+  "3": "12px"
+  "4": "16px"
+  "5": "20px"
+  "6": "24px"
+  "8": "32px"
+  "12": "48px"
+  "16": "64px"
+  "24": "96px"
+components:
+  chip-urgent:
+    backgroundColor: "{colors.urgent}"
+    textColor: "{colors.ink}"     # 11.44:1 — and the printed date is required
+    rounded: "{rounded.stamp}"
+  chip-stale:
+    textColor: "{colors.ink}"     # INK, never amber
+    rounded: "{rounded.stamp}"
+  chip-tag:
+    textColor: "{colors.ink}"     # ink in EVERY state; never category-colored
+    rounded: "{rounded.stamp}"
+  button-primary:
+    backgroundColor: "{colors.go}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.control}"
+    height: "48px"
+  card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+  floor-vote-panel:
+    backgroundColor: "{colors.go-deep}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.control}"
+  gauge:
+    backgroundColor: "{colors.go}"
+    rounded: "{rounded.stamp}"
+    height: "6px"
+---
+
 # Design
 
 Oravan's visual system. Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never a raw hex, never a raw px radius, never a font stack in a component.

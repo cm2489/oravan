@@ -328,6 +328,7 @@
       "stepOther": "{chamber, select, House {Cámara} Senate {Senado} other {Senado}}",
       "stepPresident": "Escritorio del Presidente",
       "stepBothChambers": "Aprobación en ambas cámaras",
+      "stepStates": "Enviada a los estados",
       "now": "Ahora mismo:",
       "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
       "nowFloor": "está en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
@@ -337,7 +338,9 @@
       "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
       "nowFloorMotionFailed": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} no ha aceptado considerarlo — la última moción para hacerlo fracasó.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
+      "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
+      "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al Presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
@@ -345,6 +348,7 @@
       "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
       "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
       "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al Presidente y no se convierte en ley.",
+      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al Presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
       "youAreHere": "Estás aquí",
       "law": "Ya es ley",
       "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
@@ -440,6 +444,7 @@
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como \"Sin calificar\" donde no.",
     "newestLabel": "El más reciente de estos artículos",
+    "checkedLabel": "Comprobado",
     "ageNote": "puede existir cobertura más reciente que no hemos recopilado",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {

@@ -649,8 +649,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </h2>
                 <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
               </div>
+              {/* THE BEACON SITS WITH THE CLAIM IT CAVEATS (2026-08-12).
+                  It used to hang off the week-note line ~200 lines and one
+                  full green panel below, so "Moving in Congress this week"
+                  and "The bills moving right now" — the loudest recency
+                  claims on the site — read as current for a whole scroll
+                  before anything qualified them. It rides topSub instead:
+                  directly under the rule the Stamp straddles, inside the
+                  masthead that makes the claim, continuing the same
+                  sentence. STILL EXACTLY ONE PER PAGE (only one of these two
+                  mastheads renders, and the week-note line no longer carries
+                  it) — the 2026-07 critique that a repeated note "read as a
+                  malfunction banner on every core surface" was unanimous,
+                  and it is recorded in StalenessNote's own header. Moving
+                  the note is allowed; multiplying it is not. Contrast: the
+                  caveat inherits `text-go-pale` on this `bg-go-deep` ground,
+                  6.86:1 (globals.css's ledger), AAA. */}
               <p className="mt-8 max-w-read text-pretty leading-dark tracking-dark text-go-pale md:mt-4">
                 {t('topSub')}
+                <StalenessNote checkedAt={freshness.checkedAt} />
               </p>
             </div>
             <FloorVotePanel
@@ -715,7 +732,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </h2>
               <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
             </div>
-            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">{t('topSub')}</p>
+            {/* Same beacon, same place, on the quiet week's paper ground —
+                see the hot masthead above for why it lives here. `text-ink-2`
+                on paper, 7.87:1 (globals.css's ledger), AAA. Only one of
+                these two mastheads ever renders, so the page still carries
+                exactly one staleness note. */}
+            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">
+              {t('topSub')}
+              <StalenessNote checkedAt={freshness.checkedAt} />
+            </p>
           </div>
         )}
 
@@ -799,9 +824,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           )}
 
-          {/* The note says what the loudness means, and the client-side stale
-              caveat continues its sentence — one line, one claim; renders
-              nothing at all while the data is fresh. Gated on the SAME
+          {/* The note says what the loudness means. It no longer carries the
+              staleness beacon (2026-08-12): the caveat moved UP to the
+              masthead's topSub line, where the "this week" / "right now"
+              claims it qualifies actually are, and it is not duplicated here
+              because one note per page is a standing ruling (see the
+              masthead comment above and StalenessNote's own header). Gated on the SAME
               condition as the panel itself: a note that says "the green
               panel marks one fact" on a week with no green panel is a false
               claim (owner finding 2026-08-01), so the panel-less week gets
@@ -816,7 +844,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               : feature?.kind === 'announced'
                 ? t('weekNoteAnnounced')
                 : t('weekNote')}
-            <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
 
           {/* The section closes with its exit: a full-width row under the
