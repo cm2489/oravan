@@ -13,7 +13,12 @@ export { Chip, AiMark } from './Chip';
 export type { ChipProps, ChipGround } from './Chip';
 
 export { FloorVotePanel, selectFloorVoteFeature } from './FloorVotePanel';
-export type { FloorVotePanelProps } from './FloorVotePanel';
+export type {
+  FloorAnnouncement,
+  FloorFeature,
+  FloorFeatureKind,
+  FloorVotePanelProps,
+} from './FloorVotePanel';
 
 export { Gauge } from './Gauge';
 export type { GaugeProps, GaugeSegment } from './Gauge';

@@ -320,7 +320,17 @@ export async function syncOneBill(u, ctx) {
       // The sentinel IS the outcome: a payload we refused to write surfaces
       // to every caller as 'skipped_partial' instead of posing as a refresh
       // that happened to change nothing.
-      return { outcome: refreshBillFields(existing, d), slug, decodeAttempted };
+      //
+      // `fetchedTitle` rides along unwritten. refreshBillFields deliberately
+      // does NOT touch `title` — a title that changes without the decode
+      // changing with it is a page whose headline and summary describe a
+      // different document — but the caller needs the served title to notice
+      // a VEHICLE SWAP (hr-6500-119 carried an AGOA decode while Congress was
+      // voting the continuing resolution under the same number). The
+      // re-decode trigger in scripts/newsdesk.mjs compares the two and, when
+      // they diverge, re-reads the document and writes the new title WITH the
+      // new decode, together, via redecodeBill below.
+      return { outcome: refreshBillFields(existing, d), slug, decodeAttempted, fetchedTitle: d.title ?? null };
     }
     // Same fail-closed posture as refreshBillFields, one step earlier and via
     // the same shared predicate. A brand-new bill whose payload carries no
@@ -370,6 +380,14 @@ export async function syncOneBill(u, ctx) {
       title: d.title,
       short_title: null,
       ai_summary: null, ai_headline: null,
+      // WHEN this record's decode was produced. Null for every bill decoded
+      // before 2026-08-12 and null is tolerated everywhere — it means
+      // "unknown", never "old", and the re-decode trigger
+      // (scripts/floor-signals-parse.mjs redecodeVerdict) skips on it rather
+      // than re-explaining a decode that was probably fine. Without it
+      // nothing downstream can tell a decode of THIS document from a decode
+      // of the document this bill used to be.
+      decoded_at: null,
       sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
       introduced_date: d.introducedDate ?? null,
       last_action_date: lastActionDate,
@@ -411,6 +429,10 @@ export async function syncOneBill(u, ctx) {
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
     bill.ai_sections = dec.ai_sections;
+    // Stamped only here and in redecodeBill — after the decode returned a
+    // shape the gate accepted, never before it. A failed decode leaves no
+    // stamp because it left no decode.
+    bill.decoded_at = new Date().toISOString();
     // Search handles for the coverage sync (press names + subject query).
     // Non-fatal: the backfill script sweeps up any misses.
     try {
@@ -427,6 +449,76 @@ export async function syncOneBill(u, ctx) {
   } catch (e) {
     console.error(`FAIL ${slug}: ${e.message}`);
     return { outcome: 'failed', slug, isNew: !bySlug.has(slug), decodeAttempted };
+  }
+}
+
+/**
+ * RE-DECODE one bill already in the corpus, from its CURRENT text.
+ *
+ * syncOneBill above only ever decodes a bill it is adding: an existing record
+ * gets its status and dates refreshed for free and keeps whatever decode it
+ * was born with. That was fine while a bill's document was assumed to stand
+ * still, and the corpus proves it does not — hr-6500-119 shipped a decode of
+ * the AGOA Extension Act on the page where the Senate was voting a continuing
+ * resolution under the same bill number, and the record's own action text had
+ * moved seven times since the decode was written.
+ *
+ * WHO MAY CALL THIS: scripts/newsdesk.mjs's re-decode trigger, and only under
+ * its EXISTING tier-0 decode budget. The verdict itself
+ * (redecodeVerdict, scripts/floor-signals-parse.mjs) is pure and tested; this
+ * function does not decide, it spends.
+ *
+ * THE SAME PUBLISH GATE AS EVERY OTHER DECODE, and for the same reason: the
+ * new decode is written only after decode() has returned a shape the parser
+ * accepted, both languages at once, so a partial reply leaves the OLD decode
+ * standing rather than half-replacing it. A bill's page is never blank
+ * because a re-read failed.
+ *
+ * `title` is the title Congress serves today. It is written ONLY here and
+ * ONLY beside the new decode — the whole point is that the two can never
+ * describe different documents.
+ *
+ * Returns `{ outcome, slug, decodeAttempted }`:
+ *   'redecoded'       — new decode + ES twin stored, decoded_at stamped
+ *   'missing'         — the slug isn't in the corpus (caller bug; free)
+ *   'skipped_no_text' — Congress.gov publishes no readable text (free)
+ *   'failed'          — the fetch or the decode threw; the old decode stands
+ */
+export async function redecodeBill(slug, ctx) {
+  const { anthropic, es, bySlug, title = null } = ctx;
+  const bill = bySlug.get(slug);
+  if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
+  let decodeAttempted = false;
+  try {
+    const text = await fetchBillText(bill.bill_type, bill.bill_number);
+    if (text === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
+    const subject = title ? { ...bill, title } : bill;
+    decodeAttempted = true;
+    const dec = await decode(anthropic, subject, text);
+    if (title) bill.title = title;
+    bill.ai_summary = dec.ai_summary;
+    bill.ai_headline = dec.ai_headline;
+    bill.ai_sections = dec.ai_sections;
+    bill.decoded_at = new Date().toISOString();
+    es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
+    // Search handles too, but ONLY when the vehicle changed under us: the old
+    // press_names/news_query still name the old act, so the coverage sync and
+    // the newsdesk's own t2 matcher would keep hunting for the wrong bill.
+    // Non-fatal, exactly as on the add path — the backfill script sweeps
+    // misses, and a failed search-input call must not cost a good decode.
+    if (title) {
+      try {
+        const si = await generateSearchInputs(anthropic, bill);
+        bill.press_names = si.press_names;
+        bill.news_query = si.news_query;
+      } catch (e) {
+        console.error(`  search-inputs failed for ${slug}: ${e.message}`);
+      }
+    }
+    return { outcome: 'redecoded', slug, decodeAttempted };
+  } catch (e) {
+    console.error(`FAIL redecode ${slug}: ${e.message}`);
+    return { outcome: 'failed', slug, decodeAttempted };
   }
 }
 

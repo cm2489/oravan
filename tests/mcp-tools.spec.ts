@@ -348,6 +348,45 @@ test.describe('whats_moving', () => {
     expectMeta(data.meta as Record<string, unknown>, '/', expected.length > 0);
   });
 
+  /*
+   * EVERY ITEM SAYS WHY IT IS LISTED (2026-08-12). The envelope's checkability
+   * promise used to stop at "here is the bill"; the docket ladder lets it reach
+   * "here is the sentence Congress published that put it on this list". An
+   * agent should never have to take our ordering on faith.
+   */
+  test('each item carries a signal block with a checkable sentence, date and rung', async ({ request }) => {
+    const result = await callTool(request, 'whats_moving', { locale: 'en' });
+    const bills = result.structuredContent!.bills as Array<{
+      slug: string;
+      signal?: { tier: string; annotation: string | null; evidence_sentence: string | null; evidence_date: string | null };
+    }>;
+    test.skip(bills.length === 0, 'quiet week: whats_moving is empty right now');
+    for (const b of bills) {
+      expect(b.signal, b.slug).toBeTruthy();
+      // Only the three rungs the act-now pool admits can appear here.
+      expect(['t0', 't1', 't2'], b.slug).toContain(b.signal!.tier);
+      expect(b.signal!.evidence_sentence, b.slug).toBeTruthy();
+      expect(b.signal!.evidence_date, b.slug).toBeTruthy();
+    }
+  });
+
+  test('the evidence sentence is the SAME English on /es — a quote is never translated', async ({ request }) => {
+    // Owner ruling V4: translating a verbatim quote of a government document
+    // turns it into a paraphrase wearing quotation marks. The Spanish payload
+    // frames it (status labels, topic labels, the envelope) and prints the
+    // sentence unchanged.
+    const en = await callTool(request, 'whats_moving', { locale: 'en' });
+    const es = await callTool(request, 'whats_moving', { locale: 'es' });
+    type Item = { slug: string; signal?: { evidence_sentence: string | null } };
+    const enBills = en.structuredContent!.bills as Item[];
+    const esBills = es.structuredContent!.bills as Item[];
+    test.skip(enBills.length === 0, 'quiet week');
+    const esBySlug = new Map(esBills.map((b) => [b.slug, b]));
+    for (const b of enBills) {
+      expect(esBySlug.get(b.slug)?.signal?.evidence_sentence, b.slug).toBe(b.signal?.evidence_sentence);
+    }
+  });
+
   test('never silently backfills to hit a limit or ignore a topic filter', async ({ request }) => {
     const args = { topic: 'housing', days: 3 } as const;
     test.skip(

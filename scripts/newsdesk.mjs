@@ -196,6 +196,23 @@
  * Never touches data/sync-state.json's nightly cursor — same reasoning as
  * scripts/hot-bills.mjs: a same-day refresh/trigger pass is not the
  * nightly backlog scan's own progress signal.
+ * ---- RE-DECODE TRIGGER (2026-08-12) ----
+ * A fifth thing this script can spend on, under the SAME tier-0 budget as
+ * everything above and never a new one: re-reading a bill whose stored decode
+ * no longer describes the document Congress is acting on. Eligibility is the
+ * top of the docket ladder only — a bill named in data/floor-signals.json's
+ * T0 announcements, or one whose own action text says a floor vote is
+ * ripening — and the verdict is pure and tested (redecodeVerdict in
+ * scripts/floor-signals-parse.mjs): the decode predates the bill's latest
+ * action, or the title Congress serves is no longer the title we hold (the
+ * vehicle swap that left an AGOA decode on the continuing resolution's page).
+ * A null decoded_at with a matching title never fires, which is what keeps the
+ * pre-2026-08-12 backlog from eating a day's cap the first time it runs.
+ *
+ * SIBLING STEP: scripts/floor-signals.mjs runs immediately BEFORE this one in
+ * newsdesk.yml and owns data/floor-signals.json alone — this script only ever
+ * READS that file, and treats it as absent when it can't. Neither writes the
+ * other's files.
  * SIBLING STEP: scripts/moment-updates.mjs runs immediately after this one in
  * newsdesk.yml and owns data/moment-updates.json alone — it reads this
  * script's output (data/bills.json) and never writes anything this script
@@ -203,8 +220,13 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { loadJSON, syncOneBill } from './bill-decode.mjs';
+import { loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
+import {
+  FLOOR_SIGNALS_PATH,
+  redecodeCandidates,
+  redecodeVerdict,
+} from './floor-signals-parse.mjs';
 import {
   anyDataChanged,
   assessFeeds,
@@ -617,6 +639,12 @@ console.log(`fired this run: ${fired.size}${fired.size ? ' (' + [...fired].map((
 // starved by a same-run press burst.
 const forceSlugs = new Set(fired); // the trigger's own signal stands in for the status gate
 const outcomes = [];
+// The title Congress.gov served this run, per slug. Free — every syncOneBill
+// call already fetched the bill detail — and it is the only way to notice a
+// VEHICLE SWAP, since refreshBillFields deliberately never writes `title`.
+// Kept here rather than re-fetched below so a bill that fired AND sits at the
+// top of the ladder is not fetched twice.
+const servedTitles = new Map();
 let pressDecodesThisRun = 0;
 let tier0DecodesThisRun = 0;
 for (const slug of fired) {
@@ -634,6 +662,7 @@ for (const slug of fired) {
     : pressDecodesThisRun < NEWSDESK_DECODE_CAP && cache.dailyDecodes.count < NEWSDESK_DAILY_DECODE_CAP);
   const result = await syncOneBill({ type, number }, { allowDecode, forceSlugs, bills, es, bySlug, anthropic });
   outcomes.push(result.outcome);
+  if (result.fetchedTitle) servedTitles.set(slug, result.fetchedTitle);
   // Charged on the ATTEMPT, not the success: a decode that reached the model
   // and then threw spent exactly what a decode that landed spent. Before
   // 2026-08-09 only 'added' was charged, so a deterministic decode failure
@@ -669,6 +698,89 @@ for (const slug of fired) {
       ? ' [decode attempted and failed - charged against the cap, held until tomorrow]'
       : '';
   console.log(`  ${slug}: ${result.outcome} (${reason.get(slug)})${note}`);
+}
+
+// ---- RE-DECODE TRIGGER: a bill about to be seen, explained from the wrong
+// ---- document (design A6 + critic A-8) ----------------------------------
+//
+// Everything above answers "has this bill moved". This answers a different
+// question the corpus could not previously ask: "is what we SAY about this
+// bill still about this bill". The measured failure is hr-6500-119 — the
+// Senate spent a week voting a continuing resolution under a bill number
+// whose stored decode, headline and Spanish twin all described the AGOA
+// Extension Act, on the page a reader would open to find out what the vote
+// was about.
+//
+// WHO IS ELIGIBLE: only bills entering the two loudest rungs of the ladder —
+// T0, the chamber's own announcement (data/floor-signals.json, written by
+// scripts/floor-signals.mjs immediately before this script), and T1, a floor
+// motion ripening in the record. A stale decode on a bill nobody is about to
+// see is not worth a cent.
+//
+// WHAT IT SPENDS: the EXISTING tier-0 budget, no new one. Re-decodes queue
+// behind this run's tier-0 fires and stop at the same per-run and per-UTC-day
+// caps, so the code-enforced daily ceiling in this script's header is
+// unchanged. The per-slug failed-decode hold applies too: a decode that pays
+// and fails is not retried until tomorrow.
+//
+// WHAT KEEPS IT QUIET: redecodeVerdict refuses to fire on a null decoded_at
+// with a matching title (critic A-8). The whole pre-2026-08-12 corpus has a
+// null stamp, and reading "unknown" as "stale" would have spent the entire
+// daily cap on day one re-explaining decodes that were fine.
+const floorSignals = (() => {
+  try {
+    return JSON.parse(readFileSync(FLOOR_SIGNALS_PATH, 'utf8'));
+  } catch {
+    // No file yet (before floor-signals.mjs's first run), or an unreadable
+    // one. The trigger simply falls back to its T1 half — this must never
+    // cost the newsdesk its refreshes.
+    return null;
+  }
+})();
+const candidates = redecodeCandidates({ signals: floorSignals?.signals, bills, now: Date.now() });
+console.log(
+  `re-decode: ${candidates.length} candidate(s) at the front of the ladder (${candidates.filter((c) => c.tier === 't0').length} T0, ${candidates.filter((c) => c.tier === 't1').length} T1)`
+);
+for (const cand of candidates) {
+  const bill = bySlug.get(cand.slug);
+  if (!bill) continue; // a T0 signal for a bill we don't hold yet is the fire path's job, not this one
+  // The served title is only worth a free Congress.gov call for the T0 set —
+  // the vehicle-swap case is by construction a bill the chamber has just
+  // scheduled. T1 candidates are judged on their decode stamp alone. A bill
+  // that already fired this run has its served title in hand from that call.
+  let fetchedTitle = servedTitles.get(cand.slug) ?? null;
+  if (cand.tier === 't0' && fetchedTitle === null) {
+    const refresh = await syncOneBill(
+      { type: bill.bill_type, number: String(bill.bill_number) },
+      { allowDecode: false, forceSlugs: new Set(), bills, es, bySlug, anthropic }
+    );
+    outcomes.push(refresh.outcome);
+    fetchedTitle = refresh.fetchedTitle ?? null;
+    if (fetchedTitle) servedTitles.set(cand.slug, fetchedTitle);
+  }
+  const verdict = redecodeVerdict({
+    decodedAt: bill.decoded_at ?? null,
+    lastActionDate: bill.last_action_date ?? null,
+    corpusTitle: bill.title,
+    fetchedTitle,
+  });
+  if (!verdict.redecode) continue;
+  if (cache.seen.has(failedDecodeKey(cand.slug, todayUTC))) {
+    console.log(`  ${cand.slug}: re-decode suppressed (${verdict.reason}) - an earlier decode failed today, retries tomorrow`);
+    continue;
+  }
+  if (tier0DecodesThisRun >= TIER0_DECODE_CAP || cache.dailyDecodes.tier0Count >= TIER0_DAILY_DECODE_CAP) {
+    console.log(`  ${cand.slug}: re-decode deferred (${verdict.reason}) - tier-0 decode budget spent for this ${tier0DecodesThisRun >= TIER0_DECODE_CAP ? 'run' : 'day'}`);
+    continue;
+  }
+  const result = await redecodeBill(cand.slug, { anthropic, es, bySlug, title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null });
+  outcomes.push(result.outcome);
+  if (chargeableDecode(result)) {
+    tier0DecodesThisRun++;
+    cache.dailyDecodes.tier0Count++;
+    if (result.outcome !== 'redecoded') cache.seen.add(failedDecodeKey(cand.slug, todayUTC));
+  }
+  console.log(`  ${cand.slug}: ${result.outcome} (re-decode: ${verdict.reason}, ${cand.tier.toUpperCase()})`);
 }
 
 // ---- persist: cache always, data files only if something actually changed ----

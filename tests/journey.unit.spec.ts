@@ -818,15 +818,102 @@ test.describe('selectFloorVoteFeature floor gate', () => {
     ).toBeNull();
   });
 
-  test('an exact-date tie goes to the calendar placement — the plainer claim', () => {
+  /*
+   * PIN MOVED 2026-08-12, deliberately. This test used to assert the reverse —
+   * "an exact-date tie goes to the calendar placement, the plainer claim" —
+   * and the docket ladder reverses it: the RUNG decides before the date does,
+   * everywhere, and a pending floor motion (T1) outranks a placement (T2).
+   *
+   * The reason is measured rather than aesthetic. A placement is a queue
+   * position, and the corpus's own median wait from placement to a vote is 22
+   * days; a cloture motion or a motion to proceed is a chamber acting this
+   * week. The crown must track the week, and this is the tiebreak where the two
+   * readings disagree.
+   */
+  test('the RUNG beats the date: a pending motion outranks a same-day placement', () => {
     const today = dayOffset(0);
-    const pending = candidate(today, CLOTURE_TEXT, 1);
-    const calendared = candidate(today, CALENDAR_TEXT, 0.1);
+    const pending = candidate(today, CLOTURE_TEXT, 0.1);
+    const calendared = candidate(today, CALENDAR_TEXT, 1);
     // Both orders, because a tie-break that only works one way is input order
     // wearing a comment.
-    expect(selectFloorVoteFeature([pending, calendared])?.bill).toBe(calendared);
-    expect(selectFloorVoteFeature([calendared, pending])?.bill).toBe(calendared);
-    expect(selectFloorVoteFeature([calendared, pending])?.kind).toBe('calendar');
+    expect(selectFloorVoteFeature([pending, calendared])?.bill).toBe(pending);
+    expect(selectFloorVoteFeature([calendared, pending])?.bill).toBe(pending);
+    expect(selectFloorVoteFeature([calendared, pending])?.kind).toBe('pending');
+  });
+
+  /*
+   * THE ANNOUNCED KIND (owner ruling V1) — the chamber's own published floor
+   * schedule, reaching this design primitive through a resolver so it never
+   * imports data. Three pins: it outranks both record facts, it is the ONLY
+   * kind exempt from the `floor_vote` status gate, and omitting the resolver
+   * leaves the selector behaving exactly as it did before the ruling.
+   */
+  test.describe('the announced kind', () => {
+    const announcement = (over: Record<string, unknown> = {}) => ({
+      quote: 'Senator Thune: the Senate will vote on the motion to invoke cloture on H.R. 3633.',
+      url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
+      published: dayOffset(1),
+      covers: dayOffset(-1),
+      source: 'daily-digest' as const,
+      chamber: 'senate' as const,
+      ...over,
+    });
+
+    test('an announcement outranks a fresher pending motion and a fresher placement', () => {
+      const announced = candidate(dayOffset(9), 'Referred to the Committee on Finance.', 0.1);
+      const pending = candidate(dayOffset(0), CLOTURE_TEXT, 1);
+      const calendared = candidate(dayOffset(0), CALENDAR_TEXT, 1);
+      const pick = selectFloorVoteFeature([pending, calendared, announced], (b) =>
+        b === announced ? announcement() : null
+      );
+      expect(pick?.bill).toBe(announced);
+      expect(pick?.kind).toBe('announced');
+      expect(pick?.chamber).toBe('senate');
+      expect(pick?.announcement?.quote).toContain('will vote on');
+    });
+
+    test('it is the one kind that does not need `floor_vote` — which is the point of it', () => {
+      // THE MEASURED CASE: when a measure reaches the floor Congress overwrites
+      // the action text and the sync derives `committee` from what is left, so
+      // a status gate made the week's biggest bills uncrownable.
+      const overwritten = {
+        status: 'committee' as const,
+        last_action_date: dayOffset(4),
+        last_action_text: 'Message on Senate action sent to the House.',
+        urgency_score: 0.45,
+      };
+      expect(selectFloorVoteFeature([overwritten])).toBeNull();
+      const pick = selectFloorVoteFeature([overwritten], () => announcement());
+      expect(pick?.bill).toBe(overwritten);
+      expect(pick?.kind).toBe('announced');
+    });
+
+    test('a daily program beats a weekly list on an identical publication date', () => {
+      const a = candidate(dayOffset(0), CALENDAR_TEXT, 1);
+      const b = candidate(dayOffset(0), CALENDAR_TEXT, 1);
+      const pick = selectFloorVoteFeature([b, a], (bill) =>
+        bill === a
+          ? announcement()
+          : announcement({ source: 'billsthisweek', chamber: 'house' })
+      );
+      expect(pick?.bill).toBe(a);
+    });
+
+    test('the newer announcement wins, whatever the bills\' own dates say', () => {
+      const older = candidate(dayOffset(0), CALENDAR_TEXT, 1);
+      const newer = candidate(dayOffset(9), CALENDAR_TEXT, 0.1);
+      const pick = selectFloorVoteFeature([older, newer], (bill) =>
+        bill === newer ? announcement({ published: dayOffset(0) }) : announcement({ published: dayOffset(3) })
+      );
+      expect(pick?.bill).toBe(newer);
+    });
+
+    test('with no resolver the selector is byte-for-byte the pre-ruling behavior', () => {
+      const pending = candidate(dayOffset(0), CLOTURE_TEXT, 1);
+      const pick = selectFloorVoteFeature([pending]);
+      expect(pick?.kind).toBe('pending');
+      expect(pick?.announcement).toBeNull();
+    });
   });
 
   /*

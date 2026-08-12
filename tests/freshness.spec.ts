@@ -29,7 +29,7 @@ import { waitForFeedHydrated } from './helpers';
 const fmt = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(iso));
 
-// The corpus mirror (scoreActiveBills + getTopActions on the same shared
+// The corpus mirror (the docket ladder + getTopActions on the same shared
 // modules the site imports) lives in tests/corpus.ts — one copy shared with
 // funnel.spec.ts / feed.spec.ts / mcp-tools.spec.ts, drift-pinned by
 // corpus.unit.spec.ts. Evaluated at the real clock — the same clock the

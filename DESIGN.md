@@ -116,7 +116,7 @@ Two **sizes** are exempt because they are floors, not spacing choices: `min-h-11
 
 **The signature move, and the easiest thing in this system to get wrong.**
 
-Exactly **one** bill per page takes the full-bleed green enamel panel (`components/system/FloorVotePanel.tsx`), and only a bill with `status === "floor_vote"` **and a printed date** can. Never two. A quiet week has **no** green panel at all, and the page is an unbroken paper column.
+Exactly **one** bill per page takes the full-bleed green enamel panel (`components/system/FloorVotePanel.tsx`), and only a bill carrying one of the record's dated floor facts **and a printed date** can — `status === "floor_vote"` for the two corpus facts, or the chamber's own published floor schedule naming the bill (ruling V1 below, the one kind exempt from the status gate and the only one that quotes). Never two. A quiet week has **no** green panel at all, and the page is an unbroken paper column.
 
 This is not a stylistic preference — it is the entire mechanism. The corpus is **hot**: **319 of the 2,567 bills** in `data/bills.json` carry `status: "floor_vote"` (as of the 2026-08-01 sync — the corpus moves nightly, so recompute rather than trust these figures). Stack two panels and both read as wallpaper; stack ten and the page has no signal left. Capping at one is what makes the one mean something.
 
@@ -146,7 +146,18 @@ Build against **live data in `data/`**, never against the mockups' fiction.
 >
 > **N4, same change:** the embed bill card now carries and prints `last_action_date` (`bills.updated`, "Last action {date}", UTC-formatted) with its status line, above the "Data as of" stamp. It was the one surface printing a status label with no date beside it — half the old carve-out's argument — and the order matters: the record's clock qualifies the label, the sync's clock must never read as corroboration of it.
 >
-> **The printed-date ruling above is still open.** N3 changes what the label may *assert* about age; it does not settle which date the amber prints, and `FloorVotePanel` still takes a caller-supplied `dateLabel` and still refuses to render without one.
+> **RULED 2026-08-12 (V1) — a THIRD fact, `announced`, and it is a QUOTE rather than a claim of ours.** Both facts above are read out of `data/bills.json`, and that corpus is structurally backward-looking in a way no gate can fix: `last_action_date` is always in the past, and the moment a measure actually reaches the floor Congress OVERWRITES `last_action_text` — so on 2026-08-07 the continuing resolution and the SEED Act, the two hottest vehicles in the country, both carried *"Message on Senate action sent to the House."* and a derived status of `committee`. The crown could not see either of them, and the whole shortlist under it was ranked by a score that had already promoted a cloture vote that FAILED 52–46 to rank 2 for four days.
+>
+> A second record now exists beside the corpus: `data/floor-signals.json`, rewritten hourly from the House's own weekly floor schedule (`docs.house.gov/billsthisweek`) and the Senate's "Program for" block in the Daily Digest. Amber may now carry a **third** dated floor fact — *the chamber has named this bill on its own published floor schedule* — under four conditions, all enforced in code:
+>
+> 1. **The panel QUOTES; it never paraphrases and never asserts.** The chamber's own sentence is printed verbatim as a `<blockquote>`, with the document named, its publication date printed, the meeting it covers printed, and its URL linked. If we cannot quote it, it does not render (`scripts/check-floor-signals.mjs` fails the build on a signal with no quote, no URL, or a future date).
+> 2. **The quote stays ENGLISH VERBATIM on `/es`,** under a Spanish framing sentence that says so. A translated quote is a paraphrase wearing quotation marks — a different honesty class from a quotation — so the framing is localized and the sentence inside it is not.
+> 3. **It is revalidated hourly, and the chip prints the ANNOUNCEMENT's own date,** not the bill's last-action date. A bill pulled from a chamber's schedule mid-week stops wearing the crown on the next run (`lib/docket.mjs`'s `signalIsLive`: re-observed on the latest fetch, file refreshed inside 48 hours, and the announcement's own horizon not yet past), and the panel prints the instant the schedule was last checked beside the quote.
+> 4. **It still says nothing about WHEN a vote happens.** The schedule names measures for a session; it does not schedule votes, and neither do we. This is the one clause of the original ruling that no new source changes.
+>
+> `announced` is also the ONLY kind that may render over a bill whose `status` is not `floor_vote` — that exemption *is* the ruling, because the status is precisely what goes stale when a measure reaches the floor. Everything else stands: one dated fact, printed, capped at one panel per page, and a quiet week has no panel at all. `home.weekNoteAnnounced` (EN+ES) is the note that describes this fact, and it is a separate string from `home.weekNote` so the page can never describe a fact it is not showing.
+>
+> **The printed-date ruling above is still open.** N3 changes what the label may *assert* about age; V1 adds a second document whose OWN dates may be printed and quoted. Neither settles which date the amber prints for a corpus fact, and `FloorVotePanel` still takes a caller-supplied `dateLabel` and still refuses to render without one.
 
 ---
 

@@ -534,7 +534,9 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
 
 // ---- the no-change-no-commit guard --------------------------------------
 /** Given the syncOneBill outcome strings from this run's ON-FIRE actions,
- *  did anything actually mutate bills/es? Only 'refreshed' and 'added'
+ *  did anything actually mutate bills/es? Only 'refreshed', 'added' and
+ *  'redecoded' (the re-decode trigger's outcome — a new decode + its ES twin
+ *  written over an existing record, scripts/bill-decode.mjs's redecodeBill)
  *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed',
  *  'skipped_partial' (an unreadable Congress.gov payload: no refresh
  *  applied, no new bill created — see readableAction) and 'skipped_no_text'
@@ -550,7 +552,7 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
  *  own `git diff --cached --quiet` step to (redundantly, but harmlessly)
  *  confirm. */
 export function anyDataChanged(outcomes) {
-  return outcomes.some((o) => o === 'refreshed' || o === 'added');
+  return outcomes.some((o) => o === 'refreshed' || o === 'added' || o === 'redecoded');
 }
 
 // ---- RSS/Atom feed parsing (pure — takes already-fetched XML text) ------

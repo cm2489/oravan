@@ -25,6 +25,14 @@ import type { BillTeaser } from '@/lib/types';
  * `emphasis` keeps its original job (the "Deciding now" band's cards) and its
  * original mechanism — a 2px ink edge, never a new color.
  */
+/** The data's snake_case rung annotation to its message key. Two vocabularies,
+ *  one deliberate seam: the ladder's values are data (they travel through the
+ *  MCP payload and both feeds), the message keys are the catalogue's. */
+const ANNOTATION_KEYS = {
+  just_decided: 'justDecided',
+  just_passed: 'justPassed',
+} as const;
+
 export function BillCard({
   bill,
   coverageCount,
@@ -40,6 +48,8 @@ export function BillCard({
 }) {
   const t = useTranslations();
   const format = useFormatter();
+  // Only a FeedTeaser carries it; the news lens and /reps pass plain teasers.
+  const annotation = (bill as { annotation?: 'just_decided' | 'just_passed' | null }).annotation;
 
   return (
     <Link
@@ -62,8 +72,21 @@ export function BillCard({
         </span>
         <span className="whitespace-nowrap">
           {t(`bills.status.${bill.statusKey}`)}
-          {coverageCount != null && <span aria-hidden> ·</span>}
+          {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
         </span>
+        {/* THE RUNG'S FOOTNOTE, in ink like everything else in this row.
+            `just_passed` exists because a bill that has just cleared a chamber
+            used to read as ordinary (on the day the Senate passed the
+            continuing resolution 90-6 the old floors filed it under "quieter
+            right now"); `just_decided` exists because a defeated motion looks
+            identical to a live one in a status label. Neither may ever light
+            amber — amber is one dated floor fact that is still AHEAD. */}
+        {annotation && (
+          <span className="whitespace-nowrap">
+            {t(`bills.annotation.${ANNOTATION_KEYS[annotation]}`)}
+            {coverageCount != null && <span aria-hidden> ·</span>}
+          </span>
+        )}
         {coverageCount != null && (
           <span className="whitespace-nowrap">{t('news.sources', { count: coverageCount })}</span>
         )}

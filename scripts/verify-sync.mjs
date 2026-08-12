@@ -22,6 +22,13 @@
  *     the corpus for two months rendering live pages; see offCongressBills
  *   - EN/ES parity broke: a decoded bill without a bills-es.json entry, or
  *     an ES entry pointing at a bill that doesn't exist
+ *   - data/floor-signals.json (the T0 announcement layer) doesn't parse,
+ *     carries an unknown schema, blew its size ceiling, or holds a signal
+ *     with no verbatim English quote, no https source URL or no publication
+ *     date — the file whose contents get QUOTED to readers as Congress's own
+ *     words is the one place an unevidenced claim must never survive. Skipped
+ *     cleanly when the file doesn't exist. The judgement lives in
+ *     scripts/floor-signals-parse.mjs (verifyFloorSignals)
  *   - data/moment-updates.json (the v2 live layer) doesn't parse, isn't an
  *     object, carries an unknown _meta.schema, references a moment that
  *     doesn't exist in data/moments.json, lost >50% of its updates overnight,
@@ -59,6 +66,9 @@ import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-u
 // makes no network call. One definition of "the Congress we track" — bumping
 // it there bumps this gate too.
 import { CONGRESS, offCongressBills } from './congress-fetch.mjs';
+// Same split as verifyMomentUpdates above: the judgement lives in a pure
+// module the unit spec can reach, this file supplies the bytes.
+import { FLOOR_SIGNALS_PATH, verifyFloorSignals } from './floor-signals-parse.mjs';
 
 const CURSOR_MAX_AGE_DAYS = 10;
 
@@ -218,6 +228,33 @@ if (!existsSync(MOMENT_UPDATES_PATH)) {
       moments: parse('data/moments.json', readFileSync('data/moments.json', 'utf8')),
       before,
       fileBytes: statSync(MOMENT_UPDATES_PATH).size,
+    });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
+// --- floor signals: every T0 claim carries its own evidence -----------------
+//
+// data/floor-signals.json is written hourly by scripts/floor-signals.mjs and
+// is the only file on the site whose contents are QUOTED to a reader as
+// Congress's own forward-looking words. So the gate is about evidence, not
+// about volume: a signal with no quote, no https source URL, no publication
+// date — or a quote in any language but the English of the record (owner
+// ruling V4) — is a claim nobody can check, and it fails the run rather than
+// reaching a page. Skipped cleanly when the file doesn't exist, exactly like
+// the moment-updates block above: a branch that predates the ladder must
+// still verify.
+if (!existsSync(FLOOR_SIGNALS_PATH)) {
+  console.log(`${FLOOR_SIGNALS_PATH} not present — skipping the floor-signals checks`);
+} else {
+  const signals = parse(FLOOR_SIGNALS_PATH, readFileSync(FLOOR_SIGNALS_PATH, 'utf8'));
+  if (signals !== null) {
+    const { failures, warnings, notes } = verifyFloorSignals({
+      data: signals,
+      fileBytes: statSync(FLOOR_SIGNALS_PATH).size,
+      knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
     });
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);

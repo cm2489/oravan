@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "schema": "floor-signals/v1",
+    "fetched_at": "2026-08-12T14:27:32.413Z",
+    "sources": {
+      "daily-digest": {
+        "status": "quiet",
+        "detail": "Senate program: pro forma session",
+        "checked_at": "2026-08-12T14:27:32.413Z",
+        "url": "https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm",
+        "published": "2026-08-10",
+        "covers": "2026-08-13",
+        "covers_label": "8 a.m., Thursday, August 13",
+        "via": "congress.gov"
+      },
+      "billsthisweek": {
+        "status": "quiet",
+        "detail": "no schedule published for this week (404)",
+        "checked_at": "2026-08-12T14:27:32.413Z",
+        "url": "https://docs.house.gov/billsthisweek/20260810/20260810.xml",
+        "published": "2026-08-10",
+        "covers": "2026-08-10",
+        "covers_label": null,
+        "via": "docs.house.gov"
+      }
+    },
+    "in_session": {
+      "senate": "out_of_session",
+      "house": "out_of_session",
+      "basis": "Daily Digest \"Program for\" blocks"
+    },
+    "dropped": []
+  },
+  "signals": {},
+  "nominations": {}
+}

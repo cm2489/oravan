@@ -65,6 +65,27 @@ jobs:
           key: newsdesk-seen-${{ github.run_id }}
           restore-keys: |
             newsdesk-seen-
+      - name: Collect floor signals (the T0 announcement layer)
+        # Runs BEFORE the newsdesk, because the newsdesk's re-decode trigger
+        # reads data/floor-signals.json to decide which bills are about to be
+        # seen. Owns that file alone — no other step writes it, and it writes
+        # nothing else.
+        #
+        # continue-on-error for the same reason the Moment-updates step below
+        # carries it: a Congress.gov or docs.house.gov hiccup in the
+        # announcement layer must never cost the run its bill refreshes. The
+        # script already degrades internally (a dark source records
+        # data_stale/error rather than a quiet week), so this only covers a
+        # hard crash, and the next hourly run re-collects.
+        #
+        # Cost: $0 — four free requests (one docs.house.gov XML, two
+        # Congress.gov API calls on the existing key, one congress.gov HTML
+        # page). No model calls, ever: every word it stores is a verbatim
+        # substring of a government document.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/floor-signals.mjs
       - name: Run newsdesk
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
@@ -119,7 +140,8 @@ jobs:
           # This job touches data/bills.json/data/bills-es.json (no
           # sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
           # Boundaries section) plus data/moment-updates.json from the
-          # collector step above; `git add data/` already stages all of them
+          # collector step above and data/floor-signals.json from the
+          # announcement collector; `git add data/` already stages all of them
           # - disjoint from refresh-legislators.yml's
           # files but overlapping sync-bills.yml's/hot-bills.yml's, all of
           # which share this concurrency group. Rebase onto the latest main
