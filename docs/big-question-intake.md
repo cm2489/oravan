@@ -32,9 +32,11 @@ mechanism.
    approve step can ask: has the record moved since the draft was written, and
    is the signal still inside the 45-day window the site publishes as its
    criterion.
-6. **It merges itself on green.** The workflow branches, commits, opens a PR
-   carrying the byte-fidelity attestation and the gate transcript, and enables
-   auto-merge. Merging closes the issue.
+6. **A PR opens, carrying the byte-fidelity attestation and the gate
+   transcript.** The workflow branches, commits, opens the PR, and *attempts*
+   auto-merge. **As this repository is configured today that attempt fails and
+   the PR waits for your one click** — see "Making it merge itself" below.
+   Merging closes the issue either way.
 
 ## Editing before you approve
 
@@ -82,6 +84,31 @@ rather than merely unready:
 - `check-moments.mjs` failing on the working tree after the in-process gate
   passed, which means one of the checks only the CLI runs is unhappy (comment
   posted, file restored, label removed).
+
+## Making it merge itself
+
+The workflow runs `gh pr merge --auto --squash` on every PR it opens. **That
+command fails today, and the failure is the expected path**, because auto-merge
+needs two repository settings that are off (verified against the API,
+2026-08-12: `allow_auto_merge: false`, `main` unprotected, no rulesets, no
+required status checks). When it fails, the workflow says so on the issue and
+the PR sits waiting for you — correct, complete, one click from landing.
+
+Both of these have to be on, and turning them on is your explicit opt-in
+because together they are what converts a label into a merge:
+
+1. **Settings → General → Pull Requests → "Allow auto-merge".** Without it
+   `gh pr merge --auto` errors outright.
+2. **A required status check on `main`** naming CI's `test` job (Settings →
+   Rules → Rulesets, or classic branch protection). Without it, auto-merge has
+   nothing to wait for — **"on green" has no enforcement mechanism at all**, and
+   a PR would land the moment it was armed rather than when CI passed.
+
+Setting (1) without (2) is the dangerous half-configuration: it makes merging
+automatic *and* unguarded. Do both or neither.
+
+Until then the loop still removes the whole copy-paste ritual — the reading,
+the deciding, and the one click are what remain.
 
 ## Who can approve
 

@@ -44,17 +44,25 @@ on:
   issues:
     types: [labeled]
 
-permissions:
-  contents: write # pushes the moment/approve-<id> branch
-  issues: write # comments, and removes the label on every refusal
-  pull-requests: write # opens the PR and enables auto-merge
-  actions: write # dispatches ci.yml — see the "Ask CI to run" step for why
+# NO WORKFLOW-LEVEL `permissions:` BLOCK, deliberately. Permissions are
+# declared per JOB below, because the two jobs need very different ones and a
+# workflow-level grant would hand the write scopes to both. See the `authorize`
+# job: it decides whether an untrusted trigger may proceed, and it does that
+# holding `issues: write` and nothing else.
 
 concurrency:
-  # Per issue, never cancelled: two labels racing on one issue would both read
-  # the same data/moments.json and both append. Serialised, the second run sees
-  # the first one's branch and refuses.
-  group: moment-approve-${{ github.event.issue.number }}
+  # ONE GROUP FOR THE WHOLE WORKFLOW, not one per issue (fixed 2026-08-12).
+  # The contended resource is data/moments.json — specifically the 6-live cap
+  # inside it — and that is global, not per-issue. Keyed by issue number, two
+  # DIFFERENT candidates labelled a minute apart ran concurrently, each read a
+  # 5-live file, and each decided it had room; the second to push would either
+  # collide on rebase or, worse, land a seventh live question past a cap both
+  # runs had independently checked. Runs must serialise on the file they
+  # contend for, so the group names the file's owner and nothing else.
+  #
+  # Never cancelled: a queued approval is work the owner asked for, and
+  # dropping it would look identical to a label that silently did nothing.
+  group: moment-approve
   cancel-in-progress: false
 
 env:
@@ -66,13 +74,16 @@ env:
   LABEL: approve-moment
 
 jobs:
-  approve:
+  # =====================================================================
+  # 1. THE SECURITY GATE — its own job, holding no write scope worth
+  #    stealing, and nothing checked out.
+  # =====================================================================
+  authorize:
     if: github.event.label.name == 'approve-moment'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write # the ONLY scope this job needs: remove the label, say why
     steps:
-      # ---------------------------------------------------------------------
-      # 1. THE SECURITY GATE. First, and before checkout on purpose.
-      # ---------------------------------------------------------------------
       - name: Only the repo owner may approve
         env:
           GH_TOKEN: ${{ github.token }}
@@ -84,10 +95,17 @@ jobs:
         # run is attributed to — and a run where they disagree is a run whose
         # provenance nobody can explain, which is not a state to publish from.
         #
-        # Nothing is checked out yet, so this step reads no repository content
-        # at all: `gh` is pointed at $GITHUB_REPOSITORY directly. A gate that
-        # runs after a checkout is a gate that has already done work on an
-        # unauthorized trigger's behalf.
+        # A SEPARATE JOB, and that is the point of the split (2026-08-12).
+        # Everything downstream needs `contents: write` on a repository whose
+        # `main` is unprotected; this step decides whether an untrusted trigger
+        # gets there at all, and a decision step should never itself be holding
+        # the capability it is deciding about. `publish` declares those scopes,
+        # `needs: authorize` means it does not start until this job has passed,
+        # and this job's token cannot write a branch even if something in it
+        # went wrong.
+        #
+        # Nothing is checked out either, so this job reads no repository content
+        # at all: `gh` is pointed at $GITHUB_REPOSITORY directly.
         #
         # The label is REMOVED rather than left in place, because a label that
         # stays looks approved to the next reader of the issue. The run then
@@ -103,6 +121,18 @@ jobs:
           fi
           echo "labeler ${SENDER} is the owner — proceeding"
 
+  # =====================================================================
+  # 2. THE PUBLISH JOB. Only reachable once `authorize` has passed.
+  # =====================================================================
+  publish:
+    needs: authorize
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # pushes the moment/approve-<id> branch
+      issues: write # comments, and removes the label on every refusal
+      pull-requests: write # opens the PR and attempts auto-merge
+      actions: write # dispatches ci.yml — see the "Ask CI to run" step for why
+    steps:
       - uses: actions/checkout@v7
 
       - name: Resolve origin/main (the Moments new-vehicle baseline)
@@ -191,6 +221,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.issue.number }}
+          # THROUGH THE ENVIRONMENT, never interpolated into the script body.
+          # `${{ … }}` is substituted as TEXT before bash ever sees the line, so
+          # a raw expression in a `run:` body is a command-injection sink and
+          # not a variable — and this one carried a step output derived from an
+          # issue key. Two locks now: the id is ID_RE-validated at the parse and
+          # every $GITHUB_OUTPUT value is refused if it contains a newline
+          # (scripts/moment-approve.mjs renderOutputs), and the expression no
+          # longer appears in a shell context at all. This was the ONLY raw
+          # `${{ steps.*.outputs.* }}` inside a run: body in this file; the unit
+          # suite now bans the shape outright so a future edit cannot add one.
+          REASON: ${{ steps.decide.outputs.reason }}
         # The label comes OFF on every refusal, and that is the whole re-entry
         # mechanism: re-applying it is how the owner says "try again", after the
         # watcher has re-drafted or after he has edited the body himself. A
@@ -199,7 +240,7 @@ jobs:
         run: |
           gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file /tmp/approve/comment.md
           gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL"
-          echo "::notice::refused (${{ steps.decide.outputs.reason }}) — reason posted on #${ISSUE}, label removed, data/moments.json untouched"
+          echo "::notice::refused (${REASON}) — reason posted on #${ISSUE}, label removed, data/moments.json untouched"
 
       - name: Re-run the curation gate on the working tree
         id: gate
@@ -346,29 +387,41 @@ jobs:
           gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH" \
             || echo "::warning::could not dispatch ci.yml on ${BRANCH} — the PR has no checks yet; run CI by hand before merging"
 
-      - name: Enable auto-merge on green
+      - name: Attempt auto-merge on green
         if: steps.branch.outputs.proceed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.issue.number }}
           PR_URL: ${{ steps.pr.outputs.url }}
-        # THE MERGE IS THE LABEL, delivered late. The owner read the draft and
-        # approved it; this waits for CI to agree about the mechanics and then
-        # lands exactly what he approved. Squash, so `main` carries one commit
-        # per Big Question.
+        # ATTEMPT, not enable — and the difference is not word-play. Verified
+        # against the API on 2026-08-12: this repository has
+        # `allow_auto_merge: false`, `main` is unprotected, and there are no
+        # rulesets and no required status checks. So today this command FAILS
+        # on every generated PR and the else-branch below is the live path: the
+        # PR waits for the owner's one click.
         #
-        # It can legitimately fail — auto-merge has to be enabled in repository
-        # settings, and it needs at least one required status check to wait on.
+        # It is wired anyway, and left failing loudly-but-safely, because the
+        # two things that would make it work are repository SETTINGS and
+        # therefore the owner's to turn on — deliberately, since together they
+        # are what converts a label into a merge. Both are needed:
+        #   1. Settings -> General -> "Allow auto-merge"
+        #   2. a required status check on `main` (ruleset or branch protection)
+        #      naming ci.yml's `test` job
+        # Without (2), auto-merge has nothing to wait for and "on green" has no
+        # enforcement mechanism at all. docs/big-question-intake.md states both
+        # as the owner's explicit opt-in rather than describing the merge as
+        # automatic; the two must not drift apart.
+        #
         # A failure here is NOT a run failure: the PR is open, correct, and one
-        # click from merging, and the issue gets told so. Silently red-running
-        # over a settings toggle would be noise about something that is already
-        # in the owner's hands.
+        # click from merging, and the issue gets told exactly that. Red-running
+        # over a settings toggle would be noise about something already in the
+        # owner's hands.
         run: |
           if gh pr merge --repo "$GITHUB_REPOSITORY" --auto --squash "$PR_URL"; then
             gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
-              "Approved. $PR_URL carries the entry exactly as this issue has it, byte for byte, and merges itself when CI is green — which closes this issue."
+              "Approved. $PR_URL carries the entry exactly as this issue has it, byte for byte. Auto-merge is armed: it lands once the required checks are green, which closes this issue."
           else
             gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
-              "Approved, and $PR_URL carries the entry exactly as this issue has it, byte for byte. **Auto-merge could not be enabled** — it needs \"Allow auto-merge\" on in repository settings and at least one required status check to wait on — so merge it yourself once CI is green. Merging closes this issue."
-            echo "::warning::auto-merge could not be enabled on ${PR_URL} — the PR is open and correct; merge it by hand"
+              "Approved, and $PR_URL carries the entry exactly as this issue has it, byte for byte. **Auto-merge is not available on this repository, so the PR is waiting for you** — merge it once CI is green and this issue closes. To make it automatic, both of these have to be on: *Settings -> General -> Allow auto-merge*, and a required status check on \`main\` naming CI's \`test\` job. See \`docs/big-question-intake.md\`."
+            echo "::warning::auto-merge unavailable on ${PR_URL} (expected while allow_auto_merge is off and main has no required checks) — the PR is open and correct; merge it by hand"
           fi

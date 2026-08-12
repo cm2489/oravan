@@ -91,7 +91,7 @@
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
+import { ID_RE, checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
 import { PLACEHOLDER_ID, PUBLISHED_SIGNAL_MAX_AGE_DAYS } from './moment-scaffold.mjs';
 import { nominationSlug } from './nominations-fetch.mjs';
 
@@ -209,6 +209,32 @@ export function parseScaffold(body) {
       error: `the moment id is still \`${PLACEHOLDER_ID}\`, the placeholder the scaffold ships when nothing could be derived. That id becomes the question's permanent address (\`/questions/<id>\`) — edit the issue body to the id you want, then re-apply the label.`,
     };
   }
+  /*
+   * THE ID IS UNTRUSTED INPUT, and this is the line that says so.
+   *
+   * Downstream it becomes a git branch name, a commit message, a
+   * `$GITHUB_OUTPUT` value, an `env:` value and a PR title — none of which are
+   * JSON contexts, and all of which are line-oriented. `checkMoments` does
+   * validate the key, but it validates it LAST, after this function has
+   * already handed the id to every one of those. An id like
+   * `evil\nreason=$(curl …)` was, until 2026-08-12, a schema violation that
+   * arrived one step too late to matter.
+   *
+   * ID_RE is the gate's own regex, imported (§2.3). Anything outside it is
+   * refused here, before the value leaves this function — and the refusal
+   * message deliberately does NOT echo the offending key back, because the
+   * whole point is that it is not a string this program repeats.
+   */
+  if (!ID_RE.test(id)) {
+    return {
+      ok: false,
+      error:
+        'the moment id is not a lowercase kebab slug (letters, digits and single hyphens — `syria-sanctions-repeal`). ' +
+        'It becomes a URL, a branch name and a commit subject, so it is refused here rather than sanitised. ' +
+        'Edit the id in the issue body, then re-apply the label. ' +
+        `(The offending key is ${JSON.stringify(id).length} characters and is deliberately not repeated here.)`,
+    };
+  }
   return { ok: true, id, entry };
 }
 
@@ -274,9 +300,19 @@ export function liveMoments(moments) {
  * Nothing is deleted — a retired Big Question stays in the file as the record
  * that it existed, exactly as a settled one does.
  *
+ * ROOM IS CHECKED BEFORE THE DIRECTIVE IS CONSULTED, and the order is the
+ * whole rule rather than a detail (fixed 2026-08-12). A `/replace` comment is
+ * a durable artefact: it sits in the thread forever, and the label can be
+ * re-applied days later. Reading it first meant a directive written for a
+ * six-full attempt would still fire on a LATER approval that needed no slot —
+ * silently retiring a live Big Question to make room that already existed.
+ * The directive answers exactly one question, "which of the six goes", so it
+ * is only ever asked when there are six. When there is room it is IGNORED and
+ * reported as ignored (`ignoredDirective`), never obeyed and never swallowed.
+ *
  * @param {{ moments: Record<string, any>, replaceId?: string | null, newId?: string | null }} args
- * @returns {{ ok: true, action: 'append' | 'replace', retire: string | null }
- *          | { ok: false, need: 'directive' | 'valid-directive', error: string }}
+ * @returns {{ ok: true, action: 'append' | 'replace', retire: string | null, ignoredDirective: string | null }
+ *          | { ok: false, need: 'directive' | 'valid-directive' | 'id-collision', error: string }}
  */
 export function slotDecision({ moments, replaceId = null, newId = null }) {
   const live = liveMoments(moments);
@@ -286,35 +322,38 @@ export function slotDecision({ moments, replaceId = null, newId = null }) {
   if (newId && Object.prototype.hasOwnProperty.call(moments ?? {}, newId)) {
     return {
       ok: false,
-      need: 'valid-directive',
+      need: 'id-collision',
       error: `\`${newId}\` is already a key in \`data/moments.json\`. Two entries under one key is not an error in JSON — the second silently replaces the first — so publishing this would delete the existing question and pass every gate. Rename the id in the issue body, then re-apply the label.`,
     };
   }
 
-  if (replaceId) {
-    const target = live.find((m) => m.id === replaceId);
-    if (!target) {
-      const known = Object.prototype.hasOwnProperty.call(moments ?? {}, replaceId);
-      return {
-        ok: false,
-        need: 'valid-directive',
-        error: known
-          ? `\`/replace ${replaceId}\` names a question that is not live (its stored status is \`${moments[replaceId]?.status}\`), so retiring it frees no slot. The live six are:\n\n${names()}`
-          : `\`/replace ${replaceId}\` names no question in \`data/moments.json\`. The live ones are:\n\n${names()}`,
-      };
-    }
-    return { ok: true, action: 'replace', retire: replaceId };
+  /* Room first. See the note above: a directive is only meaningful at the cap. */
+  if (live.length < LIVE_CAP) {
+    return { ok: true, action: 'append', retire: null, ignoredDirective: replaceId ?? null };
   }
 
-  if (live.length < LIVE_CAP) return { ok: true, action: 'append', retire: null };
+  if (!replaceId) {
+    return {
+      ok: false,
+      need: 'directive',
+      error:
+        `All ${LIVE_CAP} Big Question slots are full, so publishing this one means retiring one of them — and which one is your call, not this workflow's.\n\n${names()}\n\n` +
+        'Comment `/replace <moment-id>` on this issue with the id that should retire, then re-apply the `approve-moment` label. The retired question keeps its entry in the file as the record that it existed; it simply stops appearing anywhere.',
+    };
+  }
 
-  return {
-    ok: false,
-    need: 'directive',
-    error:
-      `All ${LIVE_CAP} Big Question slots are full, so publishing this one means retiring one of them — and which one is your call, not this workflow's.\n\n${names()}\n\n` +
-      'Comment `/replace <moment-id>` on this issue with the id that should retire, then re-apply the `approve-moment` label. The retired question keeps its entry in the file as the record that it existed; it simply stops appearing anywhere.',
-  };
+  const target = live.find((m) => m.id === replaceId);
+  if (!target) {
+    const known = Object.prototype.hasOwnProperty.call(moments ?? {}, replaceId);
+    return {
+      ok: false,
+      need: 'valid-directive',
+      error: known
+        ? `\`/replace ${replaceId}\` names a question that is not live (its stored status is \`${moments[replaceId]?.status}\`), so retiring it frees no slot. The live ${LIVE_CAP} are:\n\n${names()}`
+        : `\`/replace ${replaceId}\` names no question in \`data/moments.json\`. The live ones are:\n\n${names()}`,
+    };
+  }
+  return { ok: true, action: 'replace', retire: replaceId, ignoredDirective: null };
 }
 
 /* ------------------------------------------------------------------ *
@@ -625,6 +664,7 @@ export function decide({ body, comments, moments, bills, nominations, owner, now
     next,
     action: slots.action,
     retire: slots.retire,
+    ignoredDirective: slots.ignoredDirective ?? null,
     directive,
     gate,
     drift,
@@ -639,6 +679,12 @@ const REFUSAL_HEAD = {
   scaffold: 'Nothing was published — this issue does not carry one approvable scaffold',
   directive: 'Nothing was published — all six slots are full',
   'valid-directive': 'Nothing was published — the replace directive does not resolve',
+  /* Its own heading since 2026-08-12. This case used to borrow
+     `valid-directive`'s, so an id collision on an issue carrying NO directive
+     was announced as "the replace directive does not resolve" — a heading
+     about a comment the owner never wrote, over a body explaining something
+     else entirely. */
+  'id-collision': 'Nothing was published — that moment id is already taken',
   drift: 'Nothing was published — the record has moved since this draft was written',
   gate: 'Nothing was published — the curation gate wants changes this workflow will not make',
 };
@@ -697,6 +743,14 @@ export function prBody(decision, { issue, moments, messages, now }) {
     decision.retire
       ? `\`${decision.retire}\` retires in the same commit, on the \`/replace ${decision.retire}\` directive in that thread — its entry stays in the file as the record that it existed, with \`status: "retired"\`, which is how \`lib/moments.ts\` takes a question off every surface.`
       : `There was room — ${LIVE_CAP - liveMoments(moments).length} of ${LIVE_CAP} slots open — so nothing retires.`,
+    /* An ignored directive is REPORTED, never silently dropped. A `/replace`
+       comment written for an earlier six-full attempt stays in the thread
+       forever; it is only obeyed at the cap (see slotDecision), and the owner
+       has to be told when one was on the page and did not fire — otherwise he
+       reads the merge as having retired something it did not. */
+    decision.ignoredDirective
+      ? `\n> **A \`/replace ${decision.ignoredDirective}\` directive on that issue was NOT acted on.** There was room, so nothing needed to retire, and a directive is only ever read when all ${LIVE_CAP} slots are full. \`${decision.ignoredDirective}\` is still live. Retire it in its own PR if that is what you want.`
+      : null,
     '',
     '## Byte-fidelity attestation',
     '',
@@ -754,6 +808,74 @@ export function prBody(decision, { issue, moments, messages, now }) {
 const path = (p) => resolve(process.cwd(), p);
 const readJSON = (p) => JSON.parse(readFileSync(path(p), 'utf8'));
 
+/* ------------------------------------------------------------------ *
+ * Two hardening helpers, both about the same thing: text that came out
+ * of a GitHub issue is attacker-influenced, and both of the channels
+ * this script writes to are LINE-ORIENTED protocols.
+ * ------------------------------------------------------------------ */
+
+/**
+ * One `key=value` line per pair, refusing anything that could forge a second
+ * line.
+ *
+ * `$GITHUB_OUTPUT` is parsed line by line, so a value containing a newline
+ * declares an OUTPUT THIS SCRIPT NEVER SET — and those outputs are consumed by
+ * the workflow, one of them (until 2026-08-12) inside a `run:` body on a
+ * runner holding `contents: write`. `id` and `reason` both trace back to an
+ * issue body. ID_RE now rejects a hostile id at the parse, and this is the
+ * second lock on the same door: even a value assembled from somewhere this
+ * audit has not thought of cannot become a line of its own.
+ *
+ * HARD REJECT rather than escape, and rather than the random-delimiter
+ * heredoc form. Every value this script emits is a slug, a fixed reason code
+ * or an integer — none of them can legitimately contain a control character,
+ * so there is nothing to preserve by encoding it, and a refusal fails the step
+ * loudly instead of publishing under a name nobody chose. The heredoc form
+ * would be the right answer for genuinely multi-line values; there are none
+ * here, and pretending otherwise would invite one.
+ *
+ * @param {[string, string][]} pairs
+ * @returns {string} the exact bytes to append
+ */
+export function renderOutputs(pairs) {
+  const lines = [];
+  for (const [key, raw] of pairs) {
+    if (!/^[a-z_][a-z0-9_]*$/.test(key)) {
+      throw new Error(`refusing to write a GITHUB_OUTPUT key that is not a plain identifier: ${JSON.stringify(key)}`);
+    }
+    const value = raw ?? '';
+    if (typeof value !== 'string') {
+      throw new Error(`refusing to write a non-string GITHUB_OUTPUT value for ${key}`);
+    }
+    if (/[\r\n\0]/.test(value)) {
+      throw new Error(
+        `refusing to write a GITHUB_OUTPUT value containing a newline or NUL for ${key} — that would forge an output this script never set (${value.length} chars, not repeated here)`,
+      );
+    }
+    lines.push(`${key}=${value}`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * Neutralise Actions workflow commands in text this script did not author.
+ *
+ * A `run:` step's stdout and stderr are SCANNED by the runner for `::command::`
+ * lines. Several of this script's refusal messages quote the issue back — the
+ * gate's violations name vehicle slugs, the drift report quotes last-action
+ * text — so an issue body could otherwise emit `::add-mask::` (hiding later
+ * output) or any other command, from inside a log line.
+ *
+ * A zero-width word joiner after the leading colons is enough: the runner's
+ * parser needs `::` at the start of a trimmed line, and the character is
+ * invisible in the log, so a legitimate message is unchanged to read. Applied
+ * only to text with issue provenance — this file's own `::error::` and
+ * `::warning::` lines are written by this file and stay functional.
+ */
+export function sanitizeForLog(text) {
+  return String(text ?? '').replace(/^(\s*)::/gm, '$1:⁠:');
+}
+
 function main(argv) {
   const arg = (name) => argv.find((a) => a.startsWith(`--${name}=`))?.split('=').slice(1).join('=');
   const has = (name) => argv.includes(`--${name}`);
@@ -807,8 +929,10 @@ function main(argv) {
   };
 
   if (decision.decision === 'refuse') {
+    /* `reason` is one of this file's own fixed codes; `error` quotes the issue
+       and therefore goes through the log sanitiser. See sanitizeForLog. */
     console.error(`::warning::moment-approve: refused (${decision.reason})`);
-    console.error(decision.error);
+    console.error(sanitizeForLog(decision.error));
     out('comment-out', refusalComment(decision, { issue }));
   } else {
     if (has('write')) {
@@ -846,16 +970,20 @@ function main(argv) {
   }, null, 2));
 
   if (process.env.GITHUB_OUTPUT) {
+    /* Through renderOutputs, which refuses any value that could forge a second
+       line. `moment_id` and `branch` are derived from a key in an untrusted
+       issue body; ID_RE has already rejected anything but a kebab slug, and
+       this is the second lock on that door. A throw here fails the step, which
+       is the correct outcome: nothing has been pushed yet. */
     appendFileSync(
       process.env.GITHUB_OUTPUT,
-      [
-        `decision=${decision.decision}`,
-        `reason=${decision.reason ?? ''}`,
-        `moment_id=${decision.id ?? ''}`,
-        `retire=${decision.retire ?? ''}`,
-        `branch=${decision.id ? `moment/approve-${decision.id}` : ''}`,
-        '',
-      ].join('\n'),
+      renderOutputs([
+        ['decision', decision.decision],
+        ['reason', decision.reason ?? ''],
+        ['moment_id', decision.id ?? ''],
+        ['retire', decision.retire ?? ''],
+        ['branch', decision.id ? `moment/approve-${decision.id}` : ''],
+      ]),
     );
   }
 
