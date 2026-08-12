@@ -8,6 +8,32 @@ on:
       max_new_decodes:
         description: 'Max new bills to AI-decode this run (safety ceiling — the priority gate does the real limiting)'
         default: '60'
+      max_updates:
+        # The catch-up lever for a STUCK ASCENDING WINDOW. scripts/sync-bills.mjs
+        # fetches at most MAX_UPDATES bills per run and processes the oldest
+        # MAX_UPDATES of them; when a single Congress.gov updateDate carries more
+        # tracked bills than that, every bill the run finishes shares one
+        # timestamp, the high-water cursor cannot step past it, and tomorrow
+        # re-scans the identical window forever. The script's own warning says to
+        # "raise MAX_UPDATES for a catch-up run" — until now there was no way to,
+        # because MAX_UPDATES was in no workflow env or input.
+        #
+        # SIZING IT: blank = the script default 500. 2000 clears a multi-day
+        # cohort in one pass. Budget an hour-plus of runner time, not minutes:
+        # the scan pages 250 records per API request and then does ONE sequential
+        # Congress.gov detail fetch per bill, and the only timing datapoint in
+        # this repo is ~22 minutes for a 500-bill window at its fastest
+        # (docs/solutions/pinned-sync-cursor.md), so ~2000 is roughly 1.5h. The
+        # job sets no timeout-minutes, so GitHub's 6h default applies — ample.
+        #
+        # PAIR IT WITH max_new_decodes. A gate-passing NEW bill beyond the decode
+        # budget returns outcome 'budget', which sets needsWork, which sets
+        # `frozen`, which pins the cursor in resolveNextSync exactly like
+        # truncation does. A wider window with the default budget of 60 just
+        # trades one freeze cause for the other and the cursor still does not
+        # move. Raise both together.
+        description: 'One-off MAX_UPDATES override for a catch-up run (blank = the script default 500; 2000 drains a multi-day cohort — raise max_new_decodes with it or the decode budget re-freezes the cursor)'
+        default: ''
       force_decode_slugs:
         description: 'Comma-separated slugs to bypass the priority gate for (e.g. hr-1234-119,s-45-119)'
         default: ''
@@ -55,6 +81,10 @@ jobs:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '60' }}
+          # Blank/absent on every scheduled run, so the fallback below hands the
+          # script the same 500 its own `?? 500` default would have used
+          # (scripts/sync-bills.mjs:126). Only a manual dispatch changes it.
+          MAX_UPDATES: ${{ inputs.max_updates || '500' }}
           FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
         run: node scripts/sync-bills.mjs
       - name: Journey-corpus tripwire (unclassified floor texts fail the sync, not PRs)

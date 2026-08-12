@@ -367,7 +367,11 @@
       "pendingSenate": "Floor vote pending in the Senate",
       "headlineHouse": "This bill is queued for a vote of the full House.",
       "headlineSenate": "This bill is queued for a vote of the full Senate.",
+      "headlinePendingHouse": "A vote of the full House is still ahead of this bill.",
+      "headlinePendingSenate": "A vote of the full Senate is still ahead of this bill.",
+      "statusPending": "Floor vote pending",
       "meta": "A bill on the calendar can be called up with little notice, and offices tally until it is.",
+      "metaPending": "The steps toward a floor vote have started, and offices tally calls until it happens.",
       "cta": "Make your call"
     }
   },

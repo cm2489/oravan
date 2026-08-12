@@ -367,7 +367,11 @@
       "pendingSenate": "Votación pendiente en el pleno del Senado",
       "headlineHouse": "Este proyecto está en fila para una votación de toda la Cámara.",
       "headlineSenate": "Este proyecto está en fila para una votación de todo el Senado.",
+      "headlinePendingHouse": "Aún falta una votación de toda la Cámara sobre este proyecto.",
+      "headlinePendingSenate": "Aún falta una votación de todo el Senado sobre este proyecto.",
+      "statusPending": "Votación pendiente en el pleno",
       "meta": "Un proyecto en el calendario puede llamarse a votación con poco aviso, y las oficinas cuentan llamadas hasta que ocurre.",
+      "metaPending": "Ya comenzaron los pasos hacia una votación en el pleno, y las oficinas cuentan llamadas hasta que ocurra.",
       "cta": "Haz tu llamada"
     }
   },

@@ -265,6 +265,36 @@ export function slugOf(b) {
   return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 }
 
+/**
+ * Every corpus record whose `congress_number` is not the Congress this build
+ * tracks - the corpus-uniformity gate scripts/verify-sync.mjs fails on
+ * (2026-08-11). Returns the offending records' slugs, so a failure names the
+ * bills rather than a count.
+ *
+ * WHY THE CHECK EXISTS. Two 118th-Congress records (s-1776-118, s-5110-118)
+ * rode in with the original seed commit (ad6668f, 2026-06-12) and survived
+ * two months of nightly syncs, because nothing ever LOOKED: every write path
+ * since is pinned to CONGRESS, so no code could add one, and no check could
+ * notice one already sitting there. They rendered live pages that asserted
+ * present-tense floor activity for a Congress that ended in Jan 2025 (the
+ * s-1776-118 green-panel defect, tests/freshness.spec.ts R2b).
+ *
+ * WHY IT LIVES HERE rather than in verify-sync.mjs, which runs it: this
+ * module owns CONGRESS and is import-clean by contract (no secrets read at
+ * import - see the header and cg()'s comment), so a unit test can import the
+ * judgement without the file-reading, git-shelling, process.exit-ing script
+ * body around it. Same split as lib/verify-moment-updates.mjs vs.
+ * scripts/check-moment-updates.mjs.
+ *
+ * Strict equality on purpose: a string "119" is not what any write path
+ * produces, and a corpus that silently changed the field's TYPE is exactly
+ * the kind of drift this gate is for.
+ */
+export function offCongressBills(bills, congress = CONGRESS) {
+  if (!Array.isArray(bills)) return [];
+  return bills.filter((b) => b?.congress_number !== congress).map(slugOf);
+}
+
 /** Slug for a Congress.gov bill-list item ({type, number}), not yet a corpus
  *  bill object - the shape sync-bills.mjs's `updated`/recent-pass arrays and
  *  hot-bills.mjs's fetch results are in. */

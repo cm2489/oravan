@@ -1,7 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import syncState from '../data/sync-state.json';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
-import { anyNowAt, anyTopAt, calendarPlacementSlugs, newestActionDate, stableAcross } from './corpus';
+import {
+  anyNowAt,
+  anyTopAt,
+  calendarPlacementSlugs,
+  floorPendingSlugs,
+  newestActionDate,
+  pendingChamberOf,
+  stableAcross,
+} from './corpus';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -249,5 +257,101 @@ test.describe('R2b: the green floor panel never fires off a stale placement', ()
     test.skip(split.fresh.length === 0, 'no fresh calendar placement in the corpus this week');
     await page.goto(`/bills/${split.fresh[0]}`);
     await expect(page.locator(PANEL)).toHaveCount(1);
+  });
+});
+
+/*
+ * R2c: THE CROWN'S PROMISE SURVIVES THE CLICK (D1, 2026-08-11).
+ *
+ * The 2026-08-09 ruling gave amber a second dated floor fact — a floor vote
+ * still PENDING — and the homepage crown took it the same day. The bill page
+ * did not, so a bill crowned "Floor vote pending in the Senate" lost the band,
+ * the amber and the claim one click later and printed the weaker "Floor
+ * activity" over the identical record. These pin the seam shut from both
+ * ends: the fact reaches the page, and the freshness clock still governs it
+ * there exactly as it governs a placement.
+ *
+ * Corpus-derived and chamber-derived, both on purpose. The pending set is
+ * small and turns over every sync, and the chamber comes out of the record's
+ * own sentence — H.R. 3633 is a House bill standing on a Senate cloture
+ * motion, so anything reading the chamber off the bill type would assert the
+ * wrong one.
+ */
+test.describe('R2c: a fresh PENDING floor vote earns the same band the crown promises', () => {
+  const PANEL = 'section.bg-go-deep';
+  const pending = floorPendingSlugs(Date.now());
+  const PENDING_STABLE = stableAcross((at) => floorPendingSlugs(at));
+  const CHIP = { house: 'Floor vote pending in the House', senate: 'Floor vote pending in the Senate' };
+
+  test('a pending floor vote inside the window gets the band, with the chamber the record names', async ({
+    page,
+  }) => {
+    test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
+    test.skip(pending.fresh.length === 0, 'no fresh pending floor vote in the corpus this week');
+    const slug = pending.fresh[0];
+    const chamber = pendingChamberOf(slug);
+    expect(chamber, 'the corpus helper only yields slugs with a chamber').not.toBeNull();
+    await page.goto(`/bills/${slug}`);
+    const panel = page.locator(PANEL);
+    await expect(panel).toHaveCount(1);
+    // The amber chip prints the pending sentence, never the placement one —
+    // this bill was never placed on a calendar and must not say it was.
+    await expect(panel).toContainText(CHIP[chamber!]);
+    await expect(panel).not.toContainText('floor calendar');
+  });
+
+  test('the status line prints the pending fact, not the weaker "Floor activity"', async ({
+    page,
+  }) => {
+    test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
+    test.skip(pending.fresh.length === 0, 'no fresh pending floor vote in the corpus this week');
+    await page.goto(`/bills/${pending.fresh[0]}`);
+    const ritual = page.locator('main header p').first();
+    await expect(ritual).toContainText('Floor vote pending');
+    await expect(ritual).not.toContainText('Floor activity');
+  });
+
+  test('Spanish gets the same fact, in Spanish', async ({ page }) => {
+    test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
+    test.skip(pending.fresh.length === 0, 'no fresh pending floor vote in the corpus this week');
+    const slug = pending.fresh[0];
+    const chamber = pendingChamberOf(slug);
+    await page.goto(`/es/bills/${slug}`);
+    await expect(page.locator(PANEL)).toContainText(
+      chamber === 'senate' ? 'Votación pendiente en el pleno del Senado' : 'Votación pendiente en el pleno de la Cámara'
+    );
+    await expect(page.locator('main header p').first()).toContainText('Votación pendiente en el pleno');
+  });
+
+  test('an aged pending floor vote gets nothing — the clock governs both facts alike', async ({
+    page,
+  }) => {
+    test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
+    test.skip(pending.stale.length === 0, 'no aged pending floor vote in the corpus today');
+    await page.goto(`/bills/${pending.stale[0]}`);
+    await expect(page.locator(PANEL)).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // And the label falls back to the shared gate's answer, which is true of
+    // the record whatever its age.
+    await expect(page.locator('main header p').first()).toContainText(/Floor activity|On the floor calendar/);
+  });
+
+  test('THE SEAM: whatever the homepage crowns still carries its band one click later', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const crown = page.locator(`section[aria-labelledby="top-actions"] ${PANEL}`);
+    test.skip((await crown.count()) === 0, 'quiet week — no crown to follow');
+    // The crown's own chip sentence, whichever of the two facts it found.
+    // textContent, not innerText: the chip is `uppercase` in CSS only, and
+    // the page it is compared against renders the same string the same way.
+    const chip = (await crown.locator('.bg-urgent > span').first().textContent())?.trim();
+    expect(chip, 'the crown prints an amber floor claim').toBeTruthy();
+    const href = await crown.locator('a[data-call-cta]').getAttribute('href');
+    expect(href, 'the crown links to a bill page').toBeTruthy();
+    await page.goto(href!);
+    const panel = page.locator(PANEL);
+    await expect(panel, 'the crowned bill keeps its band on its own page').toHaveCount(1);
+    await expect(panel, 'and states the same floor fact, in the same chamber').toContainText(chip!);
   });
 });
