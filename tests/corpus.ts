@@ -28,6 +28,12 @@ import billsJson from '../data/bills.json';
 import syncState from '../data/sync-state.json';
 import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgency.mjs';
 import { floorCalendarChamber, floorPendingChamber } from '../lib/journey';
+// NOT re-derived, deliberately, and the one import here that breaks the mirror
+// rule on purpose: the settled-floor predicate (2026-08-12) is CLOCK-FREE — it
+// reads the record's own vocabulary and nothing else — so there is no "what
+// would this be at time t" question for it to answer, and the only thing a
+// second copy could buy is the drift this file's header exists to prevent.
+import { demoteSettled, isSettledFloor } from '../lib/core/bills';
 import { BAND_SIZES, bandFloors, bandForEff, type BandFloors } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
 
@@ -48,6 +54,19 @@ export interface CorpusBill {
 export const corpus = billsJson as unknown as CorpusBill[];
 export const activeBills = corpus.filter((b) => !TERMINAL_STATUSES.has(b.status));
 
+/**
+ * The ACT-NOW POOL (2026-08-12): active bills minus the ones whose floor
+ * question the record has already answered — a rejected motion to proceed,
+ * cloture not invoked, a withdrawn measure. lib/core/bills.ts's
+ * `scoreActiveBills().actNowPool`, which every "worth a call" surface reads.
+ *
+ * `activeBills` above stays the BANDING population (the floors are still read
+ * off all of it, and /bills still lists every one of these bills — one band
+ * lower, never hidden), so the two lists are not interchangeable: mirror
+ * whichever one the function under test reads.
+ */
+export const actNowPool = activeBills.filter((b) => !isSettledFloor(b));
+
 /** Same shape as lib/core/bills.ts's billSlug. */
 export const slugOf = (b: CorpusBill): string =>
   `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
@@ -66,18 +85,20 @@ export function floorsAt(at: number): BandFloors {
   return bandFloors(effs);
 }
 
-/** Mirror of hasActNow: any active bill (decoded or not) clears the now floor. */
+/** Mirror of hasActNow: any act-now-pool bill (decoded or not) clears the now
+ *  floor. The FLOOR is still read off every active bill (floorsAt) — only the
+ *  population that may claim it narrowed. */
 export function anyNowAt(at: number): boolean {
   const floors = floorsAt(at);
-  return activeBills.some(
+  return actNowPool.some(
     (b) => effectiveUrgency(b.status, b.last_action_date, at) >= floors.nowFloor
   );
 }
 
-/** Mirror of getTopActions' predicate: a DECODED active bill clears it. */
+/** Mirror of getTopActions' predicate: a DECODED act-now-pool bill clears it. */
 export function anyTopAt(at: number): boolean {
   const floors = floorsAt(at);
-  return activeBills.some(
+  return actNowPool.some(
     (b) =>
       b.ai_headline && effectiveUrgency(b.status, b.last_action_date, at) >= floors.nowFloor
   );
@@ -87,7 +108,7 @@ export function anyTopAt(at: number): boolean {
  *  then last-action desc — lib/core/bills.ts's byUrgencyDesc). */
 export function topActionSlugsAt(at: number): string[] {
   const floors = floorsAt(at);
-  return activeBills
+  return actNowPool
     .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date, at) }))
     .filter((s) => s.eff >= floors.nowFloor && s.b.ai_headline)
     .sort(
@@ -107,7 +128,7 @@ export function movingSlugsAt(
 ): string[] {
   const floors = floorsAt(at);
   const cutoff = at - days * 86_400_000;
-  return activeBills
+  return actNowPool
     .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date, at) }))
     .filter((s) => s.eff >= floors.nowFloor && s.b.ai_headline)
     .filter((s) => !topic || (s.b.issue_tags ?? []).includes(topic))
@@ -132,14 +153,18 @@ export function expectDataStaleAt(at: number): boolean {
 }
 
 /** Mirror of /bills' band split (getTeasers): active bills band by floor,
- *  terminal bills pin to radar. */
+ *  terminal bills pin to radar, and a bill whose floor question the record has
+ *  already answered is capped one rung below "now" (demoteSettled). */
 export function bandCountsAt(at: number): Record<'now' | 'moving' | 'radar', number> {
   const floors = floorsAt(at);
   const counts = { now: 0, moving: 0, radar: 0 };
   for (const b of corpus) {
     const band = TERMINAL_STATUSES.has(b.status)
       ? 'radar'
-      : bandForEff(effectiveUrgency(b.status, b.last_action_date, at), floors);
+      : demoteSettled(
+          bandForEff(effectiveUrgency(b.status, b.last_action_date, at), floors),
+          isSettledFloor(b)
+        );
     counts[band] += 1;
   }
   return counts;

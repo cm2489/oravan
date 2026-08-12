@@ -58,20 +58,36 @@ test.describe('coverageTier', () => {
   });
 });
 
+/*
+ * These three ordering pins predate the recency gate (2026-08-12) and every one
+ * of them still asserts exactly what it always did. What changed is the ITEM
+ * SHAPE: rankNews now also reads `newestArticle`, so the factory dates every
+ * item inside the window. The pins are about ORDER, and dating them keeps them
+ * about order — an undated item would now be dropped by the gate and all three
+ * would have started passing vacuously. The gate itself is pinned in
+ * tests/act-now-pool.unit.spec.ts.
+ */
 test.describe('rankNews (the "In the news" lens order)', () => {
-  const item = (tier: CoverageTier, sources: number, urgency = 0.5) => ({ tier, sources, urgency });
+  const NOW = Date.parse('2026-08-12T12:00:00Z');
+  const fresh = new Date(NOW - 2 * 86_400_000).toISOString().slice(0, 10);
+  const item = (tier: CoverageTier, sources: number, urgency = 0.5) => ({
+    tier,
+    sources,
+    urgency,
+    newestArticle: fresh,
+  });
 
   test('drops one-sided and none — only cross/neutral surface', () => {
-    const r = rankNews([item('cross', 2), item('one_sided', 9), item('none', 5), item('neutral', 2)], 10);
+    const r = rankNews([item('cross', 2), item('one_sided', 9), item('none', 5), item('neutral', 2)], 10, NOW);
     expect(r.map((x) => x.tier)).toEqual(['cross', 'neutral']);
   });
 
   test('orders cross before neutral, then by #sources, then urgency', () => {
-    const r = rankNews([item('neutral', 9), item('cross', 2), item('cross', 4)], 10);
+    const r = rankNews([item('neutral', 9), item('cross', 2), item('cross', 4)], 10, NOW);
     expect(r.map((x) => [x.tier, x.sources])).toEqual([['cross', 4], ['cross', 2], ['neutral', 9]]);
   });
 
   test('caps at n', () => {
-    expect(rankNews([item('cross', 1), item('cross', 2), item('neutral', 1)], 1)).toHaveLength(1);
+    expect(rankNews([item('cross', 1), item('cross', 2), item('neutral', 1)], 1, NOW)).toHaveLength(1);
   });
 });

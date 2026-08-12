@@ -282,8 +282,19 @@ export function floorActionChamber(actionText: string | null): Chamber | null {
  * texts that are neither pending nor settled — which is precisely the silent
  * gap that let a rejected motion print "the Senate is deciding whether to
  * bring it to a vote". Written once, the split stays total by construction.
+ *
+ * EXPORTED 2026-08-12 for a THIRD reader with the same requirement:
+ * lib/core/bills.ts's act-now pool, which must drop a bill whose floor question
+ * the record has already answered. That reader deliberately consumes the
+ * VOCABULARY rather than calling floorSettledChamber, because that function
+ * also requires a readable chamber (floorActionChamber's rule 7 returns null
+ * when the record names both chambers or neither) — and WHICH chamber a defeat
+ * happened in has no bearing on whether the bill is still worth a call this
+ * week. Reusing it would have failed OPEN on exactly the texts we understand
+ * least. Nothing here changed but the `export` keyword; the two functions
+ * below are untouched.
  */
-const FLOOR_SETTLED = /\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i;
+export const FLOOR_SETTLED = /\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i;
 
 export function floorPendingChamber(actionText: string | null): Chamber | null {
   if (!actionText) return null;
