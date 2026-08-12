@@ -78,7 +78,7 @@ Every tool response nests a `meta` object:
 
 ## Privacy
 
-No accounts, no API key — anyone can call it. Anonymous use is rate-limited (60 calls/minute, 1,000/day) by a short-lived, hashed counter keyed only to a caller, never a stored IP address and never linked to what was asked. Nothing about a call is logged in a way that could connect a caller to a bill, a representative, or a political position. Full policy: `https://oravan.org/privacy`.
+No accounts, no API key — anyone can call it. Anonymous use is rate-limited (60 calls/minute, 1,000 per counter window) by a short-lived, hashed counter keyed only to a caller, never a stored IP address and never linked to what was asked. Counters restart when the hashing salt rotates, so a burst across that boundary can exceed either figure. Nothing about a call is logged in a way that could connect a caller to a bill, a representative, or a political position. Full policy: `https://oravan.org/privacy`.
 
 ## Not exposed over MCP, on purpose
 

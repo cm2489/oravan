@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/server';
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
@@ -9,6 +9,7 @@ import { NewsLens } from '@/components/NewsLens';
 import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
+import { FloorEvidence } from '@/components/FloorEvidence';
 import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
 import {
   billSlug,
@@ -113,14 +114,6 @@ const FLOOR_LABEL_KEYS = {
   announced: { house: 'bill.floor.announcedHouse', senate: 'bill.floor.announcedSenate' },
   calendar: { house: 'bill.floor.calendarHouse', senate: 'bill.floor.calendarSenate' },
   pending: { house: 'bill.floor.pendingHouse', senate: 'bill.floor.pendingSenate' },
-} as const;
-
-/** The announcing document's own name, for the evidence attribution row.
- *  Naming the document is not quoting it, so this one IS translated — the
- *  QUOTE beside it never is (owner ruling V4). */
-const EVIDENCE_SOURCE_KEYS = {
-  'daily-digest': 'evidenceSourceDigest',
-  billsthisweek: 'evidenceSourceWeekly',
 } as const;
 
 // Homepage had zero metadata override before this pass — no canonical, no
@@ -353,25 +346,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   /*
    * "As of" for the floor schedule — a DATE AND A TIME, and the only timestamp
-   * on this page that carries one.
-   *
-   * Critic A-1's requirement: a bill can be pulled from a chamber's schedule
-   * mid-week, so a T0 claim is only as good as the hour it was last checked,
-   * and the reader has to be able to see that hour. `_meta.fetched_at` is a
-   * full instant (not a bare date), so it does not have billDate's
-   * UTC-midnight problem and is formatted in the reader's own zone with its
-   * zone printed — a bare "14:27" that might be anyone's afternoon is worse
-   * than no time at all.
+   * on this page that carries one — is formatted inside
+   * components/FloorEvidence.tsx now, beside the quote it stamps. Critic A-1's
+   * requirement is unchanged: a bill can be pulled from a chamber's schedule
+   * mid-week, so a T0 claim is only as good as the hour it was last checked and
+   * the reader has to be able to see that hour.
    */
-  const stampInstant = (iso: string) =>
-    format.dateTime(new Date(iso), {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
 
   /*
    * The stamp's date. Deliberately NOT pinned to UTC: its screen-reader
@@ -669,8 +649,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </h2>
                 <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
               </div>
+              {/* THE BEACON SITS WITH THE CLAIM IT CAVEATS (2026-08-12).
+                  It used to hang off the week-note line ~200 lines and one
+                  full green panel below, so "Moving in Congress this week"
+                  and "The bills moving right now" — the loudest recency
+                  claims on the site — read as current for a whole scroll
+                  before anything qualified them. It rides topSub instead:
+                  directly under the rule the Stamp straddles, inside the
+                  masthead that makes the claim, continuing the same
+                  sentence. STILL EXACTLY ONE PER PAGE (only one of these two
+                  mastheads renders, and the week-note line no longer carries
+                  it) — the 2026-07 critique that a repeated note "read as a
+                  malfunction banner on every core surface" was unanimous,
+                  and it is recorded in StalenessNote's own header. Moving
+                  the note is allowed; multiplying it is not. Contrast: the
+                  caveat inherits `text-go-pale` on this `bg-go-deep` ground,
+                  6.86:1 (globals.css's ledger), AAA. */}
               <p className="mt-8 max-w-read text-pretty leading-dark tracking-dark text-go-pale md:mt-4">
                 {t('topSub')}
+                <StalenessNote checkedAt={freshness.checkedAt} />
               </p>
             </div>
             <FloorVotePanel
@@ -688,44 +685,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                * meeting it covers, links to it, and carries the "as of" stamp
                * critic A-1 requires: the schedule is re-read hourly and a bill
                * the chamber pulls leaves this panel with the next run.
+               *
+               * It lives in components/FloorEvidence.tsx since 2026-08-12,
+               * because the BILL PAGE prints the same announcement now (the
+               * announced-kind seam) and two hand-kept copies of one attribution
+               * is how two surfaces start disagreeing about one record.
                */
               evidence={
                 feature.kind === 'announced' && feature.announcement ? (
-                  <>
-                    <span className="mb-1 block text-2xs font-extrabold tracking-[0.1em] text-go-pale uppercase not-italic">
-                      {t('evidenceLead')}
-                    </span>
-                    <span lang="en">{`“${feature.announcement.quote}”`}</span>
-                    <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-sm text-go-pale">
-                      <span>
-                        {t(EVIDENCE_SOURCE_KEYS[feature.announcement.source])}
-                        {' · '}
-                        <span className="tabular-nums">
-                          {billDate(feature.announcement.published)}
-                        </span>
-                        {feature.announcement.covers
-                          ? ` · ${t('evidenceCovers', { date: billDate(feature.announcement.covers) })}`
-                          : ''}
-                      </span>
-                      {/* External, same convention as every other link out to
-                          the official record on this site (the bill page's
-                          "View the official record"): new tab, noopener. */}
-                      <a
-                        href={feature.announcement.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
-                      >
-                        {t('evidenceLink')}
-                        <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                      </a>
-                      {signalsCheckedAt && (
-                        <span className="tabular-nums">
-                          {t('floorCheckedAt', { date: stampInstant(signalsCheckedAt) })}
-                        </span>
-                      )}
-                    </span>
-                  </>
+                  <FloorEvidence
+                    announcement={feature.announcement}
+                    checkedAt={signalsCheckedAt}
+                  />
                 ) : undefined
               }
               // The chip prints the fact the selector actually found, in the
@@ -761,7 +732,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </h2>
               <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
             </div>
-            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">{t('topSub')}</p>
+            {/* Same beacon, same place, on the quiet week's paper ground —
+                see the hot masthead above for why it lives here. `text-ink-2`
+                on paper, 7.87:1 (globals.css's ledger), AAA. Only one of
+                these two mastheads ever renders, so the page still carries
+                exactly one staleness note. */}
+            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">
+              {t('topSub')}
+              <StalenessNote checkedAt={freshness.checkedAt} />
+            </p>
           </div>
         )}
 
@@ -845,9 +824,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           )}
 
-          {/* The note says what the loudness means, and the client-side stale
-              caveat continues its sentence — one line, one claim; renders
-              nothing at all while the data is fresh. Gated on the SAME
+          {/* The note says what the loudness means. It no longer carries the
+              staleness beacon (2026-08-12): the caveat moved UP to the
+              masthead's topSub line, where the "this week" / "right now"
+              claims it qualifies actually are, and it is not duplicated here
+              because one note per page is a standing ruling (see the
+              masthead comment above and StalenessNote's own header). Gated on the SAME
               condition as the panel itself: a note that says "the green
               panel marks one fact" on a week with no green panel is a false
               claim (owner finding 2026-08-01), so the panel-less week gets
@@ -862,7 +844,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               : feature?.kind === 'announced'
                 ? t('weekNoteAnnounced')
                 : t('weekNote')}
-            <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
 
           {/* The section closes with its exit: a full-width row under the

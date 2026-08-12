@@ -14,9 +14,30 @@
 
 export type FreshnessState = 'fresh' | 'stale' | 'dead';
 
-/** How many days old `checkedAt` can be before the "as of" claim needs a
- *  caveat (KTD-2's quiet-week vs data-stale boundary). */
-export const FRESHNESS_CLAIM_WINDOW_DAYS = 5;
+/**
+ * How many days old `checkedAt` can be before the "as of" claim needs a
+ * caveat (KTD-2's quiet-week vs data-stale boundary).
+ *
+ * TIGHTENED 5 -> 3 (2026-08-12). The job behind this number is nightly
+ * (.github/workflows/sync-bills.yml, cron '30 7 * * *'), so 5 days was a 5x
+ * tolerance: the caveat stayed silent through five consecutive dead nights.
+ * Both real outages in the git record were exactly five missed nights
+ * (2026-06-25 -> 07-01 and 2026-07-16 -> 07-22, the latter root-caused in
+ * data/sync-state.json's own `note` field), which means the fuse essentially
+ * never lit while either was running — ~4.7 of ~5.6 stale days went
+ * uncaveated in the second one. At 3 days both outages would have been
+ * caveated from day three on.
+ *
+ * NOT 2. The three single-missed-night gaps in the same ~70-day record
+ * (06-12 -> 06-14, 07-04 -> 07-06, 07-14 -> 07-16) each cap `checkedAt` age
+ * at ~2.0 days, so a 2-day window would flicker on an ordinary hiccup and
+ * teach readers to ignore the note. 3 clears every observed single-miss and
+ * still catches every observed outage.
+ *
+ * Re-derive from the sync history before moving this again; it is tuned to
+ * the measured gap distribution, not picked.
+ */
+export const FRESHNESS_CLAIM_WINDOW_DAYS = 3;
 
 /** Beyond this, the nightly pipeline reads as dead, not just running a bit
  *  behind schedule. */
@@ -95,10 +116,14 @@ export interface FreshnessSignals {
  * Two different thresholds, deliberately (2026-07-16, audit §5 item 4):
  *  - `checkedAt` (did the nightly job even run tonight) uses the tight
  *    FRESHNESS_CLAIM_WINDOW_DAYS/FRESHNESS_DEAD_WINDOW_DAYS pair via
- *    freshnessState — a "we checked recently" claim should go stale fast.
+ *    freshnessState — a "we checked recently" claim should go stale fast,
+ *    and since 2026-08-12 that is three days against a nightly cron rather
+ *    than five (see FRESHNESS_CLAIM_WINDOW_DAYS above for the measured
+ *    gap distribution that sets it).
  *  - `completeThrough` (the sync cursor) and `newestAction` (the corpus's
  *    own newest activity) instead trip data_stale only past
- *    FRESHNESS_DEAD_WINDOW_DAYS, the wider of the two constants. Both are
+ *    FRESHNESS_DEAD_WINDOW_DAYS, the wider of the two constants — a gap that
+ *    the tightening above widened from 5:21 to 3:21. Both are
  *    EXPECTED to lag `checkedAt` by real days under ordinary operation — the
  *    ascending backlog-scan cursor deliberately trails while it drains (see
  *    lib/freshness.ts's own doc comment and scripts/sync-bills.mjs's

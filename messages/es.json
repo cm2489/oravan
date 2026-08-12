@@ -328,6 +328,7 @@
       "stepOther": "{chamber, select, House {Cámara} Senate {Senado} other {Senado}}",
       "stepPresident": "Escritorio del Presidente",
       "stepBothChambers": "Aprobación en ambas cámaras",
+      "stepStates": "Enviada a los estados",
       "now": "Ahora mismo:",
       "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
       "nowFloor": "está en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
@@ -337,7 +338,9 @@
       "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
       "nowFloorMotionFailed": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} no ha aceptado considerarlo — la última moción para hacerlo fracasó.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
+      "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
+      "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al Presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
@@ -345,6 +348,7 @@
       "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
       "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
       "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al Presidente y no se convierte en ley.",
+      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al Presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
       "youAreHere": "Estás aquí",
       "law": "Ya es ley",
       "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
@@ -386,7 +390,11 @@
       "metaPending": "Ya comenzaron los pasos hacia una votación en el pleno, y las oficinas cuentan llamadas hasta que ocurra.",
       "cta": "Haz tu llamada",
       "announcedHouse": "En la programación del pleno de la Cámara",
-      "announcedSenate": "En el programa del pleno del Senado"
+      "announcedSenate": "En el programa del pleno del Senado",
+      "headlineAnnouncedHouse": "La Cámara incluyó este proyecto en su propia programación del pleno.",
+      "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
+      "statusAnnounced": "En la programación del pleno",
+      "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra."
     }
   },
   "walkthrough": {
@@ -436,6 +444,7 @@
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como \"Sin calificar\" donde no.",
     "newestLabel": "El más reciente de estos artículos",
+    "checkedLabel": "Comprobado",
     "ageNote": "puede existir cobertura más reciente que no hemos recopilado",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {
@@ -803,7 +812,7 @@
     "toolsLangNote": "Los nombres y descripciones de las herramientas son metadatos de protocolo que lee el modelo de IA que llama, no texto escrito para una persona — por eso, como cualquier servidor MCP, Oravan los define solo en inglés. Todo lo que una llamada a una herramienta realmente devuelve a una conversación es completamente bilingüe: el envoltorio de citación de abajo, cada mensaje de error y cualquier contenido redactado por IA respetan el idioma que pida la consulta.",
     "privacyTitle": "Privacidad",
     "privacyNoAccounts": "Sin cuentas y sin clave de API — cualquiera puede llamarlo, igual que cualquiera puede cargar el sitio web.",
-    "privacyRateLimit": "El uso anónimo tiene un límite de velocidad (60 llamadas por minuto, 1,000 por día) mediante un contador breve y con hash — nunca una dirección IP guardada, y nunca vinculado a lo que se preguntó.",
+    "privacyRateLimit": "El uso anónimo tiene un límite de velocidad mediante un contador breve y con hash: 60 llamadas por minuto y 1,000 por ventana de conteo (los contadores se reinician cuando rota el hash, así que una ráfaga en ese límite puede superar cualquiera de las dos cifras). Nunca una dirección IP guardada, y nunca vinculado a lo que se preguntó.",
     "privacyNoLogging": "Nada aquí se registra de una forma que pudiera conectar a quien llama con un proyecto de ley, un representante o una postura política.",
     "privacyLinkText": "Lee la política de privacidad completa",
     "envelopeTitle": "Cada respuesta lleva una citación",

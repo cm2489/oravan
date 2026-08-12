@@ -156,6 +156,42 @@ const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
  */
 const SALT_MEMO_MAX_AGE_MS = 60_000;
 
+/*
+ * ROTATION RESETS EVERY COUNTER, AND THAT IS THE ACCEPTED TRADE (2026-08-12).
+ * The other side of the arithmetic above, written down here because the memo
+ * comment is where the next reader does rotation math.
+ *
+ * A counter key is `<env>:rl:<route>:sha256(ip + salt)` (counterKey +
+ * callerHash), so the key itself is salt-derived. When the salt rotates the
+ * caller's hash changes: the old counter is orphaned — still holding its own
+ * TTL, now unreachable — and a brand-new counter starts at 0, mid-window. The
+ * counter does NOT reset because it expired; it resets because its NAME
+ * changed. A longer counter TTL therefore fixes nothing.
+ *
+ * CONSEQUENCE, stated honestly: a caller's budget is per counter window, not
+ * per wall-clock day. Straddle the rotation and a window's worth can be spent
+ * on each side of it — for the 86,400s mcp-day window (max 1,000, see
+ * app/api/mcp/[transport]/route.ts) that is up to ~2,000 requests inside one
+ * 24h span, then ~1,000 per salt epoch after. Short windows barely notice: a
+ * 600s window can straddle a rotation at most once a day, costing one extra
+ * ten-minute budget.
+ *
+ * WHY IT IS NOT "FIXED": every fix needs a caller key that outlives the
+ * rotation (keeping salt N-1 and counting against both keys is the only
+ * variant that actually works), which lengthens a pseudonym's linkable life
+ * from ≤24h to ≤48h — the exact property rotation exists to bound, that
+ * lib/salt.mjs's MAX_SALT_AGE_MS = 25h dead-man's switch polices nightly, and
+ * that the header comment above promises ("a counter can never quietly become
+ * a stable identifier"). Privacy wins; the ceiling is the price.
+ *
+ * SO THE CLAIM MUST MATCH, not the code: the published figures say "per
+ * counter window" rather than "a day" (`privacyRateLimit` in messages/en.json
+ * + messages/es.json, docs/mcp-server-readme.md). Pinned as intended
+ * behavior in tests/ratelimit.unit.spec.ts ("rotation mints a new counter").
+ * If a hard per-day ceiling is ever required, the honest lever is a smaller
+ * max, not a longer-lived caller key.
+ */
+
 // --- counters-database key builders (the whole registry) --------------------
 
 export function saltKey(): string {

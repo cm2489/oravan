@@ -487,13 +487,36 @@ jobs:
         # human - this step only refuses to let the runner delete the
         # evidence.
         #
-        # TWO GATES STOPPED REACHING THIS PATH ON 2026-08-12, and both on
-        # purpose. The journey-corpus tripwire is continue-on-error now (a
-        # novel floor sentence files an issue and the night commits), and the
-        # cursor-age ceiling moved AFTER the commit step - so neither can skip
-        # the commit any more, `steps.commit.outcome` is 'success' when either
-        # of them reds the run, and this step correctly stays asleep. There is
-        # nothing to salvage when the work already landed on main.
+        # WHAT NARROWED ON 2026-08-12, STATED EXACTLY - because "two gates
+        # stopped reaching this path" would be true of one of them and only
+        # HALF true of the other, and a comment that overstates a gate is how
+        # the next reader stops believing the rest of this file.
+        #
+        #   1. The cursor-age ceiling: FULLY out of the way. It moved to the
+        #      LAST step of this job, after the commit, so it can never skip
+        #      the commit again. `steps.commit.outcome` is 'success' when it
+        #      reds the run, this step correctly stays asleep, and there is
+        #      nothing to salvage because the work already landed on main.
+        #
+        #   2. The journey-corpus tripwire: only TWO of its four verdicts
+        #      moved. The tripwire step itself is continue-on-error, but the
+        #      allow-list step right after it ("A sweep that proved nothing
+        #      still fails the night") re-fails the run on anything that is
+        #      not `clean` or `novel` - and that step runs BEFORE the commit.
+        #        - `clean` / `novel`: the night commits. A novel floor
+        #          sentence files an issue instead of costing the run. These
+        #          two really did stop reaching this path.
+        #        - `vacuous` (<50 floor_vote records, so the sweep proved
+        #          nothing) and `error` (the sweep could not run at all -
+        #          tsx missing, lib/journey.ts throwing, a corpus that will
+        #          not parse), plus an EMPTY verdict from a script that died
+        #          before writing one: these still hard-fail before the
+        #          commit, so they still SKIP it and they still land here.
+        #
+        # So this path is not dead - it is exactly as alive as case 2's
+        # second bullet, which is the case it matters most for: a sweep that
+        # proved nothing is precisely when the night's already-paid decodes
+        # must not die with the runner.
         if: always() && failure() && steps.commit.outcome != 'success' && steps.commit.outcome != 'failure'
         run: |
           if [ -z "$(git status --porcelain -- data/)" ]; then
@@ -548,7 +571,9 @@ jobs:
         # author is linked, so it is no longer BLOCKED). Deploys can still fail
         # or be dropped silently (PR #18's root cause hid for weeks behind
         # green checkmarks) - poll production until it serves the SHA we just
-        # pushed. Skips with a notice until the PROD_URL repo variable is set.
+        # pushed. A missing PROD_URL repo variable FAILS this step rather than
+        # skipping it (2026-08-12): the variable has been set since 07-11, so
+        # the old soft skip could only ever disarm this switch silently.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}

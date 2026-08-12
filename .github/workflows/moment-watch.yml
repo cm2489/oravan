@@ -61,7 +61,12 @@ on:
     # derivation is in sync-bills.yml's own schedule comment).
     #
     # THE GAP IS SIZED AGAINST THE SYNC'S RUNTIME, NOT ITS NOMINAL SLOT. The
-    # nightly has taken 11-72 minutes across its last 12 runs (median ~26), and
+    # nightly has taken 11-72 minutes across its last 12 runs. Only that RANGE
+    # is quoted, and deliberately: the endpoints are what the gap has to cover,
+    # while the middle of the distribution is not stable enough to write down
+    # (it re-measured at ~35 min on 2026-08-12 and moves every night as runs
+    # age out of the last-12 window, so any median here would be stale by the
+    # time somebody trusted it). Size against the 72, not the middle. And
     # GitHub's scheduler drifts both of these crons in the same direction (+17
     # min to +3h27m observed on this repo, never early). 2h20m of nominal
     # daylight covers the sync's worst observed run with margin, which is what
