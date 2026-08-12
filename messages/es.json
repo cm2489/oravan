@@ -803,7 +803,7 @@
     "toolsLangNote": "Los nombres y descripciones de las herramientas son metadatos de protocolo que lee el modelo de IA que llama, no texto escrito para una persona — por eso, como cualquier servidor MCP, Oravan los define solo en inglés. Todo lo que una llamada a una herramienta realmente devuelve a una conversación es completamente bilingüe: el envoltorio de citación de abajo, cada mensaje de error y cualquier contenido redactado por IA respetan el idioma que pida la consulta.",
     "privacyTitle": "Privacidad",
     "privacyNoAccounts": "Sin cuentas y sin clave de API — cualquiera puede llamarlo, igual que cualquiera puede cargar el sitio web.",
-    "privacyRateLimit": "El uso anónimo tiene un límite de velocidad (60 llamadas por minuto, 1,000 por día) mediante un contador breve y con hash — nunca una dirección IP guardada, y nunca vinculado a lo que se preguntó.",
+    "privacyRateLimit": "El uso anónimo tiene un límite de velocidad mediante un contador breve y con hash: 60 llamadas por minuto y 1,000 por ventana de conteo (los contadores se reinician cuando rota el hash, así que una ráfaga en ese límite puede superar cualquiera de las dos cifras). Nunca una dirección IP guardada, y nunca vinculado a lo que se preguntó.",
     "privacyNoLogging": "Nada aquí se registra de una forma que pudiera conectar a quien llama con un proyecto de ley, un representante o una postura política.",
     "privacyLinkText": "Lee la política de privacidad completa",
     "envelopeTitle": "Cada respuesta lleva una citación",
