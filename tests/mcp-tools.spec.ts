@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
+import { conversationBandPool } from '../lib/conversation';
 import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
 import { callTool } from './helpers';
 
@@ -367,6 +368,44 @@ test.describe('whats_moving', () => {
       expect(['t0', 't1', 't2'], b.slug).toContain(b.signal!.tier);
       expect(b.signal!.evidence_sentence, b.slug).toBeTruthy();
       expect(b.signal!.evidence_date, b.slug).toBeTruthy();
+    }
+  });
+
+  /*
+   * THE CONVERSATION FACET (2026-08-12, design B) — a SECOND, independent fact
+   * about a listed bill: how many AllSides-rated outlets published about it in
+   * the last seven days and whether congress.gov's own readers are on it. It is
+   * evidence handed to an agent, never a ranking: the list, its order and its
+   * membership are the docket ladder's and are asserted unchanged above.
+   */
+  test('the optional conversation facet carries counted evidence, and only where the evidence corroborates', async ({ request }) => {
+    const pool = new Map(conversationBandPool().map((item) => [item.slug, item]));
+    const result = await callTool(request, 'whats_moving', { locale: 'en' });
+    const bills = result.structuredContent!.bills as Array<{
+      slug: string;
+      conversation?: { outlets_7d: number; lean_spread: string[]; most_viewed_rank: number | null; most_viewed_weeks: number };
+    }>;
+    test.skip(bills.length === 0, 'quiet week: whats_moving is empty right now');
+    for (const b of bills) {
+      const evidence = pool.get(b.slug);
+      // Absent is the normal case, and it is the B-1 guarantee in payload form:
+      // a bill one outlet wrote about carries NO facet rather than a facet
+      // saying `outlets_7d: 1` — a count an agent could rank on is a surface.
+      if (!evidence) {
+        expect(b.conversation, b.slug).toBeUndefined();
+        continue;
+      }
+      expect(b.conversation, b.slug).toBeTruthy();
+      expect(b.conversation!.outlets_7d, b.slug).toBe(evidence.evidence.ratedOutlets);
+      expect(b.conversation!.lean_spread, b.slug).toEqual(evidence.evidence.leanSpread);
+      expect(b.conversation!.most_viewed_rank, b.slug).toBe(evidence.evidence.mostViewed?.lastRank ?? null);
+      // Whichever rung admitted it, one of the two facts must be real: two or
+      // more rated outlets, or the government's own most-viewed list.
+      expect(
+        b.conversation!.outlets_7d >= 2 || b.conversation!.most_viewed_rank !== null,
+        b.slug
+      ).toBe(true);
+      for (const lean of b.conversation!.lean_spread) expect(['left', 'center', 'right']).toContain(lean);
     }
   });
 

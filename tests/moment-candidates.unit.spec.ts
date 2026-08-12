@@ -147,10 +147,18 @@ type Fixture = Parameters<typeof rankCandidates>[0][number];
  * three keys below it — coverage tier, cross-spectrum breadth, outlet count,
  * with article volume strictly last — are untouched, and the tests for them
  * below are unchanged.
+ *
+ * THE THIRD KEY ARRIVED THE SAME DAY (the conversation lamp): `conversationRank`
+ * — c1 (two or more rated outlets published in the last 7 days) before c2
+ * (congress.gov's own most-viewed list, with a second fact beside it) before c0
+ * — sits directly under the docket keys and above the three stored-coverage
+ * ones. The default below is c0 (rank 2), so every pre-existing test in this
+ * file exercises the identical comparison it always did.
  */
 const candidate = (over: Partial<Fixture> & { slug: string }): Fixture => ({
   docketRank: 4, // t4, the residual rung
   lastActionDate: '2026-07-20',
+  conversationRank: 2, // c0 — no conversation evidence, the default state
   tier: 'neutral',
   partisanLeans: 0,
   outlets: 2,
@@ -191,6 +199,46 @@ test.describe('candidate ranking', () => {
       candidate({ slug: 'a', articles: 4 }),
     ]);
     expect(ranked.map((c) => c.slug)).toEqual(['a', 'b']);
+  });
+
+  /* ---- the conversation tier (2026-08-12, design B's comparator) ---- */
+
+  test('corroborated conversation outranks stored-coverage breadth on the same rung and date', () => {
+    // The C-tier is measured, dated, seven-day evidence; the coverage tier is a
+    // read on an article list the nightly sweep refreshes ~600 bills at a time.
+    // When the docket cannot separate two candidates, the fresher evidence does.
+    const ranked = rankCandidates([
+      candidate({ slug: 'wide-but-old', tier: 'cross', partisanLeans: 2, outlets: 6, articles: 5 }),
+      candidate({ slug: 'corroborated-this-week', conversationRank: 0, tier: 'neutral', outlets: 2, articles: 1 }),
+    ]);
+    expect(ranked.map((c) => c.slug)).toEqual(['corroborated-this-week', 'wide-but-old']);
+  });
+
+  test('c1 outranks c2, and c2 outranks no evidence at all', () => {
+    const ranked = rankCandidates([
+      candidate({ slug: 'none', conversationRank: 2 }),
+      candidate({ slug: 'most-viewed', conversationRank: 1 }),
+      candidate({ slug: 'corroborated', conversationRank: 0 }),
+    ]);
+    expect(ranked.map((c) => c.slug)).toEqual(['corroborated', 'most-viewed', 'none']);
+  });
+
+  test('conversation NEVER outranks the docket — proximity is still first', () => {
+    // The whole boundary of design B in one assertion: press evidence orders
+    // what the record cannot separate, and never the other way round.
+    const ranked = rankCandidates([
+      candidate({ slug: 'corroborated-but-quiet-docket', docketRank: 4, conversationRank: 0 }),
+      candidate({ slug: 'announced-no-press', docketRank: 0, conversationRank: 2 }),
+    ]);
+    expect(ranked.map((c) => c.slug)).toEqual(['announced-no-press', 'corroborated-but-quiet-docket']);
+  });
+
+  test('a more recent action still outranks conversation evidence on the same rung', () => {
+    const ranked = rankCandidates([
+      candidate({ slug: 'older-but-corroborated', docketRank: 2, lastActionDate: '2026-07-01', conversationRank: 0 }),
+      candidate({ slug: 'newer-no-press', docketRank: 2, lastActionDate: '2026-08-10', conversationRank: 2 }),
+    ]);
+    expect(ranked.map((c) => c.slug)).toEqual(['newer-no-press', 'older-but-corroborated']);
   });
 });
 
@@ -260,6 +308,51 @@ test.describe('the press bar', () => {
     expect(report.histogram).toEqual({ cross: 4, neutral: 1, one_sided: 1, none: 0 });
     expect(report.moments).toEqual({ live: 1, cap: 6, openSlots: 5 });
     expect(report.standing_line).toContain('never creates, proposes, or drafts a Moment');
+    // No conversation file passed: every candidate reads c0, which changes no
+    // order. An absent evidence file is the normal state of a fresh clone.
+    expect(report.candidates.map((c: { conversationTier: string }) => c.conversationTier)).toEqual(['c0', 'c0']);
+  });
+
+  test('the conversation tier is read from the committed evidence, and reorders a docket tie', () => {
+    const bills = [bill({ full_identifier: 'cross-1' }), bill({ full_identifier: 'neutral-1' })];
+    const articles = (a: string, b: string) => [
+      { title: 't', url: 'u', source: a, snippet: 's', publishedAt: null },
+      { title: 't', url: 'u', source: b, snippet: 's', publishedAt: null },
+    ];
+    const coverage = {
+      // cross-1 has the WIDER stored coverage (cross-spectrum, 2 outlets)...
+      'cross-1': articles('cnn.com', 'foxnews.com'),
+      'neutral-1': articles('reuters.com', 'apnews.com'),
+    };
+    const now = Date.parse('2026-07-31T00:00:00Z');
+    const day = '2026-07-31';
+    // ...and neutral-1 is the one two rated outlets published about THIS WEEK.
+    const conversation = {
+      slugs: {
+        'neutral-1': {
+          outlets7d: [
+            { domain: 'foxnews.com', lean: 'right', firstSeen: day, lastSeen: day },
+            { domain: 'cnn.com', lean: 'left', firstSeen: day, lastSeen: day },
+          ],
+          unratedOutlets7d: [],
+          mostViewed: null,
+        },
+      },
+    };
+
+    const ranked = buildReport({
+      bills,
+      coverage,
+      moments: {},
+      rejections: { entries: [], warnings: [] },
+      conversation,
+      now,
+    }).candidates as { slug: string; conversationTier: string; conversationOutlets: number }[];
+
+    expect(ranked.map((c) => c.slug)).toEqual(['neutral-1', 'cross-1']);
+    expect(ranked[0].conversationTier).toBe('c1');
+    expect(ranked[0].conversationOutlets).toBe(2);
+    expect(ranked[1].conversationTier).toBe('c0');
   });
 });
 

@@ -36,10 +36,19 @@ const ANNOTATION_KEYS = {
 export function BillCard({
   bill,
   coverageCount,
+  caption,
   emphasis = false,
 }: {
   bill: BillTeaser;
   coverageCount?: number;
+  /** WHY THIS CARD IS HERE, already localized by the caller (the news band's
+      counted caption — "Covered by 3 outlets across the spectrum this week").
+      A sentence, so it sits under the headline in sentence case rather than in
+      the uppercase metadata row above it; ink, like everything else on a
+      listing. The caller passes this OR `coverageCount`, never both: the
+      caption already states the count, and printing it twice would read as two
+      different facts. */
+  caption?: string;
   /** The 2px ink border the ActionPanel already owns — reserved for the
       "Deciding now" band, so "a call lands hardest here" is visible before
       it's read (2026-07 critique round 2). Never a new color, per the
@@ -94,6 +103,10 @@ export function BillCard({
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
         {bill.headline ?? bill.title}
       </h3>
+      {/* The counted caption, in ink. It never lights amber and never turns the
+          card green: it reports who published what, which is not a floor fact
+          and not an action. */}
+      {caption && <p className="mt-2 text-sm text-ink-2">{caption}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {bill.tags.slice(0, 2).map((tag) => (
           <Chip key={tag} tone="tag">

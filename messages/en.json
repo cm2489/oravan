@@ -454,7 +454,17 @@
   "news": {
     "heading": "In the news",
     "subhead": "Bills covered by more than one outlet, ranked by how widely — not by how recently.",
-    "sources": "{count, plural, one {# outlet} other {# outlets}}"
+    "subheadEvidence": "What the press and congress.gov's readers are on this week. Every card says why it's here, and every count comes from stored evidence you can check.",
+    "sources": "{count, plural, one {# outlet} other {# outlets}}",
+    "captionCorroborated": "Covered by {count, plural, one {# outlet} other {# outlets}} across the spectrum this week: {leans}",
+    "captionCorroboratedCenter": "Covered by {count, plural, one {# outlet} other {# outlets}} rated center this week",
+    "captionMostViewed": "Among congress.gov's most-viewed bills, {weeks, plural, one {# week} other {# weeks}} running",
+    "captionMostViewedCovered": "Among congress.gov's most-viewed bills this week, covered by {count, plural, one {# outlet} other {# outlets}}: {leans}",
+    "lean": {
+      "left": "left",
+      "center": "center",
+      "right": "right"
+    }
   },
   "why": {
     "title": "Why calling works",

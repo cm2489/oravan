@@ -23,6 +23,16 @@ import {
   type DocketRung,
 } from '../docket';
 import { coverageTier, getCoverage, newestArticleDate, normalizeSource, rankNews } from '../coverage';
+/* THE LAMP, and this is the ONLY module in lib/core that may import it: the
+ * conversation selects and captions the news band and touches nothing else.
+ * See getNewsBills' header for the boundary and why it is drawn here. */
+import {
+  conversationBandPool,
+  conversationPosture,
+  newsSpread,
+  selectConversationBand,
+  type NewsCaption,
+} from '../conversation';
 import { effectiveUrgency } from '../urgency.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
 
@@ -249,30 +259,41 @@ export function docketSignalFor(
 
 
 /*
- * The "In the news" discovery lens — feeds rankNews real bills with their
- * coverage tier, outlet count, urgency, and (since 2026-08-12) the date of the
- * newest article stored for them. The ranking/exclusion policy (cross >
- * neutral, one-sided dropped, nothing older than the signal window) lives in
- * lib/coverage so it stays unit-testable; consequence, not partisan attention,
- * decides prominence.
+ * THE "IN THE NEWS" BAND — the one surface the conversation lamp selects.
  *
- * WHY THE DATE IS PASSED IN RATHER THAN LOOKED UP THERE: rankNews is generic
- * over anything carrying the four fields, which is what lets the unit spec
- * drive it without the corpus. This function is the one place that knows a bill
- * has stored articles at all.
+ * CONVERSATION NEVER CHANGES DOCKET ORDER. Not the crown, not the shortlist,
+ * not /bills' bands, not the MCP act-now pool — every one of those still reads
+ * `docketCorpus` above and nothing else. What the lamp owns is the surface that
+ * has ALWAYS been press-selected: this band. That boundary is the whole reason
+ * the 2026-07-31 decision of record (proximity ranks; volume never does)
+ * survives the lamp existing, and it is enforced by construction — this is the
+ * only function in this file that imports lib/conversation.
+ *
+ * TWO MODES, and the posture decides which (lib/conversation.ts):
+ *
+ *  1. LAMP LIVE — cards come from data/conversation.json's committed evidence:
+ *     C1 (two or more RATED outlets published inside the 7-day window) first,
+ *     ordered by distinct rated outlets then newest evidence; then C2 (on
+ *     congress.gov's own most-viewed list, with either two consecutive weeks or
+ *     a rated article beside it), with most-viewed-only cards capped at 2 of 6.
+ *     A single outlet is not a rung and cannot render anything, anywhere.
+ *     Each card carries the counted facts it was selected on, so the page can
+ *     say WHY it is there in words a reader can check against stored evidence.
+ *
+ *  2. FALLBACK — exactly #215's behavior: `rankNews` over stored coverage,
+ *     cross/neutral only, gated to the signal window, ordered by breadth. The
+ *     captions are DROPPED rather than guessed, because nothing in this mode
+ *     counts who published what THIS WEEK. Design B2's degradation table.
+ *
+ * `now` is threaded so the whole selection — posture, evidence window and the
+ * fallback's recency gate — is evaluated at ONE instant, the same discipline
+ * docketCorpus and rankNews already keep.
  */
-export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
-  const items = BILLS.map((raw) => {
-    const articles = getCoverage(billSlug(raw));
-    return {
-      raw,
-      tier: coverageTier(articles),
-      sources: new Set(articles.map((a) => normalizeSource(a.source))).size,
-      urgency: effectiveUrgency(raw.status, raw.last_action_date),
-      newestArticle: newestArticleDate(articles),
-    };
-  });
-  return rankNews(items, n).map(({ raw, tier, sources }) => {
+export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): NewsBill[] {
+  const shape = (
+    raw: Bill,
+    extra: { coverageTier: 'cross' | 'neutral' | null; sourceCount: number; caption: NewsCaption | null }
+  ): NewsBill => {
     const b = localizeBill(raw, locale);
     return {
       slug: billSlug(b),
@@ -283,8 +304,41 @@ export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
       tags: b.issue_tags ?? [],
       statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
       lastActionDate: b.last_action_date,
-      coverageTier: tier as 'cross' | 'neutral',
-      sourceCount: sources,
+      ...extra,
+    };
+  };
+
+  if (conversationPosture(now) === 'live') {
+    // The corpus is the renderable set: the press cites bill numbers this build
+    // does not hold (a measure the sync has not reached, an untracked
+    // resolution), and a card has to link somewhere. The CI gate reports those
+    // slugs in aggregate; here they are simply skipped.
+    const bySlug = new Map(BILLS.map((raw) => [billSlug(raw), raw]));
+    return selectConversationBand(conversationBandPool(now), {
+      limit: n,
+      renderable: (slug) => bySlug.has(slug),
+    }).map((sel) =>
+      shape(bySlug.get(sel.slug)!, {
+        // The spread of the outlets the caption counts — null when the card
+        // stands on the most-viewed list alone, which is not a coverage claim.
+        coverageTier: sel.caption.outlets >= 2 ? newsSpread(sel.caption.leans) as 'cross' | 'neutral' : null,
+        sourceCount: sel.caption.outlets,
+        caption: sel.caption,
+      })
+    );
+  }
+
+  const items = BILLS.map((raw) => {
+    const articles = getCoverage(billSlug(raw));
+    return {
+      raw,
+      tier: coverageTier(articles),
+      sources: new Set(articles.map((a) => normalizeSource(a.source))).size,
+      urgency: effectiveUrgency(raw.status, raw.last_action_date),
+      newestArticle: newestArticleDate(articles),
     };
   });
+  return rankNews(items, n, now).map(({ raw, tier, sources }) =>
+    shape(raw, { coverageTier: tier as 'cross' | 'neutral', sourceCount: sources, caption: null })
+  );
 }

@@ -173,8 +173,23 @@ export interface CoverageArticle extends CoverageArticleRaw {
  */
 export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';
 
-/** A bill featured in the coverage-led "In the news" lens (cross/neutral only). */
+/**
+ * A bill featured in the "In the news" band.
+ *
+ * TWO MODES, and a card says which one it came from by whether it carries a
+ * caption (lib/conversation.ts's posture decides; see getNewsBills):
+ *
+ *  · THE LAMP — selected from data/conversation.json's committed evidence.
+ *    `caption` carries the counted facts behind the card, `sourceCount` is the
+ *    number of RATED outlets those facts were counted over, and `coverageTier`
+ *    is their spread (null when the card stands on congress.gov's most-viewed
+ *    list alone, which is not a coverage claim at all).
+ *  · THE FALLBACK — #215's stored-coverage recency gate, unchanged.
+ *    `caption` is null, because a caption that cannot be checked against
+ *    counted evidence is a guess, and the degradation rule is to drop it.
+ */
 export interface NewsBill extends BillTeaser {
-  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'>;
+  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'> | null;
   sourceCount: number;
+  caption: import('./conversation').NewsCaption | null;
 }

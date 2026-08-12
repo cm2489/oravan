@@ -50,6 +50,10 @@ import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgen
 // THE LADDER, from the one copy — see docketTierOf below for why this is an
 // import and the three functions further down are hand-copies.
 import { DOCKET_TIERS, docketRung } from '../lib/docket.mjs';
+// THE CONVERSATION LAMP's evidence read, likewise from the one copy: the
+// C-tier this report ranks on is the same function the news band captions
+// with, so a candidate's position here is reproducible from what the site says.
+import { conversationEvidence } from '../lib/conversation.mjs';
 
 /** Printed verbatim on every run, in both output modes. The boundary is the feature. */
 export const STANDING_LINE =
@@ -234,30 +238,43 @@ export function formatCitation(billType, billNumber) {
 /** cross before neutral — the same order lib/coverage.ts's NEWS_TIER_RANK uses. */
 const TIER_RANK = { cross: 0, neutral: 1 };
 
+/** c1 before c2 before c0 — the conversation lamp's own order (lib/conversation.mjs). */
+const CONVERSATION_TIERS = ['c1', 'c2', 'c0'];
+
 /**
  * The fields the ranking reads. A real candidate carries more (citation,
  * headline, link, dates); the comparator never looks at any of them.
  *
- * @typedef {{ slug: string, docketRank: number, lastActionDate: string | null, tier: string, partisanLeans: number, outlets: number, articles: number }} RankInput
+ * @typedef {{ slug: string, docketRank: number, lastActionDate: string | null, conversationRank: number, tier: string, partisanLeans: number, outlets: number, articles: number }} RankInput
  */
 
 /**
  * Proximity first, volume last — unchanged as a principle, sharper as a key.
  *
- * WHAT CHANGED (2026-08-12): the first two keys were `floorCalendar` (a boolean
- * — is there a placement sentence) then `effectiveUrgency` (a scalar off status
- * and date). Both are now one key, the docket rung (lib/docket.mjs), read from
- * the SAME module the site ranks with rather than re-derived here. The boolean
- * could not see a chamber's own floor announcement or a ripening cloture motion
- * at all, and the scalar had already been retired everywhere else for tying
- * every busy week into one block.
+ * WHAT CHANGED (2026-08-12, the ladder): the first two keys were `floorCalendar`
+ * (a boolean — is there a placement sentence) then `effectiveUrgency` (a scalar
+ * off status and date). Both are now one key, the docket rung (lib/docket.mjs),
+ * read from the SAME module the site ranks with rather than re-derived here.
+ * The boolean could not see a chamber's own floor announcement or a ripening
+ * cloture motion at all, and the scalar had already been retired everywhere
+ * else for tying every busy week into one block.
  *
- * Everything after the first two keys is untouched: coverage tier, then
- * cross-spectrum breadth, then outlet count, and article volume STRICTLY last
- * (it is the one input an adversary can buy, and it is capped at
- * COVERAGE_PER_BILL so every printed count is a floor, not a measurement).
- * Slug is the final tiebreak so two otherwise identical candidates never swap
- * places between runs.
+ * WHAT CHANGED (2026-08-12, the lamp): the C-TIER now sits directly under the
+ * docket keys — corroborated conversation (c1: two or more RATED outlets
+ * published inside a seven-day window), then congress.gov's own most-viewed
+ * list with a second fact beside it (c2), then everything else (c0). It is
+ * measured, dated, committed evidence about THIS WEEK, and it belongs above the
+ * three keys that follow it because those read data/coverage.json's stored
+ * article list — which the nightly sweep refreshes ~600 bills at a time, is
+ * capped at COVERAGE_PER_BILL per bill, and carries no window at all. Nothing
+ * was removed: coverage tier, cross-spectrum breadth and outlet count still
+ * decide among candidates the lamp cannot separate, and article volume is still
+ * STRICTLY last, because it is the one input an adversary can buy and every
+ * printed count is a floor rather than a measurement.
+ *
+ * The C-tier cannot manufacture a candidate either — it reorders the set that
+ * already cleared the press bar and never adds to it. Slug is the final
+ * tiebreak so two otherwise identical candidates never swap places between runs.
  *
  * @param {RankInput} a
  * @param {RankInput} b
@@ -266,6 +283,7 @@ export function compareCandidates(a, b) {
   return (
     a.docketRank - b.docketRank ||
     (b.lastActionDate ?? '').localeCompare(a.lastActionDate ?? '') ||
+    a.conversationRank - b.conversationRank ||
     (TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9) ||
     b.partisanLeans - a.partisanLeans ||
     b.outlets - a.outlets ||
@@ -315,8 +333,23 @@ export function vehicleSlugs(moments) {
 /**
  * Build the candidate set + the counts that explain it. Pure over its inputs
  * so the unit suite can run it on fixtures.
+ *
+ * `floorSignals` and `conversation` are both optional and both legitimately
+ * absent (a fresh clone, or any run before the first hourly newsdesk write):
+ * without them every bill reads `t4`/`c0`, which is also what a recess looks
+ * like and changes no ordering.
+ *
+ * @param {{
+ *   bills: any[],
+ *   coverage: Record<string, any>,
+ *   moments: Record<string, any>,
+ *   rejections: any,
+ *   floorSignals?: Record<string, any> | null,
+ *   conversation?: { slugs?: Record<string, any> } | null,
+ *   now: number,
+ * }} input
  */
-export function buildReport({ bills, coverage, moments, rejections, floorSignals = {}, now }) {
+export function buildReport({ bills, coverage, moments, rejections, floorSignals = {}, conversation = null, now }) {
   const vehicles = vehicleSlugs(moments);
   const histogram = { cross: 0, neutral: 0, one_sided: 0, none: 0 };
   const funnel = { covered: 0, tierQualified: 0, alreadyVehicle: 0, terminal: 0 };
@@ -345,6 +378,12 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
     const outlets = new Set(articles.map((a) => normalizeSource(a.source)));
     const leans = new Set(articles.map((a) => a.lean ?? 'unrated'));
     const partisan = new Set(articles.map((a) => a.lean).filter((l) => l === 'left' || l === 'right'));
+    /* THE CONVERSATION LAMP's read on this bill, from the committed evidence
+       file — imported from lib/conversation.mjs, never re-derived here, so the
+       C-tier a candidate ranks on is byte-identical to the one the news band
+       renders. An absent file (a fresh clone, or a run before the first
+       newsdesk write) leaves every candidate at c0, which changes no order. */
+    const conv = conversationEvidence(conversation?.slugs?.[bill.full_identifier] ?? null, { now });
 
     candidates.push({
       slug: bill.full_identifier,
@@ -359,6 +398,13 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
       // `docketRank` is what the comparator reads.
       docketTier: docketTierOf(bill, floorSignals, now),
       docketRank: DOCKET_TIERS.indexOf(docketTierOf(bill, floorSignals, now)),
+      // Printed so the owner can see WHY a candidate ranks where it does;
+      // `conversationRank` is what the comparator reads.
+      conversationTier: conv.tier,
+      conversationRank: CONVERSATION_TIERS.indexOf(conv.tier),
+      conversationOutlets: conv.ratedOutlets,
+      conversationLeans: conv.leanSpread,
+      mostViewedWeeks: conv.weeksOnList,
       urgency: effectiveUrgency(bill.status, bill.last_action_date ?? null, now),
       tier,
       outlets: outlets.size,
@@ -463,7 +509,7 @@ export function renderMarkdown(report) {
   out.push('');
   out.push('**The press bar** — coverage tier `cross` or `neutral`, never already a vehicle in any Moment (any status), status not terminal (`' + [...TERMINAL_STATUSES].sort().join('`, `') + '`).');
   out.push('');
-  out.push('**The ranking** — legislative proximity first: docket rung (`t0` the chamber named it on its own floor schedule · `t1` a vote is ripening in the record · `t2` a dated calendar placement · `t3` it just cleared a gate · `t4` everything else) → most recent action → tier and cross-spectrum breadth → outlet count. Article count is the LAST tiebreak, and is capped at `COVERAGE_PER_BILL=' + report.article_count_cap + '` — a floor, not a measurement.');
+  out.push('**The ranking** — legislative proximity first: docket rung (`t0` the chamber named it on its own floor schedule · `t1` a vote is ripening in the record · `t2` a dated calendar placement · `t3` it just cleared a gate · `t4` everything else) → most recent action → **conversation tier** (`c1` two or more AllSides-rated outlets published about it in the last 7 days · `c2` congress.gov\'s own most-viewed list carries it, with a second fact beside it · `c0` neither) → tier and cross-spectrum breadth → outlet count. Article count is the LAST tiebreak, and is capped at `COVERAGE_PER_BILL=' + report.article_count_cap + '` — a floor, not a measurement.');
   out.push('');
 
   out.push('## How the corpus narrows');
@@ -498,6 +544,15 @@ export function renderMarkdown(report) {
     out.push(
       `- coverage ${TIER_LABEL[c.tier] ?? c.tier} · ${c.outlets} outlet${c.outlets === 1 ? '' : 's'} · leans ${c.leans.join(', ')} · ${c.articles} article${c.articles === 1 ? '' : 's'} (capped at ${report.article_count_cap})`
     );
+    /* The conversation line is printed only when there IS conversation
+       evidence: a `c0` line on every candidate would be noise, and this report
+       is read by one person looking for the two or three bills worth a Moment. */
+    if (c.conversationTier !== 'c0') {
+      const mv = c.mostViewedWeeks > 0 ? ` · most-viewed ${c.mostViewedWeeks} week${c.mostViewedWeeks === 1 ? '' : 's'} running` : '';
+      out.push(
+        `- conversation \`${c.conversationTier}\` · ${c.conversationOutlets} rated outlet${c.conversationOutlets === 1 ? '' : 's'} in the last 7 days${c.conversationLeans.length ? ` (${c.conversationLeans.join(', ')})` : ''}${mv}`
+      );
+    }
     if (c.url) out.push(`- ${c.url}`);
     out.push('');
   });
@@ -561,6 +616,19 @@ function main(argv) {
     }
   }
 
+  /* The conversation lamp's evidence file, on the same terms: absent is normal
+     (nothing has written it before the first hourly newsdesk run), and an
+     absent file leaves every candidate at `c0`, which changes no ordering. */
+  let conversation = null;
+  const conversationPath = path('data/conversation.json');
+  if (existsSync(conversationPath)) {
+    try {
+      conversation = JSON.parse(readFileSync(conversationPath, 'utf8'));
+    } catch (err) {
+      console.warn(`::warning::moment-candidates: data/conversation.json is not valid JSON (${err.message}) — ranking without the conversation tier`);
+    }
+  }
+
   // docs/moment-rejections.json may not exist yet, and its absence is normal.
   const rejectionsPath = path('docs/moment-rejections.json');
   let rejectionsRaw = null;
@@ -580,6 +648,7 @@ function main(argv) {
     moments,
     rejections: { entries: rejectionEntries(rejectionsRaw), warnings },
     floorSignals,
+    conversation,
     now,
   });
 

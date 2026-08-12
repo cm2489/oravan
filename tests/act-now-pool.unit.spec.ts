@@ -8,6 +8,7 @@ import {
   isSettledFloor,
 } from '../lib/core/bills';
 import { getCoverage, coverageTier, newestArticleDate, rankNews } from '../lib/coverage';
+import { conversationPosture } from '../lib/conversation';
 import { FLOOR_SETTLED, floorSettledChamber } from '../lib/journey';
 import { SIGNAL_WINDOW_DAYS, isSignalFresh } from '../lib/urgency.mjs';
 import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
@@ -261,7 +262,19 @@ test.describe('the news band\'s recency gate', () => {
   });
 });
 
-test.describe('the news band over the committed corpus', () => {
+/*
+ * THE BAND'S SELECTION MOVED (2026-08-12, the conversation lamp): what is
+ * asserted below is the FALLBACK — the stored-coverage recency gate, which is
+ * still exactly what getNewsBills renders whenever the conversation evidence
+ * file cannot honestly speak (missing, unknown schema, no run has written it,
+ * or unrefreshed past CONVERSATION_STALE_HOURS). When the lamp IS live the band
+ * comes from committed press evidence instead, and these corpus assertions
+ * describe a selection that is not running, so the block skips itself and
+ * tests/news-band.unit.spec.ts owns both modes. The rankNews unit tests above
+ * are untouched and pin the fallback's ordering directly.
+ */
+test.describe('the news band over the committed corpus (fallback selection)', () => {
+  test.skip(conversationPosture() === 'live', 'the conversation lamp is live — tests/news-band.unit.spec.ts owns the band');
   // Captured BEFORE the call below, and the assertions read the window at
   // `at - CLOCK_SKEW_MS`: getNewsBills judges freshness at its own instant,
   // which is at or after this one, and isSignalFresh only ever expires — so a
