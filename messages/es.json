@@ -338,7 +338,9 @@
       "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
       "nowFloorMotionFailed": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} no ha aceptado considerarlo — la última moción para hacerlo fracasó.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
+      "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
+      "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al Presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
@@ -438,6 +440,7 @@
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa — con la inclinación política de cada medio etiquetada donde AllSides la ha calificado, y marcada como \"Sin calificar\" donde no.",
     "newestLabel": "El más reciente de estos artículos",
+    "checkedLabel": "Comprobado",
     "ageNote": "puede existir cobertura más reciente que no hemos recopilado",
     "leanNote": "Las etiquetas de tendencia describen al medio de prensa, no a este proyecto ni a ningún partido. Calificaciones de AllSides.",
     "lean": {

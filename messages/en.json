@@ -338,7 +338,9 @@
       "nowFloorActivityNeutral": "it's moving on the floor — the official record hasn't said yet which chamber acts next.",
       "nowFloorMotionFailed": "the {chamber, select, House {House} Senate {Senate} other {Senate}} has not agreed to take it up — the last motion to do so failed.",
       "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
+      "nowPassedStale": "it passed the {chamber, select, House {House} Senate {Senate} other {House}}, and the official record shows nothing new since.",
       "nowPassedBack": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, so it goes back to the {chamber, select, House {House} Senate {Senate} other {House}}.",
+      "nowPassedBackStale": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, and the official record shows nothing new since.",
       "nowPassedBoth": "both chambers have passed it. It goes to the President next.",
       "nowPassedSecond": "both chambers have passed it — the official record doesn't say yet whether the two versions match.",
       "nowConference": "both chambers are reconciling their versions.",
@@ -438,6 +440,7 @@
     "heading": "How it's being covered",
     "subhead": "Coverage of this bill from across the press — each outlet's political lean labeled where AllSides has rated it, and marked \"Not rated\" where it hasn't.",
     "newestLabel": "Newest of these articles",
+    "checkedLabel": "Checked",
     "ageNote": "newer coverage may exist that we haven't collected",
     "leanNote": "Lean labels describe the news outlet, not this bill or any party. Ratings by AllSides.",
     "lean": {
