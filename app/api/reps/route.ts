@@ -9,8 +9,10 @@ import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
  * Rate limit: 300 requests / 10 min per caller — deliberately the loosest
  * per-window ceiling of any per-IP limiter here (script 8, feedback 8,
  * district 10, brand 5, tenant-impressions 20, all per 10 min; MCP's 60/60s
- * is a machine-agent surface with its own 1,000/day companion). Two things
- * make this route different from all of them:
+ * is a machine-agent surface with its own 1,000-per-counter-window
+ * companion — a window ceiling, not a calendar day, because counters restart
+ * when the hashing salt rotates; see ROTATION RESETS EVERY COUNTER in
+ * lib/ratelimit.ts). Two things make this route different from all of them:
  *
  *   1. It protects INVOCATION COUNT, not spend. There is no upstream call
  *      and no Anthropic token behind it — the whole handler is an in-memory

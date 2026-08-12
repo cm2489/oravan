@@ -173,8 +173,13 @@ const handler = createMcpHandler(
 
 /*
  * Anonymous (keyless) rate limits per the S11 spec: 60 requests/min and
- * 1,000/day per caller, enforced with the same short-lived rate-limit
- * counters as the rest of the API surface (lib/ratelimit.ts — hashed
+ * 1,000 per counter window per caller — the window is the ceiling, NOT a
+ * calendar day. Counters restart when the hashing salt rotates, so a burst
+ * across that boundary can exceed either figure (see the MCP_DAY_WINDOW_SEC
+ * note below, and ROTATION RESETS EVERY COUNTER in lib/ratelimit.ts, for why
+ * that is the accepted price of the ≤24h pseudonym bound). Enforced with the
+ * same short-lived rate-limit counters as the rest of the API surface
+ * (lib/ratelimit.ts — hashed
  * caller only; a tool name never reaches a counter key, by construction:
  * the limiter API only accepts a caller IP and a closed route label).
  * Only POST carries JSON-RPC work, so only POST is limited; GET/DELETE
@@ -197,6 +202,17 @@ const HANDSHAKE_SCAN_CAP = 1;
  * would not reset for up to a day — so it retried, uselessly, all day.
  */
 const MCP_MINUTE_WINDOW_SEC = 60;
+/*
+ * "DAY" IS THE WINDOW LENGTH, NOT A CALENDAR GUARANTEE (noted 2026-08-12).
+ * Counter keys are salt-derived (lib/ratelimit.ts counterKey + callerHash),
+ * and the hashing salt rotates on its own 24h clock, so a caller who straddles
+ * a rotation gets a fresh counter mid-window: up to ~2,000 requests inside one
+ * 24h span, ~1,000 per salt epoch after. That is the accepted price of the
+ * ≤24h pseudonym bound — see the ROTATION RESETS EVERY COUNTER note in
+ * lib/ratelimit.ts for why no fix exists that keeps the privacy property. The
+ * published copy says "per counter window" for this reason; if this route ever
+ * needs a true per-day ceiling, halve `max` rather than lengthen the key.
+ */
 const MCP_DAY_WINDOW_SEC = 86400;
 
 const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: MCP_MINUTE_WINDOW_SEC });

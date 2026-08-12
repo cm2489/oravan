@@ -454,6 +454,58 @@ test('absence signal: a counters-database error drops the memo instead of holdin
   );
 });
 
+/*
+ * INTENDED BEHAVIOR, PINNED SO IT STOPS BEING A SURPRISE (2026-08-12). A
+ * counter key is salt-derived, so rotation renames it and the caller starts a
+ * fresh budget mid-window — which is why a "1,000 a day" limit is really
+ * 1,000 per counter window, and why the shipped copy now says so
+ * (`privacyRateLimit`, docs/mcp-server-readme.md). Written as an assertion
+ * rather than a comment because the only alternative — a caller key that
+ * survives rotation — would extend a pseudonym's linkable life past the ≤24h
+ * bound lib/salt.mjs polices nightly. If this test ever goes red, the fix is
+ * almost certainly NOT to make it green.
+ */
+test('rotation mints a new counter: a rotated salt gives the same caller a fresh budget, by design', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+
+  // The MCP route's day window, with a small max so saturation is readable.
+  const limiter = createRateLimiter({ route: 'mcp-day', max: 3, windowSec: 86400 });
+  const ip = '203.0.113.140';
+
+  for (let i = 0; i < 3; i += 1) expect(await limiter.isLimited(ip), `request ${i + 1} of 3`).toBe(false);
+  expect(await limiter.isLimited(ip), 'the 4th spends the budget').toBe(true);
+
+  const firstSalt = parseSaltRecord(mock.store.get(saltKey())!.value)!.v;
+  const firstKey = counterKey('mcp-day', callerHash(ip, firstSalt));
+  expect(mock.keys(), 'the saturated counter is where we think it is').toContain(firstKey);
+
+  // ROTATION: the salt's 24h TTL lapses and the next request lazily mints a
+  // successor. Nothing about the COUNTER expired — its own 86,400s window is
+  // still running, and its key is still in the store below.
+  mock.exec(['DEL', saltKey()]);
+  __resetSaltMemoForTests();
+
+  expect(
+    await limiter.isLimited(ip),
+    'INTENDED: past the rotation the same caller is a new pseudonym with a new budget'
+  ).toBe(false);
+
+  const secondSalt = parseSaltRecord(mock.store.get(saltKey())!.value)!.v;
+  expect(secondSalt, 'the successor salt really is a different secret').not.toBe(firstSalt);
+  const secondKey = counterKey('mcp-day', callerHash(ip, secondSalt));
+  expect(secondKey, 'same caller, different key — this is the whole mechanism').not.toBe(firstKey);
+  expect(mock.keys()).toContain(secondKey);
+
+  // The old counter is ORPHANED, not reused or cleaned up: it still holds its
+  // pre-rotation count and its own TTL, and nothing can address it again. That
+  // is why a longer counter TTL would not close the gap — the counter never
+  // expired in the first place, it was renamed.
+  expect(mock.store.get(firstKey)?.value, 'the pre-rotation counter is left where it was').toBe('4');
+  expect(mock.store.get(secondKey)?.value, 'and the post-rotation one starts from zero').toBe('1');
+});
+
 // --- S19: createTenantRateLimiter -------------------------------------------
 
 test('tenant counter keys are RAW tenantId, not hashed/salted - the deliberate divergence from the caller-hash shape', async () => {

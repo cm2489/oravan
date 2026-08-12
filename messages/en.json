@@ -812,7 +812,7 @@
     "toolsLangNote": "Tool names and descriptions are protocol metadata a calling AI model reads to decide how to use a tool, not prose written for a person — so, like every MCP server, Oravan defines them in English only. Everything a tool call actually hands back to a conversation is fully bilingual: the citation envelope below, every error message, and any AI-drafted content all honor the language a query requests.",
     "privacyTitle": "Privacy",
     "privacyNoAccounts": "No accounts and no API key — anyone can call it, the same way anyone can load the website.",
-    "privacyRateLimit": "Anonymous use is rate-limited (60 calls a minute, 1,000 a day) by a short-lived, hashed counter — never a stored IP address, and never linked to what was asked.",
+    "privacyRateLimit": "Anonymous use is rate-limited by a short-lived, hashed counter — 60 calls a minute and 1,000 per counter window (counters restart when the hash rotates, so a burst across that boundary can exceed either figure). Never a stored IP address, and never linked to what was asked.",
     "privacyNoLogging": "Nothing here is logged in a way that could connect a caller to a bill, a representative, or a political position.",
     "privacyLinkText": "Read the full privacy policy",
     "envelopeTitle": "Every response carries a citation",
