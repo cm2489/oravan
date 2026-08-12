@@ -121,9 +121,15 @@ export const REPLACE_RE = /^\s*\/replace\s+([a-z0-9][a-z0-9-]*)\s*$/i;
  * normally the same person, and a run where they are NOT is a run whose
  * provenance nobody can explain — which is not a state to publish from.
  *
- * The real gate is .github/workflows/moment-approve.yml's first step, which
- * runs this test before anything is checked out. This copy exists so the rule
- * is testable and so a hand-run of this script cannot skip it.
+ * THE GATE IS THE WORKFLOW, not this function, and the distinction is stated
+ * rather than blurred: .github/workflows/moment-approve.yml runs this test as
+ * its first step, before anything is checked out, against the event's own
+ * `sender.login` and `actor` — which are the only two values an attacker
+ * cannot supply. This copy exists so the RULE has one definition a test can
+ * pin, and so the CLI refuses when it is told who ran it. It is not a
+ * sandbox: anyone who can already run this script on a checkout can also
+ * edit data/moments.json directly, so pretending otherwise would be security
+ * theatre in a comment.
  */
 export function authorized({ sender, actor, owner }) {
   const ok = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -763,9 +769,14 @@ function main(argv) {
     process.exit(2);
   }
 
-  /* The labeler check is enforced by the workflow BEFORE anything is checked
-     out. It is repeated here so a hand-run cannot skip it, and so the rule has
-     one testable definition rather than living only in YAML. */
+  /* The workflow has already refused an unauthorized labeler before this
+     process starts (see authorized() above for why that, and not this, is the
+     gate). What this does is honour the identities it is TOLD: the workflow
+     passes the real ones through the environment, so a run whose labeler is
+     not the owner cannot proceed even if the first step were somehow reached
+     out of order. Absent both, a hand-run reads as the owner — deliberately,
+     because a local dry run has no labeler and refusing one would only teach
+     people to pass `--sender=cm2489` to make it go away. */
   const sender = arg('sender') ?? process.env.APPROVE_SENDER ?? owner;
   const actor = arg('actor') ?? process.env.APPROVE_ACTOR ?? owner;
   if (!authorized({ sender, actor, owner })) {
