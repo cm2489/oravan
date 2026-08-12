@@ -570,6 +570,15 @@ test.describe('anyDataChanged (the no-change-no-commit guard)', () => {
   test('a decode alone counts as a change', () => {
     expect(anyDataChanged(['budget', 'added', 'failed'])).toBe(true);
   });
+
+  test('a RE-decode counts too — it rewrites an existing record and its ES twin', () => {
+    // The re-decode trigger (2026-08-12) is the only path that mutates a bill
+    // nothing else touched this run; if this outcome did not count, a run
+    // whose only work was re-reading a swapped vehicle would write nothing
+    // and the corrected decode would be lost with the process.
+    expect(anyDataChanged(['redecoded'])).toBe(true);
+    expect(anyDataChanged(['skipped_no_text', 'redecoded'])).toBe(true);
+  });
 });
 
 test.describe('hashHeadline (seen-headlines dedupe key)', () => {
@@ -722,8 +731,12 @@ test.describe('cost invariance: the wiring in scripts/newsdesk.mjs', () => {
     const charged = src.slice(src.indexOf('if (chargeableDecode(result)) {'), src.indexOf('if (result.outcome === \'refreshed\''));
     expect(charged).toMatch(/cache\.seen\.add\(failedDecodeKey\(slug, todayUTC\)\)/);
     expect(charged).toMatch(/result\.outcome !== 'added'/);
-    // Keyed by UTC day only - never by floor window.
-    expect(src.match(/failedDecodeKey\([^)]*\)/g)?.every((c) => /failedDecodeKey\(slug, todayUTC\)/.test(c))).toBe(true);
+    // Keyed by UTC day only - never by floor window. The slug argument is
+    // matched loosely because there are now two call sites that hold the same
+    // key: the fire loop (`slug`) and the re-decode trigger (`cand.slug`,
+    // 2026-08-12). What the invariant is about is the SECOND argument - a
+    // window in there would grant three paid retries a day instead of one.
+    expect(src.match(/failedDecodeKey\([^)]*\)/g)?.every((c) => /failedDecodeKey\([\w.]+, todayUTC\)/.test(c))).toBe(true);
   });
 
   test('the failure hold can only SUBTRACT decodes - it is ANDed into allowDecode, never a new budget', () => {
@@ -744,6 +757,28 @@ test.describe('cost invariance: the wiring in scripts/newsdesk.mjs', () => {
 
   test('the run logs which window it is spending', () => {
     expect(src).toMatch(/newsdesk tier-0 \[\$\{floorWindow\} window/);
+  });
+
+  test('the re-decode trigger spends the EXISTING tier-0 budget and never a new one', () => {
+    // The trigger (2026-08-12) can pay for a Sonnet decode of a bill already
+    // in the corpus. The whole cost argument in this script's header rests on
+    // two code-enforced ceilings, so the new spender must sit inside them
+    // rather than beside them: same per-run cap, same per-day counter, same
+    // charge-on-attempt rule, same one-failure-per-day hold.
+    const block = src.slice(src.indexOf('const candidates = redecodeCandidates('));
+    expect(block).toContain('TIER0_DECODE_CAP');
+    expect(block).toContain('TIER0_DAILY_DECODE_CAP');
+    expect(block).toMatch(/if \(chargeableDecode\(result\)\) \{\s*tier0DecodesThisRun\+\+;\s*cache\.dailyDecodes\.tier0Count\+\+;/);
+    expect(block).toContain('failedDecodeKey(cand.slug, todayUTC)');
+    // No second budget may be introduced anywhere in the file.
+    expect(src).not.toMatch(/REDECODE_(DAILY_)?DECODE_CAP/);
+    // The free refresh it does to read the served title must stay free.
+    expect(block).toMatch(/allowDecode: false/);
+  });
+
+  test('the re-decode trigger treats a missing floor-signals file as absent, never as a failure', () => {
+    const loader = src.slice(src.indexOf('const floorSignals ='), src.indexOf('const candidates ='));
+    expect(loader).toMatch(/catch \{[\s\S]*return null;/);
   });
 });
 

@@ -40,6 +40,15 @@ export interface Bill {
   ai_summary: string | null;
   ai_headline: string | null;
   ai_sections?: DecodedSections | null;
+  /**
+   * WHEN the stored decode was produced (ISO instant), or null for every bill
+   * decoded before 2026-08-12 — and null means UNKNOWN, never old. Nothing
+   * may render differently on a null stamp; its one reader is the re-decode
+   * trigger (scripts/floor-signals-parse.mjs `redecodeVerdict`), which
+   * deliberately declines to fire on it. Written only by
+   * scripts/bill-decode.mjs, and only beside the decode it stamps.
+   */
+  decoded_at?: string | null;
   sponsor_bioguide_id: string | null;
   introduced_date: string | null;
   last_action_date: string | null;
