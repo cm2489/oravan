@@ -87,6 +87,13 @@ on:
 permissions:
   contents: write
   actions: write  # lets the workflow dispatch ci.yml after its own push
+  # For the journey-corpus issue below (2026-08-12), and for nothing else. The
+  # tripwire stopped failing the night and started FILING the novel floor
+  # sentence instead, which needs `gh label create` + `gh issue create` on the
+  # workflow's own automatic GITHUB_TOKEN - the same shape refresh-legislators
+  # .yml already uses for its vacancy and redistricting issues. No new secret;
+  # GITHUB_FEEDBACK_TOKEN stays issues-only and unrelated to this.
+  issues: write
 
 concurrency:
   group: data-sync
@@ -169,8 +176,12 @@ jobs:
         run: |
           gh label create journey-corpus --color FBCA04 --force \
             --description "A floor sentence no matcher in lib/floor-text.mjs reads yet"
+          # `.[].number | head -1`, NOT `.[0].number`: on an empty list the
+          # latter prints the literal string "null", which is non-empty, so the
+          # guard below would take the comment branch and run
+          # `gh issue comment null`. Same idiom daily-metrics.yml uses.
           NUM=$(gh issue list --repo cm2489/oravan --state open --label journey-corpus \
-                --json number --jq '.[0].number' | head -1)
+                --json number --jq '.[].number' | head -1)
           if [ -z "$NUM" ]; then
             gh issue create --repo cm2489/oravan --label journey-corpus \
               --title "Journey corpus: a floor sentence nothing reads yet" \

@@ -144,6 +144,14 @@ test.describe('the journey-corpus tripwire no longer costs the night', () => {
     expect(syncBills.slice(nextStepAt)).toContain("steps.journey.outputs.verdict == 'vacuous'");
   });
 
+  test('the job can actually open that issue', () => {
+    // A workflow that files an issue needs `issues: write` on its own
+    // GITHUB_TOKEN, and this one had never needed it before. Without it the
+    // step 403s at the label-create — at 3am, on the one night in months when
+    // Congress writes a sentence nobody has read.
+    expect(/permissions:[\s\S]*?issues:\s*write/.test(syncBills)).toBe(true);
+  });
+
   test('a novel floor text opens a labeled issue, search-first', () => {
     const issueAt = syncBills.indexOf('- name: Open a journey-corpus issue');
     expect(issueAt).toBeGreaterThan(0);
