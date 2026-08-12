@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/server';
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
@@ -707,11 +707,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                           ? ` · ${t('evidenceCovers', { date: billDate(feature.announcement.covers) })}`
                           : ''}
                       </span>
+                      {/* External, same convention as every other link out to
+                          the official record on this site (the bill page's
+                          "View the official record"): new tab, noopener. */}
                       <a
                         href={feature.announcement.url}
-                        className="inline-flex min-h-11 items-center font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
                       >
                         {t('evidenceLink')}
+                        <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
                       </a>
                       {signalsCheckedAt && (
                         <span className="tabular-nums">
