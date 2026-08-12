@@ -100,6 +100,15 @@ import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { CONGRESS, cg } from './congress-fetch.mjs';
+// The status-label clock, imported rather than copied a fourth time. The
+// canonical definition is lib/journey.ts `statusKeyFor`; that file is
+// TypeScript and this one is .mjs, and scripts/moment-candidates.mjs already
+// carries the script-side twin that tests/journey.unit.spec.ts pins against
+// the TS original corpus-wide. Importing the existing twin means a drift can
+// only ever happen in ONE place, and that place is already under test.
+// moment-candidates.mjs performs no I/O on import (its work sits behind a
+// run-directly guard), so this costs nothing at module load.
+import { statusKeyFor } from './moment-candidates.mjs';
 import {
   extractBillsThisWeekSlugs,
   extractFloorFeedSlugs,
@@ -658,12 +667,94 @@ function changedBecause(entry, statuses, previous) {
   return reasons;
 }
 
+// The model must NEVER see a raw status enum — the first live proof run
+// (2026-07-25) leaked "sits at floor_vote status" / "estado floor_vote"
+// straight into reader-facing prose in both languages. Feed it the same
+// plain-language phrases the UI uses (messages/*.json bills.status.*), per
+// language, and the enum never enters the model's vocabulary at all.
+// ...but the UI's own phrase for `floor_vote` was "Heading to a vote", which
+// is a FORECAST. Instructing the model to reuse UI phrases verbatim then
+// published "S.J.Res. 185 and S.J.Res. 172 are heading to a vote" above a
+// timeline recording both motions rejected (pre-launch audit, 2026-07-25).
+// The summary speaks only about the record, so forward-looking labels are
+// rewritten to record-only phrasing HERE, at the boundary, rather than
+// hoping the model declines a word we handed it. The lint now also rejects
+// these idioms outright, so this is the belt and that is the braces.
+//
+// KEYED BY THE CLOCKED STATUS KEY, NOT THE RAW ENUM (N12, 2026-08-12). This
+// table used to be read with `bill.status` straight out of data/bills.json,
+// so every `floor_vote` vehicle was handed "on the floor calendar" in the
+// present tense no matter what the record said — and this was the last
+// unclocked producer of that phrase after #211 fixed every rendered surface.
+// Two different false sentences reached PUBLISHED summary prose because of it,
+// both still in data/moment-updates.json on the day this was written:
+//
+//   "S. 4784 stands on the floor calendar." (2026-08-11) — s-4784-119's last
+//   action is a motion to proceed made in the Senate. It has never been placed
+//   on a calendar at all.
+//   "S. 3172 sits on the Senate floor calendar." (2026-08-09) — a real
+//   placement, dated 2026-07-27, i.e. present tense over a placement that
+//   had gone quiet.
+//
+// So the phrase is chosen by `statusKeyFor` (scripts/moment-candidates.mjs,
+// the script-side twin of lib/journey.ts's, pinned against it corpus-wide by
+// tests/journey.unit.spec.ts) exactly as a page or an embed card chooses a
+// label, and it answers all three keys:
+//
+//   floor_vote        a placement inside the signal window → present tense,
+//                     unchanged.
+//   floor_vote_stale  the same placement, aged out → past tense, plus the
+//                     since-clause that is what makes the demotion honest.
+//                     Wording carried from #211's shipped copy (messages/*.json
+//                     `journey.nowFloorStale`) minus its chamber select, since
+//                     a moment can carry vehicles in both chambers and this
+//                     line is per measure, not per chamber.
+//   floor_activity    no placement sentence at all → falls through to the UI's
+//                     own "Floor activity" / "Actividad en el pleno", which
+//                     claims nothing about a calendar. NOT clocked, per #211.
+//
+// FAIL CLOSED: a vehicle whose record is not in scope (no last action text or
+// date reaches this function) resolves to `floor_activity` by the same route —
+// the weaker claim, never the calendar one.
+const RECORD_ONLY_PHRASE = {
+  floor_vote: { en: 'on the floor calendar', es: 'en el calendario del pleno' },
+  floor_vote_stale: {
+    en: 'was placed on the floor calendar, and the official record shows no floor action on it since',
+    es: 'se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces',
+  },
+};
+
+/**
+ * The plain-language phrase one measure is described by, in one language.
+ *
+ * Exported for the unit suite: this is the boundary the whole "no forecast in
+ * our voice" doctrine runs through, and the clock on it is the fix N12 exists
+ * for. `now` is injectable for the same reason statusKeyFor's is — a test
+ * must be able to age a placement without waiting a fortnight.
+ *
+ * @param {string} status  the raw bill status
+ * @param {{ lastActionText?: string|null, lastActionDate?: string|null }|null|undefined} record
+ * @param {'en'|'es'} lang
+ * @param {number} [nowMs]
+ * @returns {string}
+ */
+export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) {
+  const key = statusKeyFor(status, record?.lastActionText ?? null, record?.lastActionDate ?? null, nowMs);
+  return RECORD_ONLY_PHRASE[key]?.[lang] ?? statusPhrase(key, lang);
+}
+
 /**
  * Exported for the unit suite: the lint-rejection branch below is the whole of
  * the "there is no fallback for a summary" doctrine, and until now it was a
  * comment with nothing behind it.
+ *
+ * @param {Record<string, string>} statuses slug -> raw status. UNCHANGED shape
+ *   on purpose: it is persisted as `grounded_in.vehicle_statuses` and diffed
+ *   by summaryNeedsRefresh, so the clock rides a SEPARATE map rather than
+ *   rewriting what a revision says it was grounded in.
+ * @param {Record<string, {lastActionText: string|null, lastActionDate: string|null}>} [records]
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -674,28 +765,12 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
         : `- ${u.day} [${u.class}] ${billLabel(u.vehicle)}: ${u.record?.action_text ?? ''}`,
     )
     .join('\n');
-  // The model must NEVER see a raw status enum — the first live proof run
-  // (2026-07-25) leaked "sits at floor_vote status" / "estado floor_vote"
-  // straight into reader-facing prose in both languages. Feed it the same
-  // plain-language phrases the UI uses (messages/*.json bills.status.*), per
-  // language, and the enum never enters the model's vocabulary at all.
-  // ...but the UI's own phrase for `floor_vote` is "Heading to a vote", which
-  // is a FORECAST. Instructing the model to reuse UI phrases verbatim then
-  // published "S.J.Res. 185 and S.J.Res. 172 are heading to a vote" above a
-  // timeline recording both motions rejected (pre-launch audit, 2026-07-25).
-  // The summary speaks only about the record, so forward-looking labels are
-  // rewritten to record-only phrasing HERE, at the boundary, rather than
-  // hoping the model declines a word we handed it. The lint now also rejects
-  // these idioms outright, so this is the belt and that is the braces.
-  const RECORD_ONLY_PHRASE = {
-    floor_vote: { en: 'on the floor calendar', es: 'en el calendario del pleno' },
-  };
-  const recordPhrase = (status, lang) =>
-    RECORD_ONLY_PHRASE[status]?.[lang] ?? statusPhrase(status, lang);
+  // See RECORD_ONLY_PHRASE above: the phrase per measure is chosen by the same
+  // clocked status key every rendered surface routes through.
   const statusLines = Object.entries(statuses)
     .map(
       ([slug, status]) =>
-        `- ${billLabel(slug)}: EN "${recordPhrase(status, 'en')}" / ES "${recordPhrase(status, 'es')}"`,
+        `- ${billLabel(slug)}: EN "${recordStatusPhrase(status, records[slug], 'en')}" / ES "${recordStatusPhrase(status, records[slug], 'es')}"`,
     )
     .join('\n');
 
@@ -1072,9 +1147,20 @@ async function main() {
       if (!entry) continue;
 
       const statuses = {};
+      // The record each status is read against — the two halves statusKeyFor
+      // needs to tell a live calendar placement from an aged one. Deliberately
+      // a SECOND map: `statuses` is persisted verbatim in the revision's
+      // grounded_in and diffed by summaryNeedsRefresh, so nothing here may
+      // change its shape.
+      const records = {};
       for (const v of moment.vehicles ?? []) {
-        const status = billBySlug.get(v.slug)?.status;
-        if (status) statuses[v.slug] = status;
+        const bill = billBySlug.get(v.slug);
+        if (!bill?.status) continue;
+        statuses[v.slug] = bill.status;
+        records[v.slug] = {
+          lastActionText: bill.last_action_text ?? null,
+          lastActionDate: bill.last_action_date ?? null,
+        };
       }
       if (Object.keys(statuses).length === 0) continue;
       if (!summaryNeedsRefresh(entry, statuses, now)) {
@@ -1086,7 +1172,7 @@ async function main() {
         continue;
       }
       const contextRefs = (moment.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-      const revision = await generateStateSummary(anthropic, momentId, entry, statuses, contextRefs);
+      const revision = await generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records);
       if (!revision) continue;
       // Belt and braces. The reserveRevisions above is the belt — it holds the
       // slot this append needs. This slice is the braces: if a second append
