@@ -35,6 +35,13 @@
  *     doesn't exist — on HEAD or in the working tree. The judgement lives in
  *     lib/verify-moment-updates.mjs; see that file's header for why the
  *     retention caps are checked here as well as in check-moment-updates.mjs.
+ *   - data/conversation.json (the conversation lamp's committed evidence)
+ *     doesn't parse, carries an unknown schema or a window this build doesn't
+ *     read, blew its size ceiling, dates an observation in the future or
+ *     outside the 7-day window it claims, or — the one that matters most —
+ *     counts an outlet toward corroboration that data/media-bias.json carries
+ *     no AllSides rating for. Skipped cleanly when the file doesn't exist. The
+ *     judgement lives in lib/conversation.mjs (verifyConversation)
  *
  * WHAT THIS FILE NO LONGER DOES, and where it went (owner ruling 2026-08-12,
  * N8-A2). The CURSOR-AGE ceiling — "the cursor is more than 10 days old" —
@@ -58,6 +65,7 @@
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
@@ -251,6 +259,37 @@ if (!existsSync(FLOOR_SIGNALS_PATH)) {
       data: signals,
       fileBytes: statSync(FLOOR_SIGNALS_PATH).size,
       knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
+    });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
+// --- conversation: every counted claim is rated, dated and inside its window -
+//
+// data/conversation.json is written hourly by scripts/newsdesk.mjs and is what
+// the news band's captions are counted from ("covered by N outlets across the
+// spectrum this week"). The gate is about the COUNTING RULE, not about volume:
+// only an outlet carrying an AllSides lean in data/media-bias.json may appear
+// in the corroborating list (critic B-3), because an unrated domain is the
+// channel two press-release pickups would otherwise walk through — the same
+// single-outlet prioritization channel scripts/newsdesk-match.mjs's header
+// closed on the trigger path. Evidence dated in the future, or older than the
+// 7-day window the file claims, fails for the same reason. Skipped cleanly when
+// the file doesn't exist, exactly like the blocks above: a branch that predates
+// the lamp must still verify. The judgement lives in lib/conversation.mjs.
+if (!existsSync(CONVERSATION_PATH)) {
+  console.log(`${CONVERSATION_PATH} not present — skipping the conversation checks`);
+} else {
+  const conversation = parse(CONVERSATION_PATH, readFileSync(CONVERSATION_PATH, 'utf8'));
+  if (conversation !== null) {
+    const bias = parse('data/media-bias.json', readFileSync('data/media-bias.json', 'utf8'))?.outlets ?? null;
+    const { failures, warnings, notes } = verifyConversation({
+      data: conversation,
+      fileBytes: statSync(CONVERSATION_PATH).size,
+      knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
+      bias,
     });
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);

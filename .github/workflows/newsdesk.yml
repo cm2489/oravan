@@ -140,11 +140,13 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
-          # This job touches data/bills.json/data/bills-es.json (no
-          # sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
-          # Boundaries section) plus data/moment-updates.json from the
-          # collector step above and data/floor-signals.json from the
-          # announcement collector; `git add data/` already stages all of them
+          # This job touches data/bills.json/data/bills-es.json and
+          # data/conversation.json (the conversation lamp's committed
+          # evidence - no sync-state.json, no coverage.json; see
+          # scripts/newsdesk.mjs's Boundaries section) plus
+          # data/moment-updates.json from the collector step above and
+          # data/floor-signals.json from the announcement collector;
+          # `git add data/` already stages all of them
           # - disjoint from refresh-legislators.yml's
           # files but overlapping sync-bills.yml's/hot-bills.yml's, all of
           # which share this concurrency group. Rebase onto the latest main

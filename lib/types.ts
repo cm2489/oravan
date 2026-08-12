@@ -187,8 +187,24 @@ export const COVERAGE_TIERS = ['cross', 'neutral', 'one_sided', 'none'] as const
 
 export type CoverageTier = (typeof COVERAGE_TIERS)[number];
 
-/** A bill featured in the coverage-led "In the news" lens (cross/neutral only). */
+/**
+ * A bill featured in the "In the news" band.
+ *
+ * TWO MODES, and a card says which one it came from by whether it carries a
+ * caption (lib/conversation.ts's posture decides; see getNewsBills):
+ *
+ *  · THE LAMP — selected from data/conversation.json's committed evidence.
+ *    `caption` carries the counted facts behind the card, `sourceCount` is the
+ *    number of RATED outlets THE CAPTION COUNTS (0 on a most-viewed card, which
+ *    counts none — one outlet is never a number this band says out loud), and
+ *    `coverageTier` is their spread, null whenever fewer than two outlets are
+ *    counted, because a spread over one outlet is one lean.
+ *  · THE FALLBACK — #215's stored-coverage recency gate, unchanged.
+ *    `caption` is null, because a caption that cannot be checked against
+ *    counted evidence is a guess, and the degradation rule is to drop it.
+ */
 export interface NewsBill extends BillTeaser {
-  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'>;
+  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'> | null;
   sourceCount: number;
+  caption: import('./conversation').NewsCaption | null;
 }

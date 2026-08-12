@@ -463,7 +463,17 @@
   "news": {
     "heading": "En las noticias",
     "subhead": "Proyectos de ley cubiertos por más de un medio, ordenados por la amplitud de la cobertura, no por lo reciente que sea.",
-    "sources": "{count, plural, one {# medio} other {# medios}}"
+    "subheadEvidence": "Lo que la prensa y quienes leen congress.gov están siguiendo esta semana. Cada tarjeta dice por qué está aquí, y cada cifra sale de evidencia guardada que puedes revisar.",
+    "sources": "{count, plural, one {# medio} other {# medios}}",
+    "captionCorroborated": "Cubierto esta semana por {count, plural, one {# medio} other {# medios}} de distintas tendencias: {leans}",
+    "captionCorroboratedCenter": "Cubierto esta semana por {count, plural, one {# medio de tendencia centro} other {# medios de tendencia centro}}",
+    "captionMostViewed": "Entre los proyectos más vistos de congress.gov, {weeks, plural, one {# semana} other {# semanas}} seguidas",
+    "captionMostViewedThisWeek": "Entre los proyectos más vistos de congress.gov esta semana",
+    "lean": {
+      "left": "izquierda",
+      "center": "centro",
+      "right": "derecha"
+    }
   },
   "why": {
     "title": "Por qué llamar funciona",

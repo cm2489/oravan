@@ -113,6 +113,18 @@ jobs:
         run: |
           node scripts/check-floor-signals.mjs --self-test
           node scripts/check-floor-signals.mjs
+      - name: Conversation gate (only AllSides-rated outlets may corroborate)
+        # data/conversation.json is what the news band's counted captions are
+        # made of, and it is written HOURLY by the same newsdesk workflow that
+        # commits to main and dispatches this run. The rule it protects is
+        # critic B-3: an outlet with no AllSides lean in data/media-bias.json
+        # corroborates nothing, because an unrated domain is the channel two
+        # press-release pickups would walk through — the single-outlet
+        # prioritization channel this repo already closed once on the trigger
+        # path. Exits 0 when the file doesn't exist yet.
+        run: |
+          node scripts/check-conversation.mjs --self-test
+          node scripts/check-conversation.mjs
       - name: Senate-nomination data gate (identity, status mapping, calendar numbers, civilian-only)
         # Structural checks are HARD here: they test our own code against the
         # data it produced (slug identity, stored status == what the mapper

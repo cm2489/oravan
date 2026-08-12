@@ -335,6 +335,21 @@ Build against **live data in `data/`**, never against the mockups' fiction.
 >
 > **The printed-date ruling above is still open.** N3 changes what the label may *assert* about age; V1 adds a second document whose OWN dates may be printed and quoted. Neither settles which date the amber prints for a corpus fact, and `FloorVotePanel` still takes a caller-supplied `dateLabel` and still refuses to render without one.
 
+> ### ⚠️ OPEN OWNER RULING — the news band's COUNTED CAPTION (raised 2026-08-12, the conversation lamp)
+>
+> The "In the news" band is now selected from `data/conversation.json` — committed, day-granular evidence of which AllSides-**rated** outlets published about a bill inside a seven-day window, and what congress.gov's own weekly most-viewed list said — and **every card prints one sentence saying why it is there**: *"Covered by 3 outlets across the spectrum this week: left, center, and right"* / *"Among congress.gov's most-viewed bills, 2 weeks running"*.
+>
+> That is a **new copy class**, in the same family as V1 above: V1 admitted a *quoted government sentence*; this admits a *counted claim of our own about the press*. It has not been ruled on, and it ships under six constraints so the ruling has something exact to answer:
+>
+> 1. **Only counted facts, and only ones already stored.** Outlet counts, their leans, the consecutive-week count, the rank — each is read straight from the committed file, and `scripts/check-conversation.mjs` fails the build if a domain with no AllSides rating is ever counted toward one. Nothing is inferred, rounded, or adjectival: no "widely", no "major", no "growing".
+> 2. **It is INK, always.** Never amber, never green, never a chip. Amber is one dated FLOOR fact; who published what is not a floor fact and must not borrow its weight. The band cannot light the green panel and does not change docket order anywhere.
+> 3. **It never claims a spread it does not hold, and it never counts to one.** Rated coverage that is one-sided is *dropped from the band*, not reworded — the same exclusion `coverageTier` has always applied. Center-only coverage says "rated center". "Across the spectrum" renders only when both partisan leans are present. And a card that is on the page because congress.gov's most-viewed list carries it prints **that listing and nothing else**: such a card holds at most one rated outlet by construction, and *"covered by 1 outlet: left"* is a single-outlet claim wearing a spread — so the one article that admitted it stays evidence (readable in `data/conversation.json`, and in the MCP facet, which characterizes nothing) and never becomes copy. **Two outlets is the smallest number this band says out loud.** *(Amended 2026-08-12 after verification: as first written, that caption shipped.)*
+> 4. **It says nothing about what happens next.** This band is a lens on what is being read and written about; it makes no claim about a vote, a schedule, or an outcome.
+> 5. **It disappears rather than degrades.** When the evidence file is absent, unreadable by this build, or unrefreshed past `CONVERSATION_STALE_HOURS`, the band falls back to the stored-coverage selection it used before (#215) and prints **no caption at all** — a caption that cannot be checked is a guess, and the guess is not made. When the file IS live but thin — a recess week with one eligible bill — the band is simply short, and an empty one renders nothing at all, exactly as the #215 recency gate already leaves it. No backfilling from the archive in either state.
+> 6. **No more than two of the six cards may owe their place to the most-viewed list**, by either admission route (two consecutive weeks, or one rated article beside a first-week listing). congress.gov's view counts are the cheapest input in this design for an outsider to move, so they may season the band and never fill it. *(Also amended 2026-08-12: the cap had been written against one of the two routes, and the other walked past it — five of six cards could have rested on a view count apiece.)*
+>
+> The question for the owner is whether a counted claim about the press may be printed in Oravan's own voice at all, and if so whether these five constraints are the right fence. Until then this note is the record of the open question, not a ruling.
+
 ---
 
 ## Focus
