@@ -952,8 +952,8 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    * both leave the parity pin above vacuous on the axis that matters most.
    *
    * RANGES, NEVER COUNTS, for the same reason as before and one more: the
-   * fresh bucket is the smallest and the most volatile (23 of 348 on
-   * 2026-08-11), and it is legitimately allowed to reach zero on a genuinely
+   * fresh bucket is the smallest and the most volatile (17 of 348 at
+   * 2026-08-12T02:46Z), and it is legitimately allowed to reach zero on a genuinely
    * quiet fortnight — Congress can go two weeks without placing anything on a
    * calendar, and that is a true quiet week, not a broken gate. So the fresh
    * bucket is asserted only as "not everything", while the two buckets that
@@ -1009,8 +1009,8 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
   test('statusKeyFor: an undated placement fails closed to the weaker claim', () => {
     // isSignalFresh's own rule, and the rule amber has always run on: no date,
     // no present-tense claim. 0 of the corpus's 322 placements are undated
-    // today (2026-08-11), so this is the shape we refuse to be surprised by
-    // rather than one we currently render.
+    // (2026-08-12), so this is the shape we refuse to be surprised by rather
+    // than one we currently render.
     expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
     expect(scriptStatusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
     // An unparseable date is the same answer, for the same reason.
