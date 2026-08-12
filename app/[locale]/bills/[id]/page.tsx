@@ -21,7 +21,13 @@ import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { deriveJourney, floorCalendarChamber, liveCallTarget, statusKeyFor } from '@/lib/journey';
+import {
+  deriveJourney,
+  floorCalendarChamber,
+  floorPendingChamber,
+  liveCallTarget,
+  statusKeyFor,
+} from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { isSignalFresh } from '@/lib/signal-window';
@@ -42,10 +48,13 @@ import { SITE_ORIGIN } from '@/lib/site';
  * screen instead of starting a thousand pixels down.
  *
  * DATA-GATED LOUDNESS: at most one full-bleed green enamel band, and only
- * when this bill genuinely stands on a floor calendar with the date it got
- * there. See `floorCalendarChamber` in lib/journey.ts — the gate is stricter
- * than `status === "floor_vote"` on purpose, and the amber-gate rationale
- * lives with the function.
+ * when the record itself states one of the two dated floor facts amber is
+ * allowed to carry — this bill stands on a floor calendar
+ * (`floorCalendarChamber`), or a floor vote on it is still ahead
+ * (`floorPendingChamber`) — with the date of that action, and inside the
+ * signal window. Both gates live in lib/journey.ts and both are stricter than
+ * `status === "floor_vote"` on purpose; the amber-gate rationale lives with
+ * the functions, and the freshness half with `isSignalFresh`.
  */
 
 /*
@@ -111,6 +120,56 @@ export async function generateMetadata({
 // 1440). max-w-5xl px-4 is the site rail every other route already sits on,
 // and the two-track grid still fits exactly: 1024 − 32 = 992 = 528 + 64 + 400.
 const WRAP = 'mx-auto w-full max-w-5xl px-4';
+
+/**
+ * WHICH of the two dated floor facts the band is standing on — the same split
+ * the homepage crown carries (`FloorFeatureKind` in components/system/
+ * FloorVotePanel.tsx). `calendar` is a placement the record printed; `pending`
+ * is a floor vote still ahead of the bill.
+ */
+type FloorFactKind = 'calendar' | 'pending';
+
+/*
+ * The band's copy, one key per (fact × chamber) — a table rather than nested
+ * ternaries, because there are four sentences now and every one of them is a
+ * claim about the record. The gate above decides both coordinates from the
+ * record's own sentence; nothing here decides anything, it only looks up copy.
+ *
+ * The chip keys are EXACTLY the ones the homepage crown looks up (see
+ * FLOOR_LABEL_KEYS in app/[locale]/page.tsx), so a bill crowned "Floor vote
+ * pending in the Senate" reads the identical sentence one click later. All
+ * eight keys exist in EN and ES.
+ */
+const FLOOR_COPY = {
+  calendar: {
+    house: {
+      chip: 'bill.floor.calendarHouse',
+      headline: 'bill.floor.headlineHouse',
+      status: 'bills.status.floor_vote',
+      meta: 'bill.floor.meta',
+    },
+    senate: {
+      chip: 'bill.floor.calendarSenate',
+      headline: 'bill.floor.headlineSenate',
+      status: 'bills.status.floor_vote',
+      meta: 'bill.floor.meta',
+    },
+  },
+  pending: {
+    house: {
+      chip: 'bill.floor.pendingHouse',
+      headline: 'bill.floor.headlinePendingHouse',
+      status: 'bill.floor.statusPending',
+      meta: 'bill.floor.metaPending',
+    },
+    senate: {
+      chip: 'bill.floor.pendingSenate',
+      headline: 'bill.floor.headlinePendingSenate',
+      status: 'bill.floor.statusPending',
+      meta: 'bill.floor.metaPending',
+    },
+  },
+} as const;
 
 export default async function BillPage({
   params,
@@ -196,28 +255,74 @@ export default async function BillPage({
   const jsonLd = await buildBillJsonLd(bill, locale, id);
 
   /*
-   * The one loud band, or nothing at all. THREE halves of the gate now, and
-   * every one of them is load-bearing: the calendar sentence earns the claim,
-   * the date earns the amber, and `isSignalFresh` earns the present tense.
+   * The one loud band, or nothing at all. THREE halves of the gate, and every
+   * one of them is load-bearing: one of the record's own FLOOR facts earns the
+   * claim, the date earns the amber, and `isSignalFresh` earns the present
+   * tense.
    *
-   * That third one was missing until 2026-08-09, and it was the whole defect.
-   * The band asserts "This bill is queued for a vote of the full Senate" —
-   * a claim about right now — over placements of literally unlimited age:
-   * /en/bills/s-1776-118 rendered it, with an amber chip, off a 118th-Congress
-   * placement dated 2024-09-24, for a Congress that has since ended. 261 of
-   * the corpus's 313 dated calendar placements sit outside the 14-day window,
-   * so the loudest surface on the page was mostly making a claim its own date
-   * refuted. Same lib the homepage crown gates on (lib/signal-window.ts →
-   * lib/urgency.mjs), so the two surfaces cannot disagree about what "now"
-   * means; the window's rationale lives with isSignalFresh itself.
+   * The freshness half was missing until 2026-08-09, and it was the whole of
+   * that defect. The band asserts "This bill is queued for a vote of the full
+   * Senate" — a claim about right now — over placements of literally unlimited
+   * age: /en/bills/s-1776-118 rendered it, with an amber chip, off a
+   * 118th-Congress placement dated 2024-09-24, for a Congress that has since
+   * ended. 261 of the corpus's 313 dated calendar placements sit outside the
+   * 14-day window, so the loudest surface on the page was mostly making a
+   * claim its own date refuted. Same lib the homepage crown gates on
+   * (lib/signal-window.ts → lib/urgency.mjs), so the two surfaces cannot
+   * disagree about what "now" means; the window's rationale lives with
+   * isSignalFresh itself.
    *
-   * An aged placement falls to the page's ordinary paper state, which is the
-   * honest result and needs no new copy.
+   * WHICH FACT — the second half of the 2026-08-09 owner ruling, which this
+   * page had not yet been given (2026-08-11). Amber may carry either of two
+   * dated floor facts: a calendar PLACEMENT, or a floor vote still PENDING
+   * (cloture filed, motion to proceed made, proceedings postponed, a rule
+   * reported — the fail-closed allow-list in lib/journey.ts). The homepage
+   * crown reads both (`selectFloorVoteFeature`); this page read only the
+   * first, so a bill the homepage crowned "Floor vote pending in the Senate"
+   * lost the band, the amber and the claim one click later and printed the
+   * weaker "Floor activity" over the identical record — the promise
+   * evaporating between two surfaces reading the same row. H.R. 3633's Senate
+   * cloture motion of 2026-08-08 is today's live example.
+   *
+   * The two facts are mutually exclusive by construction (FLOOR_SETTLED is
+   * floorPendingChamber's rule 0, and a placement is checked first anyway), so
+   * this is still ONE band carrying ONE dated fact — never two.
+   *
+   * An aged or settled record falls to the page's ordinary paper state, which
+   * is the honest result and needs no new copy.
    */
-  const calendarChamber =
+  const floorFresh = Boolean(
     bill.status === 'floor_vote' && bill.last_action_date && isSignalFresh(bill.last_action_date)
-      ? floorCalendarChamber(bill.last_action_text)
-      : null;
+  );
+  const calendarChamber = floorFresh ? floorCalendarChamber(bill.last_action_text) : null;
+  // Only asked when there is no placement: a placement is the stronger,
+  // plainer claim and wins the tie, exactly as it does in the crown's ranking.
+  const pendingChamber =
+    floorFresh && !calendarChamber ? floorPendingChamber(bill.last_action_text) : null;
+  const floorChamber = calendarChamber ?? pendingChamber;
+  const floorKind: FloorFactKind = calendarChamber ? 'calendar' : 'pending';
+  const floorCopy = floorChamber ? FLOOR_COPY[floorKind][floorChamber] : null;
+
+  /*
+   * THE STATUS LABEL, and why the refinement lives here rather than in
+   * `statusKeyFor`.
+   *
+   * `statusKeyFor` (lib/journey.ts) is the shared gate — citizen site, embeds
+   * and MCP all route through it — and it takes a status and an action text
+   * and NO CLOCK. It can therefore say "this record is a placement" but never
+   * "and that is still true today", which is exactly the claim "Floor vote
+   * pending" makes. Widening it would print a present-tense pending label off
+   * a motion filed in 2024, on every surface at once — the same defect the
+   * band's freshness gate was added to close. So the freshness-gated
+   * refinement lives where the clock already is: this page. `statusKeyFor`'s
+   * answer is unchanged and still the fallback for every other case.
+   *
+   * The consequence, stated rather than hidden: /bills and the embeds still
+   * print "Floor activity" for a fresh pending bill while this page prints
+   * "Floor vote pending". Both are true of the same record; this one is
+   * simply the stronger of the two, and it is the one the crown promised.
+   */
+  const statusLabelKey = floorCopy ? floorCopy.status : `bills.status.${statusKey}`;
 
   // The bigger question this bill is a vehicle of, if any — live and stale
   // moments only (lib/moments.ts owns that rule). Read-time, off the same
@@ -267,13 +372,15 @@ export default async function BillPage({
               funnel invariant I1 pins `bill.aiLabel` on this page, and this
               position is first-contact, above the fold at 390px. Status
               routes through statusKeyFor — the label can never outrun the
-              record. */}
+              record — except where the fresh floor gate above has already
+              read a stronger, dated fact out of that same record, in which
+              case it prints THAT (see statusLabelKey). */}
           <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase">
             <span className="tabular-nums">{citation}</span>
             <span aria-hidden> · </span>
             <span>{t('bill.congressLabel', { congress: bill.congress_number })}</span>
             <span aria-hidden> · </span>
-            <span>{t(`bills.status.${statusKey}`)}</span>
+            <span>{t(statusLabelKey)}</span>
             {bill.last_action_date && (
               <>
                 <span aria-hidden> · </span>
@@ -364,26 +471,20 @@ export default async function BillPage({
       {/* THE ONE LOUD, DATA-GATED BAND. Full-bleed, so it is a direct child
           of the full-width main and NOT of the max-width wrapper. It sits
           under the h1 rather than over it so the outline still opens on the
-          bill's own name. With no dated calendar placement this element does
-          not exist and the page is all paper. */}
-      {calendarChamber && bill.last_action_date && (
+          bill's own name. With no fresh dated floor fact — a placement OR a
+          pending vote — this element does not exist and the page is all
+          paper. Still exactly one band, and it prints whichever of the two
+          facts the gate above actually read. */}
+      {floorCopy && bill.last_action_date && (
         <FloorVotePanel
           status={bill.status}
           dateLabel={fmtShort(bill.last_action_date)}
-          calendarLabel={
-            calendarChamber === 'senate'
-              ? t('bill.floor.calendarSenate')
-              : t('bill.floor.calendarHouse')
-          }
+          calendarLabel={t(floorCopy.chip)}
           identifier={citation}
-          headline={
-            calendarChamber === 'senate'
-              ? t('bill.floor.headlineSenate')
-              : t('bill.floor.headlineHouse')
-          }
+          headline={t(floorCopy.headline)}
           href="#act"
           ctaLabel={t('bill.floor.cta')}
-          meta={t('bill.floor.meta')}
+          meta={t(floorCopy.meta)}
         />
       )}
 
