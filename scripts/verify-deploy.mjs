@@ -7,9 +7,23 @@
  * pushed, baked in at build time as <meta name="oravan-build">.
  *
  * Env:
- *   PROD_URL    production origin (e.g. https://oravan.example). Unset =
- *               skip with a notice, so the pipeline works before it's wired.
+ *   PROD_URL    production origin (e.g. https://oravan.example). REQUIRED —
+ *               missing is a hard failure, exactly like EXPECT_SHA below.
  *   EXPECT_SHA  the commit SHA the deploy must be built from.
+ *
+ * WHY PROD_URL IS NO LONGER A SOFT SKIP (2026-08-12). It used to print a
+ * ::notice and exit 0, so the four nightly workflows that call this script
+ * (sync-bills, hot-bills, newsdesk, refresh-legislators) could be wired up
+ * before the repository variable existed. The variable has been set since
+ * 2026-07-11 and every run since has actually polled production, so the skip
+ * branch no longer buys anything — the only state it can still reach is the
+ * one where somebody deletes the variable and all four dead-man's switches go
+ * quiet at once, each night printing a green check and a log line nobody
+ * reads. That is the same silent-green failure this script was written to
+ * catch (PR #18: a deploy dropped with every dashboard green), reproduced one
+ * level up in the check itself. A missing PROD_URL is now a red run: the
+ * pipeline says out loud that it can no longer see production, and the data
+ * commit above it has already landed either way.
  *
  * Stdlib only — runs on a bare Actions runner without npm ci.
  */
@@ -17,10 +31,10 @@ const PROD_URL = process.env.PROD_URL;
 const EXPECT_SHA = process.env.EXPECT_SHA;
 
 if (!PROD_URL) {
-  console.log(
-    '::notice::PROD_URL is not configured — skipping post-deploy verification. Set a PROD_URL repository variable (Settings > Secrets and variables > Actions > Variables) to enable it.'
+  console.error(
+    '::error::PROD_URL is missing — cannot verify the deploy, so this run cannot tell a landed deploy from a dropped one. Set the PROD_URL repository variable (Settings > Secrets and variables > Actions > Variables); if it was set and this still fires, it was deleted or the workflow step stopped passing it.'
   );
-  process.exit(0);
+  process.exit(1);
 }
 if (!EXPECT_SHA) {
   console.error('::error::EXPECT_SHA is missing — cannot verify the deploy');

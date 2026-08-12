@@ -60,6 +60,14 @@ Twelve new strings, all machine-drafted and **none reviewed by a native speaker 
 | `bills.annotation.justDecided`  | The floor already answered | El pleno ya respondió | NEW (Aug 12) — the same row, for a bill whose floor motion was REJECTED or whose cloture was not invoked. It has to say "this question is closed" without sounding like the bill is dead (it may not be). Uppercase. Alternatives: "El pleno ya se pronunció", "Ya hubo votación en el pleno". | |
 | RSS/JSON feed `EVIDENCE_LEAD` — **not a messages key**: it lives in `lib/core/feed.ts` (the four feed routes are static and have no next-intl scope)  | From the record: | Del registro (en inglés, sin traducir): | NEW (Aug 12) — **unreviewed AI draft.** Prefixes the same English quote inside an RSS item description, where a newsletter tool may render it with no styling at all: "Nuevas reglas para… — Del registro (en inglés, sin traducir): “Cloture motion…” — Contenido generado por IA…". Shorter than `home.evidenceLead` on purpose. Does the shorter parenthetical still do the work? | |
 
+### Added 2026-08-12 — the coverage check date (`fix/observability-trio`, N11b)
+
+One new string, machine-drafted and **not reviewed by a native speaker.** Same format as the tables above — mark ✅ / ✏️ / ❓.
+
+| Key | EN (intent) | Current ES | What to check | Your verdict |
+|---|---|---|---|---|
+| `coverage.checkedLabel`  | Checked | Comprobado | NEW (Aug 12, PR: observability trio) — **unreviewed AI draft.** A one-word label on the "Read" section of a bill page, printed with a date immediately after the newest-article date: "El más reciente de estos artículos: 5 may 2026 · **Comprobado**: 12 ago 2026". It means *this is the day we last went looking for coverage of this bill* — the point being that a gap in the dates is the press's silence, not ours. Three things to judge: (1) is "Comprobado" the right word for "we went and looked", or is "Revisado" / "Consultado" / "Última revisión" closer? (2) it must not read as "verified/fact-checked", which is a claim we are not making; (3) it sits one row away from `home.floorCheckedAt` ("Programación comprobada el {date}") — if you change one, say whether the other should match. | |
+
 ### Added 2026-08-12 — the aged-passage stepper sentence (`fix/passed-chamber-stale-frame`, N5)
 
 Two new strings, both **unreviewed AI drafts.** They are the third instalment of one idea the reviewer has already seen twice in this packet: a fact the record states once, printed later in a tense that implies it is still happening. `nowFloorStale` and `nowFloorActivityStale` (above) did it for the floor; these do it for a bill that has cleared one chamber. On 2026-08-12 one of them renders on 280 of the 295 bills in that state, so this is a high-traffic pair.
