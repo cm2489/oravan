@@ -151,7 +151,7 @@ test.describe('isStructuralFailure', () => {
 
 /*
  * Standing-issue rendering (2026-08-12). The watch used to file one issue per
- * changed state with no issue-level dedupe; nine accumulated in six weeks,
+ * changed state with no issue-level dedupe; ten accumulated in six weeks,
  * eight of them (#119-#126) from ONE upstream event - RDH bulk-touched eight
  * state pages within 28 minutes on 2026-07-24. These pin the replacement:
  * one rolling pinned issue, its body a status board rebuilt every run, one
@@ -161,19 +161,34 @@ test.describe('isStructuralFailure', () => {
  * running on a Monday at 08:00 UTC.
  */
 
-/** The real 2026-07-24 batch, verbatim from data/redistricting-watch.json. */
+/**
+ * The real 2026-07-24 batch: all EIGHT states the watch detected that day,
+ * the eight that opened #119-#126.
+ *
+ * Seven of them are verbatim from today's data/redistricting-watch.json. LA
+ * is NOT, and cannot be: it moved again on 2026-07-27T22:30:40 (#149, filed
+ * 2026-08-03), so the committed file has advanced LA's baseline past its
+ * 2026-07-24 value and the file alone now shows only seven. LA's row here is
+ * taken from the issue record instead — #125 filed it as "lastmod moved from
+ * 2026-07-17T16:46:34 to 2026-07-24T16:46:14", and #149 confirms the same
+ * value as its own `prev`. Reading the file alone is what makes this batch
+ * look like seven states; the event was eight.
+ *
+ * The span is unchanged by LA (16:46:14 sits inside it): 16:19:33 -> 16:47:16.
+ */
 const BULK_2026_07_24 = [
   { state: 'MO', prevLastmod: 'old', newLastmod: '2026-07-24T16:19:33+00:00', url: 'https://redistrictingdatahub.org/state/missouri/' },
   { state: 'NC', prevLastmod: 'old', newLastmod: '2026-07-24T16:20:08+00:00', url: 'https://redistrictingdatahub.org/state/north-carolina/' },
   { state: 'TX', prevLastmod: 'old', newLastmod: '2026-07-24T16:20:40+00:00', url: 'https://redistrictingdatahub.org/state/texas/' },
   { state: 'AL', prevLastmod: 'old', newLastmod: '2026-07-24T16:42:28+00:00', url: 'https://redistrictingdatahub.org/state/alabama/' },
   { state: 'FL', prevLastmod: 'old', newLastmod: '2026-07-24T16:44:42+00:00', url: 'https://redistrictingdatahub.org/state/florida/' },
+  { state: 'LA', prevLastmod: '2026-07-17T16:46:34+00:00', newLastmod: '2026-07-24T16:46:14+00:00', url: 'https://redistrictingdatahub.org/state/louisiana/' },
   { state: 'OH', prevLastmod: 'old', newLastmod: '2026-07-24T16:46:49+00:00', url: 'https://redistrictingdatahub.org/state/ohio/' },
   { state: 'TN', prevLastmod: 'old', newLastmod: '2026-07-24T16:47:16+00:00', url: 'https://redistrictingdatahub.org/state/tennessee/' },
 ];
 
 test.describe('isBulkRepublish', () => {
-  test('the real 2026-07-24 batch (7 of 10, ~28 minutes apart) reads as a republish', () => {
+  test('the real 2026-07-24 batch (8 of 10, ~28 minutes apart) reads as a republish', () => {
     expect(isBulkRepublish(BULK_2026_07_24, 10)).toBe(true);
   });
 
@@ -290,7 +305,7 @@ test.describe('renderChangeComment', () => {
 
   test('the 2026-07-24-shaped batch is called what it is: a republish, not N map events', () => {
     const md = renderChangeComment(BULK_2026_07_24, 10, '2026-07-27T08:00:00Z');
-    expect(md).toContain('**This reads as an RDH site-wide republish, not 7 map events.**');
+    expect(md).toContain('**This reads as an RDH site-wide republish, not 8 map events.**');
     expect(md).toContain('#119–#126');
     // 16:19:33 -> 16:47:16 is 27.7 minutes, rounded.
     expect(md).toContain('all within 28 minute(s) of each other');

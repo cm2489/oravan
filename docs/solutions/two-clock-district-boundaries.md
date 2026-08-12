@@ -124,11 +124,12 @@ wired into `refresh-legislators.yml`):
    *Amended 2026-08-12.* This step originally opened one GitHub issue per
    changed state, and had no issue-level dedupe at all — the only dedupe was
    value-level, via the `rdh_lastmod` advance. That is correct tripwire
-   behaviour and it still produced nine open issues in six weeks, eight of
+   behaviour and it still produced ten open issues in six weeks (#92,
+   #119–#126, #149), eight of
    them (#119–#126) from a single upstream event: RDH bulk-touched eight
    state pages within 28 minutes on 2026-07-24. Nothing reads these issues —
    not product code, not another workflow, not an MCP tool — so their only
-   job is to be *read*, and nine identical-looking titles is worse at that
+   job is to be *read*, and ten near-identical titles is worse at that
    job than one. The comment now marks a bulk run explicitly
    (`isBulkRepublish`: ≥6 tracked states, ≥60% of everything tracked, all
    within a 2-hour span) so a site-wide republish is never mistaken for six

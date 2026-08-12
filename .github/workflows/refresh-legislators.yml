@@ -96,11 +96,12 @@ jobs:
         # Replaces a per-state `gh issue create` loop that had NO issue-level
         # dedupe: the only dedupe was value-level (the committed rdh_lastmod
         # advances, so the same hop never re-fires), which is correct tripwire
-        # behaviour and still left nine open issues in six weeks - eight of
+        # behaviour and still left ten open issues in six weeks (#92,
+        # #119-#126, #149) - eight of
         # them from one upstream event, RDH bulk-touching eight state pages
         # within 28 minutes on 2026-07-24 (#119-#126). Nothing reads those
         # issues (no product code, no workflow, no MCP tool), so their only
-        # job is to be READ, and nine identical-looking titles is worse at
+        # job is to be READ, and ten near-identical titles is worse at
         # that job than one. Now: one rolling PINNED issue whose body is
         # rewritten from data/redistricting-watch.json every run, plus one
         # comment per run that detected something. Same pattern
