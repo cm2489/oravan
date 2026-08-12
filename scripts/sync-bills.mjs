@@ -40,6 +40,9 @@
  * catch-up run, or set in-process by scripts/newsdesk.mjs when a headline
  * trigger decides a brand-new bill is newsworthy enough to decode outside
  * the gate's own status-based test (see decode-gate.mjs's parseForceSlugs).
+ * A listed slug must name the Congress this build tracks: an entry ending in
+ * any other Congress is skipped with a ::warning:: rather than fetched as the
+ * same-numbered bill of the tracked one — see forceSlugTarget.
  *
  * Two-pass fetch (2026-07-16, audit §5 item 2). Congress.gov is queried
  * TWICE per run, in this order:
@@ -179,8 +182,9 @@ export function shouldAbortMostlyFailed(failed, total) {
  * The predicate above compares failures against `updated.length`, the
  * ascending pass's window. The counter fed to it also absorbed failures
  * from the force-slug direct-fetch loop, which is not part of that window
- * at all: one bad FORCE_DECODE_SLUGS entry (a typo, a bill in a Congress we
- * don't track) counted against a denominator it never contributed to, and
+ * at all: one bad FORCE_DECODE_SLUGS entry (a typo; before 2026-08-11 also a
+ * slug naming a Congress we don't track, which forceSlugTarget now skips
+ * before any fetch) counted against a denominator it never contributed to, and
  * on a quiet night - window of 2, one bad slug - that alone satisfied
  * "more than half" and ended a run whose real work was fine. Force-slug
  * failures are an owner-input problem, so they are counted, reported, and
@@ -199,6 +203,38 @@ export function mostlyFailedVerdict({ ascendingFailed = 0, forceFailed = 0, wind
     underFloor: !abort && ascendingFailed > windowSize / 2,
     ignoredForceFailures: forceFailed,
   };
+}
+
+/**
+ * What a FORCE_DECODE_SLUGS entry actually points at - exported pure so the
+ * one place an owner-supplied string becomes a Congress.gov fetch can be
+ * tested without a live sync.
+ *
+ * THE HOLE THIS CLOSES (2026-08-11). The force loop used to match
+ * `/^([a-z]+)-(\d+)-\d+$/` and throw the third segment away, then fetch
+ * `/bill/${CONGRESS}/${type}/${number}` - so forcing `s-1776-118` silently
+ * fetched S.1776 of the 119th Congress instead, wrote it under whatever slug
+ * the decode produced, and reported success. A typo'd or copy-pasted
+ * previous-Congress slug was the ONE live path by which a bill nobody asked
+ * for could enter the corpus, and it left no trace saying so. There is no
+ * honest way to serve the request (this build tracks one Congress; see
+ * CONGRESS in congress-fetch.mjs), so the entry is skipped with a
+ * ::warning:: naming it rather than quietly answered with a different bill.
+ *
+ * Malformed slugs keep their existing treatment exactly - `{ok: false,
+ * reason: 'malformed'}`, logged and skipped, uncounted.
+ *
+ * @param {string} slug lower-cased slug, as parseForceSlugs emits
+ * @returns {{ok: true, type: string, number: string, congress: number}
+ *          | {ok: false, reason: 'malformed'}
+ *          | {ok: false, reason: 'wrong-congress', congress: number}}
+ */
+export function forceSlugTarget(slug, congress = CONGRESS) {
+  const m = String(slug ?? '').match(/^([a-z]+)-(\d+)-(\d+)$/);
+  if (!m) return { ok: false, reason: 'malformed' };
+  const slugCongress = Number(m[3]);
+  if (slugCongress !== congress) return { ok: false, reason: 'wrong-congress', congress: slugCongress };
+  return { ok: true, type: m[1], number: m[2], congress: slugCongress };
 }
 
 /**
@@ -468,14 +504,25 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // not part of the ascending window the abort at the bottom judges. See
   // mostlyFailedVerdict.
   let forceFailed = 0;
+  let forceWrongCongress = 0;
   for (const slug of forceSlugs) {
     if (handledSlugs.has(slug)) continue;
-    const m = slug.match(/^([a-z]+)-(\d+)-\d+$/);
-    if (!m) {
-      console.log(`force direct-fetch: SKIPPED malformed slug ${JSON.stringify(slug)}`);
+    const target = forceSlugTarget(slug);
+    if (!target.ok) {
+      if (target.reason === 'wrong-congress') {
+        // The fetch below is pinned to CONGRESS, so honoring this entry would
+        // return a DIFFERENT bill wearing the same number - see
+        // forceSlugTarget's comment. Skipped, never silently substituted.
+        forceWrongCongress++;
+        console.log(
+          `::warning::force direct-fetch: SKIPPED ${slug} - it names the ${target.congress}th Congress and this build tracks only the ${CONGRESS}th. Nothing was fetched: fetching it would have returned the ${CONGRESS}th Congress's bill of the same number, which is a different bill. Fix the slug (or bump CONGRESS in scripts/congress-fetch.mjs if the tracked Congress really changed).`
+        );
+      } else {
+        console.log(`force direct-fetch: SKIPPED malformed slug ${JSON.stringify(slug)}`);
+      }
       continue;
     }
-    const result = await syncOneBill({ type: m[1], number: m[2] }, { ...ctxBase, allowDecode: true });
+    const result = await syncOneBill({ type: target.type, number: target.number }, { ...ctxBase, allowDecode: true });
     console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
     if (result.outcome === 'refreshed') refreshed++;
     else if (result.outcome === 'added') added++;
@@ -530,7 +577,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // real - only its text is missing, so we saw it and declined to decode it.
   const newSeen = added + gated + queued + newFailed + noTextSkipped;
   console.log(
-    `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${noTextSkipped} skipped: no bill text published yet (not decoded), ${failed} failed in the ascending pass (${newFailed} new), ${recentFailed} in the recent-first pass, ${forceFailed} force-slug; cursor -> ${state.lastSync} (${next.reason}); new bills seen this run: ${newSeen}; corpus ${bills.length}`
+    `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${noTextSkipped} skipped: no bill text published yet (not decoded), ${forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${failed} failed in the ascending pass (${newFailed} new), ${recentFailed} in the recent-first pass, ${forceFailed} force-slug; cursor -> ${state.lastSync} (${next.reason}); new bills seen this run: ${newSeen}; corpus ${bills.length}`
   );
   // Mostly-failed run: don't let CI commit garbage. Judged on the ascending
   // pass ALONE - its own failures against its own window - so neither the
