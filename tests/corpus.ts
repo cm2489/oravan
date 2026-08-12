@@ -27,7 +27,7 @@
 import billsJson from '../data/bills.json';
 import syncState from '../data/sync-state.json';
 import { TERMINAL_STATUSES, isSignalFresh } from '../lib/urgency.mjs';
-import { floorCalendarChamber, floorPendingChamber } from '../lib/journey';
+import { floorCalendarChamber, floorPendingChamber, passageState } from '../lib/journey';
 /*
  * THE LADDER ITSELF IS IMPORTED, NOT MIRRORED — the one deliberate break in
  * this file's mirror rule, and the ladder is exactly why it is safe.
@@ -234,6 +234,46 @@ export function floorPendingSlugs(at: number): { fresh: string[]; stale: string[
     if (floorCalendarChamber(b.last_action_text) !== null) continue;
     if (floorPendingChamber(b.last_action_text) === null) continue;
     (isSignalFresh(b.last_action_date, at) ? fresh : stale).push(slugOf(b));
+  }
+  return { fresh: fresh.sort(), stale: stale.sort() };
+}
+
+/**
+ * DECODED bills that have cleared their ORIGINATING chamber and are waiting on
+ * the other one (`passageState().stage === 'first'`), split by the same
+ * published signal window — the two sides of the stepper's passage sentence
+ * since N5 (2026-08-12).
+ *
+ * Derived, never pinned, and this function exists because a pinned one already
+ * broke: tests/decoded.spec.ts drove s-2280-119 and asserted "it passed the
+ * Senate and now goes to the House" as a literal. That bill's passage is dated
+ * 2026-04-29 — 105 days old on the day the clock landed — so the page now
+ * reads the stale sentence and the literal was asserting copy the site had
+ * stopped printing. Naming a different bill would only re-arm the same trap on
+ * the next sync.
+ *
+ * THE SKEW, in BOTH directions, because unlike the floor helpers this one is
+ * read for its stale side too. `fresh` is judged at the LATE end of the skew
+ * window and `stale` at the EARLY end: isSignalFresh only ever expires, so
+ * fresh-at-late implies fresh-at-build and stale-at-early implies
+ * stale-at-build, whenever inside the window `next build` actually ran. A bill
+ * mid-crossing appears in NEITHER list rather than in the wrong one.
+ *
+ * `origin` filters by the chamber the bill started in (its type), which is what
+ * a spec asserting "Senate committee" in the stepper is really asking for.
+ */
+export function passageSlugs(
+  at: number,
+  origin?: 'house' | 'senate'
+): { fresh: string[]; stale: string[] } {
+  const fresh: string[] = [];
+  const stale: string[] = [];
+  for (const b of corpus) {
+    if (b.status !== 'passed_chamber' || !b.ai_headline) continue;
+    if (origin && (b.bill_type.startsWith('h') ? 'house' : 'senate') !== origin) continue;
+    if (passageState(b).stage !== 'first') continue;
+    if (isSignalFresh(b.last_action_date, at + CLOCK_SKEW_MS)) fresh.push(slugOf(b));
+    else if (!isSignalFresh(b.last_action_date, at - CLOCK_SKEW_MS)) stale.push(slugOf(b));
   }
   return { fresh: fresh.sort(), stale: stale.sort() };
 }

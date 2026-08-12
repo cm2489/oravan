@@ -33,6 +33,41 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
  * change nobody has decided on. Until someone does, this comment describes
  * what actually runs.
  *
+ * HOW BIG IS THE DISAGREEMENT? Measured rather than left to the reader's
+ * imagination (owner ruling N11c, 2026-08-12: document the magnitude, change
+ * no behaviour). Method: hold the corpus constant and advance ONLY the clock,
+ * which is exactly the build-time/request-time gap. Against the committed
+ * 2,723-bill corpus on 2026-08-12, with #218's docket-ladder derivation:
+ *
+ *   urgency_band (get_bill's band, the rung both surfaces read)
+ *     +1 day 0 bills · +2d 0 · +3d 0 · +5d 2 (0.07%) · +7d 21 (0.77%)
+ *     · +14d 99 (3.6%), which is the plateau - by then everything dated has
+ *     left the 14-day signal window and nothing further can change.
+ *   whats_moving's population (the T0∪T1∪T2 act-now pool)
+ *     19 bills, unchanged through +4 days · 17 at +5d · 7 at +7d.
+ *   urgency_score (get_bill, search_bills - the continuous curve)
+ *     331 of 2,723 (12.2%) report a different number one day on, none by more
+ *     than 0.05. It is a decay: it moves constantly, in tiny increments, and
+ *     is the one figure that is never zero.
+ *
+ * Read those against how long a page actually stays baked. The nightly data
+ * commit triggers the deploy, so the site's clock is normally under 24h
+ * behind, and the longest no-deploy stretch in the June-August record is 4
+ * days - lags at which ZERO bills land in different bands on the two
+ * surfaces. The divergence only becomes visible around a week of no deploys,
+ * by which point `data_stale` is already the answer whats_moving gives. So
+ * the safe-direction claim above is not just directional: at every lag this
+ * pipeline actually produces, the two surfaces agree on the band, and where
+ * they don't, MCP is the fresher one.
+ *
+ * (An earlier figure, ~7 bills a day / 0.26%, was measured 2026-08-11 against
+ * the PERCENTILE band floors #218 retired the following morning. A continuous
+ * score crossing a fixed cutoff nudges a few bills every single day; a rung
+ * does not move until a dated fact leaves the signal window, which is why the
+ * per-day number went to zero without anything about the clocks changing.
+ * Re-measure the same way after any change to the derivation: same corpus,
+ * two clocks, count the bills whose band differs.)
+ *
  * Exactly these 5, per the project records §2 and the
  * settled S10 scope call (KTD-6, closed under R16): lookup_representatives,
  * get_bill, search_bills, whats_moving, get_representative.
