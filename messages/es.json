@@ -468,7 +468,7 @@
     "captionCorroborated": "Cubierto esta semana por {count, plural, one {# medio} other {# medios}} de distintas tendencias: {leans}",
     "captionCorroboratedCenter": "Cubierto esta semana por {count, plural, one {# medio de tendencia centro} other {# medios de tendencia centro}}",
     "captionMostViewed": "Entre los proyectos más vistos de congress.gov, {weeks, plural, one {# semana} other {# semanas}} seguidas",
-    "captionMostViewedCovered": "Entre los proyectos más vistos de congress.gov esta semana, con cobertura de {count, plural, one {# medio} other {# medios}}: {leans}",
+    "captionMostViewedThisWeek": "Entre los proyectos más vistos de congress.gov esta semana",
     "lean": {
       "left": "izquierda",
       "center": "centro",

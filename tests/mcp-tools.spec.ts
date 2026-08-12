@@ -389,8 +389,10 @@ test.describe('whats_moving', () => {
     for (const b of bills) {
       const evidence = pool.get(b.slug);
       // Absent is the normal case, and it is the B-1 guarantee in payload form:
-      // a bill one outlet wrote about carries NO facet rather than a facet
-      // saying `outlets_7d: 1` — a count an agent could rank on is a surface.
+      // a bill one outlet wrote about is c0 and carries NO facet at all. (Where
+      // congress.gov's most-viewed list admitted the bill, the article beside it
+      // does print as `outlets_7d: 1`; the assert below is the invariant that
+      // holds either way — one of the two facts is always real.)
       if (!evidence) {
         expect(b.conversation, b.slug).toBeUndefined();
         continue;

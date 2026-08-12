@@ -19,7 +19,7 @@ import {
   leanStatuses,
   materialFingerprint,
   MOST_VIEWED_MIN_WEEKS,
-  MOST_VIEWED_ONLY_CARD_CAP,
+  MOST_VIEWED_CARD_CAP,
   normalizeDomain,
   observeMostViewed,
   observeOutlets,
@@ -186,9 +186,12 @@ test.describe('conversationTier', () => {
     expect(conversationEvidence({}, { today: T })).toMatchObject({ tier: 'c0', reason: 'no-corroboration', ratedOutlets: 0 });
   });
 
-  test('the most-viewed-only card cap is a published number, not a local constant', () => {
-    // Critic B-2's third clause. Consumers import THIS.
-    expect(MOST_VIEWED_ONLY_CARD_CAP).toBe(2);
+  test('the most-viewed card cap is a published number, not a local constant', () => {
+    // Critic B-2's third clause. Consumers import THIS — and since 2026-08-12
+    // it counts EVERY card the list admits, not only the ones with no article
+    // beside them (lib/conversation.ts's selectConversationBand, section 3 of
+    // tests/news-band.unit.spec.ts).
+    expect(MOST_VIEWED_CARD_CAP).toBe(2);
   });
 });
 

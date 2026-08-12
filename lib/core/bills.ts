@@ -275,10 +275,13 @@ export function docketSignalFor(
  *     C1 (two or more RATED outlets published inside the 7-day window) first,
  *     ordered by distinct rated outlets then newest evidence; then C2 (on
  *     congress.gov's own most-viewed list, with either two consecutive weeks or
- *     a rated article beside it), with most-viewed-only cards capped at 2 of 6.
- *     A single outlet is not a rung and cannot render anything, anywhere.
- *     Each card carries the counted facts it was selected on, so the page can
- *     say WHY it is there in words a reader can check against stored evidence.
+ *     a rated article beside it), with EVERY most-viewed card — either route —
+ *     capped at 2 of 6. A single outlet is not a rung and cannot render
+ *     anything, anywhere, and cannot be PRINTED anywhere either: a most-viewed
+ *     card states the listing alone, so `sourceCount` is 0 on it and no lean
+ *     reaches the page. Each card carries the counted facts it was selected
+ *     on, so the page can say WHY it is there in words a reader can check
+ *     against stored evidence.
  *
  *  2. FALLBACK — exactly #215's behavior: `rankNews` over stored coverage,
  *     cross/neutral only, gated to the signal window, ordered by breadth. The
@@ -319,9 +322,13 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
       renderable: (slug) => bySlug.has(slug),
     }).map((sel) =>
       shape(bySlug.get(sel.slug)!, {
-        // The spread of the outlets the caption counts — null when the card
-        // stands on the most-viewed list alone, which is not a coverage claim.
-        coverageTier: sel.caption.outlets >= 2 ? newsSpread(sel.caption.leans) as 'cross' | 'neutral' : null,
+        // BOTH fields come off the CAPTION, never off the raw evidence, and
+        // that is the guard: the caption is the one place that decides what may
+        // be claimed, so a surface reading `sourceCount` cannot print a number
+        // the caption declined to say. On a most-viewed card it is 0 — the
+        // card's one rated article is why it was admitted, not something it
+        // claims — and the tier is null, because a spread needs two outlets.
+        coverageTier: sel.caption.outlets >= 2 ? (newsSpread(sel.caption.leans) as 'cross' | 'neutral') : null,
         sourceCount: sel.caption.outlets,
         caption: sel.caption,
       })

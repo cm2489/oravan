@@ -31,11 +31,17 @@
  * B-1  There is no single-outlet path to select FROM: `conversationPool` only
  *      ever returns c1/c2, and lib/conversation.mjs has no rung a lone outlet
  *      can reach. Nothing here can re-open it — the tier is not recomputed
- *      here, it is read.
- * B-2  Most-viewed cannot fill the band: a card with no rated article beside it
- *      is capped at MOST_VIEWED_ONLY_CARD_CAP (2) of the six, and the cap
- *      constant is imported from the module that motivates it rather than
- *      re-declared here, so writer and renderer cannot drift.
+ *      here, it is read. AND NOTHING HERE PRINTS ONE EITHER (2026-08-12): a C2
+ *      card holds at most one rated outlet by construction, so a caption that
+ *      counted its outlets or listed its lean would be a single-outlet claim
+ *      rendered on the homepage — the display half of the very channel B-1
+ *      closes. Such a card prints the congress.gov fact and only that; the
+ *      article stays admission evidence, readable in `evidence`, unprinted.
+ * B-2  Most-viewed cannot fill the band: EVERY card that is on the page because
+ *      of the most-viewed list — both admission routes — counts against
+ *      MOST_VIEWED_CARD_CAP (2) of the six, and the cap constant is imported
+ *      from the module that motivates it rather than re-declared here, so
+ *      writer and renderer cannot drift.
  * B-3  Only rated outlets are counted, because only rated outlets are IN
  *      `outlets7d` — the split happens at write time and the gate fails the
  *      build if an unrated domain appears there.
@@ -46,7 +52,8 @@
 import conversationData from '../data/conversation.json';
 import {
   CONVERSATION_SCHEMA,
-  MOST_VIEWED_ONLY_CARD_CAP,
+  MOST_VIEWED_CARD_CAP,
+  MOST_VIEWED_MIN_WEEKS,
   OUTLET_WINDOW_DAYS,
   conversationEvidence,
   conversationPool,
@@ -56,7 +63,8 @@ import type { Lean } from './types';
 
 export {
   CONVERSATION_SCHEMA,
-  MOST_VIEWED_ONLY_CARD_CAP,
+  MOST_VIEWED_CARD_CAP,
+  MOST_VIEWED_MIN_WEEKS,
   OUTLET_WINDOW_DAYS,
   conversationEvidence,
   conversationPool,
@@ -215,11 +223,40 @@ export function newsSpread(leans: readonly Lean[]): 'cross' | 'neutral' | 'one_s
  * The STRINGS live in messages/{en,es}.json; this carries no copy, because a
  * caption is a user-facing string and must exist in both languages or neither.
  */
+/** Every caption a card can carry. Exported as a value so the spec can prove it
+ *  knows how to render each one — a new kind added without a rendered, both-
+ *  language string fails there instead of shipping as a blank line. */
+export const NEWS_CAPTION_KINDS = [
+  'corroborated',
+  'corroborated_center',
+  'most_viewed',
+  'most_viewed_this_week',
+] as const;
+
+export type NewsCaptionKind = (typeof NEWS_CAPTION_KINDS)[number];
+
 export interface NewsCaption {
-  kind: 'corroborated' | 'corroborated_center' | 'most_viewed' | 'most_viewed_covered';
-  /** Distinct RATED outlets inside the window. Never counts unrated domains. */
+  /**
+   * WHICH counted fact this card prints, and therefore which localized string
+   * renders it:
+   *
+   *   corroborated          ≥2 rated outlets, both partisan leans present
+   *   corroborated_center   ≥2 rated outlets, all of them center-rated
+   *   most_viewed           on congress.gov's list `weeks` weeks running
+   *   most_viewed_this_week on congress.gov's current list
+   *
+   * The two most-viewed kinds print NO outlet count and NO lean, whatever the
+   * evidence holds beside the listing — see the B-1 note in this file's header.
+   */
+  kind: NewsCaptionKind;
+  /** Distinct RATED outlets this caption COUNTS — and therefore the only outlet
+   *  number any surface may print for the card (`NewsBill.sourceCount` is set
+   *  from this field for exactly that reason). Zero on a most-viewed card,
+   *  which counts none: two outlets is the smallest number this design will
+   *  say out loud. */
   outlets: number;
-  /** Those outlets' leans, deduped and sorted — the spread, readable. */
+  /** Those outlets' leans, deduped and sorted — the spread, readable. Empty
+   *  unless `outlets >= 2`, so a lone lean can never reach a caption. */
   leans: Lean[];
   /** Consecutive weeks on congress.gov's most-viewed list; 0 when absent. */
   weeks: number;
@@ -247,25 +284,34 @@ export interface ConversationSelection {
  * outlets first, then newest evidence, then slug. Two runs on the same evidence
  * therefore produce the same six cards in the same order.
  *
- * THE TWO EXCLUSIONS, both of them caption obligations rather than rankings:
+ * THE THREE EXCLUSIONS, every one of them a caption obligation rather than a
+ * ranking:
  *   · a C1 set that is one-sided (see `newsSpread`) is dropped, not reworded;
- *   · a most-viewed card with NO rated article beside it is capped at
- *     MOST_VIEWED_ONLY_CARD_CAP, because congress.gov's view counts are the
+ *   · EVERY most-viewed card — with or without an article beside it — counts
+ *     against MOST_VIEWED_CARD_CAP, because congress.gov's view counts are the
  *     cheapest input in this design to game and must never be able to fill the
- *     band on their own (critic B-2). It is a cap, not a ban: the government's
- *     own weekly list, carried two weeks running, is real public attention and
- *     saying so is honest.
+ *     band (critic B-2). It is a cap, not a ban: the government's own weekly
+ *     list is real public attention and saying so is honest;
+ *   · a most-viewed card prints the LISTING and nothing else. A C2 card holds
+ *     at most one rated outlet (two would have made it C1), so "covered by 1
+ *     outlet: left" is both a single-outlet claim and a spread claim built on
+ *     one lean — the two things this design refuses everywhere else. The
+ *     article is why the card was ADMITTED; it is not something the card says.
+ *
+ * (The last two were verification findings on 2026-08-12, both against the
+ * `most-viewed + one rated article` route: it walked past the cap and it
+ * rendered the lone lean. The route itself is design B-2's own OR and stays.)
  */
 export function selectConversationBand(
   pool: readonly ConversationPoolItem[],
   {
     limit,
     renderable,
-    mostViewedOnlyCap = MOST_VIEWED_ONLY_CARD_CAP,
-  }: { limit: number; renderable?: (slug: string) => boolean; mostViewedOnlyCap?: number }
+    mostViewedCap = MOST_VIEWED_CARD_CAP,
+  }: { limit: number; renderable?: (slug: string) => boolean; mostViewedCap?: number }
 ): ConversationSelection[] {
   const out: ConversationSelection[] = [];
-  let mostViewedOnly = 0;
+  let mostViewedCards = 0;
   for (const item of pool) {
     if (out.length >= limit) break;
     if (renderable && !renderable(item.slug)) continue;
@@ -291,27 +337,24 @@ export function selectConversationBand(
     }
     // C2 — the government's own most-viewed list, admitted only with a second
     // fact beside it (the module already enforced which: two consecutive weeks,
-    // or at least one rated article). Both facts are printed.
+    // or at least one rated article).
     if (!evidence.mostViewed) continue; // unreachable via conversationEvidence; a defensive floor, not a policy
-    if (evidence.ratedOutlets === 0) {
-      if (mostViewedOnly >= mostViewedOnlyCap) continue;
-      mostViewedOnly++;
-      out.push({
-        slug: item.slug,
-        tier: 'c2',
-        evidence,
-        caption: { kind: 'most_viewed', outlets: 0, leans: [], weeks: evidence.weeksOnList, rank },
-      });
-      continue;
-    }
+    // ONE counter for both routes. Which fact admitted the card changes what it
+    // SAYS, never whether the ceiling applies to it.
+    if (mostViewedCards >= mostViewedCap) continue;
+    mostViewedCards++;
     out.push({
       slug: item.slug,
       tier: 'c2',
       evidence,
       caption: {
-        kind: 'most_viewed_covered',
-        outlets: evidence.ratedOutlets,
-        leans,
+        // The listing is the whole claim, so the caption is chosen by the ONE
+        // number it prints: `weeks` running, or simply this week's list. A card
+        // admitted by an article beside a first-week listing has no second week
+        // to claim and says the smaller true thing.
+        kind: evidence.weeksOnList >= MOST_VIEWED_MIN_WEEKS ? 'most_viewed' : 'most_viewed_this_week',
+        outlets: 0,
+        leans: [],
         weeks: evidence.weeksOnList,
         rank,
       },

@@ -51,8 +51,11 @@ function captionText(
       return t('captionCorroboratedCenter', { count: caption.outlets });
     case 'most_viewed':
       return t('captionMostViewed', { weeks: caption.weeks });
-    case 'most_viewed_covered':
-      return t('captionMostViewedCovered', { count: caption.outlets, leans });
+    case 'most_viewed_this_week':
+      // No outlet count, no lean: a most-viewed card carries at most ONE rated
+      // outlet, and one outlet is never a claim this band makes (B-1). The
+      // article that admitted it is evidence, not copy.
+      return t('captionMostViewedThisWeek');
   }
 }
 

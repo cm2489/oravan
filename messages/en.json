@@ -468,7 +468,7 @@
     "captionCorroborated": "Covered by {count, plural, one {# outlet} other {# outlets}} across the spectrum this week: {leans}",
     "captionCorroboratedCenter": "Covered by {count, plural, one {# outlet} other {# outlets}} rated center this week",
     "captionMostViewed": "Among congress.gov's most-viewed bills, {weeks, plural, one {# week} other {# weeks}} running",
-    "captionMostViewedCovered": "Among congress.gov's most-viewed bills this week, covered by {count, plural, one {# outlet} other {# outlets}}: {leans}",
+    "captionMostViewedThisWeek": "Among congress.gov's most-viewed bills this week",
     "lean": {
       "left": "left",
       "center": "center",

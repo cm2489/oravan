@@ -181,9 +181,10 @@ export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';
  *
  *  · THE LAMP — selected from data/conversation.json's committed evidence.
  *    `caption` carries the counted facts behind the card, `sourceCount` is the
- *    number of RATED outlets those facts were counted over, and `coverageTier`
- *    is their spread (null when the card stands on congress.gov's most-viewed
- *    list alone, which is not a coverage claim at all).
+ *    number of RATED outlets THE CAPTION COUNTS (0 on a most-viewed card, which
+ *    counts none — one outlet is never a number this band says out loud), and
+ *    `coverageTier` is their spread, null whenever fewer than two outlets are
+ *    counted, because a spread over one outlet is one lean.
  *  · THE FALLBACK — #215's stored-coverage recency gate, unchanged.
  *    `caption` is null, because a caption that cannot be checked against
  *    counted evidence is a guess, and the degradation rule is to drop it.

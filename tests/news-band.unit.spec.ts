@@ -1,16 +1,21 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createFormatter, createTranslator } from 'next-intl';
 import {
   CONVERSATION_SCHEMA,
   CONVERSATION_STALE_HOURS,
-  MOST_VIEWED_ONLY_CARD_CAP,
+  MOST_VIEWED_CARD_CAP,
+  NEWS_CAPTION_KINDS,
   OUTLET_WINDOW_DAYS,
   conversationBandPool,
   conversationPosture,
   newsSpread,
   selectConversationBand,
   type ConversationPoolItem,
+  type ConversationSelection,
+  type NewsCaption,
+  type NewsCaptionKind,
 } from '../lib/conversation';
 import { conversationPool } from '../lib/conversation.mjs';
 import { getNewsBills } from '../lib/core/bills';
@@ -30,14 +35,26 @@ import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
  * asserted as ranges with an explicit non-vacuity guard.
  *
  * The four mandatory patches, and where each is pinned here:
- *   B-1  a single outlet renders NOTHING — there is no rung for it to reach,
- *        and the pool the selector reads cannot contain one.
- *   B-2  most-viewed needs two consecutive weeks or a rated article, and
- *        most-viewed-ONLY cards are capped at MOST_VIEWED_ONLY_CARD_CAP of six.
+ *   B-1  a single outlet renders NOTHING and PRINTS nothing — there is no rung
+ *        for it to reach, the pool the selector reads cannot contain one, and
+ *        the one card that may legitimately have a lone article behind it (the
+ *        most-viewed pairing route) never says so.
+ *   B-2  most-viewed needs two consecutive weeks or a rated article, and EVERY
+ *        card admitted by the list — either route — counts against
+ *        MOST_VIEWED_CARD_CAP of six.
  *   B-3  only AllSides-rated outlets are counted (enforced at write time; here
  *        the consequence is pinned — an unrated domain contributes no count).
  *   B-4  the writer's business, but its consequence is here: a caption never
  *        claims a spread it does not hold.
+ *
+ * THE 2026-08-12 VERIFICATION ROUND is pinned in sections 2, 3 and 8. Two
+ * findings, both against the `most-viewed + one rated article` route that
+ * design B-2's own OR sanctions: as shipped it walked past the card cap (five
+ * of six cards could rest on one view count and one newsroom apiece) and it
+ * rendered that lone newsroom's lean as a caption ("covered by 1 outlet:
+ * left") — a single-outlet claim on the homepage, which is the display half of
+ * the channel B-1 closes. The route stays; the cap counts it and the caption
+ * does not mention it.
  */
 
 const T = '2026-08-12';
@@ -152,7 +169,7 @@ test.describe('C1: two or more rated outlets, this week', () => {
 /* ------------------------------------------------------------------ *
  * 2 · B-1 — one outlet admits nothing, anywhere
  * ------------------------------------------------------------------ */
-test.describe('B-1: the single-outlet path does not exist', () => {
+test.describe('B-1: one outlet admits nothing, and is never printed either', () => {
   test('one rated outlet renders nothing', () => {
     expect(selectConversationBand(poolOf({ 'hr-1-119': corroborated(outlet('cnn.com', 'left')) }), { limit: 6 })).toEqual([]);
   });
@@ -180,6 +197,65 @@ test.describe('B-1: the single-outlet path does not exist', () => {
   test('a single outlet cannot even reach the pool the selector reads', () => {
     expect(poolOf({ 'hr-1-119': corroborated(outlet('cnn.com', 'left')) })).toEqual([]);
   });
+
+  /* ---- THE ONE ROUTE THAT CARRIES A LONE ARTICLE (2026-08-12) --------- *
+   * design B-2's OR admits a most-viewed bill with ONE rated article beside
+   * it, and that is sanctioned: the government's own list is the fact being
+   * reported and the article is corroboration that someone else noticed. What
+   * this block pins is the consequence B-1 owns — the article is why the card
+   * was ADMITTED and is never something the card SAYS. As shipped it printed
+   * "covered by 1 outlet: left", which is a single-outlet claim and a spread
+   * claim over one lean, on the homepage.                                  */
+  test('most-viewed PLUS one rated article renders — and the caption is the LISTING alone', () => {
+    const band = selectConversationBand(
+      poolOf({ 'hr-1-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 5) } }),
+      { limit: 6 }
+    );
+    expect(band).toHaveLength(1);
+    const [card] = band;
+    expect(card.tier).toBe('c2');
+    // The article is admission evidence, and it stays auditable AS evidence...
+    expect(card.evidence.reason).toBe('most-viewed-plus-article');
+    expect(card.evidence.ratedOutlets).toBe(1);
+    expect(card.evidence.leanSpread).toEqual(['left']);
+    // ...and invisible in the caption: no count, no lean, no spread.
+    expect(card.caption).toEqual({ kind: 'most_viewed_this_week', outlets: 0, leans: [], weeks: 1, rank: 5 });
+  });
+
+  test('a lone article is invisible whichever route admitted the card', () => {
+    // The same evidence, admitted by the WEEKS route instead: two consecutive
+    // weeks makes the card, one rated outlet sits beside it, and the caption
+    // still counts nothing. Neither route may print a one.
+    const [card] = selectConversationBand(
+      poolOf({ 'hr-1-119': { ...corroborated(outlet('foxnews.com', 'right')), mostViewed: mostViewed(2, 4) } }),
+      { limit: 6 }
+    );
+    expect(card.evidence.ratedOutlets).toBe(1);
+    expect(card.caption).toEqual({ kind: 'most_viewed', outlets: 0, leans: [], weeks: 2, rank: 4 });
+  });
+
+  test('NO card the selector can emit ever counts exactly one outlet', () => {
+    // The structural form of the finding: two outlets is the smallest number
+    // this band says out loud, so every caption counts 0 or 2+. A pool built to
+    // hit every rung at once, including both most-viewed routes.
+    const band = selectConversationBand(
+      poolOf({
+        'hr-1-119': corroborated(outlet('cnn.com', 'left'), outlet('foxnews.com', 'right')),
+        'hr-2-119': corroborated(outlet('reuters.com', 'center'), outlet('npr.org', 'center')),
+        'hr-3-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 1) },
+        'hr-4-119': { ...corroborated(outlet('foxnews.com', 'right')), mostViewed: mostViewed(3, 2) },
+        'hr-5-119': { ...corroborated(), mostViewed: mostViewed(2, 3) },
+      }),
+      { limit: 6, mostViewedCap: 6 }
+    );
+    expect(band.length).toBeGreaterThan(3); // non-vacuity: the pool really did render
+    for (const card of band) {
+      expect(card.caption.outlets === 0 || card.caption.outlets >= 2, card.slug).toBe(true);
+      // A lean list of one can only exist on the center-only caption, whose
+      // string never prints the list (pinned as copy in section 7).
+      if (card.caption.leans.length === 1) expect(card.caption.kind, card.slug).toBe('corroborated_center');
+    }
+  });
 });
 
 /* ------------------------------------------------------------------ *
@@ -203,31 +279,56 @@ test.describe('B-2: congress.gov most-viewed', () => {
     expect(card.caption).toEqual({ kind: 'most_viewed', outlets: 0, leans: [], weeks: 2, rank: 3 });
   });
 
-  test('one week PLUS one rated article renders, and the caption prints both facts', () => {
+  test('one week PLUS one rated article is admitted — the OR stands', () => {
+    // B-2's own disjunction: two consecutive weeks OR a rated article beside a
+    // first-week listing. What the card may SAY about that article is pinned in
+    // section 2 (nothing), and what it costs against the cap is pinned below.
     const [card] = selectConversationBand(
       poolOf({ 'hr-1-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 5) } }),
       { limit: 6 }
     );
-    expect(card.caption).toEqual({
-      kind: 'most_viewed_covered',
-      outlets: 1,
-      leans: ['left'],
-      weeks: 1,
-      rank: 5,
-    });
+    expect(card.tier).toBe('c2');
+    expect(card.evidence.reason).toBe('most-viewed-plus-article');
   });
 
-  test(`most-viewed-only cards are capped at ${MOST_VIEWED_ONLY_CARD_CAP} of six`, () => {
+  test(`most-viewed cards are capped at ${MOST_VIEWED_CARD_CAP} of six — by EITHER route`, () => {
     const slugs: Record<string, unknown> = {};
     for (let i = 1; i <= 6; i++) slugs[`hr-${i}-119`] = { ...corroborated(), mostViewed: mostViewed(2, i) };
     const band = selectConversationBand(poolOf(slugs), { limit: 6 });
-    expect(band).toHaveLength(MOST_VIEWED_ONLY_CARD_CAP);
-    // The cap is on UNCORROBORATED cards only: one with a rated article beside
-    // it is not "most-viewed-only" and is not counted against it.
-    slugs['hr-7-119'] = { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(2, 7) };
-    const withArticle = selectConversationBand(poolOf(slugs), { limit: 6 });
-    expect(withArticle).toHaveLength(MOST_VIEWED_ONLY_CARD_CAP + 1);
-    expect(withArticle.filter((c) => c.caption.kind === 'most_viewed')).toHaveLength(MOST_VIEWED_ONLY_CARD_CAP);
+    expect(band).toHaveLength(MOST_VIEWED_CARD_CAP);
+    // THE 2026-08-12 FINDING, inverted into an assert: the cap used to be
+    // written against the weeks route only, so adding cards on the pairing
+    // route raised the count. It must not move the total by one.
+    for (let i = 7; i <= 10; i++) {
+      slugs[`hr-${i}-119`] = { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, i) };
+    }
+    const withArticles = selectConversationBand(poolOf(slugs), { limit: 6 });
+    expect(withArticles).toHaveLength(MOST_VIEWED_CARD_CAP);
+    expect(withArticles.every((c) => c.tier === 'c2')).toBe(true);
+  });
+
+  test('a band of six candidates where five depend on most-viewed renders at most two of them', () => {
+    // The shape the finding actually threatened: one genuinely corroborated
+    // bill and five resting on the view count, in a six-card band. Five of six
+    // cards may not be view-count cards, however they were admitted.
+    const slugs: Record<string, unknown> = {
+      'hr-1-119': corroborated(outlet('cnn.com', 'left'), outlet('foxnews.com', 'right')),
+      // three admitted by the pairing route, two by the weeks route
+      'hr-2-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 1) },
+      'hr-3-119': { ...corroborated(outlet('foxnews.com', 'right')), mostViewed: mostViewed(1, 2) },
+      'hr-4-119': { ...corroborated(outlet('npr.org', 'center')), mostViewed: mostViewed(1, 3) },
+      'hr-5-119': { ...corroborated(), mostViewed: mostViewed(2, 4) },
+      'hr-6-119': { ...corroborated(), mostViewed: mostViewed(4, 5) },
+    };
+    const pool = poolOf(slugs);
+    expect(pool).toHaveLength(6); // all six are genuinely eligible…
+    const band = selectConversationBand(pool, { limit: 6 });
+    expect(band.filter((c) => c.tier === 'c2')).toHaveLength(MOST_VIEWED_CARD_CAP); // …two get in
+    expect(band.filter((c) => c.tier === 'c1')).toHaveLength(1);
+    expect(band).toHaveLength(1 + MOST_VIEWED_CARD_CAP);
+    // A short band is the honest outcome: the cap does not backfill with the
+    // cards it just excluded, and it does not reach outside the evidence.
+    expect(band.length).toBeLessThan(6);
   });
 
   test('a stale most-viewed observation stops counting once the window passes it', () => {
@@ -309,6 +410,21 @@ test.describe('posture: the fallback is a decision, not an accident', () => {
 
   test('the pool is empty whenever the posture is not live', () => {
     if (conversationPosture() !== 'live') expect(conversationBandPool()).toEqual([]);
+  });
+
+  test('THE FALLBACK ORDER: stale evidence hands the band back to #215, captionless', () => {
+    // The degradation ladder, in the order it is designed to fire:
+    //   missing / unknown schema / unrefreshed file → #215's stored-coverage
+    //     band, captions DROPPED (never guessed);
+    //   file PRESENT and live but thin → a short band, or none at all.
+    // This pins the first rung end to end through the real selector: at a clock
+    // past the staleness window the posture is unknown, so every card that
+    // renders came from stored coverage and carries no caption. An empty band
+    // is a legitimate result of the same rung (NewsLens renders nothing), which
+    // is why the assertion is over the cards rather than over the count.
+    const stale = Date.parse(FILE._meta.fetched_at) + (CONVERSATION_STALE_HOURS + 1) * 3_600_000;
+    expect(conversationPosture(stale)).toBe('unknown');
+    for (const b of getNewsBills('en', 6, stale)) expect(b.caption, b.slug).toBeNull();
   });
 
   test('a stamp older than the staleness window can never read as live', () => {
@@ -404,7 +520,7 @@ test.describe('caption copy, EN and ES', () => {
     'captionCorroborated',
     'captionCorroboratedCenter',
     'captionMostViewed',
-    'captionMostViewedCovered',
+    'captionMostViewedThisWeek',
     'subheadEvidence',
   ] as const;
 
@@ -428,9 +544,20 @@ test.describe('caption copy, EN and ES', () => {
     for (const m of [en.captionCorroborated, es.captionCorroborated]) expect(m).toContain('{leans}');
     for (const m of [en.captionCorroboratedCenter, es.captionCorroboratedCenter]) expect(m).toContain('{count');
     for (const m of [en.captionMostViewed, es.captionMostViewed]) expect(m).toContain('{weeks');
-    for (const m of [en.captionMostViewedCovered, es.captionMostViewedCovered]) {
-      expect(m).toContain('{count');
-      expect(m).toContain('{leans}');
+  });
+
+  test('ONLY the cross-spectrum caption may print a lean list', () => {
+    // The copy half of the single-lean finding. A lean list of one can only
+    // ever belong to `corroborated_center` (two center outlets dedupe to one
+    // lean) and to no other kind — so the guarantee "no rendered caption states
+    // a spread over one lean" holds as long as no OTHER string prints {leans}.
+    // The most-viewed captions must not print an outlet count either: a C2 card
+    // holds at most one rated outlet, and one is not a number this band says.
+    for (const key of ['captionCorroboratedCenter', 'captionMostViewed', 'captionMostViewedThisWeek'] as const) {
+      for (const m of [en[key], es[key]]) expect(m, key).not.toContain('{leans}');
+    }
+    for (const key of ['captionMostViewed', 'captionMostViewedThisWeek'] as const) {
+      for (const m of [en[key], es[key]]) expect(m, key).not.toContain('{count');
     }
   });
 
@@ -448,5 +575,111 @@ test.describe('caption copy, EN and ES', () => {
     expect(typeof en.subhead).toBe('string');
     expect(typeof es.subhead).toBe('string');
     expect(en.subhead).not.toBe(en.subheadEvidence);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 8 · The RENDERED caption — the sentence a reader actually sees, in both
+ *     languages, formatted by the same next-intl machinery the component
+ *     uses. Sections 1–3 pin the counted facts; this pins the WORDS, which
+ *     is where the 2026-08-12 finding was visible ("covered by 1 outlet:
+ *     left" under a homepage card).
+ * ------------------------------------------------------------------ */
+test.describe('the rendered caption, EN and ES', () => {
+  const MESSAGES = {
+    en: JSON.parse(readFileSync(join(__dirname, '..', 'messages', 'en.json'), 'utf8')),
+    es: JSON.parse(readFileSync(join(__dirname, '..', 'messages', 'es.json'), 'utf8')),
+  };
+  const LOCALES = ['en', 'es'] as const;
+
+  /** Every lean word either language can put in a caption, in one alternation —
+   *  the thing a most-viewed card must never contain. */
+  const LEAN_WORD = /\b(left|center|right|izquierda|centro|derecha)\b/i;
+  /** "1 outlet" / "1 medio", in either order of the plural forms. */
+  const LONE_OUTLET = /\b1\s+(outlet|medio)\b/i;
+
+  const MESSAGE_KEY: Record<NewsCaptionKind, string> = {
+    corroborated: 'captionCorroborated',
+    corroborated_center: 'captionCorroboratedCenter',
+    most_viewed: 'captionMostViewed',
+    most_viewed_this_week: 'captionMostViewedThisWeek',
+  };
+
+  /** The SAME switch components/NewsLens.tsx runs, over the same messages and
+   *  the same formatter — kept here rather than imported because the component
+   *  is a server component and this suite has no request scope. If it drifts,
+   *  the exhaustiveness assert below is what catches it. */
+  function render(locale: (typeof LOCALES)[number], caption: NewsCaption): string {
+    const t = createTranslator({ locale, messages: MESSAGES[locale], namespace: 'news' });
+    const format = createFormatter({ locale });
+    const leans = format.list(
+      caption.leans.map((lean) => t(`lean.${lean}` as 'lean.left')),
+      { type: 'conjunction' }
+    ) as string;
+    switch (caption.kind) {
+      case 'corroborated':
+        return t('captionCorroborated', { count: caption.outlets, leans });
+      case 'corroborated_center':
+        return t('captionCorroboratedCenter', { count: caption.outlets });
+      case 'most_viewed':
+        return t('captionMostViewed', { weeks: caption.weeks });
+      case 'most_viewed_this_week':
+        return t('captionMostViewedThisWeek');
+    }
+  }
+
+  /** One band that reaches all four caption kinds at once. The cap is lifted so
+   *  both most-viewed routes render together — this fixture is about the words,
+   *  and the cap has its own tests in section 3. */
+  const everyKind = (): ConversationSelection[] =>
+    selectConversationBand(
+      poolOf({
+        'hr-1-119': corroborated(outlet('cnn.com', 'left'), outlet('foxnews.com', 'right')),
+        'hr-2-119': corroborated(outlet('reuters.com', 'center'), outlet('npr.org', 'center')),
+        'hr-3-119': { ...corroborated(), mostViewed: mostViewed(3, 1) },
+        'hr-4-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 2) },
+      }),
+      { limit: 6, mostViewedCap: 6 }
+    );
+
+  test('every caption kind the selector can emit renders in both languages', () => {
+    const kinds = new Set(everyKind().map((c) => c.caption.kind));
+    // Non-vacuity AND exhaustiveness: the fixture reaches every kind, and every
+    // kind has a string. A kind added later with no copy fails here.
+    expect([...kinds].sort()).toEqual([...NEWS_CAPTION_KINDS].sort());
+    for (const kind of NEWS_CAPTION_KINDS) {
+      for (const locale of LOCALES) expect(typeof MESSAGES[locale].news[MESSAGE_KEY[kind]], `${locale}.${kind}`).toBe('string');
+    }
+  });
+
+  test('NO rendered caption ever states one outlet or a spread over one lean', () => {
+    const cards = everyKind();
+    expect(cards.length).toBeGreaterThan(3);
+    for (const card of cards) {
+      for (const locale of LOCALES) {
+        const sentence = render(locale, card.caption);
+        expect(sentence.length, `${locale} ${card.slug}`).toBeGreaterThan(0);
+        expect(sentence, `${locale} ${card.slug}`).not.toMatch(LONE_OUTLET);
+        if (card.caption.kind === 'most_viewed' || card.caption.kind === 'most_viewed_this_week') {
+          // The card whose stored evidence holds exactly one left-leaning
+          // outlet renders the congress.gov fact and NOTHING about that outlet.
+          expect(sentence, `${locale} ${card.slug}`).not.toMatch(LEAN_WORD);
+        }
+        if (card.caption.kind === 'corroborated') {
+          // The one caption that lists leans lists at least two, always.
+          expect(card.caption.leans.length, card.slug).toBeGreaterThanOrEqual(2);
+          for (const lean of card.caption.leans) {
+            expect(sentence, `${locale} ${card.slug}`).toContain(MESSAGES[locale].news.lean[lean]);
+          }
+        }
+      }
+    }
+  });
+
+  test('the pairing-route card says the same thing in both languages: the listing', () => {
+    const card = everyKind().find((c) => c.evidence.reason === 'most-viewed-plus-article')!;
+    expect(card.evidence.ratedOutlets).toBe(1);
+    expect(render('en', card.caption)).toBe("Among congress.gov's most-viewed bills this week");
+    expect(render('es', card.caption)).toBe('Entre los proyectos más vistos de congress.gov esta semana');
   });
 });

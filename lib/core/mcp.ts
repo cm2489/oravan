@@ -358,10 +358,17 @@ export interface BillSignalOut {
  * Set by `whats_moving` only, and ONLY for a bill whose stored evidence reaches
  * C1 or C2 (lib/conversation.mjs): two or more RATED outlets inside the 7-day
  * window, or congress.gov's own most-viewed list with a second fact beside it.
- * A bill carrying one outlet's story has NO facet at all rather than a facet
- * saying `outlets_7d: 1` — the single-outlet path does not exist on any
- * surface, including this one, and a count an agent could rank on is a surface
- * (critic B-1).
+ * A LONE OUTLET NEVER PRODUCES A FACET: a bill one newsroom wrote about is c0,
+ * so it carries no field at all rather than a field saying `outlets_7d: 1` —
+ * the single-outlet path does not exist on any surface, including this one
+ * (critic B-1). Where the government's own most-viewed list is what admitted
+ * the bill, the one rated article beside it IS printed here as `outlets_7d: 1`
+ * — precisely stated 2026-08-12, because the previous wording of this
+ * paragraph read as though the number 1 could never appear. It can, in this
+ * one case, and it is evidence rather than a claim: the news band's caption
+ * refuses to say it (a sentence of ours counting one outlet is a claim about
+ * the press), while the facet characterizes nothing and cannot promote
+ * anything — 1 is the floor, and the list's order is the ladder's.
  *
  * ONE DELIBERATE DIFFERENCE FROM THE NEWS BAND: coverage that is corroborated
  * but ONE-SIDED (two rated outlets leaning the same way) is dropped from the
