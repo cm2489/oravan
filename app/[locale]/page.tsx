@@ -175,7 +175,9 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
       <div className="flex flex-1 flex-col p-4 md:p-6">
         <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
           {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
-          {tShared(`bills.status.${statusKeyFor(bill.status, bill.last_action_text)}`)}
+          {tShared(
+            `bills.status.${statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}`
+          )}
         </p>
         <p className="mt-2 font-reading text-base text-ink-2">{official}</p>
         <p className="mt-4 border-t-[1.5px] border-line pt-4 text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
@@ -699,7 +701,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {b.issue_tags?.[0] && (
                         <Chip tone="tag">{tShared(`categories.${b.issue_tags[0]}`)}</Chip>
                       )}
-                      <span>{tShared(`bills.status.${statusKeyFor(b.status, b.last_action_text)}`)}</span>
+                      <span>
+                        {tShared(
+                          `bills.status.${statusKeyFor(b.status, b.last_action_text, b.last_action_date)}`
+                        )}
+                      </span>
                       {b.last_action_date && (
                         <span className="tabular-nums">
                           {tShared('bills.updated', { date: billDate(b.last_action_date) })}

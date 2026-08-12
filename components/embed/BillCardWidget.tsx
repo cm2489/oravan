@@ -30,8 +30,12 @@ export interface BillCardData {
   headline: string | null;
   officialTitle: string;
   status: BillStatus;
-  /** Label-gated key (lib/journey statusKeyFor) — see the page's comment. */
-  statusKey: BillStatus | 'floor_activity';
+  /** Label-gated key (lib/journey statusKeyFor) — see the page's comment.
+   *  `floor_vote_stale` is the aged-placement key (N3, 2026-08-11). */
+  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+  /** The bill's own last-action date (`YYYY-MM-DD`), printed with the status
+   *  line. The record's clock, never the sync's — see the render below. */
+  lastActionDate: string | null;
 }
 
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
@@ -132,6 +136,35 @@ export function BillCardWidget({
       day: 'numeric',
     }).format(new Date(dataAsOf)),
   });
+  /*
+   * THE RECORD DATE (N4) — the date of the bill's OWN last action, which is a
+   * different fact from `dataAsOf` and had to stop being missing here.
+   *
+   * `bills.updated` ("Last action {date}"), the citizen site's own string —
+   * no new message key, because this is the same sentence BillCard prints
+   * under every row on /bills and /reps and a partner card saying it
+   * differently would be a second vocabulary for one fact.
+   *
+   * timeZone: 'UTC' is not optional. `last_action_date` is a bare
+   * `YYYY-MM-DD` calendar day; `new Date("2026-05-07")` parses it as UTC
+   * midnight, so formatting in the viewer's zone renders "May 6" everywhere
+   * west of Greenwich — and this date is what licenses the status label above
+   * it. Same rule, same comment, as components/BillCard.tsx.
+   *
+   * The YEAR is not optional either, for the reason BillCard states: the
+   * corpus reaches back past a year, and "Dec 9" without one reads as a date
+   * still to come.
+   */
+  const lastActionText = bill.lastActionDate
+    ? format(t.bills.updated, {
+        date: new Intl.DateTimeFormat(locale === 'es' ? 'es' : 'en', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }).format(new Date(bill.lastActionDate)),
+      })
+    : null;
 
   return (
     <main ref={rootRef} className="bc-root" lang={locale}>
@@ -142,6 +175,12 @@ export function BillCardWidget({
 
       <article className="bc-card">
         <p className="bc-status">{t.bills.status[bill.statusKey] ?? t.bills.status[bill.status]}</p>
+        {/* WITH the status line and ABOVE the sync stamp, deliberately. These
+            are two different clocks and the order is the whole point: the
+            record's date qualifies the label it sits under, while "Data as of"
+            describes when we last looked. Printed the other way round, a fresh
+            sync date reads as implicit corroboration of an old fact. */}
+        {lastActionText && <p className="bc-freshness bc-record">{lastActionText}</p>}
         <h1 className="bc-headline">{displayHeadline}</h1>
         {bill.headline && <span className="bc-chip-ai">{t.og.aiDecoded}</span>}
         <p className="bc-freshness">{dataAsOfText}</p>

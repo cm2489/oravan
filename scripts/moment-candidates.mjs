@@ -41,7 +41,12 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
+// `isSignalFresh` joined the import with N3 (2026-08-11): the status-label
+// copy below is clocked now, and it must read the ONE window the site reads —
+// a second definition of "still live" is exactly what the .mjs copies exist to
+// prevent. lib/urgency.mjs is already this file's dependency for the ranking,
+// so this costs nothing new.
+import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgency.mjs';
 
 /** Printed verbatim on every run, in both output modes. The boundary is the feature. */
 export const STANDING_LINE =
@@ -139,7 +144,8 @@ export function floorCalendarChamber(actionText) {
 /* ------------------------------------------------------------------ *
  * Import-free copy #2b — THE STATUS-LABEL GATE.
  * SOURCE OF TRUTH: lib/journey.ts `statusKeyFor` (owner ruling
- * 2026-08-04, Wave B #1). Pinned corpus-wide by tests/journey.unit.spec.ts.
+ * 2026-08-04, Wave B #1; clocked by the N3 ruling, 2026-08-11). Pinned
+ * corpus-wide by tests/journey.unit.spec.ts, at a shared injected `now`.
  *
  * WHY A SECOND SCRIPT-SIDE COPY. The corpus derives `floor_vote` looser
  * than the label "On the floor calendar" claims — 23 of 319 carry cloture
@@ -155,17 +161,32 @@ export function floorCalendarChamber(actionText) {
  * ------------------------------------------------------------------ */
 
 /**
- * The status key a label may be printed under: `floor_vote` only when the
- * bill's own last action says a chamber placed it on a calendar, otherwise
- * `floor_activity`. Every other status passes through untouched.
+ * The status key a label may be printed under. Three answers for a
+ * `floor_vote` bill, clocked since N3 (2026-08-11) — see lib/journey.ts's
+ * header for the ruling and the reasoning:
+ *
+ *   `floor_vote`        the last action says a chamber placed it on a
+ *                       calendar AND that placement is inside the signal
+ *                       window ("On the floor calendar", present tense).
+ *   `floor_vote_stale`  the same placement, aged out of the window
+ *                       ("Placed on the calendar"). An undated or
+ *                       unparseable date fails closed to this.
+ *   `floor_activity`    no placement sentence at all. Not clocked.
+ *
+ * Every other status passes through untouched. `now` is injectable so the
+ * corpus sweep in tests/journey.unit.spec.ts can evaluate this and the TS
+ * original at ONE instant.
  *
  * @param {string} status                bill.status
  * @param {string | null} lastActionText bill.last_action_text
+ * @param {string | null} lastActionDate bill.last_action_date
+ * @param {number} [now]
  * @returns {string} a `bills.status.*` message key
  */
-export function statusKeyFor(status, lastActionText) {
+export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.now()) {
   if (status !== 'floor_vote') return status;
-  return floorCalendarChamber(lastActionText) ? 'floor_vote' : 'floor_activity';
+  if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
+  return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';
 }
 
 /**

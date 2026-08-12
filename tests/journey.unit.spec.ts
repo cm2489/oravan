@@ -70,6 +70,13 @@ const slugOf = (b: CorpusBill) => `${b.bill_type}-${b.bill_number}-${b.congress_
 const CLOTURE_TEXT =
   'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)';
 
+/* A genuine, verbatim calendar placement. MODULE scope since N3 (2026-08-11):
+   it was local to the deriveJourney suite, and the status-label suite now
+   needs the identical sentence — the whole point of both clocks is that they
+   read one record the same way, so they must be pinned against one string. */
+const CALENDAR_PLACEMENT =
+  'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
+
 /*
  * THE CLOCK'S TWO FIXTURE DATES (D3, 2026-08-11). deriveJourney and
  * liveCallTarget now read `last_action_date` as well as the sentence, so every
@@ -491,9 +498,12 @@ test.describe('deriveJourney', () => {
    * calendar" for placements of unlimited age. 305 of the corpus's 322
    * dated placements are outside the window (re-measured 2026-08-12),
    * median 140 days.
+   *
+   * The fixture sentence itself lives at module scope (see CALENDAR_PLACEMENT
+   * near the top) — suite 6's status-label clock is pinned against the very
+   * same string, which is the only way to prove the two clocks read one
+   * record identically.
    * ---------------------------------------------------------------- */
-  const CALENDAR_PLACEMENT =
-    'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
 
   test('THE D3 FLAGSHIP: an aged placement keeps its step and its chamber, and loses the present tense', () => {
     const stale = j('hr', 'floor_vote', CALENDAR_PLACEMENT, STALE);
@@ -910,23 +920,144 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    * rather than a count, because the split it turns on moves nightly: 23 of
    * 319 floor_vote records when this pin was written, 26 of 339 on the corpus
    * it merged onto. Naming a number here would make a quiet night red.
+   *
+   * ONE `now`, INJECTED (N3, 2026-08-11). Both copies read the clock now, and
+   * a sweep of ~2,700 records takes long enough that two independent
+   * `Date.now()` calls can straddle a boundary — a bill whose placement ages
+   * out mid-loop would make the two copies "disagree" about a rule they
+   * implement identically. The instant is a parameter, so the comparison is
+   * of the FUNCTIONS and never of the moment they were called.
    */
+  const SWEEP_NOW = Date.now();
+
   test('statusKeyFor: the two answer identically over the WHOLE corpus', () => {
     for (const b of corpus) {
-      expect(scriptStatusKeyFor(b.status, b.last_action_text), slugOf(b)).toBe(
-        statusKeyFor(b.status as BillStatus, b.last_action_text)
+      expect(
+        scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, SWEEP_NOW),
+        slugOf(b)
+      ).toBe(
+        statusKeyFor(b.status as BillStatus, b.last_action_text, b.last_action_date, SWEEP_NOW)
       );
     }
   });
 
-  test('statusKeyFor still separates a placement from floor activity in this corpus', () => {
-    // If this ever hits zero the pin above proves nothing — the two copies
-    // would agree by never disagreeing with anything.
-    const downgraded = floorVote.filter(
-      (b) => scriptStatusKeyFor(b.status, b.last_action_text) === 'floor_activity'
+  /*
+   * THE SPLIT-STILL-EXISTS GUARD, re-reasoned for THREE buckets (N3).
+   *
+   * It used to assert one thing: that at least one floor_vote bill is demoted
+   * to `floor_activity` and not all of them are, because a pin between two
+   * copies proves nothing if the copies agree by never disagreeing with
+   * anything. The gate now has three outputs and the same argument applies to
+   * each — a clock that never fires, or one that fires on everything, would
+   * both leave the parity pin above vacuous on the axis that matters most.
+   *
+   * RANGES, NEVER COUNTS, for the same reason as before and one more: the
+   * fresh bucket is the smallest and the most volatile (17 of 348 at
+   * 2026-08-12T02:46Z), and it is legitimately allowed to reach zero on a genuinely
+   * quiet fortnight — Congress can go two weeks without placing anything on a
+   * calendar, and that is a true quiet week, not a broken gate. So the fresh
+   * bucket is asserted only as "not everything", while the two buckets that
+   * cannot honestly empty on this corpus are asserted non-zero.
+   */
+  test('statusKeyFor still splits this corpus three ways — placement, aged placement, activity', () => {
+    const keyed = floorVote.map((b) =>
+      scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, SWEEP_NOW)
     );
-    expect(downgraded.length).toBeGreaterThan(0);
-    expect(downgraded.length).toBeLessThan(floorVote.length);
+    const fresh = keyed.filter((k) => k === 'floor_vote');
+    const stale = keyed.filter((k) => k === 'floor_vote_stale');
+    const activity = keyed.filter((k) => k === 'floor_activity');
+
+    // Every floor_vote bill lands in exactly one bucket — no fourth answer.
+    expect(fresh.length + stale.length + activity.length).toBe(floorVote.length);
+    // Aged placements are the population this ruling exists for; a corpus
+    // reaching back past a year cannot honestly have none.
+    expect(stale.length).toBeGreaterThan(0);
+    // The 2026-08-04 gate's own guard, unchanged.
+    expect(activity.length).toBeGreaterThan(0);
+    // The clock must not have swallowed the category whole: a run where EVERY
+    // placement is stale is possible; one where every floor_vote bill is would
+    // mean the placement matcher stopped matching.
+    expect(stale.length).toBeLessThan(floorVote.length);
+    // …and it must not be a no-op either: if nothing is ever demoted the
+    // parity pin above is testing an unclocked function under a clocked name.
+    expect(fresh.length).toBeLessThan(floorVote.length);
+  });
+
+  /*
+   * THE FIXTURE PINS — one per output, at a fixed instant, so the three keys
+   * are nailed down independently of whatever the corpus happens to hold.
+   * These are the two copies asserted TOGETHER: a drift in either fails here.
+   */
+  test('statusKeyFor: all three outputs, pinned by fixture in both copies', () => {
+    const both = (text: string | null, date: string | null) => {
+      const ts = statusKeyFor('floor_vote', text, date);
+      expect(scriptStatusKeyFor('floor_vote', text, date), 'the .mjs copy agrees').toBe(ts);
+      return ts;
+    };
+    // A placement inside the window: the present-tense claim is earned.
+    expect(both(CALENDAR_PLACEMENT, FRESH)).toBe('floor_vote');
+    // The SAME sentence, aged out: the fact survives, the tense moves.
+    expect(both(CALENDAR_PLACEMENT, STALE)).toBe('floor_vote_stale');
+    // No placement at all — not clocked, so the date cannot change it.
+    expect(both(CLOTURE_TEXT, FRESH)).toBe('floor_activity');
+    expect(both(CLOTURE_TEXT, STALE)).toBe('floor_activity');
+    // Every other status passes through untouched, clock or no clock.
+    expect(statusKeyFor('committee', CALENDAR_PLACEMENT, STALE)).toBe('committee');
+    expect(statusKeyFor('signed', null, null)).toBe('signed');
+  });
+
+  test('statusKeyFor: an undated placement fails closed to the weaker claim', () => {
+    // isSignalFresh's own rule, and the rule amber has always run on: no date,
+    // no present-tense claim. 0 of the corpus's 322 placements are undated
+    // (2026-08-12), so this is the shape we refuse to be surprised by rather
+    // than one we currently render.
+    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
+    expect(scriptStatusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
+    // An unparseable date is the same answer, for the same reason.
+    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, 'not-a-date')).toBe('floor_vote_stale');
+  });
+
+  test('statusKeyFor reads the ONE window — SIGNAL_WINDOW_DAYS, not a second number', () => {
+    /*
+     * ONE DAY EITHER SIDE, NEVER THE EDGE — the same idiom, and the same
+     * reason, as the deriveJourney boundary test in suite 3: corpus dates are
+     * date-only (midnight UTC) while isSignalFresh measures in milliseconds,
+     * so a placement dated exactly SIGNAL_WINDOW_DAYS ago is inside the window
+     * only at exactly 00:00 UTC and outside it for the rest of the day.
+     * Asserting that instant would be a clock-dependent coin flip.
+     */
+    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1))).toBe(
+      'floor_vote'
+    );
+    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1))).toBe(
+      'floor_vote_stale'
+    );
+  });
+
+  /*
+   * THE COPY EXISTS, IN BOTH LANGUAGES. The bilingual hard rule is enforced
+   * globally by scripts/check-messages-parity.mjs, but this key is reached by
+   * a TEMPLATE (`bills.status.${key}`) — no static reference anywhere for a
+   * reader or a tool to follow — so the one place that names it out loud
+   * should be the suite that produces it.
+   */
+  test('every key statusKeyFor can return has a label in EN and ES', () => {
+    const keys = new Set(
+      corpus.map((b) =>
+        statusKeyFor(b.status as BillStatus, b.last_action_text, b.last_action_date, SWEEP_NOW)
+      )
+    );
+    keys.add('floor_vote');
+    keys.add('floor_vote_stale');
+    keys.add('floor_activity');
+    for (const key of keys) {
+      expect((en.bills.status as Record<string, string>)[key], `EN ${key}`).toBeTruthy();
+      expect((es.bills.status as Record<string, string>)[key], `ES ${key}`).toBeTruthy();
+    }
+    // And the aged-placement label is not a copy of the live one — the whole
+    // point is that a reader can tell them apart.
+    expect(en.bills.status.floor_vote_stale).not.toBe(en.bills.status.floor_vote);
+    expect(es.bills.status.floor_vote_stale).not.toBe(es.bills.status.floor_vote);
   });
 });
 

@@ -88,7 +88,7 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
       status: b.status,
       tags: b.issue_tags ?? [],
       band: terminal ? 'radar' : bandForEff(eff, floors),
-      statusKey: statusKeyFor(b.status, b.last_action_text),
+      statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
       lastActionDate: b.last_action_date,
     };
   });
@@ -189,7 +189,7 @@ export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
       title: b.short_title ?? b.title,
       status: b.status,
       tags: b.issue_tags ?? [],
-      statusKey: statusKeyFor(b.status, b.last_action_text),
+      statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
       lastActionDate: b.last_action_date,
       coverageTier: tier as 'cross' | 'neutral',
       sourceCount: sources,

@@ -251,13 +251,24 @@ const MESSAGES: Record<Locale, Messages> = { en: enMessages, es: esMessages as M
 export function statusLabel(
   status: BillStatus,
   locale: Locale,
-  lastActionText: string | null = null
+  lastActionText: string | null = null,
+  lastActionDate: string | null = null
 ): string {
   // Label gate (Wave B #1): with the action text supplied, an activity-only
   // floor_vote bill answers "Floor activity", never the placement claim —
   // the same statusKeyFor gate every citizen surface uses. Callers without
   // the text keep the raw status label (a documented approximation).
-  const key = statusKeyFor(status, lastActionText);
+  //
+  // The date joined it with N3 (2026-08-11): a placement the record has shown
+  // nothing about for over 14 days answers "Placed on the calendar" rather
+  // than the present-tense "On the floor calendar". Both call sites below have
+  // the date in scope and pass it. It is DEFAULTED like `lastActionText` for
+  // the same documented reason and with the same shape of approximation — but
+  // note the two default in opposite directions: a missing text weakens
+  // floor_vote to `floor_activity`, and a missing date weakens it to
+  // `floor_vote_stale`. Both are the safe direction; neither ever invents the
+  // stronger claim.
+  const key = statusKeyFor(status, lastActionText, lastActionDate);
   const labels = MESSAGES[locale].bills.status as Record<string, string>;
   return labels[key] ?? labels[status] ?? status;
 }
@@ -336,7 +347,7 @@ function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
     ai_generated: Boolean(bill.ai_headline),
     title: bill.short_title ?? bill.title,
     status: bill.status,
-    status_label: statusLabel(bill.status, locale, bill.last_action_text),
+    status_label: statusLabel(bill.status, locale, bill.last_action_text, bill.last_action_date),
     topics: (bill.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
     last_action_date: bill.last_action_date,
     urgency_score: effectiveUrgency(bill.status, bill.last_action_date),
@@ -487,7 +498,12 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
         : null,
       summary: localized.ai_summary,
       status: localized.status,
-      status_label: statusLabel(localized.status, locale, localized.last_action_text),
+      status_label: statusLabel(
+        localized.status,
+        locale,
+        localized.last_action_text,
+        localized.last_action_date
+      ),
       urgency_score: effectiveUrgency(localized.status, localized.last_action_date),
       urgency_band: band,
       topics: (localized.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),

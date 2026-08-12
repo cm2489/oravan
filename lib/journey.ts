@@ -312,66 +312,109 @@ export function floorSettledChamber(actionText: string | null): Chamber | null {
  * script, and the call dialog stay where they are, which is what funnel
  * invariant I2 pins.
  *
- * WHY NOT statusKeyFor — the third function in this module that prints "On the
- * floor calendar". It is deliberately NOT clocked here; see its own header.
+ * statusKeyFor is clocked TOO, as of the same ruling's second pass (N3,
+ * 2026-08-11) — see its own header for the shape the demotion takes there,
+ * which is a THIRD key rather than a silenced one.
  */
 
 /**
- * THE STATUS-LABEL GATE (owner ruling 2026-08-04, Wave B #1). The corpus
- * derives `floor_vote` looser than the label "On the floor calendar"
- * claims: 23 of 319 carry cloture/rejected-motion texts, not placements.
- * Every surface that prints a status label routes through this key so the
- * label can never outrun the record: genuinely placed bills keep
- * `floor_vote` ("On the floor calendar"), activity-only bills print
- * `floor_activity` ("Floor activity"). Same gate, citizen site, embeds,
- * and MCP alike.
+ * THE STATUS-LABEL GATE (owner ruling 2026-08-04, Wave B #1; clocked by the
+ * owner's N3 ruling, 2026-08-11). The corpus derives `floor_vote` looser than
+ * the label "On the floor calendar" claims: 26 of 348 carry cloture/
+ * rejected-motion texts, not placements. Every surface that prints a status
+ * label routes through this key so the label can never outrun the record —
+ * citizen site, embeds and MCP alike — and it now answers THREE keys, not two:
  *
- * NOT CLOCKED, unlike deriveJourney and liveCallTarget below (owner ruling
- * 2026-08-11 gave the derivation the freshness clock; this function is the
- * deliberate exception, and the decision is the owner's to reverse). Two
- * reasons, and the second is the load-bearing one:
+ *   `floor_vote`        a calendar placement, still inside the signal window.
+ *                       "On the floor calendar" — present tense, and earned.
+ *   `floor_vote_stale`  a calendar placement the record has shown nothing
+ *                       since. "Placed on the calendar" — the same specific
+ *                       fact, in the past tense the date supports.
+ *   `floor_activity`    no placement at all (cloture, a rejected motion, a
+ *                       Rules resolution). Unchanged, and deliberately NOT
+ *                       clocked — see the last paragraph.
  *
- *   1. This key is a CATEGORY, not a sentence. "On the floor calendar" makes
- *      no claim about this week; a bill placed on the Union Calendar in March
- *      is still on the Union Calendar in August, because a placement is only
- *      undone by action or by the Congress ending. Demoting it to "Floor
- *      activity" after 14 days would trade a true, specific label for a vaguer
- *      one on 305 bills — less information, not more truth. The one class this
- *      argument does not cover is a placement from a PREVIOUS Congress, whose
- *      calendar really is gone — and that class is no longer this function's
- *      problem to argue about, because the congress check now EXISTS, one
- *      layer up in the corpus itself: #210 purged the two 118th-Congress
- *      records the corpus still carried, `offCongressBills()` (scripts/
- *      congress-fetch.mjs) drops any that a fetch tries to re-add, a force-slug
- *      congress check in scripts/sync-bills.mjs refuses them by hand, and
- *      scripts/verify-sync.mjs hard-fails the whole nightly run if one is ever
- *      committed. Every record this function reads is therefore a current-
- *      Congress record (2,700 of 2,700 on 2026-08-12), so the class is
- *      structurally excluded rather than time-demoted — which is what it always
- *      wanted, and never a 14-day clock.
- *   2. Every CITIZEN-SITE surface that prints it prints the date beside it.
- *      The provenance ritual reads "…· On the floor calendar · Latest action
- *      Feb 5 2025"; /bills and /reps rows print it through BillCard, which
- *      renders `lastActionDate` under the label; MomentVehicleCard prints the
- *      date whenever it is not showing the calendar chip. So the reader is
- *      given the category and the clock together, and can judge the age. The
- *      ONE surface where that is not true is the embed card
- *      (components/embed/BillCardWidget.tsx, `.bc-status`), which prints the
- *      label alone and its `BillCardData` does not even carry the date —
- *      flagged with this change rather than fixed inside it, because the honest
- *      repair there is to pass the date through and print it, not to blur the
- *      label.
+ * WHY THE CLOCK CAME HERE AFTER ALL, AND WHAT THE PREVIOUS HEADER GOT WRONG.
+ * This function used to argue itself out of a clock on two grounds, and the
+ * owner overruled both:
  *
- * The stepper's `nowFloor` sentence is the opposite on both counts — it is
- * prefixed "Right now:" and it is printed with no date of its own — which is
- * why the clock went there and not here.
+ *   1. "The key is a CATEGORY, not a sentence — a bill placed on the Union
+ *      Calendar in March is still on it in August." True, and beside the
+ *      point: "On the floor calendar" is read as a present-tense claim about
+ *      where a bill stands THIS WEEK, which is exactly the reading the whole
+ *      product is built to deserve. The old argument also assumed the only
+ *      available demotion was `floor_activity` — a vaguer label, less
+ *      information — and that framing is what made the trade look bad. It was
+ *      a false choice. A third key keeps every word of the specific fact and
+ *      moves only the tense, so nothing is blurred and nothing is lost.
+ *   2. "Every citizen-site surface prints the date beside it." Nearly true,
+ *      and the exception was the load-bearing one: the embed card printed the
+ *      label alone and its `BillCardData` did not even carry the date. That is
+ *      fixed in this same change (N4) rather than flagged again — the card now
+ *      carries `lastActionDate` and prints it with the status line. The date
+ *      beside a label is a good second signal; it was never a substitute for
+ *      the label being true on its own.
+ *
+ * MEASURED ON THE COMMITTED CORPUS, 2026-08-12T02:46Z, by calling this
+ * function over every bill: of 2,700 records, 348 are `floor_vote` and they
+ * split 17 `floor_vote` / 305 `floor_vote_stale` / 26 `floor_activity`. So 305
+ * bills — 11.3% of the whole corpus — change label with this change, and the
+ * aged placements run to a median of 140 days and a maximum of 553 (s-347-119,
+ * placed on the Senate calendar 2025-02-05). 0 placements are undated.
+ *
+ * RECOMPUTE, DON'T TRUST — and note the fresh bucket is genuinely allowed to
+ * reach zero. A fortnight in which Congress places nothing on a calendar is a
+ * quiet week, not a broken gate, which is why tests/journey.unit.spec.ts
+ * asserts ranges here and never a count.
+ *
+ * FAIL CLOSED ON THE DATE. An undated or unparseable `last_action_date` is
+ * never fresh (isSignalFresh's own rule, and the rule amber has always run
+ * on), so a placement we cannot date reads `floor_vote_stale`. The weaker
+ * claim is the safe one in both directions.
+ *
+ * WHAT THE CLOCK IS NOT DOING, carried forward from the header it replaced: it
+ * is NOT standing in for a previous-Congress check. A placement from a Congress
+ * that has ended is on a calendar that no longer exists, and that class is
+ * excluded structurally, one layer up in the corpus — #210 purged the two
+ * 118th-Congress records, `offCongressBills()` (scripts/congress-fetch.mjs)
+ * drops any a fetch tries to re-add, a force-slug congress check in
+ * scripts/sync-bills.mjs refuses them by hand, and scripts/verify-sync.mjs
+ * hard-fails the whole nightly run if one is ever committed. Every record this
+ * function reads is a current-Congress record (2,700 of 2,700 on 2026-08-12).
+ * So this window is measuring one thing only: how long the record has been
+ * silent.
+ *
+ * `floor_activity` IS NOT CLOCKED, and the distinction is the same one #208
+ * drew in the rail: a placement is an EVENT that ages, while "floor activity"
+ * is already a tenseless description of what the record contains. There is
+ * nothing to demote it to and nothing present-tense in it to demote. Aged
+ * pending motions therefore keep today's label here, and the rail — not this
+ * label — carries their tense.
+ *
+ * THE DESIGN LAW THAT GOVERNS THE NEW KEY: stale is INK, never amber. The
+ * colour law spends `urgent` on ONE DATED FLOOR FACT with the date printed
+ * beside it, and `floor_vote_stale` is by construction the case where that
+ * fact has aged out. No surface may give this key the amber/urgent treatment.
+ * MomentVehicleCard's chip gate reads `statusKey === 'floor_vote'` and so
+ * excludes it by construction; the embed card has no amber at all.
+ *
+ * `now` is injectable for the same reason effectiveUrgency's is: the corpus
+ * sweeps in tests/journey.unit.spec.ts must evaluate this and the .mjs twin at
+ * ONE instant, or a sweep that straddles midnight UTC can disagree with itself.
+ * Every production caller takes the default.
+ *
+ * scripts/moment-candidates.mjs carries an import-free copy of this function;
+ * tests/journey.unit.spec.ts pins the two corpus-wide at a shared `now`.
  */
 export function statusKeyFor(
   status: Bill['status'],
-  lastActionText: string | null
-): Bill['status'] | 'floor_activity' {
+  lastActionText: string | null,
+  lastActionDate: string | null,
+  now: number = Date.now()
+): Bill['status'] | 'floor_activity' | 'floor_vote_stale' {
   if (status !== 'floor_vote') return status;
-  return floorCalendarChamber(lastActionText) ? 'floor_vote' : 'floor_activity';
+  if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
+  return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';
 }
 
 /**

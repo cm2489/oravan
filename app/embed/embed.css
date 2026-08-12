@@ -482,6 +482,19 @@ body {
   opacity: 0.75;
 }
 
+/* THE RECORD DATE (N4) — the bill's own last-action date, which takes the
+   .bc-freshness type treatment (same size, same tabular figures, same muted
+   ink) because it is the same kind of utility fact, and overrides only the
+   gap. 4px binds it to the status line it qualifies; .bc-freshness's own 12px
+   would have floated it between the label and the headline as a third,
+   unattached thing. Ink and opacity only: DESIGN.md's colour law spends
+   `urgent` on a floor fact that is still live, and the aged-placement label
+   this date most often sits under is by definition the case where it is not.
+   No amber on this card, in any state. */
+.bc-record {
+  margin-top: 4px;
+}
+
 /*
  * Action-panel widget (S19, paid tier only). Reuses the re- and bc- classes
  * above everywhere it can (the stance/locale toggles, the ZIP form, the AI

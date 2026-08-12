@@ -181,6 +181,7 @@
       "committee": "In committee",
       "markup": "In markup",
       "floor_vote": "On the floor calendar",
+      "floor_vote_stale": "Placed on the calendar",
       "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
       "conference": "In conference",

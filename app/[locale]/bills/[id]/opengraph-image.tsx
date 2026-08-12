@@ -97,8 +97,19 @@ export default async function OgImage({
                 {formatCitation(bill.bill_type, bill.bill_number)}
               </span>
               <span style={{ color: PAPER_MUTE }}>·</span>
+              {/* The label gate reads the clock as well as the sentence (N3,
+                  2026-08-11), so an aged placement previews as "Placed on the
+                  calendar". NOTE: this route is prerendered
+                  (generateStaticParams above), so the clock is evaluated at
+                  BUILD time — a card minted the day a placement aged out keeps
+                  the fresher label until the next nightly rebuild. Acceptable
+                  because the demotion direction is the safe one and the nightly
+                  sync rebuilds every card; a request-time evaluation would cost
+                  the whole prerender. */}
               <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
-                {tAll(`bills.status.${statusKeyFor(bill.status, bill.last_action_text)}`)}
+                {tAll(
+                  `bills.status.${statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}`
+                )}
               </span>
             </div>
           )}

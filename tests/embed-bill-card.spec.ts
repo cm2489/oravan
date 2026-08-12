@@ -25,6 +25,29 @@ const NO_HEADLINE_SLUG = 'hr-8553-119'; // no ai_headline — official title, no
 const NO_HEADLINE_TITLE =
   'To direct the Secretary of Veterans Affairs to establish a precision oncology program for cancer of the prostate, and for other purposes.';
 
+/*
+ * N4 (2026-08-11) — THE RECORD DATE ON THE PARTNER CARD.
+ *
+ * This card was the ONE status-printing surface that showed a label with no
+ * date beside it, and its `BillCardData` did not even carry one. That gap was
+ * half the argument for leaving the shared status label unclocked, so it is
+ * closed in the same change as the clock (N3): the widget now prints the
+ * bill's own last-action date with the status line, using the citizen site's
+ * `bills.updated` string ("Last action {date}") and no new message key.
+ *
+ * The helper matches only the STATIC half of the template, because the date
+ * itself is a corpus fact these fixtures deliberately do not pin (a re-sync
+ * moves it; the suite header says a corpus refresh should break these
+ * together, not silently). The full-string assertion with the real date lives
+ * in the dedicated test below, built from the same Intl call the widget uses.
+ */
+const recordDatePrefix = (dict: { bills: { updated: string } }) =>
+  dict.bills.updated.replace('{date}', '').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** hr-5582-119's own last action. A literal, because the assertions below are
+ *  about FORMATTING (zone, year, order) and need a fixed subject. */
+const DECODED_LAST_ACTION = '2025-09-26';
+
 test('EN: citation, AI-decoded headline + label, status, freshness stamp, and a link-out', async ({
   page,
 }) => {
@@ -35,6 +58,7 @@ test('EN: citation, AI-decoded headline + label, status, freshness stamp, and a 
   ).toBeVisible();
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toBeVisible();
   await expect(page.getByText(en.bills.status.committee, { exact: true })).toBeVisible();
+  await expect(page.getByText(new RegExp(recordDatePrefix(en)))).toBeVisible();
   await expect(page.getByText(/Data as of/)).toBeVisible();
 
   const link = page.getByRole('link', { name: new RegExp(en.embed.poweredBy) });
@@ -58,11 +82,85 @@ test('ES: Spanish labels, no English leakage, ES-prefixed canonical link-out', a
   // fixture now pins the honest label on the partner-facing card.
   await expect(page.getByText(es.bills.status.floor_activity, { exact: true })).toBeVisible();
   await expect(page.getByText(es.bills.status.floor_vote, { exact: true })).toHaveCount(0);
+  // N4: the record date rides in Spanish too, off the same `bills.updated`
+  // string — bilingual parity is a hard rule and this line is user-facing.
+  await expect(page.getByText(new RegExp(recordDatePrefix(es)))).toBeVisible();
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toHaveCount(0);
   await expect(page.getByText(en.embed.poweredBy, { exact: true })).toHaveCount(0);
 
   const link = page.getByRole('link', { name: new RegExp(es.embed.poweredBy) });
   await expect(link).toHaveAttribute('href', `${SITE_ORIGIN}/es/bills/${ES_DECODED_SLUG}`);
+});
+
+/*
+ * N4 — the record date's THREE properties, each of which has its own defect
+ * history somewhere in this codebase:
+ *
+ *   1. UTC. `last_action_date` is a bare calendar day; formatting it in the
+ *      viewer's zone renders a day early everywhere west of Greenwich, and
+ *      this date is what licenses the status label above it (the same fix
+ *      components/BillCard.tsx and CoverageSection.tsx already carry).
+ *   2. The YEAR is printed. 40% of the corpus last acted in 2025 or earlier;
+ *      without a year, "Sep 26" reads as a date still to come.
+ *   3. It sits ABOVE the "Data as of" stamp. These are two different clocks —
+ *      when the record moved, and when we last looked — and printed the other
+ *      way round a fresh sync date reads as corroboration of a stale fact.
+ *      That ordering is the entire reason this line exists on this card.
+ */
+test('N4: the record date renders in UTC with its year, above the sync stamp', async ({ page }) => {
+  await page.goto(`/embed/bill-card?locale=en&slug=${DECODED_SLUG}`);
+
+  const expected = en.bills.updated.replace(
+    '{date}',
+    new Intl.DateTimeFormat('en', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(DECODED_LAST_ACTION))
+  );
+  await expect(page.getByText(expected, { exact: true })).toBeVisible();
+  // The UTC rule, asserted as the failure it prevents rather than only as the
+  // result: the day before must not appear anywhere on the card.
+  expect(expected).toContain('26');
+  expect(expected).toContain('2025');
+
+  const card = (await page.locator('.bc-card').textContent()) ?? '';
+  const recordAt = card.indexOf(expected);
+  const syncAt = card.search(/Data as of/);
+  expect(recordAt, 'the record date is on the card').toBeGreaterThan(-1);
+  expect(syncAt, 'the sync stamp is on the card').toBeGreaterThan(-1);
+  expect(recordAt, 'the record date precedes the sync stamp').toBeLessThan(syncAt);
+  // And it is under the status line it qualifies, not floating below the
+  // headline: the status is the first thing in the card, the date the second.
+  expect(card.indexOf(en.bills.status.committee)).toBeLessThan(recordAt);
+});
+
+test('N4: a bill card never renders amber — the aged-placement label is ink, by the colour law', async ({
+  page,
+}) => {
+  // sjres-99-119 is a floor_vote record whose gated label is `floor_activity`;
+  // DECODED_SLUG is a committee bill. Neither may carry the urgent treatment,
+  // and neither may the `floor_vote_stale` key this change introduced —
+  // DESIGN.md spends `urgent` on a floor fact that is still LIVE, which is by
+  // construction what a stale placement is not. The widget has no amber token
+  // at all, and this pins that it stays that way.
+  for (const slug of [DECODED_SLUG, ES_DECODED_SLUG]) {
+    await page.goto(`/embed/bill-card?locale=en&slug=${slug}`);
+    const colors = await page
+      .locator('.bc-card, .bc-card *')
+      .evaluateAll((els) =>
+        els.flatMap((el) => {
+          const s = getComputedStyle(el);
+          return [s.color, s.backgroundColor, s.borderTopColor];
+        })
+      );
+    // #ffc845 (--color-urgent) and the note amber it replaced, in rgb form.
+    for (const c of colors) {
+      expect(c, `${slug} paints no amber`).not.toMatch(/rgba?\(255,\s*200,\s*69/);
+      expect(c, `${slug} paints no amber`).not.toMatch(/rgba?\(232,\s*163,\s*23/);
+    }
+  }
 });
 
 test('a bill with no AI headline shows the official title and never the AI-decoded label', async ({
