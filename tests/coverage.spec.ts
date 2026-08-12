@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
-import { coverageTier, getCoverage } from '../lib/coverage';
+import { coverageCheckedAt, coverageTier, getCoverage } from '../lib/coverage';
 import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 
 /*
@@ -116,6 +116,66 @@ test('the section states the age of what it is showing, in both languages', asyn
     // page's sync stamp.
     await expect(section(page).getByText(messages.coverage.newestLabel)).toBeVisible();
   }
+});
+
+/*
+ * WHEN WE LAST LOOKED (N11b, 2026-08-12). scripts/sync-coverage.mjs has
+ * recorded `_checkedAt` since #158 and nothing rendered it, so a bill the
+ * sweep checked last night read exactly like one it hadn't touched since
+ * March — both got the same "newer coverage may exist" hedge and no date to
+ * judge it by. The date is now printed beside the newest-article date. Two
+ * things are pinned: that it is there with the value the corpus holds, and
+ * that it is NOT in the prerendered HTML, because it goes through the same
+ * hydration gate as StalenessNote.
+ */
+/* Dated on purpose: the check date rides the newest-article line, so a bill
+   whose articles all lack dates renders neither (0 of 391 in the committed
+   corpus — see lib/coverage.ts's newestArticleDate note). */
+const checkedSlug = slugs.find(
+  (s) => getCoverage(s).length > 0 && newestPublishedAt(s) !== null && coverageCheckedAt(s) !== null
+);
+
+test('the section says when the sweep last looked, in both languages', async ({ page }) => {
+  test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
+  const checked = coverageCheckedAt(checkedSlug!)!;
+  for (const { prefix, messages } of [
+    { prefix: '', messages: en },
+    { prefix: '/es', messages: es },
+  ] as const) {
+    await page.goto(`${prefix}/bills/${checkedSlug}`);
+    // Hydration-gated (StalenessNote's pattern) — wait for React, same as the
+    // age caveat below.
+    await expect(section(page).getByText(messages.coverage.checkedLabel)).toBeVisible({
+      timeout: 10_000,
+    });
+    // The date is the stored check date, not the article date: the whole point
+    // is that a reader can tell "the press went quiet" from "we stopped
+    // looking".
+    await expect(section(page).locator(`time[datetime="${checked}"]`)).toHaveCount(1);
+  }
+});
+
+test('the check date is absent from the prerendered HTML (the KTD-2 gate)', async ({ page }) => {
+  test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
+  const checked = coverageCheckedAt(checkedSlug!)!;
+  // The raw response, never rendered: this is the static HTML a CDN can serve
+  // for as long as it likes. A dated as-of stamp baked into it would be
+  // presented as server-current on a page built weeks earlier — the freeze
+  // lib/freshness-state.ts's header documents.
+  const html = await (await page.request.get(`/bills/${checkedSlug}`)).text();
+  expect(html).not.toContain(en.coverage.checkedLabel + ':');
+  /* The date itself is checked inside the section's own header only. The rest
+     of the page carries the bill's introduced/last-action dates, and either
+     can legitimately BE today's date — asserting over the whole document
+     would red on an unrelated coincidence. This slice runs from the section
+     element to the article list, which is exactly where the age line lives. */
+  const start = html.indexOf('aria-labelledby="coverage-heading"');
+  expect(start, 'the coverage section must be in the prerendered HTML at all').toBeGreaterThan(-1);
+  const header = html.slice(start, html.indexOf('<ul', start));
+  expect(header).not.toContain(`datetime="${checked}"`);
+  // Control: the non-gated half of the same line IS prerendered, so this test
+  // fails for the right reason rather than because the slice came up empty.
+  expect(header).toContain(en.coverage.newestLabel);
 });
 
 test('coverage older than the age window carries the caveat; recent coverage does not', async ({

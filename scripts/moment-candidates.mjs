@@ -385,6 +385,13 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
        newsdesk write) leaves every candidate at c0, which changes no order. */
     const conv = conversationEvidence(conversation?.slugs?.[bill.full_identifier] ?? null, { now });
 
+    // ONE derivation per bill, read twice. `docketTierOf` builds a slug and
+    // runs the whole ladder, and this used to be called once for the printed
+    // tier and again for its index — same inputs, same answer, twice per
+    // candidate. Two reads of one value can also drift if the second call ever
+    // takes a different `now`.
+    const docketTier = docketTierOf(bill, floorSignals, now);
+
     candidates.push({
       slug: bill.full_identifier,
       citation: formatCitation(bill.bill_type, bill.bill_number),
@@ -396,10 +403,10 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
       // The rung and its index, from the one ladder. `docketTier` is printed in
       // the report so the owner can see WHY a candidate ranks where it does;
       // `docketRank` is what the comparator reads.
-      docketTier: docketTierOf(bill, floorSignals, now),
-      docketRank: DOCKET_TIERS.indexOf(docketTierOf(bill, floorSignals, now)),
-      // Printed so the owner can see WHY a candidate ranks where it does;
-      // `conversationRank` is what the comparator reads.
+      docketTier,
+      docketRank: DOCKET_TIERS.indexOf(docketTier),
+      // The same pairing on the conversation side: the tier is printed, the
+      // rank is what the comparator reads.
       conversationTier: conv.tier,
       conversationRank: CONVERSATION_TIERS.indexOf(conv.tier),
       conversationOutlets: conv.ratedOutlets,

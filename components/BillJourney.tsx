@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Chip } from '@/components/system';
-import type { JourneyState } from '@/lib/journey';
+import type { JourneyEnding, JourneyState } from '@/lib/journey';
 
 /*
  * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
@@ -30,60 +30,48 @@ import type { JourneyState } from '@/lib/journey';
  */
 
 /*
- * WHERE THE PATH ENDS, AND THE ONE VEHICLE THAT NEVER REACHES THE PRESIDENT.
+ * WHERE THE PATH ENDS — and the two vehicles that never reach the President.
  *
- * A CONCURRENT resolution — hconres / sconres — is not presented to the
- * President and cannot become law. It is the two chambers speaking to each
- * other: budget resolutions, War Powers directives, adjournment. Both chambers
- * adopt it and that is the end of the road, Article I, Section 7's
- * presentment requirement never engages. Until 2026-08-09 this stepper printed
- * "President's desk" as the fifth step on every one of them, and the trailer
- * underneath promised the bill would go back to its origin chamber "before
- * reaching the President" — a false procedural fact on the 6 con-res pages in
- * the corpus (hconres-113-119, sconres-38-119, sconres-39-119, hconres-38-119,
- * hconres-89-119, hconres-96-119), in both languages, in the one component
- * whose own header promises it cannot hallucinate procedure.
+ * The decision itself lives in lib/journey.ts (`journeyEnding`, and the long
+ * header above it) and arrives here as `journey.ending`, because as of
+ * 2026-08-12 it is read off the record's own title and this component's first
+ * header promises that every derivation the strip renders lives there. What
+ * is left here is the mapping from that answer to the two strings the fifth
+ * step and the trailer print:
  *
- * WHY THIS IS A LOOKUP AND NOT A DERIVATION. It is the same distinction
- * lib/journey.ts draws for nominations (VOTING_CHAMBERS): a bill's CHAMBER is
- * an observation about the record and must be read from it, but presentment is
- * a fact about the KIND of vehicle — constitutional, fixed in advance, true of
- * every concurrent resolution that has ever existed. Nothing in any record can
- * change it, so nothing needs to be parsed.
+ *   'president'     → step "President's desk", the ordinary trailer
+ *   'bothChambers'  → concurrent resolutions (#199, 2026-08-09)
+ *   'states'        → Article V amendment proposals (D5, 2026-08-12) — the
+ *                     class #199 documented as its known limit and declined
+ *                     to guess at
  *
- * KNOWN LIMIT, deliberately not built (flagged to the owner rather than
- * guessed): a JOINT resolution proposing a constitutional amendment also skips
- * the President — it goes to the states for ratification. 16 of the 94 joint
- * resolutions in the corpus are amendment proposals. Detecting them means
- * pattern-matching the title ("Proposing an amendment to the Constitution…"),
- * which is a text heuristic this codebase has not verified, and an unverified
- * heuristic in a truth component is the class of thing this file exists to
- * refuse. Every other hjres/sjres — CRA disapprovals, continuing resolutions —
- * genuinely IS presented to the President, so the default is right for them.
+ * Every branch is a closed constitutional fact, so the mapping is exhaustive
+ * by TYPE: a fourth ending cannot be added to JourneyEnding without failing
+ * the build right here rather than silently reusing the President's desk.
  */
-const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
+const STEP_KEY: Record<JourneyEnding, string> = {
+  president: 'stepPresident',
+  bothChambers: 'stepBothChambers',
+  states: 'stepStates',
+};
 
-/** False only for vehicles the Constitution never presents to the President.
- *  Exported for tests/bill-journey.unit.spec.ts. */
-export function endsAtPresident(billType: string): boolean {
-  return !NO_PRESENTMENT.has(billType.toLowerCase());
-}
+const TRAILER_KEY: Record<JourneyEnding, string> = {
+  president: 'backTrailer',
+  bothChambers: 'backTrailerBothChambers',
+  states: 'backTrailerStates',
+};
 
 interface Props {
   journey: JourneyState;
-  /** The vehicle's type (`hr`, `s`, `hjres`, `sconres`, …) — decides whether
-   *  the path ends at the President's desk or at adoption by both chambers.
-   *  See NO_PRESENTMENT above. */
-  billType: string;
   /** Short, already-localized introduced date, printed under step 1. */
   introducedLabel?: string;
   /** Short, already-localized last-action date, printed under the current step. */
   currentLabel?: string;
 }
 
-export function BillJourney({ journey, billType, introducedLabel, currentLabel }: Props) {
+export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const t = useTranslations('bill.journey');
-  const toPresident = endsAtPresident(billType);
+  const { ending } = journey;
   // Display strings for the ICU selects: origin chamber and its opposite.
   const chamber = journey.origin === 'house' ? 'House' : 'Senate';
   const other = chamber === 'House' ? 'Senate' : 'House';
@@ -96,7 +84,7 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
     t('stepCommittee', { chamber }),
     t('stepVote', { chamber }),
     t('stepOther', { chamber: other }),
-    toPresident ? t('stepPresident') : t('stepBothChambers'),
+    t(STEP_KEY[ending]),
   ];
   const here = journey.step;
   const { isLaw, isVetoed } = journey;
@@ -150,9 +138,7 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
           {t(journey.nowKey, { chamber: nowChamber, other })}
-          {journey.showTrailer && (
-            <> {t(toPresident ? 'backTrailer' : 'backTrailerBothChambers', { chamber, other })}</>
-          )}
+          {journey.showTrailer && <> {t(TRAILER_KEY[ending], { chamber, other })}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>

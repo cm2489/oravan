@@ -18,5 +18,15 @@
  * same function for its own callers; that module reads the whole bill corpus
  * at module scope, which is exactly what a design primitive must not do — so
  * the component-side door is here.
+ *
+ * `TERMINAL_STATUSES` joined it on 2026-08-12, for `selectFloorVoteFeature`'s
+ * announced branch: a signed or vetoed bill has no floor question left, so no
+ * announcement may crown it. `docketRung` already checks terminal FIRST, and
+ * that ordering is the rule this re-export lets the selector hold too.
  */
-export { effectiveUrgency, isSignalFresh, SIGNAL_WINDOW_DAYS } from './urgency.mjs';
+export {
+  effectiveUrgency,
+  isSignalFresh,
+  SIGNAL_WINDOW_DAYS,
+  TERMINAL_STATUSES,
+} from './urgency.mjs';

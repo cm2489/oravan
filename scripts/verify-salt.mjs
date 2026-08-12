@@ -25,8 +25,13 @@
  * request after each rotation — absence just means no traffic yet).
  *
  * SKIPS with a ::warning when UPSTASH_COUNTERS_REST_URL/TOKEN aren't in the
- * environment (same posture as verify-deploy.mjs's PROD_URL skip): the check
- * is armed by adding those two GitHub Actions secrets. It checks the
+ * environment: the check is armed by adding those two GitHub Actions secrets.
+ * (This used to cite verify-deploy.mjs's PROD_URL skip as the shared posture.
+ * That skip is gone as of 2026-08-12 — PROD_URL had been set for a month, so
+ * the only thing its skip branch could still do was disarm the deploy check
+ * silently. The same argument will apply here the day these two secrets are
+ * wired; until then this really is a not-yet-armed check, not a disarmed one.)
+ * It checks the
  * 'production' and 'preview' keyspaces (the two VERCEL_ENV prefixes
  * lib/upstash.ts's keyPrefix() can produce in deployed environments).
  */

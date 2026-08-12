@@ -180,8 +180,9 @@ jobs:
           exit 1
       - name: Verify the deploy landed
         # Same dead-man's-switch as sync-bills.yml/hot-bills.yml - poll
-        # production until it serves the SHA we just pushed. Skips with a
-        # notice until the PROD_URL repo variable is set.
+        # production until it serves the SHA we just pushed. A missing
+        # PROD_URL repo variable FAILS this step rather than skipping it
+        # (2026-08-12) - see scripts/verify-deploy.mjs's header.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}

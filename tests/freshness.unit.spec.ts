@@ -44,6 +44,32 @@ test.describe('freshnessState (KTD-2 fresh/stale/dead tri-state)', () => {
     expect(freshnessAgeDays('not-a-date', NOW)).toBe(Infinity);
     expect(freshnessState('not-a-date', NOW)).toBe('dead');
   });
+
+  /*
+   * The one place this file names a literal, on purpose (2026-08-12). Every
+   * assertion above is symbolic so it follows the constant — which is exactly
+   * why none of them noticed that 5 days was a 5x tolerance on a nightly job
+   * and outran BOTH real outages in the git record. These two bounds are the
+   * measured rule behind the number, so a future widening has to argue with
+   * the evidence instead of sliding past a green suite:
+   *
+   *  - UPPER: a night the job misses must be caveated within the same working
+   *    week. Both recorded outages were five consecutive dead nights, so any
+   *    window >= 5 is silent for their entire duration.
+   *  - LOWER: the three single-missed-night gaps in the same ~70-day record
+   *    each cap `checkedAt` age at ~2.0 days. A window <= 2 fires on an
+   *    ordinary hiccup and the note becomes wallpaper.
+   *
+   * Re-derive both from the sync history before changing this; see
+   * FRESHNESS_CLAIM_WINDOW_DAYS' own doc comment.
+   */
+  test('the claim window stays inside its measured bounds: past a single miss, inside an outage', () => {
+    expect(FRESHNESS_CLAIM_WINDOW_DAYS).toBe(3);
+    // A single missed night (~2.0 days old) must NOT trip the caveat.
+    expect(freshnessState(daysAgo(2), NOW)).toBe('fresh');
+    // A five-night outage must be caveated well before it ends.
+    expect(freshnessState(daysAgo(4), NOW)).toBe('stale');
+  });
 });
 
 // 2026-07-16 (audit §5 item 4): emptyStateVerdict's signature changed here,
