@@ -742,11 +742,12 @@ export function deriveJourney(
        * kill (scripts/check-journey-corpus.mjs).
        *
        * MEASURED BEFORE AND AFTER on the committed corpus, 2026-08-12: of
-       * 2,723 bills, 356 are floor_vote and 8 reach this branch — all 8 match
-       * floorPendingChamber (2 cloture motions presented, 2 motions to proceed
-       * made / postponed proceedings, 3 Rules Committee resolutions reported,
-       * 1 more postponed proceeding), so ZERO rendered sentences change today.
-       * The untensed set is empty and the unclassified set is empty. This is a
+       * 2,723 bills, 356 are floor_vote and 8 reach this branch — and all 8
+       * match floorPendingChamber, so ZERO rendered sentences change today.
+       * They are 3 Rules Committee resolutions reported to the House, 2
+       * cloture motions presented in the Senate, 2 postponed proceedings, and
+       * 1 motion to proceed made in the Senate — one per rule 1-4. The
+       * untensed set is empty and the unclassified set is empty. This is a
        * change of what CAN happen, not of what does. Re-measure rather than
        * trust the number: the corpus moves nightly.
        */
