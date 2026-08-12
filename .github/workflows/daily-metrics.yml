@@ -63,7 +63,9 @@ jobs:
         # first real run — refresh-legislators.yml's data-vacancy/
         # redistricting-watch labels were both created out-of-band, not by
         # committed code) is why this step exists at all rather than a
-        # separate manual PR-checklist item to forget.
+        # separate manual PR-checklist item to forget. Updated 2026-08-12:
+        # refresh-legislators.yml now upserts `redistricting-watch` itself,
+        # the same way; `data-vacancy` is still the out-of-band one.
       - name: Compute + post digest, open spike issue if tripped
         env:
           UPSTASH_COUNTERS_REST_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
