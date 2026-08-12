@@ -103,11 +103,36 @@ export const DRAFT_PROMPT_VERSION = 3;
 export const DRAFT_FIELDS = ['name', 'summary', 'role'];
 
 /**
- * Per-field ceilings, measured against the two hand-authored moments in
- * data/moments.json (names 28 and 45 chars; summaries 545 and 700; roles 300
- * to 430) and set roughly 1.5x above the longest real one. A field over its
- * ceiling is a runaway, not a long sentence, and is dropped like any other
- * failure rather than truncated — a truncated summary is a wrong summary.
+ * Per-field ceilings. A field over its ceiling is a runaway, not a long
+ * sentence, and is dropped like any other failure rather than truncated — a
+ * truncated summary is a wrong summary.
+ *
+ * RE-MEASURED 2026-08-12, because the comment that stood here had stopped
+ * being true and said so with a number. It read "measured against the two
+ * hand-authored moments in data/moments.json (names 28 and 45 chars;
+ * summaries 545 and 700; roles 300 to 430) and set roughly 1.5x above the
+ * longest real one". data/moments.json holds SIX moments now, none of them
+ * with a 45-character name, and the ceilings are checked PER LANGUAGE
+ * (lintField loops en/es), so Spanish is what actually binds:
+ *
+ *              ceiling   longest EN   longest ES   headroom over ES
+ *   name          90         43           66            1.36x
+ *   summary     1100        866         1069            1.03x
+ *   role         700        432          515            1.36x
+ *
+ * (EN names 15/21/22/23/27/43 · summaries 407/437/521/529/554/866 · roles
+ * 210-432; ES names 25/28/29/31/39/66 · summaries 499/538/623/655/684/1069 ·
+ * roles 232-515. Recompute rather than trust these — the file grows.)
+ *
+ * SO THE "ROUGHLY 1.5x" CLAIM IS NOW FALSE OF `summary`, and that is a
+ * finding, not a typo: an honest Spanish summary of an ordinary Big Question
+ * already reaches 97% of the ceiling, so the next one that runs a sentence
+ * long is dropped as a runaway. Nothing breaks when that happens — the field
+ * degrades to blank and the owner writes it — but the ceiling is no longer
+ * doing the job it was set to do. The NUMBERS ARE LEFT ALONE HERE ON PURPOSE:
+ * changing a gate's behavior is the owner's call, and the honest description
+ * of what it does today is this comment's job. Raising `summary` to ~1600
+ * would restore the 1.5x margin against Spanish.
  */
 export const DRAFT_MAX_CHARS = { name: 90, summary: 1100, role: 700 };
 
@@ -278,11 +303,25 @@ export function recordLines(g) {
  *
  * Every token here is a value some part of this repo stores in a field: bill
  * statuses (data/bills.json `status`, plus `floor_activity`, which exists only
- * as a derived message key), coverage tiers (scripts/moment-candidates.mjs
- * coverageTier), qualifying-signal types (lib/moments-gate.mjs SIGNAL_TYPES),
- * and stored moment statuses. Listed literally rather than imported: this
- * guard has to keep working when a list moves, and the point is the SHAPE of
- * the leak rather than any one list's current contents.
+ * as a derived message key), coverage tiers (lib/types.ts COVERAGE_TIERS),
+ * qualifying-signal types (lib/moments-gate.mjs SIGNAL_TYPES), and stored
+ * moment statuses (lib/moments-gate.mjs MOMENT_STATUSES). Listed literally
+ * rather than imported: this guard has to keep working when a list moves, and
+ * the point is the SHAPE of the leak rather than any one list's current
+ * contents. This file also runs under plain node in the moment-watch job,
+ * which cannot import the TypeScript half of that vocabulary at all.
+ *
+ * HAND-MAINTENANCE FAILED INSIDE ONE DAY, which is why the list is now PINNED
+ * BY TEST rather than only by intention. `tier0_floor_action` was added to
+ * SIGNAL_TYPES on 2026-08-09 (e9ae091), the same day this guard shipped
+ * (05ef0fd), and never reached this array — and it would not have been covered
+ * by the `tier0_floor` entry either, because enumLeaks matches with a
+ * `(?![\p{L}\p{N}_])` tail that treats `_` as a word character. The leak stayed
+ * LATENT (recordLines never interpolates a signal type), so nothing shipped;
+ * what broke was this comment's claim to cover "the known enum vocabularies".
+ * tests/moment-draft.unit.spec.ts now asserts this array is a superset of
+ * every snake_case member of all four real vocabularies, so the next omission
+ * is a red PR check rather than a silent narrowing.
  *
  * SIX BILL STATUSES ARE DELIBERATELY ABSENT — introduced, committee, markup,
  * conference, signed, vetoed. Each is its own published English label ("In
@@ -300,11 +339,15 @@ export const INTERNAL_ENUM_TOKENS = [
   // `floor_vote`: enumLeaks matches on word boundaries that treat `_` as a
   // word character, so `floor_vote` does not fire inside `floor_vote_stale`.
   'floor_vote', 'floor_vote_stale', 'floor_activity', 'passed_chamber',
-  // coverage tier (scripts/moment-candidates.mjs coverageTier)
+  // coverage tier (lib/types.ts COVERAGE_TIERS; lib/coverage.ts and
+  // scripts/moment-candidates.mjs both return exactly these)
   'cross', 'neutral', 'one_sided', 'none',
-  // qualifying-signal type (lib/moments-gate.mjs SIGNAL_TYPES)
-  'tier0_floor', 'tier0_scheduled', 'tier0_most_viewed', 'tier0_exec_calendar', 'press',
-  // stored moment status (lib/moments-gate.mjs)
+  // qualifying-signal type (lib/moments-gate.mjs SIGNAL_TYPES).
+  // `tier0_floor_action` is listed SEPARATELY and is not covered by
+  // `tier0_floor`, for the same word-boundary reason `floor_vote_stale` is
+  // listed above — it was missing from 2026-08-09 to 2026-08-12.
+  'tier0_floor', 'tier0_floor_action', 'tier0_scheduled', 'tier0_most_viewed', 'tier0_exec_calendar', 'press',
+  // stored moment status (lib/moments-gate.mjs MOMENT_STATUSES)
   'live', 'retired',
 ];
 

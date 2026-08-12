@@ -493,6 +493,65 @@ test.describe('deriveJourney', () => {
   });
 
   /* ---------------------------------------------------------------- *
+   * N9-A2 (2026-08-12) — THE UNTENSED RESIDUAL. The last branch on this
+   * page that could speak about a sentence nobody has read.
+   *
+   * floorActionChamber's rule 6 pins a chamber on ANY floor text naming
+   * exactly one, so "Considered by Senate" was chamber-classifiable —
+   * and the residual branch turned that into "the Senate is deciding
+   * whether to bring it to a vote", a live-deliberation claim asserted
+   * over an unread shape. Knowing WHICH chamber a sentence belongs to
+   * has never been knowing what that chamber DID; that conflation is
+   * exactly what #198 removed from 18 settled texts.
+   *
+   * The branch now reads floorPendingChamber — an ordered allow-list —
+   * so an unmatched sentence gets the chamber-free neutral copy. This is
+   * what made the nightly journey-corpus tripwire safe to soften from a
+   * whole-night failure to a filed issue: the render fails closed first.
+   * ---------------------------------------------------------------- */
+  const UNTENSED_TEXT = 'Considered by Senate.';
+
+  test('THE N9 FLAGSHIP: a chamber-readable but UNTENSED floor text asserts nothing', () => {
+    // The chamber genuinely is readable — that is what made this class
+    // dangerous rather than merely unknown.
+    expect(floorActionChamber(UNTENSED_TEXT)).toBe('senate');
+    // …and neither half of the tense split will touch it.
+    expect(floorPendingChamber(UNTENSED_TEXT)).toBeNull();
+    expect(floorSettledChamber(UNTENSED_TEXT)).toBeNull();
+
+    const journey = j('hr', 'floor_vote', UNTENSED_TEXT);
+    expect(journey).toMatchObject({
+      step: 2,
+      current: 'house', // the ORIGIN slot: structure only, never a claim
+      onCalendar: false,
+      nowKey: 'nowFloorActivityNeutral',
+    });
+    // The two sentences that would have named a chamber over this text.
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    expect(journey.nowKey).not.toBe('nowFloorActivityStale');
+    // The neutral key names no chamber, in either language — so the
+    // origin-slot `nowChamber` above cannot leak into a rendered sentence.
+    expect(en.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+    expect(es.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+  });
+
+  test('the untensed residual is neutral whether the record is fresh or aged', () => {
+    // Nothing to demote TO: the sentence makes no chamber and no calendar
+    // claim at either age, so the clock has no work here.
+    expect(j('s', 'floor_vote', UNTENSED_TEXT, FRESH).nowKey).toBe('nowFloorActivityNeutral');
+    expect(j('s', 'floor_vote', UNTENSED_TEXT, STALE).nowKey).toBe('nowFloorActivityNeutral');
+  });
+
+  test('the rail agrees with the stepper about an unread text — both stay silent', () => {
+    // liveCallTarget already gated on `calendar ?? pending`; the stepper now
+    // reads the same answer, so the page cannot contradict itself in a
+    // quieter voice (the #198 failure, from the other direction).
+    expect(
+      liveCallTarget({ bill_type: 'hr', status: 'floor_vote', last_action_text: UNTENSED_TEXT, last_action_date: FRESH })
+    ).toBeNull();
+  });
+
+  /* ---------------------------------------------------------------- *
    * D3 (2026-08-11) — THE CLOCK. #198 gave the bill page's green panel
    * the freshness window and stopped at that one render site; the
    * derivation underneath kept answering "it's on the Senate floor
@@ -890,18 +949,24 @@ test.describe('deriveJourney', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 4 · CORPUS SWEEP — the tripwire. Runs over the live data/bills.json,
- *     so nightly data movement cannot silently re-invert the chamber
- *     derivation: a novel floor text fails here, loudly.
+ * 4 · CORPUS SWEEP — the tripwire, and where it went.
  * ------------------------------------------------------------------ */
 /* The live-corpus sweep MOVED to the nightly sync (owner ruling
  * 2026-08-04): scripts/check-journey-corpus.mjs, wired into
  * sync-bills.yml. It tests DATA, and data changes nightly — in this
  * PR-blocking suite a novel floor text landed by the sync could red the
  * CI of unrelated PRs. The fixtures above and the parity pin below test
- * CODE and stay. deriveJourney's neutral no-chamber branch (an
- * unclassified text renders nowFloorActivityNeutral, never a guessed
- * chamber) is pinned in suite 3.
+ * CODE and stay.
+ *
+ * WHAT IT DOES WHEN IT FIRES CHANGED ON 2026-08-12 (N9-A2), and the
+ * reason is in suite 3: deriveJourney's residual branch reads
+ * floorPendingChamber now, so BOTH classes the sweep hunts — an
+ * unreadable text and a chamber-readable-but-untensed one — render the
+ * chamber-free nowFloorActivityNeutral. Nothing on the site can speak
+ * about a sentence nobody has read, so the sweep files a labeled
+ * `journey-corpus` issue instead of costing the night its commit. The
+ * only verdict that still fails the run is a sweep that proved nothing
+ * (<50 floor_vote records, or a sweep that could not run).
  * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
@@ -1461,6 +1526,36 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     // point is that a reader can tell them apart.
     expect(en.bills.status.floor_vote_stale).not.toBe(en.bills.status.floor_vote);
     expect(es.bills.status.floor_vote_stale).not.toBe(es.bills.status.floor_vote);
+  });
+
+  /* ---------------------------------------------------------------- *
+   * N9-A2's live-corpus half. The fixture above pins the shape; this
+   * pins that no record tomorrow's sync lands can wear a chamber
+   * sentence the record did not earn. Stated as an implication rather
+   * than a count, for the same reason as every sweep in this file: the
+   * corpus moves nightly and a number here is a scheduled false red.
+   * ---------------------------------------------------------------- */
+  test('no floor_vote record names a chamber unless a matcher READ that chamber out of the sentence', () => {
+    for (const b of floorVote) {
+      const { nowKey, nowChamber } = deriveJourney({
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      });
+      if (nowKey === 'nowFloorActivity' || nowKey === 'nowFloorActivityStale') {
+        // The residual branch's own gate: these two sentences say "the
+        // {chamber} is deciding" / "has taken floor action", and only
+        // floorPendingChamber is allowed to have supplied that chamber.
+        expect(floorPendingChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+      if (nowKey === 'nowFloor' || nowKey === 'nowFloorStale') {
+        expect(floorCalendarChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+      if (nowKey === 'nowFloorMotionFailed') {
+        expect(floorSettledChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+    }
   });
 });
 

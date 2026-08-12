@@ -53,19 +53,41 @@ name: Moment watch
 
 on:
   schedule:
-    - cron: '20 11 * * *' # 11:20 UTC daily = 7:20am ET — after the nightly sync
-      #                     has committed, so the watcher always reads fresh
-      #                     bill statuses and coverage. Lands in time to be
-      #                     reviewed with morning coffee.
+    # BOTH SLOTS RE-PHASED 2026-08-12 (owner ruling D8), from 11:20 daily and
+    # 13:00 Mondays. This workflow reads what sync-bills.yml commits — bill
+    # statuses, coverage, the floor record — so it moves whenever the nightly
+    # moves, and the nightly moved to 14:15 UTC to land after Congress.gov
+    # publishes the day's floor actions (13:35-14:00 UTC measured; the full
+    # derivation is in sync-bills.yml's own schedule comment).
+    #
+    # THE GAP IS SIZED AGAINST THE SYNC'S RUNTIME, NOT ITS NOMINAL SLOT. The
+    # nightly has taken 11-72 minutes across its last 12 runs. Only that RANGE
+    # is quoted, and deliberately: the endpoints are what the gap has to cover,
+    # while the middle of the distribution is not stable enough to write down
+    # (it re-measured at ~35 min on 2026-08-12 and moves every night as runs
+    # age out of the last-12 window, so any median here would be stale by the
+    # time somebody trusted it). Size against the 72, not the middle. And
+    # GitHub's scheduler drifts both of these crons in the same direction (+17
+    # min to +3h27m observed on this repo, never early). 2h20m of nominal
+    # daylight covers the sync's worst observed run with margin, which is what
+    # keeps this job from sitting PENDING in the shared data-sync group — and a
+    # pending run there is the one that gets evicted when newsdesk's hourly
+    # cron queues behind it (observed 2026-08-08).
+    #
+    # NOT :00 AND NOT :30 on hot-bills.yml's measurement: the scheduler's
+    # backlog, and therefore its drift, is worst at the top and half of the
+    # hour.
+    - cron: '35 16 * * *' # 16:35 UTC daily = 12:35pm ET — after the nightly sync
+    - cron: '5 18 * * 1' # 18:05 UTC Monday — the weekly review, still after the
+      #                    daily push run so Monday's digest sees whatever that
+      #                    run just filed.
       #
-      #                     SIZED AGAINST OBSERVED TIMES, NOT NOMINAL ONES:
-      #                     sync-bills is nominally '30 7 * * *' but GitHub has
-      #                     been starting it ~10:05 UTC and it runs ~12 min. A
-      #                     cron here drifts the same way, landing ~13:50 — still
-      #                     after the sync's real window, still before hot-bills
-      #                     at 17:00. Don't re-derive this slot from the nominal
-      #                     07:30; the margin is against the observed 10:05-10:17.
-    - cron: '0 13 * * 1' # 13:00 UTC Monday = 9:00am ET — the weekly review.
+      #                    THIS STRING IS LOAD-BEARING TWICE. The "Select mode"
+      #                    step below matches `github.event.schedule` against
+      #                    it literally to choose weekly vs push mode, so the
+      #                    two must be edited together — a mismatch silently
+      #                    turns the weekly digest into a second push run.
+      #                    tests/nightly-pipeline.unit.spec.ts pins them equal.
   workflow_dispatch:
     inputs:
       mode:
@@ -78,10 +100,14 @@ permissions:
   issues: write # opens/updates the candidate issues
 
 concurrency:
-  # Shared with sync-bills.yml / newsdesk.yml / hot-bills.yml /
-  # refresh-legislators.yml so a seen-set commit can never race their commits
-  # to data/. This workflow only ever writes data/candidates-seen.json, but the
-  # push itself still has to be serialised against theirs.
+  # Shared with sync-bills.yml / newsdesk.yml / hot-bills.yml so a seen-set
+  # commit can never race their commits to data/, AND so this workflow can
+  # never READ data/bills.json while the nightly sync is halfway through
+  # rewriting it - the checkout happens when the job starts, which is after the
+  # group clears. This workflow only ever writes data/candidates-seen.json, but
+  # the push itself still has to be serialised against theirs.
+  # refresh-legislators.yml left this group on 2026-08-12 (disjoint files, and
+  # it was the one being evicted while it waited - see its own comment).
   group: data-sync
   cancel-in-progress: false
 
@@ -144,7 +170,7 @@ jobs:
                 exit 1
                 ;;
             esac
-          elif [ "$SCHEDULE" = "0 13 * * 1" ]; then
+          elif [ "$SCHEDULE" = "5 18 * * 1" ]; then
             MODE=weekly
           fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"

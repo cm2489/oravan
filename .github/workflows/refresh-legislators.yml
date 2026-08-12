@@ -19,7 +19,32 @@ permissions:
   issues: write
 
 concurrency:
-  group: data-sync
+  # ITS OWN GROUP since 2026-08-12 (owner ruling N8-B1). This job used to share
+  # `data-sync` with sync-bills / newsdesk / hot-bills / moment-watch, and the
+  # comment that justified it claimed serialization was what made its push
+  # safe. It is not: a shared group keeps ONE run plus at most ONE pending run,
+  # and a newly queued run EVICTS the older pending one. `cancel-in-progress:
+  # false` protects the run that is executing, never the one waiting. newsdesk
+  # is hourly, so the group gets a fresh challenger every ~60 minutes and
+  # anything waiting longer than that is cancelled - observed on 2026-08-08,
+  # when a newsdesk run sat pending 2,145s behind the nightly sync and ended
+  # `cancelled`. A cancelled SCHEDULED run notifies nobody.
+  #
+  # This workflow is the worst possible victim of that: it runs WEEKLY, so a
+  # miss costs two weeks of legislators/vacancies/ZIP data, skips a
+  # redistricting-watch poll, and burns one of only ~5 Mondays in the
+  # 119th->120th rollover tripwire's live window (lib/rollover-tripwire.mjs,
+  # deadline 2027-01-03). It has already come within minutes twice: run
+  # 29245921710 was held 42 minutes (2026-07-13) and run 28790519163 for 50
+  # (2026-07-06), both inside the one-hour window a newsdesk run would have
+  # displaced them in. It survived on cron drift, not on design.
+  #
+  # WHAT ACTUALLY MAKES THE PUSH SAFE, and it is already in this file: this
+  # workflow's file set (legislators.json, zip-districts.json, vacancies.json,
+  # redistricting-watch.json) is disjoint from every other data-sync member's,
+  # and its commit step carries the 5-attempt rebase-and-retry loop below.
+  # Disjoint files plus rebase-retry, not serialization.
+  group: data-sync-legislators
   cancel-in-progress: false
 
 jobs:
@@ -234,12 +259,17 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): weekly legislators refresh $(date -u +%F)"
           # The scheduled run's checked-out base can be stale by the time this
-          # job starts (queued behind sync-bills.yml in the shared data-sync
-          # concurrency group, whose push lands after our SHA was resolved -
-          # the 2026-06-22 failure). Rebase onto the latest main and retry;
-          # safe because this workflow only ever touches legislators.json /
-          # zip-districts.json / vacancies.json / redistricting-watch.json,
-          # disjoint from sync-bills.yml's files.
+          # job starts - main moves under us whether or not we are serialised
+          # against it, and since 2026-08-12 this workflow is in its OWN
+          # concurrency group (see the header), so a data-sync push can now
+          # land DURING this run rather than only before it. THIS LOOP IS WHAT
+          # MAKES THAT SAFE, together with the disjoint file set: this workflow
+          # only ever touches legislators.json / zip-districts.json /
+          # vacancies.json / redistricting-watch.json, none of which any other
+          # workflow writes, so a concurrent push is a fast-forward problem and
+          # never a content conflict. (The 2026-06-22 failure is the reason the
+          # loop exists; leaving the shared group is the reason it is now the
+          # only thing standing there.)
           for i in 1 2 3 4 5; do
             if git push; then
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

@@ -12,7 +12,17 @@ name: Daily metrics digest
 
 on:
   schedule:
-    - cron: '0 13 * * *' # 13:00 UTC — after sync-bills (07:30) and Monday's legislators refresh (08:00)
+    # 13:00 UTC, and DELIBERATELY LEFT ALONE by the 2026-08-12 nightly
+    # re-phase (owner ruling D8), because the comment that used to sit here
+    # asserted a dependency this job does not have. It read "after sync-bills
+    # (07:30) and Monday's legislators refresh (08:00)" — but this job reads
+    # nothing the sync writes: scripts/daily-metrics.mjs imports lib/usage.ts
+    # and lib/traffic-metrics.mjs and reads the counters database over HTTP.
+    # It touches no file in data/, so no ordering against any data workflow
+    # buys it anything, and it is on its own concurrency group below so it
+    # never queues behind one either. The slot stands on its own merit: a
+    # UTC-day digest posted early in the US morning.
+    - cron: '0 13 * * *' # 13:00 UTC — no data/ dependency; see the note above
   workflow_dispatch:
 
 permissions:

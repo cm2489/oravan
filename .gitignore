@@ -49,6 +49,13 @@ playwright-report/
 # Runner-only; must never be committed by a stray `git add -A`.
 salvage/
 
+# scripts/check-journey-corpus.mjs's findings drop. On a runner it writes to
+# $RUNNER_TEMP (the workflow reads the .md from there to file its issue); run
+# by hand it falls back to the repo root, and neither file is ever an input to
+# anything committed.
+journey-corpus-report.json
+journey-corpus-report.md
+
 # Impeccable design-tooling state (owner decision 2026-08-02: critique
 # snapshots ARE tracked — they carry the teardown campaign's trend lines —
 # while machine-local state stays out of the tree)

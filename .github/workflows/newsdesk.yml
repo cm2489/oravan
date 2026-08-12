@@ -32,8 +32,11 @@ permissions:
   actions: write  # lets the workflow dispatch ci.yml after its own push
 
 concurrency:
-  # Shared with sync-bills.yml/hot-bills.yml/refresh-legislators.yml so this
-  # can never race any of their commits to data/bills.json or data/bills-es.json.
+  # Shared with sync-bills.yml / hot-bills.yml / moment-watch.yml so this can
+  # never race any of their commits to data/bills.json or data/bills-es.json.
+  # refresh-legislators.yml LEFT this group on 2026-08-12 (its files are
+  # disjoint from every member's, and THIS workflow's hourly cadence was what
+  # kept evicting it while it waited - see that file's concurrency comment).
   group: data-sync
   cancel-in-progress: false
 
