@@ -111,7 +111,14 @@
     "screencastPlay": "Play",
     "screencastPause": "Pause",
     "screencastStep": "{current} of {total}",
-    "screencastStepAria": "Step {n} of {total}: {title}"
+    "screencastStepAria": "Step {n} of {total}: {title}",
+    "evidenceLead": "In the chamber's own words:",
+    "evidenceSourceDigest": "Senate Daily Digest",
+    "evidenceSourceWeekly": "House weekly floor schedule",
+    "evidenceCovers": "for {date}",
+    "evidenceLink": "Read the source",
+    "floorCheckedAt": "Schedule checked {date}",
+    "weekNoteAnnounced": "The green panel marks one dated fact from the record: the chamber has named this bill on its own published floor schedule, quoted above with the date it was published. The schedule is re-read every hour, and a bill the chamber drops leaves the panel with it. Nothing here says when a vote will happen — only Congress can say that, and it has not."
   },
   "reps": {
     "title": "Your representatives",
@@ -196,7 +203,11 @@
     "clearFilters": "Clear all filters",
     "interestsNote": "Topic picks are saved only on this device, never on a server.",
     "aiNote": "Plain-language headlines on this page are AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
-    "onCalendar": "On the floor calendar"
+    "onCalendar": "On the floor calendar",
+    "annotation": {
+      "justPassed": "Just passed a chamber",
+      "justDecided": "The floor already answered"
+    }
   },
   "bill": {
     "decoded": "Decoded",
@@ -373,7 +384,9 @@
       "statusPending": "Floor vote pending",
       "meta": "A bill on the calendar can be called up with little notice, and offices tally until it is.",
       "metaPending": "The steps toward a floor vote have started, and offices tally calls until it happens.",
-      "cta": "Make your call"
+      "cta": "Make your call",
+      "announcedHouse": "On the House floor schedule",
+      "announcedSenate": "On the Senate's floor program"
     }
   },
   "walkthrough": {

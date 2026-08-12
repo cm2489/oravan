@@ -22,6 +22,7 @@ import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { announcementFor, floorSignalsCheckedAt, floorSourcesPosture } from '@/lib/docket';
 import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
@@ -109,8 +110,17 @@ const ROUTE = [
  * looks up the copy. All four keys exist in EN and ES (bill.floor.*).
  */
 const FLOOR_LABEL_KEYS = {
+  announced: { house: 'bill.floor.announcedHouse', senate: 'bill.floor.announcedSenate' },
   calendar: { house: 'bill.floor.calendarHouse', senate: 'bill.floor.calendarSenate' },
   pending: { house: 'bill.floor.pendingHouse', senate: 'bill.floor.pendingSenate' },
+} as const;
+
+/** The announcing document's own name, for the evidence attribution row.
+ *  Naming the document is not quoting it, so this one IS translated — the
+ *  QUOTE beside it never is (owner ruling V4). */
+const EVIDENCE_SOURCE_KEYS = {
+  'daily-digest': 'evidenceSourceDigest',
+  billsthisweek: 'evidenceSourceWeekly',
 } as const;
 
 // Homepage had zero metadata override before this pass — no canonical, no
@@ -263,7 +273,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // ONE CALL, ONE TRUTH: the selector returns the bill, the FACT it earned
   // the panel on (`kind`) and the chamber that fact names, all read from the
   // same sentence. Nothing here re-derives any of the three.
-  const feature = selectFloorVoteFeature(getFloorFeatureCandidates(locale));
+  //
+  // THE THIRD FACT (owner ruling V1): the selector now also reads the chamber's
+  // own published floor schedule, through a resolver rather than a data import
+  // — components/system is design primitives and must not read data/. A live
+  // announcement outranks both record facts, and it is the only one that can
+  // crown a bill whose derived status has fallen back to `committee`, which is
+  // what happens to every measure the moment it actually reaches the floor.
+  const feature = selectFloorVoteFeature(getFloorFeatureCandidates(locale), (b) =>
+    announcementFor(billSlug(b))
+  );
+  const signalsCheckedAt = floorSignalsCheckedAt();
   // Slug equality, NEVER reference equality. localizeBill() returns a fresh
   // object on /es, and the pool is localized independently of `top`, so
   // `b !== feature.bill` was true for the crown's own bill on the Spanish
@@ -271,10 +291,24 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // English-only check cannot see this; tests/landing.spec.ts drives both.
   const featureSlug = feature ? billSlug(feature.bill) : null;
   const listed = top.filter((b) => billSlug(b) !== featureSlug);
+  /*
+   * THE DATE THE CHIP PRINTS, and it is not always the bill's.
+   *
+   * On `calendar`/`pending` it is the date of the action itself — the placement,
+   * or the day the motion was filed. On `announced` it is the ANNOUNCING
+   * DOCUMENT's own publication date, because that is the dated fact the panel is
+   * quoting: the bill's last action might be weeks old and about something else
+   * entirely (that is exactly the case ruling V1 exists for). Neither is a
+   * scheduled-vote date; the corpus still holds none.
+   */
+  const crownDate =
+    feature?.kind === 'announced'
+      ? (feature.announcement?.published ?? null)
+      : (feature?.bill.last_action_date ?? null);
   // The week wears its green crown (masthead fused onto the panel) exactly
   // when the panel itself renders — same condition, one name, so the seam
   // classes below can never disagree with the crown's presence.
-  const crowned = Boolean(feature?.bill.last_action_date);
+  const crowned = Boolean(feature && crownDate);
 
   // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
   // 2026-08-02, finding #8: the featured bill appeared in the hero card,
@@ -315,6 +349,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       month: 'short',
       day: 'numeric',
       timeZone: 'UTC',
+    });
+
+  /*
+   * "As of" for the floor schedule — a DATE AND A TIME, and the only timestamp
+   * on this page that carries one.
+   *
+   * Critic A-1's requirement: a bill can be pulled from a chamber's schedule
+   * mid-week, so a T0 claim is only as good as the hour it was last checked,
+   * and the reader has to be able to see that hour. `_meta.fetched_at` is a
+   * full instant (not a bare date), so it does not have billDate's
+   * UTC-midnight problem and is formatted in the reader's own zone with its
+   * zone printed — a bare "14:27" that might be anyone's afternoon is worse
+   * than no time at all.
+   */
+  const stampInstant = (iso: string) =>
+    format.dateTime(new Date(iso), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
     });
 
   /*
@@ -575,17 +631,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             panel's headline (h2-loud over the panel's h2) in both states.
             The Stamp lives here now — still once per page, still the sole
             printed sync date; it certifies the whole week, panel included. */}
-        {/* EXACTLY ONE. The panel gates itself on floor_vote + a printed date;
-            selectFloorVoteFeature() above holds the cap AND the floor gate —
-            the record's own "Placed on … Calendar" sentence, OR a floor vote
-            still ahead of the bill (cloture filed, motion to proceed made,
-            proceedings postponed, a rule reported). home.weekNote promises
-            exactly those two facts and nothing else, so a REJECTED motion to
-            proceed or a cloture motion that was not invoked can never wear
-            the crown (lib/journey.ts's settled guard). The date printed is the
-            date of that action — no bill in data/bills.json carries a
-            forward-looking scheduled-vote date, so no mark here claims one. */}
-        {feature?.bill.last_action_date ? (
+        {/* EXACTLY ONE. selectFloorVoteFeature() above holds the cap AND the
+            gate — THREE facts now, in rung order: the chamber's own published
+            floor schedule naming this bill (owner ruling V1, quoted below the
+            headline with its own date and URL), OR a floor vote still ahead of
+            it in the record (cloture filed, motion to proceed made, proceedings
+            postponed, a rule reported), OR the record's own "Placed on …
+            Calendar" sentence. home.weekNote / home.weekNoteAnnounced promise
+            exactly the fact that was found and nothing else, so a REJECTED
+            motion to proceed or a cloture motion that was not invoked can never
+            wear the crown (lib/journey.ts's settled guard, which is also rule 0
+            of the ladder's T1 rung). The date printed is the date of that fact
+            — an action date, or the announcing document's own publication date.
+            NO surface here claims a scheduled vote date; neither the corpus nor
+            the schedule carries one. */}
+        {feature && crownDate ? (
           // Seam 8B: flush against the band above (no margin), joined by the
           // crown's own 3px top rule in the band's bright link green — one
           // luminous line where ink meets enamel. When the band is absent
@@ -617,7 +677,51 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               flush
               headingLevel={3}
               status={feature.bill.status}
-              dateLabel={billDate(feature.bill.last_action_date)}
+              kind={feature.kind}
+              dateLabel={billDate(crownDate)}
+              /*
+               * THE EVIDENCE, on the announced kind only: the chamber's sentence
+               * quoted VERBATIM IN ENGLISH in both locales, under a framing
+               * sentence that IS localized (owner ruling V4 — translating a
+               * quote turns it into a paraphrase wearing quotation marks). The
+               * attribution row names the document, prints its own date and the
+               * meeting it covers, links to it, and carries the "as of" stamp
+               * critic A-1 requires: the schedule is re-read hourly and a bill
+               * the chamber pulls leaves this panel with the next run.
+               */
+              evidence={
+                feature.kind === 'announced' && feature.announcement ? (
+                  <>
+                    <span className="mb-1 block text-2xs font-extrabold tracking-[0.1em] text-go-pale uppercase not-italic">
+                      {t('evidenceLead')}
+                    </span>
+                    <span lang="en">{`“${feature.announcement.quote}”`}</span>
+                    <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-sm text-go-pale">
+                      <span>
+                        {t(EVIDENCE_SOURCE_KEYS[feature.announcement.source])}
+                        {' · '}
+                        <span className="tabular-nums">
+                          {billDate(feature.announcement.published)}
+                        </span>
+                        {feature.announcement.covers
+                          ? ` · ${t('evidenceCovers', { date: billDate(feature.announcement.covers) })}`
+                          : ''}
+                      </span>
+                      <a
+                        href={feature.announcement.url}
+                        className="inline-flex min-h-11 items-center font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
+                      >
+                        {t('evidenceLink')}
+                      </a>
+                      {signalsCheckedAt && (
+                        <span className="tabular-nums">
+                          {t('floorCheckedAt', { date: stampInstant(signalsCheckedAt) })}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                ) : undefined
+              }
               // The chip prints the fact the selector actually found, in the
               // chamber the record itself names (a House bill can stand on
               // the Senate's calendar), so the two can never disagree.
@@ -720,7 +824,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           {quiet && top.length === 0 && (
             <div className="mt-6">
-              <UrgencyEmptyState {...freshness} />
+              {/* The fourth signal (critic A-5): a `billsthisweek` 404 during a
+                  recess and a 404 because the URL scheme rotted look identical,
+                  and only one of them is a fact about Congress. If the sources
+                  cannot vouch for themselves, this empty week reads as OUR data
+                  being stale — never as "Congress published no schedule". */}
+              <UrgencyEmptyState
+                {...freshness}
+                floorSignals={{
+                  checkedAt: signalsCheckedAt,
+                  sourcesHealthy: floorSourcesPosture() === 'quiet',
+                }}
+              />
             </div>
           )}
 
@@ -730,9 +845,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               condition as the panel itself: a note that says "the green
               panel marks one fact" on a week with no green panel is a false
               claim (owner finding 2026-08-01), so the panel-less week gets
-              the sentence without the panel in it. */}
+              the sentence without the panel in it. THREE variants now, for the
+              same reason there are three: the announced note describes an
+              announcement — quoted, dated, re-read hourly, and explicitly NOT a
+              vote date — and printing the calendar/pending sentence over it
+              would describe a fact the panel is not showing. */}
           <p className="mt-8 max-w-note text-sm text-ink-2">
-            {feature?.bill.last_action_date ? t('weekNote') : t('weekNoteQuiet')}
+            {!crowned
+              ? t('weekNoteQuiet')
+              : feature?.kind === 'announced'
+                ? t('weekNoteAnnounced')
+                : t('weekNote')}
             <StalenessNote checkedAt={freshness.checkedAt} />
           </p>
 

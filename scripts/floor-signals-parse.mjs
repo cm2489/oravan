@@ -866,46 +866,28 @@ export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetche
 }
 
 /**
- * THE SPEND GATE FOR T1 — a deliberately WIDER net than lib/journey.ts's
- * `floorPendingChamber`, and not a substitute for it.
+ * THE SPEND GATE FOR T1 — re-exported from lib/docket.mjs, which owns it.
  *
- * journey.ts's allow-list decides what the site may SAY: it is fail-closed
- * because a novel Senate sentence must cost a quiet week rather than a false
- * claim of urgency. This function decides only whether a bill is close enough
- * to the floor to be worth re-reading before someone sees it. A false
- * positive here costs at most one capped decode and says nothing to anybody;
- * a false negative costs a reader a stale explanation of a live bill. So the
- * asymmetry runs the other way, and the two must not be merged.
+ * It shipped here first, one branch ahead of the ladder that consumes it, with
+ * a private copy of FLOOR_SETTLED beside it. Both are gone: the ladder's T1
+ * rung and this re-decode queue must mean the SAME thing by "close enough to
+ * the floor", or the site would rank a bill it never bothered to re-read (and
+ * the four-copies-of-one-regex problem is exactly what lib/floor-text.mjs was
+ * created to end). Kept as a named re-export so this module's own callers and
+ * tests/floor-signals.unit.spec.ts are unchanged.
  *
- * It carries journey.ts's four pending rungs verbatim plus the two the
- * 18-snapshot backtest measured as gaps (K7): "cloture invoked" (hr-5334
- * vanished from the ladder between its 86-12 cloture and its 86-11 passage)
- * and "motion to proceed to measure considered / measure laid before Senate"
- * (hr-6500 dropped out for two days WHILE it was being debated on the Senate
- * floor). tests/floor-signals.unit.spec.ts pins the superset relationship
- * against lib/journey.ts over the live corpus, so the two can drift apart
- * only in the safe direction.
+ * It stays deliberately WIDER than lib/journey.ts's `floorPendingChamber`, and
+ * is not a substitute for it: journey's allow-list decides what the site may
+ * SAY and is fail-closed, because a novel Senate sentence must cost a quiet
+ * week rather than a false claim of urgency. This decides only whether a bill
+ * is close enough to the floor to be worth re-reading and ranking. A false
+ * positive costs at most one capped decode; a false negative costs a reader a
+ * stale explanation of a live bill. tests/floor-signals.unit.spec.ts pins the
+ * superset relationship against lib/journey.ts over the live corpus, so the two
+ * can drift apart only in the safe direction.
  */
-const FLOOR_SETTLED = /\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i;
-
-/**
- * @param {string | null | undefined} actionText
- * @returns {boolean}
- */
-export function entersFloorWatch(actionText) {
-  const t = String(actionText ?? '');
-  if (!t) return false;
-  if (FLOOR_SETTLED.test(t)) return false;
-  return (
-    /cloture motion .*presented in senate/i.test(t) ||
-    /motion to proceed to consideration of (?:the )?measure made in senate/i.test(t) ||
-    /postponed proceedings/i.test(t) ||
-    /rules committee resolution .*reported to house/i.test(t) ||
-    /cloture .*invoked/i.test(t) ||
-    /motion to proceed to (?:the )?measure considered in senate/i.test(t) ||
-    /measure laid before senate/i.test(t)
-  );
-}
+export { entersFloorWatch } from '../lib/docket.mjs';
+import { entersFloorWatch } from '../lib/docket.mjs';
 
 /**
  * The ordered, capped queue of bills worth re-reading this run.

@@ -34,6 +34,13 @@ interface FeedItem {
   url: string;
   last_action_date: string | null;
   urgency_score: number;
+  signal?: {
+    tier: string;
+    annotation: string | null;
+    evidence_sentence: string | null;
+    evidence_url: string | null;
+    evidence_date: string | null;
+  };
 }
 
 interface FeedPayload {
@@ -119,9 +126,56 @@ test.describe('JSON feed', () => {
     expect(text).not.toContain('203.0.113.77');
     expect(text).not.toContain('198.51.100.9');
   });
+
+  /*
+   * THE DOCKET SIGNAL, INHERITED (2026-08-12). This feed is a thin wrapper over
+   * the MCP tool's own output, so an item's "why it is here" sentence arrives
+   * for free — and a newsletter built on this feed can print Congress's own
+   * words beside our decoded headline.
+   */
+  test('every item carries the rung and the sentence that put it there', async ({ request }) => {
+    const body = (await (await request.get(ROUTES.en.json)).json()) as FeedPayload;
+    test.skip(body.items.length === 0, 'quiet week: the feed is empty right now');
+    for (const item of body.items) {
+      expect(item.signal, item.slug).toBeTruthy();
+      expect(['t0', 't1', 't2'], item.slug).toContain(item.signal!.tier);
+      expect(item.signal!.evidence_sentence, item.slug).toBeTruthy();
+    }
+  });
+
+  test('es: the evidence sentence is byte-identical English — a quote is never translated', async ({
+    request,
+  }) => {
+    // Owner ruling V4. Everything AROUND the quote is Spanish (title,
+    // description, attribution, the RSS framing line); the quote itself is a
+    // verbatim sentence from a U.S. government record and stays as published.
+    const en = (await (await request.get(ROUTES.en.json)).json()) as FeedPayload;
+    const es = (await (await request.get(ROUTES.es.json)).json()) as FeedPayload;
+    test.skip(en.items.length === 0, 'quiet week: the feed is empty right now');
+    const esBySlug = new Map(es.items.map((i) => [i.slug, i]));
+    for (const item of en.items) {
+      expect(esBySlug.get(item.slug)?.signal?.evidence_sentence, item.slug).toBe(
+        item.signal!.evidence_sentence
+      );
+    }
+  });
 });
 
 test.describe('RSS feed', () => {
+  test('each locale frames the English quote in its own language', async ({ request }) => {
+    const body = (await (await request.get(ROUTES.en.json)).json()) as FeedPayload;
+    test.skip(body.items.length === 0, 'quiet week: the feed is empty right now');
+    const enXml = await (await request.get(ROUTES.en.xml)).text();
+    const esXml = await (await request.get(ROUTES.es.xml)).text();
+    expect(enXml).toContain('From the record:');
+    expect(esXml).toContain('Del registro (en inglés, sin traducir):');
+    // …and the sentence inside the frame is the same one in both.
+    const sentence = body.items[0].signal!.evidence_sentence!.replace(/&/g, '&amp;').slice(0, 40);
+    expect(enXml).toContain(sentence);
+    expect(esXml).toContain(sentence);
+  });
+
+
   test('en: 200, correct content-type, valid RSS 2.0 shape', async ({ request }) => {
     const res = await request.get(ROUTES.en.xml);
     expect(res.status()).toBe(200);

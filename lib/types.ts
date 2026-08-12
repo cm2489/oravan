@@ -76,9 +76,22 @@ export interface BillTeaser {
   lastActionDate: string | null;
 }
 
-/** A teaser placed in the urgency feed: a card plus its rank-based band. */
+/**
+ * A teaser placed in the browse feed: a card plus the band its DOCKET RUNG puts
+ * it in (lib/docket.mjs). The band used to be a rank cut off `effectiveUrgency`;
+ * since 2026-08-12 it is a fact about the record, so an empty band is a true
+ * statement about the week rather than a bug.
+ */
 export interface FeedTeaser extends BillTeaser {
   band: UrgencyBand;
+  /**
+   * The rung's own footnote, in ink and never in colour:
+   *   `just_decided` the floor took the question up and the answer was no.
+   *   `just_passed`  a chamber passed it inside the signal window.
+   * Null on every other bill. A surface may print it; none may light amber off
+   * it — amber is one dated floor fact that is still AHEAD.
+   */
+  annotation?: 'just_decided' | 'just_passed' | null;
 }
 
 export interface DistrictOffice {

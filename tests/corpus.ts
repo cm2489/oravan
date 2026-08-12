@@ -26,15 +26,30 @@
  */
 import billsJson from '../data/bills.json';
 import syncState from '../data/sync-state.json';
-import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgency.mjs';
+import { TERMINAL_STATUSES, isSignalFresh } from '../lib/urgency.mjs';
 import { floorCalendarChamber, floorPendingChamber } from '../lib/journey';
-// NOT re-derived, deliberately, and the one import here that breaks the mirror
-// rule on purpose: the settled-floor predicate (2026-08-12) is CLOCK-FREE — it
-// reads the record's own vocabulary and nothing else — so there is no "what
-// would this be at time t" question for it to answer, and the only thing a
-// second copy could buy is the drift this file's header exists to prevent.
-import { demoteSettled, isSettledFloor } from '../lib/core/bills';
-import { BAND_SIZES, bandFloors, bandForEff, type BandFloors } from '../lib/taxonomy';
+/*
+ * THE LADDER ITSELF IS IMPORTED, NOT MIRRORED — the one deliberate break in
+ * this file's mirror rule, and the ladder is exactly why it is safe.
+ *
+ * The mirror exists so a spec can ask "what would this be at time t", and the
+ * old scoring answered that with a decay curve plus percentile floors read off
+ * the whole corpus — a lot of arithmetic worth reproducing independently.
+ * `docketRung` takes `now` as an argument already, so a hand-copy would answer
+ * the identical question with the identical inputs and buy nothing but the
+ * drift this header exists to prevent. What the mirror still owns is
+ * everything BUILT on the rung: the pools, the bands, the tool windows.
+ */
+import {
+  bandForRung,
+  compareDocket,
+  docketKey,
+  docketRung,
+  isActNow,
+  isDecidingNow,
+} from '../lib/docket.mjs';
+import floorSignalsJson from '../data/floor-signals.json';
+import { BAND_SIZES } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
 
 export interface CorpusBill {
@@ -54,22 +69,58 @@ export interface CorpusBill {
 export const corpus = billsJson as unknown as CorpusBill[];
 export const activeBills = corpus.filter((b) => !TERMINAL_STATUSES.has(b.status));
 
-/**
- * The ACT-NOW POOL (2026-08-12): active bills minus the ones whose floor
- * question the record has already answered — a rejected motion to proceed,
- * cloture not invoked, a withdrawn measure. lib/core/bills.ts's
- * `scoreActiveBills().actNowPool`, which every "worth a call" surface reads.
- *
- * `activeBills` above stays the BANDING population (the floors are still read
- * off all of it, and /bills still lists every one of these bills — one band
- * lower, never hidden), so the two lists are not interchangeable: mirror
- * whichever one the function under test reads.
- */
-export const actNowPool = activeBills.filter((b) => !isSettledFloor(b));
-
-/** Same shape as lib/core/bills.ts's billSlug. */
+/** Same shape as lib/core/bills.ts's billSlug, hoisted above the ladder
+ *  helpers that need it to look a signal up. */
 export const slugOf = (b: CorpusBill): string =>
   `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
+
+const FLOOR_SIGNALS = (floorSignalsJson as { signals?: Record<string, unknown> }).signals ?? {};
+
+/** One bill's rung at instant `at` — the mirror's entry point into the ladder. */
+export function rungAt(b: CorpusBill, at: number) {
+  return docketRung(b, FLOOR_SIGNALS[slugOf(b)] ?? null, { now: at });
+}
+
+/** The whole corpus, placed and ordered exactly as lib/core/bills.ts's
+ *  `docketCorpus` orders it. */
+export function docketedAt(at: number) {
+  return corpus
+    .map((b) => {
+      const rung = rungAt(b, at);
+      return { b, rung, key: docketKey({ slug: slugOf(b), date: b.last_action_date, rung }) };
+    })
+    .sort((x, y) => compareDocket(x.key, y.key));
+}
+
+/**
+ * THE ACT-NOW POOL (2026-08-12, re-derived on the ladder the same day): every
+ * bill on rung T0, T1 or T2 — the chamber announced it, the record says a vote
+ * is ripening, or it carries a dated calendar placement still inside the signal
+ * window. lib/core/bills.ts's `docketCorpus().actNowPool`, which every "worth a
+ * call" surface reads.
+ *
+ * A bill whose floor question the record has already ANSWERED cannot be here by
+ * construction — a rejected motion to proceed, cloture not invoked, a withdrawn
+ * measure all fail the T1 rung's settled guard and land on T4 with a
+ * `just_decided` annotation. That is the same exclusion the pre-ladder pool
+ * made with an explicit filter; it is now structural.
+ *
+ * NOTE THE POOL IS NOT THE LEAD BAND. /bills' "Deciding now" band is T0 ∪ T1
+ * (`decidingNowAt` below); the pool is one rung wider. See lib/docket.mjs's
+ * `isActNow` for why, and `anyNowAt`/`bandCountsAt` for the two mirrors.
+ */
+export function actNowPoolAt(at: number): CorpusBill[] {
+  return docketedAt(at)
+    .filter((e) => isActNow(e.rung))
+    .map((e) => e.b);
+}
+
+/** The /bills lead band's membership (T0 ∪ T1) — the narrower claim. */
+export function decidingNowAt(at: number): CorpusBill[] {
+  return docketedAt(at)
+    .filter((e) => isDecidingNow(e.rung))
+    .map((e) => e.b);
+}
 
 /** Newest last_action_date anywhere in the corpus — the third freshness
  *  signal emptyStateVerdict reads. */
@@ -78,68 +129,39 @@ export const newestActionDate = corpus.reduce(
   ''
 );
 
-export function floorsAt(at: number): BandFloors {
-  const effs = activeBills
-    .map((b) => effectiveUrgency(b.status, b.last_action_date, at))
-    .sort((a, b) => b - a);
-  return bandFloors(effs);
-}
-
-/** Mirror of hasActNow: any act-now-pool bill (decoded or not) clears the now
- *  floor. The FLOOR is still read off every active bill (floorsAt) — only the
- *  population that may claim it narrowed. */
+/** Mirror of hasActNow: any act-now-pool bill (decoded or not) exists. */
 export function anyNowAt(at: number): boolean {
-  const floors = floorsAt(at);
-  return actNowPool.some(
-    (b) => effectiveUrgency(b.status, b.last_action_date, at) >= floors.nowFloor
-  );
+  return actNowPoolAt(at).length > 0;
 }
 
-/** Mirror of getTopActions' predicate: a DECODED act-now-pool bill clears it. */
+/** Mirror of getTopActions' predicate: a DECODED act-now-pool bill exists. */
 export function anyTopAt(at: number): boolean {
-  const floors = floorsAt(at);
-  return actNowPool.some(
-    (b) =>
-      b.ai_headline && effectiveUrgency(b.status, b.last_action_date, at) >= floors.nowFloor
-  );
+  return actNowPoolAt(at).some((b) => b.ai_headline);
 }
 
-/** Mirror of getTopActions: slugs in the site's own order (urgency desc,
- *  then last-action desc — lib/core/bills.ts's byUrgencyDesc). */
+/** Mirror of getTopActions: slugs in the site's own order (the docket ladder —
+ *  rung, then the tier's own significance key, then last action desc, then
+ *  slug). */
 export function topActionSlugsAt(at: number): string[] {
-  const floors = floorsAt(at);
-  return actNowPool
-    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date, at) }))
-    .filter((s) => s.eff >= floors.nowFloor && s.b.ai_headline)
-    .sort(
-      (x, y) =>
-        y.eff - x.eff ||
-        (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? '')
-    )
-    .map((s) => slugOf(s.b));
+  return actNowPoolAt(at)
+    .filter((b) => b.ai_headline)
+    .map(slugOf);
 }
 
-/** Mirror of lib/core/mcp.ts's whatsMoving: the Act-now pool further gated
- *  to bills with a known last action inside the recency window (and,
- *  optionally, a topic), capped at `limit`. */
+/** Mirror of lib/core/mcp.ts's whatsMoving: the act-now pool further gated to
+ *  bills with a known last action inside the recency window (and, optionally, a
+ *  topic), capped at `limit`. */
 export function movingSlugsAt(
   at: number,
   { topic, days = 7, limit = 10 }: { topic?: string; days?: number; limit?: number } = {}
 ): string[] {
-  const floors = floorsAt(at);
   const cutoff = at - days * 86_400_000;
-  return actNowPool
-    .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date, at) }))
-    .filter((s) => s.eff >= floors.nowFloor && s.b.ai_headline)
-    .filter((s) => !topic || (s.b.issue_tags ?? []).includes(topic))
-    .filter((s) => s.b.last_action_date && new Date(s.b.last_action_date).getTime() >= cutoff)
-    .sort(
-      (x, y) =>
-        y.eff - x.eff ||
-        (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? '')
-    )
+  return actNowPoolAt(at)
+    .filter((b) => b.ai_headline)
+    .filter((b) => !topic || (b.issue_tags ?? []).includes(topic))
+    .filter((b) => b.last_action_date && new Date(b.last_action_date).getTime() >= cutoff)
     .slice(0, limit)
-    .map((s) => slugOf(s.b));
+    .map(slugOf);
 }
 
 /** Mirror of emptyStateVerdict's data_stale collapse (lib/freshness-state.ts),
@@ -152,21 +174,13 @@ export function expectDataStaleAt(at: number): boolean {
   );
 }
 
-/** Mirror of /bills' band split (getTeasers): active bills band by floor,
- *  terminal bills pin to radar, and a bill whose floor question the record has
- *  already answered is capped one rung below "now" (demoteSettled). */
+/** Mirror of /bills' band split (getTeasers): the band IS the rung —
+ *  Deciding now = T0 ∪ T1, Moving = T2 ∪ T3, radar = T4 with every terminal
+ *  bill pinned there. No floors, no percentiles: see lib/taxonomy.ts's v4
+ *  history note for what was retired and why. */
 export function bandCountsAt(at: number): Record<'now' | 'moving' | 'radar', number> {
-  const floors = floorsAt(at);
   const counts = { now: 0, moving: 0, radar: 0 };
-  for (const b of corpus) {
-    const band = TERMINAL_STATUSES.has(b.status)
-      ? 'radar'
-      : demoteSettled(
-          bandForEff(effectiveUrgency(b.status, b.last_action_date, at), floors),
-          isSettledFloor(b)
-        );
-    counts[band] += 1;
-  }
+  for (const b of corpus) counts[bandForRung(rungAt(b, at)) as 'now' | 'moving' | 'radar'] += 1;
   return counts;
 }
 

@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
   billSlug,
-  demoteSettled,
   getFloorFeatureCandidates,
   getNewsBills,
   getTeasers,
@@ -164,11 +163,26 @@ test.describe('the settled exclusion over the committed corpus', () => {
     expect(getTeasers().length).toBe(corpus.length);
   });
 
-  test('demoteSettled caps at "moving" and touches nothing else', () => {
-    expect(demoteSettled('now', true)).toBe('moving');
-    expect(demoteSettled('now', false)).toBe('now');
-    expect(demoteSettled('moving', true)).toBe('moving');
-    expect(demoteSettled('radar', true)).toBe('radar');
+  test('the demotion is STRUCTURAL now, not a cap applied after scoring', () => {
+    /*
+     * `demoteSettled(band, settled)` used to run after the floors had already
+     * scored a settled bill into "now". With the docket ladder the exclusion is
+     * the rung itself — a settled text fails T1's rule-0 guard and lands on T4
+     * carrying `just_decided` — so there is no band left to cap. This pins the
+     * result rather than the retired mechanism: every settled bill sits in the
+     * radar band, annotated, and none of them is anywhere else.
+     */
+    const bySlug = new Map(getTeasers().map((t) => [t.slug, t]));
+    for (const b of settled) {
+      const teaser = bySlug.get(slugOf(b));
+      expect(teaser, slugOf(b)).toBeTruthy();
+      expect(teaser!.band, slugOf(b)).toBe('radar');
+    }
+    // The annotation only fires inside the signal window (an eight-month-old
+    // defeat is not news), so it is asserted as a range with its own guard.
+    const annotated = getTeasers().filter((t) => t.annotation === 'just_decided');
+    expect(annotated.length).toBeLessThanOrEqual(settled.length);
+    for (const t of annotated) expect(t.band).toBe('radar');
   });
 });
 
