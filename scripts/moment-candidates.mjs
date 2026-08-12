@@ -346,6 +346,13 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
     const leans = new Set(articles.map((a) => a.lean ?? 'unrated'));
     const partisan = new Set(articles.map((a) => a.lean).filter((l) => l === 'left' || l === 'right'));
 
+    // ONE derivation per bill, read twice. `docketTierOf` builds a slug and
+    // runs the whole ladder, and this used to be called once for the printed
+    // tier and again for its index — same inputs, same answer, twice per
+    // candidate. Two reads of one value can also drift if the second call ever
+    // takes a different `now`.
+    const docketTier = docketTierOf(bill, floorSignals, now);
+
     candidates.push({
       slug: bill.full_identifier,
       citation: formatCitation(bill.bill_type, bill.bill_number),
@@ -357,8 +364,8 @@ export function buildReport({ bills, coverage, moments, rejections, floorSignals
       // The rung and its index, from the one ladder. `docketTier` is printed in
       // the report so the owner can see WHY a candidate ranks where it does;
       // `docketRank` is what the comparator reads.
-      docketTier: docketTierOf(bill, floorSignals, now),
-      docketRank: DOCKET_TIERS.indexOf(docketTierOf(bill, floorSignals, now)),
+      docketTier,
+      docketRank: DOCKET_TIERS.indexOf(docketTier),
       urgency: effectiveUrgency(bill.status, bill.last_action_date ?? null, now),
       tier,
       outlets: outlets.size,

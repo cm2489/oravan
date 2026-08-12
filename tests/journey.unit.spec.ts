@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  billFloorBand,
   deriveJourney,
   floorActionChamber,
   floorCalendarChamber,
@@ -854,6 +855,7 @@ test.describe('selectFloorVoteFeature floor gate', () => {
       url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
       published: dayOffset(1),
       covers: dayOffset(-1),
+      coversLabel: '8 a.m., Thursday, August 13',
       source: 'daily-digest' as const,
       chamber: 'senate' as const,
       ...over,
@@ -906,6 +908,33 @@ test.describe('selectFloorVoteFeature floor gate', () => {
         bill === newer ? announcement({ published: dayOffset(0) }) : announcement({ published: dayOffset(3) })
       );
       expect(pick?.bill).toBe(newer);
+    });
+
+    /*
+     * THE TERMINAL GUARD (2026-08-12). Rung order in lib/docket.mjs is terminal
+     * FIRST, then T0 — a signed or vetoed bill has no floor question left, and
+     * no schedule entry can reopen one. This branch used to hold that rule only
+     * by upstream luck (no caller resolved an announcement for a terminal bill),
+     * which is not a rule. FIXTURE-BASED BY NECESSITY: data/floor-signals.json
+     * is empty this week (both chambers out of session), so the live corpus can
+     * elect no announced bill at all right now.
+     */
+    test('a terminal bill is never crowned, whatever the chamber published about it', () => {
+      const signed = {
+        status: 'signed' as const,
+        last_action_date: dayOffset(0),
+        last_action_text: 'Became Public Law No: 119-142.',
+        urgency_score: 1,
+      };
+      expect(selectFloorVoteFeature([signed], () => announcement())).toBeNull();
+      // And it does not merely lose the tie — it is out of the running, so the
+      // eligible bill below it still wins on its own record fact.
+      const pending = candidate(dayOffset(0), CLOTURE_TEXT, 0.1);
+      const pick = selectFloorVoteFeature([signed, pending], (b) =>
+        b === signed ? announcement() : null
+      );
+      expect(pick?.bill).toBe(pending);
+      expect(pick?.kind).toBe('pending');
     });
 
     test('with no resolver the selector is byte-for-byte the pre-ruling behavior', () => {
@@ -973,6 +1002,151 @@ test.describe('selectFloorVoteFeature floor gate', () => {
         (winner.last_action_date ?? '') >= (b.last_action_date ?? ''),
         `${slugOf(winner)} (${winner.last_action_date}) must not be older than ${slugOf(b)} (${b.last_action_date})`
       ).toBe(true);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5b · THE BILL PAGE'S BAND (`billFloorBand`) — the gate that page runs,
+ *      and the SEAM it closed on 2026-08-12.
+ *
+ *      app/[locale]/bills/[id]/page.tsx hard-gated its full-bleed green
+ *      band on `status === 'floor_vote'` and never read the chamber's own
+ *      published schedule. So a T0-ANNOUNCED bill whose derived status had
+ *      fallen back to `committee` — which is the NORMAL state of a measure
+ *      mid-passage, because Congress overwrites `last_action_text` the
+ *      moment a bill reaches the floor — wore the crown on the homepage and
+ *      showed NO band at all one click later. Same seam class #207 closed
+ *      for `pending`, one rung up.
+ *
+ *      FIXTURE-BASED, AND IT HAS TO BE: data/floor-signals.json holds zero
+ *      signals today (both chambers out of session, `_meta.sources` both
+ *      `quiet`), so no live bill can exercise the announced path at all.
+ *      Every announcement below is hand-written and injected exactly as the
+ *      page injects it from `rungFor`.
+ * ------------------------------------------------------------------ */
+test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
+  /** The measured case: the CR and the SEED Act on the days they passed. */
+  const OVERWRITTEN = {
+    status: 'committee' as const,
+    last_action_date: dayOffset(4),
+    last_action_text: 'Message on Senate action sent to the House.',
+  };
+  const announced = { chamber: 'senate' as const, published: dayOffset(1) };
+
+  test('THE SEAM, half one: an announced bill renders the band even at committee status', () => {
+    const band = billFloorBand(OVERWRITTEN, announced);
+    expect(band).not.toBeNull();
+    expect(band?.kind).toBe('announced');
+    expect(band?.chamber).toBe('senate');
+    // The ANNOUNCEMENT's own publication day, never the bill's action date —
+    // the bill's own record is precisely what has gone stale here.
+    expect(band?.date).toBe(announced.published);
+    expect(band?.date).not.toBe(OVERWRITTEN.last_action_date);
+  });
+
+  test('THE SEAM, half two: the same bill with no announcement gets no band', () => {
+    expect(billFloorBand(OVERWRITTEN, null)).toBeNull();
+  });
+
+  /*
+   * The two surfaces must agree about the same record, which is the whole
+   * point of closing the seam: the crown's selector and the page's gate,
+   * driven by one bill and one announcement, return the same kind, the same
+   * chamber and the same printed date.
+   */
+  test('the crown and the page read one record the same way', () => {
+    const pick = selectFloorVoteFeature([{ ...OVERWRITTEN, urgency_score: 0.45 }], () => ({
+      quote: 'Senator Thune: the Senate will vote on the motion to invoke cloture.',
+      url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
+      published: announced.published,
+      covers: dayOffset(-1),
+      coversLabel: '8 a.m., Thursday, August 13',
+      source: 'daily-digest' as const,
+      chamber: announced.chamber,
+    }));
+    const band = billFloorBand(OVERWRITTEN, announced);
+    expect(pick?.kind).toBe(band?.kind);
+    expect(pick?.chamber).toBe(band?.chamber);
+    expect(pick?.announcement?.published).toBe(band?.date);
+  });
+
+  test('the announcement outranks the record fact, and prints its own date', () => {
+    const placed = {
+      status: 'floor_vote' as const,
+      last_action_date: dayOffset(0),
+      last_action_text: CALENDAR_TEXT,
+    };
+    expect(billFloorBand(placed, null)?.kind).toBe('calendar');
+    const band = billFloorBand(placed, announced);
+    expect(band?.kind).toBe('announced');
+    expect(band?.date).toBe(announced.published);
+  });
+
+  /*
+   * THE RECORD HALVES ARE UNTOUCHED — the seam fix added a rung above them and
+   * changed nothing below it. These are the page's pre-existing gates, moved
+   * into a function and pinned for the first time.
+   */
+  test('a fresh placement is `calendar`, a fresh pending motion is `pending`', () => {
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toEqual({ kind: 'calendar', chamber: 'senate', date: dayOffset(1) });
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CLOTURE_TEXT },
+        null
+      )?.kind
+    ).toBe('pending');
+  });
+
+  test('an aged, settled, undated or unclassified record still gets no band', () => {
+    // One day past the window, never on it.
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(15), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(0), last_action_text: CLOTURE_NOT_INVOKED },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: null, last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'committee', last_action_date: dayOffset(0), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+  });
+
+  /*
+   * Every key the page looks up for the new rung has to EXIST in both locales,
+   * or the loudest surface on a bill page renders a raw message key in one
+   * language. Same guard suite 4 keeps over the live-call keys.
+   */
+  test('the announced band\'s copy resolves in both locales', () => {
+    for (const k of [
+      'announcedHouse',
+      'announcedSenate',
+      'headlineAnnouncedHouse',
+      'headlineAnnouncedSenate',
+      'statusAnnounced',
+      'metaAnnounced',
+    ] as const) {
+      expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
+      expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');
     }
   });
 });
