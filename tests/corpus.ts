@@ -1,6 +1,6 @@
 /*
  * Corpus-derived test expectations, time-parameterized — the ONE test-side
- * mirror of lib/core/bills.ts's scoring (scoreActiveBills / getTopActions /
+ * mirror of lib/core/bills.ts's pools (docketCorpus / getTopActions /
  * hasActNow) plus lib/core/mcp.ts's whats_moving recency window.
  *
  * Why a mirror instead of importing lib/core directly: every helper here
