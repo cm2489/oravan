@@ -23,10 +23,12 @@ import {
   generateStateSummary,
   lintPair,
   pruneStore,
+  recordStatusPhrase,
   writeIfChanged,
 } from '../scripts/moment-updates.mjs';
 import { actionToCandidate, fallbackTextFor } from '../scripts/moment-updates-map.mjs';
-import { HARD_DAY_CEILING, MAX_REVISIONS, SCHEMA_VERSION } from '../lib/moment-updates-gate.mjs';
+import { HARD_DAY_CEILING, MAX_REVISIONS, SCHEMA_VERSION, lintRevisionText } from '../lib/moment-updates-gate.mjs';
+import { SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
 /* ------------------------------------------------------------------ *
  * Fixtures — literals in the shape the Congress.gov actions endpoint
@@ -176,12 +178,19 @@ test.describe('a hedged decode falls back to the record', () => {
  * record nothing has contradicted. That doctrine was a comment with nothing
  * behind it until this test.
  *
- * `floor_vote` is not an arbitrary status here: it is the one status the
- * function rewrites from its own RECORD_ONLY_PHRASE table, so this test never
- * reaches the lazy messages/*.json read and stays filesystem-free.
+ * `floor_vote` is not an arbitrary status here: paired with a FRESH placement
+ * record it is the one input the function rewrites from its own
+ * RECORD_ONLY_PHRASE table, so this test never reaches the lazy
+ * messages/*.json read and stays filesystem-free.
  * ------------------------------------------------------------------ */
+const dayAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+
+/** A real Senate placement sentence, in the shape data/bills.json stores. */
+const PLACEMENT_TEXT = 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 501.';
+
 test.describe('generateStateSummary', () => {
   const STATUSES = { 'hr-9770-119': 'floor_vote' };
+  const RECORDS = { 'hr-9770-119': { lastActionText: PLACEMENT_TEXT, lastActionDate: dayAgo(2) } };
 
   test('a hedged summary is refused, and the previous revision is left untouched', async () => {
     const previous = { id: 's_00000001', text: { en: 'Prior.', es: 'Previo.' } };
@@ -191,7 +200,7 @@ test.describe('generateStateSummary', () => {
       es: 'Se espera que la medida llegue al pleno la próxima semana.',
     });
 
-    const revision = await generateStateSummary(clientReturning(hedged), 'test-moment', entry, STATUSES, []);
+    const revision = await generateStateSummary(clientReturning(hedged), 'test-moment', entry, STATUSES, [], RECORDS);
 
     expect(revision).toBeNull();
     // The caller appends only when a revision comes back, so "the previous
@@ -201,13 +210,120 @@ test.describe('generateStateSummary', () => {
 
   test('an API outage returns null rather than throwing out of the nightly', async () => {
     const entry = { updates: [], summary_revisions: [] };
-    expect(await generateStateSummary(throwingClient, 'test-moment', entry, STATUSES, [])).toBeNull();
+    expect(await generateStateSummary(throwingClient, 'test-moment', entry, STATUSES, [], RECORDS)).toBeNull();
   });
 
   test('a reply with no EN/ES pair returns null — bilingual parity has no machine exemption', async () => {
     const entry = { updates: [], summary_revisions: [] };
     const enOnly = JSON.stringify({ en: 'The House passed the bill on July 24, 2026.' });
-    expect(await generateStateSummary(clientReturning(enOnly), 'test-moment', entry, STATUSES, [])).toBeNull();
+    expect(await generateStateSummary(clientReturning(enOnly), 'test-moment', entry, STATUSES, [], RECORDS)).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 3b · THE CLOCK ON THE STATUS PHRASE (N12, 2026-08-12).
+ *
+ * This function is the last producer of "on the floor calendar" that #211 did
+ * not reach: every RENDERED surface routes its label through statusKeyFor, but
+ * the summary prompt read `bill.status` raw and handed the model a present-
+ * tense calendar claim for any `floor_vote` vehicle — however old the
+ * placement, and even when there had never been a placement at all. A prompt
+ * is a printing surface; both of those sentences reached published prose in
+ * data/moment-updates.json (S. 4784, 2026-08-11; S. 3172, 2026-08-09).
+ *
+ * The pins are per language, because a phrase that ages correctly in English
+ * and not in Spanish is exactly the parity break the hard rule forbids.
+ * ------------------------------------------------------------------ */
+test.describe('recordStatusPhrase — an aged placement loses the present tense', () => {
+  const FRESH = { lastActionText: PLACEMENT_TEXT, lastActionDate: dayAgo(2) };
+  const AGED = { lastActionText: PLACEMENT_TEXT, lastActionDate: dayAgo(200) };
+
+  test('a fresh placement keeps the phrase it has always had, in both languages', () => {
+    expect(recordStatusPhrase('floor_vote', FRESH, 'en')).toBe('on the floor calendar');
+    expect(recordStatusPhrase('floor_vote', FRESH, 'es')).toBe('en el calendario del pleno');
+  });
+
+  test('an aged placement is handed a PAST-tense phrase, in both languages', () => {
+    const en = recordStatusPhrase('floor_vote', AGED, 'en');
+    const es = recordStatusPhrase('floor_vote', AGED, 'es');
+
+    expect(en).toBe(
+      'was placed on the floor calendar, and the official record shows no floor action on it since',
+    );
+    expect(es).toBe(
+      'se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces',
+    );
+    // The demotion moves the tense; it must never move the FACT. Both halves
+    // still name the calendar, which is what makes a third key better than
+    // falling back to the vaguer "Floor activity".
+    expect(en).toContain('calendar');
+    expect(es).toContain('calendario');
+  });
+
+  test('the boundary sits exactly on the signal window, on both sides of it', () => {
+    const inside = { lastActionText: PLACEMENT_TEXT, lastActionDate: dayAgo(SIGNAL_WINDOW_DAYS - 1) };
+    const outside = { lastActionText: PLACEMENT_TEXT, lastActionDate: dayAgo(SIGNAL_WINDOW_DAYS + 1) };
+    expect(recordStatusPhrase('floor_vote', inside, 'en')).toBe('on the floor calendar');
+    expect(recordStatusPhrase('floor_vote', outside, 'en')).not.toBe('on the floor calendar');
+  });
+
+  test('both phrases survive the summary lint — a model that obeys the instruction is not rejected for it', () => {
+    for (const lang of ['en', 'es'] as const) {
+      for (const record of [FRESH, AGED]) {
+        expect(lintRevisionText(recordStatusPhrase('floor_vote', record, lang), lang)).toEqual([]);
+      }
+    }
+  });
+
+  test('a floor_vote with no placement in the record claims no calendar at all — and is NOT clocked', () => {
+    const cloture = { lastActionText: 'Cloture motion on the motion to proceed to the measure presented in Senate.', lastActionDate: dayAgo(3) };
+    const oldCloture = { ...cloture, lastActionDate: dayAgo(300) };
+    for (const lang of ['en', 'es'] as const) {
+      const phrase = recordStatusPhrase('floor_vote', cloture, lang);
+      expect(phrase).not.toContain(lang === 'en' ? 'calendar' : 'calendario');
+      // floor_activity is a tenseless description of what the record holds, so
+      // ageing it changes nothing (#211's rule, carried here unchanged).
+      expect(recordStatusPhrase('floor_vote', oldCloture, lang)).toBe(phrase);
+    }
+  });
+
+  test('a missing record fails closed to the weaker claim, never to the calendar', () => {
+    expect(recordStatusPhrase('floor_vote', null, 'en')).not.toContain('calendar');
+    expect(recordStatusPhrase('floor_vote', undefined, 'es')).not.toContain('calendario');
+  });
+
+  test('every other status is untouched by the clock', () => {
+    expect(recordStatusPhrase('passed_chamber', AGED, 'en')).toBe(recordStatusPhrase('passed_chamber', FRESH, 'en'));
+    expect(recordStatusPhrase('committee', AGED, 'es')).toBe(recordStatusPhrase('committee', FRESH, 'es'));
+  });
+
+  test('and the phrase reaches the PROMPT — the whole point is what the model is handed', async () => {
+    const prompts: string[] = [];
+    const capturing = {
+      messages: {
+        create: async (args: { messages: { content: string }[] }) => {
+          prompts.push(args.messages[0].content);
+          return { content: [{ type: 'text', text: JSON.stringify({ en: 'Nothing has moved.', es: 'Nada se ha movido.' }) }] };
+        },
+      },
+    };
+
+    await generateStateSummary(
+      capturing,
+      'test-moment',
+      { updates: [], summary_revisions: [] },
+      { 'hr-9770-119': 'floor_vote', 's-3172-119': 'floor_vote' },
+      [],
+      { 'hr-9770-119': FRESH, 's-3172-119': AGED },
+    );
+
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toContain('- H.R. 9770: EN "on the floor calendar" / ES "en el calendario del pleno"');
+    expect(prompts[0]).toContain(
+      '- S. 3172: EN "was placed on the floor calendar, and the official record shows no floor action on it since"',
+    );
+    // The aged measure is never offered the present-tense phrase as its own.
+    expect(prompts[0]).not.toContain('- S. 3172: EN "on the floor calendar"');
   });
 });
 
