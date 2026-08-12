@@ -114,6 +114,12 @@ test.describe(
       citations: '/citations',
       partners: '/partners', // S5b's partner GTM page - standard locked-down posture
       embeds: '/embeds', // S16's configurator + docs page
+      // The procedural glossary (issue #181): static explainers, no form, no
+      // call apparatus, no visitor state — nothing a frame could harvest. It
+      // takes the standard locked-down posture anyway, because the guard's
+      // whole point is that a new segment gets an explicit answer rather than
+      // a default nobody looked at.
+      glossary: '/glossary',
       record: '/record',
       mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
       // The Senate nomination record + call page (2026-08-06). It mounts the
