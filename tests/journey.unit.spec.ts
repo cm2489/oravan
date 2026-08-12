@@ -806,18 +806,24 @@ test.describe('deriveJourney', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 4 · CORPUS SWEEP — the tripwire. Runs over the live data/bills.json,
- *     so nightly data movement cannot silently re-invert the chamber
- *     derivation: a novel floor text fails here, loudly.
+ * 4 · CORPUS SWEEP — the tripwire, and where it went.
  * ------------------------------------------------------------------ */
 /* The live-corpus sweep MOVED to the nightly sync (owner ruling
  * 2026-08-04): scripts/check-journey-corpus.mjs, wired into
  * sync-bills.yml. It tests DATA, and data changes nightly — in this
  * PR-blocking suite a novel floor text landed by the sync could red the
  * CI of unrelated PRs. The fixtures above and the parity pin below test
- * CODE and stay. deriveJourney's neutral no-chamber branch (an
- * unclassified text renders nowFloorActivityNeutral, never a guessed
- * chamber) is pinned in suite 3.
+ * CODE and stay.
+ *
+ * WHAT IT DOES WHEN IT FIRES CHANGED ON 2026-08-12 (N9-A2), and the
+ * reason is in suite 3: deriveJourney's residual branch reads
+ * floorPendingChamber now, so BOTH classes the sweep hunts — an
+ * unreadable text and a chamber-readable-but-untensed one — render the
+ * chamber-free nowFloorActivityNeutral. Nothing on the site can speak
+ * about a sentence nobody has read, so the sweep files a labeled
+ * `journey-corpus` issue instead of costing the night its commit. The
+ * only verdict that still fails the run is a sweep that proved nothing
+ * (<50 floor_vote records, or a sweep that could not run).
  * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
