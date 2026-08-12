@@ -132,16 +132,22 @@ test.describe('the integrity/progress split survives', () => {
  * ------------------------------------------------------------------ */
 test.describe('the journey-corpus tripwire no longer costs the night', () => {
   const stepAt = syncBills.indexOf('- name: Journey-corpus tripwire');
-  const nextStepAt = syncBills.indexOf('- name: A vacuous journey corpus still fails the night');
+  const nextStepAt = syncBills.indexOf('- name: A sweep that proved nothing still fails the night');
 
   test('the sweep step is continue-on-error', () => {
     expect(stepAt).toBeGreaterThan(0);
     expect(syncBills.slice(stepAt, nextStepAt)).toContain('continue-on-error: true');
   });
 
-  test('a vacuous corpus still fails the run', () => {
+  test('the hard gate is an ALLOW-LIST — a sweep that could not run is not a pass', () => {
+    // continue-on-error makes every unhandled shape green, so the guard has to
+    // name what is ACCEPTABLE, not what is fatal. A deny-list on 'vacuous'
+    // alone would let a crashed sweep (verdict 'error') and a sweep that died
+    // before writing a verdict (empty) sail through as an all-clear.
     expect(nextStepAt).toBeGreaterThan(stepAt);
-    expect(syncBills.slice(nextStepAt)).toContain("steps.journey.outputs.verdict == 'vacuous'");
+    expect(syncBills.slice(nextStepAt)).toContain(
+      "steps.journey.outputs.verdict != 'clean' && steps.journey.outputs.verdict != 'novel'"
+    );
   });
 
   test('the job can actually open that issue', () => {

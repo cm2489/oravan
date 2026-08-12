@@ -147,21 +147,29 @@ jobs:
         # It is therefore continue-on-error PLUS a filed issue, not a bare
         # annotation: the nomination step below shows what a green job with a
         # red annotation is worth (nobody opens it). The two steps after this
-        # one keep the two things that stayed hard — a VACUOUS corpus (<50
-        # floor_vote texts, where the sweep would prove nothing) still fails
-        # the night, and a novel text still gets a labeled issue with the
-        # sentence in it.
+        # one keep the two things that stayed hard — a sweep that proved
+        # nothing (a corpus under 50 floor_vote texts, or a sweep that could
+        # not run) still fails the night, and a novel text still gets a labeled
+        # issue with the sentence in it.
         continue-on-error: true
         run: node scripts/check-journey-corpus.mjs
-      - name: A vacuous journey corpus still fails the night
-        # The ONE verdict that survives the softening above. <50 floor_vote
-        # records means the sweep proved nothing — a passing tripwire over an
-        # empty corpus is worse than no tripwire, because it reads as an
-        # all-clear. That is a corpus-shaped failure, not a vocabulary one, so
-        # it keeps the old behavior: red run, nothing committed.
-        if: steps.journey.outputs.verdict == 'vacuous'
+      - name: A sweep that proved nothing still fails the night
+        # WHAT SURVIVES THE SOFTENING ABOVE, written as an ALLOW-LIST because
+        # `continue-on-error` makes every other shape green by default. Only
+        # two verdicts are acceptable: `clean` (nothing found) and `novel` (a
+        # sentence found, issue filed, night commits). Everything else fails
+        # the run:
+        #   - `vacuous`: <50 floor_vote records, so the sweep proved nothing. A
+        #     passing tripwire over an empty corpus is worse than no tripwire,
+        #     because it reads as an all-clear. Corpus-shaped failure.
+        #   - `error`: the sweep could not run at all (tsx missing,
+        #     lib/journey.ts throwing, a corpus that will not parse).
+        #   - EMPTY: the script died before it could write a verdict.
+        # A deny-list here would have made the last two silently green - the
+        # exact failure mode this whole PR is about.
+        if: steps.journey.outputs.verdict != 'clean' && steps.journey.outputs.verdict != 'novel'
         run: |
-          echo "::error::journey-corpus: the sweep ran over a corpus too small to prove anything (see the step above). This is a SYNC failure, not a vocabulary gap - nothing is committed tonight."
+          echo "::error::journey-corpus: the sweep did not return a usable verdict (got '${{ steps.journey.outputs.verdict }}' - see the step above). This is a SYNC failure, not a vocabulary gap - nothing is committed tonight."
           exit 1
       - name: Open a journey-corpus issue for the novel floor text
         # Search-first, exactly like refresh-legislators.yml's vacancy and
