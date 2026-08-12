@@ -13,6 +13,16 @@ import type { VehicleKind } from './moments';
 // without any of this module's readers — embed, MCP, the bill page — pulling
 // a byte of the nomination corpus.
 import type { Nomination } from './core/nominations';
+// THE CLOCK, from the ONE copy. lib/urgency.mjs is a pure transform with no
+// data imports and no side effects (lib/moments.ts imports it the same way, by
+// relative path, for the same reason), so the embed and MCP surfaces that read
+// this module pay a few bytes of arithmetic and nothing else. It is
+// deliberately the SAME function the bill page's green panel
+// (app/[locale]/bills/[id]/page.tsx, via lib/signal-window.ts) and the homepage
+// crown (components/system/FloorVotePanel.tsx) gate on: three surfaces, one
+// definition of "now", so they cannot disagree about which floor facts are
+// still live.
+import { isSignalFresh } from './urgency.mjs';
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -264,6 +274,48 @@ export function floorSettledChamber(actionText: string | null): Chamber | null {
   return floorActionChamber(actionText);
 }
 
+/*
+ * THE THIRD GATE: THE CLOCK — which floor facts this module may speak about in
+ * the PRESENT TENSE (owner ruling 2026-08-11, decision D3).
+ *
+ * The two gates above ask what the record SAYS. This one asks when it said it,
+ * and it exists because every sentence the floor branch produces is written in
+ * the present: "it's on the Senate floor calendar", "the Senate is deciding
+ * whether to bring it to a vote", "this bill is in the Senate's hands right
+ * now — your senators are the live call." A placement is a one-time EVENT. It
+ * does not renew itself, and after a few weeks of silence the present tense is
+ * the only false word in an otherwise accurate sentence.
+ *
+ * MEASURED ON THE COMMITTED CORPUS, 2026-08-12 (re-measured after #210 purged
+ * the corpus's only two previous-Congress records): of 348 floor_vote bills,
+ * 322 carry a dated calendar placement and 305 of those placements are outside
+ * the 14-day window — a median age of 140 days, a maximum of 553 (s-347-119,
+ * placed on the Senate calendar 2025-02-05). Six more carry pending-but-aged
+ * floor motions. So the stepper's live-floor copy and the rail's live-call
+ * routing were, on 311 of 348 bills, claims their own printed date refuted.
+ *
+ * PR #198 gave exactly this clock to the bill page's full-bleed green panel
+ * and stopped there — one render site. The derivation underneath it kept
+ * answering "on the floor calendar, right now" to everyone else who asked,
+ * which is how the same page could drop the loud panel and still print the
+ * loud sentence three lines further down. The clock belongs here, where the
+ * question is answered once.
+ *
+ * WHAT DEMOTION MEANS, AND WHAT IT DOES NOT. The FACT survives; only the tense
+ * moves. An aged placement still sits at its calendar step, still names the
+ * chamber the record named, still says it was placed on that chamber's
+ * calendar — it simply also says the record has shown nothing since
+ * (`nowFloorStale`). Nothing is hidden, nothing is greyed out, and the call
+ * apparatus is untouched: liveCallTarget returning null only stops the rail
+ * from REORDERING the offices and printing "your senators are the live call",
+ * exactly as it already does for every committee-stage bill. Every dial, the
+ * script, and the call dialog stay where they are, which is what funnel
+ * invariant I2 pins.
+ *
+ * WHY NOT statusKeyFor — the third function in this module that prints "On the
+ * floor calendar". It is deliberately NOT clocked here; see its own header.
+ */
+
 /**
  * THE STATUS-LABEL GATE (owner ruling 2026-08-04, Wave B #1). The corpus
  * derives `floor_vote` looser than the label "On the floor calendar"
@@ -273,6 +325,46 @@ export function floorSettledChamber(actionText: string | null): Chamber | null {
  * `floor_vote` ("On the floor calendar"), activity-only bills print
  * `floor_activity` ("Floor activity"). Same gate, citizen site, embeds,
  * and MCP alike.
+ *
+ * NOT CLOCKED, unlike deriveJourney and liveCallTarget below (owner ruling
+ * 2026-08-11 gave the derivation the freshness clock; this function is the
+ * deliberate exception, and the decision is the owner's to reverse). Two
+ * reasons, and the second is the load-bearing one:
+ *
+ *   1. This key is a CATEGORY, not a sentence. "On the floor calendar" makes
+ *      no claim about this week; a bill placed on the Union Calendar in March
+ *      is still on the Union Calendar in August, because a placement is only
+ *      undone by action or by the Congress ending. Demoting it to "Floor
+ *      activity" after 14 days would trade a true, specific label for a vaguer
+ *      one on 305 bills — less information, not more truth. The one class this
+ *      argument does not cover is a placement from a PREVIOUS Congress, whose
+ *      calendar really is gone — and that class is no longer this function's
+ *      problem to argue about, because the congress check now EXISTS, one
+ *      layer up in the corpus itself: #210 purged the two 118th-Congress
+ *      records the corpus still carried, `offCongressBills()` (scripts/
+ *      congress-fetch.mjs) drops any that a fetch tries to re-add, a force-slug
+ *      congress check in scripts/sync-bills.mjs refuses them by hand, and
+ *      scripts/verify-sync.mjs hard-fails the whole nightly run if one is ever
+ *      committed. Every record this function reads is therefore a current-
+ *      Congress record (2,700 of 2,700 on 2026-08-12), so the class is
+ *      structurally excluded rather than time-demoted — which is what it always
+ *      wanted, and never a 14-day clock.
+ *   2. Every CITIZEN-SITE surface that prints it prints the date beside it.
+ *      The provenance ritual reads "…· On the floor calendar · Latest action
+ *      Feb 5 2025"; /bills and /reps rows print it through BillCard, which
+ *      renders `lastActionDate` under the label; MomentVehicleCard prints the
+ *      date whenever it is not showing the calendar chip. So the reader is
+ *      given the category and the clock together, and can judge the age. The
+ *      ONE surface where that is not true is the embed card
+ *      (components/embed/BillCardWidget.tsx, `.bc-status`), which prints the
+ *      label alone and its `BillCardData` does not even carry the date —
+ *      flagged with this change rather than fixed inside it, because the honest
+ *      repair there is to pass the date through and print it, not to blur the
+ *      label.
+ *
+ * The stepper's `nowFloor` sentence is the opposite on both counts — it is
+ * prefixed "Right now:" and it is printed with no date of its own — which is
+ * why the clock went there and not here.
  */
 export function statusKeyFor(
   status: Bill['status'],
@@ -412,9 +504,31 @@ export function passageState(
 }
 
 export function liveCallTarget(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text'>
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>
 ): LiveCallTarget | null {
   if (bill.status === 'floor_vote') {
+    /*
+     * THE CLOCK, before any sentence is read (owner ruling 2026-08-11 — see
+     * "THE THIRD GATE" above). Everything this branch can return prints "this
+     * bill is in the {chamber}'s hands right now", and on 2026-08-12 that
+     * sentence was routing off 305 placements and 6 motions older than the
+     * 14-day window — median 140 days, up to a placement dated 2025-02-05, 553
+     * days old. An undated floor record is never fresh, which is the same rule
+     * the amber gate has always run on.
+     *
+     * DEMOTE, NEVER BURY: null here does not remove a single dial. It is the
+     * quiet path every committee-stage bill already takes — the rep list
+     * renders in its ordinary order with no routing sentence over it, the call
+     * script and the call dialog are untouched, and funnel invariant I2 (a
+     * completed script within 2 interactions) never sees this value.
+     *
+     * `passed_chamber` below is deliberately NOT clocked: "the House has
+     * already voted" is a durable relational fact about a vote that happened,
+     * not a claim about this week, and all 275 of the corpus's 275
+     * passed_chamber records are outside the window (2026-08-12) — clocking it
+     * would silence that routing entirely, on a much weaker argument.
+     */
+    if (!isSignalFresh(bill.last_action_date)) return null;
     // floorPendingChamber, NOT floorActionChamber. This is the strongest
     // sentence on the page — "this bill is in the Senate's hands right now" —
     // and floorActionChamber only ever knew WHICH chamber the sentence was
@@ -608,7 +722,9 @@ export type JourneyNowKey =
   | 'nowIntroduced'
   | 'nowCommittee'
   | 'nowFloor'
+  | 'nowFloorStale'
   | 'nowFloorActivity'
+  | 'nowFloorActivityStale'
   | 'nowFloorActivityNeutral'
   | 'nowFloorMotionFailed'
   | 'nowPassed'
@@ -634,7 +750,12 @@ export interface JourneyState {
    *  passed the {origin} and now goes to the {other}"). */
   nowChamber: Chamber;
   nowKey: JourneyNowKey;
-  /** True only when the record's own sentence says "Placed on … Calendar". */
+  /** True only when the record's own sentence says "Placed on … Calendar"
+   *  AND that placement is still inside the signal window — i.e. the
+   *  present-tense claim "it is on the calendar right now" is defensible.
+   *  An aged placement keeps `nowKey: 'nowFloorStale'` (which still names the
+   *  placement, in the past tense) and sets this false, so a future reader
+   *  cannot re-light an urgency treatment off a two-year-old event. */
   onCalendar: boolean;
   isLaw: boolean;
   isVetoed: boolean;
@@ -650,7 +771,7 @@ export interface JourneyState {
  * default the stepper's old `POSITION[status] ?? 1` carried.
  */
 export function deriveJourney(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text'>
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>
 ): JourneyState {
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
@@ -670,6 +791,16 @@ export function deriveJourney(
     case 'markup':
       return { ...base, step: 1, nowKey: 'nowCommittee' };
     case 'floor_vote': {
+      /*
+       * THE CLOCK (owner ruling 2026-08-11 — see "THE THIRD GATE" above).
+       * Every sentence this branch can produce is present tense, and the step
+       * math below is deliberately NOT gated by it: where a bill stands in the
+       * five-step structure is a fact about the record, and an aged placement
+       * still stands at its calendar step. Only the TENSE moves — the same
+       * discipline the settled-motion split used in #198, where the chamber
+       * was right and the verb was the lie.
+       */
+      const live = isSignalFresh(bill.last_action_date);
       const cal = floorCalendarChamber(bill.last_action_text);
       if (cal) {
         return {
@@ -677,8 +808,11 @@ export function deriveJourney(
           step: cal === origin ? 2 : 3,
           current: cal,
           nowChamber: cal,
-          onCalendar: true,
-          nowKey: 'nowFloor',
+          // `onCalendar` is the surfaces' urgency permission, not the record's
+          // claim — an aged placement is still ON the calendar and the
+          // demoted sentence still says so.
+          onCalendar: live,
+          nowKey: live ? 'nowFloor' : 'nowFloorStale',
         };
       }
       /*
@@ -711,6 +845,16 @@ export function deriveJourney(
       // shapes moved to the nightly sync (scripts/check-journey-corpus.mjs)
       // — it fires where the data changes, never on unrelated PRs.
       if (act === null) {
+        /*
+         * NOT CLOCKED, and the reason is that there is nothing here to demote
+         * TO. This branch's sentence names no chamber and no calendar — it
+         * says only that the record has not said yet — so a stale variant
+         * would be new copy in two languages for a state that is EMPTY on the
+         * corpus (0 bills on 2026-08-12: every unclassified floor text is
+         * caught by the nightly tripwire long before it reaches here). If that
+         * ever stops being true, this branch wants its own key, not a reused
+         * one.
+         */
         return {
           ...base,
           step: 2,
@@ -719,12 +863,22 @@ export function deriveJourney(
           nowKey: 'nowFloorActivityNeutral',
         };
       }
+      /*
+       * The same clock as the calendar branch above, for the same reason and
+       * one more: `nowFloorActivity` says "the {chamber} is DECIDING whether
+       * to bring it to a vote", which is a stronger present-tense claim than
+       * the placement sentence, and liveCallTarget has just stopped routing
+       * these six aged records (2026-08-11). Leaving the stepper saying "is
+       * deciding" while the rail beside it had gone quiet would be the page
+       * contradicting itself in a quieter voice — the exact failure the
+       * passed_chamber split was written to end.
+       */
       return {
         ...base,
         step: act === origin ? 2 : 3,
         current: act,
         nowChamber: act,
-        nowKey: 'nowFloorActivity',
+        nowKey: live ? 'nowFloorActivity' : 'nowFloorActivityStale',
       };
     }
     case 'passed_chamber': {
