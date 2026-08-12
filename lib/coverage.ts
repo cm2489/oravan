@@ -76,9 +76,9 @@ export function getCoverage(slug: string): CoverageArticle[] {
  * reading "no date" as "today" is precisely the direction that manufactures
  * urgency. A bill whose articles are ALL undated therefore returns null and
  * fails the gate — the same fail-closed rule isSignalFresh has always applied
- * to an undated legislative signal. (0 of the 387 covered bills are in that
- * state on the 2026-08-12 corpus; the branch exists for the record the sync
- * has not written yet.)
+ * to an undated legislative signal. (0 of the 391 bills carrying stored
+ * articles are in that state on the 2026-08-12 corpus; the branch exists for
+ * the record the sync has not written yet.)
  */
 export function newestArticleDate(articles: Pick<CoverageArticle, 'publishedAt'>[]): string | null {
   let newest: string | null = null;
@@ -99,9 +99,9 @@ export function newestArticleDate(articles: Pick<CoverageArticle, 'publishedAt'>
  * it was once covered and never by when. Under a heading that reads "In the
  * news" — present tense, on the homepage's discovery band — the committed
  * corpus served the same six bills for twelve straight days, four of them on
- * articles from March, April, May and July: 109, 86, 77 and 34 days old at the
- * time of measurement, against a band a reader takes as "what is being written
- * about right now".
+ * articles from April, May and July — 109, 86, 77 and 16 days old at the time
+ * of measurement (2026-08-12T14:02Z) — against a band a reader takes as "what
+ * is being written about right now".
  *
  * The gate is SIGNAL_WINDOW_DAYS, deliberately the same 14 days amber and the
  * green panel run on (lib/urgency.mjs), because it answers the same question in

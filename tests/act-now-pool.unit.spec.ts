@@ -26,7 +26,7 @@ import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
  *
  * (b) The "In the news" band selected on coverage TIER alone, with no recency
  *     input at all, and served the same six bills for twelve straight days —
- *     four of them on articles 34, 77, 86 and 109 days old — under a heading
+ *     four of them on articles 16, 77, 86 and 109 days old — under a heading
  *     that reads in the present tense.
  *
  * Both halves are pinned the same way: fixtures for the rule, then a corpus
@@ -114,7 +114,7 @@ test.describe('the settled exclusion over the committed corpus', () => {
 
   test('NON-VACUITY: the corpus really does carry settled floor texts', () => {
     // Every assertion below is about a set this one proves is non-empty. Range,
-    // never a count: 18 of 348 on 2026-08-12, and it turns over nightly.
+    // never a count: 18 of 356 on 2026-08-12, and it turns over nightly.
     expect(floorVotes.length).toBeGreaterThan(50);
     expect(settled.length).toBeGreaterThan(0);
     expect(settled.length).toBeLessThan(floorVotes.length);
@@ -214,7 +214,8 @@ test.describe('the news band\'s recency gate', () => {
     // The edge itself: exactly the window passes, one day past it does not.
     expect(rankNews([item(daysAgo(SIGNAL_WINDOW_DAYS))], 10, now)).toHaveLength(1);
     expect(rankNews([item(daysAgo(SIGNAL_WINDOW_DAYS + 1))], 10, now)).toHaveLength(0);
-    // The five ages the committed band was actually serving on 2026-08-12.
+    // The four ages the committed band was actually serving on 2026-08-12,
+    // plus the 34-day one it served at n=7 the same day.
     for (const age of [16, 34, 77, 86, 109]) {
       expect(rankNews([item(daysAgo(age))], 10, now), `${age} days`).toHaveLength(0);
     }
@@ -264,8 +265,9 @@ test.describe('the news band over the committed corpus', () => {
 
   test('NON-VACUITY: the corpus holds rankable coverage on both sides of the window', () => {
     // Without a stale side, "the band carries nothing stale" would be a claim
-    // about a gate that never fires. 387 covered bills on 2026-08-12, 43 of
-    // them inside the window — ranges, because the sync moves both numbers.
+    // about a gate that never fires. 56 bills carry rankable (cross/neutral)
+    // coverage on 2026-08-12, 13 of them inside the window — asserted as
+    // ranges, because the nightly sync moves both numbers.
     expect(covered.length).toBeGreaterThan(10);
     expect(covered.filter((c) => isSignalFresh(c.newest, at)).length).toBeGreaterThan(0);
     expect(covered.filter((c) => !isSignalFresh(c.newest, at)).length).toBeGreaterThan(0);

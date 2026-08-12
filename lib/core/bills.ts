@@ -72,7 +72,7 @@ const byUrgencyDesc = <T extends { eff: number; raw: Pick<Bill, 'last_action_dat
  * additionally needs a readable chamber, and which chamber a defeat happened in
  * says nothing about whether the bill is still worth a call — reusing it would
  * fail OPEN on the texts we classify least confidently. (On today's corpus the
- * two agree exactly, 18 of 348 floor_vote bills; the difference is a promise
+ * two agree exactly, 18 of 356 floor_vote bills; the difference is a promise
  * about texts Congress has not written yet.)
  *
  * A DATED CALENDAR PLACEMENT STILL WINS, the same carve-out floorSettledChamber
