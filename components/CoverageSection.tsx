@@ -50,7 +50,19 @@ function newestPublishedAt(articles: CoverageArticle[]): string | null {
   return newest;
 }
 
-export function CoverageSection({ articles, tier }: { articles: CoverageArticle[]; tier: CoverageTier }) {
+export function CoverageSection({
+  articles,
+  tier,
+  checkedAt,
+}: {
+  articles: CoverageArticle[];
+  tier: CoverageTier;
+  /** The day the nightly sweep last LOOKED at this bill (lib/coverage.ts's
+   *  coverageCheckedAt). Passed in from the server page rather than read
+   *  here: this is a client component, and importing lib/coverage.ts would
+   *  ship all of data/coverage.json to the browser. */
+  checkedAt: string | null;
+}) {
   const t = useTranslations('coverage');
   const format = useFormatter();
   const locale = useLocale();
@@ -83,6 +95,7 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
               timeZone: 'UTC',
             })}
           </time>
+          <CoverageCheckedNote checkedAt={checkedAt} />
           <CoverageAgeNote newestAt={newestAt} />
         </p>
       )}
@@ -109,6 +122,62 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
 }
 
 /*
+ * WHEN WE LAST LOOKED — the other half of the sentence above.
+ *
+ * The date beside it is the newest ARTICLE. This one is the newest LOOK:
+ * scripts/sync-coverage.mjs's `_checkedAt` rotation (#158) has recorded it
+ * every night since August and nothing ever rendered it, so a bill whose
+ * press went quiet in April read exactly like a bill nobody had checked since
+ * April. Printing the look separates them: "Newest of these articles: 5 May ·
+ * Checked: 12 Aug" says the silence is the press's, not ours. It is a bare
+ * fact — a date this pipeline actually wrote — and it makes no claim about
+ * what was found, which is why the caveat that follows it survives untouched.
+ *
+ * HYDRATION-GATED, same useSyncExternalStore gate as StalenessNote and
+ * CoverageAgeNote above (owner ruling, N11b, 2026-08-12). Worth being precise
+ * about what the gate does and does not buy here, because this line differs
+ * from the other two: `_checkedAt` is a stored date, not a verdict read off
+ * the visitor's clock, so it cannot go false the way a baked "fresh" can — a
+ * frozen page would keep printing the last true check date rather than a
+ * silently stale judgement. What the gate does buy is that this whole line
+ * stays one client-rendered unit whose every dated claim is composed at the
+ * visitor's clock rather than half at build time, and that a page served from
+ * a CDN long after its build never presents an as-of stamp as though it were
+ * server-current. The cost is that the date is absent without JavaScript;
+ * `role="status"` announces it when it arrives, and nothing else on the line
+ * depends on it.
+ *
+ * It rides the newest-article line rather than standing alone, so a bill whose
+ * every stored article is undated prints neither date (0 of the 391 bills
+ * carrying articles are in that state on the committed corpus). That is the
+ * right way round: the check date is here to give the article date a
+ * reference, and on its own it would read as a freshness claim about coverage
+ * we cannot actually date.
+ */
+function CoverageCheckedNote({ checkedAt }: { checkedAt: string | null }) {
+  const t = useTranslations('coverage');
+  const format = useFormatter();
+  const hydrated = useHydrated();
+
+  if (!hydrated || !checkedAt) return null;
+
+  return (
+    <span role="status">
+      {' · '}
+      <span className="font-semibold text-ink">{t('checkedLabel')}:</span>{' '}
+      <time dateTime={checkedAt} className="tabular-nums">
+        {format.dateTime(new Date(checkedAt), {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        })}
+      </time>
+    </span>
+  );
+}
+
+/*
  * The age caveat, built on StalenessNote's pattern (R2 / KTD-2) and for the
  * same reason: this is one of ~1,000 statically generated pages, so a verdict
  * baked at build time would freeze at the moment of the deploy and an article
@@ -131,6 +200,13 @@ export function CoverageSection({ articles, tier }: { articles: CoverageArticle[
  * "Newer coverage may exist that we haven't collected" is the strongest true
  * version, and it is the same shape as freshness.staleNote's "newer activity
  * in Congress may not be shown yet".
+ *
+ * RE-CHECKED 2026-08-12, when the check date started rendering beside it: the
+ * two lines are not redundant and this one is not now removable. "Checked
+ * yesterday" answers when we looked; it says nothing about how deep the look
+ * went, and the look is still bounded by COVERAGE_PER_BILL and the news API's
+ * daily quota. A recent check date makes this caveat SMALLER, never false —
+ * which is exactly why the date was added rather than the caveat softened.
  */
 function CoverageAgeNote({ newestAt }: { newestAt: string }) {
   const t = useTranslations('coverage');
