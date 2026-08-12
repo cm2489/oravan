@@ -7,11 +7,11 @@
  * in the way. Nothing here changes shape or behavior — see lib/core/index.ts.
  */
 import bills from '@/data/bills.json';
-import { statusKeyFor } from '../journey';
+import { FLOOR_SETTLED, floorCalendarChamber, statusKeyFor } from '../journey';
 import billsEs from '@/data/bills-es.json';
 import { formatCitation } from '../format';
-import { bandFloors, bandForEff } from '../taxonomy';
-import { coverageTier, getCoverage, normalizeSource, rankNews } from '../coverage';
+import { bandFloors, bandForEff, type UrgencyBand } from '../taxonomy';
+import { coverageTier, getCoverage, newestArticleDate, normalizeSource, rankNews } from '../coverage';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../urgency.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
 
@@ -51,6 +51,48 @@ export function getAllBills(): Bill[] {
 const byUrgencyDesc = <T extends { eff: number; raw: Pick<Bill, 'last_action_date'> }>(a: T, b: T) =>
   b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? '');
 
+/**
+ * HAS THE FLOOR ALREADY ANSWERED — the act-now pool's one exclusion, and the
+ * reason `status: 'floor_vote'` is not on its own a reason to call.
+ *
+ * `floor_vote` is a KEYWORD BUCKET (scripts/congress-fetch.mjs's mapStatus), and
+ * it is deliberately wide enough to catch a chamber taking a measure up at all.
+ * That means it catches DEFEATS: "Cloture on the motion to proceed to the
+ * measure not invoked in Senate by Yea-Nay Vote. 52 - 46." carries the corpus's
+ * highest status base (0.9) plus the full freshness bonus, so on 2026-08-12 a
+ * cloture vote that had already failed held rank 2 of the homepage shortlist —
+ * a completed answer sold as the week's most urgent call, and propagated from
+ * the same pool into MCP `whats_moving` and the public feeds.
+ *
+ * THE VOCABULARY IS THE GATE, and it is lib/journey.ts's FLOOR_SETTLED — the
+ * same constant floorPendingChamber uses as its rule-0 guard and
+ * floorSettledChamber uses as its entry condition. A fourth reader with a
+ * private copy is exactly the drift that constant was written once to prevent.
+ * Read the vocabulary rather than calling floorSettledChamber: that function
+ * additionally needs a readable chamber, and which chamber a defeat happened in
+ * says nothing about whether the bill is still worth a call — reusing it would
+ * fail OPEN on the texts we classify least confidently. (On today's corpus the
+ * two agree exactly, 18 of 356 floor_vote bills; the difference is a promise
+ * about texts Congress has not written yet.)
+ *
+ * A DATED CALENDAR PLACEMENT STILL WINS, the same carve-out floorSettledChamber
+ * makes for the same reason: a placement is a live fact whatever else its
+ * sentence happens to mention. 0 corpus texts sit in that overlap today.
+ *
+ * DEMOTED, NOT HIDDEN. This never removes a bill from the corpus, from /bills,
+ * from search, or from its own page — getTeasers still lists every one of them,
+ * one band lower (see its comment). All that is withdrawn is the claim that a
+ * phone call could still change the outcome.
+ */
+export function isSettledFloor(bill: {
+  status: string;
+  last_action_text: string | null;
+}): boolean {
+  if (bill.status !== 'floor_vote') return false;
+  if (!FLOOR_SETTLED.test(bill.last_action_text ?? '')) return false;
+  return floorCalendarChamber(bill.last_action_text) === null;
+}
+
 /*
  * The one place the corpus gets scored and split into active/settled with
  * band floors applied (KTD-2) - getTeasers and getTopActions both read this
@@ -64,6 +106,7 @@ function scoreActiveBills() {
     raw,
     eff: effectiveUrgency(raw.status, raw.last_action_date),
     terminal: TERMINAL_STATUSES.has(raw.status),
+    settledFloor: isSettledFloor(raw),
   }));
   // Active bills claim the now/moving bands by rank; terminal bills are
   // appended and pinned to radar, so they can never displace an actionable
@@ -72,13 +115,30 @@ function scoreActiveBills() {
   const activeBills = scored.filter((s) => !s.terminal).sort(byUrgencyDesc);
   const settledBills = scored.filter((s) => s.terminal).sort(byUrgencyDesc);
   const floors = bandFloors(activeBills.map((s) => s.eff));
-  return { activeBills, settledBills, floors };
+  /*
+   * THE ACT-NOW POOL: active bills whose floor question is still open. Every
+   * surface that makes a "worth a call" claim reads THIS, not `activeBills` —
+   * the shortlist, the quiet-week claim, the crown's candidate pool, and
+   * through getTopActions the MCP `whats_moving` tool and the public feeds.
+   *
+   * THE FLOORS ARE STILL COMPUTED FROM `activeBills`, settled floor bills
+   * included, and that is deliberate rather than an oversight. A failed cloture
+   * vote is a genuine, high-signal floor event: it says the week was busy, and
+   * the bar for "Act now" is a statement about the week, not about any one
+   * bill. Dropping these from the floors as well would be a second change with
+   * a ranking ripple across every band on /bills — and would LOWER the bar on
+   * exactly the weeks the floor was most active. Terminal bills are excluded up
+   * there because a signed law is not a floor event at all; a defeated motion
+   * is one.
+   */
+  const actNowPool = activeBills.filter((s) => !s.settledFloor);
+  return { activeBills, settledBills, actNowPool, floors };
 }
 
 export function getTeasers(locale = 'en'): FeedTeaser[] {
   const { activeBills, settledBills, floors } = scoreActiveBills();
 
-  return [...activeBills, ...settledBills].map(({ raw, eff, terminal }) => {
+  return [...activeBills, ...settledBills].map(({ raw, eff, terminal, settledFloor }) => {
     const b = localizeBill(raw, locale);
     return {
       slug: billSlug(b),
@@ -87,11 +147,33 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
       title: b.short_title ?? b.title,
       status: b.status,
       tags: b.issue_tags ?? [],
-      band: terminal ? 'radar' : bandForEff(eff, floors),
+      /*
+       * ONE RUNG DOWN, NEVER OUT (2026-08-12). A bill whose floor question the
+       * record has already answered is excluded from the act-now pool above,
+       * and /bills has to agree or the site contradicts itself across one
+       * click: hasActNow is the quiet-week claim's ONLY signal precisely
+       * because it must mean "the Act now band on /bills is non-empty" (AE3 —
+       * see hasActNow's own comment). Leaving a defeated motion in this band
+       * while the shortlist dropped it would break that equivalence and print
+       * "Act now" over a completed vote on the browse page instead of the
+       * home page.
+       *
+       * `moving` and not `radar`: the bill IS still live legislation and the
+       * floor did just touch it. Radar is where terminal bills are pinned, and
+       * this one is not terminal. Nothing is hidden — it keeps its rank inside
+       * the band it lands in, its search entry, and its page.
+       */
+      band: terminal ? 'radar' : demoteSettled(bandForEff(eff, floors), settledFloor),
       statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
       lastActionDate: b.last_action_date,
     };
   });
+}
+
+/** The band cap applied to a settled floor bill: never "now", otherwise as
+ *  scored. Exported for the pin in tests/act-now-pool.unit.spec.ts. */
+export function demoteSettled(band: UrgencyBand, settledFloor: boolean): UrgencyBand {
+  return settledFloor && band === 'now' ? 'moving' : band;
 }
 
 /**
@@ -100,10 +182,15 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
  * same absolute+rank floor as getTeasers' "now" band, so a genuinely quiet
  * week returns an empty list here too, instead of backfilling from whatever
  * ranks highest regardless of how urgent it actually is.
+ *
+ * Reads `actNowPool`, so a bill whose floor question the record has already
+ * answered is not here however hot it scores (see isSettledFloor). That
+ * exclusion travels from this one function to the MCP `whats_moving` tool and
+ * both public feeds, which read this pool rather than re-deriving one.
  */
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
-  const { activeBills, floors } = scoreActiveBills();
-  return activeBills
+  const { actNowPool, floors } = scoreActiveBills();
+  return actNowPool
     .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline)
     .slice(0, n)
     .map(({ raw }) => localizeBill(raw, locale));
@@ -142,10 +229,19 @@ export function getTopActions(n = 5, locale = 'en'): Bill[] {
  * 21 bills on the 2026-08-09 corpus (339 active floor_vote bills, 21 of them
  * over the floor; every one of the 339 carries a decode). The corpus moves
  * nightly — recompute, don't trust.
+ *
+ * SETTLED TEXTS ARE OUT OF THE POOL as of 2026-08-12 (`actNowPool`, see
+ * isSettledFloor), and this changes NOTHING about which bill wears the crown:
+ * selectFloorVoteFeature already reads floorCalendarChamber ?? floorPendingChamber,
+ * and FLOOR_SETTLED is floorPendingChamber's rule 0, so a defeated motion could
+ * never have been selected. What the exclusion removes is a defeated motion
+ * sitting in the pool the selector walks — one shared definition of "act-now
+ * material" for the crown, the shortlist, the feeds and the MCP tool, instead
+ * of one pool the selector had to defend itself against.
  */
 export function getFloorFeatureCandidates(locale = 'en'): Bill[] {
-  const { activeBills, floors } = scoreActiveBills();
-  return activeBills
+  const { actNowPool, floors } = scoreActiveBills();
+  return actNowPool
     .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline && s.raw.status === 'floor_vote')
     .sort((a, b) => (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
     .map(({ raw }) => localizeBill(raw, locale));
@@ -158,17 +254,31 @@ export function getFloorFeatureCandidates(locale = 'en'): Bill[] {
  * clears the floor would land in /bills' "Act now" band (getTeasers applies
  * no headline filter) while the decoded shortlist reads empty - and "no bill
  * has cleared the bar" would be a false statement (AE3: never a false quiet).
+ *
+ * THE EQUIVALENCE THIS FUNCTION OWES /bills is why it reads `actNowPool` and
+ * getTeasers demotes the same bills one band (2026-08-12). The two changes are
+ * one change: this must stay exactly "the Act now band on /bills is non-empty",
+ * or a week whose only over-floor bill is a defeated motion would print a
+ * quiet-week state on the home page above a populated "Act now" band one click
+ * away. The undecoded-bill gap the paragraph above describes is unchanged.
  */
 export function hasActNow(): boolean {
-  const { activeBills, floors } = scoreActiveBills();
-  return activeBills.some((s) => s.eff >= floors.nowFloor);
+  const { actNowPool, floors } = scoreActiveBills();
+  return actNowPool.some((s) => s.eff >= floors.nowFloor);
 }
 
 /*
  * The "In the news" discovery lens — feeds rankNews real bills with their
- * coverage tier, outlet count, and urgency. The ranking/exclusion policy
- * (cross > neutral, one-sided dropped) lives in lib/coverage so it stays
- * unit-testable; consequence, not partisan attention, decides prominence.
+ * coverage tier, outlet count, urgency, and (since 2026-08-12) the date of the
+ * newest article stored for them. The ranking/exclusion policy (cross >
+ * neutral, one-sided dropped, nothing older than the signal window) lives in
+ * lib/coverage so it stays unit-testable; consequence, not partisan attention,
+ * decides prominence.
+ *
+ * WHY THE DATE IS PASSED IN RATHER THAN LOOKED UP THERE: rankNews is generic
+ * over anything carrying the four fields, which is what lets the unit spec
+ * drive it without the corpus. This function is the one place that knows a bill
+ * has stored articles at all.
  */
 export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
   const items = BILLS.map((raw) => {
@@ -178,6 +288,7 @@ export function getNewsBills(locale = 'en', n = 6): NewsBill[] {
       tier: coverageTier(articles),
       sources: new Set(articles.map((a) => normalizeSource(a.source))).size,
       urgency: effectiveUrgency(raw.status, raw.last_action_date),
+      newestArticle: newestArticleDate(articles),
     };
   });
   return rankNews(items, n).map(({ raw, tier, sources }) => {
