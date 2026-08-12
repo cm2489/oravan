@@ -4,7 +4,13 @@ import { join } from 'node:path';
 import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { endsAtPresident } from '../components/BillJourney';
+// Moved out of components/BillJourney.tsx on 2026-08-12: the stepper now
+// renders a glossary trigger, which pulls in `@/i18n/navigation`, and that
+// chain does not resolve inside this runner — so a spec reaching into a
+// COMPONENT for a pure function was a load-bearing dependency on that
+// component never growing a UI import. It lives in lib/journey.ts now, with
+// its reasoning; the assertions below are unchanged.
+import { endsAtPresident } from '../lib/journey';
 // The fetcher's closed vehicle allowlist — the ONE place the corpus's type
 // vocabulary is decided. Imported from the .mjs directly (the same pattern
 // tests/journey.unit.spec.ts uses for moment-candidates.mjs); the module

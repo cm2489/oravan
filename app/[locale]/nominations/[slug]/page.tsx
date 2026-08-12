@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ActionPanel } from '@/components/ActionPanel';
+import { NominationStatusLabel } from '@/components/NominationStatusLabel';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import {
@@ -355,7 +356,17 @@ export default async function NominationPage({
             </>
           )}
           <span aria-hidden> · </span>
-          <span>{t(`nominations.status.${nomination.status}`)}</span>
+          {/* Two of these labels ARE procedural terms rather than descriptions
+              of one — "Reported by committee", "On the Executive Calendar" —
+              and a reader meeting them here has nothing telling them what
+              either means. Those two carry the glossary trigger; the rest are
+              plain (issue #181, lib/glossary.ts NOMINATION_STATUS_TERMS). */}
+          <span>
+            <NominationStatusLabel
+              status={nomination.status}
+              label={t(`nominations.status.${nomination.status}`)}
+            />
+          </span>
           {nomination.last_action_date && (
             <>
               <span aria-hidden> · </span>

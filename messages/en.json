@@ -20,6 +20,7 @@
       "lore": "Oravan is a coined name — part oration, part caravan: one voice setting out, many arriving together.",
       "about": "About",
       "citations": "Citations",
+      "glossary": "Glossary",
       "embeds": "Embeds",
       "navLabel": "Footer",
       "partners": "Partners",
@@ -319,8 +320,8 @@
       "stepBothChambers": "Adopted by both chambers",
       "now": "Right now:",
       "nowCommittee": "a {chamber, select, House {House} Senate {Senate} other {House}} committee is reviewing it.",
-      "nowFloor": "it's on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar.",
-      "nowFloorStale": "it was placed on the {chamber, select, House {House} Senate {Senate} other {House}} floor calendar, and the official record shows no floor action on it since.",
+      "nowFloor": "it's on the <floorCalendar>{chamber, select, House {House} Senate {Senate} other {House}} floor calendar</floorCalendar>.",
+      "nowFloorStale": "it was placed on the <floorCalendar>{chamber, select, House {House} Senate {Senate} other {House}} floor calendar</floorCalendar>, and the official record shows no floor action on it since.",
       "nowFloorActivity": "the {chamber, select, House {House} Senate {Senate} other {Senate}} is deciding whether to bring it to a vote.",
       "nowFloorActivityStale": "the {chamber, select, House {House} Senate {Senate} other {Senate}} has taken floor action on it, and the official record shows nothing new since.",
       "nowFloorActivityNeutral": "it's moving on the floor — the official record hasn't said yet which chamber acts next.",
@@ -853,7 +854,7 @@
     "howMadeHeading": "How Big Questions get made",
     "howMadeBody": "A Big Question opens only when something real before Congress meets every rule below — checked by an automated gate, then reviewed by a person before it publishes.",
     "howMadeRule1": "Something still moving: at least one tracked bill or Senate nomination that has not reached its end. The question has to still be one a call can affect.",
-    "howMadeRule2": "A recent signal: in the last 45 days it appeared on a government schedule or in a chamber's own floor proceedings (a floor vote, a motion or cloture filing on the floor, the week's bill list, Congress.gov's most-viewed, the Senate Executive Calendar), or in press coverage from at least two outlets of differing leanings.",
+    "howMadeRule2": "A recent signal: in the last 45 days it appeared on a government schedule or in a chamber's own floor proceedings (a floor vote, a motion or <cloture>cloture</cloture> filing on the floor, the week's bill list, Congress.gov's most-viewed, the <execCalendar>Senate Executive Calendar</execCalendar>), or in press coverage from at least two outlets of differing leanings.",
     "howMadeRule3": "A callable action: the page and the call script already work — every corpus bill qualifies by construction, and a nomination qualifies only when the Senate's record carries the description sentence its script is written from. The gate rejects one that doesn't.",
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Big Question retires when the question is settled — every bill signed, vetoed, or dead, and every nomination confirmed, returned, or withdrawn. Settled Big Questions stay readable, marked resolved; they never reopen.",
@@ -939,5 +940,59 @@
   "langNote": {
     "cta": "Ver Oravan en español",
     "dismiss": "No volver a mostrar este aviso"
+  },
+  "glossary": {
+    "title": "Procedure, in plain words",
+    "metaDescription": "Plain-words explainers for the procedural terms that turn up in the official congressional record — cloture, unanimous consent, motions to proceed, the calendars, and more.",
+    "intro": "Congress runs on a vocabulary that nothing explains while you read it. These are the procedural terms that show up most often in the official record and on this site — what each one actually does, and what it does not tell you.",
+    "scopeNote": "Every entry describes the mechanics only. None of them says who benefits, who wins, or when anything will be voted on.",
+    "indexLabel": "Jump to a term",
+    "fullGlossary": "Full glossary",
+    "terms": {
+      "cloture": {
+        "term": "Cloture",
+        "body": "Cloture is how the Senate ends debate on a bill or a nomination. A senator files a cloture motion, the Senate waits a day, and then votes on whether to invoke it. Invoking cloture takes 60 votes on most legislation and a simple majority on nominations. Once it is invoked, debate has a fixed limit and the Senate can move on to a final vote."
+      },
+      "unanimous-consent": {
+        "term": "Unanimous consent",
+        "body": "Most of what the Senate does, it does by unanimous consent: a senator asks, and if nobody objects, it is agreed to. A single objection is enough to prevent it. Senators also make standing unanimous consent agreements — UC agreements — that set in advance how long something will be debated and which amendments may be offered. Setting one of those agreements aside can leave no separate entry in the record."
+      },
+      "motion-to-proceed": {
+        "term": "Motion to proceed",
+        "body": "A motion to proceed asks the Senate to take a measure up — to start working on it. It comes before any debate on the measure itself, and the Senate votes on the motion separately. Agreeing to it decides nothing about the measure; it only puts the measure before the chamber. If the motion is rejected, the measure stays where it was."
+      },
+      "cloture-on-the-motion-to-proceed": {
+        "term": "Cloture on the motion to proceed",
+        "body": "A motion to proceed can itself be debated, so before the Senate can take a measure up it sometimes has to end debate on the motion. That is cloture on the motion to proceed, and it is a different vote from cloture on the measure itself. One record can show both: one vote to start work on a measure, another later to end debate on it. Which of the two a vote was is the difference between the Senate agreeing to consider something and the Senate being ready to finish with it."
+      },
+      "legislative-calendar": {
+        "term": "The Senate Legislative Calendar (General Orders)",
+        "body": "When a Senate committee finishes with a bill, or the Senate agrees to bypass committee, the bill is placed on the Senate's Calendar of Business under a list called General Orders and given a calendar number. Being on that list means the bill is eligible to be called up. It schedules nothing: the majority leader decides what the Senate turns to, and a bill can sit on the calendar with no further action recorded."
+      },
+      "union-calendar": {
+        "term": "The Union Calendar (House)",
+        "body": "The House sorts bills onto calendars once a committee has reported them. The Union Calendar holds the bills that raise revenue or spend money, which is most of what the House votes on. A place on it means a bill has cleared committee and is eligible for floor consideration. What actually reaches the floor is decided separately, usually by a special rule from the Rules Committee."
+      },
+      "executive-calendar": {
+        "term": "The Senate Executive Calendar",
+        "body": "The Senate keeps two calendars. Legislation goes on the Calendar of Business; nominations and treaties go on the Executive Calendar, each with its own calendar number, once the committee handling them reports them out. Being listed there means the full Senate can take the nomination up. It says nothing about when that will happen or how the Senate will vote."
+      },
+      "reported-by-committee": {
+        "term": "Reported by committee",
+        "body": "A committee reports a measure when it finishes its work and sends the measure to the full chamber. It can report the measure unchanged, with amendments, or as a rewritten version, and it usually files a written report explaining what the measure does. Reporting is not a vote by the chamber: it moves the measure out of committee and onto a calendar, where the chamber decides what happens next."
+      },
+      "amendment-in-the-nature-of-a-substitute": {
+        "term": "Amendment in the nature of a substitute (ANS)",
+        "body": "An amendment in the nature of a substitute replaces the entire text of a bill with new text. Committees use it often: instead of amending a bill line by line, they adopt one substitute that becomes the version the chamber considers. The bill keeps its number and its title, so the text being voted on can be very different from the text that was introduced."
+      },
+      "budget-reconciliation": {
+        "term": "Budget reconciliation",
+        "body": "Reconciliation is a special procedure for legislation that changes spending, revenue, or the debt limit. It starts with a budget resolution instructing committees to draft those changes; the resulting bill then moves under rules that cap Senate debate, so it can pass with a simple majority instead of the 60 votes usually needed to end debate there. In exchange, what the bill may contain is restricted, and provisions without a real budget effect can be struck out."
+      },
+      "cra-disapproval": {
+        "term": "CRA disapproval",
+        "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the President, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
+      }
+    }
   }
 }

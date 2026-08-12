@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip } from '@/components/system';
-import type { JourneyState } from '@/lib/journey';
+import type { GlossaryTermId } from '@/lib/glossary';
+import { endsAtPresident, type FloorCalendar, type JourneyState } from '@/lib/journey';
 
 /*
  * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
@@ -30,44 +33,43 @@ import type { JourneyState } from '@/lib/journey';
  */
 
 /*
- * WHERE THE PATH ENDS, AND THE ONE VEHICLE THAT NEVER REACHES THE PRESIDENT.
+ * WHERE THE PATH ENDS — `endsAtPresident` MOVED TO lib/journey.ts (2026-08-12).
  *
- * A CONCURRENT resolution — hconres / sconres — is not presented to the
- * President and cannot become law. It is the two chambers speaking to each
- * other: budget resolutions, War Powers directives, adjournment. Both chambers
- * adopt it and that is the end of the road, Article I, Section 7's
- * presentment requirement never engages. Until 2026-08-09 this stepper printed
- * "President's desk" as the fifth step on every one of them, and the trailer
- * underneath promised the bill would go back to its origin chamber "before
- * reaching the President" — a false procedural fact on the 6 con-res pages in
- * the corpus (hconres-113-119, sconres-38-119, sconres-39-119, hconres-38-119,
- * hconres-89-119, hconres-96-119), in both languages, in the one component
- * whose own header promises it cannot hallucinate procedure.
+ * It was defined here and imported by tests/bill-journey.unit.spec.ts, and that
+ * import is what makes the move necessary rather than tidy: this file now
+ * renders a glossary trigger, the trigger imports `@/i18n/navigation`, and that
+ * chain does not resolve inside Playwright's plain-Node runner. So a spec that
+ * reaches into a COMPONENT for a pure function breaks the moment the component
+ * grows any UI dependency — which it always eventually does.
  *
- * WHY THIS IS A LOOKUP AND NOT A DERIVATION. It is the same distinction
- * lib/journey.ts draws for nominations (VOTING_CHAMBERS): a bill's CHAMBER is
- * an observation about the record and must be read from it, but presentment is
- * a fact about the KIND of vehicle — constitutional, fixed in advance, true of
- * every concurrent resolution that has ever existed. Nothing in any record can
- * change it, so nothing needs to be parsed.
- *
- * KNOWN LIMIT, deliberately not built (flagged to the owner rather than
- * guessed): a JOINT resolution proposing a constitutional amendment also skips
- * the President — it goes to the states for ratification. 16 of the 94 joint
- * resolutions in the corpus are amendment proposals. Detecting them means
- * pattern-matching the title ("Proposing an amendment to the Constitution…"),
- * which is a text heuristic this codebase has not verified, and an unverified
- * heuristic in a truth component is the class of thing this file exists to
- * refuse. Every other hjres/sjres — CRA disapprovals, continuing resolutions —
- * genuinely IS presented to the President, so the default is right for them.
+ * The function belonged next door anyway. This file's own header says all
+ * derivation lives in lib/journey.ts, and presentment is exactly that kind of
+ * fact: constitutional, fixed by the KIND of vehicle, never read out of a
+ * record. Its full reasoning and its known limit travelled with it.
  */
-const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
 
-/** False only for vehicles the Constitution never presents to the President.
- *  Exported for tests/bill-journey.unit.spec.ts. */
-export function endsAtPresident(billType: string): boolean {
-  return !NO_PRESENTMENT.has(billType.toLowerCase());
-}
+/*
+ * THE GLOSSARY LINK ON THE PLACEMENT PHRASE (issue #181).
+ *
+ * `nowFloor` / `nowFloorStale` are the only two "Right now:" sentences that
+ * name a calendar, and both wrap that phrase in a `<floorCalendar>` tag in
+ * BOTH languages. The tag is one name; WHICH entry it resolves to is decided
+ * here, from what the record actually said.
+ *
+ * THE HOUSE CALENDAR HAS NO ENTRY, AND SO GETS NO LINK. The House keeps two
+ * calendars and the record names both: measured 2026-08-12 on the committed
+ * corpus, 148 House placements say "Union Calendar" and 2 say "House
+ * Calendar". The first batch of glossary terms (issue #181) covers the Union
+ * Calendar and not the other, so those 2 render the identical sentence with no
+ * trigger in it rather than a link to an entry that is about a different list.
+ * Absence is a finding; a link that is 98.7% right is a false claim on the
+ * rest. See lib/journey.ts's floorCalendarName for the full split.
+ */
+const CALENDAR_TERM: Record<FloorCalendar, GlossaryTermId | null> = {
+  'senate-legislative': 'legislative-calendar',
+  union: 'union-calendar',
+  house: null,
+};
 
 interface Props {
   journey: JourneyState;
@@ -100,6 +102,12 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
   ];
   const here = journey.step;
   const { isLaw, isVetoed } = journey;
+
+  // Supplied on every key: the tag only exists inside the two placement
+  // messages, and next-intl ignores a handler a message never opens.
+  const calendarTerm = journey.floorCalendar ? CALENDAR_TERM[journey.floorCalendar] : null;
+  const floorCalendar = (chunks: ReactNode) =>
+    calendarTerm ? <GlossaryTerm id={calendarTerm}>{chunks}</GlossaryTerm> : <>{chunks}</>;
 
   return (
     <div>
@@ -149,7 +157,7 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {t(journey.nowKey, { chamber: nowChamber, other })}
+          {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar })}
           {journey.showTrailer && (
             <> {t(toPresident ? 'backTrailer' : 'backTrailerBothChambers', { chamber, other })}</>
           )}

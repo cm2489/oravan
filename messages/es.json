@@ -20,6 +20,7 @@
       "lore": "Oravan es un nombre inventado — parte oratoria, parte caravana: una voz que se pone en camino y muchas que llegan juntas.",
       "about": "Acerca de",
       "citations": "Citas y correcciones",
+      "glossary": "Glosario",
       "embeds": "Widgets",
       "navLabel": "Pie de página",
       "partners": "Socios",
@@ -319,8 +320,8 @@
       "stepBothChambers": "Aprobación en ambas cámaras",
       "now": "Ahora mismo:",
       "nowCommittee": "un comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} lo está revisando.",
-      "nowFloor": "está en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}.",
-      "nowFloorStale": "se incluyó en el calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}, y el registro oficial no muestra ninguna acción en el pleno desde entonces.",
+      "nowFloor": "está en el <floorCalendar>calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}</floorCalendar>.",
+      "nowFloorStale": "se incluyó en el <floorCalendar>calendario del pleno {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}</floorCalendar>, y el registro oficial no muestra ninguna acción en el pleno desde entonces.",
       "nowFloorActivity": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} está decidiendo si lo somete a votación.",
       "nowFloorActivityStale": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} ha actuado en el pleno, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
@@ -853,7 +854,7 @@
     "howMadeHeading": "Cómo se crean las Grandes preguntas",
     "howMadeBody": "Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada por un control automático y luego revisada por una persona antes de publicarse.",
     "howMadeRule1": "Algo todavía en marcha: al menos un proyecto de ley o una nominación ante el Senado, con seguimiento y sin haber llegado a su fin. El asunto todavía tiene que ser uno en el que una llamada pueda influir.",
-    "howMadeRule2": "Una señal reciente: en los últimos 45 días apareció en un calendario del gobierno o en las actuaciones del pleno de una cámara (una votación en el pleno, una moción o una solicitud de cierre de debate en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov, el Calendario Ejecutivo del Senado), o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
+    "howMadeRule2": "Una señal reciente: en los últimos 45 días apareció en un calendario del gobierno o en las actuaciones del pleno de una cámara (una votación en el pleno, una moción o una <cloture>solicitud de cierre de debate</cloture> en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov, el <execCalendar>Calendario Ejecutivo del Senado</execCalendar>), o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
     "howMadeRule3": "Una acción posible: la página y el guion de llamada ya funcionan — todo proyecto de ley del corpus cumple por construcción, y una nominación solo cumple cuando el registro del Senado incluye la frase descriptiva con la que se escribe su guion. El control automático rechaza la que no la tenga.",
     "howMadeRule4": "Un nombre neutral: una descripción del desacuerdo que cualquiera de los dos lados reconocería como justa, nunca la etiqueta propia de un lado.",
     "lifecycleLive": "Esta Gran pregunta se retira cuando la cuestión se resuelve — cada proyecto de ley firmado, vetado o descartado, y cada nominación confirmada, devuelta o retirada. Las Grandes preguntas resueltas siguen disponibles, marcadas como resueltas; nunca se reabren.",
@@ -939,5 +940,59 @@
   "langNote": {
     "cta": "Ver Oravan en español",
     "dismiss": "No volver a mostrar este aviso"
+  },
+  "glossary": {
+    "title": "El procedimiento, en palabras claras",
+    "metaDescription": "Explicaciones en palabras claras de los términos de procedimiento que aparecen en el registro oficial del Congreso: cierre del debate, consentimiento unánime, mociones para considerar, los calendarios y más.",
+    "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos de procedimiento que más aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice.",
+    "scopeNote": "Cada entrada describe solo el mecanismo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
+    "indexLabel": "Ir a un término",
+    "fullGlossary": "Glosario completo",
+    "terms": {
+      "cloture": {
+        "term": "Cierre del debate (cloture)",
+        "body": "El cierre del debate — cloture en inglés — es la forma en que el Senado le pone fin a la discusión de un proyecto o una nominación. Un senador presenta una moción de cierre, el Senado espera un día y después vota si la aprueba. Aprobarla requiere 60 votos en la mayoría de la legislación y una mayoría simple en las nominaciones. Una vez aprobada, el debate tiene un límite fijo y el Senado puede pasar a la votación final."
+      },
+      "unanimous-consent": {
+        "term": "Consentimiento unánime",
+        "body": "Casi todo lo que hace el Senado lo hace por consentimiento unánime: un senador lo pide y, si nadie se opone, queda acordado. Una sola objeción basta para impedirlo. Los senadores también hacen acuerdos permanentes de consentimiento unánime que fijan de antemano cuánto se va a debatir algo y qué enmiendas se pueden presentar. Dejar sin efecto uno de esos acuerdos puede no dejar ninguna entrada propia en el registro."
+      },
+      "motion-to-proceed": {
+        "term": "Moción para considerar (motion to proceed)",
+        "body": "Una moción para considerar le pide al Senado que tome un asunto, es decir, que empiece a trabajar en él. Va antes de cualquier debate sobre el asunto mismo, y el Senado la vota por separado. Aprobarla no decide nada sobre el asunto: solo lo pone ante la cámara. Si la moción se rechaza, el asunto se queda donde estaba."
+      },
+      "cloture-on-the-motion-to-proceed": {
+        "term": "Cierre del debate sobre la moción para considerar",
+        "body": "La moción para considerar también se puede debatir, así que a veces el Senado tiene que cerrar el debate sobre la moción antes de poder tomar el asunto. Eso es el cierre del debate sobre la moción para considerar, y es un voto distinto del cierre del debate sobre el asunto mismo. Un mismo registro puede mostrar los dos: un voto para empezar a trabajar en un asunto y otro, más adelante, para cerrar el debate sobre él. Cuál de los dos fue un voto marca la diferencia entre que el Senado acepte considerar algo y que esté listo para terminarlo."
+      },
+      "legislative-calendar": {
+        "term": "Calendario Legislativo del Senado (General Orders)",
+        "body": "Cuando un comité del Senado termina con un proyecto, o el Senado acepta saltarse el comité, el proyecto se incluye en el Calendario de Asuntos del Senado dentro de una lista llamada General Orders y recibe un número de calendario. Estar en esa lista significa que el proyecto puede ser llamado a consideración. No programa nada: el líder de la mayoría decide qué atiende el Senado, y un proyecto puede quedarse en el calendario sin que se registre ninguna acción más."
+      },
+      "union-calendar": {
+        "term": "Union Calendar (Cámara de Representantes)",
+        "body": "La Cámara ordena los proyectos en calendarios una vez que un comité los ha reportado. El Union Calendar reúne los proyectos que recaudan o gastan dinero, que son la mayoría de los que vota la Cámara. Estar en él significa que el proyecto salió del comité y puede pasar al pleno. Lo que llega al pleno en realidad se decide aparte, por lo general con una regla especial del Comité de Reglas."
+      },
+      "executive-calendar": {
+        "term": "Calendario Ejecutivo del Senado",
+        "body": "El Senado lleva dos calendarios. La legislación va al Calendario de Asuntos; las nominaciones y los tratados van al Calendario Ejecutivo, cada uno con su propio número de calendario, una vez que el comité a cargo los reporta. Aparecer ahí significa que el pleno del Senado puede tomar la nominación. No dice nada sobre cuándo pasará eso ni cómo votará el Senado."
+      },
+      "reported-by-committee": {
+        "term": "Reportado por el comité",
+        "body": "Un comité reporta un asunto cuando termina su trabajo y lo envía al pleno de la cámara. Puede reportarlo sin cambios, con enmiendas o como una versión reescrita, y por lo general presenta un informe escrito que explica qué hace el asunto. Reportar no es un voto de la cámara: saca el asunto del comité y lo pone en un calendario, donde la cámara decide qué sigue."
+      },
+      "amendment-in-the-nature-of-a-substitute": {
+        "term": "Enmienda sustitutiva integral (ANS)",
+        "body": "Una enmienda sustitutiva integral reemplaza todo el texto de un proyecto por un texto nuevo. Los comités la usan mucho: en vez de enmendar el proyecto línea por línea, aprueban un solo texto sustituto que pasa a ser la versión que considera la cámara. El proyecto conserva su número y su título, así que el texto que se vota puede ser muy distinto del que se presentó."
+      },
+      "budget-reconciliation": {
+        "term": "Reconciliación presupuestaria",
+        "body": "La reconciliación es un procedimiento especial para la legislación que cambia el gasto, los ingresos o el límite de la deuda. Empieza con una resolución presupuestaria que instruye a los comités a redactar esos cambios; el proyecto que resulta avanza con reglas que limitan el debate en el Senado, así que puede aprobarse con mayoría simple en vez de los 60 votos que suelen hacer falta para cerrar el debate ahí. A cambio, se restringe lo que el proyecto puede contener, y las disposiciones sin un efecto presupuestario real se pueden eliminar."
+      },
+      "cra-disapproval": {
+        "term": "Resolución de desaprobación (CRA)",
+        "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al Presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
+      }
+    }
   }
 }

@@ -110,6 +110,82 @@ export function floorCalendarChamber(actionText: string | null): Chamber | null 
 }
 
 /*
+ * WHERE THE PATH ENDS, AND THE ONE VEHICLE THAT NEVER REACHES THE PRESIDENT.
+ *
+ * Lived in components/BillJourney.tsx until 2026-08-12 and moved here whole —
+ * see that file for the move's proximate cause. It belongs here on the merits
+ * regardless: the stepper's header says all derivation lives in this module,
+ * and presentment is derivation of the purest kind.
+ *
+ * A CONCURRENT resolution — hconres / sconres — is not presented to the
+ * President and cannot become law. It is the two chambers speaking to each
+ * other: budget resolutions, War Powers directives, adjournment. Both chambers
+ * adopt it and that is the end of the road, Article I, Section 7's
+ * presentment requirement never engages. Until 2026-08-09 the stepper printed
+ * "President's desk" as the fifth step on every one of them, and the trailer
+ * underneath promised the bill would go back to its origin chamber "before
+ * reaching the President" — a false procedural fact on the 6 con-res pages in
+ * the corpus (hconres-113-119, sconres-38-119, sconres-39-119, hconres-38-119,
+ * hconres-89-119, hconres-96-119), in both languages, in the one component
+ * whose own header promises it cannot hallucinate procedure.
+ *
+ * WHY THIS IS A LOOKUP AND NOT A DERIVATION FROM TEXT. It is the same
+ * distinction this module draws for nominations (VOTING_CHAMBERS): a bill's
+ * CHAMBER is an observation about the record and must be read from it, but
+ * presentment is a fact about the KIND of vehicle — constitutional, fixed in
+ * advance, true of every concurrent resolution that has ever existed. Nothing
+ * in any record can change it, so nothing needs to be parsed.
+ *
+ * KNOWN LIMIT, deliberately not built (flagged to the owner rather than
+ * guessed): a JOINT resolution proposing a constitutional amendment also skips
+ * the President — it goes to the states for ratification. 16 of the 94 joint
+ * resolutions in the corpus are amendment proposals. Detecting them means
+ * pattern-matching the title ("Proposing an amendment to the Constitution…"),
+ * which is a text heuristic this codebase has not verified, and an unverified
+ * heuristic in a truth module is the class of thing this file exists to
+ * refuse. Every other hjres/sjres — CRA disapprovals, continuing resolutions —
+ * genuinely IS presented to the President, so the default is right for them.
+ */
+const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
+
+/** False only for vehicles the Constitution never presents to the President. */
+export function endsAtPresident(billType: string): boolean {
+  return !NO_PRESENTMENT.has(billType.toLowerCase());
+}
+
+/** Which named calendar the record put the bill on. */
+export type FloorCalendar = 'union' | 'house' | 'senate-legislative';
+
+/*
+ * WHICH CALENDAR, not just which chamber — the finer grain, added for the
+ * procedural glossary (issue #181) and deliberately built ON TOP of
+ * floorCalendarChamber rather than beside it.
+ *
+ * The reason it exists: "on the House floor calendar" is not one fact. The
+ * House keeps two, and the regex above accepts both. Measured 2026-08-12 over
+ * every `floor_vote` bill in the committed corpus whose `last_action_text`
+ * matches that regex: 180 Senate Legislative, 148 Union Calendar, 2 House
+ * Calendar. A glossary link that sent all 150 House placements to the Union
+ * Calendar entry would be a quiet false claim on 2 of them, which is the exact
+ * class of thing the surrounding module refuses to make. So the caller gets
+ * the real answer and links only what the record named. (The corpus moves
+ * nightly — recompute rather than trust these figures.)
+ *
+ * NO SECOND COPY OF THE PINNED REGEX. The `/placed on …/i` literal above is
+ * drift-pinned byte-for-byte against scripts/moment-candidates.mjs
+ * (tests/moment-candidates.unit.spec.ts §2), and a second copy in this file
+ * would be a second thing to keep in sync — the very defect that pin exists to
+ * catch. This delegates the placement question entirely and only asks the one
+ * extra thing the chamber answer throws away.
+ */
+export function floorCalendarName(actionText: string | null): FloorCalendar | null {
+  const chamber = floorCalendarChamber(actionText);
+  if (!chamber || !actionText) return null;
+  if (chamber === 'senate') return 'senate-legislative';
+  return /union calendar/i.test(actionText) ? 'union' : 'house';
+}
+
+/*
  * The activity matcher for floor_vote bills WITHOUT a calendar placement —
  * cloture motions, rejected motions to proceed, House rule resolutions,
  * postponed proceedings. Ordered rules, first hit wins; every live corpus
@@ -800,6 +876,12 @@ export interface JourneyState {
    *  placement, in the past tense) and sets this false, so a future reader
    *  cannot re-light an urgency treatment off a two-year-old event. */
   onCalendar: boolean;
+  /** WHICH calendar the record named, when it named one — set on the two
+   *  placement keys (`nowFloor` / `nowFloorStale`) and null everywhere else.
+   *  Read by components/BillJourney.tsx to decide which glossary entry the
+   *  placement phrase links to, and to link nothing when the record said
+   *  "House Calendar" (there is no glossary entry for that one yet). */
+  floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
   /** Whether the "changes send it back" trailer is still ahead. */
@@ -823,6 +905,7 @@ export function deriveJourney(
     current: origin,
     nowChamber: origin,
     onCalendar: false,
+    floorCalendar: null,
     isLaw: false,
     isVetoed: false,
     showTrailer: true,
@@ -855,6 +938,7 @@ export function deriveJourney(
           // claim — an aged placement is still ON the calendar and the
           // demoted sentence still says so.
           onCalendar: live,
+          floorCalendar: floorCalendarName(bill.last_action_text),
           nowKey: live ? 'nowFloor' : 'nowFloorStale',
         };
       }
