@@ -1,3 +1,175 @@
+---
+# MACHINE-READABLE LAYER — added 2026-08-12. The prose below is unchanged and
+# stays normative for MEANING; this block is the same system in the DESIGN.md
+# token schema (Stitch: name/description/colors/typography/rounded/spacing/
+# components — no other top-level group is valid), so the impeccable design
+# detector stops abstaining and enforces the palette, the type ladder and the
+# shape law on every edit. Values are copied from `app/globals.css` @theme and
+# are not a second source of truth: change globals.css and this block in the
+# same PR, the way `app/embed/embed.css` is already bound.
+#
+# WHAT THIS BLOCK CANNOT SAY. The schema holds values, not conditions. The
+# colour law's conditions — amber ONLY for one dated floor fact, ALWAYS with
+# ink text and the date PRINTED beside it, never without; `stale` is ink and
+# never amber — are prose below and types in `components/system/Chip.tsx`
+# (the `urgent` tone will not compile without a `dateLabel`). A value that
+# passes this block can still break the law.
+name: Oravan
+description: Plain-words truth about what Congress is doing, and the call you can make about it.
+colors:
+  paper: "#ffffff"        # the page, and text on any dark ground
+  wash: "#f3f6f4"         # recessed ground: notes, disabled, inset
+  ink: "#16191b"          # all other text, and every component edge
+  ink-2: "#4a544e"        # secondary text on paper or wash
+  ink-pale: "#c3cdc6"     # secondary text on an ink ground
+  ink-deep: "#16191b"     # ROLE TOKEN: dark enamel GROUND only. Same value as
+                          # ink on purpose — one dark, two names, two roles.
+  line: "#d7ded9"         # DECORATIVE separator only; never a component edge
+  line-strong: "#7e948a"  # every component edge
+  go: "#0f6c4a"           # GO: actions and the 6px gauge. Nothing else.
+  go-deep: "#0a4e35"      # pressed/hover go; the enamel panel ground
+  go-bright: "#5fd39a"    # go, on an ink ground
+  go-pale: "#c9ddd4"      # secondary text on the green enamel panel
+  tint: "#e7f2ec"         # YOURS: what the user chose, typed or was handed
+  urgent: "#ffc845"       # ONE dated floor fact, ink text, date printed
+  alert: "#8c3a1f"        # failure, and only failure
+typography:
+  # `scale` is the enumerated ladder: 12 · 13 · 14 · 16 · 18 · 21. Nothing is
+  # authored off it. The display steps below are fluid and declare their own
+  # endpoints, which is why they are roles rather than rungs.
+  scale:
+    "2xs": "0.75rem"
+    xs: "0.8125rem"
+    sm: "0.875rem"
+    md: "1rem"
+    lg: "1.125rem"
+    xl: "1.3125rem"
+  body:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  label:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  reading:
+    # The reading voice. Exactly two things: a bill's AI-decoded prose, and the
+    # words a caller says aloud. Set one rung up because a serif reads small;
+    # leading is unchanged. There is deliberately no display token for it.
+    fontFamily: "Besley, Georgia, Times New Roman, serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  lede:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "1.125rem"   # STEPS to 1.3125rem at 62rem; it never interpolates
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  h3:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.3125rem, 2.4vw, 1.625rem)"
+    fontWeight: 800
+    lineHeight: 1.25
+    letterSpacing: "normal"
+  h2:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.5rem, 3.5vw, 2.125rem)"
+    fontWeight: 800
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
+  h2-loud:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.5rem, 4vw, 2.5rem)"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.01em"
+  h1-bill:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(1.75rem, 5.5vw, 3.5rem)"
+    fontWeight: 800
+    lineHeight: 1.12
+    letterSpacing: "-0.02em"
+  h1:
+    fontFamily: "Libre Franklin, -apple-system, Segoe UI, Arial, sans-serif"
+    fontSize: "clamp(2rem, 7vw, 4.25rem)"
+    fontWeight: 800
+    lineHeight: 1.04
+    letterSpacing: "-0.02em"
+  embed-body:
+    # `app/embed/embed.css` is an iframe payload: system fonts, never next/font,
+    # never a webfont link. Declared so the detector knows the embed's stacks
+    # are the system by design, not drift off Franklin.
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  embed-citation:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.875rem"
+    fontWeight: 700
+    lineHeight: 1.6
+    letterSpacing: "normal"
+rounded:
+  # THE SHAPE LAW. Radius is assigned by SCALE, not by interactivity. There is
+  # no third radius and no pill: `rounded-full` is not part of this system, so
+  # no `full`/`pill` key exists here and any radius off these three is a
+  # finding. The inverted phrasing "panels 3px / controls 8px" is WRONG.
+  stamp: "3px"    # small marks: chips, tags, gauge, stamp, lang switch, pills, portraits
+  control: "8px"  # hand-sized: panels, cards, buttons, inputs, disclosures
+  hair: "2px"     # the focus indicator's own rounding and hairline inner rules ONLY
+spacing:
+  # Tailwind's 0.25rem step IS the scale; only these rungs are legal. 28/36/40/
+  # 44 (p-7/p-9/p-10/p-11) are OFF it. Every fluid clamp() must land on a rung
+  # at BOTH bounds. `min-h-11` (44px) and `min-h-12` (48px) are floors, not
+  # spacing choices, and are exempt.
+  "0.5": "2px"
+  "1": "4px"
+  "2": "8px"
+  "3": "12px"
+  "4": "16px"
+  "5": "20px"
+  "6": "24px"
+  "8": "32px"
+  "12": "48px"
+  "16": "64px"
+  "24": "96px"
+components:
+  chip-urgent:
+    backgroundColor: "{colors.urgent}"
+    textColor: "{colors.ink}"     # 11.44:1 — and the printed date is required
+    rounded: "{rounded.stamp}"
+  chip-stale:
+    textColor: "{colors.ink}"     # INK, never amber
+    rounded: "{rounded.stamp}"
+  chip-tag:
+    textColor: "{colors.ink}"     # ink in EVERY state; never category-colored
+    rounded: "{rounded.stamp}"
+  button-primary:
+    backgroundColor: "{colors.go}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.control}"
+    height: "48px"
+  card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+  floor-vote-panel:
+    backgroundColor: "{colors.go-deep}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.control}"
+  gauge:
+    backgroundColor: "{colors.go}"
+    rounded: "{rounded.stamp}"
+    height: "6px"
+---
+
 # Design
 
 Oravan's visual system. Tokens live in `app/globals.css` under `@theme` (Tailwind v4). Use them; never a raw hex, never a raw px radius, never a font stack in a component.
@@ -157,7 +329,26 @@ Build against **live data in `data/`**, never against the mockups' fiction.
 >
 > `announced` is also the ONLY kind that may render over a bill whose `status` is not `floor_vote` — that exemption *is* the ruling, because the status is precisely what goes stale when a measure reaches the floor. Everything else stands: one dated fact, printed, capped at one panel per page, and a quiet week has no panel at all. `home.weekNoteAnnounced` (EN+ES) is the note that describes this fact, and it is a separate string from `home.weekNote` so the page can never describe a fact it is not showing.
 >
+> **Applied on BOTH surfaces 2026-08-12**, the same way ruling 2026-08-09 had to be. V1 shipped on the homepage crown only, and the bill page kept its `status === 'floor_vote'` gate — so a T0-announced bill whose derived status had fallen back to `committee` (the normal state of a measure mid-passage, and the exact case this ruling exists for) wore the crown on the homepage and showed **no band at all** on its own page one click later. The page now runs one gate, `billFloorBand` in `lib/journey.ts`, which puts `announced` above both record facts and leaves both of them untouched below it; the announcement reaches it through `rungFor`, so the terminal-first rung order and `signalIsLive` govern the page exactly as they govern the ladder. The quote, its attribution row and the checked-at stamp are one shared block (`components/FloorEvidence.tsx`) rendered by both surfaces, because two hand-kept copies of one attribution is how two surfaces start disagreeing about one record. The band's chip is the crown's own string (`bill.floor.announced*`); its headline, status label and meta line are page-scoped and new in EN+ES, because a chip and a full sentence are not the same claim.
+>
+> **Where a surface prints COVERAGE it prints the source's own printed label** (`covers_label`, e.g. *"8 a.m., Thursday, August 13"*), not our ISO derivation of it — English verbatim, unformatted, marked `lang="en"`, exactly like the quote above it. `covers` keeps its other job (the horizon `signalIsLive` computes on) and is the fallback when the document printed no label. The evidence row had been printing the derivation while the label sat stored beside it unread.
+>
 > **The printed-date ruling above is still open.** N3 changes what the label may *assert* about age; V1 adds a second document whose OWN dates may be printed and quoted. Neither settles which date the amber prints for a corpus fact, and `FloorVotePanel` still takes a caller-supplied `dateLabel` and still refuses to render without one.
+
+> ### ⚠️ OPEN OWNER RULING — the news band's COUNTED CAPTION (raised 2026-08-12, the conversation lamp)
+>
+> The "In the news" band is now selected from `data/conversation.json` — committed, day-granular evidence of which AllSides-**rated** outlets published about a bill inside a seven-day window, and what congress.gov's own weekly most-viewed list said — and **every card prints one sentence saying why it is there**: *"Covered by 3 outlets across the spectrum this week: left, center, and right"* / *"Among congress.gov's most-viewed bills, 2 weeks running"*.
+>
+> That is a **new copy class**, in the same family as V1 above: V1 admitted a *quoted government sentence*; this admits a *counted claim of our own about the press*. It has not been ruled on, and it ships under six constraints so the ruling has something exact to answer:
+>
+> 1. **Only counted facts, and only ones already stored.** Outlet counts, their leans, the consecutive-week count, the rank — each is read straight from the committed file, and `scripts/check-conversation.mjs` fails the build if a domain with no AllSides rating is ever counted toward one. Nothing is inferred, rounded, or adjectival: no "widely", no "major", no "growing".
+> 2. **It is INK, always.** Never amber, never green, never a chip. Amber is one dated FLOOR fact; who published what is not a floor fact and must not borrow its weight. The band cannot light the green panel and does not change docket order anywhere.
+> 3. **It never claims a spread it does not hold, and it never counts to one.** Rated coverage that is one-sided is *dropped from the band*, not reworded — the same exclusion `coverageTier` has always applied. Center-only coverage says "rated center". "Across the spectrum" renders only when both partisan leans are present. And a card that is on the page because congress.gov's most-viewed list carries it prints **that listing and nothing else**: such a card holds at most one rated outlet by construction, and *"covered by 1 outlet: left"* is a single-outlet claim wearing a spread — so the one article that admitted it stays evidence (readable in `data/conversation.json`, and in the MCP facet, which characterizes nothing) and never becomes copy. **Two outlets is the smallest number this band says out loud.** *(Amended 2026-08-12 after verification: as first written, that caption shipped.)*
+> 4. **It says nothing about what happens next.** This band is a lens on what is being read and written about; it makes no claim about a vote, a schedule, or an outcome.
+> 5. **It disappears rather than degrades.** When the evidence file is absent, unreadable by this build, or unrefreshed past `CONVERSATION_STALE_HOURS`, the band falls back to the stored-coverage selection it used before (#215) and prints **no caption at all** — a caption that cannot be checked is a guess, and the guess is not made. When the file IS live but thin — a recess week with one eligible bill — the band is simply short, and an empty one renders nothing at all, exactly as the #215 recency gate already leaves it. No backfilling from the archive in either state.
+> 6. **No more than two of the six cards may owe their place to the most-viewed list**, by either admission route (two consecutive weeks, or one rated article beside a first-week listing). congress.gov's view counts are the cheapest input in this design for an outsider to move, so they may season the band and never fill it. *(Also amended 2026-08-12: the cap had been written against one of the two routes, and the other walked past it — five of six cards could have rested on a view count apiece.)*
+>
+> The question for the owner is whether a counted claim about the press may be printed in Oravan's own voice at all, and if so whether these five constraints are the right fence. Until then this note is the record of the open question, not a ruling.
 
 ---
 

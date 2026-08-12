@@ -450,6 +450,17 @@ function twoFactorHits(text) {
  * reaches strangers). messages/*.json are scanned separately, per key, so
  * the Moments namespace can be excluded precisely rather than by file.
  *
+ * ALSO SCANNED, and the reason is a move: docs/constitution-log.md (added
+ * 2026-08-12, in the change that created it). CLAUDE.md's hard rules kept
+ * their live claims, their dated amendment markers and their instructions,
+ * and sent only the forensic evidence — measurements, file:line tracing,
+ * inventories — to that log. Text that moves out of a scanned document into
+ * an unscanned one leaves gate coverage while looking tidier, which is the
+ * failure the NOT SCANNED list below exists to make impossible by accident.
+ * Note it carries no R3 allowlist entry, and needs none: every retired-claim
+ * quotation stayed behind in CLAUDE.md's marker sentences, so a retired
+ * claim appearing in the log is a real violation, not a record of one.
+ *
  * NOT SCANNED, and why — written down because an unexplained exclusion is
  * how a gate rots:
  *   - tests/          builds hostile fixtures on purpose (tests/claim-truth.
@@ -474,6 +485,7 @@ const SCAN_FILES = [
   'DESIGN.md',
   'AGENTS.md',
   'docs/mcp-server-readme.md',
+  'docs/constitution-log.md',
 ];
 const SCAN_EXT = /\.(ts|tsx|mjs|js|md)$/;
 const MESSAGE_FILES = ['messages/en.json', 'messages/es.json'];

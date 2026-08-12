@@ -98,3 +98,21 @@ export const NOMINATION_STATUS_TERMS: Readonly<Record<string, GlossaryTermId>> =
   reported: 'reported-by-committee',
   exec_calendar: 'executive-calendar',
 };
+
+/*
+ * THE NEAR-MISS, WRITTEN DOWN SO NOBODY HELPFULLY WIRES IT.
+ *
+ * `bill.journey.nowConference` reads "both chambers are reconciling their
+ * versions", and the only English word it shares with `budget-reconciliation`
+ * is a coincidence. That sentence is a CONFERENCE — two chambers settling the
+ * differences between two texts of one bill. Budget reconciliation is a
+ * special procedure begun by a budget resolution that caps Senate debate.
+ * Linking one to the other would hand a reader a confident explanation of
+ * something that is not happening, which is worse than no link at all.
+ *
+ * Same rule caught two more on the 2026-08-12 sweep of the strings #220 and
+ * #222 added: `nowPassedStale` / `nowPassedBackStale` name no procedural term,
+ * and `backTrailerStates` describes Article V ratification — a real procedure,
+ * and one this batch has no entry for. Absence is a finding; an approximate
+ * link is a claim.
+ */

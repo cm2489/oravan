@@ -6,7 +6,7 @@ mechanism.
 
 ## The loop
 
-1. **The watcher notices.** `moment-watch.yml` runs nightly (11:20 UTC, after
+1. **The watcher notices.** `moment-watch.yml` runs nightly (16:35 UTC, after
    the bill sync) and opens **one issue per candidate** that clears the
    notification floor — a chamber has scheduled it or acted on it on the floor,
    coverage is real, the action is recent, and there is somewhere to put it.

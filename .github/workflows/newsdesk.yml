@@ -32,8 +32,11 @@ permissions:
   actions: write  # lets the workflow dispatch ci.yml after its own push
 
 concurrency:
-  # Shared with sync-bills.yml/hot-bills.yml/refresh-legislators.yml so this
-  # can never race any of their commits to data/bills.json or data/bills-es.json.
+  # Shared with sync-bills.yml / hot-bills.yml / moment-watch.yml so this can
+  # never race any of their commits to data/bills.json or data/bills-es.json.
+  # refresh-legislators.yml LEFT this group on 2026-08-12 (its files are
+  # disjoint from every member's, and THIS workflow's hourly cadence was what
+  # kept evicting it while it waited - see that file's concurrency comment).
   group: data-sync
   cancel-in-progress: false
 
@@ -137,11 +140,13 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
-          # This job touches data/bills.json/data/bills-es.json (no
-          # sync-state.json, no coverage.json - see scripts/newsdesk.mjs's
-          # Boundaries section) plus data/moment-updates.json from the
-          # collector step above and data/floor-signals.json from the
-          # announcement collector; `git add data/` already stages all of them
+          # This job touches data/bills.json/data/bills-es.json and
+          # data/conversation.json (the conversation lamp's committed
+          # evidence - no sync-state.json, no coverage.json; see
+          # scripts/newsdesk.mjs's Boundaries section) plus
+          # data/moment-updates.json from the collector step above and
+          # data/floor-signals.json from the announcement collector;
+          # `git add data/` already stages all of them
           # - disjoint from refresh-legislators.yml's
           # files but overlapping sync-bills.yml's/hot-bills.yml's, all of
           # which share this concurrency group. Rebase onto the latest main
@@ -178,8 +183,9 @@ jobs:
           exit 1
       - name: Verify the deploy landed
         # Same dead-man's-switch as sync-bills.yml/hot-bills.yml - poll
-        # production until it serves the SHA we just pushed. Skips with a
-        # notice until the PROD_URL repo variable is set.
+        # production until it serves the SHA we just pushed. A missing
+        # PROD_URL repo variable FAILS this step rather than skipping it
+        # (2026-08-12) - see scripts/verify-deploy.mjs's header.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}

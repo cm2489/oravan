@@ -41,8 +41,9 @@
  * NEWS_API_KEY / TheNewsAPI is deliberately NOT used here — that quota
  * belongs to scripts/sync-coverage.mjs (which already exceeds its own
  * daily quota some nights; pipeline-audit.md §4). Politically-balanced
- * basket of 9 feeds (leans per data/media-bias.json), the original six
- * verified live 2026-07-16 and the three 2026-07-23 additions marked *:
+ * basket of 11 feeds (leans per data/media-bias.json), the original six
+ * verified live 2026-07-16, the three 2026-07-23 additions marked * and
+ * the two 2026-08-12 rebalance additions marked **:
  *   The Hill      thehill.com    center   https://thehill.com/homenews/feed/
  *   The Hill Senate* thehill.com center   https://thehill.com/homenews/senate/feed/
  *   The Hill House*  thehill.com center   https://thehill.com/homenews/house/feed/
@@ -53,23 +54,71 @@
  *   Roll Call     rollcall.com   unrated  https://rollcall.com/feed/
  *                 (congress-focused trade pub, not AllSides-rated;
  *                  included for direct legislative signal, not lean
- *                  balance)
+ *                  balance — and, since 2026-08-12, counted toward NO
+ *                  corroboration on the conversation lamp's side, which
+ *                  admits rated outlets only; see lib/conversation.mjs)
  *   NPR Politics  npr.org        center   https://feeds.npr.org/1014/rss.xml
  *   Fox News      foxnews.com    right    https://moxie.foxnews.com/google-publisher/politics.xml
+ *   Washington Times** washingtontimes.com right
+ *                 https://www.washingtontimes.com/rss/headlines/news/politics/
  *   CBS News      cbsnews.com    left     https://www.cbsnews.com/latest/rss/politics
  *   Politico*     politico.com   left     https://rss.politico.com/congress.xml
+ *   CNBC Politics** cnbc.com     center   https://www.cnbc.com/id/10000113/device/rss/rss.html
  *   Google News   (per-article)  spans    https://news.google.com/rss/search?q=congress%20bill%20when:1d&hl=en-US&gl=US&ceid=US:en
  *                 many leans - each item carries a <source url="…"> tag
  *                 that resolves to a bare outlet domain, giving true
  *                 per-article outlet attribution from one aggregator feed.
- * Basket = 1 right + 2 left + 2 center outlets (Hill counted once) + 1
- * unrated congress trade pub + 1 cross-outlet aggregator, so no single
- * lean can structurally dominate which bills accumulate outlet
- * corroboration (see the ≥2-outlet rule below). Dead/rejected candidates
- * during verification: apnews.com/hub/politics.rss and apnews.com/rss
- * (both 404 — AP discontinued most public RSS), politico.com/rss/
- * politics08.xml (403; the congress.xml feed above works),
- * feeds.washingtonpost.com/rss/politics (200 but an empty/stub body).
+ *
+ * THE 2026-08-12 REBALANCE (critic B-4), and why it had to happen before the
+ * conversation lamp could ship. The basket was 1 right + 2 left + 2 center
+ * rated outlets, which is a construction that leans: a story the left covers
+ * was structurally likelier to reach the ≥2-outlet bar than one the right
+ * covers, and the SINGLE right feed dying — the way apnews.com's did, silently,
+ * with a 404 — would have skewed cross-spectrum admission with nothing on the
+ * page to say so. "Nonpartisan by construction" is a claim about the
+ * construction. Two rated feeds were added, both vetted live 2026-08-12 the
+ * same way the original six were (fetch, confirm 200, parse with this repo's
+ * own parseFeed, confirm real congress-relevant items, confirm every item link
+ * resolves to the domain data/media-bias.json rates):
+ *   washingtontimes.com  RIGHT  20 items, 20 dated, 5 congress-relevant
+ *                        ("Dem senators accuse Belgian diamond group…",
+ *                        "Left wing of Democratic Party wins showdown Senate
+ *                        race in Minnesota"), all links on washingtontimes.com
+ *   cnbc.com             CENTER 30 items, 30 dated, 7-10 congress-relevant
+ *                        ("Russia sanctions bill honoring Lindsey Graham
+ *                        breezes through Senate, heads to House"), all links
+ *                        on cnbc.com
+ * Basket is now 2 right + 2 left + 3 center rated outlets (Hill counted once)
+ * + 1 unrated congress trade pub + 1 cross-outlet aggregator, and no lean
+ * depends on a single feed staying alive.
+ * Dead/rejected candidates during verification — 2026-07-16/23:
+ * apnews.com/hub/politics.rss and apnews.com/rss (both 404 — AP discontinued
+ * most public RSS), politico.com/rss/politics08.xml (403; the congress.xml
+ * feed above works), feeds.washingtonpost.com/rss/politics (200 but an
+ * empty/stub body). 2026-08-12 rebalance sweep: dailycaller.com/section/
+ * politics/feed (404), townhall.com/api/rss/columnists (404),
+ * api.axios.com/feed/politics (404), apnews.com/hub/politics.rss (404 again —
+ * still dead), reuters.com arc outboundfeeds politics (404),
+ * feeds.a.dj.com/rss/RSSPolitics.xml (403), bloomberg.com politics site.xml
+ * (403), newsmax.com/rss/Politics/1 (connection timeout at 20s),
+ * rssfeeds.usatoday.com Washington (200 with zero parseable items — the
+ * washingtonpost shape), freebeacon.com/politics/feed (200 with zero
+ * parseable items). Rated-but-passed-over on congress relevance:
+ * nationalreview.com (1/20), thedispatch.com (1/10), dailysignal.com (1/20),
+ * nypost.com/politics (5/20 but heavily NY-local), washingtonexaminer.com
+ * /tag/congress (3/10, healthy — the first alternate if either addition dies).
+ *
+ * ---- THE DARK-LEAN ALARM (critic B-4, 2026-08-12) ----
+ * A rebalanced basket that quietly loses a side is the same failure with extra
+ * steps, so per-lean liveness is tracked in the same cache the darkness
+ * tripwire uses: for every rated lean the basket carries, the last day any of
+ * THAT LEAN's own feeds returned an item. A lean silent for
+ * DARK_LEAN_ALARM_DAYS (7) emits a loud ::warning:: and is written into
+ * data/conversation.json's source_status, where the gate re-surfaces it. Only
+ * the basket's own named feeds count as a lean being live — an aggregator
+ * article that happens to resolve to a right-rated domain does not, because
+ * the thing being watched is whether the vetted basket still covers the
+ * spectrum, not whether Google News does.
  *
  * ---- Matching, cheapest first (full design in scripts/newsdesk-match.mjs) ----
  * t1 citation regex (free) -> t2 local token overlap against corpus
@@ -189,6 +238,9 @@
  * by definition fired nothing and wrote nothing on a dark run.
  *
  * ---- Boundaries ----
+ * Writes data/bills.json, data/bills-es.json and data/conversation.json, and
+ * nothing else. NEVER writes data/floor-signals.json (the sibling step below
+ * owns it; this script only reads it) and NEVER writes data/moment-updates.json.
  * NEVER writes data/coverage.json — that stays scripts/sync-coverage.mjs's
  * (TheNewsAPI, display-only enrichment of already-known bills). A future
  * integration could have sync-coverage.mjs prioritize newsdesk-triggered
@@ -209,6 +261,39 @@
  * A null decoded_at with a matching title never fires, which is what keeps the
  * pre-2026-08-12 backlog from eating a day's cap the first time it runs.
  *
+ * ---- THE CONVERSATION LAMP: data/conversation.json (2026-08-12) ----
+ * A sixth thing this script does, and the only one that writes a file of its
+ * own. Everything above is about TRIGGERING — which bill to refresh, which
+ * decode to re-run. This is about EVIDENCE: which rated outlets carried a
+ * story matched to which bill in the last 7 days, and what congress.gov's own
+ * weekly most-viewed list says, written down where it can be audited a month
+ * later. The full design, and the four critic patches it enforces at write
+ * time, live in lib/conversation.mjs's header. Three things matter here:
+ *
+ *   1. THE TRIGGER MACHINERY IS UNTOUCHED. `pendingOutlets`, its 7-day TTL and
+ *      its delete-on-fire all behave exactly as they did; decideFires still
+ *      decides fires. The lamp keeps its OWN accumulator (every press match
+ *      this run, including t1 citations, which the trigger path short-circuits
+ *      past) and reads its own committed file. Nothing here can change what
+ *      fires, and nothing that fires can erase the lamp's evidence.
+ *   2. IT NEVER TOUCHES THE DOCKET. Conversation selects and captions the news
+ *      band and contributes a C-tier input to Moment candidates. Crown,
+ *      shortlist, /bills bands and the MCP pool stay ordered by lib/docket.mjs
+ *      alone.
+ *   3. IT SPENDS NO NEW BUDGET. A bill ENTERING corroborated state (≥2 RATED
+ *      outlets inside the window — an unrated domain corroborates nothing)
+ *      with a stale decode queues through the SAME chargeableDecode path under
+ *      the SAME press caps as any other press fire. Most-viewed alone never
+ *      queues anything (critic B-2). The only extra network is up to
+ *      CONVERSATION_TITLE_CHECKS_PER_RUN free Congress.gov refreshes, spent
+ *      only on a C1 entrant whose decode stamp looks fine — the vehicle-swap
+ *      check that heals an AGOA decode sitting on a continuing resolution.
+ *
+ * The file is COMMITTED and written ONLY on a material change (a new outlet, a
+ * new day for one already recorded, a most-viewed transition, a window prune,
+ * a source status change) — every observation is stored at day granularity
+ * precisely so an hourly cron cannot become an hourly deploy.
+ *
  * SIBLING STEP: scripts/floor-signals.mjs runs immediately BEFORE this one in
  * newsdesk.yml and owns data/floor-signals.json alone — this script only ever
  * READS that file, and treats it as absent when it can't. Neither writes the
@@ -220,6 +305,19 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  buildConversation,
+  CONVERSATION_PATH,
+  conversationEvidence,
+  conversationPool,
+  DARK_LEAN_ALARM_DAYS,
+  darkLeans,
+  enteredCorroborated,
+  leanOf,
+  leanStatuses,
+  rollLeanHealth,
+  shouldWrite as shouldWriteConversation,
+} from '../lib/conversation.mjs';
 import { loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
 import {
@@ -236,6 +334,7 @@ import {
   decideFires,
   extractBillsThisWeekSlugs,
   extractFloorFeedSlugs,
+  extractMostViewedRanked,
   extractMostViewedSlugs,
   extractNicknameTokens,
   failedDecodeKey,
@@ -273,6 +372,13 @@ const TIER0_DAILY_DECODE_CAP = Number(process.env.NEWSDESK_TIER0_DAILY_DECODE_CA
 // 100 ≈ several days of legislative motion — a brand-new bill big enough
 // to be covered by nickname is essentially always inside this window.
 const NICKNAME_LIST_LIMIT = Number(process.env.NEWSDESK_NICKNAME_LIST_LIMIT ?? 100);
+// The conversation lamp's only extra network: FREE Congress.gov refreshes
+// spent checking whether a newly-corroborated bill's title is still the title
+// we hold (the vehicle swap that left an AGOA decode on the continuing
+// resolution). Only a C1 entrant whose decode stamp already looks fine costs
+// one, and entering C1 is rare by construction — five is a ceiling, not a
+// budget. No model call, no cent, ever.
+const CONVERSATION_TITLE_CHECKS_PER_RUN = Number(process.env.NEWSDESK_CONVERSATION_TITLE_CHECKS ?? 5);
 const CACHE_DIR = process.env.NEWSDESK_CACHE_DIR ?? '.newsdesk-cache';
 const CACHE_FILE = `${CACHE_DIR}/seen.json`;
 const T3_MAX_HEADLINES = Number(process.env.NEWSDESK_T3_MAX_HEADLINES ?? 40);
@@ -288,8 +394,11 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; OravanNewsdesk/1.0; +https://oravan
 const TIER0_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 // See the header comment for the full basket rationale + verification
-// dates. `domain` is what the ≥2-outlet rule counts, so the three Hill
-// feeds deliberately share one domain (one outlet, wider recall).
+// dates (including the 2026-08-12 rebalance's live vetting and its
+// dead/rejected candidate list). `domain` is what the ≥2-outlet rule counts,
+// so the three Hill feeds deliberately share one domain (one outlet, wider
+// recall) — and it is also the key data/media-bias.json is looked up by, which
+// is what makes each feed's lean a fact rather than an assertion here.
 const SOURCES = [
   { name: 'The Hill', domain: 'thehill.com', url: 'https://thehill.com/homenews/feed/' },
   { name: 'The Hill Senate', domain: 'thehill.com', url: 'https://thehill.com/homenews/senate/feed/' },
@@ -297,8 +406,14 @@ const SOURCES = [
   { name: 'Roll Call', domain: 'rollcall.com', url: 'https://rollcall.com/feed/' },
   { name: 'NPR Politics', domain: 'npr.org', url: 'https://feeds.npr.org/1014/rss.xml' },
   { name: 'Fox News Politics', domain: 'foxnews.com', url: 'https://moxie.foxnews.com/google-publisher/politics.xml' },
+  // 2026-08-12 rebalance (critic B-4): the second RIGHT-rated outlet, so no
+  // lean in this basket depends on one feed staying alive.
+  { name: 'Washington Times Politics', domain: 'washingtontimes.com', url: 'https://www.washingtontimes.com/rss/headlines/news/politics/' },
   { name: 'CBS News Politics', domain: 'cbsnews.com', url: 'https://www.cbsnews.com/latest/rss/politics' },
   { name: 'Politico Congress', domain: 'politico.com', url: 'https://rss.politico.com/congress.xml' },
+  // 2026-08-12 rebalance: a third CENTER-rated outlet, and the one with the
+  // highest measured congress-relevance of the vetted candidates.
+  { name: 'CNBC Politics', domain: 'cnbc.com', url: 'https://www.cnbc.com/id/10000113/device/rss/rss.html' },
   { name: 'Google News (congress bill query)', domain: null, url: 'https://news.google.com/rss/search?q=congress%20bill%20when:1d&hl=en-US&gl=US&ceid=US:en' },
 ];
 
@@ -321,6 +436,11 @@ const TIER0_SOURCES = [
     label: 'most-viewed-bills',
     url: () => 'https://www.congress.gov/rss/most-viewed-bills.xml',
     extract: extractMostViewedSlugs,
+    // The conversation lamp needs what the trigger path never did: the RANK
+    // congress.gov published and the week label it printed. Same parse, same
+    // request, no extra fetch — extractMostViewedSlugs is now a projection of
+    // this, so the two can never disagree about which bills are on the list.
+    extractExtra: extractMostViewedRanked,
   },
   {
     label: 'house-bills-this-week',
@@ -333,17 +453,20 @@ const TIER0_SOURCES = [
   },
 ];
 
-/** Fetch one tier-0 source and extract its slugs. Returns [] on an
- *  allowed 404; throws on anything else so Promise.allSettled surfaces it
- *  as a per-source failure without killing the run. */
+/** Fetch one tier-0 source and extract its slugs, plus whatever richer shape
+ *  that source carries for the conversation lamp (`extra`, most-viewed only).
+ *  Returns an empty result on an allowed 404; throws on anything else so
+ *  Promise.allSettled surfaces it as a per-source failure without killing the
+ *  run. */
 async function fetchTier0(src) {
   const res = await fetch(src.url(), {
     signal: AbortSignal.timeout(20_000),
     headers: { 'User-Agent': TIER0_USER_AGENT },
   });
-  if (res.status === 404 && src.okOn404) return [];
+  if (res.status === 404 && src.okOn404) return { slugs: [], extra: null };
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return src.extract(await res.text());
+  const body = await res.text();
+  return { slugs: src.extract(body), extra: src.extractExtra ? src.extractExtra(body) : null };
 }
 
 async function fetchFeed(src) {
@@ -380,13 +503,30 @@ function loadCache() {
       pendingOutlets,
       dailyDecodes: raw.dailyDecodes ?? null, // {date: 'YYYY-MM-DD', count, tier0Count}
       feedHealth: raw.feedHealth ?? null, // {consecutiveDark}
+      // {left|center|right: {last_live, first_dark}} - critic B-4's per-lean
+      // liveness. Losing it costs at most one alarm cycle: rollLeanHealth
+      // starts a lean's clock at today rather than reading a missing record as
+      // infinitely dark, which fails toward silence exactly like feedHealth.
+      leanHealth: raw.leanHealth ?? null,
+      // Slugs that ENTERED corroborated state and whose re-decode the press
+      // budget deferred. Carried so a bill does not lose its heal simply
+      // because it was corroborated on a busy hour; dropped as soon as it
+      // stops being corroborated or the re-decode resolves.
+      conversationRedecodeQueue: Array.isArray(raw.conversationRedecodeQueue) ? raw.conversationRedecodeQueue : [],
     };
   } catch {
     // Cache miss (first run, evicted, or corrupt) - degrade gracefully.
     // See the header comment: firing again on an already-handled bill is
     // idempotent, so losing this state costs a little redundant work, not
     // correctness.
-    return { seen: new Set(), pendingOutlets: {}, dailyDecodes: null, feedHealth: null };
+    return {
+      seen: new Set(),
+      pendingOutlets: {},
+      dailyDecodes: null,
+      feedHealth: null,
+      leanHealth: null,
+      conversationRedecodeQueue: [],
+    };
   }
 }
 
@@ -397,6 +537,8 @@ function saveCache(cache) {
     pendingOutlets: cache.pendingOutlets,
     dailyDecodes: cache.dailyDecodes,
     feedHealth: cache.feedHealth,
+    leanHealth: cache.leanHealth,
+    conversationRedecodeQueue: cache.conversationRedecodeQueue,
   }));
 }
 
@@ -445,6 +587,11 @@ Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slu
 const anthropic = new Anthropic({ maxRetries: 8 });
 const bills = loadJSON('data/bills.json');
 const es = loadJSON('data/bills-es.json');
+// The AllSides lean table. Display-only everywhere else in the app; HERE it is
+// the B-3 gate — an outlet absent from this map corroborates nothing on the
+// conversation lamp, and it is also what tells the run whether a whole lean of
+// the basket has gone dark (B-4).
+const bias = loadJSON('data/media-bias.json').outlets ?? {};
 const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
 const billIndex = buildBillIndex(bills);
 const cache = loadCache();
@@ -472,6 +619,11 @@ console.log(`newsdesk tier-0 [${floorWindow} window, ${todayUTC}]: fetching ${TI
 const tier0Results = await Promise.allSettled(TIER0_SOURCES.map(fetchTier0));
 const tier0Slugs = new Map(); // slug -> source label (first source to carry it wins)
 let tier0Failed = 0; // hard failures only - an empty floor feed is a recess day
+// The most-viewed list with its published ranks and week label, for the
+// conversation lamp. null when that one feed failed - the lamp then simply
+// records no most-viewed observation this run (its source_status says so) and
+// nothing about the press half changes.
+let mostViewedRanked = null;
 tier0Results.forEach((r, i) => {
   const { label } = TIER0_SOURCES[i];
   if (r.status !== 'fulfilled') {
@@ -479,8 +631,10 @@ tier0Results.forEach((r, i) => {
     console.error(`  tier-0 ${label} FAILED: ${r.reason?.message ?? r.reason}`);
     return;
   }
-  const fresh = r.value.filter((slug) => !cache.seen.has(tier0Key(slug)));
-  console.log(`  tier-0 ${label}: ${r.value.length} bill(s), ${fresh.length} not yet handled in the ${floorWindow} window`);
+  const { slugs, extra } = r.value;
+  if (extra) mostViewedRanked = extra;
+  const fresh = slugs.filter((slug) => !cache.seen.has(tier0Key(slug)));
+  console.log(`  tier-0 ${label}: ${slugs.length} bill(s), ${fresh.length} not yet handled in the ${floorWindow} window`);
   for (const slug of fresh) if (!tier0Slugs.has(slug)) tier0Slugs.set(slug, label);
 });
 
@@ -493,10 +647,19 @@ const items = [];
 // rejected branch and is indistinguishable from a quiet news hour unless it is
 // counted here. A US-politics RSS feed with zero items is broken, not calm.
 let pressSilent = 0;
+// Critic B-4: which RATED leans the basket claims to carry, and which of them
+// actually produced something this run. Per FEED, deliberately — an aggregator
+// article that resolves to a right-rated domain does not prove the basket's own
+// right-lean feeds are alive, and it is the basket's spectrum coverage that the
+// ≥2-outlet rule and the conversation lamp both rest on.
+const basketLeans = new Set(SOURCES.map((s) => leanOf(s.domain, bias)).filter(Boolean));
+const liveLeans = new Set();
 results.forEach((r, i) => {
+  const lean = leanOf(SOURCES[i].domain, bias);
   if (r.status === 'fulfilled') {
     items.push(...r.value);
     if (r.value.length === 0) pressSilent++;
+    else if (lean) liveLeans.add(lean);
     console.log(`  ${SOURCES[i].name}: ${r.value.length} items${r.value.length === 0 ? ' (EMPTY - counted as silent)' : ''}`);
   } else {
     pressSilent++;
@@ -546,15 +709,34 @@ const bridgeItems = []; // legislative-looking headlines t1/t2 missed entirely -
 // outlet's story arriving twice (its own feed, plus the same story as an
 // unattributable Google News item) cleared a guardrail that exists to require
 // two independent ones. See countDistinctOutlets in newsdesk-match.mjs.
+// The conversation lamp's OWN accumulator, parallel to the trigger's and
+// deliberately not the same set. Two differences, both load-bearing:
+//   - it records t1 CITATION matches too, which the trigger path short-circuits
+//     past (a citation fires on its own, so it never needs to accumulate) —
+//     but "The Hill wrote about H.R. 6500 today" is exactly the evidence a
+//     caption is made of;
+//   - nothing here is ever deleted on fire. The trigger spends corroboration
+//     when it acts; the evidence of what was published does not stop being
+//     true because we acted on it.
+const conversationOutlets = new Map();
+const addConversationOutlet = (slug, it) => {
+  if (!conversationOutlets.has(slug)) conversationOutlets.set(slug, new Set());
+  conversationOutlets.get(slug).add(it.outlet ?? UNRESOLVED_OUTLET);
+};
+
 const addLocalOutlet = (slug, it) => {
   if (!localOutletsBySlug.has(slug)) localOutletsBySlug.set(slug, new Set());
   localOutletsBySlug.get(slug).add(it.outlet ?? UNRESOLVED_OUTLET);
+  addConversationOutlet(slug, it);
 };
 
 for (const it of newItems) {
   const citations = findCitations(it.title);
   if (citations.length > 0) {
-    for (const c of citations) citationSlugs.add(c.slug);
+    for (const c of citations) {
+      citationSlugs.add(c.slug);
+      addConversationOutlet(c.slug, it);
+    }
     continue; // citation tier wins outright - no need to also run t2/t3
   }
   const local = matchLocal(it.title, billIndex);
@@ -783,6 +965,167 @@ for (const cand of candidates) {
   console.log(`  ${cand.slug}: ${result.outcome} (re-decode: ${verdict.reason}, ${cand.tier.toUpperCase()})`);
 }
 
+// ---- THE CONVERSATION LAMP (design B1/B2 + critics B-1..B-4) -------------
+//
+// Everything above decided what to REFRESH. This writes down what was
+// PUBLISHED — which rated outlets carried a story matched to which bill, and
+// what congress.gov's own most-viewed list said — into a committed file, so
+// that a month from now the question "why did the site show this bill that
+// week" has an answer that is not "the Actions cache, which GitHub deleted".
+//
+// It changes no ranking. It fires no trigger. The only thing it can spend is
+// the press decode budget already declared above, and only on the one case it
+// exists to heal: a bill the press has JUST corroborated whose stored decode
+// no longer describes the document Congress is acting on.
+const conversationNow = Date.parse(nowISO);
+// ONE "today" per run, and it is the same one the decode budget and the tier-0
+// refresh slots are keyed by (todayUTC, captured before the first fetch): a run
+// that straddles UTC midnight must not file its evidence under one date and
+// its spend under another.
+const today = todayUTC;
+const previousConversation = (() => {
+  try {
+    return JSON.parse(readFileSync(CONVERSATION_PATH, 'utf8'));
+  } catch {
+    return null; // first run, or an unreadable file - build from scratch
+  }
+})();
+
+// Critic B-4: a lean that has gone quiet is an alarm, not a silence.
+cache.leanHealth = rollLeanHealth(cache.leanHealth, { basketLeans, liveLeans, today });
+for (const alarm of darkLeans(cache.leanHealth, { today })) {
+  console.log(
+    `::warning::newsdesk: no ${alarm.lean}-rated feed in the press basket has produced an item for ${alarm.darkDays} days (last live ${alarm.lastLive ?? 'never'}; alarm at ${DARK_LEAN_ALARM_DAYS}). Cross-spectrum corroboration is skewed while this lasts - a story that side covers is structurally harder to corroborate, and every caption built on those counts inherits the skew. Check the ${alarm.lean}-rated feed URLs in scripts/newsdesk.mjs's SOURCES.`
+  );
+}
+
+const mostViewedStatus = mostViewedRanked
+  ? {
+      status: 'ok',
+      week: mostViewedRanked.week ?? null,
+      week_label: mostViewedRanked.weekLabel ?? null,
+      entries: mostViewedRanked.entries.length,
+      checked_at: nowISO,
+    }
+  : {
+      // The feed failed this run. Say so rather than let a missing list read as
+      // "nothing is being read" - the stored week stays whatever it was, and
+      // existing observations age out of the window on their own.
+      status: 'error',
+      week: previousConversation?._meta?.source_status?.most_viewed?.week ?? null,
+      week_label: null,
+      entries: 0,
+      checked_at: nowISO,
+    };
+
+const nextConversation = buildConversation({
+  previous: previousConversation,
+  outletsBySlug: conversationOutlets,
+  mostViewed: mostViewedRanked,
+  bias,
+  sourceStatus: {
+    press: {
+      status: health.dark ? 'dark' : health.pressDegraded ? 'degraded' : 'ok',
+      feeds_total: SOURCES.length,
+      feeds_silent: pressSilent,
+      checked_at: nowISO,
+    },
+    most_viewed: mostViewedStatus,
+    leans: leanStatuses(cache.leanHealth, { today }),
+  },
+  now: conversationNow,
+  today,
+});
+
+const pool = conversationPool(nextConversation, { today });
+console.log(
+  `conversation: ${Object.keys(nextConversation.slugs).length} slug(s) tracked, ${pool.filter((p) => p.tier === 'c1').length} corroborated (C1), ${pool.filter((p) => p.tier === 'c2').length} most-viewed+ (C2)`
+);
+
+// ---- the re-decode half: only what the press JUST corroborated ------------
+// Entering C1 is the trigger, not being C1 (a bill corroborated three days ago
+// does not re-queue every hour), and C2 never queues anything at all - critic
+// B-2, because congress.gov's view counts are the cheapest input here to game
+// and must not be able to spend a cent on their own.
+const stillC1 = new Set(pool.filter((p) => p.tier === 'c1').map((p) => p.slug));
+const redecodeQueue = [
+  ...new Set([
+    ...enteredCorroborated({ previous: previousConversation, next: nextConversation, today }),
+    ...(cache.conversationRedecodeQueue ?? []),
+  ]),
+]
+  .filter((slug) => stillC1.has(slug))
+  .sort();
+const deferredRedecodes = [];
+let conversationTitleChecks = 0;
+if (redecodeQueue.length > 0) {
+  console.log(`conversation re-decode: ${redecodeQueue.length} newly-corroborated candidate(s) - ${redecodeQueue.join(', ')}`);
+}
+for (const slug of redecodeQueue) {
+  const bill = bySlug.get(slug);
+  if (!bill) continue; // corroborated press for a bill we don't hold yet is the fire path's job
+  let fetchedTitle = servedTitles.get(slug) ?? null;
+  const judge = () =>
+    redecodeVerdict({
+      decodedAt: bill.decoded_at ?? null,
+      lastActionDate: bill.last_action_date ?? null,
+      corpusTitle: bill.title,
+      fetchedTitle,
+    });
+  let verdict = judge();
+  // The stamp alone said no. The remaining question is the expensive-to-miss
+  // one - has the vehicle been swapped under the decode - and answering it
+  // costs one FREE Congress.gov call, capped per run. Only asked when the
+  // bill did not already fire this run (which would have supplied the title).
+  if (!verdict.redecode && fetchedTitle === null && conversationTitleChecks < CONVERSATION_TITLE_CHECKS_PER_RUN) {
+    conversationTitleChecks++;
+    const refresh = await syncOneBill(
+      { type: bill.bill_type, number: String(bill.bill_number) },
+      { allowDecode: false, forceSlugs: new Set(), bills, es, bySlug, anthropic }
+    );
+    outcomes.push(refresh.outcome);
+    fetchedTitle = refresh.fetchedTitle ?? null;
+    if (fetchedTitle) servedTitles.set(slug, fetchedTitle);
+    verdict = judge();
+  }
+  if (!verdict.redecode) {
+    console.log(`  ${slug}: no re-decode needed (${verdict.reason})`);
+    continue;
+  }
+  if (cache.seen.has(failedDecodeKey(slug, todayUTC))) {
+    console.log(`  ${slug}: re-decode suppressed (${verdict.reason}) - an earlier decode of this bill failed today, retries tomorrow`);
+    continue;
+  }
+  if (pressDecodesThisRun >= NEWSDESK_DECODE_CAP || cache.dailyDecodes.count >= NEWSDESK_DAILY_DECODE_CAP) {
+    // Held in the cache rather than dropped: the file below will record this
+    // bill as corroborated, so next hour it is no longer ENTERING C1 and would
+    // silently lose its heal. It stays queued until it resolves or falls out
+    // of C1.
+    deferredRedecodes.push(slug);
+    console.log(`  ${slug}: re-decode deferred (${verdict.reason}) - press decode budget spent for this ${pressDecodesThisRun >= NEWSDESK_DECODE_CAP ? 'run' : 'day'}; still queued`);
+    continue;
+  }
+  const result = await redecodeBill(slug, {
+    anthropic,
+    es,
+    bySlug,
+    title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null,
+  });
+  outcomes.push(result.outcome);
+  if (chargeableDecode(result)) {
+    pressDecodesThisRun++;
+    cache.dailyDecodes.count++;
+    if (result.outcome !== 'redecoded') cache.seen.add(failedDecodeKey(slug, todayUTC));
+  }
+  const ev = conversationEvidence(nextConversation.slugs[slug], { today });
+  console.log(
+    `  ${slug}: ${result.outcome} (re-decode: ${verdict.reason}, C1 on ${ev.ratedOutlets} rated outlets across ${ev.leanSpread.join('/') || 'no'} lean(s))`
+  );
+}
+// Cap the carried queue: it can only ever hold currently-corroborated bills,
+// but a cap is what keeps a pathological week from growing the cache forever.
+cache.conversationRedecodeQueue = deferredRedecodes.slice(0, 25);
+
 // ---- persist: cache always, data files only if something actually changed ----
 // Every headline this run touched (matched or not, fired or not) is marked
 // seen so it isn't reprocessed next hour. The one accepted tradeoff: a
@@ -794,6 +1137,18 @@ for (const cand of candidates) {
 // will pick it up within a day once it has real recorded motion.
 for (const it of newItems) cache.seen.add(hashHeadline(it.title, it.outlet));
 saveCache(cache);
+
+// The conversation file has its OWN material-change rule and its own reasons
+// to move, so it is written independently of the corpus: an hour that fired
+// nothing can still have learned that a second rated outlet picked up a bill,
+// and an hour that re-decoded a bill may have learned nothing new about the
+// conversation. Both are normal; neither should drag the other into a commit.
+if (shouldWriteConversation({ previous: previousConversation, next: nextConversation })) {
+  writeFileSync(CONVERSATION_PATH, `${JSON.stringify(nextConversation, null, 2)}\n`);
+  console.log(`DONE: wrote ${CONVERSATION_PATH}`);
+} else {
+  console.log(`DONE: no material change - ${CONVERSATION_PATH} untouched (an hourly run must not produce a deploy)`);
+}
 
 if (anyDataChanged(outcomes)) {
   writeFileSync('data/bills.json', JSON.stringify(bills));

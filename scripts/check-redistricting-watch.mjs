@@ -12,8 +12,12 @@
  * detected split - but never touches `status`/`note`, which stay
  * human-authored until someone reads what actually changed on RDH and
  * updates them in a follow-up commit. Emits GITHUB_OUTPUT vars the next
- * workflow step ("Open an issue for each changed redistricting-watch
- * state") reads to file one issue per changed state.
+ * workflow step ("Update the standing redistricting-watch issue; escalate at
+ * rollover") reads to rewrite the rolling pinned issue's status board and add
+ * ONE comment naming this run's changed states. It used to file one issue per
+ * changed state, which had no issue-level dedupe at all - see
+ * lib/redistricting-watch.mjs's standing-issue section for why that was
+ * replaced.
  *
  * FAILS (exit 1, no baseline update) only when every tracked state comes
  * back missing from the fetch/parse - RDH restructured the sitemap, or the

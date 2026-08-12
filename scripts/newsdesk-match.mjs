@@ -640,18 +640,81 @@ export function extractFloorFeedSlugs(xml) {
 // optional intervening </a> and the [Nth] capture.
 const MOST_VIEWED_RE = /\b(H\.?\s?J\.?\s?Res\.?|S\.?\s?J\.?\s?Res\.?|H\.?\s?R\.?|S\.?)\s?(\d{1,5})(?:<\/a>)?\s*\[\s*(\d{1,3})\s*(?:st|nd|rd|th)?\s*\]/gi;
 
-/** Extract only CURRENT-Congress (119th) tracked-type slugs from the
- *  most-viewed-bills feed XML. Entries from any other congress are
- *  excluded, not remapped. */
-export function extractMostViewedSlugs(xml, congress = CONGRESS) {
-  const slugs = new Set();
-  for (const m of String(xml ?? '').matchAll(MOST_VIEWED_RE)) {
-    const type = TYPE_ALIASES[normalizeType(m[1])];
-    if (!type) continue;
-    if (Number(m[3]) !== congress) continue;
-    slugs.add(`${type}-${String(Number(m[2]))}-${congress}`);
+const MONTH_NAMES = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+];
+
+/** The feed's OWN printed week, as a date. congress.gov titles the single
+ *  weekly item "Most-Viewed Bills - Week of August 9, 2026" and repeats the
+ *  same date in the item's guid; the channel `pubDate` says it a third way.
+ *  Nothing is synthesized here — with no printed label this returns null, and
+ *  the caller's weeks-on-list accounting simply does not advance (an
+ *  unlabelled observation must never manufacture a second week).
+ *  @param {string} xml @returns {{ week: string | null, weekLabel: string | null }} */
+export function extractMostViewedWeek(xml) {
+  const src = String(xml ?? '');
+  const item = /<item\b[^>]*>([\s\S]*?)<\/item>/i.exec(src)?.[1] ?? src;
+  const title = extractTag(item, 'title');
+  const label = /Week of\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/i.exec(`${title ?? ''} ${extractTag(item, 'guid') ?? ''}`);
+  if (label) {
+    const month = MONTH_NAMES.indexOf(label[1].toLowerCase());
+    const day = Number(label[2]);
+    const year = Number(label[3]);
+    if (month >= 0 && Number.isFinite(day) && Number.isFinite(year)) {
+      return { week: new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10), weekLabel: title ?? null };
+    }
   }
-  return [...slugs];
+  const pub = Date.parse(extractTag(item, 'pubDate') ?? extractTag(src, 'pubDate') ?? '');
+  if (Number.isFinite(pub)) return { week: new Date(pub).toISOString().slice(0, 10), weekLabel: title ?? null };
+  return { week: null, weekLabel: title ?? null };
+}
+
+/** Extract only CURRENT-Congress (119th) tracked-type slugs from the
+ *  most-viewed-bills feed XML, WITH the rank congress.gov gave each one.
+ *
+ *  Rank is the position in the feed's own <ol>, counted across EVERY list
+ *  item — including the ones dropped here (a 118th-Congress bill, a simple
+ *  resolution). Renumbering after the drops would invent a rank the source
+ *  never published, and the rank is a quoted fact on the page.
+ *
+ *  Entries from any other congress are excluded, not remapped; a duplicate
+ *  slug keeps its first (best) rank.
+ *  @param {string} xml @param {number} [congress]
+ *  @returns {{ week: string | null, weekLabel: string | null, entries: { slug: string, rank: number }[] }} */
+export function extractMostViewedRanked(xml, congress = CONGRESS) {
+  const src = String(xml ?? '');
+  const seen = new Set();
+  const entries = [];
+  const push = (block, rank) => {
+    for (const m of String(block).matchAll(MOST_VIEWED_RE)) {
+      const type = TYPE_ALIASES[normalizeType(m[1])];
+      if (!type) continue;
+      if (Number(m[3]) !== congress) continue;
+      const slug = `${type}-${String(Number(m[2]))}-${congress}`;
+      if (seen.has(slug)) continue;
+      seen.add(slug);
+      entries.push({ slug, rank });
+      return; // one measure per list item
+    }
+  };
+  const items = [...src.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)];
+  if (items.length > 0) {
+    items.forEach((m, i) => push(m[1], i + 1));
+  } else {
+    // The <ol> shape is what congress.gov has served since this parser was
+    // verified live (2026-07-23), but a feed that drops the list markup must
+    // still yield slugs — rank then falls back to document order.
+    [...src.matchAll(MOST_VIEWED_RE)].forEach((m, i) => push(m[0], i + 1));
+  }
+  return { ...extractMostViewedWeek(src), entries };
+}
+
+/** Extract only CURRENT-Congress (119th) tracked-type slugs from the
+ *  most-viewed-bills feed XML, in the list's own order. Entries from any
+ *  other congress are excluded, not remapped. */
+export function extractMostViewedSlugs(xml, congress = CONGRESS) {
+  return extractMostViewedRanked(xml, congress).entries.map((e) => e.slug);
 }
 
 /** docs.house.gov/billsthisweek floorschedule XML — the LOOK-AHEAD signal

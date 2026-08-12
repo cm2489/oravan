@@ -11,9 +11,6 @@
  *     (RUN_STARTED_AT, captured by the workflow before the sync step)
  *   - lastSync is not a full ISO-8601 datetime — the bare-date cursor that
  *     400-looped every night from 2026-06-25 to 07-01 (PR #16)
- *   - the sync cursor (lastSync) is more than CURSOR_MAX_AGE_DAYS old — see
- *     the "Cursor-age threshold" note below (2026-07-16, audit §5 item 4;
- *     promoted from a non-blocking ::warning)
  *   - the bill count dropped more than 2% vs the committed corpus (the sync
  *     only ever appends, so any real drop means corruption)
  *   - a bills.json record belongs to a Congress this build does not track
@@ -38,28 +35,37 @@
  *     doesn't exist — on HEAD or in the working tree. The judgement lives in
  *     lib/verify-moment-updates.mjs; see that file's header for why the
  *     retention caps are checked here as well as in check-moment-updates.mjs.
+ *   - data/conversation.json (the conversation lamp's committed evidence)
+ *     doesn't parse, carries an unknown schema or a window this build doesn't
+ *     read, blew its size ceiling, dates an observation in the future or
+ *     outside the 7-day window it claims, or — the one that matters most —
+ *     counts an outlet toward corroboration that data/media-bias.json carries
+ *     no AllSides rating for. Skipped cleanly when the file doesn't exist. The
+ *     judgement lives in lib/conversation.mjs (verifyConversation)
  *
- * Cursor-age threshold (2026-07-16, audit §5 item 4). This check used to be
- * a non-blocking ::warning, on the theory that the cursor would sit weeks
- * behind BY DESIGN while a 361-bill decode backlog drained (the high-water
- * mark freezes at the oldest bill still awaiting decode — see
- * docs/solutions/pinned-sync-cursor.md). Live logs proved that premise
- * false: the warning fired every clean night for weeks (06-16 through
- * 07-14) and was never acted on — exactly the silent-failure shape this
- * script exists to prevent, and the root cause behind "worth a call"
- * reading stale/empty in production. Promoted to a hard failure, at a
- * DELIBERATELY GENEROUS CURSOR_MAX_AGE_DAYS=10 (not the old 7-day warning
- * threshold): the raised MAX_NEW_DECODES + the recent-first two-pass fetch
- * (scripts/sync-bills.mjs) still need real nights to drain the pre-existing
- * backlog once this change merges, and a threshold that insta-fails the
- * very next run would block that catch-up window instead of giving it room
- * to work. 10 days sits comfortably below lib/freshness-state.ts's
- * FRESHNESS_DEAD_WINDOW_DAYS=21 (the site's own "this has gone genuinely
- * dead" ceiling for the SAME cursor value), so CI catches a regression well
- * before a visitor could ever see a dishonest "quiet week" from it.
+ * WHAT THIS FILE NO LONGER DOES, and where it went (owner ruling 2026-08-12,
+ * N8-A2). The CURSOR-AGE ceiling — "the cursor is more than 10 days old" —
+ * used to fail here, which meant it failed BEFORE sync-bills.yml's commit
+ * step, which meant a stalled night threw away its own already-paid work:
+ * the decodes, coverage, nominations and Moment updates all went unrecorded
+ * because a DIFFERENT thing (progress) had stopped. It now lives in
+ * scripts/check-cursor-age.mjs and runs as the LAST step of the nightly, after
+ * the commit: the run still goes red and still shouts, and the data still
+ * lands. See that file's header for the full reasoning, including why
+ * committing the frozen cursor is the more honest of the two options.
+ *
+ * THE SPLIT IS THE POINT, and it is one line: this file asks "is the corpus
+ * damaged", check-cursor-age.mjs asks "are we falling behind". The cursor's
+ * FORMAT stays here, because a bare-date or fractional-seconds cursor is
+ * damage — it 400s Congress.gov on every request and has shipped two
+ * multi-day outages — while its AGE is only ever lateness.
+ * tests/nightly-pipeline.unit.spec.ts pins which check lives where — and in
+ * which order the workflow runs them — so the boundary cannot quietly drift
+ * back.
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
@@ -69,8 +75,6 @@ import { CONGRESS, offCongressBills } from './congress-fetch.mjs';
 // Same split as verifyMomentUpdates above: the judgement lives in a pure
 // module the unit spec can reach, this file supplies the bytes.
 import { FLOOR_SIGNALS_PATH, verifyFloorSignals } from './floor-signals-parse.mjs';
-
-const CURSOR_MAX_AGE_DAYS = 10;
 
 let failed = false;
 const fail = (msg) => {
@@ -262,6 +266,37 @@ if (!existsSync(FLOOR_SIGNALS_PATH)) {
   }
 }
 
+// --- conversation: every counted claim is rated, dated and inside its window -
+//
+// data/conversation.json is written hourly by scripts/newsdesk.mjs and is what
+// the news band's captions are counted from ("covered by N outlets across the
+// spectrum this week"). The gate is about the COUNTING RULE, not about volume:
+// only an outlet carrying an AllSides lean in data/media-bias.json may appear
+// in the corroborating list (critic B-3), because an unrated domain is the
+// channel two press-release pickups would otherwise walk through — the same
+// single-outlet prioritization channel scripts/newsdesk-match.mjs's header
+// closed on the trigger path. Evidence dated in the future, or older than the
+// 7-day window the file claims, fails for the same reason. Skipped cleanly when
+// the file doesn't exist, exactly like the blocks above: a branch that predates
+// the lamp must still verify. The judgement lives in lib/conversation.mjs.
+if (!existsSync(CONVERSATION_PATH)) {
+  console.log(`${CONVERSATION_PATH} not present — skipping the conversation checks`);
+} else {
+  const conversation = parse(CONVERSATION_PATH, readFileSync(CONVERSATION_PATH, 'utf8'));
+  if (conversation !== null) {
+    const bias = parse('data/media-bias.json', readFileSync('data/media-bias.json', 'utf8'))?.outlets ?? null;
+    const { failures, warnings, notes } = verifyConversation({
+      data: conversation,
+      fileBytes: statSync(CONVERSATION_PATH).size,
+      knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
+      bias,
+    });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
 // --- sync-state: did tonight's run actually run? ----------------------------
 const state = parse('data/sync-state.json', readFileSync('data/sync-state.json', 'utf8'));
 if (state) {
@@ -286,16 +321,10 @@ if (state) {
     fail(
       `sync-state.json lastSync (${JSON.stringify(state.lastSync)}) is not a seconds-precision ISO-8601 datetime (YYYY-MM-DDTHH:MM:SSZ) — Congress.gov 400s on both bare-date and fractional-seconds fromDateTime cursors (PR #16; 2026-07-17/22 outage)`
     );
-  } else {
-    const cursorAgeDays = (Date.now() - Date.parse(state.lastSync)) / 86_400_000;
-    // Hard failure, not a ::warning — see this file's header comment
-    // ("Cursor-age threshold") for why 10 days and why this was promoted.
-    if (cursorAgeDays > CURSOR_MAX_AGE_DAYS) {
-      fail(
-        `corpus cursor is ${Math.round(cursorAgeDays)} days old (lastSync ${state.lastSync}), past the ${CURSOR_MAX_AGE_DAYS}-day ceiling — the ascending backlog scan has stopped making real progress`
-      );
-    }
   }
+  // The cursor's AGE is deliberately not judged here any more — see this
+  // file's header and scripts/check-cursor-age.mjs, which runs after the
+  // commit so a stalled night keeps the work it paid for.
 }
 
 if (failed) process.exit(1);

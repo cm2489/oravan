@@ -170,11 +170,41 @@ export interface CoverageArticle extends CoverageArticleRaw {
  *  'cross' = left and right both present · 'neutral' = 2+ center/unrated only ·
  *  'one_sided' = 2+ outlets all leaning one partisan way (shown, but disclaimed) ·
  *  'none' = too thin to surface.
+ *
+ * The runtime array is the source of truth and `CoverageTier` is derived from
+ * it, exactly like BILL_STATUSES above. Extracted from the union 2026-08-12:
+ * these four words are an INTERNAL VERDICT of our AllSides lookup, not a
+ * description of anybody's journalism, so scripts/moment-draft.mjs's
+ * enumLeaks() has to know all of them — and a hand-copied list that nothing
+ * pins is exactly how `tier0_floor_action` went missing from that guard for
+ * three days. tests/moment-draft.unit.spec.ts now pins the copy against this
+ * array. lib/coverage.ts's coverageTier() and its import-free twin in
+ * scripts/moment-candidates.mjs return these values as literals; the TYPE is
+ * what keeps the TS half honest, and the corpus-wide equality sweep in
+ * tests/moment-candidates.unit.spec.ts keeps the .mjs twin honest.
  */
-export type CoverageTier = 'cross' | 'neutral' | 'one_sided' | 'none';
+export const COVERAGE_TIERS = ['cross', 'neutral', 'one_sided', 'none'] as const;
 
-/** A bill featured in the coverage-led "In the news" lens (cross/neutral only). */
+export type CoverageTier = (typeof COVERAGE_TIERS)[number];
+
+/**
+ * A bill featured in the "In the news" band.
+ *
+ * TWO MODES, and a card says which one it came from by whether it carries a
+ * caption (lib/conversation.ts's posture decides; see getNewsBills):
+ *
+ *  · THE LAMP — selected from data/conversation.json's committed evidence.
+ *    `caption` carries the counted facts behind the card, `sourceCount` is the
+ *    number of RATED outlets THE CAPTION COUNTS (0 on a most-viewed card, which
+ *    counts none — one outlet is never a number this band says out loud), and
+ *    `coverageTier` is their spread, null whenever fewer than two outlets are
+ *    counted, because a spread over one outlet is one lean.
+ *  · THE FALLBACK — #215's stored-coverage recency gate, unchanged.
+ *    `caption` is null, because a caption that cannot be checked against
+ *    counted evidence is a guess, and the degradation rule is to drop it.
+ */
 export interface NewsBill extends BillTeaser {
-  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'>;
+  coverageTier: Extract<CoverageTier, 'cross' | 'neutral'> | null;
   sourceCount: number;
+  caption: import('./conversation').NewsCaption | null;
 }

@@ -30,6 +30,16 @@ bill's next update, so it no longer freezes anything. Fetches got a 30s
 
 **Prevention.** `scripts/verify-sync.mjs` (run after every sync, before the
 commit step) fails the workflow if `sync-state.json`'s `lastRun` didn't advance
-past the run's start, and emits a `::warning` whenever the `lastSync` cursor is
-more than a week old — a pinned cursor now surfaces the first night, not
+past the run's start — a pinned cursor now surfaces the first night, not
 24 nights later.
+
+*Amended 2026-08-12.* This paragraph used to end "and emits a `::warning`
+whenever the `lastSync` cursor is more than a week old", which had been untrue
+since 2026-07-16: the warning was promoted to a hard failure at
+`CURSOR_MAX_AGE_DAYS = 10` because nobody ever acted on it. The ceiling has now
+moved out of `verify-sync.mjs` altogether, into `scripts/check-cursor-age.mjs`,
+which runs as the **last** step of `sync-bills.yml` — *after* the commit. A
+stalled cursor is a statement about PROGRESS, not about corpus integrity, and
+failing it before the commit made a stalled night discard its own already-paid
+decodes, coverage and nominations, which made the backlog it was complaining
+about strictly worse. The run still goes red; the data still lands.

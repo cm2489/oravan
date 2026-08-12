@@ -45,8 +45,13 @@ export {
   floorPendingChamber,
   floorSettledChamber,
 } from './floor-text.mjs';
+// floorActionChamber is re-exported above but NOT imported here any more:
+// since 2026-08-12 nothing in this file's derivation asks "which chamber does
+// this sentence belong to" without also asking what that chamber did.
+// floorSettledChamber still calls it internally (lib/floor-text.mjs), and
+// scripts/check-journey-corpus.mjs still sweeps with it — that is where a
+// chamber-nameable-but-unread sentence gets found now.
 import {
-  floorActionChamber,
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
@@ -101,57 +106,106 @@ export const VOTING_CHAMBERS: Record<VehicleKind, readonly Chamber[]> = {
 };
 
 /*
+ * WHERE THE PATH ENDS — the fifth step's destination, and the two vehicles
+ * that never reach the President.
+ *
+ * This lookup moved here from components/BillJourney.tsx on 2026-08-12,
+ * unchanged in what it decided about concurrent resolutions and widened by
+ * one class. It belongs in this module for the reason the stepper's own
+ * header states: every derivation the strip renders lives in lib/journey.ts,
+ * and as of this change the answer is no longer readable from the bill TYPE
+ * alone — it needs the record's title — so it is a derivation, not a prop.
+ *
+ * 1 · CONCURRENT resolutions (hconres / sconres) — the 2026-08-09 fix (#199).
+ * Not presented to the President and cannot become law. It is the two
+ * chambers speaking to each other: budget resolutions, War Powers directives,
+ * adjournment. Both chambers adopt it and that is the end of the road;
+ * Article I, Section 7's presentment requirement never engages.
+ *
+ * 2 · ARTICLE V amendment proposals (hjres / sjres whose title proposes an
+ * amendment to the Constitution) — this change. Congress proposes by
+ * two-thirds of both chambers and the proposal goes to the STATES; three
+ * fourths of them must ratify. The President has no role — no signature, no
+ * veto — and the measure never becomes a law. #199 named this exact class as
+ * its documented known limit and declined to guess at it; the ruling that
+ * closed it (owner, D5, 2026-08-12) attached a flag-first condition, so the
+ * heuristic below was swept against the whole corpus before it was written
+ * and the sweep is pinned as an invariant in tests/bill-journey.unit.spec.ts.
+ *
+ * WHY A TITLE MATCH IS ADMISSIBLE HERE, when this file's whole discipline is
+ * to read the record rather than guess. It is not a guess about a bill's
+ * POSITION — those still come from Congress's own last-action sentence and
+ * still refuse to answer when the sentence is silent. It is a reading of the
+ * record's own official title, which for this class is a formula Congress
+ * writes the same way every time, and it was verified exhaustively rather
+ * than assumed: on the 2026-08-12 corpus, of 97 joint resolutions exactly 16
+ * carry the word "Constitution" in their title and all 16 are Article V
+ * proposals — 12 in the "Proposing an amendment to the Constitution…" shape
+ * and 4 in the "Proposing a balanced budget amendment to the Constitution…"
+ * shape, which is why the regex allows a qualifier between the verb and the
+ * noun. There are no false positives in that set and no Article V proposal
+ * outside it.
+ *
+ * FAIL TOWARD EXCLUSION. One record sits on the line and is deliberately NOT
+ * matched: hjres-80-119, "Establishing the ratification of the Equal Rights
+ * Amendment." It concerns a constitutional amendment but does not PROPOSE one
+ * under Article V, and what such a measure's path actually is has been
+ * litigated rather than settled. The default — presentment — is the ordinary
+ * rule, so a record this predicate is unsure about keeps the ordinary ending
+ * instead of acquiring a states step nobody verified. Same reason `''` and any
+ * unrecognized type return 'president'.
+ */
+const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
+
+/*
+ * The Article V title formula. `propos…` and "amendment to the Constitution"
+ * both required, within one sentence, allowing the qualifier Congress
+ * sometimes writes between them ("a balanced budget amendment to the
+ * Constitution"). `[^.]{0,60}` keeps the two halves inside the same clause so
+ * a title that merely mentions the Constitution somewhere after a proposing
+ * verb cannot drift into a match.
+ */
+const ARTICLE_V_TITLE = /\bpropos\w+\b[^.]{0,60}\bamendment to the Constitution\b/i;
+
+/** The fifth step's destination. Exhaustive: every vehicle ends at exactly
+ *  one of these. */
+export type JourneyEnding = 'president' | 'bothChambers' | 'states';
+
+/**
+ * Which of the three endings a vehicle has. `title` is optional and only ever
+ * consulted for joint resolutions; omitting it yields the ordinary presented
+ * path, which is what every non-Article-V joint resolution (CRA disapprovals,
+ * continuing resolutions, War Powers directives) genuinely has.
+ */
+export function journeyEnding(billType: string, title?: string | null): JourneyEnding {
+  const type = billType.toLowerCase();
+  if (NO_PRESENTMENT.has(type)) return 'bothChambers';
+  if ((type === 'hjres' || type === 'sjres') && ARTICLE_V_TITLE.test(title ?? '')) {
+    return 'states';
+  }
+  return 'president';
+}
+
+/*
  * The four chamber readers and FLOOR_SETTLED used to sit here; they are
  * re-exported at the top of this file from lib/floor-text.mjs (see that
  * import's header for why). Everything below reads them exactly as it did.
  */
 
 /*
- * WHERE THE PATH ENDS, AND THE ONE VEHICLE THAT NEVER REACHES THE PRESIDENT.
+ * `endsAtPresident` LIVED HERE FOR ONE DAY AND IS GONE (2026-08-12).
  *
- * Lived in components/BillJourney.tsx until 2026-08-12 and moved here whole —
- * see that file for the move's proximate cause. It belongs here on the merits
- * regardless: the stepper's header says all derivation lives in this module,
- * and presentment is derivation of the purest kind. It stayed in this file
- * rather than travelling to lib/floor-text.mjs with the chamber readers,
- * because it reads no floor text at all: it is a fact about the KIND of
- * vehicle, and nothing under plain node asks for it.
- *
- * A CONCURRENT resolution — hconres / sconres — is not presented to the
- * President and cannot become law. It is the two chambers speaking to each
- * other: budget resolutions, War Powers directives, adjournment. Both chambers
- * adopt it and that is the end of the road, Article I, Section 7's
- * presentment requirement never engages. Until 2026-08-09 the stepper printed
- * "President's desk" as the fifth step on every one of them, and the trailer
- * underneath promised the bill would go back to its origin chamber "before
- * reaching the President" — a false procedural fact on the 6 con-res pages in
- * the corpus (hconres-113-119, sconres-38-119, sconres-39-119, hconres-38-119,
- * hconres-89-119, hconres-96-119), in both languages, in the one component
- * whose own header promises it cannot hallucinate procedure.
- *
- * WHY THIS IS A LOOKUP AND NOT A DERIVATION FROM TEXT. It is the same
- * distinction this module draws for nominations (VOTING_CHAMBERS): a bill's
- * CHAMBER is an observation about the record and must be read from it, but
- * presentment is a fact about the KIND of vehicle — constitutional, fixed in
- * advance, true of every concurrent resolution that has ever existed. Nothing
- * in any record can change it, so nothing needs to be parsed.
- *
- * KNOWN LIMIT, deliberately not built (flagged to the owner rather than
- * guessed): a JOINT resolution proposing a constitutional amendment also skips
- * the President — it goes to the states for ratification. 16 of the 94 joint
- * resolutions in the corpus are amendment proposals. Detecting them means
- * pattern-matching the title ("Proposing an amendment to the Constitution…"),
- * which is a text heuristic this codebase has not verified, and an unverified
- * heuristic in a truth module is the class of thing this file exists to
- * refuse. Every other hjres/sjres — CRA disapprovals, continuing resolutions —
- * genuinely IS presented to the President, so the default is right for them.
+ * This branch moved it out of components/BillJourney.tsx because the stepper
+ * grew a glossary link, which pulls in `@/i18n/navigation`, and
+ * tests/bill-journey.unit.spec.ts was importing a pure function straight out
+ * of that component — a dependency on the component never acquiring a UI
+ * import. #220 made the same move for a better reason and generalized the
+ * function on the way: `journeyEnding` above answers all THREE endings, the
+ * Article V states path included, and the boolean cannot express that. So the
+ * boolean is deleted rather than kept beside its own successor, and the spec
+ * reads `journeyEnding` from this module — which satisfies the import problem
+ * completely.
  */
-const NO_PRESENTMENT = new Set(['hconres', 'sconres']);
-
-/** False only for vehicles the Constitution never presents to the President. */
-export function endsAtPresident(billType: string): boolean {
-  return !NO_PRESENTMENT.has(billType.toLowerCase());
-}
 
 /** Which named calendar the record put the bill on. */
 export type FloorCalendar = 'union' | 'house' | 'senate-legislative';
@@ -233,6 +287,36 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * statusKeyFor is clocked TOO, as of the same ruling's second pass (N3,
  * 2026-08-11) — see its own header for the shape the demotion takes there,
  * which is a THIRD key rather than a silenced one.
+ *
+ * THE PASSAGE BRANCH IS CLOCKED IN THE STEPPER ONLY, as of the ruling's third
+ * pass (N5, 2026-08-12) — and the asymmetry is the whole design, so read it
+ * before changing either half:
+ *
+ *   liveCallTarget's `passed_chamber` branch is STILL NOT CLOCKED. "The House
+ *   has already voted, so the Senate decides next" names a TARGET, and the
+ *   target is right at any age: a chamber that voted stays voted, and the
+ *   chamber that has not yet acted is still the one that would. #208 declined
+ *   to clock it for exactly that reason and this change does not reverse it.
+ *   Every dial, the routing sentence, the reordering and the script are
+ *   untouched — funnel invariant I2 never sees a different value here.
+ *
+ *   deriveJourney's `passed_chamber` branch IS clocked, because its sentences
+ *   do not name a target, they name a HAPPENING: "it passed the House and now
+ *   goes to the Senate", "so it goes back to the House". "now goes to" is a
+ *   claim about this week, and on 2026-08-12 it was being made over 280 of the
+ *   corpus's 295 passage records — median 120 days, oldest hr-30-119 at 573
+ *   days (last action 2025-01-17, "Received in the Senate and Read twice and
+ *   referred to the Committee…"). The dishonesty flagged in #208's own
+ *   follow-up note was never the target; it was the implied LIVENESS, and the
+ *   liveness lives in this sentence alone.
+ *
+ * ONLY THE TWO STAGES THAT NAME A NEXT CHAMBER ARE CLOCKED — 'first' and
+ * 'back', which are exactly the two `passageState` gives a non-null `next`.
+ * 'both' ("both chambers have passed it. It goes to the President next.") and
+ * 'second' ("the official record doesn't say yet whether the two versions
+ * match") name no chamber as deciding, route nowhere already, and say what
+ * Article I requires rather than what is about to happen — the same reason
+ * `nowFloorMotionFailed` and `nowFloorActivityNeutral` are not clocked either.
  */
 
 /**
@@ -333,6 +417,72 @@ export function statusKeyFor(
   if (status !== 'floor_vote') return status;
   if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
   return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';
+}
+
+/**
+ * WHICH DATED FLOOR FACT THE BILL PAGE'S GREEN BAND STANDS ON — the page's
+ * whole gate, in one pure function, so it can be pinned with fixtures instead
+ * of only observed on whatever the corpus happens to hold today.
+ *
+ * THE SEAM THIS CLOSED (2026-08-12). The bill page hard-gated its band on
+ * `status === 'floor_vote'` and never looked at the chamber's own schedule, so
+ * an ANNOUNCED bill — the T0 rung, the chamber naming a measure for floor
+ * action in its own published words — wore the crown on the homepage and then
+ * showed no band at all on its own page one click later. That is not an edge
+ * case: `committee` is the normal derived status of a measure in the middle of
+ * passing, because Congress overwrites `last_action_text` the moment a bill
+ * reaches the floor ("Message on Senate action sent to the House."), which is
+ * the entire reason ruling V1 exempted `announced` from the status gate. It is
+ * the same seam class #207 closed for `pending`, and the general lesson is the
+ * one the crown's own header states: two surfaces reading one record must run
+ * one gate, not two hand-kept copies of it.
+ *
+ * THE ANNOUNCEMENT IS PASSED IN, ALREADY GATED — this module holds no data
+ * import and no clock of the schedule's own. The caller resolves it through
+ * lib/docket.ts (`rungFor` → `rung.announced`, which is terminal-first and
+ * `signalIsLive`-gated: a signed law is never announced, and a bill the chamber
+ * pulls stops being announced within the hour). Pass null and this function
+ * behaves exactly as the page did before the seam was closed.
+ *
+ * ORDER, AND WHY THE RECORD HALF IS UNTOUCHED: `announced` outranks both record
+ * facts, exactly as the ladder ranks T0 over T1/T2 and the crown ranks its
+ * kinds. Below it, the page's existing preference stands — a placement is the
+ * plainer claim and wins its (near-impossible) tie with a pending motion. That
+ * tie is decided the other way in `selectFloorVoteFeature`, where the question
+ * is which of MANY bills to crown rather than which sentence to print about
+ * ONE; the two only disagree on a record that states both facts at once, which
+ * the corpus holds no example of.
+ */
+export type FloorBandKind = 'announced' | 'calendar' | 'pending';
+
+export interface FloorBand {
+  kind: FloorBandKind;
+  chamber: Chamber;
+  /** The date the band's chip prints — the ANNOUNCEMENT's own publication day
+   *  on `announced`, the bill's own action date otherwise. Never a vote date:
+   *  neither the corpus nor the schedule carries one. */
+  date: string;
+}
+
+export function billFloorBand(
+  bill: {
+    status: Bill['status'];
+    last_action_text?: string | null;
+    last_action_date?: string | null;
+  },
+  announcement: { chamber: Chamber; published: string } | null,
+  now: number = Date.now()
+): FloorBand | null {
+  if (announcement) {
+    return { kind: 'announced', chamber: announcement.chamber, date: announcement.published };
+  }
+  const date = bill.last_action_date ?? null;
+  if (bill.status !== 'floor_vote' || !date || !isSignalFresh(date, now)) return null;
+  const calendar = floorCalendarChamber(bill.last_action_text ?? null);
+  const pending = calendar ? null : floorPendingChamber(bill.last_action_text ?? null);
+  const chamber = calendar ?? pending;
+  if (!chamber) return null;
+  return { kind: calendar ? 'calendar' : 'pending', chamber, date };
 }
 
 /**
@@ -483,11 +633,15 @@ export function liveCallTarget(
      * script and the call dialog are untouched, and funnel invariant I2 (a
      * completed script within 2 interactions) never sees this value.
      *
-     * `passed_chamber` below is deliberately NOT clocked: "the House has
-     * already voted" is a durable relational fact about a vote that happened,
-     * not a claim about this week, and all 275 of the corpus's 275
-     * passed_chamber records are outside the window (2026-08-12) — clocking it
-     * would silence that routing entirely, on a much weaker argument.
+     * `passed_chamber` below is deliberately NOT clocked, and the owner's N5
+     * ruling (2026-08-12) CONFIRMED that rather than reversing it. "The House
+     * has already voted" is a durable relational fact about a vote that
+     * happened, not a claim about this week, and 280 of the corpus's 295
+     * passage records are outside the window (2026-08-12) — clocking it would
+     * silence that routing entirely, on a much weaker argument. What the
+     * ruling changed is the STEPPER's sentence, which claimed the handoff was
+     * happening now; see deriveJourney's passed_chamber case and "THE THIRD
+     * GATE" above. Target here, tense there.
      */
     if (!isSignalFresh(bill.last_action_date)) return null;
     // floorPendingChamber, NOT floorActionChamber. This is the strongest
@@ -689,7 +843,9 @@ export type JourneyNowKey =
   | 'nowFloorActivityNeutral'
   | 'nowFloorMotionFailed'
   | 'nowPassed'
+  | 'nowPassedStale'
   | 'nowPassedBack'
+  | 'nowPassedBackStale'
   | 'nowPassedBoth'
   | 'nowPassedSecond'
   | 'nowConference'
@@ -698,8 +854,11 @@ export type JourneyNowKey =
 
 export interface JourneyState {
   /** Index into the five stepper steps: introduced · origin committee ·
-   *  origin vote · other chamber · President's desk. */
+   *  origin vote · other chamber · the ending below. */
   step: 0 | 1 | 2 | 3 | 4;
+  /** What the fifth step IS for this vehicle — the President's desk, adoption
+   *  by both chambers, or ratification by the states. See journeyEnding. */
+  ending: JourneyEnding;
   /** The chamber the bill started in (from the bill type). */
   origin: Chamber;
   /** The chamber the bill stands in NOW, read from the record where the
@@ -738,7 +897,14 @@ export interface JourneyState {
  * default the stepper's old `POSITION[status] ?? 1` carried.
  */
 export function deriveJourney(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & {
+    /** OPTIONAL, and only ever read by journeyEnding — a joint resolution's
+     *  official title is what says whether it is an Article V amendment
+     *  proposal headed for the states. Every other field of the derivation
+     *  ignores it. Omitted, a joint resolution keeps the ordinary presented
+     *  ending, which is the right answer for all but that one class. */
+    title?: string | null;
+  }
 ): JourneyState {
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
@@ -751,6 +917,7 @@ export function deriveJourney(
     isLaw: false,
     isVetoed: false,
     showTrailer: true,
+    ending: journeyEnding(bill.bill_type, bill.title),
   };
   switch (bill.status) {
     case 'introduced':
@@ -804,25 +971,57 @@ export function deriveJourney(
           nowKey: 'nowFloorMotionFailed',
         };
       }
-      const act = floorActionChamber(bill.last_action_text);
-      // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unclassifiable
-      // floor text used to fall back to the ORIGIN chamber — the silent-lie
-      // class the whole derivation exists to end. Now it renders the
-      // chamber-free key instead: the step math stays at the origin slot
-      // (structure needs a position) but no rendered sentence names a
-      // chamber the record did not. The corpus tripwire that catches novel
-      // shapes moved to the nightly sync (scripts/check-journey-corpus.mjs)
-      // — it fires where the data changes, never on unrelated PRs.
-      if (act === null) {
+      /*
+       * THE RESIDUAL BRANCH READS floorPendingChamber, NOT floorActionChamber
+       * (owner ruling 2026-08-12, N9-A2) — the last place on this page where a
+       * sentence could outrun the record.
+       *
+       * floorActionChamber answers "WHICH chamber does this sentence belong
+       * to". It never answers "what did that chamber DO", and it is
+       * deliberately permissive: its rule 6 pins a chamber on any floor text
+       * that names exactly one. So every chamber-nameable floor sentence used
+       * to arrive here and get "the {chamber} is deciding whether to bring it
+       * to a vote" — a live-deliberation claim, asserted over a sentence no
+       * matcher in this repo has ever read. That is the same defect class #198
+       * removed from 18 settled texts (the S.J.Res. 172 case above): the
+       * chamber was right and the verb was a fabrication.
+       *
+       * floorPendingChamber is the fail-closed answer to the question this
+       * sentence actually makes: it is an ordered ALLOW-list guarded by
+       * FLOOR_SETTLED, so it says "a vote is still ahead, in this chamber"
+       * only for shapes somebody has read. Everything else returns null and
+       * falls to the chamber-free neutral copy below. That is D4's crown logic
+       * ("one missed crown is cheaper than one wrong one") extended from the
+       * crown to the stepper, and it is what let the nightly journey-corpus
+       * tripwire stop costing a whole night: with no surface able to speak
+       * about an unread text, a novel shape is an issue to file, not a run to
+       * kill (scripts/check-journey-corpus.mjs).
+       *
+       * MEASURED BEFORE AND AFTER on the committed corpus, 2026-08-12: of
+       * 2,723 bills, 356 are floor_vote and 8 reach this branch — and all 8
+       * match floorPendingChamber, so ZERO rendered sentences change today.
+       * They are 3 Rules Committee resolutions reported to the House, 2
+       * cloture motions presented in the Senate, 2 postponed proceedings, and
+       * 1 motion to proceed made in the Senate — one per rule 1-4. The
+       * untensed set is empty and the unclassified set is empty. This is a
+       * change of what CAN happen, not of what does. Re-measure rather than
+       * trust the number: the corpus moves nightly.
+       */
+      const pending = floorPendingChamber(bill.last_action_text);
+      // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unreadable floor
+      // text used to fall back to the ORIGIN chamber — the silent-lie class
+      // the whole derivation exists to end. Now it renders the chamber-free
+      // key instead: the step math stays at the origin slot (structure needs a
+      // position) but no rendered sentence names a chamber the record did not.
+      if (pending === null) {
         /*
          * NOT CLOCKED, and the reason is that there is nothing here to demote
          * TO. This branch's sentence names no chamber and no calendar — it
          * says only that the record has not said yet — so a stale variant
          * would be new copy in two languages for a state that is EMPTY on the
-         * corpus (0 bills on 2026-08-12: every unclassified floor text is
-         * caught by the nightly tripwire long before it reaches here). If that
-         * ever stops being true, this branch wants its own key, not a reused
-         * one.
+         * corpus (0 bills on 2026-08-12, both classes of it: nothing
+         * unclassified, nothing chamber-readable-but-untensed). If that ever
+         * stops being true, this branch wants its own key, not a reused one.
          */
         return {
           ...base,
@@ -841,12 +1040,17 @@ export function deriveJourney(
        * deciding" while the rail beside it had gone quiet would be the page
        * contradicting itself in a quieter voice — the exact failure the
        * passed_chamber split was written to end.
+       *
+       * ONE READER, ONE ANSWER: this is the SAME function liveCallTarget gates
+       * on (`floorCalendarChamber ?? floorPendingChamber`) and the same one
+       * FloorVotePanel's crown gate uses, so the stepper, the rail and the
+       * crown can no longer disagree about whether a vote is ahead.
        */
       return {
         ...base,
-        step: act === origin ? 2 : 3,
-        current: act,
-        nowChamber: act,
+        step: pending === origin ? 2 : 3,
+        current: pending,
+        nowChamber: pending,
         nowKey: live ? 'nowFloorActivity' : 'nowFloorActivityStale',
       };
     }
@@ -863,13 +1067,39 @@ export function deriveJourney(
        * "if the {other} changes it, it goes back to the {origin}" — a warning
        * about something still ahead. Once the second chamber has acted that is
        * either finished business or the thing that just happened.
+       *
+       * THE CLOCK, ON THE TENSE ONLY (owner ruling 2026-08-12, N5 — the full
+       * argument, including why liveCallTarget's twin branch stays UNCLOCKED,
+       * is in "THE THIRD GATE" at the top of this file). The passage itself is
+       * durable and survives every demotion below: the step, the chambers and
+       * the words "it passed the {chamber}" are identical either way. What
+       * moves is the clause that said the handoff was underway — "and now goes
+       * to the {other}", "so it goes back to the {chamber}" — which on
+       * 2026-08-12 was printed over 280 of 295 passage records, median 120 days
+       * old and up to 573. The stale keys replace that clause with the dated
+       * silence itself ("the official record shows nothing new since"), which
+       * is the same shape #208 gave `nowFloorStale`: absence is a finding.
+       *
+       * `showTrailer` is NOT touched by the clock. It renders "If the {other}
+       * changes it, it goes back to the {origin} before reaching the
+       * President" — a conditional statement of what Article I requires, with
+       * no tense to demote, true of a passage of any age.
        */
+      const live = isSignalFresh(bill.last_action_date);
       const { stage, passedBy } = passageState(bill);
       if (stage === 'first') {
         // Corpus-verified copy: nearly all passed_chamber actions read
         // "Received in the Senate…" — origin passage, headed to the other
         // chamber — so nowChamber stays origin and current is the other.
-        return { ...base, step: 3, current: other, nowKey: 'nowPassed' };
+        // `current` is NOT clocked for the same reason `step` is not: it is
+        // where the record puts the bill, and a quiet fortnight does not move
+        // it back across the Capitol.
+        return {
+          ...base,
+          step: 3,
+          current: other,
+          nowKey: live ? 'nowPassed' : 'nowPassedStale',
+        };
       }
       if (stage === 'back') {
         /*
@@ -887,18 +1117,29 @@ export function deriveJourney(
          * nowPassedBack is written to that shape. Setting nowChamber to
          * `passedBy` here instead renders "the Senate passed it with changes,
          * so it goes back to the Senate."
+         *
+         * The stale twin keeps the amending chamber and drops the destination
+         * clause, because THAT clause is the imminence: `nowPassedBackStale`
+         * reads "the {other} passed it with changes, and the official record
+         * shows nothing new since." The destination is not lost from the page
+         * — the stepper still stands the bill at this step and the rail still
+         * routes the call to the origin chamber (liveCallTarget is unclocked
+         * here, deliberately).
          */
         return {
           ...base,
           step: 3,
           current: origin,
           nowChamber: origin,
-          nowKey: 'nowPassedBack',
+          nowKey: live ? 'nowPassedBack' : 'nowPassedBackStale',
           showTrailer: false,
         };
       }
       if (stage === 'both') {
         // Identical text out of both chambers: the only step left is the desk.
+        // NOT CLOCKED (N5): "It goes to the President next" is Article I,
+        // Section 7's presentment requirement, not a forecast — it names no
+        // chamber as deciding and nothing about it becomes less true with age.
         return {
           ...base,
           step: 4,
@@ -911,6 +1152,9 @@ export function deriveJourney(
       // 'second' — both chambers have passed it and the record does not say
       // whether the versions match, so the sentence says exactly that and
       // names no next step. Unreachable on today's corpus (see passageState).
+      // NOT CLOCKED (N5), for the same reason `nowFloorActivityNeutral` is
+      // not: it already claims only that the record has not said, which is a
+      // statement about the record's silence and cannot go stale.
       return {
         ...base,
         step: 3,

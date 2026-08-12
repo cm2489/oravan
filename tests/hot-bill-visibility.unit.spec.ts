@@ -233,9 +233,45 @@ test.describe('hot-bills.yml is phased to the floor-record publication window', 
     }
   });
 
-  test('both passes stay clear of the 07:30 UTC nightly sync', () => {
-    for (const c of crons) {
-      expect(Math.abs(c.utcMinutes - (7 * 60 + 30)), `cron ${c.hour}:${c.minute}`).toBeGreaterThan(60);
-    }
+  /*
+   * RETIRED AND REPLACED 2026-08-12 (owner ruling D8). This assertion used to
+   * read "both passes stay clear of the 07:30 UTC nightly sync" against a
+   * hard-coded 07:30, and the nightly has moved to 14:15 — onto the SAME
+   * publication-window measurement this file exists for. The old property is
+   * not merely stale, it is now false by design: the first pass at 13:47 and
+   * the nightly at 14:15 are 28 minutes apart on purpose, because both want to
+   * read the record the moment Congress.gov publishes it.
+   *
+   * WHAT REPLACES IT, and why this is a real invariant rather than a rewritten
+   * one to fit: the ORDER is what matters. The hot pass must fire BEFORE the
+   * nightly, so the nightly's own full fetch is the last word on data/bills
+   * .json each day, and the shared data-sync concurrency group is what keeps
+   * their commits from racing. The second pass keeps a wide separation on the
+   * other side.
+   *
+   * THE RESIDUAL RISK IS NAMED, not papered over: if the hot pass is still
+   * executing when the nightly queues, the nightly waits — and a waiting run
+   * in that group is what newsdesk's hourly cron evicts (observed 2026-08-08).
+   * This pass is minutes long and both crons drift by hours, so the overlap is
+   * rare; it is recorded in hot-bills.yml's schedule comment (item 5) and in
+   * the PR that made the move.
+   *
+   * Read from sync-bills.yml rather than hard-coded, so the next re-phase
+   * cannot leave this file asserting a number nothing uses.
+   */
+  const nightly = /-\s*cron:\s*'(\d+)\s+(\d+)\s+\*\s+\*\s+\*'/.exec(
+    readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8')
+  );
+  const nightlyUtcMinutes = Number(nightly![2]) * 60 + Number(nightly![1]);
+
+  test('the first pass fires BEFORE the nightly sync, so the nightly has the last word', () => {
+    expect(nightly, 'no daily cron in sync-bills.yml').toBeTruthy();
+    const earliest = Math.min(...crons.map((c) => c.utcMinutes));
+    expect(earliest).toBeLessThan(nightlyUtcMinutes);
+  });
+
+  test('the second pass stays hours clear of the nightly sync', () => {
+    const latest = Math.max(...crons.map((c) => c.utcMinutes));
+    expect(latest - nightlyUtcMinutes).toBeGreaterThan(120);
   });
 });

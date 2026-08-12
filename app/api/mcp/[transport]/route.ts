@@ -33,6 +33,41 @@ import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
  * change nobody has decided on. Until someone does, this comment describes
  * what actually runs.
  *
+ * HOW BIG IS THE DISAGREEMENT? Measured rather than left to the reader's
+ * imagination (owner ruling N11c, 2026-08-12: document the magnitude, change
+ * no behaviour). Method: hold the corpus constant and advance ONLY the clock,
+ * which is exactly the build-time/request-time gap. Against the committed
+ * 2,723-bill corpus on 2026-08-12, with #218's docket-ladder derivation:
+ *
+ *   urgency_band (get_bill's band, the rung both surfaces read)
+ *     +1 day 0 bills · +2d 0 · +3d 0 · +5d 2 (0.07%) · +7d 21 (0.77%)
+ *     · +14d 99 (3.6%), which is the plateau - by then everything dated has
+ *     left the 14-day signal window and nothing further can change.
+ *   whats_moving's population (the T0∪T1∪T2 act-now pool)
+ *     19 bills, unchanged through +4 days · 17 at +5d · 7 at +7d.
+ *   urgency_score (get_bill, search_bills - the continuous curve)
+ *     331 of 2,723 (12.2%) report a different number one day on, none by more
+ *     than 0.05. It is a decay: it moves constantly, in tiny increments, and
+ *     is the one figure that is never zero.
+ *
+ * Read those against how long a page actually stays baked. The nightly data
+ * commit triggers the deploy, so the site's clock is normally under 24h
+ * behind, and the longest no-deploy stretch in the June-August record is 4
+ * days - lags at which ZERO bills land in different bands on the two
+ * surfaces. The divergence only becomes visible around a week of no deploys,
+ * by which point `data_stale` is already the answer whats_moving gives. So
+ * the safe-direction claim above is not just directional: at every lag this
+ * pipeline actually produces, the two surfaces agree on the band, and where
+ * they don't, MCP is the fresher one.
+ *
+ * (An earlier figure, ~7 bills a day / 0.26%, was measured 2026-08-11 against
+ * the PERCENTILE band floors #218 retired the following morning. A continuous
+ * score crossing a fixed cutoff nudges a few bills every single day; a rung
+ * does not move until a dated fact leaves the signal window, which is why the
+ * per-day number went to zero without anything about the clocks changing.
+ * Re-measure the same way after any change to the derivation: same corpus,
+ * two clocks, count the bills whose band differs.)
+ *
  * Exactly these 5, per the project records §2 and the
  * settled S10 scope call (KTD-6, closed under R16): lookup_representatives,
  * get_bill, search_bills, whats_moving, get_representative.
@@ -138,8 +173,13 @@ const handler = createMcpHandler(
 
 /*
  * Anonymous (keyless) rate limits per the S11 spec: 60 requests/min and
- * 1,000/day per caller, enforced with the same short-lived rate-limit
- * counters as the rest of the API surface (lib/ratelimit.ts — hashed
+ * 1,000 per counter window per caller — the window is the ceiling, NOT a
+ * calendar day. Counters restart when the hashing salt rotates, so a burst
+ * across that boundary can exceed either figure (see the MCP_DAY_WINDOW_SEC
+ * note below, and ROTATION RESETS EVERY COUNTER in lib/ratelimit.ts, for why
+ * that is the accepted price of the ≤24h pseudonym bound). Enforced with the
+ * same short-lived rate-limit counters as the rest of the API surface
+ * (lib/ratelimit.ts — hashed
  * caller only; a tool name never reaches a counter key, by construction:
  * the limiter API only accepts a caller IP and a closed route label).
  * Only POST carries JSON-RPC work, so only POST is limited; GET/DELETE
@@ -162,6 +202,17 @@ const HANDSHAKE_SCAN_CAP = 1;
  * would not reset for up to a day — so it retried, uselessly, all day.
  */
 const MCP_MINUTE_WINDOW_SEC = 60;
+/*
+ * "DAY" IS THE WINDOW LENGTH, NOT A CALENDAR GUARANTEE (noted 2026-08-12).
+ * Counter keys are salt-derived (lib/ratelimit.ts counterKey + callerHash),
+ * and the hashing salt rotates on its own 24h clock, so a caller who straddles
+ * a rotation gets a fresh counter mid-window: up to ~2,000 requests inside one
+ * 24h span, ~1,000 per salt epoch after. That is the accepted price of the
+ * ≤24h pseudonym bound — see the ROTATION RESETS EVERY COUNTER note in
+ * lib/ratelimit.ts for why no fix exists that keeps the privacy property. The
+ * published copy says "per counter window" for this reason; if this route ever
+ * needs a true per-day ceiling, halve `max` rather than lengthen the key.
+ */
 const MCP_DAY_WINDOW_SEC = 86400;
 
 const minuteLimiter = createRateLimiter({ route: 'mcp-min', max: 60, windowSec: MCP_MINUTE_WINDOW_SEC });

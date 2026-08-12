@@ -72,7 +72,10 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
             they do not go anywhere, and `go` is spent on actions and content
             links. Two columns from 40rem so the list is one glance rather
             than a third of a screen. */}
-        <nav aria-labelledby="glossary-index" className="mt-10 border-t-[3px] border-ink pt-4">
+        {/* `mt-12`, not `mt-10`: 40px is off the space scale — DESIGN.md's
+            machine-readable block (#226) names p-10/40px explicitly as one of
+            the four rungs that are not part of it. */}
+        <nav aria-labelledby="glossary-index" className="mt-12 border-t-[3px] border-ink pt-4">
           <h2
             id="glossary-index"
             className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"

@@ -277,6 +277,27 @@ test.describe('in-place wiring', () => {
     }
   });
 
+  test('the stepper sentences that only LOOK like terms carry no tag', () => {
+    /*
+     * "both chambers are reconciling their versions" is a CONFERENCE, not
+     * budget reconciliation, and the only thing the two share is an English
+     * word. A link there would hand a reader a confident explanation of
+     * something that is not happening. Swept again 2026-08-12 over the
+     * sentences #220 and #222 added; see lib/glossary.ts's near-miss note.
+     */
+    const journey = en.bill.journey as Record<string, string>;
+    for (const key of [
+      'nowConference',
+      'nowPassedStale',
+      'nowPassedBackStale',
+      'backTrailerStates',
+      'nowFloorMotionFailed',
+    ]) {
+      expect(journey[key], `bill.journey.${key} must exist to be pinned`).toBeTruthy();
+      expect(richTags(journey[key]), `bill.journey.${key} must carry no glossary tag`).toEqual([]);
+    }
+  });
+
   test('the wired sentences still say what they said before the tags went in', () => {
     // The tags are markup, not a rewrite. Stripping them must give back copy
     // that still carries the facts the surrounding gates pin — the published

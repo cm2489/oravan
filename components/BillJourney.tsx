@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip } from '@/components/system';
 import type { GlossaryTermId } from '@/lib/glossary';
-import { endsAtPresident, type FloorCalendar, type JourneyState } from '@/lib/journey';
+import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
 
 /*
  * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
@@ -33,21 +33,6 @@ import { endsAtPresident, type FloorCalendar, type JourneyState } from '@/lib/jo
  */
 
 /*
- * WHERE THE PATH ENDS — `endsAtPresident` MOVED TO lib/journey.ts (2026-08-12).
- *
- * It was defined here and imported by tests/bill-journey.unit.spec.ts, and that
- * import is what makes the move necessary rather than tidy: this file now
- * renders a glossary trigger, the trigger imports `@/i18n/navigation`, and that
- * chain does not resolve inside Playwright's plain-Node runner. So a spec that
- * reaches into a COMPONENT for a pure function breaks the moment the component
- * grows any UI dependency — which it always eventually does.
- *
- * The function belonged next door anyway. This file's own header says all
- * derivation lives in lib/journey.ts, and presentment is exactly that kind of
- * fact: constitutional, fixed by the KIND of vehicle, never read out of a
- * record. Its full reasoning and its known limit travelled with it.
- */
-
 /*
  * THE GLOSSARY LINK ON THE PLACEMENT PHRASE (issue #181).
  *
@@ -71,21 +56,49 @@ const CALENDAR_TERM: Record<FloorCalendar, GlossaryTermId | null> = {
   house: null,
 };
 
+/*
+ * WHERE THE PATH ENDS — and the two vehicles that never reach the President.
+ *
+ * The decision itself lives in lib/journey.ts (`journeyEnding`, and the long
+ * header above it) and arrives here as `journey.ending`, because as of
+ * 2026-08-12 it is read off the record's own title and this component's first
+ * header promises that every derivation the strip renders lives there. What
+ * is left here is the mapping from that answer to the two strings the fifth
+ * step and the trailer print:
+ *
+ *   'president'     → step "President's desk", the ordinary trailer
+ *   'bothChambers'  → concurrent resolutions (#199, 2026-08-09)
+ *   'states'        → Article V amendment proposals (D5, 2026-08-12) — the
+ *                     class #199 documented as its known limit and declined
+ *                     to guess at
+ *
+ * Every branch is a closed constitutional fact, so the mapping is exhaustive
+ * by TYPE: a fourth ending cannot be added to JourneyEnding without failing
+ * the build right here rather than silently reusing the President's desk.
+ */
+const STEP_KEY: Record<JourneyEnding, string> = {
+  president: 'stepPresident',
+  bothChambers: 'stepBothChambers',
+  states: 'stepStates',
+};
+
+const TRAILER_KEY: Record<JourneyEnding, string> = {
+  president: 'backTrailer',
+  bothChambers: 'backTrailerBothChambers',
+  states: 'backTrailerStates',
+};
+
 interface Props {
   journey: JourneyState;
-  /** The vehicle's type (`hr`, `s`, `hjres`, `sconres`, …) — decides whether
-   *  the path ends at the President's desk or at adoption by both chambers.
-   *  See NO_PRESENTMENT above. */
-  billType: string;
   /** Short, already-localized introduced date, printed under step 1. */
   introducedLabel?: string;
   /** Short, already-localized last-action date, printed under the current step. */
   currentLabel?: string;
 }
 
-export function BillJourney({ journey, billType, introducedLabel, currentLabel }: Props) {
+export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const t = useTranslations('bill.journey');
-  const toPresident = endsAtPresident(billType);
+  const { ending } = journey;
   // Display strings for the ICU selects: origin chamber and its opposite.
   const chamber = journey.origin === 'house' ? 'House' : 'Senate';
   const other = chamber === 'House' ? 'Senate' : 'House';
@@ -98,7 +111,7 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
     t('stepCommittee', { chamber }),
     t('stepVote', { chamber }),
     t('stepOther', { chamber: other }),
-    toPresident ? t('stepPresident') : t('stepBothChambers'),
+    t(STEP_KEY[ending]),
   ];
   const here = journey.step;
   const { isLaw, isVetoed } = journey;
@@ -158,9 +171,7 @@ export function BillJourney({ journey, billType, introducedLabel, currentLabel }
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
           {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar })}
-          {journey.showTrailer && (
-            <> {t(toPresident ? 'backTrailer' : 'backTrailerBothChambers', { chamber, other })}</>
-          )}
+          {journey.showTrailer && <> {t(TRAILER_KEY[ending], { chamber, other })}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>

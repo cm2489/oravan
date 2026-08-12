@@ -185,6 +185,7 @@ export function announcementFor(
   url: string;
   published: string;
   covers: string | null;
+  coversLabel: string | null;
   source: FloorSignalSource;
   chamber: 'house' | 'senate';
 } | null {
@@ -196,9 +197,41 @@ export function announcementFor(
     url: t0.url,
     published: t0.published,
     covers: t0.covers,
+    // Both, deliberately: `covers` is the horizon `signalIsLive` computes on,
+    // `covers_label` is the sentence the document actually printed. A surface
+    // that shows coverage to a reader shows the label (see `coversDisplay`).
+    coversLabel: t0.covers_label ?? null,
     source: t0.source,
     chamber: t0.chamber,
   };
+}
+
+/**
+ * WHAT AN EVIDENCE ROW PRINTS FOR COVERAGE — the source's own words when it
+ * printed them, our derived date only as the fallback.
+ *
+ * Both fields are stored side by side on purpose (scripts/floor-signals-parse
+ * .mjs: "the derived date everywhere (`covers_label`) so the reader can check
+ * it"), and until 2026-08-12 only the DERIVED one reached a page: the homepage
+ * printed `for Aug 13, 2026` where the Daily Digest itself had said
+ * "8 a.m., Thursday, August 13". The label is strictly more information — it
+ * carries the hour the ISO date cannot hold — and it is the document's own
+ * sentence rather than our arithmetic on it, which is the whole standard this
+ * panel is held to.
+ *
+ * It is ENGLISH VERBATIM, like every other quoted fragment here (ruling V4), so
+ * `verbatim: true` tells the caller to mark it `lang="en"` and NOT to run it
+ * through a date formatter. When the document printed no label the caller
+ * formats `covers` itself, in the reader's locale, exactly as it did before.
+ */
+export function coversDisplay(announcement: {
+  covers: string | null;
+  coversLabel: string | null;
+}): { label: string; verbatim: true } | { iso: string; verbatim: false } | null {
+  const label = announcement.coversLabel?.trim();
+  if (label) return { label, verbatim: true };
+  if (announcement.covers) return { iso: announcement.covers, verbatim: false };
+  return null;
 }
 
 /** When the committed signal file was last refreshed — the "as of" stamp A-1

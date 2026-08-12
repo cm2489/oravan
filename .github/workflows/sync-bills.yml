@@ -2,7 +2,38 @@ name: Nightly bill sync
 
 on:
   schedule:
-    - cron: '30 7 * * *' # 07:30 UTC = 3:30am ET, after Congress.gov's own update cycle
+    # 14:15 UTC. RE-PHASED 2026-08-12 (owner ruling D8) from '30 7 * * *', and
+    # the whole point of the move is one sentence: the nightly now reads the
+    # SAME DAY's floor record instead of yesterday's.
+    #
+    # 1. WHEN THE RECORD PUBLISHES. Congress.gov publishes day D's floor
+    #    actions on D+1 between 13:35 and 14:00 UTC — measured 6/6 consecutive
+    #    legislative days from senate.gov's per-day floor XML `Last-Modified`
+    #    headers (13:35:27 to 13:55:29), and corroborated independently by this
+    #    repo's own corpus history: commits at 08:30-10:10 UTC carry no trace
+    #    of the previous day's floor actions, commits at 12:15-17:42 do. The
+    #    derivation lives in full in hot-bills.yml, which was re-phased onto
+    #    the same measurement on 2026-08-08.
+    # 2. SO THE OLD SLOT WAS STRUCTURALLY A DAY BEHIND. A 07:30 run — actually
+    #    starting 08:04-10:05 UTC on this repo — fetched the record six hours
+    #    before the day's floor actions existed in it. Every nightly decode,
+    #    every status, every coverage query was made against a corpus one
+    #    publication cycle stale, and the site's freshest possible claim was
+    #    always yesterday's.
+    # 3. WHY 14:15 AND NOT EARLIER. GitHub's scheduler on this repo drifts +17
+    #    min to +3h27m but NEVER fires early, so a nominal slot at or after
+    #    14:00 can never start inside the publication band. 14:15 is the first
+    #    quarter-hour clear of it.
+    # 4. INTRA-DAY COVER IS UNCHANGED and is why this move costs nothing while
+    #    it is landing: hot-bills.yml (13:47 / 22:47) refreshes statuses twice
+    #    a day and newsdesk.yml runs hourly, so the window was already covered
+    #    between nightlies. What changes is which day the NIGHTLY itself reads.
+    # 5. THE DEPENDENTS MOVED WITH IT: moment-watch.yml reads this workflow's
+    #    committed output and was dragged to 16:35 UTC (its Monday digest to
+    #    18:05). daily-metrics.yml did NOT move — it reads the counters
+    #    database, never data/, so it has no dependency on this cron; only its
+    #    comment, which claimed one, was corrected.
+    - cron: '15 14 * * *' # 14:15 UTC = 10:15am ET — after the floor record publishes
   workflow_dispatch:
     inputs:
       max_new_decodes:
@@ -56,6 +87,13 @@ on:
 permissions:
   contents: write
   actions: write  # lets the workflow dispatch ci.yml after its own push
+  # For the journey-corpus issue below (2026-08-12), and for nothing else. The
+  # tripwire stopped failing the night and started FILING the novel floor
+  # sentence instead, which needs `gh label create` + `gh issue create` on the
+  # workflow's own automatic GITHUB_TOKEN - the same shape refresh-legislators
+  # .yml already uses for its vacancy and redistricting issues. No new secret;
+  # GITHUB_FEEDBACK_TOKEN stays issues-only and unrelated to this.
+  issues: write
 
 concurrency:
   group: data-sync
@@ -87,12 +125,79 @@ jobs:
           MAX_UPDATES: ${{ inputs.max_updates || '500' }}
           FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
         run: node scripts/sync-bills.mjs
-      - name: Journey-corpus tripwire (unclassified floor texts fail the sync, not PRs)
-        # Owner ruling 2026-08-04: the sweep fires where the data changes.
-        # A novel floor-action shape fails THIS run loudly (extend
-        # floorActionChamber); the site renders neutral no-chamber copy for
-        # that bill in the meantime — never a guessed chamber.
+      - name: Journey-corpus tripwire (a novel floor text opens an issue, never costs the night)
+        id: journey
+        # Owner ruling 2026-08-04, unchanged: the sweep fires where the data
+        # changes, never on the CI of an unrelated PR.
+        #
+        # WHAT CHANGED 2026-08-12 (owner ruling N9-A2) IS THE BLAST RADIUS, and
+        # only because the RENDER now fails closed. This step used to be a hard
+        # gate sitting FIRST in the job, so a single unreadable sentence from
+        # Congress skipped every step below it — nominations, the search-input
+        # backfill, coverage, Moment updates, portraits, the commit — and up to
+        # MAX_NEW_DECODES already-paid decodes survived only as a salvage
+        # artifact somebody had to cherry-pick by hand. It bought that with the
+        # fact that deriveJourney's residual branch would otherwise assert "the
+        # {chamber} is deciding whether to bring it to a vote" over a text
+        # nobody had read. That branch now routes through floorPendingChamber
+        # (lib/journey.ts), so an unmatched text renders the chamber-free
+        # neutral sentence instead. No surface can lie about a novel shape any
+        # more, so blocking the commit protects nothing that is still exposed.
+        #
+        # It is therefore continue-on-error PLUS a filed issue, not a bare
+        # annotation: the nomination step below shows what a green job with a
+        # red annotation is worth (nobody opens it). The two steps after this
+        # one keep the two things that stayed hard — a sweep that proved
+        # nothing (a corpus under 50 floor_vote texts, or a sweep that could
+        # not run) still fails the night, and a novel text still gets a labeled
+        # issue with the sentence in it.
+        continue-on-error: true
         run: node scripts/check-journey-corpus.mjs
+      - name: A sweep that proved nothing still fails the night
+        # WHAT SURVIVES THE SOFTENING ABOVE, written as an ALLOW-LIST because
+        # `continue-on-error` makes every other shape green by default. Only
+        # two verdicts are acceptable: `clean` (nothing found) and `novel` (a
+        # sentence found, issue filed, night commits). Everything else fails
+        # the run:
+        #   - `vacuous`: <50 floor_vote records, so the sweep proved nothing. A
+        #     passing tripwire over an empty corpus is worse than no tripwire,
+        #     because it reads as an all-clear. Corpus-shaped failure.
+        #   - `error`: the sweep could not run at all (tsx missing,
+        #     lib/journey.ts throwing, a corpus that will not parse).
+        #   - EMPTY: the script died before it could write a verdict.
+        # A deny-list here would have made the last two silently green - the
+        # exact failure mode this whole PR is about.
+        if: steps.journey.outputs.verdict != 'clean' && steps.journey.outputs.verdict != 'novel'
+        run: |
+          echo "::error::journey-corpus: the sweep did not return a usable verdict (got '${{ steps.journey.outputs.verdict }}' - see the step above). This is a SYNC failure, not a vocabulary gap - nothing is committed tonight."
+          exit 1
+      - name: Open a journey-corpus issue for the novel floor text
+        # Search-first, exactly like refresh-legislators.yml's vacancy and
+        # redistricting issues: one open issue per novel-shape event, and a run
+        # that finds the same unread sentence again comments on it rather than
+        # opening a second. The body carries the sentence itself, so the fix
+        # (extend floorPendingChamber / FLOOR_SETTLED, or floorActionChamber)
+        # starts from the record rather than from a re-run.
+        if: steps.journey.outputs.verdict == 'novel'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create journey-corpus --color FBCA04 --force \
+            --description "A floor sentence no matcher in lib/floor-text.mjs reads yet"
+          # `.[].number | head -1`, NOT `.[0].number`: on an empty list the
+          # latter prints the literal string "null", which is non-empty, so the
+          # guard below would take the comment branch and run
+          # `gh issue comment null`. Same idiom daily-metrics.yml uses.
+          NUM=$(gh issue list --repo cm2489/oravan --state open --label journey-corpus \
+                --json number --jq '.[].number' | head -1)
+          if [ -z "$NUM" ]; then
+            gh issue create --repo cm2489/oravan --label journey-corpus \
+              --title "Journey corpus: a floor sentence nothing reads yet" \
+              --body-file "${RUNNER_TEMP}/journey-corpus-report.md"
+          else
+            gh issue comment --repo cm2489/oravan "$NUM" \
+              --body-file "${RUNNER_TEMP}/journey-corpus-report.md"
+          fi
       - name: Sync Senate nominations
         # A SEPARATE script and a SEPARATE step, on the sync-coverage.mjs
         # precedent: the bill corpus is the product's spine, and a
@@ -203,10 +308,18 @@ jobs:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
         run: node scripts/mirror-portraits.mjs
       - name: Verify the sync did its job (dead-man's-switch)
-        # Fails loudly BEFORE anything is committed: corpus parses, EN/ES
-        # parity holds, the bill count didn't drop, and sync-state advanced
-        # tonight. Warns (never fails) on corpus staleness while the decode
-        # backlog drains. See scripts/verify-sync.mjs and docs/solutions/.
+        # EVERY INTEGRITY CHECK, and they all still fail BEFORE anything is
+        # committed: corpus parses, EN/ES parity holds, one Congress only, the
+        # bill count didn't drop, floor-signals carry their evidence,
+        # moment-updates kept their record, sync-state advanced tonight, and
+        # the cursor is a seconds-precision datetime. See scripts/verify-sync
+        # .mjs and docs/solutions/.
+        #
+        # ONE CHECK IS NO LONGER HERE (owner ruling 2026-08-12, N8-A2): the
+        # cursor's AGE. It is a PROGRESS signal, not a corruption signal, and
+        # failing it here meant a stalled night threw away work it had already
+        # paid Anthropic and TheNewsAPI for. It runs as the last step of this
+        # job instead — after the commit, still red, still loud.
         env:
           RUN_STARTED_AT: ${{ steps.runstart.outputs.ts }}
         run: node scripts/verify-sync.mjs
@@ -273,9 +386,11 @@ jobs:
           trap 'rc=$?; [ "$rc" -eq 0 ] || abandon "the step exited unexpectedly with status ${rc} - a git command failed under bash -e. This is a BUG in the commit step, not a data problem."' EXIT
 
           # The scheduled run's checked-out base can be stale by the time this
-          # job starts (queued behind refresh-legislators.yml in the shared
-          # data-sync concurrency group, whose push lands after our SHA was
-          # resolved - the 2026-06-22 failure, there in the other workflow).
+          # job starts (queued behind another data-sync member - newsdesk,
+          # hot-bills or moment-watch - whose push lands after our SHA was
+          # resolved; the 2026-06-22 failure, there in refresh-legislators.yml,
+          # which as of 2026-08-12 is no longer in this group at all and
+          # therefore races us the same way any outside push does).
           # Rebase onto the latest main and retry; safe because this workflow
           # only touches bills.json/bills-es.json/sync-state.json/
           # coverage.json/portrait-manifest.json/moment-updates.json/
@@ -371,6 +486,37 @@ jobs:
         # says nothing about the corpus at all. The judgement stays with a
         # human - this step only refuses to let the runner delete the
         # evidence.
+        #
+        # WHAT NARROWED ON 2026-08-12, STATED EXACTLY - because "two gates
+        # stopped reaching this path" would be true of one of them and only
+        # HALF true of the other, and a comment that overstates a gate is how
+        # the next reader stops believing the rest of this file.
+        #
+        #   1. The cursor-age ceiling: FULLY out of the way. It moved to the
+        #      LAST step of this job, after the commit, so it can never skip
+        #      the commit again. `steps.commit.outcome` is 'success' when it
+        #      reds the run, this step correctly stays asleep, and there is
+        #      nothing to salvage because the work already landed on main.
+        #
+        #   2. The journey-corpus tripwire: only TWO of its four verdicts
+        #      moved. The tripwire step itself is continue-on-error, but the
+        #      allow-list step right after it ("A sweep that proved nothing
+        #      still fails the night") re-fails the run on anything that is
+        #      not `clean` or `novel` - and that step runs BEFORE the commit.
+        #        - `clean` / `novel`: the night commits. A novel floor
+        #          sentence files an issue instead of costing the run. These
+        #          two really did stop reaching this path.
+        #        - `vacuous` (<50 floor_vote records, so the sweep proved
+        #          nothing) and `error` (the sweep could not run at all -
+        #          tsx missing, lib/journey.ts throwing, a corpus that will
+        #          not parse), plus an EMPTY verdict from a script that died
+        #          before writing one: these still hard-fail before the
+        #          commit, so they still SKIP it and they still land here.
+        #
+        # So this path is not dead - it is exactly as alive as case 2's
+        # second bullet, which is the case it matters most for: a sweep that
+        # proved nothing is precisely when the night's already-paid decodes
+        # must not die with the runner.
         if: always() && failure() && steps.commit.outcome != 'success' && steps.commit.outcome != 'failure'
         run: |
           if [ -z "$(git status --porcelain -- data/)" ]; then
@@ -425,7 +571,9 @@ jobs:
         # author is linked, so it is no longer BLOCKED). Deploys can still fail
         # or be dropped silently (PR #18's root cause hid for weeks behind
         # green checkmarks) - poll production until it serves the SHA we just
-        # pushed. Skips with a notice until the PROD_URL repo variable is set.
+        # pushed. A missing PROD_URL repo variable FAILS this step rather than
+        # skipping it (2026-08-12): the variable has been set since 07-11, so
+        # the old soft skip could only ever disarm this switch silently.
         if: steps.commit.outputs.changed == 'true'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
@@ -470,3 +618,26 @@ jobs:
             exit 0
           fi
           npx tsx scripts/pregen-scripts.mjs
+      - name: Cursor-progress alarm (post-commit - reds the run, never blocks the data)
+        # A RED RUN WHOSE DATA STILL SHIPPED. This is the one check in the
+        # nightly that runs after the commit, by owner ruling 2026-08-12
+        # (N8-A2): a stalled cursor says "we are behind", not "the corpus is
+        # damaged", and answering it by discarding a night of already-paid
+        # decodes, coverage, nominations and Moment updates made the backlog it
+        # was complaining about strictly worse - with no self-healing path,
+        # because the same stall recurs the next night and main simply stops
+        # advancing. It is also the less honest of the two options: the site's
+        # own freshness math reads the SAME lastSync, so refusing the commit
+        # freezes the staleness signal at an older value than the truth.
+        #
+        # LAST, not immediately after the commit, and that placement is
+        # load-bearing: a failing step skips every later step whose `if:` does
+        # not name a status function, which would have taken out the deploy
+        # verification, the CI dispatch and the pregen. Everything the night
+        # owes gets done, and then the alarm sounds.
+        #
+        # `always()` so an unrelated earlier failure cannot silence a progress
+        # signal - the whole point of a dead-man's-switch is that it is the one
+        # thing a broken run still says out loud.
+        if: always()
+        run: node scripts/check-cursor-age.mjs

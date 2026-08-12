@@ -13,12 +13,14 @@
  * decode-before-publish gate runs, so this script must never publish an
  * undecoded bill. Zero Anthropic usage: needs only CONGRESS_API_KEY. This is
  * the tradeoff named up front in the audit's Alt B - a bill that's brand new
- * AND breaking mid-day still waits until the next 07:30 UTC nightly sync to
- * actually appear on the site; only bills already in the corpus get same-day
- * status/urgency freshness from this pass.
+ * AND breaking mid-day still waits until the next nightly sync (14:15 UTC
+ * since 2026-08-12, 07:30 before it) to actually appear on the site; only
+ * bills already in the corpus get same-day status/urgency freshness from this
+ * pass.
  *
- * Runs 2x/day (.github/workflows/hot-bills.yml, 17:00 + 22:00 UTC - inside
- * the US legislative day) between nightly syncs, so a floor vote or markup
+ * Runs 2x/day (.github/workflows/hot-bills.yml, 13:47 + 22:47 UTC - phased
+ * onto Congress.gov's measured 13:35-14:00 publication window, the same
+ * measurement the nightly was re-phased onto) between nightly syncs, so a floor vote or markup
  * that happens mid-day is reflected in effectiveUrgency (lib/urgency.mjs)
  * same-day instead of sitting stale until the next morning's sync. Also
  * directly improves lib/freshness.ts's `newestAction` signal (scanned live

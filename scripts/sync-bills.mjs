@@ -259,28 +259,52 @@ export function forceSlugTarget(slug, congress = CONGRESS) {
  * Congress.gov's bill-list `updateDate` is a bare DATE, so that means one
  * calendar day overflowing the cap - well above the ~337/day measured, but
  * possible, and it would re-scan the same window nightly forever. The caller
- * warns; verify-sync.mjs's CURSOR_MAX_AGE_DAYS=10 fails the run outright
- * within ten nights. Deliberately NOT "advance a second past `since` to
- * break the tie": that would skip real bills, and nothing here knows the
- * sub-day precision Congress.gov compares `fromDateTime` against.
+ * warns; scripts/check-cursor-age.mjs's CURSOR_MAX_AGE_DAYS=10 reds the run
+ * within ten nights (post-commit since 2026-08-12 - the night's data lands
+ * anyway). Deliberately NOT "advance a second past `since` to break the tie":
+ * that would skip real bills, and nothing here knows the sub-day precision
+ * Congress.gov compares `fromDateTime` against.
  *
- * Both branches pass through toISODateTime because BOTH have shipped an
- * outage: a bare-date cursor 400s (2026-06-25/07-01) and so do
+ * THE MONOTONIC GUARD (2026-08-12), and the live incident that earned it. The
+ * high-water mark is `toISODateTime(u.updateDate)`, and Congress.gov's
+ * bill-list `updateDate` is a BARE DATE - so a run whose window is one
+ * calendar day wide resolves to that day's MIDNIGHT, which can be EARLIER than
+ * the cursor it started from. On 2026-08-11 it was: `since` was
+ * 2026-08-10T08:55:10Z, the truncated window's mark normalized to
+ * 2026-08-10T00:00:00Z, and the run persisted a cursor 8h55m BEHIND the one it
+ * had been handed (origin/main:data/sync-state.json, commit bcec170). Nothing
+ * caught it: the merge-time guard in tests/merge-sync-state.unit.spec.ts
+ * covers the rebase-union path only, and the test in tests/sync-cursor.unit
+ * .spec.ts that CLAIMED "the cursor never runs backwards" only ever passed
+ * marks at or after `since`. A backwards cursor is not free: it re-fetches a
+ * window this run already paid for, and it hands lib/freshness-state.ts a
+ * staler `lastSync` than the truth. So the mark is clamped to `since` - never
+ * past it, never behind it - and the caller warns. `stalled` is unaffected by
+ * construction: a clamp lands exactly ON `since`, which is what `stalled`
+ * already tests for.
+ *
+ * Every branch passes through toISODateTime because BOTH other shapes have
+ * shipped an outage: a bare-date cursor 400s (2026-06-25/07-01) and so do
  * Date.toISOString() milliseconds, which `runStart` carries (07-17/07-22).
  *
  * @param {{since: string, highWater: string, runStart: string, frozen?: boolean, truncated?: boolean}} args
- * @returns {{lastSync: string, reason: 'clean'|'frozen'|'truncated'|'frozen+truncated', stalled: boolean}}
+ * @returns {{lastSync: string, reason: 'clean'|'frozen'|'truncated'|'frozen+truncated', stalled: boolean, clamped: boolean}}
  */
 export function resolveNextSync({ since, highWater, runStart, frozen = false, truncated = false }) {
-  if (!frozen && !truncated) {
-    return { lastSync: toISODateTime(runStart), reason: 'clean', stalled: false };
-  }
-  const lastSync = toISODateTime(highWater);
-  const reason = frozen ? (truncated ? 'frozen+truncated' : 'frozen') : 'truncated';
+  const clean = !frozen && !truncated;
+  const mark = toISODateTime(clean ? runStart : highWater);
+  const floor = toISODateTime(since);
+  // Guarded against an unparseable `since` (a corpus that predates the cursor,
+  // or a hand-edited state file): with no floor to measure against there is
+  // nothing to clamp to, and the mark passes through exactly as before.
+  const clamped = Number.isFinite(Date.parse(floor)) && Date.parse(mark) < Date.parse(floor);
+  const lastSync = clamped ? floor : mark;
+  const reason = clean ? 'clean' : frozen ? (truncated ? 'frozen+truncated' : 'frozen') : 'truncated';
   return {
     lastSync,
     reason,
-    stalled: truncated && Date.parse(lastSync) <= Date.parse(toISODateTime(since)),
+    stalled: truncated && Date.parse(lastSync) <= Date.parse(floor),
+    clamped,
   };
 }
 
@@ -560,7 +584,17 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   }
   if (next.stalled) {
     console.log(
-      `::warning::the truncated window made NO forward progress: the cursor stays at ${next.lastSync} because every bill this run finished shares that timestamp (over ${MAX_UPDATES} tracked bills on one Congress.gov updateDate). Tomorrow re-scans the same window. Raise MAX_UPDATES to clear it; verify-sync.mjs fails the run outright once the cursor passes 10 days.`
+      `::warning::the truncated window made NO forward progress: the cursor stays at ${next.lastSync} because every bill this run finished shares that timestamp (over ${MAX_UPDATES} tracked bills on one Congress.gov updateDate). Tomorrow re-scans the same window. Clear it by dispatching sync-bills.yml with a raised max_updates (raise max_new_decodes with it, or the decode budget re-freezes the cursor); scripts/check-cursor-age.mjs reds the run once the cursor passes 10 days - after the commit, so the data still lands.`
+    );
+  }
+  if (next.clamped) {
+    // The bare-date high-water mark landed BEHIND the cursor we started from
+    // (see resolveNextSync's MONOTONIC GUARD note). Held at `since` instead:
+    // re-scanning a window we already paid for buys nothing, and a cursor that
+    // walks backwards makes the site's own freshness math read staler than the
+    // truth.
+    console.log(
+      `::warning::the high-water mark (${toISODateTime(cursor)}) resolved EARLIER than this run's starting cursor (${since}) - Congress.gov's bill-list updateDate is a bare date, so a one-day window normalizes to that day's midnight. The cursor is held at ${next.lastSync} rather than moved backwards.`
     );
   }
 

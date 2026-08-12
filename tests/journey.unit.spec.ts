@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  billFloorBand,
   deriveJourney,
   floorActionChamber,
   floorCalendarChamber,
@@ -492,6 +493,65 @@ test.describe('deriveJourney', () => {
   });
 
   /* ---------------------------------------------------------------- *
+   * N9-A2 (2026-08-12) — THE UNTENSED RESIDUAL. The last branch on this
+   * page that could speak about a sentence nobody has read.
+   *
+   * floorActionChamber's rule 6 pins a chamber on ANY floor text naming
+   * exactly one, so "Considered by Senate" was chamber-classifiable —
+   * and the residual branch turned that into "the Senate is deciding
+   * whether to bring it to a vote", a live-deliberation claim asserted
+   * over an unread shape. Knowing WHICH chamber a sentence belongs to
+   * has never been knowing what that chamber DID; that conflation is
+   * exactly what #198 removed from 18 settled texts.
+   *
+   * The branch now reads floorPendingChamber — an ordered allow-list —
+   * so an unmatched sentence gets the chamber-free neutral copy. This is
+   * what made the nightly journey-corpus tripwire safe to soften from a
+   * whole-night failure to a filed issue: the render fails closed first.
+   * ---------------------------------------------------------------- */
+  const UNTENSED_TEXT = 'Considered by Senate.';
+
+  test('THE N9 FLAGSHIP: a chamber-readable but UNTENSED floor text asserts nothing', () => {
+    // The chamber genuinely is readable — that is what made this class
+    // dangerous rather than merely unknown.
+    expect(floorActionChamber(UNTENSED_TEXT)).toBe('senate');
+    // …and neither half of the tense split will touch it.
+    expect(floorPendingChamber(UNTENSED_TEXT)).toBeNull();
+    expect(floorSettledChamber(UNTENSED_TEXT)).toBeNull();
+
+    const journey = j('hr', 'floor_vote', UNTENSED_TEXT);
+    expect(journey).toMatchObject({
+      step: 2,
+      current: 'house', // the ORIGIN slot: structure only, never a claim
+      onCalendar: false,
+      nowKey: 'nowFloorActivityNeutral',
+    });
+    // The two sentences that would have named a chamber over this text.
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    expect(journey.nowKey).not.toBe('nowFloorActivityStale');
+    // The neutral key names no chamber, in either language — so the
+    // origin-slot `nowChamber` above cannot leak into a rendered sentence.
+    expect(en.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+    expect(es.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+  });
+
+  test('the untensed residual is neutral whether the record is fresh or aged', () => {
+    // Nothing to demote TO: the sentence makes no chamber and no calendar
+    // claim at either age, so the clock has no work here.
+    expect(j('s', 'floor_vote', UNTENSED_TEXT, FRESH).nowKey).toBe('nowFloorActivityNeutral');
+    expect(j('s', 'floor_vote', UNTENSED_TEXT, STALE).nowKey).toBe('nowFloorActivityNeutral');
+  });
+
+  test('the rail agrees with the stepper about an unread text — both stay silent', () => {
+    // liveCallTarget already gated on `calendar ?? pending`; the stepper now
+    // reads the same answer, so the page cannot contradict itself in a
+    // quieter voice (the #198 failure, from the other direction).
+    expect(
+      liveCallTarget({ bill_type: 'hr', status: 'floor_vote', last_action_text: UNTENSED_TEXT, last_action_date: FRESH })
+    ).toBeNull();
+  });
+
+  /* ---------------------------------------------------------------- *
    * D3 (2026-08-11) — THE CLOCK. #198 gave the bill page's green panel
    * the freshness window and stopped at that one render site; the
    * derivation underneath kept answering "it's on the Senate floor
@@ -565,15 +625,16 @@ test.describe('deriveJourney', () => {
     expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
   });
 
-  test('nothing outside the floor branch is clocked', () => {
-    // passed_chamber is a relational fact about a vote that happened — all 275
-    // of the corpus's 275 records are outside the window (2026-08-12), and
-    // clocking them would silence that routing entirely. Committee too.
-    expect(j('hr', 'passed_chamber', 'Received in the Senate.', STALE).nowKey).toBe('nowPassed');
+  test('nothing outside the floor and passage branches is clocked', () => {
+    // A committee referral and an enacted law carry no present-tense claim
+    // that ages: "a committee is reviewing it" is what the record says at any
+    // date, and a law does not stop being one. The passage branch DID gain a
+    // clock (N5, 2026-08-12) and is pinned in its own block below.
     expect(j('hr', 'committee', 'Referred to the Subcommittee on Health.', STALE).nowKey).toBe(
       'nowCommittee'
     );
     expect(j('hr', 'signed', 'Became Public Law No: 119-1.', STALE).nowKey).toBe('nowSigned');
+    expect(j('hr', 'conference', 'Conference held.', STALE).nowKey).toBe('nowConference');
   });
 
   /*
@@ -588,6 +649,97 @@ test.describe('deriveJourney', () => {
       showTrailer: false,
     });
     expect(journey.nowKey).not.toBe('nowPassed');
+  });
+
+  /* ---------------------------------------------------------------- *
+   * N5 (2026-08-12) — THE CLOCK REACHES THE PASSAGE SENTENCE.
+   *
+   * #208 clocked the floor branch and deliberately left `passed_chamber`
+   * alone, because a passage is a durable fact and the ROUTING TARGET
+   * stays right at any age. Its own follow-up note named what that
+   * missed: the stepper's sentence does not name a target, it narrates a
+   * handoff — "it passed the House and now goes to the Senate" — and on
+   * 2026-08-12 that "now" was printed over 280 of the corpus's 295
+   * passage records, median 120 days old, oldest hr-30-119 at 573.
+   *
+   * The split this block pins: the stepper's TENSE moves, the rail's
+   * TARGET does not. liveCallTarget's half is pinned explicitly in
+   * suite 5 ('passed_chamber routing is STILL not clocked').
+   * ---------------------------------------------------------------- */
+
+  const RECEIVED_IN_SENATE = 'Received in the Senate and Read twice and referred to the Committee on Finance.';
+
+  test('THE N5 FLAGSHIP: an aged passage keeps the passage, the step and the chambers, and loses the handoff', () => {
+    const stale = j('hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE);
+    expect(stale).toMatchObject({
+      // Where the record puts the bill does NOT move — a quiet fortnight does
+      // not carry it back across the Capitol.
+      step: 3,
+      origin: 'house',
+      current: 'senate',
+      nowChamber: 'house',
+      // The conditional Article I trailer is not a tense claim, so it stays.
+      showTrailer: true,
+      // Only the sentence changes.
+      nowKey: 'nowPassedStale',
+    });
+    // The same record, two days old, is untouched — the gate is age, not text.
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, FRESH)).toMatchObject({
+      step: 3,
+      current: 'senate',
+      nowChamber: 'house',
+      showTrailer: true,
+      nowKey: 'nowPassed',
+    });
+  });
+
+  test('an aged amended passage stops narrating the trip back', () => {
+    const AMENDED = 'Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 86 - 11. Record Vote Number: 224.';
+    expect(j('hr', 'passed_chamber', AMENDED, STALE)).toMatchObject({
+      step: 3,
+      current: 'house',
+      nowChamber: 'house',
+      showTrailer: false,
+      nowKey: 'nowPassedBackStale',
+    });
+    expect(j('hr', 'passed_chamber', AMENDED, FRESH).nowKey).toBe('nowPassedBack');
+  });
+
+  test('the passage clock is the ONE window — SIGNAL_WINDOW_DAYS, not a second number', () => {
+    /*
+     * ONE DAY EITHER SIDE, NEVER THE EDGE — the same idiom and the same reason
+     * as the floor-branch boundary test above: corpus dates are date-only
+     * (midnight UTC) while isSignalFresh measures milliseconds, so a passage
+     * dated exactly SIGNAL_WINDOW_DAYS ago is inside the window only at 00:00
+     * UTC and outside it the rest of the day. Asserting that instant would be
+     * a clock-dependent coin flip.
+     */
+    expect(
+      j('hr', 'passed_chamber', RECEIVED_IN_SENATE, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)).nowKey
+    ).toBe('nowPassed');
+    expect(
+      j('hr', 'passed_chamber', RECEIVED_IN_SENATE, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)).nowKey
+    ).toBe('nowPassedStale');
+  });
+
+  test('an undated passage fails closed to the weaker claim', () => {
+    // isSignalFresh's own rule, and the rule amber has always run on. 0 of the
+    // corpus's 295 passage records are undated (2026-08-12), so this is the
+    // shape we refuse to be surprised by rather than one we render today.
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, null).nowKey).toBe('nowPassedStale');
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, 'not-a-date').nowKey).toBe('nowPassedStale');
+  });
+
+  test('the two passage states that name NO next chamber are not clocked', () => {
+    // 'both' says what Article I, Section 7 requires — presentment — and names
+    // no chamber as deciding; 'second' claims only that the record has not
+    // said. Neither has a tense that can go stale, so neither gains a key.
+    expect(j('hr', 'passed_chamber', 'Passed Senate without amendment by Unanimous Consent.', STALE).nowKey).toBe(
+      'nowPassedBoth'
+    );
+    expect(j('hr', 'passed_chamber', 'Passed Senate by Voice Vote.', STALE).nowKey).toBe(
+      'nowPassedSecond'
+    );
   });
 
   test('an amended second-chamber passage sends it back to the originating chamber', () => {
@@ -743,6 +895,56 @@ test.describe('deriveJourney', () => {
     );
   });
 
+  /*
+   * THE TWO N5 SENTENCES, rendered — 280 bills read one of these on
+   * 2026-08-12. The state assertions above cannot see the failure mode that
+   * matters here: a template that keeps a "now goes to" clause, or names the
+   * wrong chamber through the icuParams asymmetry (`other` is the opposite of
+   * ORIGIN, never of nowChamber — the defect nowPassedBack shipped with in
+   * draft). Both languages: the ES pair is an unreviewed draft, and a draft
+   * that renders wrong is worse than one that reads oddly.
+   */
+  test('an aged passage still says which chamber passed it, and claims nothing about this week', () => {
+    expect(sentence(en, 'hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE)).toBe(
+      'it passed the House, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 'hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE)).toBe(
+      'fue aprobado por la Cámara, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // The mirror direction, so a template that hardcodes one chamber fails.
+    expect(sentence(en, 's', 'passed_chamber', 'Received in the House.', STALE)).toBe(
+      'it passed the Senate, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 's', 'passed_chamber', 'Received in the House.', STALE)).toBe(
+      'fue aprobado por el Senado, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // …and the SAME records inside the window keep every word of the live copy.
+    expect(sentence(en, 's', 'passed_chamber', 'Received in the House.', FRESH)).toBe(
+      'it passed the Senate and now goes to the House.'
+    );
+    expect(sentence(es, 's', 'passed_chamber', 'Received in the House.', FRESH)).toBe(
+      'fue aprobado por el Senado y ahora pasa a la Cámara.'
+    );
+  });
+
+  test('an aged amended passage names the amending chamber and no destination, in both languages', () => {
+    const AMENDED = 'Passed Senate with an amendment by Voice Vote.';
+    expect(sentence(en, 'hr', 'passed_chamber', AMENDED, STALE)).toBe(
+      'the Senate passed it with changes, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 'hr', 'passed_chamber', AMENDED, STALE)).toBe(
+      'el Senado lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // Mirror direction: a House amendment to a Senate bill.
+    expect(sentence(en, 's', 'passed_chamber', 'Passed House with an amendment by Voice Vote.', STALE)).toBe(
+      'the House passed it with changes, and the official record shows nothing new since.'
+    );
+    // Fresh keeps the destination clause — the gate is age, not text.
+    expect(sentence(en, 'hr', 'passed_chamber', AMENDED, FRESH)).toBe(
+      'the Senate passed it with changes, so it goes back to the House.'
+    );
+  });
+
   test('one pin per status', () => {
     expect(j('hr', 'introduced')).toMatchObject({ step: 0, nowKey: 'nowIntroduced', showTrailer: true });
     expect(j('hr', 'committee')).toMatchObject({ step: 1, nowKey: 'nowCommittee', current: 'house' });
@@ -757,18 +959,24 @@ test.describe('deriveJourney', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 4 · CORPUS SWEEP — the tripwire. Runs over the live data/bills.json,
- *     so nightly data movement cannot silently re-invert the chamber
- *     derivation: a novel floor text fails here, loudly.
+ * 4 · CORPUS SWEEP — the tripwire, and where it went.
  * ------------------------------------------------------------------ */
 /* The live-corpus sweep MOVED to the nightly sync (owner ruling
  * 2026-08-04): scripts/check-journey-corpus.mjs, wired into
  * sync-bills.yml. It tests DATA, and data changes nightly — in this
  * PR-blocking suite a novel floor text landed by the sync could red the
  * CI of unrelated PRs. The fixtures above and the parity pin below test
- * CODE and stay. deriveJourney's neutral no-chamber branch (an
- * unclassified text renders nowFloorActivityNeutral, never a guessed
- * chamber) is pinned in suite 3.
+ * CODE and stay.
+ *
+ * WHAT IT DOES WHEN IT FIRES CHANGED ON 2026-08-12 (N9-A2), and the
+ * reason is in suite 3: deriveJourney's residual branch reads
+ * floorPendingChamber now, so BOTH classes the sweep hunts — an
+ * unreadable text and a chamber-readable-but-untensed one — render the
+ * chamber-free nowFloorActivityNeutral. Nothing on the site can speak
+ * about a sentence nobody has read, so the sweep files a labeled
+ * `journey-corpus` issue instead of costing the night its commit. The
+ * only verdict that still fails the run is a sweep that proved nothing
+ * (<50 floor_vote records, or a sweep that could not run).
  * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
@@ -864,6 +1072,7 @@ test.describe('selectFloorVoteFeature floor gate', () => {
       url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
       published: dayOffset(1),
       covers: dayOffset(-1),
+      coversLabel: '8 a.m., Thursday, August 13',
       source: 'daily-digest' as const,
       chamber: 'senate' as const,
       ...over,
@@ -916,6 +1125,33 @@ test.describe('selectFloorVoteFeature floor gate', () => {
         bill === newer ? announcement({ published: dayOffset(0) }) : announcement({ published: dayOffset(3) })
       );
       expect(pick?.bill).toBe(newer);
+    });
+
+    /*
+     * THE TERMINAL GUARD (2026-08-12). Rung order in lib/docket.mjs is terminal
+     * FIRST, then T0 — a signed or vetoed bill has no floor question left, and
+     * no schedule entry can reopen one. This branch used to hold that rule only
+     * by upstream luck (no caller resolved an announcement for a terminal bill),
+     * which is not a rule. FIXTURE-BASED BY NECESSITY: data/floor-signals.json
+     * is empty this week (both chambers out of session), so the live corpus can
+     * elect no announced bill at all right now.
+     */
+    test('a terminal bill is never crowned, whatever the chamber published about it', () => {
+      const signed = {
+        status: 'signed' as const,
+        last_action_date: dayOffset(0),
+        last_action_text: 'Became Public Law No: 119-142.',
+        urgency_score: 1,
+      };
+      expect(selectFloorVoteFeature([signed], () => announcement())).toBeNull();
+      // And it does not merely lose the tie — it is out of the running, so the
+      // eligible bill below it still wins on its own record fact.
+      const pending = candidate(dayOffset(0), CLOTURE_TEXT, 0.1);
+      const pick = selectFloorVoteFeature([signed, pending], (b) =>
+        b === signed ? announcement() : null
+      );
+      expect(pick?.bill).toBe(pending);
+      expect(pick?.kind).toBe('pending');
     });
 
     test('with no resolver the selector is byte-for-byte the pre-ruling behavior', () => {
@@ -983,6 +1219,151 @@ test.describe('selectFloorVoteFeature floor gate', () => {
         (winner.last_action_date ?? '') >= (b.last_action_date ?? ''),
         `${slugOf(winner)} (${winner.last_action_date}) must not be older than ${slugOf(b)} (${b.last_action_date})`
       ).toBe(true);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5b · THE BILL PAGE'S BAND (`billFloorBand`) — the gate that page runs,
+ *      and the SEAM it closed on 2026-08-12.
+ *
+ *      app/[locale]/bills/[id]/page.tsx hard-gated its full-bleed green
+ *      band on `status === 'floor_vote'` and never read the chamber's own
+ *      published schedule. So a T0-ANNOUNCED bill whose derived status had
+ *      fallen back to `committee` — which is the NORMAL state of a measure
+ *      mid-passage, because Congress overwrites `last_action_text` the
+ *      moment a bill reaches the floor — wore the crown on the homepage and
+ *      showed NO band at all one click later. Same seam class #207 closed
+ *      for `pending`, one rung up.
+ *
+ *      FIXTURE-BASED, AND IT HAS TO BE: data/floor-signals.json holds zero
+ *      signals today (both chambers out of session, `_meta.sources` both
+ *      `quiet`), so no live bill can exercise the announced path at all.
+ *      Every announcement below is hand-written and injected exactly as the
+ *      page injects it from `rungFor`.
+ * ------------------------------------------------------------------ */
+test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
+  /** The measured case: the CR and the SEED Act on the days they passed. */
+  const OVERWRITTEN = {
+    status: 'committee' as const,
+    last_action_date: dayOffset(4),
+    last_action_text: 'Message on Senate action sent to the House.',
+  };
+  const announced = { chamber: 'senate' as const, published: dayOffset(1) };
+
+  test('THE SEAM, half one: an announced bill renders the band even at committee status', () => {
+    const band = billFloorBand(OVERWRITTEN, announced);
+    expect(band).not.toBeNull();
+    expect(band?.kind).toBe('announced');
+    expect(band?.chamber).toBe('senate');
+    // The ANNOUNCEMENT's own publication day, never the bill's action date —
+    // the bill's own record is precisely what has gone stale here.
+    expect(band?.date).toBe(announced.published);
+    expect(band?.date).not.toBe(OVERWRITTEN.last_action_date);
+  });
+
+  test('THE SEAM, half two: the same bill with no announcement gets no band', () => {
+    expect(billFloorBand(OVERWRITTEN, null)).toBeNull();
+  });
+
+  /*
+   * The two surfaces must agree about the same record, which is the whole
+   * point of closing the seam: the crown's selector and the page's gate,
+   * driven by one bill and one announcement, return the same kind, the same
+   * chamber and the same printed date.
+   */
+  test('the crown and the page read one record the same way', () => {
+    const pick = selectFloorVoteFeature([{ ...OVERWRITTEN, urgency_score: 0.45 }], () => ({
+      quote: 'Senator Thune: the Senate will vote on the motion to invoke cloture.',
+      url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
+      published: announced.published,
+      covers: dayOffset(-1),
+      coversLabel: '8 a.m., Thursday, August 13',
+      source: 'daily-digest' as const,
+      chamber: announced.chamber,
+    }));
+    const band = billFloorBand(OVERWRITTEN, announced);
+    expect(pick?.kind).toBe(band?.kind);
+    expect(pick?.chamber).toBe(band?.chamber);
+    expect(pick?.announcement?.published).toBe(band?.date);
+  });
+
+  test('the announcement outranks the record fact, and prints its own date', () => {
+    const placed = {
+      status: 'floor_vote' as const,
+      last_action_date: dayOffset(0),
+      last_action_text: CALENDAR_TEXT,
+    };
+    expect(billFloorBand(placed, null)?.kind).toBe('calendar');
+    const band = billFloorBand(placed, announced);
+    expect(band?.kind).toBe('announced');
+    expect(band?.date).toBe(announced.published);
+  });
+
+  /*
+   * THE RECORD HALVES ARE UNTOUCHED — the seam fix added a rung above them and
+   * changed nothing below it. These are the page's pre-existing gates, moved
+   * into a function and pinned for the first time.
+   */
+  test('a fresh placement is `calendar`, a fresh pending motion is `pending`', () => {
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toEqual({ kind: 'calendar', chamber: 'senate', date: dayOffset(1) });
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CLOTURE_TEXT },
+        null
+      )?.kind
+    ).toBe('pending');
+  });
+
+  test('an aged, settled, undated or unclassified record still gets no band', () => {
+    // One day past the window, never on it.
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(15), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: dayOffset(0), last_action_text: CLOTURE_NOT_INVOKED },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'floor_vote', last_action_date: null, last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+    expect(
+      billFloorBand(
+        { status: 'committee', last_action_date: dayOffset(0), last_action_text: CALENDAR_TEXT },
+        null
+      )
+    ).toBeNull();
+  });
+
+  /*
+   * Every key the page looks up for the new rung has to EXIST in both locales,
+   * or the loudest surface on a bill page renders a raw message key in one
+   * language. Same guard suite 4 keeps over the live-call keys.
+   */
+  test('the announced band\'s copy resolves in both locales', () => {
+    for (const k of [
+      'announcedHouse',
+      'announcedSenate',
+      'headlineAnnouncedHouse',
+      'headlineAnnouncedSenate',
+      'statusAnnounced',
+      'metaAnnounced',
+    ] as const) {
+      expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
+      expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');
     }
   });
 });
@@ -1156,6 +1537,36 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     expect(en.bills.status.floor_vote_stale).not.toBe(en.bills.status.floor_vote);
     expect(es.bills.status.floor_vote_stale).not.toBe(es.bills.status.floor_vote);
   });
+
+  /* ---------------------------------------------------------------- *
+   * N9-A2's live-corpus half. The fixture above pins the shape; this
+   * pins that no record tomorrow's sync lands can wear a chamber
+   * sentence the record did not earn. Stated as an implication rather
+   * than a count, for the same reason as every sweep in this file: the
+   * corpus moves nightly and a number here is a scheduled false red.
+   * ---------------------------------------------------------------- */
+  test('no floor_vote record names a chamber unless a matcher READ that chamber out of the sentence', () => {
+    for (const b of floorVote) {
+      const { nowKey, nowChamber } = deriveJourney({
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      });
+      if (nowKey === 'nowFloorActivity' || nowKey === 'nowFloorActivityStale') {
+        // The residual branch's own gate: these two sentences say "the
+        // {chamber} is deciding" / "has taken floor action", and only
+        // floorPendingChamber is allowed to have supplied that chamber.
+        expect(floorPendingChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+      if (nowKey === 'nowFloor' || nowKey === 'nowFloorStale') {
+        expect(floorCalendarChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+      if (nowKey === 'nowFloorMotionFailed') {
+        expect(floorSettledChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+    }
+  });
 });
 
 /* ------------------------------------------------------------------ *
@@ -1268,16 +1679,50 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('hr', 'floor_vote', CAL, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)))).toBeNull();
   });
 
-  test('passed_chamber routing is NOT clocked — a chamber that voted stays voted', () => {
-    // Deliberate asymmetry, and the reason is in liveCallTarget's comment:
-    // "the House has already voted" is a fact about a past event, not a claim
-    // about this week. 274 of the corpus's 275 passed_chamber records sit
-    // outside the window; clocking them would silence nearly all of it.
-    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', STALE))).toEqual({
-      chamber: 'senate',
+  /*
+   * THE N5 ASYMMETRY, PINNED FROM THE OTHER SIDE (2026-08-12). The stepper's
+   * passage sentence IS clocked now (suite 3) and this branch is deliberately
+   * NOT — the owner's N5 ruling confirmed #208's call rather than reversing
+   * it. TARGET here, TENSE there: a chamber that voted stays voted, and the
+   * chamber that has not yet acted is still the one a caller would reach.
+   *
+   * This test is the guard on a plausible wrong fix: clocking BOTH halves
+   * would silence 280 of the corpus's 295 passage routings (2026-08-12) and
+   * strip the routing sentence and the rep reordering off nearly every bill
+   * that has cleared a chamber. Every assertion below is spelled out with
+   * `toEqual`, so a null — or a flipped `afterVote` — fails loudly.
+   */
+  test('passed_chamber routing is STILL not clocked — the stepper moved, the target did not', () => {
+    const stale = { chamber: 'senate', afterVote: true, soleChamber: false };
+    // The corpus's dominant shape, aged well past the window.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', STALE))).toEqual(stale);
+    expect(
+      liveCallTarget(
+        bill('hr', 'passed_chamber', 'Received in the Senate and Read twice and referred to the Committee on Finance.', STALE)
+      )
+    ).toEqual(stale);
+    // hr-30-119's age on the day N5 landed: 573 days, and it still routes.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(573)))).toEqual(stale);
+    // The mirror direction, and the amended case whose target is the ORIGIN
+    // chamber — the one the old bill_type derivation got backwards.
+    expect(liveCallTarget(bill('sjres', 'passed_chamber', 'Received in the House.', STALE))).toEqual({
+      chamber: 'house',
       afterVote: true,
       soleChamber: false,
     });
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Passed Senate with an amendment by Voice Vote.', STALE))
+    ).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
+    // An undated passage routes too: unlike the floor branch, this one has no
+    // date gate at all, so there is nothing to fail closed to.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', null))).toEqual(stale);
+    // The window boundary changes NOTHING here — the same answer either side.
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)))
+    ).toEqual(stale);
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)))
+    ).toEqual(stale);
   });
 
   test('passed_chamber: the OTHER chamber is the live call, and the vote already happened', () => {
@@ -1376,6 +1821,76 @@ test.describe('liveCallTarget', () => {
      * in suite 3 instead, where no data can silence it.
      */
     expect(demoted, 'no aged floor placement in the corpus — has the gate stopped firing?').toBeGreaterThan(0);
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE N5 LIVE-CORPUS INVARIANT (2026-08-12). Same discipline as the
+   * D3 sweep above — an invariant plus a non-vacuity floor, never a
+   * count, because the count moves nightly (280 of 295 passage records
+   * demoted on the day this landed) and a number here would redden the
+   * CI of unrelated PRs on a quiet legislative week.
+   *
+   * It asserts BOTH halves of the split, which is the only way to catch
+   * the two opposite wrong fixes: a stepper that keeps narrating the
+   * handoff, and a rail that stops routing the call.
+   * ---------------------------------------------------------------- */
+  test('no aged passage narrates a handoff — and every one of them still routes a call', () => {
+    const passed = corpus.filter((b) => b.status === 'passed_chamber');
+    let aged = 0;
+    let live = 0;
+    for (const b of passed) {
+      const input = {
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      };
+      const { nowKey } = deriveJourney(input);
+      const target = liveCallTarget(input);
+      /*
+       * THE HALF THAT MUST NOT MOVE. Every stage that names a next chamber
+       * routes, at every age — a passage is a durable fact and the target
+       * stays right. The two stages that name none ('both' → the President,
+       * 'second' → the record has not said) route nowhere at every age too,
+       * so `next` and the routing decision are pinned against each other
+       * rather than against the clock.
+       */
+      const { next } = passageState(input);
+      if (next) {
+        expect(target, `${slugOf(b)} must still route`).toEqual({
+          chamber: next,
+          afterVote: true,
+          soleChamber: false,
+        });
+      } else {
+        expect(target, `${slugOf(b)} names no next chamber`).toBeNull();
+      }
+
+      if (isSignalFresh(b.last_action_date)) continue;
+      aged += 1;
+      // THE HALF THAT MOVES: no aged passage may claim the handoff is underway.
+      expect(nowKey, slugOf(b)).not.toBe('nowPassed');
+      expect(nowKey, slugOf(b)).not.toBe('nowPassedBack');
+      if (nowKey === 'nowPassedStale' || nowKey === 'nowPassedBackStale') live += 1;
+    }
+    /*
+     * NON-VACUITY, on both counts. `passed` empty would make every assertion
+     * above pass without executing; `live` at zero would mean the aged records
+     * are all landing in the two unclocked stages, i.e. the demotion this
+     * change exists for never fires. Only the STALE side is floored — aged
+     * passages only accumulate (280 of 295 on 2026-08-12, oldest 573 days),
+     * while the FRESH side legitimately empties over a recess. The fresh
+     * branch is pinned by fixture in suite 3, where no data can silence it.
+     */
+    expect(passed.length, 'no passed_chamber records at all — is the corpus loaded?').toBeGreaterThan(0);
+    expect(aged, 'no aged passage in the corpus — has the window changed?').toBeGreaterThan(0);
+    expect(live, 'aged passages exist but none demoted — has the gate stopped firing?').toBeGreaterThan(0);
+    // …and the clock must not have swallowed the category whole: a run where
+    // EVERY passage is aged is possible, one where every passage record is
+    // demoted AND none is fresh would still be legal, but `aged` exceeding the
+    // population would mean the filter above stopped filtering.
+    expect(aged).toBeLessThanOrEqual(passed.length);
+    expect(live).toBeLessThanOrEqual(aged);
   });
 });
 

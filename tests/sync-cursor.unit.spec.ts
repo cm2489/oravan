@@ -31,7 +31,7 @@ type Args = {
   frozen?: boolean;
   truncated?: boolean;
 };
-type Verdict = { lastSync: string; reason: string; stalled: boolean };
+type Verdict = { lastSync: string; reason: string; stalled: boolean; clamped: boolean };
 const resolve = resolveNextSync as (a: Args) => Verdict;
 
 // verify-sync.mjs pins EXACTLY this shape, and both other shapes have shipped
@@ -81,8 +81,8 @@ test.describe('resolveNextSync (nightly ascending-pass cursor)', () => {
     // (Congress.gov's bill-list updateDate is a bare DATE, so: one calendar
     // day overflowing the cap). The cursor is deliberately NOT nudged past
     // `since` to break the tie - that would skip real bills. The caller warns
-    // and verify-sync.mjs's 10-day cursor ceiling fails the run within ten
-    // nights.
+    // and scripts/check-cursor-age.mjs's 10-day ceiling reds the run within
+    // ten nights (post-commit since 2026-08-12: the night's data still lands).
     const v = resolve({ since: SINCE, highWater: SINCE, runStart: RUN_START, truncated: true });
     expect(v.lastSync).toBe(SINCE);
     expect(v.stalled).toBe(true);
@@ -115,16 +115,69 @@ test.describe('resolveNextSync (nightly ascending-pass cursor)', () => {
     for (const c of cases) expect(resolve(c).lastSync).toMatch(CURSOR_FORMAT);
   });
 
+  /* ------------------------------------------------------------------ *
+   * THE MONOTONIC GUARD (2026-08-12) — and the live incident that earned
+   * it, which the test below this block used to CLAIM to cover and did
+   * not: every case it passed had a high-water mark at or after `since`,
+   * so it could only ever pass. The one shape that breaks the invariant
+   * was never handed to it.
+   *
+   * WHAT HAPPENED. Congress.gov's bill-list `updateDate` is a BARE DATE,
+   * so `toISODateTime` normalizes it to that day's MIDNIGHT. On the run
+   * of 2026-08-11 the cursor started at 2026-08-10T08:55:10Z and the
+   * truncated window's newest finished bill carried updateDate
+   * "2026-08-10" -> 2026-08-10T00:00:00Z. The run persisted a cursor 8h55m
+   * BEHIND the one it was handed (origin/main:data/sync-state.json,
+   * commit bcec170), which re-buys a window this run already paid for and
+   * hands lib/freshness-state.ts a staler `lastSync` than the truth.
+   * ------------------------------------------------------------------ */
+  test('THE 2026-08-11 REGRESSION: a bare-date mark BEHIND the cursor is clamped, never persisted', () => {
+    const v = resolve({
+      since: '2026-08-10T08:55:10Z',
+      highWater: '2026-08-10', // exactly what Congress.gov returned
+      runStart: RUN_START,
+      truncated: true,
+    });
+    expect(v.lastSync).toBe('2026-08-10T08:55:10Z'); // held, not moved back
+    expect(v.lastSync).not.toBe('2026-08-10T00:00:00Z'); // what shipped
+    expect(v.clamped).toBe(true);
+    // The clamp lands exactly ON `since`, which is what `stalled` tests for,
+    // so the no-forward-progress warning still fires. A clamp must never
+    // silence the alarm that says the window is not moving.
+    expect(v.stalled).toBe(true);
+  });
+
+  test('the clamp is not a general nudge — a mark that really moved is untouched', () => {
+    const v = resolve({ since: SINCE, highWater: HIGH_WATER, runStart: RUN_START, truncated: true });
+    expect(v.lastSync).toBe(HIGH_WATER);
+    expect(v.clamped).toBe(false);
+  });
+
+  test('an unparseable `since` leaves the mark alone rather than guessing at a floor', () => {
+    // A hand-edited state file, or a corpus predating the cursor. With no
+    // floor to measure against there is nothing to clamp to, and inventing
+    // one would be worse than passing the mark through.
+    const v = resolve({ since: 'not a date', highWater: HIGH_WATER, runStart: RUN_START, frozen: true });
+    expect(v.lastSync).toBe(HIGH_WATER);
+    expect(v.clamped).toBe(false);
+  });
+
   test('the cursor never runs backwards past where the run started scanning', () => {
-    // Whatever the reason, `lastSync` is either runStart (forward) or the
-    // high-water mark, which the ascending pass only ever advances from
-    // `since`. Nothing here may hand back a cursor older than `since`.
+    // The invariant itself, now including the shapes that can actually break
+    // it: a bare-date mark inside the cursor's own day (both freeze causes),
+    // and a runStart behind the cursor (a clock skew or a future-dated state
+    // file — the clean branch is guarded too, so the rule is total).
     for (const c of [
       { since: SINCE, highWater: SINCE, runStart: RUN_START, frozen: true },
       { since: SINCE, highWater: HIGH_WATER, runStart: RUN_START, truncated: true },
       { since: SINCE, highWater: HIGH_WATER, runStart: RUN_START },
+      { since: '2026-08-10T08:55:10Z', highWater: '2026-08-10', runStart: RUN_START, truncated: true },
+      { since: '2026-08-10T08:55:10Z', highWater: '2026-08-10', runStart: RUN_START, frozen: true },
+      { since: '2026-08-10T08:55:10Z', highWater: '2026-08-09', runStart: '2026-08-10T00:00:00Z' },
     ]) {
-      expect(Date.parse(resolve(c).lastSync)).toBeGreaterThanOrEqual(Date.parse(SINCE));
+      expect(Date.parse(resolve(c).lastSync), JSON.stringify(c)).toBeGreaterThanOrEqual(
+        Date.parse(c.since)
+      );
     }
   });
 });
