@@ -147,6 +147,36 @@ export const VOTING_CHAMBERS: Record<VehicleKind, readonly Chamber[]> = {
  * statusKeyFor is clocked TOO, as of the same ruling's second pass (N3,
  * 2026-08-11) — see its own header for the shape the demotion takes there,
  * which is a THIRD key rather than a silenced one.
+ *
+ * THE PASSAGE BRANCH IS CLOCKED IN THE STEPPER ONLY, as of the ruling's third
+ * pass (N5, 2026-08-12) — and the asymmetry is the whole design, so read it
+ * before changing either half:
+ *
+ *   liveCallTarget's `passed_chamber` branch is STILL NOT CLOCKED. "The House
+ *   has already voted, so the Senate decides next" names a TARGET, and the
+ *   target is right at any age: a chamber that voted stays voted, and the
+ *   chamber that has not yet acted is still the one that would. #208 declined
+ *   to clock it for exactly that reason and this change does not reverse it.
+ *   Every dial, the routing sentence, the reordering and the script are
+ *   untouched — funnel invariant I2 never sees a different value here.
+ *
+ *   deriveJourney's `passed_chamber` branch IS clocked, because its sentences
+ *   do not name a target, they name a HAPPENING: "it passed the House and now
+ *   goes to the Senate", "so it goes back to the House". "now goes to" is a
+ *   claim about this week, and on 2026-08-12 it was being made over 280 of the
+ *   corpus's 295 passage records — median 120 days, oldest hr-30-119 at 573
+ *   days (last action 2025-01-17, "Received in the Senate and Read twice and
+ *   referred to the Committee…"). The dishonesty flagged in #208's own
+ *   follow-up note was never the target; it was the implied LIVENESS, and the
+ *   liveness lives in this sentence alone.
+ *
+ * ONLY THE TWO STAGES THAT NAME A NEXT CHAMBER ARE CLOCKED — 'first' and
+ * 'back', which are exactly the two `passageState` gives a non-null `next`.
+ * 'both' ("both chambers have passed it. It goes to the President next.") and
+ * 'second' ("the official record doesn't say yet whether the two versions
+ * match") name no chamber as deciding, route nowhere already, and say what
+ * Article I requires rather than what is about to happen — the same reason
+ * `nowFloorMotionFailed` and `nowFloorActivityNeutral` are not clocked either.
  */
 
 /**
@@ -397,11 +427,15 @@ export function liveCallTarget(
      * script and the call dialog are untouched, and funnel invariant I2 (a
      * completed script within 2 interactions) never sees this value.
      *
-     * `passed_chamber` below is deliberately NOT clocked: "the House has
-     * already voted" is a durable relational fact about a vote that happened,
-     * not a claim about this week, and all 275 of the corpus's 275
-     * passed_chamber records are outside the window (2026-08-12) — clocking it
-     * would silence that routing entirely, on a much weaker argument.
+     * `passed_chamber` below is deliberately NOT clocked, and the owner's N5
+     * ruling (2026-08-12) CONFIRMED that rather than reversing it. "The House
+     * has already voted" is a durable relational fact about a vote that
+     * happened, not a claim about this week, and 280 of the corpus's 295
+     * passage records are outside the window (2026-08-12) — clocking it would
+     * silence that routing entirely, on a much weaker argument. What the
+     * ruling changed is the STEPPER's sentence, which claimed the handoff was
+     * happening now; see deriveJourney's passed_chamber case and "THE THIRD
+     * GATE" above. Target here, tense there.
      */
     if (!isSignalFresh(bill.last_action_date)) return null;
     // floorPendingChamber, NOT floorActionChamber. This is the strongest
@@ -603,7 +637,9 @@ export type JourneyNowKey =
   | 'nowFloorActivityNeutral'
   | 'nowFloorMotionFailed'
   | 'nowPassed'
+  | 'nowPassedStale'
   | 'nowPassedBack'
+  | 'nowPassedBackStale'
   | 'nowPassedBoth'
   | 'nowPassedSecond'
   | 'nowConference'
@@ -769,13 +805,39 @@ export function deriveJourney(
        * "if the {other} changes it, it goes back to the {origin}" — a warning
        * about something still ahead. Once the second chamber has acted that is
        * either finished business or the thing that just happened.
+       *
+       * THE CLOCK, ON THE TENSE ONLY (owner ruling 2026-08-12, N5 — the full
+       * argument, including why liveCallTarget's twin branch stays UNCLOCKED,
+       * is in "THE THIRD GATE" at the top of this file). The passage itself is
+       * durable and survives every demotion below: the step, the chambers and
+       * the words "it passed the {chamber}" are identical either way. What
+       * moves is the clause that said the handoff was underway — "and now goes
+       * to the {other}", "so it goes back to the {chamber}" — which on
+       * 2026-08-12 was printed over 280 of 295 passage records, median 120 days
+       * old and up to 573. The stale keys replace that clause with the dated
+       * silence itself ("the official record shows nothing new since"), which
+       * is the same shape #208 gave `nowFloorStale`: absence is a finding.
+       *
+       * `showTrailer` is NOT touched by the clock. It renders "If the {other}
+       * changes it, it goes back to the {origin} before reaching the
+       * President" — a conditional statement of what Article I requires, with
+       * no tense to demote, true of a passage of any age.
        */
+      const live = isSignalFresh(bill.last_action_date);
       const { stage, passedBy } = passageState(bill);
       if (stage === 'first') {
         // Corpus-verified copy: nearly all passed_chamber actions read
         // "Received in the Senate…" — origin passage, headed to the other
         // chamber — so nowChamber stays origin and current is the other.
-        return { ...base, step: 3, current: other, nowKey: 'nowPassed' };
+        // `current` is NOT clocked for the same reason `step` is not: it is
+        // where the record puts the bill, and a quiet fortnight does not move
+        // it back across the Capitol.
+        return {
+          ...base,
+          step: 3,
+          current: other,
+          nowKey: live ? 'nowPassed' : 'nowPassedStale',
+        };
       }
       if (stage === 'back') {
         /*
@@ -793,18 +855,29 @@ export function deriveJourney(
          * nowPassedBack is written to that shape. Setting nowChamber to
          * `passedBy` here instead renders "the Senate passed it with changes,
          * so it goes back to the Senate."
+         *
+         * The stale twin keeps the amending chamber and drops the destination
+         * clause, because THAT clause is the imminence: `nowPassedBackStale`
+         * reads "the {other} passed it with changes, and the official record
+         * shows nothing new since." The destination is not lost from the page
+         * — the stepper still stands the bill at this step and the rail still
+         * routes the call to the origin chamber (liveCallTarget is unclocked
+         * here, deliberately).
          */
         return {
           ...base,
           step: 3,
           current: origin,
           nowChamber: origin,
-          nowKey: 'nowPassedBack',
+          nowKey: live ? 'nowPassedBack' : 'nowPassedBackStale',
           showTrailer: false,
         };
       }
       if (stage === 'both') {
         // Identical text out of both chambers: the only step left is the desk.
+        // NOT CLOCKED (N5): "It goes to the President next" is Article I,
+        // Section 7's presentment requirement, not a forecast — it names no
+        // chamber as deciding and nothing about it becomes less true with age.
         return {
           ...base,
           step: 4,
@@ -817,6 +890,9 @@ export function deriveJourney(
       // 'second' — both chambers have passed it and the record does not say
       // whether the versions match, so the sentence says exactly that and
       // names no next step. Unreachable on today's corpus (see passageState).
+      // NOT CLOCKED (N5), for the same reason `nowFloorActivityNeutral` is
+      // not: it already claims only that the record has not said, which is a
+      // statement about the record's silence and cannot go stale.
       return {
         ...base,
         step: 3,

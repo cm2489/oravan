@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { passageSlugs } from './corpus';
 
 // A-plus decoded structure: TL;DR + sections + computed journey.
 
@@ -23,8 +24,39 @@ test('signed bill shows a completed journey', async ({ page }) => {
   await expect(page.getByText(/the President signed it/)).toBeVisible();
 });
 
-test('senate bill journeys start in the Senate', async ({ page }) => {
-  await page.goto('/bills/s-2280-119'); // Senate bill, passed chamber
+/*
+ * THE PASSAGE SENTENCE, ON BOTH SIDES OF THE CLOCK (N5, 2026-08-12).
+ *
+ * This used to be one test pinned to s-2280-119 asserting "it passed the
+ * Senate and now goes to the House" as a literal. That bill's passage is dated
+ * 2026-04-29, so the day deriveJourney's passage branch was clocked the page
+ * started reading the stale sentence and the literal was asserting copy the
+ * site no longer prints. The bill is not the point — the sentence is — so both
+ * tests now ask the corpus for a record on the side they are testing
+ * (tests/corpus.ts `passageSlugs`, skew-guarded in both directions).
+ */
+test('a Senate bill whose passage has gone quiet says so, and claims nothing about this week', async ({ page }) => {
+  const { stale } = passageSlugs(Date.now(), 'senate');
+  test.skip(stale.length === 0, 'no aged Senate-origin passage in the corpus today');
+  await page.goto(`/bills/${stale[0]}`);
+  // The journey still starts in the Senate — the clock moves the tense, never
+  // the position.
+  await expect(page.getByText('Senate committee')).toBeVisible();
+  await expect(
+    page.getByText(/it passed the Senate, and the official record shows nothing new since/)
+  ).toBeVisible();
+  // The claim the ruling removed must be gone from the page entirely.
+  await expect(page.getByText(/and now goes to the House/)).toHaveCount(0);
+});
+
+test('a Senate bill that JUST cleared the chamber still names where it goes next', async ({ page }) => {
+  // The fresh side legitimately empties over a recess — Congress can go a
+  // fortnight without passing anything — so this skips with a reason rather
+  // than reddening CI on a quiet week. The fresh branch is pinned
+  // unconditionally by fixture in tests/journey.unit.spec.ts.
+  const { fresh } = passageSlugs(Date.now(), 'senate');
+  test.skip(fresh.length === 0, 'no Senate-origin passage inside the signal window today');
+  await page.goto(`/bills/${fresh[0]}`);
   await expect(page.getByText('Senate committee')).toBeVisible();
   await expect(page.getByText(/it passed the Senate and now goes to the House/)).toBeVisible();
 });
