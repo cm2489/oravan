@@ -16,6 +16,10 @@
  *     promoted from a non-blocking ::warning)
  *   - the bill count dropped more than 2% vs the committed corpus (the sync
  *     only ever appends, so any real drop means corruption)
+ *   - a bills.json record belongs to a Congress this build does not track
+ *     (congress_number !== congress-fetch.mjs's CONGRESS) — added 2026-08-11
+ *     after two 118th-Congress seed records (s-1776-118, s-5110-118) sat in
+ *     the corpus for two months rendering live pages; see offCongressBills
  *   - EN/ES parity broke: a decoded bill without a bills-es.json entry, or
  *     an ES entry pointing at a bill that doesn't exist
  *   - data/moment-updates.json (the v2 live layer) doesn't parse, isn't an
@@ -50,6 +54,11 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+// Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
+// fetch, never at import, so pulling CONGRESS in here needs no secrets and
+// makes no network call. One definition of "the Congress we track" — bumping
+// it there bumps this gate too.
+import { CONGRESS, offCongressBills } from './congress-fetch.mjs';
 
 const CURSOR_MAX_AGE_DAYS = 10;
 
@@ -81,6 +90,21 @@ if (bills !== null && (!Array.isArray(bills) || bills.length === 0)) {
 }
 if (es !== null && (typeof es !== 'object' || Array.isArray(es))) {
   fail('data/bills-es.json is not an object keyed by slug');
+}
+
+// Corpus uniformity: one Congress, no strays (2026-08-11). Independent of the
+// ES half below on purpose — a previous-Congress record is a lie about the
+// record whether or not its Spanish twin exists. Every failure names its
+// slugs; the first 10 are enough to act on and keep a CI annotation readable.
+if (Array.isArray(bills) && bills.length > 0) {
+  const strays = offCongressBills(bills, CONGRESS);
+  if (strays.length) {
+    fail(
+      `${strays.length} bills.json record(s) are not from the ${CONGRESS}th Congress (${strays.slice(0, 10).join(', ')}${strays.length > 10 ? ', …' : ''}) — every write path is pinned to CONGRESS=${CONGRESS} (scripts/congress-fetch.mjs), so these were seeded or force-fetched, and their pages assert present-tense activity for a Congress this build does not track. Remove them, or bump CONGRESS if the tracked Congress really changed.`
+    );
+  } else {
+    console.log(`corpus uniformity: all ${bills.length} bills are ${CONGRESS}th Congress`);
+  }
 }
 
 if (Array.isArray(bills) && bills.length > 0 && es && typeof es === 'object') {
