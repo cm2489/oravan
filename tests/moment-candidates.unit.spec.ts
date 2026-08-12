@@ -95,11 +95,32 @@ test.describe('coverage tier copy is pinned to lib/coverage.ts', () => {
 test.describe('floor-calendar regex copy is pinned to lib/journey.ts', () => {
   const extract = (src: string) => /(\/placed on .*?\/i)\.exec/.exec(src)?.[1];
 
-  test('the report and lib/journey.ts carry the identical regex literal', () => {
-    const libPattern = extract(readText('lib/journey.ts'));
+  test('the report and the shared vocabulary carry the identical regex literal', () => {
+    // SOURCE MOVED 2026-08-12, contents unchanged: the four chamber readers and
+    // FLOOR_SETTLED live in lib/floor-text.mjs so lib/docket.mjs's ladder can
+    // read them under plain node; lib/journey.ts re-exports all of them and
+    // every caller is unchanged. This parity pin follows the definition.
+    const libPattern = extract(readText('lib/floor-text.mjs'));
     const scriptPattern = extract(readText('scripts/moment-candidates.mjs'));
-    expect(libPattern, 'no placed-on-calendar regex found in lib/journey.ts').toBeTruthy();
+    expect(libPattern, 'no placed-on-calendar regex found in lib/floor-text.mjs').toBeTruthy();
     expect(scriptPattern).toBe(libPattern);
+  });
+
+  test('lib/journey.ts still hands every caller the same functions', () => {
+    // The re-export is the compatibility promise: nothing that imported these
+    // from lib/journey.ts had to change, and a future refactor that quietly
+    // drops one of them fails here rather than in a page.
+    const journey = readText('lib/journey.ts');
+    for (const name of [
+      'FLOOR_SETTLED',
+      'floorActionChamber',
+      'floorCalendarChamber',
+      'floorPendingChamber',
+      'floorSettledChamber',
+    ]) {
+      expect(journey, `lib/journey.ts must still export ${name}`).toContain(name);
+    }
+    expect(journey).toContain("from './floor-text.mjs'");
   });
 
   test('it reads the chamber out of the action text, and refuses everything else', () => {
@@ -118,9 +139,18 @@ test.describe('floor-calendar regex copy is pinned to lib/journey.ts', () => {
  * ------------------------------------------------------------------ */
 type Fixture = Parameters<typeof rankCandidates>[0][number];
 
+/*
+ * THE FIRST TWO KEYS CHANGED ON 2026-08-12: `floorCalendar` (a boolean) and
+ * `urgency` (a scalar) became the docket rung and the last-action date, read
+ * from lib/docket.mjs rather than re-derived here. The boolean could not see a
+ * chamber's own floor announcement or a ripening cloture motion at all. The
+ * three keys below it — coverage tier, cross-spectrum breadth, outlet count,
+ * with article volume strictly last — are untouched, and the tests for them
+ * below are unchanged.
+ */
 const candidate = (over: Partial<Fixture> & { slug: string }): Fixture => ({
-  floorCalendar: false,
-  urgency: 0.45,
+  docketRank: 4, // t4, the residual rung
+  lastActionDate: '2026-07-20',
   tier: 'neutral',
   partisanLeans: 0,
   outlets: 2,
@@ -129,19 +159,20 @@ const candidate = (over: Partial<Fixture> & { slug: string }): Fixture => ({
 });
 
 test.describe('candidate ranking', () => {
-  test('a floor-calendar bill outranks a more urgent bill that is not on a calendar', () => {
+  test('a bill on a louder rung outranks a more recent bill on a quieter one', () => {
     const ranked = rankCandidates([
-      candidate({ slug: 'hot', urgency: 0.95 }),
-      candidate({ slug: 'calendared', urgency: 0.5, floorCalendar: true }),
+      candidate({ slug: 'recent-but-quiet', lastActionDate: '2026-08-11' }),
+      candidate({ slug: 'announced', docketRank: 0, lastActionDate: '2026-06-01' }),
+      candidate({ slug: 'calendared', docketRank: 2, lastActionDate: '2026-07-01' }),
     ]);
-    expect(ranked.map((c) => c.slug)).toEqual(['calendared', 'hot']);
+    expect(ranked.map((c) => c.slug)).toEqual(['announced', 'calendared', 'recent-but-quiet']);
   });
 
-  test('within the same proximity class, effective urgency decides', () => {
+  test('within the same rung, the most recent action decides', () => {
     const ranked = rankCandidates([
-      candidate({ slug: 'stale', floorCalendar: true, urgency: 0.45 }),
-      candidate({ slug: 'fresh', floorCalendar: true, urgency: 0.95 }),
-      candidate({ slug: 'mid', floorCalendar: true, urgency: 0.7 }),
+      candidate({ slug: 'stale', docketRank: 2, lastActionDate: '2026-07-01' }),
+      candidate({ slug: 'fresh', docketRank: 2, lastActionDate: '2026-08-10' }),
+      candidate({ slug: 'mid', docketRank: 2, lastActionDate: '2026-08-01' }),
     ]);
     expect(ranked.map((c) => c.slug)).toEqual(['fresh', 'mid', 'stale']);
   });

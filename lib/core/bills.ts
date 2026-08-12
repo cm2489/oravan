@@ -7,15 +7,31 @@
  * in the way. Nothing here changes shape or behavior — see lib/core/index.ts.
  */
 import bills from '@/data/bills.json';
-import { FLOOR_SETTLED, floorCalendarChamber, statusKeyFor } from '../journey';
+import { statusKeyFor } from '../journey';
 import billsEs from '@/data/bills-es.json';
 import { formatCitation } from '../format';
-import { bandFloors, bandForEff, type UrgencyBand } from '../taxonomy';
+import {
+  bandFor,
+  compareDocket,
+  docketKey,
+  evidenceFor,
+  isActNow,
+  isDecidingNow,
+  isSettledFloor,
+  rungFor,
+  type DocketEvidence,
+  type DocketRung,
+} from '../docket';
 import { coverageTier, getCoverage, newestArticleDate, normalizeSource, rankNews } from '../coverage';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../urgency.mjs';
+import { effectiveUrgency } from '../urgency.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
 
 export { effectiveUrgency };
+/* Re-exported, not redefined: the settled-floor vocabulary gate moved to
+ * lib/docket.mjs with the ladder (it is now a RUNG decision — a settled text
+ * lands on T4 with a `just_decided` annotation instead of being filtered out of
+ * a pool it had already scored into). Callers that had it from here keep it. */
+export { isSettledFloor };
 
 const BILLS = bills as Bill[];
 const ES = billsEs as Record<
@@ -48,97 +64,68 @@ export function getAllBills(): Bill[] {
   return BILLS;
 }
 
-const byUrgencyDesc = <T extends { eff: number; raw: Pick<Bill, 'last_action_date'> }>(a: T, b: T) =>
-  b.eff - a.eff || (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? '');
-
-/**
- * HAS THE FLOOR ALREADY ANSWERED — the act-now pool's one exclusion, and the
- * reason `status: 'floor_vote'` is not on its own a reason to call.
- *
- * `floor_vote` is a KEYWORD BUCKET (scripts/congress-fetch.mjs's mapStatus), and
- * it is deliberately wide enough to catch a chamber taking a measure up at all.
- * That means it catches DEFEATS: "Cloture on the motion to proceed to the
- * measure not invoked in Senate by Yea-Nay Vote. 52 - 46." carries the corpus's
- * highest status base (0.9) plus the full freshness bonus, so on 2026-08-12 a
- * cloture vote that had already failed held rank 2 of the homepage shortlist —
- * a completed answer sold as the week's most urgent call, and propagated from
- * the same pool into MCP `whats_moving` and the public feeds.
- *
- * THE VOCABULARY IS THE GATE, and it is lib/journey.ts's FLOOR_SETTLED — the
- * same constant floorPendingChamber uses as its rule-0 guard and
- * floorSettledChamber uses as its entry condition. A fourth reader with a
- * private copy is exactly the drift that constant was written once to prevent.
- * Read the vocabulary rather than calling floorSettledChamber: that function
- * additionally needs a readable chamber, and which chamber a defeat happened in
- * says nothing about whether the bill is still worth a call — reusing it would
- * fail OPEN on the texts we classify least confidently. (On today's corpus the
- * two agree exactly, 18 of 356 floor_vote bills; the difference is a promise
- * about texts Congress has not written yet.)
- *
- * A DATED CALENDAR PLACEMENT STILL WINS, the same carve-out floorSettledChamber
- * makes for the same reason: a placement is a live fact whatever else its
- * sentence happens to mention. 0 corpus texts sit in that overlap today.
- *
- * DEMOTED, NOT HIDDEN. This never removes a bill from the corpus, from /bills,
- * from search, or from its own page — getTeasers still lists every one of them,
- * one band lower (see its comment). All that is withdrawn is the claim that a
- * phone call could still change the outcome.
- */
-export function isSettledFloor(bill: {
-  status: string;
-  last_action_text: string | null;
-}): boolean {
-  if (bill.status !== 'floor_vote') return false;
-  if (!FLOOR_SETTLED.test(bill.last_action_text ?? '')) return false;
-  return floorCalendarChamber(bill.last_action_text) === null;
-}
 
 /*
- * The one place the corpus gets scored and split into active/settled with
- * band floors applied (KTD-2) - getTeasers and getTopActions both read this
- * so "Act now" means the same thing everywhere on the site. A third
- * independent copy of this scoring is the exact drift
- * docs/solutions/stale-urgency-freeze.md closed for the urgency curve
- * itself; this keeps the band-floor logic from re-acquiring that problem.
+ * THE DOCKET LADDER, applied to the corpus — the one place the whole corpus is
+ * placed on a rung, ordered, and split into the pools every surface reads.
+ *
+ * WHAT THIS REPLACED. `scoreActiveBills` scored every bill with
+ * `effectiveUrgency` and cut the result with `bandFloors`' percentile+absolute
+ * floors. Three measured failures killed that design and they are recorded in
+ * lib/docket.mjs's header; the shortest version is that a scalar cannot say WHY
+ * a bill is on the list, and on this corpus it kept saying the wrong thing: it
+ * promoted a cloture vote that had already FAILED to rank 2 of the homepage
+ * shortlist, it could not see the two biggest bills of the fortnight at all
+ * (Congress overwrites `last_action_text` when a measure reaches the floor, so
+ * their derived status fell back to `committee`), and on a busy week every bill
+ * tied at 0.95 and the middle band collapsed.
+ *
+ * `effectiveUrgency` is NOT retired — it is still the MCP teaser's
+ * `urgency_score` and the coverage sweep's tail key. What is retired is its use
+ * as the ORDER of the site, and with it `bandFloors`/`bandForEff` (see
+ * lib/taxonomy.ts, where that whole v1→v3a history now ends).
+ *
+ * ONE SORT, MANY POOLS. Everything below is a filter over one ordered list, so
+ * the crown, the shortlist, /bills' bands, the MCP tool and both feeds cannot
+ * disagree about what is moving — the same house rule that put the urgency
+ * curve in one module (docs/solutions/stale-urgency-freeze.md).
  */
-function scoreActiveBills() {
-  const scored = BILLS.map((raw) => ({
-    raw,
-    eff: effectiveUrgency(raw.status, raw.last_action_date),
-    terminal: TERMINAL_STATUSES.has(raw.status),
-    settledFloor: isSettledFloor(raw),
-  }));
-  // Active bills claim the now/moving bands by rank; terminal bills are
-  // appended and pinned to radar, so they can never displace an actionable
-  // bill. Floors come from the active bills alone, so a settled law can't
-  // even raise the bar.
-  const activeBills = scored.filter((s) => !s.terminal).sort(byUrgencyDesc);
-  const settledBills = scored.filter((s) => s.terminal).sort(byUrgencyDesc);
-  const floors = bandFloors(activeBills.map((s) => s.eff));
+interface DocketedBill {
+  raw: Bill;
+  slug: string;
+  rung: DocketRung;
+  key: ReturnType<typeof docketKey>;
+}
+
+function docketCorpus(now: number = Date.now()): {
+  ordered: DocketedBill[];
+  actNowPool: DocketedBill[];
+} {
+  const placed: DocketedBill[] = BILLS.map((raw) => {
+    const slug = billSlug(raw);
+    const rung = rungFor(raw, slug, now);
+    return { raw, slug, rung, key: docketKey({ slug, date: raw.last_action_date, rung }) };
+  });
+  const ordered = placed.sort((a, b) => compareDocket(a.key, b.key));
   /*
-   * THE ACT-NOW POOL: active bills whose floor question is still open. Every
-   * surface that makes a "worth a call" claim reads THIS, not `activeBills` —
-   * the shortlist, the quiet-week claim, the crown's candidate pool, and
-   * through getTopActions the MCP `whats_moving` tool and the public feeds.
+   * THE ACT-NOW POOL: T0 ∪ T1 ∪ T2 — announced by the chamber, a vote ripening
+   * in the record, or a dated calendar placement still inside the signal window.
+   * Every surface that makes a "worth a call" claim reads THIS: the shortlist,
+   * the quiet-week claim, the crown's candidates, and through getTopActions the
+   * MCP `whats_moving` tool and the public feeds.
    *
-   * THE FLOORS ARE STILL COMPUTED FROM `activeBills`, settled floor bills
-   * included, and that is deliberate rather than an oversight. A failed cloture
-   * vote is a genuine, high-signal floor event: it says the week was busy, and
-   * the bar for "Act now" is a statement about the week, not about any one
-   * bill. Dropping these from the floors as well would be a second change with
-   * a ranking ripple across every band on /bills — and would LOWER the bar on
-   * exactly the weeks the floor was most active. Terminal bills are excluded up
-   * there because a signed law is not a floor event at all; a defeated motion
-   * is one.
+   * A settled floor text (a rejected motion, cloture not invoked) cannot reach
+   * it: `entersFloorWatch`'s rule 0 and `isSettledFloor` read the same
+   * FLOOR_SETTLED vocabulary, so a bill whose floor question the record has
+   * already answered lands on T4 carrying a `just_decided` annotation instead —
+   * demoted and annotated, never hidden.
    */
-  const actNowPool = activeBills.filter((s) => !s.settledFloor);
-  return { activeBills, settledBills, actNowPool, floors };
+  return { ordered, actNowPool: ordered.filter((s) => isActNow(s.rung)) };
 }
 
 export function getTeasers(locale = 'en'): FeedTeaser[] {
-  const { activeBills, settledBills, floors } = scoreActiveBills();
-
-  return [...activeBills, ...settledBills].map(({ raw, eff, terminal, settledFloor }) => {
+  const { ordered } = docketCorpus();
+  return ordered.map(({ raw, rung }) => {
     const b = localizeBill(raw, locale);
     return {
       slug: billSlug(b),
@@ -148,124 +135,118 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
       status: b.status,
       tags: b.issue_tags ?? [],
       /*
-       * ONE RUNG DOWN, NEVER OUT (2026-08-12). A bill whose floor question the
-       * record has already answered is excluded from the act-now pool above,
-       * and /bills has to agree or the site contradicts itself across one
-       * click: hasActNow is the quiet-week claim's ONLY signal precisely
-       * because it must mean "the Act now band on /bills is non-empty" (AE3 —
-       * see hasActNow's own comment). Leaving a defeated motion in this band
-       * while the shortlist dropped it would break that equivalence and print
-       * "Act now" over a completed vote on the browse page instead of the
-       * home page.
+       * THE BAND IS THE RUNG — a fact about the record, not a percentile.
        *
-       * `moving` and not `radar`: the bill IS still live legislation and the
-       * floor did just touch it. Radar is where terminal bills are pinned, and
-       * this one is not terminal. Nothing is hidden — it keeps its rank inside
-       * the band it lands in, its search entry, and its page.
+       * Deciding now = T0 ∪ T1 · Moving = T2 ∪ T3 · On the radar = T4 and every
+       * terminal bill, pinned as before. T3 is in Moving on the critic's A-3
+       * patch and the backtest's K3: under the old floors a bill that had just
+       * passed a chamber scored 0.75 against a 0.95 now-floor, so on the day the
+       * Senate passed the continuing resolution 90-6 the site moved the biggest
+       * story in national politics to "quieter right now".
+       *
+       * A band may now be EMPTY, and that is the point: a fortnight in which
+       * Congress announces nothing and files no cloture motions has no "Deciding
+       * now" band, instead of promoting whatever happened to rank highest.
        */
-      band: terminal ? 'radar' : demoteSettled(bandForEff(eff, floors), settledFloor),
+      band: bandFor(rung),
+      /* The annotation rides the card and never the colour: `just_decided` and
+       * `just_passed` are ink labels on a listing. Neither may light amber —
+       * amber is one dated floor fact that is still AHEAD. */
+      annotation: rung.annotation,
       statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
       lastActionDate: b.last_action_date,
     };
   });
 }
 
-/** The band cap applied to a settled floor bill: never "now", otherwise as
- *  scored. Exported for the pin in tests/act-now-pool.unit.spec.ts. */
-export function demoteSettled(band: UrgencyBand, settledFloor: boolean): UrgencyBand {
-  return settledFloor && band === 'now' ? 'moving' : band;
-}
-
 /**
- * Top N most urgent bills that clear the "Act now" floor and have a decoded
- * summary - the "worth a call this week" shortlist. KTD-2: this respects the
- * same absolute+rank floor as getTeasers' "now" band, so a genuinely quiet
- * week returns an empty list here too, instead of backfilling from whatever
- * ranks highest regardless of how urgent it actually is.
+ * The week's shortlist: the top N of the act-now pool in ladder order, decoded
+ * only — "what is moving in Congress this week", in the order the record itself
+ * puts them.
  *
- * Reads `actNowPool`, so a bill whose floor question the record has already
- * answered is not here however hot it scores (see isSettledFloor). That
- * exclusion travels from this one function to the MCP `whats_moving` tool and
- * both public feeds, which read this pool rather than re-deriving one.
+ * Reads the same pool and the same comparator as the crown and the MCP tool, so
+ * a bill's position here is reproducible from the evidence sentence printed
+ * beside it (see `docketSignalFor`). A genuinely quiet week returns fewer than N
+ * — or none — instead of backfilling from whatever ranks highest.
  */
 export function getTopActions(n = 5, locale = 'en'): Bill[] {
-  const { actNowPool, floors } = scoreActiveBills();
+  const { actNowPool } = docketCorpus();
   return actNowPool
-    .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline)
+    .filter((s) => s.raw.ai_headline)
     .slice(0, n)
     .map(({ raw }) => localizeBill(raw, locale));
 }
 
 /**
- * THE CROWN'S CANDIDATE POOL — every decoded floor_vote bill that clears the
- * SAME "Act now" floor getTopActions uses, newest floor action first, with NO
- * top-N truncation.
+ * THE CROWN'S CANDIDATE POOL — the act-now pool, decoded, in ladder order, with
+ * NO top-N truncation.
  *
- * Why it is not just getTopActions(4) (which is what the homepage used to
- * hand selectFloorVoteFeature): the shortlist is a rank-4 cut across every
- * status, so on a busy floor week — several bills drawing cloture motions the
- * same day — the one bill actually standing on a calendar or facing a pending
- * vote could sit at rank 9 and the page would show NO crown at all. A cap
- * that exists to make the panel mean something was quietly deciding whether
- * the panel appeared. The cap-to-one still holds; it is enforced where it
- * belongs, in selectFloorVoteFeature, which reads this whole list and returns
- * at most one bill.
+ * Why it is not just getTopActions(4): the shortlist is a display cut, and on a
+ * busy week the one bill actually carrying a live floor fact could sit below it,
+ * so the cut would silently decide whether the crown appeared at all. The
+ * cap-to-one still holds; it is enforced where it belongs, in
+ * `selectFloorVoteFeature`, which reads this whole list and returns at most one.
  *
- * The FLOOR is deliberately shared, not re-implemented: same scoreActiveBills,
- * same `floors.nowFloor`, same `ai_headline` requirement. A quiet week returns
- * an empty list here for exactly the reason it returns an empty shortlist
- * there, and a third independent copy of the scoring is the drift
- * docs/solutions/stale-urgency-freeze.md closed once already.
- *
- * NOTE THAT THIS FLOOR IS TIGHTER THAN THE PANEL'S OWN FRESHNESS WINDOW, and
- * that is deliberate rather than an oversight. `nowFloor` sits at 0.95 on the
- * 2026-08-09 corpus, and a `floor_vote` bill scores 1.0 inside 3 days, 0.95
- * inside 7, and 0.9 after — so the pool is in practice "a floor action in the
- * last week", while selectFloorVoteFeature's isSignalFresh would accept 14
- * days. The crown is the WEEK's masthead; a bill whose last floor action was
- * eleven days ago is not what the week is about, and the same floor governed
- * the old getTopActions(4) pool, so nothing narrowed here.
- *
- * 21 bills on the 2026-08-09 corpus (339 active floor_vote bills, 21 of them
- * over the floor; every one of the 339 carries a decode). The corpus moves
- * nightly — recompute, don't trust.
- *
- * SETTLED TEXTS ARE OUT OF THE POOL as of 2026-08-12 (`actNowPool`, see
- * isSettledFloor), and this changes NOTHING about which bill wears the crown:
- * selectFloorVoteFeature already reads floorCalendarChamber ?? floorPendingChamber,
- * and FLOOR_SETTLED is floorPendingChamber's rule 0, so a defeated motion could
- * never have been selected. What the exclusion removes is a defeated motion
- * sitting in the pool the selector walks — one shared definition of "act-now
- * material" for the crown, the shortlist, the feeds and the MCP tool, instead
- * of one pool the selector had to defend itself against.
+ * WHAT CHANGED WITH THE LADDER: the pool is no longer restricted to
+ * `status === 'floor_vote'`. It could not be, and that restriction was the
+ * measured F2 failure — when a measure actually reaches the floor Congress
+ * overwrites the action text and the derived status falls back to `committee`,
+ * so on 2026-08-07 the two hottest vehicles in the country were ineligible for
+ * the crown by construction. A T0 bill is admitted on the chamber's own
+ * announcement whatever its status says, and the selector's `announced` kind
+ * prints that announcement rather than a status claim.
  */
 export function getFloorFeatureCandidates(locale = 'en'): Bill[] {
-  const { actNowPool, floors } = scoreActiveBills();
-  return actNowPool
-    .filter((s) => s.eff >= floors.nowFloor && s.raw.ai_headline && s.raw.status === 'floor_vote')
-    .sort((a, b) => (b.raw.last_action_date ?? '').localeCompare(a.raw.last_action_date ?? ''))
-    .map(({ raw }) => localizeBill(raw, locale));
+  const { actNowPool } = docketCorpus();
+  return actNowPool.filter((s) => s.raw.ai_headline).map(({ raw }) => localizeBill(raw, locale));
 }
 
 /**
- * Whether ANY active bill clears the "Act now" floor - decoded or not. The
- * quiet-week claim must key on this, not on getTopActions() being empty:
- * getTopActions also filters on ai_headline, so an undecoded bill that
- * clears the floor would land in /bills' "Act now" band (getTeasers applies
- * no headline filter) while the decoded shortlist reads empty - and "no bill
- * has cleared the bar" would be a false statement (AE3: never a false quiet).
+ * Whether ANY bill stands in the act-now pool — decoded or not. The quiet-week
+ * claim must key on this, not on getTopActions() being empty: getTopActions also
+ * filters on `ai_headline`, so an undecoded bill on a live rung would leave the
+ * shortlist empty while /bills listed it, and "no bill has cleared the bar"
+ * would be a false statement (AE3: never a false quiet).
  *
- * THE EQUIVALENCE THIS FUNCTION OWES /bills is why it reads `actNowPool` and
- * getTeasers demotes the same bills one band (2026-08-12). The two changes are
- * one change: this must stay exactly "the Act now band on /bills is non-empty",
- * or a week whose only over-floor bill is a defeated motion would print a
- * quiet-week state on the home page above a populated "Act now" band one click
- * away. The undecoded-bill gap the paragraph above describes is unchanged.
+ * THE AE3 EQUIVALENCE, restated for the ladder. This pool (T0 ∪ T1 ∪ T2) is a
+ * SUPERSET of /bills' lead band (T0 ∪ T1), so "the homepage says the week is
+ * quiet" still implies "the Deciding now band is empty" — a false quiet stays
+ * unrepresentable, which is the whole promise. The converse is deliberately
+ * allowed: a week whose only floor facts are calendar placements lists them on
+ * the homepage and files them under "Moving" on /bills, because a placement is a
+ * queue position, not a chamber deciding today. See lib/docket.mjs's `isActNow`
+ * for the cross-surface reason the pool is the wider of the two.
  */
 export function hasActNow(): boolean {
-  const { actNowPool, floors } = scoreActiveBills();
-  return actNowPool.some((s) => s.eff >= floors.nowFloor);
+  return docketCorpus().actNowPool.length > 0;
 }
+
+/** Whether any bill stands on the /bills LEAD BAND (T0 ∪ T1) — the narrower
+ *  claim, exported for the corpus invariants that pin the two pools against
+ *  each other. */
+export function hasDecidingNow(): boolean {
+  return docketCorpus().ordered.some((s) => isDecidingNow(s.rung));
+}
+
+/**
+ * THE EVIDENCE FOR ONE BILL'S POSITION — the rung it stands on and the sentence
+ * that put it there, for the surfaces that publish their own reasoning (the
+ * crown, MCP `whats_moving`, both feeds).
+ *
+ * The envelope's checkability promise, extended from "here is the bill" to "here
+ * is why it is on this list": a dated, attributed sentence at a URL, in
+ * Congress's own English — never translated, always framed (owner ruling V4).
+ */
+export function docketSignalFor(
+  slug: string,
+  now: number = Date.now()
+): { rung: DocketRung; evidence: DocketEvidence | null } | null {
+  const raw = getBill(slug);
+  if (!raw) return null;
+  const rung = rungFor(raw, slug, now);
+  return { rung, evidence: evidenceFor(raw, rung) };
+}
+
 
 /*
  * The "In the news" discovery lens — feeds rankNews real bills with their

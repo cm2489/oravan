@@ -38,6 +38,7 @@ import { TERMINAL_STATUSES } from '../urgency.mjs';
 import type { Bill, BillStatus, Legislator } from '../types';
 import {
   billSlug,
+  docketSignalFor,
   effectiveUrgency,
   getAllBills,
   getBill,
@@ -320,6 +321,31 @@ export interface TeaserTopic {
   label: string;
 }
 
+/**
+ * WHY A BILL IS ON THIS LIST — the envelope's checkability promise extended
+ * from "here is the bill" to "here is the sentence that put it here".
+ *
+ * `tier` is the docket rung (lib/docket.mjs): `t0` the chamber named it on its
+ * own published floor schedule, `t1` the record says a vote is ripening, `t2` a
+ * dated calendar placement, `t3` it just cleared a gate, `t4` everything else.
+ * The three evidence fields are what an agent can check the claim against
+ * without trusting us: a sentence, a date, and a URL.
+ *
+ * `evidence_sentence` IS ENGLISH IN BOTH LOCALES, always, and that is a
+ * decision rather than an omission (owner ruling V4): it is a verbatim quote of
+ * a government document, and translating a quote turns it into a paraphrase
+ * wearing quotation marks. Spanish payloads frame it; they never rewrite it.
+ */
+export interface BillSignalOut {
+  tier: 't0' | 't1' | 't2' | 't3' | 't4';
+  /** `just_decided` (the floor answered and the answer was no) or
+   *  `just_passed` (a chamber passed it inside the signal window). */
+  annotation: 'just_decided' | 'just_passed' | null;
+  evidence_sentence: string | null;
+  evidence_url: string | null;
+  evidence_date: string | null;
+}
+
 export interface BillTeaserOut {
   slug: string;
   citation: string;
@@ -334,6 +360,10 @@ export interface BillTeaserOut {
   topics: TeaserTopic[];
   last_action_date: string | null;
   urgency_score: number;
+  /** Set by `whats_moving` only — the tool whose whole answer is "what is
+   *  moving and why". `search_bills` and `get_representative` return teasers
+   *  that answer a different question and do not carry it. */
+  signal?: BillSignalOut;
 }
 
 /** `bill` must already be locale-resolved (see localizeBill) before shaping. */
@@ -616,7 +646,28 @@ export function whatsMoving(params: WhatsMovingParams, locale: Locale) {
     if (!b.last_action_date) return false; // a recency claim needs a known date
     return new Date(b.last_action_date).getTime() >= cutoff;
   });
-  const limited = filtered.slice(0, limit).map((b) => shapeBillTeaser(b, locale));
+  /*
+   * EVERY ITEM CARRIES ITS OWN REASON (2026-08-12). The pool is the docket
+   * ladder's act-now set, so each bill is here because of one sentence Congress
+   * published — the chamber's floor schedule, or the bill's own last action —
+   * and an agent should not have to take our ordering on faith. `signal` is
+   * that sentence, its date and its URL.
+   */
+  const limited = filtered.slice(0, limit).map((b) => {
+    const teaser = shapeBillTeaser(b, locale);
+    const signal = docketSignalFor(teaser.slug);
+    if (!signal) return teaser;
+    return {
+      ...teaser,
+      signal: {
+        tier: signal.rung.tier,
+        annotation: signal.rung.annotation,
+        evidence_sentence: signal.evidence?.sentence ?? null,
+        evidence_url: signal.evidence?.url ?? null,
+        evidence_date: signal.evidence?.date ?? null,
+      },
+    };
+  });
   const hasAiContent = limited.some((t) => t.ai_generated);
 
   /*

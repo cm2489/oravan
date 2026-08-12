@@ -1,0 +1,42 @@
+{
+  "count": 62,
+  "offset": 0,
+  "granules": [
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD807",
+      "title": "Daily Digest/Senate"
+    },
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD808",
+      "title": "Daily Digest/Senate Committee Meetings"
+    },
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD808-2",
+      "title": "Daily Digest/House of Representatives"
+    },
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD808-3",
+      "title": "Daily Digest/House Committee Meetings"
+    },
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD808-4",
+      "title": "Daily Digest/COMMITTEE MEETINGS FOR 2026-08-05"
+    },
+    {
+      "dateIssued": "2026-08-04",
+      "granuleClass": "DAILYDIGEST",
+      "granuleId": "CREC-2026-08-04-pt1-PgD809",
+      "title": "Daily Digest/Next Meeting of the SENATE + Next Meeting of the HOUSE OF REPRESENTATIVES + Other End Matter"
+    }
+  ]
+}

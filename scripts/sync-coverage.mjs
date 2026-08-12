@@ -16,6 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
+import { compareDocket, docketKey, docketRung } from '../lib/docket.mjs';
 import { queryFor, readRateLimitRemaining } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
@@ -113,14 +114,42 @@ const prevCheckedAt =
 const checkedAt = { ...prevCheckedAt };
 const RUN_DAY = new Date().toISOString().slice(0, 10);
 
-// Urgency comes from lib/urgency.mjs — the same module the live site ranks
-// with — so this script and the site always agree on which bills are "top band".
+/* THE HEAD IS THE LADDER (2026-08-12). It reads lib/docket.mjs — the same
+   module, not a copy, that orders the live site — so this sweep and the site
+   always agree about what is moving. It replaced a pure `effectiveUrgency`
+   sort, which on a busy week returned a 0.95 tie block ordered by date alone
+   and could not see a bill the chamber had ANNOUNCED for the floor at all
+   (Congress overwrites the action text when a measure reaches the floor, and
+   the derived status falls back to `committee` — the bills a reader is most
+   likely to open tonight were the ones the old head key was blindest to).
+
+   data/floor-signals.json is read tolerantly: this is the nightly coverage
+   sweep, and a missing or unparseable signal file must degrade the ORDER, never
+   fail the run. With no file every bill simply lands on a record-only rung. */
+let floorSignals = {};
+try {
+  floorSignals = JSON.parse(readFileSync('data/floor-signals.json', 'utf8')).signals ?? {};
+} catch {
+  console.warn('coverage sync: data/floor-signals.json unreadable — ordering on the record alone.');
+}
+
+// `effectiveUrgency` stays as the TAIL's tiebreak (below): among bills nobody
+// has looked at for the longest, the score is still the honest way to break a
+// tie, and the tail is not a claim about the week.
 const eligible = bills
   .filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status))
-  .map((b) => ({ b, eff: effectiveUrgency(b.status, b.last_action_date) }))
-  .sort((x, y) => y.eff - x.eff || (y.b.last_action_date ?? '').localeCompare(x.b.last_action_date ?? ''));
+  .map((b) => {
+    const slug = slugOf(b);
+    const rung = docketRung(b, floorSignals[slug] ?? null, { now: Date.now() });
+    return {
+      b,
+      eff: effectiveUrgency(b.status, b.last_action_date),
+      key: docketKey({ slug, date: b.last_action_date, rung }),
+    };
+  })
+  .sort((x, y) => compareDocket(x.key, y.key));
 
-/* THE HEAD/TAIL SPLIT. The head is pure urgency order - what a reader is most
+/* THE HEAD/TAIL SPLIT. The head is ladder order - what a reader is most
    likely to open tonight. The tail is whatever has gone longest without a look,
    oldest first, with never-checked bills sorted ahead of everything (empty
    string precedes any ISO date). A bill already claimed by the head is never
@@ -142,7 +171,7 @@ const topBills = [...head, ...tail, ...overflow].map(({ b }) => b);
 
 console.log(
   `coverage sync: ${topBills.length} bills of ${eligible.length} eligible ` +
-    `(${head.length} by urgency + ${tail.length} least-recently-checked${overflow.length ? ` + ${overflow.length} overflow` : ''}), ` +
+    `(${head.length} by docket rung + ${tail.length} least-recently-checked${overflow.length ? ` + ${overflow.length} overflow` : ''}), ` +
     `PER_BILL=${PER_BILL}, CONCURRENCY=${CONCURRENCY}`
 );
 

@@ -23,6 +23,34 @@ import type { Nomination } from './core/nominations';
 // definition of "now", so they cannot disagree about which floor facts are
 // still live.
 import { isSignalFresh } from './urgency.mjs';
+/*
+ * THE FLOOR-TEXT VOCABULARY, from the ONE copy — and the reason it moved out
+ * of this file rather than being copied into a second one.
+ *
+ * FLOOR_SETTLED and the four chamber readers below are the shared vocabulary
+ * of "what does this floor sentence say", and as of 2026-08-12 they have a
+ * reader that cannot import TypeScript: lib/docket.mjs's ladder, which ranks
+ * the site AND is imported by scripts/sync-coverage.mjs and
+ * scripts/moment-candidates.mjs under plain node. The functions are unchanged
+ * — same regexes, same order, same headers, now in lib/floor-text.mjs — and
+ * they are re-exported here because this module is where every existing
+ * caller looks for them and where the derivation that consumes them lives.
+ * scripts/floor-signals-parse.mjs's private FLOOR_SETTLED copy was deleted in
+ * the same change and now reads lib/docket.mjs's rung.
+ */
+export {
+  FLOOR_SETTLED,
+  floorActionChamber,
+  floorCalendarChamber,
+  floorPendingChamber,
+  floorSettledChamber,
+} from './floor-text.mjs';
+import {
+  floorActionChamber,
+  floorCalendarChamber,
+  floorPendingChamber,
+  floorSettledChamber,
+} from './floor-text.mjs';
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -73,41 +101,10 @@ export const VOTING_CHAMBERS: Record<VehicleKind, readonly Chamber[]> = {
 };
 
 /*
- * THE AMBER GATE, and why it is narrower than the status field.
- *
- * `status: "floor_vote"` is DERIVED from action text
- * (scripts/congress-fetch.mjs keyword bucket), and the corpus proves the
- * derivation is looser than the claim amber makes. Of the 319 bills carrying
- * `floor_vote` at the time of writing, 296 say "Placed on <the Union / the
- * House / Senate Legislative> Calendar" — a real, dated calendar placement.
- * The other 23 do not: most read like "Motion to proceed to consideration of
- * measure REJECTED in Senate" or a cloture motion. Printing "On the Senate
- * floor calendar · Apr 29 2026" over a rejected motion is a false claim, and
- * the color law's "no date, no amber" rule exists to stop exactly this class
- * of lie. (The counts move nightly; tests/journey.unit.spec.ts sweeps the
- * live corpus so the split can never silently invalidate this gate.)
- *
- * So the band renders only when the bill's own last action says, in
- * Congress's words, that it was placed on a calendar — and the chamber is
- * read out of that same sentence rather than guessed from the bill type
- * (a House bill can sit on the Senate Legislative Calendar). Everything
- * else gets a paper page, which is the honest result.
- *
- * `last_action_date` is the PLACEMENT date. Nothing here claims a scheduled
- * vote date; the corpus holds none (see the ⚠️ ruling in DESIGN.md).
- *
- * scripts/moment-candidates.mjs carries an import-free copy of this function
- * (it must run under plain node); tests/journey.unit.spec.ts pins the two
- * against each other across every floor_vote action text in the corpus.
+ * The four chamber readers and FLOOR_SETTLED used to sit here; they are
+ * re-exported at the top of this file from lib/floor-text.mjs (see that
+ * import's header for why). Everything below reads them exactly as it did.
  */
-export function floorCalendarChamber(actionText: string | null): Chamber | null {
-  if (!actionText) return null;
-  const match = /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.exec(
-    actionText
-  );
-  if (!match) return null;
-  return /senate/i.test(match[1]) ? 'senate' : 'house';
-}
 
 /*
  * WHERE THE PATH ENDS, AND THE ONE VEHICLE THAT NEVER REACHES THE PRESIDENT.
@@ -115,7 +112,10 @@ export function floorCalendarChamber(actionText: string | null): Chamber | null 
  * Lived in components/BillJourney.tsx until 2026-08-12 and moved here whole —
  * see that file for the move's proximate cause. It belongs here on the merits
  * regardless: the stepper's header says all derivation lives in this module,
- * and presentment is derivation of the purest kind.
+ * and presentment is derivation of the purest kind. It stayed in this file
+ * rather than travelling to lib/floor-text.mjs with the chamber readers,
+ * because it reads no floor text at all: it is a fact about the KIND of
+ * vehicle, and nothing under plain node asks for it.
  *
  * A CONCURRENT resolution — hconres / sconres — is not presented to the
  * President and cannot become law. It is the two chambers speaking to each
@@ -162,21 +162,27 @@ export type FloorCalendar = 'union' | 'house' | 'senate-legislative';
  * floorCalendarChamber rather than beside it.
  *
  * The reason it exists: "on the House floor calendar" is not one fact. The
- * House keeps two, and the regex above accepts both. Measured 2026-08-12 over
- * every `floor_vote` bill in the committed corpus whose `last_action_text`
- * matches that regex: 180 Senate Legislative, 148 Union Calendar, 2 House
- * Calendar. A glossary link that sent all 150 House placements to the Union
- * Calendar entry would be a quiet false claim on 2 of them, which is the exact
- * class of thing the surrounding module refuses to make. So the caller gets
- * the real answer and links only what the record named. (The corpus moves
- * nightly — recompute rather than trust these figures.)
+ * House keeps two, and the placement regex accepts both. Measured 2026-08-12
+ * over every `floor_vote` bill in the committed corpus whose
+ * `last_action_text` matches that regex: 180 Senate Legislative, 148 Union
+ * Calendar, 2 House Calendar. A glossary link that sent all 150 House
+ * placements to the Union Calendar entry would be a quiet false claim on 2 of
+ * them, which is the exact class of thing the surrounding module refuses to
+ * make. So the caller gets the real answer and links only what the record
+ * named. (The corpus moves nightly — recompute rather than trust these
+ * figures.)
  *
- * NO SECOND COPY OF THE PINNED REGEX. The `/placed on …/i` literal above is
- * drift-pinned byte-for-byte against scripts/moment-candidates.mjs
- * (tests/moment-candidates.unit.spec.ts §2), and a second copy in this file
- * would be a second thing to keep in sync — the very defect that pin exists to
- * catch. This delegates the placement question entirely and only asks the one
- * extra thing the chamber answer throws away.
+ * NO SECOND COPY OF THE PINNED REGEX. The `/placed on …/i` literal lives once,
+ * in lib/floor-text.mjs, and is drift-pinned byte-for-byte against
+ * scripts/moment-candidates.mjs (tests/moment-candidates.unit.spec.ts §2). A
+ * second copy here would be a second thing to keep in sync — the very defect
+ * that pin exists to catch. This delegates the placement question entirely and
+ * asks only the one extra thing the chamber answer throws away.
+ *
+ * IT STAYS IN TypeScript, next to its consumer. #218 moved the four chamber
+ * readers to lib/floor-text.mjs because lib/docket.mjs's ladder has to read
+ * them under plain node; nothing under plain node asks WHICH calendar, and the
+ * `FloorCalendar` union is a type the stepper's lookup table is keyed on.
  */
 export function floorCalendarName(actionText: string | null): FloorCalendar | null {
   const chamber = floorCalendarChamber(actionText);
@@ -185,181 +191,6 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
   return /union calendar/i.test(actionText) ? 'union' : 'house';
 }
 
-/*
- * The activity matcher for floor_vote bills WITHOUT a calendar placement —
- * cloture motions, rejected motions to proceed, House rule resolutions,
- * postponed proceedings. Ordered rules, first hit wins; every live corpus
- * text is pinned by fixture in tests/journey.unit.spec.ts. Novel shapes are
- * caught by the NIGHTLY corpus check (scripts/check-journey-corpus.mjs,
- * wired into sync-bills.yml — it fires where the data changes, never on
- * unrelated PRs), and until a matcher rule lands the stepper renders
- * chamber-free neutral copy instead of a guess.
- */
-export function floorActionChamber(actionText: string | null): Chamber | null {
-  if (!actionText) return null;
-  // (1) Cloture exists only in the Senate.
-  if (/cloture/i.test(actionText)) return 'senate';
-  // (2) "POSTPONED PROCEEDINGS" is a House floor idiom (rule XIX) — covers
-  //     the texts that never name a chamber at all.
-  if (/postponed proceedings/i.test(actionText)) return 'house';
-  // (3) Rules Committee resolutions reported to the House.
-  if (/reported to house\b/i.test(actionText)) return 'house';
-  // (4) Congressional Record page prefix: S-pages are the Senate section,
-  //     H-pages the House section, e.g. "(CR S4365)".
-  const cr = /\(CR ([SH])\d/.exec(actionText);
-  if (cr) return cr[1] === 'S' ? 'senate' : 'house';
-  // (5) An explicit venue phrase. Must precede rule 6: "House message …
-  //     rejected in Senate" names both chambers but happened in one.
-  if (/\bin senate\b|\bby senator\b/i.test(actionText)) return 'senate';
-  if (/\bin house\b/i.test(actionText)) return 'house';
-  // (6) Exactly one chamber named anywhere in the sentence.
-  const hasSenate = /senate/i.test(actionText);
-  const hasHouse = /house/i.test(actionText);
-  if (hasSenate !== hasHouse) return hasSenate ? 'senate' : 'house';
-  // (7) The record does not say — and deriveJourney renders the
-  //     chamber-free neutral copy rather than guessing (owner ruling
-  //     2026-08-04). The nightly corpus check
-  //     (scripts/check-journey-corpus.mjs) flags novel shapes so this
-  //     branch stays rare, but reaching it is honest, never a lie.
-  return null;
-}
-
-/*
- * IS A FLOOR VOTE STILL COMING, AND IN WHICH CHAMBER — the second fact the
- * green panel is allowed to state (owner ruling 2026-08-09).
- *
- * floorCalendarChamber above answers "was it PLACED on a calendar", and that
- * is a pre-action fact: the moment a bill draws real floor action — a cloture
- * motion filed, a motion to proceed made — Congress overwrites
- * `last_action_text` and the placement sentence is gone. The crown was
- * therefore structurally blind to the week's actual floor fights and ran one
- * to two days behind them. This function is the other half: not "it was
- * queued" but "a vote on it is still ahead".
- *
- * THE THREE BUCKETS, over the 26 floor_vote texts in data/bills.json that
- * carry NO calendar placement (counts as of 2026-08-09; the corpus moves
- * nightly — recompute, don't trust):
- *
- *   8  LIVE — a vote is still coming: 2 cloture motions presented, 1 motion
- *      to proceed made in Senate, 2 POSTPONED PROCEEDINGS, 3 Rules Committee
- *      resolutions reported to the House.
- *   18 SETTLED — the vote already happened and went nowhere: rejected motions
- *      to proceed, cloture not invoked, rejected discharge motions. A pending
- *      claim over any of these is a lie, and rule 0 is what stops it.
- *   0  UNCLASSIFIED — every remaining shape returns null and the crown simply
- *      does not consider that bill.
- *
- * WHY AN ALLOW-LIST, ORDERED, WITH THE SETTLED GUARD FIRST. A deny-list would
- * admit an unseen phrasing straight into the full-bleed green panel — the one
- * surface on the site that shouts — and the Senate invents sentences we have
- * never seen every week. Fail-closed means a novel text costs us a quiet
- * week, which is honest; fail-open would cost a false claim of urgency in the
- * loudest place we have. The settled guard runs BEFORE any chamber rule for
- * the same reason: "Cloture on the motion to proceed to the measure NOT
- * INVOKED in Senate" contains a cloture phrase, and matching it first would
- * crown a dead motion.
- *
- * The corpus text "Motion by Senator Schumer to reconsider … the vote by
- * which the third cloture motion … was not invoked … entered in Senate" is a
- * genuinely live motion that rule 0 rejects on its "not invoked" clause. That
- * is DELIBERATE (owner decision D4, 2026-08-09): the sentence is about a vote
- * that already failed, a reader cannot tell from it whether anything is still
- * ahead, and one missed crown is cheaper than one wrong one.
- *
- * NO `$` ANCHORS. Live texts carry trailing Congressional-Record suffixes —
- * "(CR SN)", "(consideration: CR SN)" — so an anchored pattern would match
- * the fixture and miss the record.
- */
-/*
- * THE SETTLED VOCABULARY — one constant, because two functions must never
- * disagree about it.
- *
- * floorPendingChamber uses it as its rule-0 guard ("this already resolved, so
- * nothing is pending"); floorSettledChamber below uses it as its ENTRY
- * condition ("this already resolved, so say so"). Those are the two halves of
- * one split, and the whole point of the split is that every floor text lands
- * on exactly one side. Written twice, a word added to one copy would create
- * texts that are neither pending nor settled — which is precisely the silent
- * gap that let a rejected motion print "the Senate is deciding whether to
- * bring it to a vote". Written once, the split stays total by construction.
- *
- * EXPORTED 2026-08-12 for a THIRD reader with the same requirement:
- * lib/core/bills.ts's act-now pool, which must drop a bill whose floor question
- * the record has already answered. That reader deliberately consumes the
- * VOCABULARY rather than calling floorSettledChamber, because that function
- * also requires a readable chamber (floorActionChamber's rule 7 returns null
- * when the record names both chambers or neither) — and WHICH chamber a defeat
- * happened in has no bearing on whether the bill is still worth a call this
- * week. Reusing it would have failed OPEN on exactly the texts we understand
- * least. Nothing here changed but the `export` keyword; the two functions
- * below are untouched.
- */
-export const FLOOR_SETTLED = /\b(rejected|not invoked|failed|withdrawn|indefinitely postponed)\b/i;
-
-export function floorPendingChamber(actionText: string | null): Chamber | null {
-  if (!actionText) return null;
-  // (0) THE SETTLED GUARD, first and unconditional: the record says this
-  //     already resolved, so nothing is pending no matter what else it says.
-  if (FLOOR_SETTLED.test(actionText)) {
-    return null;
-  }
-  // (1) A cloture motion PRESENTED is the Senate scheduling its own vote.
-  if (/cloture motion .*presented in senate/i.test(actionText)) return 'senate';
-  // (2) A motion to proceed MADE (not rejected — rule 0 caught those).
-  if (/motion to proceed to consideration of (?:the )?measure made in senate/i.test(actionText)) {
-    return 'senate';
-  }
-  // (3) "POSTPONED PROCEEDINGS" (House rule XIX): the vote was deferred to a
-  //     later point in the same week's business — it is still ahead.
-  if (/postponed proceedings/i.test(actionText)) return 'house';
-  // (4) A Rules Committee resolution reported to the House sets the terms of
-  //     a floor debate that has not happened yet.
-  if (/rules committee resolution .*reported to house/i.test(actionText)) return 'house';
-  // Everything else: the record did not say a vote is coming, so we do not.
-  return null;
-}
-
-/*
- * THE OTHER HALF OF THE SPLIT — has the floor ALREADY answered, and where?
- *
- * floorPendingChamber says "a vote is still ahead". This says the opposite in
- * the record's own words: the chamber took up the question of bringing this
- * measure to a vote and the answer was no. Rejected motions to proceed,
- * rejected discharge motions, cloture not invoked.
- *
- * WHY THIS FUNCTION HAD TO EXIST RATHER THAN REUSING floorActionChamber.
- * deriveJourney used to print "the {chamber} is deciding whether to bring it
- * to a vote" for every floor text floorActionChamber could pin a chamber on —
- * and floorActionChamber answers a different question entirely. It asks
- * "WHICH chamber does this sentence belong to", never "what did that chamber
- * DO", so it happily classified all 18 of the corpus's failed-motion texts and
- * the stepper announced a live deliberation over each one. S.J.Res. 172 —
- * itself a vehicle of a live Big Question — printed "Right now: the Senate is
- * deciding whether to bring it to a vote" three lines above its own record
- * saying the discharge motion was rejected 47–48 on 2026-06-16. The chamber
- * was right; the verb was a fabrication.
- *
- * THE GATE IS THE VOCABULARY, NOT THE CHAMBER. A text only reaches the chamber
- * lookup once FLOOR_SETTLED has matched, so "Considered by Senate" — readable
- * chamber, no settled word — does NOT get called a failed motion. It falls
- * through to the caller's residual branch, exactly as it does today. Both
- * directions fail closed: we never claim a vote is coming, and we never claim
- * one died.
- *
- * MUTUALLY EXCLUSIVE WITH BOTH ITS NEIGHBOURS, by construction rather than by
- * promise. Against floorPendingChamber: FLOOR_SETTLED is that function's
- * rule 0, so a text cannot be both. Against floorCalendarChamber: the explicit
- * guard below, so a live placement that happens to mention a rejected
- * amendment somewhere in its sentence stays a placement. tests/journey.unit
- * .spec.ts pins all three pairings over the live corpus.
- */
-export function floorSettledChamber(actionText: string | null): Chamber | null {
-  if (!actionText) return null;
-  if (!FLOOR_SETTLED.test(actionText)) return null;
-  // A dated calendar placement is a live fact, whatever else the sentence says.
-  if (floorCalendarChamber(actionText)) return null;
-  return floorActionChamber(actionText);
-}
 
 /*
  * THE THIRD GATE: THE CLOCK — which floor facts this module may speak about in

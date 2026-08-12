@@ -51,6 +51,29 @@ import { Chip } from './Chip';
  * supports; it never says WHEN, which the record does not. Do not synthesize or
  * imply a scheduled vote date. See DESIGN.md.
  *
+ * ⚠️ THE THIRD FACT — `announced` (owner ruling V1, 2026-08-12) — and the ONE
+ * thing it is allowed to add. The corpus still holds no scheduled-vote date and
+ * this panel still never synthesizes one. What changed is that a SECOND record
+ * now exists beside the corpus: the chamber's own forward-looking announcement,
+ * quoted verbatim, carrying its own publication date, its own attribution and
+ * its own URL (data/floor-signals.json, rewritten hourly). The panel may print
+ * that — as a QUOTE of a dated document, never as a claim of our own, and never
+ * paraphrased. Three conditions, all enforced by the caller and its data layer:
+ *
+ *   1. the announcement is still on the chamber's LATEST published schedule
+ *      (a bill pulled mid-week stops crowning within the hour — lib/docket.mjs
+ *      `signalIsLive`);
+ *   2. the chip prints the ANNOUNCEMENT's own date, not a bill action date;
+ *   3. the quote stays ENGLISH VERBATIM in both locales, with a Spanish framing
+ *      sentence around it (ruling V4). A translated quote is a paraphrase
+ *      wearing quotation marks.
+ *
+ * `announced` is the ONLY kind that may render over a bill whose `status` is
+ * not `floor_vote`, and that exemption is the point of it: when a measure
+ * actually reaches the floor Congress overwrites `last_action_text` and the
+ * derived status falls back to `committee`, so a status gate made the week's
+ * biggest bills structurally uncrownable.
+ *
  * PARENT CONTRACT — this panel is full-bleed, so it renders full-width with
  * its own inner max-width wrapper. It must be a direct child of a FULL-WIDTH
  * section; do not put it inside `mx-auto max-w-5xl`, or it will not bleed.
@@ -67,8 +90,23 @@ import { Chip } from './Chip';
  */
 
 export interface FloorVotePanelProps {
-  /** The bill's status. Anything but `floor_vote` renders nothing. */
+  /** The bill's status. Anything but `floor_vote` renders nothing — UNLESS
+   *  `kind` is `announced`, whose fact is the chamber's own schedule rather
+   *  than a status claim (see the ⚠ note above). */
   status: BillStatus;
+  /**
+   * WHICH FACT this panel is printing, straight from `selectFloorVoteFeature`.
+   * Defaults to `calendar`, which is the historical behavior for every caller
+   * that does not pass it.
+   */
+  kind?: FloorFeatureKind;
+  /**
+   * The chamber's own sentence, already framed and localized by the caller —
+   * rendered as a real <blockquote> with its attribution. ENGLISH VERBATIM in
+   * both locales (ruling V4); the caller supplies the framing sentence around
+   * it. Only ever set on `kind: 'announced'`.
+   */
+  evidence?: ReactNode;
   /**
    * The printed calendar date, already formatted and localized. REQUIRED —
    * amber without a printed date is illegal, and an empty string renders
@@ -110,6 +148,8 @@ export interface FloorVotePanelProps {
 
 export function FloorVotePanel({
   status,
+  kind = 'calendar',
+  evidence,
   dateLabel,
   calendarLabel,
   identifier,
@@ -122,9 +162,15 @@ export function FloorVotePanel({
   flush = false,
   className = '',
 }: FloorVotePanelProps) {
-  // THE GATE. Both halves are load-bearing: the status earns the loudness,
-  // the printed date earns the amber.
-  if (status !== 'floor_vote') return null;
+  // THE GATE. Both halves are load-bearing: the FACT earns the loudness, the
+  // printed date earns the amber.
+  //
+  // `announced` is exempt from the status half and from nothing else. Its fact
+  // is the chamber's own published schedule, which is a stronger and more
+  // current record than the derived status — and the status is precisely what
+  // goes stale when a measure reaches the floor (see the ⚠ note above). Its
+  // date requirement is unchanged and its evidence is quoted and attributed.
+  if (kind !== 'announced' && status !== 'floor_vote') return null;
   if (!dateLabel.trim()) {
     if (process.env.NODE_ENV !== 'production') {
       // Silent non-render is the correct behavior but a confusing one to
@@ -163,6 +209,18 @@ export function FloorVotePanel({
           </a>
         </Heading>
 
+        {/* THE EVIDENCE, when the fact is an announcement: the chamber's own
+            sentence, quoted rather than asserted. A real <blockquote> so it is
+            a quotation to a screen reader too, set in the reading voice at the
+            panel's pale ink — present, checkable, and deliberately quieter than
+            the headline it supports. It carries its own attribution row (source,
+            date and link) from the caller. */}
+        {evidence && (
+          <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-base leading-dark text-go-pale">
+            {evidence}
+          </blockquote>
+        )}
+
         {/* The identifier rides the meta row, under the headline — the same
             headline → citation → meta order every plain listing uses (owner,
             2026-08-01: it sat alone above the headline before). */}
@@ -193,20 +251,43 @@ export function FloorVotePanel({
 }
 
 /**
- * WHICH FLOOR FACT the crowned bill stands on. `calendar` is a placement the
- * record printed ("Placed on … Calendar"); `pending` is a floor vote still
- * ahead of it (cloture filed, motion to proceed made, proceedings postponed,
- * a rule reported). Two different sentences, and the caller must print the
- * one that matches.
+ * WHICH FLOOR FACT the crowned bill stands on. Three different sentences, and
+ * the caller must print the one that matches:
+ *
+ *   `announced` the chamber ITSELF named this measure for floor action, in its
+ *               own published schedule (owner ruling V1, 2026-08-12). The only
+ *               kind that carries a quote, and the only one that may render
+ *               over a bill whose derived status is not `floor_vote`.
+ *   `pending`   a floor vote is still ahead of it in the bill's own record —
+ *               cloture filed, motion to proceed made, proceedings postponed, a
+ *               rule reported.
+ *   `calendar`  a placement the record printed ("Placed on … Calendar").
  */
-export type FloorFeatureKind = 'calendar' | 'pending';
+export type FloorFeatureKind = 'announced' | 'pending' | 'calendar';
+
+/** The chamber's own announcement, as data/floor-signals.json stored it — the
+ *  only input this module takes that does not come out of `bills`. */
+export interface FloorAnnouncement {
+  /** ENGLISH VERBATIM. Never translated on any surface (ruling V4). */
+  quote: string;
+  url: string;
+  /** The announcing document's own date, YYYY-MM-DD. */
+  published: string;
+  /** The meeting or week the announcement covers, when the source printed one. */
+  covers: string | null;
+  source: 'daily-digest' | 'billsthisweek';
+  chamber: Chamber;
+}
 
 export interface FloorFeature<T> {
   bill: T;
   kind: FloorFeatureKind;
-  /** Read out of the record's own sentence, never guessed from the bill type
-   *  — a House bill can stand on the Senate's calendar. */
+  /** Read out of the record's own sentence (or the announcing chamber), never
+   *  guessed from the bill type — a House bill can stand on the Senate's
+   *  calendar. */
   chamber: Chamber;
+  /** Set on `kind: 'announced'` only. */
+  announcement: FloorAnnouncement | null;
 }
 
 /**
@@ -222,26 +303,51 @@ export interface FloorFeature<T> {
  * winner's text to label the chip, which meant two functions had to agree
  * forever about a bill only one of them had chosen.
  *
- * RANKING IS READ-TIME AND DATE-FIRST (2026-08-09):
- *   (a) `last_action_date` descending — the newest genuine floor signal wins.
- *       This is the whole point of the change: the crown must track the week.
- *   (b) an exact-date tie goes to `calendar` over `pending` — a printed
- *       placement is the stronger, plainer claim.
- *   (c) still tied → `effectiveUrgency(status, last_action_date)`, recomputed
- *       here. It replaced a read of the STORED `urgency_score`, which is
- *       frozen at sync time (docs/solutions/stale-urgency-freeze.md) and
- *       disagreed with the read-time score on 304 of the corpus's 339
- *       floor_vote bills as of 2026-08-09. NOTE: with eligibility fixed at
- *       `floor_vote`, (c) is a formality — the curve is a pure function of
- *       status and date, so anything reaching it is already equal on both.
- *       It stays as the explicit total order, and so that widening
- *       eligibility later cannot silently fall through to input order.
+ * RANKING IS THE DOCKET LADDER'S, READ-TIME, RUNG-FIRST (2026-08-12):
+ *   (a) the FACT's rung — `announced` (T0) over `pending` (T1) over `calendar`
+ *       (T2). This replaced a date-first order whose only tiebreak preferred
+ *       `calendar` over `pending`, and the swap is deliberate: a placement is a
+ *       queue position that the measured corpus says waits a 22-day median for
+ *       a vote, while a cloture motion or a motion to proceed is a chamber
+ *       acting this week. Rung before recency, everywhere, so the crown and the
+ *       ladder that feeds it cannot disagree about which fact is stronger.
+ *   (b) inside `announced`: the announcement's own published date, newest
+ *       first, then the Senate's daily program over the House's week-list —
+ *       bill-and-time beats week-of.
+ *   (c) `last_action_date` descending — the newest genuine floor signal wins.
+ *   (d) still tied → `effectiveUrgency(status, last_action_date)`, recomputed
+ *       here. It replaced a read of the STORED `urgency_score`, which is frozen
+ *       at sync time (docs/solutions/stale-urgency-freeze.md) and disagreed
+ *       with the read-time score on 304 of the corpus's 339 floor_vote bills as
+ *       of 2026-08-09.
+ *
+ * `announcementOf` is how the chamber's own schedule reaches this module
+ * without it importing any data (it is a design primitive; lib/core/bills.ts
+ * owns the corpus and data/floor-signals.json). Omit it and the selector
+ * behaves exactly as it did before ruling V1: two kinds, read from the record.
  */
 export function selectFloorVoteFeature<T extends { status: BillStatus }>(
-  bills: readonly T[]
+  bills: readonly T[],
+  announcementOf?: (bill: T) => FloorAnnouncement | null
 ): FloorFeature<T> | null {
   let best: FloorFeature<T> | null = null;
   for (const bill of bills) {
+    // T0 FIRST, AND WITHOUT THE STATUS GATE. The announcement is a fact about
+    // the chamber's published schedule, and its freshness is the schedule's own
+    // (already enforced upstream by lib/docket.mjs's `signalIsLive`, which drops
+    // a pulled bill within the hour) — not the bill's last-action clock, which
+    // is exactly the clock that goes stale when a measure reaches the floor.
+    const announcement = announcementOf?.(bill) ?? null;
+    if (announcement) {
+      const candidate: FloorFeature<T> = {
+        bill,
+        kind: 'announced',
+        chamber: announcement.chamber,
+        announcement,
+      };
+      if (best === null || beats(candidate, best)) best = candidate;
+      continue;
+    }
     if (bill.status !== 'floor_vote') continue;
     // The panel asserts the bill's floor fact is true *now*. Past the
     // published 14-day window that assertion stops being true, and the honest
@@ -251,25 +357,44 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
     // covers rejected motions to proceed and cloture NOT invoked, where both
     // "on the floor calendar" and "a vote is pending" would be false claims.
     const text = billActionTextOf(bill);
-    const calendar = floorCalendarChamber(text);
-    const chamber = calendar ?? floorPendingChamber(text);
+    const pending = floorPendingChamber(text);
+    const chamber = pending ?? floorCalendarChamber(text);
     if (chamber === null) continue;
     const candidate: FloorFeature<T> = {
       bill,
-      kind: calendar ? 'calendar' : 'pending',
+      kind: pending ? 'pending' : 'calendar',
       chamber,
+      announcement: null,
     };
     if (best === null || beats(candidate, best)) best = candidate;
   }
   return best;
 }
 
-/** Strictly better than the incumbent on the three ordered keys above. */
+/** Rung order, loudest first — the same order lib/docket.mjs's DOCKET_TIERS
+ *  puts T0/T1/T2 in, spelled in this module's vocabulary. */
+const KIND_RANK: Record<FloorFeatureKind, number> = { announced: 0, pending: 1, calendar: 2 };
+
+/** A daily program naming a bill and a time beats a weekly list naming a bill. */
+const SOURCE_RANK: Record<FloorAnnouncement['source'], number> = {
+  'daily-digest': 0,
+  billsthisweek: 1,
+};
+
+/** Strictly better than the incumbent on the four ordered keys above. */
 function beats<T extends { status: BillStatus }>(a: FloorFeature<T>, b: FloorFeature<T>): boolean {
+  if (a.kind !== b.kind) return KIND_RANK[a.kind] < KIND_RANK[b.kind];
+  if (a.announcement && b.announcement) {
+    if (a.announcement.published !== b.announcement.published) {
+      return a.announcement.published > b.announcement.published;
+    }
+    if (a.announcement.source !== b.announcement.source) {
+      return SOURCE_RANK[a.announcement.source] < SOURCE_RANK[b.announcement.source];
+    }
+  }
   const dateA = billDateOf(a.bill) ?? '';
   const dateB = billDateOf(b.bill) ?? '';
   if (dateA !== dateB) return dateA > dateB;
-  if (a.kind !== b.kind) return a.kind === 'calendar';
   return urgencyOf(a.bill) > urgencyOf(b.bill);
 }
 

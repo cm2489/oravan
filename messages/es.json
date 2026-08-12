@@ -112,7 +112,14 @@
     "screencastPlay": "Reproducir",
     "screencastPause": "Pausar",
     "screencastStep": "{current} de {total}",
-    "screencastStepAria": "Paso {n} de {total}: {title}"
+    "screencastStepAria": "Paso {n} de {total}: {title}",
+    "evidenceLead": "En las palabras de la propia cámara (en inglés, sin traducir):",
+    "evidenceSourceDigest": "Daily Digest del Senado",
+    "evidenceSourceWeekly": "Programación semanal del pleno de la Cámara",
+    "evidenceCovers": "para el {date}",
+    "evidenceLink": "Leer la fuente",
+    "floorCheckedAt": "Programación comprobada el {date}",
+    "weekNoteAnnounced": "El panel verde señala un solo hecho con fecha del registro: la cámara nombró este proyecto en su propia programación del pleno, citada arriba con la fecha en que se publicó. Esa programación se vuelve a leer cada hora, y si la cámara retira el proyecto, este sale del panel. Nada aquí dice cuándo será la votación — eso solo lo puede decir el Congreso, y no lo ha dicho."
   },
   "reps": {
     "title": "Tus representantes",
@@ -197,7 +204,11 @@
     "clearFilters": "Borrar todos los filtros",
     "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor.",
     "aiNote": "Los titulares en lenguaje claro de esta página los redacta la IA y llevan esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
-    "onCalendar": "En el calendario del pleno"
+    "onCalendar": "En el calendario del pleno",
+    "annotation": {
+      "justPassed": "Acaba de aprobarse en una cámara",
+      "justDecided": "El pleno ya respondió"
+    }
   },
   "bill": {
     "decoded": "En claro",
@@ -374,7 +385,9 @@
       "statusPending": "Votación pendiente en el pleno",
       "meta": "Un proyecto en el calendario puede llamarse a votación con poco aviso, y las oficinas cuentan llamadas hasta que ocurre.",
       "metaPending": "Ya comenzaron los pasos hacia una votación en el pleno, y las oficinas cuentan llamadas hasta que ocurra.",
-      "cta": "Haz tu llamada"
+      "cta": "Haz tu llamada",
+      "announcedHouse": "En la programación del pleno de la Cámara",
+      "announcedSenate": "En el programa del pleno del Senado"
     }
   },
   "walkthrough": {
@@ -947,7 +960,6 @@
     "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos de procedimiento que más aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice.",
     "scopeNote": "Cada entrada describe solo el mecanismo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
     "indexLabel": "Ir a un término",
-    "fullGlossary": "Glosario completo",
     "terms": {
       "cloture": {
         "term": "Cierre del debate (cloture)",

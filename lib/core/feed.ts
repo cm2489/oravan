@@ -62,6 +62,26 @@ const DATA_STALE_NOTE: Record<Locale, string> = {
   es: 'Esta lista está vacía porque la sincronización nocturna de datos de Oravan parece desactualizada, no porque el Congreso esté inactivo.',
 };
 
+/*
+ * THE FRAMING SENTENCE THAT CARRIES THE EVIDENCE QUOTE (owner ruling V4).
+ *
+ * The quote itself is a verbatim sentence out of a U.S. government document and
+ * stays ENGLISH in both feeds — translating it would make it a paraphrase in
+ * quotation marks, which is a different honesty class from a quotation. So the
+ * Spanish feed says, in Spanish, that what follows is the record's own English
+ * wording, and then prints it unchanged.
+ *
+ * These strings live here rather than in messages/*.json for the same reason
+ * every other feed string does (FEED_TITLE, QUIET_WEEK_NOTE and the rest): the
+ * four feed routes are `force-static` and take no request, so there is no
+ * next-intl request scope to read a message catalogue from. Both languages
+ * still land in the same change, which is what the bilingual-parity rule asks.
+ */
+const EVIDENCE_LEAD: Record<Locale, string> = {
+  en: 'From the record:',
+  es: 'Del registro (en inglés, sin traducir):',
+};
+
 export interface FeedItem {
   slug: string;
   citation: string;
@@ -76,6 +96,10 @@ export interface FeedItem {
   url: string;
   last_action_date: string | null;
   urgency_score: number;
+  /** The docket rung and the sentence that put this bill on the list —
+   *  inherited unchanged from the MCP tool this feed wraps. Absent only when
+   *  the corpus no longer holds the bill. */
+  signal?: BillTeaserOut['signal'];
 }
 
 export interface FeedPayload {
@@ -107,6 +131,7 @@ function shapeItem(bill: BillTeaserOut, locale: Locale): FeedItem {
     url: bill.url,
     last_action_date: bill.last_action_date,
     urgency_score: bill.urgency_score,
+    signal: bill.signal,
   };
 }
 
@@ -158,7 +183,16 @@ export function buildFeedRss(locale: Locale): string {
   const itemsXml = payload.items
     .map((item) => {
       const itemTitle = item.headline ? `${item.citation}: ${item.headline}` : `${item.citation}: ${item.title}`;
-      const descriptionParts = [item.headline ?? item.title, item.ai_label].filter((p): p is string => Boolean(p));
+      // The evidence rides between the decoded headline and the AI label: the
+      // plain-words answer, then Congress's own sentence for it, then the
+      // disclosure that the first of those was machine-written. A reader of a
+      // newsletter built on this feed can check the second against the record.
+      const evidence = item.signal?.evidence_sentence
+        ? `${EVIDENCE_LEAD[locale]} “${item.signal.evidence_sentence}”`
+        : null;
+      const descriptionParts = [item.headline ?? item.title, evidence, item.ai_label].filter(
+        (p): p is string => Boolean(p)
+      );
       return [
         '<item>',
         `<title>${escapeXml(itemTitle)}</title>`,

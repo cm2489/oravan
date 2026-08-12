@@ -47,6 +47,9 @@ import { join } from 'node:path';
 // prevent. lib/urgency.mjs is already this file's dependency for the ranking,
 // so this costs nothing new.
 import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '../lib/urgency.mjs';
+// THE LADDER, from the one copy — see docketTierOf below for why this is an
+// import and the three functions further down are hand-copies.
+import { DOCKET_TIERS, docketRung } from '../lib/docket.mjs';
 
 /** Printed verbatim on every run, in both output modes. The boundary is the feature. */
 export const STANDING_LINE =
@@ -235,20 +238,34 @@ const TIER_RANK = { cross: 0, neutral: 1 };
  * The fields the ranking reads. A real candidate carries more (citation,
  * headline, link, dates); the comparator never looks at any of them.
  *
- * @typedef {{ slug: string, floorCalendar: boolean, urgency: number, tier: string, partisanLeans: number, outlets: number, articles: number }} RankInput
+ * @typedef {{ slug: string, docketRank: number, lastActionDate: string | null, tier: string, partisanLeans: number, outlets: number, articles: number }} RankInput
  */
 
 /**
- * Proximity first, volume last. Slug is the final tiebreak so two otherwise
- * identical candidates never swap places between runs.
+ * Proximity first, volume last — unchanged as a principle, sharper as a key.
+ *
+ * WHAT CHANGED (2026-08-12): the first two keys were `floorCalendar` (a boolean
+ * — is there a placement sentence) then `effectiveUrgency` (a scalar off status
+ * and date). Both are now one key, the docket rung (lib/docket.mjs), read from
+ * the SAME module the site ranks with rather than re-derived here. The boolean
+ * could not see a chamber's own floor announcement or a ripening cloture motion
+ * at all, and the scalar had already been retired everywhere else for tying
+ * every busy week into one block.
+ *
+ * Everything after the first two keys is untouched: coverage tier, then
+ * cross-spectrum breadth, then outlet count, and article volume STRICTLY last
+ * (it is the one input an adversary can buy, and it is capped at
+ * COVERAGE_PER_BILL so every printed count is a floor, not a measurement).
+ * Slug is the final tiebreak so two otherwise identical candidates never swap
+ * places between runs.
  *
  * @param {RankInput} a
  * @param {RankInput} b
  */
 export function compareCandidates(a, b) {
   return (
-    Number(b.floorCalendar) - Number(a.floorCalendar) ||
-    b.urgency - a.urgency ||
+    a.docketRank - b.docketRank ||
+    (b.lastActionDate ?? '').localeCompare(a.lastActionDate ?? '') ||
     (TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9) ||
     b.partisanLeans - a.partisanLeans ||
     b.outlets - a.outlets ||
@@ -260,6 +277,24 @@ export function compareCandidates(a, b) {
 /** @template {RankInput} T @param {T[]} candidates @returns {T[]} */
 export function rankCandidates(candidates) {
   return [...candidates].sort(compareCandidates);
+}
+
+/**
+ * The bill's rung, from lib/docket.mjs — NOT an import-free copy. The three
+ * copies at the top of this file exist because their sources are TypeScript;
+ * the ladder is deliberately .mjs so this script, the nightly coverage sweep
+ * and the site all read the identical ordering. `floorSignals` is optional and
+ * an absent file simply means no bill reaches T0, which is also what a recess
+ * looks like.
+ *
+ * @param {any} bill
+ * @param {Record<string, any> | null | undefined} floorSignals
+ * @param {number} now
+ * @returns {string}
+ */
+function docketTierOf(bill, floorSignals, now) {
+  const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`.toLowerCase();
+  return docketRung(bill, floorSignals?.[slug] ?? null, { now }).tier;
 }
 
 /* ------------------------------------------------------------------ *
@@ -281,7 +316,7 @@ export function vehicleSlugs(moments) {
  * Build the candidate set + the counts that explain it. Pure over its inputs
  * so the unit suite can run it on fixtures.
  */
-export function buildReport({ bills, coverage, moments, rejections, now }) {
+export function buildReport({ bills, coverage, moments, rejections, floorSignals = {}, now }) {
   const vehicles = vehicleSlugs(moments);
   const histogram = { cross: 0, neutral: 0, one_sided: 0, none: 0 };
   const funnel = { covered: 0, tierQualified: 0, alreadyVehicle: 0, terminal: 0 };
@@ -319,6 +354,11 @@ export function buildReport({ bills, coverage, moments, rejections, now }) {
       lastActionDate: bill.last_action_date ?? null,
       floorCalendar: isOnFloorCalendar(bill),
       floorChamber: floorCalendarChamber(bill.last_action_text ?? null),
+      // The rung and its index, from the one ladder. `docketTier` is printed in
+      // the report so the owner can see WHY a candidate ranks where it does;
+      // `docketRank` is what the comparator reads.
+      docketTier: docketTierOf(bill, floorSignals, now),
+      docketRank: DOCKET_TIERS.indexOf(docketTierOf(bill, floorSignals, now)),
       urgency: effectiveUrgency(bill.status, bill.last_action_date ?? null, now),
       tier,
       outlets: outlets.size,
@@ -423,7 +463,7 @@ export function renderMarkdown(report) {
   out.push('');
   out.push('**The press bar** — coverage tier `cross` or `neutral`, never already a vehicle in any Moment (any status), status not terminal (`' + [...TERMINAL_STATUSES].sort().join('`, `') + '`).');
   out.push('');
-  out.push('**The ranking** — legislative proximity first: floor-calendar placement → effective urgency → tier and cross-spectrum breadth → outlet count. Article count is the LAST tiebreak, and is capped at `COVERAGE_PER_BILL=' + report.article_count_cap + '` — a floor, not a measurement.');
+  out.push('**The ranking** — legislative proximity first: docket rung (`t0` the chamber named it on its own floor schedule · `t1` a vote is ripening in the record · `t2` a dated calendar placement · `t3` it just cleared a gate · `t4` everything else) → most recent action → tier and cross-spectrum breadth → outlet count. Article count is the LAST tiebreak, and is capped at `COVERAGE_PER_BILL=' + report.article_count_cap + '` — a floor, not a measurement.');
   out.push('');
 
   out.push('## How the corpus narrows');
@@ -454,7 +494,7 @@ export function renderMarkdown(report) {
     out.push(`### ${i + 1}. ${c.citation} — \`${c.slug}\`${flag}`);
     out.push(`${c.headline}`);
     out.push('');
-    out.push(`- status \`${c.status}\` · last action ${c.lastActionDate ?? 'undated'} · urgency ${c.urgency}`);
+    out.push(`- status \`${c.status}\` · rung \`${c.docketTier}\` · last action ${c.lastActionDate ?? 'undated'} · urgency ${c.urgency}`);
     out.push(
       `- coverage ${TIER_LABEL[c.tier] ?? c.tier} · ${c.outlets} outlet${c.outlets === 1 ? '' : 's'} · leans ${c.leans.join(', ')} · ${c.articles} article${c.articles === 1 ? '' : 's'} (capped at ${report.article_count_cap})`
     );
@@ -508,6 +548,18 @@ function main(argv) {
   const bills = read('data/bills.json');
   const coverage = read('data/coverage.json');
   const moments = read('data/moments.json');
+  /* The floor-signal file may legitimately be absent (a fresh clone before the
+     first hourly run), and this report must still run: an absent file means no
+     bill reaches T0, which is exactly what a recess produces anyway. */
+  let floorSignals = {};
+  const signalsPath = path('data/floor-signals.json');
+  if (existsSync(signalsPath)) {
+    try {
+      floorSignals = JSON.parse(readFileSync(signalsPath, 'utf8')).signals ?? {};
+    } catch (err) {
+      console.warn(`::warning::moment-candidates: data/floor-signals.json is not valid JSON (${err.message}) — ranking on the record alone`);
+    }
+  }
 
   // docs/moment-rejections.json may not exist yet, and its absence is normal.
   const rejectionsPath = path('docs/moment-rejections.json');
@@ -527,6 +579,7 @@ function main(argv) {
     coverage,
     moments,
     rejections: { entries: rejectionEntries(rejectionsRaw), warnings },
+    floorSignals,
     now,
   });
 

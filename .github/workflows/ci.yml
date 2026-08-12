@@ -101,6 +101,18 @@ jobs:
         # fails before the e2e suite spends its minutes; exits 0 when the
         # file doesn't exist yet (slice S3 is what first writes it).
         run: node scripts/check-moment-updates.mjs
+      - name: Floor-signals gate (every T0 announcement carries a dated, attributed, English-verbatim quote)
+        # data/floor-signals.json is the only file whose contents get QUOTED
+        # to a reader as Congress's own forward-looking words, and it is
+        # written HOURLY by newsdesk.yml — which commits to main and then
+        # dispatches this workflow against the pushed data. So the gate lives
+        # here as well as in the nightly verify-sync.mjs: without it a signal
+        # with no quote, no source URL or a translated quote (owner ruling V4)
+        # would sit on the site until the small hours. Exits 0 when the file
+        # doesn't exist yet.
+        run: |
+          node scripts/check-floor-signals.mjs --self-test
+          node scripts/check-floor-signals.mjs
       - name: Senate-nomination data gate (identity, status mapping, calendar numbers, civilian-only)
         # Structural checks are HARD here: they test our own code against the
         # data it produced (slug identity, stored status == what the mapper

@@ -3,6 +3,20 @@
 import { useSyncExternalStore } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { emptyStateVerdict, type FreshnessSignals } from '@/lib/freshness-state';
+import { SIGNAL_STALE_HOURS } from '@/lib/docket.mjs';
+
+/** The floor-schedule half of the verdict: every source answered for itself,
+ *  and the file carrying their answers was refreshed inside the same window the
+ *  ladder trusts a T0 claim for. */
+function floorSignalsHealthy(
+  { checkedAt, sourcesHealthy }: { checkedAt: string | null; sourcesHealthy: boolean },
+  now: number = Date.now()
+): boolean {
+  if (!sourcesHealthy) return false;
+  const stamp = checkedAt ? Date.parse(checkedAt) : NaN;
+  if (!Number.isFinite(stamp)) return false;
+  return now - stamp <= SIGNAL_STALE_HOURS * 3_600_000;
+}
 
 // The React-idiomatic hydration gate: server snapshot (and the hydration
 // render) reads false, the first client snapshot reads true. No state, no
@@ -38,7 +52,37 @@ const useHydrated = () =>
  * the visitor's: baked "quiet week" HTML would flash (or, with JS off,
  * permanently claim) quiet on long-dead data.
  */
-export function UrgencyEmptyState({ checkedAt, completeThrough, newestAction }: FreshnessSignals) {
+export function UrgencyEmptyState({
+  checkedAt,
+  completeThrough,
+  newestAction,
+  floorSignals,
+}: FreshnessSignals & {
+  /**
+   * THE FOURTH SIGNAL (critic A-5, 2026-08-12): what the chamber-schedule
+   * sources said about THEMSELVES on the last hourly run.
+   *
+   * The three signals above measure our nightly bill sync. This one measures
+   * the hourly floor-schedule fetch, and it exists because a quiet week and a
+   * broken fetch look identical from here: `docs.house.gov/billsthisweek` 404s
+   * during a recess AND would 404 if its URL scheme ever changed — which is
+   * exactly how the AP RSS feed died in this codebase's own dead-feed log. So
+   * `sourcesHealthy` is true only when EVERY source came back `ok` (it named
+   * measures) or `quiet` (it, or the other source cross-checking it, says the
+   * chamber is not meeting). Anything else — a fetch error, a 404 nothing
+   * corroborates — is a statement about US, and it collapses to data_stale.
+   *
+   * `checkedAt` is re-diffed here rather than upstream for the same reason the
+   * rest of this component is client-side: a server-rendered verdict freezes
+   * at build time, and a workflow that quietly died would read as fresh
+   * forever.
+   *
+   * Optional, and its absence changes nothing: a caller with no floor-schedule
+   * context (the /bills band, /reps) keeps exactly today's three-signal
+   * verdict.
+   */
+  floorSignals?: { checkedAt: string | null; sourcesHealthy: boolean };
+}) {
   const t = useTranslations('freshness');
   const format = useFormatter();
   const hydrated = useHydrated();
@@ -54,7 +98,9 @@ export function UrgencyEmptyState({ checkedAt, completeThrough, newestAction }: 
     );
   }
 
-  const staleVerdict = emptyStateVerdict({ checkedAt, completeThrough, newestAction }) === 'data_stale';
+  const floorStale = floorSignals ? !floorSignalsHealthy(floorSignals) : false;
+  const staleVerdict =
+    floorStale || emptyStateVerdict({ checkedAt, completeThrough, newestAction }) === 'data_stale';
   return (
     <div role="status" className="rounded-control bg-wash p-6">
       <p className="text-lg font-bold text-ink">

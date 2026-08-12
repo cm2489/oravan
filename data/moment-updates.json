@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-11T08:58:33.445Z"
+    "generated_at": "2026-08-12T15:11:17.692Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1117,5 +1117,62 @@
         "model": "claude-sonnet-5"
       }
     ]
+  },
+  "crypto-oversight-split-between-sec-and-cftc": {
+    "updates": [
+      {
+        "id": "u_456d8e0c",
+        "class": "floor_action",
+        "vehicle": "hr-3633-119",
+        "day": "2026-08-08",
+        "occurred_at": "2026-08-08",
+        "occurred_precision": "day",
+        "recorded_at": "2026-08-12T15:11:17.692Z",
+        "text": {
+          "en": "On August 8, 2026, the Senate presented a cloture motion on the motion to proceed to H.R. 3633.",
+          "es": "El 8 de agosto de 2026, el Senado presentó una moción de cierre sobre la moción de proceder a H.R. 3633."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4557)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f62494fd",
+        "class": "floor_action",
+        "vehicle": "hr-3633-119",
+        "day": "2026-08-08",
+        "occurred_at": "2026-08-08",
+        "occurred_precision": "day",
+        "recorded_at": "2026-08-12T15:11:17.692Z",
+        "text": {
+          "en": "On August 8, 2026, the Senate made a motion to proceed to consideration of H.R. 3633.",
+          "es": "El 8 de agosto de 2026, el Senado hizo una moción para proceder a considerar H.R. 3633."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4557)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      }
+    ],
+    "summary_revisions": []
   }
 }
