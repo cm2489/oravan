@@ -565,15 +565,16 @@ test.describe('deriveJourney', () => {
     expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
   });
 
-  test('nothing outside the floor branch is clocked', () => {
-    // passed_chamber is a relational fact about a vote that happened — all 275
-    // of the corpus's 275 records are outside the window (2026-08-12), and
-    // clocking them would silence that routing entirely. Committee too.
-    expect(j('hr', 'passed_chamber', 'Received in the Senate.', STALE).nowKey).toBe('nowPassed');
+  test('nothing outside the floor and passage branches is clocked', () => {
+    // A committee referral and an enacted law carry no present-tense claim
+    // that ages: "a committee is reviewing it" is what the record says at any
+    // date, and a law does not stop being one. The passage branch DID gain a
+    // clock (N5, 2026-08-12) and is pinned in its own block below.
     expect(j('hr', 'committee', 'Referred to the Subcommittee on Health.', STALE).nowKey).toBe(
       'nowCommittee'
     );
     expect(j('hr', 'signed', 'Became Public Law No: 119-1.', STALE).nowKey).toBe('nowSigned');
+    expect(j('hr', 'conference', 'Conference held.', STALE).nowKey).toBe('nowConference');
   });
 
   /*
@@ -588,6 +589,97 @@ test.describe('deriveJourney', () => {
       showTrailer: false,
     });
     expect(journey.nowKey).not.toBe('nowPassed');
+  });
+
+  /* ---------------------------------------------------------------- *
+   * N5 (2026-08-12) — THE CLOCK REACHES THE PASSAGE SENTENCE.
+   *
+   * #208 clocked the floor branch and deliberately left `passed_chamber`
+   * alone, because a passage is a durable fact and the ROUTING TARGET
+   * stays right at any age. Its own follow-up note named what that
+   * missed: the stepper's sentence does not name a target, it narrates a
+   * handoff — "it passed the House and now goes to the Senate" — and on
+   * 2026-08-12 that "now" was printed over 280 of the corpus's 295
+   * passage records, median 120 days old, oldest hr-30-119 at 573.
+   *
+   * The split this block pins: the stepper's TENSE moves, the rail's
+   * TARGET does not. liveCallTarget's half is pinned explicitly in
+   * suite 5 ('passed_chamber routing is STILL not clocked').
+   * ---------------------------------------------------------------- */
+
+  const RECEIVED_IN_SENATE = 'Received in the Senate and Read twice and referred to the Committee on Finance.';
+
+  test('THE N5 FLAGSHIP: an aged passage keeps the passage, the step and the chambers, and loses the handoff', () => {
+    const stale = j('hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE);
+    expect(stale).toMatchObject({
+      // Where the record puts the bill does NOT move — a quiet fortnight does
+      // not carry it back across the Capitol.
+      step: 3,
+      origin: 'house',
+      current: 'senate',
+      nowChamber: 'house',
+      // The conditional Article I trailer is not a tense claim, so it stays.
+      showTrailer: true,
+      // Only the sentence changes.
+      nowKey: 'nowPassedStale',
+    });
+    // The same record, two days old, is untouched — the gate is age, not text.
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, FRESH)).toMatchObject({
+      step: 3,
+      current: 'senate',
+      nowChamber: 'house',
+      showTrailer: true,
+      nowKey: 'nowPassed',
+    });
+  });
+
+  test('an aged amended passage stops narrating the trip back', () => {
+    const AMENDED = 'Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 86 - 11. Record Vote Number: 224.';
+    expect(j('hr', 'passed_chamber', AMENDED, STALE)).toMatchObject({
+      step: 3,
+      current: 'house',
+      nowChamber: 'house',
+      showTrailer: false,
+      nowKey: 'nowPassedBackStale',
+    });
+    expect(j('hr', 'passed_chamber', AMENDED, FRESH).nowKey).toBe('nowPassedBack');
+  });
+
+  test('the passage clock is the ONE window — SIGNAL_WINDOW_DAYS, not a second number', () => {
+    /*
+     * ONE DAY EITHER SIDE, NEVER THE EDGE — the same idiom and the same reason
+     * as the floor-branch boundary test above: corpus dates are date-only
+     * (midnight UTC) while isSignalFresh measures milliseconds, so a passage
+     * dated exactly SIGNAL_WINDOW_DAYS ago is inside the window only at 00:00
+     * UTC and outside it the rest of the day. Asserting that instant would be
+     * a clock-dependent coin flip.
+     */
+    expect(
+      j('hr', 'passed_chamber', RECEIVED_IN_SENATE, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)).nowKey
+    ).toBe('nowPassed');
+    expect(
+      j('hr', 'passed_chamber', RECEIVED_IN_SENATE, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)).nowKey
+    ).toBe('nowPassedStale');
+  });
+
+  test('an undated passage fails closed to the weaker claim', () => {
+    // isSignalFresh's own rule, and the rule amber has always run on. 0 of the
+    // corpus's 295 passage records are undated (2026-08-12), so this is the
+    // shape we refuse to be surprised by rather than one we render today.
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, null).nowKey).toBe('nowPassedStale');
+    expect(j('hr', 'passed_chamber', RECEIVED_IN_SENATE, 'not-a-date').nowKey).toBe('nowPassedStale');
+  });
+
+  test('the two passage states that name NO next chamber are not clocked', () => {
+    // 'both' says what Article I, Section 7 requires — presentment — and names
+    // no chamber as deciding; 'second' claims only that the record has not
+    // said. Neither has a tense that can go stale, so neither gains a key.
+    expect(j('hr', 'passed_chamber', 'Passed Senate without amendment by Unanimous Consent.', STALE).nowKey).toBe(
+      'nowPassedBoth'
+    );
+    expect(j('hr', 'passed_chamber', 'Passed Senate by Voice Vote.', STALE).nowKey).toBe(
+      'nowPassedSecond'
+    );
   });
 
   test('an amended second-chamber passage sends it back to the originating chamber', () => {
@@ -730,6 +822,56 @@ test.describe('deriveJourney', () => {
     );
     expect(sentence(es, 'hr', 'floor_vote', CLOTURE_TEXT, STALE)).toBe(
       'el Senado ha actuado en el pleno, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+  });
+
+  /*
+   * THE TWO N5 SENTENCES, rendered — 280 bills read one of these on
+   * 2026-08-12. The state assertions above cannot see the failure mode that
+   * matters here: a template that keeps a "now goes to" clause, or names the
+   * wrong chamber through the icuParams asymmetry (`other` is the opposite of
+   * ORIGIN, never of nowChamber — the defect nowPassedBack shipped with in
+   * draft). Both languages: the ES pair is an unreviewed draft, and a draft
+   * that renders wrong is worse than one that reads oddly.
+   */
+  test('an aged passage still says which chamber passed it, and claims nothing about this week', () => {
+    expect(sentence(en, 'hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE)).toBe(
+      'it passed the House, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 'hr', 'passed_chamber', RECEIVED_IN_SENATE, STALE)).toBe(
+      'fue aprobado por la Cámara, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // The mirror direction, so a template that hardcodes one chamber fails.
+    expect(sentence(en, 's', 'passed_chamber', 'Received in the House.', STALE)).toBe(
+      'it passed the Senate, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 's', 'passed_chamber', 'Received in the House.', STALE)).toBe(
+      'fue aprobado por el Senado, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // …and the SAME records inside the window keep every word of the live copy.
+    expect(sentence(en, 's', 'passed_chamber', 'Received in the House.', FRESH)).toBe(
+      'it passed the Senate and now goes to the House.'
+    );
+    expect(sentence(es, 's', 'passed_chamber', 'Received in the House.', FRESH)).toBe(
+      'fue aprobado por el Senado y ahora pasa a la Cámara.'
+    );
+  });
+
+  test('an aged amended passage names the amending chamber and no destination, in both languages', () => {
+    const AMENDED = 'Passed Senate with an amendment by Voice Vote.';
+    expect(sentence(en, 'hr', 'passed_chamber', AMENDED, STALE)).toBe(
+      'the Senate passed it with changes, and the official record shows nothing new since.'
+    );
+    expect(sentence(es, 'hr', 'passed_chamber', AMENDED, STALE)).toBe(
+      'el Senado lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.'
+    );
+    // Mirror direction: a House amendment to a Senate bill.
+    expect(sentence(en, 's', 'passed_chamber', 'Passed House with an amendment by Voice Vote.', STALE)).toBe(
+      'the House passed it with changes, and the official record shows nothing new since.'
+    );
+    // Fresh keeps the destination clause — the gate is age, not text.
+    expect(sentence(en, 'hr', 'passed_chamber', AMENDED, FRESH)).toBe(
+      'the Senate passed it with changes, so it goes back to the House.'
     );
   });
 
@@ -1258,16 +1400,50 @@ test.describe('liveCallTarget', () => {
     expect(liveCallTarget(bill('hr', 'floor_vote', CAL, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)))).toBeNull();
   });
 
-  test('passed_chamber routing is NOT clocked — a chamber that voted stays voted', () => {
-    // Deliberate asymmetry, and the reason is in liveCallTarget's comment:
-    // "the House has already voted" is a fact about a past event, not a claim
-    // about this week. 274 of the corpus's 275 passed_chamber records sit
-    // outside the window; clocking them would silence nearly all of it.
-    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', STALE))).toEqual({
-      chamber: 'senate',
+  /*
+   * THE N5 ASYMMETRY, PINNED FROM THE OTHER SIDE (2026-08-12). The stepper's
+   * passage sentence IS clocked now (suite 3) and this branch is deliberately
+   * NOT — the owner's N5 ruling confirmed #208's call rather than reversing
+   * it. TARGET here, TENSE there: a chamber that voted stays voted, and the
+   * chamber that has not yet acted is still the one a caller would reach.
+   *
+   * This test is the guard on a plausible wrong fix: clocking BOTH halves
+   * would silence 280 of the corpus's 295 passage routings (2026-08-12) and
+   * strip the routing sentence and the rep reordering off nearly every bill
+   * that has cleared a chamber. Every assertion below is spelled out with
+   * `toEqual`, so a null — or a flipped `afterVote` — fails loudly.
+   */
+  test('passed_chamber routing is STILL not clocked — the stepper moved, the target did not', () => {
+    const stale = { chamber: 'senate', afterVote: true, soleChamber: false };
+    // The corpus's dominant shape, aged well past the window.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', STALE))).toEqual(stale);
+    expect(
+      liveCallTarget(
+        bill('hr', 'passed_chamber', 'Received in the Senate and Read twice and referred to the Committee on Finance.', STALE)
+      )
+    ).toEqual(stale);
+    // hr-30-119's age on the day N5 landed: 573 days, and it still routes.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(573)))).toEqual(stale);
+    // The mirror direction, and the amended case whose target is the ORIGIN
+    // chamber — the one the old bill_type derivation got backwards.
+    expect(liveCallTarget(bill('sjres', 'passed_chamber', 'Received in the House.', STALE))).toEqual({
+      chamber: 'house',
       afterVote: true,
       soleChamber: false,
     });
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Passed Senate with an amendment by Voice Vote.', STALE))
+    ).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
+    // An undated passage routes too: unlike the floor branch, this one has no
+    // date gate at all, so there is nothing to fail closed to.
+    expect(liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', null))).toEqual(stale);
+    // The window boundary changes NOTHING here — the same answer either side.
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(SIGNAL_WINDOW_DAYS - 1)))
+    ).toEqual(stale);
+    expect(
+      liveCallTarget(bill('hr', 'passed_chamber', 'Received in the Senate.', dateDaysAgo(SIGNAL_WINDOW_DAYS + 1)))
+    ).toEqual(stale);
   });
 
   test('passed_chamber: the OTHER chamber is the live call, and the vote already happened', () => {
@@ -1366,6 +1542,76 @@ test.describe('liveCallTarget', () => {
      * in suite 3 instead, where no data can silence it.
      */
     expect(demoted, 'no aged floor placement in the corpus — has the gate stopped firing?').toBeGreaterThan(0);
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE N5 LIVE-CORPUS INVARIANT (2026-08-12). Same discipline as the
+   * D3 sweep above — an invariant plus a non-vacuity floor, never a
+   * count, because the count moves nightly (280 of 295 passage records
+   * demoted on the day this landed) and a number here would redden the
+   * CI of unrelated PRs on a quiet legislative week.
+   *
+   * It asserts BOTH halves of the split, which is the only way to catch
+   * the two opposite wrong fixes: a stepper that keeps narrating the
+   * handoff, and a rail that stops routing the call.
+   * ---------------------------------------------------------------- */
+  test('no aged passage narrates a handoff — and every one of them still routes a call', () => {
+    const passed = corpus.filter((b) => b.status === 'passed_chamber');
+    let aged = 0;
+    let live = 0;
+    for (const b of passed) {
+      const input = {
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      };
+      const { nowKey } = deriveJourney(input);
+      const target = liveCallTarget(input);
+      /*
+       * THE HALF THAT MUST NOT MOVE. Every stage that names a next chamber
+       * routes, at every age — a passage is a durable fact and the target
+       * stays right. The two stages that name none ('both' → the President,
+       * 'second' → the record has not said) route nowhere at every age too,
+       * so `next` and the routing decision are pinned against each other
+       * rather than against the clock.
+       */
+      const { next } = passageState(input);
+      if (next) {
+        expect(target, `${slugOf(b)} must still route`).toEqual({
+          chamber: next,
+          afterVote: true,
+          soleChamber: false,
+        });
+      } else {
+        expect(target, `${slugOf(b)} names no next chamber`).toBeNull();
+      }
+
+      if (isSignalFresh(b.last_action_date)) continue;
+      aged += 1;
+      // THE HALF THAT MOVES: no aged passage may claim the handoff is underway.
+      expect(nowKey, slugOf(b)).not.toBe('nowPassed');
+      expect(nowKey, slugOf(b)).not.toBe('nowPassedBack');
+      if (nowKey === 'nowPassedStale' || nowKey === 'nowPassedBackStale') live += 1;
+    }
+    /*
+     * NON-VACUITY, on both counts. `passed` empty would make every assertion
+     * above pass without executing; `live` at zero would mean the aged records
+     * are all landing in the two unclocked stages, i.e. the demotion this
+     * change exists for never fires. Only the STALE side is floored — aged
+     * passages only accumulate (280 of 295 on 2026-08-12, oldest 573 days),
+     * while the FRESH side legitimately empties over a recess. The fresh
+     * branch is pinned by fixture in suite 3, where no data can silence it.
+     */
+    expect(passed.length, 'no passed_chamber records at all — is the corpus loaded?').toBeGreaterThan(0);
+    expect(aged, 'no aged passage in the corpus — has the window changed?').toBeGreaterThan(0);
+    expect(live, 'aged passages exist but none demoted — has the gate stopped firing?').toBeGreaterThan(0);
+    // …and the clock must not have swallowed the category whole: a run where
+    // EVERY passage is aged is possible, one where every passage record is
+    // demoted AND none is fresh would still be legal, but `aged` exceeding the
+    // population would mean the filter above stopped filtering.
+    expect(aged).toBeLessThanOrEqual(passed.length);
+    expect(live).toBeLessThanOrEqual(aged);
   });
 });
 
