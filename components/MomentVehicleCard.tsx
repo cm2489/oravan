@@ -64,8 +64,10 @@ export function MomentVehicleCard({
   /** Label-gated key (lib/journey statusKeyFor). Drives BOTH the printed
       status and the amber calendar chip: an activity-only floor_vote bill
       (cloture, rejected motion) must never wear the placement claim —
-      the same gate the homepage crown enforces (Wave B #1). */
-  statusKey: BillStatus | 'floor_activity';
+      the same gate the homepage crown enforces (Wave B #1) — and neither
+      may an AGED placement, which arrives as `floor_vote_stale` since N3
+      (2026-08-11) and prints "Placed on the calendar" in ink. */
+  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
   tags: string[];
   lastActionDate: string | null;
   coverageCount?: number;
@@ -83,6 +85,14 @@ export function MomentVehicleCard({
   // and the date has to still be inside the 14-day window this page publishes
   // to the reader a few hundred pixels below ("Why this Moment exists").
   // Amber on a 39-day-old placement contradicted our own stated rule in view.
+  //
+  // The freshness half is now BELT AND BRACES rather than the only clock:
+  // since N3 (2026-08-11) statusKeyFor applies the same window itself and an
+  // aged placement arrives here as `floor_vote_stale`, so the first term
+  // already excludes it. Kept because this component is a primitive that any
+  // future caller may hand a key to, and DESIGN.md's law on the new key —
+  // stale is INK, never amber — must hold on this surface by construction and
+  // not by the caller having remembered.
   const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate);
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can

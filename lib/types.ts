@@ -59,8 +59,10 @@ export interface BillTeaser {
   title: string;
   status: BillStatus;
   /** The label-gated key (lib/journey statusKeyFor): `floor_activity` for
-   *  floor_vote bills whose record shows activity, not a placement. */
-  statusKey: BillStatus | 'floor_activity';
+   *  floor_vote bills whose record shows activity, not a placement, and
+   *  `floor_vote_stale` for a placement the record has shown nothing since
+   *  (N3, 2026-08-11 — the same fact, in the past tense). */
+  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
   tags: string[];
   lastActionDate: string | null;
 }

@@ -181,6 +181,7 @@
       "committee": "En comité",
       "markup": "En revisión",
       "floor_vote": "En el calendario del pleno",
+      "floor_vote_stale": "Incluido en el calendario",
       "floor_activity": "Actividad en el pleno",
       "passed_chamber": "Aprobado por una cámara",
       "conference": "En comisión mixta",

@@ -570,7 +570,7 @@ export default async function MomentPage({
                     headline={bill.ai_headline}
                     title={bill.short_title ?? bill.title}
                     status={bill.status}
-                    statusKey={statusKeyFor(bill.status, bill.last_action_text)}
+                    statusKey={statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}
                     tags={bill.issue_tags ?? []}
                     lastActionDate={bill.last_action_date}
                     coverageCount={coverageCount}

@@ -81,8 +81,17 @@ export default async function BillCardEmbedPage({
         officialTitle: bill.short_title ?? bill.title,
         status: bill.status,
         // Label gate (Wave B #1): partner sites must never print the
-        // placement claim over an activity-only record either.
-        statusKey: statusKeyFor(bill.status, bill.last_action_text),
+        // placement claim over an activity-only record either — nor, since N3
+        // (2026-08-11), the present-tense placement claim over a placement the
+        // record has shown nothing about in months.
+        statusKey: statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date),
+        // N4: THE RECORD DATE. This card was the one surface named in
+        // statusKeyFor's old header as printing a status label with no date
+        // beside it — its BillCardData did not even carry one — and that gap
+        // was half the argument for leaving the label unclocked. The widget
+        // prints it with the status line, ABOVE the "Data as of" stamp, so a
+        // fresh sync date can never read as corroboration of an old fact.
+        lastActionDate: bill.last_action_date,
       }
     : null;
 

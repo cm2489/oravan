@@ -162,7 +162,21 @@ test.describe('get_bill', () => {
     // vote" claimed a schedule the record cannot support — and on nine bills
     // whose motions had been REJECTED it contradicted the action text printed
     // beside it. The status key is unchanged; only what we assert it MEANS.
-    expect(bill.status_label).toBe('On the floor calendar');
+    //
+    // AMENDED 2026-08-11 (N3), and the history above is why this line moved
+    // rather than being rewritten: the same fixture, the same defect class,
+    // one more turn of the screw. H.R. 2701's placement is dated 2025-12-09 —
+    // eight months of silence — and "On the floor calendar" asserted it was
+    // there NOW. statusKeyFor is clocked, so an aged placement answers
+    // `floor_vote_stale`: the identical fact, in the past tense the date
+    // supports. `status` itself is untouched (still `floor_vote`), which is
+    // the point — an agent relaying this envelope gets the record's category
+    // and our honest rendering of it, and they no longer disagree.
+    //
+    // This assertion is date-relative in EFFECT but not in form: it will only
+    // become wrong if Congress acts on H.R. 2701 within 14 days of a CI run,
+    // which would change `status` too and red the line above first.
+    expect(bill.status_label).toBe('Placed on the calendar');
     expect(['now', 'moving', 'radar']).toContain(bill.urgency_band);
     expect((bill.sponsor as { name: string }).name).toBe('Debbie Wasserman Schultz');
     expect(bill.congress_gov_url).toContain('congress.gov');

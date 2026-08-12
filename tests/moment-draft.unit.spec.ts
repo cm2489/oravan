@@ -42,7 +42,15 @@ const CANDIDATE = {
   citation: 'S. 3172',
   headline: 'Bill would repeal two long-standing US sanctions laws on Syria',
   status: 'floor_vote',
-  lastActionDate: '2026-07-27',
+  /* RELATIVE, not a literal (N3, 2026-08-11). statusKeyFor reads this date
+     now, and a hardcoded '2026-07-27' would have silently flipped every
+     assertion in this file from `floor_vote` to `floor_vote_stale` fifteen
+     days after it was written — the fixture would have started testing the
+     clock instead of the record block, on a day nobody touched this file.
+     These fixtures ask "what does the record block say about a MOVING bill",
+     so the date says moving. The aged case is pinned deliberately, in
+     tests/journey.unit.spec.ts, where the clock is the subject. */
+  lastActionDate: new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10),
   floorCalendar: true,
   floorChamber: 'senate',
   urgency: 0.9,
@@ -60,9 +68,21 @@ const BILL = {
   last_action_text: 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 501.',
 };
 
+/* The real messages/*.json vocabulary, verbatim — `floor_vote_stale` included
+   since N3 (2026-08-11). A missing phrase here would not fail loudly: groundFor
+   falls back to the underscored key with spaces ("floor vote stale"), which is
+   an internal token wearing a disguise, and it would reach the prompt. */
 const STATUS_PHRASES = {
-  en: { floor_vote: 'On the floor calendar', floor_activity: 'Floor activity' },
-  es: { floor_vote: 'En el calendario del pleno', floor_activity: 'Actividad en el pleno' },
+  en: {
+    floor_vote: 'On the floor calendar',
+    floor_vote_stale: 'Placed on the calendar',
+    floor_activity: 'Floor activity',
+  },
+  es: {
+    floor_vote: 'En el calendario del pleno',
+    floor_vote_stale: 'Incluido en el calendario',
+    floor_activity: 'Actividad en el pleno',
+  },
 };
 
 /* s-4668-119's real shape at the time it shipped a false sentence: status
@@ -330,7 +350,17 @@ test.describe('the record block cannot contradict itself about the floor', () =>
   test('a cloture motion is NOT "On the floor calendar" — the status label goes through the gate', () => {
     const g = groundFor(CLOTURE_CANDIDATE, CLOTURE_BILL, STATUS_PHRASES);
     // The gate's own answer, and the record block's, are the same answer.
-    expect(statusKeyFor(CLOTURE_CANDIDATE.status, CLOTURE_BILL.last_action_text)).toBe('floor_activity');
+    // Three args since N3 (2026-08-11): the gate reads the date as well as the
+    // sentence. `floor_activity` is the ONE key the clock cannot touch — there
+    // is no placement here to age — so this assertion holds at any date, and
+    // passing the candidate's own is what proves that rather than assumes it.
+    expect(
+      statusKeyFor(
+        CLOTURE_CANDIDATE.status,
+        CLOTURE_BILL.last_action_text,
+        CLOTURE_CANDIDATE.lastActionDate
+      )
+    ).toBe('floor_activity');
     expect(g.statusKey).toBe('floor_activity');
     expect(g.statusEn).toBe('Floor activity');
     expect(g.statusEs).toBe('Actividad en el pleno');

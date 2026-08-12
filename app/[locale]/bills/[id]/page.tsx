@@ -221,8 +221,9 @@ export default async function BillPage({
   const citation = formatCitation(bill.bill_type, bill.bill_number);
   const displayTitle = bill.ai_headline ?? bill.short_title ?? bill.title;
   const hasDecode = Boolean(bill.ai_summary || bill.ai_sections);
-  // The provenance ritual's status fragment, through the label gate.
-  const statusKey = statusKeyFor(bill.status, bill.last_action_text);
+  // The provenance ritual's status fragment, through the label gate — which
+  // reads the date as well as the sentence since N3 (see statusLabelKey below).
+  const statusKey = statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date);
   // Headlines often already name the bill; don't repeat the citation (same
   // rule the action panel uses for call-log labels).
   const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
@@ -304,23 +305,32 @@ export default async function BillPage({
   const floorCopy = floorChamber ? FLOOR_COPY[floorKind][floorChamber] : null;
 
   /*
-   * THE STATUS LABEL, and why the refinement lives here rather than in
-   * `statusKeyFor`.
+   * THE STATUS LABEL — this page's refinement on top of the shared gate.
    *
-   * `statusKeyFor` (lib/journey.ts) is the shared gate — citizen site, embeds
-   * and MCP all route through it — and it takes a status and an action text
-   * and NO CLOCK. It can therefore say "this record is a placement" but never
-   * "and that is still true today", which is exactly the claim "Floor vote
-   * pending" makes. Widening it would print a present-tense pending label off
-   * a motion filed in 2024, on every surface at once — the same defect the
-   * band's freshness gate was added to close. So the freshness-gated
-   * refinement lives where the clock already is: this page. `statusKeyFor`'s
-   * answer is unchanged and still the fallback for every other case.
+   * WHAT MOVED (N3, owner ruling 2026-08-11). Half of what this comment used
+   * to justify now lives in `statusKeyFor` itself. That function took a status
+   * and an action text and NO CLOCK, so it could say "this record is a
+   * placement" but never "and that is still true today" — and it printed the
+   * present-tense "On the floor calendar" on 305 of the corpus's 322 dated
+   * placements whose own record had shown nothing for a median of 140 days.
+   * It now takes `last_action_date` and answers a third key,
+   * `floor_vote_stale` ("Placed on the calendar"): the same specific fact, in
+   * the tense the date supports. Every surface gets that, not just this page.
    *
-   * The consequence, stated rather than hidden: /bills and the embeds still
-   * print "Floor activity" for a fresh pending bill while this page prints
-   * "Floor vote pending". Both are true of the same record; this one is
-   * simply the stronger of the two, and it is the one the crown promised.
+   * WHAT STAYS HERE, AND WHY. The floor-COPY table above (`FLOOR_COPY`) is a
+   * different and stronger claim than a status key: it names a chamber and,
+   * in the `pending` case, asserts that a vote is still ahead — a sentence
+   * assembled from `floorPendingChamber`'s allow-list, which the shared gate
+   * deliberately does not read (a status label is a category; the allow-list
+   * is a claim about what happens next). So the page still prints its own
+   * stronger label when the fresh floor gate found one, and falls back to the
+   * shared key otherwise.
+   *
+   * The consequence, stated rather than hidden: /bills and the embeds print
+   * "Floor activity" for a fresh PENDING bill while this page prints "Floor
+   * vote pending". Both are true of the same record; this one is simply the
+   * stronger of the two, and it is the one the crown promised. The placement
+   * case no longer diverges at all — both surfaces now read the same clock.
    */
   const statusLabelKey = floorCopy ? floorCopy.status : `bills.status.${statusKey}`;
 

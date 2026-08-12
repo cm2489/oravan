@@ -202,7 +202,8 @@ export function blankDraft(notes = []) {
  */
 export function groundFor(c, bill, statusPhrases = null) {
   const lastActionText = bill?.last_action_text ?? null;
-  const statusKey = statusKeyFor(c.status, lastActionText);
+  const lastActionDate = c.lastActionDate ?? bill?.last_action_date ?? null;
+  const statusKey = statusKeyFor(c.status, lastActionText, lastActionDate);
   const phrase = (lang) =>
     statusPhrases?.[lang]?.[statusKey] ?? String(statusKey ?? '').replace(/_/g, ' ');
   return {
@@ -219,8 +220,17 @@ export function groundFor(c, bill, statusPhrases = null) {
     tier: c.tier,
     outlets: c.outlets,
     /** True iff the bill's OWN last action says a chamber placed it on a
-     *  calendar — the same answer statusKey gives, never a second one. */
-    floorCalendar: statusKey === 'floor_vote',
+     *  calendar — the same answer statusKey gives, never a second one.
+     *
+     *  BOTH placement keys count. Since N3 (2026-08-11) statusKeyFor splits a
+     *  placement by AGE — `floor_vote` fresh, `floor_vote_stale` aged — and
+     *  reading only the fresh one here would have made this line say "not on a
+     *  floor calendar" about a bill that is demonstrably on one, which is a
+     *  new falsehood in the record block rather than the old one fixed. The
+     *  two keys differ in TENSE, and the tense is already carried by the
+     *  status phrase two fields up; this boolean answers "is there a
+     *  placement", which is age-independent. */
+    floorCalendar: statusKey === 'floor_vote' || statusKey === 'floor_vote_stale',
     floorChamber: c.floorChamber ?? null,
     /** Whether ANY outlet covering this bill carries a lean rating in our own
      *  media-bias table. A fact about the table, not about the press — see
@@ -285,8 +295,11 @@ export function recordLines(g) {
  * descriptions of coverage), the signal types, and the stored moment statuses.
  */
 export const INTERNAL_ENUM_TOKENS = [
-  // bill status (data/bills.json) + the derived label key — see the note above
-  'floor_vote', 'floor_activity', 'passed_chamber',
+  // bill status (data/bills.json) + the derived label keys — see the note
+  // above. `floor_vote_stale` is listed SEPARATELY and is not covered by
+  // `floor_vote`: enumLeaks matches on word boundaries that treat `_` as a
+  // word character, so `floor_vote` does not fire inside `floor_vote_stale`.
+  'floor_vote', 'floor_vote_stale', 'floor_activity', 'passed_chamber',
   // coverage tier (scripts/moment-candidates.mjs coverageTier)
   'cross', 'neutral', 'one_sided', 'none',
   // qualifying-signal type (lib/moments-gate.mjs SIGNAL_TYPES)
