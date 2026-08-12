@@ -44,6 +44,11 @@ import { DONATE_URL } from '@/lib/site';
 
 const SITE_LINKS = [
   { href: '/why-call', key: 'nav.whyCall' },
+  // Beside "Why call?" because it answers the neighbouring question — what the
+  // record is saying — and NOT in the header, which holds a measured one-row
+  // 56px budget the Spanish nav already fills (see components/Header.tsx). The
+  // popovers are the in-context entry point; this is the standing one.
+  { href: '/glossary', key: 'footer.glossary' },
   { href: '/about', key: 'footer.about' },
   { href: '/partners', key: 'footer.partners' },
   { href: '/embeds', key: 'footer.embeds' },

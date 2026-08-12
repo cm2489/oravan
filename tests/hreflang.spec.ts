@@ -37,6 +37,7 @@ const PATHS = [
   '/embeds/terms', // S21's embeds Terms of Service
   '/partners', // S5b's partner GTM page
   '/mcp', // S12's MCP server docs page
+  '/glossary', // the procedural glossary (issue #181)
   '/bills/hr-5582-119',
   '/bills/sjres-99-119',
   '/bills/hr-8553-119', // one of the corpus's two undecoded bills

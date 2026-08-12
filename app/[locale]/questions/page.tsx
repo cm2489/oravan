@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { glossaryTag } from '@/components/glossary-tags';
 import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
@@ -148,7 +149,17 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
         {/* A ruled list, which is how a document states terms — not bullets. */}
         <ul className="mt-5 max-w-read list-none">
           <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule1')}</li>
-          <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule2')}</li>
+          {/* Rule 2 is the one place in the whole product where "cloture" and
+              "the Senate Executive Calendar" are already written into
+              hand-authored copy, so it is the glossary's first wiring site
+              (issue #181). The tags carry the link INSIDE the sentence; the
+              sentence itself is unchanged in both languages. */}
+          <li className="border-t border-line-strong py-3 text-sm text-ink-2">
+            {t.rich('moments.howMadeRule2', {
+              cloture: glossaryTag('cloture'),
+              execCalendar: glossaryTag('executive-calendar'),
+            })}
+          </li>
           <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule3')}</li>
           <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule4')}</li>
         </ul>

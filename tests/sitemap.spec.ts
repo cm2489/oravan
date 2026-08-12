@@ -13,7 +13,7 @@ import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind 
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 14; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions'
+const STATIC_PATH_COUNT = 15; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions', '/glossary'
 
 /**
  * The nomination slugs app/sitemap.ts actually lists: ONLY those a moment in a

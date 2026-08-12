@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { PhoneCall } from 'lucide-react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { NominationStatusLabel } from '@/components/NominationStatusLabel';
 import { Chip } from '@/components/system';
 import type { NominationStatus } from '@/lib/core/nominations';
 import { isSignalFresh } from '@/lib/signal-window';
@@ -120,7 +121,16 @@ export function MomentNominationCard({
   const meta: { key: string; node: ReactNode }[] = [
     { key: 'cite', node: <span className="tabular-nums normal-case">{citation}</span> },
   ];
-  if (!onExecCalendar) meta.push({ key: 'status', node: t(`nominations.status.${status}`) });
+  if (!onExecCalendar)
+    meta.push({
+      key: 'status',
+      // Glossed where the label IS a procedural term — the same renderer the
+      // nomination page uses, so a status can never be explained on one
+      // surface and bare on the other (issue #181).
+      node: (
+        <NominationStatusLabel status={status} label={t(`nominations.status.${status}`)} />
+      ),
+    });
   if (organization) meta.push({ key: 'org', node: organization });
 
   return (

@@ -193,6 +193,60 @@ export function journeyEnding(billType: string, title?: string | null): JourneyE
  */
 
 /*
+ * `endsAtPresident` LIVED HERE FOR ONE DAY AND IS GONE (2026-08-12).
+ *
+ * This branch moved it out of components/BillJourney.tsx because the stepper
+ * grew a glossary link, which pulls in `@/i18n/navigation`, and
+ * tests/bill-journey.unit.spec.ts was importing a pure function straight out
+ * of that component — a dependency on the component never acquiring a UI
+ * import. #220 made the same move for a better reason and generalized the
+ * function on the way: `journeyEnding` above answers all THREE endings, the
+ * Article V states path included, and the boolean cannot express that. So the
+ * boolean is deleted rather than kept beside its own successor, and the spec
+ * reads `journeyEnding` from this module — which satisfies the import problem
+ * completely.
+ */
+
+/** Which named calendar the record put the bill on. */
+export type FloorCalendar = 'union' | 'house' | 'senate-legislative';
+
+/*
+ * WHICH CALENDAR, not just which chamber — the finer grain, added for the
+ * procedural glossary (issue #181) and deliberately built ON TOP of
+ * floorCalendarChamber rather than beside it.
+ *
+ * The reason it exists: "on the House floor calendar" is not one fact. The
+ * House keeps two, and the placement regex accepts both. Measured 2026-08-12
+ * over every `floor_vote` bill in the committed corpus whose
+ * `last_action_text` matches that regex: 180 Senate Legislative, 148 Union
+ * Calendar, 2 House Calendar. A glossary link that sent all 150 House
+ * placements to the Union Calendar entry would be a quiet false claim on 2 of
+ * them, which is the exact class of thing the surrounding module refuses to
+ * make. So the caller gets the real answer and links only what the record
+ * named. (The corpus moves nightly — recompute rather than trust these
+ * figures.)
+ *
+ * NO SECOND COPY OF THE PINNED REGEX. The `/placed on …/i` literal lives once,
+ * in lib/floor-text.mjs, and is drift-pinned byte-for-byte against
+ * scripts/moment-candidates.mjs (tests/moment-candidates.unit.spec.ts §2). A
+ * second copy here would be a second thing to keep in sync — the very defect
+ * that pin exists to catch. This delegates the placement question entirely and
+ * asks only the one extra thing the chamber answer throws away.
+ *
+ * IT STAYS IN TypeScript, next to its consumer. #218 moved the four chamber
+ * readers to lib/floor-text.mjs because lib/docket.mjs's ladder has to read
+ * them under plain node; nothing under plain node asks WHICH calendar, and the
+ * `FloorCalendar` union is a type the stepper's lookup table is keyed on.
+ */
+export function floorCalendarName(actionText: string | null): FloorCalendar | null {
+  const chamber = floorCalendarChamber(actionText);
+  if (!chamber || !actionText) return null;
+  if (chamber === 'senate') return 'senate-legislative';
+  return /union calendar/i.test(actionText) ? 'union' : 'house';
+}
+
+
+/*
  * THE THIRD GATE: THE CLOCK — which floor facts this module may speak about in
  * the PRESENT TENSE (owner ruling 2026-08-11, decision D3).
  *
@@ -823,6 +877,12 @@ export interface JourneyState {
    *  placement, in the past tense) and sets this false, so a future reader
    *  cannot re-light an urgency treatment off a two-year-old event. */
   onCalendar: boolean;
+  /** WHICH calendar the record named, when it named one — set on the two
+   *  placement keys (`nowFloor` / `nowFloorStale`) and null everywhere else.
+   *  Read by components/BillJourney.tsx to decide which glossary entry the
+   *  placement phrase links to, and to link nothing when the record said
+   *  "House Calendar" (there is no glossary entry for that one yet). */
+  floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
   /** Whether the "changes send it back" trailer is still ahead. */
@@ -853,6 +913,7 @@ export function deriveJourney(
     current: origin,
     nowChamber: origin,
     onCalendar: false,
+    floorCalendar: null,
     isLaw: false,
     isVetoed: false,
     showTrailer: true,
@@ -886,6 +947,7 @@ export function deriveJourney(
           // claim — an aged placement is still ON the calendar and the
           // demoted sentence still says so.
           onCalendar: live,
+          floorCalendar: floorCalendarName(bill.last_action_text),
           nowKey: live ? 'nowFloor' : 'nowFloorStale',
         };
       }

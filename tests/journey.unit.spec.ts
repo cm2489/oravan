@@ -812,7 +812,17 @@ test.describe('deriveJourney', () => {
   ) => {
     const state = j(bill_type, status, text, date);
     const journey = catalog.bill.journey as Record<string, string>;
-    return render(journey[state.nowKey], icuParams(state));
+    /*
+     * Rich-text tags stripped (2026-08-12, the procedural glossary): the two
+     * placement sentences now wrap their calendar phrase in `<floorCalendar>`
+     * so components/BillJourney.tsx can turn that span into a glossary
+     * trigger. `render` here is next-intl's plain `t`, which leaves markup
+     * alone, and what these tests are about is the SENTENCE — that it names
+     * the right chamber and the right tense. The tags themselves are pinned
+     * separately in tests/glossary.unit.spec.ts, including that both
+     * languages carry the same set.
+     */
+    return render(journey[state.nowKey], icuParams(state)).replace(/<\/?[a-zA-Z][\w-]*>/g, '');
   };
 
   test('the resolver itself agrees with a sentence the catalog already shipped', () => {

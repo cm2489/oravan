@@ -4,6 +4,12 @@ import { join } from 'node:path';
 import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+// From lib/journey.ts, not from the component. #220 moved the ending
+// derivation there and generalized it to all three endings; this branch had
+// moved the boolean it replaced for a narrower reason — the stepper now
+// renders a glossary link, which pulls in `@/i18n/navigation`, and that chain
+// does not resolve inside this runner. Both reasons point the same way, and
+// #220's function is the one that survives.
 import { deriveJourney, journeyEnding } from '../lib/journey';
 // The fetcher's closed vehicle allowlist — the ONE place the corpus's type
 // vocabulary is decided. Imported from the .mjs directly (the same pattern

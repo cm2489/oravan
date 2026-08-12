@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip } from '@/components/system';
-import type { JourneyEnding, JourneyState } from '@/lib/journey';
+import type { GlossaryTermId } from '@/lib/glossary';
+import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
 
 /*
  * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
@@ -28,6 +31,30 @@ import type { JourneyEnding, JourneyState } from '@/lib/journey';
  * reference tinted the current label green, and green in this system is
  * spent on actions and the gauge, never on a label.
  */
+
+/*
+/*
+ * THE GLOSSARY LINK ON THE PLACEMENT PHRASE (issue #181).
+ *
+ * `nowFloor` / `nowFloorStale` are the only two "Right now:" sentences that
+ * name a calendar, and both wrap that phrase in a `<floorCalendar>` tag in
+ * BOTH languages. The tag is one name; WHICH entry it resolves to is decided
+ * here, from what the record actually said.
+ *
+ * THE HOUSE CALENDAR HAS NO ENTRY, AND SO GETS NO LINK. The House keeps two
+ * calendars and the record names both: measured 2026-08-12 on the committed
+ * corpus, 148 House placements say "Union Calendar" and 2 say "House
+ * Calendar". The first batch of glossary terms (issue #181) covers the Union
+ * Calendar and not the other, so those 2 render the identical sentence with no
+ * trigger in it rather than a link to an entry that is about a different list.
+ * Absence is a finding; a link that is 98.7% right is a false claim on the
+ * rest. See lib/journey.ts's floorCalendarName for the full split.
+ */
+const CALENDAR_TERM: Record<FloorCalendar, GlossaryTermId | null> = {
+  'senate-legislative': 'legislative-calendar',
+  union: 'union-calendar',
+  house: null,
+};
 
 /*
  * WHERE THE PATH ENDS — and the two vehicles that never reach the President.
@@ -89,6 +116,12 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const here = journey.step;
   const { isLaw, isVetoed } = journey;
 
+  // Supplied on every key: the tag only exists inside the two placement
+  // messages, and next-intl ignores a handler a message never opens.
+  const calendarTerm = journey.floorCalendar ? CALENDAR_TERM[journey.floorCalendar] : null;
+  const floorCalendar = (chunks: ReactNode) =>
+    calendarTerm ? <GlossaryTerm id={calendarTerm}>{chunks}</GlossaryTerm> : <>{chunks}</>;
+
   return (
     <div>
       {/* Below 48rem the strip stands up and runs DOWN the page rather than
@@ -137,7 +170,7 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {t(journey.nowKey, { chamber: nowChamber, other })}
+          {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar })}
           {journey.showTrailer && <> {t(TRAILER_KEY[ending], { chamber, other })}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}

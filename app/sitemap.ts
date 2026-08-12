@@ -43,6 +43,7 @@ const STATIC_PATHS = [
   '/partners',
   '/mcp',
   '/questions',
+  '/glossary',
 ] as const;
 
 function languagesFor(href: string): Record<string, string> {
