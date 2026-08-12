@@ -390,7 +390,11 @@
       "metaPending": "The steps toward a floor vote have started, and offices tally calls until it happens.",
       "cta": "Make your call",
       "announcedHouse": "On the House floor schedule",
-      "announcedSenate": "On the Senate's floor program"
+      "announcedSenate": "On the Senate's floor program",
+      "headlineAnnouncedHouse": "The House has named this bill on its own published floor schedule.",
+      "headlineAnnouncedSenate": "The Senate has named this bill on its own published floor program.",
+      "statusAnnounced": "On the floor schedule",
+      "metaAnnounced": "The chamber published this itself. It does not say when the vote will be, and offices tally calls until it happens."
     }
   },
   "walkthrough": {

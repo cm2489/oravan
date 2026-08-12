@@ -361,6 +361,72 @@ export function statusKeyFor(
 }
 
 /**
+ * WHICH DATED FLOOR FACT THE BILL PAGE'S GREEN BAND STANDS ON — the page's
+ * whole gate, in one pure function, so it can be pinned with fixtures instead
+ * of only observed on whatever the corpus happens to hold today.
+ *
+ * THE SEAM THIS CLOSED (2026-08-12). The bill page hard-gated its band on
+ * `status === 'floor_vote'` and never looked at the chamber's own schedule, so
+ * an ANNOUNCED bill — the T0 rung, the chamber naming a measure for floor
+ * action in its own published words — wore the crown on the homepage and then
+ * showed no band at all on its own page one click later. That is not an edge
+ * case: `committee` is the normal derived status of a measure in the middle of
+ * passing, because Congress overwrites `last_action_text` the moment a bill
+ * reaches the floor ("Message on Senate action sent to the House."), which is
+ * the entire reason ruling V1 exempted `announced` from the status gate. It is
+ * the same seam class #207 closed for `pending`, and the general lesson is the
+ * one the crown's own header states: two surfaces reading one record must run
+ * one gate, not two hand-kept copies of it.
+ *
+ * THE ANNOUNCEMENT IS PASSED IN, ALREADY GATED — this module holds no data
+ * import and no clock of the schedule's own. The caller resolves it through
+ * lib/docket.ts (`rungFor` → `rung.announced`, which is terminal-first and
+ * `signalIsLive`-gated: a signed law is never announced, and a bill the chamber
+ * pulls stops being announced within the hour). Pass null and this function
+ * behaves exactly as the page did before the seam was closed.
+ *
+ * ORDER, AND WHY THE RECORD HALF IS UNTOUCHED: `announced` outranks both record
+ * facts, exactly as the ladder ranks T0 over T1/T2 and the crown ranks its
+ * kinds. Below it, the page's existing preference stands — a placement is the
+ * plainer claim and wins its (near-impossible) tie with a pending motion. That
+ * tie is decided the other way in `selectFloorVoteFeature`, where the question
+ * is which of MANY bills to crown rather than which sentence to print about
+ * ONE; the two only disagree on a record that states both facts at once, which
+ * the corpus holds no example of.
+ */
+export type FloorBandKind = 'announced' | 'calendar' | 'pending';
+
+export interface FloorBand {
+  kind: FloorBandKind;
+  chamber: Chamber;
+  /** The date the band's chip prints — the ANNOUNCEMENT's own publication day
+   *  on `announced`, the bill's own action date otherwise. Never a vote date:
+   *  neither the corpus nor the schedule carries one. */
+  date: string;
+}
+
+export function billFloorBand(
+  bill: {
+    status: Bill['status'];
+    last_action_text?: string | null;
+    last_action_date?: string | null;
+  },
+  announcement: { chamber: Chamber; published: string } | null,
+  now: number = Date.now()
+): FloorBand | null {
+  if (announcement) {
+    return { kind: 'announced', chamber: announcement.chamber, date: announcement.published };
+  }
+  const date = bill.last_action_date ?? null;
+  if (bill.status !== 'floor_vote' || !date || !isSignalFresh(date, now)) return null;
+  const calendar = floorCalendarChamber(bill.last_action_text ?? null);
+  const pending = calendar ? null : floorPendingChamber(bill.last_action_text ?? null);
+  const chamber = calendar ?? pending;
+  if (!chamber) return null;
+  return { kind: calendar ? 'calendar' : 'pending', chamber, date };
+}
+
+/**
  * Where the live decision sits, for the rep list to route on.
  *
  * TWO BOOLEANS, AND THE DIFFERENCE BETWEEN THEM IS THE WHOLE POINT.

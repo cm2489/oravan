@@ -390,7 +390,11 @@
       "metaPending": "Ya comenzaron los pasos hacia una votación en el pleno, y las oficinas cuentan llamadas hasta que ocurra.",
       "cta": "Haz tu llamada",
       "announcedHouse": "En la programación del pleno de la Cámara",
-      "announcedSenate": "En el programa del pleno del Senado"
+      "announcedSenate": "En el programa del pleno del Senado",
+      "headlineAnnouncedHouse": "La Cámara incluyó este proyecto en su propia programación del pleno.",
+      "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
+      "statusAnnounced": "En la programación del pleno",
+      "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra."
     }
   },
   "walkthrough": {

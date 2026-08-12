@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { BillStatus } from '@/lib/types';
 import { floorCalendarChamber, floorPendingChamber, type Chamber } from '@/lib/journey';
-import { effectiveUrgency, isSignalFresh } from '@/lib/signal-window';
+import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '@/lib/signal-window';
 import { Chip } from './Chip';
 
 /*
@@ -275,6 +275,12 @@ export interface FloorAnnouncement {
   published: string;
   /** The meeting or week the announcement covers, when the source printed one. */
   covers: string | null;
+  /** THE SOURCE'S OWN PRINTED SCHEDULE LABEL, verbatim and English — e.g.
+   *  "8 a.m., Thursday, August 13". `covers` is our ISO derivation OF this
+   *  sentence (scripts/floor-signals-parse.mjs keeps both side by side so the
+   *  derivation stays checkable), so where a surface prints coverage this is
+   *  the more honest of the two. Null when the document printed no label. */
+  coversLabel: string | null;
   source: 'daily-digest' | 'billsthisweek';
   chamber: Chamber;
 }
@@ -337,7 +343,17 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
     // (already enforced upstream by lib/docket.mjs's `signalIsLive`, which drops
     // a pulled bill within the hour) — not the bill's last-action clock, which
     // is exactly the clock that goes stale when a measure reaches the floor.
-    const announcement = announcementOf?.(bill) ?? null;
+    //
+    // TERMINAL FIRST, THOUGH, and this rung order is `docketRung`'s (terminal is
+    // checked before T0 there, for the same reason). The status gate is dropped
+    // for `announced` because a derived status goes STALE; `signed`/`vetoed` is
+    // the opposite case — the floor question is closed and no schedule entry can
+    // reopen it. Until 2026-08-12 this branch leaned entirely on callers never
+    // resolving an announcement for a terminal bill, which is upstream luck
+    // rather than a rule. One Set lookup buys the rule.
+    const announcement = TERMINAL_STATUSES.has(bill.status)
+      ? null
+      : (announcementOf?.(bill) ?? null);
     if (announcement) {
       const candidate: FloorFeature<T> = {
         bill,
