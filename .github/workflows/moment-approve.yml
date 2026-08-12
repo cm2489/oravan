@@ -1,0 +1,374 @@
+name: Moment approve
+
+# The APPROVE half of the Big Question intake loop (owner ruling, 2026-08-10):
+#
+#   "I just want to approve what Big Questions are on the live site, I don't
+#    want to do any writing. Ideally when something new clears the bar I want
+#    to be notified of it and then I can decide whether it goes on, and if the
+#    6 spots are already full, what it should replace."
+#
+# moment-watch.yml already does the notifying: it opens one issue per candidate
+# carrying a lint-checked AI first draft of every sentence. What was missing was
+# a way to say yes without copying JSON into an editor and opening a PR by hand.
+# The label IS the yes. This workflow is what happens after it.
+#
+# THE SHAPE, in one line each:
+#   1. the labeler must be the repo owner, checked BEFORE anything is checked out
+#   2. scripts/moment-approve.mjs parses that issue's scaffold and runs the gate
+#   3. six slots full? a `/replace <id>` comment from the owner names the retiree
+#   4. the entry is written byte-for-byte as the issue has it, then re-read and
+#      compared; anything else and the file is restored and nothing publishes
+#   5. branch, commit, PR, auto-merge on green — the PR closes the issue
+#
+# WHAT IT NEVER DOES: change a word. When a gate wants an edit, the edit goes
+# back to the issue as a comment and the label comes off. The owner either waits
+# for tonight's watcher to re-draft, or edits the issue body himself — and his
+# edit is then the approved draft, read exactly as written. There is no path
+# here where copy nobody read reaches the site, which is the only reason
+# `moments.howMadeBody`'s promise survives the automation.
+#
+# COST: $0. No model call anywhere in this job — the writing already happened,
+# in moment-watch.yml, and re-drafting at approve time would publish sentences
+# the owner never saw. No `npm ci` either: scripts/moment-approve.mjs and
+# scripts/check-moments.mjs are stdlib-plus-local-modules, so this job installs
+# nothing. Actions minutes on standard runners are free on a public repo.
+#
+# WHY `issues: labeled` AND NOT `issue_comment`. The directive (`/replace <id>`)
+# is read from the thread, but it is never a trigger: a comment that fired this
+# workflow would mean anyone who can comment could start a publish attempt, and
+# the authorization step would then be the only thing between a stranger and a
+# run. Labels need write access to apply, the owner check is unconditional, and
+# the two together mean the trigger itself is already narrow.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write # pushes the moment/approve-<id> branch
+  issues: write # comments, and removes the label on every refusal
+  pull-requests: write # opens the PR and enables auto-merge
+  actions: write # dispatches ci.yml — see the "Ask CI to run" step for why
+
+concurrency:
+  # Per issue, never cancelled: two labels racing on one issue would both read
+  # the same data/moments.json and both append. Serialised, the second run sees
+  # the first one's branch and refuses.
+  group: moment-approve-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+env:
+  # The one account that may publish a Big Question. Written here rather than
+  # read from `github.repository_owner` on purpose: this is an authorization
+  # boundary, and an authorization boundary that derives itself from the event
+  # is one substitution away from not being one.
+  APPROVE_OWNER: cm2489
+  LABEL: approve-moment
+
+jobs:
+  approve:
+    if: github.event.label.name == 'approve-moment'
+    runs-on: ubuntu-latest
+    steps:
+      # ---------------------------------------------------------------------
+      # 1. THE SECURITY GATE. First, and before checkout on purpose.
+      # ---------------------------------------------------------------------
+      - name: Only the repo owner may approve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SENDER: ${{ github.event.sender.login }}
+          ACTOR: ${{ github.actor }}
+          ISSUE: ${{ github.event.issue.number }}
+        # BOTH identities are checked. On a `labeled` event they are normally
+        # the same person — `sender` is who added the label, `actor` is who the
+        # run is attributed to — and a run where they disagree is a run whose
+        # provenance nobody can explain, which is not a state to publish from.
+        #
+        # Nothing is checked out yet, so this step reads no repository content
+        # at all: `gh` is pointed at $GITHUB_REPOSITORY directly. A gate that
+        # runs after a checkout is a gate that has already done work on an
+        # unauthorized trigger's behalf.
+        #
+        # The label is REMOVED rather than left in place, because a label that
+        # stays looks approved to the next reader of the issue. The run then
+        # goes red: an unauthorized attempt to publish is exactly the thing a
+        # quiet green check should never hide.
+        run: |
+          if [ "$SENDER" != "$APPROVE_OWNER" ] || [ "$ACTOR" != "$APPROVE_OWNER" ]; then
+            gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL" || true
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
+              "The \`$LABEL\` label was applied by @$SENDER, and only @$APPROVE_OWNER can approve a Big Question for the live site. The label has been removed and nothing was changed."
+            echo "::error::$LABEL applied by ${SENDER} (actor ${ACTOR}) — only ${APPROVE_OWNER} may approve. Label removed, nothing published."
+            exit 1
+          fi
+          echo "labeler ${SENDER} is the owner — proceeding"
+
+      - uses: actions/checkout@v7
+
+      - name: Resolve origin/main (the Moments new-vehicle baseline)
+        # Same step, same reason, as ci.yml's: actions/checkout lands at depth 1
+        # with no origin/main remote-tracking ref, so check-moments.mjs's
+        # baseline (`git show origin/main:data/moments.json`) would have nothing
+        # to resolve against and would fall back to an in-gate network fetch.
+        # Creating the ref up front lets --require-baseline below be the hard
+        # failure it is meant to be.
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # No `npm ci`. scripts/moment-approve.mjs imports node builtins plus
+      # lib/moments-gate.mjs, scripts/moment-scaffold.mjs and
+      # scripts/nominations-fetch.mjs, all of which are stdlib-only; so is
+      # scripts/check-moments.mjs. If that ever stops being true this job needs
+      # `npm ci --omit=dev`, and it will fail loudly on the import rather than
+      # quietly on anything else.
+
+      - name: Ensure this workflow's own label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Idempotent upsert, the pattern daily-metrics.yml and moment-watch.yml
+        # both use. `--force` puts the colour and description under version
+        # control, which creating a label by hand does not — this repo's own
+        # lesson, learned twice (see moment-watch.yml's copy of this step).
+        #
+        # NOTE THE ORDERING PROBLEM this step does NOT solve, stated rather
+        # than hidden: the label has to exist before anyone can apply it, and
+        # this workflow only runs after it has been applied. moment-watch.yml —
+        # which opens the issues the label goes on, and runs nightly — creates
+        # it too, which is what actually bootstraps it.
+        run: |
+          gh label create "$LABEL" --color 5319E7 --force \
+            --description "Owner-approved: publish this Big Question candidate"
+
+      - name: Read the issue and its comments
+        id: fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        # Through FILES, never through the event payload interpolated into a
+        # shell body: an issue body is attacker-influenced text (anyone can
+        # comment, and a candidate issue quotes a bill title verbatim), and the
+        # only safe thing to do with it is write it to disk and hand over a
+        # path. Same rule moment-watch.yml states over its `FILED` receipt.
+        run: |
+          mkdir -p /tmp/approve
+          gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json body --jq .body > /tmp/approve/body.md
+          gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json comments --jq .comments > /tmp/approve/comments.json
+          wc -c /tmp/approve/body.md /tmp/approve/comments.json
+
+      - name: Decide, and write the entry byte-for-byte
+        id: decide
+        env:
+          ISSUE: ${{ github.event.issue.number }}
+          APPROVE_SENDER: ${{ github.event.sender.login }}
+          APPROVE_ACTOR: ${{ github.actor }}
+        # Writes data/moments.json only on approval, then RE-READS it and
+        # compares the entry on disk against the entry parsed out of the issue.
+        # A mismatch restores the file and exits non-zero, which fails this step
+        # and stops the job before anything is committed.
+        #
+        # A REFUSAL IS NOT A FAILURE. The script exits 0 and sets
+        # decision=refuse; the next two steps post the reason and take the label
+        # off. Red runs are for the two things that really are wrong: an
+        # unauthorized labeler, and a byte-fidelity violation.
+        run: |
+          node scripts/moment-approve.mjs \
+            --body-file=/tmp/approve/body.md \
+            --comments-file=/tmp/approve/comments.json \
+            --issue="$ISSUE" \
+            --owner="$APPROVE_OWNER" \
+            --write \
+            --out=/tmp/approve/decision.json \
+            --comment-out=/tmp/approve/comment.md \
+            --pr-title-out=/tmp/approve/pr-title.txt \
+            --pr-body-out=/tmp/approve/pr-body.md
+          cat /tmp/approve/decision.json
+
+      - name: Hand the refusal back to the issue
+        if: steps.decide.outputs.decision == 'refuse'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        # The label comes OFF on every refusal, and that is the whole re-entry
+        # mechanism: re-applying it is how the owner says "try again", after the
+        # watcher has re-drafted or after he has edited the body himself. A
+        # label left on would make the next attempt impossible without removing
+        # it by hand first.
+        run: |
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file /tmp/approve/comment.md
+          gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL"
+          echo "::notice::refused (${{ steps.decide.outputs.reason }}) — reason posted on #${ISSUE}, label removed, data/moments.json untouched"
+
+      - name: Re-run the curation gate on the working tree
+        id: gate
+        if: steps.decide.outputs.decision == 'approve'
+        # BELT AND BRACES, and not redundant. The script ran `checkMoments` in
+        # process, over objects. This runs the real CLI the merge gate runs,
+        # over the file that is actually about to be committed, including the
+        # two drift scans the CLI does that the library cannot (its copies of
+        # the terminal-status sets against lib/urgency.mjs and
+        # lib/nomination-status.mjs, and the signal-type/vehicle-kind lists
+        # against lib/moments.ts's source text) and the messages-chrome lint.
+        #
+        # On failure the file is RESTORED and the run refuses, because a gate
+        # that wants a change is a change the owner has to approve — the same
+        # rule the script obeys. Its output is captured either way and becomes
+        # the gate evidence in the PR body.
+        run: |
+          set +e
+          node scripts/check-moments.mjs --require-baseline > /tmp/approve/gate.txt 2>&1
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/approve/gate.txt
+          exit 0
+
+      - name: Restore and refuse if the gate failed
+        if: steps.decide.outputs.decision == 'approve' && steps.gate.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          git checkout -- data/moments.json
+          {
+            echo "### Nothing was published — \`scripts/check-moments.mjs\` failed on the working tree"
+            echo
+            echo "The in-process gate passed and the CLI gate did not, which means one of the checks only the CLI runs is unhappy — its drift scans against \`lib/urgency.mjs\` / \`lib/nomination-status.mjs\` / \`lib/moments.ts\`, the \`origin/main\` baseline, or the messages-chrome vocabulary lint."
+            echo
+            echo '```'
+            cat /tmp/approve/gate.txt
+            echo '```'
+            echo
+            echo "\`data/moments.json\` has been restored and the \`$LABEL\` label removed. Nothing here rewrites your copy: re-apply the label once the cause is fixed."
+          } > /tmp/approve/gate-comment.md
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file /tmp/approve/gate-comment.md
+          gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL"
+          echo "::error::check-moments failed on the spliced file — restored, label removed, nothing published"
+          exit 1
+
+      - name: Refuse if a branch is already open for this question
+        id: branch
+        if: steps.decide.outputs.decision == 'approve' && steps.gate.outputs.status == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          BRANCH: ${{ steps.decide.outputs.branch }}
+        # One branch per moment id. A second run finding one already there means
+        # either a PR is open for this same question or a previous attempt left
+        # a branch behind — and force-pushing over it would silently discard
+        # whatever is on it, including review comments. Refusing and naming it
+        # is the only outcome that cannot lose work.
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git checkout -- data/moments.json
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
+              "Nothing was published — the branch \`$BRANCH\` already exists on the remote, so a pull request for this question is already open or was left behind by an earlier attempt. Merge or delete it, then re-apply the \`$LABEL\` label. \`data/moments.json\` is untouched."
+            gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL"
+            echo "::notice::${BRANCH} already exists — refused, nothing published"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, push, open the PR
+        id: pr
+        if: steps.branch.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          BRANCH: ${{ steps.decide.outputs.branch }}
+          MOMENT_ID: ${{ steps.decide.outputs.moment_id }}
+          RETIRE: ${{ steps.decide.outputs.retire }}
+        # THE AUTHOR IS LOAD-BEARING, NOT COSMETIC — the same reason every data
+        # workflow in this repo commits as oravan-sync: Vercel's GitHub
+        # integration only auto-deploys a push whose commit author has a linked
+        # Vercel account, and a github-actions[bot] author is silently ignored.
+        # This repo already paid ten days of broken deploys for that lesson
+        # (docs/solutions/vercel-bot-push-blocked-deploys.md). A Big Question
+        # that merges and does not deploy is the worst possible version of this
+        # feature.
+        #
+        # The gate's own output is appended to the PR body as evidence, so the
+        # PR carries the transcript of the check rather than a claim about it.
+        run: |
+          git config user.name  "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/moments.json
+          {
+            echo "Publish the ${MOMENT_ID} Big Question, approved on #${ISSUE}"
+            echo
+            echo "Approved by @${APPROVE_OWNER} applying the ${LABEL} label to #${ISSUE}."
+            echo "The entry is the scaffold from that issue, written through unchanged"
+            echo "and verified byte for byte against it after the write."
+            if [ -n "$RETIRE" ]; then
+              echo
+              echo "Retires ${RETIRE} on the /replace directive in the same thread."
+            fi
+          } > /tmp/approve/commit-msg.txt
+          git commit -F /tmp/approve/commit-msg.txt
+          git push origin "$BRANCH"
+          {
+            echo
+            echo "<details><summary><code>node scripts/check-moments.mjs --require-baseline</code></summary>"
+            echo
+            echo '```'
+            cat /tmp/approve/gate.txt
+            echo '```'
+            echo
+            echo "</details>"
+          } >> /tmp/approve/pr-body.md
+          PR_URL=$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "$BRANCH" \
+            --title "$(cat /tmp/approve/pr-title.txt)" \
+            --body-file /tmp/approve/pr-body.md)
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "::notice::opened $PR_URL"
+
+      - name: Ask CI to run on the new branch
+        if: steps.branch.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.decide.outputs.branch }}
+        # A pull request opened with GITHUB_TOKEN does not fire `on:
+        # pull_request` — GitHub suppresses it to stop workflows recursing — so
+        # without this the PR would sit with no checks at all and auto-merge
+        # would wait forever for something that never starts. ci.yml carries a
+        # `workflow_dispatch` trigger for exactly this reason, and the four data
+        # workflows already dispatch it after their own bot pushes.
+        #
+        # Best-effort: a failed dispatch leaves a PR with no checks, which is
+        # visible and safe (auto-merge cannot fire on it). It must never take
+        # down a run whose commit already landed on a branch.
+        run: |
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH" \
+            || echo "::warning::could not dispatch ci.yml on ${BRANCH} — the PR has no checks yet; run CI by hand before merging"
+
+      - name: Enable auto-merge on green
+        if: steps.branch.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        # THE MERGE IS THE LABEL, delivered late. The owner read the draft and
+        # approved it; this waits for CI to agree about the mechanics and then
+        # lands exactly what he approved. Squash, so `main` carries one commit
+        # per Big Question.
+        #
+        # It can legitimately fail — auto-merge has to be enabled in repository
+        # settings, and it needs at least one required status check to wait on.
+        # A failure here is NOT a run failure: the PR is open, correct, and one
+        # click from merging, and the issue gets told so. Silently red-running
+        # over a settings toggle would be noise about something that is already
+        # in the owner's hands.
+        run: |
+          if gh pr merge --repo "$GITHUB_REPOSITORY" --auto --squash "$PR_URL"; then
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
+              "Approved. $PR_URL carries the entry exactly as this issue has it, byte for byte, and merges itself when CI is green — which closes this issue."
+          else
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
+              "Approved, and $PR_URL carries the entry exactly as this issue has it, byte for byte. **Auto-merge could not be enabled** — it needs \"Allow auto-merge\" on in repository settings and at least one required status check to wait on — so merge it yourself once CI is green. Merging closes this issue."
+            echo "::warning::auto-merge could not be enabled on ${PR_URL} — the PR is open and correct; merge it by hand"
+          fi

@@ -574,6 +574,39 @@ export function passingCandidates(report, now) {
   return report.candidates.filter((c) => passesFloors(c, { now, openSlots: report.moments.openSlots }).pass);
 }
 
+/**
+ * The two lines that turn this issue from a report into a decision.
+ *
+ * An issue that says how to DECLINE and nothing about how to accept is a form
+ * with one button. Since 2026-08-10 there is a second one: applying
+ * `approve-moment` hands the scaffold below to
+ * .github/workflows/moment-approve.yml, which publishes it byte-for-byte
+ * (scripts/moment-approve.mjs — see docs/big-question-intake.md).
+ *
+ * It says "as written" rather than "as drafted" on purpose: the approve path
+ * reads the issue BODY, so an edit made here before labelling is the thing
+ * that publishes. That is the sentence that makes editing in place obviously
+ * safe, and it is the whole reason the loop needs no copy-paste step.
+ *
+ * `openSlots` is printed because the answer changes what the label does: with
+ * room, it publishes; without, the workflow comes back asking which of the six
+ * retires. Being told that up front is cheaper than being told it by a bot.
+ */
+export const APPROVE_INSTRUCTIONS = (openSlots) => [
+  '',
+  '### To approve',
+  '',
+  'Add the **`approve-moment`** label. The scaffold above is published exactly as written — edit anything in it first and your edit is what goes live; nothing rewrites it on the way.',
+  ...(openSlots > 0
+    ? []
+    : [
+        '',
+        `All 6 slots are full, so also comment \`/replace <moment-id>\` naming the question that retires. Without one the workflow will come back with the six ids and ask.`,
+      ]),
+  '',
+  'If a gate objects — or the record moves before you get to it — nothing is written and the reason comes back here as a comment.',
+];
+
 export function renderPush(newly, report, { grounds = new Map(), drafts = new Map(), structures = new Map(), rejections = [] } = {}) {
   const lines = [
     `## ${newly.length} new Big Question candidate${newly.length === 1 ? '' : 's'}`,
@@ -588,6 +621,7 @@ export function renderPush(newly, report, { grounds = new Map(), drafts = new Ma
   for (const c of newly) {
     lines.push(renderCandidate(c, { ground: grounds.get(c.slug), draft: drafts.get(c.slug), structure: structures.get(c.slug) }), '', '---', '');
   }
+  lines.push(...APPROVE_INSTRUCTIONS(report.moments.openSlots));
   lines.push(
     '',
     '### To decline',

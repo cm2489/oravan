@@ -136,6 +136,16 @@ jobs:
             --description "A bill cleared the Moment notification floor - owner decides"
           gh label create moment-review --color 1D76DB --force \
             --description "The standing weekly Moment shortlist digest"
+          # `approve-moment` is .github/workflows/moment-approve.yml's trigger,
+          # and it is created HERE rather than only there because of an ordering
+          # this repo has been bitten by twice: a label has to exist before
+          # anyone can apply it, and a workflow triggered BY that label only
+          # ever runs after the fact. This is the workflow that opens the issues
+          # the label goes on, so it is the one that has to own its existence.
+          # moment-approve.yml re-upserts it on every run, which keeps the
+          # colour and description under version control from both directions.
+          gh label create approve-moment --color 5319E7 --force \
+            --description "Owner-approved: publish this Big Question candidate"
 
       - name: Build report
         id: report
