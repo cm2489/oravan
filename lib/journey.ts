@@ -286,13 +286,13 @@ export function floorSettledChamber(actionText: string | null): Chamber | null {
  * does not renew itself, and after a few weeks of silence the present tense is
  * the only false word in an otherwise accurate sentence.
  *
- * MEASURED ON THE COMMITTED CORPUS, 2026-08-11: of 349 floor_vote bills, 323
- * carry a dated calendar placement and 306 of those placements are outside the
- * 14-day window — a median age of 140 days, a maximum of 687, one of them
- * (s-1776-118) a 118th-Congress bill whose calendar ended with that Congress.
- * Six more carry pending-but-aged floor motions. So the stepper's live-floor
- * copy and the rail's live-call routing were, on 312 of 349 bills, claims
- * their own printed date refuted.
+ * MEASURED ON THE COMMITTED CORPUS, 2026-08-12 (re-measured after #210 purged
+ * the corpus's only two previous-Congress records): of 348 floor_vote bills,
+ * 322 carry a dated calendar placement and 305 of those placements are outside
+ * the 14-day window — a median age of 140 days, a maximum of 553 (s-347-119,
+ * placed on the Senate calendar 2025-02-05). Six more carry pending-but-aged
+ * floor motions. So the stepper's live-floor copy and the rail's live-call
+ * routing were, on 311 of 348 bills, claims their own printed date refuted.
  *
  * PR #198 gave exactly this clock to the bill page's full-bleed green panel
  * and stopped there — one render site. The derivation underneath it kept
@@ -336,13 +336,22 @@ export function floorSettledChamber(actionText: string | null): Chamber | null {
  *      is still on the Union Calendar in August, because a placement is only
  *      undone by action or by the Congress ending. Demoting it to "Floor
  *      activity" after 14 days would trade a true, specific label for a vaguer
- *      one on 306 bills — less information, not more truth. The one class this
- *      argument does not cover is a placement from a PREVIOUS Congress
- *      (s-1776-118 today), whose calendar really is gone; that is 1 bill, and
- *      it wants a congress check, not a 14-day clock.
+ *      one on 305 bills — less information, not more truth. The one class this
+ *      argument does not cover is a placement from a PREVIOUS Congress, whose
+ *      calendar really is gone — and that class is no longer this function's
+ *      problem to argue about, because the congress check now EXISTS, one
+ *      layer up in the corpus itself: #210 purged the two 118th-Congress
+ *      records the corpus still carried, `offCongressBills()` (scripts/
+ *      congress-fetch.mjs) drops any that a fetch tries to re-add, a force-slug
+ *      congress check in scripts/sync-bills.mjs refuses them by hand, and
+ *      scripts/verify-sync.mjs hard-fails the whole nightly run if one is ever
+ *      committed. Every record this function reads is therefore a current-
+ *      Congress record (2,700 of 2,700 on 2026-08-12), so the class is
+ *      structurally excluded rather than time-demoted — which is what it always
+ *      wanted, and never a 14-day clock.
  *   2. Every CITIZEN-SITE surface that prints it prints the date beside it.
  *      The provenance ritual reads "…· On the floor calendar · Latest action
- *      Sep 24 2024"; /bills and /reps rows print it through BillCard, which
+ *      Feb 5 2025"; /bills and /reps rows print it through BillCard, which
  *      renders `lastActionDate` under the label; MomentVehicleCard prints the
  *      date whenever it is not showing the calendar chip. So the reader is
  *      given the category and the clock together, and can judge the age. The
@@ -501,11 +510,11 @@ export function liveCallTarget(
     /*
      * THE CLOCK, before any sentence is read (owner ruling 2026-08-11 — see
      * "THE THIRD GATE" above). Everything this branch can return prints "this
-     * bill is in the {chamber}'s hands right now", and on 2026-08-11 that
-     * sentence was routing off 306 placements and 6 motions older than the
-     * 14-day window — median 140 days, up to a 118th-Congress placement from
-     * 2024-09-24. An undated floor record is never fresh, which is the same
-     * rule the amber gate has always run on.
+     * bill is in the {chamber}'s hands right now", and on 2026-08-12 that
+     * sentence was routing off 305 placements and 6 motions older than the
+     * 14-day window — median 140 days, up to a placement dated 2025-02-05, 553
+     * days old. An undated floor record is never fresh, which is the same rule
+     * the amber gate has always run on.
      *
      * DEMOTE, NEVER BURY: null here does not remove a single dial. It is the
      * quiet path every committee-stage bill already takes — the rep list
@@ -515,9 +524,9 @@ export function liveCallTarget(
      *
      * `passed_chamber` below is deliberately NOT clocked: "the House has
      * already voted" is a durable relational fact about a vote that happened,
-     * not a claim about this week, and 274 of the corpus's 275 passed_chamber
-     * records are outside the window — clocking it would silence the routing
-     * on essentially all of them on a much weaker argument.
+     * not a claim about this week, and all 275 of the corpus's 275
+     * passed_chamber records are outside the window (2026-08-12) — clocking it
+     * would silence that routing entirely, on a much weaker argument.
      */
     if (!isSignalFresh(bill.last_action_date)) return null;
     // floorPendingChamber, NOT floorActionChamber. This is the strongest
@@ -841,7 +850,7 @@ export function deriveJourney(
          * TO. This branch's sentence names no chamber and no calendar — it
          * says only that the record has not said yet — so a stale variant
          * would be new copy in two languages for a state that is EMPTY on the
-         * corpus (0 bills on 2026-08-11: every unclassified floor text is
+         * corpus (0 bills on 2026-08-12: every unclassified floor text is
          * caught by the nightly tripwire long before it reaches here). If that
          * ever stops being true, this branch wants its own key, not a reused
          * one.

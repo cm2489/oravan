@@ -488,8 +488,9 @@ test.describe('deriveJourney', () => {
    * D3 (2026-08-11) — THE CLOCK. #198 gave the bill page's green panel
    * the freshness window and stopped at that one render site; the
    * derivation underneath kept answering "it's on the Senate floor
-   * calendar" for placements of unlimited age. 306 of the corpus's 323
-   * dated placements were outside the window that day, median 140 days.
+   * calendar" for placements of unlimited age. 305 of the corpus's 322
+   * dated placements are outside the window (re-measured 2026-08-12),
+   * median 140 days.
    * ---------------------------------------------------------------- */
   const CALENDAR_PLACEMENT =
     'Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.';
@@ -555,9 +556,9 @@ test.describe('deriveJourney', () => {
   });
 
   test('nothing outside the floor branch is clocked', () => {
-    // passed_chamber is a relational fact about a vote that happened — 274 of
-    // the corpus's 275 records are outside the window, and clocking them would
-    // silence the routing on nearly all of them. Committee too.
+    // passed_chamber is a relational fact about a vote that happened — all 275
+    // of the corpus's 275 records are outside the window (2026-08-12), and
+    // clocking them would silence that routing entirely. Committee too.
     expect(j('hr', 'passed_chamber', 'Received in the Senate.', STALE).nowKey).toBe('nowPassed');
     expect(j('hr', 'committee', 'Referred to the Subcommittee on Health.', STALE).nowKey).toBe(
       'nowCommittee'
@@ -694,8 +695,8 @@ test.describe('deriveJourney', () => {
   });
 
   /*
-   * THE TWO NEW SENTENCES, rendered — 312 bills read one of these on the day
-   * D3 landed, so a template that names the wrong chamber or reads as a
+   * THE TWO NEW SENTENCES, rendered — 311 bills read one of these on
+   * 2026-08-12, so a template that names the wrong chamber or reads as a
    * present-tense claim would be the defect this change exists to end,
    * shipped in its own fix. Both languages: the ES pair is an unreviewed
    * draft, and a draft that renders wrong is worse than one that reads oddly.
@@ -1007,8 +1008,8 @@ test.describe('liveCallTarget', () => {
   /*
    * D3 (2026-08-11). The routing sentence is the strongest claim on the page —
    * "this bill is in the Senate's hands right now — your senators are the live
-   * call" — and it was firing off 312 floor records outside the 14-day window,
-   * including a 118th-Congress placement from 2024-09-24. Demote, never bury:
+   * call" — and it was firing off 311 floor records outside the 14-day window
+   * (2026-08-12), the oldest a placement dated 2025-02-05. Demote, never bury:
    * null here only drops the routing sentence and the reordering; every dial,
    * the script and the call dialog are untouched (tests/call-action.spec.ts
    * owns that half).
@@ -1114,7 +1115,7 @@ test.describe('liveCallTarget', () => {
    * THE LIVE-CORPUS INVARIANT (D3). The fixtures above pin the shapes
    * we know; this pins every record tomorrow's sync lands. Stated as an
    * invariant rather than a count, because the count moves nightly —
-   * 312 demotions on 2026-08-11 (306 placements + 6 pending motions),
+   * 311 demotions on 2026-08-12 (305 placements + 6 pending motions),
    * and a number here would redden CI on a quiet legislative week.
    * ---------------------------------------------------------------- */
   test('no bill outside the signal window makes a live-floor claim, anywhere in the corpus', () => {
@@ -1140,8 +1141,8 @@ test.describe('liveCallTarget', () => {
     /*
      * The loop must actually have demoted something, or it passes vacuously —
      * the same discipline the statusKeyFor split pin uses (suite 6). Only this
-     * side is asserted: aged placements only accumulate (306 of 323 on
-     * 2026-08-11, oldest 686 days), while the FRESH side legitimately empties
+     * side is asserted: aged placements only accumulate (305 of 322 on
+     * 2026-08-12, oldest 553 days), while the FRESH side legitimately empties
      * out over a recess and asserting it here would redden the CI of unrelated
      * PRs on a quiet legislative week. The fresh branch is pinned by fixture
      * in suite 3 instead, where no data can silence it.

@@ -226,7 +226,9 @@ export function pendingChamberOf(slug: string): 'house' | 'senate' | null {
  * routing now requires the floor signal to be inside the published window, so
  * this mirror must too or the specs would drive a bill whose page prints no
  * routing sentence — the same trap, re-armed by the clock instead of by the
- * vocabulary. On the corpus that day it cut the pool from 177 slugs to 19.
+ * vocabulary. On the corpus that day it cut the pool from 177 slugs to 19; re-
+ * measured 2026-08-12, after #210 purged the two previous-Congress records,
+ * 176 to 19.
  *
  * Freshness is judged at `now + CLOCK_SKEW_MS` rather than at `now`, and that
  * is the whole flake guard: a signal fresh at the LATE end of the window was
