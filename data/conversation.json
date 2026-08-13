@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-13T19:16:52.769Z",
+    "fetched_at": "2026-08-13T20:59:11.327Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-13T19:16:52.769Z"
+        "checked_at": "2026-08-13T20:59:11.327Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-13T19:16:52.769Z"
+        "checked_at": "2026-08-13T20:59:11.327Z"
       },
       "leans": {
         "center": {
@@ -71,7 +71,13 @@
     },
     "hr-3633-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 2,
@@ -180,6 +186,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7116-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thewellnews.com",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7212-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -189,6 +206,18 @@
           "lastSeen": "2026-08-12"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8771-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8800-119": {
