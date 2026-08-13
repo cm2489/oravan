@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-12T15:11:17.692Z"
+    "generated_at": "2026-08-13T15:29:03.542Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1173,6 +1173,32 @@
         "ai": true
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [
+      {
+        "id": "s_5acd8314",
+        "generated_at": "2026-08-13T15:29:10.920Z",
+        "as_of_day": "2026-08-13",
+        "text": {
+          "en": "H.R. 3633 sits in floor activity in the Senate. On August 8, 2026, a motion to proceed to consideration of the measure was made on the Senate floor. That same day, a cloture motion was presented on the motion to proceed, according to the Congressional Record (CR S4557). No other floor action on this measure appears in the record over the last fourteen days. The measure has not moved beyond this point since these entries. Both actions were recorded on the same legislative day. The current parliamentary posture is the motion to proceed, paired with the pending cloture motion, both entered in the Senate record on August 8, 2026, page S4557.",
+          "es": "El proyecto H.R. 3633 se encuentra en actividad en el pleno del Senado. El 8 de agosto de 2026 se presentó en el pleno del Senado una moción para proceder a la consideración de la medida. Ese mismo día se presentó una moción de cierre de debate sobre la moción para proceder, según el Registro del Congreso (CR S4557). No aparece ninguna otra acción en el pleno sobre esta medida en los últimos catorce días. La medida no ha avanzado más allá de este punto desde estos registros. Ambas acciones se registraron el mismo día legislativo. La postura parlamentaria actual es la moción para proceder, junto con la moción de cierre de debate pendiente, ambas inscritas en el registro del Senado el 8 de agosto de 2026, página S4557."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_456d8e0c",
+            "u_f62494fd"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      }
+    ]
   }
 }
