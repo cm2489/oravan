@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-13T15:11:15.288Z",
+    "fetched_at": "2026-08-13T17:09:02.863Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-13T15:11:15.288Z"
+        "checked_at": "2026-08-13T17:09:02.863Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-13T15:11:15.288Z"
+        "checked_at": "2026-08-13T17:09:02.863Z"
       },
       "leans": {
         "center": {
@@ -114,6 +114,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-4873-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "techtimes.com",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4911-119": {
       "outlets7d": [
         {
@@ -190,9 +201,26 @@
         "lastWeek": "2026-08-09"
       }
     },
+    "hr-8902-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-1525-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "m.economictimes.com",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-13"
+        },
         {
           "domain": "justthenews.com",
           "firstSeen": "2026-08-12",
