@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-14T19:09:52.426Z",
+    "fetched_at": "2026-08-14T20:41:53.090Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-14T19:09:52.426Z"
+        "checked_at": "2026-08-14T20:41:53.090Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-14T19:09:52.426Z"
+        "checked_at": "2026-08-14T20:41:53.090Z"
       },
       "leans": {
         "center": {
@@ -63,6 +63,16 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "foxsanantonio.com",
+          "firstSeen": "2026-08-14",
+          "lastSeen": "2026-08-14"
+        },
+        {
+          "domain": "modernghana.com",
+          "firstSeen": "2026-08-14",
+          "lastSeen": "2026-08-14"
+        },
         {
           "domain": "okcfox.com",
           "firstSeen": "2026-08-14",
@@ -532,6 +542,17 @@
       "unratedOutlets7d": [
         {
           "domain": "moneywise.com",
+          "firstSeen": "2026-08-14",
+          "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4489-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
         }
