@@ -309,14 +309,20 @@ async function main() {
     return;
   }
 
-  // Per-tool stats are informational only (floor Infinity => .spike is
-  // always false) — the design deliberately spike-checks the two aggregate
-  // series only, not each of the 5 tools individually (low/uneven per-tool
-  // volumes would be noisy and prone to false alarms).
+  // The aggregate series, full 28 days — the spike half slices its first 8
+  // below, the decline half reads all of it.
   const totalWindow = sumWindows(MCP_TOOL_NAMES.map((tool) => window.mcp[tool]));
 
   // The spike half, on the 8-day prefix — identical inputs to when this
   // script read an 8-day window directly.
+  //
+  // Per-tool stats here are informational only (floor Infinity => .spike is
+  // always false) — the design deliberately spike-checks the two aggregate
+  // series only, not each of the 5 tools individually (low/uneven per-tool
+  // volumes would be noisy and prone to false alarms). The per-tool signal
+  // that IS actionable is darkTools below, which asks a different question:
+  // not "is this tool busy today" but "did this tool have callers and then
+  // stop having them."
   const spikeWindow = (series) => series.slice(0, SPIKE_WINDOW_DAYS);
   const mcpTools = MCP_TOOL_NAMES.map((tool) => ({
     tool,
