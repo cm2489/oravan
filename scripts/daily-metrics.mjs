@@ -34,6 +34,19 @@
  * and the DECLINE_BASELINE_MIN_SUM gate means that series could not fire
  * anyway at its real volume. The spike/cost tripwire on it is unchanged.
  *
+ * ISSUE HYGIENE (2026-08) rides along on the same run, because this job
+ * already reads the issue list every morning. It appends an "Awaiting your
+ * word" section to the digest comment, and it closes stale traffic-spike
+ * alerts — ITS OWN alerts, past SPIKE_ISSUE_TTL_DAYS, matching the exact
+ * title it wrote, and carrying none of NEVER_CLOSE_LABELS. It closes
+ * nothing else, ever: closing a `moment-candidate` issue is how the owner
+ * DECLINES a candidate — the issue body tells him to (scripts/moment-watch.mjs's
+ * "To decline" section) and moment-watch.yml's filed-check reads `--state all`
+ * so a closed one never gets re-filed — so an auto-close there would perform
+ * his decline for him and bury the candidate. The whole hygiene
+ * path is additive — any failure warns, omits the section and closes
+ * nothing, never failing the digest and never inventing "0 open items".
+ *
  * MUST run via `npx tsx`, not plain `node` — same reason as
  * scripts/pregen-scripts.mjs: it imports lib/usage.ts (and transitively
  * lib/upstash.ts, lib/core/mcp.ts) unchanged, reusing the SAME key-builder
@@ -78,6 +91,8 @@ import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
   SPIKE_WINDOW_DAYS,
+  awaitingYourWordSection,
+  closableIssues,
   darkTools,
   declineClearedComment,
   declineClearedReason,
@@ -88,6 +103,7 @@ import {
   declineWindowDays,
   formatDigestBody,
   seriesStats,
+  spikeClosedComment,
   spikeIssueContent,
   sumWindows,
 } from '../lib/traffic-metrics.mjs';
@@ -238,6 +254,90 @@ function resolveDeclineIssue({ series, date, stats, reason }) {
 }
 
 /**
+ * Issue hygiene (2026-08), folded into this job rather than given a workflow
+ * of its own — this is the one thing that already reads the issue list every
+ * morning, and it needs no permission it does not already hold.
+ *
+ * ADDITIVE BY CONSTRUCTION. Every failure mode here — `gh` missing, the API
+ * refusing, unparseable JSON — logs a ::warning:: and returns null, which
+ * omits the section entirely and closes nothing. It never fails the digest
+ * and, critically, it never renders an invented "0 open items": an absent
+ * section means the read failed, and it said so in the log.
+ *
+ * That is the OPPOSITE posture to the counters read in main(), which stays
+ * fail-LOUD, and the difference is deliberate: a wrong usage number is a
+ * lie about the product, while a missing hygiene section is a missing
+ * convenience.
+ *
+ * @param {Date} now
+ * @returns {{ section: string, closable: import('../lib/traffic-metrics.mjs').ClosableSpikeIssue[] } | null}
+ */
+function collectIssueHygiene(now) {
+  try {
+    // --limit 100: gh's default page is 30, and this repo has never been
+    // near 30, let alone 100. If it ever passes 100 the section
+    // under-reports rather than mis-reports, and nothing extra gets closed.
+    const raw = gh([
+      'issue',
+      'list',
+      '--repo',
+      REPO,
+      '--state',
+      'open',
+      '--limit',
+      '100',
+      '--json',
+      'number,title,labels,createdAt',
+    ]).trim();
+    const issues = raw ? JSON.parse(raw) : [];
+    const closable = closableIssues(issues, { now });
+    // The section is rendered from the issues this run is NOT closing: a
+    // comment that lists an issue as "awaiting your word" three lines above
+    // closing it would be telling the owner two different things at once.
+    const closing = new Set(closable.map((c) => c.number));
+    const section = awaitingYourWordSection(
+      issues.filter((i) => !closing.has(i.number)),
+      { now }
+    );
+    return { section, closable };
+  } catch (e) {
+    console.log(
+      `::warning::issue hygiene skipped — could not read the open-issue list (${e.message}). The digest itself is unaffected: no section appended, nothing closed.`
+    );
+    return null;
+  }
+}
+
+/**
+ * Close the stale traffic-spike alerts closableIssues() cleared — and only
+ * those. Runs AFTER the digest comment is posted, and every close is
+ * individually guarded, so a GitHub hiccup mid-cleanup can never cost the
+ * day's digest.
+ *
+ * @returns {number} how many actually closed — NOT how many were eligible.
+ *   The run log reports this number, so a partial cleanup reads as partial.
+ */
+function closeStaleSpikeIssues(closable, { digestIssue }) {
+  let closed = 0;
+  for (const issue of closable) {
+    try {
+      const commentFile = writeTempFile(
+        spikeClosedComment({ date: issue.reportedDate, ageDays: issue.ageDays, digestIssue })
+      );
+      gh(['issue', 'comment', String(issue.number), '--repo', REPO, '--body-file', commentFile]);
+      gh(['issue', 'close', String(issue.number), '--repo', REPO]);
+      closed += 1;
+      console.log(
+        `closed stale spike issue #${issue.number} (${issue.series}, reported ${issue.reportedDate}, ${issue.ageDays}d old)`
+      );
+    } catch (e) {
+      console.log(`::warning::could not close stale spike issue #${issue.number} (${e.message}) — left open, will retry tomorrow.`);
+    }
+  }
+  return closed;
+}
+
+/**
  * Same-day idempotency (an accidental workflow_dispatch re-run on a day
  * that already posted): if the pinned issue's LAST comment already carries
  * today's `<!-- daily-metrics:YYYY-MM-DD -->` marker, edit it in place
@@ -375,10 +475,21 @@ async function main() {
     darkTools: dark,
     declineIssueUrl,
   });
-  postOrEditTodaysComment(issueNumber, date, body);
+
+  // Issue hygiene, read once and appended to the SAME comment — one place
+  // to look each morning rather than a second notification. Null on any
+  // failure, in which case the digest posts exactly as it did before this
+  // existed.
+  const hygiene = collectIssueHygiene(new Date());
+  postOrEditTodaysComment(issueNumber, date, hygiene ? `${body}\n\n${hygiene.section}` : body);
+
+  // Closes happen AFTER the digest is safely posted: the digest is the job,
+  // the cleanup is the courtesy, and the courtesy must never be able to
+  // cost the job.
+  const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'})`
   );
 }
 
