@@ -236,6 +236,16 @@ test.describe('spike floors', () => {
       expect(day).toBeLessThan(MCP_SPIKE_FLOOR); // does not clear the new one
     }
   });
+
+  test('the 165 peak still fires — the floor retires the plateau, never a real burst', () => {
+    // The real 8-day window the digest read on 2026-07-30 (#81): the plateau
+    // was four days old, the week before it near-zero, so the trailing median
+    // was 28 and 3× median = 84. 165 clears BOTH gates — by design. The
+    // recalibration retires #127–#129 (76/79/78) and would have kept #130.
+    const stats = seriesStats([165, 78, 28, 79, 76, 19, 6, 9], MCP_SPIKE_FLOOR);
+    expect(stats.med).toBe(28);
+    expect(stats.spike).toBe(true);
+  });
 });
 
 test.describe('declineStats (the real #81 series)', () => {
