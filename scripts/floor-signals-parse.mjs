@@ -676,6 +676,82 @@ export function sessionFromProgram(program) {
   return 'in_session';
 }
 
+/** The one sentence `_meta.in_session` is allowed to claim as its evidence.
+ *  It names the document the verdict was read out of, and it is the SAME
+ *  string on the stale branch — where the verdict is `unknown` for both
+ *  chambers, so the basis describes what we looked at, not what we concluded. */
+export const SESSION_BASIS = 'Daily Digest "Program for" blocks';
+
+/**
+ * How old the digest we just fetched is, in days, on the day we are asking.
+ * Both callers of the age ceiling (the writer's "store nothing from this"
+ * early return and `deriveFloorMeta`'s "assert nothing from this") compute it
+ * here, so the two can never drift into disagreeing about which document is
+ * history.
+ *
+ * @param {string | null | undefined} issueDate  YYYY-MM-DD, the issue's own date
+ * @param {string | null | undefined} todayISO   YYYY-MM-DD
+ * @returns {number | null} days, or null when either date is unusable
+ */
+export function digestAgeDays(issueDate, todayISO) {
+  const age =
+    (Date.parse(`${todayISO}T00:00:00Z`) - Date.parse(`${issueDate}T00:00:00Z`)) / 86_400_000;
+  return Number.isFinite(age) ? age : null;
+}
+
+/**
+ * THE TWO THINGS `_meta` SAYS ABOUT THE CHAMBERS THEMSELVES — are they
+ * meeting, and when do they meet next — derived from one digest and nothing
+ * else.
+ *
+ * Two rules, and both of them are critic A-5's ("a document we could not read
+ * is never a fact about Congress"):
+ *
+ *   1. BOTH CHAMBERS OR NEITHER. The digest prints a "Next Meeting of the"
+ *      block for each chamber, and until now only the Senate's reached the
+ *      file — the House's parsed `meetingLabel` was computed and thrown away,
+ *      so the file could say the House was out of session without ever saying
+ *      when it comes back. Each chamber's next meeting is the digest's own
+ *      printed label plus the date derived from it (`resolveMeetingDate`, the
+ *      one derivation in this module), stored together so a reader can check
+ *      the arithmetic against the sentence.
+ *   2. A STALE DIGEST ASSERTS NOTHING. Past the age ceiling the newest Record
+ *      is not a schedule, it is history — the chambers are out and its program
+ *      has already happened. The verdict for both chambers is `unknown` and no
+ *      next meeting is written at all, rather than a verdict computed from a
+ *      document that has stopped describing the present.
+ *
+ * @param {{ blocks?: { senate?: any, house?: any } | null, issueDate?: string | null, todayISO?: string | null, maxAgeDays?: number | null }} input
+ * @returns {{ in_session: { senate: string, house: string, basis: string }, next_meeting: { senate: { date: string | null, label: string | null } | null, house: { date: string | null, label: string | null } | null } | null, stale: boolean }}
+ */
+export function deriveFloorMeta({ blocks, issueDate, todayISO, maxAgeDays } = {}) {
+  const age = digestAgeDays(issueDate, todayISO);
+  const stale = Number.isFinite(maxAgeDays) && age !== null && age > maxAgeDays;
+  if (stale) {
+    return {
+      in_session: { senate: 'unknown', house: 'unknown', basis: SESSION_BASIS },
+      next_meeting: null,
+      stale: true,
+    };
+  }
+  const meeting = (program) => {
+    const raw = program?.meetingLabel;
+    const label = typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+    const date = resolveMeetingDate(label, issueDate);
+    if (!label && !date) return null;
+    return { date: date ?? null, label };
+  };
+  return {
+    in_session: {
+      senate: sessionFromProgram(blocks?.senate),
+      house: sessionFromProgram(blocks?.house),
+      basis: SESSION_BASIS,
+    },
+    next_meeting: { senate: meeting(blocks?.senate), house: meeting(blocks?.house) },
+    stale: false,
+  };
+}
+
 // ---- merge / write policy ------------------------------------------------
 
 const ymd = (ms) => new Date(ms).toISOString().slice(0, 10);
@@ -769,6 +845,12 @@ export function materialFingerprint(doc) {
       ])
     ),
     in_session: doc?._meta?.in_session ?? null,
+    // A chamber's next meeting moving IS the schedule moving — the House
+    // coming back on Thursday instead of Wednesday is exactly the kind of
+    // change an hourly run exists to catch, and leaving it out of the
+    // fingerprint would hold that change out of the file until something
+    // else happened to move.
+    next_meeting: doc?._meta?.next_meeting ?? null,
     dropped: doc?._meta?.dropped ?? [],
   });
 }
@@ -968,6 +1050,25 @@ export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlu
   for (const [name, src] of Object.entries(meta.sources ?? {})) {
     if (!KNOWN_STATUSES.has(src?.status)) {
       failures.push(`${FLOOR_SIGNALS_PATH} source ${name} carries an unknown status ${JSON.stringify(src?.status)}`);
+    }
+  }
+  // A next meeting BEFORE the issue that announced it is arithmetic that went
+  // backwards — the year fill-in in resolveMeetingDate is the only place a
+  // date is derived rather than printed, and this is the shape its failure
+  // would take. A WARNING, not a failure: the file is written hourly and
+  // committed straight to main, the field is _meta-only plumbing that no
+  // surface reads yet, and reddening CI over a date the government itself may
+  // have printed oddly would teach people to ignore the gate (the same
+  // reasoning check-floor-signals.mjs's missing-file exit is built on).
+  const digestPublished = meta.sources?.['daily-digest']?.published ?? null;
+  if (typeof digestPublished === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(digestPublished)) {
+    const backwards = Object.entries(meta.next_meeting ?? {})
+      .filter(([, m]) => typeof m?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(m.date) && m.date < digestPublished)
+      .map(([chamber, m]) => `${chamber}=${m.date}`);
+    if (backwards.length > 0) {
+      warnings.push(
+        `${FLOOR_SIGNALS_PATH} _meta.next_meeting is earlier than the Daily Digest that announced it (published ${digestPublished}; ${backwards.join(', ')}) — the derived meeting date and the source's own date disagree`
+      );
     }
   }
   if (Number.isFinite(fileBytes) && fileBytes > FLOOR_SIGNALS_MAX_BYTES) {

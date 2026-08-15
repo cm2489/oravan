@@ -20,6 +20,8 @@ import {
   TIER_BAND,
   SIGNAL_STALE_HOURS,
   bandForRung,
+  chamberNextMeetingFrom,
+  chamberSessionFrom,
   compareDocket,
   docketKey,
   docketRung,
@@ -93,12 +95,28 @@ export interface FloorSignalEntry {
  */
 export type FloorSourceStatus = 'ok' | 'quiet' | 'data_stale' | 'error' | 'unknown';
 
+/** One chamber's next sitting as `_meta.next_meeting` stores it: the digest's
+ *  own printed line, and the date derived from it by filling in the year. */
+export interface FloorNextMeeting {
+  date?: string | null;
+  label?: string | null;
+}
+
 export interface FloorSignalsFile {
   _meta: {
     schema: string;
     fetched_at: string;
-    sources: Record<string, { status: FloorSourceStatus; detail?: string; url?: string }>;
+    sources: Record<
+      string,
+      { status: FloorSourceStatus; detail?: string; url?: string; published?: string | null }
+    >;
+    /** `senate` / `house` -> a ChamberSession, plus `basis` -> the sentence
+     *  naming the document they were read out of. Keyed, never iterated. */
     in_session?: Record<string, string>;
+    /** Null on the stale-digest branch, where the writer asserts no meeting at
+     *  all rather than one read out of a document that has stopped describing
+     *  the present. */
+    next_meeting?: Record<string, FloorNextMeeting | null> | null;
   };
   signals: Record<string, FloorSignalEntry>;
   nominations: Record<string, FloorSignalEntry>;
@@ -150,6 +168,62 @@ export function floorSourcesPosture(now: number = Date.now()): 'quiet' | 'unknow
   const sources = Object.values(meta?.sources ?? {});
   if (sources.length === 0) return 'unknown';
   return sources.every((s) => s.status === 'ok' || s.status === 'quiet') ? 'quiet' : 'unknown';
+}
+
+/** Is a chamber meeting? Three literals and nothing else — see
+ *  `chamberSessionFrom`'s three routes to `unknown`. */
+export type ChamberSession = 'in_session' | 'out_of_session' | 'unknown';
+
+/**
+ * IS THE HOUSE / THE SENATE MEETING, as of now.
+ *
+ * The same shape as `floorSourcesPosture` above and read under the same
+ * freshness rule (SIGNAL_STALE_HOURS): the file is committed and the site is
+ * statically generated from it, so a page can only be as current as the last
+ * hourly write, and a write that stopped happening must decay to `unknown`
+ * rather than keep asserting a chamber's schedule.
+ *
+ * The rule itself lives in lib/docket.mjs so a unit test can exercise all
+ * three branches without the data import; this is the typed door onto it.
+ */
+export function chamberSession(
+  chamber: 'house' | 'senate',
+  now: number = Date.now()
+): ChamberSession {
+  return chamberSessionFrom(FILE._meta, chamber, now) as ChamberSession;
+}
+
+/**
+ * WHEN THE CHAMBER MEETS NEXT — `{ iso, label }`, or null when the file names
+ * no meeting still ahead for it.
+ *
+ * `label` is the Daily Digest's own line ("9 a.m., Thursday, August 13"),
+ * ENGLISH VERBATIM like every other quoted fragment here (ruling V4); `iso` is
+ * our arithmetic on it. A surface that shows a reader the meeting shows the
+ * label, exactly as `coversDisplay` does for an announcement's horizon.
+ */
+export function chamberNextMeeting(
+  chamber: 'house' | 'senate',
+  now: number = Date.now()
+): { iso: string | null; label: string | null } | null {
+  return chamberNextMeetingFrom(FILE._meta, chamber, now) as {
+    iso: string | null;
+    label: string | null;
+  } | null;
+}
+
+/**
+ * WHERE THE SESSION VERDICT CAME FROM — the Daily Digest's own URL and its own
+ * publication date, so anything that prints `chamberSession` or
+ * `chamberNextMeeting` can attribute it to the document instead of to us. Null
+ * when the file carries no daily-digest source at all.
+ */
+export function floorSessionSource(): { url: string | null; published: string | null } | null {
+  const src = FILE._meta?.sources?.['daily-digest'];
+  if (!src) return null;
+  const url = typeof src.url === 'string' && src.url ? src.url : null;
+  const published = typeof src.published === 'string' && src.published ? src.published : null;
+  return url || published ? { url, published } : null;
 }
 
 /** The rung for one bill, with its signal looked up here so callers never
