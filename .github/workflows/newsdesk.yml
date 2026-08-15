@@ -186,7 +186,14 @@ jobs:
         # production until it serves the SHA we just pushed. A missing
         # PROD_URL repo variable FAILS this step rather than skipping it
         # (2026-08-12) - see scripts/verify-deploy.mjs's header.
-        if: steps.commit.outputs.changed == 'true'
+        #
+        # The main-ref half of the condition is structural, not a softening of
+        # that switch: production is built from refs/heads/main and nothing
+        # else, so on a workflow_dispatch validation run from a branch this
+        # poll can only run out its 12-minute deadline and paint the run red
+        # for something that is not a fault. On main the condition is
+        # unchanged and the switch is armed exactly as before.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
@@ -197,7 +204,12 @@ jobs:
         # drift lands on the next open PR instead (2026-07-25 incident).
         # Free on a public repo; the ci-refs/heads/main concurrency group
         # queues rather than cancels, so runs serialize harmlessly.
-        if: steps.commit.outputs.changed == 'true'
+        #
+        # Same main-ref guard as the deploy check above, for the same reason
+        # read the other way round: a branch validation run pushed its data to
+        # that branch, so dispatching main's suite would run it against a
+        # corpus this run never wrote.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run ci.yml --ref main
