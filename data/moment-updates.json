@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-13T15:29:03.542Z"
+    "generated_at": "2026-08-15T04:43:46.764Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1040,32 +1040,6 @@
           "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S3193)",
           "action_code": null,
           "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_94c787d0",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-06-15",
-        "occurred_at": "2026-06-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "S. 4784 was placed on the Senate Legislative Calendar under General Orders as Calendar No. 436 on June 15, 2026.",
-          "es": "S. 4784 fue colocado en el Calendario Legislativo del Senado bajo Órdenes Generales como Calendario No. 436 el 15 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 436.",
-          "action_code": null,
-          "action_type": "Calendars",
           "source_system": "Senate"
         },
         "ai": true
