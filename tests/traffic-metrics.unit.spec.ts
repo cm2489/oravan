@@ -723,12 +723,13 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
  * this whole file is the thing it must NEVER close.
  *
  * CLOSING A `moment-candidate` ISSUE IS HOW THE OWNER DECLINES A CANDIDATE.
- * scripts/moment-watch.mjs reads `--state all` when deciding whether a bill
- * was already filed, and scripts/moment-approve.mjs reads the close as the
- * decline signal. An auto-close on that label would not be tidying — it
- * would silently cast the owner's vote against publishing a Moment, and it
- * would be indistinguishable from him having decided. Every fixture below
- * is written adversarially against that one failure.
+ * The candidate issue's own body says so ("To decline: close this issue and
+ * append the reason to docs/moment-rejections.json" — scripts/moment-watch.mjs),
+ * and moment-watch.yml's filed-check lists `--state all` so that a CLOSED
+ * issue still counts as filed and is never re-opened. An auto-close on that
+ * label would therefore perform the documented decline gesture on the
+ * owner's behalf AND bury the candidate permanently. Every fixture below is
+ * written adversarially against that one failure.
  */
 test.describe('issue hygiene: closableIssues', () => {
   // The digest's real 13:00 UTC slot, so the boundary arithmetic below is

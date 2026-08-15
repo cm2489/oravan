@@ -40,9 +40,10 @@
  * alerts — ITS OWN alerts, past SPIKE_ISSUE_TTL_DAYS, matching the exact
  * title it wrote, and carrying none of NEVER_CLOSE_LABELS. It closes
  * nothing else, ever: closing a `moment-candidate` issue is how the owner
- * DECLINES a candidate (scripts/moment-watch.mjs treats a closed issue as
- * filed; scripts/moment-approve.mjs reads the close as the decline signal),
- * so an auto-close there would silently cast his vote. The whole hygiene
+ * DECLINES a candidate — the issue body tells him to (scripts/moment-watch.mjs's
+ * "To decline" section) and moment-watch.yml's filed-check reads `--state all`
+ * so a closed one never gets re-filed — so an auto-close there would perform
+ * his decline for him and bury the candidate. The whole hygiene
  * path is additive — any failure warns, omits the section and closes
  * nothing, never failing the digest and never inventing "0 open items".
  *
