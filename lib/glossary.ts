@@ -11,7 +11,7 @@
  *
  * WHAT LIVES HERE AND WHAT DOES NOT. This module holds the ID list and the URL
  * math — pure data, no JSX, no messages — so a server page, a client popover
- * and a test can all agree on the same eleven ids without any of them
+ * and a test can all agree on the same twelve ids without any of them
  * importing the others' concerns. The PROSE lives in messages/en.json +
  * messages/es.json under `glossary.terms.<id>`, exactly like every other
  * user-facing string (CLAUDE.md's bilingual hard rule), and is pinned in both
@@ -41,6 +41,14 @@
  *
  * `germaneness` is in the issue's list under "as they come up" and is NOT in
  * this batch — see the PR body for why it was left for the next one.
+ *
+ * `pro-forma-session` was added 2026-08-15 (owner ruling D1) and APPENDED
+ * rather than slotted in beside the calendars, for the reason this list is
+ * pinned at all: the entries above are anchors people can already have sent
+ * each other, and reordering them is a decision with no upside. It is also
+ * genuinely the last one a reader meets — the term appears on a bill page only
+ * when the loud floor band has stood down, and on the homepage only on a week
+ * when both chambers are gavelling in and straight back out.
  */
 export const GLOSSARY_TERM_IDS = [
   'cloture',
@@ -54,6 +62,7 @@ export const GLOSSARY_TERM_IDS = [
   'amendment-in-the-nature-of-a-substitute',
   'budget-reconciliation',
   'cra-disapproval',
+  'pro-forma-session',
 ] as const;
 
 export type GlossaryTermId = (typeof GLOSSARY_TERM_IDS)[number];

@@ -66,10 +66,15 @@ function flatten(obj: unknown, prefix = ''): [string, string][] {
  * 1 · The registry — ids are anchors, and anchors are permanent
  * ------------------------------------------------------------------ */
 test.describe('the term registry', () => {
-  test('the first batch is exactly these eleven ids, in this order', () => {
+  test('the registry is exactly these twelve ids, in this order', () => {
     // Pinned literally rather than by count: the ids ARE the anchors
     // (/glossary#cloture), so this list is a public interface. Adding a term
     // is a one-line edit here; renaming one is a decision.
+    //
+    // `pro-forma-session` was APPENDED (2026-08-15, owner ruling D1) rather
+    // than slotted in beside the calendars, which is why this list still opens
+    // exactly as it did: every id above it is an anchor someone may already
+    // have sent, and reordering them buys nothing.
     expect([...GLOSSARY_TERM_IDS]).toEqual([
       'cloture',
       'unanimous-consent',
@@ -82,6 +87,7 @@ test.describe('the term registry', () => {
       'amendment-in-the-nature-of-a-substitute',
       'budget-reconciliation',
       'cra-disapproval',
+      'pro-forma-session',
     ]);
   });
 
@@ -221,6 +227,29 @@ test.describe('the copy constraints', () => {
     expect(esTerms['executive-calendar'].body).toMatch(/no dice nada sobre cuándo/i);
   });
 
+  test('the pro forma entry states the mechanic its two surfaces rest on', () => {
+    /*
+     * Added 2026-08-15 with the term itself (owner ruling D1). Two shipped
+     * surfaces — the bill page's ruled note and the homepage's crownless-week
+     * note — say a bill cannot be called up at one of these, and this entry is
+     * where a reader goes to check that. Soften it and the notes above it are
+     * left asserting something their own glossary no longer supports.
+     */
+    expect(enTerms['pro-forma-session'].body).toMatch(/cannot be called up/i);
+    expect(esTerms['pro-forma-session'].body).toMatch(
+      /no se puede someter un proyecto a consideración/i
+    );
+    // The other half of the mechanic: nothing legislative happens at one.
+    expect(enTerms['pro-forma-session'].body).toMatch(/no legislative business/i);
+    expect(esTerms['pro-forma-session'].body).toMatch(/no se trata ningún asunto legislativo/i);
+    // And it never says how LONG a chamber is away — the entry describes a
+    // meeting, and the digest that feeds the surfaces names exactly one.
+    for (const body of [enTerms['pro-forma-session'].body, esTerms['pro-forma-session'].body]) {
+      expect(body).not.toMatch(/\brecess\b/i);
+      expect(body).not.toMatch(/\breceso\b/i);
+    }
+  });
+
   test('cloture on the motion to proceed is stated as a DIFFERENT vote from cloture on the measure', () => {
     // The issue calls this out by name ("two different votes — the S. 4784
     // record shows exactly why the distinction matters"), so the distinction
@@ -274,6 +303,20 @@ test.describe('in-place wiring', () => {
       expect(richTags(msgs.moments.howMadeRule2).sort()).toEqual(['cloture', 'execCalendar']);
       expect(richTags(msgs.bill.journey.nowFloor)).toEqual(['floorCalendar']);
       expect(richTags(msgs.bill.journey.nowFloorStale)).toEqual(['floorCalendar']);
+      /*
+       * The 2026-08-15 pair. `term` is the glossary link; `when` / `senateWhen`
+       * / `houseWhen` mark the Daily Digest's OWN printed meeting line as
+       * English (ruling V4). They are tags rather than interpolated elements
+       * because next-intl's ICU arguments take strings, numbers and dates
+       * only — a span can reach a message solely as a handler.
+       */
+      expect(richTags(msgs.bill.floor.recessSenate).sort()).toEqual(['term', 'when']);
+      expect(richTags(msgs.bill.floor.recessHouse).sort()).toEqual(['term', 'when']);
+      expect(richTags(msgs.home.weekNoteRecess).sort()).toEqual([
+        'houseWhen',
+        'senateWhen',
+        'term',
+      ]);
     }
   });
 
@@ -366,6 +409,19 @@ test.describe('source wiring', () => {
     const journey = readText('components/BillJourney.tsx');
     expect(journey).toContain('t.rich(journey.nowKey');
     expect(journey).toContain('floorCalendar');
+
+    // The 2026-08-15 pair, same contract: each message opens `<term>`, so each
+    // call site must hand next-intl a handler for it or the render throws.
+    // Both import from the NO-directive module for the reason above.
+    for (const path of ['components/FloorRecessNote.tsx', 'app/[locale]/page.tsx']) {
+      const src = readText(path);
+      expect(src, `${path} imports the server-safe tag helper`).toContain(
+        "from '@/components/glossary-tags'"
+      );
+      expect(src, `${path} hands a handler for <term>`).toContain(
+        "term: glossaryTag('pro-forma-session')"
+      );
+    }
 
     // One renderer for the nomination status label, used by both surfaces.
     for (const path of [

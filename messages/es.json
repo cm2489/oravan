@@ -89,6 +89,7 @@
     "stampLabel": "Datos al",
     "weekNote": "El panel verde señala un solo hecho con fecha: este proyecto está en el calendario del pleno, o tiene una votación pendiente en el pleno. El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteQuiet": "El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
+    "weekNoteRecess": "No hay actividad legislativa programada en ninguna de las dos cámaras. El propio Daily Digest del Senado, publicado el {published}, indica que la próxima sesión del Senado será <senateWhen>{senate}</senateWhen> y la próxima de la Cámara, <houseWhen>{house}</houseWhen>: ambas son <term>sesiones pro forma</term>. Los proyectos de abajo siguen donde los dejó el registro.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
     "how3Dur": "1:00",
@@ -395,7 +396,9 @@
       "headlineAnnouncedHouse": "La Cámara incluyó este proyecto en su propia programación del pleno.",
       "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
       "statusAnnounced": "En la programación del pleno",
-      "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra."
+      "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra.",
+      "recessSenate": "El Daily Digest indica que la próxima sesión del Senado será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado.",
+      "recessHouse": "El Daily Digest indica que la próxima sesión de la Cámara será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado."
     }
   },
   "walkthrough": {
@@ -1023,6 +1026,10 @@
       "cra-disapproval": {
         "term": "Resolución de desaprobación (CRA)",
         "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al Presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
+      },
+      "pro-forma-session": {
+        "term": "Sesión pro forma",
+        "body": "Una sesión pro forma es una reunión que una cámara celebra para cumplir la regla constitucional de que ninguna de las dos puede interrumpir sus trabajos más de tres días sin el consentimiento de la otra. Dura un minuto o dos: quien preside abre la sesión, no se trata ningún asunto legislativo y la sesión se levanta. En una sesión así no se puede someter un proyecto a consideración, y ninguna medida avanza en el pleno por su causa. El Daily Digest de la propia cámara publica el programa de cada reunión, así que una sesión pro forma queda dicha en el registro."
       }
     }
   }

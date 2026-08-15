@@ -5,6 +5,7 @@ import {
   billFloorBand,
   deriveJourney,
   floorActionChamber,
+  floorFactSuspended,
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
@@ -1311,7 +1312,11 @@ test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
         { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CALENDAR_TEXT },
         null
       )
-    ).toEqual({ kind: 'calendar', chamber: 'senate', date: dayOffset(1) });
+      // `suspended: false` is asserted here rather than merely tolerated: with
+      // no session resolver passed, the band the page rendered before the
+      // 2026-08-15 gate existed and the band it renders now are the same
+      // object, field for field.
+    ).toEqual({ kind: 'calendar', chamber: 'senate', date: dayOffset(1), suspended: false });
     expect(
       billFloorBand(
         { status: 'floor_vote', last_action_date: dayOffset(1), last_action_text: CLOTURE_TEXT },
@@ -1364,6 +1369,197 @@ test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
     ] as const) {
       expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
       expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5c · THE SESSION GATE (`floorFactSuspended`) — owner rulings D1+D2,
+ *      2026-08-15: an amber floor surface additionally requires the
+ *      chamber to be MEETING.
+ *
+ *      WHY IT EXISTS. A calendar placement and a pending motion are both
+ *      present-tense claims that something can happen next, and both are
+ *      read out of a record that stops moving when the chambers do. A
+ *      cloture motion filed the day before a district work period keeps
+ *      clearing the 14-day signal window for a fortnight, so the crown and
+ *      the bill page's band keep saying "a vote of the full Senate is still
+ *      ahead of this bill" — right now — over a chamber that is gavelling
+ *      in and straight back out.
+ *
+ *      THE THREE THINGS PINNED HERE, each of which would be a real defect:
+ *        · `announced` is EXEMPT, and the exemption is a rule in the
+ *          function rather than caller discipline (a chamber that published
+ *          a schedule naming a bill is, by that act, meeting);
+ *        · `unknown` NEVER suspends — a dead pipeline must not be able to
+ *          suppress a true floor claim;
+ *        · a suspended band is still RETURNED, because the bill page's
+ *          status label is derived from the same result and a null would
+ *          regress it to the weaker "Floor activity" (the seam #207 closed).
+ * ------------------------------------------------------------------ */
+test.describe('5c · the session gate', () => {
+  const PENDING = {
+    status: 'floor_vote' as const,
+    last_action_date: dayOffset(1),
+    last_action_text: CLOTURE_TEXT,
+  };
+  const OUT = () => 'out_of_session' as const;
+  const IN = () => 'in_session' as const;
+  const UNKNOWN = () => 'unknown' as const;
+
+  test('floorFactSuspended: the full truth table, all three sessions × all three kinds', () => {
+    // Only one cell in nine is true, and it is the one the rulings describe.
+    expect(floorFactSuspended('pending', 'out_of_session')).toBe(true);
+    expect(floorFactSuspended('calendar', 'out_of_session')).toBe(true);
+
+    // THE EXEMPTION, pinned explicitly and by name: a chamber that published
+    // a schedule naming this bill is meeting, and no second document gets to
+    // contradict the first one's own words.
+    expect(floorFactSuspended('announced', 'out_of_session')).toBe(false);
+
+    // FAIL-SAFE, the direction that KEEPS amber. `unknown` is what a stale
+    // file, a dead workflow or a digest that stopped parsing decays to, and
+    // none of those is a fact about Congress.
+    for (const kind of ['announced', 'pending', 'calendar'] as const) {
+      expect(floorFactSuspended(kind, 'unknown'), `${kind} / unknown`).toBe(false);
+      expect(floorFactSuspended(kind, 'in_session'), `${kind} / in_session`).toBe(false);
+    }
+  });
+
+  test('THE STATUS LABEL CANNOT REGRESS: a suspended pending band is returned, never null', () => {
+    /*
+     * If this ever returns null, app/[locale]/bills/[id]/page.tsx silently
+     * falls back from `FLOOR_COPY.pending.senate.status` ("Floor vote
+     * pending") to the shared `bills.status.*` key ("Floor activity") — the
+     * exact regression PR #207 closed, arriving through a different door.
+     * The band and the label are two claims about one record: a recess stops
+     * the first and changes nothing about the second.
+     */
+    const band = billFloorBand(PENDING, null, Date.now(), OUT);
+    expect(band, 'a suspended fact still has a band object').not.toBeNull();
+    expect(band?.kind).toBe('pending');
+    expect(band?.chamber).toBe('senate');
+    expect(band?.date).toBe(PENDING.last_action_date);
+    expect(band?.suspended).toBe(true);
+    // And it is the SAME band in every other respect as the unsuspended one.
+    expect({ ...band, suspended: false }).toEqual(billFloorBand(PENDING, null));
+  });
+
+  test('a calendar placement suspends the same way, and an announced band never does', () => {
+    const placed = {
+      status: 'floor_vote' as const,
+      last_action_date: dayOffset(1),
+      last_action_text: CALENDAR_TEXT,
+    };
+    const calendar = billFloorBand(placed, null, Date.now(), OUT);
+    expect(calendar?.kind).toBe('calendar');
+    expect(calendar?.suspended).toBe(true);
+
+    const announced = billFloorBand(placed, { chamber: 'senate', published: dayOffset(1) }, Date.now(), OUT);
+    expect(announced?.kind).toBe('announced');
+    expect(announced?.suspended).toBe(false);
+  });
+
+  test('omitting the resolver leaves every existing fixture byte-identical', () => {
+    for (const fixture of [
+      PENDING,
+      { status: 'floor_vote' as const, last_action_date: dayOffset(1), last_action_text: CALENDAR_TEXT },
+      { status: 'committee' as const, last_action_date: dayOffset(4), last_action_text: 'Message on Senate action sent to the House.' },
+    ]) {
+      for (const announcement of [null, { chamber: 'senate' as const, published: dayOffset(1) }]) {
+        const band = billFloorBand(fixture, announcement);
+        if (band === null) continue;
+        expect(band.suspended, `${fixture.last_action_text} / ${announcement ? 'announced' : 'record'}`).toBe(false);
+        // An explicitly in-session resolver has to agree with the omission.
+        expect(billFloorBand(fixture, announcement, Date.now(), IN)).toEqual(band);
+        expect(billFloorBand(fixture, announcement, Date.now(), UNKNOWN)).toEqual(band);
+      }
+    }
+  });
+
+  test('the crown drops a record candidate whose chamber is out, and still crowns an announced one', () => {
+    const pool = [candidate(dayOffset(1), CLOTURE_TEXT), candidate(dayOffset(2), CALENDAR_TEXT)];
+    // In session, one of them crowns — the pool itself is sound.
+    expect(selectFloorVoteFeature(pool, undefined, IN)).not.toBeNull();
+    // Out of session, neither does: the fact is true and its "right now" is not.
+    expect(selectFloorVoteFeature(pool, undefined, OUT)).toBeNull();
+    expect(selectFloorVoteFeature(pool, undefined, UNKNOWN)).not.toBeNull();
+
+    // The announcement is the chamber's own act of meeting, so it crowns
+    // THROUGH the same out-of-session resolver.
+    const announcedPick = selectFloorVoteFeature(pool, (b) =>
+      b.last_action_text === CLOTURE_TEXT
+        ? {
+            quote: 'Senator Thune: the Senate will vote on the motion to invoke cloture.',
+            url: 'https://www.congress.gov/119/crec/2026/08/10/d10au6-1.htm',
+            published: dayOffset(1),
+            covers: dayOffset(0),
+            coversLabel: '8 a.m., Thursday, August 13',
+            source: 'daily-digest' as const,
+            chamber: 'senate' as const,
+          }
+        : null,
+      OUT
+    );
+    expect(announcedPick?.kind).toBe('announced');
+  });
+
+  test('the two chambers are independent: the Senate being out never mutes a House placement', () => {
+    // Read the chamber off the RECORD's own sentence, never the bill type —
+    // this House placement and this Senate motion are the whole point.
+    const housePlacement = candidate(dayOffset(1), 'Placed on the Union Calendar, Calendar No. 219.');
+    const senateMotion = candidate(dayOffset(0), CLOTURE_TEXT);
+    const senateOutHouseIn = (c: 'house' | 'senate') =>
+      c === 'senate' ? ('out_of_session' as const) : ('in_session' as const);
+
+    const pick = selectFloorVoteFeature([senateMotion, housePlacement], undefined, senateOutHouseIn);
+    expect(pick, 'the House fact still crowns').not.toBeNull();
+    expect(pick?.chamber).toBe('house');
+    expect(pick?.kind).toBe('calendar');
+
+    // And the bill page agrees about the same two records.
+    expect(billFloorBand(housePlacement, null, Date.now(), senateOutHouseIn)?.suspended).toBe(false);
+    expect(billFloorBand(senateMotion, null, Date.now(), senateOutHouseIn)?.suspended).toBe(true);
+  });
+
+  /*
+   * Both new surfaces print a message key that must EXIST in both languages,
+   * or a recess week renders a raw key in one of them — the same guard the
+   * announced band's copy gets above.
+   */
+  test('the recess copy resolves in both locales', () => {
+    for (const k of ['recessSenate', 'recessHouse'] as const) {
+      expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
+      expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');
+    }
+    expect(typeof en.home.weekNoteRecess, 'en.home.weekNoteRecess').toBe('string');
+    expect(typeof es.home.weekNoteRecess, 'es.home.weekNoteRecess').toBe('string');
+
+    /*
+     * THE HARD COPY RULES (owner-approved, 2026-08-15), pinned because they
+     * are the difference between quoting the record and narrating it:
+     *   · never the word "recess"/"receso" — the file says a program is pro
+     *     forma, which is a narrower claim than a recess;
+     *   · never a duration — the digest names ONE next meeting, and "for two
+     *     weeks" or "until September" is a fact nothing here carries.
+     */
+    const shipped = [
+      en.bill.floor.recessSenate,
+      en.bill.floor.recessHouse,
+      en.home.weekNoteRecess,
+      es.bill.floor.recessSenate,
+      es.bill.floor.recessHouse,
+      es.home.weekNoteRecess,
+    ];
+    for (const copy of shipped) {
+      expect(copy, 'the word "recess" is never shipped').not.toMatch(/\brecess\b/i);
+      expect(copy, 'nor "receso"').not.toMatch(/\breceso\b/i);
+      expect(copy, 'no duration claim').not.toMatch(
+        /\b(for|during|durante|por)\s+\w+\s+(days|weeks|días|semanas)\b/i
+      );
+      expect(copy, 'no month named').not.toMatch(
+        /\b(January|February|March|April|June|July|August|September|October|November|December|enero|febrero|marzo|abril|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/
+      );
     }
   });
 });

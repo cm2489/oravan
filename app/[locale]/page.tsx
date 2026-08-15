@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/server';
 import { Link, getPathname } from '@/i18n/navigation';
@@ -23,7 +24,15 @@ import type { Bill } from '@/lib/types';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { announcementFor, floorSignalsCheckedAt, floorSourcesPosture } from '@/lib/docket';
+import { glossaryTag } from '@/components/glossary-tags';
+import {
+  announcementFor,
+  chamberNextMeeting,
+  chamberSession,
+  floorSessionSource,
+  floorSignalsCheckedAt,
+  floorSourcesPosture,
+} from '@/lib/docket';
 import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
@@ -273,8 +282,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // announcement outranks both record facts, and it is the only one that can
   // crown a bill whose derived status has fallen back to `committee`, which is
   // what happens to every measure the moment it actually reaches the floor.
-  const feature = selectFloorVoteFeature(getFloorFeatureCandidates(locale), (b) =>
-    announcementFor(billSlug(b))
+  // THE FOURTH CONDITION (owner rulings D1+D2, 2026-08-15): the chamber whose
+  // floor the fact names has to be MEETING. A placement and a pending motion
+  // are both claims that something can happen next, and through a period when
+  // a chamber gavels in and straight out nothing can — while the record sits
+  // just as still, so the fact keeps clearing the 14-day window and the crown
+  // keeps saying "right now" over it. Same resolver shape as the announcement,
+  // and for the same reason: components/system reads no data. An ANNOUNCED
+  // candidate is exempt by construction — a chamber that published a schedule
+  // naming a bill is meeting — and that exemption lives in `floorFactSuspended`.
+  const feature = selectFloorVoteFeature(
+    getFloorFeatureCandidates(locale),
+    (b) => announcementFor(billSlug(b)),
+    (c) => chamberSession(c)
   );
   const signalsCheckedAt = floorSignalsCheckedAt();
   // Slug equality, NEVER reference equality. localizeBill() returns a fresh
@@ -302,6 +322,47 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // when the panel itself renders — same condition, one name, so the seam
   // classes below can never disagree with the crown's presence.
   const crowned = Boolean(feature && crownDate);
+
+  /*
+   * THE QUIET WEEK THAT CAN SAY WHY (owner ruling A-3, 2026-08-15).
+   *
+   * A crownless week already prints the honest `weekNoteQuiet` — "a quiet week
+   * shows as a quiet week" — and that sentence is true whatever the reason. It
+   * is also the one sentence that could, exactly once a year, tell the reader
+   * something the record actually says: BOTH chambers are gavelling in and
+   * straight back out, and the digest names when each of them meets next.
+   *
+   * FOUR CONDITIONS, ALL OF THEM, AND ONE CHAMBER IS NOT ENOUGH. The owner's
+   * ruling is explicit that a single chamber out of session prints nothing new
+   * here: the homepage note describes the WEEK, and a week with the House
+   * sitting is not a quiet one no matter what the Senate is doing. So both
+   * chambers must read out of session, both must have a next meeting in the
+   * file, and the digest must carry its own publication date — the note quotes
+   * that document, and a claim about Congress with no dated document behind it
+   * is exactly what this note exists to avoid making. Anything short of all
+   * four falls to today's `weekNoteQuiet`, unchanged.
+   *
+   * IT SELF-HEALS. `chamberSession` decays to `unknown` when the file stops
+   * being rewritten (lib/docket.mjs, SIGNAL_STALE_HOURS), and `unknown` is not
+   * `out_of_session` — a dead pipeline goes quiet here rather than asserting a
+   * recess that may have ended.
+   */
+  const digestSource = floorSessionSource();
+  const senateNextMeeting = chamberNextMeeting('senate');
+  const houseNextMeeting = chamberNextMeeting('house');
+  const recessWeek =
+    !crowned &&
+    chamberSession('senate') === 'out_of_session' &&
+    chamberSession('house') === 'out_of_session' &&
+    senateNextMeeting !== null &&
+    houseNextMeeting !== null &&
+    Boolean(digestSource?.published)
+      ? {
+          published: digestSource!.published!,
+          senate: senateNextMeeting,
+          house: houseNextMeeting,
+        }
+      : null;
 
   // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
   // 2026-08-02, finding #8: the featured bill appeared in the hero card,
@@ -343,6 +404,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       day: 'numeric',
       timeZone: 'UTC',
     });
+
+  /* A chamber's next meeting, printed the way this site prints anything a
+     government document said about itself: the document's OWN line first
+     ("1:30 p.m., Monday, August 17"), English and unformatted and marked as
+     such — it carries an hour the ISO date cannot hold, and it is the sentence
+     our date was derived FROM (ruling V4, the same split `coversDisplay`
+     makes). The derived date is the fallback, and only when the digest printed
+     no label at all; it is formatted in the reader's locale and never marked
+     English, because it is ours rather than the document's. */
+  const meetingText = (meeting: { iso: string | null; label: string | null }) =>
+    meeting.label ?? billDate(meeting.iso!);
+  const meetingTag = (meeting: { iso: string | null; label: string | null }) =>
+    meeting.label
+      ? function VerbatimMeeting(chunks: ReactNode) {
+          return <span lang="en">{chunks}</span>;
+        }
+      : function DerivedMeeting(chunks: ReactNode) {
+          return <span className="tabular-nums">{chunks}</span>;
+        };
 
   /*
    * "As of" for the floor schedule — a DATE AND A TIME, and the only timestamp
@@ -839,11 +919,37 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               vote date — and printing the calendar/pending sentence over it
               would describe a fact the panel is not showing. */}
           <p className="mt-8 max-w-note text-sm text-ink-2">
-            {!crowned
-              ? t('weekNoteQuiet')
-              : feature?.kind === 'announced'
-                ? t('weekNoteAnnounced')
-                : t('weekNote')}
+            {!crowned ? (
+              recessWeek ? (
+                /* The one crownless week that can name its own reason. Each
+                   chamber's next meeting is the digest's OWN printed line —
+                   English, unformatted, `lang="en"` (ruling V4), exactly as
+                   the announced band prints a schedule's coverage sentence —
+                   with our derived date as the fallback, formatted in the
+                   reader's locale. The document's publication date is ours to
+                   format either way. */
+                t.rich('weekNoteRecess', {
+                  published: billDate(recessWeek.published),
+                  senate: meetingText(recessWeek.senate),
+                  house: meetingText(recessWeek.house),
+                  /* The VALUES above are strings because next-intl's ICU
+                     arguments take strings, numbers and dates only; the SPAN
+                     that marks a verbatim English line arrives as a tag
+                     handler, one per chamber, each deciding from its own
+                     meeting whether it is wrapping the digest's words or our
+                     derived date. */
+                  senateWhen: meetingTag(recessWeek.senate),
+                  houseWhen: meetingTag(recessWeek.house),
+                  term: glossaryTag('pro-forma-session'),
+                })
+              ) : (
+                t('weekNoteQuiet')
+              )
+            ) : feature?.kind === 'announced' ? (
+              t('weekNoteAnnounced')
+            ) : (
+              t('weekNote')
+            )}
           </p>
 
           {/* The section closes with its exit: a full-width row under the
