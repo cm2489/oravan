@@ -13,6 +13,15 @@ import type { VehicleKind } from './moments';
 // without any of this module's readers — embed, MCP, the bill page — pulling
 // a byte of the nomination corpus.
 import type { Nomination } from './core/nominations';
+// TYPE-ONLY, hardest of the three: lib/docket.ts imports data/floor-signals
+// .json at module scope, and this module is read by the embed and MCP surfaces
+// that must pull no data file at all. `import type` is erased at compile time,
+// so `floorFactSuspended` below can name the ONE ChamberSession vocabulary
+// (owner ruling of 2026-08-14, shipped in #230) instead of declaring a second,
+// drifting copy of the same three literals — and nothing that reads this
+// module pays a byte for it. Re-exported below so a design primitive can name
+// the type without importing lib/docket at all.
+import type { ChamberSession } from './docket';
 // THE CLOCK, from the ONE copy. lib/urgency.mjs is a pure transform with no
 // data imports and no side effects (lib/moments.ts imports it the same way, by
 // relative path, for the same reason), so the embed and MCP surfaces that read
@@ -462,8 +471,64 @@ export interface FloorBand {
    *  on `announced`, the bill's own action date otherwise. Never a vote date:
    *  neither the corpus nor the schedule carries one. */
   date: string;
+  /** THE CHAMBER IS NOT MEETING, so the record fact this band stands on cannot
+   *  become a vote today. The band is still RETURNED — see the note on
+   *  `floorFactSuspended` for why the alternative (returning null) would break
+   *  the status label this same result derives. */
+  suspended: boolean;
 }
 
+/** The ONE session vocabulary, re-exported so a design primitive can name it
+ *  without importing lib/docket (which reads data/floor-signals.json). */
+export type { ChamberSession };
+
+/**
+ * IS THIS FLOOR FACT SUSPENDED BY THE CHAMBER NOT MEETING? (owner rulings
+ * D1+D2, 2026-08-15.)
+ *
+ * The two record facts — a calendar PLACEMENT and a PENDING motion — are both
+ * claims that something can happen next. Both are read out of the bill's own
+ * record and neither knows whether the chamber is in the building: through a
+ * district work period the record simply stops moving, so a cloture motion
+ * filed the day before the chambers went out keeps clearing the 14-day signal
+ * window and keeps asserting, in the present tense, that a vote is still ahead
+ * of it *now*. It is not; nothing is ahead of anything until the chamber
+ * meets. So an amber surface additionally requires the chamber to be meeting.
+ *
+ * `announced` IS EXEMPT BY CONSTRUCTION, and the exemption lives in this
+ * function's `kind` clause rather than in caller discipline: a chamber that
+ * published a schedule NAMING THIS BILL is, by the act of publishing it,
+ * meeting. Reading a session verdict over that fact could only ever subtract a
+ * bill from the loudest surface on the strength of a second document
+ * disagreeing with the first one's own words.
+ *
+ * FAIL-SAFE, IN THE DIRECTION THAT KEEPS AMBER. `unknown` — a stale file, a
+ * dead workflow, a digest that stopped parsing — returns false for every kind.
+ * A pipeline that has gone dark must never be able to suppress a true floor
+ * claim; the same rule lib/docket.ts's `chamberSession` header states from the
+ * other end.
+ */
+export function floorFactSuspended(kind: FloorBandKind, session: ChamberSession): boolean {
+  if (kind === 'announced') return false;
+  return session === 'out_of_session';
+}
+
+/**
+ * `sessionOf` is the fourth argument and the LAST one, so every existing call
+ * site keeps its meaning: omit it and `suspended` is false on every band, which
+ * is byte-for-byte the behavior this function had before the session gate
+ * existed. It is a resolver rather than a data read for the same reason
+ * `announcement` is passed in — this module holds no data import.
+ *
+ * IT RETURNS THE BAND, NEVER NULL, WHEN THE FACT IS SUSPENDED. The bill page's
+ * status label is derived from this same result (`FLOOR_COPY[kind][chamber]
+ * .status` → "Floor vote pending"), so a null here would silently regress that
+ * label to the weaker shared key "Floor activity" — the exact seam #207 closed.
+ * The band and the label are two different claims about one record: the label
+ * says what the record IS, which a recess does not change, and the band says
+ * what is happening on the floor, which is what stops. The caller reads
+ * `suspended` and swaps the loud band for the ruled note; nothing else moves.
+ */
 export function billFloorBand(
   bill: {
     status: Bill['status'];
@@ -471,10 +536,21 @@ export function billFloorBand(
     last_action_date?: string | null;
   },
   announcement: { chamber: Chamber; published: string } | null,
-  now: number = Date.now()
+  now: number = Date.now(),
+  sessionOf?: (chamber: Chamber) => ChamberSession
 ): FloorBand | null {
+  const suspendedFor = (kind: FloorBandKind, chamber: Chamber): boolean =>
+    sessionOf ? floorFactSuspended(kind, sessionOf(chamber)) : false;
   if (announcement) {
-    return { kind: 'announced', chamber: announcement.chamber, date: announcement.published };
+    return {
+      kind: 'announced',
+      chamber: announcement.chamber,
+      date: announcement.published,
+      // Routed through the same function as the record facts on purpose: the
+      // announced exemption is a RULE, held in one place, not a branch a caller
+      // could forget to take.
+      suspended: suspendedFor('announced', announcement.chamber),
+    };
   }
   const date = bill.last_action_date ?? null;
   if (bill.status !== 'floor_vote' || !date || !isSignalFresh(date, now)) return null;
@@ -482,7 +558,8 @@ export function billFloorBand(
   const pending = calendar ? null : floorPendingChamber(bill.last_action_text ?? null);
   const chamber = calendar ?? pending;
   if (!chamber) return null;
-  return { kind: calendar ? 'calendar' : 'pending', chamber, date };
+  const kind: FloorBandKind = calendar ? 'calendar' : 'pending';
+  return { kind, chamber, date, suspended: suspendedFor(kind, chamber) };
 }
 
 /**

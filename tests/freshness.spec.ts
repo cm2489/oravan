@@ -1,13 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 import syncState from '../data/sync-state.json';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
+// The session verdict the site itself reads, from the one copy — these are
+// corpus-derived tests and the corpus is now not the only input to the band.
+import { chamberSession } from '../lib/docket';
+import { floorCalendarChamber } from '../lib/journey';
 import {
+  CLOCK_SKEW_MS,
   anyNowAt,
   anyTopAt,
   calendarPlacementSlugs,
+  corpus,
   floorPendingSlugs,
   newestActionDate,
   pendingChamberOf,
+  slugOf,
   stableAcross,
 } from './corpus';
 import { waitForFeedHydrated } from './helpers';
@@ -280,6 +287,40 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
  * and skips-with-reason rather than gambling when the corpus cannot supply a
  * side (tests/corpus.ts's own convention).
  */
+/*
+ * THE FOURTH INPUT TO A GREEN BAND (owner rulings D1+D2, 2026-08-15): the
+ * chamber the record's fact names has to be MEETING. Both suites below assert
+ * that a fresh record fact RENDERS a band, and from this ruling forward that
+ * is only true while its chamber is in session — so each of those assertions
+ * gains a skip, in this file's own skip-with-reason convention, exactly as it
+ * already skips when the corpus cannot supply a side.
+ *
+ * READ AT THE EARLIER END OF THE SKEW WINDOW, and that direction is the whole
+ * care in this helper. `chamberSession` only ever decays toward `unknown` as
+ * time passes (lib/docket.mjs, SIGNAL_STALE_HOURS), so the run that baked
+ * these pages minutes ago is the one that could have seen `out_of_session`
+ * while an assertion reading `now` sees `unknown` — that is the one ordering
+ * that would leave a test demanding a band the build had already suppressed.
+ * Asking about the build's own instant closes it.
+ *
+ * What is NOT skipped is the status LINE (R2c's second test). That assertion
+ * is the regression guard proving the label did not fall back to the weaker
+ * "Floor activity" when the band stood down, and it is true in session and out
+ * — see lib/journey.ts's `billFloorBand`, which returns the band carrying
+ * `suspended` rather than returning null for exactly this reason.
+ */
+const chamberIsOut = (chamber: 'house' | 'senate' | null): boolean =>
+  chamber !== null &&
+  (chamberSession(chamber, Date.now() - CLOCK_SKEW_MS) === 'out_of_session' ||
+    chamberSession(chamber) === 'out_of_session');
+
+/** The chamber a calendar placement names, by slug — read out of the record's
+ *  own sentence, the same way `pendingChamberOf` does for the other fact. */
+const calendarChamberOf = (slug: string): 'house' | 'senate' | null => {
+  const bill = corpus.find((b) => slugOf(b) === slug);
+  return bill ? floorCalendarChamber(bill.last_action_text) : null;
+};
+
 test.describe('R2b: the green floor panel never fires off a stale placement', () => {
   const PANEL = 'section.bg-go-deep';
   const split = calendarPlacementSlugs(Date.now());
@@ -303,6 +344,10 @@ test.describe('R2b: the green floor panel never fires off a stale placement', ()
   }) => {
     test.skip(!SPLIT_STABLE, 'a placement sits on the freshness boundary — would be a coin flip');
     test.skip(split.fresh.length === 0, 'no fresh calendar placement in the corpus this week');
+    test.skip(
+      chamberIsOut(calendarChamberOf(split.fresh[0])),
+      'the chamber holding this placement is not meeting — the band stands down by design'
+    );
     await page.goto(`/bills/${split.fresh[0]}`);
     await expect(page.locator(PANEL)).toHaveCount(1);
   });
@@ -336,6 +381,10 @@ test.describe('R2c: a fresh PENDING floor vote earns the same band the crown pro
   }) => {
     test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
     test.skip(pending.fresh.length === 0, 'no fresh pending floor vote in the corpus this week');
+    test.skip(
+      chamberIsOut(pendingChamberOf(pending.fresh[0])),
+      'the chamber holding this motion is not meeting — the band stands down by design'
+    );
     const slug = pending.fresh[0];
     const chamber = pendingChamberOf(slug);
     expect(chamber, 'the corpus helper only yields slugs with a chamber').not.toBeNull();
@@ -353,6 +402,16 @@ test.describe('R2c: a fresh PENDING floor vote earns the same band the crown pro
   }) => {
     test.skip(!PENDING_STABLE, 'a pending motion sits on the freshness boundary — would be a coin flip');
     test.skip(pending.fresh.length === 0, 'no fresh pending floor vote in the corpus this week');
+    /*
+     * DELIBERATELY NOT SESSION-SKIPPED (2026-08-15). This is the assertion
+     * that proves the session gate took the BAND and left the LABEL: the
+     * record still says a floor vote is pending on this bill whether or not
+     * the chamber is meeting this week, and `billFloorBand` returns the band
+     * carrying `suspended` — never null — precisely so this line cannot
+     * silently fall back to the weaker "Floor activity" (the seam #207
+     * closed). If the recess work ever regresses that, this goes red on a
+     * recess week, which is the only week it could.
+     */
     await page.goto(`/bills/${pending.fresh[0]}`);
     const ritual = page.locator('main header p').first();
     await expect(ritual).toContainText('Floor vote pending');
@@ -365,9 +424,19 @@ test.describe('R2c: a fresh PENDING floor vote earns the same band the crown pro
     const slug = pending.fresh[0];
     const chamber = pendingChamberOf(slug);
     await page.goto(`/es/bills/${slug}`);
-    await expect(page.locator(PANEL)).toContainText(
-      chamber === 'senate' ? 'Votación pendiente en el pleno del Senado' : 'Votación pendiente en el pleno de la Cámara'
-    );
+    /*
+     * SPLIT RATHER THAN SKIPPED (2026-08-15). The band half is session-gated
+     * like every other band assertion in this file; the STATUS LINE half is
+     * the Spanish twin of the regression guard above and stays asserted in
+     * both states — a label that fell back would be just as wrong in Spanish,
+     * and a whole-test skip would have taken that guard out for the one week
+     * it can actually catch anything.
+     */
+    if (!chamberIsOut(chamber)) {
+      await expect(page.locator(PANEL)).toContainText(
+        chamber === 'senate' ? 'Votación pendiente en el pleno del Senado' : 'Votación pendiente en el pleno de la Cámara'
+      );
+    }
     await expect(page.locator('main header p').first()).toContainText('Votación pendiente en el pleno');
   });
 

@@ -15,6 +15,7 @@ import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
+import { FloorRecessNote } from '@/components/FloorRecessNote';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -30,7 +31,7 @@ import {
 } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
-import { floorSignalsCheckedAt, rungFor } from '@/lib/docket';
+import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
 
 /*
@@ -340,12 +341,33 @@ export default async function BillPage({
    *
    * An aged or settled record falls to the page's ordinary paper state, which
    * is the honest result and needs no new copy.
+   *
+   * THE FOURTH CONDITION — THE CHAMBER HAS TO BE MEETING (owner rulings D1+D2,
+   * 2026-08-15). Both record facts are present-tense claims that something can
+   * happen next, and through a period when a chamber gavels in and straight
+   * back out nothing can. The record does not move either, so a cloture motion
+   * filed the day before the chambers went out keeps clearing the 14-day
+   * window and keeps the band saying "a vote of the full Senate is still ahead
+   * of this bill" — right now — for as long as the window lasts.
+   *
+   * WHAT DOES *NOT* CHANGE, and this is the load-bearing half: the gate still
+   * returns the band, carrying `suspended`, rather than null. The status label
+   * two blocks down is derived from the SAME result, so a null here would
+   * quietly drop "Floor vote pending" back to the shared key's "Floor
+   * activity" — the seam #207 closed. The record still says what it says; only
+   * the loud present-tense band stands down, and `<FloorRecessNote>` takes its
+   * slot in ruled paper. `announced` is exempt by construction (a chamber that
+   * published a schedule naming this bill is meeting), enforced inside
+   * `floorFactSuspended` rather than here.
    */
   const rung = rungFor(bill, id);
   const announcement = rung.tier === 't0' ? rung.announced : null;
   const floorBand = billFloorBand(
     bill,
-    announcement ? { chamber: announcement.chamber, published: announcement.published } : null
+    announcement ? { chamber: announcement.chamber, published: announcement.published } : null,
+    // `now` keeps its default; the session resolver is the fourth argument.
+    undefined,
+    (c) => chamberSession(c)
   );
   const floorCopy = floorBand ? FLOOR_COPY[floorBand.kind][floorBand.chamber] : null;
 
@@ -538,8 +560,18 @@ export default async function BillPage({
           bill's own name. With no live dated floor fact — the chamber's own
           schedule, a placement, OR a pending vote — this element does not
           exist and the page is all paper. Still exactly one band, and it
-          prints whichever of the three facts the gate above actually read. */}
-      {floorCopy && floorBand && (
+          prints whichever of the three facts the gate above actually read.
+
+          ONE SLOT, TWO THINGS THAT CAN STAND IN IT (2026-08-15). When the
+          fact's chamber is not meeting, the loud band stands down and the
+          ruled note takes its place — never both, and never a second
+          full-bleed ground. The note renders nothing at all when the file
+          names no next meeting for that chamber, which is the honest empty
+          state and leaves the page all paper. */}
+      {floorCopy && floorBand && floorBand.suspended && (
+        <FloorRecessNote chamber={floorBand.chamber} />
+      )}
+      {floorCopy && floorBand && !floorBand.suspended && (
         <FloorVotePanel
           status={bill.status}
           /* The kind is what exempts an ANNOUNCED bill from the panel's own

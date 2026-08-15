@@ -89,6 +89,7 @@
     "stampLabel": "Data as of",
     "weekNote": "The green panel marks one dated fact: this bill is on the floor calendar, or a floor vote on it is pending. The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
     "weekNoteQuiet": "The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
+    "weekNoteRecess": "No legislative business is scheduled in either chamber. The Senate's own Daily Digest, published {published}, gives the next Senate meeting as <senateWhen>{senate}</senateWhen> and the next House meeting as <houseWhen>{house}</houseWhen> — both <term>pro forma sessions</term>. The bills below still stand where the record left them.",
     "how1Dur": "0:30",
     "how2Dur": "1:00",
     "how3Dur": "1:00",
@@ -395,7 +396,9 @@
       "headlineAnnouncedHouse": "The House has named this bill on its own published floor schedule.",
       "headlineAnnouncedSenate": "The Senate has named this bill on its own published floor program.",
       "statusAnnounced": "On the floor schedule",
-      "metaAnnounced": "The chamber published this itself. It does not say when the vote will be, and offices tally calls until it happens."
+      "metaAnnounced": "The chamber published this itself. It does not say when the vote will be, and offices tally calls until it happens.",
+      "recessSenate": "The Daily Digest gives the Senate's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged.",
+      "recessHouse": "The Daily Digest gives the House's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged."
     }
   },
   "walkthrough": {
@@ -1023,6 +1026,10 @@
       "cra-disapproval": {
         "term": "CRA disapproval",
         "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the President, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
+      },
+      "pro-forma-session": {
+        "term": "Pro forma session",
+        "body": "A pro forma session is a meeting a chamber holds to satisfy the constitutional rule that neither chamber may break for more than three days without the other's consent. It runs a minute or two: a presiding officer gavels in, no legislative business is conducted, and the chamber gavels out. A bill cannot be called up at one, and no measure moves on the floor because of it. The chamber's own Daily Digest prints the program for each meeting, so a pro forma one says so in the record."
       }
     }
   }

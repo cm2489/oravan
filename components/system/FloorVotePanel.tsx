@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import type { BillStatus } from '@/lib/types';
-import { floorCalendarChamber, floorPendingChamber, type Chamber } from '@/lib/journey';
+import {
+  floorCalendarChamber,
+  floorFactSuspended,
+  floorPendingChamber,
+  type Chamber,
+  type ChamberSession,
+} from '@/lib/journey';
 import { TERMINAL_STATUSES, effectiveUrgency, isSignalFresh } from '@/lib/signal-window';
 import { Chip } from './Chip';
 
@@ -331,10 +337,20 @@ export interface FloorFeature<T> {
  * without it importing any data (it is a design primitive; lib/core/bills.ts
  * owns the corpus and data/floor-signals.json). Omit it and the selector
  * behaves exactly as it did before ruling V1: two kinds, read from the record.
+ *
+ * `sessionOf` is the SAME pattern for the same reason (owner rulings D1+D2,
+ * 2026-08-15): whether a chamber is meeting is a fact in that same data file,
+ * and this module may not read it. A record fact whose chamber is out of
+ * session is dropped from the pool entirely — a bill that cannot be called up
+ * today does not get the loudest surface on the site claiming a vote is ahead
+ * of it right now. An ANNOUNCED candidate is exempt by construction and the
+ * exemption is enforced inside `floorFactSuspended`, not here. Omit the
+ * resolver and nothing is suspended, which is the pre-ruling behavior exactly.
  */
 export function selectFloorVoteFeature<T extends { status: BillStatus }>(
   bills: readonly T[],
-  announcementOf?: (bill: T) => FloorAnnouncement | null
+  announcementOf?: (bill: T) => FloorAnnouncement | null,
+  sessionOf?: (chamber: Chamber) => ChamberSession
 ): FloorFeature<T> | null {
   let best: FloorFeature<T> | null = null;
   for (const bill of bills) {
@@ -376,9 +392,16 @@ export function selectFloorVoteFeature<T extends { status: BillStatus }>(
     const pending = floorPendingChamber(text);
     const chamber = pending ?? floorCalendarChamber(text);
     if (chamber === null) continue;
+    const kind: FloorFeatureKind = pending ? 'pending' : 'calendar';
+    // AND THE CHAMBER HAS TO BE MEETING. The record fact is true and stays
+    // true; what a chamber out of session takes away is the "right now" the
+    // crown asserts over it. The chamber comes from the record's OWN sentence
+    // above (a House bill can stand on a Senate motion), so this reads the
+    // session of the chamber that would actually hold the vote.
+    if (sessionOf && floorFactSuspended(kind, sessionOf(chamber))) continue;
     const candidate: FloorFeature<T> = {
       bill,
-      kind: pending ? 'pending' : 'calendar',
+      kind,
       chamber,
       announcement: null,
     };
