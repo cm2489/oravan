@@ -3,7 +3,10 @@ import { expect, test } from '@playwright/test';
 // this ladder replaced as the site's ordering.
 import {
   DOCKET_TIERS,
+  SIGNAL_STALE_HOURS,
   bandForRung,
+  chamberNextMeetingFrom,
+  chamberSessionFrom,
   compareDocket,
   docketKey,
   docketRung,
@@ -16,9 +19,16 @@ import {
 } from '../lib/docket.mjs';
 import { SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 import { floorPendingChamber } from '../lib/journey';
-// The TS door, for the one helper the evidence row calls. It imports
+// The TS door, for the helpers a surface calls. It imports
 // data/floor-signals.json, which is ~1 KB and (this week) empty of signals.
-import { coversDisplay } from '../lib/docket';
+import {
+  chamberNextMeeting,
+  chamberSession,
+  coversDisplay,
+  floorSessionSource,
+  floorSignalsCheckedAt,
+  floorSignalsFile,
+} from '../lib/docket';
 import { billSlug, getFloorFeatureCandidates, getTopActions } from '../lib/core/bills';
 import { actNowPoolAt, corpus, decidingNowAt, docketedAt, rungAt, slugOf } from './corpus';
 
@@ -409,5 +419,128 @@ test.describe('coversDisplay · the printed label beats the derived date', () =>
     const out = coversDisplay({ covers: '2026-08-13', coversLabel: '8 a.m., Thursday, August 13' });
     expect(out?.verbatim).toBe(true);
     expect(out && 'iso' in out).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * THE SESSION ACCESSORS — is a chamber meeting, and when does it meet
+ * next (_meta.in_session + _meta.next_meeting).
+ *
+ * FIXTURE-BASED FOR THE RULES, by necessity and by preference: the rules
+ * live in lib/docket.mjs precisely so all three `unknown` routes can be
+ * exercised without the data import, and data/floor-signals.json is
+ * rewritten hourly by a cron — any assertion pinned to its current
+ * contents would be a scheduled failure. The two tests that do read the
+ * committed file assert only what cannot drift: the return SHAPE, and the
+ * decay to `unknown` once the file's own stamp is old enough.
+ * ------------------------------------------------------------------ */
+const META_NOW = Date.parse('2026-08-14T12:00:00Z');
+const meta = (over: Record<string, unknown> = {}) => ({
+  schema: 'floor-signals/v1',
+  fetched_at: new Date(META_NOW - 3_600_000).toISOString(),
+  sources: {},
+  in_session: { senate: 'in_session', house: 'out_of_session', basis: 'Daily Digest "Program for" blocks' },
+  ...over,
+});
+
+test.describe('chamberSessionFrom · three ways to say “we don’t know”', () => {
+  test('a fresh file hands back each chamber’s own verdict', () => {
+    expect(chamberSessionFrom(meta(), 'senate', META_NOW)).toBe('in_session');
+    expect(chamberSessionFrom(meta(), 'house', META_NOW)).toBe('out_of_session');
+  });
+
+  test('a file older than SIGNAL_STALE_HOURS stops asserting anything', () => {
+    // Either side of the ceiling and never on it: a dead workflow may not keep
+    // telling a reader the Senate is meeting.
+    const hoursOld = (h: number) => ({ ...meta(), fetched_at: new Date(META_NOW - h * 3_600_000).toISOString() });
+    expect(chamberSessionFrom(hoursOld(SIGNAL_STALE_HOURS - 1), 'senate', META_NOW)).toBe('in_session');
+    expect(chamberSessionFrom(hoursOld(SIGNAL_STALE_HOURS + 1), 'senate', META_NOW)).toBe('unknown');
+  });
+
+  test('a word this build does not know is unknown, never a verdict', () => {
+    expect(chamberSessionFrom(meta({ in_session: { senate: 'recess' } }), 'senate', META_NOW)).toBe('unknown');
+    expect(chamberSessionFrom(meta({ in_session: {} }), 'senate', META_NOW)).toBe('unknown');
+    expect(chamberSessionFrom(meta({ in_session: undefined }), 'house', META_NOW)).toBe('unknown');
+    expect(chamberSessionFrom(undefined, 'house', META_NOW)).toBe('unknown');
+    expect(chamberSessionFrom(meta({ fetched_at: 'whenever' }), 'senate', META_NOW)).toBe('unknown');
+  });
+
+  test('KEYED BY CHAMBER — `basis` can never leak out as a session verdict', () => {
+    // _meta.in_session carries a third key whose value is a prose sentence.
+    // Anything that iterated the object's values instead of asking for
+    // `senate`/`house` would hand that sentence to a caller as a verdict.
+    const m = meta();
+    const verdicts = [chamberSessionFrom(m, 'senate', META_NOW), chamberSessionFrom(m, 'house', META_NOW)];
+    expect(verdicts).toEqual(['in_session', 'out_of_session']);
+    expect(verdicts.some((v) => v.includes('Daily Digest'))).toBe(false);
+    expect(chamberSessionFrom(m, 'basis' as 'house', META_NOW)).toBe('unknown');
+  });
+});
+
+test.describe('chamberNextMeetingFrom · only a meeting still ahead', () => {
+  const withMeeting = (over: Record<string, unknown>) => meta({ next_meeting: over });
+
+  test('the printed label and the derived date come back together', () => {
+    const m = withMeeting({ house: { date: '2026-08-17', label: '9 a.m., Monday, August 17' } });
+    expect(chamberNextMeetingFrom(m, 'house', META_NOW)).toEqual({
+      iso: '2026-08-17',
+      label: '9 a.m., Monday, August 17',
+    });
+  });
+
+  test('a meeting whose day has passed is a record, not a schedule', () => {
+    const m = withMeeting({ senate: { date: '2026-08-10', label: '8 a.m., Monday, August 10' } });
+    expect(chamberNextMeetingFrom(m, 'senate', META_NOW)).toBeNull();
+    // Still ahead through the end of its own day — a 9 a.m. sitting is the
+    // next meeting at noon that same day.
+    const today = withMeeting({ senate: { date: '2026-08-14', label: '9 a.m., Friday, August 14' } });
+    expect(chamberNextMeetingFrom(today, 'senate', META_NOW)?.iso).toBe('2026-08-14');
+  });
+
+  test('absent, null and unparseable all read as no meeting named', () => {
+    expect(chamberNextMeetingFrom(meta(), 'house', META_NOW)).toBeNull();
+    expect(chamberNextMeetingFrom(meta({ next_meeting: null }), 'house', META_NOW)).toBeNull();
+    expect(chamberNextMeetingFrom(withMeeting({ house: null }), 'house', META_NOW)).toBeNull();
+    expect(chamberNextMeetingFrom(withMeeting({ house: { date: 'Thursday', label: 'x' } }), 'house', META_NOW)).toBeNull();
+    expect(chamberNextMeetingFrom(withMeeting({ house: { date: null, label: '   ' } }), 'house', META_NOW)).toBeNull();
+  });
+
+  test('a label the year could not be filled into is still the document’s own sentence', () => {
+    const m = withMeeting({ house: { date: null, label: '9 a.m., Thursday, August 13' } });
+    expect(chamberNextMeetingFrom(m, 'house', META_NOW)).toEqual({ iso: null, label: '9 a.m., Thursday, August 13' });
+  });
+});
+
+test.describe('the typed door onto the committed file', () => {
+  test('chamberSession answers with one of the three literals, and decays to unknown', () => {
+    const checkedAt = Date.parse(floorSignalsCheckedAt() ?? '');
+    expect(Number.isFinite(checkedAt)).toBe(true);
+    for (const chamber of ['house', 'senate'] as const) {
+      expect(['in_session', 'out_of_session', 'unknown']).toContain(chamberSession(chamber, checkedAt + 3_600_000));
+      // Long past the ceiling, whatever the file says: our own silence is
+      // never a fact about Congress.
+      expect(chamberSession(chamber, checkedAt + (SIGNAL_STALE_HOURS + 1) * 3_600_000)).toBe('unknown');
+    }
+  });
+
+  test('chamberNextMeeting names nothing once every stored meeting is behind us', () => {
+    const farFuture = Date.parse('2099-01-01T00:00:00Z');
+    expect(chamberNextMeeting('house', farFuture)).toBeNull();
+    expect(chamberNextMeeting('senate', farFuture)).toBeNull();
+  });
+
+  test('floorSessionSource attributes the verdict to the digest itself', () => {
+    const src = floorSessionSource();
+    const digest = floorSignalsFile()._meta?.sources?.['daily-digest'];
+    if (!digest) {
+      expect(src).toBeNull();
+      return;
+    }
+    expect(src).not.toBeNull();
+    expect(src?.url).toBe(digest.url ?? null);
+    expect(src?.published).toBe(digest.published ?? null);
+    // Attribution only — a status is a statement about US and has no business
+    // in the sentence a reader is offered as the source.
+    expect(Object.keys(src ?? {}).sort()).toEqual(['published', 'url']);
   });
 });

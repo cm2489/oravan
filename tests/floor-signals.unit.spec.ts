@@ -6,7 +6,9 @@ import { join } from 'node:path';
 import {
   alreadyDisposed,
   CARRY_FORWARD_MAX_DAYS,
+  deriveFloorMeta,
   deriveSourceStatus,
+  digestAgeDays,
   digestToText,
   entersFloorWatch,
   FLOOR_SIGNALS_SCHEMA,
@@ -23,6 +25,7 @@ import {
   resolveMeetingDate,
   routeNomination,
   selectDigestGranule,
+  SESSION_BASIS,
   sessionFromProgram,
   shouldWrite,
   splitProgramSentences,
@@ -349,6 +352,88 @@ test.describe('sessionFromProgram', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 5b · _meta.in_session + _meta.next_meeting — both chambers, and a
+ *      stale document that asserts nothing (deriveFloorMeta)
+ * ------------------------------------------------------------------ */
+test.describe('deriveFloorMeta', () => {
+  // The 08-04 digest: the Senate meeting Wednesday with real business, the
+  // House gavelling in pro forma Thursday. Both chambers print a "Next
+  // Meeting of the" line; until 2026-08-15 only the Senate's reached the file.
+  const BLOCKS_0804 = parseProgramBlocks(digestToText(DIGEST_0804));
+
+  test("the HOUSE's next meeting reaches next_meeting, not just the Senate's", () => {
+    const meta = deriveFloorMeta({
+      blocks: BLOCKS_0804,
+      issueDate: '2026-08-04',
+      todayISO: '2026-08-04',
+      maxAgeDays: 5,
+    });
+    expect(meta.next_meeting?.house).toEqual({
+      date: '2026-08-06',
+      label: '9 a.m., Thursday, August 6',
+    });
+    expect(meta.next_meeting?.senate).toEqual({
+      date: '2026-08-05',
+      label: '10:30 a.m., Wednesday, August 5',
+    });
+    // The label is the document's own sentence and the date is our arithmetic
+    // on it — stored together so a reader can check one against the other.
+    expect(meta.next_meeting?.house?.label).toContain('Thursday');
+  });
+
+  test('the session verdict is keyed by chamber and names its basis', () => {
+    const meta = deriveFloorMeta({
+      blocks: BLOCKS_0804,
+      issueDate: '2026-08-04',
+      todayISO: '2026-08-04',
+      maxAgeDays: 5,
+    });
+    expect(meta.in_session).toEqual({
+      senate: 'in_session',
+      house: 'out_of_session',
+      basis: SESSION_BASIS,
+    });
+    expect(meta.stale).toBe(false);
+  });
+
+  test('a STALE digest asserts no session verdict and no next meeting', () => {
+    // The real bug this replaced: past the age ceiling the writer still read a
+    // verdict (and a pro-forma "quiet") out of a program that had already
+    // happened. A document that stopped describing the present may not say
+    // whether Congress is meeting.
+    const meta = deriveFloorMeta({
+      blocks: BLOCKS_0804,
+      issueDate: '2026-08-04',
+      todayISO: '2026-08-20',
+      maxAgeDays: 5,
+    });
+    expect(meta.stale).toBe(true);
+    expect(meta.in_session).toEqual({ senate: 'unknown', house: 'unknown', basis: SESSION_BASIS });
+    expect(meta.next_meeting).toBeNull();
+  });
+
+  test('the ceiling is checked either side and never on it', () => {
+    const at = (todayISO: string) =>
+      deriveFloorMeta({ blocks: BLOCKS_0804, issueDate: '2026-08-04', todayISO, maxAgeDays: 5 }).stale;
+    expect(at('2026-08-08')).toBe(false); // 4 days old
+    expect(at('2026-08-10')).toBe(true); // 6 days old
+  });
+
+  test('a dark fetch — no blocks, no issue date — claims nothing about either chamber', () => {
+    const meta = deriveFloorMeta({ blocks: { senate: null, house: null }, issueDate: null, todayISO: '2026-08-04', maxAgeDays: 5 });
+    expect(meta.in_session.senate).toBe('unknown');
+    expect(meta.in_session.house).toBe('unknown');
+    expect(meta.next_meeting).toEqual({ senate: null, house: null });
+  });
+
+  test('digestAgeDays is null rather than NaN on an unusable date', () => {
+    expect(digestAgeDays('2026-08-04', '2026-08-09')).toBe(5);
+    expect(digestAgeDays(null, '2026-08-09')).toBeNull();
+    expect(digestAgeDays('2026-08-04', 'not-a-date')).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 6 · merge + write policy (critic A-1)
  * ------------------------------------------------------------------ */
 const NOW = Date.parse('2026-08-05T12:00:00Z');
@@ -461,6 +546,27 @@ test.describe('shouldWrite', () => {
     const a = doc({ 'hr-1-119': entry('daily-digest') }, '2026-08-05T01:00:00Z');
     const b = doc({ 'hr-1-119': { ...entry('daily-digest'), fetched_at: '2026-08-05T09:00:00Z' } }, '2026-08-05T09:00:00Z');
     expect(materialFingerprint(a)).toBe(materialFingerprint(b));
+  });
+
+  test('the fingerprint MOVES when a chamber’s next meeting moves', () => {
+    // The House coming back Thursday instead of Wednesday is the schedule
+    // moving, and an hourly run exists to catch exactly that. Out of the
+    // fingerprint, the change would sit unwritten until something else moved.
+    const withMeeting = (house: unknown) => ({
+      _meta: {
+        schema: FLOOR_SIGNALS_SCHEMA,
+        fetched_at: new Date(NOW).toISOString(),
+        sources: {},
+        next_meeting: { senate: { date: '2026-08-05', label: '10:30 a.m., Wednesday, August 5' }, house },
+      },
+      signals: {},
+      nominations: {},
+    });
+    const wednesday = withMeeting({ date: '2026-08-05', label: '9 a.m., Wednesday, August 5' });
+    const thursday = withMeeting({ date: '2026-08-06', label: '9 a.m., Thursday, August 6' });
+    expect(materialFingerprint(wednesday)).not.toBe(materialFingerprint(thursday));
+    expect(materialFingerprint(wednesday)).not.toBe(materialFingerprint(withMeeting(null)));
+    expect(shouldWrite({ previous: wednesday, next: thursday, now: NOW })).toBe(true);
   });
 });
 
@@ -634,6 +740,38 @@ test.describe('verifyFloorSignals', () => {
     const { failures, warnings } = verifyFloorSignals({ data: good, fileBytes: 1000, now: NOW, knownSlugs: new Set() });
     expect(failures).toEqual([]);
     expect(warnings.join(' ')).toContain('hr-6500-119');
+  });
+
+  test('warns — never fails — when a next meeting predates the digest that announced it', () => {
+    const data = {
+      ...good,
+      _meta: {
+        ...good._meta,
+        sources: { 'daily-digest': { status: 'ok', published: '2026-08-04' } },
+        next_meeting: {
+          senate: { date: '2026-08-05', label: '10:30 a.m., Wednesday, August 5' },
+          house: { date: '2025-08-06', label: '9 a.m., Thursday, August 6' },
+        },
+      },
+    };
+    const { failures, warnings } = verifyFloorSignals({ data, fileBytes: 1000, now: NOW });
+    expect(failures).toEqual([]);
+    expect(warnings.join(' ')).toContain('house=2025-08-06');
+    expect(warnings.join(' ')).not.toContain('senate=');
+  });
+
+  test('says nothing when every next meeting is on or after the digest date', () => {
+    const data = {
+      ...good,
+      _meta: {
+        ...good._meta,
+        sources: { 'daily-digest': { status: 'ok', published: '2026-08-04' } },
+        next_meeting: { senate: { date: '2026-08-05', label: 'x' }, house: null },
+      },
+    };
+    const { failures, warnings } = verifyFloorSignals({ data, fileBytes: 1000, now: NOW });
+    expect(failures).toEqual([]);
+    expect(warnings.join(' ')).not.toContain('next_meeting');
   });
 
   test('reads the committed file cleanly', () => {

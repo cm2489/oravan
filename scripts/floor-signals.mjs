@@ -55,7 +55,9 @@ import { cg } from './congress-fetch.mjs';
 import {
   FLOOR_SIGNALS_PATH,
   FLOOR_SIGNALS_SCHEMA,
+  deriveFloorMeta,
   deriveSourceStatus,
+  digestAgeDays,
   digestToText,
   govinfoGranuleHtmlUrl,
   mergeSignals,
@@ -64,7 +66,6 @@ import {
   parseSenateProgram,
   resolveMeetingDate,
   selectDigestGranule,
-  sessionFromProgram,
   shouldWrite,
 } from './floor-signals-parse.mjs';
 import { mondayOfWeekET } from './newsdesk-match.mjs';
@@ -196,7 +197,7 @@ async function fetchDigest({ bySlug, nominations, todayISO }) {
     }
   }
 
-  const ageDays = (Date.parse(`${todayISO}T00:00:00Z`) - Date.parse(`${doc.issueDate}T00:00:00Z`)) / 86_400_000;
+  const ageDays = digestAgeDays(doc.issueDate, todayISO);
   const text = digestToText(doc.html);
   const blocks = parseProgramBlocks(text);
   if (!blocks.senate) {
@@ -270,12 +271,29 @@ console.log(`  daily-digest: ${digest.outcome} — ${digest.detail}${digest.via 
 const house = await fetchBillsThisWeek();
 console.log(`  billsthisweek: ${house.outcome} — ${house.detail}`);
 
+// What the digest says about the chambers themselves — the session verdict for
+// each and, since 2026-08-15, the next meeting BOTH chambers printed rather
+// than only the Senate's. The rule (including the stale-digest branch, which
+// asserts nothing) lives in deriveFloorMeta; this file stays the network and
+// the fs.
+const floorMeta = deriveFloorMeta({
+  blocks: { senate: digest.senate, house: digest.house },
+  issueDate: digest.issueDate,
+  todayISO,
+  maxAgeDays: DIGEST_MAX_AGE_DAYS,
+});
+if (floorMeta.stale) {
+  console.log(
+    `  daily-digest: ${digest.issueDate} is past the ${DIGEST_MAX_AGE_DAYS}-day ceiling — no session verdict and no next meeting are asserted from it`
+  );
+}
+
 // The cross-check (critic A-5). Only POSITIVE evidence counts as in_session:
 // the digest's own House program tells us whether the House is meeting, and
 // the House schedule naming measures tells us the House is meeting. Two dark
 // sources produce `unknown`, never `quiet`.
-const houseSession = sessionFromProgram(digest.house);
-const senateSession = sessionFromProgram(digest.senate);
+const houseSession = floorMeta.in_session.house;
+const senateSession = floorMeta.in_session.senate;
 const digestCrossCheck = house.outcome === 'ok' ? 'in_session' : 'unknown';
 
 const sources = {
@@ -333,7 +351,12 @@ const next = {
     schema: FLOOR_SIGNALS_SCHEMA,
     fetched_at: nowISO,
     sources,
-    in_session: { senate: senateSession, house: houseSession, basis: 'Daily Digest "Program for" blocks' },
+    in_session: floorMeta.in_session,
+    // Both chambers' own printed "Next Meeting of the" line, with the date
+    // derived from it beside the verbatim label — or null on the stale branch,
+    // where a document that has stopped describing the present may not name a
+    // next meeting either.
+    next_meeting: floorMeta.next_meeting,
     // Capped and truncated: enough to audit why a measure the digest named is
     // not on the page, small enough that it can never dominate the file.
     dropped: dropped.slice(0, 20).map((d) => ({ source: d.source, reason: d.reason, slug: d.slug ?? null, text: (d.text ?? '').slice(0, 160) })),
