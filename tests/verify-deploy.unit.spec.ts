@@ -90,3 +90,31 @@ for (const workflow of CALLERS) {
     expect(tail).not.toMatch(/Skips with a\s+#?\s*notice/);
   });
 }
+
+/*
+ * ...and the other half of "fails for the right reason": newsdesk.yml carries
+ * `workflow_dispatch`, so it gets run by hand off a branch to validate a change
+ * to scripts/newsdesk.mjs. Production is built from refs/heads/main and nothing
+ * else, so on such a run the poll asks production for a SHA that can never
+ * appear there, burns the 12-minute deadline, and reports red. That is a
+ * STRUCTURAL failure, not a caught one, and a dead-man's switch that cries wolf
+ * on every branch validation is a dead-man's switch nobody reads.
+ *
+ * The guard has to AND onto the existing changed-files condition rather than
+ * replace it — dropping `changed == 'true'` would send a no-op hourly run
+ * hunting for an empty EXPECT_SHA — so pin the whole expression, not just the
+ * ref half. Same for the CI dispatch below it: a branch run pushed its data to
+ * that branch, so dispatching main's suite would test a corpus it never wrote.
+ */
+test('newsdesk.yml only verifies the deploy and dispatches CI on main', () => {
+  const yaml = readFileSync(join(REPO, '.github/workflows/newsdesk.yml'), 'utf8');
+  const GUARD = "if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'";
+
+  const verifyAt = yaml.indexOf('- name: Verify the deploy landed');
+  const dispatchAt = yaml.indexOf('- name: Dispatch CI against the pushed data');
+  expect(verifyAt, 'deploy-verify step not found').toBeGreaterThan(0);
+  expect(dispatchAt, 'CI-dispatch step not found').toBeGreaterThan(verifyAt);
+
+  expect(yaml.slice(verifyAt, dispatchAt)).toContain(GUARD);
+  expect(yaml.slice(dispatchAt)).toContain(GUARD);
+});
