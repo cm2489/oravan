@@ -43,11 +43,15 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import packageJson from '../package.json';
+import { MCP_SERVER_INFO } from './core/mcp-server-info';
 import { registerOravanTools } from './core/mcp-tools';
 
 export async function main(): Promise<void> {
-  const server = new McpServer({ name: 'oravan', version: packageJson.version });
+  // Same shared identity the HTTP route declares (lib/core/mcp-server-info.ts)
+  // - one name, one version, for the same reason registerOravanTools below is
+  // one registration: two doors onto the same room must not describe it
+  // differently.
+  const server = new McpServer(MCP_SERVER_INFO);
 
   registerOravanTools(server, {
     // See this file's header comment: a stdio process has no caller to

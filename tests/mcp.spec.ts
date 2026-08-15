@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { MCP_ACCEPT, MCP_ENDPOINT, mcpRpc, readJsonRpc } from './helpers';
 
@@ -36,7 +37,14 @@ test('initialize handshake succeeds and identifies the server', async ({ request
 
   const rpc = await readJsonRpc(res);
   expect(rpc.error).toBeUndefined();
-  expect(rpc.result?.serverInfo).toMatchObject({ name: 'oravan' });
+  // Version as well as name: this route used to hand the SDK a hand-typed
+  // '0.1.0' while the stdio transport read package.json, so a version bump
+  // would have had the two doors onto the same 5 tools answer this exact
+  // request differently. Both now read lib/core/mcp-server-info.ts; this is
+  // that value proven over the real wire (tests/mcp-server-info.unit.spec.ts
+  // pins the source side, tests/mcp-stdio.unit.spec.ts the other transport).
+  const pkgVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+  expect(rpc.result?.serverInfo).toMatchObject({ name: 'oravan', version: pkgVersion });
   expect(rpc.result?.protocolVersion).toBeTruthy();
 });
 

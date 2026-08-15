@@ -5,6 +5,24 @@ import { expect, test } from '@playwright/test';
 // the logic tested here is exactly what scripts/daily-metrics.mjs runs
 // nightly against the real counters database.
 import {
+  ageInDays,
+  awaitingYourWordSection,
+  closableIssues,
+  darkTools,
+  DARK_TOOL_MIN_CALLS,
+  DARK_TOOL_ZERO_DAYS,
+  DECLINE_BASELINE_MIN_SUM,
+  DECLINE_RATIO,
+  DECLINE_WINDOW_DAYS,
+  declineClearedComment,
+  declineClearedReason,
+  declineIssueContent,
+  declineIssueTitle,
+  declineStats,
+  declineStillDecliningComment,
+  declineWindowDays,
+  formatDarkToolsLine,
+  formatDeclineLine,
   formatDigestBody,
   formatMcpClientsLine,
   formatPercent,
@@ -12,10 +30,16 @@ import {
   MCP_CLIENTS_LINE_MAX,
   MCP_SPIKE_FLOOR,
   median,
+  NEVER_CLOSE_LABELS,
   SCRIPT_SPIKE_FLOOR,
   seriesStats,
+  spikeClosedComment,
   spikeIssueContent,
+  SPIKE_ISSUE_TITLE_RE,
+  SPIKE_ISSUE_TTL_DAYS,
   SPIKE_MULTIPLIER,
+  SPIKE_WINDOW_DAYS,
+  STANDING_LABELS,
   sumWindows,
   trailingWindowDays,
   weekOverWeek,
@@ -27,7 +51,60 @@ import {
  * zero-median/zero-latest edge cases that motivate the floor constants),
  * the spike gate (must exceed BOTH the floor AND 3x the trailing median),
  * and the digest/spike-issue text formatting.
+ *
+ * Extended 2026-08 with the decline half: the same math run against the
+ * REAL daily total-MCP series recorded on the pinned digest issue (#81),
+ * which contains the event this feature exists for — a ~95% level shift on
+ * 2026-08-04/05 that the spike-only detector never surfaced.
  */
+
+/*
+ * The real recorded daily totals (all 5 MCP tools summed), copied from the
+ * pinned digest issue's own comments. Days outside this range are not
+ * "zero" in reality, they are simply outside what was recorded; the window
+ * builder pads them with 0, which only ever makes a decline HARDER to
+ * detect (a padded block sum is smaller, so the baseline gate is stricter).
+ */
+const REAL_MCP_TOTALS: Record<string, number> = {
+  '2026-07-26': 76,
+  '2026-07-27': 79,
+  '2026-07-28': 28,
+  '2026-07-29': 78,
+  '2026-07-30': 165,
+  '2026-07-31': 82,
+  '2026-08-01': 104,
+  '2026-08-02': 114,
+  '2026-08-03': 54,
+  '2026-08-04': 12,
+  '2026-08-05': 4,
+  '2026-08-06': 4,
+  '2026-08-07': 5,
+  '2026-08-08': 5,
+  '2026-08-09': 4,
+  '2026-08-10': 4,
+  '2026-08-11': 6,
+  '2026-08-12': 6,
+  '2026-08-13': 10,
+  '2026-08-14': 2,
+};
+
+/** The 28-day window the digest would have read on the morning of `runDate`
+ *  (day-1 = the day before it), from the real series above. */
+function realWindow(runDate: string, extra: Record<string, number> = {}): number[] {
+  const totals = { ...REAL_MCP_TOTALS, ...extra };
+  return declineWindowDays(new Date(`${runDate}T13:00:00Z`)).map((d) => totals[d] ?? 0);
+}
+
+/** N consecutive days at the same level, for the clearly-synthetic
+ *  continuations below (labeled as such at every use). */
+function level(from: string, days: number, value: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  const start = new Date(`${from}T00:00:00Z`);
+  for (let i = 0; i < days; i += 1) {
+    out[new Date(start.getTime() + i * 86_400_000).toISOString().slice(0, 10)] = value;
+  }
+  return out;
+}
 
 test.describe('median', () => {
   test('odd-length array: the exact middle value after sorting', () => {
@@ -104,7 +181,9 @@ test.describe('seriesStats', () => {
 
   test('no spike above the floor when under 3x the median (real, organic growth)', () => {
     // latest clears the floor comfortably but stays under 3x a healthy median.
-    const window = [80, 60, 65, 70, 55, 60, 62, 58];
+    // Re-scaled with the 2026-08 floor recalibration (50 -> 150) — the shape
+    // under test is unchanged, only the level it has to clear.
+    const window = [200, 160, 165, 170, 155, 160, 162, 158];
     const stats = seriesStats(window, MCP_SPIKE_FLOOR, SPIKE_MULTIPLIER);
     expect(stats.latest).toBeGreaterThan(MCP_SPIKE_FLOOR);
     expect(stats.latest).toBeLessThan(stats.threshold);
@@ -150,6 +229,285 @@ test.describe('sumWindows', () => {
   });
 });
 
+test.describe('spike floors', () => {
+  test('MCP floor is the recalibrated 150 and the script floor stays 20 (the paid-path cost tripwire)', () => {
+    expect(MCP_SPIKE_FLOOR).toBe(150);
+    expect(SCRIPT_SPIKE_FLOOR).toBe(20);
+  });
+
+  test('the July directory-crawler plateau no longer clears the floor', () => {
+    // The plateau's ordinary days (76-114 total calls) fired four zero-action
+    // alerts under the old floor of 50. Under 150 the floor alone stops them,
+    // before the multiplier is even consulted.
+    for (const day of [76, 79, 78, 82, 104, 114]) {
+      expect(day).toBeGreaterThan(50); // would have cleared the OLD floor
+      expect(day).toBeLessThan(MCP_SPIKE_FLOOR); // does not clear the new one
+    }
+  });
+
+  test('the 165 peak still fires — the floor retires the plateau, never a real burst', () => {
+    // The real 8-day window the digest read on 2026-07-30 (#81): the plateau
+    // was four days old, the week before it near-zero, so the trailing median
+    // was 28 and 3× median = 84. 165 clears BOTH gates — by design. The
+    // recalibration retires #127–#129 (76/79/78) and would have kept #130.
+    const stats = seriesStats([165, 78, 28, 79, 76, 19, 6, 9], MCP_SPIKE_FLOOR);
+    expect(stats.med).toBe(28);
+    expect(stats.spike).toBe(true);
+  });
+});
+
+test.describe('declineStats (the real #81 series)', () => {
+  test('fires on the Aug-12 digest shape: 32 calls in the last 7 days against 609 the week before', () => {
+    const stats = declineStats(realWindow('2026-08-12'));
+    expect(stats.recent).toBe(32); // Aug 11 back through Aug 5
+    expect(stats.prior).toBe(609); // Aug 4 back through Jul 29
+    expect(stats.baseline).toBe(609);
+    expect(stats.hasBaseline).toBe(true);
+    expect(stats.threshold).toBe(DECLINE_RATIO * 609);
+    expect(stats.declining).toBe(true);
+  });
+
+  test("fires on today's shape too — the state has persisted, which is why it is one standing issue", () => {
+    const stats = declineStats(realWindow('2026-08-15'));
+    expect(stats.recent).toBe(37); // Aug 14 back through Aug 8
+    expect(stats.prior).toBe(297); // Aug 7 back through Aug 1
+    expect(stats.baseline).toBe(508); // days 15-21 are the higher block here
+    expect(stats.declining).toBe(true);
+  });
+
+  test('does NOT fire before the break — the same detector on Aug-03 reports nothing', () => {
+    const stats = declineStats(realWindow('2026-08-03'));
+    expect(stats.recent).toBe(650);
+    expect(stats.declining).toBe(false);
+    expect(declineClearedReason(stats)).toBe('recovered');
+  });
+
+  test('the baseline is max(prior, prior-prior), so ONE quiet week cannot silence a real decline', () => {
+    const window = [
+      ...new Array(7).fill(1), // B0: collapsed
+      ...new Array(7).fill(2), // B1: also low — a quiet week
+      ...new Array(7).fill(40), // B2: the real baseline, 280
+      ...new Array(7).fill(0),
+    ];
+    const stats = declineStats(window);
+    expect(stats.prior).toBe(14);
+    expect(stats.priorPrior).toBe(280);
+    expect(stats.baseline).toBe(280);
+    expect(stats.declining).toBe(true);
+  });
+
+  test('sums, not medians: the real break is nearly invisible to a median and obvious to a sum', () => {
+    const window = realWindow('2026-08-15');
+    const b0 = window.slice(0, 7);
+    const b1 = window.slice(7, 14);
+    // Medians: 5 vs 12 — a 2.4x gap, under the 3x the spike side calls
+    // meaningful, because a median throws away the four big days that were
+    // the entire baseline. Sums: 37 vs 297, an 8x collapse.
+    expect(median(b0)).toBe(5);
+    expect(median(b1)).toBe(12);
+    expect(median(b1) / median(b0)).toBeLessThan(SPIKE_MULTIPLIER);
+    expect(declineStats(window).prior / declineStats(window).recent).toBeGreaterThan(SPIKE_MULTIPLIER);
+    expect(declineStats(window).declining).toBe(true);
+  });
+
+  test(`rejects a window that is not exactly ${DECLINE_WINDOW_DAYS} values`, () => {
+    expect(() => declineStats(new Array(8).fill(1))).toThrow(new RegExp(`exactly ${DECLINE_WINDOW_DAYS}`));
+  });
+});
+
+test.describe('declineStats baseline gate (the near-zero series can never fire)', () => {
+  test('an all-zero series (script generations today) can never report a decline', () => {
+    const stats = declineStats(new Array(DECLINE_WINDOW_DAYS).fill(0));
+    expect(stats.baseline).toBe(0);
+    expect(stats.hasBaseline).toBe(false);
+    expect(stats.declining).toBe(false);
+  });
+
+  test('a series that collapses to zero from a level that was never a real baseline still cannot fire', () => {
+    // 9/day is a 63-per-week block — under DECLINE_BASELINE_MIN_SUM (70), so
+    // "it fell" cannot be asserted no matter how completely it fell.
+    const window = [...new Array(7).fill(0), ...new Array(21).fill(9)];
+    const stats = declineStats(window);
+    expect(stats.recent).toBe(0);
+    expect(stats.baseline).toBe(63);
+    expect(stats.baseline).toBeLessThan(DECLINE_BASELINE_MIN_SUM);
+    expect(stats.declining).toBe(false);
+  });
+
+  test('one call/day more, and the same collapse DOES fire — the gate is the baseline, nothing else', () => {
+    const window = [...new Array(7).fill(0), ...new Array(21).fill(10)];
+    const stats = declineStats(window);
+    expect(stats.baseline).toBe(70);
+    expect(stats.baseline).toBeGreaterThanOrEqual(DECLINE_BASELINE_MIN_SUM);
+    expect(stats.declining).toBe(true);
+  });
+});
+
+test.describe('declineClearedReason — two distinct reasons, never one "resolved"', () => {
+  // Both continuations below are SYNTHETIC extensions of the real series
+  // (nothing after 2026-08-14 was recorded); they exist to exercise the two
+  // exits, not to claim a future.
+  test('recovered: the recent block climbs back above the trigger while a baseline still stands', () => {
+    const stats = declineStats(realWindow('2026-08-29', level('2026-08-15', 14, 60)));
+    expect(stats.recent).toBe(420);
+    expect(stats.hasBaseline).toBe(true);
+    expect(stats.declining).toBe(false);
+    expect(declineClearedReason(stats)).toBe('recovered');
+  });
+
+  test('no_baseline: the big weeks age out, traffic is flat and low, and the comparison can no longer be made', () => {
+    const stats = declineStats(realWindow('2026-08-29', level('2026-08-15', 14, 5)));
+    expect(stats.recent).toBe(35);
+    expect(stats.prior).toBe(35); // flat — emphatically NOT a recovery
+    expect(stats.hasBaseline).toBe(false);
+    expect(declineClearedReason(stats)).toBe('no_baseline');
+  });
+
+  test('null while the decline is live — a live state is never "cleared"', () => {
+    expect(declineClearedReason(declineStats(realWindow('2026-08-15')))).toBeNull();
+  });
+});
+
+test.describe('darkTools', () => {
+  const zeros = (n: number) => new Array(n).fill(0);
+
+  test('a tool with real history and then 14 consecutive zero days is dark', () => {
+    const window = [...zeros(DARK_TOOL_ZERO_DAYS), 3, 2, 1, ...zeros(DECLINE_WINDOW_DAYS - DARK_TOOL_ZERO_DAYS - 3)];
+    const [found] = darkTools([{ tool: 'whats_moving', window }]);
+    expect(found).toEqual({ tool: 'whats_moving', calls: 6, zeroDays: DARK_TOOL_ZERO_DAYS });
+  });
+
+  test('a tool that was NEVER active is not dark — "nobody ever called this" is a product fact, not an incident', () => {
+    expect(darkTools([{ tool: 'get_representative', window: zeros(DECLINE_WINDOW_DAYS) }])).toEqual([]);
+  });
+
+  test(`under ${DARK_TOOL_MIN_CALLS} lifetime calls in the window is not enough history to call it dark`, () => {
+    const window = [...zeros(20), 1, 1, 1, 1, ...zeros(4)]; // 4 calls, then 20 zero days
+    expect(darkTools([{ tool: 'search_bills', window }])).toEqual([]);
+  });
+
+  test(`${DARK_TOOL_ZERO_DAYS - 1} zero days is not yet dark — the rule is two FULL weeks`, () => {
+    const window = [...zeros(DARK_TOOL_ZERO_DAYS - 1), 9, ...zeros(DECLINE_WINDOW_DAYS - DARK_TOOL_ZERO_DAYS)];
+    expect(darkTools([{ tool: 'get_bill', window }])).toEqual([]);
+  });
+
+  test('a currently-active tool is never dark, however lumpy', () => {
+    const window = [4, ...zeros(26), 30];
+    expect(darkTools([{ tool: 'lookup_representatives', window }])).toEqual([]);
+  });
+
+  test('finds the one broken tool inside an otherwise healthy set — an aggregate total cannot', () => {
+    const healthy = new Array(DECLINE_WINDOW_DAYS).fill(20);
+    const broken = [...zeros(DARK_TOOL_ZERO_DAYS), ...new Array(DECLINE_WINDOW_DAYS - DARK_TOOL_ZERO_DAYS).fill(9)];
+    const found = darkTools([
+      { tool: 'lookup_representatives', window: healthy },
+      { tool: 'whats_moving', window: broken },
+      { tool: 'get_bill', window: healthy },
+    ]);
+    expect(found.map((d) => d.tool)).toEqual(['whats_moving']);
+    // The aggregate stays comfortably healthy the whole time — which is the point.
+    expect(declineStats(sumWindows([healthy, broken, healthy])).declining).toBe(false);
+  });
+
+  test('rejects a window that is not the full decline window', () => {
+    expect(() => darkTools([{ tool: 'get_bill', window: [0, 0, 0] }])).toThrow(new RegExp(`exactly ${DECLINE_WINDOW_DAYS}`));
+  });
+});
+
+test.describe('formatDeclineLine / formatDarkToolsLine', () => {
+  test('declining: prints the three block sums, the baseline, the trigger, and the issue link', () => {
+    const stats = declineStats(realWindow('2026-08-15'));
+    const line = formatDeclineLine(stats, 'https://github.com/cm2489/oravan/issues/999');
+    expect(line).toContain('DECLINE');
+    expect(line).toContain('last 7d 37');
+    expect(line).toContain('prior 7d 297');
+    expect(line).toContain('baseline 508');
+    expect(line).toContain('https://github.com/cm2489/oravan/issues/999');
+  });
+
+  test('healthy: still prints the sums, so the line is readable on an ordinary day too', () => {
+    const line = formatDeclineLine(declineStats(realWindow('2026-08-03')));
+    expect(line).toContain('no decline');
+    expect(line).toContain('last 7d 650');
+  });
+
+  test('no baseline: says so explicitly rather than implying an all-clear', () => {
+    const line = formatDeclineLine(declineStats(new Array(DECLINE_WINDOW_DAYS).fill(0)));
+    expect(line).toContain('no baseline to fall from');
+    expect(line).toContain(String(DECLINE_BASELINE_MIN_SUM));
+  });
+
+  test('dark-tools line names the tool with its call count and zero streak; empty list renders nothing', () => {
+    expect(formatDarkToolsLine([])).toBe('');
+    const line = formatDarkToolsLine([{ tool: 'whats_moving', calls: 12, zeroDays: 18 }]);
+    expect(line).toContain('whats_moving');
+    expect(line).toContain('12 calls');
+    expect(line).toContain('0 for 18d');
+  });
+});
+
+test.describe('declineIssueContent / declineStillDecliningComment / declineClearedComment', () => {
+  const stats = declineStats(realWindow('2026-08-15'));
+
+  test('the title is date-free and stable — ONE standing issue, never one per day', () => {
+    const first = declineIssueContent({ series: 'total MCP calls', date: '2026-08-12', stats });
+    const later = declineIssueContent({ series: 'total MCP calls', date: '2026-08-15', stats });
+    expect(first.title).toBe('Traffic decline: total MCP calls (standing)');
+    expect(first.title).toBe(later.title);
+    expect(first.title).toBe(declineIssueTitle('total MCP calls'));
+    expect(first.title).not.toContain('2026-08');
+  });
+
+  test('the body carries the numbers, the date it was last rewritten, and the self-reported disclosure', () => {
+    const { body } = declineIssueContent({
+      series: 'total MCP calls',
+      date: '2026-08-15',
+      stats,
+      darkTools: [{ tool: 'whats_moving', calls: 12, zeroDays: 18 }],
+    });
+    expect(body).toContain('**37**');
+    expect(body).toContain('297');
+    expect(body).toContain('**508**');
+    expect(body).toContain('2026-08-15');
+    expect(body).toContain('whats_moving');
+    expect(body).toContain('one standing issue for a STATE, not one issue per day');
+    expect(body).toContain('unauthenticated and self-reported');
+  });
+
+  test('the persistence comment is dated and carries a same-day re-run marker', () => {
+    const comment = declineStillDecliningComment({ series: 'total MCP calls', date: '2026-08-15', stats });
+    expect(comment).toContain('<!-- traffic-decline:2026-08-15 -->');
+    expect(comment).toContain('Still declining — 2026-08-15');
+    expect(comment).toContain('37');
+    expect(comment).toContain('508');
+  });
+
+  test('recovered and no_baseline read as DIFFERENT outcomes, both with their numbers', () => {
+    const recovered = declineClearedComment({
+      reason: 'recovered',
+      series: 'total MCP calls',
+      date: '2026-08-29',
+      stats: declineStats(realWindow('2026-08-29', level('2026-08-15', 14, 60))),
+    });
+    const agedOut = declineClearedComment({
+      reason: 'no_baseline',
+      series: 'total MCP calls',
+      date: '2026-08-29',
+      stats: declineStats(realWindow('2026-08-29', level('2026-08-15', 14, 5))),
+    });
+
+    expect(recovered).toContain('Recovered');
+    expect(recovered).toContain('420');
+    expect(recovered).not.toContain('NOT a recovery');
+
+    expect(agedOut).toContain('NOT a recovery');
+    expect(agedOut).toContain('no baseline left to compare against');
+    expect(agedOut).toContain('35');
+
+    expect(recovered).not.toBe(agedOut);
+  });
+});
+
 test.describe('isoDateDaysAgo / trailingWindowDays', () => {
   test('isoDateDaysAgo: UTC calendar arithmetic, YYYY-MM-DD', () => {
     const now = new Date('2026-07-12T03:00:00Z');
@@ -165,6 +523,43 @@ test.describe('isoDateDaysAgo / trailingWindowDays', () => {
     expect(days[7]).toBe('2026-07-04');
     // Same weekday: 2026-07-11 and 2026-07-04 are both Saturdays.
     expect(new Date(`${days[0]}T00:00:00Z`).getUTCDay()).toBe(new Date(`${days[7]}T00:00:00Z`).getUTCDay());
+  });
+
+  test('the count param defaults to the 8-day spike window — existing callers are unaffected', () => {
+    const now = new Date('2026-07-12T03:00:00Z');
+    expect(SPIKE_WINDOW_DAYS).toBe(8);
+    expect(trailingWindowDays(now)).toEqual(trailingWindowDays(now, SPIKE_WINDOW_DAYS));
+    expect(trailingWindowDays(now, 3)).toEqual(['2026-07-11', '2026-07-10', '2026-07-09']);
+  });
+
+  test(`declineWindowDays: ${DECLINE_WINDOW_DAYS} days, and its first 8 ARE trailingWindowDays()`, () => {
+    const now = new Date('2026-07-12T03:00:00Z');
+    const wide = declineWindowDays(now);
+    expect(wide).toHaveLength(DECLINE_WINDOW_DAYS);
+    expect(wide[0]).toBe('2026-07-11');
+    expect(wide[DECLINE_WINDOW_DAYS - 1]).toBe('2026-06-14');
+    expect(wide.slice(0, SPIKE_WINDOW_DAYS)).toEqual(trailingWindowDays(now));
+  });
+});
+
+test.describe('the widened read leaves the spike math byte-identical', () => {
+  test('seriesStats on the 28-day window\'s 8-day prefix === seriesStats on an 8-day window', () => {
+    const now = new Date('2026-08-15T13:00:00Z');
+    const eight = trailingWindowDays(now).map((d) => REAL_MCP_TOTALS[d] ?? 0);
+    const twentyEight = declineWindowDays(now).map((d) => REAL_MCP_TOTALS[d] ?? 0);
+
+    expect(twentyEight.slice(0, SPIKE_WINDOW_DAYS)).toEqual(eight);
+    expect(seriesStats(twentyEight.slice(0, SPIKE_WINDOW_DAYS), MCP_SPIKE_FLOOR)).toEqual(
+      seriesStats(eight, MCP_SPIKE_FLOOR)
+    );
+  });
+
+  test('summing 28-day windows then slicing === slicing then summing (the aggregate total path)', () => {
+    const a = Array.from({ length: DECLINE_WINDOW_DAYS }, (_, i) => i);
+    const b = Array.from({ length: DECLINE_WINDOW_DAYS }, (_, i) => i * 2);
+    const sliceThenSum = sumWindows([a.slice(0, SPIKE_WINDOW_DAYS), b.slice(0, SPIKE_WINDOW_DAYS)]);
+    const sumThenSlice = sumWindows([a, b]).slice(0, SPIKE_WINDOW_DAYS);
+    expect(sumThenSlice).toEqual(sliceThenSum);
   });
 });
 
@@ -269,6 +664,46 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     expect(body).toContain('https://github.com/cm2489/oravan/issues/999');
   });
 
+  test('the 28-day trend line prints EVERY day, healthy or not', () => {
+    const healthy = formatDigestBody({
+      date: '2026-08-04',
+      mcpTools,
+      mcpTotal,
+      script,
+      mcpDecline: declineStats(realWindow('2026-08-03')),
+    });
+    expect(healthy).toContain('28d trend: no decline');
+    expect(healthy).toContain('last 7d 650');
+
+    const declining = formatDigestBody({
+      date: '2026-08-15',
+      mcpTools,
+      mcpTotal,
+      script,
+      mcpDecline: declineStats(realWindow('2026-08-15')),
+      declineIssueUrl: 'https://github.com/cm2489/oravan/issues/998',
+    });
+    expect(declining).toContain('28d trend: ⚠ DECLINE');
+    expect(declining).toContain('last 7d 37');
+    expect(declining).toContain('https://github.com/cm2489/oravan/issues/998');
+  });
+
+  test('a missing 28-day window says so out loud — never a silently absent line', () => {
+    const body = formatDigestBody({ date: '2026-08-15', mcpTools, mcpTotal, script });
+    expect(body).toContain('28d trend: not computed');
+  });
+
+  test('the dark-tools line appears only when something is dark', () => {
+    const base = { date: '2026-08-15', mcpTools, mcpTotal, script, mcpDecline: declineStats(realWindow('2026-08-15')) };
+    expect(formatDigestBody({ ...base, darkTools: [] })).not.toContain('Dark tools');
+    const withDark = formatDigestBody({
+      ...base,
+      darkTools: [{ tool: 'whats_moving', calls: 12, zeroDays: 18 }],
+    });
+    expect(withDark).toContain('Dark tools');
+    expect(withDark).toContain('whats_moving (12 calls');
+  });
+
   test('spikeIssueContent: unique title per series+date, discloses the self-reported/spoofable posture', () => {
     const { title, body } = spikeIssueContent({
       series: 'total MCP calls',
@@ -279,5 +714,303 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     expect(title).toBe('Traffic spike: total MCP calls — 2026-07-11');
     expect(body).toContain('unauthenticated and self-reported');
     expect(body).toContain(String(mcpTotal.latest));
+  });
+});
+
+/*
+ * Issue hygiene (2026-08). The digest now closes its OWN stale spike alerts
+ * and lists everything else — and the single most important property in
+ * this whole file is the thing it must NEVER close.
+ *
+ * CLOSING A `moment-candidate` ISSUE IS HOW THE OWNER DECLINES A CANDIDATE.
+ * The candidate issue's own body says so ("To decline: close this issue and
+ * append the reason to docs/moment-rejections.json" — scripts/moment-watch.mjs),
+ * and moment-watch.yml's filed-check lists `--state all` so that a CLOSED
+ * issue still counts as filed and is never re-opened. An auto-close on that
+ * label would therefore perform the documented decline gesture on the
+ * owner's behalf AND bury the candidate permanently. Every fixture below is
+ * written adversarially against that one failure.
+ */
+test.describe('issue hygiene: closableIssues', () => {
+  // The digest's real 13:00 UTC slot, so the boundary arithmetic below is
+  // the arithmetic that actually runs.
+  const NOW = new Date('2026-08-15T13:00:00Z');
+  const labels = (...names: string[]) => names.map((name) => ({ name }));
+  const numbers = (issues: Array<{ number: number }>) => issues.map((i) => i.number);
+
+  test('a moment-candidate wearing a spike-shaped title is NEVER closable', () => {
+    // The disaster case, stated first. Same title bytes the job writes for
+    // itself, two weeks old — and it survives, because it does not carry
+    // this job's own `traffic-spike` label.
+    const issue = {
+      number: 900,
+      title: 'Traffic spike: total MCP calls — 2026-08-01',
+      labels: labels('moment-candidate'),
+      createdAt: '2026-08-01T13:00:00Z',
+    };
+    expect(closableIssues([issue], { now: NOW })).toEqual([]);
+  });
+
+  test('the denylist WINS over a perfect spike match — both labels, still not closable', () => {
+    // The gate-ordering test: label (a) passes, title (b) passes, age
+    // passes, and the issue is still untouched because a protected label
+    // vetoes everything above it.
+    const issue = {
+      number: 905,
+      title: 'Traffic spike: total MCP calls — 2026-08-01',
+      labels: labels('traffic-spike', 'moment-candidate'),
+      createdAt: '2026-08-01T13:00:00Z',
+    };
+    expect(closableIssues([issue], { now: NOW })).toEqual([]);
+  });
+
+  test('every single NEVER_CLOSE_LABELS entry vetoes an otherwise-perfect match', () => {
+    // Not a spot check: the property must hold for the whole constant, so a
+    // label added to it later is covered the day it is added.
+    for (const protectedLabel of NEVER_CLOSE_LABELS) {
+      const issue = {
+        number: 910,
+        title: 'Traffic spike: total MCP calls — 2026-08-01',
+        labels: labels('traffic-spike', protectedLabel),
+        createdAt: '2026-08-01T13:00:00Z',
+      };
+      expect(closableIssues([issue], { now: NOW }), `${protectedLabel} must veto the close`).toEqual([]);
+    }
+  });
+
+  test('the standing moment-review issue is not closable', () => {
+    const issue = {
+      number: 177,
+      title: 'Moment review (standing)',
+      labels: labels('moment-review'),
+      createdAt: '2026-08-09T01:04:41Z',
+    };
+    expect(closableIssues([issue], { now: NOW })).toEqual([]);
+  });
+
+  test('a real spike issue younger than the TTL stays open; older than it closes', () => {
+    const young = {
+      number: 902,
+      title: 'Traffic spike: total MCP calls — 2026-08-13',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-08-13T13:00:00Z',
+    };
+    const old = {
+      number: 903,
+      title: 'Traffic spike: script generations — 2026-08-01',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-08-01T13:00:00Z',
+    };
+    expect(closableIssues([young], { now: NOW })).toEqual([]);
+    const closed = closableIssues([old], { now: NOW });
+    expect(numbers(closed)).toEqual([903]);
+    expect(closed[0].series).toBe('script generations');
+    expect(closed[0].reportedDate).toBe('2026-08-01');
+    expect(closed[0].ageDays).toBe(14);
+  });
+
+  test('the TTL boundary itself: exactly SPIKE_ISSUE_TTL_DAYS old survives, one day more does not', () => {
+    const at = {
+      number: 920,
+      title: 'Traffic spike: total MCP calls — 2026-08-08',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-08-08T13:00:00Z',
+    };
+    const past = { ...at, number: 921, title: 'Traffic spike: total MCP calls — 2026-08-07' };
+    expect(ageInDays('2026-08-08', NOW)).toBe(SPIKE_ISSUE_TTL_DAYS);
+    expect(closableIssues([at], { now: NOW })).toEqual([]);
+    expect(numbers(closableIssues([past], { now: NOW }))).toEqual([921]);
+  });
+
+  test('a hand-edited title is not this job’s to close', () => {
+    // Once a human has touched the title, the issue is a conversation, not
+    // an automated alert. The regex is anchored at both ends for this.
+    const suffixed = {
+      number: 904,
+      title: 'Traffic spike: total MCP calls — 2026-08-01 (still happening?)',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-08-01T13:00:00Z',
+    };
+    const prefixed = { ...suffixed, number: 906, title: 'RE: Traffic spike: total MCP calls — 2026-08-01' };
+    const wrongSeries = { ...suffixed, number: 907, title: 'Traffic spike: page views — 2026-08-01' };
+    expect(closableIssues([suffixed, prefixed, wrongSeries], { now: NOW })).toEqual([]);
+  });
+
+  test('the DATE IN THE TITLE decides staleness, not createdAt', () => {
+    // Filed today, about a fortnight-old day: closable.
+    const refiled = {
+      number: 930,
+      title: 'Traffic spike: total MCP calls — 2026-08-01',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-08-15T12:00:00Z',
+    };
+    // Ancient issue object, but the day it reports is yesterday: kept.
+    const movedIssue = {
+      number: 931,
+      title: 'Traffic spike: total MCP calls — 2026-08-14',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-07-01T00:00:00Z',
+    };
+    expect(numbers(closableIssues([refiled, movedIssue], { now: NOW }))).toEqual([930]);
+  });
+
+  test('a date-shaped but impossible title date closes nothing', () => {
+    const bogus = {
+      number: 940,
+      title: 'Traffic spike: total MCP calls — 2026-13-45',
+      labels: labels('traffic-spike'),
+      createdAt: '2026-01-01T00:00:00Z',
+    };
+    expect(SPIKE_ISSUE_TITLE_RE.test(bogus.title)).toBe(true); // the regex alone is not enough
+    expect(closableIssues([bogus], { now: NOW })).toEqual([]);
+  });
+
+  test('the title regex matches exactly what spikeIssueContent writes, for both series', () => {
+    // The drift pin: if either title format is ever edited, this fails
+    // rather than the job quietly closing nothing forever.
+    const stats = seriesStats([200, 10, 10, 10, 10, 10, 10, 10], MCP_SPIKE_FLOOR);
+    for (const series of ['total MCP calls', 'script generations'] as const) {
+      const { title } = spikeIssueContent({ series, date: '2026-08-01', stats, floor: MCP_SPIKE_FLOOR });
+      const m = SPIKE_ISSUE_TITLE_RE.exec(title);
+      expect(m, `${series} title must match SPIKE_ISSUE_TITLE_RE`).not.toBeNull();
+      expect(m?.[1]).toBe(series);
+      expect(m?.[2]).toBe('2026-08-01');
+    }
+  });
+
+  test('the closing comment says it was automatic, how late, and where the series lives', () => {
+    const body = spikeClosedComment({ date: '2026-08-01', ageDays: 14, digestIssue: 81 });
+    expect(body).toContain('<!-- traffic-spike-closed:2026-08-01 -->');
+    expect(body).toContain('Closed automatically — 14 days after the reported date (2026-08-01)');
+    expect(body).toContain('point-in-time');
+    expect(body).toContain('the daily digest on issue #81');
+    expect(body).toContain('SPIKE_ISSUE_TTL_DAYS = 7');
+    // Never a verdict that the traffic was fine.
+    expect(body).toContain('bookkeeping, not a finding');
+  });
+
+  test('the closing comment invents no issue number when the caller has none', () => {
+    const body = spikeClosedComment({ date: '2026-08-01', ageDays: 9 });
+    expect(body).toContain('the pinned daily-metrics digest issue');
+    expect(body).not.toContain('#');
+  });
+});
+
+/*
+ * The real, verified open-issue set on 2026-08-15 — four issues, all
+ * bot-created. This is the acceptance fixture for the first live run: the
+ * correct behaviour is a NO-OP on the close path (there are no open spike
+ * issues at all) plus a two-line "awaiting your word" list.
+ */
+const REAL_OPEN_ISSUES_2026_08_15 = [
+  {
+    number: 206,
+    title: 'Big Question candidate: hr-3074-119',
+    labels: [{ name: 'moment-candidate' }],
+    createdAt: '2026-08-11T12:02:25Z',
+  },
+  {
+    number: 202,
+    title: 'Big Question candidate: s-1525-119',
+    labels: [{ name: 'moment-candidate' }],
+    createdAt: '2026-08-09T11:51:27Z',
+  },
+  {
+    number: 177,
+    title: 'Moment review (standing)',
+    labels: [{ name: 'moment-review' }],
+    createdAt: '2026-08-09T01:04:41Z',
+  },
+  {
+    number: 81,
+    title: '📊 Daily metrics',
+    labels: [{ name: 'metrics' }],
+    createdAt: '2026-07-13T15:43:10Z',
+  },
+];
+
+test.describe('issue hygiene: awaitingYourWordSection', () => {
+  const NOW = new Date('2026-08-15T13:00:00Z');
+
+  test('the real 2026-08-15 issue set closes NOTHING — the no-op IS the acceptance signal', () => {
+    expect(closableIssues(REAL_OPEN_ISSUES_2026_08_15, { now: NOW })).toEqual([]);
+  });
+
+  test('the real 2026-08-15 issue set renders exactly this, byte for byte', () => {
+    expect(awaitingYourWordSection(REAL_OPEN_ISSUES_2026_08_15, { now: NOW })).toBe(
+      [
+        '---',
+        '',
+        '**Awaiting your word (2)** — open issues that are not standing by design:',
+        '',
+        '- #206 · Big Question candidate: hr-3074-119 · moment-candidate · 4d open',
+        '- #202 · Big Question candidate: s-1525-119 · moment-candidate · 6d open',
+        '',
+        'Standing by design (2): #81 metrics · #177 moment-review — not awaiting anything.',
+      ].join('\n')
+    );
+  });
+
+  test('the standing pair is derived from the LABELS, not from issue numbers', () => {
+    // Same two standing issues, renumbered. If either were matched by
+    // number this would move them into the actionable list.
+    const renumbered = REAL_OPEN_ISSUES_2026_08_15.map((i) =>
+      i.number === 81 ? { ...i, number: 5000 } : i.number === 177 ? { ...i, number: 5001 } : i
+    );
+    const out = awaitingYourWordSection(renumbered, { now: NOW });
+    expect(out).toContain('Standing by design (2): #5000 metrics · #5001 moment-review');
+    expect(out).toContain('**Awaiting your word (2)**');
+    // Every STANDING_LABELS entry keeps its issue out of the actionable list.
+    for (const standing of STANDING_LABELS) {
+      const only = [{ number: 7, title: 'x', labels: [{ name: standing }], createdAt: '2026-01-01T00:00:00Z' }];
+      expect(awaitingYourWordSection(only, { now: NOW }), standing).toContain('Awaiting your word (0)');
+    }
+  });
+
+  test('an empty actionable set says nothing is waiting — never a silent omission', () => {
+    const standingOnly = REAL_OPEN_ISSUES_2026_08_15.filter((i) => i.number === 81 || i.number === 177);
+    expect(awaitingYourWordSection(standingOnly, { now: NOW })).toBe(
+      [
+        '---',
+        '',
+        '**Awaiting your word (0) — nothing is waiting on you.**',
+        '',
+        'Standing by design (2): #81 metrics · #177 moment-review — not awaiting anything.',
+      ].join('\n')
+    );
+  });
+
+  test('no open issues at all still renders the line', () => {
+    expect(awaitingYourWordSection([], { now: NOW })).toBe(
+      ['---', '', '**Awaiting your word (0) — nothing is waiting on you.**'].join('\n')
+    );
+  });
+
+  test('newest first, and an unlabelled or unparseable issue still lists honestly', () => {
+    const issues = [
+      { number: 300, title: 'oldest', labels: [], createdAt: '2026-08-01T13:00:00Z' },
+      { number: 301, title: 'newest', labels: [{ name: 'beta-feedback' }], createdAt: '2026-08-15T01:00:00Z' },
+      { number: 302, title: 'unknown age', labels: [{ name: 'bug' }], createdAt: 'not-a-date' },
+    ];
+    const out = awaitingYourWordSection(issues, { now: NOW });
+    expect(out).toContain('- #301 · newest · beta-feedback · 0d open');
+    expect(out).toContain('- #300 · oldest · no label · 14d open');
+    expect(out).toContain('- #302 · unknown age · bug · age unknown');
+    expect(out.indexOf('#301')).toBeLessThan(out.indexOf('#300'));
+  });
+
+  test('a spike issue this run is NOT yet closing still shows up as awaiting', () => {
+    // The complement of the no-op test: hygiene lists what it will not
+    // close, so a fresh alert is never invisible.
+    const fresh = {
+      number: 950,
+      title: 'Traffic spike: total MCP calls — 2026-08-14',
+      labels: [{ name: 'traffic-spike' }],
+      createdAt: '2026-08-14T13:00:00Z',
+    };
+    expect(closableIssues([fresh], { now: NOW })).toEqual([]);
+    expect(awaitingYourWordSection([fresh], { now: NOW })).toContain(
+      '- #950 · Traffic spike: total MCP calls — 2026-08-14 · traffic-spike · 1d open'
+    );
   });
 });

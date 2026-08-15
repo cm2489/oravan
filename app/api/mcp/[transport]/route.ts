@@ -1,6 +1,7 @@
 import { createMcpHandler } from 'mcp-handler';
 import { after, NextResponse } from 'next/server';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
+import { MCP_SERVER_INFO } from '@/lib/core/mcp-server-info';
 import { registerOravanTools } from '@/lib/core/mcp-tools';
 import { noteMcpClientHandshake, noteMcpToolCall } from '@/lib/usage';
 
@@ -162,7 +163,15 @@ const handler = createMcpHandler(
     });
   },
   {
-    serverInfo: { name: 'oravan', version: '0.1.0' },
+    /*
+     * Shared with the stdio transport, never re-typed here: this line used to
+     * read `{ name: 'oravan', version: '0.1.0' }` as a literal while
+     * lib/mcp-stdio.ts read package.json's version, so the two transports
+     * would have reported different versions the first time anyone bumped it.
+     * See lib/core/mcp-server-info.ts for why the name stays a literal there
+     * and the version does not. Pinned by tests/mcp-server-info.unit.spec.ts.
+     */
+    serverInfo: MCP_SERVER_INFO,
   },
   {
     basePath: '/api/mcp',

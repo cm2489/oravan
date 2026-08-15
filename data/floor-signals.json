@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-08-14T10:14:42.705Z",
+    "fetched_at": "2026-08-15T20:35:22.036Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-08-14T10:14:42.705Z",
+        "checked_at": "2026-08-15T20:35:22.036Z",
         "url": "https://www.congress.gov/119/crec/2026/08/13/d13au6-1.htm",
         "published": "2026-08-13",
         "covers": "2026-08-17",
@@ -16,7 +16,7 @@
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-08-14T10:14:42.705Z",
+        "checked_at": "2026-08-15T20:35:22.036Z",
         "url": "https://docs.house.gov/billsthisweek/20260810/20260810.xml",
         "published": "2026-08-10",
         "covers": "2026-08-10",
@@ -28,6 +28,16 @@
       "senate": "out_of_session",
       "house": "out_of_session",
       "basis": "Daily Digest \"Program for\" blocks"
+    },
+    "next_meeting": {
+      "senate": {
+        "date": "2026-08-17",
+        "label": "1:30 p.m., Monday, August 17"
+      },
+      "house": {
+        "date": "2026-08-17",
+        "label": "9 a.m., Monday, August 17"
+      }
     },
     "dropped": []
   },
