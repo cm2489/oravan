@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-15T15:32:35.976Z",
+    "fetched_at": "2026-08-15T16:37:10.350Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-15T15:32:35.976Z"
+        "checked_at": "2026-08-15T16:37:10.350Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-15T15:32:35.976Z"
+        "checked_at": "2026-08-15T16:37:10.350Z"
       },
       "leans": {
         "center": {
@@ -657,6 +657,17 @@
       ],
       "mostViewed": null
     },
+    "s-5370-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-08-15",
+          "lastSeen": "2026-08-15"
+        }
+      ],
+      "mostViewed": null
+    },
     "sconres-25-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -664,6 +675,17 @@
           "domain": "bizpacreview.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-96-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stripes.com",
+          "firstSeen": "2026-08-15",
+          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": null
