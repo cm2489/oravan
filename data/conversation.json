@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-16T04:47:38.048Z",
+    "fetched_at": "2026-08-16T07:41:10.824Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-16T04:47:38.048Z"
+        "checked_at": "2026-08-16T07:41:10.824Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-16T04:47:38.048Z"
+        "checked_at": "2026-08-16T07:41:10.824Z"
       },
       "leans": {
         "center": {
@@ -237,6 +237,28 @@
           "domain": "oregonlive.com",
           "firstSeen": "2026-08-12",
           "lastSeen": "2026-08-12"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5961-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gmanetwork.com",
+          "firstSeen": "2026-08-16",
+          "lastSeen": "2026-08-16"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6356-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "psypost.org",
+          "firstSeen": "2026-08-16",
+          "lastSeen": "2026-08-16"
         }
       ],
       "mostViewed": null
