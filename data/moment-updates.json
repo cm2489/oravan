@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-16T04:47:38.430Z"
+    "generated_at": "2026-08-16T14:49:39.376Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -174,6 +174,29 @@
         "text": {
           "en": "H.R. 9770 stands passed by one chamber. No action has been recorded on this bill in the last 14 days. That means the bill has cleared the chamber where it started, and it now waits for the other chamber to take it up. There is no committee action, no floor vote, and no new text to report in this window. The record shows no further movement beyond the one-chamber passage already on file. Until new action is recorded, the bill's status remains unchanged from where it stands now.",
           "es": "El proyecto H.R. 9770 se encuentra aprobado por una cámara. No se ha registrado ninguna acción sobre este proyecto en los últimos 14 días. Esto significa que el proyecto superó la cámara donde se originó y ahora espera que la otra cámara lo considere. No hay acción de comité, ni votación en el pleno, ni texto nuevo que reportar en este período. El registro no muestra avances adicionales más allá de la aprobación por una cámara ya documentada. Hasta que se registre una nueva acción, el estado del proyecto sigue igual a como se encuentra ahora."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_43ae7b08",
+        "generated_at": "2026-08-16T14:49:46.872Z",
+        "as_of_day": "2026-08-16",
+        "text": {
+          "en": "H.R. 9770 stands where it has stood: passed one chamber. No action on the bill was recorded in the last 14 days. The measure has not moved beyond that single chamber vote, and there is no new roll call, committee action, or scheduling entry to report. Readers following this bill should expect the next update to note whichever chamber takes it up, if and when that happens. For now, the record shows no change since the bill cleared its first chamber. No further votes, amendments, or hearings appear in the file for this period. The status remains exactly as recorded: passed one chamber, nothing more logged.",
+          "es": "El proyecto H.R. 9770 permanece donde estaba: aprobado por una cámara. No se registró ninguna acción sobre el proyecto en los últimos 14 días. La medida no ha avanzado más allá de esa única votación en una cámara, y no hay nueva votación nominal, acción de comité ni programación que reportar. Los lectores que sigan este proyecto deben esperar que la próxima actualización indique qué cámara lo retoma, si eso ocurre. Por ahora, el registro no muestra cambios desde que el proyecto pasó su primera cámara. No aparecen más votaciones, enmiendas ni audiencias en el expediente durante este período. El estatus permanece exactamente como se registró: aprobado por una cámara, sin más movimientos registrados."
         },
         "grounded_in": {
           "vehicle_statuses": {
@@ -607,6 +630,28 @@
           "first-summary"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_eeb4ad78",
+        "generated_at": "2026-08-16T14:49:53.048Z",
+        "as_of_day": "2026-08-16",
+        "text": {
+          "en": "S. 3172 sits on the floor calendar. The bill was placed there, and the official record shows no floor action on it since. Nothing was recorded on this measure in the last fourteen days. That means the calendar placement remains the last update available in the official record. No committee vote, floor vote, or roll-call tally has been logged beyond that placement. Readers looking for the bill's text, sponsor information, or committee history can consult the official record directly, since no further action appears there. Until the record shows a new entry, the floor calendar listing is the full and current status of S. 3172, with no additional votes, amendments, or scheduling actions to report at this time.",
+          "es": "El proyecto S. 3172 permanece en el calendario del pleno. Se incluyó allí, y el registro oficial no muestra ninguna acción en el pleno desde entonces. En los últimos catorce días no se registró nada sobre esta medida. Eso significa que la inclusión en el calendario sigue siendo la última actualización disponible en el registro oficial. No se ha registrado ninguna votación en comité, votación en el pleno, ni votación nominal más allá de esa inclusión. Quienes busquen el texto del proyecto, información sobre su patrocinador o su historial en comité pueden consultar el registro oficial directamente, ya que no aparece ninguna acción adicional. Hasta que el registro muestre una nueva entrada, la inclusión en el calendario del pleno es el estado completo y actual de S. 3172."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -739,6 +784,30 @@
         },
         "changed_because": [
           "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_e98e0deb",
+        "generated_at": "2026-08-16T14:49:58.473Z",
+        "as_of_day": "2026-08-16",
+        "text": {
+          "en": "S. 4668 stands at floor activity in the Senate. On August 5, 2026, a cloture motion on the motion to proceed to the measure was presented in the Senate, as recorded in the Congressional Record at page S4449. No other floor action on this bill has been recorded in the past 14 days. The measure has not been brought to a final vote, and no roll-call tally has been taken on cloture or passage. The next step on the record would be action on that cloture motion, but no such action has yet occurred according to the Congressional Record.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno del Senado. El 5 de agosto de 2026 se presentó en el Senado una moción de cierre de debate sobre la moción para proceder a la medida, según consta en el Congressional Record, página S4449. No se ha registrado ninguna otra acción en el pleno sobre este proyecto en los últimos 14 días. La medida no ha llegado a una votación final, y no se ha realizado votación nominal sobre el cierre de debate ni sobre su aprobación. El siguiente paso según el registro sería la acción sobre esa moción de cierre de debate, pero aún no consta que haya ocurrido."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_d6d43314"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }
