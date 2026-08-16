@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-15T04:43:46.764Z"
+    "generated_at": "2026-08-16T04:47:38.430Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -328,65 +328,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)",
-          "action_code": null,
-          "action_type": "latestAction",
-          "source_system": "Congress.gov bill detail",
-          "status_from": "floor_vote",
-          "status_to": "committee"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_524e5667",
-        "class": "vote",
-        "vehicle": "sjres-172-119",
-        "day": "2026-06-16",
-        "occurred_at": "2026-06-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T07:06:54.754Z",
-        "text": {
-          "en": "The Senate rejected the motion to discharge S.J.Res. 172 from the Foreign Relations Committee, 47-48, on Record Vote 174.",
-          "es": "El Senado rechazó la moción para descargar la S.J.Res. 172 del Comité de Relaciones Exteriores, 47-48, en la votación registrada 174."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00174.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.",
-          "action_code": null,
-          "action_type": "Discharge",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 174
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_0cc8080c",
-        "class": "status_change",
-        "vehicle": "sjres-172-119",
-        "day": "2026-06-16",
-        "occurred_at": "2026-06-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T20:03:22.252Z",
-        "text": {
-          "en": "Senate rejected a motion to discharge S.J.Res. 172 from the Foreign Relations Committee on June 16, 2026, by vote 47-48 (Record Vote Number 174).",
-          "es": "El Senado rechazó una moción para sacar S.J.Res. 172 de la Comisión de Relaciones Exteriores el 16 de junio de 2026, con votación 47-48 (Número de Votación de Registro 174)."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.",
           "action_code": null,
           "action_type": "latestAction",
           "source_system": "Congress.gov bill detail",
