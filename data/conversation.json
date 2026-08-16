@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-16T12:57:27.012Z",
+    "fetched_at": "2026-08-16T15:33:05.251Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-16T12:57:27.012Z"
+        "checked_at": "2026-08-16T15:33:05.251Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-16T12:57:27.012Z"
+        "checked_at": "2026-08-16T15:33:05.251Z"
       },
       "leans": {
         "center": {
@@ -37,6 +37,17 @@
     }
   },
   "slugs": {
+    "hconres-113-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-08-16",
+          "lastSeen": "2026-08-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
