@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-17T10:46:17.257Z",
+    "fetched_at": "2026-08-17T11:36:16.497Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-17T10:46:17.257Z"
+        "checked_at": "2026-08-17T11:36:16.497Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-09",
         "week_label": "Most-Viewed Bills - Week of August 9, 2026",
         "entries": 9,
-        "checked_at": "2026-08-17T10:46:17.257Z"
+        "checked_at": "2026-08-17T11:36:16.497Z"
       },
       "leans": {
         "center": {
@@ -337,6 +337,17 @@
           "domain": "gmanetwork.com",
           "firstSeen": "2026-08-16",
           "lastSeen": "2026-08-16"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6248-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "idahocapitalsun.com",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
         }
       ],
       "mostViewed": null
