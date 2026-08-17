@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-16T14:49:39.376Z"
+    "generated_at": "2026-08-17T04:54:43.386Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -572,32 +572,6 @@
         },
         "record": {
           "action_text": "Committee on Foreign Relations. Reported by Senator Risch without amendment. Without written report.",
-          "action_code": null,
-          "action_type": "Committee",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_b6d33df0",
-        "class": "floor_action",
-        "vehicle": "s-3172-119",
-        "day": "2026-06-17",
-        "occurred_at": "2026-06-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "The Senate Committee on Foreign Relations ordered S. 3172 to be reported favorably without amendment on June 17, 2026.",
-          "es": "La Comisión de Relaciones Exteriores del Senado ordenó que S. 3172 fuera presentado favorablemente sin enmienda el 17 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
-          ]
-        },
-        "record": {
-          "action_text": "Committee on Foreign Relations. Ordered to be reported without amendment favorably.",
           "action_code": null,
           "action_type": "Committee",
           "source_system": "Senate"
