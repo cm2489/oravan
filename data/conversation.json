@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-17T13:02:53.995Z",
+    "fetched_at": "2026-08-17T14:40:11.892Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-17T13:02:53.995Z"
+        "checked_at": "2026-08-17T14:40:11.892Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-17T13:02:53.995Z"
+        "checked_at": "2026-08-17T14:40:11.892Z"
       },
       "leans": {
         "center": {
@@ -80,6 +80,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "masslive.com",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        },
         {
           "domain": "nbc4i.com",
           "firstSeen": "2026-08-17",
@@ -354,6 +359,18 @@
           "lastSeen": "2026-08-16"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-6130-119": {
+      "outlets7d": [
+        {
+          "domain": "dailycaller.com",
+          "lean": "right",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-6248-119": {
