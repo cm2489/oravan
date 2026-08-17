@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-17T14:40:11.892Z",
+    "fetched_at": "2026-08-17T15:35:50.191Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-17T14:40:11.892Z"
+        "checked_at": "2026-08-17T15:35:50.191Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-17T14:40:11.892Z"
+        "checked_at": "2026-08-17T15:35:50.191Z"
       },
       "leans": {
         "center": {
@@ -60,6 +60,12 @@
     },
     "hr-139-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -209,6 +215,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "bitcoinfoundation.org",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        },
+        {
           "domain": "en.sedaily.com",
           "firstSeen": "2026-08-17",
           "lastSeen": "2026-08-17"
@@ -286,7 +297,13 @@
           "lastSeen": "2026-08-13"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "idahocapitalsun.com",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        }
+      ],
       "mostViewed": null
     },
     "hr-4873-119": {
@@ -418,6 +435,12 @@
     "hr-6529-119": {
       "outlets7d": [
         {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-08-12",
@@ -505,6 +528,17 @@
           "domain": "standard-democrat.com",
           "firstSeen": "2026-08-12",
           "lastSeen": "2026-08-12"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7608-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ips-dc.org",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
         }
       ],
       "mostViewed": null
