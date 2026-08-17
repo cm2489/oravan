@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-17T11:36:16.497Z",
+    "fetched_at": "2026-08-17T13:02:53.995Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-17T11:36:16.497Z"
+        "checked_at": "2026-08-17T13:02:53.995Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-08-09",
-        "week_label": "Most-Viewed Bills - Week of August 9, 2026",
-        "entries": 9,
-        "checked_at": "2026-08-17T11:36:16.497Z"
+        "week": "2026-08-16",
+        "week_label": "Most-Viewed Bills - Week of August 16, 2026",
+        "entries": 8,
+        "checked_at": "2026-08-17T13:02:53.995Z"
       },
       "leans": {
         "center": {
@@ -52,10 +52,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 5,
+        "weeksOnList": 2,
+        "lastRank": 3,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "hr-139-119": {
@@ -126,7 +126,12 @@
           "lastSeen": "2026-08-14"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 8,
+        "lastSeen": "2026-08-17",
+        "lastWeek": "2026-08-16"
+      }
     },
     "hr-2191-119": {
       "outlets7d": [],
@@ -143,10 +148,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 4,
+        "weeksOnList": 2,
+        "lastRank": 6,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "hr-2335-119": {
@@ -215,10 +220,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 2,
+        "weeksOnList": 2,
+        "lastRank": 4,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "hr-3735-119": {
@@ -319,6 +324,16 @@
       ],
       "mostViewed": null
     },
+    "hr-5316-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 5,
+        "lastSeen": "2026-08-17",
+        "lastWeek": "2026-08-16"
+      }
+    },
     "hr-5481-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -377,10 +392,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
+        "weeksOnList": 2,
         "lastRank": 1,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "hr-6529-119": {
@@ -460,6 +475,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "kcur.org",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
+        },
+        {
           "domain": "food-safety.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
@@ -510,10 +530,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 6,
+        "weeksOnList": 2,
+        "lastRank": 9,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "hr-8902-119": {
@@ -535,6 +555,17 @@
           "domain": "chosun.com",
           "firstSeen": "2026-08-15",
           "lastSeen": "2026-08-15"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9089-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "m.dailyhunt.in",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
         }
       ],
       "mostViewed": null
@@ -645,10 +676,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 3,
+        "weeksOnList": 2,
+        "lastRank": 2,
         "lastSeen": "2026-08-17",
-        "lastWeek": "2026-08-09"
+        "lastWeek": "2026-08-16"
       }
     },
     "s-2554-119": {
@@ -745,6 +776,17 @@
           "domain": "leadership.ng",
           "firstSeen": "2026-08-15",
           "lastSeen": "2026-08-15"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4419-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aginfo.net",
+          "firstSeen": "2026-08-17",
+          "lastSeen": "2026-08-17"
         }
       ],
       "mostViewed": null
