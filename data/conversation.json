@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-18T19:36:11.009Z",
+    "fetched_at": "2026-08-18T21:35:02.885Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-18T19:36:11.009Z"
+        "checked_at": "2026-08-18T21:35:02.885Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-18T19:36:11.009Z"
+        "checked_at": "2026-08-18T21:35:02.885Z"
       },
       "leans": {
         "center": {
@@ -1242,6 +1242,17 @@
           "domain": "bizpacreview.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-185-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "justthenews.com",
+          "firstSeen": "2026-08-18",
+          "lastSeen": "2026-08-18"
         }
       ],
       "mostViewed": null
