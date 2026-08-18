@@ -1,36 +1,36 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-17T22:37:16.626Z",
+    "fetched_at": "2026-08-18T01:47:34.968Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-17T22:37:16.626Z"
+        "checked_at": "2026-08-18T01:47:34.968Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-17T22:37:16.626Z"
+        "checked_at": "2026-08-18T01:47:34.968Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-08-17",
+          "last_live": "2026-08-18",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-08-17",
+          "last_live": "2026-08-18",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-08-17",
+          "last_live": "2026-08-18",
           "dark_days": 0
         }
       }
@@ -59,13 +59,25 @@
       ],
       "mostViewed": null
     },
+    "hjres-152-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-18",
+          "lastSeen": "2026-08-18"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 3,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -151,7 +163,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -172,7 +184,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 6,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -272,7 +284,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 4,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -346,7 +358,7 @@
         {
           "domain": "idahocapitalsun.com",
           "firstSeen": "2026-08-17",
-          "lastSeen": "2026-08-17"
+          "lastSeen": "2026-08-18"
         }
       ],
       "mostViewed": null
@@ -397,7 +409,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 5,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -501,7 +513,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 1,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -679,7 +691,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 9,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -865,7 +877,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 2,
-        "lastSeen": "2026-08-17",
+        "lastSeen": "2026-08-18",
         "lastWeek": "2026-08-16"
       }
     },
@@ -936,6 +948,17 @@
           "domain": "alaskabeacon.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4140-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "military.com",
+          "firstSeen": "2026-08-18",
+          "lastSeen": "2026-08-18"
         }
       ],
       "mostViewed": null
