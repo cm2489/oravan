@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-17T04:54:43.386Z"
+    "generated_at": "2026-08-18T04:48:11.412Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -703,32 +703,6 @@
         },
         "record": {
           "action_text": "Committee on Commerce, Science, and Transportation. Reported by Senator Cruz with an amendment in the nature of a substitute. Without written report.",
-          "action_code": null,
-          "action_type": "Committee",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_82b1d9c8",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-06-18",
-        "occurred_at": "2026-06-18",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "The Senate Committee on Commerce, Science, and Transportation ordered S. 4668 to be reported favorably with an amendment in the nature of a substitute on June 18, 2026.",
-          "es": "La Comisión de Comercio, Ciencia y Transporte del Senado ordenó que S. 4668 fuera presentado favorablemente con una enmienda en la naturaleza de un sustituto el 18 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Committee on Commerce, Science, and Transportation. Ordered to be reported with an amendment in the nature of a substitute favorably.",
           "action_code": null,
           "action_type": "Committee",
           "source_system": "Senate"
