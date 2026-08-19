@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T19:35:18.747Z",
+    "fetched_at": "2026-08-19T20:41:39.008Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T19:35:18.747Z"
+        "checked_at": "2026-08-19T20:41:39.008Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T19:35:18.747Z"
+        "checked_at": "2026-08-19T20:41:39.008Z"
       },
       "leans": {
         "center": {
@@ -318,6 +318,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "bitcoinworld.co.in",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        },
+        {
           "domain": "cryptobriefing.com",
           "firstSeen": "2026-08-18",
           "lastSeen": "2026-08-19"
@@ -330,7 +335,7 @@
         {
           "domain": "tradingview.com",
           "firstSeen": "2026-08-13",
-          "lastSeen": "2026-08-18"
+          "lastSeen": "2026-08-19"
         },
         {
           "domain": "bitcoinfoundation.org",
@@ -816,6 +821,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-779-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8112-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -864,6 +881,11 @@
     "hr-8467-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "edgemedianetwork.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        },
         {
           "domain": "federalnewsnetwork.com",
           "firstSeen": "2026-08-19",
