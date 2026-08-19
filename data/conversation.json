@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T04:48:59.188Z",
+    "fetched_at": "2026-08-19T05:42:53.237Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T04:48:59.188Z"
+        "checked_at": "2026-08-19T05:42:53.237Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T04:48:59.188Z"
+        "checked_at": "2026-08-19T05:42:53.237Z"
       },
       "leans": {
         "center": {
@@ -66,6 +66,18 @@
           "lean": "right",
           "firstSeen": "2026-08-18",
           "lastSeen": "2026-08-18"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hjres-84-119": {
+      "outlets7d": [
+        {
+          "domain": "truthout.org",
+          "lean": "left",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
         }
       ],
       "unratedOutlets7d": [],
