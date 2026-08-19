@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T15:43:00.637Z",
+    "fetched_at": "2026-08-19T16:43:44.657Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T15:43:00.637Z"
+        "checked_at": "2026-08-19T16:43:44.657Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T15:43:00.637Z"
+        "checked_at": "2026-08-19T16:43:44.657Z"
       },
       "leans": {
         "center": {
@@ -85,13 +85,30 @@
     },
     "hr-1-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 3,
         "lastSeen": "2026-08-19",
         "lastWeek": "2026-08-16"
       }
+    },
+    "hr-10111-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-139-119": {
       "outlets7d": [
@@ -776,6 +793,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7757-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8112-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -955,6 +984,17 @@
       "unratedOutlets7d": [
         {
           "domain": "northjersey.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9835-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
         }
