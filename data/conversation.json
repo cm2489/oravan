@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T08:51:48.864Z",
+    "fetched_at": "2026-08-19T13:56:27.987Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T08:51:48.864Z"
+        "checked_at": "2026-08-19T13:56:27.987Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T08:51:48.864Z"
+        "checked_at": "2026-08-19T13:56:27.987Z"
       },
       "leans": {
         "center": {
@@ -767,6 +767,17 @@
           "domain": "marinecorpstimes.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8467-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "federalnewsnetwork.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
         }
       ],
       "mostViewed": null
