@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T14:49:06.156Z",
+    "fetched_at": "2026-08-19T15:43:00.637Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T14:49:06.156Z"
+        "checked_at": "2026-08-19T15:43:00.637Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T14:49:06.156Z"
+        "checked_at": "2026-08-19T15:43:00.637Z"
       },
       "leans": {
         "center": {
@@ -700,6 +700,17 @@
       ],
       "mostViewed": null
     },
+    "hr-7004-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ingame.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7039-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -765,6 +776,17 @@
       ],
       "mostViewed": null
     },
+    "hr-8112-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "inc.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8127-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -774,6 +796,18 @@
           "lastSeen": "2026-08-14"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-826-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8332-119": {
@@ -853,6 +887,22 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8852-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        },
+        {
+          "domain": "stlpr.org",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8902-119": {
@@ -1184,6 +1234,11 @@
     "s-4427-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "peoplesworld.org",
+          "firstSeen": "2026-08-19",
+          "lastSeen": "2026-08-19"
+        },
         {
           "domain": "grist.org",
           "firstSeen": "2026-08-14",
