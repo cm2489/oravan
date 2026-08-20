@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-20T16:48:35.913Z",
+    "fetched_at": "2026-08-20T17:41:51.390Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-20T16:48:35.913Z"
+        "checked_at": "2026-08-20T17:41:51.390Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-20T16:48:35.913Z"
+        "checked_at": "2026-08-20T17:41:51.390Z"
       },
       "leans": {
         "center": {
@@ -1067,6 +1067,17 @@
       ],
       "mostViewed": null
     },
+    "hr-9372-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "detroitnews.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9835-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1465,6 +1476,18 @@
           "lastSeen": "2026-08-20"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4614-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4660-119": {
