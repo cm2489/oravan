@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-20T20:42:29.174Z",
+    "fetched_at": "2026-08-20T21:38:50.292Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-20T20:42:29.174Z"
+        "checked_at": "2026-08-20T21:38:50.292Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-20T20:42:29.174Z"
+        "checked_at": "2026-08-20T21:38:50.292Z"
       },
       "leans": {
         "center": {
@@ -335,6 +335,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "americanbanker.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        },
         {
           "domain": "bitcoinworld.co.in",
           "firstSeen": "2026-08-19",
@@ -998,7 +1003,13 @@
           "lastSeen": "2026-08-13"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "fedagent.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8998-119": {
