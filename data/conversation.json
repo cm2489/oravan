@@ -1,36 +1,36 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-19T23:33:27.790Z",
+    "fetched_at": "2026-08-20T01:48:32.882Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-19T23:33:27.790Z"
+        "checked_at": "2026-08-20T01:48:32.882Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-19T23:33:27.790Z"
+        "checked_at": "2026-08-20T01:48:32.882Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-08-19",
+          "last_live": "2026-08-20",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-08-19",
+          "last_live": "2026-08-20",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-08-19",
+          "last_live": "2026-08-20",
           "dark_days": 0
         }
       }
@@ -95,7 +95,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 3,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -202,7 +202,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -241,7 +241,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 6,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -331,7 +331,12 @@
         {
           "domain": "bitcoinworld.co.in",
           "firstSeen": "2026-08-19",
-          "lastSeen": "2026-08-19"
+          "lastSeen": "2026-08-20"
+        },
+        {
+          "domain": "crypto-economy.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
         },
         {
           "domain": "cryptobriefing.com",
@@ -372,7 +377,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 4,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -407,17 +412,6 @@
           "domain": "legis1.com",
           "firstSeen": "2026-08-17",
           "lastSeen": "2026-08-17"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-4386-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "aol.com",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
         }
       ],
       "mostViewed": null
@@ -535,7 +529,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 5,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -557,11 +551,6 @@
           "domain": "rollcall.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
-        },
-        {
-          "domain": "oregonlive.com",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
         }
       ],
       "mostViewed": null
@@ -677,7 +666,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 1,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -694,12 +683,6 @@
           "lean": "left",
           "firstSeen": "2026-08-17",
           "lastSeen": "2026-08-17"
-        },
-        {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
         }
       ],
       "unratedOutlets7d": [
@@ -805,11 +788,6 @@
           "domain": "food-safety.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
-        },
-        {
-          "domain": "standard-democrat.com",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
         }
       ],
       "mostViewed": null
@@ -951,7 +929,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 9,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -1095,11 +1073,6 @@
           "domain": "m.economictimes.com",
           "firstSeen": "2026-08-13",
           "lastSeen": "2026-08-14"
-        },
-        {
-          "domain": "justthenews.com",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
         }
       ],
       "mostViewed": null
@@ -1186,7 +1159,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 2,
-        "lastSeen": "2026-08-19",
+        "lastSeen": "2026-08-20",
         "lastWeek": "2026-08-16"
       }
     },
@@ -1409,6 +1382,18 @@
       ],
       "mostViewed": null
     },
+    "s-4662-119": {
+      "outlets7d": [
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4668-119": {
       "outlets7d": [
         {
@@ -1433,20 +1418,7 @@
       }
     },
     "s-5025-119": {
-      "outlets7d": [
-        {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
-        },
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-08-12",
-          "lastSeen": "2026-08-12"
-        }
-      ],
+      "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
