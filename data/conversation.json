@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-20T03:58:21.725Z",
+    "fetched_at": "2026-08-20T07:53:13.436Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-20T03:58:21.725Z"
+        "checked_at": "2026-08-20T07:53:13.436Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-20T03:58:21.725Z"
+        "checked_at": "2026-08-20T07:53:13.436Z"
       },
       "leans": {
         "center": {
@@ -326,7 +326,14 @@
       "mostViewed": null
     },
     "hr-3633-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "bitcoinworld.co.in",
@@ -1356,6 +1363,17 @@
           "domain": "moneywise.com",
           "firstSeen": "2026-08-14",
           "lastSeen": "2026-08-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4451-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "everycrsreport.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
         }
       ],
       "mostViewed": null
