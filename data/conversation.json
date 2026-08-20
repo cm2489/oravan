@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-20T17:41:51.390Z",
+    "fetched_at": "2026-08-20T18:56:07.637Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-20T17:41:51.390Z"
+        "checked_at": "2026-08-20T18:56:07.637Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-20T17:41:51.390Z"
+        "checked_at": "2026-08-20T18:56:07.637Z"
       },
       "leans": {
         "center": {
@@ -1049,6 +1049,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "thewellnews.com",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        },
+        {
           "domain": "northjersey.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
@@ -1429,6 +1434,12 @@
     },
     "s-4430-119": {
       "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-08-20",
+          "lastSeen": "2026-08-20"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
