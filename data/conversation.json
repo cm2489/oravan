@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-21T03:13:26.931Z",
+    "fetched_at": "2026-08-21T08:54:35.440Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-21T03:13:26.931Z"
+        "checked_at": "2026-08-21T08:54:35.440Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-21T03:13:26.931Z"
+        "checked_at": "2026-08-21T08:54:35.440Z"
       },
       "leans": {
         "center": {
@@ -215,6 +215,18 @@
           "lastSeen": "2026-08-18"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-1968-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-2191-119": {
