@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-21T13:07:34.053Z",
+    "fetched_at": "2026-08-21T16:48:40.463Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-21T13:07:34.053Z"
+        "checked_at": "2026-08-21T16:48:40.463Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-21T13:07:34.053Z"
+        "checked_at": "2026-08-21T16:48:40.463Z"
       },
       "leans": {
         "center": {
@@ -280,6 +280,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-2853-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "centralcurrent.org",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-2911-119": {
       "outlets7d": [
         {
@@ -349,6 +360,11 @@
       "unratedOutlets7d": [
         {
           "domain": "coindesk.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        },
+        {
+          "domain": "kucoin.com",
           "firstSeen": "2026-08-21",
           "lastSeen": "2026-08-21"
         },
@@ -441,6 +457,11 @@
     "hr-4405-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        },
         {
           "domain": "canberratimes.com.au",
           "firstSeen": "2026-08-14",
@@ -553,6 +574,17 @@
           "domain": "rollcall.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5688-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
         }
       ],
       "mostViewed": null
@@ -1038,6 +1070,17 @@
       ],
       "mostViewed": null
     },
+    "hr-9471-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "themarijuanaherald.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9835-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1330,6 +1373,11 @@
     "s-4427-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "khou.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        },
         {
           "domain": "peoplesworld.org",
           "firstSeen": "2026-08-19",
