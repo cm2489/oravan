@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-18T15:10:22.030Z"
+    "generated_at": "2026-08-21T15:11:30.441Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1179,6 +1179,31 @@
         },
         "changed_because": [
           "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_155bd1cf",
+        "generated_at": "2026-08-21T15:11:36.100Z",
+        "as_of_day": "2026-08-21",
+        "text": {
+          "en": "Where it stands: H.R. 3633 sits in floor activity in the Senate. On August 8, 2026, a motion to proceed to consideration of the measure was made in the Senate. That same day, a cloture motion was filed on the motion to proceed. Both actions are recorded in the Congressional Record at page S4557. No vote tally on cloture or on the measure itself is in the record for this period. No committee action or other floor steps are recorded in the last 14 days. The record shows no further movement beyond these two entries dated August 8, 2026.",
+          "es": "Dónde está: el proyecto H.R. 3633 se encuentra en actividad en el pleno del Senado. El 8 de agosto de 2026 se presentó en el Senado una moción para proceder a la consideración de la medida. Ese mismo día se presentó una moción de clausura sobre la moción de proceder. Ambas acciones constan en el Registro del Congreso en la página S4557. El registro no incluye resultado de votación sobre la clausura ni sobre la medida en este período. No se registra actividad de comité ni otros pasos en el pleno en los últimos 14 días. El registro no muestra más movimiento además de estas dos entradas del 8 de agosto de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_456d8e0c",
+            "u_f62494fd"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
       }
