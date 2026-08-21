@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-21T08:54:35.440Z",
+    "fetched_at": "2026-08-21T10:43:42.322Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-21T08:54:35.440Z"
+        "checked_at": "2026-08-21T10:43:42.322Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-21T08:54:35.440Z"
+        "checked_at": "2026-08-21T10:43:42.322Z"
       },
       "leans": {
         "center": {
@@ -1009,6 +1009,11 @@
     "hr-9367-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "floridatoday.com",
+          "firstSeen": "2026-08-21",
+          "lastSeen": "2026-08-21"
+        },
         {
           "domain": "fishduck.com",
           "firstSeen": "2026-08-20",
