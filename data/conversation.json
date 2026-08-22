@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-22T05:38:39.609Z",
+    "fetched_at": "2026-08-22T06:56:26.749Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-22T05:38:39.609Z"
+        "checked_at": "2026-08-22T06:56:26.749Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-22T05:38:39.609Z"
+        "checked_at": "2026-08-22T06:56:26.749Z"
       },
       "leans": {
         "center": {
@@ -132,6 +132,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "mshale.com",
+          "firstSeen": "2026-08-22",
+          "lastSeen": "2026-08-22"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-08-21",
@@ -364,6 +369,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "cryptotimes.io",
+          "firstSeen": "2026-08-22",
+          "lastSeen": "2026-08-22"
+        },
         {
           "domain": "disruptionbanking.com",
           "firstSeen": "2026-08-22",
