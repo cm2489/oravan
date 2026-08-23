@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-21T15:11:30.441Z"
+    "generated_at": "2026-08-23T14:50:17.895Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -210,6 +210,29 @@
         },
         "changed_because": [
           "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_fd2618ef",
+        "generated_at": "2026-08-23T14:50:25.296Z",
+        "as_of_day": "2026-08-23",
+        "text": {
+          "en": "H.R. 9770 stands passed by one chamber. No new action on this measure has been recorded in the last 14 days. The bill's current status remains where it was: approved in the chamber that voted on it, with no further recorded step since. No committee action, no additional floor vote, and no other procedural move appears in the record for this period. Anyone tracking this bill will find the status unchanged from the prior stretch, with the single-chamber passage as the latest fact on file.",
+          "es": "El proyecto H.R. 9770 se mantiene aprobado por una cámara. No se ha registrado ninguna acción nueva sobre esta medida en los últimos 14 días. Su estado actual sigue siendo el mismo: aprobado en la cámara que lo votó, sin ningún paso adicional registrado desde entonces. No aparece acción de comité, ni otra votación en el pleno, ni ningún otro movimiento procesal en el registro durante este periodo. Quien siga este proyecto encontrará el estado sin cambios respecto al periodo anterior, con la aprobación en una sola cámara como el dato más reciente disponible."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }
@@ -655,6 +678,28 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_abfd5c34",
+        "generated_at": "2026-08-23T14:50:31.271Z",
+        "as_of_day": "2026-08-23",
+        "text": {
+          "en": "The Senate's question on S. 3172 sits where it has sat for the last two weeks. The bill was placed on the floor calendar, and the official record shows no floor action on it since. No committee votes, no floor votes, and no procedural moves on this measure appear in the record over the past 14 days. There is nothing further to report because nothing further was recorded. The bill remains on the calendar awaiting scheduling, with no new entry from either chamber changing its position. Readers watching for movement will see the same status as before, unchanged in the official record during this period, with no additional action logged.",
+          "es": "La pregunta del Senado sobre el S. 3172 se mantiene donde ha estado durante las últimas dos semanas. El proyecto de ley se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces. No aparecen votaciones en comité, votaciones en el pleno ni movimientos de procedimiento sobre esta medida en el registro durante los últimos 14 días. No hay más que informar porque no se registró nada más. El proyecto sigue en el calendario a la espera de programación, sin ninguna entrada nueva de ninguna de las cámaras que cambie su posición. Los lectores que buscan movimiento verán el mismo estado de antes, sin cambios en el registro oficial durante este período."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -779,6 +824,28 @@
           "update_ids": [
             "u_d6d43314"
           ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_359d7848",
+        "generated_at": "2026-08-23T14:50:37.477Z",
+        "as_of_day": "2026-08-23",
+        "text": {
+          "en": "S. 4668 stands at floor activity. No new action was recorded on this bill in the last 14 days. Its status remains where it last stood, with no roll call, vote tally, or committee action logged in this window. Readers watching this measure will see no movement to report right now beyond its current placement on the floor. The bill's text and prior status remain unchanged from the last recorded update. No date, number, or procedural step has been added since then. This is where the record stands as of now, based solely on what has been logged for this bill.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se registró ninguna acción nueva sobre este proyecto en los últimos 14 días. Su estado sigue siendo el mismo que la última vez, sin votación nominal, conteo de votos ni acción de comité registrada en este período. Quienes siguen esta medida no encontrarán movimiento nuevo que informar, más allá de su ubicación actual en el pleno. El texto del proyecto y su estado previo no han cambiado desde la última actualización registrada. No se ha añadido ninguna fecha, número ni paso procesal desde entonces. Así se encuentra el registro por ahora, basado únicamente en lo documentado para este proyecto."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
