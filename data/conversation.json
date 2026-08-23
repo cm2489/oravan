@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-23T10:36:39.990Z",
+    "fetched_at": "2026-08-23T16:39:05.084Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-23T10:36:39.990Z"
+        "checked_at": "2026-08-23T16:39:05.084Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-23T10:36:39.990Z"
+        "checked_at": "2026-08-23T16:39:05.084Z"
       },
       "leans": {
         "center": {
@@ -283,6 +283,17 @@
           "domain": "centralcurrent.org",
           "firstSeen": "2026-08-21",
           "lastSeen": "2026-08-21"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2870-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "duluthnewstribune.com",
+          "firstSeen": "2026-08-23",
+          "lastSeen": "2026-08-23"
         }
       ],
       "mostViewed": null
