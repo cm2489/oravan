@@ -1,36 +1,36 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-22T23:32:07.174Z",
+    "fetched_at": "2026-08-23T01:57:18.718Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-22T23:32:07.174Z"
+        "checked_at": "2026-08-23T01:57:18.718Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-16",
         "week_label": "Most-Viewed Bills - Week of August 16, 2026",
         "entries": 8,
-        "checked_at": "2026-08-22T23:32:07.174Z"
+        "checked_at": "2026-08-23T01:57:18.718Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-08-22",
+          "last_live": "2026-08-23",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-08-22",
+          "last_live": "2026-08-23",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-08-22",
+          "last_live": "2026-08-23",
           "dark_days": 0
         }
       }
@@ -95,7 +95,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 3,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -182,27 +182,12 @@
           "domain": "asatunews.co.id",
           "firstSeen": "2026-08-16",
           "lastSeen": "2026-08-16"
-        },
-        {
-          "domain": "abc3340.com",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
-        },
-        {
-          "domain": "courierpostonline.com",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
-        },
-        {
-          "domain": "delawareonline.com",
-          "firstSeen": "2026-08-14",
-          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -264,7 +249,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 6,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -332,17 +317,6 @@
           "domain": "davisvanguard.org",
           "firstSeen": "2026-08-16",
           "lastSeen": "2026-08-16"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-3230-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "ourfinancialsecurity.org",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": null
@@ -474,7 +448,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 4,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -578,7 +552,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 5,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -731,7 +705,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 1,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -799,6 +773,17 @@
           "domain": "puertoricoreport.com",
           "firstSeen": "2026-08-21",
           "lastSeen": "2026-08-21"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7529-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-08-23",
+          "lastSeen": "2026-08-23"
         }
       ],
       "mostViewed": null
@@ -906,7 +891,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 9,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -945,17 +930,6 @@
           "domain": "fedagent.com",
           "firstSeen": "2026-08-20",
           "lastSeen": "2026-08-20"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-8998-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "chosun.com",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": null
@@ -1117,15 +1091,19 @@
       ],
       "mostViewed": null
     },
-    "s-1748-119": {
-      "outlets7d": [
+    "s-1670-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
         {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-08-14",
-          "lastSeen": "2026-08-15"
+          "domain": "blackchronicle.com",
+          "firstSeen": "2026-08-23",
+          "lastSeen": "2026-08-23"
         }
       ],
+      "mostViewed": null
+    },
+    "s-1748-119": {
+      "outlets7d": [],
       "unratedOutlets7d": [
         {
           "domain": "kens5.com",
@@ -1192,7 +1170,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 2,
-        "lastSeen": "2026-08-22",
+        "lastSeen": "2026-08-23",
         "lastWeek": "2026-08-16"
       }
     },
@@ -1331,17 +1309,6 @@
       ],
       "mostViewed": null
     },
-    "s-4394-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "leadership.ng",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
-        }
-      ],
-      "mostViewed": null
-    },
     "s-4419-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1461,17 +1428,6 @@
           "domain": "energiesmedia.com",
           "firstSeen": "2026-08-22",
           "lastSeen": "2026-08-22"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-4489-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-08-14",
-          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": null
@@ -1628,17 +1584,6 @@
           "domain": "justthenews.com",
           "firstSeen": "2026-08-18",
           "lastSeen": "2026-08-18"
-        }
-      ],
-      "mostViewed": null
-    },
-    "sjres-96-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "stripes.com",
-          "firstSeen": "2026-08-15",
-          "lastSeen": "2026-08-15"
         }
       ],
       "mostViewed": null
