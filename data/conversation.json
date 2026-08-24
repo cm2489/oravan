@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-24T15:52:21.132Z",
+    "fetched_at": "2026-08-24T16:52:26.302Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-24T15:52:21.132Z"
+        "checked_at": "2026-08-24T16:52:26.302Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-24T15:52:21.132Z"
+        "checked_at": "2026-08-24T16:52:26.302Z"
       },
       "leans": {
         "center": {
@@ -456,6 +456,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "bizpacreview.com",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
         {
           "domain": "idahocapitalsun.com",
           "firstSeen": "2026-08-17",
@@ -1057,6 +1062,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "thegeorgiavirtue.com",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
+        {
           "domain": "blackchronicle.com",
           "firstSeen": "2026-08-23",
           "lastSeen": "2026-08-23"
@@ -1374,6 +1384,12 @@
     "s-4430-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-13",
+          "lastSeen": "2026-08-24"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-08-20",
@@ -1389,12 +1405,6 @@
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-08-21",
-          "lastSeen": "2026-08-21"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-08-13",
           "lastSeen": "2026-08-21"
         }
       ],
@@ -1505,6 +1515,12 @@
     },
     "s-4668-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
