@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-24T10:50:21.600Z",
+    "fetched_at": "2026-08-24T13:10:27.209Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-24T10:50:21.600Z"
+        "checked_at": "2026-08-24T13:10:27.209Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-08-16",
-        "week_label": "Most-Viewed Bills - Week of August 16, 2026",
-        "entries": 8,
-        "checked_at": "2026-08-24T10:50:21.600Z"
+        "week": "2026-08-23",
+        "week_label": "Most-Viewed Bills - Week of August 23, 2026",
+        "entries": 9,
+        "checked_at": "2026-08-24T13:10:27.209Z"
       },
       "leans": {
         "center": {
@@ -82,10 +82,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 2,
+        "weeksOnList": 3,
         "lastRank": 3,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-10111-119": {
@@ -157,10 +157,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 8,
+        "weeksOnList": 2,
+        "lastRank": 10,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-1589-119": {
@@ -208,10 +208,10 @@
       ],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
-        "lastRank": 6,
+        "weeksOnList": 3,
+        "lastRank": 9,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-222-119": {
@@ -407,10 +407,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 2,
+        "weeksOnList": 3,
         "lastRank": 4,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-4044-119": {
@@ -447,7 +447,14 @@
       "mostViewed": null
     },
     "hr-4710-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "idahocapitalsun.com",
@@ -494,6 +501,16 @@
         }
       ],
       "mostViewed": null
+    },
+    "hr-5269-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 8,
+        "lastSeen": "2026-08-24",
+        "lastWeek": "2026-08-23"
+      }
     },
     "hr-5316-119": {
       "outlets7d": [],
@@ -641,10 +658,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
+        "weeksOnList": 3,
         "lastRank": 1,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-6529-119": {
@@ -827,10 +844,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
-        "lastRank": 9,
+        "weeksOnList": 3,
+        "lastRank": 7,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "hr-8825-119": {
@@ -859,6 +876,18 @@
           "lastSeen": "2026-08-19"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8883-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8902-119": {
@@ -1079,10 +1108,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
+        "weeksOnList": 3,
         "lastRank": 2,
         "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastWeek": "2026-08-23"
       }
     },
     "s-2743-119": {
@@ -1106,6 +1135,16 @@
         }
       ],
       "mostViewed": null
+    },
+    "s-2976-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 5,
+        "lastSeen": "2026-08-24",
+        "lastWeek": "2026-08-23"
+      }
     },
     "s-3170-119": {
       "outlets7d": [
