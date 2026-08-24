@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-23T14:50:17.895Z"
+    "generated_at": "2026-08-24T04:57:39.145Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -322,65 +322,6 @@
           "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
         },
         "ai": false
-      },
-      {
-        "id": "u_8b7ad678",
-        "class": "vote",
-        "vehicle": "sjres-185-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The Senate rejected the motion to proceed to S.J.Res. 185, 47-50, on Record Vote 192.",
-          "es": "El Senado rechazó la moción para considerar la S.J.Res. 185, 47-50, en la votación registrada 192."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00192.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 192
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_7740dd6f",
-        "class": "status_change",
-        "vehicle": "sjres-185-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T20:03:22.252Z",
-        "text": {
-          "en": "Senate rejected a motion to proceed to S.J.Res. 185 on June 24, 2026, by vote 47-50 (Record Vote Number 192).",
-          "es": "El Senado rechazó una moción para proceder con S.J.Res. 185 el 24 de junio de 2026, con votación 47-50 (Número de Votación de Registro 192)."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)",
-          "action_code": null,
-          "action_type": "latestAction",
-          "source_system": "Congress.gov bill detail",
-          "status_from": "floor_vote",
-          "status_to": "committee"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -401,8 +342,7 @@
           },
           "update_ids": [
             "u_19ae0eba",
-            "u_c95bb4da",
-            "u_8b7ad678"
+            "u_c95bb4da"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
@@ -730,58 +670,6 @@
           "source_system": "Senate"
         },
         "ai": true
-      },
-      {
-        "id": "u_acb58cab",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "S. 4668 was placed on the Senate Legislative Calendar under General Orders as Calendar No. 449 on June 24, 2026.",
-          "es": "S. 4668 fue colocado en el Calendario Legislativo del Senado bajo Órdenes Generales como Calendario No. 449 el 24 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 449.",
-          "action_code": null,
-          "action_type": "Calendars",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_b34d7c98",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "The Senate Committee on Commerce, Science, and Transportation reported S. 4668 with an amendment in the nature of a substitute on June 24, 2026.",
-          "es": "La Comisión de Comercio, Ciencia y Transporte del Senado presentó S. 4668 con una enmienda en la naturaleza de un sustituto el 24 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Committee on Commerce, Science, and Transportation. Reported by Senator Cruz with an amendment in the nature of a substitute. Without written report.",
-          "action_code": null,
-          "action_type": "Committee",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -1040,58 +928,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S3919)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_14121c3e",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On June 24, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 24 de junio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S3193)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_7b90218f",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-06-24",
-        "occurred_at": "2026-06-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "A cloture motion on the motion to proceed to S. 4784 was presented in the Senate on June 24, 2026.",
-          "es": "Una moción de cierre sobre la moción de proceder a S. 4784 fue presentada en el Senado el 24 de junio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S3193)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"

@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-08-21T13:07:30.357Z",
+    "fetched_at": "2026-08-24T04:57:35.507Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-08-21T13:07:30.357Z",
+        "checked_at": "2026-08-24T04:57:35.507Z",
         "url": "https://www.congress.gov/119/crec/2026/08/20/d20au6-1.htm",
         "published": "2026-08-20",
         "covers": "2026-08-24",
@@ -16,10 +16,10 @@
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-08-21T13:07:30.357Z",
-        "url": "https://docs.house.gov/billsthisweek/20260817/20260817.xml",
-        "published": "2026-08-17",
-        "covers": "2026-08-17",
+        "checked_at": "2026-08-24T04:57:35.507Z",
+        "url": "https://docs.house.gov/billsthisweek/20260824/20260824.xml",
+        "published": "2026-08-24",
+        "covers": "2026-08-24",
         "covers_label": null,
         "via": "docs.house.gov"
       }
