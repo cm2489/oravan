@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-24T13:10:27.209Z",
+    "fetched_at": "2026-08-24T14:56:07.397Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-24T13:10:27.209Z"
+        "checked_at": "2026-08-24T14:56:07.397Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-24T13:10:27.209Z"
+        "checked_at": "2026-08-24T14:56:07.397Z"
       },
       "leans": {
         "center": {
@@ -552,6 +552,11 @@
     "hr-5688-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "cdllife.com",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
         {
           "domain": "quiverquant.com",
           "firstSeen": "2026-08-21",
@@ -1205,6 +1210,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-3723-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "mykxlg.com",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        }
+      ],
       "mostViewed": null
     },
     "s-3752-119": {
