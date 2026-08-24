@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-24T16:52:26.302Z",
+    "fetched_at": "2026-08-24T18:56:16.301Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-24T16:52:26.302Z"
+        "checked_at": "2026-08-24T18:56:16.301Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-24T16:52:26.302Z"
+        "checked_at": "2026-08-24T18:56:16.301Z"
       },
       "leans": {
         "center": {
@@ -449,6 +449,12 @@
     "hr-4710-119": {
       "outlets7d": [
         {
+          "domain": "dailycaller.com",
+          "lean": "right",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-08-24",
@@ -876,6 +882,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "stlamerican.com",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        },
+        {
           "domain": "quiverquant.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
@@ -1285,7 +1296,14 @@
       "mostViewed": null
     },
     "s-4315-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "forbes.com",
+          "lean": "center",
+          "firstSeen": "2026-08-24",
+          "lastSeen": "2026-08-24"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "rollcall.com",
