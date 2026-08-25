@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-25T18:54:19.558Z",
+    "fetched_at": "2026-08-25T21:39:13.995Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-25T18:54:19.558Z"
+        "checked_at": "2026-08-25T21:39:13.995Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-25T18:54:19.558Z"
+        "checked_at": "2026-08-25T21:39:13.995Z"
       },
       "leans": {
         "center": {
@@ -688,7 +688,17 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "deseret.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        },
+        {
           "domain": "wral.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        },
+        {
+          "domain": "yourconroenews.com",
           "firstSeen": "2026-08-25",
           "lastSeen": "2026-08-25"
         }
@@ -760,6 +770,18 @@
           "lastSeen": "2026-08-25"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8581-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8586-119": {
@@ -1110,6 +1132,11 @@
       "unratedOutlets7d": [
         {
           "domain": "ksl.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        },
+        {
+          "domain": "thecentersquare.com",
           "firstSeen": "2026-08-25",
           "lastSeen": "2026-08-25"
         },
