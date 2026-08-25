@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-25T01:49:06.465Z",
+    "fetched_at": "2026-08-25T03:09:46.988Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-25T01:49:06.465Z"
+        "checked_at": "2026-08-25T03:09:46.988Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-25T01:49:06.465Z"
+        "checked_at": "2026-08-25T03:09:46.988Z"
       },
       "leans": {
         "center": {
@@ -615,7 +615,14 @@
       "mostViewed": null
     },
     "hr-7802-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "breitbart.com",
+          "lean": "right",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "wral.com",
