@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-08-24T04:57:35.507Z",
+    "fetched_at": "2026-08-25T13:07:50.079Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-08-24T04:57:35.507Z",
-        "url": "https://www.congress.gov/119/crec/2026/08/20/d20au6-1.htm",
-        "published": "2026-08-20",
-        "covers": "2026-08-24",
-        "covers_label": "12:30 p.m., Monday, August 24",
+        "checked_at": "2026-08-25T13:07:50.079Z",
+        "url": "https://www.congress.gov/119/crec/2026/08/24/d24au6-1.htm",
+        "published": "2026-08-24",
+        "covers": "2026-08-27",
+        "covers_label": "8 a.m., Thursday, August 27",
         "via": "congress.gov"
       },
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-08-24T04:57:35.507Z",
+        "checked_at": "2026-08-25T13:07:50.079Z",
         "url": "https://docs.house.gov/billsthisweek/20260824/20260824.xml",
         "published": "2026-08-24",
         "covers": "2026-08-24",
@@ -31,12 +31,12 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-08-24",
-        "label": "12:30 p.m., Monday, August 24"
+        "date": "2026-08-27",
+        "label": "8 a.m., Thursday, August 27"
       },
       "house": {
-        "date": "2026-08-24",
-        "label": "9 a.m., Monday, August 24"
+        "date": "2026-08-27",
+        "label": "9 a.m., Thursday, August 27"
       }
     },
     "dropped": []
