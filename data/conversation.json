@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-25T13:07:52.816Z",
+    "fetched_at": "2026-08-25T15:00:30.251Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-25T13:07:52.816Z"
+        "checked_at": "2026-08-25T15:00:30.251Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-25T13:07:52.816Z"
+        "checked_at": "2026-08-25T15:00:30.251Z"
       },
       "leans": {
         "center": {
@@ -58,7 +58,13 @@
           "lastSeen": "2026-08-19"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "jpost.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1-119": {
@@ -406,6 +412,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4911-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-4968-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -711,6 +729,17 @@
           "domain": "wfin.com",
           "firstSeen": "2026-08-19",
           "lastSeen": "2026-08-19"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8720-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "metrotimes.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
         }
       ],
       "mostViewed": null
@@ -1028,6 +1057,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "ksl.com",
+          "firstSeen": "2026-08-25",
+          "lastSeen": "2026-08-25"
+        },
         {
           "domain": "identityweek.net",
           "firstSeen": "2026-08-24",
