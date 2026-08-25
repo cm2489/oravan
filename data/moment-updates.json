@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-24T04:57:39.145Z"
+    "generated_at": "2026-08-25T15:17:08.008Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -513,6 +513,35 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_a46a7eba",
+        "generated_at": "2026-08-25T15:17:14.637Z",
+        "as_of_day": "2026-08-25",
+        "text": {
+          "en": "Where it stands: two joint resolutions, S.J.Res. 185 and S.J.Res. 172, remain at floor activity. Neither has moved in the last 14 days; no new votes or texts were recorded in that window. Separately, H. Con. Res. 38 remains in committee, with no recorded action in the last 14 days. H. Con. Res. 89 has passed one chamber, and no further action on it appears in the record over the same period. In short, all four measures sit where they last stood, with the record showing no new activity to report for this stretch.",
+          "es": "Cómo está la situación: dos resoluciones conjuntas, S.J.Res. 185 y S.J.Res. 172, siguen en actividad en el pleno. Ninguna registró movimiento en los últimos 14 días; no se anotaron nuevos votos ni textos en ese período. Por separado, H. Con. Res. 38 sigue en comité, sin acción registrada en los últimos 14 días. H. Con. Res. 89 fue aprobada por una cámara, y no aparece ninguna acción adicional en el mismo período. En resumen, las cuatro medidas permanecen donde estaban, y el registro no muestra actividad nueva que informar en este tramo."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -987,6 +1016,28 @@
         "text": {
           "en": "S. 4784 stands at floor activity in the Senate. No action has been recorded on this bill in the last 14 days. That means the last update available shows the measure still positioned at this stage, with no new votes, amendments, or scheduling actions logged since. There is no record of any change in status to report during this period. The bill's location in the legislative process remains the same as it was two weeks ago, according to the official record reviewed for this update. No further detail is available beyond this current standing.",
           "es": "El proyecto S. 4784 se encuentra en actividad en el pleno del Senado. No se ha registrado ninguna accion sobre este proyecto en los ultimos 14 dias. Esto significa que la ultima actualizacion disponible muestra la medida todavia en esta etapa, sin nuevas votaciones, enmiendas o acciones de programacion registradas desde entonces. No existe registro de ningun cambio de estado que informar durante este periodo. La ubicacion del proyecto en el proceso legislativo sigue siendo la misma que hace dos semanas, segun el registro oficial revisado para esta actualizacion. No hay mas detalles disponibles mas alla de esta situacion actual."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_7b6a26b1",
+        "generated_at": "2026-08-25T15:17:20.827Z",
+        "as_of_day": "2026-08-25",
+        "text": {
+          "en": "Where it stands: S. 4784 remains at floor activity in the Senate. No new action has been recorded on this bill in the last 14 days. The measure sits in the same place it has held throughout this period, with no changes to its status to report. There is no additional record of committee action, amendments, or scheduling to add beyond the current floor activity designation. Readers following this legislation should note that the absence of recent action means the bill has not advanced, stalled, or shifted position during this window. Once new developments occur, including any votes, tallies, or procedural steps, those specifics will be reported plainly and directly as they enter the record.",
+          "es": "Cómo está la situación: S. 4784 permanece en actividad en el pleno del Senado. No se ha registrado ninguna acción nueva sobre este proyecto de ley en los últimos 14 días. La medida se mantiene en el mismo lugar que ha ocupado durante todo este período, sin cambios en su estatus que reportar. No existe registro adicional de acción en comité, enmiendas o programación más allá de la designación actual de actividad en el pleno. Los lectores que sigan esta legislación deben notar que la ausencia de acción reciente significa que el proyecto no ha avanzado, se ha detenido, ni ha cambiado de posición durante esta ventana. Cuando ocurran nuevos desarrollos, incluidas votaciones o pasos procesales, se reportarán con claridad."
         },
         "grounded_in": {
           "vehicle_statuses": {
