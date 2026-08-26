@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-26T09:54:00.997Z",
+    "fetched_at": "2026-08-26T11:40:14.026Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-26T09:54:00.997Z"
+        "checked_at": "2026-08-26T11:40:14.026Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-26T09:54:00.997Z"
+        "checked_at": "2026-08-26T11:40:14.026Z"
       },
       "leans": {
         "center": {
@@ -58,6 +58,11 @@
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "fox40.com",
+          "firstSeen": "2026-08-26",
+          "lastSeen": "2026-08-26"
+        },
         {
           "domain": "legis1.com",
           "firstSeen": "2026-08-19",
@@ -388,6 +393,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "ktar.com",
+          "firstSeen": "2026-08-26",
+          "lastSeen": "2026-08-26"
+        },
+        {
           "domain": "cpapracticeadvisor.com",
           "firstSeen": "2026-08-18",
           "lastSeen": "2026-08-19"
@@ -594,6 +604,12 @@
     },
     "hr-779-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-26",
+          "lastSeen": "2026-08-26"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
