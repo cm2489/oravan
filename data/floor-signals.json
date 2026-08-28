@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-08-25T13:07:50.079Z",
+    "fetched_at": "2026-08-28T18:36:39.062Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-08-25T13:07:50.079Z",
-        "url": "https://www.congress.gov/119/crec/2026/08/24/d24au6-1.htm",
-        "published": "2026-08-24",
-        "covers": "2026-08-27",
-        "covers_label": "8 a.m., Thursday, August 27",
+        "checked_at": "2026-08-28T18:36:39.062Z",
+        "url": "https://www.congress.gov/119/crec/2026/08/27/d27au6-1.htm",
+        "published": "2026-08-27",
+        "covers": "2026-08-31",
+        "covers_label": "11:30 a.m., Monday, August 31",
         "via": "congress.gov"
       },
       "billsthisweek": {
-        "status": "quiet",
+        "status": "data_stale",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-08-25T13:07:50.079Z",
+        "checked_at": "2026-08-28T18:36:39.062Z",
         "url": "https://docs.house.gov/billsthisweek/20260824/20260824.xml",
         "published": "2026-08-24",
         "covers": "2026-08-24",
@@ -26,17 +26,17 @@
     },
     "in_session": {
       "senate": "out_of_session",
-      "house": "out_of_session",
+      "house": "in_session",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-08-27",
-        "label": "8 a.m., Thursday, August 27"
+        "date": "2026-08-31",
+        "label": "11:30 a.m., Monday, August 31"
       },
       "house": {
-        "date": "2026-08-27",
-        "label": "9 a.m., Thursday, August 27"
+        "date": "2026-08-31",
+        "label": "12 noon, Monday, August 31"
       }
     },
     "dropped": []
