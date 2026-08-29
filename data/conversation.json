@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-29T09:59:22.312Z",
+    "fetched_at": "2026-08-29T15:02:03.289Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-29T09:59:22.312Z"
+        "checked_at": "2026-08-29T15:02:03.289Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-29T09:59:22.312Z"
+        "checked_at": "2026-08-29T15:02:03.289Z"
       },
       "leans": {
         "center": {
@@ -245,6 +245,18 @@
       ],
       "mostViewed": null
     },
+    "hr-3443-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-29",
+          "lastSeen": "2026-08-29"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -293,6 +305,17 @@
           "domain": "goemkarponn.com",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4318-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "guampdn.com",
+          "firstSeen": "2026-08-29",
+          "lastSeen": "2026-08-29"
         }
       ],
       "mostViewed": null
@@ -822,6 +845,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-9200-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "amac.us",
+          "firstSeen": "2026-08-29",
+          "lastSeen": "2026-08-29"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9237-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -887,6 +921,11 @@
     "s-1547-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "spectrumnews1.com",
+          "firstSeen": "2026-08-29",
+          "lastSeen": "2026-08-29"
+        },
         {
           "domain": "riograndeguardian.com",
           "firstSeen": "2026-08-22",
