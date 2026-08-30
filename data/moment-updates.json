@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-08-28T23:50:05.298Z"
+    "generated_at": "2026-08-30T18:16:51.325Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -220,6 +220,29 @@
         "text": {
           "en": "H.R. 9770 stands passed by one chamber. No new action on this measure has been recorded in the last 14 days. The bill's current status remains where it was: approved in the chamber that voted on it, with no further recorded step since. No committee action, no additional floor vote, and no other procedural move appears in the record for this period. Anyone tracking this bill will find the status unchanged from the prior stretch, with the single-chamber passage as the latest fact on file.",
           "es": "El proyecto H.R. 9770 se mantiene aprobado por una cámara. No se ha registrado ninguna acción nueva sobre esta medida en los últimos 14 días. Su estado actual sigue siendo el mismo: aprobado en la cámara que lo votó, sin ningún paso adicional registrado desde entonces. No aparece acción de comité, ni otra votación en el pleno, ni ningún otro movimiento procesal en el registro durante este periodo. Quien siga este proyecto encontrará el estado sin cambios respecto al periodo anterior, con la aprobación en una sola cámara como el dato más reciente disponible."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c50bd9db",
+        "generated_at": "2026-08-30T18:16:59.439Z",
+        "as_of_day": "2026-08-30",
+        "text": {
+          "en": "H.R. 9770 stands passed by one chamber. No action on it has been recorded in the last 14 days. The bill's status has not changed since it cleared that chamber, and it has not been taken up by the other chamber in this window. There is no new vote, no roll-call number, and no committee action to report for this period. The measure remains where it was: through one chamber, awaiting further action elsewhere. Readers following this bill will see no movement to describe today beyond its existing status. When further floor or committee activity is entered into the record, it will be reflected here with dates, tallies, and text as reported.",
+          "es": "El proyecto H.R. 9770 permanece aprobado por una cámara. No se ha registrado ninguna acción sobre él en los últimos 14 días. Su estatus no ha cambiado desde que fue aprobado en esa cámara, y no ha sido considerado por la otra cámara durante este período. No hay votación nueva, ni número de votación nominal, ni acción de comité que reportar en este lapso. La medida permanece donde estaba: aprobada por una cámara, en espera de otra acción. Quienes siguen este proyecto no verán movimiento adicional que describir hoy, más allá de su estatus actual. Cuando se registre nueva actividad legislativa, se reflejará aquí con fechas, votaciones y texto conforme se reporten."
         },
         "grounded_in": {
           "vehicle_statuses": {
@@ -669,6 +692,28 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c4fcf68e",
+        "generated_at": "2026-08-30T18:17:04.715Z",
+        "as_of_day": "2026-08-30",
+        "text": {
+          "en": "The most current fact on S. 3172 is where it already sits: the bill was placed on the floor calendar, and the official record shows no floor action on it since. Nothing new has entered the record in the last 14 days. There is no scheduled vote, no committee action, and no other step to report in this window. The bill remains at that same point on the calendar, with no change in its position since it was placed there. Anyone tracking this measure will find the record unchanged from the prior update, with the floor calendar listing as the last official entry tied to its status.",
+          "es": "El hecho más actual sobre el S. 3172 es el punto donde ya se encuentra: el proyecto se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces. En los últimos 14 días no se registró nada nuevo. No hay votación programada, ni acción de comité, ni otro paso que informar en este periodo. El proyecto permanece en ese mismo punto del calendario, sin cambios en su posición desde que fue incluido. Quien siga esta medida encontrará el registro igual que en la actualización anterior, con la inclusión en el calendario del pleno como la última entrada oficial vinculada a su estado."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -757,6 +802,28 @@
         "text": {
           "en": "S. 4668 stands at floor activity. No new action was recorded on this bill in the last 14 days. Its status remains where it last stood, with no roll call, vote tally, or committee action logged in this window. Readers watching this measure will see no movement to report right now beyond its current placement on the floor. The bill's text and prior status remain unchanged from the last recorded update. No date, number, or procedural step has been added since then. This is where the record stands as of now, based solely on what has been logged for this bill.",
           "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se registró ninguna acción nueva sobre este proyecto en los últimos 14 días. Su estado sigue siendo el mismo que la última vez, sin votación nominal, conteo de votos ni acción de comité registrada en este período. Quienes siguen esta medida no encontrarán movimiento nuevo que informar, más allá de su ubicación actual en el pleno. El texto del proyecto y su estado previo no han cambiado desde la última actualización registrada. No se ha añadido ninguna fecha, número ni paso procesal desde entonces. Así se encuentra el registro por ahora, basado únicamente en lo documentado para este proyecto."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_5c550702",
+        "generated_at": "2026-08-30T18:17:10.152Z",
+        "as_of_day": "2026-08-30",
+        "text": {
+          "en": "S. 4668 stands at floor activity. No new action was recorded on this bill in the last fourteen days. That leaves the measure in the same place it has been, with the floor as the current point of business. No committee action, no roll-call vote, and no scheduling notice appear in the record for this period. Until the record shows a new step, the status remains floor activity, unchanged from before this window began. Readers watching this bill will see the next update reflected here once the record shows movement, whether that is a vote, a scheduling action, or another recorded step in the process.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se registró ninguna acción nueva sobre este proyecto en los últimos catorce días. Esto deja la medida en el mismo punto en que estaba, con el pleno como el asunto pendiente actual. No aparecen en el registro acciones de comité, votaciones nominales ni avisos de calendario para este período. Hasta que el registro muestre un nuevo paso, el estado sigue siendo actividad en el pleno, sin cambios respecto a antes de este período. Los lectores que sigan este proyecto verán la próxima actualización reflejada aquí una vez que el registro muestre movimiento, ya sea una votación, una acción de calendario u otro paso registrado en el proceso."
         },
         "grounded_in": {
           "vehicle_statuses": {
