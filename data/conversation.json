@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-30T00:15:56.991Z",
+    "fetched_at": "2026-08-30T06:36:18.815Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-30T00:15:56.991Z"
+        "checked_at": "2026-08-30T06:36:18.815Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-23",
         "week_label": "Most-Viewed Bills - Week of August 23, 2026",
         "entries": 9,
-        "checked_at": "2026-08-30T00:15:56.991Z"
+        "checked_at": "2026-08-30T06:36:18.815Z"
       },
       "leans": {
         "center": {
@@ -69,6 +69,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "mishtalk.com",
+          "firstSeen": "2026-08-30",
+          "lastSeen": "2026-08-30"
+        },
         {
           "domain": "fox40.com",
           "firstSeen": "2026-08-26",
@@ -345,6 +350,11 @@
     "hr-4968-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "southernillinoisnow.com",
+          "firstSeen": "2026-08-30",
+          "lastSeen": "2026-08-30"
+        },
         {
           "domain": "kfiam640.iheart.com",
           "firstSeen": "2026-08-27",
@@ -1258,6 +1268,17 @@
           "domain": "thecsrjournal.in",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-188-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "detroitnews.com",
+          "firstSeen": "2026-08-30",
+          "lastSeen": "2026-08-30"
         }
       ],
       "mostViewed": null
