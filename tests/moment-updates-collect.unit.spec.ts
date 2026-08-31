@@ -436,7 +436,13 @@ test.describe('actionToCandidate', () => {
     // The seed was hand-authored in slice S2 from this same API response. If
     // the collector cannot re-derive those ids, the very first live run would
     // duplicate every seeded event instead of deduping it.
-    const seed = read('data/moment-updates.json');
+    //
+    // FROZEN FIXTURE, not the live file. The invariant is the id recipe, and
+    // the recipe outlives the rows: RETENTION_DAYS prunes live updates at 60
+    // days, so a pin against data/moment-updates.json breaks the day its row
+    // legally ages out (it did — the sjres-185 rows on 2026-08-24, 11 days of
+    // red CI). The fixture is that file's last pre-prune state, verbatim.
+    const seed = read('tests/fixtures/moment-updates-seed.json');
     const seededVote = seed['government-funding-deadline'].updates.find((u: Update) => u.class === 'vote');
     const rebuilt = build(find(HR9770, 'Roll no. 272'))!;
     expect(rebuilt.id).toBe(seededVote.id);
