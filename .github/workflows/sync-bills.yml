@@ -574,7 +574,11 @@ jobs:
         # pushed. A missing PROD_URL repo variable FAILS this step rather than
         # skipping it (2026-08-12): the variable has been set since 07-11, so
         # the old soft skip could only ever disarm this switch silently.
-        if: steps.commit.outputs.changed == 'true'
+        # Main-ref guard, mirrored from newsdesk.yml (#229): production is
+        # built from refs/heads/main only, so on a branch validation run this
+        # poll can only run out its deadline and paint the run red for
+        # something that is not a fault. On main the switch is unchanged.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
@@ -585,7 +589,10 @@ jobs:
         # drift lands on the next open PR instead (2026-07-25 incident).
         # Free on a public repo; the ci-refs/heads/main concurrency group
         # queues rather than cancels, so runs serialize harmlessly.
-        if: steps.commit.outputs.changed == 'true'
+        # Same main-ref guard as the deploy check above (newsdesk.yml has the
+        # full rationale): a branch run pushed to that branch, so main's suite
+        # would run against a corpus this run never wrote.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run ci.yml --ref main
