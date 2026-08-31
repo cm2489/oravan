@@ -1,36 +1,36 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-30T23:26:54.226Z",
+    "fetched_at": "2026-08-31T05:26:10.095Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-30T23:26:54.226Z"
+        "checked_at": "2026-08-31T05:26:10.095Z"
       },
       "most_viewed": {
         "status": "error",
         "week": "2026-08-23",
         "week_label": null,
         "entries": 0,
-        "checked_at": "2026-08-30T23:26:54.226Z"
+        "checked_at": "2026-08-31T05:26:10.095Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-08-30",
+          "last_live": "2026-08-31",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-08-30",
+          "last_live": "2026-08-31",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-08-30",
+          "last_live": "2026-08-31",
           "dark_days": 0
         }
       }
@@ -229,17 +229,6 @@
           "domain": "ua.news",
           "firstSeen": "2026-08-27",
           "lastSeen": "2026-08-27"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-2870-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "duluthnewstribune.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
         }
       ],
       "mostViewed": null
@@ -648,17 +637,6 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hr-7529-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "abcnews.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
-        }
-      ],
-      "mostViewed": null
-    },
     "hr-7560-119": {
       "outlets7d": [
         {
@@ -999,16 +977,6 @@
           "domain": "thegeorgiavirtue.com",
           "firstSeen": "2026-08-24",
           "lastSeen": "2026-08-24"
-        },
-        {
-          "domain": "blackchronicle.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
-        },
-        {
-          "domain": "justthenews.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
         }
       ],
       "mostViewed": null
@@ -1108,16 +1076,6 @@
           "domain": "thehindu.com",
           "firstSeen": "2026-08-24",
           "lastSeen": "2026-08-24"
-        },
-        {
-          "domain": "orissapost.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
-        },
-        {
-          "domain": "pragativadi.com",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
         }
       ],
       "mostViewed": null
@@ -1231,6 +1189,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "kyivindependent.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
+        {
           "domain": "courant.com",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
@@ -1276,6 +1239,18 @@
       ],
       "mostViewed": null
     },
+    "s-455-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4581-119": {
       "outlets7d": [
         {
@@ -1283,18 +1258,6 @@
           "lean": "left",
           "firstSeen": "2026-08-26",
           "lastSeen": "2026-08-26"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "s-4645-119": {
-      "outlets7d": [
-        {
-          "domain": "mediaite.com",
-          "lean": "left",
-          "firstSeen": "2026-08-23",
-          "lastSeen": "2026-08-23"
         }
       ],
       "unratedOutlets7d": [],

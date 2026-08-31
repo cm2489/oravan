@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-08-28T18:36:39.062Z",
+    "fetched_at": "2026-08-31T05:26:06.462Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-08-28T18:36:39.062Z",
+        "checked_at": "2026-08-31T05:26:06.462Z",
         "url": "https://www.congress.gov/119/crec/2026/08/27/d27au6-1.htm",
         "published": "2026-08-27",
         "covers": "2026-08-31",
@@ -14,12 +14,12 @@
         "via": "congress.gov"
       },
       "billsthisweek": {
-        "status": "data_stale",
-        "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-08-28T18:36:39.062Z",
-        "url": "https://docs.house.gov/billsthisweek/20260824/20260824.xml",
-        "published": "2026-08-24",
-        "covers": "2026-08-24",
+        "status": "ok",
+        "detail": "19 scheduled measure(s)",
+        "checked_at": "2026-08-31T05:26:06.462Z",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-31",
+        "covers": "2026-08-31",
         "covers_label": null,
         "via": "docs.house.gov"
       }
@@ -41,6 +41,368 @@
     },
     "dropped": []
   },
-  "signals": {},
+  "signals": {
+    "hjres-1-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Proposing an amendment to the Constitution of the United States to require that the Supreme Court of the United States be composed of nine justices.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-27",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-1501-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Protecting Domestic Mining Act of 2025",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered pursuant to a rule",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-27",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "rule",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-1869-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Protecting American Industry and Labor from International Trade Crimes Act of 2025, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-4465-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To amend chapters 4, 10, and 131 of title 5, United States Code, as necessary to keep those chapters current and to correct related technical errors.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-4499-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make technical amendments to update statutory references to provisions reclassified to title 34, United States Code, and to correct related technical errors.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-4523-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make technical amendments to title 49, United States Code, as necessary to improve the Code.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-4584-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make technical amendments to update statutory references to certain provisions which were formerly classified to chapters 14 and 19 of title 25, United States Code, and to correct related technical errors.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-4795-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Protect Economic and Academic Freedom Act of 2026",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered pursuant to a rule",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-27",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "rule",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-5174-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make revisions in title 51, United States Code, as necessary to keep the title current, and to make technical amendments to improve the United States Code.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-5182-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make improvements in the enactment of title 54, United States Code, into a positive law title and to correct related technical errors., as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-5185-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make improvements in the enactment of title 41, United States Code, into a positive law title and to improve the Code.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-5210-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To make technical amendments to update statutory references to certain provisions classified to title 2, United States Code, title 50, United States Code, and title 52, United States Code, and to correct related technical errors.",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-6048-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "NDO Fairness Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-6500-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Continuing Appropriations and Extensions Act, 2027",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-26",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-8481-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Kayleigh’s Law Act of 2026, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "hr-9436-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "To amend the Consolidated Appropriations Act, 2023 to extend the time period for which certain regulation concerning the North Atlantic right whale are effective. [Northeast Lobsterman Protection Act of 2026]",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered pursuant to a rule",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-27",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "rule",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "s-307-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Prison Staff Safety Enhancement Act",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "s-32-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "LACA",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    },
+    "s-858-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Hershel ‘Woody' Williams National Medal of Honor Monument Location Act",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20260831/20260831.xml",
+        "published": "2026-08-25",
+        "covers": "2026-08-31",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-08-31T05:26:06.462Z",
+      "first_seen": "2026-08-31T05:26:06.462Z",
+      "stale": false
+    }
+  },
   "nominations": {}
 }
