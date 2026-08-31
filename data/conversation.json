@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-31T13:37:22.628Z",
+    "fetched_at": "2026-08-31T19:59:51.303Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-31T13:37:22.628Z"
+        "checked_at": "2026-08-31T19:59:51.303Z"
       },
       "most_viewed": {
-        "status": "error",
-        "week": "2026-08-23",
-        "week_label": null,
-        "entries": 0,
-        "checked_at": "2026-08-31T13:37:22.628Z"
+        "status": "ok",
+        "week": "2026-08-30",
+        "week_label": "Most-Viewed Bills - Week of August 30, 2026",
+        "entries": 9,
+        "checked_at": "2026-08-31T19:59:51.303Z"
       },
       "leans": {
         "center": {
@@ -86,10 +86,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 3,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 4,
+        "lastRank": 2,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-10118-119": {
@@ -152,6 +152,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "phillyburbs.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
+        {
           "domain": "delawareonline.com",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
@@ -163,10 +168,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 2,
-        "lastRank": 10,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 3,
+        "lastRank": 6,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-1700-119": {
@@ -204,10 +209,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 9,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 4,
+        "lastRank": 10,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-2548-119": {
@@ -260,6 +265,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "bitcoinfoundation.org",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
+        {
           "domain": "coinmarketcap.com",
           "firstSeen": "2026-08-29",
           "lastSeen": "2026-08-29"
@@ -271,10 +281,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 4,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 4,
+        "lastRank": 5,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-4244-119": {
@@ -388,10 +398,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 8,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 2,
+        "lastRank": 7,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-5316-119": {
@@ -399,9 +409,9 @@
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
-        "lastRank": 5,
-        "lastSeen": "2026-08-24",
-        "lastWeek": "2026-08-16"
+        "lastRank": 8,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-5551-119": {
@@ -485,6 +495,12 @@
     "hr-6500-119": {
       "outlets7d": [
         {
+          "domain": "usatoday.com",
+          "lean": "center",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
+        {
           "domain": "washingtonpost.com",
           "lean": "left",
           "firstSeen": "2026-08-31",
@@ -503,10 +519,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
+        "weeksOnList": 4,
         "lastRank": 1,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-6529-119": {
@@ -606,7 +622,24 @@
           "lastSeen": "2026-08-28"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "whec.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7212-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7273-119": {
@@ -624,6 +657,11 @@
     "hr-7332-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "nationalfisherman.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
         {
           "domain": "fernandinaobserver.org",
           "firstSeen": "2026-08-27",
@@ -653,7 +691,13 @@
           "lastSeen": "2026-08-28"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rochesterfirst.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7662-119": {
@@ -802,10 +846,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 7,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 4,
+        "lastRank": 9,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "hr-8809-119": {
@@ -1003,10 +1047,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 2,
-        "lastSeen": "2026-08-30",
-        "lastWeek": "2026-08-23"
+        "weeksOnList": 4,
+        "lastRank": 3,
+        "lastSeen": "2026-08-31",
+        "lastWeek": "2026-08-30"
       }
     },
     "s-2667-119": {
@@ -1265,6 +1309,18 @@
           "lean": "left",
           "firstSeen": "2026-08-26",
           "lastSeen": "2026-08-26"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4606-119": {
+      "outlets7d": [
+        {
+          "domain": "wsj.com",
+          "lean": "center",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
         }
       ],
       "unratedOutlets7d": [],
