@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-08-31T19:59:51.303Z",
+    "fetched_at": "2026-08-31T23:48:02.242Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-08-31T19:59:51.303Z"
+        "checked_at": "2026-08-31T23:48:02.242Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-08-31T19:59:51.303Z"
+        "checked_at": "2026-08-31T23:48:02.242Z"
       },
       "leans": {
         "center": {
@@ -394,6 +394,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4978-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-5269-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -573,6 +585,17 @@
       ],
       "mostViewed": null
     },
+    "hr-6688-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "theshopmag.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6771-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -610,13 +633,13 @@
     "hr-7039-119": {
       "outlets7d": [
         {
-          "domain": "axios.com",
+          "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-08-28",
-          "lastSeen": "2026-08-28"
+          "lastSeen": "2026-08-31"
         },
         {
-          "domain": "thehill.com",
+          "domain": "axios.com",
           "lean": "center",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
@@ -911,6 +934,17 @@
           "domain": "dailyherald.com",
           "firstSeen": "2026-08-30",
           "lastSeen": "2026-08-30"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9172-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thetaxadviser.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
         }
       ],
       "mostViewed": null
@@ -1232,6 +1266,12 @@
     "s-4421-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
+        {
           "domain": "csmonitor.com",
           "lean": "center",
           "firstSeen": "2026-08-26",
@@ -1239,6 +1279,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "globalbankingandfinance.com",
+          "firstSeen": "2026-08-31",
+          "lastSeen": "2026-08-31"
+        },
         {
           "domain": "kyivindependent.com",
           "firstSeen": "2026-08-31",
