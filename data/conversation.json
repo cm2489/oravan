@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-02T14:25:42.309Z",
+    "fetched_at": "2026-09-02T18:38:19.521Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-02T14:25:42.309Z"
+        "checked_at": "2026-09-02T18:38:19.521Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-02T14:25:42.309Z"
+        "checked_at": "2026-09-02T18:38:19.521Z"
       },
       "leans": {
         "center": {
@@ -360,7 +360,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-01"
+          "lastSeen": "2026-09-02"
         },
         {
           "domain": "washingtontimes.com",
@@ -466,6 +466,17 @@
         "lastWeek": "2026-08-30"
       }
     },
+    "hr-5526-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gabionline.net",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5551-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -486,6 +497,18 @@
           "lastSeen": "2026-08-30"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-5818-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-5941-119": {
@@ -509,6 +532,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-6248-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "healthcareuncovered.substack.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6500-119": {
@@ -569,6 +603,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "927thevan.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
         {
           "domain": "aljazeera.com",
           "firstSeen": "2026-09-02",
@@ -768,6 +807,17 @@
           "domain": "orlandosentinel.com",
           "firstSeen": "2026-08-29",
           "lastSeen": "2026-08-29"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6986-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "financebuzz.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
         }
       ],
       "mostViewed": null
@@ -1132,7 +1182,14 @@
       "mostViewed": null
     },
     "hr-9172-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "nationalinterest.org",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "thetaxadviser.com",
@@ -1288,6 +1345,17 @@
       ],
       "mostViewed": null
     },
+    "s-1782-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-2296-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1297,6 +1365,17 @@
         "lastSeen": "2026-09-02",
         "lastWeek": "2026-08-30"
       }
+    },
+    "s-2354-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "fiercehealthcare.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "mostViewed": null
     },
     "s-2667-119": {
       "outlets7d": [
@@ -1423,6 +1502,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "greenstate.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
         {
           "domain": "news.bgov.com",
           "firstSeen": "2026-09-01",
@@ -1617,6 +1701,18 @@
           "lastSeen": "2026-08-30"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-189-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     }
   }
