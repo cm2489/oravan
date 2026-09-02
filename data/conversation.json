@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-02T18:38:19.521Z",
+    "fetched_at": "2026-09-02T21:46:42.589Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-02T18:38:19.521Z"
+        "checked_at": "2026-09-02T21:46:42.589Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-02T18:38:19.521Z"
+        "checked_at": "2026-09-02T21:46:42.589Z"
       },
       "leans": {
         "center": {
@@ -46,6 +46,24 @@
           "lastSeen": "2026-08-27"
         }
       ],
+      "mostViewed": null
+    },
+    "hjres-1-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-1-119": {
@@ -624,6 +642,11 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "dealbreaker.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "deseret.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
@@ -680,6 +703,11 @@
         },
         {
           "domain": "wbkb11.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "whtc.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
@@ -884,6 +912,12 @@
     "hr-7212-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-02",
@@ -899,6 +933,11 @@
       "unratedOutlets7d": [
         {
           "domain": "cannabisbusinesstimes.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "cspdailynews.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
