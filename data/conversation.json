@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-02T04:29:54.512Z",
+    "fetched_at": "2026-09-02T09:32:52.931Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-02T04:29:54.512Z"
+        "checked_at": "2026-09-02T09:32:52.931Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-02T04:29:54.512Z"
+        "checked_at": "2026-09-02T09:32:52.931Z"
       },
       "leans": {
         "center": {
@@ -508,6 +508,12 @@
     "hr-6500-119": {
       "outlets7d": [
         {
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "reuters.com",
           "lean": "center",
           "firstSeen": "2026-09-02",
@@ -563,6 +569,11 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "arkansasonline.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "breakingdefense.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
@@ -583,12 +594,27 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "finance.biggo.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "indexbox.io",
           "firstSeen": "2026-09-01",
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "kfgo.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "ncan.org",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "news.lee.net",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
@@ -609,6 +635,11 @@
         },
         {
           "domain": "wbkb11.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "wncy.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
@@ -831,13 +862,13 @@
           "lastSeen": "2026-09-02"
         },
         {
-          "domain": "marijuanamoment.net",
-          "firstSeen": "2026-08-31",
-          "lastSeen": "2026-09-01"
-        },
-        {
           "domain": "sg.news.yahoo.com",
           "firstSeen": "2026-09-01",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-08-31",
           "lastSeen": "2026-09-01"
         }
       ],
