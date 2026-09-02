@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-02T09:32:52.931Z",
+    "fetched_at": "2026-09-02T14:25:42.309Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-02T09:32:52.931Z"
+        "checked_at": "2026-09-02T14:25:42.309Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-02T09:32:52.931Z"
+        "checked_at": "2026-09-02T14:25:42.309Z"
       },
       "leans": {
         "center": {
@@ -233,6 +233,12 @@
     },
     "hr-2548-119": {
       "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
@@ -867,6 +873,11 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "wdio.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "marijuanamoment.net",
           "firstSeen": "2026-08-31",
           "lastSeen": "2026-09-01"
@@ -1175,6 +1186,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9693-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-9771-119": {
       "outlets7d": [
         {
@@ -1185,6 +1208,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1096-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gabionline.net",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
       "mostViewed": null
     },
     "s-1333-119": {
@@ -1220,14 +1254,14 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "kob.com",
+          "firstSeen": "2026-08-28",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "riverreporter.com",
           "firstSeen": "2026-09-01",
           "lastSeen": "2026-09-01"
-        },
-        {
-          "domain": "kob.com",
-          "firstSeen": "2026-08-28",
-          "lastSeen": "2026-08-28"
         }
       ],
       "mostViewed": null
