@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-02T00:05:51.015Z",
+    "fetched_at": "2026-09-02T04:29:54.512Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-02T00:05:51.015Z"
+        "checked_at": "2026-09-02T04:29:54.512Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-02T00:05:51.015Z"
+        "checked_at": "2026-09-02T04:29:54.512Z"
       },
       "leans": {
         "center": {
@@ -119,6 +119,11 @@
     "hr-10183-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "lapsi.al",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
         {
           "domain": "rferl.org",
           "firstSeen": "2026-08-30",
@@ -379,7 +384,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-01"
+          "lastSeen": "2026-09-02"
         }
       ],
       "unratedOutlets7d": [],
@@ -573,6 +578,16 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "federalnewsnetwork.com",
+          "firstSeen": "2026-09-01",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "indexbox.io",
+          "firstSeen": "2026-09-01",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "ncan.org",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
@@ -588,19 +603,19 @@
           "lastSeen": "2026-09-02"
         },
         {
-          "domain": "yahoo.com",
+          "domain": "thewellnews.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
         {
-          "domain": "federalnewsnetwork.com",
-          "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-01"
+          "domain": "wbkb11.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
         },
         {
-          "domain": "indexbox.io",
-          "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-01"
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
         },
         {
           "domain": "news8000.com",
@@ -723,13 +738,25 @@
     "hr-7024-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-08-30",
           "lastSeen": "2026-08-30"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "startribune.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7039-119": {
@@ -789,7 +816,17 @@
           "lastSeen": "2026-09-02"
         },
         {
+          "domain": "hempsupporter.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
           "domain": "law360.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
+        {
+          "domain": "northernnewsnow.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
@@ -1461,6 +1498,11 @@
     "s-5025-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "mezha.net",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-02"
+        },
         {
           "domain": "eadaily.com",
           "firstSeen": "2026-09-01",
