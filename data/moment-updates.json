@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-01T18:07:45.303Z"
+    "generated_at": "2026-09-02T18:14:41.188Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1146,6 +1146,28 @@
         },
         "changed_because": [
           "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_4fe39d12",
+        "generated_at": "2026-09-02T18:14:47.753Z",
+        "as_of_day": "2026-09-02",
+        "text": {
+          "en": "S. 4784 stands at floor activity in the Senate. No action on this bill has been recorded in the last fourteen days. There is no new vote, committee action, or scheduling update to report during this period. The bill's status remains what it was at the start of this window, with the record showing no movement since then. Anyone tracking this measure should note that the current stage is unchanged, and the next update will reflect whatever the Senate record shows when floor action resumes or a vote is scheduled.",
+          "es": "El proyecto S. 4784 se encuentra en actividad en el pleno del Senado. No se ha registrado ninguna accion sobre este proyecto en los ultimos catorce dias. No hay votacion nueva, accion de comite, ni actualizacion de calendario que informar durante este periodo. El estado del proyecto sigue siendo el mismo que al inicio de este periodo, y el registro no muestra movimiento desde entonces. Quienes sigan esta medida deben notar que la etapa actual no ha cambiado, y la proxima actualizacion reflejara lo que el registro del Senado muestre cuando se reanude la actividad en el pleno o se programe una votacion."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
       }
