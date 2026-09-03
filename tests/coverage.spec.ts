@@ -130,10 +130,22 @@ test('the section states the age of what it is showing, in both languages', asyn
  */
 /* Dated on purpose: the check date rides the newest-article line, so a bill
    whose articles all lack dates renders neither (0 of 391 in the committed
-   corpus — see lib/coverage.ts's newestArticleDate note). */
-const checkedSlug = slugs.find(
+   corpus — see lib/coverage.ts's newestArticleDate note).
+
+   AND DISTINCT ON PURPOSE (2026-09-03). The two dates on that line are two
+   <time> elements, and on a day the sweep finds an article published that
+   same day they carry the same datetime — 3 of 136 checked bills did on
+   2026-09-03, H.J.Res. 1 among them, and a count of one over the whole
+   section went red on the coincidence (main, 2026-09-02/03). Prefer a bill
+   whose check date differs from its newest-article date, so the assertions
+   below prove the check date is its OWN value; fall back to a colliding one
+   only when the corpus has nothing else, which the note-scoped locator below
+   tolerates. */
+const checkedCandidates = slugs.filter(
   (s) => getCoverage(s).length > 0 && newestPublishedAt(s) !== null && coverageCheckedAt(s) !== null
 );
+const checkedSlug =
+  checkedCandidates.find((s) => coverageCheckedAt(s) !== newestPublishedAt(s)) ?? checkedCandidates[0];
 
 test('the section says when the sweep last looked, in both languages', async ({ page }) => {
   test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
@@ -150,8 +162,9 @@ test('the section says when the sweep last looked, in both languages', async ({ 
     });
     // The date is the stored check date, not the article date: the whole point
     // is that a reader can tell "the press went quiet" from "we stopped
-    // looking".
-    await expect(section(page).locator(`time[datetime="${checked}"]`)).toHaveCount(1);
+    // looking". Scoped to the note's own role="status" span, not the section:
+    // the newest-article <time> beside it can legitimately hold the same day.
+    await expect(section(page).locator(`[role="status"] time[datetime="${checked}"]`)).toHaveCount(1);
   }
 });
 
@@ -172,7 +185,12 @@ test('the check date is absent from the prerendered HTML (the KTD-2 gate)', asyn
   const start = html.indexOf('aria-labelledby="coverage-heading"');
   expect(start, 'the coverage section must be in the prerendered HTML at all').toBeGreaterThan(-1);
   const header = html.slice(start, html.indexOf('<ul', start));
-  expect(header).not.toContain(`datetime="${checked}"`);
+  // Only meaningful when the check date is not also the newest-article date —
+  // that <time> IS prerendered, by design. checkedSlug prefers a distinct pair;
+  // this guard covers the fallback, and the label assertion above still holds.
+  if (checked !== newestPublishedAt(checkedSlug!)) {
+    expect(header).not.toContain(`datetime="${checked}"`);
+  }
   // Control: the non-gated half of the same line IS prerendered, so this test
   // fails for the right reason rather than because the slice came up empty.
   expect(header).toContain(en.coverage.newestLabel);
