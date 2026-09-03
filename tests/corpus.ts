@@ -191,6 +191,23 @@ export function anyBandExceedsCapAt(at: number): boolean {
 }
 
 /**
+ * THE ANNOUNCED GATE, shared by the two record-fact helpers below
+ * (2026-09-03). The bill page resolves the chamber's OWN announcement before
+ * either record fact — `rung.tier === 't0'` → `billFloorBand`'s `announced`
+ * (app/[locale]/bills/[id]/page.tsx) — so a bill that is ALSO on this week's
+ * published schedule renders the announced panel over the pending chip or the
+ * placement band. Right page, wrong fixture: H.R. 1501 stood on a reported
+ * rule (pending, 08-31) AND on the House week-list for Aug 31, the R2c specs
+ * drove it and asserted the pending chip against an announced panel from
+ * 2026-09-02 until the House voted and it left the pending set. Same gate for
+ * placements: an aged placement the chamber then announces keeps its band by
+ * rule (`floorFactSuspended` exempts `announced`), so it must not drive "an
+ * aged placement gets no panel" either. `rungAt` is the page's own resolver,
+ * so the exclusion tracks the signal's liveness, not just its presence.
+ */
+const announcedAt = (b: CorpusBill, at: number): boolean => rungAt(b, at).tier === 't0';
+
+/**
  * Bills carrying a DATED floor-calendar placement, split by the published
  * signal window — the two sides of the bill page's green-panel gate.
  *
@@ -206,6 +223,7 @@ export function calendarPlacementSlugs(at: number): { fresh: string[]; stale: st
   for (const b of corpus) {
     if (b.status !== 'floor_vote' || !b.last_action_date) continue;
     if (floorCalendarChamber(b.last_action_text) === null) continue;
+    if (announcedAt(b, at)) continue;
     (isSignalFresh(b.last_action_date, at) ? fresh : stale).push(slugOf(b));
   }
   return { fresh: fresh.sort(), stale: stale.sort() };
@@ -233,6 +251,7 @@ export function floorPendingSlugs(at: number): { fresh: string[]; stale: string[
     if (b.status !== 'floor_vote' || !b.last_action_date) continue;
     if (floorCalendarChamber(b.last_action_text) !== null) continue;
     if (floorPendingChamber(b.last_action_text) === null) continue;
+    if (announcedAt(b, at)) continue;
     (isSignalFresh(b.last_action_date, at) ? fresh : stale).push(slugOf(b));
   }
   return { fresh: fresh.sort(), stale: stale.sort() };
