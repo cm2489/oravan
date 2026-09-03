@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-03T00:10:02.446Z",
+    "fetched_at": "2026-09-03T05:44:32.113Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-03T00:10:02.446Z"
+        "checked_at": "2026-09-03T05:44:32.113Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-03T00:10:02.446Z"
+        "checked_at": "2026-09-03T05:44:32.113Z"
       },
       "leans": {
         "center": {
@@ -540,6 +540,12 @@
     "hr-6500-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
+        {
           "domain": "newsmax.com",
           "lean": "right",
           "firstSeen": "2026-09-02",
@@ -597,6 +603,11 @@
       "unratedOutlets7d": [
         {
           "domain": "businesstimes.com.sg",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
+        {
+          "domain": "fox59.com",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
         },
@@ -712,11 +723,6 @@
         },
         {
           "domain": "san.com",
-          "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-01"
-        },
-        {
-          "domain": "srnnews.com",
           "firstSeen": "2026-09-01",
           "lastSeen": "2026-09-01"
         }
@@ -879,6 +885,11 @@
         {
           "domain": "cspdailynews.com",
           "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-03"
+        },
+        {
+          "domain": "fox21online.com",
+          "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
         },
         {
@@ -1454,6 +1465,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "mjbizdaily.com",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
         {
           "domain": "greenstate.com",
           "firstSeen": "2026-09-02",
