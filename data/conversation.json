@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-03T11:08:23.704Z",
+    "fetched_at": "2026-09-03T16:22:07.029Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-09-03T11:08:23.704Z"
+        "feeds_silent": 2,
+        "checked_at": "2026-09-03T16:22:07.029Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-03T11:08:23.704Z"
+        "checked_at": "2026-09-03T16:22:07.029Z"
       },
       "leans": {
         "center": {
@@ -81,6 +81,18 @@
         "lastSeen": "2026-09-03",
         "lastWeek": "2026-08-30"
       }
+    },
+    "hr-10052-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "hr-10118-119": {
       "outlets7d": [
@@ -348,10 +360,28 @@
     "hr-4405-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-01",
-          "lastSeen": "2026-09-02"
+          "lastSeen": "2026-09-03"
         },
         {
           "domain": "washingtontimes.com",
