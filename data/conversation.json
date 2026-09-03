@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-03T05:44:32.113Z",
+    "fetched_at": "2026-09-03T11:08:23.704Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-03T05:44:32.113Z"
+        "checked_at": "2026-09-03T11:08:23.704Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-03T05:44:32.113Z"
+        "checked_at": "2026-09-03T11:08:23.704Z"
       },
       "leans": {
         "center": {
@@ -404,7 +404,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-08-25",
-          "lastSeen": "2026-08-30"
+          "lastSeen": "2026-09-03"
         }
       ],
       "unratedOutlets7d": [],
@@ -436,6 +436,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-511-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "insideradio.com",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5269-119": {
@@ -537,6 +548,17 @@
       ],
       "mostViewed": null
     },
+    "hr-6251-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "straitstimes.com",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6500-119": {
       "outlets7d": [
         {
@@ -607,6 +629,11 @@
           "lastSeen": "2026-09-03"
         },
         {
+          "domain": "dealbreaker.com",
+          "firstSeen": "2026-09-02",
+          "lastSeen": "2026-09-03"
+        },
+        {
           "domain": "fox59.com",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
@@ -628,11 +655,6 @@
         },
         {
           "domain": "breakingdefense.com",
-          "firstSeen": "2026-09-02",
-          "lastSeen": "2026-09-02"
-        },
-        {
-          "domain": "dealbreaker.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         },
@@ -1071,6 +1093,17 @@
       ],
       "mostViewed": null
     },
+    "hr-8429-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ewg.org",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8721-119": {
       "outlets7d": [
         {
@@ -1215,6 +1248,17 @@
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9497-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-03"
         }
       ],
       "mostViewed": null
