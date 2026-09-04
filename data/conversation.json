@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-04T19:31:30.414Z",
+    "fetched_at": "2026-09-04T22:20:07.640Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-04T19:31:30.414Z"
+        "checked_at": "2026-09-04T22:20:07.640Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-04T19:31:30.414Z"
+        "checked_at": "2026-09-04T22:20:07.640Z"
       },
       "leans": {
         "center": {
@@ -69,6 +69,11 @@
     "hjres-84-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "dailytimes.com.pk",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "nst.com.my",
           "firstSeen": "2026-09-04",
@@ -419,6 +424,12 @@
     },
     "hr-4405-119": {
       "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
@@ -773,6 +784,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "kxan.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
           "domain": "thenews.com.pk",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -891,11 +907,6 @@
           "domain": "whtc.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
-        },
-        {
-          "domain": "wncy.com",
-          "firstSeen": "2026-09-02",
-          "lastSeen": "2026-09-02"
         }
       ],
       "mostViewed": {
@@ -1008,6 +1019,17 @@
       ],
       "mostViewed": null
     },
+    "hr-6856-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gazetaexpress.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6986-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1085,6 +1107,12 @@
     },
     "hr-7212-119": {
       "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
