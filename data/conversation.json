@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-04T16:17:41.989Z",
+    "fetched_at": "2026-09-04T19:31:30.414Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-04T16:17:41.989Z"
+        "checked_at": "2026-09-04T19:31:30.414Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-04T16:17:41.989Z"
+        "checked_at": "2026-09-04T19:31:30.414Z"
       },
       "leans": {
         "center": {
@@ -307,6 +307,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "gazetaexpress.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
+          "domain": "oilprice.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
           "domain": "unn.ua",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -351,6 +361,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-3459-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "shelterforce.org",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        }
+      ],
       "mostViewed": null
     },
     "hr-3633-119": {
@@ -460,6 +481,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "middleeasteye.net",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "aljazeera.com",
           "firstSeen": "2026-09-03",
@@ -923,6 +949,11 @@
         },
         {
           "domain": "kelo.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
+          "domain": "kfgo.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
         },
@@ -1391,6 +1422,18 @@
           "lastSeen": "2026-08-29"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-9237-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-9335-119": {
