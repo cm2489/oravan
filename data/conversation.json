@@ -1,53 +1,42 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-03T22:32:43.244Z",
+    "fetched_at": "2026-09-04T01:01:55.000Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-03T22:32:43.244Z"
+        "checked_at": "2026-09-04T01:01:55.000Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-03T22:32:43.244Z"
+        "checked_at": "2026-09-04T01:01:55.000Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-09-03",
+          "last_live": "2026-09-04",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-09-03",
+          "last_live": "2026-09-04",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-09-03",
+          "last_live": "2026-09-04",
           "dark_days": 0
         }
       }
     }
   },
   "slugs": {
-    "hconres-113-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "mb.com.ph",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        }
-      ],
-      "mostViewed": null
-    },
     "hjres-1-119": {
       "outlets7d": [
         {
@@ -89,7 +78,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 2,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -100,18 +89,6 @@
           "lean": "center",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-10118-119": {
-      "outlets7d": [
-        {
-          "domain": "npr.org",
-          "lean": "center",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
         }
       ],
       "unratedOutlets7d": [],
@@ -181,14 +158,14 @@
     "hr-1229-119": {
       "outlets7d": [
         {
-          "domain": "reason.com",
-          "lean": "right",
-          "firstSeen": "2026-09-03",
-          "lastSeen": "2026-09-03"
-        },
-        {
           "domain": "reuters.com",
           "lean": "center",
+          "firstSeen": "2026-09-03",
+          "lastSeen": "2026-09-04"
+        },
+        {
+          "domain": "reason.com",
+          "lean": "right",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
         }
@@ -218,7 +195,7 @@
       "mostViewed": {
         "weeksOnList": 3,
         "lastRank": 6,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -287,7 +264,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 10,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -315,17 +292,6 @@
       ],
       "mostViewed": null
     },
-    "hr-2756-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "ua.news",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        }
-      ],
-      "mostViewed": null
-    },
     "hr-2985-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -333,17 +299,6 @@
           "domain": "govciomedia.com",
           "firstSeen": "2026-09-01",
           "lastSeen": "2026-09-01"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-3230-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "acainternational.org",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
         }
       ],
       "mostViewed": null
@@ -388,7 +343,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 5,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -462,18 +417,6 @@
       ],
       "mostViewed": null
     },
-    "hr-4611-119": {
-      "outlets7d": [
-        {
-          "domain": "dailycaller.com",
-          "lean": "right",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
     "hr-4795-119": {
       "outlets7d": [
         {
@@ -543,11 +486,6 @@
           "domain": "southernillinoisnow.com",
           "firstSeen": "2026-08-30",
           "lastSeen": "2026-08-30"
-        },
-        {
-          "domain": "kfiam640.iheart.com",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
         }
       ],
       "mostViewed": null
@@ -581,7 +519,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 7,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -591,7 +529,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -643,6 +581,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "india.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
           "domain": "millenniumpost.in",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
@@ -671,18 +614,6 @@
           "lastSeen": "2026-08-28"
         }
       ],
-      "mostViewed": null
-    },
-    "hr-6092-119": {
-      "outlets7d": [
-        {
-          "domain": "dailykos.com",
-          "lean": "left",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        }
-      ],
-      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-6248-119": {
@@ -921,7 +852,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 1,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -938,12 +869,6 @@
           "lean": "right",
           "firstSeen": "2026-08-30",
           "lastSeen": "2026-08-30"
-        },
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
         }
       ],
       "unratedOutlets7d": [],
@@ -1161,11 +1086,17 @@
           "domain": "nationalfisherman.com",
           "firstSeen": "2026-08-31",
           "lastSeen": "2026-08-31"
-        },
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7501-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
         {
-          "domain": "fernandinaobserver.org",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
         }
       ],
       "mostViewed": null
@@ -1307,7 +1238,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 9,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -1358,14 +1289,7 @@
       "mostViewed": null
     },
     "hr-9089-119": {
-      "outlets7d": [
-        {
-          "domain": "washingtonexaminer.com",
-          "lean": "right",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        }
-      ],
+      "outlets7d": [],
       "unratedOutlets7d": [
         {
           "domain": "dailyherald.com",
@@ -1587,7 +1511,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 3,
-        "lastSeen": "2026-09-03",
+        "lastSeen": "2026-09-04",
         "lastWeek": "2026-08-30"
       }
     },
@@ -1770,21 +1694,6 @@
           "domain": "courant.com",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-08-28"
-        },
-        {
-          "domain": "bostonherald.com",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        },
-        {
-          "domain": "cato.org",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
-        },
-        {
-          "domain": "wsbradio.com",
-          "firstSeen": "2026-08-27",
-          "lastSeen": "2026-08-27"
         }
       ],
       "mostViewed": null
