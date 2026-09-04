@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-04T11:16:42.987Z",
+    "fetched_at": "2026-09-04T16:17:41.989Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-04T11:16:42.987Z"
+        "checked_at": "2026-09-04T16:17:41.989Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-04T11:16:42.987Z"
+        "checked_at": "2026-09-04T16:17:41.989Z"
       },
       "leans": {
         "center": {
@@ -181,7 +181,13 @@
           "lastSeen": "2026-09-03"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hirunews.lk",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        }
+      ],
       "mostViewed": null
     },
     "hr-139-119": {
@@ -746,6 +752,11 @@
           "lastSeen": "2026-09-04"
         },
         {
+          "domain": "wate.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
           "domain": "wgno.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -859,11 +870,6 @@
           "domain": "wncy.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
-        },
-        {
-          "domain": "yahoo.com",
-          "firstSeen": "2026-09-02",
-          "lastSeen": "2026-09-02"
         }
       ],
       "mostViewed": {
@@ -898,14 +904,30 @@
           "lastSeen": "2026-08-30"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6687-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "eletric-vehicles.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
           "domain": "kelo.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
+        {
+          "domain": "theautowire.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
         },
@@ -929,6 +951,17 @@
           "domain": "theshopmag.com",
           "firstSeen": "2026-08-31",
           "lastSeen": "2026-08-31"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6719-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sofx.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
         }
       ],
       "mostViewed": null
@@ -1676,6 +1709,12 @@
     },
     "s-4315-119": {
       "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
