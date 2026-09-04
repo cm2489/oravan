@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-04T05:53:04.346Z",
+    "fetched_at": "2026-09-04T11:16:42.987Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-04T05:53:04.346Z"
+        "checked_at": "2026-09-04T11:16:42.987Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-04T05:53:04.346Z"
+        "checked_at": "2026-09-04T11:16:42.987Z"
       },
       "leans": {
         "center": {
@@ -187,6 +187,11 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "al.com",
+          "firstSeen": "2026-09-04",
+          "lastSeen": "2026-09-04"
+        },
         {
           "domain": "cleveland.com",
           "firstSeen": "2026-09-03",
