@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-05T19:00:48.520Z",
+    "fetched_at": "2026-09-05T21:10:31.077Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-05T19:00:48.520Z"
+        "checked_at": "2026-09-05T21:10:31.077Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-05T19:00:48.520Z"
+        "checked_at": "2026-09-05T21:10:31.077Z"
       },
       "leans": {
         "center": {
@@ -452,6 +452,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
+        {
           "domain": "thewellnews.com",
           "firstSeen": "2026-09-03",
           "lastSeen": "2026-09-03"
@@ -677,6 +682,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-6170-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "dallasnews.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6248-119": {
@@ -908,6 +924,17 @@
         "lastSeen": "2026-08-17",
         "lastWeek": "2026-08-09"
       }
+    },
+    "hr-6502-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "en.bloomingbit.io",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-6509-119": {
       "outlets7d": [],
@@ -1649,6 +1676,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "kcrg.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
+        {
           "domain": "kob.com",
           "firstSeen": "2026-08-28",
           "lastSeen": "2026-09-02"
@@ -1736,6 +1768,18 @@
           "lastSeen": "2026-09-05"
         }
       ],
+      "mostViewed": null
+    },
+    "s-2667-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-278-119": {
