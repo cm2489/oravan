@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-05T05:41:23.822Z",
+    "fetched_at": "2026-09-05T10:30:10.499Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-05T05:41:23.822Z"
+        "checked_at": "2026-09-05T10:30:10.499Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-05T05:41:23.822Z"
+        "checked_at": "2026-09-05T10:30:10.499Z"
       },
       "leans": {
         "center": {
@@ -471,6 +471,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "newsgram.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
+        {
           "domain": "middleeasteye.net",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -530,6 +535,11 @@
     "hr-4968-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "en.as.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
         {
           "domain": "southernillinoisnow.com",
           "firstSeen": "2026-08-30",
@@ -751,6 +761,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "azfreenews.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
+        {
           "domain": "kxan.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -869,11 +884,6 @@
           "domain": "wbkb11.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
-        },
-        {
-          "domain": "whtc.com",
-          "firstSeen": "2026-09-02",
-          "lastSeen": "2026-09-02"
         }
       ],
       "mostViewed": {
@@ -909,6 +919,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "dailymemphian.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
         {
           "domain": "rollcall.com",
           "firstSeen": "2026-09-04",
@@ -982,6 +997,17 @@
           "domain": "orlandosentinel.com",
           "firstSeen": "2026-08-29",
           "lastSeen": "2026-08-29"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6825-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "iheart.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
         }
       ],
       "mostViewed": null
@@ -1238,9 +1264,25 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "m.dailyhunt.in",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
+        {
           "domain": "thesouthfirst.com",
           "firstSeen": "2026-08-30",
           "lastSeen": "2026-08-30"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7797-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "startupfortune.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
         }
       ],
       "mostViewed": null
@@ -1624,6 +1666,18 @@
       ],
       "mostViewed": null
     },
+    "s-2576-119": {
+      "outlets7d": [
+        {
+          "domain": "thefederalist.com",
+          "lean": "right",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-2578-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1858,6 +1912,11 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "yardbarker.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
         {
           "domain": "amac.us",
           "firstSeen": "2026-08-31",
