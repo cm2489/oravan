@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-05T13:51:23.644Z",
+    "fetched_at": "2026-09-05T16:48:08.876Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-05T13:51:23.644Z"
+        "checked_at": "2026-09-05T16:48:08.876Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-05T13:51:23.644Z"
+        "checked_at": "2026-09-05T16:48:08.876Z"
       },
       "leans": {
         "center": {
@@ -522,7 +522,13 @@
           "lastSeen": "2026-09-02"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hollywoodreporter.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        }
+      ],
       "mostViewed": null
     },
     "hr-4911-119": {
@@ -1917,6 +1923,11 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "awfulannouncing.com",
+          "firstSeen": "2026-09-05",
+          "lastSeen": "2026-09-05"
+        },
         {
           "domain": "yardbarker.com",
           "firstSeen": "2026-09-05",
