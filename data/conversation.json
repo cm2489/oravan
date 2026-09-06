@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-06T13:39:07.288Z",
+    "fetched_at": "2026-09-06T16:58:57.551Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-06T13:39:07.288Z"
+        "checked_at": "2026-09-06T16:58:57.551Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-08-30",
         "week_label": "Most-Viewed Bills - Week of August 30, 2026",
         "entries": 9,
-        "checked_at": "2026-09-06T13:39:07.288Z"
+        "checked_at": "2026-09-06T16:58:57.551Z"
       },
       "leans": {
         "center": {
@@ -594,6 +594,18 @@
         "lastWeek": "2026-08-30"
       }
     },
+    "hr-5408-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-06",
+          "lastSeen": "2026-09-06"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-5486-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -764,6 +776,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "vannuysnewspress.com",
+          "firstSeen": "2026-09-06",
+          "lastSeen": "2026-09-06"
+        },
+        {
           "domain": "azfreenews.com",
           "firstSeen": "2026-09-05",
           "lastSeen": "2026-09-05"
@@ -880,11 +897,6 @@
         },
         {
           "domain": "thewellnews.com",
-          "firstSeen": "2026-09-02",
-          "lastSeen": "2026-09-02"
-        },
-        {
-          "domain": "wbkb11.com",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-02"
         }
