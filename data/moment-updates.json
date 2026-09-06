@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-02T18:14:41.188Z"
+    "generated_at": "2026-09-06T17:14:43.102Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1298,6 +1298,28 @@
         },
         "changed_because": [
           "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_aa7a97c4",
+        "generated_at": "2026-09-06T17:14:50.335Z",
+        "as_of_day": "2026-09-06",
+        "text": {
+          "en": "H.R. 3633 stands at floor activity. No action on this bill has been recorded in the last 14 days, so the measure remains where it was, with no new votes, motions, or scheduling changes to report. There is no record of committee action, amendments, or a roll call in this window. Anyone tracking this bill should know the status has not changed recently, and no additional facts are available beyond what is stated here. When the record adds new developments, they will be reflected in future updates. For now, the bill's position is unchanged from its last known standing, without further detail on timing or next steps.",
+          "es": "El proyecto H.R. 3633 se encuentra en actividad en el pleno. No se ha registrado ninguna acción sobre este proyecto en los últimos 14 días, por lo que la medida permanece donde estaba, sin nuevas votaciones, mociones ni cambios de calendario que informar. No hay registro de acción en comité, enmiendas ni votación nominal en este periodo. Quien siga este proyecto debe saber que el estado no ha cambiado recientemente, y no hay datos adicionales disponibles más allá de lo aquí indicado. Cuando el registro incorpore novedades, se reflejarán en futuras actualizaciones. Por ahora, la posición del proyecto sigue igual a la última conocida, sin más detalles sobre tiempos o próximos pasos."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "reanchor:9d"
         ],
         "model": "claude-sonnet-5"
       }
