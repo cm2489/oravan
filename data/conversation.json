@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-07T16:25:42.536Z",
+    "fetched_at": "2026-09-07T20:32:52.003Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-07T16:25:42.536Z"
+        "checked_at": "2026-09-07T20:32:52.003Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-07T16:25:42.536Z"
+        "checked_at": "2026-09-07T20:32:52.003Z"
       },
       "leans": {
         "center": {
@@ -348,6 +348,11 @@
         },
         {
           "domain": "coingabbar.com",
+          "firstSeen": "2026-09-07",
+          "lastSeen": "2026-09-07"
+        },
+        {
+          "domain": "tradingview.com",
           "firstSeen": "2026-09-07",
           "lastSeen": "2026-09-07"
         },
@@ -1621,6 +1626,17 @@
       ],
       "mostViewed": null
     },
+    "s-1763-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wwnytv.com",
+          "firstSeen": "2026-09-07",
+          "lastSeen": "2026-09-07"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1782-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1709,6 +1725,17 @@
         "lastSeen": "2026-08-30",
         "lastWeek": "2026-08-23"
       }
+    },
+    "s-3065-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ariananews.co",
+          "firstSeen": "2026-09-07",
+          "lastSeen": "2026-09-07"
+        }
+      ],
+      "mostViewed": null
     },
     "s-307-119": {
       "outlets7d": [],
