@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-07T18:57:26.706Z"
+    "generated_at": "2026-09-08T18:09:22.238Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -596,6 +596,35 @@
         "text": {
           "en": "Where it stands: two Senate measures, S.J.Res. 185 and S.J.Res. 172, remain at floor activity, meaning each awaits or is undergoing action on the Senate floor. In the House, H. Con. Res. 38 stays in committee, and H. Con. Res. 89 has passed one chamber. No activity was recorded on any of these measures in the last 14 days. The record shows no new votes, no new tallies, and no new committee actions during this period. Each measure remains at the status listed above, unchanged from the prior period, with no additional record to report at this time.",
           "es": "Dónde está: dos medidas del Senado, S.J.Res. 185 y S.J.Res. 172, permanecen en actividad en el pleno, lo que significa que cada una espera o se encuentra en proceso de acción en el pleno del Senado. En la Cámara, H. Con. Res. 38 sigue en comité, y H. Con. Res. 89 ha sido aprobada por una cámara. No se registró actividad en ninguna de estas medidas en los últimos 14 días. El registro no muestra nuevas votaciones, nuevos conteos ni nuevas acciones de comité durante este período. Cada medida permanece en el estatus indicado arriba, sin cambios respecto al período anterior."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_1991faa8",
+        "generated_at": "2026-09-08T18:09:30.208Z",
+        "as_of_day": "2026-09-08",
+        "text": {
+          "en": "Where it stands: two Senate joint resolutions, S.J.Res. 185 and S.J.Res. 172, sit at floor activity, the live stage where each awaits further floor action. No votes or scheduling notes have been recorded on either in the last fourteen days. In the House, H. Con. Res. 38 remains in committee, unchanged in that status through this period. H. Con. Res. 89 has passed one chamber, and no further action on it has been logged in the last fourteen days. Nothing has moved on any of these four measures in this window; each stands exactly where it stood two weeks ago.",
+          "es": "Cómo están las cosas: dos resoluciones conjuntas del Senado, S.J.Res. 185 y S.J.Res. 172, se encuentran en actividad en el pleno, la etapa vigente en la que cada una espera nueva acción en el pleno. No se ha registrado ninguna votación ni programación sobre ninguna de las dos en los últimos catorce días. En la Cámara de Representantes, H. Con. Res. 38 permanece en comité, sin cambios en ese estatus durante este período. H. Con. Res. 89 fue aprobado por una cámara, y no se ha registrado ninguna acción adicional sobre esta medida en los últimos catorce días. Nada se ha movido en ninguna de estas cuatro medidas en este período; cada una permanece exactamente donde estaba hace dos semanas."
         },
         "grounded_in": {
           "vehicle_statuses": {
