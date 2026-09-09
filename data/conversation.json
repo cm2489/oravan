@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-09T00:09:32.535Z",
+    "fetched_at": "2026-09-09T05:56:49.582Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-09T00:09:32.535Z"
+        "checked_at": "2026-09-09T05:56:49.582Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-09T00:09:32.535Z"
+        "checked_at": "2026-09-09T05:56:49.582Z"
       },
       "leans": {
         "center": {
@@ -359,6 +359,11 @@
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "crypto.news",
+          "firstSeen": "2026-09-09",
+          "lastSeen": "2026-09-09"
+        },
         {
           "domain": "bitcoinfoundation.org",
           "firstSeen": "2026-08-31",
@@ -1492,7 +1497,7 @@
         {
           "domain": "rollingout.com",
           "firstSeen": "2026-09-08",
-          "lastSeen": "2026-09-08"
+          "lastSeen": "2026-09-09"
         },
         {
           "domain": "mb.com.ph",
@@ -1739,6 +1744,17 @@
           "domain": "techtimes.com",
           "firstSeen": "2026-09-05",
           "lastSeen": "2026-09-05"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4626-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "myplainview.com",
+          "firstSeen": "2026-09-09",
+          "lastSeen": "2026-09-09"
         }
       ],
       "mostViewed": null
