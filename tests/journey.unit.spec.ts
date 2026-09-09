@@ -1195,11 +1195,18 @@ test.describe('selectFloorVoteFeature floor gate', () => {
 
   /*
    * THE LIVE-CORPUS SWEEP. Whatever today's data elects has to pass one of
-   * the two gates AND be the newest eligible fact in the corpus — the second
-   * half is what pins the ranking change against real data rather than
-   * fixtures.
+   * the two gates AND be the loudest eligible fact in the corpus — rung
+   * first, then date, which is the selector's own order since 2026-08-12
+   * (a pending motion beats a newer placement: a chamber acting this week
+   * outranks a queue position). Until 2026-09-03 this pinned "newest date
+   * wins" across BOTH kinds — the pre-ladder order — and it held only while
+   * the corpus never carried a fresh pending motion beside a fresher
+   * placement. The first week Congress was back it did: H.R. 1501 (rule
+   * reported, 08-31) over H.R. 8141 (placed on the Union Calendar, 09-01),
+   * and the selector was right. The date half now runs inside the winner's
+   * own rung, and a louder rung anywhere in the pool is the failure.
    */
-  test('whatever the live corpus elects passes a gate and carries the newest eligible date', () => {
+  test('whatever the live corpus elects passes a gate and is the loudest, then newest, eligible fact', () => {
     const pick = selectFloorVoteFeature(corpus as ReadonlyArray<CorpusBill & { status: BillStatus }>);
     if (pick === null) return;
     const winner = pick.bill;
@@ -1209,12 +1216,23 @@ test.describe('selectFloorVoteFeature floor gate', () => {
     expect(pick.kind).toBe(calendar ? 'calendar' : 'pending');
     expect(pick.chamber).toBe(calendar ?? pending);
 
+    // The selector's own kind order for the two record facts (its KIND_RANK,
+    // minus `announced`, which needs a resolver this sweep does not pass).
+    const RUNG = { pending: 0, calendar: 1 } as const;
     for (const b of floorVote) {
-      const eligible =
-        isSignalFresh(b.last_action_date) &&
-        (floorCalendarChamber(b.last_action_text) !== null ||
-          floorPendingChamber(b.last_action_text) !== null);
-      if (!eligible) continue;
+      if (!isSignalFresh(b.last_action_date)) continue;
+      // Pending first, as the selector reads it.
+      const bKind = floorPendingChamber(b.last_action_text)
+        ? 'pending'
+        : floorCalendarChamber(b.last_action_text)
+          ? 'calendar'
+          : null;
+      if (bKind === null) continue;
+      expect(
+        RUNG[bKind] >= RUNG[pick.kind as keyof typeof RUNG],
+        `${slugOf(b)} (${bKind}) outranks the elected ${slugOf(winner)} (${pick.kind})`
+      ).toBe(true);
+      if (bKind !== pick.kind) continue;
       // ISO dates, so lexical order IS chronological order.
       expect(
         (winner.last_action_date ?? '') >= (b.last_action_date ?? ''),
