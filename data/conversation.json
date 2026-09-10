@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-10T19:37:44.949Z",
+    "fetched_at": "2026-09-10T22:31:40.605Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-10T19:37:44.949Z"
+        "checked_at": "2026-09-10T22:31:40.605Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-10T19:37:44.949Z"
+        "checked_at": "2026-09-10T22:31:40.605Z"
       },
       "leans": {
         "center": {
@@ -55,6 +55,18 @@
           "lean": "left",
           "firstSeen": "2026-09-02",
           "lastSeen": "2026-09-03"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hjres-120-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
         }
       ],
       "unratedOutlets7d": [],
@@ -821,7 +833,14 @@
       }
     },
     "hr-6529-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "cleveland.com",
@@ -916,6 +935,137 @@
           "domain": "gazetaexpress.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7008-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "14news.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "25newsnow.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "atlantanewsfirst.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "fox8live.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "hawaiinewsnow.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kait8.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kalb.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kctv5.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "keyc.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kmvt.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kold.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kotatv.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "kwch.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "ky3.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "uppermichiganssource.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "valleynewslive.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "walb.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wandtv.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wbko.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wbrc.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wbtv.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wdbj7.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wnem.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wsaw.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        },
+        {
+          "domain": "wsmv.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
         }
       ],
       "mostViewed": null
@@ -1658,6 +1808,18 @@
           "lastSeen": "2026-09-03"
         }
       ],
+      "mostViewed": null
+    },
+    "s-858-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-141-119": {
