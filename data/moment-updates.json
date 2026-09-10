@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-08T18:09:22.238Z"
+    "generated_at": "2026-09-10T17:54:38.462Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -795,6 +795,28 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_37c412b3",
+        "generated_at": "2026-09-10T17:54:45.423Z",
+        "as_of_day": "2026-09-10",
+        "text": {
+          "en": "The most current fact: S. 3172 was placed on the floor calendar, and the official record shows no floor action on it since. Over the last 14 days, nothing was recorded in the official record for this measure. The bill remains where it stood before this window, sitting on the calendar without a scheduled or completed floor vote noted in the record. No new committee action, amendment, or roll call appears for this period. Anyone tracking this measure will find its status unchanged from the prior update, with the calendar placement as the last official marker on file.",
+          "es": "El hecho más actual: S. 3172 se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces. En los últimos 14 días, no se registró nada en el expediente oficial sobre esta medida. El proyecto de ley permanece donde estaba antes de este período, en el calendario, sin ninguna votación programada o completada que conste en el registro. No aparece ninguna acción nueva de comité, enmienda ni votación nominal durante este tiempo. Quien siga esta medida encontrará su estado sin cambios respecto a la actualización anterior, con la inclusión en el calendario como el último marcador oficial disponible."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:11d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1230,6 +1252,28 @@
         "text": {
           "en": "S. 4784 stands at floor activity in the Senate. No action on this bill has been recorded in the last fourteen days. There is no new vote, committee action, or scheduling update to report during this period. The bill's status remains what it was at the start of this window, with the record showing no movement since then. Anyone tracking this measure should note that the current stage is unchanged, and the next update will reflect whatever the Senate record shows when floor action resumes or a vote is scheduled.",
           "es": "El proyecto S. 4784 se encuentra en actividad en el pleno del Senado. No se ha registrado ninguna accion sobre este proyecto en los ultimos catorce dias. No hay votacion nueva, accion de comite, ni actualizacion de calendario que informar durante este periodo. El estado del proyecto sigue siendo el mismo que al inicio de este periodo, y el registro no muestra movimiento desde entonces. Quienes sigan esta medida deben notar que la etapa actual no ha cambiado, y la proxima actualizacion reflejara lo que el registro del Senado muestre cuando se reanude la actividad en el pleno o se programe una votacion."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_070f50f1",
+        "generated_at": "2026-09-10T17:54:50.922Z",
+        "as_of_day": "2026-09-10",
+        "text": {
+          "en": "S. 4784 stands at floor activity in the Senate. No action on this bill has been recorded in the last 14 days. The bill's status remains where it was, with no new votes, amendments, or scheduling entries logged during this period. There is nothing further in the record to report on its movement through the chamber at this time. Readers tracking this measure will see the status updated here once new floor action is entered into the record. For now, the bill sits at the same point it has occupied throughout the most recent two weeks, without additional recorded developments.",
+          "es": "El proyecto S. 4784 se encuentra en actividad en el pleno del Senado. No se ha registrado ninguna acción sobre este proyecto en los últimos 14 dias. Su estado se mantiene igual, sin nuevas votaciones, enmiendas ni programaciones registradas durante este periodo. No hay mas informacion en el registro sobre su avance en la camara por el momento. Los lectores que sigan esta medida veran el estado actualizado aqui una vez que se incorpore al registro una nueva accion en el pleno. Por ahora, el proyecto permanece en el mismo punto que ha ocupado durante las ultimas dos semanas, sin desarrollos adicionales registrados."
         },
         "grounded_in": {
           "vehicle_statuses": {
