@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-10T01:01:30.601Z",
+    "fetched_at": "2026-09-10T11:12:02.604Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-10T01:01:30.601Z"
+        "checked_at": "2026-09-10T11:12:02.604Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-10T01:01:30.601Z"
+        "checked_at": "2026-09-10T11:12:02.604Z"
       },
       "leans": {
         "center": {
@@ -135,6 +135,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-10325-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "benzinga.com",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-10"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1229-119": {
