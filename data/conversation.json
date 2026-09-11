@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-11T19:38:52.273Z",
+    "fetched_at": "2026-09-11T22:31:26.754Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-11T19:38:52.273Z"
+        "checked_at": "2026-09-11T22:31:26.754Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-11T19:38:52.273Z"
+        "checked_at": "2026-09-11T22:31:26.754Z"
       },
       "leans": {
         "center": {
@@ -227,6 +227,17 @@
       ],
       "mostViewed": null
     },
+    "hr-2130-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-22-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -255,6 +266,16 @@
       "unratedOutlets7d": [
         {
           "domain": "justthenews.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "rferl.org",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "thetimes-tribune.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
@@ -658,6 +679,11 @@
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "whas11.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "cleveland.com",
           "firstSeen": "2026-09-08",
           "lastSeen": "2026-09-08"
@@ -880,6 +906,17 @@
       ],
       "mostViewed": null
     },
+    "hr-7187-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7212-119": {
       "outlets7d": [
         {
@@ -1052,6 +1089,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8475-119": {
+      "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8720-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1076,6 +1125,11 @@
     "hr-8883-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "scvnews.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
         {
           "domain": "americanexperiment.org",
           "firstSeen": "2026-09-05",
@@ -1560,6 +1614,11 @@
       "unratedOutlets7d": [
         {
           "domain": "censor.net",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "en.interfax.com.ua",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
