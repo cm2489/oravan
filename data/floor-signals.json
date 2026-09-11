@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-09T16:34:17.766Z",
+    "fetched_at": "2026-09-11T11:12:41.586Z",
     "sources": {
       "daily-digest": {
-        "status": "quiet",
-        "detail": "Senate program: pro forma session",
-        "checked_at": "2026-09-09T16:34:17.766Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/08/d08se6-1.htm",
-        "published": "2026-09-08",
-        "covers": "2026-09-10",
-        "covers_label": "3 p.m., Thursday, September 10",
+        "status": "ok",
+        "detail": "1 announced measure(s)/nomination(s)",
+        "checked_at": "2026-09-11T11:12:41.586Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/10/d10se6-1.htm",
+        "published": "2026-09-10",
+        "covers": "2026-09-14",
+        "covers_label": "3 p.m., Monday, September 14",
         "via": "congress.gov"
       },
       "billsthisweek": {
-        "status": "quiet",
+        "status": "data_stale",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-09-09T16:34:17.766Z",
+        "checked_at": "2026-09-11T11:12:41.586Z",
         "url": "https://docs.house.gov/billsthisweek/20260907/20260907.xml",
         "published": "2026-09-07",
         "covers": "2026-09-07",
@@ -25,22 +25,41 @@
       }
     },
     "in_session": {
-      "senate": "out_of_session",
-      "house": "out_of_session",
+      "senate": "in_session",
+      "house": "in_session",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-09-10",
-        "label": "3 p.m., Thursday, September 10"
+        "date": "2026-09-14",
+        "label": "3 p.m., Monday, September 14"
       },
       "house": {
-        "date": "2026-09-10",
-        "label": "3:30 p.m., Thursday, September 10"
+        "date": "2026-09-14",
+        "label": "12 noon, Monday, September 14"
       }
     },
     "dropped": []
   },
   "signals": {},
-  "nominations": {}
+  "nominations": {
+    "PN1093-3": {
+      "tier0": {
+        "source": "daily-digest",
+        "chamber": "senate",
+        "quote": "Following which, Senate will vote on the motion to invoke cloture on the nomination of Matthew R. Byrne, of Ohio, to be United States District Judge for the Southern District of Ohio, at approximately 5:30 p.m.",
+        "quote_lang": "en",
+        "quote_kind": "digest_program_sentence",
+        "url": "https://www.congress.gov/119/crec/2026/09/10/d10se6-1.htm",
+        "published": "2026-09-10",
+        "covers": "2026-09-14",
+        "covers_label": "3 p.m., Monday, September 14",
+        "track": "unspecified",
+        "certainty": "scheduled_vote"
+      },
+      "fetched_at": "2026-09-11T11:12:41.586Z",
+      "first_seen": "2026-09-11T11:12:41.586Z",
+      "stale": false
+    }
+  }
 }

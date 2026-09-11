@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-11T05:55:17.371Z",
+    "fetched_at": "2026-09-11T11:12:46.470Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-11T05:55:17.371Z"
+        "checked_at": "2026-09-11T11:12:46.470Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-11T05:55:17.371Z"
+        "checked_at": "2026-09-11T11:12:46.470Z"
       },
       "leans": {
         "center": {
@@ -738,6 +738,11 @@
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "kplctv.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "ky3.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-11"
@@ -748,12 +753,47 @@
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "wgem.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wistv.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wlbt.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wlox.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "wndu.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "wtva.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wtvy.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "wvlt.tv",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wvva.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
@@ -784,46 +824,6 @@
         },
         {
           "domain": "kctv5.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "kmvt.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "kotatv.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "kwch.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "uppermichiganssource.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "valleynewslive.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "walb.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "wandtv.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "wbko.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-10"
         }
