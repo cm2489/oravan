@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-11T01:00:37.453Z",
+    "fetched_at": "2026-09-11T05:55:17.371Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-11T01:00:37.453Z"
+        "checked_at": "2026-09-11T05:55:17.371Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-11T01:00:37.453Z"
+        "checked_at": "2026-09-11T05:55:17.371Z"
       },
       "leans": {
         "center": {
@@ -1115,6 +1115,51 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "21alivenews.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "actionnews5.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "knoe.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "live5news.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wbbjtv.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wbng.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "weau.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wgem.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wymt.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "wengradio.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-10"
@@ -1362,7 +1407,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-05",
-          "lastSeen": "2026-09-05"
+          "lastSeen": "2026-09-11"
         }
       ],
       "unratedOutlets7d": [
