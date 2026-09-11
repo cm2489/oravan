@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-11T11:12:46.470Z",
+    "fetched_at": "2026-09-11T16:24:33.635Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-11T11:12:46.470Z"
+        "checked_at": "2026-09-11T16:24:33.635Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-11T11:12:46.470Z"
+        "checked_at": "2026-09-11T16:24:33.635Z"
       },
       "leans": {
         "center": {
@@ -608,7 +608,7 @@
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
+          "lastSeen": "2026-09-11"
         }
       ],
       "unratedOutlets7d": [
@@ -692,6 +692,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "njspotlightnews.org",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "gazetaexpress.com",
           "firstSeen": "2026-09-04",
           "lastSeen": "2026-09-04"
@@ -713,7 +718,17 @@
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "fox19.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "fox5vegas.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "foxcarolina.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
@@ -778,6 +793,26 @@
           "lastSeen": "2026-09-11"
         },
         {
+          "domain": "wrdw.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wsfa.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wthitv.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
+          "domain": "wtok.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-11"
+        },
+        {
           "domain": "wtva.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
@@ -796,36 +831,6 @@
           "domain": "wvva.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "25newsnow.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "atlantanewsfirst.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "fox8live.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "hawaiinewsnow.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "kait8.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "kctv5.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
         }
       ],
       "mostViewed": null
