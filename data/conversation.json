@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-12T10:40:24.448Z",
+    "fetched_at": "2026-09-12T14:04:02.613Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-12T10:40:24.448Z"
+        "checked_at": "2026-09-12T14:04:02.613Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-12T10:40:24.448Z"
+        "checked_at": "2026-09-12T14:04:02.613Z"
       },
       "leans": {
         "center": {
@@ -505,6 +505,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5713-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-12",
+          "lastSeen": "2026-09-12"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-5878-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -624,6 +636,17 @@
       ],
       "mostViewed": null
     },
+    "hr-6799-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "postbulletin.com",
+          "firstSeen": "2026-09-12",
+          "lastSeen": "2026-09-12"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6825-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -640,6 +663,11 @@
       "unratedOutlets7d": [
         {
           "domain": "oneidadispatch.com",
+          "firstSeen": "2026-09-12",
+          "lastSeen": "2026-09-12"
+        },
+        {
+          "domain": "rferl.org",
           "firstSeen": "2026-09-12",
           "lastSeen": "2026-09-12"
         },
