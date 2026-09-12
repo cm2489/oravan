@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-12T01:04:29.982Z",
+    "fetched_at": "2026-09-12T05:45:20.615Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-12T01:04:29.982Z"
+        "checked_at": "2026-09-12T05:45:20.615Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-12T01:04:29.982Z"
+        "checked_at": "2026-09-12T05:45:20.615Z"
       },
       "leans": {
         "center": {
@@ -581,12 +581,12 @@
       ],
       "unratedOutlets7d": [
         {
-          "domain": "suaragarut.id",
+          "domain": "whas11.com",
           "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
+          "lastSeen": "2026-09-12"
         },
         {
-          "domain": "whas11.com",
+          "domain": "suaragarut.id",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
@@ -633,6 +633,11 @@
     "hr-6856-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "oneidadispatch.com",
+          "firstSeen": "2026-09-12",
+          "lastSeen": "2026-09-12"
+        },
         {
           "domain": "njspotlightnews.org",
           "firstSeen": "2026-09-11",
@@ -1068,6 +1073,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "wflx.com",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-12"
+        },
+        {
           "domain": "21alivenews.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
@@ -1099,11 +1109,6 @@
         },
         {
           "domain": "weau.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "wflx.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
@@ -1456,6 +1461,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "en.interfax.com.ua",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-12"
+        },
+        {
           "domain": "kyivindependent.com",
           "firstSeen": "2026-09-12",
           "lastSeen": "2026-09-12"
@@ -1467,11 +1477,6 @@
         },
         {
           "domain": "censor.net",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "en.interfax.com.ua",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
         },
