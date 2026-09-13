@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-13T06:05:10.328Z"
+    "generated_at": "2026-09-13T17:38:23.874Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1355,6 +1355,28 @@
         },
         "changed_because": [
           "reanchor:9d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_ee4c0fd5",
+        "generated_at": "2026-09-13T17:38:30.943Z",
+        "as_of_day": "2026-09-13",
+        "text": {
+          "en": "H.R. 3633 stands at floor activity. Nothing new has entered the record in the past 14 days, so this remains the current status. No committee action, no scheduled vote, and no roll call have been logged in that window. The bill's position has not changed from where it last stood. Any further movement, whether a debate, an amendment, or a vote, will be reflected here once it appears in the official record. For now, the status is floor activity, and that is the complete, current picture based on what has been recorded.",
+          "es": "El proyecto H.R. 3633 se encuentra en actividad en el pleno. No se ha registrado nada nuevo en los últimos 14 días, por lo que este sigue siendo el estado actual. No se ha registrado acción de comité, votación programada ni votación nominal en ese período. La posición del proyecto no ha cambiado desde su último estado. Cualquier movimiento adicional, ya sea un debate, una enmienda o una votación, se reflejará aquí una vez que aparezca en el registro oficial. Por ahora, el estado es actividad en el pleno, y ese es el panorama completo y actual según lo registrado."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }
