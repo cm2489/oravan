@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-13T19:25:41.432Z",
+    "fetched_at": "2026-09-13T22:22:36.937Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-13T19:25:41.432Z"
+        "checked_at": "2026-09-13T22:22:36.937Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-13T19:25:41.432Z"
+        "checked_at": "2026-09-13T22:22:36.937Z"
       },
       "leans": {
         "center": {
@@ -617,6 +617,11 @@
     "hr-6856-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "easternherald.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
         {
           "domain": "timesheraldonline.com",
           "firstSeen": "2026-09-13",
@@ -1319,6 +1324,11 @@
         },
         {
           "domain": "san.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "yankton.net",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
         },
