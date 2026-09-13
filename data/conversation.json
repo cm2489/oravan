@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-13T00:56:11.667Z",
+    "fetched_at": "2026-09-13T06:05:10.019Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-13T00:56:11.667Z"
+        "checked_at": "2026-09-13T06:05:10.019Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-13T00:56:11.667Z"
+        "checked_at": "2026-09-13T06:05:10.019Z"
       },
       "leans": {
         "center": {
@@ -294,7 +294,14 @@
       "mostViewed": null
     },
     "hr-3633-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "washingtontimes.com",
+          "lean": "right",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "finance.biggo.com",
@@ -453,6 +460,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-5860-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-5878-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -460,6 +479,17 @@
           "domain": "civilbeat.org",
           "firstSeen": "2026-09-08",
           "lastSeen": "2026-09-08"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5913-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newstribune.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
         }
       ],
       "mostViewed": null
@@ -546,7 +576,7 @@
         {
           "domain": "postbulletin.com",
           "firstSeen": "2026-09-12",
-          "lastSeen": "2026-09-12"
+          "lastSeen": "2026-09-13"
         }
       ],
       "mostViewed": null
@@ -775,6 +805,17 @@
       ],
       "mostViewed": null
     },
+    "hr-8205-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tpww.net",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8469-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -808,6 +849,17 @@
         "lastWeek": "2026-08-30"
       }
     },
+    "hr-8852-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "denverpost.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8883-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -815,6 +867,17 @@
           "domain": "scvnews.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9089-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "savingadvice.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
         }
       ],
       "mostViewed": null
@@ -1121,6 +1184,12 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-05",
@@ -1134,6 +1203,16 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "essentiallysports.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "lehighvalleylive.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
         {
           "domain": "kotaradio.com",
           "firstSeen": "2026-09-11",

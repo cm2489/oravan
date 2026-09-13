@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-10T17:54:38.462Z"
+    "generated_at": "2026-09-13T06:05:10.328Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1066,89 +1066,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4145)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_dee114ef",
-        "class": "vote",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-14",
-        "occurred_at": "2026-07-14",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "Cloture on the motion to proceed to S. 4784 was not invoked on July 14, 2026, by a vote of 50-46 (Record Vote No. 195).",
-          "es": "El cierre sobre la moción de proceder a S. 4784 no fue invocado el 14 de julio de 2026, por una votación de 50-46 (Voto de Registro No. 195)."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00195.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 50 - 46. Record Vote Number: 195. (CR S3918)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 195
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_04e2329a",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-14",
-        "occurred_at": "2026-07-14",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "A motion to reconsider the vote on cloture for S. 4784 (Record Vote No. 195) was entered on July 14, 2026.",
-          "es": "Una moción para reconsiderar la votación sobre cierre para S. 4784 (Voto de Registro No. 195) fue presentada el 14 de julio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion by Senator Thune to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 195) entered in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_1510724a",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-14",
-        "occurred_at": "2026-07-14",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 14, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 14 de julio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S3919)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
