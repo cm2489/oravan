@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-13T06:05:10.019Z",
+    "fetched_at": "2026-09-13T16:12:04.057Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-13T06:05:10.019Z"
+        "checked_at": "2026-09-13T16:12:04.057Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-13T06:05:10.019Z"
+        "checked_at": "2026-09-13T16:12:04.057Z"
       },
       "leans": {
         "center": {
@@ -156,6 +156,17 @@
       ],
       "mostViewed": null
     },
+    "hr-192-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "timesnews.net",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1993-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -258,6 +269,18 @@
       ],
       "mostViewed": null
     },
+    "hr-30-119": {
+      "outlets7d": [
+        {
+          "domain": "townhall.com",
+          "lean": "right",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-3054-119": {
       "outlets7d": [
         {
@@ -303,6 +326,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "coindesk.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
         {
           "domain": "finance.biggo.com",
           "firstSeen": "2026-09-05",
@@ -882,6 +910,17 @@
       ],
       "mostViewed": null
     },
+    "hr-9175-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9237-119": {
       "outlets7d": [
         {
@@ -998,6 +1037,17 @@
       ],
       "mostViewed": null
     },
+    "s-1733-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thecentersquare.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1748-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1069,6 +1119,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-2378-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-2976-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1111,6 +1173,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-3658-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wkrn.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        }
+      ],
       "mostViewed": null
     },
     "s-4315-119": {
@@ -1184,6 +1257,12 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
           "domain": "newsmax.com",
           "lean": "right",
           "firstSeen": "2026-09-13",
@@ -1204,12 +1283,32 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "al.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
           "domain": "essentiallysports.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
         },
         {
           "domain": "lehighvalleylive.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "newsnationnow.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "san.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "yardbarker.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
         },
