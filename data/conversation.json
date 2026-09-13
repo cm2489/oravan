@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-13T16:12:04.057Z",
+    "fetched_at": "2026-09-13T19:25:41.432Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-13T16:12:04.057Z"
+        "checked_at": "2026-09-13T19:25:41.432Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-13T16:12:04.057Z"
+        "checked_at": "2026-09-13T19:25:41.432Z"
       },
       "leans": {
         "center": {
@@ -159,6 +159,11 @@
     "hr-192-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "thecentersquare.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
         {
           "domain": "timesnews.net",
           "firstSeen": "2026-09-13",
@@ -1182,6 +1187,11 @@
           "domain": "wkrn.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
         }
       ],
       "mostViewed": null
@@ -1288,6 +1298,11 @@
           "lastSeen": "2026-09-13"
         },
         {
+          "domain": "businessupturn.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
           "domain": "essentiallysports.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
@@ -1309,6 +1324,11 @@
         },
         {
           "domain": "yardbarker.com",
+          "firstSeen": "2026-09-13",
+          "lastSeen": "2026-09-13"
+        },
+        {
+          "domain": "yourerie.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
         },
