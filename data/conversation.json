@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-14T00:59:41.121Z",
+    "fetched_at": "2026-09-14T06:12:02.745Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-14T00:59:41.121Z"
+        "checked_at": "2026-09-14T06:12:02.745Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-06",
         "week_label": "Most-Viewed Bills - Week of September 6, 2026",
         "entries": 6,
-        "checked_at": "2026-09-14T00:59:41.121Z"
+        "checked_at": "2026-09-14T06:12:02.745Z"
       },
       "leans": {
         "center": {
@@ -159,6 +159,11 @@
     "hr-192-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "justthenews.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        },
         {
           "domain": "thecentersquare.com",
           "firstSeen": "2026-09-13",
@@ -825,6 +830,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8770-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tippahnews.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8800-119": {
