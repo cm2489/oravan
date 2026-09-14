@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-14T13:58:17.591Z",
+    "fetched_at": "2026-09-14T19:18:59.372Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-14T13:58:17.591Z"
+        "checked_at": "2026-09-14T19:18:59.372Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-14T13:58:17.591Z"
+        "checked_at": "2026-09-14T19:18:59.372Z"
       },
       "leans": {
         "center": {
@@ -38,7 +38,14 @@
   },
   "slugs": {
     "hconres-113-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "afge.org",
@@ -110,6 +117,11 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "delawareonline.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-09-08",
@@ -331,6 +343,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "fortune.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        },
+        {
+          "domain": "thenerdstash.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        },
+        {
           "domain": "coindesk.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
@@ -383,6 +405,17 @@
         "lastWeek": "2026-09-13"
       }
     },
+    "hr-3766-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "knightcolumbia.org",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4405-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -404,6 +437,17 @@
         "lastWeek": "2026-09-06"
       }
     },
+    "hr-4823-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wfmd.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4840-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -416,6 +460,17 @@
           "domain": "variety.com",
           "firstSeen": "2026-09-09",
           "lastSeen": "2026-09-09"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4926-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "heartlandernews.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
         }
       ],
       "mostViewed": null
@@ -472,6 +527,18 @@
           "lastSeen": "2026-09-09"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-5587-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-5713-119": {
@@ -903,6 +970,18 @@
         "lastWeek": "2026-08-30"
       }
     },
+    "hr-8850-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8852-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1200,6 +1279,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "whnt.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        },
+        {
           "domain": "wreg.com",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
@@ -1453,7 +1537,13 @@
           "lastSeen": "2026-09-10"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stripes.com",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-14"
+        }
+      ],
       "mostViewed": null
     },
     "s-91-119": {
