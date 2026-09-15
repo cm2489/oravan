@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-15T07:39:52.002Z",
+    "fetched_at": "2026-09-15T13:29:29.596Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-15T07:39:52.002Z"
+        "checked_at": "2026-09-15T13:29:29.596Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-15T07:39:52.002Z"
+        "checked_at": "2026-09-15T13:29:29.596Z"
       },
       "leans": {
         "center": {
@@ -666,6 +666,18 @@
       ],
       "mostViewed": null
     },
+    "hr-6809-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-6856-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -916,6 +928,18 @@
           "lastSeen": "2026-09-09"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-7744-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7772-119": {
@@ -1208,6 +1232,18 @@
       ],
       "mostViewed": null
     },
+    "s-1814-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-1887-119": {
       "outlets7d": [
         {
@@ -1308,6 +1344,18 @@
           "lean": "right",
           "firstSeen": "2026-09-08",
           "lastSeen": "2026-09-08"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4369-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
         }
       ],
       "unratedOutlets7d": [],
@@ -1521,6 +1569,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "ukranews.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
           "domain": "en.interfax.com.ua",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-12"
@@ -1549,6 +1602,17 @@
           "domain": "legis1.com",
           "firstSeen": "2026-09-08",
           "lastSeen": "2026-09-08"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-856-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "democrata.es",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
         }
       ],
       "mostViewed": null
