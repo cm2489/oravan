@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-13T17:38:23.874Z"
+    "generated_at": "2026-09-15T07:39:54.114Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -61,32 +61,6 @@
           }
         },
         "ai": false
-      },
-      {
-        "id": "u_58b3ac85",
-        "class": "scheduled",
-        "vehicle": "hr-9770-119",
-        "day": "2026-07-16",
-        "occurred_at": "2026-07-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T07:06:54.754Z",
-        "text": {
-          "en": "H.R. 9770, the continuing appropriations bill for 2027, was added to the House floor schedule for the week of July 20, 2026.",
-          "es": "La H.R. 9770, el proyecto de asignaciones continuas para 2027, fue añadida al calendario del pleno de la Cámara para la semana del 20 de julio de 2026."
-        },
-        "source": {
-          "kind": "tier0_feed",
-          "refs": [
-            "https://docs.house.gov/billsthisweek/20260720/20260720.xml"
-          ]
-        },
-        "record": {
-          "action_text": "H.R. 9770 — Continuing Appropriations Act, 2027",
-          "action_code": null,
-          "action_type": "Items that may be considered pursuant to a rule",
-          "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
-        },
-        "ai": false
       }
     ],
     "summary_revisions": [
@@ -129,8 +103,7 @@
           },
           "update_ids": [
             "u_9085cf38",
-            "u_212c0547",
-            "u_58b3ac85"
+            "u_212c0547"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
