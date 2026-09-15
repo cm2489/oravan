@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-15T13:29:29.596Z",
+    "fetched_at": "2026-09-15T18:08:43.232Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-15T13:29:29.596Z"
+        "checked_at": "2026-09-15T18:08:43.232Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-15T13:29:29.596Z"
+        "checked_at": "2026-09-15T18:08:43.232Z"
       },
       "leans": {
         "center": {
@@ -65,6 +65,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hjres-152-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "streamlinefeed.co.ke",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
       "mostViewed": null
     },
     "hjres-9-119": {
@@ -441,7 +452,14 @@
       "mostViewed": null
     },
     "hr-4840-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "imdb.com",
@@ -456,6 +474,17 @@
       ],
       "mostViewed": null
     },
+    "hr-4849-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "alreporter.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4926-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -463,6 +492,17 @@
           "domain": "heartlandernews.com",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5068-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
         }
       ],
       "mostViewed": null
@@ -490,6 +530,11 @@
     "hr-5371-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "ruralradio.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-09-14",
@@ -903,6 +948,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7332-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7529-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -910,6 +967,17 @@
           "domain": "abcnews.com",
           "firstSeen": "2026-09-08",
           "lastSeen": "2026-09-08"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7553-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ainonline.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
         }
       ],
       "mostViewed": null
@@ -1064,6 +1132,18 @@
           "lastSeen": "2026-09-11"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8902-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-9089-119": {
@@ -1349,6 +1429,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4338-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "pressley.house.gov",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4369-119": {
       "outlets7d": [
         {
@@ -1452,6 +1543,11 @@
         },
         {
           "domain": "thehour.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "wvlt.tv",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
         },
