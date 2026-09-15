@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-15T18:08:43.232Z",
+    "fetched_at": "2026-09-15T22:10:39.317Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-15T18:08:43.232Z"
+        "checked_at": "2026-09-15T22:10:39.317Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-15T18:08:43.232Z"
+        "checked_at": "2026-09-15T22:10:39.317Z"
       },
       "leans": {
         "center": {
@@ -260,7 +260,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
+          "lastSeen": "2026-09-15"
         }
       ],
       "unratedOutlets7d": [
@@ -362,6 +362,12 @@
     "hr-3633-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-14",
@@ -378,6 +384,11 @@
         {
           "domain": "fortune.com",
           "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
         },
         {
@@ -428,6 +439,36 @@
           "lastSeen": "2026-09-15"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-4405-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-4795-119": {
@@ -948,6 +989,17 @@
       ],
       "mostViewed": null
     },
+    "hr-7275-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ca.news.yahoo.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7332-119": {
       "outlets7d": [
         {
@@ -1417,6 +1469,17 @@
       ],
       "mostViewed": null
     },
+    "s-3968-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medium.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4315-119": {
       "outlets7d": [
         {
@@ -1490,6 +1553,24 @@
           "lastSeen": "2026-09-09"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4662-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        },
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4668-119": {
@@ -1653,6 +1734,17 @@
         "lastSeen": "2026-09-15",
         "lastWeek": "2026-09-13"
       }
+    },
+    "s-4949-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
     },
     "s-5025-119": {
       "outlets7d": [
