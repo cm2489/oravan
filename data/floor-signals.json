@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-16T07:38:25.935Z",
+    "fetched_at": "2026-09-16T18:10:09.807Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "2 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-16T07:38:25.935Z",
+        "checked_at": "2026-09-16T18:10:09.807Z",
         "url": "https://www.congress.gov/119/crec/2026/09/14/d14se6-1.htm",
         "published": "2026-09-14",
         "covers": "2026-09-15",
@@ -16,7 +16,7 @@
       "billsthisweek": {
         "status": "ok",
         "detail": "77 scheduled measure(s)",
-        "checked_at": "2026-09-16T07:38:25.935Z",
+        "checked_at": "2026-09-16T18:10:09.807Z",
         "url": "https://docs.house.gov/billsthisweek/20260914/20260914.xml",
         "published": "2026-09-14",
         "covers": "2026-09-14",
@@ -64,7 +64,7 @@
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -83,7 +83,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -102,7 +102,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -121,7 +121,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -140,7 +140,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -159,7 +159,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -178,7 +178,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -197,7 +197,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -216,7 +216,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -235,7 +235,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -254,7 +254,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -273,7 +273,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -292,7 +292,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -311,7 +311,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -330,7 +330,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -349,7 +349,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -368,7 +368,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -386,7 +386,7 @@
         "track": "unspecified",
         "certainty": "scheduled_vote"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-16T01:22:35.120Z",
       "stale": false
     },
@@ -405,7 +405,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -424,7 +424,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -443,7 +443,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -462,7 +462,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -481,7 +481,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -500,7 +500,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -519,7 +519,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -538,7 +538,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -557,7 +557,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -576,7 +576,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -595,7 +595,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -614,7 +614,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -633,7 +633,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -652,7 +652,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -671,7 +671,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -690,7 +690,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -709,7 +709,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -728,7 +728,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -747,7 +747,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -766,7 +766,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -785,7 +785,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -804,7 +804,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -823,7 +823,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -842,7 +842,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -861,7 +861,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -880,7 +880,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -899,7 +899,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -918,7 +918,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -937,7 +937,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -956,7 +956,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -975,7 +975,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -994,7 +994,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1013,7 +1013,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1032,7 +1032,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1051,7 +1051,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1070,7 +1070,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1089,7 +1089,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1108,7 +1108,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1127,7 +1127,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1146,7 +1146,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1165,7 +1165,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1184,7 +1184,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1203,7 +1203,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1222,7 +1222,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1241,7 +1241,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1260,7 +1260,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1279,7 +1279,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1298,7 +1298,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1317,7 +1317,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1336,7 +1336,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1355,7 +1355,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1374,7 +1374,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1393,7 +1393,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1412,7 +1412,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1431,7 +1431,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1450,7 +1450,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1469,7 +1469,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1488,7 +1488,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1507,7 +1507,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1526,7 +1526,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     }
@@ -1546,7 +1546,7 @@
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T07:38:25.935Z",
+      "fetched_at": "2026-09-16T18:10:09.807Z",
       "first_seen": "2026-09-11T11:12:41.586Z",
       "stale": false
     }
