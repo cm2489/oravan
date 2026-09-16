@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-16T01:22:39.941Z",
+    "fetched_at": "2026-09-16T07:38:30.635Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-16T01:22:39.941Z"
+        "checked_at": "2026-09-16T07:38:30.635Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-16T01:22:39.941Z"
+        "checked_at": "2026-09-16T07:38:30.635Z"
       },
       "leans": {
         "center": {
@@ -167,6 +167,17 @@
       ],
       "mostViewed": null
     },
+    "hr-2140-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-22-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -243,6 +254,17 @@
           "domain": "united24media.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2978-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
         }
       ],
       "mostViewed": null
@@ -958,6 +980,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-808-119": {
+      "outlets7d": [
+        {
+          "domain": "bloomberg.com",
+          "lean": "center",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8205-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1093,6 +1127,17 @@
       ],
       "mostViewed": null
     },
+    "hr-9174-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cryptoslate.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9175-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1135,6 +1180,17 @@
           "domain": "wktv.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-10"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9500-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
         }
       ],
       "mostViewed": null
@@ -1481,6 +1537,11 @@
           "lastSeen": "2026-09-16"
         },
         {
+          "domain": "ctmirror.org",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        },
+        {
           "domain": "espn.com",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
@@ -1695,6 +1756,24 @@
           "lastSeen": "2026-09-11"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-185-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-3-119": {
