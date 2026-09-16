@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-16T18:10:09.807Z",
+    "fetched_at": "2026-09-16T22:06:15.765Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "2 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-16T18:10:09.807Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/14/d14se6-1.htm",
-        "published": "2026-09-14",
-        "covers": "2026-09-15",
-        "covers_label": "10 a.m., Tuesday, September 15",
+        "checked_at": "2026-09-16T22:06:15.765Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/15/d15se6-1.htm",
+        "published": "2026-09-15",
+        "covers": "2026-09-16",
+        "covers_label": "10 a.m., Wednesday, September 16",
         "via": "congress.gov"
       },
       "billsthisweek": {
         "status": "ok",
         "detail": "77 scheduled measure(s)",
-        "checked_at": "2026-09-16T18:10:09.807Z",
+        "checked_at": "2026-09-16T22:06:15.765Z",
         "url": "https://docs.house.gov/billsthisweek/20260914/20260914.xml",
         "published": "2026-09-14",
         "covers": "2026-09-14",
@@ -31,22 +31,15 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-09-15",
-        "label": "10 a.m., Tuesday, September 15"
+        "date": "2026-09-16",
+        "label": "10 a.m., Wednesday, September 16"
       },
       "house": {
-        "date": "2026-09-15",
-        "label": "10 a.m., Tuesday, September 15"
+        "date": "2026-09-16",
+        "label": "9 a.m., Wednesday, September 16"
       }
     },
-    "dropped": [
-      {
-        "source": "daily-digest",
-        "reason": "nomination_unroutable",
-        "slug": null,
-        "text": "(Senate will recess following the vote on confirmation of the nomination of Matthew R. Byrne until 1:50 p.m. for their respective party conferences.)"
-      }
-    ]
+    "dropped": []
   },
   "signals": {
     "hconres-93-119": {
@@ -64,7 +57,7 @@
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -83,7 +76,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -102,7 +95,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -121,7 +114,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -140,7 +133,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -159,7 +152,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -178,7 +171,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -197,7 +190,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -216,7 +209,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -235,7 +228,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -254,7 +247,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -273,7 +266,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -292,7 +285,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -311,7 +304,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -330,7 +323,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -349,7 +342,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -368,26 +361,8 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
-      "stale": false
-    },
-    "hr-3633-119": {
-      "tier0": {
-        "source": "daily-digest",
-        "chamber": "senate",
-        "quote": "At 2:15 p.m., Senate will vote on the motion to invoke cloture on the motion to proceed to consideration of H.R. 3633, Digital Asset Market Clarity Act.",
-        "quote_lang": "en",
-        "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/09/14/d14se6-1.htm",
-        "published": "2026-09-14",
-        "covers": "2026-09-15",
-        "covers_label": "10 a.m., Tuesday, September 15",
-        "track": "unspecified",
-        "certainty": "scheduled_vote"
-      },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
-      "first_seen": "2026-09-16T01:22:35.120Z",
       "stale": false
     },
     "hr-3925-119": {
@@ -405,7 +380,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -424,7 +399,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -443,7 +418,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -462,7 +437,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -481,7 +456,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -500,7 +475,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -519,7 +494,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -538,7 +513,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -557,7 +532,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -576,7 +551,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -595,7 +570,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -614,7 +589,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -633,7 +608,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -652,7 +627,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -671,7 +646,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -690,7 +665,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -709,7 +684,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -728,7 +703,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -747,7 +722,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -766,7 +741,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -785,7 +760,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -804,7 +779,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -823,7 +798,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -842,7 +817,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -861,7 +836,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -880,7 +855,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -899,7 +874,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -918,7 +893,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -937,7 +912,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -956,7 +931,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -975,7 +950,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -994,7 +969,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1013,7 +988,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1032,7 +1007,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1051,7 +1026,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1070,7 +1045,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1089,7 +1064,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1108,7 +1083,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1127,7 +1102,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1146,7 +1121,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1165,7 +1140,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1184,7 +1159,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1203,7 +1178,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1222,7 +1197,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1241,7 +1216,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1260,7 +1235,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1279,7 +1254,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1298,7 +1273,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1317,7 +1292,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1336,7 +1311,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1355,7 +1330,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1374,7 +1349,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1393,7 +1368,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1412,7 +1387,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1431,8 +1406,26 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
+      "stale": false
+    },
+    "s-4668-119": {
+      "tier0": {
+        "source": "daily-digest",
+        "chamber": "senate",
+        "quote": "Senate will continue consideration of the motion to proceed to consideration of S. 4668, Protect College Sports Act, post-cloture.",
+        "quote_lang": "en",
+        "quote_kind": "digest_program_sentence",
+        "url": "https://www.congress.gov/119/crec/2026/09/15/d15se6-1.htm",
+        "published": "2026-09-15",
+        "covers": "2026-09-16",
+        "covers_label": "10 a.m., Wednesday, September 16",
+        "track": "unspecified",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-09-16T22:06:15.765Z",
+      "first_seen": "2026-09-16T22:06:15.765Z",
       "stale": false
     },
     "s-550-119": {
@@ -1450,7 +1443,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1469,7 +1462,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1488,7 +1481,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1507,7 +1500,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     },
@@ -1526,28 +1519,28 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
       "first_seen": "2026-09-14T06:11:59.257Z",
       "stale": false
     }
   },
   "nominations": {
-    "PN1093-3": {
+    "PN999-4": {
       "tier0": {
         "source": "daily-digest",
         "chamber": "senate",
-        "quote": "Senate will continue consideration of the nomination of Matthew R. Byrne, of Ohio, to be United States District Judge for the Southern District of Ohio, post-cloture, and vote on confirmation thereon at 11:15 a.m.",
+        "quote": "Roll call votes on the motion to proceed to consideration of the bill and on the motion to invoke cloture on the nomination of Kasdin Miller Mitchell, of Texas, to be United States District Judge for the Northern District of Texas, are possible during Wednesday's session of the Senate.",
         "quote_lang": "en",
         "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/09/14/d14se6-1.htm",
-        "published": "2026-09-14",
-        "covers": "2026-09-15",
-        "covers_label": "10 a.m., Tuesday, September 15",
+        "url": "https://www.congress.gov/119/crec/2026/09/15/d15se6-1.htm",
+        "published": "2026-09-15",
+        "covers": "2026-09-16",
+        "covers_label": "10 a.m., Wednesday, September 16",
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-16T18:10:09.807Z",
-      "first_seen": "2026-09-11T11:12:41.586Z",
+      "fetched_at": "2026-09-16T22:06:15.765Z",
+      "first_seen": "2026-09-16T22:06:15.765Z",
       "stale": false
     }
   }

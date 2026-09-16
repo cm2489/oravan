@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-16T18:10:14.625Z",
+    "fetched_at": "2026-09-16T22:06:24.005Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-16T18:10:14.625Z"
+        "checked_at": "2026-09-16T22:06:24.005Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-16T18:10:14.625Z"
+        "checked_at": "2026-09-16T22:06:24.005Z"
       },
       "leans": {
         "center": {
@@ -369,6 +369,17 @@
         "lastWeek": "2026-09-13"
       }
     },
+    "hr-3717-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "harder.house.gov",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-3766-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -397,28 +408,34 @@
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
+          "lastSeen": "2026-09-16"
         },
         {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
+          "lastSeen": "2026-09-16"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-16"
         },
         {
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "audacy.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
       "mostViewed": null
     },
     "hr-4795-119": {
@@ -670,6 +687,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "floridapolitics.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        },
+        {
+          "domain": "realtor.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        },
+        {
           "domain": "whas11.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-12"
@@ -706,7 +733,14 @@
       "mostViewed": null
     },
     "hr-6856-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cnn.com",
+          "lean": "left",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "easternherald.com",
@@ -918,6 +952,17 @@
       ],
       "mostViewed": null
     },
+    "hr-7250-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7275-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1042,6 +1087,17 @@
       ],
       "mostViewed": null
     },
+    "hr-8390-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "lookouteugene-springfield.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8469-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1063,6 +1119,29 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8571-119": {
+      "outlets7d": [
+        {
+          "domain": "businessinsider.com",
+          "lean": "center",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8572-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-16"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8770-119": {
