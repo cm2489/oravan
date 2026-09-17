@@ -1,36 +1,36 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-16T22:06:24.005Z",
+    "fetched_at": "2026-09-17T00:30:45.863Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-16T22:06:24.005Z"
+        "checked_at": "2026-09-17T00:30:45.863Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-16T22:06:24.005Z"
+        "checked_at": "2026-09-17T00:30:45.863Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-09-16",
+          "last_live": "2026-09-17",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-09-16",
+          "last_live": "2026-09-17",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-09-16",
+          "last_live": "2026-09-17",
           "dark_days": 0
         }
       }
@@ -78,7 +78,7 @@
       "mostViewed": {
         "weeksOnList": 6,
         "lastRank": 5,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -88,7 +88,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 7,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -120,9 +120,20 @@
       "mostViewed": {
         "weeksOnList": 5,
         "lastRank": 10,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
+    },
+    "hr-1722-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "millermeeks.house.gov",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-192-119": {
       "outlets7d": [],
@@ -191,25 +202,63 @@
     "hr-2548-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "cnn.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-11",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-16"
+          "lastSeen": "2026-09-17"
         },
         {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
-        },
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-15"
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "dw.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "edition.cnn.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "escobar.house.gov",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
         {
           "domain": "rferl.org",
           "firstSeen": "2026-09-11",
@@ -281,18 +330,6 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hr-3054-119": {
-      "outlets7d": [
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
     "hr-3276-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -355,17 +392,12 @@
           "domain": "finance.biggo.com",
           "firstSeen": "2026-09-05",
           "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "crypto.news",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
         }
       ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 3,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -375,7 +407,7 @@
         {
           "domain": "harder.house.gov",
           "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-16"
+          "lastSeen": "2026-09-17"
         }
       ],
       "mostViewed": null
@@ -468,18 +500,7 @@
           "lastSeen": "2026-09-15"
         }
       ],
-      "unratedOutlets7d": [
-        {
-          "domain": "imdb.com",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        },
-        {
-          "domain": "variety.com",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-4849-119": {
@@ -547,29 +568,6 @@
           "domain": "abcnews.com",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-5517-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-5551-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "kentucky.com",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
         }
       ],
       "mostViewed": null
@@ -650,7 +648,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 6,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -660,17 +658,41 @@
       "mostViewed": {
         "weeksOnList": 6,
         "lastRank": 1,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
     "hr-6529-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-16"
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
         },
         {
           "domain": "politico.com",
@@ -941,17 +963,6 @@
       ],
       "mostViewed": null
     },
-    "hr-7223-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "mostViewed": null
-    },
     "hr-7250-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1009,11 +1020,6 @@
           "domain": "goldrushcam.com",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
-        },
-        {
-          "domain": "fb.org",
-          "firstSeen": "2026-09-08",
-          "lastSeen": "2026-09-09"
         }
       ],
       "mostViewed": null
@@ -1256,18 +1262,6 @@
       ],
       "mostViewed": null
     },
-    "hr-9237-119": {
-      "outlets7d": [
-        {
-          "domain": "washingtonexaminer.com",
-          "lean": "right",
-          "firstSeen": "2026-09-08",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
     "hr-9340-119": {
       "outlets7d": [
         {
@@ -1277,7 +1271,18 @@
           "lastSeen": "2026-09-16"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "escobar.house.gov",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
       "mostViewed": null
     },
     "hr-9363-119": {
@@ -1401,17 +1406,6 @@
       ],
       "mostViewed": null
     },
-    "s-1748-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "rollingout.com",
-          "firstSeen": "2026-09-08",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "mostViewed": null
-    },
     "s-1814-119": {
       "outlets7d": [
         {
@@ -1424,39 +1418,15 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "s-1887-119": {
-      "outlets7d": [
-        {
-          "domain": "npr.org",
-          "lean": "center",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
     "s-2296-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 6,
         "lastRank": 4,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
-    },
-    "s-2355-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
     },
     "s-2378-119": {
       "outlets7d": [
@@ -1487,7 +1457,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -1620,17 +1590,6 @@
           "domain": "radiologybusiness.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-4626-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "myplainview.com",
-          "firstSeen": "2026-09-09",
-          "lastSeen": "2026-09-09"
         }
       ],
       "mostViewed": null
@@ -1816,7 +1775,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 2,
-        "lastSeen": "2026-09-16",
+        "lastSeen": "2026-09-17",
         "lastWeek": "2026-09-13"
       }
     },
@@ -1837,13 +1796,37 @@
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-16"
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "cnn.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
         },
         {
           "domain": "reuters.com",
           "lean": "center",
           "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-16"
+          "lastSeen": "2026-09-17"
         }
       ],
       "unratedOutlets7d": [
