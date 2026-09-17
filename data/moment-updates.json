@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-17T16:56:55.134Z"
+    "generated_at": "2026-09-17T18:31:20.219Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -842,6 +842,28 @@
           "reanchor:11d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_2eae2ad4",
+        "generated_at": "2026-09-17T18:31:27.240Z",
+        "as_of_day": "2026-09-17",
+        "text": {
+          "en": "S. 3172 stands where it has stood: placed on the floor calendar, and the official record shows no floor action on it since. Nothing new has been recorded on this bill in the last 14 days. The measure remains available for a floor vote, but no vote, debate, or other floor activity appears in the official record beyond its placement on the calendar. No committee action, amendment, or scheduling update has been logged in this window either. Readers tracking S. 3172 should expect the current entry to hold until the official record shows a new action, at which point the calendar placement will no longer be the most recent update.",
+          "es": "El proyecto S. 3172 permanece donde estaba: se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces. En los últimos 14 días no se registró nada nuevo sobre este proyecto. La medida sigue disponible para una votación en el pleno, pero no aparece en el registro oficial ninguna votación, debate u otra actividad más allá de su inclusión en el calendario. Tampoco se registró en este periodo ninguna acción de comité, enmienda o actualización de programación. Quienes sigan el S. 3172 deben tener en cuenta que esta entrada se mantiene vigente hasta que el registro oficial muestre una nueva acción."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1120,6 +1142,32 @@
           "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_9ee03b1e",
+        "generated_at": "2026-09-17T18:31:31.375Z",
+        "as_of_day": "2026-09-17",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, sits at floor activity in the Senate. On September 15, 2026, the Senate invoked cloture on the motion to proceed to the measure by a recorded vote of 74 to 24 (Roll no. 235). On September 16, 2026, the Senate considered the motion to proceed to the measure. The bill was scheduled for September 17, 2026. No further recorded action appears in the last 14 days beyond these steps.",
+          "es": "El proyecto S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invocó la mocion de cierre sobre la mocion para proceder a la medida por votacion nominal de 74 a 24 (votacion num. 235). El 16 de septiembre de 2026, el Senado consideró la mocion para proceder a la medida. El proyecto quedó programado para el 17 de septiembre de 2026. No aparece ninguna otra acción registrada en los últimos 14 días además de estos pasos."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_5607f3cb",
+            "u_732a58b6",
+            "u_317b9dc8"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+4"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1362,6 +1410,28 @@
           "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_65f18f6e",
+        "generated_at": "2026-09-17T18:31:36.266Z",
+        "as_of_day": "2026-09-17",
+        "text": {
+          "en": "S. 4784 stands at floor activity. No action on this bill was recorded in the last fourteen days. That means the last entry on the record remains the most recent official step taken on the measure, and no new vote, hearing, or procedural move has been logged since. The bill's status has not changed from what was previously reported. Anyone tracking this measure will see the same standing until the chamber records a new action. There is nothing further to report at this time based on the official record available.",
+          "es": "El proyecto S. 4784 se encuentra en actividad en el pleno. No se registró ninguna acción sobre esta ley en los últimos catorce días. Esto significa que la última entrada en el registro sigue siendo el paso oficial más reciente tomado sobre la medida, y no se ha registrado ningún voto, audiencia o trámite nuevo desde entonces. El estatus del proyecto no ha cambiado respecto a lo informado anteriormente. Cualquiera que siga esta medida vera la misma situacion hasta que la camara registre una nueva accion. No hay mas novedades que informar por el momento segun el registro oficial disponible."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1591,6 +1661,31 @@
         },
         "changed_because": [
           "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_190e7cd9",
+        "generated_at": "2026-09-17T18:31:40.124Z",
+        "as_of_day": "2026-09-17",
+        "text": {
+          "en": "H.R. 3633 stands at floor activity in the Senate. On September 15, 2026, the Senate held a Yea-Nay Vote on cloture for the motion to proceed to the measure. Cloture was not invoked, by a recorded vote of 49 to 50 (Roll no. 234). That same day, Senator Tillis entered a motion to reconsider the vote by which cloture was not invoked. No further action is recorded in the past 14 days.",
+          "es": "El proyecto H.R. 3633 se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado realizó una votación nominal sobre el cierre de debate para la moción de proceder a considerar la medida. El cierre de debate no fue invocado, por votación nominal de 49 a 50 (votación num. 234). Ese mismo día, el senador Tillis presentó una moción para reconsiderar la votación en la que no se invocó el cierre de debate. No se registra ninguna otra acción en los últimos 14 días."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_0f663f8a",
+            "u_ee8fd160"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
         ],
         "model": "claude-sonnet-5"
       }
