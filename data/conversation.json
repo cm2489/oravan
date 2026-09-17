@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-17T06:06:17.177Z",
+    "fetched_at": "2026-09-17T11:38:53.476Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-17T06:06:17.177Z"
+        "checked_at": "2026-09-17T11:38:53.476Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-17T06:06:17.177Z"
+        "checked_at": "2026-09-17T11:38:53.476Z"
       },
       "leans": {
         "center": {
@@ -251,6 +251,31 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "aa.com.tr",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "arabnews.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "caliber.az",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "channelstv.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "dailysabah.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "dw.com",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
@@ -266,7 +291,67 @@
           "lastSeen": "2026-09-17"
         },
         {
+          "domain": "euronews.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "europeantimes.news",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "eutoday.net",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "france24.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "hindustantimes.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "newindianexpress.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "news.inbox.eu",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "pajhwok.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "rollcall.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "swarajyamag.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "thedailystar.net",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "themoscowtimes.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "tradewindsnews.com",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
         },
@@ -289,31 +374,6 @@
           "domain": "citizensvoice.com",
           "firstSeen": "2026-09-12",
           "lastSeen": "2026-09-12"
-        },
-        {
-          "domain": "justthenews.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-12"
-        },
-        {
-          "domain": "post-gazette.com",
-          "firstSeen": "2026-09-12",
-          "lastSeen": "2026-09-12"
-        },
-        {
-          "domain": "trentonian.com",
-          "firstSeen": "2026-09-12",
-          "lastSeen": "2026-09-12"
-        },
-        {
-          "domain": "thetimes-tribune.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "united24media.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
         }
       ],
       "mostViewed": null
@@ -530,6 +590,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4911-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-4926-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -725,12 +797,22 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "audacy.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "bozemandailychronicle.com",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
         },
         {
           "domain": "coloradopolitics.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "kjrh.com",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
         },
@@ -1715,6 +1797,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "mises.org",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "2news.com",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
@@ -1831,11 +1918,6 @@
         },
         {
           "domain": "kotatv.com",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-10"
-        },
-        {
-          "domain": "mitchellrepublic.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-10"
         }
