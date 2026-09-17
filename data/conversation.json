@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-17T00:30:45.863Z",
+    "fetched_at": "2026-09-17T06:06:17.177Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-17T00:30:45.863Z"
+        "checked_at": "2026-09-17T06:06:17.177Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-17T00:30:45.863Z"
+        "checked_at": "2026-09-17T06:06:17.177Z"
       },
       "leans": {
         "center": {
@@ -104,6 +104,17 @@
           "domain": "yahoo.com",
           "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-10"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-10326-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
         }
       ],
       "mostViewed": null
@@ -408,6 +419,11 @@
           "domain": "harder.house.gov",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
         }
       ],
       "mostViewed": null
@@ -709,6 +725,21 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "bozemandailychronicle.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "coloradopolitics.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "floridapolitics.com",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
@@ -764,6 +795,16 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "bluewin.ch",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
         {
           "domain": "easternherald.com",
           "firstSeen": "2026-09-13",
@@ -1046,6 +1087,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7830-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
       "mostViewed": null
     },
     "hr-808-119": {
@@ -1583,6 +1635,22 @@
       ],
       "mostViewed": null
     },
+    "s-4603-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kget.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4624-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1827,9 +1895,85 @@
           "lean": "center",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "abc7ny.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "aljazeera.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "canberratimes.com.au",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "channelnewsasia.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "escobar.house.gov",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "eutoday.net",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "firstpost.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "kuwaittimes.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "ms.now",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "ndtv.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "rferl.org",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "theaustralian.com.au",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "thehindu.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "timesofisrael.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
         {
           "domain": "deccanchronicle.com",
           "firstSeen": "2026-09-16",
