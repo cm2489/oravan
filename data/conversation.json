@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-17T16:54:35.815Z",
+    "fetched_at": "2026-09-17T20:16:53.844Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-17T16:54:35.815Z"
+        "checked_at": "2026-09-17T20:16:53.844Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-17T16:54:35.815Z"
+        "checked_at": "2026-09-17T20:16:53.844Z"
       },
       "leans": {
         "center": {
@@ -119,9 +119,25 @@
       ],
       "mostViewed": null
     },
+    "hr-10357-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "memeburn.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "tallahassee.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
         {
           "domain": "delawareonline.com",
           "firstSeen": "2026-09-14",
@@ -405,6 +421,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "pymnts.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
@@ -422,6 +443,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-3200-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "alreporter.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
       "mostViewed": null
     },
     "hr-3276-119": {
@@ -673,6 +705,37 @@
         "lastWeek": "2026-08-30"
       }
     },
+    "hr-5334-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "abc7.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "english.nv.ua",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "modernghana.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "timesofisrael.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "united24media.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5371-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -801,6 +864,12 @@
         },
         {
           "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
+        {
+          "domain": "nytimes.com",
           "lean": "left",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
@@ -1208,6 +1277,11 @@
     "hr-7567-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        },
         {
           "domain": "goldrushcam.com",
           "firstSeen": "2026-09-14",
@@ -1641,6 +1715,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-2398-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kfgo.com",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
       "mostViewed": null
     },
     "s-2975-119": {
@@ -2239,6 +2324,18 @@
           "lastSeen": "2026-09-11"
         }
       ],
+      "mostViewed": null
+    },
+    "sconres-25-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-17"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-185-119": {
