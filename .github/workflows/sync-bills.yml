@@ -124,6 +124,15 @@ jobs:
           # (scripts/sync-bills.mjs:126). Only a manual dispatch changes it.
           MAX_UPDATES: ${{ inputs.max_updates || '500' }}
           FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
+          # Half-price decodes through the Message Batches API (2026-09-18).
+          # The script defaults this ON; it is named here so the kill switch is
+          # visible where the run is configured rather than only in the code.
+          # Set to '0' for a night that must not wait on a batch queue - the
+          # script then decodes synchronously exactly as it did before, at full
+          # price. Any bill the batch cannot deliver already falls back to a
+          # synchronous decode within the same run, so this is a lever for
+          # wall-clock, not for correctness.
+          DECODE_BATCH: '1'
         run: node scripts/sync-bills.mjs
       - name: Journey-corpus tripwire (a novel floor text opens an issue, never costs the night)
         id: journey

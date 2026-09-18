@@ -49,6 +49,23 @@ export interface Bill {
    * scripts/bill-decode.mjs, and only beside the decode it stamps.
    */
   decoded_at?: string | null;
+  /**
+   * Fingerprint of the exact document the stored decode was written from
+   * (scripts/bill-decode.mjs `textFingerprint`), absent on every bill decoded
+   * before 2026-09-18. PIPELINE-ONLY — nothing rendered reads it. Its one
+   * purpose is to let the re-decode path tell "this bill moved" apart from
+   * "this bill's document changed" and decline to pay a model to re-read
+   * identical input.
+   */
+  decode_text_sha?: string | null;
+  /**
+   * When the stored decode's source document was last confirmed to still be
+   * the document Congress serves — a weaker claim than `decoded_at`, which is
+   * when a decode was actually written, and deliberately a separate field so
+   * neither can be mistaken for the other. PIPELINE-ONLY, read by
+   * `redecodeVerdict` as the later of the two freshness days.
+   */
+  decode_text_verified_at?: string | null;
   sponsor_bioguide_id: string | null;
   introduced_date: string | null;
   last_action_date: string | null;
