@@ -29,6 +29,13 @@ import {
 } from './congress-fetch.mjs';
 import { passesGate } from './decode-gate.mjs';
 import { generateSearchInputs } from './search-inputs.mjs';
+import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
+
+/** Re-exported, not re-implemented: the "which document is the current text"
+ *  question moved to scripts/text-version.mjs on 2026-09-18 so the re-decode
+ *  trigger asks it the same way this file answers it. Existing importers
+ *  (tests/bill-text-source.unit.spec.ts) are unchanged. */
+export { pickTextVersion };
 
 // Sonnet 5's tokenizer runs ~30% more tokens than 4.6 for the same text, so
 // max_tokens caps on its calls are sized up accordingly; thinking is disabled
@@ -36,68 +43,52 @@ import { generateSearchInputs } from './search-inputs.mjs';
 // would add unbounded thinking spend to batch calls.
 export const DECODE_MODEL = 'claude-sonnet-5';
 
-const formattedTextUrl = (v) =>
-  (v?.formats ?? []).find((f) => f?.type === 'Formatted Text')?.url ?? null;
-
 /**
- * The version of a bill we decode from: the CURRENT one — Congress.gov's
- * /text `textVersions` array as returned, first entry carrying a Formatted
- * Text URL. Null when the bill has no retrievable text at all.
- *
- * This used to iterate `[...versions].reverse()`, which took the LAST entry
- * and therefore decoded almost every bill from the text as INTRODUCED, no
- * matter how far it had since moved. Live-verified against the API on
- * 2026-08-09, 67 multi-version bills of the 119th:
- *
- *   s/1199    Engrossed in Senate@2026-04-29 | Reported@2025-07-30 | Introduced@2025-03-27
- *   hr/2701   Placed on Calendar Senate@2025-12-09 | Engrossed in House@2025-09-15
- *             | Reported in House@2025-09-09 | Introduced in House@2025-04-07
- *
- * The array is ordered MOST-ADVANCED FIRST. It is NOT simply date-descending,
- * and a future reader must not "fix" it by sorting on `date`: the two
- * terminal texts of an enacted bill sit outside the date order entirely —
- * `Enrolled Bill` is pinned FIRST and carries `date: null`, and `Public Law`
- * is pinned LAST despite holding the NEWEST date (hr/1: Enrolled@null |
- * Engrossed Amendment Senate@2025-07-01 | ... | Reported@2025-05-20 |
- * Public Law@2025-07-05). Measured 2026-08-09: Enrolled first in 25/25 and
- * Public Law last in 25/25 enacted bills sampled, and entry [0] was the
- * most-advanced text in 42/42 in-progress multi-version bills. So entry [0]
- * is the current text in every observed shape, and the old reverse() landed
- * on `Introduced` for everything still moving — while accidentally landing
- * on the correct `Public Law` for bills already enacted, which is why the
- * damage never showed up in the enacted records anyone spot-checked.
- *
- * Versions with no Formatted Text URL are skipped, not treated as the end of
- * the list — the pick is "the newest version we can actually read".
+ * ONE bill's published text versions, plus the count Congress.gov reports for
+ * them. The single /text request both the decode path below and the nightly
+ * re-decode probe (scripts/sync-bills.mjs) go through, so "what text exists
+ * for this bill" is asked one way and counted one way — see versionCount in
+ * scripts/text-version.mjs for why the count must not simply be the array's
+ * length.
  */
-export function pickTextVersion(versions) {
-  return (versions ?? []).find((v) => formattedTextUrl(v)) ?? null;
+export async function fetchTextVersions(type, number) {
+  const data = await cg(`/bill/${CONGRESS}/${type}/${number}/text`);
+  return {
+    versions: Array.isArray(data.textVersions) ? data.textVersions : [],
+    count: versionCount(data),
+  };
 }
 
 /**
- * The current text of one bill as plain words, or null when Congress.gov
- * publishes NO text for it yet (the caller refuses to decode on null — see
- * syncOneBill). Throws when a version exists but its document can't be
- * fetched, which is a retryable failure rather than a text-less bill.
+ * The current text of one bill as plain words — plus WHICH version that was,
+ * so the record can say which document it was decoded from — or null when
+ * Congress.gov publishes NO text for it yet (the caller refuses to decode on
+ * null — see syncOneBill). Throws when a version exists but its document
+ * can't be fetched, which is a retryable failure rather than a text-less bill.
  *
  * Only the current version is fetched. The old loop fell through to the next
  * version on a non-ok response, which — now that we start from the newest
  * rather than the oldest — would quietly decode a SUPERSEDED document
  * whenever the current one's HTML lagged, reintroducing exactly the staleness
- * above with no marker on the record to show it. Nothing distinguishes a
- * summary of last month's text from a summary of this week's once it is
- * stored, so a text we can't fetch is refused and retried, never approximated
- * from an older one.
+ * pickTextVersion's comment describes. Nothing on the record distinguished a
+ * summary of last month's text from a summary of this week's once it was
+ * stored, which is precisely the gap the returned `version` now closes; a
+ * text we can't fetch is still refused and retried, never approximated from
+ * an older one.
  */
 async function fetchBillText(type, number) {
-  const data = await cg(`/bill/${CONGRESS}/${type}/${number}/text`);
-  const version = pickTextVersion(data.textVersions);
+  const { versions, count } = await fetchTextVersions(type, number);
+  const version = pickTextVersion(versions);
   if (!version) return null;
   const url = formattedTextUrl(version);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`bill text ${res.status} for ${type}/${number} (${version.type})`);
   const html = await res.text();
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000);
+  return {
+    text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60_000),
+    version,
+    count,
+  };
 }
 
 const DECODE_TAGS = [
@@ -330,7 +321,22 @@ export async function syncOneBill(u, ctx) {
       // re-decode trigger in scripts/newsdesk.mjs compares the two and, when
       // they diverge, re-reads the document and writes the new title WITH the
       // new decode, together, via redecodeBill below.
-      return { outcome: refreshBillFields(existing, d), slug, decodeAttempted, fetchedTitle: d.title ?? null };
+      //
+      // `textVersionCount` rides along the same way and for the same kind of
+      // reason: it is Congress.gov's own count of published text versions,
+      // free in this payload, and it is the only signal a refresh can give
+      // about whether the DOCUMENT changed rather than the calendar entry.
+      // scripts/sync-bills.mjs compares it against the stored count to decide
+      // which refreshed bills are worth a (free) /text probe. It is a hint
+      // for ordering, never the thing that spends a decode — see
+      // countSaysNewText in scripts/text-version.mjs.
+      return {
+        outcome: refreshBillFields(existing, d),
+        slug,
+        decodeAttempted,
+        fetchedTitle: d.title ?? null,
+        textVersionCount: Number.isFinite(d.textVersions?.count) ? d.textVersions.count : null,
+      };
     }
     // Same fail-closed posture as refreshBillFields, one step earlier and via
     // the same shared predicate. A brand-new bill whose payload carries no
@@ -388,6 +394,17 @@ export async function syncOneBill(u, ctx) {
       // nothing downstream can tell a decode of THIS document from a decode
       // of the document this bill used to be.
       decoded_at: null,
+      // WHICH DOCUMENT this record's decode was produced from, and how many
+      // text versions existed when we last looked. Declared null here and
+      // written only beside a decode that succeeded (see the stamp below), so
+      // a record can never claim provenance it doesn't have. Null is tolerated
+      // everywhere and means "unknown" — scripts/text-version.mjs's
+      // dateSaysNewText falls back to the bill's EARLIEST published version as
+      // the baseline for those, which is the conservative direction: it can
+      // only over-trigger a re-read, never let a stale explanation stand.
+      text_version_date: null,
+      text_version_type: null,
+      text_version_count: null,
       sponsor_bioguide_id: d.sponsors?.[0]?.bioguideId ?? null,
       introduced_date: d.introducedDate ?? null,
       last_action_date: lastActionDate,
@@ -419,20 +436,23 @@ export async function syncOneBill(u, ctx) {
     // its text is published, and the update feed resurfaces it then, exactly
     // as it does for a gated one. Callers count the skip and name it in their
     // run log, so a night that refuses N bills says so out loud.
-    const text = await fetchBillText(type, u.number);
-    if (text === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
+    const fetched = await fetchBillText(type, u.number);
+    if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     // Set BEFORE the await, not after: a throw inside decode() (its shape
     // check, a parse failure, an SDK error past the retries) still means the
     // request was issued and billed.
     decodeAttempted = true;
-    const dec = await decode(anthropic, bill, text);
+    const dec = await decode(anthropic, bill, fetched.text);
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
     bill.ai_sections = dec.ai_sections;
     // Stamped only here and in redecodeBill — after the decode returned a
     // shape the gate accepted, never before it. A failed decode leaves no
-    // stamp because it left no decode.
+    // stamp because it left no decode. The text-version stamp rides in the
+    // same breath for the same reason: it describes the document `dec` was
+    // produced from, and the two must never be able to come apart.
     bill.decoded_at = new Date().toISOString();
+    Object.assign(bill, textVersionStamp(fetched.version, fetched.count));
     // Search handles for the coverage sync (press names + subject query).
     // Non-fatal: the backfill script sweeps up any misses.
     try {
@@ -463,10 +483,20 @@ export async function syncOneBill(u, ctx) {
  * resolution under the same bill number, and the record's own action text had
  * moved seven times since the decode was written.
  *
- * WHO MAY CALL THIS: scripts/newsdesk.mjs's re-decode trigger, and only under
- * its EXISTING tier-0 decode budget. The verdict itself
- * (redecodeVerdict, scripts/floor-signals-parse.mjs) is pure and tested; this
- * function does not decide, it spends.
+ * WHO MAY CALL THIS, and under whose budget — two callers, two budgets, and
+ * neither of them is this function's to decide:
+ *   - scripts/newsdesk.mjs's re-decode trigger, under its EXISTING tier-0
+ *     decode budget. Its verdict (redecodeVerdict, scripts/floor-signals-parse
+ *     .mjs) asks "is this bill about to be seen, explained from the wrong
+ *     document".
+ *   - scripts/sync-bills.mjs's new-text trigger (2026-09-18), under its own
+ *     REDECODE_MAX_PER_NIGHT ceiling. Its verdict (dateSaysNewText,
+ *     scripts/text-version.mjs) asks a narrower question the newsdesk's
+ *     cannot: has Congress published a NEWER TEXT than the one this record was
+ *     decoded from — an amendment in committee, which moves no headline and
+ *     trips no floor signal, and which is the likeliest single moment for a
+ *     decode to stop describing its own bill.
+ * Both are pure and tested. This function does not decide, it spends.
  *
  * THE SAME PUBLISH GATE AS EVERY OTHER DECODE, and for the same reason: the
  * new decode is written only after decode() has returned a shape the parser
@@ -490,16 +520,22 @@ export async function redecodeBill(slug, ctx) {
   if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
   let decodeAttempted = false;
   try {
-    const text = await fetchBillText(bill.bill_type, bill.bill_number);
-    if (text === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
+    const fetched = await fetchBillText(bill.bill_type, bill.bill_number);
+    if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const subject = title ? { ...bill, title } : bill;
     decodeAttempted = true;
-    const dec = await decode(anthropic, subject, text);
+    const dec = await decode(anthropic, subject, fetched.text);
     if (title) bill.title = title;
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
     bill.ai_sections = dec.ai_sections;
     bill.decoded_at = new Date().toISOString();
+    // The whole point of the new-text trigger: the record now says which
+    // version it was re-read from, so the next run measures against THIS
+    // document rather than re-queueing the bill forever. Stamped from the
+    // version fetchBillText actually read, never from textVersions[0] blind —
+    // see dateSaysNewText's note on comparing like with like.
+    Object.assign(bill, textVersionStamp(fetched.version, fetched.count));
     es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
     // Search handles too, but ONLY when the vehicle changed under us: the old
     // press_names/news_query still name the old act, so the coverage sync and
