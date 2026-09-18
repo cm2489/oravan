@@ -932,18 +932,38 @@ export function titleDrift(corpusTitle, fetchedTitle) {
  *   a matching title is skipped, and gets its stamp the next time the bill is
  *   decoded for a reason of its own.
  *
- * @param {{ decodedAt?: string | null, lastActionDate?: string | null, corpusTitle?: string | null, fetchedTitle?: string | null }} input
+ * `textVerifiedAt` (2026-09-18) — the day a re-decode last CONFIRMED that the
+ *   stored decode's source document is still the document Congress serves
+ *   (scripts/bill-decode.mjs's `decode_text_verified_at`, written by the
+ *   unchanged-document short-circuit). It is folded in as the later of the
+ *   two freshness days, and it has to be, or the short-circuit could never
+ *   settle: a bill whose action keeps moving past an unchanged document would
+ *   re-enter this verdict every single hourly run, re-fetch the same text
+ *   forever, and never reach a quiet state. It is a strictly weaker claim
+ *   than `decodedAt` — "we re-read the document and it had not changed", not
+ *   "we wrote this decode then" — which is exactly why it lives in its own
+ *   field instead of back-dating `decoded_at` to a decode that never ran.
+ *   Absent (every record before that date), the rule is the date rule
+ *   unchanged.
+ *
+ * @param {{ decodedAt?: string | null, lastActionDate?: string | null, corpusTitle?: string | null, fetchedTitle?: string | null, textVerifiedAt?: string | null }} input
  * @returns {{ redecode: boolean, reason: string, similarity?: number }}
  */
-export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetchedTitle }) {
+export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetchedTitle, textVerifiedAt }) {
   if (fetchedTitle && corpusTitle) {
     const drift = titleDrift(corpusTitle, fetchedTitle);
     if (drift.swapped) return { redecode: true, reason: 'vehicle-swap', similarity: drift.similarity };
   }
   if (!decodedAt) return { redecode: false, reason: 'null-decoded-at' };
   if (!lastActionDate) return { redecode: false, reason: 'no-last-action' };
+  // The later of the two: a decode written on day X and re-verified against an
+  // unchanged document on day Y > X is as current as a decode written on Y.
+  // A verification stamp alone never qualifies a bill — `decodedAt` is checked
+  // first above, so a null decode stamp still returns 'null-decoded-at'.
   const decodedDay = String(decodedAt).slice(0, 10);
-  if (decodedDay < String(lastActionDate)) return { redecode: true, reason: 'stale-decode' };
+  const verifiedDay = textVerifiedAt ? String(textVerifiedAt).slice(0, 10) : '';
+  const freshDay = verifiedDay > decodedDay ? verifiedDay : decodedDay;
+  if (freshDay < String(lastActionDate)) return { redecode: true, reason: 'stale-decode' };
   return { redecode: false, reason: 'fresh-decode' };
 }
 
