@@ -70,21 +70,31 @@ import { getMomentsForNomination } from '@/lib/moments';
  * bare English root one (the same defect app/[locale]/bills/[id] fixed on
  * 2026-08-04 — its comment is the canonical version).
  *
- * This route deliberately declares NO generateStaticParams, which is the same
- * place every other route in this app ends up: measured on the production
- * build of 2026-08-06, `/[locale]/bills/[id]`, `/[locale]/questions/[id]` and
- * every other page render on demand (`ƒ`) despite declaring params. What the
- * corpus would have offered to prebuild here is the set of nominations a
- * Moment cites, and TODAY THAT IS EMPTY.
+ * This route deliberately declares NO generateStaticParams. What the corpus
+ * would have offered to prebuild here is the set of nominations a Moment
+ * cites, and TODAY THAT IS EMPTY.
+ *
+ * CORRECTED 2026-09-18: this paragraph used to add that declaring no params
+ * "is the same place every other route in this app ends up", citing the
+ * production build of 2026-08-06 where `/[locale]/bills/[id]`,
+ * `/[locale]/questions/[id]` and every other page rendered on demand (`ƒ`)
+ * despite declaring params. That measurement was real but it was not a law
+ * about this app — it was a site-wide regression traced to
+ * `app/[locale]/loading.tsx` (see that file). With it fixed, every other
+ * [locale] page is `●` again, so this route is now the deliberate exception
+ * rather than one more instance of the rule. The reason below is untouched
+ * and is the whole reason: it never depended on what the other routes did.
  *
  * An empty list is the one configuration Next mis-reads: it classifies the
  * route as fully static (`●`), then tries to prerender each request as it
  * arrives and throws DYNAMIC_SERVER_USAGE — a 500 on every nomination URL,
  * including the 404 path. Verified against a real production build before
  * this landed, which is the only reason it is written down here rather than
- * rediscovered. Declaring no params says the true thing (nothing is prebuilt),
- * costs nothing (this route was `ƒ` either way), and cannot flip behavior the
- * day a Moment cites its first nomination.
+ * rediscovered. Declaring no params says the true thing (nothing is prebuilt)
+ * and cannot flip behavior the day a Moment cites its first nomination. It
+ * does now cost something — this is the one [locale] page that is not
+ * prerendered — and that is the trade accepted: a `ƒ` nomination page beats a
+ * 500 on every nomination URL.
  *
  * A nomination NO moment cites is still a real government record and still
  * renders — but it is marked `noindex`, because it is not part of this site's
