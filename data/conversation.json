@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-18T18:23:11.118Z",
+    "fetched_at": "2026-09-18T21:37:39.441Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-18T18:23:11.118Z"
+        "checked_at": "2026-09-18T21:37:39.441Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-18T18:23:11.118Z"
+        "checked_at": "2026-09-18T21:37:39.441Z"
       },
       "leans": {
         "center": {
@@ -58,6 +58,18 @@
           "lastSeen": "2026-09-15"
         }
       ],
+      "mostViewed": null
+    },
+    "hjres-84-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-1-119": {
@@ -1682,7 +1694,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
+          "lastSeen": "2026-09-18"
         }
       ],
       "unratedOutlets7d": [],
@@ -1713,6 +1725,11 @@
     "hr-9175-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "cryptonews.net",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
         {
           "domain": "tradingview.com",
           "firstSeen": "2026-09-13",
@@ -2315,6 +2332,16 @@
           "lastSeen": "2026-09-18"
         },
         {
+          "domain": "magicvalley.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "mankatofreepress.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "mises.org",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-18"
@@ -2325,7 +2352,17 @@
           "lastSeen": "2026-09-18"
         },
         {
+          "domain": "nwitimes.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "oskaloosa.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "ottumwacourier.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         },
@@ -2403,26 +2440,6 @@
           "domain": "freep.com",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
-        },
-        {
-          "domain": "al.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "businessupturn.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "essentiallysports.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "lehighvalleylive.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
         }
       ],
       "mostViewed": {
