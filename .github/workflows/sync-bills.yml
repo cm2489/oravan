@@ -24,6 +24,13 @@ on:
     #    min to +3h27m but NEVER fires early, so a nominal slot at or after
     #    14:00 can never start inside the publication band. 14:15 is the first
     #    quarter-hour clear of it.
+    #    UPDATED 2026-09-18 (newsdesk-delivery package): +3h27m was hot-
+    #    bills.yml's own worst instance (2026-08-08). A wider measurement
+    #    across the data-sync group's scheduled runs over 2026-08-27..09-10
+    #    found +9h31m, on newsdesk.yml's hourly cron - see that file's header
+    #    and hot-bills.yml's cron comment for the fuller correction. Still
+    #    same-day against 14:15's margin, so nothing below changes; corrected
+    #    here so a future re-derivation starts from the true worst case.
     # 4. INTRA-DAY COVER IS UNCHANGED and is why this move costs nothing while
     #    it is landing: hot-bills.yml (13:47 / 22:47) refreshes statuses twice
     #    a day and newsdesk.yml runs hourly, so the window was already covered
@@ -744,3 +751,32 @@ jobs:
         # thing a broken run still says out loud.
         if: always()
         run: node scripts/check-cursor-age.mjs
+      - name: Dispatch the newsdesk (guaranteed hourly-layer fire)
+        # newsdesk.yml's own hourly cron delivered only 76 of 336 scheduled
+        # runs over 2026-08-27..09-10 (22.6%; max gap 13.27h) - GitHub starves
+        # an hourly cron far worse than it starves this job's own once-daily
+        # one. `gh workflow run` fires a workflow_dispatch event, which -
+        # unlike a plain push - a bot-authored GITHUB_TOKEN IS allowed to
+        # trigger (the same carve-out the "Dispatch CI" step above already
+        # relies on). This buys the hourly layer at least one extra
+        # guaranteed fire per night on top of whatever the starved cron
+        # manages, without waiting on it.
+        #
+        # NO concurrency guard needed here: newsdesk.yml already shares this
+        # job's own `data-sync` group (cancel-in-progress: false), so a
+        # dispatched run queues rather than races a scheduled or
+        # already-running one - verified by reading that workflow's
+        # concurrency block, not assumed.
+        #
+        # LAST, after the cursor-progress alarm, and `always()` for the same
+        # reason that alarm is last (see its own comment): nothing below this
+        # job's normal work may skip the newsdesk its fire, including a red
+        # cursor-age alarm or an earlier gate failure. `continue-on-error` so
+        # a dispatch failure here can never fail this job. Same main-ref guard
+        # as the deploy/CI steps above: a branch validation run must not
+        # dispatch the shared newsdesk against main's data.
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run newsdesk.yml --ref main

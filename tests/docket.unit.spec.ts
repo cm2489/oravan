@@ -11,6 +11,7 @@ import {
   docketKey,
   docketRung,
   entersFloorWatch,
+  floorSignalsHealthy,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -474,6 +475,54 @@ test.describe('chamberSessionFrom · three ways to say “we don’t know”', (
     expect(verdicts).toEqual(['in_session', 'out_of_session']);
     expect(verdicts.some((v) => v.includes('Daily Digest'))).toBe(false);
     expect(chamberSessionFrom(m, 'basis' as 'house', META_NOW)).toBe('unknown');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * floorSignalsHealthy / chamberSessionFrom's fourth arg — 2026-09-18,
+ * newsdesk-delivery: the heartbeat that keeps in_session honest on an hour
+ * with no live BILL signal (light in-session week, not a recess).
+ * ------------------------------------------------------------------ */
+test.describe('floorSignalsHealthy · merging the signal file\'s stamp with the heartbeat\'s', () => {
+  test('with no checked file at all, the signal file\'s own stamp wins (unchanged behaviour)', () => {
+    expect(floorSignalsHealthy(meta(), null).fetched_at).toBe(meta().fetched_at);
+    expect(floorSignalsHealthy(meta(), undefined).fetched_at).toBe(meta().fetched_at);
+  });
+
+  test('the NEWER of the two stamps wins, whichever file it came from', () => {
+    const older = new Date(META_NOW - 3_600_000).toISOString();
+    const newer = new Date(META_NOW - 60_000).toISOString();
+    expect(floorSignalsHealthy({ fetched_at: older }, { checked_at: newer }).fetched_at).toBe(newer);
+    expect(floorSignalsHealthy({ fetched_at: newer }, { checked_at: older }).fetched_at).toBe(newer);
+  });
+
+  test('an unparseable checked_at is ignored, not preferred', () => {
+    const m = meta();
+    expect(floorSignalsHealthy(m, { checked_at: 'not a date' }).fetched_at).toBe(m.fetched_at);
+  });
+
+  test('both stamps missing/unparseable is null, not a thrown error', () => {
+    expect(floorSignalsHealthy({}, {}).fetched_at).toBeNull();
+    expect(floorSignalsHealthy(undefined, undefined).fetched_at).toBeNull();
+  });
+});
+
+test.describe('chamberSessionFrom + the checked heartbeat — the recess-vs-light-week distinction', () => {
+  test('a stale signal file alone reads unknown (unchanged from before this file existed)', () => {
+    const stale = { ...meta(), fetched_at: new Date(META_NOW - (SIGNAL_STALE_HOURS + 1) * 3_600_000).toISOString() };
+    expect(chamberSessionFrom(stale, 'senate', META_NOW)).toBe('unknown');
+  });
+
+  test('a fresh HEARTBEAT rescues a stale signal file — the light-in-session-week case this file exists for', () => {
+    const stale = { ...meta(), fetched_at: new Date(META_NOW - (SIGNAL_STALE_HOURS + 1) * 3_600_000).toISOString() };
+    const freshChecked = { checked_at: new Date(META_NOW - 3_600_000).toISOString() };
+    expect(chamberSessionFrom(stale, 'senate', META_NOW, freshChecked)).toBe('in_session');
+  });
+
+  test('a stale heartbeat cannot rescue a stale signal file either', () => {
+    const stale = { ...meta(), fetched_at: new Date(META_NOW - (SIGNAL_STALE_HOURS + 1) * 3_600_000).toISOString() };
+    const staleChecked = { checked_at: new Date(META_NOW - (SIGNAL_STALE_HOURS + 2) * 3_600_000).toISOString() };
+    expect(chamberSessionFrom(stale, 'senate', META_NOW, staleChecked)).toBe('unknown');
   });
 });
 

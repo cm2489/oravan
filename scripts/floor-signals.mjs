@@ -34,6 +34,14 @@
  * carry-forward rules live in scripts/floor-signals-parse.mjs's header — this
  * file is the network and the fs, that one is the judgement.
  *
+ * A second file, data/floor-signals-checked.json, carries the "we still
+ * checked" heartbeat for a run that reconfirms the schedule with no live BILL
+ * signal (a light in-session week, not a recess) — decoupled from
+ * FLOOR_SIGNALS_PATH's own `live`-gated restamp so a genuine recess still
+ * produces zero commits. See that constant's header in
+ * floor-signals-parse.mjs for the full reasoning (2026-09-18,
+ * newsdesk-delivery package).
+ *
  * The write is CONDITIONAL: an hourly cron must never become an hourly
  * deploy, so a run whose content matches the committed file writes nothing
  * (shouldWrite / materialFingerprint). A schedule that CHANGED — a bill added,
@@ -53,6 +61,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { cg } from './congress-fetch.mjs';
 import {
+  CHECKED_STAMP_MAX_AGE_HOURS,
+  FLOOR_SIGNALS_CHECKED_PATH,
+  FLOOR_SIGNALS_CHECKED_SCHEMA,
   FLOOR_SIGNALS_PATH,
   FLOOR_SIGNALS_SCHEMA,
   deriveFloorMeta,
@@ -67,6 +78,7 @@ import {
   resolveMeetingDate,
   selectDigestGranule,
   shouldWrite,
+  shouldWriteChecked,
 } from './floor-signals-parse.mjs';
 import { mondayOfWeekET } from './newsdesk-match.mjs';
 
@@ -375,4 +387,29 @@ if (shouldWrite({ previous, next, now })) {
   console.log(`DONE: wrote ${FLOOR_SIGNALS_PATH}`);
 } else {
   console.log(`DONE: no change and the stamp is still fresh — ${FLOOR_SIGNALS_PATH} untouched (an hourly run must not produce a deploy)`);
+}
+
+// ---- the "we checked" heartbeat, independent of the write above -----------
+// See FLOOR_SIGNALS_CHECKED_PATH's header in floor-signals-parse.mjs: this
+// reconfirms in_session/next_meeting for lib/docket.mjs's floorSignalsHealthy
+// on an hour where floor-signals.json itself stays silent (no live bill
+// signal) but the sources still answered — the gap that let the file's
+// staleness clock drift to 60h against the 48h ceiling while checks were
+// genuinely still happening. Never conditioned on `live`; never touches
+// FLOOR_SIGNALS_PATH or its commit behaviour.
+const previousChecked = existsSync(FLOOR_SIGNALS_CHECKED_PATH) ? loadJSONOr(FLOOR_SIGNALS_CHECKED_PATH, null) : null;
+const anySourceHealthy = Object.values(sources).some((s) => s.status !== 'error' && s.status !== 'data_stale');
+if (!anySourceHealthy) {
+  console.log(`  floor-signals-checked: skipped — both sources unhealthy this run, nothing honest to reconfirm`);
+} else if (shouldWriteChecked({ previous: previousChecked, now })) {
+  const nextChecked = {
+    schema: FLOOR_SIGNALS_CHECKED_SCHEMA,
+    checked_at: nowISO,
+    in_session: floorMeta.in_session,
+    next_meeting: floorMeta.next_meeting,
+  };
+  writeFileSync(FLOOR_SIGNALS_CHECKED_PATH, `${JSON.stringify(nextChecked, null, 2)}\n`);
+  console.log(`DONE: restamped ${FLOOR_SIGNALS_CHECKED_PATH}`);
+} else {
+  console.log(`DONE: ${FLOOR_SIGNALS_CHECKED_PATH} stamp is still within ${CHECKED_STAMP_MAX_AGE_HOURS}h — untouched`);
 }

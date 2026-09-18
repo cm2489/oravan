@@ -298,7 +298,56 @@ test.describe('concurrency groups', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 5 · D8 — the nightly reads the same day's floor record.
+ * 5 · 2026-09-18 (newsdesk-delivery) — the hourly layer gets guaranteed
+ *     fires on top of its own starved cron, and never races a scheduled run.
+ * ------------------------------------------------------------------ */
+test.describe('newsdesk is dispatched, not only scheduled', () => {
+  const dispatchStep = (yml: string) => {
+    const at = yml.indexOf('- name: Dispatch the newsdesk');
+    expect(at, 'dispatch step not found').toBeGreaterThan(0);
+    // Slice to the next top-level step (or EOF) so the assertions below can't
+    // accidentally match a LATER step's `if:`/`run:` line.
+    const rest = yml.slice(at);
+    const nextStepAt = rest.slice(1).search(/\n {6}- name:/);
+    return nextStepAt === -1 ? rest : rest.slice(0, nextStepAt + 1);
+  };
+
+  test('hot-bills.yml dispatches it, guarded to main and non-blocking', () => {
+    const step = dispatchStep(hotBills);
+    expect(step).toContain('gh workflow run newsdesk.yml --ref main');
+    expect(step).toContain("github.ref == 'refs/heads/main'");
+    expect(step).toContain('continue-on-error: true');
+  });
+
+  test('sync-bills.yml dispatches it too, and only after the cursor-progress alarm', () => {
+    const step = dispatchStep(syncBills);
+    expect(step).toContain('gh workflow run newsdesk.yml --ref main');
+    expect(step).toContain("github.ref == 'refs/heads/main'");
+    expect(step).toContain('continue-on-error: true');
+    // Same reasoning as "the alarm is LAST" above, one step further: nothing
+    // in this job's normal work — including a red cursor-age alarm — may
+    // skip the newsdesk its guaranteed fire.
+    expect(syncBills.indexOf('- name: Dispatch the newsdesk')).toBeGreaterThan(
+      syncBills.indexOf('- name: Cursor-progress alarm')
+    );
+  });
+
+  test('both dispatch steps run even when something upstream already failed', () => {
+    expect(dispatchStep(hotBills)).toContain('if: always()');
+    expect(dispatchStep(syncBills)).toContain('if: always()');
+  });
+
+  test('the concurrency group already shared with newsdesk.yml is the only guard needed — no new one was invented', () => {
+    // Pinned above too (test group 4): re-asserted here so a reader of THIS
+    // block sees the guard the dispatch steps rely on without cross-referencing.
+    const groupOf = (yml: string) => /concurrency:[\s\S]*?group:\s*(\S+)/.exec(yml)?.[1];
+    expect(groupOf(wf('newsdesk.yml'))).toBe(groupOf(hotBills));
+    expect(groupOf(wf('newsdesk.yml'))).toBe(groupOf(syncBills));
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 6 · D8 — the nightly reads the same day's floor record.
  * ------------------------------------------------------------------ */
 test.describe('nightly phasing (Congress.gov publishes 13:35-14:00 UTC)', () => {
   const cronsOf = (yml: string) =>
