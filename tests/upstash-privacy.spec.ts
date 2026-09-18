@@ -7,7 +7,16 @@ import { noteImpression, noteImpressionForToken } from '../lib/impressions';
 import { __resetSaltMemoForTests, createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
 import { mintCapabilityToken, resolveTenantAccess, tenantKey, tokenHash, tokenIndexKey } from '../lib/tenancy';
-import { MCP_TOOL_NAMES, noteMcpToolCall, noteScriptGeneration } from '../lib/usage';
+import {
+  MCP_TOOL_NAMES,
+  noteMcpToolCall,
+  notePageview,
+  noteScriptGeneration,
+  PAGEVIEW_SURFACES,
+  pageviewSurfaceForPath,
+  pageviewUsageKey,
+  usageDayKey,
+} from '../lib/usage';
 import {
   CACHE_URL,
   COUNTERS_URL,
@@ -628,5 +637,83 @@ test('AE5 (usage-counter family, traffic-watch): MCP tool calls + script generat
     expect(counters.store.get(scriptKey!)?.value).toBe('3');
   } finally {
     restoreUsageFetch();
+  }
+});
+
+/*
+ * AE5, RE-RUN AGAINST THE SITE PAGE-VIEW FAMILY (site-counter, 2026-09).
+ * Drives the exact pair proxy.ts calls - pageviewSurfaceForPath then
+ * notePageview - over a burst of REAL request paths, including the ones
+ * that carry the most identifying material a URL can carry here (a bill
+ * slug, a ZIP in a query string, a locale prefix). Proves that what
+ * crosses the wire is a route TEMPLATE and a date, and that none of the
+ * path that produced it survives the trip.
+ *
+ * This is the family's load-bearing claim, so it is asserted over the
+ * whole recorded command surface, not just the keys that stuck.
+ */
+test('AE5 (site page-view family, site-counter): a burst of real paths leaves only route-template counters on the counters wire', async () => {
+  const counters = new MockUpstash();
+  const restorePageviewFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  try {
+    const locales = ['en', 'es'];
+    // Every path a visitor could plausibly produce, including hostile ones.
+    const paths = [
+      '/',
+      '/es',
+      '/bills',
+      `/bills/${SLUG}`,
+      `/es/bills/${SLUG}`,
+      `/bills/${SLUG}?stance=support`,
+      '/questions',
+      '/questions/what-is-a-markup',
+      '/reps',
+      '/record',
+      '/nominations/jane-doe',
+      '/about',
+      `/${CALLER_IPS[0]}`,
+      '/definitely-not-a-route',
+    ];
+    for (const path of paths) {
+      // Exactly proxy.ts's call shape: the pathname (no query - NextRequest
+      // splits it off), matched to a label, and only the label passed on.
+      await notePageview(pageviewSurfaceForPath(path.split('?')[0], locales));
+    }
+
+    const countersCommandText = counters.commands.map((c) => c.join(' ')).join('\n');
+
+    // 1. Every key stays inside the closed shape: pageview:<one of the 9
+    //    label literals>:<day>. No other shape exists - which is also
+    //    rule pageview-surface's real-world counterpart.
+    const surfaceAlternation = PAGEVIEW_SURFACES.join('|');
+    for (const key of counters.keys()) {
+      expect(key).toMatch(new RegExp(`^dev:usage:pageview:(${surfaceAlternation}):\\d{4}-\\d{2}-\\d{2}$`));
+    }
+
+    // 2. Nothing the paths carried reaches the wire: not the bill slug, not
+    //    the stance, not the locale prefix, not an address-shaped segment,
+    //    not a slash, not a query string.
+    for (const marker of [SLUG, 'stance', 'support', '/es/', 'definitely-not-a-route', ...CALLER_IPS]) {
+      expect(countersCommandText, `page-view wire surface must not carry "${marker}"`).not.toContain(marker);
+    }
+
+    // 3. The labels really did bucket, with exact counts - 'bill' is 3 (the
+    //    en, es, and query-string variants of ONE bill page, which is the
+    //    point: the template is the unit), and everything unmatched really
+    //    did land in 'other' rather than inventing a label.
+    const countFor = (surface: string) =>
+      Number(counters.store.get(pageviewUsageKey(surface as never, usageDayKey()))?.value ?? '0');
+    expect(countFor('home')).toBe(2); // '/' and '/es'
+    expect(countFor('bills-index')).toBe(1);
+    expect(countFor('bill')).toBe(3);
+    expect(countFor('questions-index')).toBe(1);
+    expect(countFor('question')).toBe(1);
+    expect(countFor('reps')).toBe(1);
+    expect(countFor('record')).toBe(1);
+    expect(countFor('nominations')).toBe(1);
+    expect(countFor('other')).toBe(3); // /about, the IP-shaped path, the unknown route
+  } finally {
+    restorePageviewFetch();
   }
 });
