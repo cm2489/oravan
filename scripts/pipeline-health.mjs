@@ -77,6 +77,13 @@ const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
  */
 const MAX_LOG_FETCHES = 16;
 
+/**
+ * How old the newest nightly may be before "no nightly ran" is the honest
+ * reading. 30h, not 24: see the nightly block in buildReport for the fifteen
+ * minutes of headroom a 24h window would be betting on.
+ */
+const NIGHTLY_MISSING_HOURS = 30;
+
 /** Data workflows whose logs carry the counters this report is made of. */
 const DATA_WORKFLOWS = new Set([
   'Nightly bill sync',
@@ -202,15 +209,29 @@ export function buildReport({ now = Date.now() } = {}) {
   const runs24h = within(allRuns, since24h);
 
   /* -- nightly ---------------------------------------------------- */
-  const nightlyRun = runs24h.find((r) => r.workflowName === 'Nightly bill sync') ?? null;
-  const nightly = nightlyRun
-    ? {
-        conclusion: nightlyRun.conclusion ?? nightlyRun.status ?? 'unknown',
-        durationMin: durationMinutes(nightlyRun.startedAt, nightlyRun.updatedAt),
-        url: nightlyRun.url,
-        runId: nightlyRun.databaseId,
-      }
-    : null;
+  // Deliberately NOT a 24h window. This digest fires at 13:00 UTC and the
+  // nightly's cron is 14:15 UTC, so at report time the newest nightly is
+  // yesterday's — 22h45m old, with fifteen minutes of headroom. A queued
+  // runner eats that headroom easily, and a bare 24h filter would then report
+  // "no nightly ran" on a night that ran fine. So: take the most recent
+  // nightly from the 7-day list, and let NIGHTLY_MISSING_HOURS decide whether
+  // its age is a problem.
+  const nightlyRun = allRuns.find((r) => r.workflowName === 'Nightly bill sync') ?? null;
+  const nightlyAgeHours = nightlyRun ? (now - Date.parse(nightlyRun.createdAt ?? '')) / 3_600_000 : null;
+  const nightly =
+    nightlyRun && (nightlyAgeHours === null || nightlyAgeHours <= NIGHTLY_MISSING_HOURS)
+      ? {
+          // A run still in flight has no verdict yet, and must not be reported
+          // as having "ended in_progress" — that would alarm on a healthy run
+          // that simply has not finished.
+          conclusion: nightlyRun.status === 'completed' ? (nightlyRun.conclusion ?? 'unknown') : 'still running',
+          running: nightlyRun.status !== 'completed',
+          ageHours: nightlyAgeHours,
+          durationMin: durationMinutes(nightlyRun.startedAt, nightlyRun.updatedAt),
+          url: nightlyRun.url,
+          runId: nightlyRun.databaseId,
+        }
+      : null;
 
   /* -- logs ------------------------------------------------------- */
   // One pass over the day's data-workflow runs. Each log is read ONCE and
@@ -220,9 +241,17 @@ export function buildReport({ now = Date.now() } = {}) {
   // is the only run whose log carries the sync counters, the coverage
   // summary, pregen and the portrait mirror, so on a day busy enough to hit
   // MAX_LOG_FETCHES it must never be the log that gets dropped.
-  const logTargets = runs24h
-    .filter((r) => DATA_WORKFLOWS.has(r.workflowName) && r.status === 'completed')
-    .sort((a, b) => Number(b.workflowName === 'Nightly bill sync') - Number(a.workflowName === 'Nightly bill sync'));
+  const logCandidates = runs24h.filter((r) => DATA_WORKFLOWS.has(r.workflowName) && r.status === 'completed');
+  // The chosen nightly may sit just outside the 24h window (see above). Read
+  // its log anyway — otherwise the report would show a nightly's conclusion
+  // beside "sync counters: not found in the log", which reads like a parser
+  // break rather than a window edge.
+  if (nightlyRun && nightlyRun.status === 'completed' && !logCandidates.some((r) => r.databaseId === nightlyRun.databaseId)) {
+    logCandidates.push(nightlyRun);
+  }
+  const logTargets = logCandidates.sort(
+    (a, b) => Number(b.workflowName === 'Nightly bill sync') - Number(a.workflowName === 'Nightly bill sync')
+  );
   const skippedLogs = Math.max(0, logTargets.length - MAX_LOG_FETCHES);
   const anthropic = { creditBalance: 0, invalidRequestOther: 0, total: 0 };
   const anthropicByWorkflow = {};

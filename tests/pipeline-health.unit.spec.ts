@@ -476,6 +476,7 @@ test.describe('alarms', () => {
     const codes = (r: object) => alarms(r).map((a) => a.code);
     expect(codes({ ...healthy, nightly: { conclusion: 'failure' } })).toContain('nightly-not-success');
     expect(codes({ ...healthy, nightly: null })).toContain('nightly-missing');
+    expect(codes({ ...healthy, nightly: { conclusion: 'cancelled' } })).toContain('nightly-not-success');
     expect(codes({ ...healthy, anthropic: { creditBalance: 12, invalidRequestOther: 0 } })).toContain(
       'anthropic-credit'
     );
@@ -487,6 +488,13 @@ test.describe('alarms', () => {
     expect(codes({ ...healthy, floorSignals: { pastAlarm: true, ageHours: 40, alarmHours: 36 } })).toContain(
       'floor-signals-stale'
     );
+  });
+
+  test('a nightly still in flight is not an alarm', () => {
+    // The digest fires at 13:00 UTC and the nightly's cron is 14:15 UTC, so
+    // they normally never overlap — but a queued runner can make them, and a
+    // run with no verdict yet is a scheduling coincidence, not a fault.
+    expect(alarms({ ...healthy, nightly: { conclusion: 'still running', running: true } })).toEqual([]);
   });
 
   test('t3 resolving none of NOTHING is not an alarm', () => {
@@ -520,7 +528,7 @@ test.describe('formatHealthSection', () => {
     // not measure", not as "everything is zero".
     const rendered = formatHealthSection({});
     expect(rendered).toContain('not found');
-    expect(rendered).toContain('no run in 24h');
+    expect(rendered).toContain('no recent run');
     expect(rendered).toContain('not found in the log');
   });
 
