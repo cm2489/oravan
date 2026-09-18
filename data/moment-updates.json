@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-18T14:29:25.757Z"
+    "generated_at": "2026-09-18T17:56:21.177Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1273,6 +1273,36 @@
         },
         "changed_because": [
           "updates:+4"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_7e143c92",
+        "generated_at": "2026-09-18T17:56:27.567Z",
+        "as_of_day": "2026-09-18",
+        "text": {
+          "en": "Where it stands: S. 4668 is in floor activity in the Senate. On September 15, 2026, the Senate voted to invoke cloture on the motion to proceed by a recorded vote of 74 to 24 (Roll no. 235). The Senate then considered the motion to proceed on September 16, 2026. On September 17, 2026, the Senate agreed to the motion to proceed by a recorded vote of 77 to 22 (Roll no. 236). That same day, a cloture motion was presented on the measure itself, and a cloture motion was also presented on amendment SA 6776. No further votes are recorded in the last 14 days.",
+          "es": "Donde se encuentra: el S. 4668 esta en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invoco la mocion de clausura sobre la mocion para proceder por votacion nominal de 74 a 24 (votacion num. 235). Luego, el Senado considero la mocion para proceder el 16 de septiembre de 2026. El 17 de septiembre de 2026, el Senado aprobo la mocion para proceder por votacion nominal de 77 a 22 (votacion num. 236). Ese mismo dia se presento una mocion de clausura sobre la medida misma, y tambien se presento una mocion de clausura sobre la enmienda SA 6776. No se registran mas votaciones en los ultimos 14 dias."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+5"
         ],
         "model": "claude-sonnet-5"
       }
