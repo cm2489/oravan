@@ -56,6 +56,30 @@
  *                 VERSION (USAGE_CONTENT_IDENTIFIER names it — software
  *                 name only) may ever reach a usage key.
  *
+ * The usage family gains a FOURTH key shape (site page views,
+ *                 site-counter 2026-09): a daily counter per ROUTE-TEMPLATE
+ *                 label — the shape of the page ('bill'), never which page.
+ *                 Two teeth, because this family is the first one whose
+ *                 input starts life as a URL:
+ *                   - the `pageview-surface` rule below holds the CANONICAL
+ *                     label vocabulary. lib/usage.ts's PAGEVIEW_SURFACES
+ *                     declaration is parsed and every label checked against
+ *                     it, so widening the vocabulary means editing this
+ *                     privacy gate on purpose rather than editing a list in
+ *                     passing. A pageview key with no parsable declaration
+ *                     behind it fails too — the check cannot be removed by
+ *                     renaming the constant.
+ *                   - RAW_REFERER_MATERIAL now applies to this registry the
+ *                     way it already applies to embed-domain nominations:
+ *                     the raw pathname/URL/query the label is DERIVED from
+ *                     must never itself reach a key. (`bill` reads as a
+ *                     forbidden token in USAGE_CONTENT_IDENTIFIER, and
+ *                     correctly so for an interpolation — a caller's bill
+ *                     identifier is content. It survives as a LABEL here
+ *                     only because it is a fixed member of the closed
+ *                     vocabulary this gate itself pins, never an
+ *                     interpolated value.)
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -135,7 +159,35 @@ const TENANT_IDENTIFIER = /tenantId/;
 // Referer/URL material it starts from must never make it into a template
 // interpolation — the only interpolations that belong in that file's key
 // builder are the already-truncated domain and a date bucket.
-const RAW_REFERER_MATERIAL = /referer|referrer|pathname|\bhref\b|\bsearch\b|\burl\b/i;
+// `nexturl` named explicitly (site-counter, 2026-09): `\burl\b` cannot see
+// it — there is no word boundary inside `req.nextUrl` — and NextRequest's
+// nextUrl is exactly the object proxy.ts reads the pathname from, so it is
+// the most likely spelling of this mistake in this repo, not a hypothetical.
+const RAW_REFERER_MATERIAL = /referer|referrer|pathname|nexturl|\bhref\b|\bsearch\b|\burl\b/i;
+// The pageview family's CANONICAL route-template vocabulary (site-counter,
+// 2026-09). The gate holds this list, not lib/usage.ts, and lib/usage.ts's
+// PAGEVIEW_SURFACES declaration is checked against it — so a new surface
+// label is a deliberate edit to the privacy gate, reviewed as such, rather
+// than one more string appended to an array. Every label is a route
+// TEMPLATE: the shape of the page, never which page, never a path segment
+// taken from a request.
+const ALLOWED_PAGEVIEW_SURFACES = new Set([
+  'home',
+  'bills-index',
+  'bill',
+  'questions-index',
+  'question',
+  'reps',
+  'record',
+  'nominations',
+  'other',
+]);
+// Matches lib/usage.ts's `export const PAGEVIEW_SURFACES = [ ... ]`. Kept
+// deliberately literal (the constant's exact name, an array literal): a
+// rename or a computed list stops matching, which the missing-declaration
+// check below turns into a failure rather than a silent pass.
+const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
+const PAGEVIEW_KEY_MARKER = 'usage:pageview:';
 
 /** Every ${...} interpolation inside template literals of a source text. */
 function templateInterpolations(text) {
@@ -339,6 +391,10 @@ export function scanText(file, text) {
   //     caller-derived material — mirrors rule 4d's impression-content/
   //     impression-caller checks. A bare `${tool}` or `${day}` interpolation
   //     is the legitimate shape and must NOT be flagged.
+  //     The pageview shape (site-counter, 2026-09) adds a THIRD check here,
+  //     the same one the domain-nomination family already carries: this is
+  //     the first usage shape whose input starts life as a URL, so the raw
+  //     pathname/URL/query it is derived from must never reach a key either.
   if (file === USAGE_REGISTRY) {
     for (const { expr, line } of templateInterpolations(text)) {
       if (USAGE_CONTENT_IDENTIFIER.test(expr)) {
@@ -347,6 +403,42 @@ export function scanText(file, text) {
       if (CALLER_MATERIAL.test(expr)) {
         add('usage-caller', line, `caller-derived material "${expr.trim()}" interpolated in the usage registry`);
       }
+      if (RAW_REFERER_MATERIAL.test(expr)) {
+        add('usage-raw-path', line, `raw path/URL material "${expr.trim()}" interpolated in the usage registry`);
+      }
+    }
+  }
+
+  // 4f. the pageview family's closed vocabulary (site-counter, 2026-09).
+  //     Unlike every rule above, this one reads a DECLARATION rather than an
+  //     interpolation: the surface segment is a fixed label, so the thing
+  //     worth gating is the set of labels that exists at all. Two teeth —
+  //     every declared label must be on this gate's own allowlist, and a
+  //     registry that writes pageview keys must have a parsable declaration
+  //     to check (renaming the constant is a failure, not an escape).
+  if (file === USAGE_REGISTRY) {
+    const decl = PAGEVIEW_SURFACES_DECL.exec(text);
+    const line = decl ? text.slice(0, decl.index).split('\n').length : 0;
+    if (decl) {
+      const labels = [...decl[1].matchAll(/'([^']*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]);
+      if (labels.length === 0) {
+        add('pageview-surface', line, 'PAGEVIEW_SURFACES declares no labels — the closed vocabulary cannot be checked');
+      }
+      for (const label of labels) {
+        if (!ALLOWED_PAGEVIEW_SURFACES.has(label)) {
+          add(
+            'pageview-surface',
+            line,
+            `page-view surface "${label}" is not in the gate's allowlist — a surface label is a route TEMPLATE, never a path, slug, query, or locale`
+          );
+        }
+      }
+    } else if (text.includes(PAGEVIEW_KEY_MARKER)) {
+      add(
+        'pageview-surface',
+        0,
+        `the usage registry writes ${PAGEVIEW_KEY_MARKER} keys but declares no parsable PAGEVIEW_SURFACES list — the closed vocabulary cannot be checked`
+      );
     }
   }
 
@@ -571,6 +663,38 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:usage:mcp-client:${client}:${clientVersion}:${day}`;',
     rule: 'usage-content',
   },
+  {
+    // The hazard this family is built around: the label is DERIVED from a
+    // path, so the path itself must never take the label's place.
+    name: 'the raw request pathname interpolated into a page-view key (site-counter)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:pageview:${pathname}:${day}`;',
+    rule: 'usage-raw-path',
+  },
+  {
+    name: 'the raw request URL interpolated into a page-view key (site-counter)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:pageview:${req.nextUrl}:${day}`;',
+    rule: 'usage-raw-path',
+  },
+  {
+    name: 'a page-view surface label that is a path, not a route template (site-counter)',
+    file: USAGE_REGISTRY,
+    text: "const PAGEVIEW_SURFACES = ['home', '/bills/hr-1234'] as const;",
+    rule: 'pageview-surface',
+  },
+  {
+    name: 'a page-view surface label outside the gate allowlist (site-counter)',
+    file: USAGE_REGISTRY,
+    text: "const PAGEVIEW_SURFACES = ['home', 'bill', 'visitor-id'] as const;",
+    rule: 'pageview-surface',
+  },
+  {
+    name: 'page-view keys written with no parsable surface declaration to check (site-counter)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:pageview:${surface}:${day}`;',
+    rule: 'pageview-surface',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -636,6 +760,17 @@ const SELF_TEST_CLEAN = [
     // must not false-positive against any rule.
     file: USAGE_REGISTRY,
     text: 'const k = `${keyPrefix()}:usage:mcp-client:${sanitizeMcpClientName(client)}:${day}`;',
+  },
+  {
+    // The real page-view shape (site-counter, 2026-09), declaration and key
+    // builder together, exactly as lib/usage.ts ships them — the closed
+    // vocabulary on the allowlist, and the structural narrowing call inside
+    // the interpolation. Must produce zero violations across all four usage
+    // rules, including the missing-declaration tooth.
+    file: USAGE_REGISTRY,
+    text:
+      "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'record', 'nominations', 'other'] as const;\n" +
+      'const k = `${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`;',
   },
 ];
 
