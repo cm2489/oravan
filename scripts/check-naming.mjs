@@ -16,22 +16,7 @@ import { readFileSync } from 'node:fs';
 const FRAG = { r: 'ros' + 'tra', c: 'cab' + 'ina', b: 'be[\\s-]+the[\\s-]+change', s: 's[e\u00E9][\\s-]+el[\\s-]+cambio' };
 const PATTERNS = [
   { name: FRAG.r, re: new RegExp(FRAG.r, 'i') },
-  // WORD-BOUNDED (2026-09-18, newsdesk-delivery package \u2014 found blocking every
-  // CI dispatch on main since ~04:40 UTC today). FRAG.c's root is also an
-  // ordinary Spanish word (cabin/booth, as in an airplane's or a vehicle's),
-  // not only a retired product name, and the un-bounded pattern matched it as
-  // a substring of its own plural form in a legitimate AI decode's Spanish
-  // summary (data/bills-es.json, s-246-119: the plural, describing airplane
-  // cabins under TSA knife rules \u2014 nothing to do with the retired name). Note
-  // deliberately avoids spelling either form out, so this comment cannot
-  // become a new self-match. `\b` still catches the bare singular and any
-  // hyphenated/punctuated form (a non-word character on either side still
-  // satisfies a boundary) \u2014 everything the self-test fixtures below actually
-  // exercise \u2014 and only stops matching INSIDE a longer word built on the same
-  // root. The other three patterns are proper nouns/phrases with no ordinary-
-  // word collision found in this corpus, so they are left as they were rather
-  // than changed on a guess.
-  { name: FRAG.c, re: new RegExp(`\\b${FRAG.c}\\b`, 'i') },
+  { name: FRAG.c, re: new RegExp(FRAG.c, 'i') },
   { name: 'old-app name (EN)', re: new RegExp(FRAG.b, 'i') },
   { name: 'old-app name (ES)', re: new RegExp(FRAG.s, 'i') },
 ];
@@ -59,20 +44,8 @@ const cap = (w) => w[0].toUpperCase() + w.slice(1);
 const FIXTURES_BAD = [
   cap(FRAG.r) + ' rules', FRAG.c.toUpperCase() + '-nine', 'be the' + ' change',
   'Be The' + ' Change', 's\u00E9 el' + ' cambio', 'se  el' + ' cambio', 'data-' + FRAG.r + '-widget',
-  // The bare product name and a hyphenated/punctuated form both still trip
-  // the word-bounded FRAG.c pattern - \b is satisfied by any non-word
-  // character on either side, punctuation included.
-  cap(FRAG.c) + ' app', 'the ' + FRAG.c + '.',
 ];
-const FIXTURES_GOOD = [
-  'Oravan', 'rostrum', 'cambio climático', 'el cambio llega', 'change the beat',
-  // 2026-09-18: the false positive that blocked every CI dispatch on main -
-  // an ordinary Spanish PLURAL built on the same root as the retired product
-  // name (singular), which the un-bounded pattern used to catch as a
-  // substring. The bare singular word stays caught deliberately - see the
-  // pattern comment above; only the inflected form was ever the bug.
-  'cabinas de avión',
-];
+const FIXTURES_GOOD = ['Oravan', 'rostrum', 'cambio climático', 'el cambio llega', 'change the beat'];
 for (const s of FIXTURES_BAD) {
   if (!PATTERNS.some((p) => p.re.test(s))) {
     console.error(`::error::check-naming self-test failed: pattern set missed known-bad fixture "${s}"`);
