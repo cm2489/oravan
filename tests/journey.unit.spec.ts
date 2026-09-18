@@ -1384,6 +1384,7 @@ test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
       'headlineAnnouncedSenate',
       'statusAnnounced',
       'metaAnnounced',
+      'metaAnnouncedFootnote',
     ] as const) {
       expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
       expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');

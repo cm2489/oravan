@@ -158,6 +158,17 @@ const FLOOR_COPY = {
    * chamber itself named it) and narrower (it names no vote date, ever). The
    * status label is chamber-neutral on purpose — the chamber is already in the
    * chip directly above it.
+   *
+   * THE FOOTNOTE (owner decision D13, 2026-09-18) is the announced row's alone,
+   * and it is the sentence this band owes a reader now that it comes down on
+   * its own: the announcement is a live fact only until the chamber's record
+   * answers it, and until 2026-09-18 nothing said so. On 2026-09-03 seventeen
+   * of the eighteen bills the site called "Deciding now" carried a floor
+   * outcome in their own record while this panel was still saying offices tally
+   * calls until it happens — so the rule is now enforced (lib/docket.mjs's
+   * `announcementAnswered`) AND stated. The other two rows keep null: a
+   * placement and a pending motion are the bill's OWN record, and they already
+   * fall out of the band the moment that record moves.
    */
   announced: {
     house: {
@@ -165,12 +176,14 @@ const FLOOR_COPY = {
       headline: 'bill.floor.headlineAnnouncedHouse',
       status: 'bill.floor.statusAnnounced',
       meta: 'bill.floor.metaAnnounced',
+      footnote: 'bill.floor.metaAnnouncedFootnote',
     },
     senate: {
       chip: 'bill.floor.announcedSenate',
       headline: 'bill.floor.headlineAnnouncedSenate',
       status: 'bill.floor.statusAnnounced',
       meta: 'bill.floor.metaAnnounced',
+      footnote: 'bill.floor.metaAnnouncedFootnote',
     },
   },
   calendar: {
@@ -179,12 +192,14 @@ const FLOOR_COPY = {
       headline: 'bill.floor.headlineHouse',
       status: 'bills.status.floor_vote',
       meta: 'bill.floor.meta',
+      footnote: null,
     },
     senate: {
       chip: 'bill.floor.calendarSenate',
       headline: 'bill.floor.headlineSenate',
       status: 'bills.status.floor_vote',
       meta: 'bill.floor.meta',
+      footnote: null,
     },
   },
   pending: {
@@ -193,12 +208,14 @@ const FLOOR_COPY = {
       headline: 'bill.floor.headlinePendingHouse',
       status: 'bill.floor.statusPending',
       meta: 'bill.floor.metaPending',
+      footnote: null,
     },
     senate: {
       chip: 'bill.floor.pendingSenate',
       headline: 'bill.floor.headlinePendingSenate',
       status: 'bill.floor.statusPending',
       meta: 'bill.floor.metaPending',
+      footnote: null,
     },
   },
 } as const;
@@ -605,7 +622,13 @@ export default async function BillPage({
           headline={t(floorCopy.headline)}
           href="#act"
           ctaLabel={t('bill.floor.cta')}
-          meta={t(floorCopy.meta)}
+          /* One meta row, one or two sentences. The footnote is the announced
+             row's own (see FLOOR_COPY) and rides the same line rather than
+             opening a second block: it is a qualification of the sentence
+             before it, not a new claim. */
+          meta={
+            floorCopy.footnote ? `${t(floorCopy.meta)} ${t(floorCopy.footnote)}` : t(floorCopy.meta)
+          }
         />
       )}
 
