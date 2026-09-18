@@ -190,6 +190,22 @@ test.describe('runHonestyVerdict (the post-commit run alarm)', () => {
     expect(runHonestyVerdict({ t3Batched: 0, t3Failed: 0, billsRefreshed: 2 }, { job: 'newsdesk' }).ok).toBe(true);
   });
 
+  test('a quiet newsdesk hour still WRITES that zero, so it is measured, not unmeasured', () => {
+    // Pinned on the source, because the verdict above is only reachable if the
+    // counter file exists at all. `t3Batched` is the one counter the newsdesk
+    // job writes on its common path - a quiet hour batches nothing and decodes
+    // nothing, so no other call site here touches run-counters. If this write
+    // ever slips BEHIND the empty-batch early return, a quiet hour leaves no
+    // counter file, `instrumented` is false, and this alarm reds most of the
+    // 24 hourly runs a day for being quiet (caught in review, 2026-09-18).
+    const src = readFileSync(join(process.cwd(), 'scripts/newsdesk.mjs'), 'utf8');
+    const write = src.indexOf("setCounter('t3Batched'");
+    const earlyReturn = src.indexOf('if (batch.length === 0) return new Map()');
+    expect(write, 't3Batched counter not found').toBeGreaterThan(0);
+    expect(earlyReturn, 'empty-batch early return not found').toBeGreaterThan(0);
+    expect(write).toBeLessThan(earlyReturn);
+  });
+
   test('the nightly rules do not judge a newsdesk run, or vice versa', () => {
     // decodeAttempts>0 with nothing added is normal for the newsdesk: its
     // decodes are RE-decodes, which land as 'redecoded', not as billsAdded.

@@ -548,13 +548,22 @@ function saveCache(cache) {
  *  own short candidate lists. Never trusts a slug the batch didn't offer -
  *  a hallucinated slug from the model can't enter the pipeline. */
 async function resolveWithHaiku(anthropic, batch) {
-  if (batch.length === 0) return new Map(); // skip t3 entirely - zero API calls
   // Counters, not log prose, are what the post-commit honesty alarm reads
   // (scripts/check-run-honesty.mjs). The two graceful degradations below are
   // correct for the RUN - no headline may cost a bill its refresh - and that
   // is exactly why the run must record that the tier went dark, or an hour
   // with a dead t3 reads identically to a quiet news hour.
+  //
+  // WRITTEN BEFORE THE EMPTY-BATCH RETURN, and that placement is the whole
+  // point (2026-09-18, verifier fix). This is the only counter the newsdesk
+  // job writes on its common path - most hourly runs batch nothing and decode
+  // nothing, so nothing else here calls run-counters at all. Behind the early
+  // return, a quiet hour left NO counter file, and check-run-honesty.mjs reads
+  // an absent file as `instrumented: false` and reds the run. That would have
+  // painted most of the 24 hourly runs a day red for being quiet - exactly the
+  // alarm fatigue this alarm's own header forbids. Zero is a measurement.
   setCounter('t3Batched', batch.length);
+  if (batch.length === 0) return new Map(); // skip t3 entirely - zero API calls
   const prompt = batch
     .map((b, i) => `${i}. HEADLINE: ${b.title}\n   CANDIDATES: ${b.candidates.map((c) => `${c.slug} = ${c.title}`).join(' | ')}`)
     .join('\n');
