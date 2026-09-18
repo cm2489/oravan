@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-18T09:40:36.470Z",
+    "fetched_at": "2026-09-18T14:27:52.442Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-18T09:40:36.470Z"
+        "checked_at": "2026-09-18T14:27:52.442Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-18T09:40:36.470Z"
+        "checked_at": "2026-09-18T14:27:52.442Z"
       },
       "leans": {
         "center": {
@@ -1386,6 +1386,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7391-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7553-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1917,6 +1929,17 @@
       ],
       "mostViewed": null
     },
+    "s-3181-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-3658-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2163,6 +2186,18 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "apnews.com",
+          "lean": "center",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "newrepublic.com",
+          "lean": "left",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "usatoday.com",
           "lean": "center",
           "firstSeen": "2026-09-17",
@@ -2201,8 +2236,23 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "heraldbanner.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "mises.org",
           "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "oskaloosa.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "tippinsights.com",
+          "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         },
         {
@@ -2309,16 +2359,6 @@
           "domain": "kotaradio.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "semafor.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
-        },
-        {
-          "domain": "wfmd.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
         }
       ],
       "mostViewed": {
@@ -2385,6 +2425,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "sundayguardianlive.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
         {
           "domain": "abc7ny.com",
           "firstSeen": "2026-09-17",

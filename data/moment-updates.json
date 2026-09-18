@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-17T18:31:20.219Z"
+    "generated_at": "2026-09-18T14:29:25.757Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -870,29 +870,111 @@
   "paying-college-athletes": {
     "updates": [
       {
-        "id": "u_5607f3cb",
-        "class": "scheduled",
+        "id": "u_a3cc6ca3",
+        "class": "vote",
         "vehicle": "s-4668-119",
         "day": "2026-09-17",
         "occurred_at": "2026-09-17",
         "occurred_precision": "day",
-        "recorded_at": "2026-09-17T16:56:55.134Z",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
         "text": {
-          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for the Senate floor on September 17, 2026.",
-          "es": "S. 4668, la Ley de Protección de Deportes Universitarios de 2026, fue programada para el piso del Senado el 17 de septiembre de 2026."
+          "en": "On September 17, 2026, the Senate agreed to the motion to proceed to S. 4668 by a vote of 77-22, Record Vote Number 236.",
+          "es": "El 17 de septiembre de 2026, el Senado aprobó la moción de proceder a S. 4668 con una votación de 77-22, número de votación 236."
         },
         "source": {
-          "kind": "tier0_feed",
+          "kind": "congress_actions",
           "refs": [
-            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00236.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 77 - 22. Record Vote Number: 236.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 236
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_682cca41",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate presented a cloture motion on amendment SA 6776 to S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre la enmienda SA 6776 a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
         },
         "record": {
-          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/17/2026)",
+          "action_text": "Cloture motion on amendment SA 6776 presented in Senate.",
           "action_code": null,
-          "action_type": "Senate Floor Today",
-          "source_system": "Congress.gov senate-floor-today RSS"
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_86b9e54f",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate considered the motion to proceed to S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f0db9993",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate presented a cloture motion on S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
         },
         "ai": true
       },
@@ -950,6 +1032,32 @@
             "chamber": "senate",
             "number": 235
           }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_04053945",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-15",
+        "occurred_at": "2026-09-15",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 15, 2026, the Senate considered the motion to proceed to S. 4668.",
+          "es": "El 15 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
         },
         "ai": true
       },
@@ -1156,7 +1264,6 @@
             "s-4668-119": "floor_vote"
           },
           "update_ids": [
-            "u_5607f3cb",
             "u_732a58b6",
             "u_317b9dc8"
           ],
