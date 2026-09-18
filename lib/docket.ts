@@ -19,6 +19,7 @@ import {
   DOCKET_TIERS,
   TIER_BAND,
   SIGNAL_STALE_HOURS,
+  announcementAnswered,
   bandForRung,
   chamberNextMeetingFrom,
   chamberSessionFrom,
@@ -26,6 +27,7 @@ import {
   docketKey,
   docketRung,
   entersFloorWatch,
+  floorAnsweredChamber,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -38,11 +40,13 @@ export {
   DOCKET_TIERS,
   TIER_BAND,
   SIGNAL_STALE_HOURS,
+  announcementAnswered,
   bandForRung,
   compareDocket,
   docketKey,
   docketRung,
   entersFloorWatch,
+  floorAnsweredChamber,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -250,8 +254,19 @@ export function bandFor(rung: DocketRung): UrgencyBand {
  * Returns null the instant `signalIsLive` says the announcement is no longer a
  * statement about this week, so a bill pulled from the schedule stops wearing
  * the crown on the next hourly run (critic A-1).
+ *
+ * IT TAKES THE BILL, NOT JUST THE SLUG (owner decision D13, 2026-09-18), and
+ * the gate is `rungFor` rather than `signalIsLive` alone — the same one line
+ * the bill page already ran (`rung.tier === 't0' ? rung.announced : null`). A
+ * slug-only resolver could not see the bill's own record, so an announcement
+ * the chamber's vote had already spent stayed available to the crown through a
+ * bill that reached the pool on a LOWER rung: a measure the House passed on
+ * Tuesday and the Senate then placed on its calendar is a live T2, and the
+ * crown would have printed "On the House floor schedule" over it. Two surfaces
+ * reading one record run one gate.
  */
 export function announcementFor(
+  bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null },
   slug: string,
   now: number = Date.now()
 ): {
@@ -263,9 +278,9 @@ export function announcementFor(
   source: FloorSignalSource;
   chamber: 'house' | 'senate';
 } | null {
-  const signal = floorSignalFor(slug);
-  if (!signal || !signalIsLive(signal, { now })) return null;
-  const t0 = signal.tier0;
+  const rung = rungFor(bill, slug, now);
+  if (rung.tier !== 't0' || !rung.announced) return null;
+  const t0 = rung.announced;
   return {
     quote: t0.quote,
     url: t0.url,

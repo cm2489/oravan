@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 import {
   DOCKET_TIERS,
   SIGNAL_STALE_HOURS,
+  announcementAnswered,
   bandForRung,
   chamberNextMeetingFrom,
   chamberSessionFrom,
@@ -11,6 +12,7 @@ import {
   docketKey,
   docketRung,
   entersFloorWatch,
+  floorAnsweredChamber,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -141,6 +143,109 @@ test.describe('docketRung · one fixture per rung', () => {
       expect(rung.tier, text).toBe('t4');
       expect(rung.annotation, text).toBe('just_decided');
     }
+  });
+
+  /* ---------------------------------------------------------------- *
+   * THE T0 SETTLED GUARD (owner decision D13, 2026-09-18)
+   * ---------------------------------------------------------------- */
+
+  test('T0 retires when the announcing chamber has already voted', () => {
+    // The House week-list, covering a day three days back — still live (its
+    // horizon is covers + 7) and now carrying an outcome from inside that week.
+    const weekList = signal({ chamber: 'house', source: 'billsthisweek', covers: dayOffset(3) });
+    for (const [text, tier, annotation] of [
+      // The 2026-09-03 sample, phrasing by phrasing.
+      ['Motion to reconsider laid on the table Agreed to without objection.', 't4', 'just_decided'],
+      ['Presented to President.', 't4', 'just_decided'],
+      [
+        'On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).',
+        't4',
+        'just_decided',
+      ],
+      ['Received in the Senate and Read twice and referred to the Committee on Finance.', 't4', 'just_decided'],
+    ] as const) {
+      const rung = docketRung(bill('committee', text, 2), weekList, { now: NOW });
+      expect(rung.tier, text).toBe(tier);
+      expect(rung.annotation, text).toBe(annotation);
+      expect(rung.announced, text).toBeNull();
+    }
+  });
+
+  test('an answered announcement falls through to the record, it does not collapse to the radar', () => {
+    // K3, one rung up: flattening a whole House week onto T4 would repeat the
+    // regression the T3 rung exists to prevent. The record places the bill.
+    const weekList = signal({ chamber: 'house', source: 'billsthisweek', covers: dayOffset(3) });
+    const passed = docketRung(
+      bill('passed_chamber', 'Passed House by the Yeas and Nays: 350 - 60 (Roll no. 401).', 2),
+      weekList,
+      { now: NOW }
+    );
+    expect(passed.tier).toBe('t3');
+    expect(passed.annotation).toBe('just_passed');
+    expect(passed.announced).toBeNull();
+    // And a placement the OTHER chamber then made is a live fact of its own.
+    const placed = docketRung(
+      bill('passed_chamber', `Received in the Senate. Read twice. ${CALENDAR}`, 2),
+      weekList,
+      { now: NOW }
+    );
+    expect(placed.tier).toBe('t2');
+  });
+
+  test('the date gate: an outcome older than the announcement leaves T0 alone', () => {
+    // A bill the House passed in the spring, named on the Senate's program now:
+    // the passage is exactly WHY the Senate is taking it up.
+    const program = signal({ chamber: 'senate', covers: dayOffset(1) });
+    expect(tierOf(bill('passed_chamber', 'Passed House by voice vote.', 40), program)).toBe('t0');
+    // The other side of the horizon: the Senate voted after its own program
+    // named the bill, so the announcement is spent and the record places it.
+    expect(tierOf(bill('passed_chamber', 'Passed Senate without amendment.', 0), program)).toBe('t3');
+  });
+
+  test('the chamber gate: an outcome in the OTHER chamber leaves T0 alone', () => {
+    const arrived = 'Received in the Senate and Read twice and referred to the Committee on Finance.';
+    // A House announcement: "received in the Senate" is the House's own answer.
+    expect(
+      tierOf(bill('passed_chamber', arrived, 2), signal({ chamber: 'house', source: 'billsthisweek', covers: dayOffset(3) }))
+    ).not.toBe('t0');
+    // A Senate announcement over the identical sentence: the Senate has done
+    // nothing yet, and its program says it is about to. (The digest's horizon
+    // is covers + 2 days, so its `covers` sits one day back, not three.)
+    expect(
+      tierOf(bill('passed_chamber', arrived, 0), signal({ chamber: 'senate', covers: dayOffset(1) }))
+    ).toBe('t0');
+  });
+
+  test('a rule resolution passing the House is not the bill passing', () => {
+    // The sentence that means the House just SET UP this week's debate. Reading
+    // it as a passage would retire the crown on the day the bill reaches the
+    // floor — the exact opposite of the guard's purpose.
+    const weekList = signal({ chamber: 'house', source: 'billsthisweek', covers: dayOffset(3) });
+    expect(tierOf(bill('floor_vote', 'Rule H. Res. 988 passed House.', 2), weekList)).toBe('t0');
+    expect(floorAnsweredChamber('Rule H. Res. 988 passed House.')).toBeNull();
+  });
+
+  test('floorAnsweredChamber reads the outcome and its chamber, or says neither', () => {
+    expect(floorAnsweredChamber('Passed Senate without amendment by Unanimous Consent.')).toBe('senate');
+    expect(floorAnsweredChamber('Passed House by the Yeas and Nays: 350 - 60.')).toBe('house');
+    expect(floorAnsweredChamber('Received in the Senate. Read the first time.')).toBe('house');
+    expect(floorAnsweredChamber('Message on House action received in Senate.')).toBe('house');
+    expect(floorAnsweredChamber('Presented to President.')).toBe('both');
+    expect(floorAnsweredChamber('Motion to reconsider laid on the table Agreed to without objection.')).toBe('unknown');
+    expect(floorAnsweredChamber(MTP_REJECTED)).toBe('senate');
+    // No outcome: a live placement, a filed cloture motion, a committee referral.
+    for (const text of [CALENDAR, CLOTURE_FILED, QUIET, null]) {
+      expect(floorAnsweredChamber(text), String(text)).toBeNull();
+    }
+  });
+
+  test('announcementAnswered needs a datable announcement and says no without one', () => {
+    const noDates = signal({ chamber: 'house', source: 'billsthisweek', covers: null, published: '' });
+    expect(announcementAnswered(bill('committee', 'Presented to President.', 1), noDates)).toBe(false);
+    // With no `covers`, the announcement's own publication date is the horizon.
+    const publishedOnly = signal({ chamber: 'house', source: 'billsthisweek', covers: null, published: dayOffset(3) });
+    expect(announcementAnswered(bill('committee', 'Presented to President.', 1), publishedOnly)).toBe(true);
+    expect(announcementAnswered(bill('committee', 'Presented to President.', 1), null)).toBe(false);
   });
 
   test('terminal bills are pinned to T4 and can never be annotated or announced', () => {
