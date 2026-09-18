@@ -89,7 +89,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const raw = getBill(id);
-  if (!raw) return {};
+  if (!raw) notFound();
   const bill = localizeBill(raw, locale);
   const title = `${formatCitation(bill.bill_type, bill.bill_number)} — ${bill.ai_headline ?? bill.short_title ?? bill.title}`;
   const description = bill.ai_summary?.slice(0, 160);

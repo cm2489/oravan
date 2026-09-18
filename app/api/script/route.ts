@@ -35,10 +35,12 @@ import { noteScriptGeneration } from '@/lib/usage';
  * a second place for a rate limit or a cache key to drift. The bill path runs
  * first and is byte-for-byte what it was.
  *
- * Rate limiting (S11): 8 requests / 10 min per caller — the same limit as
- * always, now enforced with short-lived rate-limit counters in the
- * caller-keyed Upstash counters database (sha256(ip + rotating salt), TTL =
- * the window), durable across instances. See lib/ratelimit.ts for the salt
+ * Rate limiting (S11; resized 2026-09-18): 20 requests / 10 min per caller —
+ * it was 8 from S11 until the spend-guards change; SCRIPT_IP_MAX below states
+ * why the per-caller ceiling moved and what bounds the day's spend instead.
+ * Enforced with short-lived rate-limit counters in the caller-keyed Upstash
+ * counters database (sha256(ip + rotating salt), TTL = the window), durable
+ * across instances. See lib/ratelimit.ts for the salt
  * rules and lib/upstash.ts for why counters and cache are two physically
  * separate databases. Unconfigured or unreachable Upstash degrades to the
  * per-instance in-memory limiter — this route never hard-fails on it.
@@ -86,6 +88,18 @@ import { noteScriptGeneration } from '@/lib/usage';
  *      path below, completely unchanged. Response shape stays
  *      `{script, cached}` — no tenant metadata ever added to it.
  *
+ * SPEND CEILING (spend-guards, 2026-09-18). The three limiters above are
+ * per-CALLER or per-TENANT; none of them bounds the day's total. A launch
+ * day with many distinct callers, each comfortably under 20/10min, can still
+ * run the Anthropic bill up with nothing in the way. `script-day` below is
+ * that missing bound — the same GLOBAL daily breaker /api/brand already runs
+ * ('brand-day' keyed by 'brand-global'), applied here to CACHE-MISS
+ * GENERATIONS ONLY, inside serveScript. A cache hit costs nothing, so it
+ * must never consume the breaker: this endpoint's whole economy is that a
+ * popular bill is generated once and served from the shared cache forever
+ * after, and charging those hits against a spend cap would let free traffic
+ * dark a paid feature.
+ *
  * Numbers (60/10min, 800/24h per tenant) are disclosed as tunable, not
  * derived from real per-tenant demand — S18 is dark-shipped, zero live
  * tenant traffic exists yet. See the S19 PR body for the full reasoning.
@@ -118,9 +132,72 @@ const GENERATION_MAX_RETRIES = 2;
 
 const cache = createScriptCache();
 
-const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+/*
+ * PER-CALLER CEILING, raised 8 -> 20 per 600s (spend-guards, 2026-09-18).
+ *
+ * 8 was sized when nothing else bounded the bill, so the per-IP limiter was
+ * doing two jobs at once: keeping one caller from monopolising the endpoint,
+ * AND standing in for a spend cap it was never shaped to be. It was tight
+ * enough to catch real readers: three stances x two vehicles (a bill and its
+ * House-audience script) is already 6, and a reader who compares a couple of
+ * bills in one sitting hits the wall on legitimate use — the panel then shows
+ * the rate-limited copy and the honest static template instead of the draft
+ * they asked for. 20 leaves that reader alone.
+ *
+ * What makes the raise safe is that the spend job moved to something shaped
+ * for it: SCRIPT_DAY_MAX below bounds the DAY globally, so the per-IP number
+ * no longer has to. Worst case one caller can now drive 20 cache-miss
+ * generations per 10 minutes instead of 8 — and every one of those still
+ * counts against the same global daily breaker.
+ */
+const SCRIPT_IP_MAX = 20;
+const SCRIPT_IP_WINDOW_SEC = 600;
+
+/*
+ * GLOBAL DAILY SPEND BREAKER — the number, and how to change it.
+ *
+ * 1,800 cache-miss generations per 24h. Env-overridable (SCRIPT_DAY_MAX) so
+ * the ceiling can be lowered — or raised for a known event — without a
+ * deploy of this file. An unset, malformed, zero, or negative value falls
+ * back to the default rather than being trusted: a typo'd env var must never
+ * silently remove the cap or set it to nothing.
+ *
+ * Read at module scope, like every other limiter constant here. That is the
+ * same import-time env read lib/ratelimit.ts warns about for the counters
+ * CLIENT, and it is deliberate for a plain number: this value is a
+ * deployment-wide constant, not per-request state, and re-reading it per
+ * request would let the breaker's ceiling change mid-window.
+ */
+const SCRIPT_DAY_MAX_DEFAULT = 1_800;
+function resolveDayMax(raw: string | undefined): number {
+  const parsed = Number(raw);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : SCRIPT_DAY_MAX_DEFAULT;
+}
+const SCRIPT_DAY_MAX = resolveDayMax(process.env.SCRIPT_DAY_MAX);
+
+/** The global-breaker key: a constant, not caller/content material. */
+const SCRIPT_GLOBAL_BUCKET = 'script-global';
+
+const limiter = createRateLimiter({
+  route: 'script',
+  max: SCRIPT_IP_MAX,
+  windowSec: SCRIPT_IP_WINDOW_SEC,
+});
 const tenantMinuteLimiter = createTenantRateLimiter({ route: 'embed-script', max: 60, windowSec: 600 });
 const tenantDayLimiter = createTenantRateLimiter({ route: 'embed-script-day', max: 800, windowSec: 86400 });
+// failClosed, for the reason lib/ratelimit.ts's doctrine comment states and
+// /api/brand's breaker already follows: this guards SPEND, not availability.
+// An unreachable counters database leaves the day's count unknown, and the
+// honest answer for a money guard with unknown state is to decline the paid
+// call — otherwise one Upstash outage turns a single global ceiling into one
+// ceiling PER serverless instance. The caller-visible outcome is the 429 the
+// breaker already returns, and the panel's honest template rides with it.
+const dayBreaker = createTenantRateLimiter({
+  route: 'script-day',
+  max: SCRIPT_DAY_MAX,
+  windowSec: 86_400,
+  failClosed: true,
+});
 
 export async function POST(req: NextRequest) {
   const ip = callerIp(req.headers);
@@ -190,8 +267,10 @@ export async function POST(req: NextRequest) {
     // server-side callers of this exact bill/stance/locale shape) so there
     // is only ever one script prompt in the codebase, never a second copy
     // drifting out of sync with this one.
-    return serveScript({ slug, stance, lang, version }, () =>
-      buildScriptPrompt({ bill, stance, lang })
+    return serveScript(
+      { slug, stance, lang, version },
+      () => buildScriptPrompt({ bill, stance, lang }),
+      oravanKey !== null
     );
   }
 
@@ -255,8 +334,10 @@ export async function POST(req: NextRequest) {
   // MOVE. nominationContentVersion picks them, so this call site cannot drift
   // out of agreement with the key material any future caller writes.
   const version = nominationContentVersion(nomination, audience);
-  return serveScript({ slug, stance, lang, version }, () =>
-    buildNominationScriptPrompt({ nomination, stance, audience, lang })
+  return serveScript(
+    { slug, stance, lang, version },
+    () => buildNominationScriptPrompt({ nomination, stance, audience, lang }),
+    oravanKey !== null
   );
 }
 
@@ -271,13 +352,51 @@ export async function POST(req: NextRequest) {
  *
  * `buildPrompt` is a thunk so the prompt is never built on a cache hit — the
  * common case, and the one that must stay cheapest.
+ *
+ * `tokenPath` says which 429 shape a breaker trip gets, and nothing else —
+ * the breaker itself applies identically to citizen and tenant traffic,
+ * because a dollar spent on either is the same dollar.
  */
 async function serveScript(
   key: { slug: string; stance: string; lang: 'en' | 'es'; version: string },
-  buildPrompt: () => string
+  buildPrompt: () => string,
+  tokenPath: boolean
 ): Promise<NextResponse> {
   const cached = await cache.get(key);
   if (cached) return NextResponse.json({ script: cached, cached: true });
+
+  /*
+   * THE GLOBAL DAILY SPEND BREAKER, and the reason it sits exactly HERE.
+   *
+   * Above this line the request has cost nothing: a cache hit, a bad body, a
+   * slug that resolves to no vehicle, a nomination with no call to make. None
+   * of those spend an Anthropic call, so none of them may consume a cap whose
+   * whole job is to bound spend — charging them would let free traffic dark a
+   * paid feature for everyone. Below this line a generation is about to
+   * happen. So the breaker counts attempts at the only place an attempt is
+   * real, exactly as /api/brand's does.
+   *
+   * The counter is consumed by the CHECK, not by success: a generation that
+   * then fails at Anthropic has still occupied the machinery, and a route
+   * that refunded failures would let a persistent upstream error spin the
+   * breaker forever. Same semantics as brand-day.
+   */
+  if (await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)) {
+    // Token path: the uniform bare 429, per §4's doctrine above.
+    if (tokenPath) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+    /*
+     * Citizen path: `scope: 'daily'` — NOT a hint about the breaker's
+     * threshold, and not the retryAfterSec the per-IP limiter discloses.
+     * It exists so the panel can tell the reader something TRUE. The per-IP
+     * copy says "You've requested several scripts in a short time… this
+     * usually clears within about ten minutes", and a reader who requested
+     * nothing and is waiting on a day-long window is owed neither of those
+     * sentences. No Retry-After rides with it: the honest reset is up to 24h
+     * away and the fallback template works right now, so a countdown would
+     * only invite the reader to sit and wait for it.
+     */
+    return NextResponse.json({ error: 'rate_limited', scope: 'daily' }, { status: 429 });
+  }
 
   try {
     const msg = await anthropic.messages.create(

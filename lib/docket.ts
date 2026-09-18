@@ -15,6 +15,11 @@
  * behind a claim printed in the loudest surface on the site.
  */
 import floorSignals from '@/data/floor-signals.json';
+// The "we checked" heartbeat that lives OUTSIDE floor-signals.json on purpose
+// — see scripts/floor-signals-parse.mjs's FLOOR_SIGNALS_CHECKED_PATH header
+// and lib/docket.mjs's floorSignalsHealthy. Committed like floor-signals.json
+// itself (never a cache), so this import is always safe.
+import floorSignalsChecked from '@/data/floor-signals-checked.json';
 import {
   DOCKET_TIERS,
   TIER_BAND,
@@ -28,6 +33,7 @@ import {
   docketRung,
   entersFloorWatch,
   floorAnsweredChamber,
+  floorSignalsHealthy,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -136,6 +142,8 @@ export interface DocketRung {
 }
 
 const FILE = floorSignals as unknown as FloorSignalsFile;
+/** `{ schema, checked_at }` — the merge input for `floorSignalsHealthy`. */
+const CHECKED = floorSignalsChecked as unknown as { checked_at?: string | null };
 
 /** The committed signal file. Read through a function so no caller closes over
  *  the import and no test has to reach past this module. */
@@ -167,7 +175,7 @@ export function floorSignalFor(slug: string): FloorSignalEntry | null {
  */
 export function floorSourcesPosture(now: number = Date.now()): 'quiet' | 'unknown' {
   const meta = FILE._meta;
-  const stamp = Date.parse(meta?.fetched_at ?? '');
+  const stamp = Date.parse(floorSignalsHealthy(meta, CHECKED).fetched_at ?? '');
   if (!Number.isFinite(stamp) || now - stamp > SIGNAL_STALE_HOURS * 3_600_000) return 'unknown';
   const sources = Object.values(meta?.sources ?? {});
   if (sources.length === 0) return 'unknown';
@@ -194,7 +202,7 @@ export function chamberSession(
   chamber: 'house' | 'senate',
   now: number = Date.now()
 ): ChamberSession {
-  return chamberSessionFrom(FILE._meta, chamber, now) as ChamberSession;
+  return chamberSessionFrom(FILE._meta, chamber, now, CHECKED) as ChamberSession;
 }
 
 /**
@@ -323,10 +331,13 @@ export function coversDisplay(announcement: {
   return null;
 }
 
-/** When the committed signal file was last refreshed — the "as of" stamp A-1
- *  requires beside any T0 claim. */
+/** When the committed signal file was last refreshed OR last honestly
+ *  reconfirmed — the "as of" stamp A-1 requires beside any T0 claim. Merges
+ *  floor-signals.json's own stamp with floor-signals-checked.json's (see
+ *  `floorSignalsHealthy`), so a reconfirmed-but-unchanged hour still moves
+ *  this forward instead of reading as days-old. */
 export function floorSignalsCheckedAt(): string | null {
-  const stamp = FILE._meta?.fetched_at ?? null;
+  const stamp = floorSignalsHealthy(FILE._meta, CHECKED).fetched_at;
   return stamp && Number.isFinite(Date.parse(stamp)) ? stamp : null;
 }
 

@@ -128,6 +128,109 @@ test.describe('the integrity/progress split survives', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b · 2026-09-18 — the run-honesty alarm joins it, on the same side
+ *      of the commit and for the same reason.
+ * ------------------------------------------------------------------ */
+test.describe('the run-honesty alarm (a run whose core function died goes red)', () => {
+  const newsdesk = wf('newsdesk.yml');
+  const honestyAt = syncBills.indexOf('- name: Run-honesty alarm');
+
+  test('it runs AFTER the commit, like the cursor alarm', () => {
+    // Identical N8-A2 reasoning: it judges whether the night WORKED, not
+    // whether the corpus is sound. A credit-balance outage kills the decodes
+    // and leaves every free refresh correct — refusing that commit would throw
+    // away good data to protest an unrelated failure, and would freeze the
+    // site's own freshness signal at a value staler than the truth.
+    expect(honestyAt, 'run-honesty step not found').toBeGreaterThan(0);
+    expect(honestyAt).toBeGreaterThan(syncBills.indexOf('- name: Commit data'));
+    expect(honestyAt).toBeGreaterThan(syncBills.indexOf('- name: Dispatch CI against the pushed data'));
+  });
+
+  test('BOTH post-commit alarms carry if: always(), so neither can swallow the other', () => {
+    // A failing step skips every later step whose `if:` does not name a status
+    // function. Two alarms in a row is only safe while both are unconditional.
+    const tail = syncBills.slice(honestyAt);
+    expect(tail).toContain('if: always()');
+    expect(tail.slice(tail.indexOf('- name: Cursor-progress alarm'))).toContain('if: always()');
+  });
+
+  test('each job is judged by name — the alarm never guesses which run it is in', () => {
+    expect(syncBills).toContain('node scripts/check-run-honesty.mjs nightly');
+    expect(newsdesk).toContain('node scripts/check-run-honesty.mjs newsdesk');
+    expect(newsdesk.indexOf('- name: Run-honesty alarm')).toBeGreaterThan(newsdesk.indexOf('- name: Commit data'));
+  });
+
+  test('both jobs point their scripts at a counter file in the RUNNER temp dir', () => {
+    // Runner temp, never the workspace: a counter file inside the repo would
+    // be swept into `git add data/`'s sibling working tree on some future
+    // refactor, and these counts are diagnostics, not corpus.
+    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', newsdesk]] as const) {
+      expect(yml, name).toContain('RUN_COUNTERS_FILE=$RUNNER_TEMP/oravan-run-counters.json');
+      expect(yml.indexOf('RUN_COUNTERS_FILE='), name).toBeLessThan(yml.indexOf('- name: Commit data'));
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2c · 2026-09-18 — the preflight arms or disarms the decodes, and
+ *      never the data.
+ * ------------------------------------------------------------------ */
+test.describe('the Anthropic preflight', () => {
+  const preflightAt = syncBills.indexOf('- name: Anthropic preflight');
+
+  test('it runs before the sync and cannot fail the job', () => {
+    expect(preflightAt, 'preflight step not found').toBeGreaterThan(0);
+    expect(preflightAt).toBeLessThan(syncBills.indexOf('- name: Sync bills'));
+    expect(syncBills.slice(preflightAt, syncBills.indexOf('- name: Sync bills'))).toContain('continue-on-error: true');
+  });
+
+  test('a failed preflight zeroes the decode budget and NOTHING else', () => {
+    // MAX_NEW_DECODES=0 makes syncOneBill's `allowDecode` false everywhere, so
+    // every bill still takes its free Congress.gov refresh and every new one
+    // comes back 'budget' — deferred, not failed. Coverage, nominations,
+    // Moment updates and portraits are untouched by this value.
+    const step = syncBills.slice(syncBills.indexOf('- name: Sync bills'), syncBills.indexOf('- name: Journey-corpus tripwire'));
+    expect(step).toContain("steps.preflight.outputs.decode_ok == 'true'");
+    expect(step).toMatch(/MAX_NEW_DECODES:.*\|\| '0' \}\}/);
+  });
+
+  test('a manual max_new_decodes can never turn decoding back ON', () => {
+    // The dispatch input sits INSIDE the true branch, so it only ever chooses
+    // between budgets the preflight already allowed.
+    const line = /MAX_NEW_DECODES: \$\{\{ steps\.preflight\.outputs\.decode_ok == 'true' && \(inputs\.max_new_decodes \|\| '60'\) \|\| '0' \}\}/;
+    expect(syncBills).toMatch(line);
+  });
+
+  test('the alarm is handed the preflight output as well as the counter', () => {
+    // Belt and braces: a crash inside the preflight script would leave
+    // decode_ok unset (so the sync decodes nothing) and no counter written.
+    expect(syncBills.slice(syncBills.indexOf('- name: Run-honesty alarm'))).toContain(
+      'PREFLIGHT_DECODE_OK: ${{ steps.preflight.outputs.decode_ok }}'
+    );
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2d · 2026-09-18 — every data workflow checks out the branch TIP.
+ * ------------------------------------------------------------------ */
+test.describe('the stale-checkout race that killed two nightlies', () => {
+  test('sync-bills and newsdesk both pin checkout to the branch, not the event SHA', () => {
+    // Without `ref:`, actions/checkout takes `github.sha` — main's SHA when the
+    // RUN WAS CREATED. A run queued in the data-sync group can start long
+    // after that, against a corpus another member has already advanced; its
+    // commit is then unpushable, because data/bills.json is single-line
+    // minified JSON and every concurrent edit to it is a content conflict.
+    // Runs 34886281500 (2026-09-14) and 35132794181 (2026-09-16) both died
+    // that way, each throwing away a full night of paid work.
+    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')]] as const) {
+      const checkoutAt = yml.indexOf('- uses: actions/checkout@v7');
+      expect(checkoutAt, `${name}: no checkout step`).toBeGreaterThan(0);
+      expect(yml.slice(checkoutAt, checkoutAt + 2600), name).toContain('ref: ${{ github.ref_name }}');
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 3 · N9-A2 — the journey tripwire files an issue; only vacuity is hard.
  * ------------------------------------------------------------------ */
 test.describe('the journey-corpus tripwire no longer costs the night', () => {
@@ -195,7 +298,56 @@ test.describe('concurrency groups', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 5 · D8 — the nightly reads the same day's floor record.
+ * 5 · 2026-09-18 (newsdesk-delivery) — the hourly layer gets guaranteed
+ *     fires on top of its own starved cron, and never races a scheduled run.
+ * ------------------------------------------------------------------ */
+test.describe('newsdesk is dispatched, not only scheduled', () => {
+  const dispatchStep = (yml: string) => {
+    const at = yml.indexOf('- name: Dispatch the newsdesk');
+    expect(at, 'dispatch step not found').toBeGreaterThan(0);
+    // Slice to the next top-level step (or EOF) so the assertions below can't
+    // accidentally match a LATER step's `if:`/`run:` line.
+    const rest = yml.slice(at);
+    const nextStepAt = rest.slice(1).search(/\n {6}- name:/);
+    return nextStepAt === -1 ? rest : rest.slice(0, nextStepAt + 1);
+  };
+
+  test('hot-bills.yml dispatches it, guarded to main and non-blocking', () => {
+    const step = dispatchStep(hotBills);
+    expect(step).toContain('gh workflow run newsdesk.yml --ref main');
+    expect(step).toContain("github.ref == 'refs/heads/main'");
+    expect(step).toContain('continue-on-error: true');
+  });
+
+  test('sync-bills.yml dispatches it too, and only after the cursor-progress alarm', () => {
+    const step = dispatchStep(syncBills);
+    expect(step).toContain('gh workflow run newsdesk.yml --ref main');
+    expect(step).toContain("github.ref == 'refs/heads/main'");
+    expect(step).toContain('continue-on-error: true');
+    // Same reasoning as "the alarm is LAST" above, one step further: nothing
+    // in this job's normal work — including a red cursor-age alarm — may
+    // skip the newsdesk its guaranteed fire.
+    expect(syncBills.indexOf('- name: Dispatch the newsdesk')).toBeGreaterThan(
+      syncBills.indexOf('- name: Cursor-progress alarm')
+    );
+  });
+
+  test('both dispatch steps run even when something upstream already failed', () => {
+    expect(dispatchStep(hotBills)).toContain('if: always()');
+    expect(dispatchStep(syncBills)).toContain('if: always()');
+  });
+
+  test('the concurrency group already shared with newsdesk.yml is the only guard needed — no new one was invented', () => {
+    // Pinned above too (test group 4): re-asserted here so a reader of THIS
+    // block sees the guard the dispatch steps rely on without cross-referencing.
+    const groupOf = (yml: string) => /concurrency:[\s\S]*?group:\s*(\S+)/.exec(yml)?.[1];
+    expect(groupOf(wf('newsdesk.yml'))).toBe(groupOf(hotBills));
+    expect(groupOf(wf('newsdesk.yml'))).toBe(groupOf(syncBills));
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 6 · D8 — the nightly reads the same day's floor record.
  * ------------------------------------------------------------------ */
 test.describe('nightly phasing (Congress.gov publishes 13:35-14:00 UTC)', () => {
   const cronsOf = (yml: string) =>

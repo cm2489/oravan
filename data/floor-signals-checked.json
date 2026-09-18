@@ -1,0 +1,19 @@
+{
+  "schema": "floor-signals-checked/v1",
+  "checked_at": "2026-09-18T14:27:47.751Z",
+  "in_session": {
+    "senate": "out_of_session",
+    "house": "out_of_session",
+    "basis": "Daily Digest \"Program for\" blocks"
+  },
+  "next_meeting": {
+    "senate": {
+      "date": "2026-09-18",
+      "label": "9 a.m., Friday, September 18"
+    },
+    "house": {
+      "date": "2026-09-21",
+      "label": "10:30 a.m., Monday, September 21"
+    }
+  }
+}

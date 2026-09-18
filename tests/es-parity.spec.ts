@@ -143,6 +143,7 @@ test.describe('3-stance × 2-locale matrix', () => {
       'rateRetryIn',
       'rateRetryHint',
       'rateTemplateNow',
+      'scriptPaused',
       'callWhoMulti',
       'refineDistrictCta',
       'ghostSummary',
