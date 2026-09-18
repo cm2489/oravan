@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-18T14:27:52.442Z",
+    "fetched_at": "2026-09-18T18:23:11.118Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-18T14:27:52.442Z"
+        "checked_at": "2026-09-18T18:23:11.118Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-18T14:27:52.442Z"
+        "checked_at": "2026-09-18T18:23:11.118Z"
       },
       "leans": {
         "center": {
@@ -744,6 +744,21 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "alreporter.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "brecorder.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "ctmirror.org",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "english.nv.ua",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-18"
@@ -759,8 +774,18 @@
           "lastSeen": "2026-09-18"
         },
         {
+          "domain": "thebridgechronicle.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "united24media.com",
           "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "witness.co.za",
+          "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         },
         {
@@ -906,6 +931,18 @@
           "lastSeen": "2026-09-15"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-6247-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-6251-119": {
@@ -1413,6 +1450,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "foodfix.co",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "rfdtv.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
@@ -1864,6 +1906,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-2048-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "dailypioneer.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-2296-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1925,6 +1978,17 @@
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-11",
           "lastSeen": "2026-09-11"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-315-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "insideevs.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
         }
       ],
       "mostViewed": null
@@ -2236,6 +2300,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "abc-7.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "helenair.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "heraldbanner.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
@@ -2246,12 +2320,32 @@
           "lastSeen": "2026-09-18"
         },
         {
+          "domain": "missoulian.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "oskaloosa.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         },
         {
+          "domain": "theeagle.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
           "domain": "tippinsights.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "tucson.com",
+          "firstSeen": "2026-09-18",
+          "lastSeen": "2026-09-18"
+        },
+        {
+          "domain": "tulsaworld.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         },
@@ -2329,36 +2423,6 @@
           "domain": "lehighvalleylive.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "newsnationnow.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "san.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "yankton.net",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "yardbarker.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "yourerie.com",
-          "firstSeen": "2026-09-13",
-          "lastSeen": "2026-09-13"
-        },
-        {
-          "domain": "kotaradio.com",
-          "firstSeen": "2026-09-11",
-          "lastSeen": "2026-09-11"
         }
       ],
       "mostViewed": {
