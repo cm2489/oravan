@@ -247,6 +247,7 @@
     "rateRetryIn": "Podrás pedir un nuevo borrador de IA en {time}.",
     "rateTemplateNow": "La plantilla y los números de teléfono de abajo funcionan ahora mismo.",
     "rateRetryHint": "Esto suele resolverse en unos diez minutos. La plantilla y los números de teléfono funcionan ahora mismo.",
+    "scriptPaused": "La redacción con IA está en pausa por hoy — Oravan limita cuántos borradores escribe en un día.",
     "fallbackScript": {
       "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",

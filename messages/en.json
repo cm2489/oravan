@@ -247,6 +247,7 @@
     "rateRetryIn": "You can ask for a fresh AI draft in {time}.",
     "rateTemplateNow": "The template and the phone numbers below work right now.",
     "rateRetryHint": "This usually clears within about ten minutes. The template and the phone numbers work right now.",
+    "scriptPaused": "AI drafting is paused for today — Oravan caps how many drafts it writes in a day.",
     "fallbackScript": {
       "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I support this bill, and I'm asking the office to record my position in favor. Thank you for your time.",
       "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I oppose this bill, and I'm asking the office to record my position against it. Thank you for your time.",
