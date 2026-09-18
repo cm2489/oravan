@@ -670,6 +670,18 @@ jobs:
         # the PREGEN_ENABLED repo variable so this spends $0 until the owner
         # explicitly arms it (see the introducing PR's Arming checklist).
         # Must run via tsx, not plain node - see scripts/pregen-scripts.mjs.
+        #
+        # POST-COMMIT AND ALLOWED TO RED THE RUN (2026-09-18). The step sits
+        # here, after the commit, the deploy check and the CI dispatch, for the
+        # same reason the cursor alarm sits last: the night's data is already
+        # on main before this runs, so a pregen failure can never cost the
+        # corpus anything. That matters now because pregen REFUSES to run when
+        # the cache database is unreachable - it exits non-zero having
+        # submitted nothing rather than paying for 60 scripts it would throw
+        # away (eight consecutive nightlies did exactly that; see
+        # lib/pregen-runner.ts). A red run with the data landed is the honest
+        # report of "the cache is down", and the only step after this one
+        # carries `if: always()`, so the cursor alarm still sounds.
         env:
           PREGEN_ENABLED: ${{ vars.PREGEN_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

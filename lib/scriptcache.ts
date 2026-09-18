@@ -9,7 +9,7 @@ import { PROMPT_VERSION } from './scriptprompt';
 // TYPE-ONLY import — erased at compile time, so this module still pulls zero
 // bytes of the corpus (the constraint lib/nomination-script.ts's header names).
 import type { Bill } from './types';
-import { cacheClient, keyPrefix, noteUpstashError } from './upstash';
+import { cacheClient, keyPrefix, noteUpstashError, UpstashRequestError } from './upstash';
 
 /*
  * Content-keyed script cache, durable across instances (S11). This module is
@@ -218,8 +218,75 @@ export function scriptKey(parts: ScriptKeyParts): string {
 
 export interface ScriptCache {
   get(parts: ScriptKeyParts): Promise<string | null>;
-  /** Never throws — a cache write failure must not fail the response. */
-  set(parts: ScriptKeyParts, script: string): Promise<void>;
+  /**
+   * Never throws — a cache write failure must not fail the response.
+   *
+   * Returns TRUE only when the write reached the cache DATABASE, i.e. when
+   * the entry is durable and readable by every other instance. FALSE means
+   * the value lives in this process's in-memory map and nowhere else (the
+   * database is unconfigured, or the request failed). The live route
+   * ignores the return value — a visitor's script was already generated and
+   * is already being served, so a failed write is genuinely nothing to it.
+   * The nightly pregen job does NOT ignore it: a run that generated scripts
+   * and stored none of them durably has spent money for nothing, and the
+   * only way it can say so is if `set` tells it (lib/pregen-runner.ts).
+   */
+  set(parts: ScriptKeyParts, script: string): Promise<boolean>;
+}
+
+/**
+ * The key a reachability probe reads. Deliberately built by scriptKey()
+ * from ordinary-looking parts rather than a special literal, so the cache
+ * database still only ever sees the ONE key shape this module's registry
+ * comment promises (and tests/upstash-privacy.spec.ts pins). It is only
+ * ever GET, never SET, and `probe` can never be a real bill slug —
+ * lib/core/bills.ts's billSlug is always `<type>-<number>-<congress>`.
+ */
+const PROBE_PARTS: ScriptKeyParts = {
+  slug: 'probe',
+  stance: 'support',
+  lang: 'en',
+  version: '000000000000',
+};
+
+export interface CacheProbe {
+  /** Both env vars present, i.e. a client could be built at all. */
+  configured: boolean;
+  /** The database answered a command. A miss counts — we only asked if it is there. */
+  reachable: boolean;
+  /** HTTP status of the failure, 0 for network/timeout; null when there was none. */
+  status: number | null;
+}
+
+/**
+ * One cheap read against the cache database, to answer "is it there?" before
+ * a caller commits to work that is only worth doing if it can be stored.
+ *
+ * It exists because of a real, eight-night failure: the nightly pregen job
+ * (lib/pregen-runner.ts) read 60 combos, got 60 fail-open misses, generated
+ * all 60 scripts, wrote 60 entries that also failed, and reported "60
+ * cached" — every night, while the cache database was unreachable
+ * (status 0). Fail-open is exactly right for a VISITOR's request, which is
+ * why get/set keep it; it is exactly wrong for a batch job whose entire
+ * product is a durable cache entry.
+ *
+ * Deliberately does NOT call noteUpstashError: that helper's message says
+ * "failing open to in-memory", which is not what this caller does with the
+ * answer. The caller reports the failure in its own words.
+ */
+export async function probeCacheDatabase(): Promise<CacheProbe> {
+  const client = cacheClient();
+  if (!client) return { configured: false, reachable: false, status: null };
+  try {
+    await client.cmd(['GET', scriptKey(PROBE_PARTS)]);
+    return { configured: true, reachable: true, status: null };
+  } catch (err) {
+    return {
+      configured: true,
+      reachable: false,
+      status: err instanceof UpstashRequestError ? err.status : 0,
+    };
+  }
 }
 
 let fallbackLogged = false;
@@ -269,18 +336,20 @@ export function createScriptCache(): ScriptCache {
       }
     },
 
-    async set(parts: ScriptKeyParts, script: string): Promise<void> {
+    async set(parts: ScriptKeyParts, script: string): Promise<boolean> {
       const key = scriptKey(parts);
       memorySet(key, script); // always keep the warm-instance copy
       const client = cacheClient();
       if (!client) {
         logFallbackOnce();
-        return;
+        return false; // in this process's memory only — not durable
       }
       try {
         await client.cmd(['SET', key, script, 'EX', String(SCRIPT_TTL_SECONDS)]);
+        return true;
       } catch (err) {
         noteUpstashError('cache', err); // never fails the response
+        return false;
       }
     },
   };
