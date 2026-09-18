@@ -53,13 +53,22 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                                HANDSHAKES, not tool calls
  *                                                (see noteMcpClientHandshake)
  *   <env>:usage:script:<YYYY-MM-DD>              an INCR'd daily counter
+ *   <env>:usage:pageview:<surface>:<YYYY-MM-DD> an INCR'd daily counter per
+ *                                                route-TEMPLATE label — the
+ *                                                SHAPE of the page (home,
+ *                                                bills-index, bill, …),
+ *                                                never which page (see the
+ *                                                CONSTITUTIONAL CONSTRAINT
+ *                                                comment at PAGEVIEW_SURFACES)
  *
- * All three families are content-free (no slug/stance/locale/query/bill)
+ * All four families are content-free (no slug/stance/locale/query/bill)
  * and caller-free (no IP/UA/referer/salt) by construction: noteMcpToolCall's
  * only parameter is a closed-union tool name, noteScriptGeneration takes no
- * parameter at all, and noteMcpClientHandshake's one input is force-
- * sanitized into a bounded software-name alphabet before any key is built —
- * see the CONSTITUTIONAL CONSTRAINT comment at sanitizeMcpClientName.
+ * parameter at all, noteMcpClientHandshake's one input is force-
+ * sanitized into a bounded software-name alphabet before any key is built
+ * (see the CONSTITUTIONAL CONSTRAINT comment at sanitizeMcpClientName), and
+ * notePageview's is force-narrowed to a closed 9-member route-template
+ * union the same structural way.
  */
 
 // 90 days: long enough for month-over-month trend context beyond a single
@@ -150,6 +159,155 @@ export function mcpClientUsageKey(client: string, day: string): string {
   // Sanitization applied HERE, not just at the call site — see the
   // CONSTITUTIONAL CONSTRAINT comment above for why this is structural.
   return `${keyPrefix()}:usage:mcp-client:${sanitizeMcpClientName(client)}:${day}`;
+}
+
+// --- site page-view counters (site-counter, 2026-09) ------------------------
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: one integer per ROUTE TEMPLATE per UTC day.
+ * "The bill-detail template was requested 412 times yesterday" — never
+ * WHICH bill, never by whom, never from where. It is a first-party,
+ * server-side turnstile count for the founder-facing digest
+ * (scripts/daily-metrics.mjs), and it is the reason the digest's long-
+ * standing "site page-view traffic: not measured" disclosure changed: the
+ * compliant data source the digest said did not exist is this one.
+ *
+ * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data", "no
+ * analytics trackers"): the <surface> segment is drawn from the closed
+ * PAGEVIEW_SURFACES union below — route-template labels, fixed at compile
+ * time, nine of them. A path, a slug, a query string, a locale prefix, a
+ * referer, an IP, or a User-Agent can never become one, and the narrowing
+ * is STRUCTURAL rather than advisory: pageviewUsageKey pipes its own
+ * argument through asPageviewSurface, so even an untyped or hostile caller
+ * lands on 'other' instead of injecting a key segment. Same discipline as
+ * mcpClientUsageKey/sanitizeMcpClientName above, one step stricter (a
+ * closed set, not a bounded alphabet). The vocabulary itself is
+ * CI-enforced: scripts/check-key-namespaces.mjs holds the canonical
+ * allowlist, so adding a label means editing the privacy gate on purpose.
+ *
+ * NOTHING per-visitor is stored or derivable: no cookie is set or read, no
+ * session, no ordering, no cross-request correlation, no client script at
+ * all (the write happens in proxy.ts, server-side, inside waitUntil).
+ * There is deliberately NO unique/visitor count — that is a pending owner
+ * ruling, not an oversight, and implementing one would need an identity
+ * this family is built to not have.
+ *
+ * WHY THE COUNTERS DATABASE IS THE RIGHT HOME (lib/upstash.ts's split is
+ * the rule being reasoned against): a pageview write adds a "what SHAPE of
+ * page" entry to the database that also carries caller-hashed rate-limit
+ * entries, so the temporal re-pairing risk that justified the three-way
+ * split deserves an answer rather than a shrug. The answer is that this
+ * family is strictly weaker than an already-accepted precedent: the
+ * usage:script family is written in the SAME REQUEST as that request's own
+ * rl:script:<callerHash> write, while a pageview write happens on a page
+ * request that touches no rate limiter at all (the proxy matcher excludes
+ * /api), and the most a log-level correlation could ever yield is "that
+ * caller hash looked at some bill-shaped page" — the template, which the
+ * URL in the same log line already states. No new class of linkage is
+ * created; a family of thinner ones is not enough to justify a fourth
+ * database.
+ */
+
+/**
+ * The closed route-template vocabulary. Order is stable (digest rendering
+ * reads it); 'other' is last and is the fallback every unrecognised path
+ * collapses into.
+ *
+ * scripts/check-key-namespaces.mjs parses THIS declaration by name and
+ * fails CI on any label outside its own allowlist — keep the two in sync
+ * deliberately, which is the point.
+ */
+export const PAGEVIEW_SURFACES = [
+  'home',
+  'bills-index',
+  'bill',
+  'questions-index',
+  'question',
+  'reps',
+  'record',
+  'nominations',
+  'other',
+] as const;
+
+export type PageviewSurface = (typeof PAGEVIEW_SURFACES)[number];
+
+export const OTHER_PAGEVIEW_SURFACE: PageviewSurface = 'other';
+
+const PAGEVIEW_SURFACE_SET: ReadonlySet<string> = new Set<string>(PAGEVIEW_SURFACES);
+
+/** Force any input onto the closed union; anything unrecognised is 'other'. */
+export function asPageviewSurface(raw: unknown): PageviewSurface {
+  return typeof raw === 'string' && PAGEVIEW_SURFACE_SET.has(raw)
+    ? (raw as PageviewSurface)
+    : OTHER_PAGEVIEW_SURFACE;
+}
+
+export function pageviewUsageKey(surface: PageviewSurface, day: string): string {
+  // Narrowing applied HERE, not just at the call site — see the
+  // CONSTITUTIONAL CONSTRAINT comment above for why this is structural.
+  return `${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`;
+}
+
+/**
+ * Map a request path to its route-template label. The path is read, matched,
+ * and DROPPED — only the returned label ever travels onward, and every
+ * unmatched shape (including a 404 under app/[locale]/[...rest]) returns
+ * 'other' rather than inventing a label from the path itself.
+ *
+ * `locales` is next-intl's own list (proxy.ts passes routing.locales), so a
+ * leading /es is stripped before matching rather than being counted as a
+ * separate surface — the locale must never become a key segment
+ * (CONTENT_IDENTIFIER names it in every registry, usage included).
+ *
+ * Bare /nominations is 'other' on purpose: there is no nominations index
+ * route (only app/[locale]/nominations/[slug]), so that path 404s, and
+ * counting a 404 as the nominations surface would overstate it.
+ */
+export function pageviewSurfaceForPath(pathname: string, locales: readonly string[] = []): PageviewSurface {
+  const segments = pathname.split('/').filter((segment) => segment !== '');
+  if (segments.length > 0 && locales.includes(segments[0])) segments.shift();
+  const [head, second] = segments;
+  if (head === undefined) return 'home';
+  switch (head) {
+    case 'bills':
+      return second === undefined ? 'bills-index' : 'bill';
+    case 'questions':
+      return second === undefined ? 'questions-index' : 'question';
+    case 'nominations':
+      return second === undefined ? OTHER_PAGEVIEW_SURFACE : 'nominations';
+    case 'reps':
+      return second === undefined ? 'reps' : OTHER_PAGEVIEW_SURFACE;
+    case 'record':
+      return second === undefined ? 'record' : OTHER_PAGEVIEW_SURFACE;
+    default:
+      return OTHER_PAGEVIEW_SURFACE;
+  }
+}
+
+/**
+ * Is this request one page view worth counting? Kept HERE rather than in
+ * proxy.ts so the whole pageview family — vocabulary, key, predicate,
+ * write, read — is reviewable in one file, and so the predicate is unit-
+ * testable without importing Next's middleware runtime.
+ *
+ * Counted: a GET whose Accept asks for HTML. Excluded: every non-GET; RSC
+ * payload fetches and router prefetches (the `RSC` / `Next-Router-Prefetch`
+ * / `Next-Router-State-Tree` headers Next sets on its own client-side
+ * navigations), which would otherwise multiply one human page view into
+ * several. Static assets, /api, /_next, /_vercel and /embed never reach
+ * here at all — proxy.ts's matcher already excludes them.
+ *
+ * Headers are READ and discarded; none of them reaches a key.
+ */
+export function isCountablePageviewRequest(req: {
+  method: string;
+  headers: { get(name: string): string | null };
+}): boolean {
+  if (req.method !== 'GET') return false;
+  if (req.headers.get('rsc') !== null) return false;
+  if (req.headers.get('next-router-prefetch') !== null) return false;
+  if (req.headers.get('next-router-state-tree') !== null) return false;
+  return (req.headers.get('accept') ?? '').includes('text/html');
 }
 
 // --- the ingestion calls ------------------------------------------------------
@@ -264,6 +422,18 @@ export async function noteMcpClientHandshake(clientName: unknown): Promise<void>
   await noteUsage(mcpClientUsageKey(sanitizeMcpClientName(clientName), usageDayKey()));
 }
 
+/**
+ * Record one site page view against a route-template label. Called from
+ * proxy.ts inside `event.waitUntil()` — the middleware equivalent of the
+ * `after()` the other writers use — so the response is already on its way
+ * out before this runs and a slow or failed counters write can never delay
+ * or fail a page load. Takes the label as `unknown`-tolerant input by way
+ * of pageviewUsageKey's own narrowing. Never throws.
+ */
+export async function notePageview(surface: PageviewSurface): Promise<void> {
+  await noteUsage(pageviewUsageKey(surface, usageDayKey()));
+}
+
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
 
 export type UsageWindowResult =
@@ -317,6 +487,57 @@ export async function readUsageWindow(days: string[]): Promise<UsageWindowResult
   const script = raw.slice(cursor, cursor + days.length).map(toNum);
 
   return { ok: true, mcp, script };
+}
+
+export type PageviewWindowResult =
+  | { ok: true; surfaces: Record<PageviewSurface, number[]> }
+  | { ok: false };
+
+/**
+ * Read `days.length` days' worth of counts for all 9 surfaces, ONE Upstash
+ * round trip via MGET — same shape and same DELIBERATE WRITE/READ ASYMMETRY
+ * as readUsageWindow above (the write fails open and silent; this fails
+ * LOUD with `{ ok: false }` rather than hand the digest a degraded number).
+ * Index i in `days` maps back to index i in each returned array.
+ *
+ * An empty `days` is answered with empty series rather than an MGET with no
+ * arguments, which Upstash rejects.
+ */
+export async function readPageviewWindow(days: string[]): Promise<PageviewWindowResult> {
+  const client = countersClient();
+  if (!client) return { ok: false };
+
+  const emptySurfaces = (): Record<PageviewSurface, number[]> => {
+    const out = {} as Record<PageviewSurface, number[]>;
+    for (const surface of PAGEVIEW_SURFACES) out[surface] = [];
+    return out;
+  };
+  if (days.length === 0) return { ok: true, surfaces: emptySurfaces() };
+
+  const allKeys = PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => pageviewUsageKey(surface, day)));
+
+  let raw: unknown;
+  try {
+    raw = await client.cmd(['MGET', ...allKeys]);
+  } catch (err) {
+    noteUpstashError(
+      'counters',
+      err,
+      'failing closed to a digest read error (page-view window, never a degraded number)'
+    );
+    return { ok: false };
+  }
+  if (!Array.isArray(raw) || raw.length !== allKeys.length) return { ok: false };
+
+  const toNum = (v: unknown): number => (typeof v === 'string' ? Number(v) || 0 : 0);
+  const surfaces = emptySurfaces();
+  let cursor = 0;
+  for (const surface of PAGEVIEW_SURFACES) {
+    surfaces[surface] = raw.slice(cursor, cursor + days.length).map(toNum);
+    cursor += days.length;
+  }
+
+  return { ok: true, surfaces };
 }
 
 export type McpClientDayResult =
