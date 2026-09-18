@@ -21,6 +21,17 @@ name: Newsdesk headline trigger
 # directive. Actions minutes: $0 (public repo, unlimited free minutes on
 # standard runners). Full typical/busy/hard-ceiling breakdown in
 # scripts/newsdesk.mjs's header comment and the introducing PRs' reports.
+#
+# DISPATCHED, NOT ONLY SCHEDULED (2026-09-18, newsdesk-delivery package): the
+# hourly cron above delivered only 76 of 336 scheduled runs over
+# 2026-08-27..09-10 (22.6%; max gap 13.27h), so hot-bills.yml and
+# sync-bills.yml each `gh workflow run newsdesk.yml` after their own commit,
+# guaranteeing 3 extra fires/day on top of whatever the starved cron manages.
+# Costs nothing extra: NEWSDESK_DAILY_DECODE_CAP/NEWSDESK_TIER0_DAILY_DECODE_CAP
+# above are a true DAILY total (scripts/newsdesk.mjs's cache.dailyDecodes,
+# persisted across every run of this workflow regardless of trigger), so more
+# fires only spend the same daily ceiling sooner and more reliably, never a
+# larger one.
 
 on:
   schedule:
