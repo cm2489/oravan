@@ -201,7 +201,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   const nomination = getNomination(slug);
-  if (!nomination) return {};
+  if (!nomination) notFound();
   const t = await getTranslations({ locale, namespace: 'nominations' });
   const title = `${nomination.citation} — ${headlineFor(nomination, t('untitled', { citation: nomination.citation }))}`;
   const cited = getMomentsForNomination(slug).length > 0;
