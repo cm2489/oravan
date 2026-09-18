@@ -164,6 +164,7 @@ import {
   updateSlug,
 } from './congress-fetch.mjs';
 import { parseForceSlugs, passesGate } from './decode-gate.mjs';
+import { setCounter } from './run-counters.mjs';
 
 const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 500);
 // The ceiling on the same-timestamp extension described in the header: how far
@@ -925,6 +926,16 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // 'skipped_no_text' IS counted: that bill's record read fine and the bill is
   // real - only its text is missing, so we saw it and declined to decode it.
   const newSeen = added + gated + queued + newFailed + noTextSkipped;
+  // What the post-commit honesty alarm judges the night on
+  // (scripts/check-run-honesty.mjs). Written here, after both passes and the
+  // force-slug pass have resolved, so the numbers are the same ones the DONE
+  // line reports - the alarm and the log can never disagree. `billsFailed` is
+  // every pass's failures together, because "the decode path is dead" is a
+  // claim about the run, not about one window. No-ops with RUN_COUNTERS_FILE
+  // unset, which is every local run.
+  setCounter('billsAdded', added);
+  setCounter('billsFailed', failed + recentFailed + forceFailed);
+  setCounter('billsRefreshed', refreshed);
   console.log(
     `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${noTextSkipped} skipped: no bill text published yet (not decoded), ${forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${failed} failed in the ascending pass (${newFailed} new), ${recentFailed} in the recent-first pass, ${forceFailed} force-slug; cursor -> ${state.lastSync} (${next.reason}${finishedDay ? `, finished ${finishedDay}` : ''}); new bills seen this run: ${newSeen}; corpus ${bills.length}`
   );

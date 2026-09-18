@@ -54,6 +54,16 @@
  * in-flight batch" was considered and deliberately cut from this first
  * slice for scope; see the PR description.
  *
+ * IT REFUSES TO SPEND INTO A DEAD CACHE (2026-09-18). Before any batch is
+ * submitted, the runner reads one key from the cache database; if the
+ * database does not answer, it exits non-zero having submitted nothing.
+ * Eight consecutive nightlies had generated all 60 scripts against an
+ * unreachable cache database, thrown all 60 away, and exited green — the
+ * fail-open behaviour that is correct for a visitor's request (and stays
+ * untouched in app/api/script) is the wrong behaviour for a job whose only
+ * product is a durable cache entry. The workflow step is post-commit, so a
+ * refusal reds the run without touching the night's data.
+ *
  * Env:
  *   PREGEN_TOP_N               bills to pregen (default 10)
  *   PREGEN_BATCH_MAX_WAIT_MS   bounded poll wait, ms (default 1_200_000 = 20 min)
@@ -63,6 +73,12 @@
 import { main } from '../lib/pregen-runner';
 
 main().catch((err) => {
-  console.error('::error::pregen crashed:', err);
+  // Two shapes of failure land here. A DEAD CACHE DATABASE is a deliberate
+  // refusal, not a crash: lib/pregen-runner.ts has already printed an
+  // ::error:: line saying what to check, and its stack would add nothing, so
+  // only the one-line summary is echoed. Anything else is a genuine crash and
+  // keeps its full stack.
+  console.error('::error::pregen failed:', err instanceof Error ? err.message : err);
+  if (!(err instanceof Error) || err.name !== 'PregenCacheUnavailableError') console.error(err);
   process.exit(1);
 });

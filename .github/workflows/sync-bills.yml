@@ -24,6 +24,13 @@ on:
     #    min to +3h27m but NEVER fires early, so a nominal slot at or after
     #    14:00 can never start inside the publication band. 14:15 is the first
     #    quarter-hour clear of it.
+    #    UPDATED 2026-09-18 (newsdesk-delivery package): +3h27m was hot-
+    #    bills.yml's own worst instance (2026-08-08). A wider measurement
+    #    across the data-sync group's scheduled runs over 2026-08-27..09-10
+    #    found +9h31m, on newsdesk.yml's hourly cron - see that file's header
+    #    and hot-bills.yml's cron comment for the fuller correction. Still
+    #    same-day against 14:15's margin, so nothing below changes; corrected
+    #    here so a future re-derivation starts from the true worst case.
     # 4. INTRA-DAY COVER IS UNCHANGED and is why this move costs nothing while
     #    it is landing: hot-bills.yml (13:47 / 22:47) refreshes statuses twice
     #    a day and newsdesk.yml runs hourly, so the window was already covered
@@ -111,6 +118,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # THE BRANCH TIP, NOT THE EVENT SHA (2026-09-18). Without `ref:`,
+          # actions/checkout checks out `github.sha` - the SHA main carried when
+          # the RUN WAS CREATED. Every member of the data-sync concurrency group
+          # queues behind the others, so a scheduled run can sit pending for
+          # most of an hour while the hourly newsdesk pushes to main, and then
+          # start work against a corpus that is already one or two commits
+          # stale. Its own commit is then unpushable: data/bills.json and
+          # data/bills-es.json are single-line 10MB minified JSON, so ANY
+          # concurrent edit to either is a content conflict 100% of the time,
+          # and the rebase in the commit step below is right to refuse to guess
+          # at a corpus.
+          #
+          # That is exactly how the nightlies of 2026-09-14 (run 34886281500)
+          # and 2026-09-16 (run 35132794181) died. In both, the racing commit
+          # had landed BEFORE this job even started - 19:21 against a 19:25
+          # checkout, and 18:11 against an 18:15 one - so there was no race to
+          # survive, only a stale pin to not take. Both threw away a full
+          # night's bills, coverage (paid TheNewsAPI requests), nominations and
+          # Moment updates.
+          #
+          # Naming the branch makes checkout fetch and check out its CURRENT
+          # tip instead, which closes that window entirely; the concurrency
+          # group already prevents a second data workflow from pushing WHILE
+          # this one runs. The retry/rebase loop in the commit step stays as
+          # the backstop for an outside push (a PR merge touching data/).
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -121,11 +155,49 @@ jobs:
         # advance past this timestamp or the night's run didn't do its job.
         id: runstart
         run: echo "ts=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
+      - name: Point the run's scripts at a counter file
+        # WHY A FILE. The post-commit honesty alarm has to answer "did any
+        # Anthropic call die on a credit balance tonight" and "did the newsdesk's
+        # t3 call come back at all". Both are known inside the scripts and
+        # nowhere else once they exit; scraping the step logs for them would
+        # mean a regex over prose that stops matching the day someone rewords a
+        # message, which is worse than no gate. RUNNER_TEMP is wiped with the
+        # runner, so nothing leaks between runs and nothing can be committed.
+        # scripts/run-counters.mjs is a total no-op when this is unset, which is
+        # every local run.
+        run: echo "RUN_COUNTERS_FILE=$RUNNER_TEMP/oravan-run-counters.json" >> "$GITHUB_ENV"
+      - name: Anthropic preflight (one 1-token call - never blocks the data refresh)
+        id: preflight
+        # ONE request, max_tokens 1, on the same Haiku the newsdesk's t3 tier
+        # already calls every hour: about $0.000017 a night. It exists because
+        # of 2026-09-09/10, when the account's credit balance ran out and the
+        # night discovered it sixty failed decodes later - each one caught,
+        # logged, and walked past, with the run ending green.
+        #
+        # IT CANNOT COST THE NIGHT ITS DATA. Congress.gov statuses, floor
+        # signals, coverage, nominations and portraits are free and correct
+        # whether or not the model is reachable. So this step is
+        # continue-on-error, the script itself exits 0 on every path, and all a
+        # failure does is set decode_ok=false - which the sync step below turns
+        # into MAX_NEW_DECODES=0 (refresh everything, decode nothing). The run
+        # is painted red afterwards by the post-commit honesty alarm, once the
+        # night's free work is safely on main.
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/anthropic-preflight.mjs
       - name: Sync bills
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MAX_NEW_DECODES: ${{ inputs.max_new_decodes || '60' }}
+          # 0 when the preflight could not reach the model: syncOneBill's
+          # `allowDecode: added < MAX_NEW_DECODES` is then false everywhere, so
+          # every bill takes the free refresh path and every new one comes back
+          # as 'budget' - deferred, not failed, and picked up by the next run.
+          # A manual dispatch's max_new_decodes is honoured only when the
+          # preflight passed; nothing here can turn decoding ON that the
+          # preflight turned off.
+          MAX_NEW_DECODES: ${{ steps.preflight.outputs.decode_ok == 'true' && (inputs.max_new_decodes || '60') || '0' }}
           # Blank/absent on every scheduled run, so the fallback below hands the
           # script the same 500 its own `?? 500` default would have used
           # (scripts/sync-bills.mjs:126). Only a manual dispatch changes it.
@@ -612,6 +684,18 @@ jobs:
         # the PREGEN_ENABLED repo variable so this spends $0 until the owner
         # explicitly arms it (see the introducing PR's Arming checklist).
         # Must run via tsx, not plain node - see scripts/pregen-scripts.mjs.
+        #
+        # POST-COMMIT AND ALLOWED TO RED THE RUN (2026-09-18). The step sits
+        # here, after the commit, the deploy check and the CI dispatch, for the
+        # same reason the cursor alarm sits last: the night's data is already
+        # on main before this runs, so a pregen failure can never cost the
+        # corpus anything. That matters now because pregen REFUSES to run when
+        # the cache database is unreachable - it exits non-zero having
+        # submitted nothing rather than paying for 60 scripts it would throw
+        # away (eight consecutive nightlies did exactly that; see
+        # lib/pregen-runner.ts). A red run with the data landed is the honest
+        # report of "the cache is down", and the only step after this one
+        # carries `if: always()`, so the cursor alarm still sounds.
         env:
           PREGEN_ENABLED: ${{ vars.PREGEN_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -632,6 +716,25 @@ jobs:
             exit 0
           fi
           npx tsx scripts/pregen-scripts.mjs
+      - name: Run-honesty alarm (post-commit - reds the run, never blocks the data)
+        # The SECOND post-commit alarm, alongside the cursor-progress one below
+        # and for the identical N8-A2 reason: it judges whether the night
+        # WORKED, not whether the corpus is sound, so the data lands first and
+        # the run goes red after. It fires when a decode died on a credit
+        # balance or another invalid_request_error, when the preflight above
+        # disabled decoding, or when the run reached the model on every new bill
+        # and landed none of them. if: always() so a failure upstream cannot
+        # hide it - and it sits BEFORE the cursor alarm, which carries the same
+        # always(), so neither alarm can swallow the other.
+        if: always()
+        env:
+          # Belt and braces: the preflight records its own failure counter, but
+          # a hard crash inside it would leave none while still leaving
+          # decode_ok unset - which the sync step above reads as "decode
+          # nothing". Handing the alarm the step output too means a night that
+          # decoded nothing can never end green for want of a counter.
+          PREFLIGHT_DECODE_OK: ${{ steps.preflight.outputs.decode_ok }}
+        run: node scripts/check-run-honesty.mjs nightly
       - name: Cursor-progress alarm (post-commit - reds the run, never blocks the data)
         # A RED RUN WHOSE DATA STILL SHIPPED. This is the one check in the
         # nightly that runs after the commit, by owner ruling 2026-08-12
@@ -655,3 +758,32 @@ jobs:
         # thing a broken run still says out loud.
         if: always()
         run: node scripts/check-cursor-age.mjs
+      - name: Dispatch the newsdesk (guaranteed hourly-layer fire)
+        # newsdesk.yml's own hourly cron delivered only 76 of 336 scheduled
+        # runs over 2026-08-27..09-10 (22.6%; max gap 13.27h) - GitHub starves
+        # an hourly cron far worse than it starves this job's own once-daily
+        # one. `gh workflow run` fires a workflow_dispatch event, which -
+        # unlike a plain push - a bot-authored GITHUB_TOKEN IS allowed to
+        # trigger (the same carve-out the "Dispatch CI" step above already
+        # relies on). This buys the hourly layer at least one extra
+        # guaranteed fire per night on top of whatever the starved cron
+        # manages, without waiting on it.
+        #
+        # NO concurrency guard needed here: newsdesk.yml already shares this
+        # job's own `data-sync` group (cancel-in-progress: false), so a
+        # dispatched run queues rather than races a scheduled or
+        # already-running one - verified by reading that workflow's
+        # concurrency block, not assumed.
+        #
+        # LAST, after the cursor-progress alarm, and `always()` for the same
+        # reason that alarm is last (see its own comment): nothing below this
+        # job's normal work may skip the newsdesk its fire, including a red
+        # cursor-age alarm or an earlier gate failure. `continue-on-error` so
+        # a dispatch failure here can never fail this job. Same main-ref guard
+        # as the deploy/CI steps above: a branch validation run must not
+        # dispatch the shared newsdesk against main's data.
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run newsdesk.yml --ref main

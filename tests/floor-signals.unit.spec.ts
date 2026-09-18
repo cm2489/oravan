@@ -6,11 +6,14 @@ import { join } from 'node:path';
 import {
   alreadyDisposed,
   CARRY_FORWARD_MAX_DAYS,
+  CHECKED_STAMP_MAX_AGE_HOURS,
   deriveFloorMeta,
   deriveSourceStatus,
   digestAgeDays,
   digestToText,
   entersFloorWatch,
+  FLOOR_SIGNALS_CHECKED_PATH,
+  FLOOR_SIGNALS_CHECKED_SCHEMA,
   FLOOR_SIGNALS_SCHEMA,
   govinfoGranuleHtmlUrl,
   materialFingerprint,
@@ -28,10 +31,12 @@ import {
   SESSION_BASIS,
   sessionFromProgram,
   shouldWrite,
+  shouldWriteChecked,
   splitProgramSentences,
   titleDrift,
   trackFromCategory,
   verifyFloorSignals,
+  verifyFloorSignalsChecked,
 } from '../scripts/floor-signals-parse.mjs';
 // The gate this module's spend predicate must stay a SUPERSET of. Two
 // different questions — see entersFloorWatch's doc comment — pinned against
@@ -567,6 +572,60 @@ test.describe('shouldWrite', () => {
     expect(materialFingerprint(wednesday)).not.toBe(materialFingerprint(thursday));
     expect(materialFingerprint(wednesday)).not.toBe(materialFingerprint(withMeeting(null)));
     expect(shouldWrite({ previous: wednesday, next: thursday, now: NOW })).toBe(true);
+  });
+});
+
+test.describe('shouldWriteChecked (the heartbeat, decoupled from `live`)', () => {
+  test('writes on a missing previous stamp', () => {
+    expect(shouldWriteChecked({ previous: null, now: NOW })).toBe(true);
+  });
+
+  test('writes on damage — an unparseable checked_at is treated as absent', () => {
+    expect(shouldWriteChecked({ previous: { checked_at: 'not a date' }, now: NOW })).toBe(true);
+  });
+
+  test('stays silent while the stamp is still within the ceiling', () => {
+    const previous = { checked_at: new Date(NOW - (CHECKED_STAMP_MAX_AGE_HOURS - 1) * 3_600_000).toISOString() };
+    expect(shouldWriteChecked({ previous, now: NOW })).toBe(false);
+  });
+
+  test('restamps once the ceiling is crossed — this is EXACTLY what has no `live` gate', () => {
+    // The whole reason this file exists: a recess with zero live bill signals
+    // is the one case shouldWrite (above) refuses to restamp forever. This
+    // predicate never even looks at bill signals, so the recess case restamps
+    // fine — a genuinely fresh reconfirmation is honest whether or not any
+    // bill is on the floor.
+    const previous = { checked_at: new Date(NOW - (CHECKED_STAMP_MAX_AGE_HOURS + 1) * 3_600_000).toISOString() };
+    expect(shouldWriteChecked({ previous, now: NOW })).toBe(true);
+  });
+});
+
+test.describe('verifyFloorSignalsChecked', () => {
+  const good = () => ({ schema: FLOOR_SIGNALS_CHECKED_SCHEMA, checked_at: new Date(NOW).toISOString() });
+
+  test('a well-formed file passes clean', () => {
+    const { failures } = verifyFloorSignalsChecked({ data: good(), now: NOW });
+    expect(failures).toEqual([]);
+  });
+
+  test('not an object fails', () => {
+    expect(verifyFloorSignalsChecked({ data: null, now: NOW }).failures.length).toBeGreaterThan(0);
+    expect(verifyFloorSignalsChecked({ data: [1, 2], now: NOW }).failures.length).toBeGreaterThan(0);
+  });
+
+  test('an unknown schema fails', () => {
+    const { failures } = verifyFloorSignalsChecked({ data: { ...good(), schema: 'wrong' }, now: NOW });
+    expect(failures.some((f) => f.includes(FLOOR_SIGNALS_CHECKED_PATH))).toBe(true);
+  });
+
+  test('a missing or unparseable checked_at fails', () => {
+    expect(verifyFloorSignalsChecked({ data: { ...good(), checked_at: undefined }, now: NOW }).failures.length).toBeGreaterThan(0);
+    expect(verifyFloorSignalsChecked({ data: { ...good(), checked_at: 'soon' }, now: NOW }).failures.length).toBeGreaterThan(0);
+  });
+
+  test('a future checked_at fails — this stamp may never claim a check that hasn\'t happened', () => {
+    const future = { ...good(), checked_at: new Date(NOW + 3_600_000).toISOString() };
+    expect(verifyFloorSignalsChecked({ data: future, now: NOW }).failures.length).toBeGreaterThan(0);
   });
 });
 
