@@ -847,6 +847,8 @@
     "liveSub": "Open questions with something callable moving through Congress right now — a bill, or a nomination before the Senate.",
     "settledHeading": "Settled",
     "settledSub": "Recently closed questions, kept for the record. These don't reopen.",
+    "reviewHeading": "Under review",
+    "reviewSub": "Questions whose scheduled review date passed without a renewal. They stay readable and still link to the record, but nobody has confirmed they reflect where things stand right now.",
     "emptyTitle": "No live Big Questions right now",
     "emptyBody": "A Big Question opens only when a real, callable bill or Senate nomination meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",

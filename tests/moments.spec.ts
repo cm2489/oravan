@@ -29,25 +29,67 @@ const LOCALES = [
 
 test.describe('/questions index', () => {
   for (const { locale, prefix, messages, pick } of LOCALES) {
-    test(`${locale}: renders live Moments, the settled section (if any), and the scarcity note`, async ({
+    /*
+     * THE HEADING, THE GRID AND THE COUNT HAVE TO AGREE.
+     *
+     * Until 2026-09-18 a stale moment rendered inside the "Live" section, so
+     * this page could — and on 2026-09-18 did — print six cards under a
+     * heading saying Live above a count line saying "0 live Big Questions
+     * today". Stale now has its own "Under review" section, and the three
+     * assertions below are what stops the two ever being folded back
+     * together: every live card in the live section, every stale card in the
+     * review section, and NO stale card in the live one.
+     */
+    test(`${locale}: live, under-review and settled sections each hold exactly their own state`, async ({
       page,
     }) => {
       const all = getMoments();
-      const live = all.filter((m) => m.state === 'live' || m.state === 'stale');
+      const live = all.filter((m) => m.state === 'live');
+      const underReview = all.filter((m) => m.state === 'stale');
       const settled = all.filter((m) => m.state === 'settled');
-      const liveCount = all.filter((m) => m.state === 'live').length;
 
       await page.goto(`${prefix}/questions`);
       await expect(page.getByRole('heading', { level: 1, name: messages.moments.indexTitle })).toBeVisible();
 
+      const liveSection = page.locator('section[aria-labelledby="moments-live"]');
+      const reviewSection = page.locator('section[aria-labelledby="moments-review"]');
+      const settledSection = page.locator('section[aria-labelledby="moments-settled"]');
+
       if (live.length > 0) {
         for (const m of live) {
           await expect(
-            page.getByRole('link', { name: new RegExp(escapeRegex(pick(m.name))) })
+            liveSection.getByRole('link', { name: new RegExp(escapeRegex(pick(m.name))) })
           ).toBeVisible();
         }
+        // The max-6 scarcity note states today's actual live count, and the
+        // live grid is exactly that many cards.
+        await expect(liveSection.locator('a[href*="/questions/"]')).toHaveCount(live.length);
+        await expect(
+          liveSection.getByText(String(live.length), { exact: false }).first()
+        ).toBeVisible();
       } else {
+        // Nothing live: the empty state, no cards, and no count line boasting
+        // a cap over an empty shelf.
         await expect(page.getByText(messages.moments.emptyTitle)).toBeVisible();
+        await expect(liveSection.locator('a[href*="/questions/"]')).toHaveCount(0);
+      }
+
+      const reviewHeading = page.getByRole('heading', { level: 2, name: messages.moments.reviewHeading });
+      if (underReview.length > 0) {
+        await expect(reviewHeading).toBeVisible();
+        for (const m of underReview) {
+          const name = new RegExp(escapeRegex(pick(m.name)));
+          // Reachable, and labelled for what it is...
+          await expect(reviewSection.getByRole('link', { name })).toBeVisible();
+          // ...and never counted as live.
+          await expect(liveSection.getByRole('link', { name })).toHaveCount(0);
+        }
+        // The card keeps the honesty badge it always had.
+        await expect(
+          reviewSection.getByText(messages.moments.staleBadge, { exact: true }).first()
+        ).toBeVisible();
+      } else {
+        await expect(reviewHeading).toHaveCount(0);
       }
 
       const settledHeading = page.getByRole('heading', { level: 2, name: messages.moments.settledHeading });
@@ -55,15 +97,12 @@ test.describe('/questions index', () => {
         await expect(settledHeading).toBeVisible();
         for (const m of settled) {
           await expect(
-            page.getByRole('link', { name: new RegExp(escapeRegex(pick(m.name))) })
+            settledSection.getByRole('link', { name: new RegExp(escapeRegex(pick(m.name))) })
           ).toBeVisible();
         }
       } else {
         await expect(settledHeading).toHaveCount(0);
       }
-
-      // The max-6 scarcity note states today's actual live count.
-      await expect(page.getByText(String(liveCount), { exact: false }).first()).toBeVisible();
     });
   }
 

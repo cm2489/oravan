@@ -51,11 +51,24 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
   const dataAsOf = await dataAsOfString(locale);
 
   // Retired moments never render here — a stored owner decision that takes a
-  // moment off every index (spec §4.3). 'stale' still renders inside the
-  // live section (with its own quiet badge on the card): it's dropped from
-  // the homepage strip and search pinning, not from this page.
+  // moment off every index (spec §4.3).
+  //
+  // STALE IS NOT LIVE (2026-09-18). A stale entry used to render inside this
+  // page's live grid, carrying only a quiet badge on the card to say
+  // otherwise — so on a day when every entry's review_by had passed, six
+  // cards sat under a heading reading "Live" above a count line reading "0
+  // live Big Questions today". The count was the honest half; the heading and
+  // the grid it stood over were the false one.
+  //
+  // Stale entries now get their own labelled section below. That is a
+  // relabelling, not a withdrawal: they stay on this page, keep the "Needs
+  // review" badge on the card, keep the review-date banner on their own page,
+  // and keep their backlink from every vehicle (momentClaimsVehicles is
+  // unchanged — live + stale). What changes is that the heading over a card,
+  // the section it sits in, and the count under it now say the same thing.
   const all = getMoments();
-  const live = all.filter((m) => m.state === 'live' || m.state === 'stale');
+  const live = all.filter((m) => m.state === 'live');
+  const underReview = all.filter((m) => m.state === 'stale');
   const settled = all.filter((m) => m.state === 'settled');
 
   return (
@@ -115,13 +128,38 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
         )}
 
         {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
-            curation honest — count reflects moments actually reading as
-            live right now, not the stored total, which can also include
-            settled or stale entries the file keeps for the record. */}
-        <p className="mt-6 max-w-read text-sm text-ink-2">
-          {t('moments.scarcityNote', { count: live.filter((m) => m.state === 'live').length })}
-        </p>
+            curation honest — the count is the moments actually reading as
+            live right now, which is now exactly the grid above it. Suppressed
+            at zero, where the empty state has already said the same thing in
+            words and "never more than 6" would be a boast about an empty
+            shelf; the homepage band takes the same posture, disappearing
+            rather than printing a nought. */}
+        {live.length > 0 && (
+          <p className="mt-6 max-w-read text-sm text-ink-2">
+            {t('moments.scarcityNote', { count: live.length })}
+          </p>
+        )}
       </section>
+
+      {/* Under review — the zombie-curation tripwire, rendered rather than
+          hidden. Hairline rule and the quieter heading weight, the same
+          register as the settled record below: this section states a fact
+          about our own upkeep, it does not ask the reader for anything. */}
+      {underReview.length > 0 && (
+        <section className="mt-12 border-t border-line pt-4" aria-labelledby="moments-review">
+          <h2 id="moments-review" className="text-h3 font-bold text-ink-2">
+            {t('moments.reviewHeading')}
+          </h2>
+          <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.reviewSub')}</p>
+          {/* The same card with the same "Needs review" badge it already
+              carried — now inside a section that agrees with the badge. */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {underReview.map((m) => (
+              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {settled.length > 0 && (
         <section className="mt-12 border-t border-line pt-4" aria-labelledby="moments-settled">
