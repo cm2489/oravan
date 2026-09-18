@@ -5,10 +5,16 @@ name: Daily metrics digest
 # existing counters-database usage family (lib/usage.ts) — no new
 # database, no new secret, zero client-side analytics (CLAUDE.md's
 # constitution forbids that permanently; see scripts/daily-metrics.mjs's
-# header comment and the digest body itself for the disclosure). Site
-# page-view traffic is deliberately NOT covered — there is no compliant
-# programmatic source for it today (Vercel Web Analytics needs a banned
-# client script; Vercel's server-side Observability has no REST API).
+# header comment and the digest body itself for the disclosure).
+#
+# Site page views joined the digest 2026-09 (site-counter), from the SAME
+# counters database and still with no client script: lib/usage.ts's
+# pageview family, one counter per ROUTE TEMPLATE per UTC day, incremented
+# server-side in proxy.ts. The line this header used to carry — "there is
+# no compliant programmatic source for it today" — was true of the VENDOR
+# options only (Vercel Web Analytics needs a banned client script; Vercel's
+# server-side Observability has no REST API), and both of those remain
+# true, which is why the source is first-party.
 
 on:
   schedule:
@@ -61,7 +67,7 @@ jobs:
                 --json number,title --jq '.[] | select(.title=="📊 Daily metrics") | .number' | head -1)
           if [ -z "$NUM" ]; then
             NUM=$(gh issue create --repo cm2489/oravan --title "📊 Daily metrics" --label metrics \
-                  --body "Automated daily digest — one comment per day. Covers MCP tool calls and /api/script generations from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median. Site-level page-view traffic is NOT included: Vercel's Web Analytics API needs the @vercel/analytics client script, which CLAUDE.md permanently bans, and Vercel's server-side Observability (the compliant, no-client-script data source) has no REST API — dashboard/CSV-export only. See scripts/daily-metrics.mjs for the full reasoning." \
+                  --body "Automated daily digest — one comment per day. Covers MCP tool calls, /api/script generations, and site page views from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median on the two MCP/script aggregates. Site page views are first-party and server-side (one counter per route template per UTC day, incremented in proxy.ts — no client script, no path, no query, no caller material): they are requests, bots included, not people, and there is no unique-visitor count. Not Vercel Web Analytics — that API needs the @vercel/analytics client script, which CLAUDE.md permanently bans, and Vercel's server-side Observability has no REST API. See scripts/daily-metrics.mjs for the full reasoning." \
                   | grep -oE '[0-9]+$')
             gh issue pin --repo cm2489/oravan "$NUM" || true
           fi
