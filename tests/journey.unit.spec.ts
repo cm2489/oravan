@@ -7,6 +7,7 @@ import {
   floorActionChamber,
   floorFactSuspended,
   floorCalendarChamber,
+  floorMakesNoClaim,
   floorPendingChamber,
   floorSettledChamber,
   liveCallKey,
@@ -315,6 +316,65 @@ test.describe('floorSettledChamber', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b-iii · floorMakesNoClaim — "we READ this shape, and the honest
+ *          classification is that it claims nothing" (issue #241,
+ *          2026-09-18).
+ *
+ * The nightly sweep had two answers for a floor sentence and needed a third.
+ * S. 1602's sequential-referral order names the Senate, so it is not
+ * unclassifiable; but its discharge and its calendar placement are the
+ * CONDITIONAL consequence of a committee clock, so "a vote is coming" and
+ * "the last motion failed" are both false. Routing it into
+ * floorPendingChamber would have crowned a bill sitting in committee;
+ * widening FLOOR_SETTLED would have called a non-defeat a defeat AND dropped
+ * live bills out of the act-now pool that reads the same constant.
+ *
+ * WHAT THIS BUCKET DOES NOT DO is license a sentence. These texts render the
+ * same chamber-free `nowFloorActivityNeutral` copy they rendered before, and
+ * the deriveJourney fixture below is what pins that.
+ * ------------------------------------------------------------------ */
+test.describe('floorMakesNoClaim', () => {
+  const SEQUENTIAL_REFERRAL =
+    'Referred sequentially to the Committee on Commerce, Science, and Transportation, pursuant to the order of March 3, 1988, for 30 calendar days excluding any day on which the Senate is not in session, and if not reported by that day, the Committee be discharged from further consideration thereof, and the bill be placed on the calendar.';
+
+  test('the sequential-referral order reads as claim-free (s-1602-119, verbatim)', () => {
+    expect(floorMakesNoClaim(SEQUENTIAL_REFERRAL)).toBe(true);
+  });
+
+  test('and it stays out of both tensed matchers, so no surface can speak for it', () => {
+    expect(floorPendingChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+    expect(floorSettledChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+    expect(floorCalendarChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+  });
+
+  test('all three clauses are required — a partial match stays unread', () => {
+    // A plain sequential referral with no discharge clock.
+    expect(
+      floorMakesNoClaim(
+        'Referred sequentially to the Committee on Finance for a period not to exceed 30 days.'
+      )
+    ).toBe(false);
+    // A discharge that ALREADY happened is a real event, not a conditional.
+    expect(
+      floorMakesNoClaim('Committee on Commerce discharged from further consideration thereof.')
+    ).toBe(false);
+  });
+
+  test('never swallows a live or a settled floor text', () => {
+    expect(floorMakesNoClaim(CLOTURE_TEXT)).toBe(false);
+    expect(floorMakesNoClaim('Motion to proceed to consideration of measure made in Senate. (CR S4276)')).toBe(false);
+    expect(
+      floorMakesNoClaim(
+        'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 111. (CR S2106)'
+      )
+    ).toBe(false);
+    expect(floorMakesNoClaim('Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toBe(false);
+    expect(floorMakesNoClaim(null)).toBe(false);
+    expect(floorMakesNoClaim('')).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 2c · passageState — which passage a `passed_chamber` record reports
  *      (2026-08-09 floor-truth fix). The bill TYPE used to answer this,
  *      which is a fact about where a bill started, not where it stands.
@@ -534,6 +594,28 @@ test.describe('deriveJourney', () => {
     // origin-slot `nowChamber` above cannot leak into a rendered sentence.
     expect(en.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
     expect(es.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+  });
+
+  test('a READ-but-claim-free text (#241) renders exactly what an unread one does', () => {
+    /*
+     * floorMakesNoClaim moved this shape out of the nightly sweep's "nobody
+     * has read this" bucket. It must not have moved it anywhere on the PAGE:
+     * the bucket records a reading, it does not license a sentence. If this
+     * ever starts printing `nowFloorActivity`, a bill sitting in committee is
+     * being described as one the Senate is about to vote on.
+     */
+    const SEQUENTIAL_REFERRAL =
+      'Referred sequentially to the Committee on Commerce, Science, and Transportation, pursuant to the order of March 3, 1988, for 30 calendar days excluding any day on which the Senate is not in session, and if not reported by that day, the Committee be discharged from further consideration thereof, and the bill be placed on the calendar.';
+    expect(floorMakesNoClaim(SEQUENTIAL_REFERRAL)).toBe(true);
+
+    const journey = j('s', 'floor_vote', SEQUENTIAL_REFERRAL);
+    expect(journey.nowKey).toBe('nowFloorActivityNeutral');
+    expect(journey.onCalendar).toBe(false);
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    expect(journey.nowKey).not.toBe('nowFloorMotionFailed');
+    // Fresh or aged, the answer is the same one the untensed residual gives.
+    expect(j('s', 'floor_vote', SEQUENTIAL_REFERRAL, FRESH).nowKey).toBe('nowFloorActivityNeutral');
+    expect(j('s', 'floor_vote', SEQUENTIAL_REFERRAL, STALE).nowKey).toBe('nowFloorActivityNeutral');
   });
 
   test('the untensed residual is neutral whether the record is fresh or aged', () => {
