@@ -249,7 +249,7 @@ function HouseScriptSlot({
   script: string;
   isFallback: boolean;
   loading: boolean;
-  error: 'generic' | 'rate' | 'refused' | null;
+  error: 'generic' | 'rate' | 'paused' | 'refused' | null;
   copied: boolean;
   onGenerate: () => void;
   onChange: (text: string) => void;
@@ -281,10 +281,14 @@ function HouseScriptSlot({
           {t('scriptNotCallable')}
         </p>
       )}
-      {(error === 'rate' || error === 'generic') && (
+      {(error === 'rate' || error === 'paused' || error === 'generic') && (
         <Failure>
           <span className="font-bold text-alert">
-            {error === 'rate' ? t('rateLimited') : t('scriptError')}
+            {error === 'rate'
+              ? t('rateLimited')
+              : error === 'paused'
+                ? t('scriptPaused')
+                : t('scriptError')}
           </span>
           {error === 'generic' && (
             <button type="button" onClick={onGenerate} className={GHOST}>
@@ -372,7 +376,7 @@ export function ActionPanel({
    * deliberate refusal reported as a hiccup is the same class of untruth as
    * manufactured urgency, just pointed the other way.
    */
-  const [error, setError] = useState<'generic' | 'rate' | 'refused' | null>(null);
+  const [error, setError] = useState<'generic' | 'rate' | 'paused' | 'refused' | null>(null);
   /*
    * THE HOUSE MEMBER'S SLOT — its own draft, its own template, its own error,
    * kept beside the senator's rather than replacing them. That separation IS
@@ -391,7 +395,7 @@ export function ActionPanel({
   const [houseDrafts, setHouseDrafts] = useState<Partial<Record<Stance, string>>>({});
   const [houseFallbacks, setHouseFallbacks] = useState<Partial<Record<Stance, string>>>({});
   const [houseLoading, setHouseLoading] = useState(false);
-  const [houseError, setHouseError] = useState<'generic' | 'rate' | 'refused' | null>(null);
+  const [houseError, setHouseError] = useState<'generic' | 'rate' | 'paused' | 'refused' | null>(null);
   const [houseCopied, setHouseCopied] = useState(false);
   const [lookup, setLookup] = useState<RepLookup>({ status: 'idle' });
   const prefs = usePrefs();
@@ -700,6 +704,17 @@ export function ActionPanel({
   type ScriptOutcome =
     | { kind: 'draft'; script: string }
     | { kind: 'rate'; retryAfterSec: number | null }
+    /*
+     * The route's GLOBAL daily spend breaker (app/api/script's `script-day`),
+     * which is a 429 like the per-caller limiter but is NOT the same event and
+     * must not borrow its words. `rate` says "you asked for several scripts"
+     * and "this usually clears within about ten minutes"; both sentences are
+     * false for a reader who asked for one draft and hit a day-long cap that
+     * someone else's traffic filled. Its own kind, so the panel can say the
+     * true thing instead — and no countdown, because the honest reset is
+     * hours away and the template below works now.
+     */
+    | { kind: 'paused' }
     | { kind: 'refused' }
     | { kind: 'generic' };
 
@@ -714,11 +729,14 @@ export function ActionPanel({
         body: JSON.stringify({ slug, stance: s, locale, ...(audience ? { audience } : {}) }),
       });
       if (res.status === 429) {
-        // The citizen 429 may disclose seconds-to-reset; older mocks and the
-        // token path send a bare body — tolerate both (null = no countdown).
+        // The citizen 429 may disclose seconds-to-reset, or `scope: 'daily'`
+        // when the GLOBAL breaker tripped instead of this caller's own
+        // window; older mocks and the token path send a bare body — tolerate
+        // all three (bare = the per-caller wording, no countdown).
         let sec: number | null = null;
         try {
-          const b = (await res.json()) as { retryAfterSec?: unknown };
+          const b = (await res.json()) as { retryAfterSec?: unknown; scope?: unknown };
+          if (b.scope === 'daily') return { kind: 'paused' };
           if (
             typeof b.retryAfterSec === 'number' &&
             Number.isFinite(b.retryAfterSec) &&
@@ -840,6 +858,12 @@ export function ActionPanel({
         seedFallback();
         setError('rate');
         break;
+      case 'paused':
+        // No retryAt: a day-long reset is not a countdown anyone should watch,
+        // and the template seeded here is the thing that actually works now.
+        seedFallback();
+        setError('paused');
+        break;
       case 'refused':
         // No fallback seeded here, on purpose. Every other branch hands over a
         // template because the reader still has a call to make and only our
@@ -877,6 +901,10 @@ export function ActionPanel({
       case 'rate':
         seedFallback();
         setHouseError('rate');
+        break;
+      case 'paused':
+        seedFallback();
+        setHouseError('paused');
         break;
       case 'refused':
         setHouseError('refused');
@@ -1074,13 +1102,20 @@ export function ActionPanel({
             <p className="max-w-note text-sm text-ink">{t('scriptNotCallable')}</p>
           </div>
         )}
-        {(error === 'rate' || error === 'generic') && (
+        {(error === 'rate' || error === 'paused' || error === 'generic') && (
           <div>
             <Failure>
               <span className="font-bold text-alert">
-                {error === 'rate' ? t('rateLimited') : t('scriptError')}
+                {error === 'rate'
+                  ? t('rateLimited')
+                  : error === 'paused'
+                    ? t('scriptPaused')
+                    : t('scriptError')}
               </span>
-              {error !== 'rate' && stance && (
+              {/* No retry on `paused` either: the cap is the site's for the
+                  day, so pressing the button again cannot clear it — offering
+                  one would be the panel promising something it can't do. */}
+              {error === 'generic' && stance && (
                 <button type="button" onClick={() => generate(stance)} className={GHOST}>
                   <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
                   {t('retry')}
@@ -1117,6 +1152,12 @@ export function ActionPanel({
               ) : (
                 <p className="mt-2 text-sm text-ink-2">{t('rateRetryHint')}</p>
               ))}
+            {/* `paused` gets the one true follow-on sentence — the template
+                and the numbers work right now — and never the ten-minute
+                hint, which belongs to the per-caller window alone. */}
+            {error === 'paused' && stance && fallbackPristine && (
+              <p className="mt-2 text-sm text-ink-2">{t('rateTemplateNow')}</p>
+            )}
           </div>
         )}
         {script && (
