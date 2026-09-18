@@ -6,8 +6,9 @@ import { expect, test } from '@playwright/test';
  * README principle 2 ("Static-first … baked into statically generated pages")
  * and CLAUDE.md's architecture line were, for a stretch, claims nothing
  * checked. On the production build of 2026-09-18 EVERY [locale] route was
- * marked `ƒ Dynamic`, `.next/prerender-manifest.json` listed no HTML route at
- * all, and live responses came back `x-vercel-cache: MISS` with
+ * marked `ƒ Dynamic`, `.next/prerender-manifest.json` held 10 non-image
+ * entries — feeds and metadata files, not one page — and live responses came
+ * back `x-vercel-cache: MISS` with
  * `cache-control: private, no-cache, no-store` — while both documents went on
  * promising prerendered pages. The cause was one file
  * (app/[locale]/loading.tsx, whose header comment has the mechanism), and the
