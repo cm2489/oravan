@@ -51,6 +51,7 @@ export {
   FLOOR_SETTLED,
   floorActionChamber,
   floorCalendarChamber,
+  floorMakesNoClaim,
   floorPendingChamber,
   floorSettledChamber,
 } from './floor-text.mjs';
