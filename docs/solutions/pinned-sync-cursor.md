@@ -43,3 +43,33 @@ stalled cursor is a statement about PROGRESS, not about corpus integrity, and
 failing it before the commit made a stalled night discard its own already-paid
 decodes, coverage and nominations, which made the backlog it was complaining
 about strictly worse. The run still goes red; the data still lands.
+
+*Amended 2026-09-18 — the second freeze, caused by the first fix's own
+mechanism.* The high-water mark above is `toISODateTime(u.updateDate)`, and the
+bill-list `updateDate` is a bare DATE, so the mark is the MIDNIGHT of the last
+finished bill's day. When the cursor already sits INSIDE that day, midnight is
+*behind* it; the monotonic clamp (added 2026-08-12) holds it where it was, and
+the night makes zero progress. From 2026-09-08 to 2026-09-18 that is exactly
+what happened: 1,340 tracked bills carry the 2026-09-08 `updateDate`, so the
+oldest-500 slice could never reach a later day, `lastSync` sat at
+2026-09-08T17:54:31Z for ten nights, and the 09-18 nightly went red on
+`check-cursor-age.mjs` with no self-healing path — raising `max_updates` by hand
+was the only exit.
+
+**Fix.** A calendar day is the finest grain the list offers, so the run now
+*finishes the day*: the page loop keeps paging past `MAX_UPDATES` while
+everything fetched still sits on one day (bounded by `MAX_DAY_COMPLETION`), the
+processing slice is extended to the end of that day (`planAscendingWindow`), and
+once a day is provably finished the mark becomes the **end** of it
+(`endOfDayCursor`) rather than its own midnight. The extension is affordable
+because it is made of refreshes and gate verdicts — free Congress.gov calls;
+the only paid work, a new-bill decode, is still capped by `MAX_NEW_DECODES`, and
+a bill past that budget still freezes the cursor exactly as before.
+
+**What the freeze was hiding.** Measured with the new `SYNC_DRY_RUN` sizing mode
+on 2026-09-18: of the 962 new bills dated 2026-09-08, the 334 inside the
+current cap contain **0** that clear the priority decode gate — which is why
+every nightly reported "0 added, 0 queued" and looked healthy. The 628 beyond
+the cap contain roughly **105** that do, and they are `passed_chamber` records
+("Received in the Senate", "Held at the desk"). The stall was not just late; it
+was invisible *because* the part of the day it could reach was the boring part.

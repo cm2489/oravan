@@ -47,14 +47,21 @@ on:
         description: 'Max new bills to AI-decode this run (safety ceiling — the priority gate does the real limiting)'
         default: '60'
       max_updates:
-        # The catch-up lever for a STUCK ASCENDING WINDOW. scripts/sync-bills.mjs
-        # fetches at most MAX_UPDATES bills per run and processes the oldest
-        # MAX_UPDATES of them; when a single Congress.gov updateDate carries more
-        # tracked bills than that, every bill the run finishes shares one
-        # timestamp, the high-water cursor cannot step past it, and tomorrow
-        # re-scans the identical window forever. The script's own warning says to
-        # "raise MAX_UPDATES for a catch-up run" — until now there was no way to,
-        # because MAX_UPDATES was in no workflow env or input.
+        # The catch-up lever for a DEEP BACKLOG. scripts/sync-bills.mjs fetches at
+        # most MAX_UPDATES bills per run and processes the oldest MAX_UPDATES of
+        # them, so a window many days deep drains a slice at a time.
+        #
+        # IT IS NO LONGER THE FIX FOR A SAME-TIMESTAMP FREEZE (2026-09-18). When a
+        # single Congress.gov updateDate carried more tracked bills than the cap,
+        # every bill the run finished shared one timestamp, the high-water cursor
+        # could not step past it, and tomorrow re-scanned the identical window
+        # forever — 2026-09-08 to 09-18, ten nights. The run now finishes the
+        # cursor's own calendar day regardless of the cap and advances to the END
+        # of it (see "A DAY THAT CANNOT BE FINISHED" in scripts/sync-bills.mjs).
+        # This input is still what you reach for when the backlog is simply deep,
+        # or when one day carries more than MAX_DAY_COMPLETION (3000) bills —
+        # setting max_updates above that day's size clears it by the ordinary
+        # path.
         #
         # SIZING IT: blank = the script default 500. 2000 clears a multi-day
         # cohort in one pass. Budget an hour-plus of runner time, not minutes:
