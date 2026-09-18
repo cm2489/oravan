@@ -47,7 +47,7 @@ const MD_PATH = join(OUT_DIR, 'journey-corpus-report.md');
 // duplicating the corpus read.
 const driver = `
 import { readFileSync, writeFileSync } from 'node:fs';
-import { floorCalendarChamber, floorActionChamber, floorPendingChamber, floorSettledChamber } from './lib/journey';
+import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber } from './lib/journey';
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const floorVote = bills.filter((b) => b.status === 'floor_vote');
 const row = (b) => ({ slug: \`\${b.bill_type}-\${b.bill_number}-\${b.congress_number}\`, text: b.last_action_text });
@@ -69,13 +69,24 @@ const unclassified = floorVote.filter(
  * had already voted down (#198). Since 2026-08-12 this class renders the
  * chamber-free neutral sentence too — it is a shape nobody has read, no longer
  * a shape wearing a claim.
+ *
+ * floorMakesNoClaim is the THIRD answer (2026-09-18, issue #241). Some shapes
+ * are read and then deliberately left unspoken: S. 1602's sequential-referral
+ * order names the Senate, but the discharge and the calendar placement in it
+ * are the CONDITIONAL consequence of a committee clock, so "a vote is coming"
+ * and "the motion failed" are both false. Without a way to record that reading
+ * the sweep re-filed the same issue every night over a sentence somebody had
+ * already judged. These bills keep rendering the same chamber-free neutral
+ * copy they render today — the bucket records a reading, it does not license
+ * a claim. See lib/floor-text.mjs's own header for the allow-list discipline.
  */
 const untensed = floorVote.filter(
   (b) =>
     floorCalendarChamber(b.last_action_text) === null &&
     floorActionChamber(b.last_action_text) !== null &&
     floorPendingChamber(b.last_action_text) === null &&
-    floorSettledChamber(b.last_action_text) === null
+    floorSettledChamber(b.last_action_text) === null &&
+    !floorMakesNoClaim(b.last_action_text)
 ).map(row);
 
 writeFileSync(process.env.JOURNEY_CORPUS_JSON, JSON.stringify({ total: floorVote.length, unclassified, untensed }, null, 2));
