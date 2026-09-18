@@ -11,6 +11,7 @@ import {
   anyTopAt,
   calendarPlacementSlugs,
   corpus,
+  decidingNowAt,
   floorPendingSlugs,
   newestActionDate,
   pendingChamberOf,
@@ -45,10 +46,29 @@ const fmt = (iso: string, locale: string) =>
 const anyNow = anyNowAt(Date.now());
 /** Any DECODED active bill clears it (site: getTopActions — the homepage cards). */
 const anyTop = anyTopAt(Date.now());
+/**
+ * /bills' LEAD BAND membership (T0 + T1), which is NOT the act-now pool
+ * (T0 + T1 + T2) that `anyNow` mirrors. The divergence is deliberate and
+ * documented on lib/docket.mjs's `isActNow` (2026-08-12): a dated calendar
+ * placement is worth a call, so it sits in the pool, but /bills renders it
+ * under "Moving" rather than in the lead band. The pool is a superset, so the
+ * AE3 promise still holds in the direction that matters - a quiet homepage
+ * implies an empty lead band, a false quiet stays unrepresentable. The
+ * converse is allowed and honest, and it is exactly the week that reddened
+ * this test from 2026-09-06: a non-empty pool of placements, an empty lead
+ * band, and an assertion demanding a bill link in the band on the pool's
+ * say-so. The band assertion reads the band's own predicate now; the homepage
+ * tests above keep reading the pool, because the homepage claim is the pool's.
+ */
+const anyDecidingNow = decidingNowAt(Date.now()).length > 0;
 /** The build baked one branch of the tri-state; when the corpus sits at a
  *  scoring boundary the assert-time recomputation can disagree with it —
  *  skip the branch-dependent tests then, never gamble (tests/corpus.ts). */
-const CORPUS_STABLE = stableAcross((at) => [anyNowAt(at), anyTopAt(at)]);
+const CORPUS_STABLE = stableAcross((at) => [
+  anyNowAt(at),
+  anyTopAt(at),
+  decidingNowAt(at).length > 0,
+]);
 
 const LAST_RUN = new Date(syncState.lastRun).getTime();
 const FRESH_CLOCK = LAST_RUN + 60 * 60 * 1000; // 1h after the last check
@@ -182,7 +202,7 @@ test.describe('AE3: /bills "Act now" band mirrors the same tri-state', () => {
     await waitForFeedHydrated(page);
     const quietCard = page.getByRole('status').filter({ hasText: /Quiet week/ });
     const staleCard = page.getByRole('status').filter({ hasText: /Data check needed/ });
-    if (!anyNow) {
+    if (!anyDecidingNow) {
       // The unfiltered now band renders the empty-state card under its
       // header — quiet_week only when the cursor/corpus are also genuinely
       // current at this clock (audit §5 item 4), data_stale otherwise.
