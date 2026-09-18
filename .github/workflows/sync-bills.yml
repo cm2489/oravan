@@ -68,6 +68,27 @@ on:
       force_decode_slugs:
         description: 'Comma-separated slugs to bypass the priority gate for (e.g. hr-1234-119,s-45-119)'
         default: ''
+      force_redecode_slugs:
+        # The counterpart for bills ALREADY in the corpus: re-read each listed
+        # slug from its CURRENT text, whether or not the nightly's own new-text
+        # detection would have nominated it. The use for it is the one the
+        # detection cannot serve — an amended bill whose stale explanation is
+        # on screen NOW and should not wait for its turn in the capped queue.
+        #
+        # It bypasses the detection, NOT the ceiling: forced slugs are first in
+        # the queue and still counted against redecode_max_per_night, so a
+        # fifty-slug list costs ten re-decodes tonight and the rest tomorrow.
+        # There is no wording of this input that raises a night's bill.
+        description: 'Comma-separated slugs already in the corpus to re-decode from their current text (e.g. hr-5634-119)'
+        default: ''
+      redecode_max_per_night:
+        # The ONLY knob for re-decode spend. Blank = the script default of 10,
+        # which at the measured ~$0.065 per decode is ~$0.65 a night worst
+        # case. Raising it raises the bill linearly: 50 is ~$3.25, which is
+        # over the owner's standing $3 approval line, so anything above ~45
+        # is his call, not a dispatcher's.
+        description: 'One-off REDECODE_MAX_PER_NIGHT override (blank = 10 ≈ $0.65/night; each unit is ~$0.065)'
+        default: ''
       coverage_top_n:
         # The one-time wide refresh lever (owner directive, 2026-08-05). Leave
         # blank for the nightly default of 600.
@@ -124,6 +145,10 @@ jobs:
           # (scripts/sync-bills.mjs:126). Only a manual dispatch changes it.
           MAX_UPDATES: ${{ inputs.max_updates || '500' }}
           FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
+          FORCE_REDECODE_SLUGS: ${{ inputs.force_redecode_slugs || '' }}
+          # Blank on every scheduled run, so the script's own `?? 10` default
+          # applies and the nightly re-decode bill stays at ~$0.65 worst case.
+          REDECODE_MAX_PER_NIGHT: ${{ inputs.redecode_max_per_night || '10' }}
         run: node scripts/sync-bills.mjs
       - name: Journey-corpus tripwire (a novel floor text opens an issue, never costs the night)
         id: journey
