@@ -30,6 +30,8 @@ import {
 import { passesGate } from './decode-gate.mjs';
 import { generateSearchInputs } from './search-inputs.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
+import { classifyApiError } from './api-billing.mjs';
+import { bumpCounter, recordApiError } from './run-counters.mjs';
 
 /** Re-exported, not re-implemented: the "which document is the current text"
  *  question moved to scripts/text-version.mjs on 2026-09-18 so the re-decode
@@ -241,6 +243,32 @@ Output exactly this tagged format, each tag on its own line followed by its cont
 }
 
 /**
+ * The billing half of a 'failed' result, shared by both decode paths.
+ *
+ * A failure BEFORE the first Anthropic call (`decodeAttempted` false) is free
+ * and always was - a Congress.gov 500, a timeout fetching the bill text. What
+ * this adds is the second free case: the call was made and the API REFUSED it
+ * before generating anything. Both are reported to the caller as
+ * `unbilledApiError: true`, and every counter the run's honesty alarm reads is
+ * recorded here, once, at the single point where a decode failure is known.
+ *
+ * `apiErrorKind` rides along for the log line only. It is a short label this
+ * repo generates (scripts/api-billing.mjs), never a server message - nothing
+ * that could carry request content into a counter file.
+ */
+function failureBilling(err, decodeAttempted) {
+  if (!decodeAttempted) return { unbilledApiError: true, apiErrorKind: 'before_first_call' };
+  const v = classifyApiError(err);
+  recordApiError(v);
+  if (v.unbilled) {
+    console.error(
+      `  ^ the API refused that request before generating (${v.kind}${v.status === null ? '' : `, HTTP ${v.status}`}) - NOT billed, so it is not charged to any decode cap${v.creditBalance ? '. THIS IS THE CREDIT-BALANCE REFUSAL: top up the Anthropic account' : ''}`
+    );
+  }
+  return { unbilledApiError: v.unbilled, apiErrorKind: v.kind };
+}
+
+/**
  * Fetch one bill's current detail and either refresh it (already in the
  * corpus — free, unconditional) or, for a brand-new bill, run it through
  * the priority gate and decode-before-publish. The ONE place both
@@ -298,6 +326,14 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  * paid for two Sonnet calls and then failed its shape check. Callers that
  * charge a spend budget must charge on this, not on 'added' — see
  * chargeableDecode in scripts/newsdesk-match.mjs for the failure this fixed.
+ *
+ * And `unbilledApiError`: true when the call reached the API and the API
+ * REFUSED it before generating anything — a credit-balance 400, any other
+ * invalid_request_error, a 401/403/404/413/422/429, or a 5xx (see
+ * scripts/api-billing.mjs). `decodeAttempted` is set before the request, so it
+ * is true for those too, and on 2026-09-09/10 that let a credit outage spend
+ * a whole day of decode caps on requests nobody was invoiced for. A caller
+ * charging a budget must exempt them; chargeableDecode does.
  */
 export async function syncOneBill(u, ctx) {
   const { allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic } = ctx;
@@ -440,8 +476,10 @@ export async function syncOneBill(u, ctx) {
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     // Set BEFORE the await, not after: a throw inside decode() (its shape
     // check, a parse failure, an SDK error past the retries) still means the
-    // request was issued and billed.
+    // request was ISSUED. Whether it was BILLED is a second question, and the
+    // catch below answers it — see `unbilledApiError`.
     decodeAttempted = true;
+    bumpCounter('decodeAttempts');
     const dec = await decode(anthropic, bill, fetched.text);
     bill.ai_summary = dec.ai_summary;
     bill.ai_headline = dec.ai_headline;
@@ -461,6 +499,7 @@ export async function syncOneBill(u, ctx) {
       bill.news_query = si.news_query;
     } catch (e) {
       console.error(`  search-inputs failed for ${slug}: ${e.message}`);
+      recordApiError(classifyApiError(e));
     }
     es[slug] = { headline: dec.es_headline, summary: dec.es_summary, sections: dec.es_sections };
     bills.push(bill);
@@ -468,7 +507,15 @@ export async function syncOneBill(u, ctx) {
     return { outcome: 'added', slug, decodeAttempted };
   } catch (e) {
     console.error(`FAIL ${slug}: ${e.message}`);
-    return { outcome: 'failed', slug, isNew: !bySlug.has(slug), decodeAttempted };
+    const billing = failureBilling(e, decodeAttempted);
+    return {
+      outcome: 'failed',
+      slug,
+      isNew: !bySlug.has(slug),
+      decodeAttempted,
+      unbilledApiError: billing.unbilledApiError,
+      apiErrorKind: billing.apiErrorKind,
+    };
   }
 }
 
@@ -524,6 +571,7 @@ export async function redecodeBill(slug, ctx) {
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const subject = title ? { ...bill, title } : bill;
     decodeAttempted = true;
+    bumpCounter('decodeAttempts');
     const dec = await decode(anthropic, subject, fetched.text);
     if (title) bill.title = title;
     bill.ai_summary = dec.ai_summary;
@@ -549,12 +597,20 @@ export async function redecodeBill(slug, ctx) {
         bill.news_query = si.news_query;
       } catch (e) {
         console.error(`  search-inputs failed for ${slug}: ${e.message}`);
+        recordApiError(classifyApiError(e));
       }
     }
     return { outcome: 'redecoded', slug, decodeAttempted };
   } catch (e) {
     console.error(`FAIL redecode ${slug}: ${e.message}`);
-    return { outcome: 'failed', slug, decodeAttempted };
+    const billing = failureBilling(e, decodeAttempted);
+    return {
+      outcome: 'failed',
+      slug,
+      decodeAttempted,
+      unbilledApiError: billing.unbilledApiError,
+      apiErrorKind: billing.apiErrorKind,
+    };
   }
 }
 

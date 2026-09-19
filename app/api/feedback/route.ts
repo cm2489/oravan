@@ -29,8 +29,14 @@ const MAX_MESSAGE_CHARS = 2000;
 const MAX_PAGE_CHARS = 200;
 const TITLE_CHARS = 60;
 
-// Rate limit: 8 requests / 10 min per caller, following app/api/script — the
-// same limit as always. As of S11 this is enforced with short-lived
+// Rate limit: 8 requests / 10 min per caller. This number was originally
+// copied from app/api/script; it is this route's OWN number now, and the
+// comment no longer says otherwise — /api/script moved to 20/600s on
+// 2026-09-18 when a global daily spend breaker took over the spend job its
+// per-IP ceiling had been doing. Nothing about feedback's sizing changed:
+// this endpoint spends no model tokens, 8 notes in ten minutes is already
+// generous for a human writing them, and a looser ceiling here buys a
+// GitHub-issue flood, not a better report. As of S11 this is enforced with short-lived
 // rate-limit counters in the Upstash counters database (sha256(ip + rotating
 // salt), durable across instances), degrading to the per-instance in-memory
 // window when unconfigured or unreachable — see lib/ratelimit.ts. The IP is

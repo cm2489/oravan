@@ -247,6 +247,7 @@
     "rateRetryIn": "Podrás pedir un nuevo borrador de IA en {time}.",
     "rateTemplateNow": "La plantilla y los números de teléfono de abajo funcionan ahora mismo.",
     "rateRetryHint": "Esto suele resolverse en unos diez minutos. La plantilla y los números de teléfono funcionan ahora mismo.",
+    "scriptPaused": "La redacción con IA está en pausa por hoy — Oravan limita cuántos borradores escribe en un día.",
     "fallbackScript": {
       "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",
@@ -846,6 +847,8 @@
     "liveSub": "Cuestiones abiertas con algo en marcha por el Congreso ahora mismo — un proyecto de ley o una nominación ante el Senado.",
     "settledHeading": "Resueltas",
     "settledSub": "Cuestiones cerradas recientemente, conservadas como registro. Estas no se reabren.",
+    "reviewHeading": "En revisión",
+    "reviewSub": "Cuestiones cuya fecha de revisión programada pasó sin renovarse. Siguen legibles y siguen enlazando al registro oficial, pero nadie ha confirmado que reflejen la situación actual.",
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",
