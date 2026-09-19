@@ -73,6 +73,13 @@ const slugOf = (b: CorpusBill) => `${b.bill_type}-${b.bill_number}-${b.congress_
 const CLOTURE_TEXT =
   'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)';
 
+/* s-2503-119's exact live sentence (issue #258) — a HOUSE suspension vote that
+   failed, on a SENATE bill, in a sentence that names no chamber at all. Module
+   scope because four suites read it: the chamber rule that places it, the two
+   halves of the tense split, and the derivation that prints it. */
+const SUSPENSION_FAILED_TEXT =
+  'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).';
+
 /* A genuine, verbatim calendar placement. MODULE scope since N3 (2026-08-11):
    it was local to the deriveJourney suite, and the status-label suite now
    needs the identical sentence — the whole point of both clocks is that they
@@ -143,6 +150,39 @@ test.describe('floorActionChamber', () => {
     expect(floorActionChamber('Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.')).toBe('senate');
   });
 
+  /*
+   * RULE 5b (issue #258) — a suspension vote, which names no chamber at all.
+   * All three live corpus texts, verbatim; the first is s-2503-119, the
+   * sentence the nightly sweep filed the issue over.
+   */
+  test('a suspension vote is a House vote, by two House-only signatures', () => {
+    expect(floorActionChamber(SUSPENSION_FAILED_TEXT)).toBe('house');
+    expect(floorActionChamber('On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).')).toBe('house');
+    expect(floorActionChamber('On motion to suspend the rules and pass the resolution Failed by the Yeas and Nays: (2/3 required): 211 - 207 (Roll no. 95).')).toBe('house');
+  });
+
+  test('rule 5b beats rule 6, because the House takes up SENATE bills under suspension', () => {
+    // INVENTED, and the reason the rule sits above the word count rather than
+    // below it: this sentence names exactly one chamber and it is the wrong
+    // one. The corpus holds no instance yet; the ordering must be pinned
+    // before one arrives.
+    expect(
+      floorActionChamber(
+        'On motion to suspend the rules and pass the Senate bill Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 118).'
+      )
+    ).toBe('house');
+  });
+
+  test('rule 5b needs BOTH signatures — either alone stays unread', () => {
+    // A suspension motion disposed of by voice vote carries no roll number,
+    // and no other rule reads it: fail-closed, exactly as before #258.
+    expect(floorActionChamber('On motion to suspend the rules and pass the bill Agreed to by voice vote.')).toBeNull();
+    // The Senate numbers its own roll calls "Record Vote Number", never
+    // "Roll no." — so the Senate's defeats keep reading through rule 5, and
+    // this new rule never touches them.
+    expect(floorActionChamber('Failed of passage in Senate by Yea-Nay Vote. 47 - 51. Record Vote Number: 554.')).toBe('senate');
+  });
+
   test('exactly one chamber named anywhere decides', () => {
     expect(floorActionChamber('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.')).toBe('senate');
   });
@@ -185,6 +225,9 @@ test.describe('floorPendingChamber', () => {
     expect(floorPendingChamber('Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 46 - 48. Record Vote Number: 173. (consideration: CR S2816)')).toBeNull();
     expect(floorPendingChamber('Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.')).toBeNull();
     expect(floorPendingChamber('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.')).toBeNull();
+    // #258: rule 5b made this sentence chamber-readable. It must not have made
+    // it a COMING vote — the House already held this one and it lost.
+    expect(floorPendingChamber(SUSPENSION_FAILED_TEXT)).toBeNull();
     // The guard's other three words, on invented texts — the corpus holds no
     // instance yet, and the rule must be pinned before one arrives.
     expect(floorPendingChamber('Cloture motion on the motion to proceed to the measure presented in Senate, then withdrawn.')).toBeNull();
@@ -267,6 +310,13 @@ test.describe('floorSettledChamber', () => {
         'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 47 - 45. Record Vote Number: 301.'
       )
     ).toBe('senate');
+    /*
+     * s-2503-119 (issue #258) — the chamber comes from the PROCEDURE and the
+     * tense from FLOOR_SETTLED's "failed", which is why the two halves are
+     * separate functions. Note the chamber is not the bill's own: a Senate
+     * bill, defeated on the House floor.
+     */
+    expect(floorSettledChamber(SUSPENSION_FAILED_TEXT)).toBe('house');
   });
 
   test('a live text is never called settled', () => {
@@ -544,6 +594,31 @@ test.describe('deriveJourney', () => {
     expect(journey.nowKey).not.toBe('nowFloorActivity');
     // S.J.Res. 103's shape, the same verdict.
     expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT).nowKey).toBe('nowFloorMotionFailed');
+  });
+
+  /*
+   * ISSUE #258. Before rule 5b, s-2503-119's sentence reached no matcher at
+   * all: the derivation fell to the residual branch and printed "it's moving
+   * on the floor — the official record hasn't said yet which chamber acts
+   * next" over a House suspension vote that failed 264-133 on 2026-02-24. The
+   * record had said; nothing here could read it. Both halves of the fix are
+   * pinned below — the CHAMBER (the House, not this Senate bill's own) and
+   * the TENSE (settled, not moving).
+   */
+  test('a failed House suspension vote on a Senate bill reads settled, in the House', () => {
+    const journey = j('s', 'floor_vote', SUSPENSION_FAILED_TEXT);
+    expect(journey).toMatchObject({
+      step: 3, // the other chamber's slot — the origin is the Senate
+      current: 'house',
+      nowChamber: 'house',
+      onCalendar: false,
+      nowKey: 'nowFloorMotionFailed',
+    });
+    // The two sentences it used to be able to print, and must not.
+    expect(journey.nowKey).not.toBe('nowFloorActivityNeutral');
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    // Aged or fresh, a settled outcome is settled — the tense does not move.
+    expect(j('s', 'floor_vote', SUSPENSION_FAILED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
   });
 
   test('a genuinely pending floor vote keeps the live deliberation copy', () => {
