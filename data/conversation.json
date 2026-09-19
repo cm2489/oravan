@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T20:34:44.072Z",
+    "fetched_at": "2026-09-19T22:57:44.753Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T20:34:44.072Z"
+        "checked_at": "2026-09-19T22:57:44.753Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T20:34:44.072Z"
+        "checked_at": "2026-09-19T22:57:44.753Z"
       },
       "leans": {
         "center": {
@@ -2215,6 +2215,11 @@
           "lastSeen": "2026-09-19"
         },
         {
+          "domain": "theitem.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "thenationaldesk.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
@@ -2271,11 +2276,6 @@
         },
         {
           "domain": "ottumwacourier.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "theeagle.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         }
