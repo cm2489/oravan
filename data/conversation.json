@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T18:00:34.469Z",
+    "fetched_at": "2026-09-19T20:34:44.072Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T18:00:34.469Z"
+        "checked_at": "2026-09-19T20:34:44.072Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T18:00:34.469Z"
+        "checked_at": "2026-09-19T20:34:44.072Z"
       },
       "leans": {
         "center": {
@@ -155,6 +155,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-1700-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "finance.yahoo.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1722-119": {
@@ -747,6 +758,11 @@
         },
         {
           "domain": "foreignpolicyjournal.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "indianexpress.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         },
@@ -1995,6 +2011,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4437-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4482-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2323,6 +2351,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "english.ratopati.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "news.abplive.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "sanluisobispo.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
@@ -2434,11 +2472,6 @@
         },
         {
           "domain": "kyivindependent.com",
-          "firstSeen": "2026-09-12",
-          "lastSeen": "2026-09-12"
-        },
-        {
-          "domain": "news.liga.net",
           "firstSeen": "2026-09-12",
           "lastSeen": "2026-09-12"
         }
