@@ -28,7 +28,7 @@ import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mj
 // The read-but-claim-free reading, from the ONE copy (lib/floor-text.mjs) —
 // the totality sweep below has to exempt exactly what the nightly
 // journey-corpus sweep exempts, or the two disagree about the same sentence.
-import { floorMakesNoClaim } from '../lib/floor-text.mjs';
+import { FLOOR_SETTLED, floorMakesNoClaim } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -403,6 +403,7 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
       /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.test(t ?? '');
     let activityOnly = 0;
     let claimFree = 0;
+    let settledOutcome = 0;
     for (const b of bills) {
       const placement = isPlacement(b.last_action_text);
       const onFloor = b.status === 'floor_vote';
@@ -437,6 +438,28 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
         expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
         continue;
       }
+      /*
+       * THE SECOND EXEMPTION (2026-09-19): a SETTLED floor outcome. The
+       * nightly of 2026-09-19 refreshed S.J.Res. 71 and S.J.Res. 10 into
+       * `floor_vote` on "Failed of passage in Senate by Yea-Nay Vote" — the
+       * chamber acted on the measure, and the action was a defeat. That is
+       * not "the chamber MOVING on the measure" (tier0_floor_action, a
+       * pending fact); it is the answer. FLOOR_SETTLED (lib/floor-text.mjs,
+       * the one settled vocabulary four readers share) already reads it that
+       * way — chamber named or not, as in the House's "On motion to suspend
+       * the rules and pass the bill Failed by the Yeas and Nays" — so the
+       * scaffold must derive NOTHING
+       * for it. So a settled sentence that matches NO activity shape is
+       * excused from totality: it derives nothing, and nothing is the honest
+       * answer. It is NOT forced to false, because a settled sentence can
+       * also name the activity that settled it ("Motion to proceed ...
+       * rejected") and the matcher has always read that as floor action —
+       * that reading is pre-existing and stays.
+       */
+      if (onFloor && !placement && !derived && FLOOR_SETTLED.test(b.last_action_text ?? '')) {
+        settledOutcome++;
+        continue;
+      }
       if (onFloor && !placement) {
         activityOnly++;
         expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(true);
@@ -446,7 +469,7 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     }
     // The exemption is a carve-out, never the rule: if it ever swallowed the
     // whole population the assertion above would go vacuous.
-    expect(claimFree).toBeLessThan(activityOnly);
+    expect(claimFree + settledOutcome).toBeLessThan(activityOnly);
     // Guards the guard: if the population ever empties, the loop above would
     // pass vacuously and stop meaning anything.
     expect(activityOnly).toBeGreaterThan(0);
