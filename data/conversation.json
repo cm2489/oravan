@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T01:21:41.796Z",
+    "fetched_at": "2026-09-19T10:52:10.725Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T01:21:41.796Z"
+        "checked_at": "2026-09-19T10:52:10.725Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T01:21:41.796Z"
+        "checked_at": "2026-09-19T10:52:10.725Z"
       },
       "leans": {
         "center": {
@@ -561,6 +561,12 @@
     },
     "hr-4405-119": {
       "outlets7d": [
+        {
+          "domain": "forbes.com",
+          "lean": "center",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
         {
           "domain": "npr.org",
           "lean": "center",
@@ -2069,6 +2075,11 @@
           "lastSeen": "2026-09-19"
         },
         {
+          "domain": "herald-review.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "hickoryrecord.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
@@ -2090,6 +2101,11 @@
         },
         {
           "domain": "qconline.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "roanoke.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         },
@@ -2172,16 +2188,6 @@
           "domain": "ctmirror.org",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
-        },
-        {
-          "domain": "sportstalkflorida.com",
-          "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-16"
-        },
-        {
-          "domain": "espn.com",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
         }
       ],
       "mostViewed": {
