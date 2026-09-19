@@ -13,6 +13,16 @@
  *   a refresh can trigger, and the only answer to an amendment in committee,
  *   which changes the document without changing the title or the ladder. See
  *   the RE-DECODE ON NEW TEXT pass near the bottom of this file.
+ * - NEW-BILL decodes go through the Message Batches API at half price
+ *   (DECODE_BATCH, on by default; see the flag's comment and the drain near
+ *   the bottom). The nightly has no reader waiting on it, which is what makes
+ *   an asynchronous transport free to take. The RE-DECODE pass above is NOT
+ *   batched and is not an oversight — the reasoning is at that pass, and it
+ *   comes down to ~$0.33 a night of discount against two more rounds of
+ *   holding the data-sync concurrency group the hourly newsdesk queues behind.
+ *   The hourly newsdesk's own re-decode, which heals a live page, is
+ *   synchronous for a different reason again (latency) and is untouched by
+ *   this flag.
  * - NEW bills are decode-before-publish AND priority-gated: a new bill only
  *   spends a decode if it clears the priority gate (real legislative
  *   motion — see scripts/decode-gate.mjs) or is explicitly force-listed.
@@ -160,10 +170,33 @@
  * that did not move: the night's decodes land in sync-bills.yml's salvage
  * bundle instead of dying with the runner, and re-running simply re-scans
  * the same window and refreshes (free) the bills already in it.
+ *
+ * WITH BATCHING ON (2026-09-19) THAT WRITE MOVED ITS MEANING, and gained a
+ * sibling. Pass 1 no longer decodes anything: it queues, so its mid-run write
+ * persists FREE refreshes and there is no paid work there to lose. The spend
+ * all happens in one drain after pass 2, so the drain does its own
+ * writeCorpus() the moment it finishes - same guarantee ("never discard work
+ * already paid for"), applied at the point where payment now happens, and
+ * before the re-decode pass below it gets a chance to throw.
+ *
+ * WHERE THE CURSOR IS DECIDED (2026-09-19). Not in the loop any more. A
+ * queued decode's outcome is unknown while the loop runs, so the loop records
+ * one row per fetched bill and resolveCursorRows applies the freeze rule AND
+ * #251's day-walk once the drain has resolved them. See that function, and
+ * docs/solutions/pinned-sync-cursor.md's 2026-09-19 amendment.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { writeFileSync } from 'node:fs';
-import { fetchTextVersions, loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
+import {
+  completeDecode,
+  decodeBill,
+  decodeStructureFrom,
+  fetchTextVersions,
+  loadJSON,
+  redecodeBill,
+  syncOneBill,
+} from './bill-decode.mjs';
+import { decodeBatched } from '../lib/decode-batch.mjs';
 import {
   BILL_TYPES,
   CONGRESS,
@@ -176,7 +209,8 @@ import {
   updateSlug,
 } from './congress-fetch.mjs';
 import { parseForceSlugs, passesGate } from './decode-gate.mjs';
-import { setCounter } from './run-counters.mjs';
+import { bumpCounter, recordApiError, setCounter } from './run-counters.mjs';
+import { classifyApiError } from './api-billing.mjs';
 import {
   DEFAULT_REDECODE_MAX_PER_NIGHT,
   DEFAULT_REDECODE_PROBE_LIMIT,
@@ -221,6 +255,99 @@ const RECENT_FETCH_LIMIT = Number(process.env.RECENT_FETCH_LIMIT ?? 100);
 // the last ~100 updates leaves the full MAX_NEW_DECODES for the ascending
 // backlog pass; a night with several leaves proportionally less.
 const RECENT_DECODE_RESERVE = Number(process.env.RECENT_DECODE_RESERVE ?? 20);
+/*
+ * BATCHED DECODES (2026-09-18, owner directive: cut pipeline spend).
+ *
+ * On by default, and on for THIS script only. The nightly is the one decode
+ * path with no reader waiting on it, so its two model calls per new bill go
+ * through the Message Batches API at 50% of the standard rate. The hourly
+ * newsdesk re-decode — which heals a page that is live and wrong right now —
+ * stays synchronous and is untouched by this flag.
+ *
+ * WHAT IT CHANGES ABOUT THE NIGHT: nothing that can be seen in the output.
+ * The gates, the budget, the priority filter, the no-text refusal and the
+ * publish shape check all run exactly where they always ran; only the
+ * transport for the two calls moves, and any bill the batch cannot deliver is
+ * decoded synchronously in the same run at full price (see the drain below).
+ * The cost is wall-clock: two batch rounds, measured at 2-5 minutes each on
+ * this repo's existing batch user, with a ceiling past which it gives up and
+ * falls back.
+ *
+ * DECODE_BATCH=0 turns it off and restores the pre-2026-09-18 behaviour
+ * exactly — the kill switch, if a batch ever misbehaves at 14:15 UTC.
+ */
+const DECODE_BATCH = (process.env.DECODE_BATCH ?? '1') !== '0';
+
+/** Record which pass queued a decode, so the drain can put a failure in the
+ *  same tally that pass's inline failure would have gone to. Matched by slug
+ *  rather than by "the last thing pushed" — the passes are sequential today,
+ *  and a future reader who makes one concurrent should not have to notice
+ *  this to keep the failure counts honest. */
+function tagPass(queue, slug, pass) {
+  const job = queue.find((j) => j.slug === slug);
+  if (job) job.pass = pass;
+}
+
+/**
+ * THE WHOLE CURSOR DECISION FOR THE ASCENDING WINDOW, as one pure function:
+ * the freeze rule AND the day-walk, over one row per fetched bill, in window
+ * order. Exported so the arithmetic that governs whether a bill is EVER seen
+ * again is unit-testable without a live sync.
+ *
+ * THE FREEZE RULE is unchanged and is the one docs/solutions/pinned-sync-
+ * cursor.md exists to protect: advance the high-water mark over every bill
+ * this run fully handled, and freeze it the instant one still needs work.
+ * What changed on 2026-09-18 is only WHEN it can be evaluated. A queued
+ * decode's outcome — added, or failed and therefore still needing work — is
+ * not known while the loop is running, so the loop records its verdict per
+ * bill and this function applies the same rule once the drain has resolved
+ * the pending ones. Deciding inline would have meant guessing, and both
+ * guesses are bad: assume success and a failed decode advances the cursor past
+ * a bill that is not in the corpus, which is exactly the permanently-skipped-
+ * bill failure the pinned-cursor doc is about; assume failure and one queued
+ * bill freezes the night's whole backlog.
+ *
+ * THE DAY-WALK moved in here on 2026-09-19, when #251's cursor work met this
+ * one. `lastFullDay` is the newest calendar day this run processed CLEAN
+ * THROUGH — the walk crossed into a LATER day with nothing frozen behind it —
+ * which is a strictly stronger fact than "we got somewhere inside this day"
+ * and is what lets the cursor leave a day it is already sitting in
+ * (endOfDayCursor). It has to be decided here and not in the loop for exactly
+ * the same reason the freeze does: a day whose last bill is a queued decode is
+ * not finished until the drain says it is, and the loop cannot know that yet.
+ * Two rules over the same rows, one pass, one place to read.
+ *
+ * EVERY BILL OF THE WINDOW GETS A ROW — including the ones pass 1 already
+ * resolved, which the loop's dedupe branch skips without deciding anything.
+ * That is what makes "handledSlugs ⟹ resolved" an invariant of this function
+ * rather than a property of whichever branch remembered to push: a row is
+ * frozen only by its own `needsWork` or by its slug appearing in
+ * `failedSlugs`, and a deduped row has neither.
+ *
+ * @param {{ updateDate?: string | null, day?: string | null, slug?: string | null,
+ *           needsWork: boolean }[]} rows one per fetched bill, ascending
+ * @param {string} since the cursor this run started from
+ * @param {Set<string>} failedSlugs slugs whose queued decode did not produce a decode
+ * @returns {{ cursor: string, frozen: boolean, lastFullDay: string|null }}
+ */
+export function resolveCursorRows(rows, since, failedSlugs = new Set()) {
+  let cursor = since;
+  let frozen = false;
+  let lastFullDay = null;
+  let currentDay = null;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const day = row.day ?? null;
+    // Crossing into a later day with nothing frozen behind us means every bill
+    // of the day we just left is done.
+    if (!frozen && currentDay !== null && day !== null && day !== currentDay) lastFullDay = currentDay;
+    if (day !== null) currentDay = day;
+    const needsWork = Boolean(row.needsWork) || (row.slug ? failedSlugs.has(row.slug) : false);
+    if (needsWork) frozen = true;
+    else if (!frozen && row.updateDate) cursor = toISODateTime(row.updateDate);
+  }
+  return { cursor, frozen, lastFullDay };
+}
+
 // See the header comment above and decode-gate.mjs. Empty by default.
 const forceSlugs = parseForceSlugs(process.env.FORCE_DECODE_SLUGS);
 // RE-DECODE-ON-NEW-TEXT (2026-09-18). A separate, much smaller budget from
@@ -580,7 +707,12 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   let noTextSkipped = 0; // combined - real bill, no published text yet, so not decoded
   let newFailed = 0; // new-bill decode failures specifically (subset of `failed` below)
 
-  const ctxBase = { bills, es, bySlug, anthropic, forceSlugs };
+  // The batch queue. Present (an array) when DECODE_BATCH is on, which makes
+  // syncOneBill stop at the decode and hand the job back instead of spending
+  // it — see its 'queued_decode' outcome. Null restores the synchronous path
+  // byte for byte.
+  const decodeQueue = DECODE_BATCH ? [] : null;
+  const ctxBase = { bills, es, bySlug, anthropic, forceSlugs, decodeQueue };
 
   // The corpus pair, always written together: syncOneBill fills es[slug] and
   // pushes the bill in the same synchronous breath after a decode returns, so
@@ -627,8 +759,15 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < recentDecodeCap });
     if (result.outcome === 'refreshed') {
       refreshed++; recentRefreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
-    } else if (result.outcome === 'added') {
+    } else if (result.outcome === 'added' || result.outcome === 'queued_decode') {
+      // A queued decode charges the budget NOW, before it is spent. It has to:
+      // `allowDecode` is what stops a night from decoding more bills than
+      // MAX_NEW_DECODES allows, and a queue that didn't count against it would
+      // let the whole window queue up and then bill for all of it at once. The
+      // drain reconciles the count afterwards — a queued decode that fails
+      // comes back out of `added` and into the failure tallies.
       added++; recentAdded++; handledSlugs.add(result.slug);
+      if (result.outcome === 'queued_decode') tagPass(decodeQueue, result.slug, 'recent');
     } else if (result.outcome === 'gated') {
       gated++; recentGated++; handledSlugs.add(result.slug);
     } else if (result.outcome === 'budget') {
@@ -650,11 +789,18 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       recentFailed++; // logged only; deliberately NOT folded into the abort check below
     }
   }
-  console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} added+decoded, ${recentGated} gated (no real motion), ${recentDeferred} deferred (reserve exhausted), ${recentPartial} skipped (partial payload), ${recentNoText} skipped (no bill text published yet), ${recentFailed} failed`);
+  console.log(`recent-first pass: ${recentRefreshed} refreshed, ${recentAdded} ${DECODE_BATCH ? 'queued for batch decode' : 'added+decoded'}, ${recentGated} gated (no real motion), ${recentDeferred} deferred (reserve exhausted), ${recentPartial} skipped (partial payload), ${recentNoText} skipped (no bill text published yet), ${recentFailed} failed`);
 
   // PERSIST WHAT PASS 1 ALREADY PAID FOR, before pass 2 gets the chance to
   // throw. Corpus only - the cursor belongs to pass 2 and pass 2 hasn't run.
   // See "WHAT IS ON DISK WHEN PASS 2 THROWS" in the header comment.
+  // With DECODE_BATCH on, this write persists pass 1's FREE refreshes only:
+  // its new bills are still sitting in `decodeQueue`, undecoded and unpushed,
+  // and nothing has been paid for them yet. That is the same guarantee this
+  // write was added for (2026-08-09) — never discard work already paid for —
+  // reaching it from the other side: there is no paid work to lose here,
+  // because the spend happens after pass 2, in one drain. The drain does its
+  // OWN write the moment it finishes, for the original reason; see it below.
   if (!DRY_RUN) writeCorpus();
   console.log(
     DRY_RUN
@@ -816,18 +962,21 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // processed CLEAN THROUGH, i.e. it went on to a bill of a later day without
   // having frozen. That is a strictly stronger fact than "we got somewhere
   // inside this day", and it is the one that lets the cursor leave a day it is
-  // already sitting in (endOfDayCursor). It is tracked in the loop rather than
-  // inferred afterwards because only the loop knows where the freeze fell.
-  let cursor = since;
-  let frozen = false;
-  let lastFullDay = null;
-  let currentDay = null;
+  // already sitting in (endOfDayCursor).
+  //
+  // RECORDED, NOT APPLIED (2026-09-19, merging the batch drain). Both rules —
+  // the freeze and the day-walk — now live in resolveCursorRows near the top
+  // of this file, and run once the drain has turned every queued decode into
+  // added-or-failed. The loop cannot decide either one while it runs: a bill
+  // whose decode is still sitting in a batch is neither handled nor failed
+  // yet, and guessing is not available. Assume success and a failed decode
+  // advances the cursor past a bill that is not in the corpus, which is the
+  // permanently-skipped-bill failure docs/solutions/pinned-sync-cursor.md
+  // exists for; assume failure and one queued bill freezes the night's whole
+  // backlog. So the loop writes down what it saw — one row per bill of the
+  // window, IN WINDOW ORDER, dedupes included — and the pure function decides.
+  const cursorRows = [];
   for (const u of updated.slice(0, plan.count)) {
-    const day = updateDay(u.updateDate);
-    // Crossing into a later day with nothing frozen behind us means every bill
-    // of the day we just left is done.
-    if (!frozen && currentDay !== null && day !== null && day !== currentDay) lastFullDay = currentDay;
-    if (day !== null) currentDay = day;
     const slug = updateSlug(u);
     let needsWork = false;
     if (handledSlugs.has(slug)) {
@@ -840,6 +989,13 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         refreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
       } else if (result.outcome === 'added') {
         added++; handledSlugs.add(result.slug);
+      } else if (result.outcome === 'queued_decode') {
+        // Charged to the budget now, resolved at the drain — see the same
+        // branch in pass 1. The cursor cannot judge this bill yet; its row
+        // below carries the slug, and resolveCursorRows finishes the job
+        // against the drain's failure set.
+        added++; handledSlugs.add(result.slug);
+        tagPass(decodeQueue, result.slug, 'ascending');
       } else if (result.outcome === 'gated') {
         gated++; handledSlugs.add(result.slug); // real legislative motion absent - fully handled, NOT queued/frozen
       } else if (result.outcome === 'budget') {
@@ -869,8 +1025,17 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         if (result.isNew) { needsWork = true; newFailed++; }
       }
     }
-    if (needsWork) frozen = true;
-    else if (!frozen && u.updateDate) cursor = toISODateTime(u.updateDate);
+    // ONE ROW PER BILL OF THE WINDOW — dedupes included. That is what makes
+    // "resolved ⟹ a row exists saying so" an invariant of the function rather
+    // than a property of whichever branch happened to push: the pass-1 dedupe
+    // branch above writes nothing and decides nothing, and a row carrying its
+    // slug is how the drain's verdict still reaches it.
+    cursorRows.push({
+      updateDate: u.updateDate ?? null,
+      day: updateDay(u.updateDate),
+      slug,
+      needsWork,
+    });
   }
 
   // ---- Force-slug direct fetch (2026-07-23) ------------------------------
@@ -907,11 +1072,117 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
     if (result.outcome === 'refreshed') { refreshed++; noteRefreshed(result); }
     else if (result.outcome === 'added') added++;
-    else if (result.outcome === 'skipped_partial') partialSkipped++;
+    else if (result.outcome === 'queued_decode') {
+      added++;
+      tagPass(decodeQueue, slug, 'force');
+    } else if (result.outcome === 'skipped_partial') partialSkipped++;
     else if (result.outcome === 'skipped_no_text') noTextSkipped++;
     else if (result.outcome === 'failed') forceFailed++;
     handledSlugs.add(slug);
   }
+  // ---- THE BATCH DRAIN ---------------------------------------------------
+  // Every decode this run decided to spend, spent here, in two batch rounds
+  // at half the standard rate (lib/decode-batch.mjs). It runs AFTER both
+  // passes and the force list so one batch covers the whole night rather than
+  // three, and BEFORE the cursor is resolved, because a decode that does not
+  // land is a bill that still needs work.
+  //
+  // THE FALLBACK IS THE POINT. A batch that times out, errors a row, or comes
+  // back with a reply that fails the publish shape check costs that bill
+  // nothing except the wait: it is decoded synchronously, right here, at full
+  // price, through the identical decodeBill/completeDecode pair the
+  // pre-batch nightly used. The only way a bill ends the night undecoded is
+  // the way it always could — both attempts failed — and that is counted and
+  // freezes the cursor exactly as an inline decode failure always did.
+  let batchDecoded = 0;
+  let syncFallback = 0;
+  // New bills whose queued decode produced nothing, outside the ascending
+  // window: the recent-first pass's and the force list's. They are real new
+  // bills this run SAW, so `newSeen` at the bottom has to count them, and
+  // their pass's own failure tally is where the DONE line reports them. Kept
+  // apart from `newFailed`, which stays the ascending pass's own number
+  // because lib/pipeline-health.mjs parses it out of the DONE line as such.
+  let newQueuedFailed = 0;
+  const drainFailedSlugs = new Set();
+  if (decodeQueue && decodeQueue.length) {
+    console.log(`decode-batch: draining ${decodeQueue.length} queued decode(s) — Message Batches API at half the standard rate, synchronous fallback for anything it can't deliver`);
+    const decoded = await decodeBatched(decodeQueue, { anthropic });
+    for (const job of decodeQueue) {
+      // #246's counter, moved to where the spend moved. `decodeAttempts` is
+      // what scripts/check-run-honesty.mjs's rule 3 measures a dead decode
+      // path against ("reached the model N times, landed none"), and with the
+      // batch transport syncOneBill no longer reaches the model at all — it
+      // hands the job here. One bump per job, exactly as syncOneBill bumps
+      // once per bill: every job below issues at least one request, through
+      // the batch or through the fallback.
+      bumpCounter('decodeAttempts');
+      const batched = decoded.get(job.slug);
+      let dec = batched?.ok ? batched.dec : null;
+      if (dec) {
+        batchDecoded++;
+      } else {
+        try {
+          // PAY FOR THE MISSING HALF, NOT THE WHOLE THING. When the batch
+          // delivered round 1 and lost round 2, its summary comes back on the
+          // failure (lib/decode-batch.mjs) and has already been billed at the
+          // batch rate — re-running decodeBill here would buy that paragraph a
+          // second time at full rate for nothing.
+          dec = batched?.summary
+            ? await decodeStructureFrom(anthropic, job.bill, batched.summary)
+            : await decodeBill(anthropic, job.bill, job.text);
+          syncFallback++;
+          console.log(`decode-batch: ${job.slug} fell back to a synchronous ${batched?.summary ? 'call 2 only (the batch delivered its summary)' : 'decode'} (${batched?.reason ?? 'no batch result'})`);
+        } catch (e) {
+          console.error(`FAIL ${job.slug}: batch (${batched?.reason ?? 'no batch result'}) then sync decode (${e.message})`);
+          // The other half of #246: a refusal the API never billed (a credit
+          // balance 400 above all) has to be classified where it is caught, or
+          // the post-commit alarm cannot tell an outage from a bad night.
+          recordApiError(classifyApiError(e));
+          drainFailedSlugs.add(job.slug);
+          continue;
+        }
+      }
+      try {
+        await completeDecode({
+          slug: job.slug, bill: job.bill, text: job.text,
+          version: job.version ?? null, count: job.count ?? null,
+          dec, bills, es, bySlug, anthropic,
+        });
+      } catch (e) {
+        // completeDecode is the write, not the decode: a throw here means the
+        // bill is not in the corpus, so it is a failure like any other.
+        console.error(`FAIL ${job.slug}: storing the decode threw (${e.message})`);
+        drainFailedSlugs.add(job.slug);
+      }
+    }
+    // Reconcile the optimistic budget accounting the loops did (see their
+    // 'queued_decode' branches): a queued decode that produced nothing is not
+    // an `added` bill, and it must land in the same tally its pass's inline
+    // failure would have.
+    for (const job of decodeQueue) {
+      if (!drainFailedSlugs.has(job.slug)) continue;
+      added--;
+      if (job.pass === 'recent') { recentFailed++; newQueuedFailed++; }
+      else if (job.pass === 'force') { forceFailed++; newQueuedFailed++; }
+      else { failed++; newFailed++; }
+    }
+    console.log(
+      `decode-batch: ${batchDecoded} decoded via Batches (50% rate), ${syncFallback} via synchronous fallback (full rate), ${drainFailedSlugs.size} failed both`
+    );
+    // PERSIST THE MOMENT THE MONEY IS SPENT. This is the 2026-08-09 guarantee
+    // ("never discard work already paid for") moved to where payment now
+    // happens: before batching, pass 1's write was the only thing standing
+    // between a paid decode and a pass-2 throw; with batching, every decode of
+    // the night lands here, and the re-decode pass below it can still throw.
+    // One extra writeFileSync of a file this run writes anyway, and it is the
+    // simplest correct answer — draining pass 1 separately would double the
+    // batch rounds and the wall-clock on a concurrency group the hourly
+    // newsdesk is queued behind; a try/finally around the rest of the run
+    // would put the write on the abort path too, which is exactly where the
+    // mostly-failed rule says nothing should land.
+    writeCorpus();
+  }
+
   if (forceFailed) {
     console.log(
       `::warning::${forceFailed} FORCE_DECODE_SLUGS entr(ies) failed their direct fetch (reasons in the FAIL lines above; ${forceSlugs.size} slug(s) were listed, and any the two passes already resolved were never direct-fetched). Check the slugs. This does NOT count toward the mostly-failed abort and never freezes the cursor.`
@@ -944,13 +1215,22 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // count comparison rides on a payload already paid for, and confirming a
   // candidate costs one free Congress.gov /text request.
   //
-  // WHY IT RUNS AFTER THE CURSOR'S WORK AND BEFORE THE WRITE. It mutates the
-  // corpus in place, so it must precede writeCorpus() below; it must NOT
-  // touch `frozen` or the high-water mark, because the cursor means "the
-  // backlog scan has fully processed through here" and a deferred re-decode
-  // says nothing about the backlog. A re-decode that fails leaves the old
-  // decode standing (see redecodeBill) and is retried on the bill's next
-  // refresh — there is nothing to freeze for.
+  // WHERE IT SITS IN THE RUN, and why (order re-stated 2026-09-19, when the
+  // batch drain landed between it and the passes):
+  //   force loop -> BATCH DRAIN -> failVerdict -> THIS PASS -> the cursor
+  //   decision -> the writes.
+  //   - AFTER THE DRAIN, because `failVerdict` below is what stops this pass
+  //     from spending on a night that is going to exit 1, and a queued
+  //     decode's failure is not known until the drain resolves it. Computing
+  //     the verdict before the drain would have let a night whose batch died
+  //     wholesale pay for ten re-decodes on its way to throwing the night away.
+  //   - BEFORE THE CURSOR DECISION and before writeCorpus, because it mutates
+  //     the corpus in place — but it must NOT touch `frozen` or the high-water
+  //     mark, because the cursor means "the backlog scan has fully processed
+  //     through here" and a deferred re-decode says nothing about the backlog.
+  //     A re-decode that fails leaves the old decode standing (see
+  //     redecodeBill) and is retried on the bill's next refresh — there is
+  //     nothing to freeze for.
   const redecodeProbeLimit = Number.isFinite(REDECODE_PROBE_LIMIT) && REDECODE_PROBE_LIMIT >= 0
     ? Math.floor(REDECODE_PROBE_LIMIT)
     : DEFAULT_REDECODE_PROBE_LIMIT;
@@ -961,6 +1241,13 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // bottom, so the two can't disagree about whether tonight is that night —
   // its inputs (the ascending pass's failures, the force loop's, the window)
   // are all final by now.
+  //
+  // "BY NOW" MOVED (2026-09-19). It used to mean "after the two passes and the
+  // force loop"; with the batch drain a queued decode's failure is not known
+  // until the drain has run, so this sits BELOW the drain. Getting that order
+  // wrong would have been silent and expensive in exactly one direction: a
+  // night whose batch died wholesale would have computed a clean verdict,
+  // skipped nothing, and then paid for ten re-decodes on its way to exit 1.
   // `plan.count` - the slice this run ATTEMPTED - is the denominator, never
   // `updated.length`: failures can only come from bills we tried, and since the
   // same-timestamp extension (2026-09-18) the slice can be LARGER than
@@ -1058,7 +1345,25 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     );
   }
 
-  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeMissing = 0;
+  // WHY THIS PASS STAYS SYNCHRONOUS while the new-bill decodes above went to
+  // the Message Batches API (2026-09-19). Not an oversight, and not a small
+  // change either way:
+  //   - THE SAVING IS SMALL. The ceiling is 10 re-decodes a night at ~$0.065,
+  //     so the batch discount is worth about $0.33 a night — against ~$2 for
+  //     the new-bill path it is rounding error.
+  //   - THE COST IS NOT. Batching this would add a THIRD and FOURTH round of
+  //     waiting to a job that holds the `data-sync` concurrency group, which
+  //     the hourly newsdesk queues behind. That is the exact starvation
+  //     DECODE_BATCH_MAX_WAIT_MS was lowered to bound; spending it again for
+  //     $0.33 is the wrong trade.
+  //   - IT IS NOT MECHANICAL. redecodeBill fetches, fingerprints, VETOES,
+  //     decodes and stores in one function shared with scripts/newsdesk.mjs.
+  //     Batching it means splitting it into a "fetch + veto" phase and a
+  //     "decode + store" phase and threading the version stamp between them —
+  //     a refactor of the newsdesk's decode path, done for a night that saves
+  //     a third of a dollar. If this ceiling is ever raised far enough to
+  //     matter, that is the shape it should take.
+  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0;
   for (const item of redecodePlan.run) {
     const bill = bySlug.get(item.slug);
     // The served title is written ONLY beside a new decode and ONLY when it
@@ -1069,8 +1374,18 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     // call for nothing, which is the one avoidable cent on this path.
     const fetchedTitle = item.fetchedTitle ?? null;
     const title = bill && fetchedTitle && fetchedTitle !== bill.title ? fetchedTitle : null;
-    const result = await redecodeBill(item.slug, { anthropic, es, bySlug, title });
+    // `forced` CARRIES THE OWNER'S ORDER THE REST OF THE WAY (2026-09-19).
+    // planRedecodes marks a FORCE_REDECODE_SLUGS entry with reason 'forced';
+    // dropping that here let the fingerprint veto answer a question the owner
+    // had not asked, so a forced slug over unchanged text came back
+    // 'text-unchanged' with zero model calls and the workflow input was inert
+    // on exactly the bill someone typed it for. The ceiling is untouched:
+    // forced slugs are already inside redecodePlan.run, which is capped.
+    const result = await redecodeBill(item.slug, {
+      anthropic, es, bySlug, title, forced: item.reason === 'forced',
+    });
     if (result.outcome === 'redecoded') redecoded++;
+    else if (result.outcome === 'text-unchanged') redecodeUnchanged++;
     else if (result.outcome === 'skipped_no_text') redecodeNoText++;
     else if (result.outcome === 'missing') redecodeMissing++;
     else redecodeFailed++;
@@ -1079,9 +1394,19 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   }
   if (redecodePlan.run.length) {
     console.log(
-      `re-decode on new text: ${redecoded} re-decoded, ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)`
+      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)`
     );
   }
+
+  // ---- THE CURSOR DECISION, IN ONE PURE FUNCTION -------------------------
+  // Everything that can change a bill's verdict has now happened: the drain
+  // turned every queued decode into added-or-failed, and the re-decode pass
+  // above deliberately touches neither `frozen` nor the mark (a deferred
+  // re-decode says nothing about whether the BACKLOG SCAN got through here).
+  // resolveCursorRows near the top of this file owns the freeze rule and the
+  // day-walk together, so there is exactly one place to read - and to test -
+  // for "could this run skip a bill forever".
+  const { cursor, frozen, lastFullDay } = resolveCursorRows(cursorRows, since, drainFailedSlugs);
 
   // Where the cursor lands. A run that left nothing behind advances to
   // runStart; a frozen one, or one whose window was truncated, advances only to
@@ -1094,9 +1419,13 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // worth nothing when the run started inside the same day. Where a day
   // FINISHED, the honest mark is the end of it. `plan.dayComplete` proves it for
   // the slice's last day (the next fetched bill is on a later one);
-  // `lastFullDay` proves it for any earlier day the loop walked clean through
-  // before freezing. Take whichever is later, never earlier than `cursor`, and
-  // let resolveNextSync's monotonic clamp have the last word.
+  // `lastFullDay` proves it for any earlier day the walk got clean through
+  // before freezing (resolveCursorRows, which owns both rules now). Take
+  // whichever is later, never earlier than `cursor`, and let resolveNextSync's
+  // monotonic clamp have the last word. `plan.dayComplete` stays a property of
+  // the FETCHED WINDOW — it says the next bill Congress.gov handed us is on a
+  // later day — so the drain cannot change it; `frozen` is the post-drain one,
+  // which is the whole reason this line reads them in this order.
   const finishedDay = (!frozen && plan.dayComplete) ? plan.completedDay : lastFullDay;
   const dayMark = endOfDayCursor(finishedDay);
   const highWater =
@@ -1136,14 +1465,18 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
 
   // New bills seen this run, deduped across both passes: every new-bill slug
-  // this run touched resolves to exactly one of added/gated/queued/newFailed
-  // by the time we get here (a pass-1 'budget' deferral that pass 2 later
-  // resolves is NOT double-counted - see recentDeferred's comment above).
+  // this run touched resolves to exactly one of added/gated/queued/newFailed/
+  // newQueuedFailed by the time we get here (a pass-1 'budget' deferral that
+  // pass 2 later resolves is NOT double-counted - see recentDeferred's comment
+  // above). `newQueuedFailed` was added 2026-09-19 with the batch drain: a
+  // queued decode that fails outside the ascending window comes back out of
+  // `added` and would otherwise vanish from this total, which would make a bad
+  // batch night read as a quiet one.
   // The one exception is 'skipped_partial', counted in partialSkipped instead:
   // its payload was unreadable, so we can't honestly say we saw a bill at all.
   // 'skipped_no_text' IS counted: that bill's record read fine and the bill is
   // real - only its text is missing, so we saw it and declined to decode it.
-  const newSeen = added + gated + queued + newFailed + noTextSkipped;
+  const newSeen = added + gated + queued + newFailed + newQueuedFailed + noTextSkipped;
   // What the post-commit honesty alarm judges the night on
   // (scripts/check-run-honesty.mjs). Written here, after both passes and the
   // force-slug pass have resolved, so the numbers are the same ones the DONE

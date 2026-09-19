@@ -73,3 +73,28 @@ every nightly reported "0 added, 0 queued" and looked healthy. The 628 beyond
 the cap contain roughly **105** that do, and they are `passed_chamber` records
 ("Received in the Senate", "Held at the desk"). The stall was not just late; it
 was invisible *because* the part of the day it could reach was the boring part.
+
+*Amended 2026-09-19 — the rule moved, the rule did not change.* The nightly's
+new-bill decodes now go through the Message Batches API, which means a bill's
+outcome is no longer known when the ascending loop walks past it: a queued
+decode is neither handled nor failed until the drain resolves it. Guessing was
+not available in either direction — assume success and a failed decode advances
+the cursor past a bill that never entered the corpus, which is the failure this
+document exists for; assume failure and one queued bill freezes the whole
+night's backlog. So the loop stopped deciding. It writes **one row per fetched
+bill, in window order** — `{updateDate, day, slug, needsWork}`, dedupes
+included — and `resolveCursorRows` (exported from `scripts/sync-bills.mjs`,
+pinned in `tests/sync-cursor.unit.spec.ts` and `tests/decode-batch.unit.spec.ts`)
+applies **both** the freeze rule and the day-walk over those rows once the drain
+has finished. A row needs work when its own `needsWork` is set *or* its slug is
+in the drain's failure set.
+
+Two things about that are load-bearing. First, **every** bill of the window gets
+a row, including the ones the recent-first pass already resolved: the dedupe
+branch writes nothing and decides nothing, and without a row carrying its slug a
+pass-1 bill whose batched decode failed would have been walked straight past.
+Second, the caller reads `frozen` **after** the drain and `plan.dayComplete`
+from the **fetched window** — `finishedDay = (!frozen && plan.dayComplete) ?
+plan.completedDay : lastFullDay` — because "the next bill Congress handed us is
+on a later day" is a fact about the fetch that no drain outcome can change,
+while "this run finished that day" is exactly what a failed decode withdraws.

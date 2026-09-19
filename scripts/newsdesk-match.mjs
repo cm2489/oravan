@@ -555,6 +555,10 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
  *  did anything actually mutate bills/es? Only 'refreshed', 'added' and
  *  'redecoded' (the re-decode trigger's outcome — a new decode + its ES twin
  *  written over an existing record, scripts/bill-decode.mjs's redecodeBill)
+ *  and 'text-unchanged' (that same trigger finding the document byte-identical
+ *  to the one the decode was written from, so it wrote no decode but DID
+ *  stamp `decode_text_verified_at` — the stamp has to be committed or the
+ *  short-circuit resets every run and saves nothing)
  *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed',
  *  'skipped_partial' (an unreadable Congress.gov payload: no refresh
  *  applied, no new bill created — see readableAction) and 'skipped_no_text'
@@ -570,7 +574,9 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
  *  own `git diff --cached --quiet` step to (redundantly, but harmlessly)
  *  confirm. */
 export function anyDataChanged(outcomes) {
-  return outcomes.some((o) => o === 'refreshed' || o === 'added' || o === 'redecoded');
+  return outcomes.some(
+    (o) => o === 'refreshed' || o === 'added' || o === 'redecoded' || o === 'text-unchanged'
+  );
 }
 
 // ---- RSS/Atom feed parsing (pure — takes already-fetched XML text) ------

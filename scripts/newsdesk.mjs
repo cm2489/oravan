@@ -968,6 +968,7 @@ for (const cand of candidates) {
     lastActionDate: bill.last_action_date ?? null,
     corpusTitle: bill.title,
     fetchedTitle,
+    textVerifiedAt: bill.decode_text_verified_at ?? null,
   });
   if (!verdict.redecode) continue;
   if (cache.seen.has(failedDecodeKey(cand.slug, todayUTC))) {
@@ -1094,6 +1095,7 @@ for (const slug of redecodeQueue) {
       lastActionDate: bill.last_action_date ?? null,
       corpusTitle: bill.title,
       fetchedTitle,
+      textVerifiedAt: bill.decode_text_verified_at ?? null,
     });
   let verdict = judge();
   // The stamp alone said no. The remaining question is the expensive-to-miss

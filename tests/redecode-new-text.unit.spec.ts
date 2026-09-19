@@ -8,6 +8,7 @@ import {
   textVersionStamp,
   versionCount,
 } from '../scripts/text-version.mjs';
+import { buildSummaryPrompt, redecodeBill, textFingerprint } from '../scripts/bill-decode.mjs';
 
 /*
  * PINS the re-decode-on-new-text trigger: WHO gets re-read (dateSaysNewText,
@@ -271,5 +272,231 @@ test.describe('planRedecodes — how many re-decodes a night may pay for', () =>
   test('a quiet night plans nothing', () => {
     expect(planRedecodes({}).run).toHaveLength(0);
     expect(planRedecodes({ forced: [''], detected: [{ slug: '' }] }).run).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. The fingerprint veto: the LAST gate, and the thing that closes the loop
+// ---------------------------------------------------------------------------
+
+test.beforeAll(() => {
+  process.env.CONGRESS_API_KEY ??= 'test-key-never-sent-anywhere';
+});
+
+const VETO_TEXT = 'SEC. 1. SHORT TITLE. This Act may be cited as the Bridge Act.';
+
+/** Congress.gov's /text endpoint plus the document behind it, serving the
+ *  AMENDED version of hr/5634 — the shape this whole trigger exists for. */
+function stubAmendedText(body: string) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (url: string | URL | Request) => {
+    const href = String(url);
+    if (href.includes('api.congress.gov')) {
+      return new Response(JSON.stringify({ textVersions: amendedVersions() }), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    }
+    return new Response(`<html><body>${body}</body></html>`, { status: 200 });
+  }) as typeof fetch;
+  return () => { globalThis.fetch = original; };
+}
+
+function corpusBill(overrides: Record<string, unknown> = {}) {
+  return {
+    full_identifier: 'hr-5634-119',
+    bill_type: 'hr',
+    bill_number: 5634,
+    title: 'An act to fund bridge repair.',
+    ai_summary: 'The bill spends $4 billion.',
+    ai_headline: 'Bridge money moves',
+    ai_sections: { tldr: 't', what: 'w', who: 'o', why: 'y', cost: null, costChips: null },
+    decoded_at: '2026-09-01T00:00:00Z',
+    text_version_date: '2025-09-30T04:00:00Z',
+    text_version_type: 'Introduced in House',
+    text_version_count: 1,
+    ...overrides,
+  } as Record<string, unknown>;
+}
+
+test.describe('a VETOED re-decode stamps both provenance sets', () => {
+  test('THE LIVE-LOCK: a nominated, probed, vetoed bill is not nominated again', async () => {
+    // Before 2026-09-19 the veto wrote only `decode_text_verified_at`, which
+    // #248's nominator does not read. So a bill whose text-version DATE had
+    // moved but whose prompt had not — a new version of the same words, or a
+    // version stamp this corpus never had — was nominated every night, spent a
+    // free probe and a free /text fetch every night, and was vetoed every
+    // night. Free in dollars, and permanent: the queue's ten slots were being
+    // spent nominating bills that could never be re-decoded.
+    const restore = stubAmendedText(VETO_TEXT);
+    try {
+      const bill = corpusBill();
+      // The stored decode WAS written from this exact prompt.
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+
+      // Night 1: #248 nominates it — its stamp names the introduced text and
+      // Congress now serves a newer one.
+      const nominated = dateSaysNewText({
+        storedDate: bill.text_version_date as string,
+        versions: amendedVersions(),
+      });
+      expect(nominated.redecode).toBe(true);
+      expect(nominated.reason).toBe('new-text-version');
+
+      // The fingerprint refuses the spend. A client that throws proves it.
+      const anthropic = {
+        messages: {
+          create: async () => { throw new Error('a model call was made on an identical prompt'); },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]),
+      });
+      expect(result.outcome).toBe('text-unchanged');
+      expect(result.decodeAttempted).toBe(false);
+
+      // BOTH SETS ARE STAMPED — the version just read, not just the date we
+      // read it on.
+      expect(bill.text_version_date).toBe('2026-09-08T04:00:00Z');
+      expect(bill.text_version_type).toBe('Reported in House');
+      expect(bill.text_version_count).toBe(2);
+      expect(typeof bill.decode_text_verified_at).toBe('string');
+      // ...and the decode itself is untouched, because none was written.
+      expect(bill.decoded_at).toBe('2026-09-01T00:00:00Z');
+      expect(bill.ai_summary).toBe('The bill spends $4 billion.');
+
+      // Night 2: the same nominator, over the updated record. Silent.
+      const again = dateSaysNewText({
+        storedDate: bill.text_version_date as string,
+        versions: amendedVersions(),
+      });
+      expect(again.redecode).toBe(false);
+      expect(again.reason).toBe('current-text-decoded');
+    } finally {
+      restore();
+    }
+  });
+
+  test('the veto never fires on a document that really moved', async () => {
+    // The guarantee that makes the veto safe: it declines to PAY, never to
+    // re-READ. A changed document changes the prompt and the spend happens.
+    const restore = stubAmendedText(`${VETO_TEXT} SEC. 2. The amount is $6,000,000,000.`);
+    try {
+      const bill = corpusBill();
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+      let calls = 0;
+      const anthropic = {
+        messages: {
+          create: async () => {
+            calls++;
+            return {
+              content: [{
+                type: 'text',
+                text: calls === 1 ? 'A new summary.' : [
+                  '[HEADLINE_EN]\nH', '[HEADLINE_ES]\nH', '[TLDR]\nT', '[WHAT]\nW', '[WHO]\nO',
+                  '[WHY]\nY', '[COST]\nNONE', '[COST_CHIPS]\nNONE', '[ES_TLDR]\nT', '[ES_WHAT]\nW',
+                  '[ES_WHO]\nO', '[ES_WHY]\nY', '[ES_COST]\nNONE', '[ES_COST_CHIPS]\nNONE',
+                  '[ES_SUMMARY]\nR',
+                ].join('\n'),
+              }],
+            };
+          },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]),
+      });
+      expect(result.outcome).toBe('redecoded');
+      expect(calls).toBe(2);
+      expect(bill.text_version_date).toBe('2026-09-08T04:00:00Z');
+      expect(bill.text_version_count).toBe(2);
+    } finally {
+      restore();
+    }
+  });
+});
+
+test.describe('FORCE_REDECODE_SLUGS outranks the veto, and only the ceiling outranks it', () => {
+  test('a FORCED slug over an identical prompt still spends a real decode', async () => {
+    // THE BUG THIS PINS. planRedecodes marks a FORCE_REDECODE_SLUGS entry with
+    // reason 'forced'; the call site used to drop that, so a forced slug whose
+    // text had not changed came back 'text-unchanged' with ZERO model calls.
+    // sync-bills.yml's input says in as many words that a listed slug is
+    // "re-decoded from its current text, whether or not the nightly's own
+    // new-text detection would have nominated it" — and the whole use for it is
+    // the case the detection cannot serve. A veto there answers a question the
+    // owner did not ask, and makes the input inert on exactly the bill someone
+    // typed it for.
+    const restore = stubAmendedText(VETO_TEXT);
+    try {
+      const bill = corpusBill();
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+      let calls = 0;
+      const anthropic = {
+        messages: {
+          create: async () => {
+            calls++;
+            return {
+              content: [{
+                type: 'text',
+                text: calls === 1 ? 'A forced re-read.' : [
+                  '[HEADLINE_EN]\nH', '[HEADLINE_ES]\nH', '[TLDR]\nT', '[WHAT]\nW', '[WHO]\nO',
+                  '[WHY]\nY', '[COST]\nNONE', '[COST_CHIPS]\nNONE', '[ES_TLDR]\nT', '[ES_WHAT]\nW',
+                  '[ES_WHO]\nO', '[ES_WHY]\nY', '[ES_COST]\nNONE', '[ES_COST_CHIPS]\nNONE',
+                  '[ES_SUMMARY]\nR',
+                ].join('\n'),
+              }],
+            };
+          },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]), forced: true,
+      });
+      expect(result.outcome).toBe('redecoded');
+      expect(result.decodeAttempted).toBe(true);
+      expect(calls).toBe(2);
+      expect(bill.ai_summary).toBe('A forced re-read.');
+      // An ordinary re-decode in every other respect: both provenance sets and
+      // a fresh fingerprint land together.
+      expect(bill.decode_text_sha).toBe(textFingerprint(buildSummaryPrompt(bill, VETO_TEXT)));
+      expect(bill.text_version_date).toBe('2026-09-08T04:00:00Z');
+      expect(bill.text_version_count).toBe(2);
+    } finally {
+      restore();
+    }
+  });
+
+  test('the SAME bill, not forced, is vetoed — so `forced` is doing the work', async () => {
+    const restore = stubAmendedText(VETO_TEXT);
+    try {
+      const bill = corpusBill();
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+      const anthropic = {
+        messages: {
+          create: async () => { throw new Error('a model call was made on an identical prompt'); },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]),
+      });
+      expect(result.outcome).toBe('text-unchanged');
+    } finally {
+      restore();
+    }
+  });
+
+  test('forcing bypasses the DETECTION, never the CEILING', () => {
+    // The ceiling lives one level up, in planRedecodes, and forcing has never
+    // been able to raise it: a forced slug is first in the queue and still
+    // counted. Re-stated here because `forced` now skips a second gate, and the
+    // one thing it must never skip is the one with the dollar sign on it.
+    const plan = planRedecodes({
+      forced: ['hr-1-119', 'hr-2-119', 'hr-3-119'],
+      detected: [{ slug: 'hr-9-119', reason: 'new-text-version', urgency: 99 }],
+      cap: 2,
+    });
+    expect(plan.run.map((r) => r.slug)).toEqual(['hr-1-119', 'hr-2-119']);
+    expect(plan.run.every((r) => r.reason === 'forced')).toBe(true);
+    expect(plan.deferred).toHaveLength(2);
   });
 });

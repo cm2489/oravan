@@ -228,6 +228,27 @@ jobs:
           # Blank on every scheduled run, so the script's own `?? 10` default
           # applies and the nightly re-decode bill stays at ~$0.65 worst case.
           REDECODE_MAX_PER_NIGHT: ${{ inputs.redecode_max_per_night || '10' }}
+          # Half-price decodes through the Message Batches API (2026-09-18).
+          # The script defaults this ON; it is named here so the kill switch is
+          # visible where the run is configured rather than only in the code.
+          # Set to '0' for a night that must not wait on a batch queue - the
+          # script then decodes synchronously exactly as it did before, at full
+          # price. Any bill the batch cannot deliver already falls back to a
+          # synchronous decode within the same run, so this is a lever for
+          # wall-clock, not for correctness.
+          #
+          # WALL-CLOCK IS NOT FREE HERE, and the reason is the concurrency
+          # group at the top of this file. `data-sync` is shared with
+          # newsdesk.yml, whose cron fires at :07 EVERY HOUR and whose runs
+          # queue behind this one - so every minute this job spends waiting on
+          # a batch is a minute the hourly live layer cannot publish in. That
+          # is why lib/decode-batch.mjs's DECODE_BATCH_MAX_WAIT_MS defaults to
+          # 8 minutes a round (16 worst case across the two rounds) rather than
+          # the 20 it was written with: a batch slower than that is abandoned
+          # and decoded synchronously at full price, because a stale homepage
+          # costs more than the discount saves. Override the env var for a
+          # one-off catch-up when nothing else is queued.
+          DECODE_BATCH: '1'
         run: node scripts/sync-bills.mjs
       - name: Journey-corpus tripwire (a novel floor text opens an issue, never costs the night)
         id: journey

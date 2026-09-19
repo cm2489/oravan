@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test';
 import {
   endOfDayCursor,
   planAscendingWindow,
+  resolveCursorRows,
   resolveNextSync,
   updateDay,
 } from '../scripts/sync-bills.mjs';
@@ -394,5 +395,123 @@ test.describe('the freeze, end to end through the cursor decision', () => {
     expect(v.lastSync).toBe('2026-09-09T00:00:00Z');
     expect(v.reason).toBe('frozen+truncated');
     expect(v.stalled).toBe(false);
+  });
+});
+
+test.describe('resolveCursorRows owns BOTH rules, and the caller composes them', () => {
+  /*
+   * WHY THIS SECTION EXISTS (2026-09-19). #251 put the day-walk in the
+   * ascending loop; the batch drain made the loop unable to finish its own
+   * verdicts, because a queued decode is neither handled nor failed until the
+   * drain resolves it. Rather than keep two half-rules in two places, the
+   * freeze and the day-walk are one pure function over one row per fetched
+   * bill, and the caller's three lines below are the only glue.
+   *
+   * The caller is:
+   *   const { cursor, frozen, lastFullDay } = resolveCursorRows(rows, since, drainFailed);
+   *   const finishedDay = (!frozen && plan.dayComplete) ? plan.completedDay : lastFullDay;
+   *   const highWater   = dayMark > cursor ? dayMark : cursor;
+   * and `frozen` there is the POST-DRAIN one. `plan.dayComplete` stays a
+   * property of the FETCHED WINDOW — "the next bill Congress handed us is on a
+   * later day" — which no drain outcome can change.
+   */
+  const rowsOf = (...r: Array<{ d: string; needsWork?: boolean; slug: string }>) =>
+    r.map((x) => ({ updateDate: x.d, day: x.d.slice(0, 10), slug: x.slug, needsWork: x.needsWork ?? false }));
+
+  const compose = (
+    rows: ReturnType<typeof rowsOf>,
+    since: string,
+    drainFailed: Set<string>,
+    plan: { dayComplete: boolean; completedDay: string | null }
+  ) => {
+    const { cursor, frozen, lastFullDay } = resolveCursorRows(rows, since, drainFailed);
+    const finishedDay = (!frozen && plan.dayComplete) ? plan.completedDay : lastFullDay;
+    const dayMark = endOfDayCursor(finishedDay);
+    const highWater =
+      dayMark && Date.parse(dayMark) > Date.parse(cursor) ? dayMark : cursor;
+    return { frozen, finishedDay, highWater };
+  };
+
+  test('a clean window takes the END of the day the fetched window proved finished', () => {
+    const out = compose(
+      rowsOf({ d: '2026-09-08', slug: 'a' }, { d: '2026-09-08', slug: 'b' }),
+      '2026-09-08T17:54:31Z',
+      new Set(),
+      { dayComplete: true, completedDay: '2026-09-08' }
+    );
+    expect(out.frozen).toBe(false);
+    expect(out.finishedDay).toBe('2026-09-08');
+    expect(out.highWater).toBe('2026-09-09T00:00:00Z');
+    // And that is the value that actually moves a cursor sitting inside the day.
+    const next = resolveNextSync({
+      since: '2026-09-08T17:54:31Z', highWater: out.highWater,
+      runStart: '2026-09-19T00:10:00.000Z', frozen: false, truncated: true,
+    });
+    expect(next.lastSync).toBe('2026-09-09T00:00:00Z');
+    expect(next.stalled).toBe(false);
+  });
+
+  test('A DRAIN FAILURE ANYWHERE IN THE DAY WITHDRAWS THE END-OF-DAY CLAIM', () => {
+    // The one that matters: plan.dayComplete still says the FETCHED window ran
+    // past 09-08, and it is still telling the truth about the fetch. What is no
+    // longer true is that the run FINISHED that day — one of its bills was
+    // queued and its decode did not land. Reading plan.dayComplete without the
+    // post-drain `frozen` would advance the cursor past a bill that is not in
+    // the corpus and never will be.
+    const out = compose(
+      rowsOf({ d: '2026-09-08', slug: 'a' }, { d: '2026-09-08', slug: 'QUEUED' }),
+      '2026-09-08T17:54:31Z',
+      new Set(['QUEUED']),
+      { dayComplete: true, completedDay: '2026-09-08' }
+    );
+    expect(out.frozen).toBe(true);
+    expect(out.finishedDay).toBeNull();
+    // Pinned to the last bill actually finished, which is inside 09-08, so the
+    // monotonic clamp holds the cursor where it was. Behind is the honest
+    // answer here: the night is genuinely not past this bill.
+    const next = resolveNextSync({
+      since: '2026-09-08T17:54:31Z', highWater: out.highWater,
+      runStart: '2026-09-19T00:10:00.000Z', frozen: true, truncated: true,
+    });
+    expect(next.lastSync).toBe('2026-09-08T17:54:31Z');
+    expect(next.clamped).toBe(true);
+  });
+
+  test('an EARLIER day walked clean through still counts when a later one freezes', () => {
+    const out = compose(
+      rowsOf(
+        { d: '2026-09-08', slug: 'a' },
+        { d: '2026-09-09', slug: 'QUEUED' },
+        { d: '2026-09-09', slug: 'c' }
+      ),
+      '2026-09-07T00:00:00Z',
+      new Set(['QUEUED']),
+      { dayComplete: true, completedDay: '2026-09-09' }
+    );
+    expect(out.frozen).toBe(true);
+    // 09-09's claim is withdrawn; 09-08's is not, because nothing behind it
+    // froze and the walk crossed into a later day.
+    expect(out.finishedDay).toBe('2026-09-08');
+    expect(out.highWater).toBe('2026-09-09T00:00:00Z');
+  });
+
+  test('every bill of the window carries a row, so a deduped bill can still freeze', () => {
+    // A bill pass 1 resolved and queued is skipped by pass 2's dedupe branch,
+    // which writes nothing and decides nothing. Its row is what carries the
+    // drain's verdict back to the cursor.
+    const window = rowsOf(
+      { d: '2026-09-08', slug: 'fresh' },
+      { d: '2026-09-08', slug: 'deduped-and-queued' },
+      { d: '2026-09-09', slug: 'later' }
+    );
+    expect(resolveCursorRows(window, '2026-09-07T00:00:00Z', new Set()).frozen).toBe(false);
+    expect(
+      resolveCursorRows(window, '2026-09-07T00:00:00Z', new Set(['deduped-and-queued'])).frozen
+    ).toBe(true);
+  });
+
+  test('no rows at all is a clean, unfrozen, unmoved cursor', () => {
+    const out = resolveCursorRows([], '2026-09-08T17:54:31Z');
+    expect(out).toEqual({ cursor: '2026-09-08T17:54:31Z', frozen: false, lastFullDay: null });
   });
 });
