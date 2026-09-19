@@ -8,6 +8,11 @@
  *
  * Policy:
  * - Existing bills: status/action/urgency/tags refresh freely (no AI cost).
+ * - An existing bill whose TEXT has been replaced since it was decoded is
+ *   re-read, at most REDECODE_MAX_PER_NIGHT (10) a night — the one paid thing
+ *   a refresh can trigger, and the only answer to an amendment in committee,
+ *   which changes the document without changing the title or the ladder. See
+ *   the RE-DECODE ON NEW TEXT pass near the bottom of this file.
  * - NEW bills are decode-before-publish AND priority-gated: a new bill only
  *   spends a decode if it clears the priority gate (real legislative
  *   motion — see scripts/decode-gate.mjs) or is explicitly force-listed.
@@ -43,6 +48,13 @@
  * A listed slug must name the Congress this build tracks: an entry ending in
  * any other Congress is skipped with a ::warning:: rather than fetched as the
  * same-numbered bill of the tracked one — see forceSlugTarget.
+ *
+ * FORCE_REDECODE_SLUGS (same comma-separated shape) is its counterpart for
+ * bills ALREADY in the corpus: each listed slug is re-read from its current
+ * text whether or not the new-text detection would have nominated it. It
+ * bypasses the detection, never the ceiling — forced slugs are simply first
+ * in the queue, so no env var can raise a night's Anthropic bill above
+ * REDECODE_MAX_PER_NIGHT. See planRedecodes in scripts/text-version.mjs.
  *
  * Two-pass fetch (2026-07-16, audit §5 item 2). Congress.gov is queried
  * TWICE per run, in this order:
@@ -151,7 +163,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { writeFileSync } from 'node:fs';
-import { loadJSON, syncOneBill } from './bill-decode.mjs';
+import { fetchTextVersions, loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
 import {
   BILL_TYPES,
   CONGRESS,
@@ -165,6 +177,13 @@ import {
 } from './congress-fetch.mjs';
 import { parseForceSlugs, passesGate } from './decode-gate.mjs';
 import { setCounter } from './run-counters.mjs';
+import {
+  DEFAULT_REDECODE_MAX_PER_NIGHT,
+  DEFAULT_REDECODE_PROBE_LIMIT,
+  countSaysNewText,
+  dateSaysNewText,
+  planRedecodes,
+} from './text-version.mjs';
 
 const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 500);
 // The ceiling on the same-timestamp extension described in the header: how far
@@ -204,6 +223,23 @@ const RECENT_FETCH_LIMIT = Number(process.env.RECENT_FETCH_LIMIT ?? 100);
 const RECENT_DECODE_RESERVE = Number(process.env.RECENT_DECODE_RESERVE ?? 20);
 // See the header comment above and decode-gate.mjs. Empty by default.
 const forceSlugs = parseForceSlugs(process.env.FORCE_DECODE_SLUGS);
+// RE-DECODE-ON-NEW-TEXT (2026-09-18). A separate, much smaller budget from
+// MAX_NEW_DECODES above, and additive to it: the worst case a night can bill
+// is MAX_NEW_DECODES first decodes PLUS REDECODE_MAX_PER_NIGHT re-reads. Ten
+// is ~$0.65 at the measured per-decode cost. See the RE-DECODE pass near the
+// bottom of this file and scripts/text-version.mjs's ceiling comment.
+const REDECODE_MAX_PER_NIGHT = Number(
+  process.env.REDECODE_MAX_PER_NIGHT ?? DEFAULT_REDECODE_MAX_PER_NIGHT
+);
+// Free /text probes per run — runner time, not money. See text-version.mjs.
+const REDECODE_PROBE_LIMIT = Number(
+  process.env.REDECODE_PROBE_LIMIT ?? DEFAULT_REDECODE_PROBE_LIMIT
+);
+// FORCE_REDECODE_SLUGS: the FORCE_DECODE_SLUGS of the re-decode path. It
+// bypasses the DETECTION (a listed slug is re-read whether or not its text
+// moved) but NOT the ceiling — forced slugs are simply first in the queue, so
+// no env var can raise a night's bill. See planRedecodes.
+const forceRedecodeSlugs = parseForceSlugs(process.env.FORCE_REDECODE_SLUGS);
 
 // ---- the "mostly failed" abort predicate (exported so it can be tested) --
 // A majority-failed run must not reach the commit step, but "majority" only
@@ -566,6 +602,23 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // a gate verdict is a resolution too) so pass 2 can dedupe without
   // re-fetching or re-deciding - see updateSlug/refreshBillFields.
   const handledSlugs = new Set();
+
+  // What each refreshed bill told us on the way past, for the re-decode pass
+  // near the bottom of this file. A refresh is free and already fetched the
+  // bill-detail payload, so its text-version COUNT and its served TITLE cost
+  // nothing extra here — and they are the only two things a refresh can say
+  // about whether the DOCUMENT moved rather than the calendar entry. Keyed by
+  // slug so a bill both passes touch is recorded once, with the later (pass 2)
+  // reading winning, which is the newer one.
+  const refreshedThisRun = new Map();
+  const noteRefreshed = (r) => {
+    if (!r?.slug) return;
+    refreshedThisRun.set(r.slug, {
+      servedCount: r.textVersionCount ?? null,
+      fetchedTitle: r.fetchedTitle ?? null,
+    });
+  };
+
   const recentDecodeCap = Math.min(RECENT_DECODE_RESERVE, MAX_NEW_DECODES);
   console.log(`recent-first pass: fetching up to ${RECENT_FETCH_LIMIT} most-recently-updated bills (decode reserve ${recentDecodeCap})`);
   const recentBills = DRY_RUN ? [] : await fetchRecentlyUpdated(RECENT_FETCH_LIMIT);
@@ -573,7 +626,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   for (const u of recentBills) {
     const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < recentDecodeCap });
     if (result.outcome === 'refreshed') {
-      refreshed++; recentRefreshed++; handledSlugs.add(result.slug);
+      refreshed++; recentRefreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
     } else if (result.outcome === 'added') {
       added++; recentAdded++; handledSlugs.add(result.slug);
     } else if (result.outcome === 'gated') {
@@ -784,7 +837,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     } else {
       const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < MAX_NEW_DECODES });
       if (result.outcome === 'refreshed') {
-        refreshed++; handledSlugs.add(result.slug);
+        refreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
       } else if (result.outcome === 'added') {
         added++; handledSlugs.add(result.slug);
       } else if (result.outcome === 'gated') {
@@ -852,7 +905,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     }
     const result = await syncOneBill({ type: target.type, number: target.number }, { ...ctxBase, allowDecode: true });
     console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
-    if (result.outcome === 'refreshed') refreshed++;
+    if (result.outcome === 'refreshed') { refreshed++; noteRefreshed(result); }
     else if (result.outcome === 'added') added++;
     else if (result.outcome === 'skipped_partial') partialSkipped++;
     else if (result.outcome === 'skipped_no_text') noTextSkipped++;
@@ -862,6 +915,171 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   if (forceFailed) {
     console.log(
       `::warning::${forceFailed} FORCE_DECODE_SLUGS entr(ies) failed their direct fetch (reasons in the FAIL lines above; ${forceSlugs.size} slug(s) were listed, and any the two passes already resolved were never direct-fetched). Check the slugs. This does NOT count toward the mostly-failed abort and never freezes the cursor.`
+    );
+  }
+
+  // ---- RE-DECODE ON NEW TEXT (2026-09-18) -------------------------------
+  //
+  // Everything above answers "has this bill MOVED". This answers "is the text
+  // we explained still the text Congress publishes". They are not the same
+  // question, and the gap between them shipped a wrong number to readers for
+  // ten days: H.R. 5634 was reported out of committee WITH AN AMENDMENT on
+  // 2026-09-08, which changed the dollar figure at the centre of its decode,
+  // while the refresh path dutifully updated its status, its date and its
+  // urgency and left the explanation describing the bill as introduced — in
+  // both languages, on the bill page and in the homepage hero.
+  //
+  // WHY IT LIVES HERE AND NOT IN THE NEWSDESK. scripts/newsdesk.mjs already
+  // re-decodes, on two triggers of its own: a vehicle swap (the title
+  // Congress serves stopped matching ours) and a stale decode beside a newer
+  // floor action, both scoped to bills at the front of the ladder. Neither
+  // fires on an amendment in committee: the title does not change, and the
+  // action that accompanies it ("Placed on the Union Calendar") is not a
+  // floor signal. The nightly is the right place because the nightly is what
+  // already holds every refreshed bill's detail payload.
+  //
+  // WHAT IT SPENDS, and the one knob that governs it: REDECODE_MAX_PER_NIGHT
+  // (10 → ~$0.65 worst case), additive to MAX_NEW_DECODES. Forced slugs jump
+  // the queue but do not raise the ceiling. The detection itself is free: the
+  // count comparison rides on a payload already paid for, and confirming a
+  // candidate costs one free Congress.gov /text request.
+  //
+  // WHY IT RUNS AFTER THE CURSOR'S WORK AND BEFORE THE WRITE. It mutates the
+  // corpus in place, so it must precede writeCorpus() below; it must NOT
+  // touch `frozen` or the high-water mark, because the cursor means "the
+  // backlog scan has fully processed through here" and a deferred re-decode
+  // says nothing about the backlog. A re-decode that fails leaves the old
+  // decode standing (see redecodeBill) and is retried on the bill's next
+  // refresh — there is nothing to freeze for.
+  const redecodeProbeLimit = Number.isFinite(REDECODE_PROBE_LIMIT) && REDECODE_PROBE_LIMIT >= 0
+    ? Math.floor(REDECODE_PROBE_LIMIT)
+    : DEFAULT_REDECODE_PROBE_LIMIT;
+  // A night that is going to abort as mostly-failed buys nothing by re-reading
+  // ten bills: the abort at the bottom of this file exits 1, sync-bills.yml
+  // never reaches its commit step, and every decode paid for after this point
+  // dies with the runner. The verdict is computed once here and reused at the
+  // bottom, so the two can't disagree about whether tonight is that night —
+  // its inputs (the ascending pass's failures, the force loop's, the window)
+  // are all final by now.
+  // `plan.count` - the slice this run ATTEMPTED - is the denominator, never
+  // `updated.length`: failures can only come from bills we tried, and since the
+  // same-timestamp extension (2026-09-18) the slice can be LARGER than
+  // MAX_UPDATES as well as smaller than the window. Same number the bottom-of-
+  // run check reports, because it is literally the same verdict object.
+  const failVerdict = mostlyFailedVerdict({
+    ascendingFailed: failed,
+    forceFailed,
+    windowSize: plan.count,
+  });
+  if (failVerdict.abort) {
+    console.log(
+      're-decode on new text: skipped — this run is already going to abort as mostly-failed, so nothing it paid for tonight would be committed.'
+    );
+  }
+  // Probe order: bills whose published text-version COUNT grew since we last
+  // looked first (the strongest free signal there is), then by urgency, so a
+  // run that can confirm only `redecodeProbeLimit` bills confirms the ones a
+  // reader is most likely to open. Probing more bills than we can re-decode is
+  // the point: it is what makes the capped queue the RIGHT ten rather than the
+  // first ten.
+  const probeQueue = [...refreshedThisRun.entries()]
+    .map(([slug, seen]) => ({ slug, seen, bill: bySlug.get(slug) }))
+    .filter((c) => c.bill)
+    .map((c) => ({
+      ...c,
+      hint: countSaysNewText({
+        storedCount: c.bill.text_version_count ?? null,
+        servedCount: c.seen.servedCount,
+      }),
+    }))
+    .sort((a, b) => {
+      if (a.hint.newer !== b.hint.newer) return a.hint.newer ? -1 : 1;
+      return (b.bill.urgency_score ?? 0) - (a.bill.urgency_score ?? 0);
+    });
+  const countHinted = probeQueue.filter((c) => c.hint.newer).length;
+  const toProbe = failVerdict.abort ? [] : probeQueue.slice(0, redecodeProbeLimit);
+
+  const newTextCandidates = [];
+  let probed = 0, probeFailed = 0, countStamped = 0;
+  for (const c of toProbe) {
+    let versions, count;
+    try {
+      ({ versions, count } = await fetchTextVersions(c.bill.bill_type, c.bill.bill_number));
+      probed++;
+    } catch (e) {
+      // Free call, non-fatal, nothing written: the bill keeps whatever stamp
+      // it had and comes back on its next refresh. A probe failure must never
+      // cost the night anything, least of all the cursor.
+      probeFailed++;
+      console.error(`  re-decode probe failed for ${c.slug}: ${e.message}`);
+      continue;
+    }
+    const verdict = dateSaysNewText({ storedDate: c.bill.text_version_date ?? null, versions });
+    if (verdict.redecode) {
+      newTextCandidates.push({
+        slug: c.slug,
+        reason: verdict.reason,
+        from: verdict.from,
+        to: verdict.to,
+        fetchedTitle: c.seen.fetchedTitle,
+        urgency: c.bill.urgency_score ?? 0,
+      });
+      continue;
+    }
+    // NOT a candidate, so record what we just saw — and ONLY the count, never
+    // a date. The count is an honest statement about this probe ("this many
+    // versions existed when we last looked") and it is what stops a
+    // single-version bill from spending a probe every night for the life of
+    // the corpus. A DATE would be a claim about which document the stored
+    // decode came from, which nobody read and nothing here can know.
+    // Deliberately not written for candidates: a candidate the cap defers
+    // must stay a candidate.
+    if (c.bill.text_version_count == null && Number.isFinite(count)) {
+      c.bill.text_version_count = count;
+      countStamped++;
+    }
+  }
+
+  // planRedecodes owns the ORDER as well as the ceiling — a known change
+  // outranks a suspected one, and urgency decides within each tier. See its
+  // comment for why the backfill must never be able to crowd out a bill
+  // amended this morning.
+  const redecodePlan = planRedecodes({
+    forced: failVerdict.abort ? [] : [...forceRedecodeSlugs],
+    detected: newTextCandidates,
+    cap: REDECODE_MAX_PER_NIGHT,
+  });
+  console.log(
+    `re-decode on new text: ${refreshedThisRun.size} refreshed bill(s) seen, ${countHinted} with a grown text-version count, ${probed} probed (limit ${redecodeProbeLimit}${probeFailed ? `, ${probeFailed} probe failure(s)` : ''}), ${newTextCandidates.length} candidate(s) detected (${newTextCandidates.filter((c) => c.reason === 'new-text-version').length} newer than our stamp, ${newTextCandidates.filter((c) => c.reason === 'legacy-backfill').length} unstamped backfill), ${forceRedecodeSlugs.size} forced; ${redecodePlan.run.length} will be re-decoded (cap ${redecodePlan.cap}), ${redecodePlan.deferred.length} deferred to a later run, ${countStamped} record(s) stamped with a first text-version count`
+  );
+  if (!Number.isFinite(REDECODE_MAX_PER_NIGHT) || REDECODE_MAX_PER_NIGHT < 0) {
+    console.log(
+      `::warning::REDECODE_MAX_PER_NIGHT was not a usable number, so the built-in ceiling of ${redecodePlan.cap} was used instead. Check the workflow input.`
+    );
+  }
+
+  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeMissing = 0;
+  for (const item of redecodePlan.run) {
+    const bill = bySlug.get(item.slug);
+    // The served title is written ONLY beside a new decode and ONLY when it
+    // actually differs — refreshBillFields deliberately never touches `title`,
+    // because a title that moves without its decode is a page whose headline
+    // describes a different document. Here the decode IS moving, so the two
+    // land together. Passing it unchanged would also re-run the search-input
+    // call for nothing, which is the one avoidable cent on this path.
+    const fetchedTitle = item.fetchedTitle ?? null;
+    const title = bill && fetchedTitle && fetchedTitle !== bill.title ? fetchedTitle : null;
+    const result = await redecodeBill(item.slug, { anthropic, es, bySlug, title });
+    if (result.outcome === 'redecoded') redecoded++;
+    else if (result.outcome === 'skipped_no_text') redecodeNoText++;
+    else if (result.outcome === 'missing') redecodeMissing++;
+    else redecodeFailed++;
+    const span = item.from && item.to ? ` ${String(item.from).slice(0, 10)} -> ${String(item.to).slice(0, 10)}` : '';
+    console.log(`  ${item.slug}: ${result.outcome} (${item.reason}${span}${title ? ', title updated' : ''})`);
+  }
+  if (redecodePlan.run.length) {
+    console.log(
+      `re-decode on new text: ${redecoded} re-decoded, ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)`
     );
   }
 
@@ -954,7 +1172,11 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // slice can now be LARGER than MAX_UPDATES. Judging failures against the
   // population they were drawn from is the same "one window" discipline the
   // force-slug split above already enforces.
-  const verdict = mostlyFailedVerdict({ ascendingFailed: failed, forceFailed, windowSize: plan.count });
+  //
+  // Computed once, above the re-decode pass, and reused here — so "is tonight
+  // a mostly-failed night" is answered in exactly one place and the pass that
+  // spends money can't disagree with the check that throws the night away.
+  const verdict = failVerdict;
   if (verdict.abort) {
     console.error(
       `::error::mostly-failed run: ${failed} of the ${plan.count} bills this ascending pass processed failed. Nothing is committed tonight.`
