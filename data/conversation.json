@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T17:51:46.738Z",
+    "fetched_at": "2026-09-19T18:00:34.469Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T17:51:46.738Z"
+        "checked_at": "2026-09-19T18:00:34.469Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T17:51:46.738Z"
+        "checked_at": "2026-09-19T18:00:34.469Z"
       },
       "leans": {
         "center": {
@@ -1625,6 +1625,17 @@
       ],
       "mostViewed": null
     },
+    "hr-9372-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tdworld.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9394-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2161,7 +2172,22 @@
           "lastSeen": "2026-09-19"
         },
         {
+          "domain": "sandiegouniontribune.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "shawlocal.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "thecapitolist.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "thenationaldesk.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         },
@@ -2222,21 +2248,6 @@
         },
         {
           "domain": "theeagle.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "tippinsights.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "tucson.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "tulsaworld.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         }
