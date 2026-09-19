@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-18T17:56:21.177Z"
+    "generated_at": "2026-09-19T05:48:26.269Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1382,32 +1382,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4241-4242)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_9a354fe9",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-20",
-        "occurred_at": "2026-07-20",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 20, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 20 de julio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4145)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
