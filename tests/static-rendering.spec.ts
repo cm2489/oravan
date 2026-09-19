@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -8,25 +8,51 @@ import { expect, test } from '@playwright/test';
  * checked. On the production build of 2026-09-18 EVERY [locale] route was
  * marked `ƒ Dynamic`, `.next/prerender-manifest.json` held 10 non-image
  * entries — feeds and metadata files, not one page — and live responses came
- * back `x-vercel-cache: MISS` with
- * `cache-control: private, no-cache, no-store` — while both documents went on
- * promising prerendered pages. The cause was one file
- * (app/[locale]/loading.tsx, whose header comment has the mechanism), and the
- * reason it survived that long is that no test could tell the difference: the
- * site renders identically either way. Only the bill is different.
+ * back `x-vercel-cache: MISS` with `cache-control: private, no-cache,
+ * no-store`, while both documents went on promising prerendered pages.
  *
- * So this spec asserts the posture itself, from the build's own manifest.
- * Pure Node — it takes no `page` fixture and launches no browser.
+ * ── THE MECHANISM, WRITTEN DOWN BECAUSE ITS FILE IS GONE ──
  *
- * It reads the artifact of the `next build` that playwright.config.ts's
- * webServer already runs before any test, so it costs nothing extra in CI.
- * Run locally with PW_NO_WEBSERVER=1 and no prior build and it fails loudly
- * with instructions rather than skipping — a skipped posture check and a
- * passed one print the same green tick, which is the failure mode that let
- * this regression ship.
+ * The trigger was `app/[locale]/loading.tsx`, a route-level loading boundary
+ * sitting at the root of every [locale] route. As a SERVER component it called
+ * next-intl's `useTranslations`, and when Next renders that boundary's
+ * fallback, `setRequestLocale(locale)` — which the layout and every page do
+ * call — has not populated next-intl's per-request locale cache. So the call
+ * fell through to next-intl's last-resort path, `getCachedRequestLocale() ||
+ * (await headers()).get(...)` in its RequestLocale module. `headers()` is a
+ * dynamic API, so the boundary opted its whole segment into dynamic
+ * rendering — and that segment was the entire site. Instrumenting next-intl's
+ * fallback across a full build counted 6,004 header reads, every one of them
+ * rooted at that file and no other. (The frames are the measurement; that the
+ * fallback renders in a pass where no layout has run above it is the
+ * inference drawn from them.)
+ *
+ * That file is now DELETED, by #253 — which arrived at the same file from a
+ * different symptom: the implicit Suspense boundary a `loading.tsx` creates
+ * makes Next flush a 200 shell before a page's own `notFound()` can set the
+ * status, so unknown paths soft-404ed (vercel/next.js#75543). Deleting it
+ * fixed both, and production now serves `/`, `/why-call`, `/es` and bill pages
+ * with `x-vercel-cache: PRERENDER`. Nothing in this static-JSON site suspends
+ * on data fetching, so nothing was lost.
+ *
+ * So this spec does not fix anything — the posture is already correct. It
+ * exists because nothing could SEE the posture: the site renders identically
+ * whether a page is prerendered or built per request, and only the hosting
+ * bill and the cache headers differ. That is why the regression survived, and
+ * why it took a second, louder bug to find the file. This asserts the posture
+ * itself, from the build's own manifest, so the next such regression fails a
+ * check instead of quietly costing money.
+ *
+ * Pure Node — it takes no `page` fixture and launches no browser. It reads the
+ * artifact of the `next build` that playwright.config.ts's webServer already
+ * runs before any test, so it costs nothing extra in CI. Run locally with
+ * PW_NO_WEBSERVER=1 and no prior build and it fails loudly with instructions
+ * rather than skipping — a skipped posture check and a passed one print the
+ * same green tick, which is the failure mode that let this ship.
  */
 
 const MANIFEST = join(process.cwd(), '.next/prerender-manifest.json');
+const LOCALE_DIR = join(process.cwd(), 'app/[locale]');
 
 /**
  * Every [locale] page that must be prerendered HTML, in BOTH locales. The
@@ -94,19 +120,30 @@ test('the decoded corpus is prerendered, not rendered per request', () => {
   expect(bills.some((r) => r.startsWith('/es/'))).toBe(true);
 });
 
-test('the shared loading boundary stays a client component', () => {
+test('any re-added loading boundary under [locale] is a client component', () => {
   /*
-   * The fast, diagnostic half of this spec: the manifest assertions above say
-   * WHAT broke, this one says WHERE. app/[locale]/loading.tsx sits at the root
-   * of every [locale] route and Next renders it in its own render, above which
-   * no layout — and therefore no setRequestLocale — has run. As a server
-   * component its next-intl call falls through to reading a request header,
-   * and that one dynamic API marks the entire site dynamic.
+   * The fast, diagnostic half: the manifest assertions above say WHAT broke,
+   * this one says WHERE to look first.
+   *
+   * There is no loading.tsx in the tree today and this test does not ask for
+   * one — #253 deleted the only one there was, for the soft-404 reason in the
+   * header comment, and re-adding a route-level loading boundary anywhere
+   * under [locale] would re-open that bug. This is a tripwire for the day
+   * someone adds one back anyway: it must not resolve the locale from a
+   * server context, or it drags the whole site back to dynamic. A client
+   * component reads the locale from the layout's NextIntlClientProvider
+   * instead, which is the only shape of this file that is safe on both
+   * counts — and it is still a decision to make deliberately, not a detail.
    */
-  const source = readFileSync(join(process.cwd(), 'app/[locale]/loading.tsx'), 'utf8');
+  const offenders = readdirSync(LOCALE_DIR, { withFileTypes: true, recursive: true })
+    .filter((entry) => entry.isFile() && entry.name === 'loading.tsx')
+    .map((entry) => join(entry.parentPath ?? LOCALE_DIR, entry.name))
+    .filter((path) => !readFileSync(path, 'utf8').trimStart().startsWith("'use client'"));
+
   expect(
-    source.trimStart().startsWith("'use client'"),
-    "app/[locale]/loading.tsx must stay a client component, or next-intl resolves its locale " +
-      'from a request header and every page on the site goes dynamic. See the file comment.',
-  ).toBe(true);
+    offenders,
+    'A server-component loading.tsx under app/[locale] makes next-intl resolve its locale from a ' +
+      'request header, which marks every page on the site dynamic. See this file’s header comment — ' +
+      'and note that re-adding a loading boundary at all re-opens the soft-404 that #253 fixed.',
+  ).toEqual([]);
 });

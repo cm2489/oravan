@@ -26,6 +26,12 @@
  *     words is the one place an unevidenced claim must never survive. Skipped
  *     cleanly when the file doesn't exist. The judgement lives in
  *     scripts/floor-signals-parse.mjs (verifyFloorSignals)
+ *   - data/floor-signals-checked.json (the reconfirmation heartbeat beside
+ *     it, 2026-09-18) doesn't parse, carries an unknown schema, or has a
+ *     missing/unparseable/future checked_at. It carries no evidence of its
+ *     own — only a timestamp — so the bar is thin. Skipped cleanly when the
+ *     file doesn't exist. The judgement lives in scripts/floor-signals-
+ *     parse.mjs (verifyFloorSignalsChecked)
  *   - data/moment-updates.json (the v2 live layer) doesn't parse, isn't an
  *     object, carries an unknown _meta.schema, references a moment that
  *     doesn't exist in data/moments.json, lost >50% of its updates overnight,
@@ -74,7 +80,12 @@ import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-u
 import { CONGRESS, offCongressBills } from './congress-fetch.mjs';
 // Same split as verifyMomentUpdates above: the judgement lives in a pure
 // module the unit spec can reach, this file supplies the bytes.
-import { FLOOR_SIGNALS_PATH, verifyFloorSignals } from './floor-signals-parse.mjs';
+import {
+  FLOOR_SIGNALS_CHECKED_PATH,
+  FLOOR_SIGNALS_PATH,
+  verifyFloorSignals,
+  verifyFloorSignalsChecked,
+} from './floor-signals-parse.mjs';
 
 let failed = false;
 const fail = (msg) => {
@@ -260,6 +271,25 @@ if (!existsSync(FLOOR_SIGNALS_PATH)) {
       fileBytes: statSync(FLOOR_SIGNALS_PATH).size,
       knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
     });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
+// --- floor-signals-checked: the reconfirmation heartbeat beside it ---------
+//
+// data/floor-signals-checked.json (2026-09-18, newsdesk-delivery package)
+// carries no evidence of its own — only a timestamp lib/docket.mjs's
+// floorSignalsHealthy merges with floor-signals.json's own _meta.fetched_at —
+// so the gate is thin: it parses, its schema is current, its stamp is a real
+// non-future date. Skipped cleanly when the file doesn't exist.
+if (!existsSync(FLOOR_SIGNALS_CHECKED_PATH)) {
+  console.log(`${FLOOR_SIGNALS_CHECKED_PATH} not present — skipping the floor-signals-checked checks`);
+} else {
+  const checked = parse(FLOOR_SIGNALS_CHECKED_PATH, readFileSync(FLOOR_SIGNALS_CHECKED_PATH, 'utf8'));
+  if (checked !== null) {
+    const { failures, warnings, notes } = verifyFloorSignalsChecked({ data: checked });
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);
     for (const f of failures) fail(f);

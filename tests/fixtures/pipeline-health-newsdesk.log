@@ -1,0 +1,3 @@
+newsdesk	UNKNOWN STEP	2026-09-18T14:27:52.1890034Z t3: 25 headline(s) batched, 8 resolved
+newsdesk	UNKNOWN STEP	2026-09-18T14:29:25.5756618Z DONE: wrote data/conversation.json
+newsdesk	UNKNOWN STEP	2026-09-18T14:29:25.6693894Z DONE: 86 refreshed, 0 added+decoded; corpus 2978

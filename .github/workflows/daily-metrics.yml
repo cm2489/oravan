@@ -5,10 +5,23 @@ name: Daily metrics digest
 # existing counters-database usage family (lib/usage.ts) — no new
 # database, no new secret, zero client-side analytics (CLAUDE.md's
 # constitution forbids that permanently; see scripts/daily-metrics.mjs's
-# header comment and the digest body itself for the disclosure). Site
-# page-view traffic is deliberately NOT covered — there is no compliant
-# programmatic source for it today (Vercel Web Analytics needs a banned
-# client script; Vercel's server-side Observability has no REST API).
+# header comment and the digest body itself for the disclosure).
+#
+# Site page-view traffic is deliberately NOT covered here. Vercel Web
+# Analytics needs the @vercel/analytics client script, which the constitution
+# permanently bans. Corrected 2026-09-18: this comment used to add "and
+# Vercel's server-side Observability has no REST API", which had stopped being
+# true — `vercel metrics --format json` (CLI, public beta 2026, requires
+# Observability Plus) and runtime-log aggregation over the API both expose the
+# compliant server-side numbers with no client script. This digest does not
+# read either one yet; adopting one is a separate decision (plan tier + a
+# token) and is not made by this file.
+#
+# Pipeline health (2026-09) also rides this job: scripts/pipeline-health.mjs
+# builds one deterministic report from the Actions run list, the run logs the
+# data workflows already print, the committed data files and the open-issue
+# list. No new secret, no paid call — which is why this job now also needs
+# `actions: read` below.
 
 on:
   schedule:
@@ -24,9 +37,18 @@ on:
     # UTC-day digest posted early in the US morning.
     - cron: '0 13 * * *' # 13:00 UTC — no data/ dependency; see the note above
   workflow_dispatch:
+    inputs:
+      secrets_health:
+        description: 'Also ping the three Upstash REST databases (status code + 8 hostname chars only — never a token, never a full URL)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  # actions: read is what lets `gh run list` / `gh run view --log` see this
+  # repo's own workflow runs — the whole input to the pipeline-health report.
+  # Read-only: this job cannot start, cancel or re-run anything.
+  actions: read
   issues: write
 
 concurrency:
@@ -38,6 +60,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The pipeline-health report's corpus/coverage DELTAS compare
+          # data/bills.json and data/coverage.json against the commit before
+          # the one that last touched them, so the default depth-1 checkout
+          # would leave both deltas permanently "not found". 25 is generous
+          # against how often the data workflows commit (several times a day,
+          # so both files are touched well inside it) and still cheap. A
+          # shallow history the walk cannot resolve yields a NULL delta with a
+          # warning, never a wrong number.
+          fetch-depth: 25
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -57,11 +89,12 @@ jobs:
           gh label create metrics --color 1D76DB --description "Daily metrics digest" --force
           gh label create traffic-spike --color D93F0B --description "Automated traffic-spike alert" --force
           gh label create traffic-decline --color FBCA04 --description "Automated traffic-decline alert (standing issue)" --force
+          gh label create pipeline-health --color 0E8A16 --description "Daily pipeline-health report (standing issue)" --force
           NUM=$(gh issue list --repo cm2489/oravan --state open --search 'in:title "Daily metrics"' \
                 --json number,title --jq '.[] | select(.title=="📊 Daily metrics") | .number' | head -1)
           if [ -z "$NUM" ]; then
             NUM=$(gh issue create --repo cm2489/oravan --title "📊 Daily metrics" --label metrics \
-                  --body "Automated daily digest — one comment per day. Covers MCP tool calls and /api/script generations from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median. Site-level page-view traffic is NOT included: Vercel's Web Analytics API needs the @vercel/analytics client script, which CLAUDE.md permanently bans, and Vercel's server-side Observability (the compliant, no-client-script data source) has no REST API — dashboard/CSV-export only. See scripts/daily-metrics.mjs for the full reasoning." \
+                  --body "Automated daily digest — one comment per day. Covers MCP tool calls and /api/script generations from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median, plus a Pipeline health section built by scripts/pipeline-health.mjs. Site-level page-view traffic is NOT included: Vercel's Web Analytics API needs the @vercel/analytics client script, which CLAUDE.md permanently bans. A compliant server-side source DOES exist — \`vercel metrics --format json\` (CLI, public beta 2026, requires Observability Plus) and runtime-log aggregation over the API, neither needing a client script — and this digest does not read it yet. See scripts/daily-metrics.mjs for the full reasoning." \
                   | grep -oE '[0-9]+$')
             gh issue pin --repo cm2489/oravan "$NUM" || true
           fi
@@ -93,4 +126,53 @@ jobs:
           # scripts/tenant-admin.mjs's own header comment already documents
           # for laptop-shell CLI runs: export VERCEL_ENV=production explicitly.
           VERCEL_ENV: production
+          # The pipeline-health report runs inside this same script (additive,
+          # failure-tolerant). It needs no secret of its own — `gh` uses
+          # GITHUB_TOKEN above — but it does need `actions: read`, granted at
+          # the job's permissions block.
         run: npx tsx scripts/daily-metrics.mjs
+
+      # ---------------------------------------------------------------
+      # Secrets health. workflow_dispatch ONLY, and off by default, because
+      # it is the one step here that touches a credential at all.
+      #
+      # WHAT IT PRINTS, EXHAUSTIVELY: the database's role (a literal in this
+      # file), the HTTP status of a /ping, and the FIRST EIGHT CHARACTERS of
+      # the hostname. Never a token. Never a full URL. Never a response body.
+      # curl writes only `%{http_code}` and sends its body to /dev/null, so
+      # there is no wording of a reply that can reach the log.
+      #
+      # Why it exists: a rotated-but-not-updated Upstash token fails SILENTLY
+      # in production — lib/upstash.ts's counters/cache paths fail OPEN to
+      # in-memory by design, so the site stays up and the digest simply reads
+      # zeros. This is the one-command answer to "are the three tokens still
+      # good", without ever putting one in front of a human.
+      # ---------------------------------------------------------------
+      - name: Secrets health (Upstash /ping — status + 8 hostname chars only)
+        if: github.event_name == 'workflow_dispatch' && inputs.secrets_health
+        env:
+          COUNTERS_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
+          COUNTERS_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
+          CACHE_URL: ${{ secrets.UPSTASH_CACHE_REST_URL }}
+          CACHE_TOKEN: ${{ secrets.UPSTASH_CACHE_REST_TOKEN }}
+          TENANCY_URL: ${{ secrets.UPSTASH_TENANCY_REST_URL }}
+          TENANCY_TOKEN: ${{ secrets.UPSTASH_TENANCY_REST_TOKEN }}
+        run: |
+          ping_one() {
+            role="$1"; url="$2"; token="$3"
+            if [ -z "$url" ] || [ -z "$token" ]; then
+              echo "${role}: not configured in this environment"
+              return 0
+            fi
+            # Host fragment only: strip the scheme, drop everything from the
+            # first slash, keep 8 characters. An Upstash hostname carries a
+            # database id, so 8 characters is a fingerprint, not an address.
+            host8=$(printf '%s' "$url" | sed -E 's#^https?://##; s#/.*##' | cut -c1-8)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+                   -H "Authorization: Bearer ${token}" "${url}/ping" || echo "000")
+            echo "${role}: host=${host8}… status=${code}"
+          }
+          ping_one counters "$COUNTERS_URL" "$COUNTERS_TOKEN"
+          ping_one cache    "$CACHE_URL"    "$CACHE_TOKEN"
+          ping_one tenancy  "$TENANCY_URL"  "$TENANCY_TOKEN"
+          echo "A 200 means the URL and token still pair. 401/403 means the token was rotated without updating this repo's secret. 000 means the request never completed."

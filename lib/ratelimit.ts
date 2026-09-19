@@ -100,7 +100,18 @@ export type RouteName =
   // unauthenticated Anthropic-spending endpoint with no cross-user cache to
   // blunt a distributed farm.
   | 'brand'
-  | 'brand-day';
+  | 'brand-day'
+  // /api/script (spend-guards build): 'script-day' is a GLOBAL daily spend
+  // breaker for the script endpoint — the SECOND user of the brand-day
+  // pattern, a tenant-limiter keyed by the documented constant
+  // 'script-global' (neither caller nor content material, same class as a
+  // route label). It sits alongside, never replaces, the per-IP 'script'
+  // label above: that one bounds ONE abusive caller, this one bounds the
+  // day's total Anthropic spend across every caller at once. Unlike
+  // /api/brand, /api/script has a cross-user cache in front of it, so this
+  // breaker is only ever consumed by a real cache-MISS generation — see
+  // serveScript in app/api/script/route.ts.
+  | 'script-day';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
@@ -479,7 +490,8 @@ export interface TenantRateLimiter {
  *
  * A SPEND breaker is not that. `brand-day` is a GLOBAL daily cap on an
  * unauthenticated endpoint that spends real money per call (~$2/day at 250
- * calls, app/api/brand/route.ts). Failing it open substitutes a per-INSTANCE
+ * calls, app/api/brand/route.ts), and `script-day` is the same shape on
+ * /api/script. Failing either open substitutes a per-INSTANCE
  * in-memory counter for the global one, so during an Upstash outage the
  * documented ~$2/day cap silently becomes ~$2/day PER SERVERLESS INSTANCE,
  * multiplied by however many instances a distributed caller can cause to

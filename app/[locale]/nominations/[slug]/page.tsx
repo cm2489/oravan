@@ -79,11 +79,13 @@ import { getMomentsForNomination } from '@/lib/moments';
  * production build of 2026-08-06 where `/[locale]/bills/[id]`,
  * `/[locale]/questions/[id]` and every other page rendered on demand (`ƒ`)
  * despite declaring params. That measurement was real but it was not a law
- * about this app — it was a site-wide regression traced to
- * `app/[locale]/loading.tsx` (see that file). With it fixed, every other
- * [locale] page is `●` again, so this route is now the deliberate exception
- * rather than one more instance of the rule. The reason below is untouched
- * and is the whole reason: it never depended on what the other routes did.
+ * about this app — it was a site-wide regression whose trigger was the
+ * route-level loading boundary that used to live at `app/[locale]/loading.tsx`
+ * (deleted by #253, which was chasing the soft-404 the same boundary caused;
+ * tests/static-rendering.spec.ts has the mechanism). Every other [locale]
+ * page is `●` again, so this route is now the deliberate exception rather
+ * than one more instance of the rule. The reason below is untouched and is
+ * the whole reason: it never depended on what the other routes did.
  *
  * An empty list is the one configuration Next mis-reads: it classifies the
  * route as fully static (`●`), then tries to prerender each request as it
@@ -211,7 +213,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   const nomination = getNomination(slug);
-  if (!nomination) return {};
+  if (!nomination) notFound();
   const t = await getTranslations({ locale, namespace: 'nominations' });
   const title = `${nomination.citation} — ${headlineFor(nomination, t('untitled', { citation: nomination.citation }))}`;
   const cited = getMomentsForNomination(slug).length > 0;
