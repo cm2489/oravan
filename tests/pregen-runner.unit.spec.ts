@@ -10,8 +10,13 @@ import { CACHE_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './up
  * Pins scripts/pregen-scripts.mjs's orchestration (lib/pregen-runner.ts):
  * idempotent skip against the REAL lib/scriptcache.ts cache (import
  * equality on the key, not a reimplementation), --dry-run's zero-network
- * guarantee, the batch-payload shape actually submitted, and the bounded
- * poll timeout's fail-safe (never writes a partial/incomplete result).
+ * guarantee, the batch-payload shape actually submitted, the bounded
+ * poll timeout's fail-safe (never writes a partial/incomplete result), and
+ * the dead-cache guard: when the cache database does not answer, NOTHING is
+ * submitted to Anthropic. That last one is the expensive invariant — the
+ * run it was written for generated and paid for 60 scripts a night for
+ * eight nights and stored none of them, because every fail-open read looked
+ * exactly like a cold cache.
  *
  * No live Anthropic or Upstash token exists in this environment. Anthropic
  * is a plain injected fake shaped like { messages: { batches: { create,
@@ -134,7 +139,15 @@ test('idempotent skip + key/TTL exactness: a pre-cached combo is skipped, and wr
   });
 
   // 6 combos total (3 stances x 2 locales), 1 pre-cached -> 5 to generate.
-  expect(result).toEqual({ planned: 5, generated: 5, dryRun: false, batchId: 'batch_1' });
+  expect(result).toEqual({
+    planned: 5,
+    generated: 5,
+    dryRun: false,
+    batchId: 'batch_1',
+    alreadyCached: 1,
+    cacheWrites: 5,
+    cacheWriteFailures: 0,
+  });
   expect(createCalls).toHaveLength(1);
   expect(createCalls[0].requests).toHaveLength(5);
 
@@ -226,4 +239,123 @@ test('bounded poll timeout: never writes a partial result, and stops before ever
   for (const combo of planCombos([bill], STANCES, ['en', 'es'])) {
     expect(await cache.get(combo)).toBeNull();
   }
+});
+
+
+/* ---------------------------------------------------------------------- *
+ * The dead-cache guard (2026-09-18) and what the run reports about it.
+ * ---------------------------------------------------------------------- */
+
+test('dead cache database: refuses before submitting anything — zero Anthropic spend', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithNetworkError = true; // the real nightly's status-0 failure
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+
+  const { anthropic, createCalls } = fakeAnthropic();
+  let message = '';
+  try {
+    await main({
+      anthropic,
+      cache: createScriptCache(),
+      getBills: () => [makeBill()],
+      sleep: noopSleep,
+    });
+    throw new Error('main() must not resolve when the cache database is unreachable');
+  } catch (err) {
+    message = err instanceof Error ? err.message : String(err);
+  }
+
+  expect(message).toContain('cache database unreachable');
+  expect(message).toContain('status 0');
+  // The whole point: not one request was submitted, so not one cent was spent.
+  expect(createCalls).toHaveLength(0);
+  // And it gave up after the single probe rather than reading all 60 combos.
+  expect(mock.callsAttempted).toBe(1);
+});
+
+test('cache database not configured: refuses too, and says so without naming the confined env vars', async () => {
+  // No setUpstashEnv() here — cacheClient() returns null, so no fetch is
+  // ever attempted and the in-memory fallback is the only store there is.
+  const { anthropic, createCalls } = fakeAnthropic();
+  let message = '';
+  try {
+    await main({
+      anthropic,
+      cache: createScriptCache(),
+      getBills: () => [makeBill()],
+      sleep: noopSleep,
+    });
+    throw new Error('main() must not resolve when the cache database is unconfigured');
+  } catch (err) {
+    message = err instanceof Error ? err.message : String(err);
+  }
+
+  // The env var names themselves stay confined to lib/upstash.ts
+  // (scripts/check-key-namespaces.mjs's env-confinement rule), so the
+  // message states the condition rather than naming them.
+  expect(message).toContain('not configured');
+  expect(createCalls).toHaveLength(0);
+});
+
+test('metrics line: already-cached count and durable-write count are printed as machine-readable key=value', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+
+  const bill = makeBill();
+  const cache = createScriptCache();
+  const [preCached] = planCombos([bill], ['support'], ['en']);
+  await cache.set(preCached, 'ALREADY GENERATED');
+
+  const { anthropic } = fakeAnthropic();
+  const lines: string[] = [];
+  const realLog = console.log;
+  console.log = (...args: unknown[]) => {
+    lines.push(args.map(String).join(' '));
+  };
+  let result;
+  try {
+    result = await main({ anthropic, cache, getBills: () => [bill], sleep: noopSleep });
+  } finally {
+    console.log = realLog;
+  }
+
+  expect(result.alreadyCached).toBe(1);
+  expect(result.cacheWrites).toBe(5);
+  expect(result.cacheWriteFailures).toBe(0);
+  expect(lines).toContain(
+    'pregen: metrics already_cached=1 generated=5 cache_writes_ok=5 cache_writes_failed=0'
+  );
+});
+
+test('writes that never reach the database fail the run instead of reporting a green night', async () => {
+  // A cache whose probe passes and whose writes all silently miss — the
+  // database going away mid-run, which is exactly what "60 cached" used to
+  // hide. No env/fetch needed: both dependencies are injected.
+  const writes: string[] = [];
+  const { anthropic, createCalls } = fakeAnthropic();
+  let message = '';
+  try {
+    await main({
+      anthropic,
+      cache: {
+        get: async () => null,
+        set: async (parts) => {
+          writes.push(scriptKey(parts));
+          return false; // memory only — not durable
+        },
+      },
+      probe: async () => ({ configured: true, reachable: true, status: null }),
+      getBills: () => [makeBill()],
+      sleep: noopSleep,
+    });
+    throw new Error('main() must not resolve when no write reached the database');
+  } catch (err) {
+    message = err instanceof Error ? err.message : String(err);
+  }
+
+  expect(message).toContain('all cache writes failed after generation');
+  expect(createCalls).toHaveLength(1); // the batch WAS paid for — that is the point
+  expect(writes).toHaveLength(6); // and every write was attempted before it gave up
 });

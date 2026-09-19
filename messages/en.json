@@ -247,6 +247,7 @@
     "rateRetryIn": "You can ask for a fresh AI draft in {time}.",
     "rateTemplateNow": "The template and the phone numbers below work right now.",
     "rateRetryHint": "This usually clears within about ten minutes. The template and the phone numbers work right now.",
+    "scriptPaused": "AI drafting is paused for today — Oravan caps how many drafts it writes in a day.",
     "fallbackScript": {
       "support": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I support this bill, and I'm asking the office to record my position in favor. Thank you for your time.",
       "oppose": "Hello, my name is [YOUR NAME] and I'm a constituent from [YOUR TOWN OR ZIP]. I'm calling about {citation}. I oppose this bill, and I'm asking the office to record my position against it. Thank you for your time.",
@@ -397,6 +398,7 @@
       "headlineAnnouncedSenate": "The Senate has named this bill on its own published floor program.",
       "statusAnnounced": "On the floor schedule",
       "metaAnnounced": "The chamber published this itself. It does not say when the vote will be, and offices tally calls until it happens.",
+      "metaAnnouncedFootnote": "Once the record shows the chamber has voted on it, this panel comes down.",
       "recessSenate": "The Daily Digest gives the Senate's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged.",
       "recessHouse": "The Daily Digest gives the House's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged."
     }
@@ -846,6 +848,8 @@
     "liveSub": "Open questions with something callable moving through Congress right now — a bill, or a nomination before the Senate.",
     "settledHeading": "Settled",
     "settledSub": "Recently closed questions, kept for the record. These don't reopen.",
+    "reviewHeading": "Under review",
+    "reviewSub": "Questions whose scheduled review date passed without a renewal. They stay readable and still link to the record, but nobody has confirmed they reflect where things stand right now.",
     "emptyTitle": "No live Big Questions right now",
     "emptyBody": "A Big Question opens only when a real, callable bill or Senate nomination meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",

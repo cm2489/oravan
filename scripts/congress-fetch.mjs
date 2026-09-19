@@ -182,11 +182,36 @@ export function mapStatus(actionText) {
   if (text.includes('became public law') || text.includes('signed by president')) return 'signed';
   if (text.includes('vetoed')) return 'vetoed';
   if (text.includes('conference report') || text.includes('conference committee')) return 'conference';
+  // A RULE RESOLUTION PASSING THE HOUSE IS NOT THE BILL PASSING, and this guard
+  // has to run BEFORE the passage branch below, whose `passed house` substring
+  // it matches. "Rule H. Res. 988 passed House." is the House adopting the
+  // TERMS of a debate that has not happened yet — the bill's own floor vote is
+  // still ahead, which is `floor_vote`, and reading it as `passed_chamber`
+  // retired the bill's floor claim on the exact day it reached the floor.
+  // lib/docket.mjs's `floorAnsweredChamber` carries the same guard, one layer
+  // up, for the same sentence.
+  if (/\brule h\.? ?res\.? ?\d+ passed house/.test(text)) return 'floor_vote';
   if (
     text.includes('passed house') || text.includes('passed senate') ||
     text.includes('passed/agreed to') || text.includes('agreed to in') ||
     text.includes('received in the senate') || text.includes('received in the house') ||
-    text.includes('held at the desk')
+    text.includes('held at the desk') ||
+    // THE POST-PASSAGE MOTION (2026-09-18). "Motion to reconsider laid on the
+    // table Agreed to without objection." is what a chamber does immediately
+    // AFTER passing a measure, and it is the sentence Congress leaves as the
+    // last action on a large share of a busy week's bills — 24 of the corpus
+    // on 2026-09-18, every one of them reading as plain `committee`, which is
+    // the stage the bill left. It says nothing about which chamber, so nothing
+    // here claims one; `passed_chamber` is the stage, and the chamber-level
+    // claim stays with lib/journey.ts's passage derivation.
+    text.includes('motion to reconsider laid on the table') ||
+    // BOTH CHAMBERS ARE DONE. "Presented to President." is the enrolled bill
+    // going to the desk; it derived `committee` until now, which put a measure
+    // awaiting signature at the same stage as one awaiting a hearing. The
+    // status vocabulary has no `presented` rung and this change does not invent
+    // one — `passed_chamber` is the nearest true stage, and `signed` remains
+    // the only status that claims an outcome.
+    text.includes('presented to president')
   ) return 'passed_chamber';
   // Floor activity. The scheduling signals (calendar/cloture/rule) were the
   // original set; the recorded-vote and live-consideration signals were added
@@ -204,7 +229,18 @@ export function mapStatus(actionText) {
     text.includes('yea-nay vote') || text.includes('record vote number') ||
     text.includes('roll call') || text.includes('postponed proceedings') ||
     text.includes('motion to discharge') || text.includes('put the question') ||
-    text.includes('unfinished business')
+    text.includes('unfinished business') ||
+    // A SUSPENSION VOTE THAT FAILED IS A FLOOR VOTE (2026-09-18). "On motion to
+    // suspend the rules and pass Failed by the Yeas and Nays: (2/3 required):
+    // 212 - 206 (Roll no. 293)." is a recorded vote of the full House, and it
+    // derived `committee` — so the one sentence in the corpus that says the
+    // floor ANSWERED could not reach the settled guard that reads
+    // `status === 'floor_vote'` (lib/docket.mjs's `isSettledFloor`), and the
+    // bill kept ranking as if the vote were still ahead. The committee roll
+    // call uses the same "Yeas and Nays" phrasing, so the match is on the
+    // outcome verb, not on the vote form: "Ordered to be Reported by the Yeas
+    // and Nays" is untouched and still `markup`.
+    text.includes('failed by the yeas and nays')
   ) return 'floor_vote';
   // 'mark-up': Congress.gov action text uses both spellings ("Mark-up
   // Session Held") — the hyphenated form alone covers 133 live corpus bills

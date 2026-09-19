@@ -18,6 +18,12 @@
  *
  * USAGE
  *   node --env-file=.env.local scripts/eval-translation.mjs [--n 10] [--out PATH]
+ *                                                             [--confirm-cost]
+ *
+ * NOTHING RUNS THIS BUT A HUMAN. It is referenced by no workflow, and it must
+ * stay that way: it is a one-off measurement tool that spends real money per
+ * invocation, and a scheduled job that quietly re-ran it every night would be
+ * a recurring bill nobody decided to pay. See the SPEND CEILING below.
  *
  * COST. Two calls per bill. Per bill the input is one English decode
  * (~2,900 characters, ~950 tokens) and the output is its Spanish twin
@@ -37,6 +43,33 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { writeFileSync } from 'node:fs';
 import { loadJSON } from './bill-decode.mjs';
+
+/*
+ * THE SPEND CEILING — $3.00, the owner's standing approval line.
+ *
+ * `--n` is a plain integer on a command line, which is exactly the shape of a
+ * typo that turns a $0.17 measurement into a $170 one. The estimate below is
+ * printed before anything is spent; this makes the estimate a GATE rather than
+ * a notice. Over the line the script refuses and exits 2, naming the number and
+ * the flag; `--confirm-cost` is the deliberate override, and it has to be typed
+ * by the person paying.
+ */
+export const COST_CEILING_USD = 3;
+
+/**
+ * Whether a run of this size may start.
+ *
+ * Pure so the ceiling is a tested property rather than a comment. `confirmed`
+ * is the `--confirm-cost` flag.
+ *
+ * @param {number} estimate dollars, from estimateCost below
+ * @param {boolean} confirmed
+ * @returns {{ allowed: boolean, reason: 'under-ceiling'|'confirmed'|'over-ceiling' }}
+ */
+export function spendAllowed(estimate, confirmed = false, ceiling = COST_CEILING_USD) {
+  if (!(Number(estimate) > ceiling)) return { allowed: true, reason: 'under-ceiling' };
+  return confirmed ? { allowed: true, reason: 'confirmed' } : { allowed: false, reason: 'over-ceiling' };
+}
 
 export const CANDIDATE_MODEL = 'claude-haiku-4-5-20251001';
 export const INCUMBENT_MODEL = 'claude-sonnet-5';
@@ -157,7 +190,18 @@ if (/(^|\/)eval-translation\.mjs$/.test(process.argv[1] ?? '')) {
   const n = Number(arg('n', 10));
   const out = arg('out', 'eval-translation.md');
   const bills = pickBills(loadJSON('data/bills.json'), n);
-  console.log(`eval-translation: ${bills.length} bill(s), 2 calls each, estimated cost $${estimateCost(bills.length)} at list prices.`);
+  const estimate = estimateCost(bills.length);
+  console.log(`eval-translation: ${bills.length} bill(s), 2 calls each, estimated cost $${estimate} at list prices.`);
+  const verdict = spendAllowed(estimate, process.argv.includes('--confirm-cost'));
+  if (!verdict.allowed) {
+    console.error(
+      `eval-translation: REFUSING to start. $${estimate} is over the $${COST_CEILING_USD.toFixed(2)} ceiling for an unattended run, and nothing here is worth finding that out from an invoice. Lower --n, or re-run with --confirm-cost if you mean to spend it.`
+    );
+    process.exit(2);
+  }
+  if (verdict.reason === 'confirmed') {
+    console.log(`eval-translation: --confirm-cost given, so $${estimate} is being spent deliberately.`);
+  }
 
   const anthropic = new Anthropic({ maxRetries: 4 });
   const rows = [];

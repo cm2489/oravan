@@ -6,6 +6,7 @@ import {
   assembleDecode,
   buildStructurePrompt,
   buildSummaryPrompt,
+  decodeStructureFrom,
   redecodeBill,
   textFingerprint,
 } from '../scripts/bill-decode.mjs';
@@ -62,6 +63,17 @@ function makeBill(overrides: AnyBill = {}): AnyBill {
     status: 'floor_vote',
     ...overrides,
   };
+}
+
+/**
+ * THE FINGERPRINT AS THE CODE COMPUTES IT — over the MODEL INPUT, not the
+ * document. Written once here so a test can never accidentally pin the
+ * document-only version the 2026-09-19 merge corrected: a fingerprint that
+ * ignored the title let a renamed bill read as unchanged, and made the veto
+ * useless against the nightly re-decode pass, which routinely passes a title.
+ */
+function fingerprintOf(bill: AnyBill, text: string): string {
+  return textFingerprint(buildSummaryPrompt(bill, text));
 }
 
 /** A structure reply carrying every required tag. */
@@ -240,13 +252,149 @@ test.describe('decodeBatched', () => {
   });
 });
 
+/**
+ * A batches client that must actually be POLLED, so the retrieve/cancel paths
+ * are reachable. `failRetrieveOnRound` makes that round's status check throw.
+ */
+function pollableBatches(
+  repliesByRound: Array<Map<string, string>>,
+  opts: { failRetrieveOnRound?: number; neverEnds?: boolean } = {}
+) {
+  let round = -1;
+  const cancelled: string[] = [];
+  const created: string[] = [];
+  return {
+    cancelled,
+    created,
+    messages: {
+      batches: {
+        async create(): Promise<FakeBatch> {
+          round++;
+          created.push(`batch-${round}`);
+          return { id: `batch-${round}`, processing_status: 'in_progress' };
+        },
+        async retrieve(id: string): Promise<FakeBatch> {
+          const idx = Number(id.split('-')[1]);
+          if (opts.failRetrieveOnRound === idx) throw new Error('503 from the status check');
+          return { id, processing_status: opts.neverEnds ? 'in_progress' : 'ended' };
+        },
+        async cancel(id: string) {
+          cancelled.push(id);
+          return { id, processing_status: 'canceling' };
+        },
+        async results(id: string) {
+          const idx = Number(id.split('-')[1]);
+          const replies = repliesByRound[idx] ?? new Map<string, string>();
+          return (async function* () {
+            for (const [customId, text] of replies) {
+              yield {
+                custom_id: customId,
+                result: { type: 'succeeded', message: { content: [{ type: 'text', text }] } },
+              };
+            }
+          })();
+        },
+      },
+    },
+  };
+}
+
+test.describe('a batch that stops answering costs one decode, not two', () => {
+  const jobs = () => [{ slug: 'hr-1234-119', bill: makeBill(), text: 'FULL TEXT' }];
+
+  test('a poll failure in round 2 keeps round 1 and hands the summary back', async () => {
+    // THE MEDIUM FINDING. `batches.retrieve` throwing used to escape
+    // decodeBatched's try, which discarded round 1's summaries — so every bill
+    // fell back to a FULL synchronous decode and bought, at full price, a
+    // paragraph the batch had already produced and billed at half.
+    let clock = 0;
+    const fake = pollableBatches([
+      new Map([['hr-1234-119', 'A plain-language summary of the bill.']]),
+      new Map(),
+    ], { failRetrieveOnRound: 1 });
+    const out = await decodeBatched(jobs(), {
+      anthropic: fake,
+      log: () => {},
+      now: () => clock,
+      sleep: async () => { clock += 1_000; },
+      maxWaitMs: 600_000,
+    });
+    const row = out.get('hr-1234-119');
+    expect(row?.ok).toBe(false);
+    expect(row?.reason).toBe('no-structure');
+    expect(row?.summary).toBe('A plain-language summary of the bill.');
+    // And the batch nobody will read is cancelled rather than left to bill.
+    expect(fake.cancelled).toEqual(['batch-1']);
+  });
+
+  test('the caller finishes such a bill with ONE model call, not two', async () => {
+    // The other half of "does not double-pay": decodeStructureFrom is call 2
+    // alone, and it produces byte-for-byte what the two-call path would have.
+    let calls = 0;
+    const anthropic = {
+      messages: {
+        create: async () => {
+          calls++;
+          return { content: [{ type: 'text', text: STRUCTURE_REPLY }] };
+        },
+      },
+    };
+    const dec = await decodeStructureFrom(anthropic, makeBill(), 'A plain-language summary of the bill.');
+    expect(calls).toBe(1);
+    expect(dec).toEqual(assembleDecode('A plain-language summary of the bill.', STRUCTURE_REPLY));
+  });
+
+  test('a batch abandoned at the deadline is cancelled, not just walked away from', async () => {
+    // Walking away does not stop a batch: it keeps processing and keeps
+    // billing while the caller pays for the same decodes synchronously.
+    let clock = 0;
+    const fake = pollableBatches([], { neverEnds: true });
+    const out = await decodeBatched(jobs(), {
+      anthropic: fake,
+      log: () => {},
+      now: () => clock,
+      sleep: async () => { clock += 60_000; },
+      maxWaitMs: 120_000,
+    });
+    expect(out.get('hr-1234-119')).toEqual({ ok: false, reason: 'no-summary' });
+    expect(fake.cancelled).toEqual(['batch-0']);
+  });
+
+  test('the default wait ceiling is 8 minutes a round, not 20', async () => {
+    // A money-and-starvation pin. sync-bills.yml shares the `data-sync`
+    // concurrency group with the hourly newsdesk (cron :07), so every minute
+    // the nightly waits is a minute the live layer is queued behind it. Two
+    // rounds at the old 20-minute ceiling could hold that group for 40 minutes
+    // to save a few dollars. If this number is raised, raise it deliberately.
+    let clock = 0;
+    let lastSeen = 0;
+    const fake = pollableBatches([], { neverEnds: true });
+    await decodeBatched(jobs(), {
+      anthropic: fake,
+      log: () => {},
+      now: () => clock,
+      sleep: async () => { clock += 60_000; lastSeen = clock; },
+    });
+    // It gave up on the first minute at or past the ceiling.
+    expect(lastSeen).toBe(8 * 60 * 1000);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 3. The cursor still freezes on a decode that did not land
 // ---------------------------------------------------------------------------
 
 test.describe('resolveCursorRows', () => {
-  const rows = (...r: Array<{ updateDate: string; needsWork?: boolean; pendingSlug?: string }>) =>
-    r.map((x) => ({ needsWork: false, pendingSlug: null, ...x }));
+  /** One row per fetched bill, exactly as the ascending loop pushes them:
+   *  every bill of the window gets one, dedupes included, and `day` is the
+   *  bare date the day-walk reads. */
+  const rows = (...r: Array<{ updateDate: string; needsWork?: boolean; slug?: string }>) =>
+    r.map((x, i) => ({
+      needsWork: false,
+      slug: x.slug ?? `hr-${i + 1}-119`,
+      day: x.updateDate.slice(0, 10),
+      ...x,
+    }));
 
   test('a clean window advances the high-water mark to its last bill', () => {
     const out = resolveCursorRows(
@@ -264,7 +412,7 @@ test.describe('resolveCursorRows', () => {
     // failure docs/solutions/pinned-sync-cursor.md exists for.
     const window = rows(
       { updateDate: '2026-09-01' },
-      { updateDate: '2026-09-02', pendingSlug: 'hr-9-119' },
+      { updateDate: '2026-09-02', slug: 'hr-9-119' },
       { updateDate: '2026-09-03' }
     );
     const failed = resolveCursorRows(window, '2026-08-31T00:00:00Z', new Set(['hr-9-119']));
@@ -276,12 +424,63 @@ test.describe('resolveCursorRows', () => {
     expect(succeeded.cursor.startsWith('2026-09-03')).toBe(true);
   });
 
+  test('a PASS-1 queued decode that failed freezes the cursor at its own bill', () => {
+    // THE HIGH FINDING of the 2026-09-19 review. Pass 1 resolves a bill, adds
+    // it to handledSlugs, and queues its decode; pass 2 meets the same bill,
+    // takes the dedupe branch, and decides nothing. Before this merge that
+    // branch pushed a row with no slug on it, so when the drain failed that
+    // decode, nothing in the window carried the failure and the cursor walked
+    // straight past a bill that never entered the corpus.
+    const window = rows(
+      { updateDate: '2026-09-01' },
+      { updateDate: '2026-09-02', slug: 'hr-DEDUPED-119' }, // resolved by pass 1, needsWork false
+      { updateDate: '2026-09-03' }
+    );
+    const out = resolveCursorRows(window, '2026-08-31T00:00:00Z', new Set(['hr-DEDUPED-119']));
+    expect(out.frozen).toBe(true);
+    expect(out.cursor.startsWith('2026-09-01')).toBe(true);
+  });
+
   test('an inline needsWork row still freezes, with no pending slugs involved', () => {
     const out = resolveCursorRows(
       rows({ updateDate: '2026-09-01' }, { updateDate: '2026-09-02', needsWork: true }, { updateDate: '2026-09-03' }),
       '2026-08-31T00:00:00Z'
     );
     expect(out.frozen).toBe(true);
+    expect(out.cursor.startsWith('2026-09-01')).toBe(true);
+  });
+
+  test('the day-walk closes a day only when nothing behind it is frozen', () => {
+    // #251's rule, now decided in the same pass as the freeze because a day
+    // whose last bill is a queued decode is not finished until the drain says
+    // so. Day 09-01 is walked clean through, then 09-02 freezes: the cursor
+    // may claim the END of 09-01 and nothing later.
+    const window = rows(
+      { updateDate: '2026-09-01' },
+      { updateDate: '2026-09-01' },
+      { updateDate: '2026-09-02', slug: 'hr-STUCK-119' },
+      { updateDate: '2026-09-03' }
+    );
+    const frozen = resolveCursorRows(window, '2026-08-31T00:00:00Z', new Set(['hr-STUCK-119']));
+    expect(frozen.frozen).toBe(true);
+    expect(frozen.lastFullDay).toBe('2026-09-01');
+
+    // Same window, that decode landed: the walk crosses 09-02 and 09-03 too,
+    // so the newest day it got CLEAN THROUGH is 09-02 (09-03 is the day it is
+    // standing in, which the caller answers with plan.dayComplete).
+    const clean = resolveCursorRows(window, '2026-08-31T00:00:00Z', new Set());
+    expect(clean.frozen).toBe(false);
+    expect(clean.lastFullDay).toBe('2026-09-02');
+  });
+
+  test('a freeze on the FIRST bill of a day leaves the previous day closed and nothing more', () => {
+    const window = rows(
+      { updateDate: '2026-09-01' },
+      { updateDate: '2026-09-02', slug: 'hr-STUCK-119', needsWork: true },
+      { updateDate: '2026-09-02' }
+    );
+    const out = resolveCursorRows(window, '2026-08-31T00:00:00Z');
+    expect(out.lastFullDay).toBe('2026-09-01');
     expect(out.cursor.startsWith('2026-09-01')).toBe(true);
   });
 });
@@ -316,7 +515,8 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
   test('matching fingerprint skips the model entirely and stamps only the verification', async () => {
     const restore = stubText(TEXT);
     try {
-      const bill = makeBill({ decode_text_sha: textFingerprint(TEXT), ai_summary: 'OLD SUMMARY' });
+      const bill = makeBill({ ai_summary: 'OLD SUMMARY' });
+      bill.decode_text_sha = fingerprintOf(bill, TEXT);
       const bySlug = new Map([['hr-1234-119', bill]]);
       const es: Record<string, unknown> = { 'hr-1234-119': { summary: 'RESUMEN VIEJO' } };
       // A client that throws on any call: proof the decode never happened.
@@ -335,6 +535,14 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
       // written; only the weaker, separately-named claim is stamped.
       expect(bill.decoded_at).toBe('2026-09-01T00:00:00Z');
       expect(typeof bill.decode_text_verified_at).toBe('string');
+      // BOTH PROVENANCE SETS, from the version just read. Stamping only the
+      // verification date left #248's nominator measuring against a stale
+      // text_version_date forever: the bill was nominated, probed, vetoed and
+      // nominated again every night, spending a free probe and a free /text
+      // fetch on the same answer for the life of the corpus.
+      expect(bill.text_version_date).toBe('2026-09-10');
+      expect(bill.text_version_type).toBe('Engrossed');
+      expect(bill.text_version_count).toBe(1);
     } finally {
       restore();
     }
@@ -343,7 +551,8 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
   test('a CHANGED document is re-decoded, and re-stamps the fingerprint', async () => {
     const restore = stubText(TEXT);
     try {
-      const bill = makeBill({ decode_text_sha: textFingerprint('SOMETHING ELSE ENTIRELY') });
+      const bill = makeBill();
+      bill.decode_text_sha = fingerprintOf(bill, 'SOMETHING ELSE ENTIRELY');
       const bySlug = new Map([['hr-1234-119', bill]]);
       const es: Record<string, unknown> = {};
       let calls = 0;
@@ -361,7 +570,10 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
       expect(bill.ai_summary).toBe('A new summary.');
       // Stamped from the document actually decoded (the stub's HTML strips to
       // exactly TEXT), so the NEXT run can short-circuit.
-      expect(bill.decode_text_sha).toBe(textFingerprint(TEXT));
+      expect(bill.decode_text_sha).toBe(fingerprintOf(bill, TEXT));
+      // The version stamp lands in the same breath, so the next run's probe
+      // measures against THIS document.
+      expect(bill.text_version_date).toBe('2026-09-10');
     } finally {
       restore();
     }
@@ -393,9 +605,12 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
     // The title changed under us. That is the one case where the record and
     // the document have to be rewritten together, and skipping it is how a
     // page ends up explaining a different bill than the one being voted.
+    // NOTE (2026-09-19): this no longer needs a `!title` carve-out to hold.
+    // The fingerprint covers the prompt, and the prompt carries the title.
     const restore = stubText(TEXT);
     try {
-      const bill = makeBill({ decode_text_sha: textFingerprint(TEXT) });
+      const bill = makeBill();
+      bill.decode_text_sha = fingerprintOf(bill, TEXT);
       const bySlug = new Map([['hr-1234-119', bill]]);
       let calls = 0;
       const anthropic = {
@@ -414,6 +629,50 @@ test.describe('redecodeBill: an identical document costs nothing', () => {
       // handles, because the old press_names still name the old act.
       expect(calls).toBe(3);
       expect(bill.title).toBe('A continuing resolution for fiscal year 2027.');
+    } finally {
+      restore();
+    }
+  });
+});
+
+test.describe('the fingerprint covers the MODEL INPUT, not the document', () => {
+  test('a title-only change changes the fingerprint', () => {
+    // THE MEDIUM FINDING of the 2026-09-19 review. Call 1 reads
+    // `buildSummaryPrompt(bill, text)`, which prints the title above the
+    // document. A fingerprint over the document alone therefore called a
+    // renamed bill unchanged — and vetoed exactly the re-decode that rename
+    // needed.
+    const before = makeBill({ title: 'An act to fund bridge repair.' });
+    const after = makeBill({ title: 'An act to fund bridge repair and rail crossings.' });
+    expect(fingerprintOf(before, TEXT)).not.toBe(fingerprintOf(after, TEXT));
+    // And the document still matters on its own.
+    expect(fingerprintOf(before, TEXT)).not.toBe(fingerprintOf(before, `${TEXT} SEC. 2.`));
+  });
+
+  test('a SUB-THRESHOLD title change on an identical document is still re-decoded', async () => {
+    // Not a vehicle swap — titleDrift would not call this one — so the old
+    // `!title` carve-out could not have saved it, and the document-only
+    // fingerprint matched. The result was a page whose headline named one act
+    // and whose explanation described another, permanently.
+    const restore = stubText(TEXT);
+    try {
+      const bill = makeBill();
+      bill.decode_text_sha = fingerprintOf(bill, TEXT);
+      const bySlug = new Map([['hr-1234-119', bill]]);
+      let calls = 0;
+      const anthropic = {
+        messages: {
+          create: async () => {
+            calls++;
+            return { content: [{ type: 'text', text: calls === 1 ? 'Summary.' : STRUCTURE_REPLY }] };
+          },
+        },
+      };
+      const result = await redecodeBill('hr-1234-119', {
+        anthropic, es: {}, bySlug, title: 'An act to fund bridge repair and rail crossings.',
+      });
+      expect(result.outcome).toBe('redecoded');
+      expect(result.decodeAttempted).toBe(true);
     } finally {
       restore();
     }

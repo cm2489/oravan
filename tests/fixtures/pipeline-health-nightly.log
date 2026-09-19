@@ -1,0 +1,28 @@
+sync	UNKNOWN STEP	2026-09-17T18:18:19.6952127Z DONE: 212 refreshed, 11 added+decoded, 366 gated (no real legislative motion), 0 queued for next run, 0 skipped: partial payload (left untouched), 0 skipped: no bill text published yet (not decoded), 0 skipped: force slug naming another Congress (never fetched), 0 failed in the ascending pass (0 new), 0 in the recent-first pass, 0 force-slug; cursor -> 2026-09-08T17:54:31Z (truncated); new bills seen this run: 377; corpus 2976
+sync	UNKNOWN STEP	2026-09-17T18:18:24.3669864Z DONE: 0 added, 18 refreshed, 0 skipped (unreadable reply), corpus 919 (was 919); cursor -> 2026-09-17T18:18:22Z
+sync	UNKNOWN STEP	2026-09-17T18:31:20.1099806Z DONE: 90/600 bills with coverage, 194 articles total (+310 unprocessed bills carried forward)
+sync	UNKNOWN STEP	2026-09-17T18:31:40.1267142Z DONE: wrote data/moment-updates.json (103918 bytes)
+sync	UNKNOWN STEP	2026-09-17T18:31:40.4348525Z mirror-portraits: B001323 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.4668256Z mirror-portraits: B001321 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.4761040Z mirror-portraits: B001324 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.4978398Z mirror-portraits: H001104 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5174805Z mirror-portraits: W000831 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5265251Z mirror-portraits: G000606 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5351861Z mirror-portraits: V000139 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5440489Z mirror-portraits: M001245 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5674716Z mirror-portraits: A000383 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.5994015Z mirror-portraits: F000485 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6088793Z mirror-portraits: M001246 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6208360Z mirror-portraits: G000607 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6604333Z mirror-portraits: G000608 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6701943Z mirror-portraits: B001328 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6785290Z mirror-portraits: W000832 source fetch failed (status 404) - skipped
+sync	UNKNOWN STEP	2026-09-17T18:31:40.6794350Z mirror-portraits: 0 newly mirrored, 524 already mirrored (skipped), 15 failed, 525 total in manifest
+sync	UNKNOWN STEP	2026-09-17T18:35:53.4121579Z upstash cache: request failed (status 0); failing open to in-memory (error #1 this instance)
+sync	UNKNOWN STEP	2026-09-17T18:35:53.4125268Z upstash cache: request failed (status 0); failing open to in-memory (error #2 this instance)
+sync	UNKNOWN STEP	2026-09-17T18:35:53.4126593Z upstash cache: request failed (status 0); failing open to in-memory (error #3 this instance)
+sync	UNKNOWN STEP	2026-09-17T18:35:53.4212480Z pregen: 10 top bill(s), 60 combo(s) total, 0 already cached, 60 to generate
+sync	UNKNOWN STEP	2026-09-17T18:35:53.4213915Z pregen: estimated cost — batch ~$0.084-$0.126/night (~$2.52-$3.78/month); sync-fallback (if batch is ever unavailable) ~$0.168-$0.252/night (~$5.04-$7.56/month)
+sync	UNKNOWN STEP	2026-09-17T18:35:54.1162754Z pregen: submitted batch msgbatch_REDACTED (60 requests)
+sync	UNKNOWN STEP	2026-09-17T18:40:57.9952136Z pregen: done — 60 cached, 0 failed, batch msgbatch_REDACTED
+sync	UNKNOWN STEP	2026-09-17T18:40:57.9961821Z upstash cache: request failed (status 0); failing open to in-memory (error #112 this instance)

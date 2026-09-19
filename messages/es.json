@@ -247,6 +247,7 @@
     "rateRetryIn": "Podrás pedir un nuevo borrador de IA en {time}.",
     "rateTemplateNow": "La plantilla y los números de teléfono de abajo funcionan ahora mismo.",
     "rateRetryHint": "Esto suele resolverse en unos diez minutos. La plantilla y los números de teléfono funcionan ahora mismo.",
+    "scriptPaused": "La redacción con IA está en pausa por hoy — Oravan limita cuántos borradores escribe en un día.",
     "fallbackScript": {
       "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",
@@ -397,6 +398,7 @@
       "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
       "statusAnnounced": "En la programación del pleno",
       "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra.",
+      "metaAnnouncedFootnote": "En cuanto el registro muestra que la cámara ya votó, este panel desaparece.",
       "recessSenate": "El Daily Digest indica que la próxima sesión del Senado será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado.",
       "recessHouse": "El Daily Digest indica que la próxima sesión de la Cámara será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado."
     }
@@ -846,6 +848,8 @@
     "liveSub": "Cuestiones abiertas con algo en marcha por el Congreso ahora mismo — un proyecto de ley o una nominación ante el Senado.",
     "settledHeading": "Resueltas",
     "settledSub": "Cuestiones cerradas recientemente, conservadas como registro. Estas no se reabren.",
+    "reviewHeading": "En revisión",
+    "reviewSub": "Cuestiones cuya fecha de revisión programada pasó sin renovarse. Siguen legibles y siguen enlazando al registro oficial, pero nadie ha confirmado que reflejen la situación actual.",
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",

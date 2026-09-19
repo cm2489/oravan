@@ -106,6 +106,144 @@ export function getUpstashErrorCounts(): { counters: number; cache: number; tena
   return { ...errorCounts };
 }
 
+/*
+ * ENV-VALUE PASTE-MISTAKE TOLERANCE — added after a verified eight-night
+ * failure: a workflow step that pings each Upstash REST URL and prints only
+ * the first 8 hostname characters found that the CACHE database's
+ * UPSTASH_CACHE_REST_URL GitHub Actions secret VALUE begins with the literal
+ * text `UPSTASH_` — someone pasted a whole `UPSTASH_CACHE_REST_URL=https://…`
+ * env line (or just the bare variable name) as the secret's value, not the
+ * URL itself. Every cache request from the nightly pregen then failed with
+ * status 0 ("upstash cache: request failed (status 0); failing open to
+ * in-memory"), and pregen paid for scripts it could never store
+ * (lib/pregen-runner.ts's whole reason for existing is to catch that). The
+ * token secret can be pasted the same wrong way.
+ *
+ * normalizeEnvValue is the pure cleanup: trim whitespace, strip one layer of
+ * surrounding quotes (a value pasted as `"https://…"`), and — if what's left
+ * still starts with the variable's OWN name followed by `=` — strip that
+ * prefix once (quotes are stripped again afterward, in case the mistake was
+ * `NAME="value"` rather than `"NAME=value"`). Never strips a SECOND `NAME=`
+ * — a value that still starts with the prefix after one strip is left alone
+ * rather than looped over, so this can never eat into a legitimate value
+ * that happens to start with its own variable name twice.
+ *
+ * Callers below (readUrlEnv/readTokenEnv) log exactly ONE console.warn per
+ * process per malformed variable — never its value, only its NAME — so a
+ * misconfigured secret is loud without ever leaking into logs the thing
+ * CLAUDE.md forbids logging. readUrlEnv additionally requires https:// (a
+ * bare `NAME=` prefix stripped down to nothing, or a non-URL paste, must
+ * never reach fetch() as a URL) and otherwise treats the database as
+ * unconfigured, logging which variable — never the value — the same way.
+ */
+
+/** One layer of matching `"..."` or `'...'` around a value, else unchanged. */
+function stripSurroundingQuotes(value: string): string {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
+export interface NormalizedEnvValue {
+  /** Cleaned value, or null when absent/empty after cleanup. */
+  value: string | null;
+  /** Surrounding quotes had to be stripped (before and/or after the prefix strip). */
+  strippedQuotes: boolean;
+  /** A leading `${name}=` — the whole-env-line paste mistake — had to be stripped. */
+  strippedPrefix: boolean;
+}
+
+/**
+ * Pure. Trims whitespace and one layer of surrounding quotes; if what
+ * remains starts with `${name}=` (the pasted-a-whole-env-line, or
+ * pasted-the-variable-name, mistake), strips that prefix once and re-trims
+ * quotes around what's left; returns `value: null` for empty/absent.
+ */
+export function normalizeEnvValue(name: string, raw: string | undefined): NormalizedEnvValue {
+  if (raw === undefined) return { value: null, strippedQuotes: false, strippedPrefix: false };
+
+  let value = raw.trim();
+  let strippedQuotes = false;
+  const unquoted = stripSurroundingQuotes(value);
+  if (unquoted !== value) {
+    strippedQuotes = true;
+    value = unquoted.trim();
+  }
+
+  let strippedPrefix = false;
+  const prefix = `${name}=`;
+  if (value.startsWith(prefix)) {
+    strippedPrefix = true;
+    value = value.slice(prefix.length).trim();
+    const reUnquoted = stripSurroundingQuotes(value);
+    if (reUnquoted !== value) {
+      strippedQuotes = true;
+      value = reUnquoted.trim();
+    }
+  }
+
+  return { value: value === '' ? null : value, strippedQuotes, strippedPrefix };
+}
+
+// One console.warn per process per malformed variable NAME — never the
+// value. Module-level, so it survives across calls within one instance but
+// never repeats per-request (matches lib/scriptcache.ts's logFallbackOnce
+// seam, one flag per variable instead of one flag total).
+const warnedEnvVars = new Set<string>();
+
+/** Test seam only — mirrors lib/ratelimit.ts's __resetSaltMemoForTests. */
+export function __resetUpstashEnvWarningsForTests(): void {
+  warnedEnvVars.clear();
+}
+
+function warnIfMalformed(name: string, result: NormalizedEnvValue): void {
+  if (!result.strippedPrefix && !result.strippedQuotes) return;
+  if (warnedEnvVars.has(name)) return;
+  warnedEnvVars.add(name);
+  const reason = result.strippedPrefix
+    ? "was set as a `NAME=value` line; using the value after '='"
+    : 'was set with surrounding quotes; using the value with them stripped';
+  console.warn(`upstash: ${name} ${reason} — re-set the secret cleanly`);
+}
+
+/**
+ * https:// is required — with ONE narrow, sanctioned exception:
+ * tests/e2e-server.mjs's in-process fake Upstash backend for the TENANCY
+ * database, which the CI e2e job (and any local full `playwright test` run)
+ * points UPSTASH_TENANCY_REST_URL at over plain http://127.0.0.1 — test-only
+ * infra, documented there as "never part of the shipped app". Every other
+ * UPSTASH_*_REST_URL in this repo (real Upstash, or tests/upstash-mock.ts's
+ * https://*.mock.test fixtures) is already https://, so this exception
+ * never widens what a real, live database's URL is allowed to be.
+ */
+function isAcceptableUrl(value: string): boolean {
+  return value.startsWith('https://') || value.startsWith('http://127.0.0.1:');
+}
+
+/** Read + clean a *_REST_URL var; https:// (see isAcceptableUrl) is required or it's treated as unconfigured. */
+function readUrlEnv(name: string): string | null {
+  const result = normalizeEnvValue(name, process.env[name]);
+  warnIfMalformed(name, result);
+  if (result.value === null) return null;
+  if (!isAcceptableUrl(result.value)) {
+    // Variable name only — never the value — same discipline as noteUpstashError above.
+    console.error(`upstash: ${name} does not start with https:// — treating the database as not configured`);
+    return null;
+  }
+  return result.value;
+}
+
+/** Read + clean a *_REST_TOKEN var. No format beyond non-empty is enforced. */
+function readTokenEnv(name: string): string | null {
+  const result = normalizeEnvValue(name, process.env[name]);
+  warnIfMalformed(name, result);
+  return result.value;
+}
+
 function restClient(url: string, token: string): UpstashClient {
   return {
     async cmd(command: string[]): Promise<unknown> {
@@ -146,8 +284,8 @@ function restClient(url: string, token: string): UpstashClient {
  * Null when unconfigured — callers degrade to in-memory.
  */
 export function countersClient(): UpstashClient | null {
-  const url = process.env.UPSTASH_COUNTERS_REST_URL;
-  const token = process.env.UPSTASH_COUNTERS_REST_TOKEN;
+  const url = readUrlEnv('UPSTASH_COUNTERS_REST_URL');
+  const token = readTokenEnv('UPSTASH_COUNTERS_REST_TOKEN');
   if (!url || !token) return null;
   return restClient(url, token);
 }
@@ -159,8 +297,8 @@ export function countersClient(): UpstashClient | null {
  * Null when unconfigured — callers degrade to in-memory.
  */
 export function cacheClient(): UpstashClient | null {
-  const url = process.env.UPSTASH_CACHE_REST_URL;
-  const token = process.env.UPSTASH_CACHE_REST_TOKEN;
+  const url = readUrlEnv('UPSTASH_CACHE_REST_URL');
+  const token = readTokenEnv('UPSTASH_CACHE_REST_TOKEN');
   if (!url || !token) return null;
   return restClient(url, token);
 }
@@ -177,8 +315,8 @@ export function cacheClient(): UpstashClient | null {
  * not "degrade to in-memory". See that file's lookupTenantByToken.
  */
 export function tenancyClient(): UpstashClient | null {
-  const url = process.env.UPSTASH_TENANCY_REST_URL;
-  const token = process.env.UPSTASH_TENANCY_REST_TOKEN;
+  const url = readUrlEnv('UPSTASH_TENANCY_REST_URL');
+  const token = readTokenEnv('UPSTASH_TENANCY_REST_TOKEN');
   if (!url || !token) return null;
   return restClient(url, token);
 }
@@ -210,9 +348,9 @@ export function keyPrefix(): string {
  * (scripts/check-key-namespaces.mjs's env-confinement rule).
  */
 export function tenancyConfigured(): boolean {
-  return Boolean(process.env.UPSTASH_TENANCY_REST_URL && process.env.UPSTASH_TENANCY_REST_TOKEN);
+  return Boolean(readUrlEnv('UPSTASH_TENANCY_REST_URL') && readTokenEnv('UPSTASH_TENANCY_REST_TOKEN'));
 }
 
 export function countersConfigured(): boolean {
-  return Boolean(process.env.UPSTASH_COUNTERS_REST_URL && process.env.UPSTASH_COUNTERS_REST_TOKEN);
+  return Boolean(readUrlEnv('UPSTASH_COUNTERS_REST_URL') && readTokenEnv('UPSTASH_COUNTERS_REST_TOKEN'));
 }
