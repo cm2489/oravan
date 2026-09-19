@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T00:15:31.831Z",
+    "fetched_at": "2026-09-19T01:21:41.796Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T00:15:31.831Z"
+        "checked_at": "2026-09-19T01:21:41.796Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T00:15:31.831Z"
+        "checked_at": "2026-09-19T01:21:41.796Z"
       },
       "leans": {
         "center": {
@@ -729,6 +729,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "devdiscourse.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "alreporter.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
@@ -1007,6 +1012,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "bisnow.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
         {
           "domain": "audacy.com",
           "firstSeen": "2026-09-17",
@@ -1748,7 +1758,7 @@
         {
           "domain": "insideevs.com",
           "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
+          "lastSeen": "2026-09-19"
         }
       ],
       "mostViewed": null
@@ -2059,7 +2069,17 @@
           "lastSeen": "2026-09-19"
         },
         {
+          "domain": "hickoryrecord.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "martinsvillebulletin.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "pinalcentral.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         },
@@ -2160,16 +2180,6 @@
         },
         {
           "domain": "espn.com",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
-        },
-        {
-          "domain": "nhregister.com",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
-        },
-        {
-          "domain": "stamfordadvocate.com",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
         }
@@ -2399,6 +2409,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "sjres-141-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        }
+      ],
       "mostViewed": null
     },
     "sjres-185-119": {
