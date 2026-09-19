@@ -398,6 +398,7 @@
       "headlineAnnouncedSenate": "The Senate has named this bill on its own published floor program.",
       "statusAnnounced": "On the floor schedule",
       "metaAnnounced": "The chamber published this itself. It does not say when the vote will be, and offices tally calls until it happens.",
+      "metaAnnouncedFootnote": "Once the record shows the chamber has voted on it, this panel comes down.",
       "recessSenate": "The Daily Digest gives the Senate's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged.",
       "recessHouse": "The Daily Digest gives the House's next meeting as <when>{meeting}</when> — a <term>pro forma session</term>. A bill cannot be called up at one, so this page shows no live floor claim today. The record below is unchanged."
     }

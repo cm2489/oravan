@@ -129,6 +129,14 @@ function docketCorpus(now: number = Date.now()): {
    * FLOOR_SETTLED vocabulary, so a bill whose floor question the record has
    * already answered lands on T4 carrying a `just_decided` annotation instead —
    * demoted and annotated, never hidden.
+   *
+   * SINCE OWNER DECISION D13 (2026-09-18) THE SAME IS TRUE ONE RUNG UP. An
+   * ANNOUNCEMENT is a live fact only until the announcing chamber's own record
+   * answers it: a bill the House named on this week's schedule and then passed
+   * stops being T0 and is placed by its record (T3 "Just passed a chamber", or
+   * T4 "The floor already answered"), so it leaves this pool the day the vote
+   * happens instead of the day the week-list expires. See
+   * `announcementAnswered` in lib/docket.mjs.
    */
   return { ordered, actNowPool: ordered.filter((s) => isActNow(s.rung)) };
 }

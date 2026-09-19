@@ -398,6 +398,7 @@
       "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
       "statusAnnounced": "En la programación del pleno",
       "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra.",
+      "metaAnnouncedFootnote": "En cuanto el registro muestra que la cámara ya votó, este panel desaparece.",
       "recessSenate": "El Daily Digest indica que la próxima sesión del Senado será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado.",
       "recessHouse": "El Daily Digest indica que la próxima sesión de la Cámara será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado."
     }

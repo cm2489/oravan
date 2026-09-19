@@ -193,6 +193,50 @@ test.describe('floor-activity status mapping (the buried-vote bug)', () => {
 });
 
 /*
+ * THE FOUR PHRASINGS OF A FINISHED FLOOR (owner decision D13, 2026-09-18).
+ *
+ * Measured on the 2026-09-03 live-day pass: 17 of the 18 bills the site was
+ * calling "Deciding now" carried a floor outcome in their own record, and
+ * every one of those records mapped to a status that said otherwise. These are
+ * the exact Congress.gov sentences, from the corpus of 2026-09-18.
+ */
+test.describe('finished-floor status mapping (the crown outlived the vote)', () => {
+  test('the post-passage motion is a passage, not a committee stage', () => {
+    // 24 bills in the corpus on 2026-09-18 carried this as their last action —
+    // it is what a chamber does immediately after passing a measure.
+    expect(mapStatus('Motion to reconsider laid on the table Agreed to without objection.')).toBe(
+      'passed_chamber'
+    );
+  });
+
+  test('an enrolled bill on the President\'s desk is past both chambers', () => {
+    // The status vocabulary has no `presented` rung; `passed_chamber` is the
+    // nearest true stage, and `signed` still claims the only outcome.
+    expect(mapStatus('Presented to President.')).toBe('passed_chamber');
+  });
+
+  test('a rule resolution passing the House is not the bill passing', () => {
+    // The House adopting the TERMS of a debate that has not happened yet. The
+    // bill's own floor vote is still ahead, and lib/docket.mjs's
+    // `floorAnsweredChamber` carries the same guard one layer up.
+    expect(mapStatus('Rule H. Res. 988 passed House.')).toBe('floor_vote');
+  });
+
+  test('a failed suspension vote is a floor vote, so the settled guard can see it', () => {
+    // At `committee` this could not reach `isSettledFloor`, which gates on
+    // `status === 'floor_vote'` — so the one sentence saying the floor ANSWERED
+    // kept ranking as if the vote were still ahead.
+    expect(
+      mapStatus(
+        'On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).'
+      )
+    ).toBe('floor_vote');
+    // The committee roll call keeps its own phrasing and its own status.
+    expect(mapStatus('Ordered to be Reported by the Yeas and Nays: 25 - 20.')).toBe('markup');
+  });
+});
+
+/*
  * Hot-bill schedule phasing (2026-08-08). The refresh job used to run at
  * '0 17' / '0 22' UTC. Congress.gov publishes day D's floor actions on D+1
  * between 13:35 and 14:00 UTC (measured 6/6 consecutive legislative days
