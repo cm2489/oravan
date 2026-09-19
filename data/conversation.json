@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-19T14:21:38.927Z",
+    "fetched_at": "2026-09-19T16:57:47.669Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-19T14:21:38.927Z"
+        "checked_at": "2026-09-19T16:57:47.669Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-19T14:21:38.927Z"
+        "checked_at": "2026-09-19T16:57:47.669Z"
       },
       "leans": {
         "center": {
@@ -561,6 +561,12 @@
     },
     "hr-4405-119": {
       "outlets7d": [
+        {
+          "domain": "axios.com",
+          "lean": "center",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
         {
           "domain": "forbes.com",
           "lean": "center",
@@ -1581,6 +1587,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "fingerlakes1.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
+        },
+        {
           "domain": "escobar.house.gov",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
@@ -1935,14 +1946,20 @@
           "lastSeen": "2026-09-19"
         },
         {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-14",
-          "lastSeen": "2026-09-14"
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-19"
         },
         {
           "domain": "thehill.com",
           "lean": "center",
+          "firstSeen": "2026-09-14",
+          "lastSeen": "2026-09-19"
+        },
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
           "firstSeen": "2026-09-14",
           "lastSeen": "2026-09-14"
         }
