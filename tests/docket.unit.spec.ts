@@ -234,6 +234,16 @@ test.describe('docketRung · one fixture per rung', () => {
     expect(floorAnsweredChamber('Presented to President.')).toBe('both');
     expect(floorAnsweredChamber('Motion to reconsider laid on the table Agreed to without objection.')).toBe('unknown');
     expect(floorAnsweredChamber(MTP_REJECTED)).toBe('senate');
+    // s-2503-119, verbatim (issue #258). This defeat used to answer 'unknown'
+    // — a real outcome with no chamber on it, which the T0 gate has to treat
+    // as answering EVERY announcement. floorActionChamber's rule 5b reads the
+    // suspension procedure, so the gate can now be chamber-exact: it retires a
+    // House announcement and leaves a Senate one alone.
+    expect(
+      floorAnsweredChamber(
+        'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).'
+      )
+    ).toBe('house');
     // No outcome: a live placement, a filed cloture motion, a committee referral.
     for (const text of [CALENDAR, CLOTURE_FILED, QUIET, null]) {
       expect(floorAnsweredChamber(text), String(text)).toBeNull();
