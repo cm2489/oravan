@@ -13,12 +13,16 @@
  *   a refresh can trigger, and the only answer to an amendment in committee,
  *   which changes the document without changing the title or the ladder. See
  *   the RE-DECODE ON NEW TEXT pass near the bottom of this file.
- * - Decodes on this path — new bills AND the re-decode pass — go through the
- *   Message Batches API at half price (DECODE_BATCH, on by default; see the
- *   flag's comment and the drain near the bottom). The nightly has no reader
- *   waiting on it, which is what makes an asynchronous transport free to take;
- *   the hourly newsdesk re-decode, which heals a live page, stays synchronous
- *   and is not affected.
+ * - NEW-BILL decodes go through the Message Batches API at half price
+ *   (DECODE_BATCH, on by default; see the flag's comment and the drain near
+ *   the bottom). The nightly has no reader waiting on it, which is what makes
+ *   an asynchronous transport free to take. The RE-DECODE pass above is NOT
+ *   batched and is not an oversight — the reasoning is at that pass, and it
+ *   comes down to ~$0.33 a night of discount against two more rounds of
+ *   holding the data-sync concurrency group the hourly newsdesk queues behind.
+ *   The hourly newsdesk's own re-decode, which heals a live page, is
+ *   synchronous for a different reason again (latency) and is untouched by
+ *   this flag.
  * - NEW bills are decode-before-publish AND priority-gated: a new bill only
  *   spends a decode if it clears the priority gate (real legislative
  *   motion — see scripts/decode-gate.mjs) or is explicitly force-listed.
@@ -1370,7 +1374,16 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     // call for nothing, which is the one avoidable cent on this path.
     const fetchedTitle = item.fetchedTitle ?? null;
     const title = bill && fetchedTitle && fetchedTitle !== bill.title ? fetchedTitle : null;
-    const result = await redecodeBill(item.slug, { anthropic, es, bySlug, title });
+    // `forced` CARRIES THE OWNER'S ORDER THE REST OF THE WAY (2026-09-19).
+    // planRedecodes marks a FORCE_REDECODE_SLUGS entry with reason 'forced';
+    // dropping that here let the fingerprint veto answer a question the owner
+    // had not asked, so a forced slug over unchanged text came back
+    // 'text-unchanged' with zero model calls and the workflow input was inert
+    // on exactly the bill someone typed it for. The ceiling is untouched:
+    // forced slugs are already inside redecodePlan.run, which is capped.
+    const result = await redecodeBill(item.slug, {
+      anthropic, es, bySlug, title, forced: item.reason === 'forced',
+    });
     if (result.outcome === 'redecoded') redecoded++;
     else if (result.outcome === 'text-unchanged') redecodeUnchanged++;
     else if (result.outcome === 'skipped_no_text') redecodeNoText++;

@@ -414,3 +414,89 @@ test.describe('a VETOED re-decode stamps both provenance sets', () => {
     }
   });
 });
+
+test.describe('FORCE_REDECODE_SLUGS outranks the veto, and only the ceiling outranks it', () => {
+  test('a FORCED slug over an identical prompt still spends a real decode', async () => {
+    // THE BUG THIS PINS. planRedecodes marks a FORCE_REDECODE_SLUGS entry with
+    // reason 'forced'; the call site used to drop that, so a forced slug whose
+    // text had not changed came back 'text-unchanged' with ZERO model calls.
+    // sync-bills.yml's input says in as many words that a listed slug is
+    // "re-decoded from its current text, whether or not the nightly's own
+    // new-text detection would have nominated it" — and the whole use for it is
+    // the case the detection cannot serve. A veto there answers a question the
+    // owner did not ask, and makes the input inert on exactly the bill someone
+    // typed it for.
+    const restore = stubAmendedText(VETO_TEXT);
+    try {
+      const bill = corpusBill();
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+      let calls = 0;
+      const anthropic = {
+        messages: {
+          create: async () => {
+            calls++;
+            return {
+              content: [{
+                type: 'text',
+                text: calls === 1 ? 'A forced re-read.' : [
+                  '[HEADLINE_EN]\nH', '[HEADLINE_ES]\nH', '[TLDR]\nT', '[WHAT]\nW', '[WHO]\nO',
+                  '[WHY]\nY', '[COST]\nNONE', '[COST_CHIPS]\nNONE', '[ES_TLDR]\nT', '[ES_WHAT]\nW',
+                  '[ES_WHO]\nO', '[ES_WHY]\nY', '[ES_COST]\nNONE', '[ES_COST_CHIPS]\nNONE',
+                  '[ES_SUMMARY]\nR',
+                ].join('\n'),
+              }],
+            };
+          },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]), forced: true,
+      });
+      expect(result.outcome).toBe('redecoded');
+      expect(result.decodeAttempted).toBe(true);
+      expect(calls).toBe(2);
+      expect(bill.ai_summary).toBe('A forced re-read.');
+      // An ordinary re-decode in every other respect: both provenance sets and
+      // a fresh fingerprint land together.
+      expect(bill.decode_text_sha).toBe(textFingerprint(buildSummaryPrompt(bill, VETO_TEXT)));
+      expect(bill.text_version_date).toBe('2026-09-08T04:00:00Z');
+      expect(bill.text_version_count).toBe(2);
+    } finally {
+      restore();
+    }
+  });
+
+  test('the SAME bill, not forced, is vetoed — so `forced` is doing the work', async () => {
+    const restore = stubAmendedText(VETO_TEXT);
+    try {
+      const bill = corpusBill();
+      bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, VETO_TEXT));
+      const anthropic = {
+        messages: {
+          create: async () => { throw new Error('a model call was made on an identical prompt'); },
+        },
+      };
+      const result = await redecodeBill('hr-5634-119', {
+        anthropic, es: {}, bySlug: new Map([['hr-5634-119', bill]]),
+      });
+      expect(result.outcome).toBe('text-unchanged');
+    } finally {
+      restore();
+    }
+  });
+
+  test('forcing bypasses the DETECTION, never the CEILING', () => {
+    // The ceiling lives one level up, in planRedecodes, and forcing has never
+    // been able to raise it: a forced slug is first in the queue and still
+    // counted. Re-stated here because `forced` now skips a second gate, and the
+    // one thing it must never skip is the one with the dollar sign on it.
+    const plan = planRedecodes({
+      forced: ['hr-1-119', 'hr-2-119', 'hr-3-119'],
+      detected: [{ slug: 'hr-9-119', reason: 'new-text-version', urgency: 99 }],
+      cap: 2,
+    });
+    expect(plan.run.map((r) => r.slug)).toEqual(['hr-1-119', 'hr-2-119']);
+    expect(plan.run.every((r) => r.reason === 'forced')).toBe(true);
+    expect(plan.deferred).toHaveLength(2);
+  });
+});

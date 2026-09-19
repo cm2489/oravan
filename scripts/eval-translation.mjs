@@ -59,8 +59,9 @@ export const COST_CEILING_USD = 3;
 /**
  * Whether a run of this size may start.
  *
- * Pure so the ceiling is a tested property rather than a comment. `confirmed`
- * is the `--confirm-cost` flag.
+ * Pure so the ceiling is a tested property rather than a comment — the test is
+ * in tests/decode-batch.unit.spec.ts, alongside the pipeline's other spend
+ * guarantees. `confirmed` is the `--confirm-cost` flag.
  *
  * @param {number} estimate dollars, from estimateCost below
  * @param {boolean} confirmed
@@ -182,7 +183,19 @@ async function translate(anthropic, model, bill) {
   return msg.content[0]?.type === 'text' ? msg.content[0].text.trim() : '';
 }
 
-if (/(^|\/)eval-translation\.mjs$/.test(process.argv[1] ?? '')) {
+/*
+ * THE SCRIPT BODY, as a function rather than as top-level await (2026-09-19).
+ *
+ * It reads identically, and the reason for the wrapper is mechanical: a module
+ * with top-level await cannot be require()'d, and Playwright's transform
+ * reaches this file that way when tests/decode-batch.unit.spec.ts imports
+ * `spendAllowed` to pin the $3.00 ceiling. A guard that nothing tests is a
+ * guard on trust. The argv[1] check below is unchanged, so importing this
+ * module still runs nothing and constructs no client; the explicit .catch is
+ * the same non-zero exit an unhandled top-level rejection produced, said out
+ * loud.
+ */
+async function main() {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('eval-translation: ANTHROPIC_API_KEY is not set. This script spends money and will not guess at a key; run it with --env-file=.env.local or export the key.');
     process.exit(1);
@@ -224,4 +237,11 @@ if (/(^|\/)eval-translation\.mjs$/.test(process.argv[1] ?? '')) {
   }
   writeFileSync(out, renderMarkdown(rows, { n: rows.length }));
   console.log(`eval-translation: wrote ${out}. Read it before changing any model id.`);
+}
+
+if (/(^|\/)eval-translation\.mjs$/.test(process.argv[1] ?? '')) {
+  main().catch((e) => {
+    console.error(`eval-translation: ${e.message}`);
+    process.exit(1);
+  });
 }

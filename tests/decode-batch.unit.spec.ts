@@ -15,7 +15,9 @@ import {
   buildSummaryRequests,
   decodeBatched,
   extractText,
+  resolveMaxWaitMs,
 } from '../lib/decode-batch.mjs';
+import { COST_CEILING_USD, spendAllowed } from '../scripts/eval-translation.mjs';
 import { resolveCursorRows } from '../scripts/sync-bills.mjs';
 import { redecodeVerdict } from '../scripts/floor-signals-parse.mjs';
 import { anyDataChanged } from '../scripts/newsdesk-match.mjs';
@@ -721,5 +723,82 @@ test.describe('the short-circuit settles instead of re-firing every hour', () =>
     // the saving would be exactly zero.
     expect(anyDataChanged(['text-unchanged'])).toBe(true);
     expect(anyDataChanged(['gated', 'skipped_no_text'])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. The two knobs that decide how much a run may spend or wait
+// ---------------------------------------------------------------------------
+
+test.describe('resolveMaxWaitMs: an unreadable knob is an UNSET knob', () => {
+  test('a non-numeric value falls back to the built-in ceiling and warns', () => {
+    // THE BUG: `Number('oops')` is NaN, and every comparison against NaN is
+    // false — including the poll loop's `now() >= deadline`. So a typo in the
+    // workflow input did not shorten the wait, it REMOVED it: the nightly held
+    // the data-sync concurrency group until GitHub's 6-hour job default killed
+    // it, with the hourly newsdesk queued behind the whole time.
+    const logged: string[] = [];
+    expect(resolveMaxWaitMs('oops', (m: string) => logged.push(m))).toBe(8 * 60 * 1000);
+    expect(logged.join('\n')).toContain('::warning::');
+    expect(logged.join('\n')).toContain('DECODE_BATCH_MAX_WAIT_MS');
+  });
+
+  test('zero and negatives are refused too — a ceiling of 0 is not a configuration', () => {
+    expect(resolveMaxWaitMs('0', () => {})).toBe(8 * 60 * 1000);
+    expect(resolveMaxWaitMs('-1', () => {})).toBe(8 * 60 * 1000);
+  });
+
+  test('absent or blank is simply the default, with nothing logged', () => {
+    const logged: string[] = [];
+    const log = (m: string) => logged.push(m);
+    expect(resolveMaxWaitMs(undefined, log)).toBe(8 * 60 * 1000);
+    expect(resolveMaxWaitMs('', log)).toBe(8 * 60 * 1000);
+    expect(resolveMaxWaitMs(null, log)).toBe(8 * 60 * 1000);
+    expect(logged).toEqual([]);
+  });
+
+  test('a real override is honoured exactly', () => {
+    expect(resolveMaxWaitMs('90000', () => {})).toBe(90_000);
+  });
+
+  test('and the loop actually terminates on a garbage env value', async () => {
+    // The end-to-end version of the same guarantee: with DECODE_BATCH_MAX_WAIT
+    // _MS unreadable, decodeBatched still gives up and reports every bill
+    // unresolved rather than polling forever.
+    const before = process.env.DECODE_BATCH_MAX_WAIT_MS;
+    process.env.DECODE_BATCH_MAX_WAIT_MS = 'oops';
+    try {
+      let clock = 0;
+      const fake = pollableBatches([], { neverEnds: true });
+      const out = await decodeBatched(
+        [{ slug: 'hr-1234-119', bill: makeBill(), text: 'FULL TEXT' }],
+        { anthropic: fake, log: () => {}, now: () => clock, sleep: async () => { clock += 60_000; } }
+      );
+      expect(out.get('hr-1234-119')).toEqual({ ok: false, reason: 'no-summary' });
+      expect(fake.cancelled).toEqual(['batch-0']);
+    } finally {
+      if (before === undefined) delete process.env.DECODE_BATCH_MAX_WAIT_MS;
+      else process.env.DECODE_BATCH_MAX_WAIT_MS = before;
+    }
+  });
+});
+
+test.describe('spendAllowed: the eval script cannot start an unattended $170 run', () => {
+  /* The import is what made scripts/eval-translation.mjs wrap its script body
+   * in a function instead of top-level await: a TLA module cannot be
+   * require()'d, and this is how a guard stops being a guard on trust. The
+   * argv[1] check there means importing it runs nothing and builds no client. */
+  test('the ceiling is $3.00 and the boundary is inclusive', () => {
+    expect(COST_CEILING_USD).toBe(3);
+    expect(spendAllowed(3, false)).toEqual({ allowed: true, reason: 'under-ceiling' });
+    expect(spendAllowed(3.01, false)).toEqual({ allowed: false, reason: 'over-ceiling' });
+    expect(spendAllowed(0.17, false).allowed).toBe(true);
+  });
+
+  test('--confirm-cost is the only override, and it is deliberate', () => {
+    expect(spendAllowed(170, false)).toEqual({ allowed: false, reason: 'over-ceiling' });
+    expect(spendAllowed(170, true)).toEqual({ allowed: true, reason: 'confirmed' });
+    // Confirming an already-allowed run changes nothing.
+    expect(spendAllowed(1, true).reason).toBe('under-ceiling');
   });
 });

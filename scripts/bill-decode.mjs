@@ -767,6 +767,17 @@ export async function syncOneBill(u, ctx) {
  * the document in hand, so the cheap nomination runs first and the certain
  * answer runs last.
  *
+ * IT IS OUTRANKED BY `forced`, AND ONLY BY THAT. A slug listed in
+ * FORCE_REDECODE_SLUGS is an owner order to re-read the bill from its current
+ * text — scripts/sync-bills.yml's input describes it in those words, for the
+ * case the detection cannot serve. The veto would have answered a question
+ * nobody asked and returned 'text-unchanged' with zero model calls, making the
+ * input inert on precisely the bill someone typed it for. `forced` skips it;
+ * the re-decode that follows is an ordinary one and stamps both provenance
+ * sets and a fresh fingerprint like any other. Nothing about the CEILING
+ * changes: forced slugs are first in planRedecodes' queue and still counted
+ * against REDECODE_MAX_PER_NIGHT.
+ *
  * IT DOES NOT NEED A VEHICLE-SWAP CARVE-OUT, and the one it shipped with was
  * worse than useless. The fingerprint covers `buildSummaryPrompt(subject,
  * text)`, and `subject` carries the TITLE, so a renamed bill fingerprints
@@ -795,7 +806,7 @@ export async function syncOneBill(u, ctx) {
  *   'failed'          — the fetch or the decode threw; the old decode stands
  */
 export async function redecodeBill(slug, ctx) {
-  const { anthropic, es, bySlug, title = null } = ctx;
+  const { anthropic, es, bySlug, title = null, forced = false } = ctx;
   const bill = bySlug.get(slug);
   if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
   let decodeAttempted = false;
@@ -813,7 +824,15 @@ export async function redecodeBill(slug, ctx) {
     // candidate for free; this is the only thing that can still refuse to pay,
     // and it refuses on the one fact that makes "same answer" certain rather
     // than hoped for: identical input.
-    if (bill.decode_text_sha && bill.decode_text_sha === fingerprint) {
+    // `forced` IS THE ONE THING THAT OUTRANKS THE VETO (2026-09-19). A slug in
+    // FORCE_REDECODE_SLUGS is an explicit owner order to re-read this bill from
+    // its current text, and sync-bills.yml's input says so in those words. The
+    // veto answers a question the owner did not ask ("did the input change?"),
+    // and letting it refuse here would have made that input silently inert on
+    // exactly the bill someone typed it for. It bypasses the veto and the
+    // detection; it does NOT bypass REDECODE_MAX_PER_NIGHT, which is still the
+    // only thing that decides a night's bill.
+    if (!forced && bill.decode_text_sha && bill.decode_text_sha === fingerprint) {
       const verifiedAt = new Date().toISOString();
       bill.decode_text_verified_at = verifiedAt;
       // BOTH provenance sets, together (2026-09-19, merging #248). Stamping
