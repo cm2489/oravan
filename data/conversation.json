@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-20T06:10:38.400Z",
+    "fetched_at": "2026-09-20T12:16:39.763Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-20T06:10:38.400Z"
+        "checked_at": "2026-09-20T12:16:39.763Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-20T06:10:38.400Z"
+        "checked_at": "2026-09-20T12:16:39.763Z"
       },
       "leans": {
         "center": {
@@ -160,6 +160,17 @@
         "lastSeen": "2026-09-20",
         "lastWeek": "2026-09-13"
       }
+    },
+    "hr-1499-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "timesofindia.indiatimes.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-1684-119": {
       "outlets7d": [
@@ -495,6 +506,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "cryptonews.net",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "tradingkey.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
           "domain": "coindesk.com",
           "firstSeen": "2026-09-13",
           "lastSeen": "2026-09-17"
@@ -761,6 +782,11 @@
     "hr-5334-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "eurasiareview.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
         {
           "domain": "devdiscourse.com",
           "firstSeen": "2026-09-19",
@@ -1049,6 +1075,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "magnoliareporter.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
           "domain": "bisnow.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
@@ -1302,6 +1333,11 @@
     "hr-7275-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "firerescue1.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
         {
           "domain": "socialnews.xyz",
           "firstSeen": "2026-09-16",
@@ -1741,6 +1777,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-1887-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-2048-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2155,7 +2203,22 @@
           "lastSeen": "2026-09-20"
         },
         {
+          "domain": "mercedsunstar.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
           "domain": "nonpareilonline.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "shawlocal.com",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "shreveportbossieradvocate.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
         },
@@ -2210,11 +2273,6 @@
           "lastSeen": "2026-09-19"
         },
         {
-          "domain": "shawlocal.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
-        },
-        {
           "domain": "thecapitolist.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
@@ -2262,16 +2320,6 @@
         {
           "domain": "mises.org",
           "firstSeen": "2026-09-17",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "missoulian.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "nwitimes.com",
-          "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         }
       ],
