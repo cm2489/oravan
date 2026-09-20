@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-20T16:46:37.551Z",
+    "fetched_at": "2026-09-20T17:07:36.309Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 2,
-        "checked_at": "2026-09-20T16:46:37.551Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-09-20T17:07:36.309Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-20T16:46:37.551Z"
+        "checked_at": "2026-09-20T17:07:36.309Z"
       },
       "leans": {
         "center": {
@@ -1204,6 +1204,11 @@
         },
         {
           "domain": "thenews.com.pk",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "thenews.pk",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
         },
