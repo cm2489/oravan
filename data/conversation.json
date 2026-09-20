@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-20T17:07:36.309Z",
+    "fetched_at": "2026-09-20T22:23:59.891Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-20T17:07:36.309Z"
+        "checked_at": "2026-09-20T22:23:59.891Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-09-13",
-        "week_label": "Most-Viewed Bills - Week of September 13, 2026",
+        "week": "2026-09-20",
+        "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-20T17:07:36.309Z"
+        "checked_at": "2026-09-20T22:23:59.891Z"
       },
       "leans": {
         "center": {
@@ -76,10 +76,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 6,
-        "lastRank": 5,
+        "weeksOnList": 7,
+        "lastRank": 7,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "hr-1030-119": {
@@ -552,10 +552,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 3,
+        "weeksOnList": 2,
+        "lastRank": 2,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "hr-3717-119": {
@@ -898,7 +898,12 @@
           "lastSeen": "2026-09-17"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 4,
+        "lastSeen": "2026-09-20",
+        "lastWeek": "2026-09-20"
+      }
     },
     "hr-5371-119": {
       "outlets7d": [],
@@ -997,6 +1002,17 @@
       ],
       "mostViewed": null
     },
+    "hr-617-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "digitalmusicnews.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6247-119": {
       "outlets7d": [
         {
@@ -1034,10 +1050,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 6,
+        "weeksOnList": 7,
         "lastRank": 1,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "hr-6529-119": {
@@ -1687,7 +1703,12 @@
           "lastSeen": "2026-09-17"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 8,
+        "lastSeen": "2026-09-20",
+        "lastWeek": "2026-09-20"
+      }
     },
     "hr-9363-119": {
       "outlets7d": [],
@@ -1821,10 +1842,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 6,
-        "lastRank": 4,
+        "weeksOnList": 7,
+        "lastRank": 5,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "s-2378-119": {
@@ -1865,10 +1886,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 8,
+        "weeksOnList": 2,
+        "lastRank": 10,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "s-315-119": {
@@ -2341,10 +2362,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 2,
+        "weeksOnList": 2,
+        "lastRank": 3,
         "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastWeek": "2026-09-20"
       }
     },
     "s-4949-119": {
@@ -2531,7 +2552,12 @@
           "lastSeen": "2026-09-15"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 6,
+        "lastSeen": "2026-09-20",
+        "lastWeek": "2026-09-20"
+      }
     },
     "s-856-119": {
       "outlets7d": [],
