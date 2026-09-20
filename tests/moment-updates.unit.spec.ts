@@ -1065,13 +1065,65 @@ test.describe('groupByDay', () => {
     expect(groups[0].isToday).toBe(true);
   });
 
+  /*
+   * The window is anchored to the seed's OWN newest day, never to a calendar
+   * date. data/moment-updates.json is pipeline-owned and pruneEntry drops
+   * anything past a RETENTION_DAYS rolling floor, so a hard-coded day is a
+   * timer: it ages out of the file and fails this test for a reason that is
+   * not a regression. This one fired on 2026-09-20, when '2026-07-21' crossed
+   * the 60-day floor and the assertion below it was due to fire the next day.
+   *
+   * Anchoring on `latestUpdateDay` + 3 keeps the exact shape the fixed dates
+   * described — a quiet "today" three days above the newest recorded day —
+   * and the assertions are strictly stronger than the two they replace:
+   * bucket-by-bucket parity with the gate module (the contract this test is
+   * named for), plus every update landing in its own ET day with nothing in
+   * the window dropped or double-counted.
+   */
   test('the reader groups the real seed the same way the gate module does', () => {
-    const groups = groupUpdatesByDay('government-funding-deadline', 10, new Date('2026-07-25T18:00:00Z').getTime());
+    // The moment is chosen by content, not by name, for the same reason the
+    // window is: moments get retired and pruneEntry empties them, so a
+    // hard-coded id is the same timer a hard-coded day is. On 2026-09-21 the
+    // moment this test used to name, 'government-funding-deadline', drops to
+    // zero updates as its last day crosses the floor.
+    const file = read('data/moment-updates.json');
+    const ids = Object.keys(file).filter((k) => k !== '_meta');
+    expect(ids.length, 'the store holds no moments at all').toBeGreaterThan(0);
+    const id = ids.sort(
+      (a, b) => getUpdates(b).length - getUpdates(a).length || a.localeCompare(b),
+    )[0];
+
+    const updates = getUpdates(id);
+    const newest = latestUpdateDay(id);
+    if (newest === undefined) {
+      // Every moment pruned back to empty is a legitimate state, and one
+      // verify-sync already owns. The reader still has to render it as an
+      // honest run of quiet days rather than as an error.
+      const quiet = groupUpdatesByDay(id, 10, GROUP_NOW);
+      expect(quiet).toEqual(groupByDay([], 10, GROUP_NOW));
+      expect(quiet.every((g) => g.quiet)).toBe(true);
+      return;
+    }
+
+    const today = shiftDay(newest, 3);
+    const now = new Date(`${today}T18:00:00Z`).getTime();
+    const groups = groupUpdatesByDay(id, 10, now);
     expect(groups).toHaveLength(10);
+
+    // The reader and the gate see the same timeline, bucket for bucket.
+    expect(groups).toEqual(groupByDay(updates, 10, now));
+
     const byDay = Object.fromEntries(groups.map((g) => [g.day, g]));
-    expect(byDay['2026-07-21'].updates).toHaveLength(1);
-    expect(byDay['2026-07-22'].updates).toHaveLength(1);
-    expect(byDay['2026-07-25'].quiet).toBe(true);
+    expect(byDay[today].quiet).toBe(true); // nothing recorded yet today
+    expect(byDay[newest].quiet).toBe(false); // ...and the seed is non-vacuous
+
+    // Every update sits in its own ET day, and the window neither drops nor
+    // duplicates any of them.
+    for (const g of groups) for (const u of g.updates) expect(u.day).toBe(g.day);
+    const inWindow = new Set(groups.map((g) => g.day));
+    expect(groups.reduce((n, g) => n + g.updates.length, 0)).toBe(
+      updates.filter((u) => inWindow.has(u.day)).length,
+    );
   });
 });
 
