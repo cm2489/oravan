@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-19T05:48:26.269Z"
+    "generated_at": "2026-09-20T06:10:41.010Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -30,37 +30,6 @@
           "source_system": "Senate"
         },
         "ai": false
-      },
-      {
-        "id": "u_212c0547",
-        "class": "vote",
-        "vehicle": "hr-9770-119",
-        "day": "2026-07-21",
-        "occurred_at": "2026-07-21",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The House passed H.R. 9770, the short-term funding extension, 220-205 on Roll Call 272.",
-          "es": "La Cámara aprobó la H.R. 9770, la extensión de financiamiento a corto plazo, 220-205 en la votación nominal 272."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
-            "https://clerk.house.gov/evs/2026/roll272.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272). (text: CR H4731-4733)",
-          "action_code": "H37100",
-          "action_type": "Floor",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 272
-          }
-        },
-        "ai": false
       }
     ],
     "summary_revisions": [
@@ -77,8 +46,7 @@
             "hr-9770-119": "passed_chamber"
           },
           "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
+            "u_9085cf38"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
@@ -102,8 +70,7 @@
             "hr-9770-119": "passed_chamber"
           },
           "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
+            "u_9085cf38"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
@@ -127,8 +94,7 @@
             "hr-9770-119": "passed_chamber"
           },
           "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
+            "u_9085cf38"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770",

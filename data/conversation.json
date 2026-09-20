@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-20T01:03:12.485Z",
+    "fetched_at": "2026-09-20T06:10:38.400Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-20T01:03:12.485Z"
+        "checked_at": "2026-09-20T06:10:38.400Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-13",
         "week_label": "Most-Viewed Bills - Week of September 13, 2026",
         "entries": 9,
-        "checked_at": "2026-09-20T01:03:12.485Z"
+        "checked_at": "2026-09-20T06:10:38.400Z"
       },
       "leans": {
         "center": {
@@ -82,6 +82,17 @@
         "lastWeek": "2026-09-13"
       }
     },
+    "hr-1030-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "firerescue1.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-10319-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -122,6 +133,11 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "news.ssbcrack.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
         {
           "domain": "staugustine.com",
           "firstSeen": "2026-09-18",
@@ -1119,7 +1135,22 @@
           "lastSeen": "2026-09-20"
         },
         {
+          "domain": "fortune.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
           "domain": "gulf-times.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "myind.net",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "straitstimes.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
         },
@@ -1130,6 +1161,11 @@
         },
         {
           "domain": "thenews.com.pk",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
+          "domain": "tvpworld.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
         },
@@ -2114,6 +2150,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "chronicle-tribune.com",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-20"
+        },
+        {
           "domain": "nonpareilonline.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
@@ -2230,11 +2271,6 @@
         },
         {
           "domain": "nwitimes.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "oskaloosa.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         }
