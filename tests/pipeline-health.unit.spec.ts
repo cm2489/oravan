@@ -54,6 +54,7 @@ const NIGHTLY = fixture('pipeline-health-nightly.log');
 const CREDIT = fixture('pipeline-health-credit-outage.log');
 const NEWSDESK = fixture('pipeline-health-newsdesk.log');
 const CI_FAILURE = fixture('pipeline-health-ci-failure.log');
+const PREGEN_ABORT = fixture('pipeline-health-pregen-abort.log');
 
 /* ------------------------------------------------------------------ *
  * 1 · Log-line normalisation
@@ -146,6 +147,7 @@ test.describe('parsePregen', () => {
       failed: 0,
       costLow: 0.084,
       costHigh: 0.126,
+      abortReason: null,
     });
   });
 
@@ -159,7 +161,41 @@ test.describe('parsePregen', () => {
       failed: null,
       costLow: null,
       costHigh: null,
+      abortReason: null,
     });
+  });
+
+  test('reads the refusal a night of nulls would otherwise hide', () => {
+    // The 2026-09-19 and 2026-09-20 nightlies both ended here: pregen probed
+    // the cache database, found it unconfigured, refused to spend and exited
+    // 1 having printed none of its three counter lines. Every counter below
+    // is null and SHOULD be — nothing ran. The reading is the reason.
+    const pregen = parsePregen(PREGEN_ABORT);
+    expect(pregen.abortReason).toBe(
+      'cache database unreachable — the cache database is not configured in this environment (its two REST secrets are absent)'
+    );
+    expect(pregen.alreadyCached).toBeNull();
+    expect(pregen.cached).toBeNull();
+    expect(pregen.failed).toBeNull();
+    expect(pregen.costLow).toBeNull();
+  });
+
+  test('a night that never armed pregen and a night pregen refused do not render alike', () => {
+    // The whole point. Both nights parse to all-null counters, so before the
+    // abort reading the two rows were the same four "not found"s.
+    const disabled = formatHealthSection({ pregen: parsePregen(NEWSDESK) });
+    const refused = formatHealthSection({ pregen: parsePregen(PREGEN_ABORT) });
+    expect(disabled).toContain('pregen              not found already cached');
+    expect(refused).toContain('pregen              FAILED — cache database unreachable');
+    expect(refused).not.toContain('not found already cached');
+  });
+
+  test('a reason too long for the aligned block is capped, not wrapped', () => {
+    const rendered = formatHealthSection({ pregen: { abortReason: 'x'.repeat(400) } });
+    const line = rendered.split('\n').find((l) => l.startsWith('pregen'));
+    expect(line).toBeDefined();
+    expect(line!.length).toBeLessThanOrEqual(20 + 'FAILED — '.length + 150);
+    expect(line).toContain('…');
   });
 });
 

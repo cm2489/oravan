@@ -1,0 +1,4 @@
+sync	UNKNOWN STEP	2026-09-20T17:59:18.4234195Z upstash: *** does not start with https:// — treating the database as not configured
+sync	UNKNOWN STEP	2026-09-20T17:59:18.4240738Z ##[error]pregen: the CACHE database is unreachable — the cache database is not configured in this environment (its two REST secrets are absent). Nothing was submitted and nothing was spent: every generated script would be thrown away, because the in-memory fallback dies with this process. Check that the cache database still exists and that the two cache secrets in this step's env block point at it — the counters database is separate and can be healthy in the same run while this one is not.
+sync	UNKNOWN STEP	2026-09-20T17:59:18.4243904Z ##[error]pregen failed: cache database unreachable — the cache database is not configured in this environment (its two REST secrets are absent)
+sync	UNKNOWN STEP	2026-09-20T17:59:18.4469685Z ##[error]Process completed with exit code 1.
