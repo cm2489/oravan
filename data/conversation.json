@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-21T14:01:18.129Z",
+    "fetched_at": "2026-09-21T19:03:38.742Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-21T14:01:18.129Z"
+        "checked_at": "2026-09-21T19:03:38.742Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-21T14:01:18.129Z"
+        "checked_at": "2026-09-21T19:03:38.742Z"
       },
       "leans": {
         "center": {
@@ -133,6 +133,11 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "fox5dc.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "news.ssbcrack.com",
           "firstSeen": "2026-09-20",
@@ -770,6 +775,16 @@
           "lastSeen": "2026-09-21"
         },
         {
+          "domain": "thedailystar.net",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
+        {
+          "domain": "yellowhammernews.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
+        {
           "domain": "eurasiareview.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
@@ -878,11 +893,6 @@
           "domain": "thesun.my",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
-        },
-        {
-          "domain": "timesofisrael.com",
-          "firstSeen": "2026-09-17",
-          "lastSeen": "2026-09-17"
         }
       ],
       "mostViewed": {
@@ -891,6 +901,17 @@
         "lastSeen": "2026-09-21",
         "lastWeek": "2026-09-20"
       }
+    },
+    "hr-5345-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thetelegraph.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-5371-119": {
       "outlets7d": [],
@@ -969,6 +990,11 @@
     "hr-617-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "edm.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "digitalmusicnews.com",
           "firstSeen": "2026-09-20",
@@ -1066,6 +1092,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "tiffinohio.net",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "magnoliareporter.com",
           "firstSeen": "2026-09-20",
@@ -1362,6 +1393,17 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7501-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wtop.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7553-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1614,6 +1656,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "thenevadaglobe.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "fingerlakes1.com",
           "firstSeen": "2026-09-19",
@@ -2104,6 +2151,12 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-05",
@@ -2144,6 +2197,11 @@
         {
           "domain": "mercedsunstar.com",
           "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-21"
+        },
+        {
+          "domain": "newsnationnow.com",
+          "firstSeen": "2026-09-21",
           "lastSeen": "2026-09-21"
         },
         {
@@ -2258,11 +2316,6 @@
         },
         {
           "domain": "helenair.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "heraldbanner.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
         }
@@ -2518,14 +2571,14 @@
     "sjres-185-119": {
       "outlets7d": [
         {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-16"
-        },
-        {
           "domain": "thehill.com",
           "lean": "center",
+          "firstSeen": "2026-09-16",
+          "lastSeen": "2026-09-21"
+        },
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
         }
