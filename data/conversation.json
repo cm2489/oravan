@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-21T06:16:01.083Z",
+    "fetched_at": "2026-09-21T14:01:18.129Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-21T06:16:01.083Z"
+        "checked_at": "2026-09-21T14:01:18.129Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-21T06:16:01.083Z"
+        "checked_at": "2026-09-21T14:01:18.129Z"
       },
       "leans": {
         "center": {
@@ -724,6 +724,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-09-15",
+          "lastSeen": "2026-09-21"
+        },
+        {
           "domain": "elkodaily.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
@@ -732,11 +737,6 @@
           "domain": "justthenews.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "marijuanamoment.net",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-15"
         }
       ],
       "mostViewed": null
@@ -764,6 +764,11 @@
     "hr-5334-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "armyinform.com.ua",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "eurasiareview.com",
           "firstSeen": "2026-09-20",
@@ -1266,6 +1271,17 @@
       ],
       "mostViewed": null
     },
+    "hr-7056-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7187-119": {
       "outlets7d": [
         {
@@ -1681,6 +1697,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9602-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-9617-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1856,6 +1884,18 @@
           "lastSeen": "2026-09-15"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4330-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4338-119": {
@@ -2112,6 +2152,16 @@
           "lastSeen": "2026-09-21"
         },
         {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
+        {
+          "domain": "sports.yahoo.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
+        {
           "domain": "chronicle-tribune.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
@@ -2215,16 +2265,6 @@
           "domain": "heraldbanner.com",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "magicvalley.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
-        },
-        {
-          "domain": "mankatofreepress.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
         }
       ],
       "mostViewed": {
@@ -2237,6 +2277,11 @@
     "s-4949-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "njspotlightnews.org",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        },
         {
           "domain": "legis1.com",
           "firstSeen": "2026-09-15",
