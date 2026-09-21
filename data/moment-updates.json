@@ -1,37 +1,10 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-20T06:10:41.010Z"
+    "generated_at": "2026-09-21T06:16:01.412Z"
   },
   "government-funding-deadline": {
-    "updates": [
-      {
-        "id": "u_9085cf38",
-        "class": "floor_action",
-        "vehicle": "hr-9770-119",
-        "day": "2026-07-22",
-        "occurred_at": "2026-07-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The Senate received the funding bill on July 22, 2026.",
-          "es": "El Senado recibió el proyecto de financiamiento el 22 de julio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/9770"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_1856a409",
@@ -45,9 +18,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
           ]
@@ -69,9 +40,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
           ]
@@ -93,9 +62,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770",
             "https://www.congress.gov/crs-report/R48832"
@@ -304,32 +271,6 @@
           "source_system": "Senate"
         },
         "ai": false
-      },
-      {
-        "id": "u_7b6f9d34",
-        "class": "scheduled",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-22",
-        "occurred_at": "2026-07-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T07:06:54.754Z",
-        "text": {
-          "en": "H. Con. Res. 89 was added to the House floor schedule for the week of July 20, 2026.",
-          "es": "La H. Con. Res. 89 fue añadida al calendario del pleno de la Cámara para la semana del 20 de julio de 2026."
-        },
-        "source": {
-          "kind": "tier0_feed",
-          "refs": [
-            "https://docs.house.gov/billsthisweek/20260720/20260720.xml"
-          ]
-        },
-        "record": {
-          "action_text": "H. Con. Res. 89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
-          "action_code": null,
-          "action_type": "Items that may be considered",
-          "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
-        },
-        "ai": false
       }
     ],
     "summary_revisions": [
@@ -379,8 +320,7 @@
           },
           "update_ids": [
             "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
+            "u_c95bb4da"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
@@ -414,8 +354,7 @@
           },
           "update_ids": [
             "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
+            "u_c95bb4da"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
@@ -448,8 +387,7 @@
           },
           "update_ids": [
             "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
+            "u_c95bb4da"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
