@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-21T19:03:38.742Z",
+    "fetched_at": "2026-09-21T19:58:57.226Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-21T19:03:38.742Z"
+        "checked_at": "2026-09-21T19:58:57.226Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-21T19:03:38.742Z"
+        "checked_at": "2026-09-21T19:58:57.226Z"
       },
       "leans": {
         "center": {
@@ -951,6 +951,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5818-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "agnetwest.com",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5858-119": {
@@ -1933,6 +1944,17 @@
       ],
       "mostViewed": null
     },
+    "s-4271-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "goiam.org",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4330-119": {
       "outlets7d": [
         {
@@ -2076,6 +2098,17 @@
           "domain": "rollcall.com",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4518-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "the74million.org",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-21"
         }
       ],
       "mostViewed": null
