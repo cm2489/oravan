@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-22T04:47:35.223Z",
+    "fetched_at": "2026-09-22T14:47:31.743Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-22T04:47:35.223Z"
+        "checked_at": "2026-09-22T14:47:31.743Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-22T04:47:35.223Z"
+        "checked_at": "2026-09-22T14:47:31.743Z"
       },
       "leans": {
         "center": {
@@ -1625,6 +1625,17 @@
       ],
       "mostViewed": null
     },
+    "s-1281-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "en.clickpetroleoegas.com.br",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1498-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1913,7 +1924,13 @@
           "lastSeen": "2026-09-19"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "westsidecurrent.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
       "mostViewed": null
     },
     "s-4482-119": {
@@ -2380,6 +2397,17 @@
         "lastSeen": "2026-09-22",
         "lastWeek": "2026-09-20"
       }
+    },
+    "s-737-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "vpncompare.co.uk",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
     },
     "s-856-119": {
       "outlets7d": [],

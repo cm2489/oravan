@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-21T06:15:57.740Z",
+    "fetched_at": "2026-09-22T14:47:28.088Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "1 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-21T06:15:57.740Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/18/d18se6-1.htm",
-        "published": "2026-09-18",
+        "checked_at": "2026-09-22T14:47:28.088Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/21/d21se6-1.htm",
+        "published": "2026-09-21",
         "covers": "2026-09-22",
         "covers_label": "3 p.m., Tuesday, September 22",
         "via": "congress.gov"
@@ -16,7 +16,7 @@
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-09-21T06:15:57.740Z",
+        "checked_at": "2026-09-22T14:47:28.088Z",
         "url": "https://docs.house.gov/billsthisweek/20260921/20260921.xml",
         "published": "2026-09-21",
         "covers": "2026-09-21",
@@ -35,8 +35,8 @@
         "label": "3 p.m., Tuesday, September 22"
       },
       "house": {
-        "date": "2026-09-21",
-        "label": "10:30 a.m., Monday, September 21"
+        "date": "2026-09-24",
+        "label": "2:30 p.m., Thursday, September 24"
       }
     },
     "dropped": []
@@ -50,14 +50,14 @@
         "quote": "Senate will resume consideration of the nomination of Angela Veronica Colmenero, of Texas, to be United States District Judge for the Southern District of Texas, and vote on the motion to invoke cloture thereon at 5:30 p.m.",
         "quote_lang": "en",
         "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/09/18/d18se6-1.htm",
-        "published": "2026-09-18",
+        "url": "https://www.congress.gov/119/crec/2026/09/21/d21se6-1.htm",
+        "published": "2026-09-21",
         "covers": "2026-09-22",
         "covers_label": "3 p.m., Tuesday, September 22",
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-21T06:15:57.740Z",
+      "fetched_at": "2026-09-22T14:47:28.088Z",
       "first_seen": "2026-09-19T10:52:06.928Z",
       "stale": false
     }
