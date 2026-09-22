@@ -174,7 +174,7 @@ jobs:
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref main
+        run: node scripts/dispatch-ci.mjs
       - name: Dispatch the newsdesk (guaranteed hourly-layer fire)
         # newsdesk.yml's own hourly cron delivered only 76 of 336 scheduled
         # runs over 2026-08-27..09-10 (22.6%; max gap 13.27h) - GitHub starves

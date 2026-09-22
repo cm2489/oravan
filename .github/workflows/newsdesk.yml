@@ -259,7 +259,7 @@ jobs:
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref main
+        run: node scripts/dispatch-ci.mjs
       - name: Run-honesty alarm (post-commit - reds the run, never blocks the data)
         # Same post-commit placement and the same N8-A2 reasoning as
         # sync-bills.yml: the headlines and Moment updates this run collected
