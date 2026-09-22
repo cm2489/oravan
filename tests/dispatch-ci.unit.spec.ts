@@ -19,6 +19,22 @@ import { appeared } from '../scripts/dispatch-ci.mjs';
 
 const wf = (name: string) => readFileSync(join(process.cwd(), '.github/workflows', name), 'utf8');
 
+/**
+ * The dispatch step, sliced to the NEXT top-level step (or EOF) — the same
+ * idiom nightly-pipeline.unit.spec.ts uses, and for a second reason here: a
+ * fixed-width window silently stops covering the step as soon as someone adds
+ * a comment to it. The first cut of this file used `slice(at, at + 1400)` and
+ * went red the moment sync-bills.yml's step grew the note explaining this very
+ * script, because `run:` fell off the end of the window.
+ */
+const dispatchStep = (yml: string) => {
+  const at = yml.indexOf('- name: Dispatch CI against the pushed data');
+  expect(at, 'dispatch step not found').toBeGreaterThan(0);
+  const rest = yml.slice(at);
+  const nextStepAt = rest.slice(1).search(/\n {6}- name:/);
+  return nextStepAt === -1 ? rest : rest.slice(0, nextStepAt + 1);
+};
+
 test.describe('appeared — did a new run actually show up', () => {
   test('two different readable ids is the one true case', () => {
     expect(appeared('100', '101')).toBe(true);
@@ -50,10 +66,7 @@ test.describe('every data workflow dispatches CI through the script', () => {
   // PR branch with its own flags, not main's post-commit suite.
   for (const name of ['sync-bills.yml', 'hot-bills.yml', 'newsdesk.yml', 'refresh-legislators.yml']) {
     test(`${name} uses scripts/dispatch-ci.mjs, not a bare gh workflow run`, () => {
-      const yml = wf(name);
-      const at = yml.indexOf('- name: Dispatch CI against the pushed data');
-      expect(at, 'dispatch step not found').toBeGreaterThan(0);
-      const step = yml.slice(at, at + 1400);
+      const step = dispatchStep(wf(name));
       expect(step).toContain('run: node scripts/dispatch-ci.mjs');
       expect(step).not.toMatch(/run: gh workflow run ci\.yml/);
       // It still needs the token to talk to the API at all.
@@ -68,9 +81,6 @@ test.describe('the dispatch step still fails the run when CI was not dispatched'
     // main's suite never ran against the pushed corpus, which is precisely
     // the 2026-07-25 incident this step was added for. The script narrows
     // WHAT counts as a failure; it must not stop failing.
-    const yml = wf('sync-bills.yml');
-    const at = yml.indexOf('- name: Dispatch CI against the pushed data');
-    const step = yml.slice(at, yml.indexOf('- name: Pre-generate top-band call scripts'));
-    expect(step).not.toContain('continue-on-error');
+    expect(dispatchStep(wf('sync-bills.yml'))).not.toContain('continue-on-error');
   });
 });
