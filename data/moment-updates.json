@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-21T06:16:01.412Z"
+    "generated_at": "2026-09-22T04:47:35.361Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -214,65 +214,7 @@
     ]
   },
   "iran-war-powers": {
-    "updates": [
-      {
-        "id": "u_19ae0eba",
-        "class": "vote",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The House adopted H. Con. Res. 89, 214-208, on Roll Call 282.",
-          "es": "La Cámara aprobó la H. Con. Res. 89, 214-208, en la votación nominal 282."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
-            "https://clerk.house.gov/evs/2026/roll282.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 214 - 208 (Roll no. 282).",
-          "action_code": "H37100",
-          "action_type": "Floor",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 282
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_c95bb4da",
-        "class": "floor_action",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The Senate received the resolution on July 23, 2026 and referred it to the Committee on Foreign Relations.",
-          "es": "El Senado recibió la resolución el 23 de julio de 2026 y la remitió al Comité de Relaciones Exteriores."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate and referred to the Committee on Foreign Relations.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_d26a6b43",
@@ -289,10 +231,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185"
@@ -318,10 +257,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -352,10 +288,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -385,10 +318,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -1234,58 +1164,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4276)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_2f78803a",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 23, 2026, a motion to proceed to consideration of S. 4784 was withdrawn in the Senate.",
-          "es": "El 23 de julio de 2026, se retiró en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure withdrawn in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_7c9b308c",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 23, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 23 de julio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4241-4242)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
