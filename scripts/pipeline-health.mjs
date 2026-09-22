@@ -376,6 +376,21 @@ export function buildReport({ now = Date.now() } = {}) {
     }
   })();
 
+  // The cursor's own baseline: what lastSync was at the commit before the one
+  // that last touched data/sync-state.json. This is what turns FROZEN back
+  // into the movement test its name claims (see cursorHealth). Unreachable
+  // history reads as "not measured", never as "moved".
+  const previousCursor = (() => {
+    const blob = previousBlob('data/sync-state.json');
+    if (blob === null) return null;
+    try {
+      return JSON.parse(blob)?.lastSync ?? null;
+    } catch (e) {
+      warn(`the previous data/sync-state.json did not parse (${e.message}) — cursor movement reads "not measured"`);
+      return null;
+    }
+  })();
+
   const staleness = coverage ? coverageStaleness(coverage, { now }) : null;
 
   const report = {
@@ -388,7 +403,7 @@ export function buildReport({ now = Date.now() } = {}) {
       bills: corpusBills,
       delta: corpusBills !== null && previousBills !== null ? corpusBills - previousBills : null,
     },
-    cursor: state ? cursorHealth(state, { now }) : null,
+    cursor: state ? cursorHealth(state, { now, previousSync: previousCursor }) : null,
     coverage: staleness
       ? {
           bills: coverageBills,
