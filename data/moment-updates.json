@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-22T04:47:35.361Z"
+    "generated_at": "2026-09-22T18:28:40.904Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -208,6 +208,29 @@
         },
         "changed_because": [
           "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_9353daca",
+        "generated_at": "2026-09-22T18:28:53.370Z",
+        "as_of_day": "2026-09-22",
+        "text": {
+          "en": "Where it stands: H.R. 9770 has passed one chamber. No further action has been recorded in the last 14 days. The bill remains at that stage, with no committee action, no floor vote in a second chamber, and no other change to report since it passed one chamber. There is nothing new to add beyond that current status. Readers tracking this bill can expect this notice to update once the record shows a new vote, a committee action, or another formal step in either chamber. Until then, passed one chamber is the accurate and complete description of where this measure sits right now, based solely on the official record available for this period.",
+          "es": "Dónde está: el proyecto H.R. 9770 ha sido aprobado por una cámara. No se ha registrado ninguna otra acción en los últimos 14 días. El proyecto permanece en esa etapa, sin acción de comité, sin votación en el pleno de una segunda cámara y sin ningún otro cambio que reportar desde que fue aprobado por una cámara. No hay nada nuevo que agregar más allá de ese estado actual. Los lectores que sigan este proyecto pueden esperar que este aviso se actualice cuando el registro muestre una nueva votación, una acción de comité u otro paso formal en cualquiera de las cámaras. Hasta entonces, aprobado por una cámara describe con exactitud dónde se encuentra esta medida en este momento, según el registro oficial disponible para este período."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }
@@ -484,6 +507,35 @@
         "text": {
           "en": "Where it stands: four measures sit at the status recorded, with nothing new logged in the last 14 days. S.J.Res. 185 and S.J.Res. 172 each show floor activity. H. Con. Res. 38 remains in committee. H. Con. Res. 89 has passed one chamber. No votes, tallies, or roll-call numbers were recorded for any of the four measures during this period. Readers tracking these items will see the same status today as in the prior update, since the record contains no entries for this window. When new floor votes, committee actions, or roll calls are recorded, the status lines above will change to reflect them.",
           "es": "Dónde está el asunto: cuatro medidas permanecen en el estado registrado, sin nada nuevo anotado en los últimos 14 días. S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno. H. Con. Res. 38 sigue en comité. H. Con. Res. 89 fue aprobado por una cámara. No se registraron votaciones, conteos ni números de votación nominal para ninguna de las cuatro medidas durante este período. Quienes sigan estos temas verán hoy el mismo estado que en la actualización anterior, ya que el registro no contiene entradas para esta ventana. Cuando se registren nuevas votaciones en el pleno, acciones de comité o votaciones nominales, las líneas de estado anteriores cambiarán para reflejarlo."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_71587d77",
+        "generated_at": "2026-09-22T18:28:47.525Z",
+        "as_of_day": "2026-09-22",
+        "text": {
+          "en": "Where it stands: two Senate joint resolutions, S.J.Res. 185 and S.J.Res. 172, sit at Floor activity, with no recorded action in the last 14 days. In the House, H. Con. Res. 38 remains In committee, also with nothing recorded in this window. H. Con. Res. 89 has reached Passed one chamber, its most recent recorded status, with no further movement logged in the last 14 days. No votes, tallies, or roll-call numbers were recorded for any of these measures during this period. Readers can expect updates here as soon as new floor or committee action is entered into the record for these four measures.",
+          "es": "Cómo están las cosas: dos resoluciones conjuntas del Senado, S.J.Res. 185 y S.J.Res. 172, se encuentran en Actividad en el pleno, sin ninguna acción registrada en los últimos 14 días. En la Cámara de Representantes, H. Con. Res. 38 permanece En comité, también sin nada registrado en este período. H. Con. Res. 89 alcanzó el estatus de Aprobado por una cámara, su registro más reciente, sin movimiento adicional en los últimos 14 días. No se registraron votaciones, conteos ni números de votación nominal para ninguna de estas medidas durante este período. Aquí se reflejarán actualizaciones tan pronto se registre nueva actividad en el pleno o en comité para estas cuatro medidas."
         },
         "grounded_in": {
           "vehicle_statuses": {
