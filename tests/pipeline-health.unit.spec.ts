@@ -322,10 +322,50 @@ test.describe('cursorHealth', () => {
   const now = Date.parse('2026-09-18T12:00:00Z');
 
   test('FROZEN is a conjunction: the pipeline RAN and the cursor did not move', () => {
-    const h = cursorHealth({ lastSync: '2026-09-08T17:54:31Z', lastRun: '2026-09-17T18:12:13Z' }, { now });
+    const h = cursorHealth(
+      { lastSync: '2026-09-08T17:54:31Z', lastRun: '2026-09-17T18:12:13Z' },
+      { now, previousSync: '2026-09-08T17:54:31Z' }
+    );
     expect(h.frozen).toBe(true);
+    expect(h.moved).toBe(false);
     expect(h.lastSyncAgeDays).toBeGreaterThan(9);
     expect(h.lastRunAgeHours).toBeLessThan(48);
+  });
+
+  test('a cursor walking a backlog forward is BEHIND, never FROZEN', () => {
+    // The regression this pins (2026-09-22): the cursor advanced 09-09 → 09-16
+    // → 09-18 on consecutive nights and the report called it FROZEN and "not
+    // making progress" every one of those days, because it measured lastSync's
+    // age and called that movement. Catching up and stalled are opposite
+    // states and must never print the same word.
+    const h = cursorHealth(
+      { lastSync: '2026-09-14T00:00:00Z', lastRun: '2026-09-17T18:12:13Z' },
+      { now, previousSync: '2026-09-09T00:00:00Z' }
+    );
+    expect(h.moved).toBe(true);
+    expect(h.behind).toBe(true);
+    expect(h.frozen).toBe(false);
+    expect(h.movementUnknown).toBe(false);
+  });
+
+  test('a cursor that went BACKWARDS has not advanced', () => {
+    const h = cursorHealth(
+      { lastSync: '2026-09-09T00:00:00Z', lastRun: '2026-09-17T18:12:13Z' },
+      { now, previousSync: '2026-09-14T00:00:00Z' }
+    );
+    expect(h.moved).toBe(false);
+    expect(h.frozen).toBe(true);
+  });
+
+  test('no baseline reads as "not measured", never as movement', () => {
+    // A dead-man's-switch that goes quiet for want of an input is the failure
+    // it exists to catch, so an unreachable baseline still raises an alarm —
+    // it just says what it actually knows.
+    const h = cursorHealth({ lastSync: '2026-09-08T17:54:31Z', lastRun: '2026-09-17T18:12:13Z' }, { now });
+    expect(h.moved).toBeNull();
+    expect(h.frozen).toBe(false);
+    expect(h.movementUnknown).toBe(true);
+    expect(h.behind).toBe(true);
   });
 
   test('a pipeline that has ALSO stopped running is not called frozen', () => {
@@ -508,6 +548,15 @@ test.describe('alarms', () => {
     expect(alarms(healthy)).toEqual([]);
   });
 
+  test('a cursor that is behind but advancing raises nothing', () => {
+    // Lateness is check-cursor-age.mjs's business (10-day ceiling), not a ⛔
+    // here. Raising one daily for a backlog that is draining on schedule is
+    // how an owner learns to scroll past this issue.
+    expect(alarms({ ...healthy, cursor: { frozen: false, behind: true, moved: true, lastSyncAgeDays: 4.6 } })).toEqual(
+      []
+    );
+  });
+
   test('every ⛔ condition in the contract fires', () => {
     const codes = (r: object) => alarms(r).map((a) => a.code);
     expect(codes({ ...healthy, nightly: { conclusion: 'failure' } })).toContain('nightly-not-success');
@@ -521,6 +570,9 @@ test.describe('alarms', () => {
       'ci-red-24h'
     );
     expect(codes({ ...healthy, cursor: { frozen: true, lastSyncAgeDays: 10 } })).toContain('cursor-frozen');
+    expect(codes({ ...healthy, cursor: { frozen: false, movementUnknown: true, lastSyncAgeDays: 10 } })).toContain(
+      'cursor-movement-unknown'
+    );
     expect(codes({ ...healthy, floorSignals: { pastAlarm: true, ageHours: 40, alarmHours: 36 } })).toContain(
       'floor-signals-stale'
     );
