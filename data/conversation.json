@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-22T18:49:46.345Z",
+    "fetched_at": "2026-09-22T22:02:35.302Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-22T18:49:46.345Z"
+        "checked_at": "2026-09-22T22:02:35.302Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-22T18:49:46.345Z"
+        "checked_at": "2026-09-22T22:02:35.302Z"
       },
       "leans": {
         "center": {
@@ -153,6 +153,17 @@
         "lastSeen": "2026-09-20",
         "lastWeek": "2026-09-13"
       }
+    },
+    "hr-1403-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "democrata.es",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-1499-119": {
       "outlets7d": [],
@@ -394,6 +405,18 @@
       ],
       "mostViewed": null
     },
+    "hr-2756-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-2978-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -434,6 +457,12 @@
     },
     "hr-3633-119": {
       "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -889,6 +918,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5471-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "intrafish.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5818-119": {
@@ -1396,6 +1436,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7797-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7830-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1484,6 +1536,18 @@
         "lastSeen": "2026-09-07",
         "lastWeek": "2026-08-30"
       }
+    },
+    "hr-8805-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "hr-8845-119": {
       "outlets7d": [],
@@ -1821,6 +1885,11 @@
           "domain": "fiercehealthcare.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
         }
       ],
       "mostViewed": null
@@ -1862,6 +1931,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "ksl.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        },
+        {
           "domain": "goiam.org",
           "firstSeen": "2026-09-21",
           "lastSeen": "2026-09-21"
@@ -1900,6 +1974,17 @@
           "domain": "pressley.house.gov",
           "firstSeen": "2026-09-15",
           "lastSeen": "2026-09-15"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4345-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
         }
       ],
       "mostViewed": null
@@ -2072,6 +2157,17 @@
       ],
       "mostViewed": null
     },
+    "s-4567-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thecollegeinvestor.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4603-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2164,6 +2260,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "brookingsregister.com",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        },
         {
           "domain": "kansas.com",
           "firstSeen": "2026-09-22",
@@ -2283,11 +2384,6 @@
           "domain": "wxxv25.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "abc-7.com",
-          "firstSeen": "2026-09-18",
-          "lastSeen": "2026-09-18"
         }
       ],
       "mostViewed": {
@@ -2498,6 +2594,17 @@
       "unratedOutlets7d": [
         {
           "domain": "vpncompare.co.uk",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-836-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "facebook.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
         }
