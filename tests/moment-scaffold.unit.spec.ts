@@ -366,6 +366,41 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(signal.type).toBe('tier0_floor_action');
   });
 
+  /* ---------------------------------------------------------------- *
+   * The adopted rule (2026-09-23, issue #268). H.R. 4366's record,
+   * verbatim, as the nightly of 2026-09-22 refreshed it. The House
+   * adopting the special rule is the step after "Rule provides for
+   * consideration", which this matcher has read since 2026-08-09.
+   * ---------------------------------------------------------------- */
+  const ADOPTED_RULE_TEXT = 'Rule H. Res. 988 passed House.';
+
+  test('an adopted special rule is floor action — the step after the rule was reported', () => {
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, slug: 'hr-4366-119', url: 'https://www.congress.gov/bill/119th-congress/house-bill/4366' },
+      [],
+      { now: NOW_FLOOR, lastActionText: ADOPTED_RULE_TEXT },
+    );
+    expect(signal.type).toBe('tier0_floor_action');
+  });
+
+  /* The precision half of that rule, and the reason it cites the
+     resolution instead of matching "passed House": what passed is H. Res.
+     988, not the bill. A bill that has itself passed a chamber is a
+     SETTLED outcome, and calling it "the chamber is moving on the
+     measure" would be a pending claim over a finished fact. */
+  test('a bill that itself passed the House is not floor action — the rule pattern cannot reach it', () => {
+    for (const text of [
+      'Passed House by the Yeas and Nays: 220 - 210 (Roll no. 415).',
+      'On passage Passed by the Yeas and Nays: 218 - 214 (Roll no. 502).',
+      'Rule H. Res. 1175 failed passage of House.',
+    ]) {
+      expect(
+        floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text),
+        text,
+      ).toBe(false);
+    }
+  });
+
   test('a placement is never floor action — the narrower type wins, and tier0_floor is untouched', () => {
     const { signal } = signalFor(ON_CALENDAR, [], {
       now: NOW_NEAR,
