@@ -220,6 +220,34 @@ const FLOOR_ACTION_PATTERNS = [
   /\bpostponed proceedings\b/i,
   /\brule provides for consideration\b/i,
   /\bmotion by senator\b/i,
+  /*
+   * THE ADOPTED RULE (2026-09-23, issue #268). The nightly of 2026-09-22
+   * refreshed H.R. 4366 onto a sentence no pattern above could read:
+   *
+   *   "Rule H. Res. 988 passed House."
+   *
+   * It is the NEXT EVENT in a sequence this list already covers at its first
+   * step. "Rule provides for consideration" above is the Rules Committee
+   * reporting a special rule to the floor; this is the House then adopting
+   * that rule, which is what puts H.R. 4366 itself in order for debate. Both
+   * are the chamber moving on the measure on its own floor — the exact fact
+   * `tier0_floor_action` names — so reading the first and not the second was
+   * a gap, not a judgement.
+   *
+   * WHY THE SUBJECT IS PINNED TO THE RULE AND NOT LEFT AS "passed house".
+   * The clause that "passed House" attaches to is H. Res. 988, NOT H.R. 4366:
+   * the rule passed, the bill did not. A bare /passed house/ would read this
+   * sentence correctly today and then, the first night a bill genuinely
+   * passes the House on its own last action, call a COMPLETED passage "the
+   * chamber is moving on the measure" — a pending claim over a settled fact,
+   * which is the failure this file's neighbours are all built to refuse. So
+   * the citation of the resolution is required between "Rule" and the verb,
+   * and the corpus is what says that is enough: of 3,143 bills on 2026-09-23
+   * exactly one carries this shape, and its only sibling is H.R. 8035's
+   * "Rule H. Res. 1175 failed passage of House." — which this does not match,
+   * correctly, on both counts (it is a defeat, and that bill is in committee).
+   */
+  /\brule\s+h\.\s?res\.\s*\d+\s+passed\s+house\b/i,
 ];
 
 /**
