@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-23T01:06:58.477Z"
+    "generated_at": "2026-09-23T16:51:20.985Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -756,16 +756,16 @@
   "paying-college-athletes": {
     "updates": [
       {
-        "id": "u_67cec48b",
+        "id": "u_fcb078e5",
         "class": "scheduled",
         "vehicle": "s-4668-119",
-        "day": "2026-09-22",
-        "occurred_at": "2026-09-22",
+        "day": "2026-09-23",
+        "occurred_at": "2026-09-23",
         "occurred_precision": "day",
-        "recorded_at": "2026-09-23T01:06:58.477Z",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
         "text": {
-          "en": "The Senate scheduled S. 4668, the Protect College Sports Act of 2026, for September 22, 2026.",
-          "es": "El Senado programó S. 4668, la Ley de Protección de Deportes Universitarios de 2026, para el 22 de septiembre de 2026."
+          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, estaba programada para el 23 de septiembre de 2026."
         },
         "source": {
           "kind": "tier0_feed",
@@ -775,10 +775,38 @@
           ]
         },
         "record": {
-          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/22/2026)",
+          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/23/2026)",
           "action_code": null,
           "action_type": "Senate Floor Today",
           "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c6a1ebcb",
+        "class": "status_change",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "The Senate considered S. 4668 on September 22, 2026.",
+          "es": "El Senado consideró S. 4668 el 22 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Considered by Senate. (consideration: CR S4851)",
+          "action_code": null,
+          "action_type": "latestAction",
+          "source_system": "Congress.gov bill detail",
+          "status_from": "floor_vote",
+          "status_to": "committee"
         },
         "ai": true
       },
@@ -810,6 +838,32 @@
             "chamber": "senate",
             "number": 236
           }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_05246d80",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A cloture motion on S. 4668 was presented in the Senate on September 17, 2026.",
+          "es": "Una moción de cierre sobre S. 4668 fue presentada en el Senado el 17 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate. (CR S4789)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
         },
         "ai": true
       },
@@ -866,6 +920,32 @@
         "ai": true
       },
       {
+        "id": "u_d15dae4c",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 17, 2026.",
+          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 17 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4773-4774)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
         "id": "u_f0db9993",
         "class": "floor_action",
         "vehicle": "s-4668-119",
@@ -885,6 +965,32 @@
         },
         "record": {
           "action_text": "Cloture motion on the measure presented in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_48567655",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-16",
+        "occurred_at": "2026-09-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 16, 2026.",
+          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 16 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4743)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"

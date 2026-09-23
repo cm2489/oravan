@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-23T11:27:50.691Z",
+    "fetched_at": "2026-09-23T16:51:19.796Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-23T11:27:50.691Z"
+        "checked_at": "2026-09-23T16:51:19.796Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-23T11:27:50.691Z"
+        "checked_at": "2026-09-23T16:51:19.796Z"
       },
       "leans": {
         "center": {
@@ -433,6 +433,18 @@
       ],
       "mostViewed": null
     },
+    "hr-3452-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-3633-119": {
       "outlets7d": [
         {
@@ -631,7 +643,7 @@
         {
           "domain": "marijuanamoment.net",
           "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-21"
+          "lastSeen": "2026-09-23"
         },
         {
           "domain": "elkodaily.com",
@@ -960,6 +972,12 @@
     "hr-6529-119": {
       "outlets7d": [
         {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-17",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
@@ -974,12 +992,6 @@
         {
           "domain": "cbsnews.com",
           "lean": "left",
-          "firstSeen": "2026-09-17",
-          "lastSeen": "2026-09-17"
-        },
-        {
-          "domain": "foxnews.com",
-          "lean": "right",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
         },
@@ -1332,6 +1344,11 @@
           "lastSeen": "2026-09-23"
         },
         {
+          "domain": "wlfi.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "wowt.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
@@ -1416,6 +1433,18 @@
           "lastSeen": "2026-09-16"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8772-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8800-119": {
@@ -1618,6 +1647,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9576-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-9602-119": {
       "outlets7d": [
         {
@@ -1705,6 +1746,18 @@
           "lastSeen": "2026-09-17"
         }
       ],
+      "mostViewed": null
+    },
+    "s-252-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-2667-119": {
@@ -2099,6 +2152,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "courant.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "brookingsregister.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
@@ -2215,11 +2273,6 @@
         },
         {
           "domain": "thenationaldesk.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "wxxv25.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         }
