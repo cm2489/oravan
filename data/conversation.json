@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-23T19:25:24.229Z",
+    "fetched_at": "2026-09-23T20:17:25.620Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-23T19:25:24.229Z"
+        "checked_at": "2026-09-23T20:17:25.620Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-23T19:25:24.229Z"
+        "checked_at": "2026-09-23T20:17:25.620Z"
       },
       "leans": {
         "center": {
@@ -612,6 +612,17 @@
           "domain": "audacy.com",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-16"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4624-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "boxinginsider.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
         }
       ],
       "mostViewed": null
@@ -1990,6 +2001,12 @@
     "s-4430-119": {
       "outlets7d": [
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-19",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "npr.org",
           "lean": "center",
           "firstSeen": "2026-09-19",
@@ -2006,12 +2023,18 @@
           "lean": "left",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
-        },
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4432-119": {
+      "outlets7d": [
         {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
         }
       ],
       "unratedOutlets7d": [],
