@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-23T01:06:58.216Z",
+    "fetched_at": "2026-09-23T05:55:17.990Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-23T01:06:58.216Z"
+        "checked_at": "2026-09-23T05:55:17.990Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-23T01:06:58.216Z"
+        "checked_at": "2026-09-23T05:55:17.990Z"
       },
       "leans": {
         "center": {
@@ -149,7 +149,7 @@
         {
           "domain": "democrata.es",
           "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-22"
+          "lastSeen": "2026-09-23"
         }
       ],
       "mostViewed": null
@@ -1294,6 +1294,11 @@
           "lastSeen": "2026-09-23"
         },
         {
+          "domain": "localnewslive.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "wowt.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
@@ -1311,6 +1316,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8136-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "manilastandard.net",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8278-119": {
