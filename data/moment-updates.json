@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-23T16:51:20.985Z"
+    "generated_at": "2026-09-23T19:17:29.722Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -1321,6 +1321,42 @@
           ]
         },
         "changed_because": [
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c0bcbd35",
+        "generated_at": "2026-09-23T19:17:36.831Z",
+        "as_of_day": "2026-09-23",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, is in committee, though Senate floor activity over the past two weeks moved the bill further than that status alone shows. On September 15, cloture on the motion to proceed was invoked by a recorded vote of 74 to 24 (Roll no. 235). On September 17, a cloture motion on the measure and on amendment SA 6776 was presented, and the motion to proceed was agreed to by a recorded vote of 77 to 22 (Roll no. 236). The Senate then considered the measure on September 22, with further consideration scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección al Deporte Universitario de 2026, está en comité, aunque la actividad en el pleno del Senado durante las últimas dos semanas llevó el proyecto más allá de lo que ese estado por sí solo muestra. El 15 de septiembre se invocó la clausura sobre la moción para proceder por votación nominal de 74 a 24 (votación núm. 235). El 17 de septiembre se presentó una moción de clausura sobre la medida y sobre la enmienda SA 6776, y la moción para proceder fue aprobada por votación nominal de 77 a 22 (votación núm. 236). El Senado consideró luego la medida el 22 de septiembre, con otra sesión de consideración programada para el 23 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "committee"
+          },
+          "update_ids": [
+            "u_fcb078e5",
+            "u_c6a1ebcb",
+            "u_a3cc6ca3",
+            "u_05246d80",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_d15dae4c",
+            "u_f0db9993",
+            "u_48567655",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→committee",
           "updates:+5"
         ],
         "model": "claude-sonnet-5"
