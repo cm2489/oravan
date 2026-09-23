@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-23T20:17:25.620Z",
+    "fetched_at": "2026-09-23T23:38:41.244Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-23T20:17:25.620Z"
+        "checked_at": "2026-09-23T23:38:41.244Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-23T20:17:25.620Z"
+        "checked_at": "2026-09-23T23:38:41.244Z"
       },
       "leans": {
         "center": {
@@ -637,6 +637,17 @@
         "lastWeek": "2026-09-06"
       }
     },
+    "hr-4889-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "northgwinnettvoice.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4911-119": {
       "outlets7d": [
         {
@@ -1001,6 +1012,12 @@
           "lastSeen": "2026-09-23"
         },
         {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-10",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
@@ -1028,12 +1045,6 @@
           "domain": "nytimes.com",
           "lean": "left",
           "firstSeen": "2026-09-17",
-          "lastSeen": "2026-09-17"
-        },
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-09-10",
           "lastSeen": "2026-09-17"
         }
       ],
@@ -1298,6 +1309,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7436-119": {
+      "outlets7d": [
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7501-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1427,6 +1450,11 @@
     "hr-8463-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "thedesertreview.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
         {
           "domain": "washingtonstand.com",
           "firstSeen": "2026-09-22",
@@ -1664,6 +1692,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "nemonews.net",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-17",
           "lastSeen": "2026-09-17"
@@ -1800,6 +1833,17 @@
       "unratedOutlets7d": [
         {
           "domain": "jpost.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-2867-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "yahoo.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
         }
@@ -2204,6 +2248,16 @@
           "lastSeen": "2026-09-23"
         },
         {
+          "domain": "espn.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
+          "domain": "miamitimesonline.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23"
+        },
+        {
           "domain": "brookingsregister.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
@@ -2310,16 +2364,6 @@
         },
         {
           "domain": "thecapitolist.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "theitem.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "thenationaldesk.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         }
@@ -2579,7 +2623,7 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-21"
+          "lastSeen": "2026-09-23"
         },
         {
           "domain": "foxnews.com",
