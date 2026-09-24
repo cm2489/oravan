@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-24T09:56:18.952Z",
+    "fetched_at": "2026-09-24T15:00:27.994Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-24T09:56:18.952Z"
+        "checked_at": "2026-09-24T15:00:27.994Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-24T09:56:18.952Z"
+        "checked_at": "2026-09-24T15:00:27.994Z"
       },
       "leans": {
         "center": {
@@ -161,6 +161,17 @@
           "domain": "timesofindia.indiatimes.com",
           "firstSeen": "2026-09-20",
           "lastSeen": "2026-09-20"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1657-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wsaw.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
         }
       ],
       "mostViewed": null
@@ -803,6 +814,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "cpapracticeadvisor.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
           "domain": "recordpatriot.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
@@ -846,6 +862,17 @@
           "domain": "intrafish.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5772-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wdet.org",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
         }
       ],
       "mostViewed": null
@@ -1286,6 +1313,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "edweek.org",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
           "domain": "kptv.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
@@ -1320,7 +1352,14 @@
       "mostViewed": null
     },
     "hr-8463-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "nationalreview.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "thedesertreview.com",
@@ -1644,7 +1683,14 @@
       "mostViewed": null
     },
     "s-2867-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "realtor.com",
@@ -1821,28 +1867,28 @@
     "s-4430-119": {
       "outlets7d": [
         {
-          "domain": "cnbc.com",
-          "lean": "center",
+          "domain": "cbsnews.com",
+          "lean": "left",
           "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-23"
+          "lastSeen": "2026-09-24"
         },
         {
           "domain": "npr.org",
           "lean": "center",
           "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-23"
+          "lastSeen": "2026-09-24"
         },
         {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-14",
-          "lastSeen": "2026-09-23"
+          "lastSeen": "2026-09-24"
         },
         {
-          "domain": "cbsnews.com",
-          "lean": "left",
+          "domain": "cnbc.com",
+          "lean": "center",
           "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
+          "lastSeen": "2026-09-23"
         }
       ],
       "unratedOutlets7d": [],
@@ -1963,6 +2009,18 @@
     },
     "s-4668-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
         {
           "domain": "nytimes.com",
           "lean": "left",
@@ -2357,6 +2415,29 @@
           "lean": "center",
           "firstSeen": "2026-09-16",
           "lastSeen": "2026-09-23"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "sjres-192-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medlearn.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-213-119": {
+      "outlets7d": [
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
         }
       ],
       "unratedOutlets7d": [],
