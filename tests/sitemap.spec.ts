@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { getAllBills } from '../lib/core';
+import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
 
@@ -46,7 +46,7 @@ function citedNominationSlugs(): Set<string> {
 }
 
 test.describe('sitemap.xml', () => {
-  test('renders both locales for every static path, every bill, and every cited nomination', async ({
+  test('renders both locales for every static path, every bill, every member page, and every cited nomination', async ({
     request,
   }) => {
     const res = await request.get('/sitemap.xml');
@@ -58,8 +58,22 @@ test.describe('sitemap.xml', () => {
     // Moments (v2 slice S5): every non-retired moment ships, both locales.
     const totalMoments = getMoments().filter((m) => m.state !== 'retired').length;
     const cited = citedNominationSlugs();
+    // Member pages: every sitting member plus every vacant seat (keyed on the seat).
+    const totalRepPages = getAllLegislators().length + getVacancies().length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
-    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments + cited.size) * 2);
+    expect(locCount).toBe(
+      (STATIC_PATH_COUNT + totalBills + totalMoments + cited.size + totalRepPages) * 2
+    );
+
+    // One member and one vacant seat, both locales.
+    const member = getAllLegislators()[0].bioguide;
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${member}</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${member}</loc>`);
+    const seat = getVacancies()[0];
+    if (seat) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${vacancySlug(seat)}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${vacancySlug(seat)}</loc>`);
+    }
 
     // Every cited nomination is listed, both locales…
     for (const slug of cited) {

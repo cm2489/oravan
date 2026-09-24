@@ -17,6 +17,7 @@ import {
   getTopActions,
   repsForDistrict,
   vacancyForDistrict,
+  vacancySlug,
 } from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
 import { formatCitation } from '@/lib/format';
@@ -194,7 +195,7 @@ export default async function RepsPage({
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}
-              {vacancy && <VacantSeatCard />}
+              {vacancy && <VacantSeatCard href={`/reps/${vacancySlug(vacancy)}`} />}
             </div>
           </section>
         );
@@ -277,7 +278,9 @@ export default async function RepsPage({
       {zip && districts.length > 0 && (
         <p className="mt-12 text-sm text-ink-2">
           ZIP {zip} ·{' '}
-          <Link href="/reps" className="underline underline-offset-2">
+          {/* min-h-11: this measured 17px tall, under the 44px target rule.
+              The text stays text-sm; only the hit box grows. */}
+          <Link href="/reps" className="inline-flex min-h-11 items-center underline underline-offset-2">
             {t('changeZip')}
           </Link>
         </p>

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments } from '../lib/moments';
+import { getAllLegislators, getBillsSponsoredBy } from '../lib/core';
 import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
@@ -39,6 +40,15 @@ import { mockScriptApi } from './helpers';
  *        structural constraint 1) is what makes this true: DEMOTE, NEVER
  *        BURY, enforced structurally.
  *
+ *   MEMBER PAGES (/reps/[bioguide], added 2026-09-24 with plan item C2) are a
+ *        truth surface too, so both invariants are asserted there as well:
+ *        a sponsored-bill link is <=1 click from a decoded, AI-labeled
+ *        answer (I1), and a completed script is <=2 interactions from the
+ *        member page (I2: the bill click, then the stance). A member who
+ *        sponsors nothing Oravan tracks gets section[aria-labelledby=
+ *        "rep-next"] instead - the /reps continuation under its own id, so
+ *        the frozen `reps-next` stays the lookup's alone.
+ *
  *   I3 - QUIET-WEEK HONESTY (unchanged). When the truth surfaces are empty
  *        they say so in a role=status empty state (never a false "quiet"
  *        claim - AE3), and neither entry point dead-ends.
@@ -63,6 +73,14 @@ const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
  *  the truth claim survives in the hero instead - so I1's second surface is
  *  corpus-gated the same way its first one is. */
 const anyLiveMoment = getLiveMoments().length > 0;
+
+/** A member with sponsored, decoded bills - the one with the most, so a
+ *  nightly sync can't empty the list out from under this file. */
+const SPONSOR = getAllLegislators()
+  .map((l) => ({ id: l.bioguide, n: getBillsSponsoredBy(l.bioguide).length }))
+  .sort((a, b) => b.n - a.n)[0];
+/** A member Oravan tracks no sponsored bill for, if the roster has one. */
+const NON_SPONSOR = getAllLegislators().find((l) => getBillsSponsoredBy(l.bioguide).length === 0);
 
 const ZIP = '78501'; // single district + two senators, no address-refinement detour (see reps.spec.ts)
 
@@ -207,6 +225,41 @@ for (const { locale, prefix, messages } of LOCALES) {
       // Click 3 of <=3: declare a stance - script appears.
       await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
+    });
+  });
+
+  test.describe(`${locale} locale: member page (I1 + I2 on /reps/[bioguide])`, () => {
+    test('I1: a sponsored-bill link reaches a decoded answer in 1 click', async ({ page }) => {
+      test.skip(!SPONSOR || SPONSOR.n === 0, 'no member sponsors a decoded bill in this corpus');
+      await page.goto(`${prefix}/reps/${SPONSOR.id}`);
+      await clickFirstBillCardIn(page, 'section[aria-labelledby="rep-sponsored"]');
+      await expect(page).toHaveURL(/\/bills\//);
+      await expectDecodedAnswer(page, messages);
+    });
+
+    test('I2: from a member page, a completed script in 2 interactions', async ({ page }) => {
+      test.skip(!SPONSOR || SPONSOR.n === 0, 'no member sponsors a decoded bill in this corpus');
+      await mockScriptApi(page);
+      await page.goto(`${prefix}/reps/${SPONSOR.id}`);
+      // Interaction 1 of <=2: a sponsored bill.
+      await clickFirstBillCardIn(page, 'section[aria-labelledby="rep-sponsored"]');
+      await expect(page).toHaveURL(/\/bills\//);
+      // Interaction 2 of <=2: a stance - the script appears.
+      await declareStance(page, messages.bill.stance.support);
+      await expectCompletedScript(page, messages.bill.scriptTitle);
+    });
+
+    test('a member with no sponsored bill never dead-ends', async ({ page }) => {
+      test.skip(!NON_SPONSOR, 'every member sponsors a tracked bill this run');
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked page could flip before the assert');
+      await page.goto(`${prefix}/reps/${NON_SPONSOR!.bioguide}`);
+      const next = page.locator('section[aria-labelledby="rep-next"]');
+      await expect(next).toBeVisible();
+      if (anyTop) {
+        await expect(next.locator('a[href*="/bills/"]').first()).toBeVisible();
+      } else {
+        await expect(next.getByRole('status')).toBeVisible();
+      }
     });
   });
 

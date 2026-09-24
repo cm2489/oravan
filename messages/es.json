@@ -171,6 +171,24 @@
     "nextSeeAll": "Ver los {count} proyectos de ley activos",
     "errorLabel": "Revisa esto"
   },
+  "rep": {
+    "crumb": "Busca a tus representantes",
+    "metaTitle": "{name}, {role} · {place}",
+    "metaDescription": "Los teléfonos de {name} en Washington y en su estado, y los proyectos de ley que presentó, explicados en palabras sencillas.",
+    "contactHeading": "Llama a esta oficina",
+    "sponsoredHeading": "Proyectos de ley que presentó",
+    "sponsoredNote": "{count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, con la actividad más reciente primero.",
+    "sponsoredNone": "Ninguno de los proyectos que sigue Oravan fue presentado por {name}.",
+    "showAll": "Ver los {count}",
+    "aiNote": "Titulares traducidos por IA, verificados con el registro",
+    "houseSeat": "Escaño en la Cámara",
+    "senatorsHeading": "Senadores de {state}",
+    "senatorsNote": "Representan a todo el estado, incluido este distrito.",
+    "vacantMetaTitle": "{place} · Escaño vacante",
+    "vacantMetaDescription": "Nadie ocupa este escaño de la Cámara por ahora. Los dos senadores del estado lo siguen representando.",
+    "nextTitle": "Lo que avanza en el Congreso",
+    "nextSeeAll": "Ver todos los proyectos de ley"
+  },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
     "sub": "Cada proyecto de ley que avanza ahora en el Congreso, traducido a lenguaje claro por IA. Filtra por lo que te importa.",
