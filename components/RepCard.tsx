@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { portraitUrl } from '@/lib/core';
 import type { Legislator } from '@/lib/types';
 
@@ -141,13 +142,27 @@ export function RepCard({ rep }: { rep: Legislator }) {
           <p className="text-xs font-semibold tracking-[0.04em] text-ink-2">
             {role} · {party} · {rep.state}
           </p>
-          <h3 className="mt-1 text-xl font-extrabold">{rep.name}</h3>
+          {/* The name is the way to the member's own page. Its 44px hit area
+              is an ::after overlay (12px above, 4px below a 28px line), so the
+              card's layout is exactly what it was before the link existed and
+              the focus ring hugs the name instead of covering the meta line.
+              The overlay stops where the website link begins; that link is
+              `relative` so it paints above the overlay and keeps its own full
+              target. Ink, not green: the dial stays the one green here. */}
+          <h3 className="mt-1 text-xl font-extrabold">
+            <Link
+              href={`/reps/${rep.bioguide}`}
+              className="relative inline-block text-ink underline decoration-line-strong underline-offset-4 after:absolute after:inset-x-0 after:-top-3 after:-bottom-1 hover:decoration-ink"
+            >
+              {rep.name}
+            </Link>
+          </h3>
           {rep.url && (
             <a
               href={rep.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
+              className="relative mt-1 inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
             >
               {t('website')}
             </a>
