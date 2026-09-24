@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-23T19:17:29.722Z"
+    "generated_at": "2026-09-24T18:07:05.065Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -755,6 +755,33 @@
   },
   "paying-college-athletes": {
     "updates": [
+      {
+        "id": "u_2530a6e7",
+        "class": "scheduled",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-24T18:07:05.065Z",
+        "text": {
+          "en": "The Senate scheduled S. 4668, the Protect College Sports Act of 2026, for consideration on September 24, 2026.",
+          "es": "El Senado agendó S. 4668, la Ley de Protección del Deporte Universitario de 2026, para consideración el 24 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/24/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": true
+      },
       {
         "id": "u_fcb078e5",
         "class": "scheduled",
