@@ -121,6 +121,9 @@ test.describe(
       // a default nobody looked at.
       glossary: '/glossary',
       record: '/record',
+      // The daily brief (plan item C3): read-only record lines and links, no
+      // form, no call apparatus — standard locked-down posture.
+      today: '/today',
       mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
       // The Senate nomination record + call page (2026-08-06). It mounts the
       // SAME ActionPanel the bill page does — stance selection, the generated
