@@ -42,6 +42,7 @@ const STATIC_PATHS = [
   '/embeds/terms',
   '/partners',
   '/mcp',
+  '/follow',
   '/questions',
   '/glossary',
 ] as const;

@@ -46,6 +46,7 @@ const ROUTES = [
   '/terms',
   '/citations',
   '/mcp',
+  '/follow',
   '/embeds',
   // The failure surface and the machine surfaces.
   '/this-page-does-not-exist-404',

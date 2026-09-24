@@ -71,6 +71,7 @@ const STATIC_PAGES = [
   '/citations',
   '/embeds',
   '/embeds/terms',
+  '/follow',
   '/glossary',
   '/mcp',
   '/partners',
