@@ -627,9 +627,40 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     expect(body).toContain('get_bill');
     expect(body).toContain(`no spike (floor ${MCP_SPIKE_FLOOR}`);
     expect(body).toContain(`no spike (floor ${SCRIPT_SPIKE_FLOOR}`);
-    // Site traffic disclosure must always be present - never silently omitted.
-    expect(body).toContain('Site page-view traffic: not measured');
+    // Site traffic disclosure must always be present - never silently
+    // omitted. Corrected 2026-09 (site-counter): it used to read "not
+    // measured"; page views ARE measured now, first-party, and the
+    // paragraph says where they come from and what they are not. The
+    // @vercel/analytics half stays, because the reason this is first-party
+    // rather than vendor-measured has not changed.
+    expect(body).toContain('Site page views above are FIRST-PARTY and server-side');
     expect(body).toContain('@vercel/analytics');
+    expect(body).not.toContain('not measured');
+    // And the caveat under it, every day - a count that reads as "people"
+    // is the one way this number can lie.
+    expect(body).toContain('requests, bots included');
+    expect(body).toContain('not unique visitors');
+  });
+
+  test('the site block renders one line per route template plus a total, and says so out loud when no window was supplied', () => {
+    const sitePageviews = [
+      { surface: 'home', stats: seriesStats([412, 388, 390, 380, 395, 388, 370, 401], Infinity) },
+      { surface: 'bill', stats: seriesStats([97, 90, 91, 88, 92, 90, 85, 94], Infinity) },
+    ];
+    const siteTotal = seriesStats([509, 478, 481, 468, 487, 478, 455, 495], Infinity);
+    const body = formatDigestBody({ date: '2026-09-17', mcpTools, mcpTotal, script, sitePageviews, siteTotal });
+    expect(body).toContain('Site page views (production, by route template)');
+    expect(body).toMatch(/home\s+412\s+\(7d median 388/);
+    expect(body).toMatch(/bill\s+97\s+\(7d median 90/);
+    expect(body).toMatch(/── total\s+509\s+\(7d median 478/);
+    // Descriptive only: this series never alarms, so it never prints a
+    // spike verdict of its own the way the two aggregate series do.
+    expect(body).not.toContain('Site page views: not computed');
+
+    // Omitted entirely: the line still appears, honestly empty - the same
+    // rule as the 28-day trend line, never a silently absent section.
+    const without = formatDigestBody({ date: '2026-09-17', mcpTools, mcpTotal, script });
+    expect(without).toContain('Site page views: not computed (no page-view window supplied)');
   });
 
   test('includes the MCP client-handshake line, with the honest fallback when none were recorded', () => {
