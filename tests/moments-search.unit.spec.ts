@@ -138,15 +138,16 @@ test.describe('matchMoments — degenerate aliases cannot pin everything', () =>
   });
 });
 
-test.describe('getMomentSearchTeasers — live only, localized, aliases carried', () => {
-  test('pins exactly the live moments — never stale, settled, or retired', () => {
-    const live = getMoments().filter((m) => m.state === 'live');
+test.describe('getMomentSearchTeasers — live and past-review, localized, aliases carried', () => {
+  test('pins exactly the live and past-review moments — never settled or retired', () => {
+    // Owner, 2026-09-24: a lapsed review date is a curation reminder, not a
+    // hide switch, so a past-review (`stale`) question stays pinnable — the
+    // same set /questions and the homepage band render (getLiveMoments).
+    const live = getMoments().filter((m) => m.state === 'live' || m.state === 'stale');
     const teasers = getMomentSearchTeasers('en');
     expect(ids(teasers).sort()).toEqual(live.map((m) => m.id).sort());
-    // The rule app/[locale]/questions/page.tsx states in prose: stale still
-    // renders on that page, and is dropped from the strip and from pinning.
     for (const m of getMoments()) {
-      if (m.state !== 'live') expect(ids(teasers)).not.toContain(m.id);
+      if (m.state === 'settled' || m.state === 'retired') expect(ids(teasers)).not.toContain(m.id);
     }
   });
 

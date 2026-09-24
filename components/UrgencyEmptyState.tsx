@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { ArrowDown } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { emptyStateVerdict, type FreshnessSignals } from '@/lib/freshness-state';
 import { SIGNAL_STALE_HOURS } from '@/lib/docket.mjs';
@@ -57,6 +58,7 @@ export function UrgencyEmptyState({
   completeThrough,
   newestAction,
   floorSignals,
+  moving,
 }: FreshnessSignals & {
   /**
    * THE FOURTH SIGNAL (critic A-5, 2026-08-12): what the chamber-schedule
@@ -82,6 +84,21 @@ export function UrgencyEmptyState({
    * verdict.
    */
   floorSignals?: { checkedAt: string | null; sourcesHealthy: boolean };
+  /**
+   * THE LEAD BAND IS EMPTY, THE WEEK IS NOT (finding B4, 2026-09-24). /bills'
+   * "Deciding now" band is T0 ∪ T1 only, while the homepage's week is the
+   * wider act-now pool (T0 ∪ T1 ∪ T2 — lib/core/bills.ts, `hasActNow`). So on
+   * a week whose only floor facts are calendar placements, the homepage lists
+   * bills and this band is legitimately empty, and "Quiet week" printed here
+   * contradicted the page one tap back. When the caller knows the "Moving"
+   * band has bills it passes the count and that band's anchor, and the fresh
+   * verdict says what is true instead: nothing is at a deciding step, and
+   * here is where the moving bills are. It never promises urgency, and the
+   * stale verdict still wins — an empty band on data we cannot vouch for is
+   * a statement about us, not about Congress. Copy only: the band logic in
+   * lib/docket.mjs is untouched (owner rulings 2026-08-11/12).
+   */
+  moving?: { count: number; href: string };
 }) {
   const t = useTranslations('freshness');
   const format = useFormatter();
@@ -101,6 +118,24 @@ export function UrgencyEmptyState({
   const floorStale = floorSignals ? !floorSignalsHealthy(floorSignals) : false;
   const staleVerdict =
     floorStale || emptyStateVerdict({ checkedAt, completeThrough, newestAction }) === 'data_stale';
+  if (!staleVerdict && moving && moving.count > 0) {
+    return (
+      <div role="status" className="rounded-control bg-wash p-6">
+        <p className="text-lg font-bold text-ink">{t('nothingDecidingTitle')}</p>
+        <p className="mt-1 max-w-read text-sm text-ink-2">
+          {t('nothingDecidingBody', { count: moving.count })}
+        </p>
+        <a
+          href={moving.href}
+          className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+        >
+          {t('nothingDecidingCta')}
+          <ArrowDown className="h-4 w-4" aria-hidden />
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div role="status" className="rounded-control bg-wash p-6">
       <p className="text-lg font-bold text-ink">

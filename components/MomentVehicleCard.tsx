@@ -5,6 +5,8 @@ import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import type { BillStatus } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
+import type { StatusLine } from '@/lib/moment-status.mjs';
+import { MomentStatusLine } from '@/components/MomentStatusLine';
 
 /**
  * A Moment's vehicle card — BillCard's teaser idiom (cite · status ·
@@ -55,6 +57,7 @@ export function MomentVehicleCard({
   statusKey,
   ctaLabel,
   calendarLabel,
+  statusLine,
 }: {
   slug: string;
   identifier: string;
@@ -77,6 +80,12 @@ export function MomentVehicleCard({
   /** "On the floor calendar", already localized. Claims placement, not a
       scheduled vote — the corpus cannot support the latter. */
   calendarLabel: string;
+  /** Where this vehicle stands, read from the record (lib/moment-status.mjs).
+   *  When present it REPLACES the generic status word in the meta row and the
+   *  bare "Updated" date: the line says the same thing more precisely and
+   *  prints the same record date itself, so keeping both would state one fact
+   *  twice. Optional so any other caller renders exactly as before. */
+  statusLine?: StatusLine;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -100,7 +109,7 @@ export function MomentVehicleCard({
   const meta: { key: string; node: ReactNode }[] = [
     { key: 'id', node: <span className="tabular-nums normal-case">{identifier}</span> },
   ];
-  if (!onCalendar) meta.push({ key: 'status', node: t(`bills.status.${statusKey}`) });
+  if (!onCalendar && !statusLine) meta.push({ key: 'status', node: t(`bills.status.${statusKey}`) });
   if (coverageCount != null && coverageCount > 0) {
     meta.push({ key: 'coverage', node: t('news.sources', { count: coverageCount }) });
   }
@@ -138,6 +147,7 @@ export function MomentVehicleCard({
           {headline ?? title}
         </Link>
       </h3>
+      {statusLine && <MomentStatusLine line={statusLine} className="mt-3" />}
       <p className="mt-3 max-w-read border-t border-line pt-3 text-sm text-ink-2">{role}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {tags.slice(0, 2).map((tag) => (
@@ -145,7 +155,7 @@ export function MomentVehicleCard({
             {t(`categories.${tag}`)}
           </Chip>
         ))}
-        {!onCalendar && lastActionDate && (
+        {!onCalendar && !statusLine && lastActionDate && (
           <span>
             {t('bills.updated', {
               // Year included — see components/BillCard.tsx: a bare month/day

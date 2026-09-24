@@ -442,9 +442,17 @@ function billDateOf(bill: unknown): string | null {
   return b.last_action_date ?? b.lastActionDate ?? null;
 }
 
+/** The sentence the bill's status was READ from — `status_basis_text` when
+ *  the latest step is an ambiguous notice ("Motion to reconsider laid on the
+ *  table…"), else the latest step itself. See lib/floor-text.mjs's
+ *  statusBasisText; this accessor also accepts the camelCase teaser shape. */
 function billActionTextOf(bill: unknown): string | null {
-  const b = bill as { last_action_text?: string | null; lastActionText?: string | null };
-  return b.last_action_text ?? b.lastActionText ?? null;
+  const b = bill as {
+    status_basis_text?: string | null;
+    last_action_text?: string | null;
+    lastActionText?: string | null;
+  };
+  return b.status_basis_text || (b.last_action_text ?? b.lastActionText ?? null);
 }
 
 function urgencyOf(bill: { status: BillStatus }): number {

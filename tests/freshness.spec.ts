@@ -274,7 +274,7 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     // And it is inside the masthead paragraph that makes the claim
     // (home.topSub), not down by the week note.
     const sub = page.locator('section[aria-labelledby="top-actions"] p', {
-      hasText: 'The bills moving right now',
+      hasText: 'The bills Congress is deciding or moving right now',
     });
     await expect(sub.getByText(CAVEAT)).toBeVisible();
   });
@@ -285,7 +285,7 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     const es = /actividad más reciente del Congreso aún no se muestre/;
     await expect(page.getByText(es)).toHaveCount(1);
     const sub = page.locator('section[aria-labelledby="top-actions"] p', {
-      hasText: 'Los proyectos de ley que avanzan ahora mismo',
+      hasText: 'Los proyectos de ley que el Congreso decide o hace avanzar ahora mismo',
     });
     await expect(sub.getByText(es)).toBeVisible();
   });

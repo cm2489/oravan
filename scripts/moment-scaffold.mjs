@@ -68,8 +68,16 @@
  * scripts/check-moments.mjs validates against. lib/moments-gate.mjs is itself
  * import-free and free of import.meta, so the chain loads under Playwright's
  * transform. No module-scope I/O, no env, no clock: `now` is a parameter.
+ *
+ * A SECOND IMPORT, for the same reason (2026-09-24, issue #268):
+ * `floorMakesNoClaim` from lib/floor-text.mjs, the one reading of floor
+ * sentences that were read and judged to make no floor claim. It is imported
+ * rather than copied so this scaffold and the nightly journey-corpus sweep
+ * cannot disagree about one sentence. lib/floor-text.mjs is likewise
+ * import-free and free of import.meta.
  */
 import { CATEGORIES, SIGNAL_TYPES, lintForbidden } from '../lib/moments-gate.mjs';
+import { floorMakesNoClaim } from '../lib/floor-text.mjs';
 
 const DAY_MS = 86_400_000;
 
@@ -248,6 +256,26 @@ const FLOOR_ACTION_PATTERNS = [
    * correctly, on both counts (it is a defeat, and that bill is in committee).
    */
   /\brule\s+h\.\s?res\.\s*\d+\s+passed\s+house\b/i,
+  /*
+   * THE MEASURE UNDER CONSIDERATION (2026-09-24, S. 4668). scripts/
+   * congress-fetch.mjs's mapStatus now files these sentences as `floor_vote`,
+   * because they are the chamber debating the measure on its own floor —
+   * S. 4668's last action on the morning of its cloture vote was "Considered
+   * by Senate. (consideration: CR S4851)" and it read as `committee`. Once a
+   * sync re-derives that status, this list has to read the sentence or the
+   * totality test in tests/moment-scaffold.unit.spec.ts goes red on it, and
+   * it is exactly the fact `tier0_floor_action` names. Same shapes as
+   * lib/floor-text.mjs's SENATE_/HOUSE_/CHAMBER_SILENT_CONSIDERATION (this
+   * file keeps import-free copies; see the header above). "Considered as
+   * unfinished business." was already `floor_vote` and was a latent gap here.
+   * No `$` anchors — live texts carry "(consideration: CR …)" tails.
+   */
+  /\bmeasure laid before senate\b/i,
+  /\bconsidered by senate\b(?!\s+committee)/i,
+  /\bconsidered under the provisions of rule h\.? ?res\b/i,
+  /\bconsidered under suspension of the rules\b/i,
+  /\bconsidered as unfinished business\b/i,
+  /\bconsidered pursuant to a previous order\b/i,
 ];
 
 /**
@@ -271,6 +299,11 @@ export function floorActionInRecord(c, lastActionText = null) {
   if (c?.status !== 'floor_vote') return false;
   if (c?.floorCalendar) return false;
   const text = String(lastActionText ?? '');
+  // A shape read and judged claim-free derives NOTHING. The live case is a
+  // House discharge petition being FILED (owner ruling 2026-09-24, #268): it
+  // says "motion to discharge", which the pattern list reads as floor action,
+  // but a filing is a signature drive and nothing has happened on the floor.
+  if (floorMakesNoClaim(text)) return false;
   return text.trim().length > 0 && FLOOR_ACTION_PATTERNS.some((re) => re.test(text));
 }
 

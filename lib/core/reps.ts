@@ -41,3 +41,34 @@ export function getLegislator(bioguide: string): Legislator | undefined {
 export function portraitUrl(bioguide: string): string {
   return `https://unitedstates.github.io/images/congress/450x550/${bioguide}.jpg`;
 }
+
+/** Every sitting member in the baked roster (senators, representatives, delegates). */
+export function getAllLegislators(): Legislator[] {
+  return LEGISLATORS;
+}
+
+/** Every currently vacant House seat. */
+export function getVacancies(): Vacancy[] {
+  return VACANCIES;
+}
+
+/*
+ * A vacant seat has no bioguide to key a page on, and data/vacancies.json is
+ * built so it CANNOT carry the departed member's (see the Vacancy type). So a
+ * vacant seat's page is keyed on the seat itself - "fl-20" - under the same
+ * /reps/[bioguide] segment. The two id shapes cannot collide: a bioguide is
+ * one capital letter and six digits (BIOGUIDE_RE), a seat slug is two
+ * lower-case letters, a hyphen and a number.
+ */
+export function vacancySlug(v: Pick<Vacancy, 'state' | 'district'>): string {
+  return `${v.state}-${v.district}`.toLowerCase();
+}
+
+export function getVacancyBySlug(slug: string): Vacancy | undefined {
+  return VACANCIES.find((v) => vacancySlug(v) === slug);
+}
+
+/** The state's senators, for a seat page that has no House member to show. */
+export function senatorsForState(state: string): Legislator[] {
+  return LEGISLATORS.filter((l) => l.type === 'sen' && l.state === state);
+}

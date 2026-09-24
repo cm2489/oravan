@@ -6,6 +6,8 @@ import { NominationStatusLabel } from '@/components/NominationStatusLabel';
 import { Chip } from '@/components/system';
 import type { NominationStatus } from '@/lib/core/nominations';
 import { isSignalFresh } from '@/lib/signal-window';
+import type { StatusLine } from '@/lib/moment-status.mjs';
+import { MomentStatusLine } from '@/components/MomentStatusLine';
 
 /**
  * A Moment's SENATE NOMINATION vehicle card — MomentVehicleCard's sibling, and
@@ -72,6 +74,7 @@ export function MomentNominationCard({
   role,
   ctaLabel,
   noDecodeNote,
+  statusLine,
 }: {
   /** The `pn-…` corpus slug (lib/core/nominations.ts nominationSlug). */
   slug: string;
@@ -97,6 +100,10 @@ export function MomentNominationCard({
   ctaLabel: string;
   /** "Oravan does not rewrite nominations…" — already localized. */
   noDecodeNote: string;
+  /** The record's latest step (lib/moment-status.mjs nominationStatusLine —
+   *  verbatim, since nominations carry no status-line vocabulary yet). When
+   *  present it replaces the bare "Updated" date, which it prints itself. */
+  statusLine?: StatusLine;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -160,15 +167,16 @@ export function MomentNominationCard({
       </h3>
       {/* The absence of a decode, stated where the decode would have been. */}
       <p className="mt-2 max-w-read text-xs text-ink-2">{noDecodeNote}</p>
+      {statusLine && <MomentStatusLine line={statusLine} className="mt-3" />}
       <p className="mt-3 max-w-read border-t border-line pt-3 text-sm text-ink-2">{role}</p>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-ink-2">
         {receivedDate && (
           <span>
             {t('nominations.sentToSenate', { date: fmt(receivedDate) })}
-            {!onExecCalendar && lastActionDate && <span aria-hidden> ·</span>}
+            {!onExecCalendar && !statusLine && lastActionDate && <span aria-hidden> ·</span>}
           </span>
         )}
-        {!onExecCalendar && lastActionDate && (
+        {!onExecCalendar && !statusLine && lastActionDate && (
           // Year included — see components/BillCard.tsx: a bare month/day on a
           // corpus that reaches back to January reads as an upcoming date.
           <span>{t('bills.updated', { date: fmt(lastActionDate) })}</span>

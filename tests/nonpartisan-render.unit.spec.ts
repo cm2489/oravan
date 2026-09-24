@@ -32,6 +32,7 @@ import { expect, test } from '@playwright/test';
 const SURFACES = [
   'components/CoverageSection.tsx',
   'components/RepCard.tsx',
+  'app/[locale]/reps/[bioguide]/page.tsx',
   'components/VoteRecord.tsx',
   'components/VoteDelegation.tsx',
 ] as const;

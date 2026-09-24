@@ -190,6 +190,35 @@ test.describe('floor-activity status mapping (the buried-vote bug)', () => {
   test('plain referral is untouched', () => {
     expect(mapStatus('Referred to the House Committee on Foreign Affairs.')).toBe('committee');
   });
+
+  test('a House discharge petition FILED stays in committee (owner ruling 2026-09-24, #268)', () => {
+    // hr-4889-119, verbatim. A filing opens a signature drive; nothing has
+    // happened on the floor, so it must not read as floor_vote.
+    expect(
+      mapStatus(
+        'Motion to Discharge Committee filed by Mr. Kiley (CA). Petition No: 119-21. (<a href="https://clerk.house.gov/DischargePetition/2026051221">Discharge petition</a> text with signatures.)'
+      )
+    ).toBe('committee');
+    // The same shape without the markup link, and with a different Member.
+    expect(
+      mapStatus('Motion to Discharge Committee filed by Ms. Luna. Petition No: 119-9.')
+    ).toBe('committee');
+  });
+
+  test('every Senate discharge motion that was VOTED ON keeps floor_vote', () => {
+    // The corpus's three live Senate discharge votes, verbatim.
+    for (const text of [
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)',
+    ]) {
+      expect(mapStatus(text)).toBe('floor_vote');
+    }
+    // Both halves of the filing shape are required: a filing sentence with no
+    // petition citation is not the shape that was read, and keeps its old
+    // bucket rather than being guessed at.
+    expect(mapStatus('Motion to Discharge Committee filed by Mr. Kiley (CA).')).toBe('floor_vote');
+  });
 });
 
 /*
@@ -233,6 +262,86 @@ test.describe('finished-floor status mapping (the crown outlived the vote)', () 
     ).toBe('floor_vote');
     // The committee roll call keeps its own phrasing and its own status.
     expect(mapStatus('Ordered to be Reported by the Yeas and Nays: 25 - 20.')).toBe('markup');
+  });
+});
+
+/*
+ * THE MESSAGE THAT FOLLOWS A PASSAGE (2026-09-24, H.Con.Res. 86). Agreed to
+ * by the House, then agreed to in the Senate 50-48 — and its last action,
+ * "Message on Senate action sent to the House.", read as `committee`, the
+ * stage it left months earlier. The notice runs in both directions.
+ */
+test.describe('post-passage message status mapping (an agreed resolution read as in committee)', () => {
+  test('the message in either direction is a passage stage', () => {
+    expect(mapStatus('Message on Senate action sent to the House.')).toBe('passed_chamber');
+    expect(mapStatus('Message on House action sent to the Senate.')).toBe('passed_chamber');
+  });
+
+  test('a committee sentence that merely mentions a message is untouched', () => {
+    expect(mapStatus('Referred to the House Committee on Rules.')).toBe('committee');
+  });
+});
+
+/*
+ * A MEASURE UNDER FLOOR CONSIDERATION (2026-09-24, S. 4668). On the morning
+ * the Senate was set to vote on cloture on S. 4668, its last action read
+ * "Considered by Senate. (consideration: CR S4851)" and the corpus filed it as
+ * `committee` — so the bill being debated on the floor could never crown as
+ * deciding now. These are the sentences Congress writes while a measure is on
+ * a chamber floor, with and without their Congressional-Record tails.
+ */
+test.describe('floor-consideration status mapping (the debated bill read as in committee)', () => {
+  test('the Senate consideration sentences are floor activity', () => {
+    for (const text of [
+      'Considered by Senate. (consideration: CR S4851)',
+      'Considered by Senate.',
+      'Measure laid before Senate by motion.',
+      'Measure laid before Senate by motion. (consideration: CR S4850)',
+      'Measure laid before Senate by unanimous consent.',
+      'Measure laid before Senate by unanimous consent. (consideration: CR S4102-4110)',
+    ]) {
+      expect(mapStatus(text), text).toBe('floor_vote');
+    }
+  });
+
+  test('the House consideration sentences are floor activity', () => {
+    for (const text of [
+      'Considered under the provisions of rule H. Res. 988.',
+      'Considered under the provisions of rule H. Res. 988. (consideration: CR H4410-4432)',
+      'Considered under suspension of the rules.',
+      'Considered under suspension of the rules. (consideration: CR H1234-1240)',
+      'Considered as unfinished business.',
+      'Considered as unfinished business. (consideration: CR H1250-1251)',
+      'Considered pursuant to a previous order.',
+      'Considered pursuant to a previous order. (consideration: CR H2201)',
+    ]) {
+      expect(mapStatus(text), text).toBe('floor_vote');
+    }
+  });
+
+  test('"consideration" in a committee sentence is still committee work', () => {
+    // The markup sentence says "Consideration", never "considered by/under/
+    // pursuant" — it stays markup, never floor_vote.
+    expect(mapStatus('Committee Consideration and Mark-up Session Held')).toBe('markup');
+    // A referral's "for consideration of such provisions" is not floor action.
+    expect(
+      mapStatus(
+        'Referred to the Committee on Energy and Commerce, and in addition to the Committee on Ways and Means, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned.'
+      )
+    ).toBe('committee');
+    // "hereafter be considered as the first sponsor" is not "considered as
+    // unfinished business".
+    expect(
+      mapStatus(
+        'ASSUMING FIRST SPONSORSHIP - Mr. Min asked unanimous consent that he may hereafter be considered as the first sponsor of H.R. 1234, a bill originally introduced by Representative X, for the purposes of adding cosponsors and requesting reprintings pursuant to clause 7 of rule XII. Agreed to without objection.'
+      )
+    ).not.toBe('floor_vote');
+  });
+
+  test('the passage guards still run first over a consideration tail', () => {
+    expect(mapStatus('Passed Senate without amendment by Unanimous Consent. (consideration: CR S4882)')).toBe(
+      'passed_chamber'
+    );
   });
 });
 

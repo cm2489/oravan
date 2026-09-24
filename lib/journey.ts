@@ -54,6 +54,7 @@ export {
   floorMakesNoClaim,
   floorPendingChamber,
   floorSettledChamber,
+  statusBasisText,
 } from './floor-text.mjs';
 // floorActionChamber is re-exported above but NOT imported here any more:
 // since 2026-08-12 nothing in this file's derivation asks "which chamber does
@@ -65,7 +66,13 @@ import {
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
+  passageState as passageStateMjs,
+  statusBasisText,
 } from './floor-text.mjs';
+
+/** The optional pipeline field every chamber/tense derivation below reads
+ *  through `statusBasisText` (lib/floor-text.mjs). */
+type Basis = { status_basis_text?: string | null };
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -535,6 +542,7 @@ export function billFloorBand(
     status: Bill['status'];
     last_action_text?: string | null;
     last_action_date?: string | null;
+    status_basis_text?: string | null;
   },
   announcement: { chamber: Chamber; published: string } | null,
   now: number = Date.now(),
@@ -555,8 +563,9 @@ export function billFloorBand(
   }
   const date = bill.last_action_date ?? null;
   if (bill.status !== 'floor_vote' || !date || !isSignalFresh(date, now)) return null;
-  const calendar = floorCalendarChamber(bill.last_action_text ?? null);
-  const pending = calendar ? null : floorPendingChamber(bill.last_action_text ?? null);
+  const record = statusBasisText(bill);
+  const calendar = floorCalendarChamber(record);
+  const pending = calendar ? null : floorPendingChamber(record);
   const chamber = calendar ?? pending;
   if (!chamber) return null;
   const kind: FloorBandKind = calendar ? 'calendar' : 'pending';
@@ -652,9 +661,10 @@ export interface LiveCallTarget {
  * and "it goes back to the House" are opposite claims and guessing between
  * them is how this defect happened the first time. Every one of the 24 real
  * passage sentences carries "without amendment", "with an amendment(s)", or
- * "with an amendment and an amendment to the Title", so 'second' is
- * unreachable on today's corpus and exists for the sentence Congress has not
- * written yet.
+ * "with an amendment and an amendment to the Title", so no PASSAGE sentence
+ * reaches 'second'. Since 2026-09-24 the second-chamber "Message on {chamber}
+ * action sent to the {other}." notice does (see the message read below): it
+ * names the acting chamber and never the amendment.
  */
 export type PassageStage = 'first' | 'back' | 'both' | 'second';
 
@@ -666,34 +676,20 @@ export interface PassageState {
   next: Chamber | null;
 }
 
+/*
+ * THE BODY LIVES IN lib/floor-text.mjs since 2026-09-24 (unchanged — same
+ * regexes, same order), because scripts/moment-watch.mjs now diffs the Big
+ * Questions status lines under plain node and needs the same reading. The
+ * header above still describes it; the types above still name its shape.
+ */
 export function passageState(
-  bill: Pick<Bill, 'bill_type' | 'last_action_text'>
+  bill: Pick<Bill, 'bill_type' | 'last_action_text'> & Basis
 ): PassageState {
-  const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
-  const other: Chamber = origin === 'house' ? 'senate' : 'house';
-  const text = bill.last_action_text ?? '';
-  // Anchored: "Rule H. Res. 988 passed House." reports a RULE's passage, not
-  // this bill's, and an unanchored match would read it as one.
-  const passage = /^\s*Passed (House|Senate)\b/i.exec(text);
-  if (!passage) return { stage: 'first', passedBy: null, next: other };
-  const passedBy: Chamber = passage[1].toLowerCase() === 'senate' ? 'senate' : 'house';
-  // The originating chamber passing its own bill is the ordinary case, and an
-  // amendment adopted during that passage is just its own floor amendment —
-  // it changes nothing about who acts next.
-  if (passedBy === origin) return { stage: 'first', passedBy, next: other };
-  // Past here the SECOND chamber has passed it, and only the amendment clause
-  // decides between the President and a trip back.
-  if (/\bwithout amendment\b/i.test(text)) {
-    return { stage: 'both', passedBy, next: null };
-  }
-  if (/\bwith (?:an? )?amendments?\b/i.test(text)) {
-    return { stage: 'back', passedBy, next: origin };
-  }
-  return { stage: 'second', passedBy, next: null };
+  return passageStateMjs(bill);
 }
 
 export function liveCallTarget(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis
 ): LiveCallTarget | null {
   if (bill.status === 'floor_vote') {
     /*
@@ -733,7 +729,7 @@ export function liveCallTarget(
     // ordinary who-to-call framing — the same quiet path a committee-stage
     // bill has always taken.
     const chamber =
-      floorCalendarChamber(bill.last_action_text) ?? floorPendingChamber(bill.last_action_text);
+      floorCalendarChamber(statusBasisText(bill)) ?? floorPendingChamber(statusBasisText(bill));
     return chamber ? { chamber, afterVote: false, soleChamber: false } : null;
   }
   if (bill.status === 'passed_chamber') {
@@ -975,7 +971,7 @@ export interface JourneyState {
  * default the stepper's old `POSITION[status] ?? 1` carried.
  */
 export function deriveJourney(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & {
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & {
     /** OPTIONAL, and only ever read by journeyEnding — a joint resolution's
      *  official title is what says whether it is an Article V amendment
      *  proposal headed for the states. Every other field of the derivation
@@ -1014,7 +1010,12 @@ export function deriveJourney(
        * was right and the verb was the lie.
        */
       const live = isSignalFresh(bill.last_action_date);
-      const cal = floorCalendarChamber(bill.last_action_text);
+      // Every sentence below reads the record the status was read from
+      // (statusBasisText) — for a defeated House vote under "Motion to
+      // reconsider laid on the table…", that is the defeat, so the settled
+      // branch can say so instead of the neutral "moving on the floor".
+      const record = statusBasisText(bill);
+      const cal = floorCalendarChamber(record);
       if (cal) {
         return {
           ...base,
@@ -1025,7 +1026,7 @@ export function deriveJourney(
           // claim — an aged placement is still ON the calendar and the
           // demoted sentence still says so.
           onCalendar: live,
-          floorCalendar: floorCalendarName(bill.last_action_text),
+          floorCalendar: floorCalendarName(record),
           nowKey: live ? 'nowFloor' : 'nowFloorStale',
         };
       }
@@ -1039,7 +1040,7 @@ export function deriveJourney(
        * out here, keeping the SAME step slot (the bill's position in the
        * five-step structure did not change — only the sentence about it did).
        */
-      const settled = floorSettledChamber(bill.last_action_text);
+      const settled = floorSettledChamber(record);
       if (settled) {
         return {
           ...base,
@@ -1085,7 +1086,7 @@ export function deriveJourney(
        * change of what CAN happen, not of what does. Re-measure rather than
        * trust the number: the corpus moves nightly.
        */
-      const pending = floorPendingChamber(bill.last_action_text);
+      const pending = floorPendingChamber(record);
       // NEVER GUESS A CHAMBER (owner ruling 2026-08-04). An unreadable floor
       // text used to fall back to the ORIGIN chamber — the silent-lie class
       // the whole derivation exists to end. Now it renders the chamber-free
@@ -1229,7 +1230,8 @@ export function deriveJourney(
       }
       // 'second' — both chambers have passed it and the record does not say
       // whether the versions match, so the sentence says exactly that and
-      // names no next step. Unreachable on today's corpus (see passageState).
+      // names no next step. Reached by a second-chamber "Message on … action
+      // sent to the …" notice (see passageState).
       // NOT CLOCKED (N5), for the same reason `nowFloorActivityNeutral` is
       // not: it already claims only that the record has not said, which is a
       // statement about the record's silence and cannot go stale.

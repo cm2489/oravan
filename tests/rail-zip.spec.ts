@@ -224,7 +224,7 @@ test('Enter submits the rail ZIP form, and chamber routing names the senators as
  * page's rail are pinned here; A1 is pinned in landing.spec.
  */
 
-test('C1 provenance ritual: one fixed-order metadata line under the h1 — citation, gated status, latest action, the AI label', async ({
+test('C1 provenance, as the B6 credibility block under the h1 — gated status chip, citation + latest action, the AI label', async ({
   page,
 }) => {
   await page.goto(BILL);

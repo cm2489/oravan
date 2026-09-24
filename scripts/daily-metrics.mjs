@@ -71,23 +71,25 @@
  * and `gh` is preinstalled and already authenticated via GITHUB_TOKEN on
  * every GitHub-hosted runner.
  *
- * Site page-view traffic is deliberately NOT in this digest — see the
- * traffic-watch design's §1: Vercel's Web Analytics REST API requires the
- * @vercel/analytics client script, which CLAUDE.md permanently bans. This is
- * disclosed in the digest body itself every day, not silently omitted.
+ * Site page views joined the digest 2026-09 (site-counter). They are
+ * first-party and server-side — lib/usage.ts's pageview family, incremented
+ * in proxy.ts, one counter per ROUTE TEMPLATE per UTC day — not Vercel Web
+ * Analytics, whose REST API requires the @vercel/analytics client script
+ * that CLAUDE.md permanently bans. Until then the digest said "site
+ * page-view traffic: not measured" every day; it now says where the numbers
+ * come from, and what they are not (requests, bots included, never unique
+ * visitors). Descriptive only: no spike or decline check runs on this series
+ * — see lib/traffic-metrics.mjs's formatSiteLines for why.
  *
- * CORRECTED 2026-09-18. The second half of that disclosure used to read
- * "Vercel's server-side Observability has no REST API at all
- * (dashboard/CSV-export only)", and that stopped being true: `vercel metrics`
- * (CLI, --format json, public beta 2026, requires Observability Plus) exposes
- * the compliant server-side numbers programmatically, and runtime logs can be
- * aggregated over the API as well. The honest statement is the one this file
- * and the digest now make: a compliant programmatic source EXISTS, and this
- * digest does not read it yet. The reason to fix the wording rather than
- * quietly leave it is the same duty CLAUDE.md's "Constitutional conflicts"
- * section names — a shipped claim that has stopped being true is a conflict,
- * not a detail. Adopting the source is a separate decision (it needs a plan
- * tier and a token) and is deliberately NOT made here.
+ * CORRECTED 2026-09-18 (kept through the site-counter merge). An earlier
+ * version of this header said Vercel's server-side Observability "has no
+ * REST API at all", and that stopped being true: `vercel metrics` (CLI,
+ * --format json, public beta 2026, requires Observability Plus) exposes the
+ * compliant server-side numbers programmatically, and runtime logs can be
+ * aggregated over the API as well. This digest does not read that source;
+ * adopting it would need a plan tier and a token, and the first-party
+ * counter needs neither. A shipped claim that has stopped being true is a
+ * conflict, not a detail (CLAUDE.md, "Constitutional conflicts").
  *
  * PIPELINE HEALTH (2026-09) rides along on this same run, the same way issue
  * hygiene does and for the same reason: this is the job that already runs
@@ -104,7 +106,7 @@ import { join } from 'node:path';
 // directly — lib/core/mcp.ts transitively imports 'server-only' (via
 // lib/freshness.ts), which only resolves inside Next's own bundler, not
 // under tsx. See lib/usage.ts's header/MCP_TOOL_NAMES comments.
-import { MCP_TOOL_NAMES, readMcpClientDay, readUsageWindow } from '../lib/usage';
+import { MCP_TOOL_NAMES, PAGEVIEW_SURFACES, readMcpClientDay, readPageviewWindow, readUsageWindow } from '../lib/usage';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -550,6 +552,18 @@ async function main() {
     return;
   }
 
+  // Site page views, the SAME 28-day window, one more MGET. Same fail-LOUD
+  // posture as the two reads above and for the same reason: a digest that
+  // renders an invented zero is worse than a digest that does not post.
+  const pageviews = await readPageviewWindow(days);
+  if (!pageviews.ok) {
+    console.error(
+      '::error::could not read the site page-view window from the counters database — refusing to post a digest with an invented number'
+    );
+    process.exit(1);
+    return;
+  }
+
   // The aggregate series, full 28 days — the spike half slices its first 8
   // below, the decline half reads all of it.
   const totalWindow = sumWindows(MCP_TOOL_NAMES.map((tool) => window.mcp[tool]));
@@ -571,6 +585,19 @@ async function main() {
   }));
   const mcpTotal = seriesStats(spikeWindow(totalWindow), MCP_SPIKE_FLOOR);
   const script = seriesStats(spikeWindow(window.script), SCRIPT_SPIKE_FLOOR);
+
+  // Page views reuse the same 8-day prefix and the same seriesStats, with
+  // floor Infinity — the per-tool lines' own trick, and here it is the
+  // whole story: this series is reported, never alarmed on (no calibrated
+  // floor exists for it yet; see lib/traffic-metrics.mjs's formatSiteLines).
+  const sitePageviews = PAGEVIEW_SURFACES.map((surface) => ({
+    surface,
+    stats: seriesStats(spikeWindow(pageviews.surfaces[surface]), Infinity),
+  }));
+  const siteTotal = seriesStats(
+    spikeWindow(sumWindows(PAGEVIEW_SURFACES.map((surface) => pageviews.surfaces[surface]))),
+    Infinity
+  );
 
   const spikeIssueUrls = {};
   if (mcpTotal.spike) {
@@ -615,6 +642,8 @@ async function main() {
     mcpDecline,
     darkTools: dark,
     declineIssueUrl,
+    sitePageviews,
+    siteTotal,
   });
 
   // Issue hygiene, read once and appended to the SAME comment — one place
@@ -642,7 +671,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 
