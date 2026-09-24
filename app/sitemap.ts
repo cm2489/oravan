@@ -9,6 +9,7 @@ import { absoluteUrl } from '@/lib/hreflang';
 import { getMoments, momentClaimsVehicles, vehicleKind } from '@/lib/moments';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { latestVehicleAction } from '@/lib/moments-ui';
+import { briefWindow } from '@/lib/today';
 
 /*
  * S22 — no sitemap existed before this PR. Ships alongside the still-active
@@ -45,6 +46,7 @@ const STATIC_PATHS = [
   '/follow',
   '/questions',
   '/glossary',
+  '/today',
 ] as const;
 
 function languagesFor(href: string): Record<string, string> {
@@ -154,6 +156,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const lastModified = day ? new Date(day) : siteLastModified;
     for (const locale of routing.locales) {
       entries.push({ url: absoluteUrl(locale, href), lastModified, alternates });
+    }
+  }
+
+  /*
+   * The daily brief's dated permalinks (plan item C3): exactly the 14 days
+   * app/[locale]/today/[date] prerenders — the same window function, so the
+   * sitemap can never list a date the route 404s. lastModified is the day
+   * itself: a past day's page only changes when the record it quotes does.
+   */
+  for (const date of briefWindow()) {
+    const href = `/today/${date}`;
+    const alternates = { languages: languagesFor(href) };
+    for (const locale of routing.locales) {
+      entries.push({ url: absoluteUrl(locale, href), lastModified: new Date(`${date}T00:00:00Z`), alternates });
     }
   }
 

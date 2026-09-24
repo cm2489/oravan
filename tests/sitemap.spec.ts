@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
+import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -13,7 +14,7 @@ import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind 
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 16; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/follow', '/questions', '/glossary'
+const STATIC_PATH_COUNT = 17; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/follow', '/questions', '/glossary', '/today'
 
 /**
  * The nomination slugs app/sitemap.ts actually lists: ONLY those a moment in a
@@ -62,7 +63,7 @@ test.describe('sitemap.xml', () => {
     const totalRepPages = getAllLegislators().length + getVacancies().length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
     expect(locCount).toBe(
-      (STATIC_PATH_COUNT + totalBills + totalMoments + cited.size + totalRepPages) * 2
+      (STATIC_PATH_COUNT + totalBills + totalMoments + cited.size + totalRepPages + BRIEF_WINDOW_DAYS) * 2
     );
 
     // One member and one vacant seat, both locales.
@@ -74,6 +75,16 @@ test.describe('sitemap.xml', () => {
       expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${vacancySlug(seat)}</loc>`);
       expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${vacancySlug(seat)}</loc>`);
     }
+
+    // The daily brief's dated permalinks: exactly the window the route
+    // prerenders, both locales, and nothing older.
+    for (const date of briefWindow()) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/today/${date}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/today/${date}</loc>`);
+    }
+    expect(body.match(/<loc>[^<]*\/today\/\d{4}-\d{2}-\d{2}<\/loc>/g) ?? []).toHaveLength(
+      BRIEF_WINDOW_DAYS * 2
+    );
 
     // Every cited nomination is listed, both locales…
     for (const slug of cited) {

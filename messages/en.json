@@ -125,7 +125,8 @@
     "evidenceCovers": "for {date}",
     "evidenceLink": "Read the source",
     "floorCheckedAt": "Schedule checked {date}",
-    "weekNoteAnnounced": "The green panel marks one dated fact from the record: the chamber has named this bill on its own published floor schedule, quoted above with the date it was published. The schedule is re-read every hour, and a bill the chamber drops leaves the panel with it. Nothing here says when a vote will happen — only Congress can say that, and it has not."
+    "weekNoteAnnounced": "The green panel marks one dated fact from the record: the chamber has named this bill on its own published floor schedule, quoted above with the date it was published. The schedule is re-read every hour, and a bill the chamber drops leaves the panel with it. Nothing here says when a vote will happen — only Congress can say that, and it has not.",
+    "todayLink": "Today's brief: votes, bills that moved, and each chamber's schedule, from the record."
   },
   "reps": {
     "title": "Your representatives",
@@ -1115,6 +1116,41 @@
         "body": "A pro forma session is a meeting a chamber holds to satisfy the constitutional rule that neither chamber may break for more than three days without the other's consent. It runs a minute or two: a presiding officer gavels in, no legislative business is conducted, and the chamber gavels out. A bill cannot be called up at one, and no measure moves on the floor because of it. The chamber's own Daily Digest prints the program for each meeting, so a pro forma one says so in the record."
       }
     }
+  },
+  "today": {
+    "title": "Today in Congress",
+    "titleDated": "Congress on {date}",
+    "metaDescription": "What the official record shows for {date}: roll-call votes, bills that moved, and each chamber's own published schedule.",
+    "recordNote": "Everything below comes from the official record. Bill titles, vote questions and results, and quoted schedule lines are printed in the record's own words.",
+    "senate": "Senate",
+    "house": "House",
+    "chambersHeading": "The chambers",
+    "chamberIn": "<name>{chamber}</name>: in session, per the Daily Digest published {published}.",
+    "chamberOut": "<name>{chamber}</name>: the Daily Digest published {published} gives its next meeting as <when>{meeting}</when>, a <term>pro forma session</term>.",
+    "chamberOutNoMeeting": "<name>{chamber}</name>: its last program in the Daily Digest, published {published}, was a <term>pro forma session</term>.",
+    "chamberUnknown": "<name>{chamber}</name>: not confirmed. The chamber schedule we read has not been refreshed in more than two days.",
+    "dayEmpty": "Nothing in the record we hold for this day: no roll-call vote on a bill we track, and no bill whose latest action is dated this day.",
+    "votesHeading": "Roll-call votes",
+    "voteRoll": "{chamber} roll call {roll}",
+    "tally": "Yea {yea} · Nay {nay} · Present {present} · Not voting {notVoting}",
+    "voteSource": "Official tally",
+    "movedHeading": "Bills whose latest action is dated this day",
+    "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",
+    "scheduleHeading": "On the floor schedule next",
+    "scheduleNote": "Each chamber publishes the business it plans to take up. That names a meeting, not a vote time.",
+    "scheduleMeta": "{source} · published {published} · for <when>{covers}</when>",
+    "scheduleMetaNoCovers": "{source} · published {published}",
+    "questionsHeading": "Big Questions that moved",
+    "questionVehicle": "{citation}, latest action {date}",
+    "empty": "The record we hold, as of the times at the foot of this page, shows nothing for {date} or the day before: no roll-call vote on a bill we track, and no bill or Big Question with a latest action dated either day.",
+    "pastNote": "Chamber schedules are re-read every hour and not archived, so they appear on the current day's brief only.",
+    "navLabel": "Other days",
+    "navToday": "Today's brief",
+    "permalink": "Link to this day",
+    "stampsLead": "Record as of:",
+    "stampBills": "bills {date}",
+    "stampVotes": "votes {date}",
+    "stampFloor": "floor schedule {date}"
   },
   "votes": {
     "heading": "Recorded votes",

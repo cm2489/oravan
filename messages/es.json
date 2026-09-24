@@ -125,7 +125,8 @@
     "evidenceCovers": "para el {date}",
     "evidenceLink": "Leer la fuente",
     "floorCheckedAt": "Programación comprobada el {date}",
-    "weekNoteAnnounced": "El panel verde señala un solo hecho con fecha del registro: la cámara nombró este proyecto en su propia programación del pleno, citada arriba con la fecha en que se publicó. Esa programación se vuelve a leer cada hora, y si la cámara retira el proyecto, este sale del panel. Nada aquí dice cuándo será la votación — eso solo lo puede decir el Congreso, y no lo ha dicho."
+    "weekNoteAnnounced": "El panel verde señala un solo hecho con fecha del registro: la cámara nombró este proyecto en su propia programación del pleno, citada arriba con la fecha en que se publicó. Esa programación se vuelve a leer cada hora, y si la cámara retira el proyecto, este sale del panel. Nada aquí dice cuándo será la votación — eso solo lo puede decir el Congreso, y no lo ha dicho.",
+    "todayLink": "Resumen de hoy: votaciones, proyectos que avanzaron y la agenda de cada cámara, según el registro."
   },
   "reps": {
     "title": "Tus representantes",
@@ -1115,6 +1116,41 @@
         "body": "Una sesión pro forma es una reunión que una cámara celebra para cumplir la regla constitucional de que ninguna de las dos puede interrumpir sus trabajos más de tres días sin el consentimiento de la otra. Dura un minuto o dos: quien preside abre la sesión, no se trata ningún asunto legislativo y la sesión se levanta. En una sesión así no se puede someter un proyecto a consideración, y ninguna medida avanza en el pleno por su causa. El Daily Digest de la propia cámara publica el programa de cada reunión, así que una sesión pro forma queda dicha en el registro."
       }
     }
+  },
+  "today": {
+    "title": "Hoy en el Congreso",
+    "titleDated": "El Congreso el {date}",
+    "metaDescription": "Lo que muestra el registro oficial para el {date}: votaciones nominales, proyectos de ley que avanzaron y la agenda que publica cada cámara.",
+    "recordNote": "Todo lo que sigue viene del registro oficial. Los títulos de los proyectos, las preguntas y resultados de las votaciones y las líneas de agenda citadas aparecen con las palabras del registro, en inglés y sin traducir.",
+    "senate": "Senado",
+    "house": "Cámara de Representantes",
+    "chambersHeading": "Las cámaras",
+    "chamberIn": "<name>{chamber}</name>: en sesión, según el Daily Digest publicado el {published}.",
+    "chamberOut": "<name>{chamber}</name>: el Daily Digest publicado el {published} indica que su próxima reunión es <when>{meeting}</when>, una <term>sesión pro forma</term>.",
+    "chamberOutNoMeeting": "<name>{chamber}</name>: su último programa en el Daily Digest, publicado el {published}, fue una <term>sesión pro forma</term>.",
+    "chamberUnknown": "<name>{chamber}</name>: sin confirmar. La agenda de la cámara que consultamos no se ha actualizado en más de dos días.",
+    "dayEmpty": "Nada en el registro que tenemos para este día: ninguna votación nominal sobre un proyecto que seguimos, y ningún proyecto cuya última acción tenga esta fecha.",
+    "votesHeading": "Votaciones nominales",
+    "voteRoll": "{chamber}, votación nominal {roll}",
+    "tally": "A favor {yea} · En contra {nay} · Presente {present} · No votaron {notVoting}",
+    "voteSource": "Recuento oficial",
+    "movedHeading": "Proyectos cuya última acción tiene esta fecha",
+    "movedMore": "{count, plural, one {# proyecto más tiene} other {# proyectos más tienen}} una última acción con esta fecha.",
+    "scheduleHeading": "Lo próximo en la agenda del pleno",
+    "scheduleNote": "Cada cámara publica los asuntos que piensa tratar. Eso nombra una reunión, no la hora de una votación.",
+    "scheduleMeta": "{source} · publicado el {published} · para <when>{covers}</when>",
+    "scheduleMetaNoCovers": "{source} · publicado el {published}",
+    "questionsHeading": "Grandes preguntas que avanzaron",
+    "questionVehicle": "{citation}, última acción el {date}",
+    "empty": "El registro que tenemos, a las horas indicadas al pie de esta página, no muestra nada para el {date} ni para el día anterior: ninguna votación nominal sobre un proyecto que seguimos, y ningún proyecto ni Gran pregunta con una última acción en esas fechas.",
+    "pastNote": "Las agendas de las cámaras se consultan cada hora y no se archivan, así que solo aparecen en el resumen del día actual.",
+    "navLabel": "Otros días",
+    "navToday": "Resumen de hoy",
+    "permalink": "Enlace a este día",
+    "stampsLead": "Registro al:",
+    "stampBills": "proyectos {date}",
+    "stampVotes": "votaciones {date}",
+    "stampFloor": "agenda del pleno {date}"
   },
   "votes": {
     "heading": "Votaciones registradas",

@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { briefWindow } from '../lib/today';
 
 /*
  * README principle 2 ("Static-first … baked into statically generated pages")
@@ -81,6 +82,7 @@ const STATIC_PAGES = [
   '/questions',
   '/record',
   '/terms',
+  '/today',
   '/why-call',
 ] as const;
 
@@ -136,6 +138,18 @@ test('every member-of-Congress page is prerendered, in both languages', () => {
     ids.map((id) => `/${locale}/reps/${id}`).filter((route) => !(route in prerendered)),
   );
   expect(missing, 'member pages rendered on demand instead of prerendered').toEqual([]);
+});
+
+test('the daily brief prerenders every dated permalink in its window, in both languages', () => {
+  // /today/{date} for today and the 13 days before (lib/today.ts's window).
+  // Older dates are not prerendered and 404 at request time — tests/today.spec.ts.
+  const prerendered = routes();
+  const missing = ['en', 'es'].flatMap((locale) =>
+    briefWindow()
+      .map((date) => `/${locale}/today/${date}`)
+      .filter((route) => !(route in prerendered)),
+  );
+  expect(missing).toEqual([]);
 });
 
 test('any re-added loading boundary under [locale] is a client component', () => {
