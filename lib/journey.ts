@@ -65,6 +65,7 @@ import {
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
+  passageState as passageStateMjs,
 } from './floor-text.mjs';
 
 /*
@@ -666,30 +667,16 @@ export interface PassageState {
   next: Chamber | null;
 }
 
+/*
+ * THE BODY LIVES IN lib/floor-text.mjs since 2026-09-24 (unchanged — same
+ * regexes, same order), because scripts/moment-watch.mjs now diffs the Big
+ * Questions status lines under plain node and needs the same reading. The
+ * header above still describes it; the types above still name its shape.
+ */
 export function passageState(
   bill: Pick<Bill, 'bill_type' | 'last_action_text'>
 ): PassageState {
-  const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
-  const other: Chamber = origin === 'house' ? 'senate' : 'house';
-  const text = bill.last_action_text ?? '';
-  // Anchored: "Rule H. Res. 988 passed House." reports a RULE's passage, not
-  // this bill's, and an unanchored match would read it as one.
-  const passage = /^\s*Passed (House|Senate)\b/i.exec(text);
-  if (!passage) return { stage: 'first', passedBy: null, next: other };
-  const passedBy: Chamber = passage[1].toLowerCase() === 'senate' ? 'senate' : 'house';
-  // The originating chamber passing its own bill is the ordinary case, and an
-  // amendment adopted during that passage is just its own floor amendment —
-  // it changes nothing about who acts next.
-  if (passedBy === origin) return { stage: 'first', passedBy, next: other };
-  // Past here the SECOND chamber has passed it, and only the amendment clause
-  // decides between the President and a trip back.
-  if (/\bwithout amendment\b/i.test(text)) {
-    return { stage: 'both', passedBy, next: null };
-  }
-  if (/\bwith (?:an? )?amendments?\b/i.test(text)) {
-    return { stage: 'back', passedBy, next: origin };
-  }
-  return { stage: 'second', passedBy, next: null };
+  return passageStateMjs(bill);
 }
 
 export function liveCallTarget(

@@ -8,6 +8,8 @@
  *   node scripts/moment-watch.mjs --mode=push --commit-seen   # persist the seen-set
  *   node scripts/moment-watch.mjs --mode=push --commit-seen --filed=hr-1-119,s-2-119
  *   node scripts/moment-watch.mjs --mode=weekly --now=2026-08-05T12:00:00Z
+ *   node scripts/moment-watch.mjs --mode=status                  # nightly: what moved on the record
+ *   node scripts/moment-watch.mjs --mode=status --commit-status  # persist the status snapshot
  *
  * WHY THIS EXISTS. scripts/moment-candidates.mjs has been a complete, correct
  * ranked report since it was written — and it was wired to nothing. It ran only
@@ -77,11 +79,20 @@ import {
   groundFor,
 } from './moment-draft.mjs';
 import { blankStructure, structureFor } from './moment-scaffold.mjs';
+import {
+  billStatusLine,
+  buildStatusSnapshot,
+  diffStatusSnapshots,
+  nominationStatusLine,
+  pastReview,
+} from '../lib/moment-status.mjs';
+import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 
 const path = (p) => join(process.cwd(), p);
 const read = (p) => JSON.parse(readFileSync(path(p), 'utf8'));
 
 const SEEN_PATH = 'data/candidates-seen.json';
+const STATUS_PATH = 'data/moment-status-seen.json';
 
 /*
  * ============================ THE FLOORS ============================
@@ -650,7 +661,11 @@ export function renderWeekly(report, { newly, dropped, expiring, now, grounds = 
   if (expiring.length) {
     lines.push('', '### ⚠ Expiring');
     for (const m of expiring) {
-      lines.push(`- \`${m.id}\` — review_by **${m.review_by}** (${m.days} day(s))`);
+      lines.push(
+        m.days < 0
+          ? `- \`${m.id}\` — review_by **${m.review_by}** (past review by ${-m.days} day(s); still on the site)`
+          : `- \`${m.id}\` — review_by **${m.review_by}** (${m.days} day(s))`,
+      );
     }
   }
 
@@ -699,6 +714,143 @@ export function expiringMoments(moments, now, days = 14) {
   return out.sort((a, b) => a.days - b.days);
 }
 
+/* ===================== THE NIGHTLY STATUS REFRESH =====================
+ *
+ * Owner, 2026-09-24: "Big Questions should get a nightly refresh, don't you
+ * think?" The refresh is of STATUS, from the record — never of prose. Every
+ * night after the sync, `--mode=status` re-derives each open question's
+ * per-vehicle status lines (lib/moment-status.mjs, the same derivation the
+ * pages render at build time), diffs them against the snapshot the last run
+ * committed, and prints a digest when either:
+ *
+ *   - a vehicle's derived line MOVED (a new action, a new state, a vehicle
+ *     added or dropped by a content PR), or
+ *   - a question is NEWLY past its review_by date.
+ *
+ * The workflow posts that digest as a comment on the standing moment-review
+ * issue — the existing delivery path, no new issue type — and only then
+ * commits the snapshot (--commit-status), so a failed post re-flags the next
+ * night instead of swallowing the change. An empty digest prints nothing and
+ * posts nothing: silence is the signal, as it is for candidates.
+ *
+ * What it deliberately does not do: write data/moments.json, rewrite a
+ * summary, or call a model. It tells the owner the record moved; whether the
+ * summary needs a new PR is his call. $0, offline, no network.
+ * ------------------------------------------------------------------------ */
+
+/** @param {{ pn_number: number, part_number?: string | number | null, congress_number: number }} n */
+export function storedNominationSlug(n) {
+  const part = Number(n.part_number ?? 0);
+  const base = `pn-${n.pn_number}`;
+  return (Number.isInteger(part) && part > 0 ? `${base}-${part}` : base) + `-${n.congress_number}`;
+}
+
+/** The committed snapshot, or null on the very first run. */
+export function readStatusSeen() {
+  if (!existsSync(path(STATUS_PATH))) return null;
+  try {
+    const raw = read(STATUS_PATH);
+    return { questions: raw.questions ?? {}, pastReview: Array.isArray(raw.pastReview) ? raw.pastReview : [] };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Everything one status run knows, pure over its inputs.
+ *
+ * @param {{ moments: Record<string, any>, bills: any[], nominations: any[], prev: { questions: any, pastReview: string[] } | null, now: number }} input
+ */
+export function statusRun({ moments, bills, nominations, prev, now }) {
+  const billBySlug = new Map(bills.map((b) => [b.full_identifier, b]));
+  // The corpus stores no slug; this is lib/core/nominations.ts nominationSlug,
+  // restated because that module is TypeScript (pinned by
+  // tests/moment-status.unit.spec.ts against the TS original).
+  const nomBySlug = new Map((nominations ?? []).map((n) => [storedNominationSlug(n), n]));
+  const lineFor = (v) => {
+    if ((v.kind ?? 'bill') === 'nomination') {
+      const n = nomBySlug.get(v.slug);
+      return n ? nominationStatusLine(n, TERMINAL_NOMINATION_STATUSES) : null;
+    }
+    const b = billBySlug.get(v.slug);
+    return b ? billStatusLine(b, now) : null;
+  };
+  const snapshot = buildStatusSnapshot({ moments, lineFor });
+  const changes = diffStatusSnapshots(prev?.questions ?? null, snapshot);
+  const past = pastReview(snapshot, now);
+  const seenPast = new Set(prev?.pastReview ?? []);
+  const newlyPast = past.filter((p) => !seenPast.has(p.id));
+  const body = renderStatusDigest({ changes, past, newlyPast, now, firstRun: !prev });
+  return { snapshot, changes, past, newlyPast, body };
+}
+
+const describe = (fp) => {
+  if (fp === null) return '_(none)_';
+  if (fp === 'question' || fp === 'unresolved') return `\`${fp}\``;
+  const [key, chamber, law, date] = fp.split('|');
+  return `\`${key}\`${chamber ? ` (${chamber})` : ''}${law ? ` P.L. ${law}` : ''}${date ? ` · ${date}` : ''}`;
+};
+
+/**
+ * The comment body, or '' when there is nothing to flag.
+ *
+ * @param {{ changes: ReturnType<typeof diffStatusSnapshots>, past: ReturnType<typeof pastReview>, newlyPast: ReturnType<typeof pastReview>, now: number, firstRun?: boolean }} input
+ */
+export function renderStatusDigest({ changes, past, newlyPast, now, firstRun = false }) {
+  if (changes.length === 0 && newlyPast.length === 0) return '';
+  const day = new Date(now).toISOString().slice(0, 10);
+  const lines = [
+    `## Big Questions — the record moved (${day})`,
+    '',
+    '> Derived nightly from the official record by `lib/moment-status.mjs` — the same status lines the question pages render. No prose was written or changed; whether a summary needs a PR is the owner\'s call.',
+    '',
+  ];
+  if (firstRun) {
+    lines.push('_First run: no earlier snapshot to diff against, so only review dates are flagged tonight._', '');
+  }
+  if (changes.length) {
+    lines.push(`### Status changed (${changes.length})`, '');
+    for (const c of changes) {
+      if (c.slug === null) {
+        lines.push(`- \`${c.id}\` — question ${c.to ? 'opened' : 'closed or retired'}`);
+        continue;
+      }
+      const record = c.text ? ` — record: “${c.text.replace(/\s+/g, ' ').trim()}”` : '';
+      lines.push(`- \`${c.id}\` · \`${c.slug}\`: ${describe(c.from)} → ${describe(c.to)}${record}`);
+    }
+    lines.push('');
+  }
+  if (past.length) {
+    const fresh = new Set(newlyPast.map((p) => p.id));
+    lines.push(`### Past review (${past.length}) — still on the site; renew \`review_by\` (and set \`reviewed\`) or retire`, '');
+    for (const p of past) {
+      lines.push(`- \`${p.id}\` — review_by ${p.review_by} (${p.daysPast} day(s) ago)${fresh.has(p.id) ? ' **· new tonight**' : ''}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The file --commit-status writes. No timestamp inside it: the file changes
+ * only when a derived line or the past-review set does, so a quiet night
+ * leaves nothing to commit (and therefore nothing to deploy).
+ */
+export function statusSeenFile(snapshot, past) {
+  return `${JSON.stringify(
+    {
+      _meta: {
+        schema: 1,
+        note: 'Big Questions status lines as last flagged by scripts/moment-watch.mjs --mode=status. Deleting it re-baselines (no status diff, review dates re-flagged).',
+      },
+      pastReview: past.map((p) => p.id).sort(),
+      questions: snapshot,
+    },
+    null,
+    2,
+  )}\n`;
+}
+
 /**
  * The Anthropic client, or null. Null is a first-class outcome, not an error:
  * every caller degrades to the blank scaffold and the issue still opens.
@@ -729,11 +881,32 @@ async function main(argv) {
   const has = (name) => argv.includes(`--${name}`);
 
   const mode = arg('mode') ?? 'push';
-  if (mode !== 'push' && mode !== 'weekly') {
-    console.error(`unknown --mode=${mode} (expected "push" or "weekly")`);
+  if (mode !== 'push' && mode !== 'weekly' && mode !== 'status') {
+    console.error(`unknown --mode=${mode} (expected "push", "weekly" or "status")`);
     process.exit(2);
   }
   const now = arg('now') ? Date.parse(arg('now')) : Date.now();
+
+  if (mode === 'status') {
+    const run = statusRun({
+      moments: read('data/moments.json'),
+      bills: read('data/bills.json'),
+      nominations: existsSync(path('data/nominations.json')) ? read('data/nominations.json') : [],
+      prev: readStatusSeen(),
+      now,
+    });
+    if (run.body) console.log(run.body);
+    if (has('commit-status')) {
+      const next = statusSeenFile(run.snapshot, run.past);
+      const current = existsSync(path(STATUS_PATH)) ? readFileSync(path(STATUS_PATH), 'utf8') : null;
+      if (next !== current) writeFileSync(path(STATUS_PATH), next);
+    }
+    if (process.env.GITHUB_OUTPUT) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `status_flagged=${run.body ? 'true' : 'false'}\n`);
+    }
+    process.exitCode = 0;
+    return;
+  }
 
   const bills = read('data/bills.json');
   const coverage = read('data/coverage.json');

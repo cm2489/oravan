@@ -845,11 +845,9 @@
     "indexTitle": "Grandes preguntas",
     "indexSub": "Puntos de entrada a las cuestiones legislativas que cubren las noticias en este momento — cada uno lleva directo a los proyectos de ley y las nominaciones ante el Senado por donde pasa realmente el debate.",
     "liveHeading": "Vigentes",
-    "liveSub": "Cuestiones abiertas con algo en marcha por el Congreso ahora mismo — un proyecto de ley o una nominación ante el Senado.",
+    "liveSub": "Preguntas abiertas ante el Congreso, cada una con la situación actual de sus proyectos, tomada del registro oficial.",
     "settledHeading": "Resueltas",
     "settledSub": "Cuestiones cerradas recientemente, conservadas como registro. Estas no se reabren.",
-    "reviewHeading": "En revisión",
-    "reviewSub": "Cuestiones cuya fecha de revisión programada pasó sin renovarse. Siguen legibles y siguen enlazando al registro oficial, pero nadie ha confirmado que reflejen la situación actual.",
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",
@@ -860,11 +858,9 @@
     "cardUpdated": "Actualizado el {date}",
     "liveBadge": "Vigente",
     "settledBadge": "Resuelta",
-    "staleBadge": "Necesita revisión",
     "decidingLive": "Qué está decidiendo el Congreso",
     "decidingSettled": "Qué decidió el Congreso",
     "settledBanner": "Este asunto está resuelto — esto es lo que pasó. Esta página queda como registro y no se reabrirá.",
-    "staleBanner": "La revisión programada de esta Gran pregunta ({date}) pasó sin renovarse — puede que no refleje la situación actual.",
     "vehiclesHeading": "Los proyectos de ley",
     "vehiclesLede": "Los proyectos de ley por los que realmente pasa esta cuestión. Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.",
     "vehiclesHeadingNominations": "Las nominaciones",
@@ -940,7 +936,36 @@
       },
       "privacyNote": "Nadie observa lo que lees aquí — sin cuenta, sin rastreo, sin un muro ajustado a ti; por eso la misma página se puede compartir entre personas de todo el espectro."
     },
-    "kicker": "Gran pregunta"
+    "kicker": "Gran pregunta",
+    "status": {
+      "label": "Del registro oficial",
+      "latestAction": "Última acción: {date}",
+      "recordStepLabel": "El último paso del registro, en sus propias palabras (en inglés):",
+      "recordStepEmpty": "El registro todavía no muestra texto de la acción.",
+      "explainer": "Todos los proyectos de esta pregunta llegaron al final de su recorrido. Las tarjetas de abajo cuentan lo que pasó.",
+      "lastReviewed": "Resumen revisado por última vez por una persona el {date}.",
+      "group": {
+        "house": "Empezó en la Cámara",
+        "senate": "Empezó en el Senado",
+        "enacted": "Se convirtió en ley"
+      },
+      "line": {
+        "signed": "Promulgado como ley{law, select, none {} other { (Ley Pública {law})}}.",
+        "vetoed": "Vetado por el presidente.",
+        "presented": "Ambas cámaras lo aprobaron y se envió al presidente.",
+        "bothAgreed": "Ambas cámaras lo aprobaron con el mismo texto.",
+        "passedBack": "{chamber, select, house {Ambas cámaras lo aprobaron en versiones distintas; regresa a la Cámara para resolver los cambios.} other {Ambas cámaras lo aprobaron en versiones distintas; regresa al Senado para resolver los cambios.}}",
+        "passedOnCalendar": "{chamber, select, house {Aprobado por el Senado; incluido en el calendario de la Cámara, donde puede llevarse al pleno cualquier día en que la Cámara sesione.} other {Aprobado por la Cámara; incluido en el calendario del Senado, donde puede llevarse al pleno cualquier día en que el Senado sesione.}}",
+        "heldAtDesk": "{chamber, select, house {Aprobado por el Senado; retenido en la mesa de la Cámara.} other {Aprobado por la Cámara; retenido en la mesa del Senado.}}",
+        "passedWaiting": "{chamber, select, house {Aprobado por el Senado; a la espera de la Cámara.} other {Aprobado por la Cámara; a la espera del Senado.}}",
+        "clotureFiled": "Se presentó una solicitud de cierre del debate (cloture) en el Senado. Según sus reglas, esa votación llega en pocos días.",
+        "onFloor": "{chamber, select, house {En trámite en el pleno de la Cámara, con una votación por delante.} other {En trámite en el pleno del Senado, con una votación por delante.}}",
+        "failedReconsider": "Una votación en el Senado sobre este proyecto fracasó y hay una moción de reconsideración pendiente, así que es posible otra votación.",
+        "onCalendar": "{chamber, select, house {Incluido en el calendario de la Cámara. Puede llevarse al pleno cualquier día en que la Cámara sesione.} other {Incluido en el calendario del Senado. Puede llevarse al pleno cualquier día en que el Senado sesione.}}",
+        "failed": "{chamber, select, house {Una votación en el pleno de la Cámara sobre este proyecto fracasó.} other {Una votación en el pleno del Senado sobre este proyecto fracasó.}}",
+        "inCommittee": "En comité."
+      }
+    }
   },
   "nominations": {
     "metaDescription": "Una nominación presidencial pendiente ante el Senado de EE. UU. — el registro del propio Senado y la llamada que le corresponde.",
