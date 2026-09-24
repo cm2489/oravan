@@ -70,6 +70,22 @@ export interface Bill {
   introduced_date: string | null;
   last_action_date: string | null;
   last_action_text: string | null;
+  /**
+   * PIPELINE-WRITTEN, OPTIONAL (2026-09-24). Present only when
+   * `last_action_text` is one of the sentences that cannot be read on their
+   * own ("Motion to reconsider laid on the table…", "Message on {chamber}
+   * action sent to the {other}." — scripts/congress-fetch.mjs's
+   * AMBIGUOUS_WITHOUT_CONTEXT): the earlier action `status` was actually read
+   * from, e.g. "Passed/agreed to in House: …" or "Failed of passage/not agreed
+   * to in House …". Every chamber/tense derivation reads it through
+   * lib/floor-text.mjs's `statusBasisText`; the page still SHOWS
+   * `last_action_text` as the latest step. Deleted whenever the latest step is
+   * not ambiguous. scripts/verify-sync.mjs fails a record that breaks that.
+   */
+  status_basis_text?: string | null;
+  /** The date of `status_basis_text`'s action (YYYY-MM-DD), when Congress.gov
+   *  gave one. Never present without `status_basis_text`. */
+  status_basis_date?: string | null;
   status: BillStatus;
   issue_tags: string[] | null;
   policy_area: string | null;
@@ -129,6 +145,10 @@ export interface Legislator {
   phone: string | null;
   url: string | null;
   offices: DistrictOffice[];
+  /** Senate LIS member id (e.g. "S428"), senators only. The Senate's
+   *  roll-call XML names senators by this id alone, never by bioguide, so it
+   *  is the join key for data/votes.json (scripts/sync-votes.mjs). */
+  lis?: string;
 }
 
 export interface District {
@@ -224,4 +244,72 @@ export interface NewsBill extends BillTeaser {
   coverageTier: Extract<CoverageTier, 'cross' | 'neutral'> | null;
   sourceCount: number;
   caption: import('./conversation').NewsCaption | null;
+}
+
+/**
+ * Roll-call votes (data/votes.json, written by scripts/sync-votes.mjs and
+ * gated by scripts/check-votes.mjs). Record data only — the record's own
+ * question and result text, its tally, and every member's position. No party
+ * is stored; data/legislators.json carries it.
+ *
+ * The four positions are the record's own vocabulary. The House's "Aye"/"No"
+ * on a recorded vote are counted by the Clerk under the same yea/nay totals
+ * and are stored as `yea`/`nay`.
+ */
+export type VotePosition = 'yea' | 'nay' | 'present' | 'notVoting';
+
+export interface RollCallTotals {
+  yea: number;
+  nay: number;
+  present: number;
+  notVoting: number;
+}
+
+export interface RollCall {
+  /** `h-119-2-308` / `s-119-2-234`: chamber initial, congress, session, roll. */
+  id: string;
+  chamber: 'house' | 'senate';
+  congress: number;
+  session: number;
+  roll: number;
+  /** YYYY-MM-DD, the date the record gives (Eastern). */
+  date: string;
+  /** Verbatim from the record, e.g. "On Cloture on the Motion to Proceed H.R. 3633". */
+  question: string;
+  /** Verbatim from the record, e.g. "Passed" / "Cloture on the Motion to Proceed Rejected". */
+  result: string;
+  /** Corpus bill id (`full_identifier`), e.g. `hr-3633-119`. */
+  bill: string;
+  /** The record's own tally; the gate pins it equal to the per-member lists. */
+  totals: RollCallTotals;
+  /** The official record this roll call was read from (clerk.house.gov / senate.gov). */
+  source: string;
+  /** Bioguide ids by position. */
+  votes: Record<VotePosition, string[]>;
+  /** Senate only, when the Vice President broke a tie. Not a member position. */
+  tieBreaker?: { by: string | null; position: VotePosition };
+}
+
+/** Every member any stored roll call names — current, departed or replaced —
+ *  so a vote can always be attributed after data/legislators.json moves on. */
+export interface VotingMember {
+  id: string;
+  name: string;
+  state: string;
+  chamber: 'house' | 'senate';
+}
+
+export interface VotesFile {
+  _meta: {
+    schema: number;
+    /** Earliest date the file covers (the first run's 120-day lookback). */
+    floor: string;
+    /** Seconds-precision ISO-8601; when the file last changed. */
+    updatedAt: string;
+    /** `CONGRESS-SESSION-ROLL`, the highest roll examined per chamber. */
+    cursor: { house: string; senate: string };
+    sources: Record<string, string>;
+  };
+  rollCalls: RollCall[];
+  members: VotingMember[];
 }

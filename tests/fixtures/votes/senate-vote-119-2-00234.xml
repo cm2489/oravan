@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><roll_call_vote>
+  <congress>119</congress>
+  <session>2</session>
+  <congress_year>2026</congress_year>
+  <vote_number>234</vote_number>
+  <vote_date>September 15, 2026,  02:19 PM</vote_date>
+  <modify_date>September 15, 2026,  03:24 PM</modify_date>
+  <vote_question_text>On Cloture on the Motion to Proceed H.R. 3633</vote_question_text>
+  <vote_document_text>To provide for a system of regulation of the offer and sale of digital commodities by the Securities and Exchange Commission and the Commodity Futures Trading Commission, to amend the Federal Reserve Act to prohibit the Federal reserve banks from offering certain products or services directly to an individual, to prohibit the use of central bank digital currency for monetary policy, and for other purposes.</vote_document_text>
+  <vote_result_text>Cloture on the Motion to Proceed Rejected (49-50, 3/5 majority required)</vote_result_text>
+  <question>On Cloture on the Motion to Proceed</question>
+  <vote_title>Motion to Invoke Cloture: Motion to Proceed to H.R. 3633</vote_title>
+  <majority_requirement>3/5</majority_requirement>
+  <vote_result>Cloture on the Motion to Proceed Rejected</vote_result>
+  <document>
+    <document_congress>119</document_congress>
+    <document_type>H.R.</document_type>
+    <document_number>3633</document_number>
+    <document_name>H.R. 3633</document_name>
+    <document_title>To provide for a system of regulation of the offer and sale of digital commodities by the Securities and Exchange Commission and the Commodity Futures Trading Commission, to amend the Federal Reserve Act to prohibit the Federal reserve banks from offering certain products or services directly to an individual, to prohibit the use of central bank digital currency for monetary policy, and for other purposes.</document_title>
+    <document_short_title>A bill to provide for a system of regulation of the offer and sale of digital commodities by the Securities and Exchange Commission and the Commodity Futures Trading Commission, and for other purposes.</document_short_title>
+  </document>
+  <amendment>
+    <amendment_number/>
+    <amendment_to_amendment_number/>
+    <amendment_to_amendment_to_amendment_number/>
+    <amendment_to_document_number/>
+    <amendment_to_document_short_title/>
+    <amendment_purpose>No Statement of Purpose on File.</amendment_purpose>
+  </amendment>
+  <count>
+    <yeas>1</yeas>
+    <nays>1</nays>
+    <present/>
+    <absent>1</absent>
+  </count>
+  <tie_breaker>
+    <by_whom/>
+    <tie_breaker_vote/>
+  </tie_breaker>
+  <members>
+    <member>
+      <member_full>Armstrong (R-OK)</member_full>
+      <last_name>Armstrong</last_name>
+      <first_name>Alan</first_name>
+      <party>R</party>
+      <state>OK</state>
+      <vote_cast>Yea</vote_cast>
+      <lis_member_id>S440</lis_member_id>
+    </member>
+    <member>
+      <member_full>Alsobrooks (D-MD)</member_full>
+      <last_name>Alsobrooks</last_name>
+      <first_name>Angela</first_name>
+      <party>D</party>
+      <state>MD</state>
+      <vote_cast>Nay</vote_cast>
+      <lis_member_id>S428</lis_member_id>
+    </member>
+    <member>
+      <member_full>Coons (D-DE)</member_full>
+      <last_name>Coons</last_name>
+      <first_name>Christopher</first_name>
+      <party>D</party>
+      <state>DE</state>
+      <vote_cast>Not Voting</vote_cast>
+      <lis_member_id>S337</lis_member_id>
+    </member>
+  </members>
+</roll_call_vote>

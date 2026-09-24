@@ -77,7 +77,7 @@ import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-u
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
 // it there bumps this gate too.
-import { CONGRESS, offCongressBills } from './congress-fetch.mjs';
+import { CONGRESS, offCongressBills, statusBasisProblems } from './congress-fetch.mjs';
 // Same split as verifyMomentUpdates above: the judgement lives in a pure
 // module the unit spec can reach, this file supplies the bytes.
 import {
@@ -129,6 +129,22 @@ if (Array.isArray(bills) && bills.length > 0) {
     );
   } else {
     console.log(`corpus uniformity: all ${bills.length} bills are ${CONGRESS}th Congress`);
+  }
+  // The status-basis fields (2026-09-24) are OPTIONAL, so nothing above keys
+  // on their presence; what fails is a basis that lies. It must sit only
+  // behind an ambiguous latest step (it is cleared on every other write), be
+  // a non-empty readable sentence, and carry a YYYY-MM-DD date if any. A stale
+  // basis would make every chamber/tense derivation reason from an older
+  // action than the page shows. The rules live in congress-fetch.mjs
+  // (statusBasisProblems) beside the one writer.
+  const basisProblems = statusBasisProblems(bills);
+  if (basisProblems.length) {
+    fail(
+      `${basisProblems.length} status-basis problem(s): ${basisProblems.slice(0, 10).join('; ')}${basisProblems.length > 10 ? '; …' : ''} — status_basis_text/_date are written only by writeStatusBasis (scripts/congress-fetch.mjs); a record that breaks these rules was edited by something else.`
+    );
+  } else {
+    const withBasis = bills.filter((b) => b?.status_basis_text).length;
+    console.log(`status basis: ${withBasis} bill(s) carry one, all behind an ambiguous latest step`);
   }
 }
 

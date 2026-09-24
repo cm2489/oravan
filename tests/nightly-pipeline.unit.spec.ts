@@ -172,6 +172,100 @@ test.describe('the run-honesty alarm (a run whose core function died goes red)',
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b′ · 2026-09-24 — roll-call votes (C1a): an additive sync, and an
+ *       integrity gate that sits with the others, BEFORE the commit.
+ * ------------------------------------------------------------------ */
+test.describe('roll-call votes: sync step and pre-commit gate', () => {
+  const stepOf = (name: string) => {
+    const at = syncBills.indexOf(`- name: ${name}`);
+    expect(at, `${name} step not found`).toBeGreaterThan(0);
+    const rest = syncBills.slice(at);
+    const next = rest.slice(1).search(/\n {6}- name:/);
+    return { at, body: next === -1 ? rest : rest.slice(0, next + 1) };
+  };
+
+  test('the sync runs after the bill sync (tonight\'s new bills get their votes) and cannot cost the night', () => {
+    const sync = stepOf('Sync roll-call votes');
+    expect(sync.body).toContain('run: node scripts/sync-votes.mjs');
+    expect(sync.body).toContain('continue-on-error: true');
+    expect(sync.body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    // $0 by construction: this step is never handed the Anthropic key.
+    expect(sync.body).not.toContain('ANTHROPIC_API_KEY');
+    expect(sync.at).toBeGreaterThan(syncBills.indexOf('- name: Sync bills'));
+    expect(sync.at).toBeLessThan(syncBills.indexOf('- name: Verify the sync did its job'));
+  });
+
+  test('THE ORDER: the votes gate is pre-commit, beside verify-sync, and is NOT continue-on-error', () => {
+    const gate = stepOf('Roll-call votes gate');
+    expect(gate.body).toContain('node scripts/check-votes.mjs --self-test');
+    // The data run itself, not only the self-test.
+    expect(gate.body).toMatch(/node scripts\/check-votes\.mjs\s*$/m);
+    expect(gate.body).not.toContain('continue-on-error');
+    expect(gate.at).toBeGreaterThan(syncBills.indexOf('run: node scripts/verify-sync.mjs'));
+    expect(gate.at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    expect(gate.at).toBeGreaterThan(stepOf('Sync roll-call votes').at);
+  });
+
+  test('the sync script refuses to WRITE a file the gate would fail (the nominations precedent)', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
+    const gateAt = src.indexOf('verifyVotes({');
+    const writeAt = src.indexOf('writeFileSync(VOTES_PATH');
+    expect(gateAt, 'pre-write verifyVotes call').toBeGreaterThan(0);
+    expect(writeAt).toBeGreaterThan(gateAt);
+  });
+
+  test('the gate pins the cursor FORMAT — a date is damage, not a roll-call cursor', () => {
+    const core = readFileSync(join(process.cwd(), 'lib/votes-core.mjs'), 'utf8');
+    expect(core).toContain('a date is not a roll-call cursor');
+  });
+
+  test('ci.yml runs the gate too, because refresh-legislators rewrites the file it joins on', () => {
+    const ci = wf('ci.yml');
+    expect(ci).toContain('node scripts/check-votes.mjs --self-test');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b″ · 2026-09-24 — the status re-derivation pass: after the bill sync,
+ *       before every integrity check, and hard (its guard is a corpus claim).
+ * ------------------------------------------------------------------ */
+test.describe('status re-derivation: position and posture', () => {
+  const rederiveRun = 'run: node scripts/rederive-status.mjs';
+  const stepName = '- name: Re-derive every stored status';
+
+  test('THE ORDER: after the bill sync, before verify-sync and the commit', () => {
+    const at = syncBills.indexOf(rederiveRun);
+    expect(at, 'rederive step not found').toBeGreaterThan(0);
+    expect(at).toBeGreaterThan(syncBills.indexOf('run: node scripts/sync-bills.mjs'));
+    expect(at).toBeLessThan(syncBills.indexOf('run: node scripts/verify-sync.mjs'));
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    // Directly after the sync, so every later reader (the journey tripwire,
+    // coverage, Moment updates) sees the corrected corpus.
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Journey-corpus tripwire'));
+  });
+
+  test('its guard reds the run: the step is NOT continue-on-error and runs without --dry-run', () => {
+    const start = syncBills.indexOf(stepName);
+    expect(start, 'rederive step name not found').toBeGreaterThan(0);
+    const rest = syncBills.slice(start);
+    const body = rest.slice(0, rest.slice(1).search(/\n {6}- name:/) + 1);
+    expect(body).toContain(rederiveRun);
+    expect(body).not.toContain('continue-on-error');
+    expect(body).not.toContain('--dry-run');
+    // $0 by construction: the only secret is the free Congress.gov key, used
+    // to resolve the ambiguous sentences from the action before them.
+    expect(body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    expect(body).not.toContain('ANTHROPIC_API_KEY');
+  });
+
+  test('the guard lives in the script, not in verify-sync.mjs', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/rederive-status.mjs'), 'utf8');
+    expect(src).toContain('MAX_CHANGE_FRACTION = 0.02');
+    expect(readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8')).not.toContain('MAX_CHANGE_FRACTION');
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 2c · 2026-09-18 — the preflight arms or disarms the decodes, and
  *      never the data.
  * ------------------------------------------------------------------ */
