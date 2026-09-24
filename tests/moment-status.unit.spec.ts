@@ -91,6 +91,7 @@ test.describe('each vocabulary state, over the record’s own words', () => {
       bill('s', 'floor_vote', 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4200)'),
       { key: 'clotureFiled', chamber: 'senate' },
     ],
+    ['considered by the Senate (fresh; #279’s reading, status lags the record)', bill('s', 'committee', 'Considered by Senate. (consideration: CR S4851)'), { key: 'onFloor', chamber: 'senate' }],
     ['motion to proceed made (fresh)', bill('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)'), { key: 'onFloor', chamber: 'senate' }],
     [
       'postponed proceedings (fresh)',
@@ -133,8 +134,8 @@ test.describe('each vocabulary state, over the record’s own words', () => {
 
 test.describe('the verbatim fallback — what no matcher has read', () => {
   const verbatim: [string, ReturnType<typeof bill>][] = [
-    // the sibling "Considered by …" matcher is not on main yet; until it is, the record speaks
-    ['Considered by Senate (status lags the record)', bill('s', 'committee', 'Considered by Senate. (consideration: CR S4851)')],
+    // #279 reads "Considered by …" as pending; aged, the record speaks instead
+    ['Considered by Senate, AGED (status lags the record)', bill('s', 'committee', 'Considered by Senate. (consideration: CR S4851)', OLD)],
     ['House routine closure under a committee status', bill('hconres', 'committee', 'Motion to reconsider laid on the table Agreed to without objection.', '2026-03-05')],
     ['House routine closure after passage: the chamber is unknowable', bill('s', 'passed_chamber', 'Motion to reconsider laid on the table Agreed to without objection.')],
     ['reported BY a committee has left it', bill('hr', 'committee', 'Reported (Amended) by the Committee on Natural Resources. H. Rept. 119-300.')],
