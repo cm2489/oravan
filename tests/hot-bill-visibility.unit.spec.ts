@@ -190,6 +190,35 @@ test.describe('floor-activity status mapping (the buried-vote bug)', () => {
   test('plain referral is untouched', () => {
     expect(mapStatus('Referred to the House Committee on Foreign Affairs.')).toBe('committee');
   });
+
+  test('a House discharge petition FILED stays in committee (owner ruling 2026-09-24, #268)', () => {
+    // hr-4889-119, verbatim. A filing opens a signature drive; nothing has
+    // happened on the floor, so it must not read as floor_vote.
+    expect(
+      mapStatus(
+        'Motion to Discharge Committee filed by Mr. Kiley (CA). Petition No: 119-21. (<a href="https://clerk.house.gov/DischargePetition/2026051221">Discharge petition</a> text with signatures.)'
+      )
+    ).toBe('committee');
+    // The same shape without the markup link, and with a different Member.
+    expect(
+      mapStatus('Motion to Discharge Committee filed by Ms. Luna. Petition No: 119-9.')
+    ).toBe('committee');
+  });
+
+  test('every Senate discharge motion that was VOTED ON keeps floor_vote', () => {
+    // The corpus's three live Senate discharge votes, verbatim.
+    for (const text of [
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)',
+    ]) {
+      expect(mapStatus(text)).toBe('floor_vote');
+    }
+    // Both halves of the filing shape are required: a filing sentence with no
+    // petition citation is not the shape that was read, and keeps its old
+    // bucket rather than being guessed at.
+    expect(mapStatus('Motion to Discharge Committee filed by Mr. Kiley (CA).')).toBe('floor_vote');
+  });
 });
 
 /*
