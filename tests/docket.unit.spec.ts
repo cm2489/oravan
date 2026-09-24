@@ -708,3 +708,35 @@ test.describe('the typed door onto the committed file', () => {
     expect(Object.keys(src ?? {}).sort()).toEqual(['published', 'url']);
   });
 });
+
+/*
+ * status_basis_text (2026-09-24). The ladder reads the sentence the status
+ * was READ from, never the ambiguous notice written over it: a House defeat
+ * stored behind "Motion to reconsider laid on the table…" is settled, and it
+ * answers the House's announcement.
+ */
+test.describe('docketRung · status_basis_text', () => {
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const HOUSE_DEFEAT =
+    'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 204 - 216 (Roll no. 188).';
+  const now = Date.parse('2026-09-24T12:00:00Z');
+
+  test('a fresh defeat behind the reconsider notice is settled: T4 just_decided', () => {
+    const b = { status: 'floor_vote', last_action_text: RECONSIDER, last_action_date: '2026-09-22', status_basis_text: HOUSE_DEFEAT };
+    expect(isSettledFloor(b)).toBe(true);
+    expect(docketRung(b, null, { now })).toMatchObject({ tier: 't4', annotation: 'just_decided' });
+    // The bare notice is not settled on its own.
+    expect(isSettledFloor({ ...b, status_basis_text: undefined })).toBe(false);
+  });
+
+  test('the basis answers a House announcement', () => {
+    const b = { status: 'floor_vote', last_action_text: RECONSIDER, last_action_date: '2026-09-22', status_basis_text: HOUSE_DEFEAT };
+    const signal = { tier0: { chamber: 'house', published: '2026-09-21', covers: '2026-09-21' } };
+    expect(announcementAnswered(b, signal)).toBe(true);
+  });
+
+  test('a bill with no basis ranks exactly as before', () => {
+    const b = { status: 'passed_chamber', last_action_text: 'Received in the Senate.', last_action_date: '2026-09-22' };
+    expect(docketRung(b, null, { now })).toMatchObject({ tier: 't3', annotation: 'just_passed' });
+  });
+});

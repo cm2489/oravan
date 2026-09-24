@@ -241,7 +241,7 @@ export function floorSessionSource(): { url: string | null; published: string | 
 /** The rung for one bill, with its signal looked up here so callers never
  *  have to know the file exists. */
 export function rungFor(
-  bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null },
+  bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null; status_basis_text?: string | null },
   slug: string,
   now: number = Date.now()
 ): DocketRung {
@@ -274,7 +274,7 @@ export function bandFor(rung: DocketRung): UrgencyBand {
  * reading one record run one gate.
  */
 export function announcementFor(
-  bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null },
+  bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null; status_basis_text?: string | null },
   slug: string,
   now: number = Date.now()
 ): {

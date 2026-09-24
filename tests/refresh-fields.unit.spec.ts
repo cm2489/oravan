@@ -257,3 +257,42 @@ test.describe('refreshBillFields — ambiguous latest actions are resolved, neve
     expect(bill.last_action_date).toBe('2026-09-20');
   });
 });
+
+/*
+ * THE BASIS TRAVELS WITH THE STATUS on the refresh path (2026-09-24): stored
+ * when the latest step is ambiguous, deleted when it is not, and — when the
+ * lookup fails — taken from the reading the kept status came from.
+ */
+test.describe('refreshBillFields — status_basis_text', () => {
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const DEFEAT = 'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 204 - 216 (Roll no. 188).';
+
+  test('a resolved defeat stores the defeat as the basis, with its date', async () => {
+    const bill: Record<string, unknown> = { ...floorBill(), bill_type: 'hr', bill_number: 1329, status: 'passed_chamber' };
+    await refreshBillFields(
+      bill as never,
+      { latestAction: { text: RECONSIDER, actionDate: '2026-05-21' } },
+      {
+        resolve: (b) =>
+          resolveAmbiguousStatus(b, {
+            fetchActions: async () => [{ text: RECONSIDER }, { text: DEFEAT, actionDate: '2026-05-21' }] as never,
+          }),
+      }
+    );
+    expect(bill).toMatchObject({ status: 'floor_vote', last_action_text: RECONSIDER, status_basis_text: DEFEAT, status_basis_date: '2026-05-21' });
+  });
+
+  test('a latest step readable on its own DELETES any basis', async () => {
+    const bill: Record<string, unknown> = { ...floorBill(), status_basis_text: DEFEAT, status_basis_date: '2026-05-21' };
+    await refreshBillFields(bill as never, { latestAction: { text: 'Received in the Senate.', actionDate: '2026-09-20' } });
+    expect('status_basis_text' in bill).toBe(false);
+    expect('status_basis_date' in bill).toBe(false);
+  });
+
+  test('lookup failed: the basis is the previous readable step the kept status came from', async () => {
+    const bill: Record<string, unknown> = { ...floorBill() }; // floor_vote from a calendar placement
+    const before = bill.last_action_text;
+    await refreshBillFields(bill as never, { latestAction: { text: RECONSIDER, actionDate: '2026-09-20' } }, { resolve: async () => null });
+    expect(bill).toMatchObject({ status: 'floor_vote', last_action_text: RECONSIDER, status_basis_text: before, status_basis_date: '2026-08-05' });
+  });
+});
