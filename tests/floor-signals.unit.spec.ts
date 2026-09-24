@@ -700,6 +700,11 @@ test.describe('entersFloorWatch', () => {
     expect(entersFloorWatch(null)).toBe(false);
   });
 
+  test('the House adopting a special rule enters the watch; a defeated rule does not (#268)', () => {
+    expect(entersFloorWatch('Rule H. Res. 988 passed House.')).toBe(true);
+    expect(entersFloorWatch('Rule H. Res. 1175 failed passage of House.')).toBe(false);
+  });
+
   test('is a strict SUPERSET of lib/journey.ts’s pending gate, over the live corpus', () => {
     // The spend gate may be wider than the claim gate; it may never be
     // narrower, or a bill the site is about to crown could be explained from
