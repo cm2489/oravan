@@ -653,11 +653,19 @@ test.describe('the moment id is derived the way the live file was named', () => 
 });
 
 test.describe('the dates match the file, not an invented cadence', () => {
-  test('review_by is opened + 30 days in both live moments', () => {
+  /* This used to assert review_by === opened + 30 for EVERY stored moment.
+     That held only until the first renewal: a reviewed PR that brings a
+     question back to the record sets a new review_by and keeps `opened`
+     (lib/moments-gate.mjs's header — "until a reviewed PR renews or retires
+     it"), so the equality is a property of a moment at birth, not forever.
+     What stays true of every stored moment is the ordering; the 30-day
+     cadence itself is pinned on the scaffold below, where a birth happens. */
+  test('review_by follows opened in every stored moment; the birth cadence is 30 days', () => {
     for (const [id, m] of Object.entries(momentsFile)) {
-      expect(reviewByFor(m.opened), `${id}`).toBe(m.review_by);
+      expect(Date.parse(m.review_by) > Date.parse(m.opened), `${id}`).toBe(true);
     }
     expect(REVIEW_WINDOW_DAYS).toBe(30);
+    expect(reviewByFor('2026-08-09')).toBe('2026-09-08');
   });
 
   test('opened is the run date and review_by follows it', () => {

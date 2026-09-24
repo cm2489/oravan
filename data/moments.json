@@ -5,8 +5,8 @@
       "es": "Poderes de guerra sobre Irán"
     },
     "summary": {
-      "en": "U.S. forces have been involved in hostilities with Iran since late February 2026 — hostilities Congress has not voted to authorize. The measures below put one question to a vote: do those operations need Congress's explicit approval to continue? A yes directs the President to end U.S. involvement in hostilities Congress has not authorized, keeping exceptions that let the military protect U.S. personnel and help partner countries intercept incoming strikes. A no leaves the operations in place under the President's direction.",
-      "es": "Fuerzas de Estados Unidos participan en hostilidades con Irán desde fines de febrero de 2026 — hostilidades que el Congreso no ha autorizado con su voto. Las medidas de abajo someten una pregunta a votación: ¿esas operaciones necesitan la aprobación explícita del Congreso para continuar? Un sí ordena al Presidente poner fin a la participación de EE. UU. en hostilidades que el Congreso no ha autorizado, y mantiene excepciones que permiten a las fuerzas militares proteger al personal estadounidense y ayudar a países socios a interceptar proyectiles. Un no deja las operaciones en curso bajo la dirección del Presidente."
+      "en": "Congress has not passed an authorization for U.S. military action against Iran. The question these resolutions put to a vote: do U.S. hostilities with Iran need Congress's approval to continue? The House has agreed three times: H.Con.Res. 86 (215–208, June 3), H.Con.Res. 89 (214–208, July 23) and H.Con.Res. 93 (220–204, September 15), the last with yes votes from both parties, including Rep. Thomas Massie. The Senate agreed to H.Con.Res. 86 on June 23, 50–48, also with yes votes from both parties. On June 24 it voted 47–50 against taking up S.J.Res. 185, and motions to pull two more Senate resolutions out of committee failed in July. A concurrent resolution never goes to the President, and the Congressional Research Service calls that path constitutionally suspect; the record does not show that H.Con.Res. 86 ended the operations. H.Con.Res. 89 and 93 sit in the Senate Foreign Relations Committee, with no vote date on the record.",
+      "es": "El Congreso no ha aprobado ninguna autorización para una acción militar de EE. UU. contra Irán. La pregunta que estas resoluciones llevan a votación: ¿necesitan las hostilidades de EE. UU. con Irán la aprobación del Congreso para continuar? La Cámara ha dicho que sí tres veces: H.Con.Res. 86 (215–208, 3 de junio), H.Con.Res. 89 (214–208, 23 de julio) y H.Con.Res. 93 (220–204, 15 de septiembre), esta última con votos a favor de ambos partidos, entre ellos el del representante Thomas Massie. El Senado aprobó la H.Con.Res. 86 el 23 de junio, 50–48, también con votos a favor de ambos partidos. El 24 de junio rechazó, 47–50, considerar la S.J.Res. 185, y en julio fracasaron las mociones para sacar de comité otras dos resoluciones. Una resolución concurrente nunca llega al Presidente, y el Servicio de Investigación del Congreso considera ese mecanismo de dudosa constitucionalidad; el expediente no muestra que la H.Con.Res. 86 haya puesto fin a las operaciones. Las H.Con.Res. 89 y 93 están en el Comité de Relaciones Exteriores del Senado, sin fecha de votación en el expediente."
     },
     "aliases": {
       "en": [
@@ -31,31 +31,52 @@
     "category": "national_security",
     "vehicles": [
       {
-        "slug": "sjres-185-119",
+        "slug": "hconres-93-119",
         "role": {
-          "en": "A yes vote directs the President to end U.S. involvement in hostilities with Iran that Congress has not authorized, with exceptions for protecting U.S. personnel and facilities and for helping partner countries intercept incoming strikes. A no vote leaves current operations in place under the President's direction.",
-          "es": "Un voto a favor ordena al Presidente poner fin a la participación de EE. UU. en hostilidades con Irán que el Congreso no ha autorizado, con excepciones para proteger al personal y las instalaciones de EE. UU. y para ayudar a países socios a interceptar proyectiles. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
-        }
-      },
-      {
-        "slug": "sjres-172-119",
-        "role": {
-          "en": "The earlier Senate measure on the same question. A yes vote directs the same wind-down; a no vote leaves operations unchanged. While it sits in committee, calls reach the members who decide whether it advances.",
-          "es": "La medida anterior del Senado sobre la misma pregunta. Un voto a favor ordena el mismo repliegue; un voto en contra deja las operaciones sin cambios. Mientras está en comité, las llamadas llegan a los miembros que deciden si avanza."
-        }
-      },
-      {
-        "slug": "hconres-38-119",
-        "role": {
-          "en": "The House version of the same question. A yes vote directs the President to remove U.S. armed forces from hostilities with Iran that Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
-          "es": "La versión de la Cámara de la misma cuestión. Un voto a favor ordena al Presidente retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+          "en": "The newest House measure. It directs the President, under section 5(c) of the War Powers Resolution, to remove U.S. armed forces from hostilities with Iran that Congress has not authorized. The House agreed to it on September 15, 2026, 220–204, and the Senate referred it to the Foreign Relations Committee the next day. A yes vote in the Senate joins that direction; a no vote leaves current operations under the President's direction.",
+          "es": "La medida más reciente de la Cámara. Ordena al Presidente, conforme a la sección 5(c) de la Resolución de Poderes de Guerra, retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. La Cámara la aprobó el 15 de septiembre de 2026, 220–204, y el Senado la remitió al Comité de Relaciones Exteriores al día siguiente. Un voto a favor en el Senado se suma a esa orden; un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
         }
       },
       {
         "slug": "hconres-89-119",
         "role": {
-          "en": "The measure the House took up this week. A yes vote states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. A no vote leaves current operations in place under the President's direction.",
-          "es": "La medida que la Cámara consideró esta semana. Un voto a favor declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+          "en": "The House agreed to it on July 23, 2026, 214–208. It states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. The Senate referred it to the Foreign Relations Committee the same day, and it has had no action since. A yes vote in the Senate joins that direction; a no vote leaves current operations under the President's direction.",
+          "es": "La Cámara la aprobó el 23 de julio de 2026, 214–208. Declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. El Senado la remitió al Comité de Relaciones Exteriores ese mismo día y no ha tenido más acción. Un voto a favor en el Senado se suma a esa orden; un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
+      },
+      {
+        "slug": "sjres-185-119",
+        "role": {
+          "en": "The Senate discharged it from committee on May 19, 2026, 50–47, then voted 47–50 on June 24 against taking it up. It remains on the Senate calendar. A yes vote directs the President to end U.S. involvement in hostilities with Iran that Congress has not authorized, with exceptions for protecting U.S. personnel and facilities and for helping partner countries intercept incoming strikes. A no vote leaves current operations under the President's direction.",
+          "es": "El Senado la sacó de comité el 19 de mayo de 2026, 50–47, y el 24 de junio votó 47–50 en contra de considerarla. Sigue en el calendario del Senado. Un voto a favor ordena al Presidente poner fin a la participación de EE. UU. en hostilidades con Irán que el Congreso no ha autorizado, con excepciones para proteger al personal y las instalaciones de EE. UU. y para ayudar a países socios a interceptar proyectiles. Un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+        }
+      },
+      {
+        "slug": "sjres-180-119",
+        "role": {
+          "en": "A Senate joint resolution directing the removal of U.S. armed forces from hostilities with Iran that Congress has not authorized. A motion to discharge it from the Foreign Relations Committee failed on July 23, 2026, 47–49, and it has had no action since. A yes vote on a new discharge motion would bring it to the floor; a no vote leaves it in committee.",
+          "es": "Una resolución conjunta del Senado que ordena retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. La moción para sacarla del Comité de Relaciones Exteriores fracasó el 23 de julio de 2026, 47–49, y no ha tenido más acción. Un voto a favor de una nueva moción la llevaría al pleno; un voto en contra la deja en comité."
+        }
+      },
+      {
+        "slug": "sjres-181-119",
+        "role": {
+          "en": "A Senate joint resolution directing the removal of U.S. armed forces from hostilities with Iran that Congress has not authorized. A motion to discharge it from the Foreign Relations Committee failed on July 30, 2026, 49–50, and it has had no action since. A yes vote on a new discharge motion would bring it to the floor; a no vote leaves it in committee.",
+          "es": "Una resolución conjunta del Senado que ordena retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no ha autorizado. La moción para sacarla del Comité de Relaciones Exteriores fracasó el 30 de julio de 2026, 49–50, y no ha tenido más acción. Un voto a favor de una nueva moción la llevaría al pleno; un voto en contra la deja en comité."
+        }
+      },
+      {
+        "slug": "sjres-172-119",
+        "role": {
+          "en": "The earlier Senate measure on the same question. A motion to discharge it from the Foreign Relations Committee failed on June 16, 2026, 47–48. A yes vote directs the same wind-down; a no vote leaves operations unchanged.",
+          "es": "La medida anterior del Senado sobre la misma pregunta. La moción para sacarla del Comité de Relaciones Exteriores fracasó el 16 de junio de 2026, 47–48. Un voto a favor ordena el mismo repliegue; un voto en contra deja las operaciones sin cambios."
+        }
+      },
+      {
+        "slug": "hconres-38-119",
+        "role": {
+          "en": "The first House vote on the question. It directed the President to remove U.S. armed forces from hostilities with Iran that Congress had not authorized, and it failed on March 5, 2026, 212–219. That vote is closed; the House later agreed to H.Con.Res. 86, 89 and 93.",
+          "es": "La primera votación de la Cámara sobre la pregunta. Ordenaba al Presidente retirar a las fuerzas armadas de EE. UU. de hostilidades con Irán que el Congreso no había autorizado, y fue rechazada el 5 de marzo de 2026, 212–219. Esa votación está cerrada; después la Cámara aprobó las H.Con.Res. 86, 89 y 93."
         }
       }
     ],
@@ -63,11 +84,15 @@
       "type": "tier0_floor",
       "refs": [
         "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
-        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172"
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+        "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93/all-actions",
+        "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86/all-actions",
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180/all-actions",
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181/all-actions"
       ]
     },
     "opened": "2026-07-23",
-    "review_by": "2026-08-22",
+    "review_by": "2026-10-05",
     "status": "live",
     "context_refs": [
       {
@@ -86,8 +111,8 @@
       "es": "Fecha límite para financiar el gobierno"
     },
     "summary": {
-      "en": "Money for most federal agencies runs out on September 30, 2026. The House has passed a short-term funding bill — a continuing resolution — that would keep agencies running at this year's levels through December 4, 2026, while Congress keeps working on the full-year spending bills. The question now sits with the Senate: pass the short-term extension, or not? A yes keeps the government funded at current levels into December. A no leaves funding on track to lapse on October 1 unless Congress passes a different measure.",
-      "es": "El dinero para la mayoría de las agencias federales se agota el 30 de septiembre de 2026. La Cámara de Representantes aprobó un proyecto de financiamiento a corto plazo — una resolución de continuidad — que mantendría a las agencias funcionando a los niveles de este año hasta el 4 de diciembre de 2026, mientras el Congreso sigue trabajando en las leyes de gasto de todo el año. La pregunta ahora está en el Senado: ¿aprobar la extensión a corto plazo o no? Un sí mantiene al gobierno financiado a los niveles actuales hasta diciembre. Un no deja el financiamiento en camino a vencer el 1 de octubre, a menos que el Congreso apruebe una medida diferente."
+      "en": "Federal agencies are funded through December 11, 2026, under a stopgap law, so the September 30 deadline no longer applies. The House passed its own stopgap, H.R. 9770, on July 21 (220–205), running to December 4; the Senate received it the next day and has not acted on it. Instead, the Senate turned a different House bill, H.R. 6500, into a stopgap and passed it 90–6 on August 8. The House agreed 370–48 on September 1, and the President signed it on September 2 as Public Law 119-103. The next deadline is December 11: by then Congress has to pass the full-year spending bills or another stopgap. No new stopgap is on the record yet.",
+      "es": "Las agencias federales tienen fondos hasta el 11 de diciembre de 2026 gracias a una ley de financiamiento temporal, así que la fecha límite del 30 de septiembre ya no aplica. La Cámara aprobó su propia medida temporal, la H.R. 9770, el 21 de julio (220–205), con fondos hasta el 4 de diciembre; el Senado la recibió al día siguiente y no ha actuado sobre ella. En cambio, el Senado convirtió otro proyecto de la Cámara, la H.R. 6500, en una medida temporal y la aprobó 90–6 el 8 de agosto. La Cámara la aceptó 370–48 el 1 de septiembre, y el Presidente la firmó el 2 de septiembre como Ley Pública 119-103. La próxima fecha límite es el 11 de diciembre: para entonces el Congreso tiene que aprobar las leyes de gasto de todo el año u otra medida temporal. Todavía no hay una nueva medida temporal en el expediente."
     },
     "aliases": {
       "en": [
@@ -115,21 +140,32 @@
     "category": "jobs_economy",
     "vehicles": [
       {
+        "slug": "hr-6500-119",
+        "role": {
+          "en": "The stopgap now in force. The Senate passed it 90–6 on August 8, 2026, the House agreed 370–48 on September 1, and it became law on September 2 (Public Law 119-103). It funds federal agencies through December 11, 2026. There is no vote left on it; the next funding decision comes due by December 11.",
+          "es": "La medida temporal vigente. El Senado la aprobó 90–6 el 8 de agosto de 2026, la Cámara la aceptó 370–48 el 1 de septiembre y se convirtió en ley el 2 de septiembre (Ley Pública 119-103). Financia a las agencias federales hasta el 11 de diciembre de 2026. Ya no queda ninguna votación sobre ella; la próxima decisión de financiamiento vence el 11 de diciembre."
+        },
+        "_terminal_ok": "Enacted stopgap kept on a live explainer (owner decision 2026-09-24): it is the law now in force, and the question stays open until the December 11, 2026 deadline it sets."
+      },
+      {
         "slug": "hr-9770-119",
         "role": {
-          "en": "A yes vote extends current funding through December 4, 2026, so federal agencies, benefit programs, and services keep operating while the full-year bills are negotiated. A no vote leaves funding set to run out on September 30, 2026, unless Congress passes a different measure.",
-          "es": "Un voto a favor extiende el financiamiento actual hasta el 4 de diciembre de 2026, para que las agencias federales, los programas de beneficios y los servicios sigan funcionando mientras se negocian las leyes de gasto de todo el año. Un voto en contra deja el financiamiento por agotarse el 30 de septiembre de 2026, a menos que el Congreso apruebe una medida diferente."
+          "en": "The House's stopgap, passed July 21, 2026, 220–205, to fund agencies through December 4. The Senate received it on July 22 and has not acted on it. H.R. 6500 became law instead, and it is the law that sets the December 11 deadline.",
+          "es": "La medida temporal de la Cámara, aprobada el 21 de julio de 2026, 220–205, para financiar a las agencias hasta el 4 de diciembre. El Senado la recibió el 22 de julio y no ha actuado sobre ella. En su lugar se convirtió en ley la H.R. 6500, que es la que fija la fecha límite del 11 de diciembre."
         }
       }
     ],
     "qualifying_signal": {
       "type": "tier0_floor",
       "refs": [
-        "https://www.congress.gov/bill/119th-congress/house-bill/9770"
+        "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+        "https://www.congress.gov/bill/119th-congress/house-bill/6500/all-actions",
+        "https://www.congress.gov/119/plaws/publ103/PLAW-119publ103.htm",
+        "https://www.congress.gov/bill/119th-congress/house-bill/9770/all-actions"
       ]
     },
     "opened": "2026-07-23",
-    "review_by": "2026-08-22",
+    "review_by": "2026-11-30",
     "status": "live",
     "context_refs": [
       {
@@ -148,8 +184,8 @@
       "es": "Derogación de sanciones a Siria"
     },
     "summary": {
-      "en": "Before Congress is S. 3172, a bill to repeal certain Acts that impose sanctions upon Syria. It sits on the Senate floor calendar under General Orders, Calendar No. 501, placed there on July 27, 2026. As the record states it, the measure would repeal two long-standing US sanctions laws on Syria. A yes vote would end those sanctions laws. A no vote would leave the existing sanctions laws on Syria in place.",
-      "es": "Ante el Congreso está el S. 3172, un proyecto de ley para derogar ciertas leyes que imponen sanciones a Siria. Se encuentra en el calendario del pleno del Senado bajo Órdenes Generales, Calendario No. 501, colocado ahí el 27 de julio de 2026. Según lo que indica el expediente, la medida derogaría dos leyes de sanciones a Siria de larga data en Estados Unidos. Un voto a favor terminaría con esas leyes de sanciones. Un voto en contra dejaría vigentes las leyes de sanciones existentes sobre Siria."
+      "en": "Should the United States repeal two more of its Syria sanctions laws? One law is already gone: Congress repealed the Caesar Syria Civilian Protection Act of 2019 in the fiscal 2026 defense law (Public Law 119-60, section 8369), signed December 18, 2025. S. 3172 is a different bill. It repeals two older laws: the Syria Accountability and Lebanese Sovereignty Restoration Act of 2003 and the Syria Human Rights Accountability Act of 2012. The Foreign Relations Committee reported it without changes, and on July 27, 2026, it was placed on the Senate calendar (Calendar No. 501). It has had no action since, and there is no vote date on the record. If the Senate passes it, it goes to the House.",
+      "es": "¿Debe Estados Unidos derogar otras dos de sus leyes de sanciones contra Siria? Una ya no existe: el Congreso derogó la Ley César de Protección de Civiles en Siria de 2019 en la ley de defensa del año fiscal 2026 (Ley Pública 119-60, sección 8369), firmada el 18 de diciembre de 2025. El S. 3172 es otro proyecto. Deroga dos leyes más antiguas: la Ley de Rendición de Cuentas de Siria y Restauración de la Soberanía del Líbano de 2003 y la Ley de Rendición de Cuentas sobre Derechos Humanos en Siria de 2012. El Comité de Relaciones Exteriores lo presentó sin cambios, y el 27 de julio de 2026 pasó al calendario del Senado (Calendario No. 501). No ha tenido más acción desde entonces y no hay fecha de votación en el expediente. Si el Senado lo aprueba, pasa a la Cámara."
     },
     "aliases": {
       "en": [
@@ -164,8 +200,8 @@
       {
         "slug": "s-3172-119",
         "role": {
-          "en": "A yes vote on S. 3172 would repeal the two sanctions laws on Syria named in the bill. A no vote leaves those sanctions laws in place. The bill currently sits on the Senate floor calendar under General Orders, Calendar No. 501, with no vote date in the record.",
-          "es": "Un voto a favor del S. 3172 derogaría las dos leyes de sanciones a Siria mencionadas en el proyecto. Un voto en contra deja vigentes esas leyes de sanciones. El proyecto se encuentra actualmente en el calendario del pleno del Senado bajo Órdenes Generales, Calendario No. 501, sin fecha de votación en el expediente."
+          "en": "A yes vote repeals the Syria Accountability and Lebanese Sovereignty Restoration Act of 2003 and the Syria Human Rights Accountability Act of 2012. A no vote leaves both laws in place. The bill does not touch the Caesar Act, which Congress already repealed in December 2025. It sits on the Senate calendar (Calendar No. 501) with no vote date on the record.",
+          "es": "Un voto a favor deroga la Ley de Rendición de Cuentas de Siria y Restauración de la Soberanía del Líbano de 2003 y la Ley de Rendición de Cuentas sobre Derechos Humanos en Siria de 2012. Un voto en contra deja ambas leyes vigentes. El proyecto no toca la Ley César, que el Congreso ya derogó en diciembre de 2025. Está en el calendario del Senado (Calendario No. 501), sin fecha de votación en el expediente."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/3172",
         "_status_at_scaffold": "floor_vote",
@@ -175,11 +211,14 @@
     "qualifying_signal": {
       "type": "tier0_floor",
       "refs": [
-        "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+        "https://www.congress.gov/bill/119th-congress/senate-bill/3172",
+        "https://www.congress.gov/bill/119th-congress/senate-bill/3172/all-actions",
+        "https://www.congress.gov/119/bills/s3172/BILLS-119s3172rs.htm",
+        "https://www.congress.gov/119/plaws/publ60/PLAW-119publ60.htm"
       ]
     },
     "opened": "2026-08-09",
-    "review_by": "2026-09-08",
+    "review_by": "2026-10-05",
     "status": "live"
   },
   "paying-college-athletes": {
@@ -188,8 +227,8 @@
       "es": "Pago a atletas universitarios"
     },
     "summary": {
-      "en": "On what terms should college athletes be paid? That is the question S. 4668 — the Protect College Sports Act of 2026 — puts before the Senate. The published record spells those terms out — among other things: schools, conferences, and associations like the NCAA could not keep athletes out of name, image, and likeness (NIL) deals, within limits the bill sets; athletes would report deals over $600 to their school; agents would register with a state, their fees on endorsement deals capped at 5%; athletes would get one transfer without losing eligibility; and schools and conferences would get a limited antitrust exemption to sell certain college sports media rights together. The live decision is the procedural step ahead of all that: a cloture motion on the motion to proceed is pending, so what the Senate settles first is whether it takes the bill up at all.",
-      "es": "¿En qué términos se debe pagar a los atletas universitarios? Esa es la pregunta que el S. 4668 — la Ley de Protección de los Deportes Universitarios de 2026 — plantea ante el Senado. El expediente publicado detalla esos términos — entre otras cosas: las universidades, conferencias y asociaciones como la NCAA no podrían impedir que los atletas firmen acuerdos de nombre, imagen y semejanza (NIL), dentro de los límites que fija el proyecto; los atletas reportarían a su universidad los acuerdos mayores a $600; los agentes se registrarían en un estado, con honorarios limitados al 5% en acuerdos de patrocinio; los atletas tendrían una transferencia sin perder elegibilidad; y las universidades y conferencias recibirían una exención antimonopolio limitada para vender en conjunto ciertos derechos de transmisión del deporte universitario. La decisión en juego es el paso procesal previo a todo eso: hay pendiente una moción de cierre de debate (cloture) sobre la moción para proceder, así que lo primero que el Senado resuelve es si toma el proyecto en consideración."
+      "en": "On what terms should college athletes be paid? S. 4668, the Protect College Sports Act of 2026, sets national rules. Among them: it bars schools, conferences and associations like the NCAA from keeping athletes out of name, image and likeness (NIL) deals, within the bill's limits; has agents register with a state, capping their fees on endorsement deals at 5%; gives athletes one transfer without losing eligibility; and grants schools and conferences a limited antitrust exemption to sell some media rights together. The Senate voted 74–24 to end debate on taking the bill up (September 15), 77–22 to take it up (September 17) and 70–21 to end debate on the Cruz–Cantwell substitute (September 22). Its floor schedule listed two votes for September 24: ending debate on the bill, and adopting the substitute. A bill the Senate passes goes to the House, where neither House version has had a floor vote.",
+      "es": "¿En qué términos se debe pagar a los atletas universitarios? El S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, fija reglas nacionales. Entre ellas: prohíbe a universidades, conferencias y asociaciones como la NCAA impedir que los atletas firmen acuerdos de nombre, imagen y semejanza (NIL), dentro de sus límites; obliga a los agentes a registrarse en un estado, con honorarios de hasta el 5% en acuerdos de patrocinio; da a los atletas una transferencia sin perder elegibilidad; y otorga a universidades y conferencias una exención antimonopolio limitada para vender en conjunto ciertos derechos de transmisión. El Senado votó 74–24 para cerrar el debate sobre considerar el proyecto (15 de septiembre), 77–22 para considerarlo (17 de septiembre) y 70–21 para cerrar el debate sobre la enmienda sustitutiva Cruz–Cantwell (22 de septiembre). Su agenda del pleno fijó dos votaciones para el 24 de septiembre: cerrar el debate sobre el proyecto y adoptar la enmienda sustitutiva. Si el Senado lo aprueba, pasa a la Cámara, donde ninguna versión propia ha llegado a votación."
     },
     "aliases": {
       "en": [
@@ -204,8 +243,8 @@
       {
         "slug": "s-4668-119",
         "role": {
-          "en": "A yes vote on the cloture motion moves S. 4668 toward further Senate action on nationwide rules for paying college athletes. A no vote leaves the measure without that procedural step taken, keeping existing arrangements in place. The Senate placed the bill on its legislative calendar on June 24, 2026 (Calendar No. 449); its latest recorded action is the cloture motion presented on August 5, 2026, with no vote date in the record.",
-          "es": "Un voto a favor de la moción de cierre de debate hace avanzar el S. 4668 hacia una mayor acción del Senado sobre reglas nacionales para pagar a los atletas universitarios. Un voto en contra deja la medida sin ese paso procesal, y mantiene vigentes los arreglos actuales. El Senado colocó el proyecto en su calendario legislativo el 24 de junio de 2026 (Calendario No. 449); su acción más reciente registrada es la moción de cierre de debate presentada el 5 de agosto de 2026, sin fecha de votación en el expediente."
+          "en": "A yes vote on ending debate on S. 4668 clears the way to a final Senate vote on nationwide rules for paying college athletes; a no vote keeps the bill on the floor without that step. The Senate took the bill up 77–22 on September 17, 2026, and ended debate on the Cruz–Cantwell substitute 70–21 on September 22. The bill is on the Senate calendar as No. 449.",
+          "es": "Un voto a favor de cerrar el debate sobre el S. 4668 abre el camino a una votación final del Senado sobre reglas nacionales para pagar a los atletas universitarios; un voto en contra deja el proyecto en el pleno sin ese paso. El Senado lo tomó en consideración 77–22 el 17 de septiembre de 2026 y cerró el debate sobre la enmienda sustitutiva Cruz–Cantwell 70–21 el 22 de septiembre. El proyecto figura en el calendario del Senado con el No. 449."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
         "_status_at_scaffold": "floor_vote",
@@ -220,7 +259,7 @@
       ]
     },
     "opened": "2026-08-09",
-    "review_by": "2026-09-08",
+    "review_by": "2026-10-05",
     "status": "live"
   },
   "annual-defense-policy": {
@@ -229,24 +268,33 @@
       "es": "Política de defensa anual"
     },
     "summary": {
-      "en": "What should defense policy be for fiscal year 2027? That is the question S. 4784 — the National Defense Authorization Act for Fiscal Year 2027 — puts before the Senate; its plain-language headline says the bill sets troop levels, pay raises, and weapons buys. Reaching a vote on it is itself unresolved: on July 14, 2026, the Senate did not invoke cloture — the procedural step that ends debate and allows a final vote — on the motion to proceed, 50 to 46. A motion to proceed was made again on July 27, 2026, and that is the latest action in the record.",
-      "es": "¿Cuál debe ser la política de defensa para el año fiscal 2027? Esa es la pregunta que el S. 4784 — la Ley de Autorización de Defensa Nacional para el Año Fiscal 2027 — plantea ante el Senado; su titular en lenguaje sencillo dice que el proyecto establece niveles de tropas, aumentos salariales y compras de armamento. Llegar a una votación es en sí mismo un asunto sin resolver: el 14 de julio de 2026, el Senado no invocó la clausura (cloture) — el paso procesal que cierra el debate y permite una votación final — sobre la moción para proceder, por 50 votos a 46. El 27 de julio de 2026 se volvió a presentar una moción para proceder, y esa es la acción más reciente del expediente."
+      "en": "What should defense policy be for fiscal year 2027? The annual National Defense Authorization Act sets troop levels, pay raises and weapons purchases. The House passed its version, H.R. 8800, on July 22, 2026, 216–212, and the Senate received it on September 14. The Senate's own bill, S. 4784, has not reached the floor: on July 14, a motion to end debate on taking it up got 50 votes to 46, short of the 60 needed. Sen. Thune entered a motion to reconsider that vote the same day, and it is still pending, which lets the Senate vote again without starting over. The latest action on S. 4784 is a motion to proceed made July 27. There is no vote date on the record for either bill.",
+      "es": "¿Cuál debe ser la política de defensa para el año fiscal 2027? La Ley anual de Autorización de Defensa Nacional fija niveles de tropas, aumentos salariales y compras de armamento. La Cámara aprobó su versión, la H.R. 8800, el 22 de julio de 2026, 216–212, y el Senado la recibió el 14 de septiembre. El proyecto propio del Senado, el S. 4784, no ha llegado al pleno: el 14 de julio, una moción para cerrar el debate sobre considerarlo obtuvo 50 votos contra 46, por debajo de los 60 necesarios. Ese mismo día el senador Thune presentó una moción para reconsiderar esa votación, que sigue pendiente y permite al Senado volver a votar sin empezar de cero. La acción más reciente sobre el S. 4784 es una moción para proceder presentada el 27 de julio. No hay fecha de votación en el expediente para ninguno de los dos proyectos."
     },
     "aliases": {
       "en": [
-        "S. 4784"
+        "S. 4784",
+        "H.R. 8800"
       ],
       "es": [
-        "S. 4784"
+        "S. 4784",
+        "H.R. 8800"
       ]
     },
     "category": "national_security",
     "vehicles": [
       {
+        "slug": "hr-8800-119",
+        "role": {
+          "en": "The House-passed defense bill, approved July 22, 2026, 216–212, and received in the Senate on September 14. A yes vote in the Senate advances the House's version of fiscal 2027 defense policy; a no vote leaves it without Senate approval. It has no Senate calendar number yet, and there is no vote date on the record.",
+          "es": "El proyecto de defensa aprobado por la Cámara el 22 de julio de 2026, 216–212, y recibido en el Senado el 14 de septiembre. Un voto a favor en el Senado hace avanzar la versión de la Cámara de la política de defensa para el año fiscal 2027; un voto en contra la deja sin aprobación del Senado. Todavía no tiene número en el calendario del Senado y no hay fecha de votación en el expediente."
+        }
+      },
+      {
         "slug": "s-4784-119",
         "role": {
-          "en": "A yes vote on the motion to proceed would allow the Senate to take up S. 4784 for consideration. A no vote would leave the measure without further floor action beyond what the record already shows. The Senate placed the bill on its legislative calendar on June 15, 2026 (Calendar No. 436); its latest recorded action is the motion to proceed made on July 27, 2026, with no vote date in the record.",
-          "es": "Un voto a favor de la moción para proceder permitiría que el Senado tome en consideración el S. 4784. Un voto en contra dejaría la medida sin más acción en el pleno más allá de lo que ya muestra el expediente. El Senado colocó el proyecto en su calendario legislativo el 15 de junio de 2026 (Calendario No. 436); su acción más reciente registrada es la moción para proceder presentada el 27 de julio de 2026, sin fecha de votación en el expediente."
+          "en": "A yes vote on ending debate on the motion to proceed lets the Senate take up S. 4784, its own fiscal 2027 defense bill; a no vote keeps it off the floor. That vote failed 50–46 on July 14, 2026, and Sen. Thune's motion to reconsider it has been pending since. The bill is on the Senate calendar as No. 436, with no vote date on the record.",
+          "es": "Un voto a favor de cerrar el debate sobre la moción para proceder permite al Senado tomar en consideración el S. 4784, su propio proyecto de defensa para el año fiscal 2027; un voto en contra lo mantiene fuera del pleno. Esa votación fracasó 50–46 el 14 de julio de 2026, y la moción del senador Thune para reconsiderarla sigue pendiente desde entonces. El proyecto figura en el calendario del Senado con el No. 436, sin fecha de votación en el expediente."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
         "_status_at_scaffold": "floor_vote",
@@ -257,11 +305,12 @@
       "type": "tier0_floor_action",
       "refs": [
         "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
-        "https://www.congress.gov/bill/119th-congress/senate-bill/4784/all-actions"
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4784/all-actions",
+        "https://www.congress.gov/bill/119th-congress/house-bill/8800/all-actions"
       ]
     },
     "opened": "2026-08-09",
-    "review_by": "2026-09-08",
+    "review_by": "2026-10-05",
     "status": "live"
   },
   "crypto-oversight-split-between-sec-and-cftc": {
@@ -270,8 +319,8 @@
       "es": "División de la supervisión de criptomonedas entre la SEC y la CFTC"
     },
     "summary": {
-      "en": "Which federal agency should oversee crypto? That is the question H.R. 3633 — the Digital Asset Market Clarity Act — puts before the Senate; its plain-language headline says the bill would split crypto oversight between the SEC and the CFTC. Reaching a vote on it is the step in play: the latest action in the record is a cloture motion on the motion to proceed, presented in the Senate on August 8, 2026, with no vote date in the record.",
-      "es": "¿Qué agencia federal debe supervisar las criptomonedas? Esa es la pregunta que la H.R. 3633 — la Ley de Claridad del Mercado de Activos Digitales — plantea ante el Senado; su titular en lenguaje sencillo dice que el proyecto dividiría la supervisión de las criptomonedas entre la SEC y la CFTC. Llegar a una votación es el paso en juego: la acción más reciente del expediente es una moción de cierre de debate (cloture) sobre la moción para proceder, presentada en el Senado el 8 de agosto de 2026, sin fecha de votación en el expediente."
+      "en": "Which federal agency should oversee crypto? H.R. 3633, the Digital Asset Market Clarity Act, splits oversight of digital assets between the Securities and Exchange Commission (SEC) and the Commodity Futures Trading Commission (CFTC). The House passed it on July 17, 2025, 294–134, and the Senate Banking Committee reported it with a substitute text on June 1, 2026. On September 15, 2026, a Senate motion to end debate on taking it up failed 49–50, eleven votes short of the 60 needed. Sen. Tillis then entered a motion to reconsider that vote, which keeps the bill available for another try without starting over. There is no vote date on the record.",
+      "es": "¿Qué agencia federal debe supervisar las criptomonedas? La H.R. 3633, la Ley de Claridad del Mercado de Activos Digitales, divide la supervisión de los activos digitales entre la Comisión de Bolsa y Valores (SEC) y la Comisión de Comercio de Futuros de Materias Primas (CFTC). La Cámara la aprobó el 17 de julio de 2025, 294–134, y el Comité de Banca del Senado la presentó con un texto sustitutivo el 1 de junio de 2026. El 15 de septiembre de 2026 fracasó, 49–50, una moción del Senado para cerrar el debate sobre considerarla, a once votos de los 60 necesarios. Después, el senador Tillis presentó una moción para reconsiderar esa votación, lo que mantiene el proyecto disponible para otro intento sin empezar de cero. No hay fecha de votación en el expediente."
     },
     "aliases": {
       "en": [
@@ -286,8 +335,8 @@
       {
         "slug": "hr-3633-119",
         "role": {
-          "en": "H.R. 3633 is the specific measure that would split crypto oversight between the SEC and the CFTC, as stated in its plain-language headline. A yes vote advances that split; a no vote leaves current oversight arrangements unchanged. A Senate cloture motion on the motion to proceed was presented on August 8, 2026.",
-          "es": "El H.R. 3633 es la medida específica que dividiría la supervisión de las criptomonedas entre la SEC y la CFTC, según su título en lenguaje sencillo. Un voto a favor avanza esa división; un voto en contra deja sin cambios los arreglos actuales de supervisión. Una moción de cierre en el Senado sobre la moción para proceder fue presentada el 8 de agosto de 2026."
+          "en": "A yes vote on ending debate lets the Senate take up H.R. 3633 and its split of crypto oversight between the SEC and the CFTC; a no vote keeps it off the floor. That vote failed 49–50 on September 15, 2026, and Sen. Tillis's motion to reconsider it is pending. The bill is on the Senate calendar as No. 423, with no vote date on the record.",
+          "es": "Un voto a favor de cerrar el debate permite al Senado tomar en consideración la H.R. 3633 y su división de la supervisión de las criptomonedas entre la SEC y la CFTC; un voto en contra la mantiene fuera del pleno. Esa votación fracasó 49–50 el 15 de septiembre de 2026, y la moción del senador Tillis para reconsiderarla sigue pendiente. El proyecto figura en el calendario del Senado con el No. 423, sin fecha de votación en el expediente."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/house-bill/3633",
         "_status_at_scaffold": "floor_vote",
@@ -302,7 +351,7 @@
       ]
     },
     "opened": "2026-08-09",
-    "review_by": "2026-09-08",
+    "review_by": "2026-10-05",
     "status": "live"
   }
 }
