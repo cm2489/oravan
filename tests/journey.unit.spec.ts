@@ -1581,6 +1581,63 @@ test.describe('selectFloorVoteFeature floor gate', () => {
  *      Every announcement below is hand-written and injected exactly as the
  *      page injects it from `rungFor`.
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * 5a · THE ADOPTED RULE (issue #268, awaiting owner ruling). "Rule H. Res.
+ *      988 passed House." is the House adopting the terms of a debate on
+ *      the bill, and the bill's own vote is still ahead — the reading
+ *      mapStatus and floorAnsweredChamber already make of this sentence.
+ *      Fresh, it is pending and crowns; stale, it reads as past floor
+ *      action and never crowns.
+ * ------------------------------------------------------------------ */
+test.describe('the adopted special rule reads as a pending House vote', () => {
+  const ADOPTED_RULE = 'Rule H. Res. 988 passed House.';
+  const FAILED_RULE = 'Rule H. Res. 1175 failed passage of House.';
+  const journeyOf = (last_action_date: string) =>
+    deriveJourney({
+      bill_type: 'hr',
+      status: 'floor_vote',
+      last_action_text: ADOPTED_RULE,
+      last_action_date,
+    } as Parameters<typeof deriveJourney>[0]);
+
+  test('the adopted rule is pending in the House (hr-4366-119, verbatim)', () => {
+    expect(floorPendingChamber(ADOPTED_RULE)).toBe('house');
+    // With a Congressional-Record tail, which no `$` anchor may defeat.
+    expect(floorPendingChamber('Rule H. Res. 988 passed House. (CR H123)')).toBe('house');
+    // And it is never ALSO settled: "the last motion failed" would be false.
+    expect(floorSettledChamber(ADOPTED_RULE)).toBeNull();
+  });
+
+  test('a FAILED rule is never pending', () => {
+    expect(floorPendingChamber(FAILED_RULE)).toBeNull();
+  });
+
+  test('the subject is pinned to the rule: a bill passing the House is not pending', () => {
+    expect(floorPendingChamber('Passed House.')).toBeNull();
+    expect(
+      floorPendingChamber('On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 301). Passed House.')
+    ).toBeNull();
+  });
+
+  test('fresh: "the House is deciding whether to bring it to a vote", and it crowns', () => {
+    const fresh = dayOffset(1);
+    expect(isSignalFresh(fresh)).toBe(true);
+    expect(journeyOf(fresh)).toMatchObject({ nowKey: 'nowFloorActivity', nowChamber: 'house' });
+    expect(
+      billFloorBand({ status: 'floor_vote', last_action_date: fresh, last_action_text: ADOPTED_RULE }, null)
+    ).toEqual({ kind: 'pending', chamber: 'house', date: fresh, suspended: false });
+  });
+
+  test('stale: "the House has taken floor action on it", and it never crowns', () => {
+    const stale = dayOffset(SIGNAL_WINDOW_DAYS + 1);
+    expect(isSignalFresh(stale)).toBe(false);
+    expect(journeyOf(stale)).toMatchObject({ nowKey: 'nowFloorActivityStale', nowChamber: 'house' });
+    expect(
+      billFloorBand({ status: 'floor_vote', last_action_date: stale, last_action_text: ADOPTED_RULE }, null)
+    ).toBeNull();
+  });
+});
+
 test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
   /** The measured case: the CR and the SEED Act on the days they passed. */
   const OVERWRITTEN = {
