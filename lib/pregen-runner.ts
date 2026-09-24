@@ -9,7 +9,13 @@ import {
   planCombos,
   type BatchResultRow,
 } from './pregen';
-import { createScriptCache, probeCacheDatabase, type CacheProbe, type ScriptCache } from './scriptcache';
+import {
+  createScriptCache,
+  INFLIGHT_BATCH_PARTS,
+  probeCacheDatabase,
+  type CacheProbe,
+  type ScriptCache,
+} from './scriptcache';
 import { STANCES } from './scriptprompt';
 import type { Bill } from './types';
 
@@ -163,6 +169,52 @@ export async function main({
     throw new PregenCacheUnavailableError(`cache database unreachable — ${why}`);
   }
 
+  // ── Collect a batch a previous run walked away from (2026-09-24) ────────
+  //
+  // The bounded wait below does NOT cancel the batch when it expires:
+  // Anthropic keeps processing it and bills for every request in it. So the
+  // first night the cache database was finally reachable, the run submitted
+  // 60 requests, waited 20 minutes, dropped the id on the floor and wrote
+  // nothing — and because nothing was written, the next night planned the
+  // same 60 combos and bought them a second time. Paid twice, cached never.
+  //
+  // The id is now parked in the cache database (INFLIGHT_BATCH_PARTS — the
+  // same five-segment key shape, a reserved slug) and collected here, BEFORE
+  // anything new is planned, so the scripts it already paid for land in the
+  // cache and drop straight out of tonight's todo list.
+  const resumed = { generated: 0, cacheWrites: 0, cacheWriteFailures: 0, failed: 0 };
+  let stillRunning: string | null = null;
+  const parkedId = await cache.get(INFLIGHT_BATCH_PARTS);
+  if (parkedId) {
+    let status: string | null = null;
+    try {
+      status = (await anthropic.messages.batches.retrieve(parkedId)).processing_status;
+    } catch (err) {
+      // An id the API no longer knows — expired, cancelled, or a value parked
+      // by an older shape of this code — must never wedge the job for good.
+      // Forget it and carry on with a normal night.
+      console.log(
+        `pregen: parked batch ${parkedId} could not be retrieved ` +
+          `(${err instanceof Error ? err.message : String(err)}) — forgetting it`
+      );
+      await cache.set(INFLIGHT_BATCH_PARTS, '');
+    }
+    if (status === 'ended') {
+      Object.assign(resumed, await collectBatch(anthropic, cache, parkedId, allCombos));
+      await cache.set(INFLIGHT_BATCH_PARTS, ''); // a re-collection would write the same entries again
+      console.log(
+        `pregen: collected parked batch ${parkedId} — ${resumed.generated} generated, ` +
+          `${resumed.cacheWrites} stored durably, ${resumed.cacheWriteFailures} not stored, ` +
+          `${resumed.failed} failed`
+      );
+    } else if (status) {
+      // Still running. Submitting a second batch for the same combos would pay
+      // for them twice over, which is the whole failure this block exists to
+      // end, so tonight stops after the accounting below and leaves it parked.
+      stillRunning = status;
+    }
+  }
+
   // Idempotent skip: never re-spend on a combo already cached under its
   // current content-version.
   const todo = [];
@@ -184,16 +236,45 @@ export async function main({
       `$${estimate.perMonthSyncFallback.standard}/month)`
   );
 
-  if (todo.length === 0) {
-    console.log('pregen: nothing to do — every combo is already cached.');
-    logMetrics({ alreadyCached: allCombos.length, generated: 0, cacheWrites: 0, cacheWriteFailures: 0 });
+  if (stillRunning) {
+    console.log(
+      `::warning::pregen: batch ${parkedId} submitted by an earlier run is still ${stillRunning} — ` +
+        'submitting nothing tonight, because a second batch for the same combos would pay for ' +
+        'them twice; the next run collects it.'
+    );
+    logMetrics({
+      alreadyCached: allCombos.length - todo.length,
+      generated: resumed.generated,
+      cacheWrites: resumed.cacheWrites,
+      cacheWriteFailures: resumed.cacheWriteFailures,
+    });
     return {
       planned: 0,
-      generated: 0,
+      generated: resumed.generated,
+      dryRun: false,
+      timedOut: true,
+      batchId: parkedId ?? undefined,
+      alreadyCached: allCombos.length - todo.length,
+      cacheWrites: resumed.cacheWrites,
+      cacheWriteFailures: resumed.cacheWriteFailures,
+    };
+  }
+
+  if (todo.length === 0) {
+    console.log('pregen: nothing to do — every combo is already cached.');
+    logMetrics({
+      alreadyCached: allCombos.length,
+      generated: resumed.generated,
+      cacheWrites: resumed.cacheWrites,
+      cacheWriteFailures: resumed.cacheWriteFailures,
+    });
+    return {
+      planned: 0,
+      generated: resumed.generated,
       dryRun: false,
       alreadyCached: allCombos.length,
-      cacheWrites: 0,
-      cacheWriteFailures: 0,
+      cacheWrites: resumed.cacheWrites,
+      cacheWriteFailures: resumed.cacheWriteFailures,
     };
   }
 
@@ -205,37 +286,85 @@ export async function main({
   let current = batch;
   while (current.processing_status !== 'ended') {
     if (now() >= deadline) {
+      // PARK THE ID RATHER THAN DROP IT. The wait expiring does not stop the
+      // batch and does not refund it — walking away here is what paid for a
+      // night of scripts and stored none. The one cache write below is the
+      // difference between a slow batch costing nothing and costing the whole
+      // night's generation, every night.
+      const parked = await cache.set(INFLIGHT_BATCH_PARTS, batch.id);
       console.log(
         `::warning::pregen: batch ${batch.id} still processing after ${maxWaitMs}ms — ` +
-          'skipping this run without writing anything; uncached combos get a fresh batch next night.'
+          (parked
+            ? 'parked for the next run to collect; nothing is written tonight and nothing is re-bought.'
+            : 'and the cache database would not store its id, so it cannot be collected later — ' +
+              'tonight\'s generation is paid for and lost.')
       );
       logMetrics({
         alreadyCached: allCombos.length - todo.length,
-        generated: 0,
-        cacheWrites: 0,
-        cacheWriteFailures: 0,
+        generated: resumed.generated,
+        cacheWrites: resumed.cacheWrites,
+        cacheWriteFailures: resumed.cacheWriteFailures,
       });
       return {
         planned: todo.length,
-        generated: 0,
+        generated: resumed.generated,
         dryRun: false,
         timedOut: true,
         batchId: batch.id,
         alreadyCached: allCombos.length - todo.length,
-        cacheWrites: 0,
-        cacheWriteFailures: 0,
+        cacheWrites: resumed.cacheWrites,
+        cacheWriteFailures: resumed.cacheWriteFailures,
       };
     }
     await sleep(POLL_INTERVAL_MS);
     current = await anthropic.messages.batches.retrieve(batch.id);
   }
 
-  const byCustomId = new Map(todo.map((combo) => [customId(combo), combo]));
+  const collected = await collectBatch(anthropic, cache, batch.id, todo);
+  const generated = collected.generated + resumed.generated;
+  const cacheWrites = collected.cacheWrites + resumed.cacheWrites;
+  const cacheWriteFailures = collected.cacheWriteFailures + resumed.cacheWriteFailures;
+
+  const alreadyCached = allCombos.length - todo.length;
+  console.log(
+    `pregen: done — ${collected.generated} generated, ${collected.cacheWrites} stored durably, ` +
+      `${collected.cacheWriteFailures} not stored, ${collected.failed} failed, batch ${batch.id}`
+  );
+  logMetrics({ alreadyCached, generated, cacheWrites, cacheWriteFailures });
+
+  return {
+    planned: todo.length,
+    generated,
+    dryRun: false,
+    batchId: batch.id,
+    alreadyCached,
+    cacheWrites,
+    cacheWriteFailures,
+  };
+}
+
+/**
+ * Stream one ENDED batch's results into the cache.
+ *
+ * Shared by the two callers that have to do exactly the same thing with a
+ * finished batch: tonight's, and one a previous run parked. `combos` is what
+ * a returned custom_id is matched against — for a parked batch that is this
+ * run's full combo set, so a result whose bill has since been re-decoded (a
+ * changed content-version, hence a changed custom_id) is dropped rather than
+ * written under a key the live route can no longer read.
+ */
+async function collectBatch(
+  anthropic: AnthropicLike,
+  cache: ScriptCache,
+  batchId: string,
+  combos: ReturnType<typeof planCombos>
+): Promise<{ generated: number; failed: number; cacheWrites: number; cacheWriteFailures: number }> {
+  const byCustomId = new Map(combos.map((combo) => [customId(combo), combo]));
   let generated = 0;
   let failed = 0;
   let cacheWrites = 0;
   let cacheWriteFailures = 0;
-  const results = await anthropic.messages.batches.results(batch.id);
+  const results = await anthropic.messages.batches.results(batchId);
   for await (const row of results) {
     const combo = byCustomId.get(row.custom_id);
     if (!combo) continue; // defensive: unrecognized custom_id must never crash a nightly run
@@ -252,33 +381,18 @@ export async function main({
     generated++;
   }
 
-  const alreadyCached = allCombos.length - todo.length;
-  console.log(
-    `pregen: done — ${generated} generated, ${cacheWrites} stored durably, ` +
-      `${cacheWriteFailures} not stored, ${failed} failed, batch ${batch.id}`
-  );
-  logMetrics({ alreadyCached, generated, cacheWrites, cacheWriteFailures });
-
   // The probe passed and the writes still all failed: the database went away
   // mid-run. Say so out loud rather than reporting a green night — this is
   // the exact shape of the failure that hid for eight nights.
   if (generated > 0 && cacheWrites === 0) {
     console.error(
       '::error::pregen: every cache write failed after the batch was paid for — ' +
-        'the cache database became unreachable mid-run. Tonight\'s generation is lost.'
+        `the cache database became unreachable mid-run. Batch ${batchId}'s generation is lost.`
     );
     throw new PregenCacheUnavailableError('all cache writes failed after generation');
   }
 
-  return {
-    planned: todo.length,
-    generated,
-    dryRun: false,
-    batchId: batch.id,
-    alreadyCached,
-    cacheWrites,
-    cacheWriteFailures,
-  };
+  return { generated, failed, cacheWrites, cacheWriteFailures };
 }
 
 /**

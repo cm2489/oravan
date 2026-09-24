@@ -249,6 +249,31 @@ const PROBE_PARTS: ScriptKeyParts = {
   version: '000000000000',
 };
 
+/**
+ * The key a pregen run parks an IN-FLIGHT BATCH ID under, so the next run can
+ * collect a batch the previous one stopped waiting for (lib/pregen-runner.ts).
+ *
+ * Built by scriptKey() from ordinary-looking parts for exactly the reason
+ * PROBE_PARTS above is: the cache database must only ever see the ONE
+ * five-segment key shape this module's registry comment promises and
+ * tests/upstash-privacy.spec.ts pins, so a bookkeeping value gets a reserved
+ * slug rather than a second key family — the same call this module already
+ * made for the nomination audience, which went inside the version hash rather
+ * than into a sixth segment. `pregen-inflight` can never collide with a real
+ * bill slug: lib/core/bills.ts's billSlug is always `<type>-<number>-<congress>`.
+ *
+ * The value is an Anthropic batch id and nothing else — no bill, no caller, no
+ * content — and it rides the same 24h TTL a script does, which is the right
+ * order of magnitude: a batch still unfinished a day after the nightly that
+ * submitted it is not worth waiting for.
+ */
+export const INFLIGHT_BATCH_PARTS: ScriptKeyParts = {
+  slug: 'pregen-inflight',
+  stance: 'support',
+  lang: 'en',
+  version: '000000000000',
+};
+
 export interface CacheProbe {
   /** Both env vars present, i.e. a client could be built at all. */
   configured: boolean;
