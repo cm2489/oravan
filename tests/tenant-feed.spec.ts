@@ -236,8 +236,10 @@ test.describe('discoverability', () => {
 
   test('the /embeds docs page links both feed formats and the embeds ToS', async ({ page }) => {
     await page.goto('/embeds');
-    await expect(page.locator('a[href="/feed/whats-moving.json"]')).toHaveCount(1);
-    await expect(page.locator('a[href="/feed/whats-moving.xml"]')).toHaveCount(1);
+    // Scoped to <main>: the footer's Follow column links both feeds on every page too.
+    const main = page.locator('main');
+    await expect(main.locator('a[href="/feed/whats-moving.json"]')).toHaveCount(1);
+    await expect(main.locator('a[href="/feed/whats-moving.xml"]')).toHaveCount(1);
     await expect(page.locator('a[href="/embeds/terms"]')).toHaveCount(1);
   });
 });

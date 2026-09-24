@@ -27,7 +27,11 @@ import { expect, test } from '@playwright/test';
  * sources — every rule below passes on them today.
  */
 
-const SURFACES = ['components/CoverageSection.tsx', 'components/RepCard.tsx'] as const;
+const SURFACES = [
+  'components/CoverageSection.tsx',
+  'components/RepCard.tsx',
+  'app/[locale]/reps/[bioguide]/page.tsx',
+] as const;
 const GLOBALS = 'app/globals.css';
 const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 

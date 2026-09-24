@@ -13,6 +13,10 @@ import type { ReactNode } from 'react';
  *           PRINTED — the type below makes `dateLabel` impossible to omit.
  *   stale   Data is past its claim window. INK, never amber: amber means a
  *           dated floor-calendar fact, and a staleness caveat is not one.
+ *   status  A record's derived status label (bill page credibility block,
+ *           2026-09-24). INK, never amber and never green: the label comes
+ *           from statusKeyFor / the floor gate, and the chip only prints it.
+ *           Amber stays the floor band's; one status chip per page.
  *   tag     Topic and policy tags. Ink in EVERY state — rest, hover, active,
  *           visited. A topic tag never turns green, never takes `tint`, and
  *           is never category-colored. Nonpartisan by construction.
@@ -64,6 +68,7 @@ export type ChipProps = ChipBase &
         dateLabel: string;
       }
     | { tone: 'stale' }
+    | { tone: 'status' }
     | { tone: 'tag' }
   );
 
@@ -138,6 +143,19 @@ export function Chip(props: ChipProps) {
       >
         {props.marker && <AiMark ground={ground}>{props.marker}</AiMark>}
         <span className="pt-0.5">{children}</span>
+      </span>
+    );
+  }
+
+  if (props.tone === 'status') {
+    // Sentence case at text-sm so it never reads as the tracked-caps `stale`
+    // caveat beside it; the same ink outline, because a status is a fact
+    // about the record and never a color.
+    return (
+      <span
+        className={`${SHELL} border-[1.5px] px-3 py-1 text-sm font-bold ${OUTLINE[ground]} ${className}`}
+      >
+        {children}
       </span>
     );
   }

@@ -187,7 +187,7 @@ export function BillsBrowser({
             The count is LIVE (bills with a decode in this very payload),
             never a hardcoded claim that drifts from the data. */}
         <p className="mt-2 max-w-note text-sm text-ink-2">
-          {t('bills.searchTrust', { decoded: decodedCount })}
+          {t('bills.searchTrust', { decoded: decodedCount, total: bills.length })}
         </p>
       </div>
 
@@ -302,9 +302,15 @@ export function BillsBrowser({
               <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
                 {t(`bills.band.${band}`)}
               </h2>
-              <p className="mt-2 max-w-read text-sm text-ink-2">{t(`bills.bandSub.${band}`)}</p>
+              {/* No band sub here: "A call lands hardest here" over an empty
+                  band promised urgency the band could not show (B4,
+                  2026-09-24). The empty state says what is true instead, and
+                  points at "Moving" when that band has bills. */}
               <div className="mt-6">
-                <UrgencyEmptyState {...freshness} />
+                <UrgencyEmptyState
+                  {...freshness}
+                  moving={{ count: byBand.moving.length, href: '#band-moving' }}
+                />
               </div>
             </section>
           );

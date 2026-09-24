@@ -148,6 +148,9 @@ components:
   chip-stale:
     textColor: "{colors.ink}"     # INK, never amber
     rounded: "{rounded.stamp}"
+  chip-status:
+    textColor: "{colors.ink}"     # a derived status label; INK, one per page
+    rounded: "{rounded.stamp}"
   chip-tag:
     textColor: "{colors.ink}"     # ink in EVERY state; never category-colored
     rounded: "{rounded.stamp}"
@@ -435,7 +438,7 @@ Three constraints exist because breaking them has already killed a build or a sp
 |---|---|---|
 | `Gauge` | The 6px bar. Proportional segment widths. | Only where it **measures** something true. Never a decorative rule, never a card topper, never a link underline. |
 | `Stamp` | The dated stamp, pressed across a real border. | **Once per page**, and it is the sole printed sync date. Static geometry — survives reduced motion. |
-| `Chip` | `ai` · `urgent` · `stale` · `tag` | `urgent` requires a printed date (enforced by the type). `stale` is ink, never amber. `tag` is ink in every state. |
+| `Chip` | `ai` · `urgent` · `stale` · `status` · `tag` | `urgent` requires a printed date (enforced by the type). `stale` is ink, never amber. `status` prints a derived status label, ink, once per page (the bill page credibility block). `tag` is ink in every state. |
 | `FloorVotePanel` | The full-bleed green enamel panel. | `status === "floor_vote"` **and** a `dateLabel`, or it returns `null`. One per page — use `selectFloorVoteFeature()`. |
 
 The go-mark is one 6px green bar used exactly two ways: as a **segment** of a gauge, drawn to scale, measuring something true; and as a **stroke** under the hero's promise, at the same weight and the same 3px cap, because the promise is the thing being measured. It never tops a card, never underlines a link, and never decorates anything else.

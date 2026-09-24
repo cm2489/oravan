@@ -70,6 +70,22 @@ export interface Bill {
   introduced_date: string | null;
   last_action_date: string | null;
   last_action_text: string | null;
+  /**
+   * PIPELINE-WRITTEN, OPTIONAL (2026-09-24). Present only when
+   * `last_action_text` is one of the sentences that cannot be read on their
+   * own ("Motion to reconsider laid on the table…", "Message on {chamber}
+   * action sent to the {other}." — scripts/congress-fetch.mjs's
+   * AMBIGUOUS_WITHOUT_CONTEXT): the earlier action `status` was actually read
+   * from, e.g. "Passed/agreed to in House: …" or "Failed of passage/not agreed
+   * to in House …". Every chamber/tense derivation reads it through
+   * lib/floor-text.mjs's `statusBasisText`; the page still SHOWS
+   * `last_action_text` as the latest step. Deleted whenever the latest step is
+   * not ambiguous. scripts/verify-sync.mjs fails a record that breaks that.
+   */
+  status_basis_text?: string | null;
+  /** The date of `status_basis_text`'s action (YYYY-MM-DD), when Congress.gov
+   *  gave one. Never present without `status_basis_text`. */
+  status_basis_date?: string | null;
   status: BillStatus;
   issue_tags: string[] | null;
   policy_area: string | null;

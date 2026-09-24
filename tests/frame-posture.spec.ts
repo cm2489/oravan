@@ -125,6 +125,7 @@ test.describe(
       // form, no call apparatus — standard locked-down posture.
       today: '/today',
       mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
+      follow: '/follow', // B8's every-way-to-follow page: links only, no form - standard locked-down posture
       // The Senate nomination record + call page (2026-08-06). It mounts the
       // SAME ActionPanel the bill page does — stance selection, the generated
       // script, the dials — so it takes the identical locked-down posture, and

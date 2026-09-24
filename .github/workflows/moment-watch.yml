@@ -1,6 +1,18 @@
 name: Moment watch
 
-# Delivery for the Big Question candidate shortlist (owner decision, 2026-08-05).
+# Delivery for the Big Question candidate shortlist (owner decision, 2026-08-05),
+# and — since 2026-09-24 — the nightly STATUS refresh of the live questions.
+#
+# THE STATUS REFRESH (owner, 2026-09-24: "Big Questions should get a nightly
+# refresh, don't you think?"). Every push-mode night, after the candidate
+# issues, `--mode=status` re-derives each open question's per-vehicle status
+# lines from the just-synced record (lib/moment-status.mjs — the same lines the
+# pages render at build time), diffs them against data/moment-status-seen.json,
+# and comments on the standing moment-review issue when a line moved or a
+# question is newly past its review_by. No new issue type, no model call, $0.
+# It never writes data/moments.json: whether a summary needs a PR is the
+# owner's call. The snapshot is committed only after the comment posts, so a
+# failed post re-flags the next night instead of swallowing the change.
 #
 # WHY: scripts/moment-candidates.mjs has produced a complete, correct ranked
 # report since it was written, and was referenced by no workflow and no npm
@@ -96,7 +108,7 @@ on:
         default: 'push'
 
 permissions:
-  contents: write # commits data/candidates-seen.json
+  contents: write # commits data/candidates-seen.json and data/moment-status-seen.json
   issues: write # opens/updates the candidate issues
 
 concurrency:
@@ -305,6 +317,35 @@ jobs:
             gh issue create --title "Moment review (standing)" --label moment-review --body-file /tmp/report.md
           fi
 
+      - name: Flag Big Question status changes
+        id: status
+        if: steps.mode.outputs.mode == 'push'
+        # CONTINUE-ON-ERROR, and the reason is the ordering below. A failed
+        # comment must not stop the candidate seen-set from committing (that
+        # is the duplicate-issue failure this file already paid for twice), and
+        # it must not let the status snapshot commit either — or the movement
+        # it failed to report would be marked delivered and never re-flagged.
+        # So the commit step reads this step's OUTCOME and writes the snapshot
+        # only on success, and the last step turns the run red afterwards.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # No ANTHROPIC_API_KEY: nothing here writes prose. An empty digest
+        # (nothing moved, nothing newly past review) posts nothing.
+        run: |
+          node scripts/moment-watch.mjs --mode=status > /tmp/status.md
+          if [ ! -s /tmp/status.md ]; then
+            echo "no status movement and no newly past-review question - nothing to flag"
+            exit 0
+          fi
+          cat /tmp/status.md
+          existing=$(gh issue list --label moment-review --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file /tmp/status.md
+          else
+            gh issue create --title "Moment review (standing)" --label moment-review --body-file /tmp/status.md
+          fi
+
       - name: Commit the seen-set
         if: steps.mode.outputs.mode == 'push'
         env:
@@ -315,6 +356,10 @@ jobs:
           # skipped (nothing was newly qualifying), which is also correct —
           # scripts/moment-watch.mjs holds back only slugs it OWED an issue.
           FILED: ${{ steps.file.outputs.filed }}
+          # The status step's OUTCOME (not its conclusion, which
+          # continue-on-error turns green). Only "success" means the digest
+          # was posted or there was nothing to post.
+          STATUS_OUTCOME: ${{ steps.status.outcome }}
         # Only for the candidates whose issues exist. Rebase-and-retry mirrors
         # the other data workflows: a nightly sync commit may have landed while
         # this ran.
@@ -341,6 +386,11 @@ jobs:
         #     silently pay for a second full set of drafts to write /dev/null.
         run: |
           node scripts/moment-watch.mjs --mode=push --commit-seen --no-draft --filed="$FILED" > /dev/null
+          if [ "$STATUS_OUTCOME" = "success" ]; then
+            node scripts/moment-watch.mjs --mode=status --commit-status > /dev/null
+          else
+            echo "status digest was not delivered - its snapshot is NOT advanced, so tonight's movement re-flags next run"
+          fi
           # TWO WAYS THE SEEN-SET FAILS TO REACH `main`, and every duplicate
           # issue this workflow has ever opened comes from one of them.
           #
@@ -362,14 +412,17 @@ jobs:
           # issue exists, which is what `--filed` carries
           # (scripts/moment-watch.mjs seenSetAfter, pinned by
           # tests/moment-watch-seen.unit.spec.ts).
-          if [ -z "$(git status --porcelain -- data/candidates-seen.json)" ]; then
-            echo "seen-set unchanged"
+          if [ -z "$(git status --porcelain -- data/candidates-seen.json data/moment-status-seen.json)" ]; then
+            echo "seen-set and status snapshot unchanged"
             exit 0
           fi
           git config user.name  "oravan-sync"
           git config user.email "223600121+cm2489@users.noreply.github.com"
           git add data/candidates-seen.json
-          git commit -m "chore(data): moment candidates seen-set $(date -u +%Y-%m-%d)"
+          # The status snapshot does not exist until the first status run
+          # writes it; `git add` of an absent path would fail the step.
+          if [ -e data/moment-status-seen.json ]; then git add data/moment-status-seen.json; fi
+          git commit -m "chore(data): moment watch seen-set and status snapshot $(date -u +%Y-%m-%d)"
           # PUSH FIRST, THEN FETCH, THEN REBASE - three separate outcomes,
           # because they need three different answers. This was the one
           # rebase-retry block of the five data workflows that ran them as a
@@ -425,4 +478,13 @@ jobs:
           FAILED: ${{ steps.file.outputs.failed }}
         run: |
           echo "::error::no issue was filed for: ${FAILED}. They were held out of the seen-set and will be retried on the next run; every candidate that WAS filed is committed and will not re-file."
+          exit 1
+
+      - name: Fail the run if the status digest could not be posted
+        # Same ordering as the step above: the candidate seen-set is already
+        # committed, the status snapshot deliberately is not, and the run
+        # still goes red so a missed digest never looks like a quiet night.
+        if: steps.mode.outputs.mode == 'push' && steps.status.outcome == 'failure'
+        run: |
+          echo "::error::the Big Questions status digest could not be posted to the moment-review issue. Its snapshot was not advanced, so the same movement re-flags on the next run."
           exit 1

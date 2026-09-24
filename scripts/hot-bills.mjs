@@ -91,7 +91,7 @@ for (const u of recent) {
     // A 200 with no readable latestAction leaves the bill exactly as it was
     // rather than downgrading it to committee/null - counted and logged here
     // because this workflow has no verify step that would catch it later.
-    if (refreshBillFields(existing, d) === 'refreshed') refreshed++;
+    if ((await refreshBillFields(existing, d)) === 'refreshed') refreshed++;
     else partialSkipped++;
   } catch (e) {
     failed++;

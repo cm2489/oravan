@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { briefWindow } from '../lib/today';
 
 /*
@@ -61,7 +62,8 @@ const LOCALE_DIR = join(process.cwd(), 'app/[locale]');
  * regression that catches one page catches all of them, but a regression that
  * catches only the newest page is exactly what a sample misses.
  *
- * Absent on purpose: `/reps` (reads searchParams — legitimately dynamic),
+ * Absent on purpose: `/reps` (reads searchParams — legitimately dynamic; its
+ * per-member children `/reps/[bioguide]` ARE static, pinned separately below),
  * `/nominations/[slug]` (declares no generateStaticParams on purpose; see its
  * page comment) and the [...rest] catch-all.
  */
@@ -72,6 +74,7 @@ const STATIC_PAGES = [
   '/citations',
   '/embeds',
   '/embeds/terms',
+  '/follow',
   '/glossary',
   '/mcp',
   '/partners',
@@ -120,6 +123,21 @@ test('the decoded corpus is prerendered, not rendered per request', () => {
   expect(questions.length).toBeGreaterThan(4);
   expect(bills.some((r) => r.startsWith('/en/'))).toBe(true);
   expect(bills.some((r) => r.startsWith('/es/'))).toBe(true);
+});
+
+test('every member-of-Congress page is prerendered, in both languages', () => {
+  const prerendered = routes();
+  // The ids the route's generateStaticParams declares: every sitting member's
+  // bioguide, plus every vacant seat's slug (a vacancy has no bioguide).
+  const ids = [
+    ...getAllLegislators().map((l) => l.bioguide),
+    ...getVacancies().map((v) => vacancySlug(v)),
+  ];
+  expect(ids.length).toBeGreaterThan(500);
+  const missing = ['en', 'es'].flatMap((locale) =>
+    ids.map((id) => `/${locale}/reps/${id}`).filter((route) => !(route in prerendered)),
+  );
+  expect(missing, 'member pages rendered on demand instead of prerendered').toEqual([]);
 });
 
 test('the daily brief prerenders every dated permalink in its window, in both languages', () => {

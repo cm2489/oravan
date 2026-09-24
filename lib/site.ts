@@ -40,3 +40,16 @@ export const DONATE_URL: string | null = 'https://buy.stripe.com/00w8wIcX74px0CH
  * they used at checkout; Oravan itself holds no account or identity.
  */
 export const BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/aFa28k5uF4px0CHdZ38k800';
+
+/**
+ * The free "what moved this week" feed's public paths, per locale (S21).
+ * Locale-explicit static routes — app/feed/whats-moving.{json,xml} for en,
+ * app/es/feed/whats-moving.{json,xml} for es — so these are plain paths
+ * OUTSIDE the next-intl [locale] tree: link them with a bare <a>, never with
+ * next-intl's <Link>, which would prefix them a second time. One definition,
+ * read by the footer's Follow column, /follow, and /embeds.
+ */
+export function feedPaths(locale: string): { json: string; xml: string } {
+  const prefix = locale === 'es' ? '/es/feed' : '/feed';
+  return { json: `${prefix}/whats-moving.json`, xml: `${prefix}/whats-moving.xml` };
+}
