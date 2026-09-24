@@ -401,6 +401,36 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     }
   });
 
+  /* THE MEASURE UNDER CONSIDERATION (2026-09-24, S. 4668). mapStatus now
+     files these as floor_vote, so the totality test below would go red the
+     night a sync re-derives S. 4668 unless the scaffold reads them. */
+  test('a measure under floor consideration is floor action, in either chamber', () => {
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, slug: 's-4668-119', url: 'https://www.congress.gov/bill/119th-congress/senate-bill/4668' },
+      [],
+      { now: NOW_FLOOR, lastActionText: 'Considered by Senate. (consideration: CR S4851)' },
+    );
+    expect(signal.type).toBe('tier0_floor_action');
+    for (const text of [
+      'Measure laid before Senate by motion.',
+      'Measure laid before Senate by unanimous consent. (consideration: CR S4102-4110)',
+      'Considered under the provisions of rule H. Res. 988. (consideration: CR H4410-4432)',
+      'Considered under suspension of the rules.',
+      'Considered as unfinished business.',
+      'Considered pursuant to a previous order. (consideration: CR H2201)',
+    ]) {
+      expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text), text).toBe(true);
+    }
+    // Committee "consideration" is not floor action, and the status gate
+    // still holds: the same sentence at committee derives nothing.
+    expect(
+      floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, 'Committee Consideration and Mark-up Session Held'),
+    ).toBe(false);
+    expect(
+      floorActionInRecord({ status: 'committee', floorCalendar: false }, 'Considered by Senate. (consideration: CR S4851)'),
+    ).toBe(false);
+  });
+
   test('a placement is never floor action — the narrower type wins, and tier0_floor is untouched', () => {
     const { signal } = signalFor(ON_CALENDAR, [], {
       now: NOW_NEAR,

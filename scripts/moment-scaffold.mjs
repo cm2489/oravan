@@ -248,6 +248,26 @@ const FLOOR_ACTION_PATTERNS = [
    * correctly, on both counts (it is a defeat, and that bill is in committee).
    */
   /\brule\s+h\.\s?res\.\s*\d+\s+passed\s+house\b/i,
+  /*
+   * THE MEASURE UNDER CONSIDERATION (2026-09-24, S. 4668). scripts/
+   * congress-fetch.mjs's mapStatus now files these sentences as `floor_vote`,
+   * because they are the chamber debating the measure on its own floor —
+   * S. 4668's last action on the morning of its cloture vote was "Considered
+   * by Senate. (consideration: CR S4851)" and it read as `committee`. Once a
+   * sync re-derives that status, this list has to read the sentence or the
+   * totality test in tests/moment-scaffold.unit.spec.ts goes red on it, and
+   * it is exactly the fact `tier0_floor_action` names. Same shapes as
+   * lib/floor-text.mjs's SENATE_/HOUSE_/CHAMBER_SILENT_CONSIDERATION (this
+   * file keeps import-free copies; see the header above). "Considered as
+   * unfinished business." was already `floor_vote` and was a latent gap here.
+   * No `$` anchors — live texts carry "(consideration: CR …)" tails.
+   */
+  /\bmeasure laid before senate\b/i,
+  /\bconsidered by senate\b(?!\s+committee)/i,
+  /\bconsidered under the provisions of rule h\.? ?res\b/i,
+  /\bconsidered under suspension of the rules\b/i,
+  /\bconsidered as unfinished business\b/i,
+  /\bconsidered pursuant to a previous order\b/i,
 ];
 
 /**
