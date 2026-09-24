@@ -8,6 +8,7 @@ import {
   isAmbiguousAction,
   mapStatus,
   resolveAmbiguousStatus,
+  statusBasisProblems,
   statusFromActions,
   urgencyScore,
 } from '../scripts/congress-fetch.mjs';
@@ -104,14 +105,20 @@ test.describe('the ambiguous sentences', () => {
     }
   });
 
-  test('each shape after a FAILURE never resolves to a passage (no failed rung: committee)', () => {
+  test('each shape after a FAILURE never resolves to a passage', () => {
     for (const shape of [RECONSIDER, MESSAGE_SENATE]) {
+      // A bare failure names no chamber: nothing downstream could say who
+      // voted it down, so it stays the missed claim (#285's committee).
       expect(statusFromActions([{ text: shape }, { text: 'On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).' }]), shape)
         .toMatchObject({ status: 'committee' });
-      expect(
-        statusFromActions([{ text: shape }, { text: 'Failed of passage/not agreed to in House On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).' }]),
-        shape
-      ).toMatchObject({ status: 'committee' });
+      // Congress.gov's defeat summary names the chamber, and is STORED as the
+      // basis, so the status is the failed floor vote it is (2026-09-24).
+      const DEFEAT = 'Failed of passage/not agreed to in House On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).';
+      expect(statusFromActions([{ text: shape }, { text: DEFEAT, actionDate: '2026-03-05' }] as never), shape).toEqual({
+        status: 'floor_vote',
+        basis: DEFEAT,
+        basisDate: '2026-03-05',
+      });
     }
   });
 
@@ -136,7 +143,7 @@ test.describe('the ambiguous sentences', () => {
         { ...f, text: 'On passage Failed by the Yeas and Nays: 204 - 216 (Roll no. 188).' },
         { ...f, text: 'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 204 - 216 (Roll no. 188).' },
       ] as never)
-    ).toMatchObject({ status: 'committee' });
+    ).toMatchObject({ status: 'floor_vote', basis: expect.stringMatching(/^Failed of passage/) });
   });
 
   test('stacked ambiguous sentences are all skipped; an all-ambiguous list says nothing', () => {
@@ -156,7 +163,7 @@ test.describe('planRederive', () => {
   test('finds a stored status the current matcher disagrees with, and nothing else', async () => {
     const corpus = [...settled(5), bill('s', 4668, 'committee', CONSIDERED)];
     const { changes, warnings } = await planRederive(corpus, { resolve: noApi });
-    expect(changes).toEqual([{ slug: 's-4668-119', from: 'committee', to: 'floor_vote' }]);
+    expect(changes).toEqual([{ slug: 's-4668-119', from: 'committee', to: 'floor_vote', basis: null, basisChanged: false }]);
     expect(warnings).toEqual([]);
   });
 
@@ -168,18 +175,46 @@ test.describe('planRederive', () => {
       bill('hr', 5345, 'committee', MESSAGE_SENATE),
     ];
     const { changes } = await planRederive(corpus, { resolve: recordResolver });
-    // The two failed votes stay put — never passed_chamber.
-    expect(changes.map((c) => [c.slug, c.to])).toEqual([
-      ['hconres-86-119', 'passed_chamber'],
-      ['hr-5345-119', 'passed_chamber'],
+    // Never passed_chamber for a failed vote. H.Con.Res. 38's record carries
+    // the chamber-naming defeat summary, so it is the failed floor vote it is;
+    // H.R. 2262's fixture has only the bare failure, so it stays committee.
+    // Every ambiguous bill that resolved gains its basis.
+    expect(changes.map((c) => [c.slug, c.to, c.basis?.text.slice(0, 26)])).toEqual([
+      ['hconres-38-119', 'floor_vote', 'Failed of passage/not agre'],
+      ['hr-2262-119', 'committee', 'On passage Failed by the Y'],
+      ['hconres-86-119', 'passed_chamber', 'Resolution agreed to in Se'],
+      ['hr-5345-119', 'passed_chamber', 'Passed Senate without amen'],
     ]);
+    expect(changes.every((c) => c.basisChanged)).toBe(true);
   });
 
   test('a passage status ALREADY stored on an ambiguous sentence is checked too, and corrected', async () => {
     const { changes } = await planRederive([bill('hconres', 38, 'passed_chamber', RECONSIDER)], { resolve: recordResolver });
     expect(changes).toEqual([
-      expect.objectContaining({ slug: 'hconres-38-119', from: 'passed_chamber', to: 'committee' }),
+      expect.objectContaining({ slug: 'hconres-38-119', from: 'passed_chamber', to: 'floor_vote', basisChanged: true }),
     ]);
+  });
+
+  test('basis-only changes: an unchanged status still gains its basis, and a stale basis is cleared', async () => {
+    const PASSED = 'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by voice vote.';
+    const s2403 = bill('s', 2403, 'passed_chamber', RECONSIDER);
+    const stale = { ...bill('s', 4668, 'floor_vote', CONSIDERED), status_basis_text: PASSED };
+    const { changes } = await planRederive([s2403, stale], {
+      resolve: (b: Bill) => resolveAmbiguousStatus(b as never, { fetchActions: async () => [{ text: RECONSIDER }, { text: PASSED, actionDate: '2026-09-15' }] }),
+    });
+    expect(changes).toEqual([
+      { slug: 's-2403-119', from: 'passed_chamber', to: 'passed_chamber', basis: { text: PASSED, date: '2026-09-15' }, basisChanged: true },
+      { slug: 's-4668-119', from: 'floor_vote', to: 'floor_vote', basis: null, basisChanged: true },
+    ]);
+    applyRederive([s2403, stale], {}, changes);
+    expect(s2403).toMatchObject({ status: 'passed_chamber', status_basis_text: PASSED, status_basis_date: '2026-09-15' });
+    expect(s2403.urgency_score).toBe(0.45); // a basis-only change leaves the score alone
+    expect('status_basis_text' in stale).toBe(false);
+    // A second night finds nothing left to do.
+    const again = await planRederive([s2403, stale], {
+      resolve: (b: Bill) => resolveAmbiguousStatus(b as never, { fetchActions: async () => [{ text: RECONSIDER }, { text: PASSED, actionDate: '2026-09-15' }] }),
+    });
+    expect(again.changes).toEqual([]);
   });
 
   test('NO API: an ambiguous bill keeps its stored status and is named in a warning', async () => {
@@ -255,7 +290,10 @@ test.describe('the 2% guard', () => {
     const r = await runRederive(corpus, {}, { resolve: recordResolver });
     expect(r.code).toBe(0);
     expect(r.wrote.en).toBe(true);
-    expect(r.log.join('\n')).toContain('DONE: rederive-status changed 1 of 100 bills: hconres-86-119 committee->passed_chamber');
+    expect(r.log.join('\n')).toContain(
+      'DONE: rederive-status changed 1 of 100 bills (1 status change(s), 1 basis set/updated, 0 basis cleared): hconres-86-119 committee->passed_chamber +basis'
+    );
+    expect(corpus[99]).toMatchObject({ status: 'passed_chamber', status_basis_text: expect.stringMatching(/^Resolution agreed to in Senate/) });
   });
 
   test('--dry-run reports and writes nothing', async () => {
@@ -323,5 +361,38 @@ test.describe('scripts/rederive-status.mjs on disk (no API key)', () => {
     expect(run.status).toBe(0);
     expect(run.stdout).toContain('DRY RUN');
     expect(after).toEqual(before);
+  });
+});
+
+/*
+ * THE BASIS FIELDS' INTEGRITY RULES (verify-sync.mjs, pre-commit). The fields
+ * are optional, so their absence is never a problem; a basis that could make
+ * the page reason from the wrong sentence is.
+ */
+test.describe('statusBasisProblems', () => {
+  const PASSED = 'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by voice vote.';
+  test('no basis anywhere, and a basis behind an ambiguous step, are both clean', () => {
+    expect(statusBasisProblems([bill('s', 1, 'committee', 'Referred to the Committee on Finance.')])).toEqual([]);
+    expect(statusBasisProblems([bill('s', 2, 'committee', RECONSIDER)])).toEqual([]); // could-not-look state
+    expect(
+      statusBasisProblems([{ ...bill('s', 2403, 'passed_chamber', RECONSIDER), status_basis_text: PASSED, status_basis_date: '2026-09-15' }])
+    ).toEqual([]);
+  });
+
+  test('each way a basis can lie is named', () => {
+    const problems = statusBasisProblems([
+      { ...bill('s', 1, 'floor_vote', CONSIDERED), status_basis_text: PASSED },
+      { ...bill('s', 2, 'passed_chamber', RECONSIDER), status_basis_text: MESSAGE_SENATE },
+      { ...bill('s', 3, 'passed_chamber', RECONSIDER), status_basis_text: '' },
+      { ...bill('s', 4, 'passed_chamber', RECONSIDER), status_basis_text: PASSED, status_basis_date: '15 Sep' },
+      { ...bill('s', 5, 'passed_chamber', RECONSIDER), status_basis_date: '2026-09-15' },
+    ]);
+    expect(problems).toEqual([
+      's-1-119: status_basis_text behind a latest step that is readable on its own',
+      's-2-119: status_basis_text is itself an ambiguous sentence',
+      's-3-119: status_basis_text is empty or not a string',
+      's-4-119: status_basis_date is not YYYY-MM-DD',
+      's-5-119: status_basis_date without status_basis_text',
+    ]);
   });
 });

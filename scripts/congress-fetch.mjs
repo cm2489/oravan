@@ -341,18 +341,28 @@ const RECORDED_FAILURE = /\bfailed\b|\bnot agreed to\b/i;
  * "On passage Failed..." and "Failed of passage/not agreed to in House..."
  * say the same thing, so their relative order does not matter). Pure.
  *
- * Skips every ambiguous sentence and reads the first one that is not:
- *   - a recorded FAILURE -> 'committee'. The status vocabulary has no failed
- *     rung, and the other candidates would each assert something false over
- *     the reconsider sentence still stored as the last action: `floor_vote`
- *     renders "it's moving on the floor", `passed_chamber` "it passed".
- *     `committee` is what these bills carried before any matcher read the
- *     sentence, so it is a missed claim, not a new one.
- *   - anything else -> mapStatus of that sentence.
+ * Skips every ambiguous sentence and reads the first one that is not, and
+ * returns the sentence it read (`basis`) and that action's date
+ * (`basisDate`), which every write path stores as `status_basis_text` /
+ * `status_basis_date` (writeStatusBasis below):
+ *   - Congress.gov's DEFEAT summary ("Failed of passage/not agreed to in
+ *     House ...") -> `floor_vote`, the stage every recorded failure already
+ *     maps to. Since 2026-09-24 this is safe to write because the defeat is
+ *     STORED as the basis: the journey, the ladder and the floor matchers
+ *     read it (lib/floor-text.mjs's statusBasisText), so the settled branch
+ *     says the chamber voted it down. (#285 wrote `committee` here, because
+ *     without a stored basis `floor_vote` over the bare reconsider sentence
+ *     rendered "it's moving on the floor".)
+ *   - any other recorded FAILURE with no chamber-naming summary ->
+ *     `committee`, for #285's reason: nothing downstream could read a
+ *     chamber out of it, so `floor_vote` would still render the neutral
+ *     "moving on the floor", and `committee` is the missed claim, not a new
+ *     one.
+ *   - a passage -> `passed_chamber`; anything else -> mapStatus of it.
  * Returns null when no readable, unambiguous action exists.
  *
  * @param {Array<{ text?: string, actionDate?: string, actionTime?: string }> | null | undefined} actions
- * @returns {{ status: string, basis: string } | null}
+ * @returns {{ status: string, basis: string, basisDate: string | null } | null}
  */
 export function statusFromActions(actions) {
   const list = (actions ?? []).filter((a) => a?.text);
@@ -369,12 +379,72 @@ export function statusFromActions(actions) {
   // gives no time, as the Senate usually does not).
   const key = (a) => `${a.actionDate ?? ''}|${a.actionTime ?? ''}`;
   const group = list.slice(i).filter((a) => key(a) === key(first) && !isAmbiguousAction(a.text));
+  const out = (status, a) => ({ status, basis: a.text, basisDate: isoDate(a.actionDate) });
   const defeat = group.find((a) => /^\s*failed of passage\b|\bnot agreed to in (?:the )?(?:house|senate)\b/i.test(a.text));
-  if (defeat) return { status: 'committee', basis: defeat.text };
+  if (defeat) return out(mapStatus(defeat.text), defeat);
   const passage = group.find((a) => mapStatus(a.text) === 'passed_chamber');
-  if (passage) return { status: 'passed_chamber', basis: passage.text };
-  if (RECORDED_FAILURE.test(first.text)) return { status: 'committee', basis: first.text };
-  return { status: mapStatus(first.text), basis: first.text };
+  if (passage) return out('passed_chamber', passage);
+  if (RECORDED_FAILURE.test(first.text)) return out('committee', first);
+  return out(mapStatus(first.text), first);
+}
+
+/** A YYYY-MM-DD prefix, or null. */
+function isoDate(v) {
+  const m = /^\d{4}-\d{2}-\d{2}/.exec(String(v ?? ''));
+  return m ? m[0] : null;
+}
+
+/**
+ * Store (or clear) the sentence a bill's status was read from. The ONE writer
+ * of `status_basis_text` / `status_basis_date`, used by refreshBillFields, the
+ * new-bill path (scripts/bill-decode.mjs) and scripts/rederive-status.mjs.
+ * `null` DELETES both fields: a record whose latest step is readable on its
+ * own carries no basis at all, never an empty one.
+ * @param {Record<string, any>} bill
+ * @param {{ text: string, date?: string | null } | null} basis
+ */
+export function writeStatusBasis(bill, basis) {
+  if (basis?.text) {
+    bill.status_basis_text = basis.text;
+    if (basis.date) bill.status_basis_date = basis.date;
+    else delete bill.status_basis_date;
+  } else {
+    delete bill.status_basis_text;
+    delete bill.status_basis_date;
+  }
+}
+
+/**
+ * THE BASIS FIELDS' INTEGRITY RULES, for scripts/verify-sync.mjs (pre-commit):
+ *   - a basis exists ONLY behind an ambiguous latest step (it is cleared on
+ *     every other write, so one sitting behind a readable sentence is stale
+ *     and would make the page reason from an older action than it shows);
+ *   - it is a non-empty string and is not itself ambiguous;
+ *   - a basis date is YYYY-MM-DD and never present without the text.
+ * An ambiguous latest step WITHOUT a basis is legal: it is the "could not
+ * look" state, and its status is whatever was stored before.
+ * Returns one "slug: reason" line per problem. Pure.
+ * @param {Array<Record<string, any>>} bills
+ * @returns {string[]}
+ */
+export function statusBasisProblems(bills) {
+  const out = [];
+  for (const b of Array.isArray(bills) ? bills : []) {
+    const hasText = !!b && Object.prototype.hasOwnProperty.call(b, 'status_basis_text');
+    const hasDate = !!b && Object.prototype.hasOwnProperty.call(b, 'status_basis_date');
+    if (!hasText && !hasDate) continue;
+    const slug = slugOf(b);
+    if (!hasText) {
+      out.push(`${slug}: status_basis_date without status_basis_text`);
+      continue;
+    }
+    const t = b.status_basis_text;
+    if (typeof t !== 'string' || !t.trim()) out.push(`${slug}: status_basis_text is empty or not a string`);
+    else if (isAmbiguousAction(t)) out.push(`${slug}: status_basis_text is itself an ambiguous sentence`);
+    if (!isAmbiguousAction(b.last_action_text)) out.push(`${slug}: status_basis_text behind a latest step that is readable on its own`);
+    if (hasDate && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.status_basis_date))) out.push(`${slug}: status_basis_date is not YYYY-MM-DD`);
+  }
+  return out;
 }
 
 /**
@@ -575,15 +645,30 @@ export async function refreshBillFields(existing, detail, { resolve = resolveAmb
   // so this is one extra request, made only for these sentences. When it
   // cannot be made the stored status stands (never mapStatus's passage
   // reading) and the nightly re-derivation pass retries it.
+  //
+  // THE BASIS travels with the status (writeStatusBasis): the sentence the
+  // status was read from, stored when the latest step is ambiguous and
+  // deleted when it is not. When the lookup fails the kept status came from
+  // the PREVIOUS reading: its stored basis if it had one, else the previous
+  // latest step, provided that step was readable on its own.
   let status = mapStatus(action.text);
+  let basis = null;
   if (isAmbiguousAction(action.text)) {
     const resolved = await resolve(existing);
-    if (resolved) status = resolved.status;
-    else {
+    if (resolved) {
+      status = resolved.status;
+      basis = { text: resolved.basis, date: resolved.basisDate ?? null };
+    } else {
       console.warn(`WARN ${slugOf(existing)}: ambiguous last action ("${action.text}") and the action before it could not be read; status kept at ${existing.status}`);
       status = existing.status ?? 'committee';
+      if (existing.status_basis_text) {
+        basis = { text: existing.status_basis_text, date: existing.status_basis_date ?? null };
+      } else if (existing.last_action_text && !isAmbiguousAction(existing.last_action_text)) {
+        basis = { text: existing.last_action_text, date: existing.last_action_date ?? null };
+      }
     }
   }
+  writeStatusBasis(existing, basis);
   const lastActionDate = action.actionDate ?? existing.last_action_date ?? null;
   existing.status = status;
   existing.last_action_date = lastActionDate;

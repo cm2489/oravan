@@ -13,7 +13,11 @@
  * reads from the stored sentence, and a disagreement is corrected.
  *
  * WHAT IT WRITES, AND WHY ONLY THAT. Exactly what `refreshBillFields` writes
- * from the status and nothing else: `status`, and `urgency_score`, recomputed
+ * from the status and nothing else: `status`; the status BASIS
+ * (`status_basis_text` / `status_basis_date`, through the same
+ * writeStatusBasis, 2026-09-24) — the earlier action an ambiguous latest step
+ * was resolved from, deleted when the latest step is readable on its own; and
+ * `urgency_score`, recomputed
  * by calling the same `urgencyScore(status, last_action_date)` the sync calls
  * (never a copy). The sentence and its date are untouched — this pass reads
  * the record, it never re-dates it. A bill whose stored text is empty is
@@ -47,32 +51,56 @@
  *              write nothing, exit 0 unless the guard would trip.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { isAmbiguousAction, mapStatus, resolveAmbiguousStatus, slugOf, urgencyScore } from './congress-fetch.mjs';
+import {
+  isAmbiguousAction,
+  mapStatus,
+  resolveAmbiguousStatus,
+  slugOf,
+  urgencyScore,
+  writeStatusBasis,
+} from './congress-fetch.mjs';
 
 export const MAX_CHANGE_FRACTION = 0.02;
 
+/** @typedef {{ text: string, date: string | null } | null} Basis */
+/** @typedef {{ slug: string, from: string, to: string, basis: Basis, basisChanged: boolean }} Change */
+
+const storedBasis = (b) =>
+  b?.status_basis_text ? { text: b.status_basis_text, date: b.status_basis_date ?? null } : null;
+const sameBasis = (a, b) => (a?.text ?? null) === (b?.text ?? null) && (a?.date ?? null) === (b?.date ?? null);
+const hasBasisFields = (b) =>
+  Object.prototype.hasOwnProperty.call(b, 'status_basis_text') ||
+  Object.prototype.hasOwnProperty.call(b, 'status_basis_date');
+
 /**
- * Every bill whose stored status disagrees with what the current matcher
- * reads from its stored last action. Never mutates.
+ * Every bill whose stored status, or stored status BASIS, disagrees with what
+ * the current matcher reads. Never mutates.
  *
  * AMBIGUOUS LAST ACTIONS (congress-fetch.mjs's AMBIGUOUS_WITHOUT_CONTEXT) are
  * never read from the sentence itself: every such bill is resolved from the
- * action BEFORE it via `resolveAmbiguousStatus` — including one whose stored
+ * action BEFORE it via `resolveAmbiguousStatus`, including one whose stored
  * status already agrees with mapStatus's passage default, because that
- * default is exactly the claim that has to be checked (H.Con.Res. 38 and
- * H.R. 2262 both FAILED in the House under that sentence). When the lookup
- * cannot be made (no key, Congress.gov down) the stored status stands and a
- * warning names the slug. On 2026-09-24 that was 13 bills: 13 free requests.
+ * default is exactly the claim that has to be checked. The sentence the
+ * status was read from is stored beside it as `status_basis_text` (and its
+ * date as `status_basis_date`), so a bill can change on its basis alone. When
+ * the lookup cannot be made (no key, Congress.gov down) the stored status and
+ * basis stand and a warning names the slug. On 2026-09-24 that was 13 bills:
+ * 13 free requests.
+ *
+ * A bill whose latest step is readable on its own carries no basis, so a
+ * stale one left behind is cleared here too.
  *
  * @param {Array<Record<string, any>>} bills
  * @param {{ resolve?: typeof resolveAmbiguousStatus }} [opts]
- * @returns {Promise<{ changes: Array<{ slug: string, from: string, to: string, basis?: string }>, warnings: string[] }>}
+ * @returns {Promise<{ changes: Change[], warnings: string[] }>}
  */
 export async function planRederive(bills, { resolve = resolveAmbiguousStatus } = {}) {
   const changes = [];
   const warnings = [];
   for (const b of bills) {
     if (!b?.last_action_text) continue;
+    /** @type {string} */ let to;
+    /** @type {Basis} */ let basis = null;
     if (isAmbiguousAction(b.last_action_text)) {
       const resolved = await resolve(b);
       if (!resolved) {
@@ -81,13 +109,15 @@ export async function planRederive(bills, { resolve = resolveAmbiguousStatus } =
         );
         continue;
       }
-      if (resolved.status !== b.status) {
-        changes.push({ slug: slugOf(b), from: b.status, to: resolved.status, basis: resolved.basis });
-      }
-      continue;
+      to = resolved.status;
+      basis = { text: resolved.basis, date: resolved.basisDate ?? null };
+    } else {
+      to = mapStatus(b.last_action_text);
     }
-    const to = mapStatus(b.last_action_text);
-    if (to !== b.status) changes.push({ slug: slugOf(b), from: b.status, to });
+    const basisChanged = basis ? !sameBasis(basis, storedBasis(b)) : hasBasisFields(b);
+    if (to !== b.status || basisChanged) {
+      changes.push({ slug: slugOf(b), from: b.status, to, basis, basisChanged });
+    }
   }
   return { changes, warnings };
 }
@@ -104,16 +134,20 @@ export function guardVerdict(changed, total) {
 /**
  * Apply a plan to the EN corpus (array) and the ES corpus (object keyed by
  * slug) in place, in lockstep. Returns whether the ES corpus was touched.
+ * The basis goes through the one writer (writeStatusBasis) the sync uses;
+ * the Spanish corpus carries no basis (it holds no status-derived sentence).
  * @param {Array<Record<string, any>>} bills
  * @param {Record<string, Record<string, any>>} es
- * @param {Array<{ slug: string, from?: string, to: string }>} changes
+ * @param {Array<{ slug: string, from?: string, to: string, basis?: Basis, basisChanged?: boolean }>} changes
  */
 export function applyRederive(bills, es, changes) {
   const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
   let esTouched = false;
-  for (const { slug, to } of changes) {
+  for (const { slug, to, basis = null, basisChanged = false } of changes) {
     const b = bySlug.get(slug);
     if (!b) continue;
+    if (basisChanged || basis) writeStatusBasis(b, basis);
+    if (b.status === to) continue;
     b.status = to;
     b.urgency_score = urgencyScore(to, b.last_action_date ?? null);
     const e = es?.[slug];
@@ -129,16 +163,32 @@ export function applyRederive(bills, es, changes) {
 /** One printed line per change, stable order. */
 function listLines(changes) {
   return changes
-    .map((c) => `  ${c.slug}: ${c.from} -> ${c.to}${c.basis ? `  (read from: "${c.basis}")` : ''}`)
+    .map((c) => {
+      const status = c.from === c.to ? `${c.from} (unchanged)` : `${c.from} -> ${c.to}`;
+      const basis = !c.basisChanged
+        ? ''
+        : c.basis
+          ? `  [basis: "${c.basis.text}"${c.basis.date ? ` ${c.basis.date}` : ''}]`
+          : '  [basis cleared]';
+      return `  ${c.slug}: ${status}${basis}`;
+    })
     .join('\n');
 }
 
+const summary = (changes) => {
+  const flips = changes.filter((c) => c.from !== c.to).length;
+  const gained = changes.filter((c) => c.basisChanged && c.basis).length;
+  const cleared = changes.filter((c) => c.basisChanged && !c.basis).length;
+  return `${flips} status change(s), ${gained} basis set/updated, ${cleared} basis cleared`;
+};
+
 /**
  * The whole pass over a pair of corpora, file-free so tests can drive it.
+ * The 2% guard counts every changed RECORD (a status flip or a basis write).
  * @param {Array<Record<string, any>>} bills
  * @param {Record<string, Record<string, any>>} es
  * @param {{ dryRun?: boolean, resolve?: typeof resolveAmbiguousStatus }} [opts]
- * @returns {Promise<{ code: number, log: string[], warnings: string[], changes: Array<{slug:string,from:string,to:string,basis?:string}>, wrote: { en: boolean, es: boolean } }>}
+ * @returns {Promise<{ code: number, log: string[], warnings: string[], changes: Change[], wrote: { en: boolean, es: boolean } }>}
  */
 export async function runRederive(bills, es, { dryRun = false, resolve = resolveAmbiguousStatus } = {}) {
   const log = [];
@@ -146,20 +196,24 @@ export async function runRederive(bills, es, { dryRun = false, resolve = resolve
   const verdict = guardVerdict(changes.length, bills.length);
   if (!verdict.ok) {
     log.push(
-      `REDERIVE_GUARD_TRIPPED: ${changes.length} of ${bills.length} bills would change status tonight, above the ${Math.round(MAX_CHANGE_FRACTION * 100)}% ceiling (${verdict.limit}). A matcher change that moves this much of the corpus must be read by a person first - NOTHING was written.`,
+      `REDERIVE_GUARD_TRIPPED: ${changes.length} of ${bills.length} bills would change tonight (${summary(changes)}), above the ${Math.round(MAX_CHANGE_FRACTION * 100)}% ceiling (${verdict.limit}). A matcher change that moves this much of the corpus must be read by a person first - NOTHING was written.`,
       listLines(changes)
     );
     return { code: 1, log, warnings, changes, wrote: { en: false, es: false } };
   }
   if (dryRun) {
-    log.push(`DRY RUN: ${changes.length} of ${bills.length} bills would change status (guard limit ${verdict.limit}); nothing written.`);
+    log.push(
+      `DRY RUN: ${changes.length} of ${bills.length} bills would change (${summary(changes)}; guard limit ${verdict.limit}); nothing written.`
+    );
     if (changes.length) log.push(listLines(changes));
     return { code: 0, log, warnings, changes, wrote: { en: false, es: false } };
   }
   const { esTouched } = applyRederive(bills, es, changes);
   log.push(
-    `DONE: rederive-status changed ${changes.length} of ${bills.length} bills` +
-      (changes.length ? `: ${changes.map((c) => `${c.slug} ${c.from}->${c.to}`).join(', ')}` : '')
+    `DONE: rederive-status changed ${changes.length} of ${bills.length} bills (${summary(changes)})` +
+      (changes.length
+        ? `: ${changes.map((c) => `${c.slug} ${c.from}->${c.to}${c.basisChanged ? (c.basis ? ' +basis' : ' -basis') : ''}`).join(', ')}`
+        : '')
   );
   return { code: 0, log, warnings, changes, wrote: { en: changes.length > 0, es: esTouched } };
 }

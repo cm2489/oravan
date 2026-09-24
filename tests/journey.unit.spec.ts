@@ -2612,3 +2612,85 @@ test.describe('liveCallKey', () => {
     }
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * status_basis_text (2026-09-24) — the sentence a status was READ from.
+ *
+ * "Motion to reconsider laid on the table Agreed to without objection." is
+ * the last action on S. 2403, S. 195, S. 2398 and S. 766, which the House
+ * PASSED, and on H.Con.Res. 38, which the House voted DOWN. Read on its own it
+ * says neither; the pipeline stores the vote before it as status_basis_text,
+ * and every chamber/tense derivation reads that. The page still shows the
+ * reconsider sentence as the latest step.
+ * ------------------------------------------------------------------ */
+test.describe('status_basis_text drives every chamber/tense derivation', () => {
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const HOUSE_PASSED =
+    'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by the Yeas and Nays: (2/3 required): 401 - 14 (Roll no. 314).';
+  const HOUSE_DEFEAT =
+    'Failed of passage/not agreed to in House On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).';
+  const fresh = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  test('a Senate bill the House passed claims NO next chamber (was: "the House decides next")', () => {
+    const s2403 = {
+      bill_type: 's',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: RECONSIDER,
+      last_action_date: fresh,
+      status_basis_text: HOUSE_PASSED,
+    };
+    expect(passageState(s2403)).toEqual({ stage: 'second', passedBy: 'house', next: null });
+    expect(liveCallTarget(s2403)).toBeNull();
+    const j = deriveJourney(s2403);
+    expect(j.nowKey).toBe('nowPassedSecond');
+    expect(j.nowChamber).toBe('house');
+    expect(en.bill.journey.nowPassedSecond).toBeTruthy();
+    expect(es.bill.journey.nowPassedSecond).toBeTruthy();
+    // Without the basis it is exactly the shipped defect this closes.
+    const bare = { ...s2403, status_basis_text: undefined };
+    expect(liveCallTarget(bare)).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
+  });
+
+  test('the same shape over a House DEFEAT renders the failed House vote through the settled branch', () => {
+    const hconres38 = {
+      bill_type: 'hconres',
+      status: 'floor_vote' as BillStatus,
+      last_action_text: RECONSIDER,
+      last_action_date: fresh,
+      status_basis_text: HOUSE_DEFEAT,
+    };
+    const j = deriveJourney(hconres38);
+    expect(j.nowKey).toBe('nowFloorMotionFailed');
+    expect(j.nowChamber).toBe('house');
+    expect(liveCallTarget(hconres38)).toBeNull();
+    expect(billFloorBand(hconres38, null)).toBeNull();
+    // Without the basis the same status would say "it's moving on the floor".
+    expect(deriveJourney({ ...hconres38, status_basis_text: undefined }).nowKey).toBe('nowFloorActivityNeutral');
+  });
+
+  test('a bill with no basis derives exactly as before', () => {
+    const plain = {
+      bill_type: 'hr',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: 'Received in the Senate.',
+      last_action_date: fresh,
+    };
+    expect(passageState(plain)).toEqual({ stage: 'first', passedBy: null, next: 'senate' });
+    expect(deriveJourney(plain).nowKey).toBe('nowPassed');
+    expect(liveCallTarget(plain)).toEqual({ chamber: 'senate', afterVote: true, soleChamber: false });
+  });
+
+  test('a concurrent resolution agreed to by the second chamber without amendment never "goes to the President"', () => {
+    // 'both' renders "It goes to the President next"; a concurrent resolution
+    // is never presented. The second chamber's summary line can now reach
+    // passageState as a basis, so this fails closed to 'second'.
+    expect(
+      passageState({
+        bill_type: 'sconres',
+        last_action_text: RECONSIDER,
+        status_basis_text: 'Passed/agreed to in House: On agreeing to the resolution Agreed to without amendment.',
+      })
+    ).toEqual({ stage: 'second', passedBy: 'house', next: null });
+    expect(passageState({ bill_type: 'hr', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }).stage).toBe('both');
+  });
+});
