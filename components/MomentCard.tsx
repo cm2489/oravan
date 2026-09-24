@@ -3,6 +3,8 @@ import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import type { Category } from '@/lib/taxonomy';
 import type { MomentState } from '@/lib/moments';
+import type { StatusLine } from '@/lib/moment-status.mjs';
+import { MomentStatusLine } from '@/components/MomentStatusLine';
 
 export interface MomentTeaser {
   id: string;
@@ -15,6 +17,10 @@ export interface MomentTeaser {
   nominationCount: number;
   updatedDate: string | null;
   state: MomentState;
+  /** The question-level line from the record (lib/moment-status.mjs
+   *  questionStatus) — the most advanced live vehicle's, or in explainer mode
+   *  the most recent finished one's. Null only when no vehicle resolves. */
+  status: StatusLine | null;
 }
 
 /**
@@ -60,6 +66,11 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
         ? t('moments.cardNominationCount', { count: moment.nominationCount })
         : t('moments.cardVehicleCount', { count: moment.billCount });
 
+  // The status line already prints the record's date; "Updated" repeats it
+  // only when the live layer recorded something newer (or there is no line).
+  const updatedDate =
+    moment.updatedDate && moment.updatedDate !== moment.status?.date ? moment.updatedDate : null;
+
   return (
     <Link
       href={`/questions/${moment.id}`}
@@ -68,24 +79,34 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
       <div className="flex flex-wrap items-center gap-2">
         <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
         {moment.state === 'settled' && <Chip tone="stale">{t('moments.settledBadge')}</Chip>}
-        {moment.state === 'stale' && <Chip tone="stale">{t('moments.staleBadge')}</Chip>}
+        {/* No "Needs review" badge any more (owner, 2026-09-24): a lapsed
+            review date is a curation reminder the watcher sends the owner,
+            not a caveat on the reader's card. The card's status line below is
+            re-derived from the record on every build either way. */}
       </div>
       <h3 className="mt-3 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
         {moment.name}
       </h3>
       <p className="mt-2 max-w-read text-sm text-ink-2">{moment.dek}</p>
+      {/* Where it stands, from the record — hairline above it so the AI-drafted
+          dek and the record's own status never read as one passage. The date
+          it prints is the record's; the "Updated" line below is the
+          question's own freshness and stays. */}
+      {moment.status && (
+        <MomentStatusLine line={moment.status} className="mt-3 border-t border-line pt-3" />
+      )}
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
         <span>
           {countLine}
-          {moment.updatedDate && <span aria-hidden> ·</span>}
+          {updatedDate && <span aria-hidden> ·</span>}
         </span>
-        {moment.updatedDate && (
+        {updatedDate && (
           <span>
             {t('moments.cardUpdated', {
               // date-only string => format in UTC, or it reads a day early.
               // Year included: a bare "Dec 1" on a card that claims currency
               // reads as this year even when the action is months past.
-              date: format.dateTime(new Date(moment.updatedDate), {
+              date: format.dateTime(new Date(updatedDate), {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',

@@ -899,11 +899,9 @@
     "indexTitle": "Big Questions",
     "indexSub": "Entry points into the legislative questions the news is covering right now — each one routes straight to the bills and Senate nominations the debate actually runs through.",
     "liveHeading": "Live",
-    "liveSub": "Open questions with something callable moving through Congress right now — a bill, or a nomination before the Senate.",
+    "liveSub": "Open questions before Congress, each with where its bills stand today, read from the official record.",
     "settledHeading": "Settled",
     "settledSub": "Recently closed questions, kept for the record. These don't reopen.",
-    "reviewHeading": "Under review",
-    "reviewSub": "Questions whose scheduled review date passed without a renewal. They stay readable and still link to the record, but nobody has confirmed they reflect where things stand right now.",
     "emptyTitle": "No live Big Questions right now",
     "emptyBody": "A Big Question opens only when a real, callable bill or Senate nomination meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",
@@ -914,11 +912,9 @@
     "cardUpdated": "Updated {date}",
     "liveBadge": "Live",
     "settledBadge": "Settled",
-    "staleBadge": "Needs review",
     "decidingLive": "What Congress is deciding",
     "decidingSettled": "What Congress decided",
     "settledBanner": "This question is settled — here's what happened. This page stays as the record and won't reopen.",
-    "staleBanner": "This Big Question's scheduled review ({date}) passed without renewal — it may not reflect where things stand right now.",
     "vehiclesHeading": "The bills",
     "vehiclesLede": "The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.",
     "vehiclesHeadingNominations": "The nominations",
@@ -994,7 +990,36 @@
       },
       "privacyNote": "Nobody is watching you read this — no account, no tracking, no feed tuned to you, which is why the same page can be shared across the spectrum."
     },
-    "kicker": "Big Question"
+    "kicker": "Big Question",
+    "status": {
+      "label": "From the official record",
+      "latestAction": "Latest action {date}",
+      "recordStepLabel": "The record's latest step, in its own words:",
+      "recordStepEmpty": "The record shows no action text yet.",
+      "explainer": "Every bill in this question has reached the end of its path. The cards below say what happened.",
+      "lastReviewed": "Summary last reviewed by a person {date}.",
+      "group": {
+        "house": "Started in the House",
+        "senate": "Started in the Senate",
+        "enacted": "Became law"
+      },
+      "line": {
+        "signed": "Signed into law{law, select, none {} other { as Public Law {law}}}.",
+        "vetoed": "Vetoed by the President.",
+        "presented": "Both chambers passed it, and it has been sent to the President.",
+        "bothAgreed": "Both chambers have passed it in the same form.",
+        "passedBack": "{chamber, select, house {Both chambers passed it in different versions; it is back with the House to settle the changes.} other {Both chambers passed it in different versions; it is back with the Senate to settle the changes.}}",
+        "passedOnCalendar": "{chamber, select, house {Passed the Senate; placed on the House calendar, where it can be called up any day the House is in session.} other {Passed the House; placed on the Senate calendar, where it can be called up any day the Senate is in session.}}",
+        "heldAtDesk": "{chamber, select, house {Passed the Senate; held at the House desk.} other {Passed the House; held at the Senate desk.}}",
+        "passedWaiting": "{chamber, select, house {Passed the Senate; waiting on the House.} other {Passed the House; waiting on the Senate.}}",
+        "clotureFiled": "Cloture was filed in the Senate. Under Senate rules, that vote comes within days.",
+        "onFloor": "{chamber, select, house {Moving on the House floor, with a vote ahead.} other {Moving on the Senate floor, with a vote ahead.}}",
+        "failedReconsider": "A Senate vote on it failed, and a motion to reconsider is pending, so another vote is possible.",
+        "onCalendar": "{chamber, select, house {Placed on the House calendar. It can be called up any day the House is in session.} other {Placed on the Senate calendar. It can be called up any day the Senate is in session.}}",
+        "failed": "{chamber, select, house {A House floor vote on it failed.} other {A Senate floor vote on it failed.}}",
+        "inCommittee": "In committee."
+      }
+    }
   },
   "nominations": {
     "metaDescription": "A presidential nomination pending before the U.S. Senate — the Senate's own record of it, and the call that goes with it.",

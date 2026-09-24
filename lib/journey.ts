@@ -66,6 +66,7 @@ import {
   floorCalendarChamber,
   floorPendingChamber,
   floorSettledChamber,
+  passageState as passageStateMjs,
   statusBasisText,
 } from './floor-text.mjs';
 
@@ -675,63 +676,16 @@ export interface PassageState {
   next: Chamber | null;
 }
 
+/*
+ * THE BODY LIVES IN lib/floor-text.mjs since 2026-09-24 (unchanged — same
+ * regexes, same order), because scripts/moment-watch.mjs now diffs the Big
+ * Questions status lines under plain node and needs the same reading. The
+ * header above still describes it; the types above still name its shape.
+ */
 export function passageState(
   bill: Pick<Bill, 'bill_type' | 'last_action_text'> & Basis
 ): PassageState {
-  const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
-  const other: Chamber = origin === 'house' ? 'senate' : 'house';
-  // The sentence the status was READ from (statusBasisText): for a bill whose
-  // last action is "Motion to reconsider laid on the table…", that is the
-  // vote before it, e.g. "Passed/agreed to in House: On motion to suspend the
-  // rules and pass the bill Agreed to by voice vote." The message read below
-  // stays on last_action_text, because the message IS that sentence.
-  const text = statusBasisText(bill) ?? '';
-  // Anchored: "Rule H. Res. 988 passed House." reports a RULE's passage, not
-  // this bill's, and an unanchored match would read it as one.
-  // "Passed/agreed to in House: …" is Congress.gov's own summary line for a
-  // chamber's passage (2026-09-24): it names the chamber, and its amendment
-  // clause is read below exactly like a "Passed House …" sentence's.
-  const passage = /^\s*Passed(?:\/agreed to in)? (House|Senate)\b/i.exec(text);
-  // THE NOTICE THAT FOLLOWS A PASSAGE (2026-09-24, H.Con.Res. 86). "Message
-  // on Senate action sent to the House." is what Congress writes OVER the
-  // passage sentence once the acting chamber notifies the other, and since
-  // that date mapStatus files it as `passed_chamber`. Read here so the
-  // routing does not fall to the 'first' default: on H.Con.Res. 86 — agreed
-  // to by the House, then by the Senate — that default would have printed
-  // "the Senate decides next" about the chamber that had just decided. The
-  // sentence names the acting chamber and carries no amendment clause, so a
-  // second-chamber notice is 'second' (both have acted, no next step named)
-  // and never 'both' or 'back': the same fail-closed rule as below.
-  const message = /^\s*Message on (House|Senate) action sent to the (?:House|Senate)\b/i.exec(
-    bill.last_action_text ?? ''
-  );
-  if (!passage && message) {
-    const actedBy: Chamber = message[1].toLowerCase() === 'senate' ? 'senate' : 'house';
-    return actedBy === origin
-      ? { stage: 'first', passedBy: actedBy, next: other }
-      : { stage: 'second', passedBy: actedBy, next: null };
-  }
-  if (!passage) return { stage: 'first', passedBy: null, next: other };
-  const passedBy: Chamber = passage[1].toLowerCase() === 'senate' ? 'senate' : 'house';
-  // The originating chamber passing its own bill is the ordinary case, and an
-  // amendment adopted during that passage is just its own floor amendment —
-  // it changes nothing about who acts next.
-  if (passedBy === origin) return { stage: 'first', passedBy, next: other };
-  // Past here the SECOND chamber has passed it, and only the amendment clause
-  // decides between the President and a trip back.
-  if (/\bwithout amendment\b/i.test(text)) {
-    // 'both' renders "It goes to the President next", and a CONCURRENT
-    // resolution never goes to the President (it binds only Congress). Now
-    // that a stored basis can put "…agreed to in Senate without amendment"
-    // in front of this line for an hconres/sconres, those fail closed to
-    // 'second', which claims only that both chambers acted.
-    const concurrent = /conres$/i.test(bill.bill_type);
-    return { stage: concurrent ? 'second' : 'both', passedBy, next: null };
-  }
-  if (/\bwith (?:an? )?amendments?\b/i.test(text)) {
-    return { stage: 'back', passedBy, next: origin };
-  }
-  return { stage: 'second', passedBy, next: null };
+  return passageStateMjs(bill);
 }
 
 export function liveCallTarget(
