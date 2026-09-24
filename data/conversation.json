@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-24T01:02:48.653Z",
+    "fetched_at": "2026-09-24T09:56:18.952Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-24T01:02:48.653Z"
+        "checked_at": "2026-09-24T09:56:18.952Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-24T01:02:48.653Z"
+        "checked_at": "2026-09-24T09:56:18.952Z"
       },
       "leans": {
         "center": {
@@ -2346,6 +2346,12 @@
     },
     "sjres-185-119": {
       "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
