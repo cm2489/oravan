@@ -235,6 +235,36 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
   submission (DNS is on Vercel; a `google-site-verification` TXT already
   exists on the apex); MCP registry submission is optional and can follow.
 
+## Naming gate — nightly Spanish corpus, decided 2026-09-24
+
+Context: the second retired-name pattern in `scripts/check-naming.mjs` (the
+infra-era name behind the M2 legacy-key literals) is also an ordinary Spanish
+common noun — an airplane cabin. The nightly AI decode writes free Spanish
+prose into `data/bills-es.json`; on 2026-09-11 the decode of S. 246 used that
+noun in its everyday sense, and CI on `main` failed at the naming gate for a
+week until PR #244 hand-reworded the two phrases. PR #244 called itself "a
+patch, not a fix", because the gate's own failure message says exemptions are
+founder-decided in writing.
+
+- **N1 — Nightly Spanish corpus: EXEMPT FROM THE SECOND PATTERN ONLY.**
+  - *Offered (2026-09-24):* (a) "exempt the nightly Spanish corpus from that
+    one word, recorded in his words in docs/migration/decisions.md"; (b)
+    "match whole words only".
+  - *Recommended:* (a), "because the gate exists to keep old names off brand
+    surfaces and out of code, and no regex can tell the noun from the name."
+  - *Ruling (Colby, 2026-09-24):* "go with your recs."
+  - *Exact scope:* one pattern (the second one), one file
+    (`data/bills-es.json`), any count, and zero matches allowed — the file's
+    normal state is zero, so the entry is exempt from the gate's stale-entry
+    rule. Implemented as the ALLOWLIST entry
+    `{ path: 'data/bills-es.json', only: FRAG.c, max: Infinity, mayBeEmpty: true }`,
+    with in-process self-tests proving each boundary below.
+  - *NOT exempted:* the other three patterns (a match of any of them in
+    `data/bills-es.json` still fails); every other file; `messages/*.json`
+    (hand-written UI strings, where the noun has no business appearing);
+    the English corpus (`data/bills.json`); and filenames, which are never
+    allowlisted.
+
 ## Naming timeline (historical record)
 
 - **Cabina** — infra-era name; survives in the Vercel project name until S8
@@ -251,3 +281,4 @@ where it conflicts with zero-survivor purity, these written exemptions govern.
 3. The two Sprint-8-staged workflow lines (`refresh-legislators.yml` `--repo
    cm2489/rostra` literals) IF held rather than TODO-marked — finalized in S3.
 4. The eight R1 dated historical docs listed above.
+5. `data/bills-es.json` — the second pattern only, zero matches allowed (N1).
