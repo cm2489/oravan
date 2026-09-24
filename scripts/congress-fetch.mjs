@@ -240,7 +240,29 @@ export function mapStatus(actionText) {
     // call uses the same "Yeas and Nays" phrasing, so the match is on the
     // outcome verb, not on the vote form: "Ordered to be Reported by the Yeas
     // and Nays" is untouched and still `markup`.
-    text.includes('failed by the yeas and nays')
+    text.includes('failed by the yeas and nays') ||
+    // A MEASURE UNDER FLOOR CONSIDERATION (2026-09-24, S. 4668). "Considered
+    // by Senate. (consideration: CR S4851)" is the chamber debating the
+    // measure on its own floor, and it derived `committee` — so on the
+    // morning of a scheduled cloture vote the bill read as sitting in
+    // committee and could never reach the crown. These are the sentences
+    // Congress writes while a measure is on the floor (Congress.gov action
+    // text, read 2026-09-24): the Senate lays the measure before itself and
+    // considers it; the House considers it under a special rule, under
+    // suspension, as unfinished business, or under a previous order.
+    // "Considered as unfinished business." is already caught by the
+    // `unfinished business` line above. `includes`, never an anchored match:
+    // live texts carry "(consideration: CR …)" tails. The passage and
+    // rule-resolution guards above still run first, so "Passed Senate …
+    // (consideration: CR S…)" stays `passed_chamber`. A committee sentence
+    // does not reach this: "Committee Consideration and Mark-up Session Held"
+    // says "consideration", never "considered by/under/pursuant", and it
+    // stays `markup` below.
+    text.includes('measure laid before senate') ||
+    /\bconsidered by senate\b(?!\s+committee)/.test(text) ||
+    /\bconsidered under the provisions of rule h\.? ?res\b/.test(text) ||
+    text.includes('considered under suspension of the rules') ||
+    text.includes('considered pursuant to a previous order')
   ) return 'floor_vote';
   // 'mark-up': Congress.gov action text uses both spellings ("Mark-up
   // Session Held") — the hyphenated form alone covers 133 live corpus bills

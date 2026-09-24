@@ -125,6 +125,16 @@ jobs:
         run: |
           node scripts/check-conversation.mjs --self-test
           node scripts/check-conversation.mjs
+      - name: Roll-call votes gate (every position resolves to a member, totals match, bills exist)
+        # data/votes.json is written by the nightly and joined against
+        # data/legislators.json, which refresh-legislators.yml rewrites on its
+        # own weekly schedule and then dispatches this workflow against. Run
+        # the gate here too, so a legislators refresh that broke the join
+        # reddens main instead of waiting for the next nightly. Exits 0 when
+        # the file doesn't exist yet.
+        run: |
+          node scripts/check-votes.mjs --self-test
+          node scripts/check-votes.mjs
       - name: Senate-nomination data gate (identity, status mapping, calendar numbers, civilian-only)
         # Structural checks are HARD here: they test our own code against the
         # data it produced (slug identity, stored status == what the mapper

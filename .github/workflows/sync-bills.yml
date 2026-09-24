@@ -376,6 +376,28 @@ jobs:
         # advisory.
         continue-on-error: true
         run: node scripts/check-nominations.mjs --strict
+      - name: Sync roll-call votes
+        # The record of how each member voted on corpus bills, both chambers
+        # (data/votes.json; scripts/sync-votes.mjs). AFTER the bill sync on
+        # purpose: a bill that joined the corpus tonight gets its roll calls
+        # tonight, including older ones inside the file's window.
+        #
+        # A SEPARATE script and step, continue-on-error, on the nominations
+        # precedent: a vote-side outage (senate.gov moving a path, a novel vote
+        # cast, a Congress.gov field change) must never cost the night's bill
+        # statuses. And for the same reason as there, the structural gate runs
+        # INSIDE the script: it refuses to WRITE a file that fails
+        # lib/votes-core.mjs's verifyVotes, so nothing corrupt reaches disk for
+        # the commit step to pick up. scripts/check-votes.mjs re-checks it
+        # below, before the commit.
+        #
+        # Cost: $0. Two free Congress.gov list requests + two per new House
+        # corpus roll call, one senate.gov menu + one per new Senate corpus
+        # roll call. No Anthropic key.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/sync-votes.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
         # generation existed (~1,090 at introduction; 835 left after night one,
@@ -448,6 +470,18 @@ jobs:
         env:
           RUN_STARTED_AT: ${{ steps.runstart.outputs.ts }}
         run: node scripts/verify-sync.mjs
+      - name: Roll-call votes gate (every position resolves to a member, totals match, bills exist)
+        # PRE-COMMIT, beside verify-sync.mjs: this is an integrity check, not a
+        # progress one (N8-A2) — a position attached to the wrong person, a
+        # tally that disagrees with its own member list, or a vote on a bill
+        # the corpus does not hold is damage, and damage does not ship. The
+        # sync step above already refuses to write a failing file, so this
+        # can only fire if something ELSE broke the join tonight. Self-test
+        # first, so a gate refactored into a no-op fails here too. Exits 0
+        # when data/votes.json does not exist yet.
+        run: |
+          node scripts/check-votes.mjs --self-test
+          node scripts/check-votes.mjs
       - name: Verify rate-limit salt age (dead-man's-switch)
         # Loud failure if the counters database's hashing salt outlived its
         # 24h TTL, lost its TTL, or got corrupted - silent rotation failure
@@ -519,7 +553,8 @@ jobs:
           # Rebase onto the latest main and retry; safe because this workflow
           # only touches bills.json/bills-es.json/sync-state.json/
           # coverage.json/portrait-manifest.json/moment-updates.json/
-          # nominations.json, disjoint from refresh-legislators.yml's files.
+          # nominations.json/votes.json, disjoint from refresh-legislators.yml's
+          # files.
           # `git add data/` stages all of them, including whatever the
           # Moment-updates and nomination steps wrote.
           #

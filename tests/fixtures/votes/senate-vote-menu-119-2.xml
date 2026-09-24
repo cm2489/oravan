@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><vote_summary>
+  <congress>119</congress>
+  <session>2</session>
+  <congress_year>2026</congress_year>
+  <votes>
+    <vote>
+      <vote_number>00238</vote_number>
+      <vote_date>17-Sep</vote_date>
+      <issue>PN999-4</issue>
+      <question>On the Nomination
+         </question>
+      <result>Confirmed</result>
+      <vote_tally>
+        <yeas>49</yeas>
+        <nays>45</nays>
+      </vote_tally>
+      <title>Confirmation: Kasdin Miller Mitchell, of Texas, to be U.S. District Judge for the Northern District of Texas</title>
+    </vote>
+    <vote>
+      <vote_number>00237</vote_number>
+      <vote_date>17-Sep</vote_date>
+      <issue>PN999-4</issue>
+      <question>On the Cloture Motion
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>49</yeas>
+        <nays>47</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Kasdin Miller Mitchell to be U.S. District Judge for the Northern District of Texas</title>
+    </vote>
+    <vote>
+      <vote_number>00236</vote_number>
+      <vote_date>17-Sep</vote_date>
+      <issue>S. 4668</issue>
+      <question>On the Motion to Proceed
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>77</yeas>
+        <nays>22</nays>
+      </vote_tally>
+      <title>Motion to Proceed to S. 4668; A bill to protect the name, image, and likeness rights of, and provide protections for, student athletes and to promote fair competition among intercollegiate athletics, and for other purposes.</title>
+    </vote>
+    <vote>
+      <vote_number>00235</vote_number>
+      <vote_date>15-Sep</vote_date>
+      <issue>S. 4668</issue>
+      <question>On Cloture on the Motion to Proceed
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>74</yeas>
+        <nays>24</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Motion to Proceed to S. 4668; A bill to protect the name, image, and likeness rights of, and provide protections for, student athletes and to promote fair competition among intercollegiate athletics, and for other purposes.</title>
+    </vote>
+    <vote>
+      <vote_number>00234</vote_number>
+      <vote_date>15-Sep</vote_date>
+      <issue>H.R. 3633</issue>
+      <question>On Cloture on the Motion to Proceed
+         </question>
+      <result>Rejected</result>
+      <vote_tally>
+        <yeas>49</yeas>
+        <nays>50</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Motion to Proceed to H.R. 3633; To provide for a system of regulation of the offer and sale of digital commodities by the Securities and Exchange Commission and the Commodity Futures Trading Commission, to amend the Federal Reserve Act to prohibit the Federal reserve banks from offering certain products or services directly to an individual, to prohibit the use of central bank digital currency for monetary policy, and for other purposes.</title>
+    </vote>
+    <vote>
+      <vote_number>00233</vote_number>
+      <vote_date>15-Sep</vote_date>
+      <issue>PN1093-3</issue>
+      <question>On the Nomination
+         </question>
+      <result>Confirmed</result>
+      <vote_tally>
+        <yeas>52</yeas>
+        <nays>45</nays>
+      </vote_tally>
+      <title>Confirmation: Matthew R. Byrne, of Ohio, to be U.S. District Judge for the Southern District of Ohio</title>
+    </vote>
+    <vote>
+      <vote_number>00232</vote_number>
+      <vote_date>14-Sep</vote_date>
+      <issue>PN1093-3</issue>
+      <question>On the Cloture Motion
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>47</yeas>
+        <nays>46</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Matthew R. Byrne to be U.S. District Judge for the Southern District of Ohio</title>
+    </vote>
+  </votes>
+</vote_summary>
