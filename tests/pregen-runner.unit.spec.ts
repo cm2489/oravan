@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { main, type AnthropicLike } from '../lib/pregen-runner';
 import { planCombos, buildBatchRequest, customId } from '../lib/pregen';
-import { createScriptCache, scriptKey } from '../lib/scriptcache';
+import { createScriptCache, INFLIGHT_BATCH_PARTS, scriptKey } from '../lib/scriptcache';
 import { STANCES } from '../lib/scriptprompt';
 import type { Bill } from '../lib/types';
 import { CACHE_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
@@ -234,11 +234,120 @@ test('bounded poll timeout: never writes a partial result, and stops before ever
   expect(result.generated).toBe(0);
   expect(retrieveCalls).toHaveLength(0);
   expect(resultsCalls).toHaveLength(0);
-  // Nothing was ever written to the cache database.
-  expect(mock.commands.some((c) => c[0] === 'SET')).toBe(false);
+  // No SCRIPT was written — the whole point of the bounded wait is that a
+  // partial or unread batch never lands in the cache.
   for (const combo of planCombos([bill], STANCES, ['en', 'es'])) {
     expect(await cache.get(combo)).toBeNull();
   }
+  // The ONE write is the batch id, parked for the next run. Walking away
+  // without it is what paid for a night of scripts and stored none.
+  const sets = mock.commands.filter((c) => c[0] === 'SET');
+  expect(sets).toHaveLength(1);
+  expect(sets[0][1]).toBe(scriptKey(INFLIGHT_BATCH_PARTS));
+  expect(sets[0][2]).toBe('batch_1');
+});
+
+test('a parked batch that has ENDED is collected before anything new is planned — and never re-bought', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+
+  const bill = makeBill();
+  const cache = createScriptCache();
+  const combos = planCombos([bill], STANCES, ['en', 'es']);
+
+  // Last night's run submitted these and walked away, parking the id.
+  await cache.set(INFLIGHT_BATCH_PARTS, 'batch_parked');
+
+  // A fake whose results stream answers for the PARKED batch's combos.
+  const resultsCalls: string[] = [];
+  const createCalls: { requests: unknown[] }[] = [];
+  const anthropic: AnthropicLike = {
+    messages: {
+      batches: {
+        async create(body) {
+          createCalls.push(body as { requests: unknown[] });
+          return { id: 'batch_new', processing_status: 'ended' };
+        },
+        async retrieve(id) {
+          return { id, processing_status: 'ended' };
+        },
+        async results(id) {
+          resultsCalls.push(id);
+          async function* gen() {
+            for (const combo of combos) {
+              yield {
+                custom_id: customId(combo),
+                result: {
+                  type: 'succeeded' as const,
+                  message: { content: [{ type: 'text', text: `SCRIPT FOR ${customId(combo)}` }] },
+                },
+              };
+            }
+          }
+          return gen();
+        },
+      },
+    },
+  };
+
+  const result = await main({ anthropic, cache, getBills: () => [bill], sleep: noopSleep });
+
+  // The parked batch was read, and only it.
+  expect(resultsCalls).toEqual(['batch_parked']);
+  // Everything it paid for is now in the cache, so tonight submits NOTHING.
+  expect(createCalls).toHaveLength(0);
+  expect(result.generated).toBe(combos.length);
+  expect(result.cacheWrites).toBe(combos.length);
+  expect(result.alreadyCached).toBe(combos.length);
+  for (const combo of combos) {
+    expect(await cache.get(combo)).toBe(`SCRIPT FOR ${customId(combo)}`);
+  }
+  // And the marker is cleared, so a later run cannot collect it twice.
+  expect(await cache.get(INFLIGHT_BATCH_PARTS)).toBe('');
+});
+
+test('a parked batch STILL RUNNING blocks a second submission — the same combos are never paid for twice', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+
+  const bill = makeBill();
+  const cache = createScriptCache();
+  await cache.set(INFLIGHT_BATCH_PARTS, 'batch_parked');
+
+  const { anthropic, createCalls, resultsCalls } = fakeAnthropic({ retrieveStatus: 'in_progress' });
+  const result = await main({ anthropic, cache, getBills: () => [bill], sleep: noopSleep });
+
+  expect(createCalls).toHaveLength(0); // nothing submitted — that is the money invariant
+  expect(resultsCalls).toHaveLength(0); // and an unfinished batch is never read
+  expect(result.timedOut).toBe(true);
+  expect(result.batchId).toBe('batch_parked');
+  // Still parked, so the next run can collect it.
+  expect(await cache.get(INFLIGHT_BATCH_PARTS)).toBe('batch_parked');
+});
+
+test('a parked id the API no longer knows is forgotten, and the night proceeds normally', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+
+  const bill = makeBill();
+  const cache = createScriptCache();
+  await cache.set(INFLIGHT_BATCH_PARTS, 'batch_expired');
+
+  const { anthropic, createCalls } = fakeAnthropic();
+  const original = anthropic.messages.batches.retrieve;
+  anthropic.messages.batches.retrieve = async (id: string) => {
+    if (id === 'batch_expired') throw new Error('404 batch not found');
+    return original(id);
+  };
+
+  const result = await main({ anthropic, cache, getBills: () => [bill], sleep: noopSleep });
+
+  expect(createCalls).toHaveLength(1); // a dead id must never wedge the job
+  expect(result.generated).toBeGreaterThan(0);
+  expect(await cache.get(INFLIGHT_BATCH_PARTS)).toBe('');
 });
 
 
