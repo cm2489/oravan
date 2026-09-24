@@ -1115,5 +1115,39 @@
         "body": "Una sesión pro forma es una reunión que una cámara celebra para cumplir la regla constitucional de que ninguna de las dos puede interrumpir sus trabajos más de tres días sin el consentimiento de la otra. Dura un minuto o dos: quien preside abre la sesión, no se trata ningún asunto legislativo y la sesión se levanta. En una sesión así no se puede someter un proyecto a consideración, y ninguna medida avanza en el pleno por su causa. El Daily Digest de la propia cámara publica el programa de cada reunión, así que una sesión pro forma queda dicha en el registro."
       }
     }
+  },
+  "votes": {
+    "heading": "Votaciones registradas",
+    "coverage": "Votaciones nominales registradas desde el {date}.",
+    "chamber": {
+      "house": "Cámara",
+      "senate": "Senado"
+    },
+    "roll": "Votación nominal n.º {roll}",
+    "asRecorded": "Tal como consta en el registro oficial, en inglés",
+    "question": "Pregunta",
+    "result": "Resultado",
+    "tally": "Recuento",
+    "position": {
+      "yea": "Sí",
+      "nay": "No",
+      "present": "Presente",
+      "notVoting": "No votó"
+    },
+    "tieBreaker": "Voto de desempate del vicepresidente: {position}",
+    "source": "Registro oficial",
+    "membersToggle": "Cómo votó cada miembro",
+    "group": "{position} ({count})",
+    "earlier": "{count, plural, one {# votación anterior} other {# votaciones anteriores}}",
+    "delegation": {
+      "heading": "Tus miembros del Congreso en este proyecto",
+      "note": "Calculado en este dispositivo, con los miembros que el panel de llamada ya encontró para tu código postal guardado. Esta sección no envía nada.",
+      "onHouseVote": "Votación de la Cámara, {date}",
+      "onSenateVote": "Votación del Senado, {date}",
+      "noHouseVote": "Sin votación nominal de la Cámara sobre este proyecto desde el {date}",
+      "noSenateVote": "Sin votación nominal del Senado sobre este proyecto desde el {date}",
+      "notListed": "No figura en esta votación nominal",
+      "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen tus senadores."
+    }
   }
 }
