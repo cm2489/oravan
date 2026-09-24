@@ -38,8 +38,27 @@ const FIELD_BASE =
 export function ZipForm({
   autoFocus = false,
   onSaved,
+  submitTone = 'primary',
+  inline = false,
 }: {
   autoFocus?: boolean;
+  /**
+   * The submit's visual weight. 'primary' (default) is the filled green
+   * control every instance has always had. 'secondary' is the ink outline
+   * the home hero passes (2026-09-24, finding B3): the hero keeps exactly ONE
+   * filled control, and under "Truth-first, call-next" (CLAUDE.md) that is
+   * the jump to what is moving, not the field that asks for a ZIP. Keys,
+   * behaviour and the ZIP-first funnel path are untouched by the tone.
+   */
+  submitTone?: 'primary' | 'secondary';
+  /**
+   * Field and submit side by side at EVERY width (the home hero, 2026-09-24).
+   * A ZIP is five digits, so the field never needs a full row; putting the
+   * submit beside it keeps the hero's lowest control clear of the phone
+   * thumb bar on short screens (390×664 in tests/home-fold.spec.ts). Other
+   * instances keep the container-query stacking below.
+   */
+  inline?: boolean;
   /**
    * In-panel resolution (the bill page's call rail + call dialog): when
    * present, a valid submit saves the ZIP and hands it to the caller INSTEAD
@@ -108,7 +127,13 @@ export function ZipForm({
       </label>
       {/* one grid, two full-bleed rows while the form is narrow: no ragged
           right edge on a phone or in the bill rail */}
-      <div className="mt-2 grid gap-2 @min-[26rem]:grid-cols-[9.5rem_minmax(0,1fr)]">
+      <div
+        className={
+          inline
+            ? 'mt-2 grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2'
+            : 'mt-2 grid gap-2 @min-[26rem]:grid-cols-[9.5rem_minmax(0,1fr)]'
+        }
+      >
         <input
           id={fieldId}
           name="zip"
@@ -129,7 +154,11 @@ export function ZipForm({
         />
         <button
           type="submit"
-          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep"
+          className={
+            submitTone === 'secondary'
+              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
+              : 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep'
+          }
         >
           {t('zipCta')}
           <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

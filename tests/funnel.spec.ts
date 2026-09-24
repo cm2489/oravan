@@ -126,9 +126,14 @@ async function expectDecodedAnswer(
   await expect(page.getByText(messages.bill.aiLabel, { exact: true }).first()).toBeVisible();
 }
 
-/** Turn a "...{count}..." message template into a regex matching any count. */
+/** Turn a "...{count}..." message template into a regex matching any count.
+ *  `{count, number}` (home.seeAll since 2026-09-24) prints a locale-grouped
+ *  figure — "3,197" in English — so the count matches digits with group
+ *  separators, not bare digits only. */
 function messageRegex(template: string): RegExp {
-  const escaped = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{count\\\}/, '\\d+');
+  const escaped = template
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\\\{count(?:, number)?\\\}/, '\\d[\\d,.\\u00a0\\u202f]*');
   return new RegExp(escaped);
 }
 
@@ -204,10 +209,11 @@ for (const { locale, prefix, messages } of LOCALES) {
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
 
-      // Click 1 of <=3: submit a ZIP code. The flip demoted ZipForm BY
-      // POSITION only - it stays in the hero and stays page-wide-locatable
-      // via getByLabel, and Playwright auto-scrolls, so the demotion cost
-      // this path exactly zero clicks.
+      // Click 1 of <=3: submit a ZIP code. Since the 2026-09-24 fold pass
+      // the ZipForm is the hero's ONE filled control (tests/home-fold.spec.ts
+      // pins that it clears the thumb bar on the first screen); the jump to
+      // the week is the secondary text link under it. Either way it stays
+      // page-wide-locatable via getByLabel, so the budget is unchanged.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
       await page.getByRole('button', { name: messages.home.zipCta }).click();
       await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
