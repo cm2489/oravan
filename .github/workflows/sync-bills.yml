@@ -250,6 +250,22 @@ jobs:
           # one-off catch-up when nothing else is queued.
           DECODE_BATCH: '1'
         run: node scripts/sync-bills.mjs
+      - name: Re-derive every stored status from its own last action (pre-commit)
+        # A stored status is mapStatus(last_action_text), but the sync only
+        # recomputes it when Congress.gov reports the bill UPDATED - so a
+        # matcher fix left every bill that did not move again reading the old
+        # verdict (hconres-86-119: agreed to by both chambers, still
+        # `committee` on 2026-09-24). This pass recomputes it for every bill
+        # from the sentence already stored, plus the urgency_score the sync
+        # derives from it, and prints a DONE line naming every change.
+        #
+        # PRE-COMMIT, and directly after the sync so every later step (the
+        # journey tripwire, coverage, Moment updates, verify-sync) reads the
+        # corrected corpus. Its guard is a CORPUS claim: if more than 2% of the
+        # corpus would flip in one night it writes nothing and exits 1, which
+        # reds the run before the commit. That is a matcher bug until a person
+        # has read the list the step prints.
+        run: node scripts/rederive-status.mjs
       - name: Journey-corpus tripwire (a novel floor text opens an issue, never costs the night)
         id: journey
         # Owner ruling 2026-08-04, unchanged: the sweep fires where the data
