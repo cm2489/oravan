@@ -2,7 +2,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { OravanLockup } from '@/components/brand/OravanLockup';
-import { DONATE_URL, feedPaths } from '@/lib/site';
+import { DONATE_URL } from '@/lib/site';
+// Its own line on purpose: tests/donate.unit.spec.ts pins the DONATE_URL import verbatim.
+import { feedPaths } from '@/lib/site';
 
 /*
  * THE BACK COVER.
