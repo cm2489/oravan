@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
-import { billSlug, getAllBills } from '@/lib/core';
+import { billSlug, getAllBills, getAllLegislators, getVacancies, vacancySlug } from '@/lib/core';
 // Imported DIRECTLY, never through the lib/core barrel — that module's header
 // forbids the barrel so no bundle pays for data/nominations.json by accident.
 import { getNomination } from '@/lib/core/nominations';
@@ -78,6 +78,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
         lastModified,
         alternates,
       });
+    }
+  }
+
+  // Members of Congress: every sitting member, plus every vacant seat (keyed
+  // on the seat, since a vacancy has no bioguide), both locales. The roster
+  // carries no per-member date, so lastModified is the corpus stamp - never
+  // an invented date.
+  const repIds = [
+    ...getAllLegislators().map((l) => l.bioguide),
+    ...getVacancies().map((v) => vacancySlug(v)),
+  ];
+  for (const id of repIds) {
+    const href = `/reps/${id}`;
+    const alternates = { languages: languagesFor(href) };
+    for (const locale of routing.locales) {
+      entries.push({ url: absoluteUrl(locale, href), lastModified: siteLastModified, alternates });
     }
   }
 

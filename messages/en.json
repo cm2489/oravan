@@ -166,6 +166,24 @@
     "nextSeeAll": "Browse all {count} active bills",
     "errorLabel": "Check this"
   },
+  "rep": {
+    "crumb": "Find your representatives",
+    "metaTitle": "{name}, {role} · {place}",
+    "metaDescription": "{name}'s DC and local phone numbers, and the bills {name} sponsors, in plain words.",
+    "contactHeading": "Call this office",
+    "sponsoredHeading": "Bills they sponsor",
+    "sponsoredNote": "{count, plural, one {# bill} other {# bills}} among the ones Oravan tracks, latest activity first.",
+    "sponsoredNone": "None of the bills Oravan tracks lists {name} as the sponsor.",
+    "showAll": "Show all {count}",
+    "aiNote": "Headlines decoded by AI, checked against the record",
+    "houseSeat": "House seat",
+    "senatorsHeading": "{state}'s senators",
+    "senatorsNote": "They represent the whole state, this district included.",
+    "vacantMetaTitle": "{place} · Vacant seat",
+    "vacantMetaDescription": "No one holds this House seat right now. The state's two senators still represent it.",
+    "nextTitle": "What's moving in Congress",
+    "nextSeeAll": "Browse all bills"
+  },
   "bills": {
     "title": "Active bills, decoded",
     "sub": "Every bill moving through Congress right now, translated into plain language by AI. Filter by what matters to you.",
