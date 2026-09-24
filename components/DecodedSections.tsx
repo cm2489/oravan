@@ -1,5 +1,4 @@
 import { useTranslations } from 'next-intl';
-import { Chip } from '@/components/system';
 import type { Bill } from '@/lib/types';
 
 /*
@@ -50,11 +49,12 @@ export function DecodedSections({ bill }: { bill: Bill }) {
         <section className="p-4 md:p-5">
           <h3 className="text-md font-bold text-ink">{t('sec.cost')}</h3>
           {s.costChips?.length ? (
-            <ul className="mt-2 flex list-none flex-wrap gap-2">
+            // Plain answer lines in the reading voice, not chips (B6,
+            // 2026-09-24): on the bill page a chip means status, and a cost
+            // is part of the answer, not a label on it.
+            <ul className="mt-2 list-disc space-y-1 pl-5 font-reading text-lg text-ink-2 marker:text-ink-2">
               {s.costChips.map((chip) => (
-                <li key={chip}>
-                  <Chip tone="tag">{chip}</Chip>
-                </li>
+                <li key={chip}>{chip}</li>
               ))}
             </ul>
           ) : (
