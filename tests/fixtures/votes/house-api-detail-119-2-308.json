@@ -1,0 +1,47 @@
+{
+  "houseRollCallVote": {
+    "congress": 119,
+    "identifier": 11922026308,
+    "legislationNumber": "5334",
+    "legislationType": "HR",
+    "legislationUrl": "https://www.congress.gov/bill/119/house-bill/5334",
+    "result": "Passed",
+    "rollCallNumber": 308,
+    "sessionNumber": 2,
+    "sourceDataURL": "https://clerk.house.gov/evs/2026/roll308.xml",
+    "startDate": "2026-09-16T18:28:00-04:00",
+    "updateDate": "2026-09-17T17:38:38-04:00",
+    "votePartyTotal": [
+      {
+        "nayTotal": 1,
+        "notVotingTotal": 1,
+        "party": {
+          "name": "Republican",
+          "type": "R"
+        },
+        "presentTotal": 0,
+        "voteParty": "R",
+        "yeaTotal": 1
+      },
+      {
+        "nayTotal": 0,
+        "notVotingTotal": 0,
+        "party": {
+          "name": "Democrat",
+          "type": "D"
+        },
+        "presentTotal": 0,
+        "voteParty": "D",
+        "yeaTotal": 1
+      }
+    ],
+    "voteQuestion": "On Motion to Concur in the Senate Amendments",
+    "voteType": "Yea-and-Nay"
+  },
+  "request": {
+    "congress": "119",
+    "contentType": "application/json",
+    "format": "json",
+    "session": "2"
+  }
+}

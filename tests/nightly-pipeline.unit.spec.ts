@@ -172,6 +172,60 @@ test.describe('the run-honesty alarm (a run whose core function died goes red)',
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b′ · 2026-09-24 — roll-call votes (C1a): an additive sync, and an
+ *       integrity gate that sits with the others, BEFORE the commit.
+ * ------------------------------------------------------------------ */
+test.describe('roll-call votes: sync step and pre-commit gate', () => {
+  const stepOf = (name: string) => {
+    const at = syncBills.indexOf(`- name: ${name}`);
+    expect(at, `${name} step not found`).toBeGreaterThan(0);
+    const rest = syncBills.slice(at);
+    const next = rest.slice(1).search(/\n {6}- name:/);
+    return { at, body: next === -1 ? rest : rest.slice(0, next + 1) };
+  };
+
+  test('the sync runs after the bill sync (tonight\'s new bills get their votes) and cannot cost the night', () => {
+    const sync = stepOf('Sync roll-call votes');
+    expect(sync.body).toContain('run: node scripts/sync-votes.mjs');
+    expect(sync.body).toContain('continue-on-error: true');
+    expect(sync.body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    // $0 by construction: this step is never handed the Anthropic key.
+    expect(sync.body).not.toContain('ANTHROPIC_API_KEY');
+    expect(sync.at).toBeGreaterThan(syncBills.indexOf('- name: Sync bills'));
+    expect(sync.at).toBeLessThan(syncBills.indexOf('- name: Verify the sync did its job'));
+  });
+
+  test('THE ORDER: the votes gate is pre-commit, beside verify-sync, and is NOT continue-on-error', () => {
+    const gate = stepOf('Roll-call votes gate');
+    expect(gate.body).toContain('node scripts/check-votes.mjs --self-test');
+    // The data run itself, not only the self-test.
+    expect(gate.body).toMatch(/node scripts\/check-votes\.mjs\s*$/m);
+    expect(gate.body).not.toContain('continue-on-error');
+    expect(gate.at).toBeGreaterThan(syncBills.indexOf('run: node scripts/verify-sync.mjs'));
+    expect(gate.at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    expect(gate.at).toBeGreaterThan(stepOf('Sync roll-call votes').at);
+  });
+
+  test('the sync script refuses to WRITE a file the gate would fail (the nominations precedent)', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
+    const gateAt = src.indexOf('verifyVotes({');
+    const writeAt = src.indexOf('writeFileSync(VOTES_PATH');
+    expect(gateAt, 'pre-write verifyVotes call').toBeGreaterThan(0);
+    expect(writeAt).toBeGreaterThan(gateAt);
+  });
+
+  test('the gate pins the cursor FORMAT — a date is damage, not a roll-call cursor', () => {
+    const core = readFileSync(join(process.cwd(), 'lib/votes-core.mjs'), 'utf8');
+    expect(core).toContain('a date is not a roll-call cursor');
+  });
+
+  test('ci.yml runs the gate too, because refresh-legislators rewrites the file it joins on', () => {
+    const ci = wf('ci.yml');
+    expect(ci).toContain('node scripts/check-votes.mjs --self-test');
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 2c · 2026-09-18 — the preflight arms or disarms the decodes, and
  *      never the data.
  * ------------------------------------------------------------------ */

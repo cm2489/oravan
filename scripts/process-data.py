@@ -54,7 +54,7 @@ for l in legs:
         {'city': o.get('city'), 'state': o.get('state'), 'phone': o.get('phone')}
         for o in office_map.get(bid, []) if o.get('phone')
     ]
-    out.append({
+    entry = {
         'bioguide': bid,
         'name': l['name'].get('official_full') or (l['name']['first'] + ' ' + l['name']['last']),
         'first': l['name']['first'],
@@ -66,7 +66,13 @@ for l in legs:
         'phone': t.get('phone'),
         'url': t.get('url'),
         'offices': offs,
-    })
+    }
+    # The Senate's roll-call XML identifies senators by LIS member id only,
+    # never bioguide, so scripts/sync-votes.mjs joins on this. Senators only:
+    # a House member has no LIS id to carry.
+    if t['type'] == 'sen' and l['id'].get('lis'):
+        entry['lis'] = l['id']['lis']
+    out.append(entry)
 json.dump(out, open('data/legislators.json', 'w'), ensure_ascii=False)
 print('legislators.json:', len(out), 'members,', sum(1 for m in out if m['offices']), 'with district offices')
 
