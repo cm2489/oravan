@@ -401,6 +401,25 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     }
   });
 
+  /* A House discharge petition FILED is a signature drive, not the floor
+     (owner ruling 2026-09-24, #268). Its "motion to discharge" phrase must
+     not derive tier0_floor_action; a Senate discharge motion that was
+     actually voted on still does. */
+  test('a filed discharge petition is not floor action; a Senate discharge vote still is', () => {
+    expect(
+      floorActionInRecord(
+        { status: 'floor_vote', floorCalendar: false },
+        'Motion to Discharge Committee filed by Mr. Kiley (CA). Petition No: 119-21. (<a href="https://clerk.house.gov/DischargePetition/2026051221">Discharge petition</a> text with signatures.)',
+      ),
+    ).toBe(false);
+    expect(
+      floorActionInRecord(
+        { status: 'floor_vote', floorCalendar: false },
+        'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      ),
+    ).toBe(true);
+  });
+
   test('a placement is never floor action — the narrower type wins, and tier0_floor is untouched', () => {
     const { signal } = signalFor(ON_CALENDAR, [], {
       now: NOW_NEAR,

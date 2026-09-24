@@ -68,8 +68,16 @@
  * scripts/check-moments.mjs validates against. lib/moments-gate.mjs is itself
  * import-free and free of import.meta, so the chain loads under Playwright's
  * transform. No module-scope I/O, no env, no clock: `now` is a parameter.
+ *
+ * A SECOND IMPORT, for the same reason (2026-09-24, issue #268):
+ * `floorMakesNoClaim` from lib/floor-text.mjs, the one reading of floor
+ * sentences that were read and judged to make no floor claim. It is imported
+ * rather than copied so this scaffold and the nightly journey-corpus sweep
+ * cannot disagree about one sentence. lib/floor-text.mjs is likewise
+ * import-free and free of import.meta.
  */
 import { CATEGORIES, SIGNAL_TYPES, lintForbidden } from '../lib/moments-gate.mjs';
+import { floorMakesNoClaim } from '../lib/floor-text.mjs';
 
 const DAY_MS = 86_400_000;
 
@@ -271,6 +279,11 @@ export function floorActionInRecord(c, lastActionText = null) {
   if (c?.status !== 'floor_vote') return false;
   if (c?.floorCalendar) return false;
   const text = String(lastActionText ?? '');
+  // A shape read and judged claim-free derives NOTHING. The live case is a
+  // House discharge petition being FILED (owner ruling 2026-09-24, #268): it
+  // says "motion to discharge", which the pattern list reads as floor action,
+  // but a filing is a signature drive and nothing has happened on the floor.
+  if (floorMakesNoClaim(text)) return false;
   return text.trim().length > 0 && FLOOR_ACTION_PATTERNS.some((re) => re.test(text));
 }
 
