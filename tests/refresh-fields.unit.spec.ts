@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 // Pure, I/O-free module (no CONGRESS_API_KEY needed) — refreshBillFields only
 // maps an already-fetched bill-detail payload onto a corpus record.
-import { mapStatus, readableAction, refreshBillFields } from '../scripts/congress-fetch.mjs';
+import { mapStatus, readableAction, refreshBillFields, resolveAmbiguousStatus } from '../scripts/congress-fetch.mjs';
 import { passesGate } from '../scripts/decode-gate.mjs';
 import { anyDataChanged } from '../scripts/newsdesk-match.mjs';
 
@@ -39,11 +39,11 @@ function floorBill() {
 }
 
 test.describe('refreshBillFields — partial payloads never downgrade a bill', () => {
-  test('no latestAction at all: status, date AND text all survive untouched', () => {
+  test('no latestAction at all: status, date AND text all survive untouched', async () => {
     const bill = floorBill();
     const before = structuredClone(bill);
 
-    const outcome = refreshBillFields(bill, { policyArea: { name: 'Health' } });
+    const outcome = await refreshBillFields(bill, { policyArea: { name: 'Health' } });
 
     expect(outcome).toBe('skipped_partial'); // the skip is signaled, not silent
     expect(bill).toEqual(before); // byte-identical: NOTHING was written
@@ -55,24 +55,24 @@ test.describe('refreshBillFields — partial payloads never downgrade a bill', (
     expect(bill.urgency_score).toBe(0.85);
   });
 
-  test('an empty latestAction object is the same skip', () => {
+  test('an empty latestAction object is the same skip', async () => {
     const bill = floorBill();
     const before = structuredClone(bill);
-    expect(refreshBillFields(bill, { latestAction: {} })).toBe('skipped_partial');
+    expect(await refreshBillFields(bill, { latestAction: {} })).toBe('skipped_partial');
     expect(bill).toEqual(before);
   });
 
-  test('a date with no text also skips — a bare date cannot produce a status, and pinning it to the older stored text would overstate freshness', () => {
+  test('a date with no text also skips — a bare date cannot produce a status, and pinning it to the older stored text would overstate freshness', async () => {
     const bill = floorBill();
     const before = structuredClone(bill);
-    expect(refreshBillFields(bill, { latestAction: { actionDate: '2026-08-07' } })).toBe('skipped_partial');
+    expect(await refreshBillFields(bill, { latestAction: { actionDate: '2026-08-07' } })).toBe('skipped_partial');
     expect(bill).toEqual(before);
   });
 
-  test('text with no actionDate: the text is applied, the stored date is PRESERVED rather than nulled', () => {
+  test('text with no actionDate: the text is applied, the stored date is PRESERVED rather than nulled', async () => {
     const bill = floorBill();
 
-    const outcome = refreshBillFields(bill, {
+    const outcome = await refreshBillFields(bill, {
       latestAction: { text: 'Passed Senate without amendment by Unanimous Consent.' },
       policyArea: { name: 'Health' },
     });
@@ -88,17 +88,17 @@ test.describe('refreshBillFields — partial payloads never downgrade a bill', (
     expect(bill.urgency_score).toBeGreaterThan(0);
   });
 
-  test('a bill with no stored date and a date-less payload lands on null, not undefined', () => {
+  test('a bill with no stored date and a date-less payload lands on null, not undefined', async () => {
     const bill = { ...floorBill(), last_action_date: null };
-    expect(refreshBillFields(bill, { latestAction: { text: 'Referred to the Committee on Finance.' } })).toBe('refreshed');
+    expect(await refreshBillFields(bill, { latestAction: { text: 'Referred to the Committee on Finance.' } })).toBe('refreshed');
     expect(bill.last_action_date).toBeNull();
     expect(bill.status).toBe('committee');
   });
 
-  test('a complete payload still updates every refreshable field exactly as before', () => {
+  test('a complete payload still updates every refreshable field exactly as before', async () => {
     const bill = floorBill();
 
-    const outcome = refreshBillFields(bill, {
+    const outcome = await refreshBillFields(bill, {
       latestAction: { text: 'Became Public Law No: 119-42.', actionDate: '2026-08-08' },
       policyArea: { name: 'Energy' },
     });
@@ -113,9 +113,9 @@ test.describe('refreshBillFields — partial payloads never downgrade a bill', (
     expect(bill.urgency_score).toBeGreaterThan(0);
   });
 
-  test('a genuine committee referral still downgrades — the guard blocks unreadable payloads, not real news', () => {
+  test('a genuine committee referral still downgrades — the guard blocks unreadable payloads, not real news', async () => {
     const bill = floorBill();
-    expect(refreshBillFields(bill, {
+    expect(await refreshBillFields(bill, {
       latestAction: { text: 'Referred to the Committee on Finance.', actionDate: '2026-08-08' },
     })).toBe('refreshed');
     expect(bill.status).toBe('committee');
@@ -137,16 +137,16 @@ test.describe('refreshBillFields — partial payloads never downgrade a bill', (
  * the refresh branch alike.
  */
 test.describe('readableAction — the one definition of a payload worth writing', () => {
-  test('a payload with action text is readable and hands back the action itself', () => {
+  test('a payload with action text is readable and hands back the action itself', async () => {
     const action = { text: 'Passed House by recorded vote.', actionDate: '2026-08-08' };
     expect(readableAction({ latestAction: action })).toBe(action);
   });
 
-  test('text without a date is still readable — the text is the record', () => {
+  test('text without a date is still readable — the text is the record', async () => {
     expect(readableAction({ latestAction: { text: 'Passed House.' } })).toEqual({ text: 'Passed House.' });
   });
 
-  test('every unreadable shape returns null, so neither path writes anything', () => {
+  test('every unreadable shape returns null, so neither path writes anything', async () => {
     expect(readableAction(undefined)).toBeNull(); // a reply with no .bill at all
     expect(readableAction({})).toBeNull(); // no latestAction key
     expect(readableAction({ latestAction: null })).toBeNull();
@@ -157,7 +157,7 @@ test.describe('readableAction — the one definition of a payload worth writing'
 });
 
 test.describe('a new bill is never minted from an unreadable payload', () => {
-  test('the status such a record would have carried was invented, never read', () => {
+  test('the status such a record would have carried was invented, never read', async () => {
     // This is precisely what the old code stored: mapStatus of nothing is a
     // real, gate-relevant status string with no official record behind it.
     expect(mapStatus(undefined)).toBe('committee');
@@ -167,7 +167,7 @@ test.describe('a new bill is never minted from an unreadable payload', () => {
     expect(readableAction({ latestAction: {} })).toBeNull();
   });
 
-  test('the guard runs BEFORE the priority gate, because "gated" is a claim the payload cannot support', () => {
+  test('the guard runs BEFORE the priority gate, because "gated" is a claim the payload cannot support', async () => {
     // A non-forced new bill used to reach 'gated' only via that invented
     // 'committee' — accidentally harmless, for a reason that was not true.
     // 'gated' asserts the bill shows no real legislative motion; an
@@ -176,7 +176,7 @@ test.describe('a new bill is never minted from an unreadable payload', () => {
     expect(readableAction({ latestAction: { actionDate: '2026-08-08' } })).toBeNull(); // the deliberate one
   });
 
-  test('a readable payload still decides the gate on its real status — forced slugs decode as before', () => {
+  test('a readable payload still decides the gate on its real status — forced slugs decode as before', async () => {
     const floor = readableAction({ latestAction: { text: 'Placed on Senate Legislative Calendar under General Orders.' } });
     expect(floor).not.toBeNull();
     expect(passesGate(mapStatus(floor!.text))).toBe(true);
@@ -187,11 +187,73 @@ test.describe('a new bill is never minted from an unreadable payload', () => {
 });
 
 test.describe('the skip sentinel travels to the callers', () => {
-  test('newsdesk treats skipped_partial as no data change — nothing written, nothing committed', () => {
+  test('newsdesk treats skipped_partial as no data change — nothing written, nothing committed', async () => {
     // syncOneBill returns the sentinel verbatim as its outcome, so this is
     // the string newsdesk.mjs's no-change-no-commit guard actually sees.
     expect(anyDataChanged(['skipped_partial'])).toBe(false);
     expect(anyDataChanged(['skipped_partial', 'failed', 'budget'])).toBe(false);
     expect(anyDataChanged(['skipped_partial', 'refreshed'])).toBe(true);
+  });
+});
+
+/*
+ * AMBIGUOUS LATEST ACTIONS ON THE REFRESH PATH (2026-09-24). "Motion to
+ * reconsider laid on the table..." follows a failed vote as readily as a
+ * passage (H.Con.Res. 38 failed 212-219 under it), so a refresh must read the
+ * action before it, through the one shared resolver, and must keep the stored
+ * status when it cannot.
+ */
+test.describe('refreshBillFields — ambiguous latest actions are resolved, never guessed', () => {
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const committeeBill = () => ({ ...floorBill(), bill_type: 'hconres', bill_number: 38, status: 'committee' });
+
+  test('a preceding FAILED vote never becomes a passage', async () => {
+    const bill = committeeBill();
+    const outcome = await refreshBillFields(
+      bill,
+      { latestAction: { text: RECONSIDER, actionDate: '2026-03-05' } },
+      {
+        resolve: (b) =>
+          resolveAmbiguousStatus(b, {
+            fetchActions: async () => [
+              { text: RECONSIDER },
+              { text: 'On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).' },
+            ],
+          }),
+      }
+    );
+    expect(outcome).toBe('refreshed');
+    expect(bill.status).toBe('committee');
+    expect(bill.last_action_text).toBe(RECONSIDER);
+  });
+
+  test('a preceding passage resolves to passed_chamber', async () => {
+    const bill = committeeBill();
+    await refreshBillFields(
+      bill,
+      { latestAction: { text: 'Message on Senate action sent to the House.', actionDate: '2026-06-24' } },
+      {
+        resolve: (b) =>
+          resolveAmbiguousStatus(b, {
+            fetchActions: async () => [
+              { text: 'Message on Senate action sent to the House.' },
+              { text: 'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184.' },
+            ],
+          }),
+      }
+    );
+    expect(bill.status).toBe('passed_chamber');
+  });
+
+  test('no lookup possible: the stored status stands, the rest of the record still refreshes', async () => {
+    const bill = { ...floorBill(), status: 'floor_vote' };
+    await refreshBillFields(
+      bill,
+      { latestAction: { text: RECONSIDER, actionDate: '2026-09-20' } },
+      { resolve: async () => null }
+    );
+    expect(bill.status).toBe('floor_vote');
+    expect(bill.last_action_text).toBe(RECONSIDER);
+    expect(bill.last_action_date).toBe('2026-09-20');
   });
 });

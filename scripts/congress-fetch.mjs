@@ -191,6 +191,14 @@ export function mapStatus(actionText) {
   // lib/docket.mjs's `floorAnsweredChamber` carries the same guard, one layer
   // up, for the same sentence.
   if (/\brule h\.? ?res\.? ?\d+ passed house/.test(text)) return 'floor_vote';
+  // A DEFEAT IS NOT A PASSAGE (2026-09-24). "Failed of passage/not agreed to
+  // in House On agreeing to the resolution Failed by the Yeas and Nays: 212 -
+  // 219" (the House's own summary line for H.Con.Res. 38's defeat) contains
+  // "agreed to in", which the passage branch below matches. It has to be
+  // caught first. `floor_vote` is the stage a recorded failure already maps
+  // to ("Failed of passage in Senate by Yea-Nay Vote", "... Failed by the
+  // Yeas and Nays"), so the settled guard in lib/docket.mjs can read it.
+  if (/\bfailed of passage\b|\bnot agreed to in (?:the )?(?:house|senate)\b/.test(text)) return 'floor_vote';
   if (
     text.includes('passed house') || text.includes('passed senate') ||
     text.includes('passed/agreed to') || text.includes('agreed to in') ||
@@ -204,6 +212,10 @@ export function mapStatus(actionText) {
     // the stage the bill left. It says nothing about which chamber, so nothing
     // here claims one; `passed_chamber` is the stage, and the chamber-level
     // claim stays with lib/journey.ts's passage derivation.
+    // AMENDED 2026-09-24: the motion is laid after a FAILED vote too
+    // (H.Con.Res. 38, H.R. 2262), so this reading is only the default. It is
+    // listed in AMBIGUOUS_WITHOUT_CONTEXT below, and no write path stores it
+    // without resolveAmbiguousStatus reading the action before it.
     text.includes('motion to reconsider laid on the table') ||
     // BOTH CHAMBERS ARE DONE. "Presented to President." is the enrolled bill
     // going to the desk; it derived `committee` until now, which put a measure
@@ -211,7 +223,22 @@ export function mapStatus(actionText) {
     // status vocabulary has no `presented` rung and this change does not invent
     // one — `passed_chamber` is the nearest true stage, and `signed` remains
     // the only status that claims an outcome.
-    text.includes('presented to president')
+    text.includes('presented to president') ||
+    // THE MESSAGE THAT FOLLOWS A CHAMBER'S PASSAGE (2026-09-24, H.Con.Res. 86).
+    // "Message on Senate action sent to the House." / "Message on House action
+    // sent to the Senate." is the formal notice one chamber sends the other
+    // after it has acted on the measure, and Congress writes it OVER the
+    // passage sentence as the last action. hconres-86-119 was agreed to in the
+    // Senate by a 50-48 Yea-Nay vote after the House had already agreed to it,
+    // and still read `committee` from this sentence. Like the post-passage
+    // motion above, `passed_chamber` is the stage and nothing more: the
+    // vocabulary has no "both agreed" rung, and which chamber acted (and so
+    // who, if anyone, is next) is lib/journey.ts's `passageState`, which reads
+    // the same sentence and fails closed to 'second' when the acting chamber
+    // is not the originating one. The notice does not say WHAT the chamber
+    // did, so this is only the default: it is in AMBIGUOUS_WITHOUT_CONTEXT
+    // below, and no write path stores it without resolveAmbiguousStatus.
+    /\bmessage on (?:house|senate) action sent to the (?:house|senate)\b/.test(text)
   ) return 'passed_chamber';
   // Floor activity. The scheduling signals (calendar/cloture/rule) were the
   // original set; the recorded-vote and live-consideration signals were added
@@ -273,6 +300,113 @@ export function mapStatus(actionText) {
     text.includes('ordered to be reported') || text.includes('reported by')
   ) return 'markup';
   return 'committee';
+}
+
+/**
+ * SENTENCES THAT CANNOT BE READ FROM THE LAST ACTION ALONE (2026-09-24).
+ *
+ * `mapStatus` files both of these as `passed_chamber`, because that is what
+ * they follow most of the time. But not always, and the exceptions are a
+ * false passage claim:
+ *
+ *   - "Motion to reconsider laid on the table Agreed to without objection."
+ *     is laid after ANY recorded House vote, won or lost. H.Con.Res. 38
+ *     failed in the House 212-219 on 2026-03-05 and H.R. 2262 failed 209-215
+ *     on 2026-01-13; this sentence is the last action on both.
+ *   - "Message on Senate action sent to the House." (and the mirror) is the
+ *     notice that follows the acting chamber's action on the measure. Usually
+ *     that action is passage, but the notice does not say so.
+ *
+ * So no write path may store a status for one of these without first reading
+ * the action BEFORE it (see `resolveAmbiguousStatus`). One missed passage is
+ * cheaper than one wrong one.
+ */
+export const AMBIGUOUS_WITHOUT_CONTEXT = [
+  /\bmotion to reconsider laid on the table\b/i,
+  /\bmessage on (?:house|senate) action sent to the (?:house|senate)\b/i,
+];
+
+/** @param {string | null | undefined} text */
+export function isAmbiguousAction(text) {
+  const t = String(text ?? '');
+  return AMBIGUOUS_WITHOUT_CONTEXT.some((re) => re.test(t));
+}
+
+/** A sentence that records the measure's own floor defeat. */
+const RECORDED_FAILURE = /\bfailed\b|\bnot agreed to\b/i;
+
+/**
+ * The status an ambiguous last action stands for, read from the action list
+ * (newest first, Congress.gov's own order; same-timestamp siblings such as
+ * "On passage Failed..." and "Failed of passage/not agreed to in House..."
+ * say the same thing, so their relative order does not matter). Pure.
+ *
+ * Skips every ambiguous sentence and reads the first one that is not:
+ *   - a recorded FAILURE -> 'committee'. The status vocabulary has no failed
+ *     rung, and the other candidates would each assert something false over
+ *     the reconsider sentence still stored as the last action: `floor_vote`
+ *     renders "it's moving on the floor", `passed_chamber` "it passed".
+ *     `committee` is what these bills carried before any matcher read the
+ *     sentence, so it is a missed claim, not a new one.
+ *   - anything else -> mapStatus of that sentence.
+ * Returns null when no readable, unambiguous action exists.
+ *
+ * @param {Array<{ text?: string, actionDate?: string, actionTime?: string }> | null | undefined} actions
+ * @returns {{ status: string, basis: string } | null}
+ */
+export function statusFromActions(actions) {
+  const list = (actions ?? []).filter((a) => a?.text);
+  const i = list.findIndex((a) => !isAmbiguousAction(a.text));
+  if (i === -1) return null;
+  const first = list[i];
+  // THE VOTE IS RECORDED AS A GROUP. The House writes one vote as two
+  // sentences with the same timestamp: the vote itself ("On passage Passed by
+  // the Yeas and Nays: ...", which no mapStatus rule reads as passage) and
+  // Congress.gov's summary line ("Passed/agreed to in House: On passage ..."
+  // or "Failed of passage/not agreed to in House ..."). Their relative order
+  // is not guaranteed, so the verdict is read from the whole group: every
+  // action sharing the first one's date and time (date alone when Congress
+  // gives no time, as the Senate usually does not).
+  const key = (a) => `${a.actionDate ?? ''}|${a.actionTime ?? ''}`;
+  const group = list.slice(i).filter((a) => key(a) === key(first) && !isAmbiguousAction(a.text));
+  const defeat = group.find((a) => /^\s*failed of passage\b|\bnot agreed to in (?:the )?(?:house|senate)\b/i.test(a.text));
+  if (defeat) return { status: 'committee', basis: defeat.text };
+  const passage = group.find((a) => mapStatus(a.text) === 'passed_chamber');
+  if (passage) return { status: 'passed_chamber', basis: passage.text };
+  if (RECORDED_FAILURE.test(first.text)) return { status: 'committee', basis: first.text };
+  return { status: mapStatus(first.text), basis: first.text };
+}
+
+/**
+ * Fetch a bill's action list (newest first). Null, never a throw, when the
+ * key is absent or Congress.gov will not answer, so every caller has exactly
+ * one "could not look" branch.
+ * @param {{ bill_type: string, bill_number: number | string }} bill
+ * @returns {Promise<Array<{ text?: string }> | null>}
+ */
+export async function fetchBillActions(bill) {
+  if (!process.env.CONGRESS_API_KEY) return null;
+  try {
+    const r = await cg(`/bill/${CONGRESS}/${String(bill.bill_type).toLowerCase()}/${bill.bill_number}/actions`, { limit: '50' });
+    return Array.isArray(r?.actions) ? r.actions : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * THE ONE RESOLUTION every write path uses for an ambiguous last action
+ * (refreshBillFields below, the new-bill path in scripts/bill-decode.mjs,
+ * scripts/rederive-status.mjs). Null means "could not tell": the caller must
+ * then keep what it has and never fall back to mapStatus's passage reading.
+ * `fetchActions` is injectable for tests.
+ * @param {{ bill_type: string, bill_number: number | string }} bill
+ * @param {{ fetchActions?: (bill: any) => Promise<Array<{ text?: string }> | null> }} [opts]
+ * @returns {Promise<{ status: string, basis: string } | null>}
+ */
+export async function resolveAmbiguousStatus(bill, { fetchActions = fetchBillActions } = {}) {
+  const actions = await fetchActions(bill);
+  return actions ? statusFromActions(actions) : null;
 }
 
 // Stored sync-time score (freshness bonus, no decay) - the FEED never ranks
@@ -428,11 +562,28 @@ export function readableAction(detail) {
  *  outright. The mirror case - a date with NO text - deliberately gets no
  *  such path: it can't produce a status, and pinning a newer date onto the
  *  older stored text would overstate freshness, the one direction this file
- *  must never err in. It skips with everything else. */
-export function refreshBillFields(existing, detail) {
+ *  must never err in. It skips with everything else.
+ *
+ *  ASYNC since 2026-09-24: an ambiguous latest action (see
+ *  AMBIGUOUS_WITHOUT_CONTEXT) costs one /actions request to resolve, and
+ *  every caller awaits the outcome. `resolve` is injectable for tests. */
+export async function refreshBillFields(existing, detail, { resolve = resolveAmbiguousStatus } = {}) {
   const action = readableAction(detail);
   if (!action) return 'skipped_partial';
-  const status = mapStatus(action.text);
+  // An ambiguous last action (AMBIGUOUS_WITHOUT_CONTEXT above) is resolved
+  // from the action BEFORE it. The detail payload carries only latestAction,
+  // so this is one extra request, made only for these sentences. When it
+  // cannot be made the stored status stands (never mapStatus's passage
+  // reading) and the nightly re-derivation pass retries it.
+  let status = mapStatus(action.text);
+  if (isAmbiguousAction(action.text)) {
+    const resolved = await resolve(existing);
+    if (resolved) status = resolved.status;
+    else {
+      console.warn(`WARN ${slugOf(existing)}: ambiguous last action ("${action.text}") and the action before it could not be read; status kept at ${existing.status}`);
+      status = existing.status ?? 'committee';
+    }
+  }
   const lastActionDate = action.actionDate ?? existing.last_action_date ?? null;
   existing.status = status;
   existing.last_action_date = lastActionDate;
