@@ -956,6 +956,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               t('weekNote')
             )}
           </p>
+          {/* One line to the daily brief (plan item C3). Footer/nav placement
+              is left to the owner's review: the footer's Follow column is
+              claimed by a sibling PR. */}
+          <p className="mt-2 max-w-note text-sm">
+            <Link
+              href="/today"
+              className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('todayLink')}
+            </Link>
+          </p>
 
           {/* The section closes with its exit: a full-width row under the
               listing, not a link floating beside the intro where it reads as

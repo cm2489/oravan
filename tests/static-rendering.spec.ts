@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { briefWindow } from '../lib/today';
 
 /*
  * README principle 2 ("Static-first … baked into statically generated pages")
@@ -78,6 +79,7 @@ const STATIC_PAGES = [
   '/questions',
   '/record',
   '/terms',
+  '/today',
   '/why-call',
 ] as const;
 
@@ -118,6 +120,18 @@ test('the decoded corpus is prerendered, not rendered per request', () => {
   expect(questions.length).toBeGreaterThan(4);
   expect(bills.some((r) => r.startsWith('/en/'))).toBe(true);
   expect(bills.some((r) => r.startsWith('/es/'))).toBe(true);
+});
+
+test('the daily brief prerenders every dated permalink in its window, in both languages', () => {
+  // /today/{date} for today and the 13 days before (lib/today.ts's window).
+  // Older dates are not prerendered and 404 at request time — tests/today.spec.ts.
+  const prerendered = routes();
+  const missing = ['en', 'es'].flatMap((locale) =>
+    briefWindow()
+      .map((date) => `/${locale}/today/${date}`)
+      .filter((route) => !(route in prerendered)),
+  );
+  expect(missing).toEqual([]);
 });
 
 test('any re-added loading boundary under [locale] is a client component', () => {
