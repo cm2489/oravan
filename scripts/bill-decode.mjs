@@ -21,9 +21,11 @@ import {
   CONGRESS,
   cg,
   congressGovUrl,
+  isAmbiguousAction,
   mapStatus,
   readableAction,
   refreshBillFields,
+  resolveAmbiguousStatus,
   tagBill,
   updateSlug,
   urgencyScore,
@@ -553,7 +555,7 @@ export async function syncOneBill(u, ctx) {
       // for ordering, never the thing that spends a decode — see
       // countSaysNewText in scripts/text-version.mjs.
       return {
-        outcome: refreshBillFields(existing, d),
+        outcome: await refreshBillFields(existing, d),
         slug,
         decodeAttempted,
         fetchedTitle: d.title ?? null,
@@ -593,7 +595,20 @@ export async function syncOneBill(u, ctx) {
     // a gated one.
     const action = readableAction(d);
     if (!action) return { outcome: 'skipped_partial', slug, decodeAttempted };
-    const status = mapStatus(action.text);
+    // An ambiguous last action (congress-fetch.mjs's AMBIGUOUS_WITHOUT_CONTEXT)
+    // is resolved from the action before it, through the same helper the
+    // refresh path uses. A new bill has no stored status to keep, so when the
+    // lookup fails it enters at `committee`: a missed passage, never a wrong
+    // one, and the nightly re-derivation pass retries it.
+    let status = mapStatus(action.text);
+    if (isAmbiguousAction(action.text)) {
+      const resolved = await resolveAmbiguousStatus({ bill_type: type, bill_number: u.number });
+      if (resolved) status = resolved.status;
+      else {
+        console.warn(`WARN ${slug}: ambiguous last action ("${action.text}") and the action before it could not be read; entering at committee`);
+        status = 'committee';
+      }
+    }
     const forced = forceSlugs.has(slug);
     if (!forced && !passesGate(status)) {
       return { outcome: 'gated', slug, status, decodeAttempted };

@@ -252,8 +252,10 @@ test.describe('status re-derivation: position and posture', () => {
     expect(body).toContain(rederiveRun);
     expect(body).not.toContain('continue-on-error');
     expect(body).not.toContain('--dry-run');
-    // $0 by construction: it reads files already on disk and calls nothing.
-    expect(body).not.toContain('secrets.');
+    // $0 by construction: the only secret is the free Congress.gov key, used
+    // to resolve the ambiguous sentences from the action before them.
+    expect(body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    expect(body).not.toContain('ANTHROPIC_API_KEY');
   });
 
   test('the guard lives in the script, not in verify-sync.mjs', () => {
