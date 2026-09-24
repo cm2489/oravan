@@ -226,6 +226,46 @@ test.describe('roll-call votes: sync step and pre-commit gate', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b″ · 2026-09-24 — the status re-derivation pass: after the bill sync,
+ *       before every integrity check, and hard (its guard is a corpus claim).
+ * ------------------------------------------------------------------ */
+test.describe('status re-derivation: position and posture', () => {
+  const rederiveRun = 'run: node scripts/rederive-status.mjs';
+  const stepName = '- name: Re-derive every stored status';
+
+  test('THE ORDER: after the bill sync, before verify-sync and the commit', () => {
+    const at = syncBills.indexOf(rederiveRun);
+    expect(at, 'rederive step not found').toBeGreaterThan(0);
+    expect(at).toBeGreaterThan(syncBills.indexOf('run: node scripts/sync-bills.mjs'));
+    expect(at).toBeLessThan(syncBills.indexOf('run: node scripts/verify-sync.mjs'));
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    // Directly after the sync, so every later reader (the journey tripwire,
+    // coverage, Moment updates) sees the corrected corpus.
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Journey-corpus tripwire'));
+  });
+
+  test('its guard reds the run: the step is NOT continue-on-error and runs without --dry-run', () => {
+    const start = syncBills.indexOf(stepName);
+    expect(start, 'rederive step name not found').toBeGreaterThan(0);
+    const rest = syncBills.slice(start);
+    const body = rest.slice(0, rest.slice(1).search(/\n {6}- name:/) + 1);
+    expect(body).toContain(rederiveRun);
+    expect(body).not.toContain('continue-on-error');
+    expect(body).not.toContain('--dry-run');
+    // $0 by construction: the only secret is the free Congress.gov key, used
+    // to resolve the ambiguous sentences from the action before them.
+    expect(body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    expect(body).not.toContain('ANTHROPIC_API_KEY');
+  });
+
+  test('the guard lives in the script, not in verify-sync.mjs', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/rederive-status.mjs'), 'utf8');
+    expect(src).toContain('MAX_CHANGE_FRACTION = 0.02');
+    expect(readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8')).not.toContain('MAX_CHANGE_FRACTION');
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 2c · 2026-09-18 — the preflight arms or disarms the decodes, and
  *      never the data.
  * ------------------------------------------------------------------ */
