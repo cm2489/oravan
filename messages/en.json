@@ -376,6 +376,8 @@
     "aiLede": "The plain-language version leads. The official text is always the reference.",
     "congressLabel": "{congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress",
     "officialDisclosure": "Read the official text",
+    "shortTitleLabel": "Short title",
+    "topicsLabel": "Topics",
     "trackerLabel": "Where this bill is in the process",
     "stampLabel": "Data as of",
     "footNote": "This panel follows as you scroll — your call is always in reach",

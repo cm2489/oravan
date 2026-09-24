@@ -376,6 +376,8 @@
     "aiLede": "La versión en lenguaje claro va primero. El texto oficial siempre es la referencia.",
     "congressLabel": "Congreso {congress}",
     "officialDisclosure": "Leer el texto oficial",
+    "shortTitleLabel": "Título corto",
+    "topicsLabel": "Temas",
     "trackerLabel": "En qué punto del proceso está este proyecto",
     "stampLabel": "Datos al",
     "footNote": "Este panel te sigue mientras lees — tu llamada siempre queda a mano",
