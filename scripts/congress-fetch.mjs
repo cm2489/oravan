@@ -240,6 +240,23 @@ export function mapStatus(actionText) {
     // below, and no write path stores it without resolveAmbiguousStatus.
     /\bmessage on (?:house|senate) action sent to the (?:house|senate)\b/.test(text)
   ) return 'passed_chamber';
+  // A DISCHARGE PETITION FILED IS NOT FLOOR ACTION (owner ruling 2026-09-24,
+  // issue #268). In the House, "Motion to Discharge Committee filed by
+  // Mr. Kiley (CA). Petition No: 119-21. (Discharge petition text with
+  // signatures.)" opens a signature drive — 218 Members must sign before the
+  // motion can even be called up. Nothing has happened on the floor; the bill
+  // is still in committee, so it stays at `committee`. This must run BEFORE
+  // the floor-activity branch below, whose `motion to discharge` substring it
+  // matches. BOTH the "filed by" verb and the "Petition No" citation are
+  // required, so a Senate discharge motion that was actually VOTED ON
+  // ("Motion to discharge Senate Committee on Foreign Relations rejected by
+  // Yea-Nay Vote. 47 - 48.") keeps `floor_vote`, and "Committee discharged"
+  // sentences never reach this line. lib/floor-text.mjs's floorMakesNoClaim
+  // records the same reading one layer up, for records already stored at
+  // `floor_vote`.
+  if (/\bmotion to discharge committee filed by\b/.test(text) && /\bpetition no\b/.test(text)) {
+    return 'committee';
+  }
   // Floor activity. The scheduling signals (calendar/cloture/rule) were the
   // original set; the recorded-vote and live-consideration signals were added
   // 2026-07-23 after H.Con.Res. 89 — a war-powers resolution in active House

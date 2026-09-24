@@ -484,6 +484,34 @@ test.describe('floorMakesNoClaim', () => {
     expect(floorMakesNoClaim(null)).toBe(false);
     expect(floorMakesNoClaim('')).toBe(false);
   });
+
+  /*
+   * THE FILED DISCHARGE PETITION (owner ruling 2026-09-24, issue #268). A
+   * House discharge petition being FILED is a signature drive, not a floor
+   * event, and the site makes no floor claim about it.
+   */
+  const DISCHARGE_PETITION_FILED =
+    'Motion to Discharge Committee filed by Mr. Kiley (CA). Petition No: 119-21. (<a href="https://clerk.house.gov/DischargePetition/2026051221">Discharge petition</a> text with signatures.)';
+
+  test('a filed House discharge petition reads as claim-free (hr-4889-119, verbatim)', () => {
+    expect(floorMakesNoClaim(DISCHARGE_PETITION_FILED)).toBe(true);
+    // And it stays out of both tensed matchers, so no surface can speak for it.
+    expect(floorPendingChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+    expect(floorSettledChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+    expect(floorCalendarChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+  });
+
+  test('a Senate discharge motion that was VOTED ON is a real floor event, never claim-free', () => {
+    const SENATE_DISCHARGE_VOTE =
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.';
+    expect(floorMakesNoClaim(SENATE_DISCHARGE_VOTE)).toBe(false);
+    expect(floorSettledChamber(SENATE_DISCHARGE_VOTE)).toBe('senate');
+  });
+
+  test('both halves of the filing shape are required', () => {
+    expect(floorMakesNoClaim('Motion to Discharge Committee filed by Mr. Kiley (CA).')).toBe(false);
+    expect(floorMakesNoClaim('Petition No: 119-21.')).toBe(false);
+  });
 });
 
 /* ------------------------------------------------------------------ *
