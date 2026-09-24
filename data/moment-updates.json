@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-24T18:56:52.751Z"
+    "generated_at": "2026-09-24T22:21:40.382Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -237,7 +237,35 @@
     ]
   },
   "iran-war-powers": {
-    "updates": [],
+    "updates": [
+      {
+        "id": "u_3b1d76f0",
+        "class": "scheduled",
+        "vehicle": "hconres-89-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-24T22:21:40.382Z",
+        "text": {
+          "en": "“H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)”",
+          "es": "Registro oficial, en inglés: “H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2…”"
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
+          ]
+        },
+        "record": {
+          "action_text": "H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": false
+      }
+    ],
     "summary_revisions": [
       {
         "id": "s_d26a6b43",

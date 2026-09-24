@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-24T19:09:35.271Z",
+    "fetched_at": "2026-09-24T22:21:39.843Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-24T19:09:35.271Z"
+        "checked_at": "2026-09-24T22:21:39.843Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-24T19:09:35.271Z"
+        "checked_at": "2026-09-24T22:21:39.843Z"
       },
       "leans": {
         "center": {
@@ -232,6 +232,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
         {
           "domain": "finance.yahoo.com",
           "firstSeen": "2026-09-19",
@@ -641,7 +646,14 @@
       }
     },
     "hr-4840-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "hollywoodreporter.com",
@@ -654,7 +666,17 @@
           "lastSeen": "2026-09-24"
         },
         {
+          "domain": "sagaftra.org",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
           "domain": "thewrap.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
+          "domain": "yahoo.com",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
         }
@@ -877,6 +899,11 @@
       "unratedOutlets7d": [
         {
           "domain": "cpapracticeadvisor.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
+          "domain": "quiverquant.com",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
         },
@@ -2089,16 +2116,16 @@
           "lastSeen": "2026-09-24"
         },
         {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-24"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "nytimes.com",
-          "lean": "left",
-          "firstSeen": "2026-09-21",
-          "lastSeen": "2026-09-22"
         },
         {
           "domain": "thehill.com",
@@ -2500,6 +2527,12 @@
           "lastSeen": "2026-09-24"
         },
         {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-16",
@@ -2524,6 +2557,18 @@
           "lastSeen": "2026-09-24"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-200-119": {
+      "outlets7d": [
+        {
+          "domain": "pbs.org",
+          "lean": "center",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-24"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-213-119": {
