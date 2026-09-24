@@ -191,6 +191,17 @@ test.describe('floorActionChamber', () => {
     expect(floorActionChamber(null)).toBeNull();
     expect(floorActionChamber('Considered as unfinished business.')).toBeNull();
   });
+
+  test('House consideration procedures and the "(consideration: CR …)" citation (2026-09-24)', () => {
+    // Rule 5c: a special rule is an H. Res., and suspension is the House's
+    // two-thirds track — neither sentence names a chamber, both are House-only.
+    expect(floorActionChamber('Considered under the provisions of rule H. Res. 988.')).toBe('house');
+    expect(floorActionChamber('Considered under suspension of the rules.')).toBe('house');
+    // Rule 4 now reads the labelled citation form as well as the bare one.
+    expect(floorActionChamber('Considered as unfinished business. (consideration: CR H1250-1251)')).toBe('house');
+    expect(floorActionChamber('Considered by Senate. (consideration: CR S4851)')).toBe('senate');
+    expect(floorActionChamber('Motion to proceed to consideration of measure made in Senate. (CR S4276)')).toBe('senate');
+  });
 });
 
 /* ------------------------------------------------------------------ *
@@ -241,6 +252,57 @@ test.describe('floorPendingChamber', () => {
     // that anything is still ahead. Rule 0 catches it on "not invoked", and
     // that is the ruling: one missed crown is cheaper than one wrong one.
     expect(floorPendingChamber('Motion by Senator Schumer to reconsider, under the order of 10/9/2025, not having voted on the prevailing side, the vote by which the third cloture motion on the motion to proceed to S. 2882 was not invoked (Record Vote No. 557) entered in Senate.')).toBeNull();
+  });
+
+  /*
+   * THE CONSIDERATION RULE (2026-09-24, S. 4668). A measure the record says
+   * is under consideration has its vote still ahead IN THAT CHAMBER. S. 4668's
+   * last action on the morning of its cloture vote is the first line below,
+   * verbatim, and until this rule nothing read it.
+   */
+  test('a measure under floor consideration is a vote still ahead, in that chamber', () => {
+    // Senate — the chamber names itself.
+    expect(floorPendingChamber('Considered by Senate. (consideration: CR S4851)')).toBe('senate');
+    expect(floorPendingChamber('Considered by Senate.')).toBe('senate');
+    expect(floorPendingChamber('Measure laid before Senate by motion.')).toBe('senate');
+    expect(floorPendingChamber('Measure laid before Senate by motion. (consideration: CR S4850)')).toBe('senate');
+    expect(floorPendingChamber('Measure laid before Senate by unanimous consent. (consideration: CR S4102-4110)')).toBe('senate');
+    // House — no chamber named, but a procedure only the House has.
+    expect(floorPendingChamber('Considered under the provisions of rule H. Res. 988. (consideration: CR H4410-4432)')).toBe('house');
+    expect(floorPendingChamber('Considered under the provisions of rule H. Res. 988.')).toBe('house');
+    expect(floorPendingChamber('Considered under suspension of the rules. (consideration: CR H1234-1240)')).toBe('house');
+    expect(floorPendingChamber('Considered under suspension of the rules.')).toBe('house');
+    // House — chamber-silent words; the record's own page citation says where.
+    expect(floorPendingChamber('Considered as unfinished business. (consideration: CR H1250-1251)')).toBe('house');
+    expect(floorPendingChamber('Considered pursuant to a previous order. (consideration: CR H2201)')).toBe('house');
+    // …and every one agrees with the chamber floorActionChamber reads.
+    for (const text of [
+      'Considered by Senate. (consideration: CR S4851)',
+      'Measure laid before Senate by unanimous consent.',
+      'Considered under the provisions of rule H. Res. 988.',
+      'Considered under suspension of the rules.',
+      'Considered as unfinished business. (consideration: CR H1250-1251)',
+      'Considered pursuant to a previous order. (consideration: CR H2201)',
+    ]) {
+      expect(floorPendingChamber(text), text).toBe(floorActionChamber(text));
+    }
+  });
+
+  test('a chamber-silent consideration sentence with no page citation stays silent', () => {
+    // "Unfinished business" and "a previous order" are not House-only words.
+    // With no "(consideration: CR H…)" tail there is no chamber evidence, and
+    // one missed crown is cheaper than one wrong one.
+    expect(floorPendingChamber('Considered as unfinished business.')).toBeNull();
+    expect(floorPendingChamber('Considered pursuant to a previous order.')).toBeNull();
+    expect(floorActionChamber('Considered pursuant to a previous order.')).toBeNull();
+  });
+
+  test('the settled guard still runs first over a consideration sentence', () => {
+    // Rule 0 is untouched: a consideration sentence carrying a settled word is
+    // never a vote still ahead.
+    expect(floorPendingChamber('Considered by Senate. Motion to table the measure failed. (consideration: CR S4851)')).toBeNull();
+    expect(floorPendingChamber('Considered under suspension of the rules. Motion withdrawn. (consideration: CR H1234)')).toBeNull();
+    expect(floorPendingChamber('Indefinitely postponed by Senate by Unanimous Consent. (consideration: CR S8395)')).toBeNull();
   });
 
   test('FAIL-CLOSED on everything else — a deny-list would admit these', () => {
@@ -621,6 +683,45 @@ test.describe('deriveJourney', () => {
     expect(j('s', 'floor_vote', SUSPENSION_FAILED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
   });
 
+  /*
+   * S. 4668, 2026-09-24. Its last action is a measure under consideration,
+   * and the whole point of the consideration rule is that a fresh one reads
+   * as the live deliberation AND crowns — through the same billFloorBand gate
+   * the bill page and the homepage crown run — while an aged one keeps its
+   * chamber and loses the present tense, exactly like an aged cloture motion.
+   */
+  test('a measure under consideration: fresh reads live and crowns, stale does not', () => {
+    const S4668 = 'Considered by Senate. (consideration: CR S4851)';
+    const fresh = j('s', 'floor_vote', S4668, FRESH);
+    expect(fresh).toMatchObject({ step: 2, current: 'senate', nowChamber: 'senate', onCalendar: false, nowKey: 'nowFloorActivity' });
+    expect(billFloorBand({ status: 'floor_vote', last_action_text: S4668, last_action_date: FRESH }, null)).toMatchObject({
+      kind: 'pending',
+      chamber: 'senate',
+      date: FRESH,
+    });
+
+    const stale = j('s', 'floor_vote', S4668, STALE);
+    expect(stale).toMatchObject({ current: 'senate', nowChamber: 'senate', nowKey: 'nowFloorActivityStale' });
+    expect(billFloorBand({ status: 'floor_vote', last_action_text: S4668, last_action_date: STALE }, null)).toBeNull();
+
+    // A House bill the Senate is considering sits at the Senate step.
+    expect(j('hr', 'floor_vote', 'Measure laid before Senate by motion.', FRESH)).toMatchObject({
+      step: 3,
+      current: 'senate',
+      nowKey: 'nowFloorActivity',
+    });
+    // The House side, on a House bill, fresh and aged.
+    const HOUSE = 'Considered under the provisions of rule H. Res. 988. (consideration: CR H4410-4432)';
+    expect(j('hr', 'floor_vote', HOUSE, FRESH)).toMatchObject({ step: 2, current: 'house', nowKey: 'nowFloorActivity' });
+    expect(billFloorBand({ status: 'floor_vote', last_action_text: HOUSE, last_action_date: FRESH }, null)).toMatchObject({
+      kind: 'pending',
+      chamber: 'house',
+    });
+    expect(j('hr', 'floor_vote', HOUSE, STALE).nowKey).toBe('nowFloorActivityStale');
+    // At the status the corpus gave S. 4668 before this change, nothing crowns.
+    expect(billFloorBand({ status: 'committee', last_action_text: S4668, last_action_date: FRESH }, null)).toBeNull();
+  });
+
   test('a genuinely pending floor vote keeps the live deliberation copy', () => {
     expect(j('hr', 'floor_vote', CLOTURE_TEXT).nowKey).toBe('nowFloorActivity');
     expect(
@@ -645,7 +746,15 @@ test.describe('deriveJourney', () => {
    * what made the nightly journey-corpus tripwire safe to soften from a
    * whole-night failure to a filed issue: the render fails closed first.
    * ---------------------------------------------------------------- */
-  const UNTENSED_TEXT = 'Considered by Senate.';
+  /*
+   * The fixture was "Considered by Senate." until 2026-09-24, when that
+   * sentence was READ: a measure under consideration has its vote still
+   * ahead (floorPendingChamber rule 5, S. 4668), and its own pins are in the
+   * consideration suite. This is the next real chamber-readable, untensed
+   * sentence — H.R. 6500's, 2026-08-04 — which lib/docket.mjs's T1 rung ranks
+   * but the crown still deliberately does not speak over.
+   */
+  const UNTENSED_TEXT = 'Motion to proceed to measure considered in Senate.';
 
   test('THE N9 FLAGSHIP: a chamber-readable but UNTENSED floor text asserts nothing', () => {
     // The chamber genuinely is readable — that is what made this class
