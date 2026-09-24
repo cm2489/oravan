@@ -694,6 +694,30 @@ test.describe('entersFloorWatch', () => {
     expect(entersFloorWatch('Measure laid before Senate by motion.')).toBe(true);
   });
 
+  test('admits every consideration sentence the crown now reads (2026-09-24, S. 4668)', () => {
+    for (const text of [
+      'Considered by Senate. (consideration: CR S4851)',
+      'Considered by Senate.',
+      'Measure laid before Senate by motion.',
+      'Measure laid before Senate by unanimous consent. (consideration: CR S4102-4110)',
+      'Considered under the provisions of rule H. Res. 988. (consideration: CR H4410-4432)',
+      'Considered under suspension of the rules.',
+      'Considered as unfinished business. (consideration: CR H1250-1251)',
+      'Considered pursuant to a previous order. (consideration: CR H2201)',
+      // The ranking admits the chamber-silent sentence even without a page
+      // citation — the measure is on a floor either way; only the crown asks
+      // which one.
+      'Considered as unfinished business.',
+      'Considered pursuant to a previous order.',
+    ]) {
+      expect(entersFloorWatch(text), text).toBe(true);
+      // The superset, sentence by sentence: wherever the crown speaks, this admits.
+      if (floorPendingChamber(text)) expect(entersFloorWatch(text), text).toBe(true);
+    }
+    // The settled guard still runs first here too.
+    expect(entersFloorWatch('Considered by Senate. Motion to table the measure failed.')).toBe(false);
+  });
+
   test('never fires on a settled record', () => {
     expect(entersFloorWatch('Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 52 - 46.')).toBe(false);
     expect(entersFloorWatch('Motion to proceed to consideration of measure rejected in Senate.')).toBe(false);

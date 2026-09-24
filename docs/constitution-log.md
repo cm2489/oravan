@@ -10,6 +10,25 @@ Each `CLAUDE.md` amendment points here with `(evidence: docs/constitution-log.md
 
 ---
 
+<a id="merging-2026-09-24"></a>
+
+## 2026-09-24 — Merging: the standing pipeline carve-out
+
+Evidence for the amendment that replaced "Claude opens PRs but never merges — Colby merges." The live rule and its scope stay inline in `CLAUDE.md`.
+
+What was true on the day:
+
+- The daily pipeline-doctor routine (created 2026-09-18) carried the owner's authorization — *"You have my authorization to push and merge. Anything that costs over $3 will need my approval."* — for the pipeline/ops scope, and had merged #261, #263, #265, #266 and #269 on it, each with a PR comment naming the grant. The hard rule and the running practice disagreed in writing. The routine's 2026-09-23 report raised it as a constitutional conflict instead of continuing silently: *"until then, say the word and I will stop merging and leave every PR."*
+- The owner's ruling, 2026-09-24, verbatim: *"From now on you can merge anything that has to do with the doctor's pipeline indefinitely or until I request you to stop. This should override line 14 in Claude.md."* He widened the rule rather than stopping the merges.
+- The scope written into the rule is copied from the routine's prompt, not invented for the amendment; the $3 line is the same one the routine carries; the green-CI condition and the PR-comment record are the routine's existing practice.
+- Session grants for everything else are unchanged: per-session, in his words, never carried forward.
+
+Corrected in the same change:
+
+- "~1,000 SSG pages" (CLAUDE.md) and "~1,000 statically generated pages" (README principle 2) → the measured figure. `.next/prerender-manifest.json` on the 2026-09-19 production build held 6,012 HTML pages (#256), and `tests/static-rendering.spec.ts` pins that every `[locale]` page prerenders in both languages. The claim had been an undercount, not a falsehood, since the loading-boundary regression was fixed by #253.
+
+---
+
 <a id="ai-content-2026-08-07"></a>
 
 ## 2026-08-07 — AI content is always labeled, and never publishes unless the automated gates pass
