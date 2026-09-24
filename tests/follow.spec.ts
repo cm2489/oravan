@@ -134,6 +134,36 @@ for (const path of ['/', '/bills', BILL, '/es']) {
   });
 }
 
+/*
+ * Every footer link — Site, Trust and Follow alike — is a 44px target in BOTH
+ * dimensions on a phone. Height alone was pinned before; an accessibility
+ * sweep (2026-09-24) measured "About" and "Terms" at 41-42px WIDE on
+ * webkit-mobile. Checked on a bill page, where the sweep found it, and on the
+ * Spanish homepage, whose labels differ.
+ */
+for (const path of [BILL, '/es']) {
+  test(`every footer link on ${path} is at least 44×44 on mobile`, async ({ page, isMobile }, testInfo) => {
+    test.skip(!isMobile, 'the 44px floor is measured at the phone viewport');
+    await page.goto(path);
+    const links = page.locator('footer a');
+    const count = await links.count();
+    expect(count).toBeGreaterThan(10);
+    const sizes: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const link = links.nth(i);
+      await link.scrollIntoViewIfNeeded();
+      const box = await link.boundingBox();
+      const label = (await link.innerText()).trim();
+      expect(box, `footer link "${label}" has no box`).not.toBeNull();
+      sizes.push(`${label}: ${box!.width.toFixed(1)}×${box!.height.toFixed(1)}`);
+      expect(box!.width, `footer link "${label}" is under 44px wide`).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `footer link "${label}" is under 44px tall`).toBeGreaterThanOrEqual(44);
+    }
+    await testInfo.attach('footer-link-sizes', { body: sizes.join('\n'), contentType: 'text/plain' });
+    console.log(`footer link sizes on ${path}:\n${sizes.join('\n')}`);
+  });
+}
+
 test('the feeds the Follow links point at are the real feeds, with feed content types', async ({ request }) => {
   for (const feed of ['/feed', '/es/feed']) {
     const rss = await request.get(`${feed}/whats-moving.xml`);

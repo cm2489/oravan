@@ -66,8 +66,13 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
   const t = useTranslations('common');
   const feeds = feedPaths(useLocale());
 
+  // 44px hit area in BOTH dimensions (WCAG 2.5.8 / CLAUDE.md): short labels
+  // like "About" and "Terms" set at 41-42px wide on webkit-mobile. The fix is
+  // padding, not type: px-1 widens the target by 8px, the matching -mx-1
+  // keeps the text flush with the column heading, and min-w-11 is the floor
+  // for any label shorter still. Pinned in tests/follow.spec.ts.
   const linkClass =
-    'inline-flex min-h-11 items-center text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
+    '-mx-1 inline-flex min-h-11 min-w-11 items-center px-1 text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
 
   return (
     <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
