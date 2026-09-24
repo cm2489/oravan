@@ -530,30 +530,33 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {/* ONE PRIMARY (fold pass 2026-09-24, finding B3). The hero used
                 to carry TWO filled green controls — "See what's moving" and
                 the ZIP submit — pointing at two funnels with equal weight, so
-                neither read as the next step. The ZIP form is the one filled
-                control now; the jump to the week is the secondary, set as a
-                text link directly under it. Nothing is removed: the week is
-                still one tap away, and it is also the next thing on the page
-                when you scroll. Every ZipForm key is untouched (shared with
-                the bill-page dialog and the embed widget).
+                neither read as the next step. The filled control is the jump
+                to what is moving: "Truth-first, call-next" (CLAUDE.md) and the
+                2026-07-31 ruling above both make READING the front door, and
+                the call apparatus is demoted, never buried. So the ZIP form
+                stays in the hero, directly under the jump, with its submit in
+                the secondary ink-outline tone (ZipForm's submitTone) — every
+                key and the ZIP-first funnel path are untouched (the form is
+                shared with the bill-page dialog and the embed widget).
 
-                THE FOLD IS MEASURED, NOT ASSUMED: at 390×844 the submit
-                button's bottom edge must clear the fixed thumb bar's top edge
-                in BOTH locales (tests/home-fold.spec.ts). Spanish is the long
-                language and is the one that failed (8px under the bar,
-                2026-09-10) — so the lede is held to about twenty words and the
-                hero's top rhythm is tighter below md. */}
-            <div className="mt-6">
-              <ZipForm />
-            </div>
-
+                THE FOLD IS MEASURED, NOT ASSUMED: at 390×844 the ZIP submit's
+                bottom edge — the lowest control in the hero — must clear the
+                fixed thumb bar's top edge in BOTH locales
+                (tests/home-fold.spec.ts). Spanish is the long language and is
+                the one that failed (8px under the bar, 2026-09-10) — so the
+                lede is held to about twenty words and the hero's top rhythm is
+                tighter below md. */}
             <a
               href="#top-actions"
-              className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
             >
               {t('heroJump')}
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
             </a>
+
+            <div className="mt-4">
+              <ZipForm submitTone="secondary" inline />
+            </div>
 
             {/* THE TRUST LINE ON A PHONE. The header carries it inline at lg+
                 (EN) or in its sub-bar (ES), and the 56px phone bar has no room

@@ -10,11 +10,12 @@ import es from '../messages/es.json';
  * filled buttons pointing at two funnels, and the "No accounts, no ads, no
  * trackers" line was hidden on phones. Three facts pinned here, both locales:
  *
- *   1. The primary CTA (the ZIP submit) clears the thumb bar: its bottom edge
+ *   1. The lowest hero control (the ZIP submit) clears the thumb bar: its bottom edge
  *      is above the bar's top edge with the page at scroll 0. Checked at the
  *      measured 390×844 AND at the iPhone 13 project's own 390×664, the
  *      shorter screen where it is tightest.
- *   2. Exactly ONE filled primary control in the hero.
+ *   2. Exactly ONE filled primary control in the hero, and it is the jump to
+ *      what is moving ("Truth-first, call-next"); the ZIP submit is secondary.
  *   3. The trust line is visible on the first screen.
  *
  * Spanish is the long language and is the one that failed; it is never
@@ -45,7 +46,7 @@ test.describe('home fold (phone)', () => {
 
   for (const { prefix, messages } of LOCALES) {
     for (const height of HEIGHTS) {
-      test(`${prefix || '/'} @390×${height}: the primary CTA clears the thumb bar at scroll 0`, async ({
+      test(`${prefix || '/'} @390×${height}: the ZIP submit (lowest hero control) clears the thumb bar at scroll 0`, async ({
         page,
       }) => {
         await page.setViewportSize({ width: 390, height });
@@ -60,30 +61,33 @@ test.describe('home fold (phone)', () => {
       });
     }
 
-    test(`${prefix || '/'}: exactly one filled primary control in the hero, and it is the ZIP submit`, async ({
+    test(`${prefix || '/'}: exactly one filled primary control in the hero, and it is the jump to what is moving`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`${prefix}/`);
-      const cta = page.getByRole('button', { name: messages.home.zipCta });
-      await expect(cta).toBeVisible();
-      const filled = await page.evaluate((ctaName) => {
+      const jump = page.getByRole('link', { name: messages.home.heroJump });
+      await expect(jump).toBeVisible();
+      // "Truth-first, call-next": the filled control leads to READING. The ZIP
+      // form is still in the hero (demoted, never buried) with an ink-outline
+      // submit, so the ZIP-first funnel path is unchanged.
+      const filled = await page.evaluate((jumpName) => {
         const hero = document.querySelector('main h1')?.parentElement;
         if (!hero) throw new Error('no hero');
-        const submit = [...hero.querySelectorAll('button')].find(
-          (b) => b.textContent?.trim() === ctaName
+        const primary = [...hero.querySelectorAll('a')].find(
+          (a) => a.textContent?.trim() === jumpName
         );
-        if (!submit) throw new Error('no ZIP submit in the hero');
-        const go = getComputedStyle(submit).backgroundColor;
+        if (!primary) throw new Error('no jump link in the hero');
+        const go = getComputedStyle(primary).backgroundColor;
         return [...hero.querySelectorAll('a, button')]
           .filter((el) => el.getBoundingClientRect().height > 0)
           .filter((el) => getComputedStyle(el).backgroundColor === go)
           .map((el) => el.textContent?.trim());
-      }, messages.home.zipCta);
-      expect(filled).toEqual([messages.home.zipCta]);
+      }, messages.home.heroJump);
+      expect(filled).toEqual([messages.home.heroJump]);
 
-      // The other funnel is still one tap away — demoted, not removed.
-      await expect(page.getByRole('link', { name: messages.home.heroJump })).toBeVisible();
+      // The ZIP path is still one tap away — demoted, not removed.
+      await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
     });
 
     test(`${prefix || '/'}: the trust line is visible on the first screen`, async ({ page }) => {
