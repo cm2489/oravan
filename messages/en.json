@@ -1036,5 +1036,39 @@
         "body": "A pro forma session is a meeting a chamber holds to satisfy the constitutional rule that neither chamber may break for more than three days without the other's consent. It runs a minute or two: a presiding officer gavels in, no legislative business is conducted, and the chamber gavels out. A bill cannot be called up at one, and no measure moves on the floor because of it. The chamber's own Daily Digest prints the program for each meeting, so a pro forma one says so in the record."
       }
     }
+  },
+  "votes": {
+    "heading": "Recorded votes",
+    "coverage": "Roll-call votes recorded since {date}.",
+    "chamber": {
+      "house": "House",
+      "senate": "Senate"
+    },
+    "roll": "Roll call {roll}",
+    "asRecorded": "As recorded",
+    "question": "Question",
+    "result": "Result",
+    "tally": "Tally",
+    "position": {
+      "yea": "Yea",
+      "nay": "Nay",
+      "present": "Present",
+      "notVoting": "Not voting"
+    },
+    "tieBreaker": "Vice President's tie-breaking vote: {position}",
+    "source": "Official record",
+    "membersToggle": "How members voted",
+    "group": "{position} ({count})",
+    "earlier": "{count, plural, one {# earlier vote} other {# earlier votes}}",
+    "delegation": {
+      "heading": "Your members on this bill",
+      "note": "Matched on this device, using the members the call panel already found for your saved ZIP. This section sends nothing.",
+      "onHouseVote": "House vote, {date}",
+      "onSenateVote": "Senate vote, {date}",
+      "noHouseVote": "No recorded House vote on this bill since {date}",
+      "noSenateVote": "No recorded Senate vote on this bill since {date}",
+      "notListed": "Not listed in this roll call",
+      "multiDistrict": "Your ZIP spans more than one House district, so only your senators are shown here."
+    }
   }
 }

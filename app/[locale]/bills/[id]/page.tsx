@@ -13,6 +13,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { ReadReceipt } from '@/components/ReadReceipt';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
+import { VoteRecord } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
@@ -727,6 +728,8 @@ export default async function BillPage({
               srLabel={dataAsOf}
             />
           </section>
+
+          <VoteRecord billId={id} className="min-[62rem]:col-start-1" />
 
           {/* For the hesitant: what a call actually looks like, on demand,
               collapsed so it never displaces the rail. */}
