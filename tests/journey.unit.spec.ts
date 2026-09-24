@@ -573,6 +573,32 @@ test.describe('passageState', () => {
   });
 
   /*
+   * THE POST-PASSAGE NOTICE (2026-09-24, H.Con.Res. 86). mapStatus files
+   * "Message on Senate action sent to the House." as `passed_chamber`; left to
+   * the 'first' default, an hconres the Senate had just agreed to would route
+   * the live call to the Senate. The notice names the acting chamber and no
+   * amendment clause, so the second chamber's notice is 'second', never 'both'.
+   */
+  test('the post-passage message names the acting chamber and fails closed on the second one', () => {
+    expect(p('hconres', 'Message on Senate action sent to the House.')).toEqual({
+      stage: 'second',
+      passedBy: 'senate',
+      next: null,
+    });
+    expect(p('hr', 'Message on Senate action sent to the House.')).toEqual({
+      stage: 'second',
+      passedBy: 'senate',
+      next: null,
+    });
+    // The originating chamber's own notice is the ordinary first passage.
+    expect(p('hr', 'Message on House action sent to the Senate.')).toEqual({
+      stage: 'first',
+      passedBy: 'house',
+      next: 'senate',
+    });
+  });
+
+  /*
    * CORPUS SWEEP, narrow and cheap: whatever else moves nightly, a record
    * whose text reports the SECOND chamber passing must never route to that
    * same chamber. That is the precise shape of the shipped bug.

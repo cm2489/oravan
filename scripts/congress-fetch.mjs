@@ -211,7 +211,20 @@ export function mapStatus(actionText) {
     // status vocabulary has no `presented` rung and this change does not invent
     // one — `passed_chamber` is the nearest true stage, and `signed` remains
     // the only status that claims an outcome.
-    text.includes('presented to president')
+    text.includes('presented to president') ||
+    // THE MESSAGE THAT FOLLOWS A CHAMBER'S PASSAGE (2026-09-24, H.Con.Res. 86).
+    // "Message on Senate action sent to the House." / "Message on House action
+    // sent to the Senate." is the formal notice one chamber sends the other
+    // after it has acted on the measure, and Congress writes it OVER the
+    // passage sentence as the last action. hconres-86-119 was agreed to in the
+    // Senate by a 50-48 Yea-Nay vote after the House had already agreed to it,
+    // and still read `committee` from this sentence. Like the post-passage
+    // motion above, `passed_chamber` is the stage and nothing more: the
+    // vocabulary has no "both agreed" rung, and which chamber acted (and so
+    // who, if anyone, is next) is lib/journey.ts's `passageState`, which reads
+    // the same sentence and fails closed to 'second' when the acting chamber
+    // is not the originating one.
+    /\bmessage on (?:house|senate) action sent to the (?:house|senate)\b/.test(text)
   ) return 'passed_chamber';
   // Floor activity. The scheduling signals (calendar/cloture/rule) were the
   // original set; the recorded-vote and live-consideration signals were added

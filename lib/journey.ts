@@ -652,9 +652,10 @@ export interface LiveCallTarget {
  * and "it goes back to the House" are opposite claims and guessing between
  * them is how this defect happened the first time. Every one of the 24 real
  * passage sentences carries "without amendment", "with an amendment(s)", or
- * "with an amendment and an amendment to the Title", so 'second' is
- * unreachable on today's corpus and exists for the sentence Congress has not
- * written yet.
+ * "with an amendment and an amendment to the Title", so no PASSAGE sentence
+ * reaches 'second'. Since 2026-09-24 the second-chamber "Message on {chamber}
+ * action sent to the {other}." notice does (see the message read below): it
+ * names the acting chamber and never the amendment.
  */
 export type PassageStage = 'first' | 'back' | 'both' | 'second';
 
@@ -675,6 +676,23 @@ export function passageState(
   // Anchored: "Rule H. Res. 988 passed House." reports a RULE's passage, not
   // this bill's, and an unanchored match would read it as one.
   const passage = /^\s*Passed (House|Senate)\b/i.exec(text);
+  // THE NOTICE THAT FOLLOWS A PASSAGE (2026-09-24, H.Con.Res. 86). "Message
+  // on Senate action sent to the House." is what Congress writes OVER the
+  // passage sentence once the acting chamber notifies the other, and since
+  // that date mapStatus files it as `passed_chamber`. Read here so the
+  // routing does not fall to the 'first' default: on H.Con.Res. 86 — agreed
+  // to by the House, then by the Senate — that default would have printed
+  // "the Senate decides next" about the chamber that had just decided. The
+  // sentence names the acting chamber and carries no amendment clause, so a
+  // second-chamber notice is 'second' (both have acted, no next step named)
+  // and never 'both' or 'back': the same fail-closed rule as below.
+  const message = /^\s*Message on (House|Senate) action sent to the (?:House|Senate)\b/i.exec(text);
+  if (!passage && message) {
+    const actedBy: Chamber = message[1].toLowerCase() === 'senate' ? 'senate' : 'house';
+    return actedBy === origin
+      ? { stage: 'first', passedBy: actedBy, next: other }
+      : { stage: 'second', passedBy: actedBy, next: null };
+  }
   if (!passage) return { stage: 'first', passedBy: null, next: other };
   const passedBy: Chamber = passage[1].toLowerCase() === 'senate' ? 'senate' : 'house';
   // The originating chamber passing its own bill is the ordinary case, and an
@@ -1229,7 +1247,8 @@ export function deriveJourney(
       }
       // 'second' — both chambers have passed it and the record does not say
       // whether the versions match, so the sentence says exactly that and
-      // names no next step. Unreachable on today's corpus (see passageState).
+      // names no next step. Reached by a second-chamber "Message on … action
+      // sent to the …" notice (see passageState).
       // NOT CLOCKED (N5), for the same reason `nowFloorActivityNeutral` is
       // not: it already claims only that the record has not said, which is a
       // statement about the record's silence and cannot go stale.

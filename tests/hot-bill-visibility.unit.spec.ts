@@ -237,6 +237,23 @@ test.describe('finished-floor status mapping (the crown outlived the vote)', () 
 });
 
 /*
+ * THE MESSAGE THAT FOLLOWS A PASSAGE (2026-09-24, H.Con.Res. 86). Agreed to
+ * by the House, then agreed to in the Senate 50-48 — and its last action,
+ * "Message on Senate action sent to the House.", read as `committee`, the
+ * stage it left months earlier. The notice runs in both directions.
+ */
+test.describe('post-passage message status mapping (an agreed resolution read as in committee)', () => {
+  test('the message in either direction is a passage stage', () => {
+    expect(mapStatus('Message on Senate action sent to the House.')).toBe('passed_chamber');
+    expect(mapStatus('Message on House action sent to the Senate.')).toBe('passed_chamber');
+  });
+
+  test('a committee sentence that merely mentions a message is untouched', () => {
+    expect(mapStatus('Referred to the House Committee on Rules.')).toBe('committee');
+  });
+});
+
+/*
  * A MEASURE UNDER FLOOR CONSIDERATION (2026-09-24, S. 4668). On the morning
  * the Senate was set to vote on cloture on S. 4668, its last action read
  * "Considered by Senate. (consideration: CR S4851)" and the corpus filed it as
