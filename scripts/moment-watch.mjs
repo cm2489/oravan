@@ -24,7 +24,7 @@
  * THE MEMORY IS THE FRAGILE HALF, and both of its failures have now been
  * written down as invariants rather than patched (see seenSetAfter): a slug
  * enters the set only when its issue exists, and a slug LEAVES the set only on
- * genuine signal loss — never because all six Moment slots happened to be
+ * genuine signal loss — never because all eight Moment slots happened to be
  * full, which used to erase the file wholesale and re-fire every candidate the
  * day a slot reopened.
  *
@@ -118,7 +118,7 @@ export const FLOORS = {
   maxLastActionAgeDays: 45,
 
   /* F4 — THERE IS SOMEWHERE TO PUT IT.
-     The 6-live cap is the scarcity claim the whole feature rests on. Pushing a
+     The 8-live cap is the scarcity claim the whole feature rests on. Pushing a
      candidate the owner cannot act on trains him to ignore the notification,
      which is the only way this mechanism actually fails. When slots are full,
      candidates still surface in the weekly digest. */
@@ -164,7 +164,7 @@ export function passesFloors(c, { now, openSlots }) {
     why.push(`last action ${age === Infinity ? 'undated' : `${age} days ago`}, limit ${FLOORS.maxLastActionAgeDays}`);
   }
   if (FLOORS.respectLiveCap && openSlots <= 0) {
-    why.push('no open Moment slots (6 live)');
+    why.push('no open Moment slots (8 live)');
   }
 
   return { pass: why.length === 0, why };
@@ -202,8 +202,8 @@ export function passesFloors(c, { now, openSlots }) {
  * THE SECOND INVARIANT: CAPACITY IS NOT FORGETTING (2026-08-09).
  *
  * The set used to be *replaced* by whatever qualified right now, and F4 —
- * respectLiveCap — zeroes "qualifying" the moment all six Moment slots are
- * full. Together those two say: **the night the owner fills the sixth slot,
+ * respectLiveCap — zeroes "qualifying" the moment all eight Moment slots are
+ * full. Together those two say: **the night the owner fills the last slot,
  * the watcher forgets every candidate it has ever issued**, and the next time
  * a slot frees, all of them re-fire as new. Concretely, on the corpus this
  * shipped against: seen = [s-3172-119, s-4668-119, s-4784-119], candidates
@@ -601,7 +601,7 @@ export const APPROVE_INSTRUCTIONS = (openSlots) => [
     ? []
     : [
         '',
-        `All 6 slots are full, so also comment \`/replace <moment-id>\` naming the question that retires. Without one the workflow will come back with the six ids and ask.`,
+        `All 8 slots are full, so also comment \`/replace <moment-id>\` naming the question that retires. Without one the workflow will come back with the eight ids and ask.`,
       ]),
   '',
   'If a gate objects — or the record moves before you get to it — nothing is written and the reason comes back here as a comment.',
@@ -757,7 +757,7 @@ async function main(argv) {
   /* Every slug that still LOOKS like a Big Question, whether or not there is a
      slot for it. Both the seen-set arithmetic and the digest's "dropped" line
      read this rather than `qualifyingSlugs`, because the live cap zeroes
-     qualifying whenever all six slots are full — and "we have nowhere to put
+     qualifying whenever all eight slots are full — and "we have nowhere to put
      it" is not a candidate dropping below the floor. See seenSetAfter. */
   const withSignal = slugsWithSignal(report, now);
   const dropped = seen.slugs.filter((s) => !withSignal.includes(s));

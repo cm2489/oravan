@@ -396,15 +396,17 @@ const momentsWith = (liveIds: string[], extra: Record<string, MomentRow> = {}) =
   for (const id of liveIds) out[id] = { name: { en: id, es: id }, status: 'live', review_by: '2026-12-01' };
   return { ...out, ...extra };
 };
-const SIX = ['a', 'b', 'c', 'd', 'e', 'f'];
+/* A FULL file: exactly LIVE_CAP live ids (six until the 2026-09-24 cap
+   ruling, eight since). Derived from the constant so the fixture follows it. */
+const FULL = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].slice(0, LIVE_CAP);
 
 test.describe('slot logic', () => {
   test('the cap this file reasons about is the cap the gate enforces', () => {
     // lib/moments-gate.mjs states the number inside a violation string rather
     // than as a constant, so it is asserted here rather than imported: a
-    // seventh live moment must fail the real gate at exactly LIVE_CAP + 1.
+    // one-past-the-cap live moment must fail the real gate at exactly LIVE_CAP + 1.
     const { violations } = checkMoments(
-      momentsWith([...SIX, 'g']),
+      momentsWith([...FULL, 'overflow']),
       { bill: new Set(), nomination: new Set() },
       () => undefined,
     );
@@ -416,29 +418,29 @@ test.describe('slot logic', () => {
     expect(d).toMatchObject({ ok: true, action: 'append', retire: null });
   });
 
-  test('with six live and no directive, it refuses and names all six', () => {
-    const d = slotDecision({ moments: momentsWith(SIX), newId: 'new' });
+  test('with every slot full and no directive, it refuses and names them all', () => {
+    const d = slotDecision({ moments: momentsWith(FULL), newId: 'new' });
     expect(d.ok).toBe(false);
     if (d.ok) return;
     expect(d.need).toBe('directive');
-    for (const id of SIX) expect(d.error).toContain(`\`${id}\``);
+    for (const id of FULL) expect(d.error).toContain(`\`${id}\``);
     expect(d.error).toContain('/replace <moment-id>');
   });
 
-  test('with six live and a valid directive, the named question retires', () => {
-    const d = slotDecision({ moments: momentsWith(SIX), replaceId: 'c', newId: 'new' });
+  test('with every slot full and a valid directive, the named question retires', () => {
+    const d = slotDecision({ moments: momentsWith(FULL), replaceId: 'c', newId: 'new' });
     expect(d).toMatchObject({ ok: true, action: 'replace', retire: 'c' });
   });
 
   test('a directive naming an already-retired question refuses — retiring it frees no slot', () => {
-    const moments = momentsWith(SIX, { old: { name: { en: 'old', es: 'old' }, status: 'retired' } });
+    const moments = momentsWith(FULL, { old: { name: { en: 'old', es: 'old' }, status: 'retired' } });
     const d = slotDecision({ moments, replaceId: 'old', newId: 'new' });
     expect(d.ok).toBe(false);
     if (!d.ok) expect(d.error).toContain('not live');
   });
 
   test('a directive naming nothing in the file refuses, and lists what is there', () => {
-    const d = slotDecision({ moments: momentsWith(SIX), replaceId: 'typo', newId: 'new' });
+    const d = slotDecision({ moments: momentsWith(FULL), replaceId: 'typo', newId: 'new' });
     expect(d.ok).toBe(false);
     if (!d.ok) expect(d.error).toContain('names no question');
   });
@@ -496,7 +498,7 @@ test.describe('slot logic', () => {
   });
 
   test('at the cap the directive is obeyed — it is only ever read there', () => {
-    const d = slotDecision({ moments: momentsWith(SIX), replaceId: 'c', newId: 'new' });
+    const d = slotDecision({ moments: momentsWith(FULL), replaceId: 'c', newId: 'new' });
     expect(d).toMatchObject({ ok: true, action: 'replace', retire: 'c', ignoredDirective: null });
   });
 
@@ -660,19 +662,19 @@ test.describe('applyEntry', () => {
   });
 
   test('retirement flips exactly one stored status and preserves key order', () => {
-    const before = momentsWith(SIX);
+    const before = momentsWith(FULL);
     const after = applyEntry(before, 'new', ENTRY, 'c');
-    expect(Object.keys(after)).toEqual([...SIX, 'new']);
+    expect(Object.keys(after)).toEqual([...FULL, 'new']);
     expect(after.c.status).toBe('retired');
     expect(Object.keys(after.c)).toEqual(Object.keys(before.c));
-    for (const id of SIX.filter((x) => x !== 'c')) expect(after[id].status).toBe('live');
+    for (const id of FULL.filter((x) => x !== 'c')) expect(after[id].status).toBe('live');
   });
 
   test('the input object is not mutated — a refusal after this point must leave the file readable', () => {
-    const before = momentsWith(SIX);
+    const before = momentsWith(FULL);
     applyEntry(before, 'new', ENTRY, 'c');
     expect(before.c.status).toBe('live');
-    expect(Object.keys(before)).toEqual(SIX);
+    expect(Object.keys(before)).toEqual(FULL);
   });
 });
 
@@ -763,7 +765,7 @@ test.describe('decide(), end to end', () => {
     expect(violations).toEqual([]);
   });
 
-  test('six full and no directive: it refuses, and the file it would have written is never built', async () => {
+  test('every slot full and no directive: it refuses, and the file it would have written is never built', async () => {
     const { body } = await realIssueBody();
     const full = structuredClone(momentsFile);
     // Pad to the cap with entries that are live and nothing else — the slot

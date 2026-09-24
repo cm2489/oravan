@@ -359,7 +359,7 @@ export function momentsForBill(moments: MomentWithState[], slug: string): Moment
  * reads, deliberately NOT a build-time reverse index: an index would freeze
  * the state this file's header exists to keep unfrozen, and a moment that
  * settles overnight would keep backlinking until somebody remembered to
- * rebuild it. The corpus is ≤6 moments with a handful of vehicles each, so
+ * rebuild it. The corpus is ≤8 live moments with a handful of vehicles each, so
  * the scan is free.
  */
 export function getMomentsForBill(slug: string, now: number = Date.now()): MomentWithState[] {

@@ -306,7 +306,7 @@ test.describe('the press bar', () => {
     expect(report.candidates.map((c: { slug: string }) => c.slug)).toEqual(['cross-1', 'neutral-1']);
     expect(report.funnel).toEqual({ covered: 6, tierQualified: 5, alreadyVehicle: 2, terminal: 1 });
     expect(report.histogram).toEqual({ cross: 4, neutral: 1, one_sided: 1, none: 0 });
-    expect(report.moments).toEqual({ live: 1, cap: 6, openSlots: 5 });
+    expect(report.moments).toEqual({ live: 1, cap: 8, openSlots: 7 });
     expect(report.standing_line).toContain('never creates, proposes, or drafts a Moment');
     // No conversation file passed: every candidate reads c0, which changes no
     // order. An absent evidence file is the normal state of a fresh clone.

@@ -63,7 +63,7 @@
  *   the signal aged out .......... `moments.whyCriteria` tells readers a
  *       question opens on a signal inside 45 days. Approving one on a
  *       51-day-old action publishes a page that contradicts its own criteria.
- *   six slots, no directive ...... the cap is the scarcity claim. Which one
+ *   all slots, no directive ...... the cap is the scarcity claim. Which one
  *       retires is an editorial decision, and it is his.
  *
  * ZERO NETWORK. Every input is a file: the issue body and its comments are
@@ -104,7 +104,7 @@ const DAY_MS = 86_400_000;
  * tests/moment-approve.unit.spec.ts rather than imported, because the gate
  * states it inside a violation string rather than as a constant.
  */
-export const LIVE_CAP = 6;
+export const LIVE_CAP = 8; // lib/moments-gate.mjs (`liveCount > 8`); raised from 6 by owner ruling 2026-09-24
 
 /** The directive that names which live question retires. Owner comments only. */
 export const REPLACE_RE = /^\s*\/replace\s+([a-z0-9][a-z0-9-]*)\s*$/i;
@@ -677,7 +677,7 @@ export function decide({ body, comments, moments, bills, nominations, owner, now
 
 const REFUSAL_HEAD = {
   scaffold: 'Nothing was published — this issue does not carry one approvable scaffold',
-  directive: 'Nothing was published — all six slots are full',
+  directive: `Nothing was published — all ${LIVE_CAP} slots are full`,
   'valid-directive': 'Nothing was published — the replace directive does not resolve',
   /* Its own heading since 2026-08-12. This case used to borrow
      `valid-directive`'s, so an id collision on an issue carrying NO directive

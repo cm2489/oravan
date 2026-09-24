@@ -353,5 +353,65 @@
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
     "status": "live"
+  },
+  "penny-production-and-cash-rounding": {
+    "name": {
+      "en": "Penny production and cash rounding",
+      "es": "Producción del centavo y redondeo en efectivo"
+    },
+    "summary": {
+      "en": "Should the law end the penny and round cash purchases to the nearest five cents? The U.S. Mint struck its last penny for circulation on November 12, 2025, and pennies remain legal tender. The Common Cents Act puts the end of penny production into law and sets rounding rules for cash payments only. Each chamber has passed its own version, but no single bill has passed both. The Senate passed S. 1525 by unanimous consent on August 7, 2026, and the House is holding it at the desk. The House passed H.R. 3074 by voice vote on July 14 and a revised bill, H.R. 10167, by voice vote on September 14; both sit in the Senate Banking Committee. There is no vote date on the record.",
+      "es": "¿Debe la ley eliminar el centavo y redondear las compras en efectivo a los cinco centavos más cercanos? La Casa de la Moneda de EE. UU. acuñó su último centavo para circulación el 12 de noviembre de 2025, y los centavos siguen siendo de curso legal. La Ley Common Cents lleva a la ley el fin de la producción del centavo y fija reglas de redondeo solo para pagos en efectivo. Cada cámara ha aprobado su propia versión, pero ningún proyecto ha sido aprobado por las dos. El Senado aprobó el S. 1525 por consentimiento unánime el 7 de agosto de 2026, y la Cámara lo tiene retenido en la mesa. La Cámara aprobó la H.R. 3074 por voto oral el 14 de julio y una versión revisada, la H.R. 10167, por voto oral el 14 de septiembre; ambas están en el Comité de Banca del Senado. No hay fecha de votación en el expediente."
+    },
+    "aliases": {
+      "en": [
+        "S. 1525",
+        "H.R. 10167",
+        "H.R. 3074"
+      ],
+      "es": [
+        "S. 1525",
+        "H.R. 10167",
+        "H.R. 3074"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "hr-10167-119",
+        "role": {
+          "en": "The newest version. The House passed it by voice vote on September 14, 2026, and the Senate referred it to the Banking Committee the next day. It ends production of pennies for circulation and rounds cash totals to the nearest five cents. A yes vote in the Senate sends it to the President; a no vote leaves current coinage law unchanged. There is no vote date on the record.",
+          "es": "La versión más reciente. La Cámara la aprobó por voto oral el 14 de septiembre de 2026, y el Senado la remitió al Comité de Banca al día siguiente. Pone fin a la producción de centavos para circulación y redondea los totales en efectivo a los cinco centavos más cercanos. Un voto a favor en el Senado la envía al Presidente; un voto en contra deja sin cambios la ley actual sobre monedas. No hay fecha de votación en el expediente."
+        }
+      },
+      {
+        "slug": "s-1525-119",
+        "role": {
+          "en": "The Senate's version, passed by unanimous consent on August 7, 2026. The House received it on August 10 and is holding it at the desk, which lets the House take it up directly without sending it to a committee. A yes vote in the House sends it to the President; a no vote leaves current coinage law unchanged. There is no vote date on the record.",
+          "es": "La versión del Senado, aprobada por consentimiento unánime el 7 de agosto de 2026. La Cámara la recibió el 10 de agosto y la mantiene retenida en la mesa, lo que le permite considerarla directamente sin enviarla a un comité. Un voto a favor en la Cámara la envía al Presidente; un voto en contra deja sin cambios la ley actual sobre monedas. No hay fecha de votación en el expediente."
+        }
+      },
+      {
+        "slug": "hr-3074-119",
+        "role": {
+          "en": "The House's first version, passed by voice vote on July 14, 2026. The Senate referred it to the Banking Committee on July 15, and it has had no action since. The House later passed a revised bill on the same subject, H.R. 10167. A yes vote in the Senate sends H.R. 3074 to the President; a no vote leaves current coinage law unchanged.",
+          "es": "La primera versión de la Cámara, aprobada por voto oral el 14 de julio de 2026. El Senado la remitió al Comité de Banca el 15 de julio y no ha tenido más acción. Después, la Cámara aprobó un proyecto revisado sobre el mismo tema, la H.R. 10167. Un voto a favor en el Senado envía la H.R. 3074 al Presidente; un voto en contra deja sin cambios la ley actual sobre monedas."
+        }
+      }
+    ],
+    "qualifying_signal": {
+      "type": "press",
+      "refs": [
+        "https://time.com/article/2026/07/16/common-cents-act-house-pass-penny/",
+        "https://www.washingtontimes.com/news/2026/jul/14/house-approves-bipartisan-bill-ban-production-penny/",
+        "https://www.cbsnews.com/news/common-cents-act-passed-house-penny-businesses/",
+        "https://www.congress.gov/bill/119th-congress/house-bill/10167/all-actions",
+        "https://www.congress.gov/bill/119th-congress/senate-bill/1525/all-actions",
+        "https://www.congress.gov/bill/119th-congress/house-bill/3074/all-actions"
+      ]
+    },
+    "opened": "2026-09-24",
+    "review_by": "2026-10-05",
+    "status": "live"
   }
 }
