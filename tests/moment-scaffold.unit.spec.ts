@@ -25,6 +25,10 @@ import { join } from 'node:path';
 // ZERO network. The Anthropic client is a stub; every other input is a file
 // already in the repo.
 import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mjs';
+// The read-but-claim-free reading, from the ONE copy (lib/floor-text.mjs) —
+// the totality sweep below has to exempt exactly what the nightly
+// journey-corpus sweep exempts, or the two disagree about the same sentence.
+import { FLOOR_SETTLED, floorMakesNoClaim } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -362,6 +366,41 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(signal.type).toBe('tier0_floor_action');
   });
 
+  /* ---------------------------------------------------------------- *
+   * The adopted rule (2026-09-23, issue #268). H.R. 4366's record,
+   * verbatim, as the nightly of 2026-09-22 refreshed it. The House
+   * adopting the special rule is the step after "Rule provides for
+   * consideration", which this matcher has read since 2026-08-09.
+   * ---------------------------------------------------------------- */
+  const ADOPTED_RULE_TEXT = 'Rule H. Res. 988 passed House.';
+
+  test('an adopted special rule is floor action — the step after the rule was reported', () => {
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, slug: 'hr-4366-119', url: 'https://www.congress.gov/bill/119th-congress/house-bill/4366' },
+      [],
+      { now: NOW_FLOOR, lastActionText: ADOPTED_RULE_TEXT },
+    );
+    expect(signal.type).toBe('tier0_floor_action');
+  });
+
+  /* The precision half of that rule, and the reason it cites the
+     resolution instead of matching "passed House": what passed is H. Res.
+     988, not the bill. A bill that has itself passed a chamber is a
+     SETTLED outcome, and calling it "the chamber is moving on the
+     measure" would be a pending claim over a finished fact. */
+  test('a bill that itself passed the House is not floor action — the rule pattern cannot reach it', () => {
+    for (const text of [
+      'Passed House by the Yeas and Nays: 220 - 210 (Roll no. 415).',
+      'On passage Passed by the Yeas and Nays: 218 - 214 (Roll no. 502).',
+      'Rule H. Res. 1175 failed passage of House.',
+    ]) {
+      expect(
+        floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text),
+        text,
+      ).toBe(false);
+    }
+  });
+
   test('a placement is never floor action — the narrower type wins, and tier0_floor is untouched', () => {
     const { signal } = signalFor(ON_CALENDAR, [], {
       now: NOW_NEAR,
@@ -398,6 +437,8 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     const isPlacement = (t?: string | null) =>
       /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.test(t ?? '');
     let activityOnly = 0;
+    let claimFree = 0;
+    let settledOutcome = 0;
     for (const b of bills) {
       const placement = isPlacement(b.last_action_text);
       const onFloor = b.status === 'floor_vote';
@@ -405,6 +446,55 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
         { status: b.status, floorCalendar: onFloor && placement },
         b.last_action_text ?? null,
       );
+      /*
+       * THE EXEMPTION, and why totality had to gain one (2026-09-18, issue
+       * #241). This matcher's header states its own premise: a `floor_vote`
+       * status is derived FROM the action text, "so this is never a
+       * committee-stage bill with a stray word in its sentence". The corpus
+       * falsified that on 2026-09-11. S. 1602's last action is a Senate
+       * SEQUENTIAL-REFERRAL order — the bill goes to a second committee, and
+       * the discharge and the calendar placement in it are the conditional
+       * consequence of a 30-session-day clock — and the keyword bucket read
+       * "placed on the calendar" out of that conditional clause and called
+       * the bill floor_vote. It is in committee. No chamber has acted on it
+       * on any floor.
+       *
+       * So the honest population is "floor_vote, not a placement, and not a
+       * shape we have READ and judged claim-free", and `floorMakesNoClaim`
+       * (lib/floor-text.mjs) is that reading — the same one the nightly
+       * journey-corpus sweep uses, deliberately, so the two cannot disagree
+       * about one sentence. Note which way this exemption points: a claim-free
+       * record must derive NOTHING, which is the stricter assertion, and a
+       * genuinely novel floor-action sentence is still unexempted and still
+       * fails this test. That is what the test is for.
+       */
+      if (onFloor && !placement && floorMakesNoClaim(b.last_action_text)) {
+        claimFree++;
+        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
+        continue;
+      }
+      /*
+       * THE SECOND EXEMPTION (2026-09-19): a SETTLED floor outcome. The
+       * nightly of 2026-09-19 refreshed S.J.Res. 71 and S.J.Res. 10 into
+       * `floor_vote` on "Failed of passage in Senate by Yea-Nay Vote" — the
+       * chamber acted on the measure, and the action was a defeat. That is
+       * not "the chamber MOVING on the measure" (tier0_floor_action, a
+       * pending fact); it is the answer. FLOOR_SETTLED (lib/floor-text.mjs,
+       * the one settled vocabulary four readers share) already reads it that
+       * way — chamber named or not, as in the House's "On motion to suspend
+       * the rules and pass the bill Failed by the Yeas and Nays" — so the
+       * scaffold must derive NOTHING
+       * for it. So a settled sentence that matches NO activity shape is
+       * excused from totality: it derives nothing, and nothing is the honest
+       * answer. It is NOT forced to false, because a settled sentence can
+       * also name the activity that settled it ("Motion to proceed ...
+       * rejected") and the matcher has always read that as floor action —
+       * that reading is pre-existing and stays.
+       */
+      if (onFloor && !placement && !derived && FLOOR_SETTLED.test(b.last_action_text ?? '')) {
+        settledOutcome++;
+        continue;
+      }
       if (onFloor && !placement) {
         activityOnly++;
         expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(true);
@@ -412,6 +502,9 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
         expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
       }
     }
+    // The exemption is a carve-out, never the rule: if it ever swallowed the
+    // whole population the assertion above would go vacuous.
+    expect(claimFree + settledOutcome).toBeLessThan(activityOnly);
     // Guards the guard: if the population ever empties, the loop above would
     // pass vacuously and stop meaning anything.
     expect(activityOnly).toBeGreaterThan(0);

@@ -1,68 +1,10 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-18T17:56:21.177Z"
+    "generated_at": "2026-09-23T19:17:29.722Z"
   },
   "government-funding-deadline": {
-    "updates": [
-      {
-        "id": "u_9085cf38",
-        "class": "floor_action",
-        "vehicle": "hr-9770-119",
-        "day": "2026-07-22",
-        "occurred_at": "2026-07-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The Senate received the funding bill on July 22, 2026.",
-          "es": "El Senado recibió el proyecto de financiamiento el 22 de julio de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/9770"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_212c0547",
-        "class": "vote",
-        "vehicle": "hr-9770-119",
-        "day": "2026-07-21",
-        "occurred_at": "2026-07-21",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The House passed H.R. 9770, the short-term funding extension, 220-205 on Roll Call 272.",
-          "es": "La Cámara aprobó la H.R. 9770, la extensión de financiamiento a corto plazo, 220-205 en la votación nominal 272."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
-            "https://clerk.house.gov/evs/2026/roll272.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272). (text: CR H4731-4733)",
-          "action_code": "H37100",
-          "action_type": "Floor",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 272
-          }
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_1856a409",
@@ -76,10 +18,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
           ]
@@ -101,10 +40,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770"
           ]
@@ -126,10 +62,7 @@
           "vehicle_statuses": {
             "hr-9770-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_9085cf38",
-            "u_212c0547"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/9770",
             "https://www.congress.gov/crs-report/R48832"
@@ -277,95 +210,34 @@
           "reanchor:8d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_9353daca",
+        "generated_at": "2026-09-22T18:28:53.370Z",
+        "as_of_day": "2026-09-22",
+        "text": {
+          "en": "Where it stands: H.R. 9770 has passed one chamber. No further action has been recorded in the last 14 days. The bill remains at that stage, with no committee action, no floor vote in a second chamber, and no other change to report since it passed one chamber. There is nothing new to add beyond that current status. Readers tracking this bill can expect this notice to update once the record shows a new vote, a committee action, or another formal step in either chamber. Until then, passed one chamber is the accurate and complete description of where this measure sits right now, based solely on the official record available for this period.",
+          "es": "Dónde está: el proyecto H.R. 9770 ha sido aprobado por una cámara. No se ha registrado ninguna otra acción en los últimos 14 días. El proyecto permanece en esa etapa, sin acción de comité, sin votación en el pleno de una segunda cámara y sin ningún otro cambio que reportar desde que fue aprobado por una cámara. No hay nada nuevo que agregar más allá de ese estado actual. Los lectores que sigan este proyecto pueden esperar que este aviso se actualice cuando el registro muestre una nueva votación, una acción de comité u otro paso formal en cualquiera de las cámaras. Hasta entonces, aprobado por una cámara describe con exactitud dónde se encuentra esta medida en este momento, según el registro oficial disponible para este período."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
   "iran-war-powers": {
-    "updates": [
-      {
-        "id": "u_19ae0eba",
-        "class": "vote",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The House adopted H. Con. Res. 89, 214-208, on Roll Call 282.",
-          "es": "La Cámara aprobó la H. Con. Res. 89, 214-208, en la votación nominal 282."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
-            "https://clerk.house.gov/evs/2026/roll282.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 214 - 208 (Roll no. 282).",
-          "action_code": "H37100",
-          "action_type": "Floor",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 282
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_c95bb4da",
-        "class": "floor_action",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T06:20:00Z",
-        "text": {
-          "en": "The Senate received the resolution on July 23, 2026 and referred it to the Committee on Foreign Relations.",
-          "es": "El Senado recibió la resolución el 23 de julio de 2026 y la remitió al Comité de Relaciones Exteriores."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate and referred to the Committee on Foreign Relations.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_7b6f9d34",
-        "class": "scheduled",
-        "vehicle": "hconres-89-119",
-        "day": "2026-07-22",
-        "occurred_at": "2026-07-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-07-25T07:06:54.754Z",
-        "text": {
-          "en": "H. Con. Res. 89 was added to the House floor schedule for the week of July 20, 2026.",
-          "es": "La H. Con. Res. 89 fue añadida al calendario del pleno de la Cámara para la semana del 20 de julio de 2026."
-        },
-        "source": {
-          "kind": "tier0_feed",
-          "refs": [
-            "https://docs.house.gov/billsthisweek/20260720/20260720.xml"
-          ]
-        },
-        "record": {
-          "action_text": "H. Con. Res. 89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
-          "action_code": null,
-          "action_type": "Items that may be considered",
-          "source_system": "docs.house.gov floor schedule, week of 2026-07-20"
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_d26a6b43",
@@ -382,10 +254,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185"
@@ -411,11 +280,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -446,11 +311,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -480,11 +341,7 @@
             "hconres-38-119": "committee",
             "hconres-89-119": "passed_chamber"
           },
-          "update_ids": [
-            "u_19ae0eba",
-            "u_c95bb4da",
-            "u_7b6f9d34"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
             "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
@@ -650,6 +507,35 @@
         "text": {
           "en": "Where it stands: four measures sit at the status recorded, with nothing new logged in the last 14 days. S.J.Res. 185 and S.J.Res. 172 each show floor activity. H. Con. Res. 38 remains in committee. H. Con. Res. 89 has passed one chamber. No votes, tallies, or roll-call numbers were recorded for any of the four measures during this period. Readers tracking these items will see the same status today as in the prior update, since the record contains no entries for this window. When new floor votes, committee actions, or roll calls are recorded, the status lines above will change to reflect them.",
           "es": "Dónde está el asunto: cuatro medidas permanecen en el estado registrado, sin nada nuevo anotado en los últimos 14 días. S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno. H. Con. Res. 38 sigue en comité. H. Con. Res. 89 fue aprobado por una cámara. No se registraron votaciones, conteos ni números de votación nominal para ninguna de las cuatro medidas durante este período. Quienes sigan estos temas verán hoy el mismo estado que en la actualización anterior, ya que el registro no contiene entradas para esta ventana. Cuando se registren nuevas votaciones en el pleno, acciones de comité o votaciones nominales, las líneas de estado anteriores cambiarán para reflejarlo."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "committee",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_71587d77",
+        "generated_at": "2026-09-22T18:28:47.525Z",
+        "as_of_day": "2026-09-22",
+        "text": {
+          "en": "Where it stands: two Senate joint resolutions, S.J.Res. 185 and S.J.Res. 172, sit at Floor activity, with no recorded action in the last 14 days. In the House, H. Con. Res. 38 remains In committee, also with nothing recorded in this window. H. Con. Res. 89 has reached Passed one chamber, its most recent recorded status, with no further movement logged in the last 14 days. No votes, tallies, or roll-call numbers were recorded for any of these measures during this period. Readers can expect updates here as soon as new floor or committee action is entered into the record for these four measures.",
+          "es": "Cómo están las cosas: dos resoluciones conjuntas del Senado, S.J.Res. 185 y S.J.Res. 172, se encuentran en Actividad en el pleno, sin ninguna acción registrada en los últimos 14 días. En la Cámara de Representantes, H. Con. Res. 38 permanece En comité, también sin nada registrado en este período. H. Con. Res. 89 alcanzó el estatus de Aprobado por una cámara, su registro más reciente, sin movimiento adicional en los últimos 14 días. No se registraron votaciones, conteos ni números de votación nominal para ninguna de estas medidas durante este período. Aquí se reflejarán actualizaciones tan pronto se registre nueva actividad en el pleno o en comité para estas cuatro medidas."
         },
         "grounded_in": {
           "vehicle_statuses": {
@@ -870,6 +756,61 @@
   "paying-college-athletes": {
     "updates": [
       {
+        "id": "u_fcb078e5",
+        "class": "scheduled",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-23",
+        "occurred_at": "2026-09-23",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, estaba programada para el 23 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/23/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c6a1ebcb",
+        "class": "status_change",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "The Senate considered S. 4668 on September 22, 2026.",
+          "es": "El Senado consideró S. 4668 el 22 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Considered by Senate. (consideration: CR S4851)",
+          "action_code": null,
+          "action_type": "latestAction",
+          "source_system": "Congress.gov bill detail",
+          "status_from": "floor_vote",
+          "status_to": "committee"
+        },
+        "ai": true
+      },
+      {
         "id": "u_a3cc6ca3",
         "class": "vote",
         "vehicle": "s-4668-119",
@@ -897,6 +838,32 @@
             "chamber": "senate",
             "number": 236
           }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_05246d80",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A cloture motion on S. 4668 was presented in the Senate on September 17, 2026.",
+          "es": "Una moción de cierre sobre S. 4668 fue presentada en el Senado el 17 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate. (CR S4789)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
         },
         "ai": true
       },
@@ -953,6 +920,32 @@
         "ai": true
       },
       {
+        "id": "u_d15dae4c",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 17, 2026.",
+          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 17 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4773-4774)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
         "id": "u_f0db9993",
         "class": "floor_action",
         "vehicle": "s-4668-119",
@@ -972,6 +965,32 @@
         },
         "record": {
           "action_text": "Cloture motion on the measure presented in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_48567655",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-16",
+        "occurred_at": "2026-09-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 16, 2026.",
+          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 16 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4743)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
@@ -1305,6 +1324,42 @@
           "updates:+5"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c0bcbd35",
+        "generated_at": "2026-09-23T19:17:36.831Z",
+        "as_of_day": "2026-09-23",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, is in committee, though Senate floor activity over the past two weeks moved the bill further than that status alone shows. On September 15, cloture on the motion to proceed was invoked by a recorded vote of 74 to 24 (Roll no. 235). On September 17, a cloture motion on the measure and on amendment SA 6776 was presented, and the motion to proceed was agreed to by a recorded vote of 77 to 22 (Roll no. 236). The Senate then considered the measure on September 22, with further consideration scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección al Deporte Universitario de 2026, está en comité, aunque la actividad en el pleno del Senado durante las últimas dos semanas llevó el proyecto más allá de lo que ese estado por sí solo muestra. El 15 de septiembre se invocó la clausura sobre la moción para proceder por votación nominal de 74 a 24 (votación núm. 235). El 17 de septiembre se presentó una moción de clausura sobre la medida y sobre la enmienda SA 6776, y la moción para proceder fue aprobada por votación nominal de 77 a 22 (votación núm. 236). El Senado consideró luego la medida el 22 de septiembre, con otra sesión de consideración programada para el 23 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "committee"
+          },
+          "update_ids": [
+            "u_fcb078e5",
+            "u_c6a1ebcb",
+            "u_a3cc6ca3",
+            "u_05246d80",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_d15dae4c",
+            "u_f0db9993",
+            "u_48567655",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→committee",
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1330,84 +1385,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4276)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_2f78803a",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 23, 2026, a motion to proceed to consideration of S. 4784 was withdrawn in the Senate.",
-          "es": "El 23 de julio de 2026, se retiró en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure withdrawn in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_7c9b308c",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-23",
-        "occurred_at": "2026-07-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 23, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 23 de julio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4241-4242)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_9a354fe9",
-        "class": "floor_action",
-        "vehicle": "s-4784-119",
-        "day": "2026-07-20",
-        "occurred_at": "2026-07-20",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-10T21:55:00.801Z",
-        "text": {
-          "en": "On July 20, 2026, a motion to proceed to consideration of S. 4784 was made in the Senate.",
-          "es": "El 20 de julio de 2026, se presentó en el Senado una moción para proceder a la consideración de S. 4784."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4145)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"

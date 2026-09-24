@@ -291,9 +291,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // and for the same reason: components/system reads no data. An ANNOUNCED
   // candidate is exempt by construction — a chamber that published a schedule
   // naming a bill is meeting — and that exemption lives in `floorFactSuspended`.
+  // THE FIFTH CONDITION (owner decision D13, 2026-09-18): an announcement the
+  // chamber's own vote has already SPENT is not a live fact. The resolver now
+  // takes the bill so it can run the ladder's gate rather than the signal file's
+  // — see `announcementFor` — which is why a bill the House passed on Tuesday
+  // stops wearing "On the House floor schedule" for the rest of the week.
   const feature = selectFloorVoteFeature(
     getFloorFeatureCandidates(locale),
-    (b) => announcementFor(billSlug(b)),
+    (b) => announcementFor(b, billSlug(b)),
     (c) => chamberSession(c)
   );
   const signalsCheckedAt = floorSignalsCheckedAt();

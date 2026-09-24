@@ -43,3 +43,58 @@ stalled cursor is a statement about PROGRESS, not about corpus integrity, and
 failing it before the commit made a stalled night discard its own already-paid
 decodes, coverage and nominations, which made the backlog it was complaining
 about strictly worse. The run still goes red; the data still lands.
+
+*Amended 2026-09-18 — the second freeze, caused by the first fix's own
+mechanism.* The high-water mark above is `toISODateTime(u.updateDate)`, and the
+bill-list `updateDate` is a bare DATE, so the mark is the MIDNIGHT of the last
+finished bill's day. When the cursor already sits INSIDE that day, midnight is
+*behind* it; the monotonic clamp (added 2026-08-12) holds it where it was, and
+the night makes zero progress. From 2026-09-08 to 2026-09-18 that is exactly
+what happened: 1,340 tracked bills carry the 2026-09-08 `updateDate`, so the
+oldest-500 slice could never reach a later day, `lastSync` sat at
+2026-09-08T17:54:31Z for ten nights, and the 09-18 nightly went red on
+`check-cursor-age.mjs` with no self-healing path — raising `max_updates` by hand
+was the only exit.
+
+**Fix.** A calendar day is the finest grain the list offers, so the run now
+*finishes the day*: the page loop keeps paging past `MAX_UPDATES` while
+everything fetched still sits on one day (bounded by `MAX_DAY_COMPLETION`), the
+processing slice is extended to the end of that day (`planAscendingWindow`), and
+once a day is provably finished the mark becomes the **end** of it
+(`endOfDayCursor`) rather than its own midnight. The extension is affordable
+because it is made of refreshes and gate verdicts — free Congress.gov calls;
+the only paid work, a new-bill decode, is still capped by `MAX_NEW_DECODES`, and
+a bill past that budget still freezes the cursor exactly as before.
+
+**What the freeze was hiding.** Measured with the new `SYNC_DRY_RUN` sizing mode
+on 2026-09-18: of the 962 new bills dated 2026-09-08, the 334 inside the
+current cap contain **0** that clear the priority decode gate — which is why
+every nightly reported "0 added, 0 queued" and looked healthy. The 628 beyond
+the cap contain roughly **105** that do, and they are `passed_chamber` records
+("Received in the Senate", "Held at the desk"). The stall was not just late; it
+was invisible *because* the part of the day it could reach was the boring part.
+
+*Amended 2026-09-19 — the rule moved, the rule did not change.* The nightly's
+new-bill decodes now go through the Message Batches API, which means a bill's
+outcome is no longer known when the ascending loop walks past it: a queued
+decode is neither handled nor failed until the drain resolves it. Guessing was
+not available in either direction — assume success and a failed decode advances
+the cursor past a bill that never entered the corpus, which is the failure this
+document exists for; assume failure and one queued bill freezes the whole
+night's backlog. So the loop stopped deciding. It writes **one row per fetched
+bill, in window order** — `{updateDate, day, slug, needsWork}`, dedupes
+included — and `resolveCursorRows` (exported from `scripts/sync-bills.mjs`,
+pinned in `tests/sync-cursor.unit.spec.ts` and `tests/decode-batch.unit.spec.ts`)
+applies **both** the freeze rule and the day-walk over those rows once the drain
+has finished. A row needs work when its own `needsWork` is set *or* its slug is
+in the drain's failure set.
+
+Two things about that are load-bearing. First, **every** bill of the window gets
+a row, including the ones the recent-first pass already resolved: the dedupe
+branch writes nothing and decides nothing, and without a row carrying its slug a
+pass-1 bill whose batched decode failed would have been walked straight past.
+Second, the caller reads `frozen` **after** the drain and `plan.dayComplete`
+from the **fetched window** — `finishedDay = (!frozen && plan.dayComplete) ?
+plan.completedDay : lastFullDay` — because "the next bill Congress handed us is
+on a later day" is a fact about the fetch that no drain outcome can change,
+while "this run finished that day" is exactly what a failed decode withdraws.

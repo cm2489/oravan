@@ -75,12 +75,28 @@
  * first-party and server-side — lib/usage.ts's pageview family, incremented
  * in proxy.ts, one counter per ROUTE TEMPLATE per UTC day — not Vercel Web
  * Analytics, whose REST API requires the @vercel/analytics client script
- * that CLAUDE.md permanently bans (Vercel's server-side Observability, the
- * other compliant source, has no REST API at all). Until then the digest
- * said "site page-view traffic: not measured" every day; it now says where
- * the numbers come from, and what they are not (requests, bots included,
- * never unique visitors). Descriptive only: no spike or decline check runs
- * on this series — see lib/traffic-metrics.mjs's formatSiteLines for why.
+ * that CLAUDE.md permanently bans. Until then the digest said "site
+ * page-view traffic: not measured" every day; it now says where the numbers
+ * come from, and what they are not (requests, bots included, never unique
+ * visitors). Descriptive only: no spike or decline check runs on this series
+ * — see lib/traffic-metrics.mjs's formatSiteLines for why.
+ *
+ * CORRECTED 2026-09-18 (kept through the site-counter merge). An earlier
+ * version of this header said Vercel's server-side Observability "has no
+ * REST API at all", and that stopped being true: `vercel metrics` (CLI,
+ * --format json, public beta 2026, requires Observability Plus) exposes the
+ * compliant server-side numbers programmatically, and runtime logs can be
+ * aggregated over the API as well. This digest does not read that source;
+ * adopting it would need a plan tier and a token, and the first-party
+ * counter needs neither. A shipped claim that has stopped being true is a
+ * conflict, not a detail (CLAUDE.md, "Constitutional conflicts").
+ *
+ * PIPELINE HEALTH (2026-09) rides along on this same run, the same way issue
+ * hygiene does and for the same reason: this is the job that already runs
+ * every morning holding the token it needs. It appends one "Pipeline health"
+ * section to the digest comment and maintains ONE standing issue. Additive by
+ * construction — any failure warns, omits the section, touches no issue, and
+ * never fails the digest.
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -111,6 +127,14 @@ import {
   spikeIssueContent,
   sumWindows,
 } from '../lib/traffic-metrics.mjs';
+import {
+  HEALTH_ISSUE_LABEL,
+  HEALTH_ISSUE_TITLE,
+  formatHealthAlarmComment,
+  formatHealthIssueBody,
+  formatHealthSection,
+} from '../lib/pipeline-health.mjs';
+import { buildReport } from './pipeline-health.mjs';
 
 const REPO = 'cm2489/oravan';
 
@@ -342,6 +366,121 @@ function closeStaleSpikeIssues(closable, { digestIssue }) {
 }
 
 /**
+ * PIPELINE HEALTH — collection. Same additive posture as collectIssueHygiene
+ * above, and the same reason: a missing health section is a missing
+ * convenience, while the counters read stays fail-LOUD because a wrong usage
+ * number is a lie about the product.
+ *
+ * buildReport() guards each of its own reads individually and renders a
+ * failed one as "not found", so reaching the catch here means something
+ * structural broke (gh gone, the repo unreadable). Either way the digest
+ * posts exactly as it did before this existed.
+ *
+ * @returns {{ report: object, section: string } | null}
+ */
+function collectPipelineHealth() {
+  try {
+    const report = buildReport();
+    return { report, section: formatHealthSection(report) };
+  } catch (e) {
+    console.log(
+      `::warning::pipeline health skipped — the report could not be built (${e.message}). The digest itself is unaffected: no section appended, no issue touched.`
+    );
+    return null;
+  }
+}
+
+/**
+ * The ONE standing health issue. A pipeline's condition is a STATE, so it
+ * gets a single issue whose body is rewritten every run — the same shape rule
+ * the traffic-decline issue follows, and for the reason
+ * refresh-legislators.yml's redistricting watch banked first: a state that
+ * files one issue per run leaves ten near-identical issues open and stops
+ * being read.
+ *
+ * The dated comment is the exception, and it is reserved: it appears ONLY on
+ * a day with a ⛔ condition, because a comment is a notification and a
+ * notification that arrives every morning is one nobody opens.
+ *
+ * Every step is individually guarded and runs AFTER the digest comment is
+ * posted. The digest is the job; this is the courtesy, and the courtesy must
+ * never be able to cost the job.
+ */
+function maintainHealthIssue(report) {
+  try {
+    const raw = gh([
+      'issue',
+      'list',
+      '--repo',
+      REPO,
+      '--state',
+      'open',
+      '--search',
+      `in:title "${HEALTH_ISSUE_TITLE}"`,
+      '--json',
+      'number,title,url',
+    ]).trim();
+    const matches = raw ? JSON.parse(raw) : [];
+    const existing = matches.find((m) => m.title === HEALTH_ISSUE_TITLE) ?? null;
+    const bodyFile = writeTempFile(formatHealthIssueBody(report));
+
+    let issueNumber;
+    let issueUrl;
+    if (existing) {
+      gh(['issue', 'edit', String(existing.number), '--repo', REPO, '--body-file', bodyFile]);
+      issueNumber = existing.number;
+      issueUrl = existing.url;
+      console.log(`pipeline health: standing issue #${issueNumber} body rewritten`);
+    } else {
+      issueUrl = gh([
+        'issue',
+        'create',
+        '--repo',
+        REPO,
+        '--title',
+        HEALTH_ISSUE_TITLE,
+        '--label',
+        HEALTH_ISSUE_LABEL,
+        '--body-file',
+        bodyFile,
+      ]).trim();
+      issueNumber = Number.parseInt(issueUrl.split('/').pop() ?? '', 10);
+      console.log(`pipeline health: opened the standing issue ${issueUrl}`);
+      // Pinning is best-effort: GitHub allows at most three pinned issues per
+      // repo, so a full board must not turn a healthy run red.
+      try {
+        gh(['issue', 'pin', '--repo', REPO, String(issueNumber)]);
+      } catch (e) {
+        console.log(`::warning::pipeline health: could not pin the standing issue (${e.message}) — body is still current.`);
+      }
+    }
+
+    const list = report.alarms ?? [];
+    if (!list.length) {
+      console.log('pipeline health: no ⛔ conditions — body refreshed, no comment posted');
+      return issueUrl;
+    }
+    const date = (report.generatedAt ?? new Date().toISOString()).slice(0, 10);
+    const marker = `<!-- pipeline-health:${date} -->`;
+    if (Number.isFinite(issueNumber) && hasCommentWithMarker(issueNumber, marker)) {
+      console.log(`pipeline health: today's (${date}) ⛔ comment already posted — body refreshed only`);
+      return issueUrl;
+    }
+    const commentFile = writeTempFile(
+      formatHealthAlarmComment({ date, alarms: list, runUrl: process.env.HEALTH_RUN_URL })
+    );
+    gh(['issue', 'comment', String(issueNumber), '--repo', REPO, '--body-file', commentFile]);
+    console.log(`pipeline health: ${list.length} ⛔ condition(s) — dated comment appended to ${issueUrl}`);
+    return issueUrl;
+  } catch (e) {
+    console.log(
+      `::warning::pipeline health: the standing issue could not be maintained (${e.message}) — the digest comment still carries the section.`
+    );
+    return null;
+  }
+}
+
+/**
  * Same-day idempotency (an accidental workflow_dispatch re-run on a day
  * that already posted): if the pinned issue's LAST comment already carries
  * today's `<!-- daily-metrics:YYYY-MM-DD -->` marker, edit it in place
@@ -512,7 +651,19 @@ async function main() {
   // failure, in which case the digest posts exactly as it did before this
   // existed.
   const hygiene = collectIssueHygiene(new Date());
-  postOrEditTodaysComment(issueNumber, date, hygiene ? `${body}\n\n${hygiene.section}` : body);
+
+  // Pipeline health, read once and appended to the SAME comment — one place
+  // to look each morning rather than a third notification. Null on any
+  // failure, in which case the digest posts exactly as it did before this
+  // existed.
+  const health = collectPipelineHealth();
+
+  const sections = [body, hygiene?.section, health?.section].filter(Boolean);
+  postOrEditTodaysComment(issueNumber, date, sections.join('\n\n'));
+
+  // The standing health issue is maintained AFTER the digest comment lands,
+  // for the same reason the stale-spike cleanup is: the digest is the job.
+  const healthIssueUrl = health ? maintainHealthIssue(health.report) : null;
 
   // Closes happen AFTER the digest is safely posted: the digest is the job,
   // the cleanup is the courtesy, and the courtesy must never be able to
@@ -520,7 +671,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 

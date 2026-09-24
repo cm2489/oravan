@@ -355,6 +355,8 @@ import {
   tier0SeenKey,
   UNRESOLVED_OUTLET,
 } from './newsdesk-match.mjs';
+import { classifyApiError } from './api-billing.mjs';
+import { bumpCounter, recordApiError, setCounter } from './run-counters.mjs';
 
 // ---- Press-fire decode budget (unchanged from the 2026-07-16 design) ----
 const NEWSDESK_DECODE_CAP = Number(process.env.NEWSDESK_DECODE_CAP ?? 3);
@@ -546,6 +548,21 @@ function saveCache(cache) {
  *  own short candidate lists. Never trusts a slug the batch didn't offer -
  *  a hallucinated slug from the model can't enter the pipeline. */
 async function resolveWithHaiku(anthropic, batch) {
+  // Counters, not log prose, are what the post-commit honesty alarm reads
+  // (scripts/check-run-honesty.mjs). The two graceful degradations below are
+  // correct for the RUN - no headline may cost a bill its refresh - and that
+  // is exactly why the run must record that the tier went dark, or an hour
+  // with a dead t3 reads identically to a quiet news hour.
+  //
+  // WRITTEN BEFORE THE EMPTY-BATCH RETURN, and that placement is the whole
+  // point (2026-09-18, verifier fix). This is the only counter the newsdesk
+  // job writes on its common path - most hourly runs batch nothing and decode
+  // nothing, so nothing else here calls run-counters at all. Behind the early
+  // return, a quiet hour left NO counter file, and check-run-honesty.mjs reads
+  // an absent file as `instrumented: false` and reds the run. That would have
+  // painted most of the 24 hourly runs a day red for being quiet - exactly the
+  // alarm fatigue this alarm's own header forbids. Zero is a measurement.
+  setCounter('t3Batched', batch.length);
   if (batch.length === 0) return new Map(); // skip t3 entirely - zero API calls
   const prompt = batch
     .map((b, i) => `${i}. HEADLINE: ${b.title}\n   CANDIDATES: ${b.candidates.map((c) => `${c.slug} = ${c.title}`).join(' | ')}`)
@@ -564,6 +581,8 @@ Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slu
     text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
   } catch (e) {
     console.error(`t3 Haiku call failed: ${e.message}`);
+    recordApiError(classifyApiError(e));
+    bumpCounter('t3Failed');
     return new Map(); // degrade gracefully - no t3 matches this run
   }
   try {
@@ -576,9 +595,13 @@ Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slu
         if (validOffer) out.set(row.i, row.slug);
       }
     }
+    setCounter('t3Resolved', out.size);
     return out;
   } catch (e) {
     console.error(`t3 JSON parse failed: ${e.message}`);
+    // A reply the parser cannot read is the tier being dark just as surely as
+    // a thrown request is - the batch was offered and nothing came back.
+    bumpCounter('t3Failed');
     return new Map();
   }
 }
@@ -945,6 +968,7 @@ for (const cand of candidates) {
     lastActionDate: bill.last_action_date ?? null,
     corpusTitle: bill.title,
     fetchedTitle,
+    textVerifiedAt: bill.decode_text_verified_at ?? null,
   });
   if (!verdict.redecode) continue;
   if (cache.seen.has(failedDecodeKey(cand.slug, todayUTC))) {
@@ -1071,6 +1095,7 @@ for (const slug of redecodeQueue) {
       lastActionDate: bill.last_action_date ?? null,
       corpusTitle: bill.title,
       fetchedTitle,
+      textVerifiedAt: bill.decode_text_verified_at ?? null,
     });
   let verdict = judge();
   // The stamp alone said no. The remaining question is the expensive-to-miss

@@ -103,7 +103,12 @@ export function docketedAt(at: number) {
  * construction — a rejected motion to proceed, cloture not invoked, a withdrawn
  * measure all fail the T1 rung's settled guard and land on T4 with a
  * `just_decided` annotation. That is the same exclusion the pre-ladder pool
- * made with an explicit filter; it is now structural.
+ * made with an explicit filter; it is now structural. Since owner decision D13
+ * (2026-09-18) the same exclusion reaches T0: an ANNOUNCED bill whose record
+ * shows the announcing chamber already voted, dated inside the week the
+ * announcement covers, stops being announced and is placed by its own record
+ * instead (`announcementAnswered` in lib/docket.mjs). This mirror calls
+ * `docketRung` itself, so it inherits both guards rather than restating them.
  *
  * NOTE THE POOL IS NOT THE LEAD BAND. /bills' "Deciding now" band is T0 ∪ T1
  * (`decidingNowAt` below); the pool is one rung wider. See lib/docket.mjs's

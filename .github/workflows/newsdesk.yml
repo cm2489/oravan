@@ -21,6 +21,17 @@ name: Newsdesk headline trigger
 # directive. Actions minutes: $0 (public repo, unlimited free minutes on
 # standard runners). Full typical/busy/hard-ceiling breakdown in
 # scripts/newsdesk.mjs's header comment and the introducing PRs' reports.
+#
+# DISPATCHED, NOT ONLY SCHEDULED (2026-09-18, newsdesk-delivery package): the
+# hourly cron above delivered only 76 of 336 scheduled runs over
+# 2026-08-27..09-10 (22.6%; max gap 13.27h), so hot-bills.yml and
+# sync-bills.yml each `gh workflow run newsdesk.yml` after their own commit,
+# guaranteeing 3 extra fires/day on top of whatever the starved cron manages.
+# Costs nothing extra: NEWSDESK_DAILY_DECODE_CAP/NEWSDESK_TIER0_DAILY_DECODE_CAP
+# above are a true DAILY total (scripts/newsdesk.mjs's cache.dailyDecodes,
+# persisted across every run of this workflow regardless of trigger), so more
+# fires only spend the same daily ceiling sooner and more reliably, never a
+# larger one.
 
 on:
   schedule:
@@ -45,6 +56,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # THE BRANCH TIP, NOT THE EVENT SHA (2026-09-18). Without `ref:`,
+          # actions/checkout checks out `github.sha` - the SHA main carried when
+          # the RUN WAS CREATED. Every member of the data-sync concurrency group
+          # queues behind the others, so a run can sit pending while another
+          # member (the nightly sync, hot-bills, moment-watch) pushes to main,
+          # and then start work against a corpus that is already one or two
+          # commits stale. Its own commit is then unpushable: data/bills.json
+          # and data/bills-es.json are single-line 10MB minified JSON, so ANY
+          # concurrent edit to either is a content conflict 100% of the time,
+          # and the rebase below is right to refuse to guess at a corpus.
+          #
+          # That is how the nightlies of 2026-09-14 (run 34886281500) and
+          # 2026-09-16 (run 35132794181) died - in both cases against a commit
+          # THIS workflow had pushed minutes BEFORE the nightly's job started,
+          # so there was no race to survive, only a stale pin to not take. The
+          # same pin is over this workflow too: an hourly run queued behind a
+          # 70-minute nightly checks out whatever main held when it was created.
+          #
+          # Naming the branch makes checkout fetch and check out its CURRENT
+          # tip instead, which closes that window entirely; the concurrency
+          # group already prevents a second data workflow from pushing WHILE
+          # this one runs. The rebase-retry loop in the commit step stays as
+          # the backstop for an outside push (a PR merge touching data/).
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v6
         # Needs npm ci (not stdlib-only like hot-bills.yml): scripts/newsdesk.mjs
         # constructs its own Anthropic client for the t3 disambiguation call
@@ -68,6 +104,17 @@ jobs:
           key: newsdesk-seen-${{ github.run_id }}
           restore-keys: |
             newsdesk-seen-
+      - name: Point the run's scripts at a counter file
+        # WHY A FILE. The post-commit honesty alarm has to answer "did any
+        # Anthropic call die on a credit balance tonight" and "did the newsdesk's
+        # t3 call come back at all". Both are known inside the scripts and
+        # nowhere else once they exit; scraping the step logs for them would
+        # mean a regex over prose that stops matching the day someone rewords a
+        # message, which is worse than no gate. RUNNER_TEMP is wiped with the
+        # runner, so nothing leaks between runs and nothing can be committed.
+        # scripts/run-counters.mjs is a total no-op when this is unset, which is
+        # every local run.
+        run: echo "RUN_COUNTERS_FILE=$RUNNER_TEMP/oravan-run-counters.json" >> "$GITHUB_ENV"
       - name: Collect floor signals (the T0 announcement layer)
         # Runs BEFORE the newsdesk, because the newsdesk's re-decode trigger
         # reads data/floor-signals.json to decide which bills are about to be
@@ -212,4 +259,15 @@ jobs:
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref main
+        run: node scripts/dispatch-ci.mjs
+      - name: Run-honesty alarm (post-commit - reds the run, never blocks the data)
+        # Same post-commit placement and the same N8-A2 reasoning as
+        # sync-bills.yml: the headlines and Moment updates this run collected
+        # are already on main before this runs. It fires when an Anthropic call
+        # died on the account's credit balance or another invalid_request_error,
+        # or when the t3 disambiguation call itself died with a non-empty batch
+        # waiting on it - scripts/newsdesk.mjs degrades that to zero matches on
+        # purpose, which is right for the run and is exactly why a dark t3 tier
+        # must not also look like a quiet news hour.
+        if: always()
+        run: node scripts/check-run-honesty.mjs newsdesk

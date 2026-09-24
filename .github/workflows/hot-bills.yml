@@ -26,11 +26,22 @@ on:
     #    three hours after the record was already sitting there.
     # 2. CRON DRIFT IS ONE-DIRECTIONAL. GitHub's scheduler on this repo has
     #    drifted from +17 min to +3h27m (the old '0 22' once fired at 01:27
-    #    UTC) and is worst at the top of the hour - but it NEVER fires
-    #    early. So the earliest safe minute is the first one at or after the
-    #    latest observed publication plus margin: 13:47. Under typical drift
-    #    the job lands 14:04-14:30 UTC (~09:04-09:30 ET); under the worst
-    #    observed drift it still lands the same day, just later.
+    #    UTC) - but it NEVER fires early. So the earliest safe minute is the
+    #    first one at or after the latest observed publication plus margin:
+    #    13:47. Under typical drift the job lands 14:04-14:30 UTC
+    #    (~09:04-09:30 ET); under the worst observed drift it still lands the
+    #    same day, just later.
+    #    UPDATED 2026-09-18 (newsdesk-delivery package): the +3h27m figure
+    #    above was this job's OWN worst instance, measured 2026-08-08. A wider
+    #    measurement across the whole data-sync group's scheduled runs over
+    #    2026-08-27..09-10 found a worse case, +9h31m, on newsdesk.yml's
+    #    hourly cron (the same window that measured only 76 of 336 scheduled
+    #    newsdesk runs actually delivered, 22.6%, max gap 13.27h - see
+    #    newsdesk.yml's own header). +9h31m is still same-day against 13:47's
+    #    margin, so nothing below changes; the number is corrected here
+    #    because a future re-derivation should start from the true worst case,
+    #    not this job's narrower one. This job's own drift is worst at the top
+    #    of the hour, which is unrelated to and unchanged by that finding.
     # 3. OFF-HOUR, OFF-:00/:30 ON PURPOSE. :47 dodges the top-of-hour and
     #    half-hour queues where the scheduler's backlog (and therefore its
     #    drift) is worst.
@@ -163,4 +174,32 @@ jobs:
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref main
+        run: node scripts/dispatch-ci.mjs
+      - name: Dispatch the newsdesk (guaranteed hourly-layer fire)
+        # newsdesk.yml's own hourly cron delivered only 76 of 336 scheduled
+        # runs over 2026-08-27..09-10 (22.6%; max gap 13.27h) - GitHub starves
+        # an hourly cron far worse than it starves this job's own twice-daily
+        # one. `gh workflow run` fires a workflow_dispatch event, which -
+        # unlike a plain push - a bot-authored GITHUB_TOKEN IS allowed to
+        # trigger (the same carve-out the "Dispatch CI" step above already
+        # relies on). This buys the hourly layer at least one extra
+        # guaranteed fire per run of THIS job (two/day) on top of whatever the
+        # starved cron manages, without waiting on it.
+        #
+        # NO concurrency guard needed here: newsdesk.yml already shares this
+        # job's own `data-sync` group (cancel-in-progress: false), so a
+        # dispatched run queues rather than races a scheduled or
+        # already-running one - verified by reading that workflow's
+        # concurrency block, not assumed.
+        #
+        # `always()` and `continue-on-error` for the same reason in both
+        # directions: a hot-bill-refresh failure must never cost the newsdesk
+        # its fire, and a dispatch failure here must never fail hot-bills.yml.
+        # The two jobs are otherwise unrelated. Same main-ref guard as the
+        # deploy/CI steps above: a branch validation run must not dispatch the
+        # shared newsdesk against main's data.
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run newsdesk.yml --ref main

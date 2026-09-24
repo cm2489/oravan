@@ -93,6 +93,71 @@ export const CARRY_FORWARD_MAX_DAYS = 3;
  *  the file is empty and nothing is being claimed, produces no writes at all. */
 export const STAMP_MAX_AGE_HOURS = 6;
 
+/**
+ * data/floor-signals-checked.json — the "we still checked" heartbeat that
+ * lives OUTSIDE floor-signals.json on purpose (2026-09-18, newsdesk-delivery
+ * package).
+ *
+ * WHY A SEPARATE FILE RATHER THAN WIDENING shouldWrite's `live` CONDITION
+ * ABOVE. The obvious fix — drop the "at least one live signal" requirement so
+ * an aged stamp always re-writes floor-signals.json — was rejected because
+ * `tests/floor-signals.unit.spec.ts`'s "never re-stamps an empty file — a
+ * recess produces no commits at all" pins that behaviour as deliberate, not
+ * incidental: a real recess should produce zero deploys, and floor-signals
+ * .json's own commit is shared with newsdesk.mjs/moment-updates.mjs in the
+ * same workflow step, so touching it at all risks exactly the noisy-commit
+ * outcome STAMP_MAX_AGE_HOURS's `live` gate exists to prevent.
+ *
+ * But `_meta.fetched_at` is ALSO the one staleness clock lib/docket.mjs's
+ * `chamberSessionFrom` (and lib/docket.ts's `floorSourcesPosture` /
+ * `floorSignalsCheckedAt`) read to decide whether the in_session verdict, the
+ * next-meeting claim and the "as of" copy are still trustworthy
+ * (SIGNAL_STALE_HOURS = 48h). Those claims can be true and freshly
+ * reconfirmed on an hour with ZERO live bill signals — a light in-session
+ * week where neither chamber's program names a corpus bill is the common
+ * case, not the recess case — and under the `live` gate that hour's honest
+ * "still checked, nothing changed" reconfirmation is silently dropped. Left
+ * alone, THAT is what let the observed 60h gap form against the 48h ceiling:
+ * not a dead workflow, but a live one whose "nothing new" runs had nowhere to
+ * record themselves.
+ *
+ * So this file exists to carry exactly that reconfirmation, decoupled from
+ * whether any BILL signal is live, without ever touching floor-signals.json
+ * or its commit behaviour:
+ *   - written by scripts/floor-signals.mjs, its own step, after the source
+ *     fetches — never by anything else;
+ *   - only when at least one source came back healthy this run (an outage on
+ *     both sources must never certify a "just checked" stamp — the same
+ *     critic-A-5 discipline `deriveSourceStatus` already applies to
+ *     `in_session`);
+ *   - throttled to CHECKED_STAMP_MAX_AGE_HOURS, same as STAMP_MAX_AGE_HOURS
+ *     above and for the same reason — this is still a commit (newsdesk.yml's
+ *     `git add data/` picks up any file under data/), so it still must not
+ *     become an hourly one.
+ *
+ * `lib/docket.mjs`'s `floorSignalsHealthy` merges this stamp with
+ * floor-signals.json's own `_meta.fetched_at` (whichever is newer) so every
+ * reader of that staleness clock benefits without a second code path.
+ */
+export const FLOOR_SIGNALS_CHECKED_PATH = 'data/floor-signals-checked.json';
+export const FLOOR_SIGNALS_CHECKED_SCHEMA = 'floor-signals-checked/v1';
+export const CHECKED_STAMP_MAX_AGE_HOURS = 6;
+
+/**
+ * Should scripts/floor-signals.mjs rewrite the heartbeat file this run?
+ * Yes on a missing/unparseable previous stamp (first run, or damage); yes
+ * once the stored stamp has aged past the ceiling. Never conditioned on `live`
+ * — that is the entire point of this file's existence (see the header above).
+ *
+ * @param {{ previous: any, now: number }} input
+ * @returns {boolean}
+ */
+export function shouldWriteChecked({ previous, now }) {
+  const stamp = Date.parse(previous?.checked_at ?? '');
+  if (!Number.isFinite(stamp)) return true;
+  return (now - stamp) / 3_600_000 >= CHECKED_STAMP_MAX_AGE_HOURS;
+}
+
 // ---- HTML -> text --------------------------------------------------------
 
 const NAMED_ENTITIES = {
@@ -932,18 +997,38 @@ export function titleDrift(corpusTitle, fetchedTitle) {
  *   a matching title is skipped, and gets its stamp the next time the bill is
  *   decoded for a reason of its own.
  *
- * @param {{ decodedAt?: string | null, lastActionDate?: string | null, corpusTitle?: string | null, fetchedTitle?: string | null }} input
+ * `textVerifiedAt` (2026-09-18) — the day a re-decode last CONFIRMED that the
+ *   stored decode's source document is still the document Congress serves
+ *   (scripts/bill-decode.mjs's `decode_text_verified_at`, written by the
+ *   unchanged-document short-circuit). It is folded in as the later of the
+ *   two freshness days, and it has to be, or the short-circuit could never
+ *   settle: a bill whose action keeps moving past an unchanged document would
+ *   re-enter this verdict every single hourly run, re-fetch the same text
+ *   forever, and never reach a quiet state. It is a strictly weaker claim
+ *   than `decodedAt` — "we re-read the document and it had not changed", not
+ *   "we wrote this decode then" — which is exactly why it lives in its own
+ *   field instead of back-dating `decoded_at` to a decode that never ran.
+ *   Absent (every record before that date), the rule is the date rule
+ *   unchanged.
+ *
+ * @param {{ decodedAt?: string | null, lastActionDate?: string | null, corpusTitle?: string | null, fetchedTitle?: string | null, textVerifiedAt?: string | null }} input
  * @returns {{ redecode: boolean, reason: string, similarity?: number }}
  */
-export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetchedTitle }) {
+export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetchedTitle, textVerifiedAt }) {
   if (fetchedTitle && corpusTitle) {
     const drift = titleDrift(corpusTitle, fetchedTitle);
     if (drift.swapped) return { redecode: true, reason: 'vehicle-swap', similarity: drift.similarity };
   }
   if (!decodedAt) return { redecode: false, reason: 'null-decoded-at' };
   if (!lastActionDate) return { redecode: false, reason: 'no-last-action' };
+  // The later of the two: a decode written on day X and re-verified against an
+  // unchanged document on day Y > X is as current as a decode written on Y.
+  // A verification stamp alone never qualifies a bill — `decodedAt` is checked
+  // first above, so a null decode stamp still returns 'null-decoded-at'.
   const decodedDay = String(decodedAt).slice(0, 10);
-  if (decodedDay < String(lastActionDate)) return { redecode: true, reason: 'stale-decode' };
+  const verifiedDay = textVerifiedAt ? String(textVerifiedAt).slice(0, 10) : '';
+  const freshDay = verifiedDay > decodedDay ? verifiedDay : decodedDay;
+  if (freshDay < String(lastActionDate)) return { redecode: true, reason: 'stale-decode' };
   return { redecode: false, reason: 'fresh-decode' };
 }
 
@@ -1120,5 +1205,42 @@ export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlu
   notes.push(
     `floor-signals: ${Object.keys(data.signals ?? {}).length} bill signal(s) (${liveCount} live), ${Object.keys(data.nominations ?? {}).length} nomination(s), sources ${Object.entries(meta.sources ?? {}).map(([k, v]) => `${k}=${v.status}`).join(', ') || 'none'}`
   );
+  return { failures, warnings, notes };
+}
+
+/**
+ * Verify data/floor-signals-checked.json — deliberately thin next to
+ * verifyFloorSignals above. This file carries no quote and is never printed
+ * to a reader as evidence (only its timestamp feeds lib/docket.mjs's
+ * floorSignalsHealthy), so the gate is "parses, and its stamp is a real,
+ * non-future date" — not the evidentiary bar the signal file itself has to
+ * clear. Skipped entirely (by the caller) when the file doesn't exist, same
+ * as every other data-file gate here — a branch that predates it must still
+ * verify.
+ *
+ * @param {{ data: any, now?: number }} input
+ * @returns {{ failures: string[], warnings: string[], notes: string[] }}
+ */
+export function verifyFloorSignalsChecked({ data, now = Date.now() }) {
+  const failures = [];
+  const warnings = [];
+  const notes = [];
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    failures.push(`${FLOOR_SIGNALS_CHECKED_PATH} is not a JSON object`);
+    return { failures, warnings, notes };
+  }
+  if (data.schema !== FLOOR_SIGNALS_CHECKED_SCHEMA) {
+    failures.push(
+      `${FLOOR_SIGNALS_CHECKED_PATH} carries an unknown schema (${JSON.stringify(data.schema)}); this build writes ${FLOOR_SIGNALS_CHECKED_SCHEMA}`
+    );
+  }
+  const stamp = Date.parse(data.checked_at ?? '');
+  if (!Number.isFinite(stamp)) {
+    failures.push(`${FLOOR_SIGNALS_CHECKED_PATH} checked_at is missing or unparseable`);
+  } else if (stamp > now + 60_000) {
+    failures.push(`${FLOOR_SIGNALS_CHECKED_PATH} checked_at is in the future (${data.checked_at})`);
+  } else {
+    notes.push(`floor-signals-checked: last reconfirmed ${data.checked_at}`);
+  }
   return { failures, warnings, notes };
 }

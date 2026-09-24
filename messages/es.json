@@ -247,6 +247,7 @@
     "rateRetryIn": "Podrás pedir un nuevo borrador de IA en {time}.",
     "rateTemplateNow": "La plantilla y los números de teléfono de abajo funcionan ahora mismo.",
     "rateRetryHint": "Esto suele resolverse en unos diez minutos. La plantilla y los números de teléfono funcionan ahora mismo.",
+    "scriptPaused": "La redacción con IA está en pausa por hoy — Oravan limita cuántos borradores escribe en un día.",
     "fallbackScript": {
       "support": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Apoyo este proyecto de ley y pido que la oficina registre mi posición a favor. Gracias por su tiempo.",
       "oppose": "Hola, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo por {citation}. Me opongo a este proyecto de ley y pido que la oficina registre mi posición en contra. Gracias por su tiempo.",
@@ -397,6 +398,7 @@
       "headlineAnnouncedSenate": "El Senado incluyó este proyecto en su propio programa del pleno.",
       "statusAnnounced": "En la programación del pleno",
       "metaAnnounced": "Lo publicó la propia cámara. No dice cuándo será la votación, y las oficinas cuentan las llamadas hasta que ocurra.",
+      "metaAnnouncedFootnote": "En cuanto el registro muestra que la cámara ya votó, este panel desaparece.",
       "recessSenate": "El Daily Digest indica que la próxima sesión del Senado será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado.",
       "recessHouse": "El Daily Digest indica que la próxima sesión de la Cámara será <when>{meeting}</when>: una <term>sesión pro forma</term>. En una sesión así no se puede someter un proyecto a consideración, así que hoy esta página no muestra ninguna afirmación sobre actividad en el pleno. El registro que aparece abajo no ha cambiado."
     }
@@ -524,6 +526,7 @@
     "p2": "Tu código postal, tus temas de interés, los proyectos de ley que has leído y tu historial de llamadas se guardan únicamente en el almacenamiento local de tu navegador, en tu dispositivo. Cuando buscas a tus representantes, el código postal viaja a nuestro servidor dentro de la dirección web de la página para poder asociarlo a un distrito: se usa en memoria, nunca se guarda y nunca se escribe en una base de datos. Todo lo demás de esta lista permanece en tu dispositivo. La página Tu historial cívico tiene un botón que borra todo de una sola vez.",
     "p3": "Cuando pides un guion de llamada, tu postura y el proyecto de ley se envían a nuestro servidor para redactar el texto, se procesan en memoria y no se vinculan a ninguna identidad. Limitamos la frecuencia por dirección de red para prevenir abusos; no guardamos registros que liguen direcciones con posiciones políticas.",
     "p4": "Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies en absoluto. Tu preferencia de idioma se guarda en el almacenamiento de tu propio navegador, como todo lo personal aquí.",
+    "p8": "Lo que sí llevamos es una cuenta sencilla: cuántas veces se abre cada tipo de página al día — la página de inicio, la de un proyecto de ley, la de una pregunta, entre otras. Es un solo número por tipo de página y por día. Nunca registra de qué página concreta se trata, quién la abrió ni de dónde venía.",
     "p5": "Esto importa porque las creencias políticas son datos sensibles. La base de datos más segura es la que no existe — así que no la construimos.",
     "contact": "¿Preguntas? Oravan se construye a la vista de todos — cada línea de código es inspeccionable.",
     "p7": "Una excepción opcional a «nunca pedimos»: si tu código postal cubre más de un distrito congresional, puedes escribir tu dirección para precisar el tuyo. Va a nuestro servidor una sola vez, pasa directo al geocodificador público de la Oficina del Censo de EE. UU. (así tu dispositivo nunca contacta a census.gov), y nunca se guarda ni se escribe en ningún registro. Solo regresa el número del distrito."
@@ -846,6 +849,8 @@
     "liveSub": "Cuestiones abiertas con algo en marcha por el Congreso ahora mismo — un proyecto de ley o una nominación ante el Senado.",
     "settledHeading": "Resueltas",
     "settledSub": "Cuestiones cerradas recientemente, conservadas como registro. Estas no se reabren.",
+    "reviewHeading": "En revisión",
+    "reviewSub": "Cuestiones cuya fecha de revisión programada pasó sin renovarse. Siguen legibles y siguen enlazando al registro oficial, pero nadie ha confirmado que reflejen la situación actual.",
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",

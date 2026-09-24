@@ -451,9 +451,27 @@ export function rollDailyDecodes(dailyDecodes, todayUTC) {
  * and 'failed' splits: a failure BEFORE the first model call (a Congress.gov
  * 500, a timeout) is free and stays free, so a transient upstream blip still
  * retries next hour at no cost.
+ *
+ * THE SECOND FREE CASE (2026-09-18, after the Sep 9-10 credit outage). The
+ * attempt is the right thing to price only while the attempt is what the
+ * invoice prices. A request the API REFUSES before generating anything is
+ * never invoiced: the credit-balance 400, any other invalid_request_error, a
+ * 401/403/404/413/422/429, a 5xx. During the outage every decode threw one of
+ * those, `decodeAttempted` was true for all of them, and the caps counted all
+ * of them — two hours of a failure nobody was billed for ate the whole day's
+ * NEWSDESK_DAILY_DECODE_CAP and TIER0_DAILY_DECODE_CAP, so the decodes were
+ * still not running an hour after the credits were topped up.
+ *
+ * syncOneBill/redecodeBill therefore also report `unbilledApiError` (classified
+ * in scripts/api-billing.mjs), and this exempts it. Note what that ALSO fixes:
+ * the failedDecodeKey day-lock is set inside the caller's `chargeableDecode`
+ * branch, so an outage no longer locks a slug out of retrying for the rest of
+ * the day either. The shape-check failure this function was built for is
+ * unaffected — a bad decode shape carries no HTTP status, so it stays billed
+ * and stays charged, which is the whole point of the original fix.
  */
 export function chargeableDecode(result) {
-  return result?.decodeAttempted === true;
+  return result?.decodeAttempted === true && result?.unbilledApiError !== true;
 }
 
 /** Dedupe key for "this slug already burned a decode and failed, today".
@@ -537,6 +555,10 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
  *  did anything actually mutate bills/es? Only 'refreshed', 'added' and
  *  'redecoded' (the re-decode trigger's outcome — a new decode + its ES twin
  *  written over an existing record, scripts/bill-decode.mjs's redecodeBill)
+ *  and 'text-unchanged' (that same trigger finding the document byte-identical
+ *  to the one the decode was written from, so it wrote no decode but DID
+ *  stamp `decode_text_verified_at` — the stamp has to be committed or the
+ *  short-circuit resets every run and saves nothing)
  *  touch the in-memory corpus; 'budget' (decode cap hit), 'failed',
  *  'skipped_partial' (an unreadable Congress.gov payload: no refresh
  *  applied, no new bill created — see readableAction) and 'skipped_no_text'
@@ -552,7 +574,9 @@ export function rollFeedDarkness(prev, dark, escalateAfter = FEED_DARK_ESCALATE_
  *  own `git diff --cached --quiet` step to (redundantly, but harmlessly)
  *  confirm. */
 export function anyDataChanged(outcomes) {
-  return outcomes.some((o) => o === 'refreshed' || o === 'added' || o === 'redecoded');
+  return outcomes.some(
+    (o) => o === 'refreshed' || o === 'added' || o === 'redecoded' || o === 'text-unchanged'
+  );
 }
 
 // ---- RSS/Atom feed parsing (pure — takes already-fetched XML text) ------

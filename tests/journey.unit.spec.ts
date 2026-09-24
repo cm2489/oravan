@@ -7,6 +7,7 @@ import {
   floorActionChamber,
   floorFactSuspended,
   floorCalendarChamber,
+  floorMakesNoClaim,
   floorPendingChamber,
   floorSettledChamber,
   liveCallKey,
@@ -71,6 +72,13 @@ const slugOf = (b: CorpusBill) => `${b.bill_type}-${b.bill_number}-${b.congress_
 // a Senate-only procedure on a House bill.
 const CLOTURE_TEXT =
   'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)';
+
+/* s-2503-119's exact live sentence (issue #258) — a HOUSE suspension vote that
+   failed, on a SENATE bill, in a sentence that names no chamber at all. Module
+   scope because four suites read it: the chamber rule that places it, the two
+   halves of the tense split, and the derivation that prints it. */
+const SUSPENSION_FAILED_TEXT =
+  'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).';
 
 /* A genuine, verbatim calendar placement. MODULE scope since N3 (2026-08-11):
    it was local to the deriveJourney suite, and the status-label suite now
@@ -142,6 +150,39 @@ test.describe('floorActionChamber', () => {
     expect(floorActionChamber('Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.')).toBe('senate');
   });
 
+  /*
+   * RULE 5b (issue #258) — a suspension vote, which names no chamber at all.
+   * All three live corpus texts, verbatim; the first is s-2503-119, the
+   * sentence the nightly sweep filed the issue over.
+   */
+  test('a suspension vote is a House vote, by two House-only signatures', () => {
+    expect(floorActionChamber(SUSPENSION_FAILED_TEXT)).toBe('house');
+    expect(floorActionChamber('On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).')).toBe('house');
+    expect(floorActionChamber('On motion to suspend the rules and pass the resolution Failed by the Yeas and Nays: (2/3 required): 211 - 207 (Roll no. 95).')).toBe('house');
+  });
+
+  test('rule 5b beats rule 6, because the House takes up SENATE bills under suspension', () => {
+    // INVENTED, and the reason the rule sits above the word count rather than
+    // below it: this sentence names exactly one chamber and it is the wrong
+    // one. The corpus holds no instance yet; the ordering must be pinned
+    // before one arrives.
+    expect(
+      floorActionChamber(
+        'On motion to suspend the rules and pass the Senate bill Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 118).'
+      )
+    ).toBe('house');
+  });
+
+  test('rule 5b needs BOTH signatures — either alone stays unread', () => {
+    // A suspension motion disposed of by voice vote carries no roll number,
+    // and no other rule reads it: fail-closed, exactly as before #258.
+    expect(floorActionChamber('On motion to suspend the rules and pass the bill Agreed to by voice vote.')).toBeNull();
+    // The Senate numbers its own roll calls "Record Vote Number", never
+    // "Roll no." — so the Senate's defeats keep reading through rule 5, and
+    // this new rule never touches them.
+    expect(floorActionChamber('Failed of passage in Senate by Yea-Nay Vote. 47 - 51. Record Vote Number: 554.')).toBe('senate');
+  });
+
   test('exactly one chamber named anywhere decides', () => {
     expect(floorActionChamber('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.')).toBe('senate');
   });
@@ -184,6 +225,9 @@ test.describe('floorPendingChamber', () => {
     expect(floorPendingChamber('Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 46 - 48. Record Vote Number: 173. (consideration: CR S2816)')).toBeNull();
     expect(floorPendingChamber('Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.')).toBeNull();
     expect(floorPendingChamber('Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.')).toBeNull();
+    // #258: rule 5b made this sentence chamber-readable. It must not have made
+    // it a COMING vote — the House already held this one and it lost.
+    expect(floorPendingChamber(SUSPENSION_FAILED_TEXT)).toBeNull();
     // The guard's other three words, on invented texts — the corpus holds no
     // instance yet, and the rule must be pinned before one arrives.
     expect(floorPendingChamber('Cloture motion on the motion to proceed to the measure presented in Senate, then withdrawn.')).toBeNull();
@@ -266,6 +310,13 @@ test.describe('floorSettledChamber', () => {
         'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 47 - 45. Record Vote Number: 301.'
       )
     ).toBe('senate');
+    /*
+     * s-2503-119 (issue #258) — the chamber comes from the PROCEDURE and the
+     * tense from FLOOR_SETTLED's "failed", which is why the two halves are
+     * separate functions. Note the chamber is not the bill's own: a Senate
+     * bill, defeated on the House floor.
+     */
+    expect(floorSettledChamber(SUSPENSION_FAILED_TEXT)).toBe('house');
   });
 
   test('a live text is never called settled', () => {
@@ -312,6 +363,65 @@ test.describe('floorSettledChamber', () => {
    * classifiability sweep it extends. The exclusivity assertions above stay,
    * because those are claims about CODE: they hold whatever the sync lands.
    */
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b-iii · floorMakesNoClaim — "we READ this shape, and the honest
+ *          classification is that it claims nothing" (issue #241,
+ *          2026-09-18).
+ *
+ * The nightly sweep had two answers for a floor sentence and needed a third.
+ * S. 1602's sequential-referral order names the Senate, so it is not
+ * unclassifiable; but its discharge and its calendar placement are the
+ * CONDITIONAL consequence of a committee clock, so "a vote is coming" and
+ * "the last motion failed" are both false. Routing it into
+ * floorPendingChamber would have crowned a bill sitting in committee;
+ * widening FLOOR_SETTLED would have called a non-defeat a defeat AND dropped
+ * live bills out of the act-now pool that reads the same constant.
+ *
+ * WHAT THIS BUCKET DOES NOT DO is license a sentence. These texts render the
+ * same chamber-free `nowFloorActivityNeutral` copy they rendered before, and
+ * the deriveJourney fixture below is what pins that.
+ * ------------------------------------------------------------------ */
+test.describe('floorMakesNoClaim', () => {
+  const SEQUENTIAL_REFERRAL =
+    'Referred sequentially to the Committee on Commerce, Science, and Transportation, pursuant to the order of March 3, 1988, for 30 calendar days excluding any day on which the Senate is not in session, and if not reported by that day, the Committee be discharged from further consideration thereof, and the bill be placed on the calendar.';
+
+  test('the sequential-referral order reads as claim-free (s-1602-119, verbatim)', () => {
+    expect(floorMakesNoClaim(SEQUENTIAL_REFERRAL)).toBe(true);
+  });
+
+  test('and it stays out of both tensed matchers, so no surface can speak for it', () => {
+    expect(floorPendingChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+    expect(floorSettledChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+    expect(floorCalendarChamber(SEQUENTIAL_REFERRAL)).toBeNull();
+  });
+
+  test('all three clauses are required — a partial match stays unread', () => {
+    // A plain sequential referral with no discharge clock.
+    expect(
+      floorMakesNoClaim(
+        'Referred sequentially to the Committee on Finance for a period not to exceed 30 days.'
+      )
+    ).toBe(false);
+    // A discharge that ALREADY happened is a real event, not a conditional.
+    expect(
+      floorMakesNoClaim('Committee on Commerce discharged from further consideration thereof.')
+    ).toBe(false);
+  });
+
+  test('never swallows a live or a settled floor text', () => {
+    expect(floorMakesNoClaim(CLOTURE_TEXT)).toBe(false);
+    expect(floorMakesNoClaim('Motion to proceed to consideration of measure made in Senate. (CR S4276)')).toBe(false);
+    expect(
+      floorMakesNoClaim(
+        'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 111. (CR S2106)'
+      )
+    ).toBe(false);
+    expect(floorMakesNoClaim('Placed on Senate Legislative Calendar under General Orders. Calendar No. 412.')).toBe(false);
+    expect(floorMakesNoClaim(null)).toBe(false);
+    expect(floorMakesNoClaim('')).toBe(false);
+  });
 });
 
 /* ------------------------------------------------------------------ *
@@ -486,6 +596,31 @@ test.describe('deriveJourney', () => {
     expect(j('sjres', 'floor_vote', MOTION_REJECTED_TEXT).nowKey).toBe('nowFloorMotionFailed');
   });
 
+  /*
+   * ISSUE #258. Before rule 5b, s-2503-119's sentence reached no matcher at
+   * all: the derivation fell to the residual branch and printed "it's moving
+   * on the floor — the official record hasn't said yet which chamber acts
+   * next" over a House suspension vote that failed 264-133 on 2026-02-24. The
+   * record had said; nothing here could read it. Both halves of the fix are
+   * pinned below — the CHAMBER (the House, not this Senate bill's own) and
+   * the TENSE (settled, not moving).
+   */
+  test('a failed House suspension vote on a Senate bill reads settled, in the House', () => {
+    const journey = j('s', 'floor_vote', SUSPENSION_FAILED_TEXT);
+    expect(journey).toMatchObject({
+      step: 3, // the other chamber's slot — the origin is the Senate
+      current: 'house',
+      nowChamber: 'house',
+      onCalendar: false,
+      nowKey: 'nowFloorMotionFailed',
+    });
+    // The two sentences it used to be able to print, and must not.
+    expect(journey.nowKey).not.toBe('nowFloorActivityNeutral');
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    // Aged or fresh, a settled outcome is settled — the tense does not move.
+    expect(j('s', 'floor_vote', SUSPENSION_FAILED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
+  });
+
   test('a genuinely pending floor vote keeps the live deliberation copy', () => {
     expect(j('hr', 'floor_vote', CLOTURE_TEXT).nowKey).toBe('nowFloorActivity');
     expect(
@@ -534,6 +669,28 @@ test.describe('deriveJourney', () => {
     // origin-slot `nowChamber` above cannot leak into a rendered sentence.
     expect(en.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
     expect(es.bill.journey.nowFloorActivityNeutral).not.toContain('{chamber');
+  });
+
+  test('a READ-but-claim-free text (#241) renders exactly what an unread one does', () => {
+    /*
+     * floorMakesNoClaim moved this shape out of the nightly sweep's "nobody
+     * has read this" bucket. It must not have moved it anywhere on the PAGE:
+     * the bucket records a reading, it does not license a sentence. If this
+     * ever starts printing `nowFloorActivity`, a bill sitting in committee is
+     * being described as one the Senate is about to vote on.
+     */
+    const SEQUENTIAL_REFERRAL =
+      'Referred sequentially to the Committee on Commerce, Science, and Transportation, pursuant to the order of March 3, 1988, for 30 calendar days excluding any day on which the Senate is not in session, and if not reported by that day, the Committee be discharged from further consideration thereof, and the bill be placed on the calendar.';
+    expect(floorMakesNoClaim(SEQUENTIAL_REFERRAL)).toBe(true);
+
+    const journey = j('s', 'floor_vote', SEQUENTIAL_REFERRAL);
+    expect(journey.nowKey).toBe('nowFloorActivityNeutral');
+    expect(journey.onCalendar).toBe(false);
+    expect(journey.nowKey).not.toBe('nowFloorActivity');
+    expect(journey.nowKey).not.toBe('nowFloorMotionFailed');
+    // Fresh or aged, the answer is the same one the untensed residual gives.
+    expect(j('s', 'floor_vote', SEQUENTIAL_REFERRAL, FRESH).nowKey).toBe('nowFloorActivityNeutral');
+    expect(j('s', 'floor_vote', SEQUENTIAL_REFERRAL, STALE).nowKey).toBe('nowFloorActivityNeutral');
   });
 
   test('the untensed residual is neutral whether the record is fresh or aged', () => {
@@ -1384,6 +1541,7 @@ test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
       'headlineAnnouncedSenate',
       'statusAnnounced',
       'metaAnnounced',
+      'metaAnnouncedFootnote',
     ] as const) {
       expect(typeof en.bill.floor[k], `en.bill.floor.${k}`).toBe('string');
       expect(typeof es.bill.floor[k], `es.bill.floor.${k}`).toBe('string');
