@@ -142,6 +142,9 @@ export function BillsBrowser({
   // "every bill", because the corpus genuinely holds undecoded stragglers).
   const decodedCount = useMemo(() => bills.filter((b) => b.headline).length, [bills]);
 
+  // Is the reader narrowing the list? Decides what the one count line says.
+  const filtering = query.trim() !== '' || active.length > 0;
+
   return (
     <div>
       <div className="mt-8">
@@ -182,12 +185,23 @@ export function BillsBrowser({
             </kbd>
           )}
         </div>
-        {/* The corpus, stated at the point of first input (2026-08): the
-            inline count is both a trust signal and an expectation-setter.
-            The count is LIVE (bills with a decode in this very payload),
-            never a hardcoded claim that drifts from the data. */}
-        <p className="mt-2 max-w-note text-sm text-ink-2">
-          {t('bills.searchTrust', { decoded: decodedCount, total: bills.length })}
+        {/* THE ONE COUNT LINE (UI audit B1-4, 2026-09-25). There used to be
+            two, four lines apart — "3,216 of 3,218 … decoded" here and
+            "3,218 of 3,218 bills" above the feed — two different counts
+            stacked for one list. Now one line does both jobs:
+              - unfiltered, it states the corpus at the point of first input
+                (2026-08): a trust signal and an expectation-setter, with the
+                LIVE decode count from this very payload, never a hardcoded
+                claim that drifts from the data;
+              - once a search or a topic narrows the list, it becomes the
+                result count, and it is the page's one aria-live region.
+            It sits under the input, not above the feed, because that is where
+            the eye is while typing — and on a phone, the one place the open
+            keyboard does not cover. */}
+        <p className="mt-2 max-w-note text-sm text-ink-2" aria-live="polite">
+          {filtering
+            ? t('bills.showingCount', { shown: filtered.length, total: bills.length })
+            : t('bills.searchTrust', { decoded: decodedCount, total: bills.length })}
         </p>
       </div>
 
@@ -218,12 +232,16 @@ export function BillsBrowser({
         ))}
       </div>
 
+      {/* Directly under the chips it describes, and the last line before
+          the results: a topic tap writes to this device, so this is where
+          the reader is deciding whether to make one. */}
       <p className="mt-3 text-xs text-ink-2">{t('bills.interestsNote')}</p>
 
-      {/* THE PINNED QUESTION (spec §7.3). Above the count, and outside it.
+      {/* THE PINNED QUESTION (spec §7.3). Outside the count, always.
           Three rules hold this row honest:
-            1. It is not a bill result. The aria-live count below still says
-               how many BILLS matched — a pin that inflated that number would
+            1. It is not a bill result. The aria-live count line under the
+               search box still says how many BILLS matched — a pin that
+               inflated that number would
                be answering a question the reader didn't ask with a number
                they can't check. "ukraine" can legitimately read
                "0 bills" and still show this row.
@@ -264,14 +282,10 @@ export function BillsBrowser({
         </ul>
       )}
 
-      <p className="mt-4 text-sm text-ink-2" aria-live="polite">
-        {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
-      </p>
-
       {filtered.length === 0 && (
         <div className="mt-8">
           <p className="max-w-read text-ink-2">{t('bills.noResults')}</p>
-          {(query.trim() !== '' || active.length > 0) && (
+          {filtering && (
             <button
               type="button"
               onClick={() => {
@@ -295,7 +309,7 @@ export function BillsBrowser({
           // quiet-week/data-stale claim (KTD-2, AE3). An entirely empty
           // corpus is a data problem, not a quiet week — no claim there
           // either (the generic noResults block already covers it).
-          const unfiltered = query.trim() === '' && active.length === 0 && bills.length > 0;
+          const unfiltered = !filtering && bills.length > 0;
           if (band !== 'now' || !unfiltered) return null;
           return (
             <section key={band} className={`mt-12 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>

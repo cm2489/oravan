@@ -8,6 +8,7 @@ import es from '../messages/es.json';
 // are the checks that gate every moments PR.
 import {
   CATEGORIES as GATE_CATEGORIES,
+  LIVE_CAP as GATE_LIVE_CAP,
   SIGNAL_TYPES as GATE_SIGNAL_TYPES,
   TERMINAL_NOMINATION_VEHICLE_STATUSES,
   TERMINAL_VEHICLE_STATUSES,
@@ -26,6 +27,7 @@ import {
 import { CATEGORIES } from '../lib/taxonomy';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
 import {
+  LIVE_CAP,
   QUALIFYING_SIGNAL_TYPES,
   VEHICLE_KINDS,
   computeMomentState,
@@ -815,5 +817,35 @@ test.describe('computeMomentState', () => {
   test('an unknown vehicle slug can never read as settled (fails toward live)', () => {
     expect(computeMomentState(fixture({ slugs: ['nope'] }), lookup, NOW)).toBe('live');
     expect(computeMomentState(fixture({ slugs: ['signedBill', 'nope'] }), lookup, NOW)).toBe('live');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The live cap is ONE number (UI audit B1-4, 2026-09-25). The gate
+ * refuses at it, and `moments.scarcityNote` prints it ("never more than
+ * {cap}") on the homepage band, /questions and every question page.
+ * Before this, the message said "6" in its own text, so raising the
+ * gate's cap would have left three pages promising the old number.
+ * ------------------------------------------------------------------ */
+test.describe('the live cap is one number', () => {
+  test('the gate refuses exactly at LIVE_CAP + 1 and accepts LIVE_CAP', () => {
+    const atCap: Record<string, unknown> = {};
+    for (let i = 1; i <= GATE_LIVE_CAP; i++) atCap[`moment-${i}`] = validMoment();
+    expect(run(atCap).violations).toEqual([]);
+
+    const overCap: Record<string, unknown> = { ...atCap, 'moment-over': validMoment() };
+    const v = run(overCap).violations;
+    expect(v.some((x: string) => x.includes(`the cap is ${GATE_LIVE_CAP}`))).toBe(true);
+  });
+
+  test('the pages read the gate’s constant, not a copy of it', () => {
+    expect(LIVE_CAP).toBe(GATE_LIVE_CAP);
+  });
+
+  test('the scarcity note prints the cap from the argument in both languages, never a typed digit', () => {
+    for (const m of [en.moments.scarcityNote, es.moments.scarcityNote]) {
+      expect(m).toMatch(/\{cap\}\.$/);
+      expect(m).not.toMatch(/(more than|más de) \d/);
+    }
   });
 });

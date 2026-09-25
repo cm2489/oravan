@@ -28,8 +28,16 @@ import type { NewsBill } from '@/lib/types';
  * evidence file is missing, unreadable by this build, or has not been refreshed
  * recently enough to speak in the present tense, the band degrades to exactly
  * the selection it made before the lamp shipped and the captions DROP rather
- * than guess. The subhead changes with it, so the deck never describes a
- * selection the cards did not come from.
+ * than guess.
+ *
+ * NO DECK UNDER THE HEADING (UI audit B1-4, 2026-09-25). There used to be one
+ * per mode — "Every card says why it's here, and every count comes from
+ * stored evidence you can check" under the lamp, "ranked by how widely" in the
+ * fallback. Both described the cards instead of adding to them, and the
+ * fallback's "widely" is the adjective the band's own copy fence rules out
+ * (DESIGN.md, the counted-caption note, constraint 1). The heading plus each
+ * card's reason is the whole account, which is how the compact /bills
+ * variant has always worked.
  */
 
 /** The counted facts, turned into one localized sentence. The lean list uses
@@ -64,9 +72,9 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
   const t = await getTranslations('news');
   const format = await getFormatter();
   // Under the lamp every selected card carries its evidence; in the fallback
-  // none does. Deriving the mode from the cards themselves means the deck and
-  // the cards can never disagree about which selection produced them.
-  const captioned = bills.some((b) => b.caption);
+  // none does, and each card falls back to its stored outlet count. Either way
+  // the CARD is what says why it is here — there is no deck above the band to
+  // disagree with it (see the header note).
   const captionOf = (b: NewsBill) => (b.caption ? captionText(t, format, b.caption) : null);
 
   // Compact rows (2026-07 critique, majority): on /bills the full card grid
@@ -119,7 +127,6 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
           {t('heading')}
         </h2>
       </div>
-      <p className="mt-2 max-w-read text-ink-2">{t(captioned ? 'subheadEvidence' : 'subhead')}</p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {bills.map((b) => {
           const caption = captionOf(b);

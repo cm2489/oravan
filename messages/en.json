@@ -130,7 +130,7 @@
   },
   "reps": {
     "title": "Your representatives",
-    "sub": "Every US resident has one House representative and two senators. Here are yours, with every number that reaches them.",
+    "sub": "In a state, you have one House representative and two senators; in DC or a territory, one House member and no senators. Here are yours, with every number that reaches them.",
     "noZip": "Enter your ZIP code to find your three members of Congress.",
     "previewNote": "Your three will appear here — one House representative and two senators, with their DC and local numbers.",
     "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same either way.",
@@ -397,7 +397,6 @@
     "allBills": "All bills",
     "aiMarker": "AI",
     "aiLabel": "Decoded by AI · checked against the record",
-    "aiLede": "The plain-language version leads. The official text is always the reference.",
     "congressLabel": "{congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress",
     "officialDisclosure": "Read the official text",
     "shortTitleLabel": "Short title",
@@ -494,8 +493,6 @@
   },
   "news": {
     "heading": "In the news",
-    "subhead": "Bills covered by more than one outlet, ranked by how widely — not by how recently.",
-    "subheadEvidence": "What the press and congress.gov's readers are on this week. Every card says why it's here, and every count comes from stored evidence you can check.",
     "sources": "{count, plural, one {# outlet} other {# outlets}}",
     "captionCorroborated": "Covered by {count, plural, one {# outlet} other {# outlets}} across the spectrum this week: {leans}",
     "captionCorroboratedCenter": "Covered by {count, plural, one {# outlet} other {# outlets}} rated center this week",
@@ -906,7 +903,7 @@
     "emptyTitle": "No live Big Questions right now",
     "emptyBody": "A Big Question opens only when a real, callable bill or Senate nomination meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",
-    "scarcityNote": "{count, plural, =1 {1 live Big Question} other {# live Big Questions}} today — never more than 6.",
+    "scarcityNote": "{count, plural, =1 {1 live Big Question} other {# live Big Questions}} today — never more than {cap}.",
     "cardVehicleCount": "{count, plural, one {# bill} other {# bills}}",
     "cardNominationCount": "{count, plural, one {# nomination} other {# nominations}}",
     "cardMixedCount": "{bills, plural, one {# bill} other {# bills}} and {nominations, plural, one {# nomination} other {# nominations}}",
@@ -988,8 +985,7 @@
         "crs": "Congressional Research Service",
         "cbo": "Congressional Budget Office",
         "gao": "Government Accountability Office"
-      },
-      "privacyNote": "Nobody is watching you read this — no account, no tracking, no feed tuned to you, which is why the same page can be shared across the spectrum."
+      }
     },
     "kicker": "Big Question",
     "status": {

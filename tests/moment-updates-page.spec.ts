@@ -428,14 +428,21 @@ test.describe('institutional context refs', () => {
   }
 });
 
-test.describe('the privacy line on /questions', () => {
+/* The privacy promise on /questions is the CHROME's, not the page body's
+   (UI audit B1-4, 2026-09-25). The v2 spec §7 body line ("Nobody is watching
+   you read this…") was removed because the footer's mission line already
+   says it on every page, in both languages, at every width — so what this
+   pins now is the thing the removal leaned on: that the footer really does. */
+test.describe('the privacy promise on /questions', () => {
   for (const { locale, prefix, messages } of [
     { locale: 'en', prefix: '', messages: en },
     { locale: 'es', prefix: '/es', messages: es },
   ] as const) {
-    test(`${locale}: the index states that nobody is watching you read it`, async ({ page }) => {
+    test(`${locale}: the footer's mission line carries it`, async ({ page }) => {
       await page.goto(`${prefix}/questions`);
-      await expect(page.getByText(messages.moments.updates.privacyNote, { exact: true })).toBeVisible();
+      await expect(
+        page.locator('footer').getByText(messages.common.footer.mission, { exact: true })
+      ).toBeVisible();
     });
   }
 });

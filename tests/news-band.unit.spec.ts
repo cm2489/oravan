@@ -521,7 +521,6 @@ test.describe('caption copy, EN and ES', () => {
     'captionCorroboratedCenter',
     'captionMostViewed',
     'captionMostViewedThisWeek',
-    'subheadEvidence',
   ] as const;
 
   test('every caption string exists in both languages', () => {
@@ -571,10 +570,15 @@ test.describe('caption copy, EN and ES', () => {
     }
   });
 
-  test('the fallback deck is still there — a captionless band must not describe captions', () => {
-    expect(typeof en.subhead).toBe('string');
-    expect(typeof es.subhead).toBe('string');
-    expect(en.subhead).not.toBe(en.subheadEvidence);
+  test('the band has no deck in either mode — each card says why it is here', () => {
+    // UI audit B1-4 (2026-09-25): the two decks under "In the news" described
+    // the cards instead of adding to them, and the fallback one ranked "by how
+    // widely" — the adjective this band's copy fence rules out. With no deck,
+    // no deck can describe a selection the cards did not come from.
+    for (const m of [en, es]) {
+      expect(m.subhead).toBeUndefined();
+      expect(m.subheadEvidence).toBeUndefined();
+    }
   });
 });
 

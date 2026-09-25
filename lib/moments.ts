@@ -19,6 +19,11 @@ import { TERMINAL_NOMINATION_STATUSES } from './nomination-status.mjs';
 import { TERMINAL_STATUSES } from './urgency.mjs';
 import type { Category } from './taxonomy';
 
+/* The live cap has ONE home, the gate that enforces it. Re-exported here so
+   the pages that print it ("never more than {cap}") read the same number the
+   gate refuses at, instead of a digit typed into messages/*.json. */
+export { LIVE_CAP } from './moments-gate.mjs';
+
 export interface Localized {
   en: string;
   es: string;

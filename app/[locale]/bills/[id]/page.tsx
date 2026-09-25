@@ -670,7 +670,12 @@ export default async function BillPage({
             </div>
             {hasDecode ? (
               <>
-                <p className="mt-3 text-sm text-ink-2">{t('bill.aiLede')}</p>
+                {/* No lede between the heading and the decode (UI audit B1-4,
+                    2026-09-25): "The plain-language version leads…" was
+                    commentary about the page, not content, and the page
+                    already shows it — the decode comes first, and the
+                    official-text link closes the section. The AI label
+                    stays where it was, at first contact in the header. */}
                 <TldrStrip bill={bill} />
                 <DecodedSections bill={bill} />
                 <p className="mt-6 text-sm text-ink-2">{t('bill.aiDisclaimer')}</p>

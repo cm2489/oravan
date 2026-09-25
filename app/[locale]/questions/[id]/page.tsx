@@ -29,6 +29,7 @@ import {
   isAiSummary,
 } from '@/lib/moment-updates';
 import {
+  LIVE_CAP,
   QUALIFYING_SIGNAL_TYPES,
   getLiveMoments,
   getMoment,
@@ -757,7 +758,7 @@ export default async function MomentPage({
         <Link href="/questions" className={CONTENT_LINK}>
           {t('moments.browseAll')} →
         </Link>
-        <span className="text-xs text-ink-2">{t('moments.scarcityNote', { count: liveCount })}</span>
+        <span className="text-xs text-ink-2">{t('moments.scarcityNote', { count: liveCount, cap: LIVE_CAP })}</span>
       </p>
     </article>
   );

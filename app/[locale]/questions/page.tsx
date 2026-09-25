@@ -5,7 +5,13 @@ import { glossaryTag } from '@/components/glossary-tags';
 import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
-import { getMoments, momentClaimsVehicles, vehicleKind, type MomentWithState } from '@/lib/moments';
+import {
+  LIVE_CAP,
+  getMoments,
+  momentClaimsVehicles,
+  vehicleKind,
+  type MomentWithState,
+} from '@/lib/moments';
 import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -85,12 +91,14 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           {t('moments.aiNote')}
         </Chip>
       </p>
-      {/* The privacy line (v2 spec §7): threaded through, never a banner. It
-          sits beside the AI note because the two are the same disclosure —
-          here is what a machine wrote, and here is what nobody recorded about
-          you reading it. Stated once, in ink, in the calm register: no
-          "unlike them", no adversary, no claim about any named competitor. */}
-      <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.updates.privacyNote')}</p>
+      {/* No privacy line here any more (UI audit B1-4, 2026-09-25). The v2
+          spec §7 line ("Nobody is watching you read this…") sat between the
+          AI note and the first card and cost 67px of a 390px first screen
+          (90px in Spanish) to say what the footer's mission line says on
+          every page, in both languages, at every width: no accounts, no
+          trackers, nothing about you stored. The header's trust line repeats
+          it at `lg` (64rem) and up. The promise is kept by the chrome, not
+          restated in each page body. */}
 
       {/* The section that asks something of the reader takes the full 3px ink
           rule; the record below it takes a hairline. `line` is a separator
@@ -130,12 +138,13 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
             curation honest — the count is the moments actually reading as
             live right now, which is now exactly the grid above it. Suppressed
             at zero, where the empty state has already said the same thing in
-            words and "never more than 6" would be a boast about an empty
+            words and "never more than {cap}" would be a boast about an empty
             shelf; the homepage band takes the same posture, disappearing
-            rather than printing a nought. */}
+            rather than printing a nought. {cap} is LIVE_CAP, the gate's own
+            constant, so the printed promise moves when the rule does. */}
         {live.length > 0 && (
           <p className="mt-6 max-w-read text-sm text-ink-2">
-            {t('moments.scarcityNote', { count: live.length })}
+            {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
           </p>
         )}
       </section>
