@@ -82,17 +82,16 @@
  * moment vehicle per run, and only for vehicles that actually moved.
  *
  * INTRADAY SUMMARIES (2026-09-25). An incremental run makes a Sonnet call only
- * for a question a roll-call vote landed on in THAT run, never more than
- * INTRADAY_SUMMARY_CAP (3) stored revisions per question per ET day, and never
- * more than MOMENT_SUMMARY_DAILY_CAP per run. A rejected attempt is not
- * retried until the next landing, so the per-question worst case is one call
- * per landing run. At the brief's $2/$10 per MTok and ~1,450 in / 420 out a
- * call is ≈ $0.0071 (the vote lines add ~50–150 input tokens). Roll calls on
- * moment vehicles are rare — 11 in data/votes.json from 2026-05-27 to
- * 2026-09-24 — so the expected added cost is cents per month; the hard
- * ceiling (every live question, a landing on every one of ~24 hourly runs, a
- * rejection every time) is 24 calls per question per day. Reading
- * data/votes.json costs nothing: it is a local file.
+ * for a question a roll-call vote landed on in THAT run, and never more than
+ * INTRADAY_SUMMARY_CAP (3) intraday CALLS per question per ET day — counted in
+ * `entry.summary_attempts` before each call, so a rejected or failed reply
+ * spends its slot too — and never more than MOMENT_SUMMARY_DAILY_CAP per run.
+ * At the brief's $2/$10 per MTok and ~1,450 in / 420 out a call is ≈ $0.0071
+ * (the vote lines add ~50–150 input tokens). Roll calls on moment vehicles
+ * are rare — 11 in data/votes.json from 2026-05-27 to 2026-09-24 — so the
+ * expected added cost is cents per month; the code-enforced ceiling is 3
+ * calls × live questions × days (6 live questions: ≈ $0.13/day, ≈ $3.83 over
+ * 30 days). Reading data/votes.json costs nothing: it is a local file.
  *
  * NO PROMPT CACHING, deliberately: both prompts sit under the models' minimum
  * cacheable prefix (1024 tokens on Haiku 4.5, 512 on Sonnet 5), so a
@@ -148,6 +147,7 @@ import {
   pruneEntry,
   revisionId,
   revisionsOnDay,
+  summaryAttemptsOnDay,
   sameActionKey,
   shiftDay,
   summaryRefreshReason,
@@ -1213,12 +1213,14 @@ export function freshCandidates(candidates, storeArg) {
  * movement).
  *
  * INCREMENTAL (new): regenerate ONLY when a `vote` update landed for that
- * question on THIS run (`landedVotes`), and only while it has fewer than
- * `intradayCap` revisions on today's ET day. Nothing else opens the door
- * intraday — a status change, a scheduled listing, a re-anchor all wait for
- * the nightly exactly as before. A rejected or failed attempt is not retried
- * until the next vote lands or the nightly runs, so a model that keeps
- * writing a rejected sentence costs one call per landing, never one per hour.
+ * question on THIS run (`landedVotes`), and only while today's ET day has
+ * fewer than `intradayCap` of EITHER stored revisions or intraday model calls
+ * (entry.summary_attempts, spent by writeSummaries before each call). Nothing
+ * else opens the door intraday — a status change, a scheduled listing, a
+ * re-anchor all wait for the nightly exactly as before. A rejected or failed
+ * attempt is not retried until the next vote lands or the nightly runs, and it
+ * still spends one of the day's slots, so the cap bounds what we pay, not
+ * only what the page shows.
  *
  * BOTH MODES: the floor guard defers a question whose vehicle has a floor
  * event today and no roll call on it dated today in the vote data
@@ -1238,7 +1240,7 @@ export function freshCandidates(candidates, storeArg) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  * }} args
- * @returns {{ momentId: string, generate: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[] }[]}
+ * @returns {{ momentId: string, generate: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], intraday: boolean, day: string }[]}
  */
 export function planSummaries({
   mode,
@@ -1282,7 +1284,9 @@ export function planSummaries({
     const votes = (rolls ?? [])
       .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
       .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : Number(b.roll) - Number(a.roll)));
-    const base = { momentId, statuses, records, votes };
+    // `intraday` + `day` tell writeSummaries to spend one of today's attempt
+    // slots before it calls the model.
+    const base = { momentId, statuses, records, votes, intraday: mode !== 'nightly', day: today };
 
     let why;
     if (mode === 'nightly') {
@@ -1294,12 +1298,17 @@ export function planSummaries({
       }
     } else {
       if (!landedVotes.has(momentId)) continue;
-      const already = revisionsOnDay(entry, today);
+      // The cap counts whichever is larger: revisions stored today (the
+      // nightly's included) or intraday model calls spent today, successful
+      // or rejected. So it bounds BOTH what the page shows and what we pay.
+      const revisions = revisionsOnDay(entry, today);
+      const attempts = summaryAttemptsOnDay(entry, today);
+      const already = Math.max(revisions, attempts);
       if (already >= intradayCap) {
         plan.push({
           ...base,
           generate: false,
-          reason: `a vote landed, but ${already} revision(s) already exist for ${today} (intraday cap ${intradayCap})`,
+          reason: `a vote landed, but ${today} already has ${revisions} revision(s) and ${attempts} intraday attempt(s) (intraday cap ${intradayCap})`,
         });
         continue;
       }
@@ -1346,6 +1355,12 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
       continue;
     }
     const entry = storeArg[p.momentId];
+    if (p.intraday) {
+      // Counted BEFORE the call, so a call that throws or is rejected still
+      // spends its slot — the intraday cap is a bound on model calls, not on
+      // successes (summaryAttemptsOnDay).
+      entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
+    }
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
     const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes);
     if (!revision) continue;

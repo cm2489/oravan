@@ -579,6 +579,50 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
     expect(plan({ store: two })[0].generate).toBe(true);
   });
 
+  test('REJECTED replies spend the cap too — it bounds model calls, not only successes', async () => {
+    let calls = 0;
+    const rejecting = {
+      messages: {
+        create: async () => {
+          calls++;
+          return { content: [{ type: 'text', text: JSON.stringify(FALSE_ABSENCE) }] };
+        },
+      },
+    };
+    const store = storeWith([rev('s_088cc923', '2026-09-24T18:57:01.886Z')]);
+    // Three landings in a row, every reply rejected by the absence lint.
+    for (let i = 0; i < 3; i++) {
+      const written = await writeSummaries({ plan: plan({ store }), store, moments: MOMENTS, anthropic: rejecting });
+      expect(written).toBe(0);
+    }
+    expect(calls).toBe(3);
+    expect(store['iran-war-powers']).toMatchObject({ summary_attempts: { day: '2026-09-24', count: 3 } });
+    // The fourth landing that day makes no call at all.
+    const [fourth] = plan({ store });
+    expect(fourth.generate).toBe(false);
+    expect(fourth.reason).toContain('3 intraday attempt(s)');
+    await writeSummaries({ plan: [fourth], store, moments: MOMENTS, anthropic: rejecting });
+    expect(calls).toBe(3);
+    // Nothing was appended: the previous revision stands through all of it.
+    expect(store['iran-war-powers'].summary_revisions).toHaveLength(1);
+    // A counter from yesterday is stale and reads as zero.
+    expect(plan({ store, now: Date.parse('2026-09-25T15:00:00Z') })[0].generate).toBe(true);
+  });
+
+  test('the gate accepts a well-formed attempt counter and rejects a malformed one', () => {
+    const run = (attempts: unknown) =>
+      checkMomentUpdates(
+        { _meta: { schema: 1, generated_at: '2026-09-24T20:00:00Z' }, 'iran-war-powers': { updates: [], summary_revisions: [], summary_attempts: attempts } },
+        MOMENTS,
+        new Set(IRAN_VEHICLES),
+        { now: NOW },
+      ).violations;
+    expect(run({ day: '2026-09-24', count: 2 })).toEqual([]);
+    expect(run({ day: '2026-09-24', count: -1 }).length).toBe(1);
+    expect(run({ day: 'yesterday', count: 1 }).length).toBe(1);
+    expect(run({ day: '2026-09-30', count: 1 }).some((v: string) => v.includes('future'))).toBe(true);
+  });
+
   test('no landed vote, no intraday rewrite — whatever else moved', () => {
     expect(plan({ landedVotes: new Set() })).toEqual([]);
   });
