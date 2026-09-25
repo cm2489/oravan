@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-25T13:41:33.041Z"
+    "generated_at": "2026-09-25T19:08:59.888Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2505,7 +2505,11 @@
         ],
         "model": "claude-sonnet-5"
       }
-    ]
+    ],
+    "summary_attempts": {
+      "day": "2026-09-25",
+      "count": 1
+    }
   },
   "crypto-oversight-split-between-sec-and-cftc": {
     "updates": [

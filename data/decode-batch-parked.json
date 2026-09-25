@@ -1,0 +1,20 @@
+{
+  "schema": "decode-batch-parked/v1",
+  "batches": [
+    {
+      "id": "msgbatch_01N2KfFy85HysWbQqsRGPd44",
+      "round": "summaries",
+      "parkedAt": "2026-09-25T18:50:51.691Z",
+      "jobs": [
+        {
+          "slug": "hr-7128-119",
+          "promptSha": "a7720dc23b32b39a"
+        },
+        {
+          "slug": "s-1900-119",
+          "promptSha": "d37a85db286bad40"
+        }
+      ]
+    }
+  ]
+}
