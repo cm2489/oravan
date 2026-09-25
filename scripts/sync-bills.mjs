@@ -842,6 +842,13 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // a gate verdict is a resolution too) so pass 2 can dedupe without
   // re-fetching or re-deciding - see updateSlug/refreshBillFields.
   const handledSlugs = new Set();
+  // Every slug a pass already FETCHED tonight and counted an outcome for,
+  // whatever that outcome was — wider than handledSlugs, which deliberately
+  // leaves out a budget deferral, a partial payload and a failure so a later
+  // pass may retry them. Read by the parked-bill direct fetch alone, so it
+  // never re-fetches (and re-counts) a bill the passes already met tonight
+  // (2026-09-25 fix pass).
+  const metTonight = new Set();
 
   // What each refreshed bill told us on the way past, for the re-decode pass
   // near the bottom of this file. A refresh is free and already fetched the
@@ -865,6 +872,10 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   let recentRefreshed = 0, recentAdded = 0, recentGated = 0, recentDeferred = 0, recentPartial = 0, recentNoText = 0, recentFailed = 0;
   for (const u of recentBills) {
     const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < recentDecodeCap });
+    // A 'budget' deferral here is the RECENT reserve running out, not the
+    // night's budget, and it is counted in no DONE-line tally — so it is the
+    // one outcome the parked-bill direct fetch may still try again.
+    if (result.outcome !== 'budget') metTonight.add(result.slug);
     if (result.outcome === 'refreshed') {
       refreshed++; recentRefreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
     } else if (result.outcome === 'added' || result.outcome === 'queued_decode') {
@@ -1093,6 +1104,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       // still advance over it exactly as if pass 2 had handled it itself.
     } else {
       const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < MAX_NEW_DECODES });
+      metTonight.add(slug);
       if (result.outcome === 'refreshed') {
         refreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
       } else if (result.outcome === 'added') {
@@ -1206,7 +1218,14 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   if (decodeQueue) {
     const queuedTonight = new Set(decodeQueue.map((j) => j.slug));
     for (const slug of parkedSlugs(parkedState)) {
-      if (handledSlugs.has(slug) || queuedTonight.has(slug) || bySlug.has(slug)) continue;
+      // metTonight, not just handledSlugs (2026-09-25 fix pass): a parked bill
+      // a pass already met tonight with a budget deferral, a partial payload
+      // or a failure has had its verdict counted. Fetching it again here would
+      // count it twice — in `queued`, `partialSkipped` or `billsFailed`, and
+      // in `newSeen` — for the same night. Skipping it strands nothing: it is
+      // not in the corpus, so the parked file keeps it and the next run's
+      // direct fetch still reaches it if no window does.
+      if (handledSlugs.has(slug) || metTonight.has(slug) || queuedTonight.has(slug) || bySlug.has(slug)) continue;
       const target = forceSlugTarget(slug);
       if (!target.ok) continue; // a stored slug for another Congress: never substituted
       revisited++;
@@ -1264,6 +1283,9 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // back behind an earlier run's batch that is still running. The cursor treats
   // them exactly like a failure (resolveCursorRows below); nothing else does.
   let drainDeferredSlugs = new Set();
+  // The union of the two, as the drain computes it (lib/decode-batch.mjs's
+  // unresolvedSlugs): the ONE set the cursor decision below is handed.
+  let drainUnresolvedSlugs = new Set();
   if (decodeQueue) {
     if (decodeQueue.length) {
       console.log(`decode-batch: draining ${decodeQueue.length} queued decode(s) — parked batches collected first, then the Message Batches API at half the standard rate; a slow batch is parked for the next run (time-critical bills fall back synchronously)`);
@@ -1280,6 +1302,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     });
     drainFailedSlugs = drain.failedSlugs;
     drainDeferredSlugs = drain.deferredSlugs;
+    drainUnresolvedSlugs = drain.unresolvedSlugs;
     batchDecoded = drain.batchDecoded;
     syncFallback = drain.syncFallback;
     harvestedDecodes = drain.harvested;
@@ -1558,11 +1581,12 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // meets it again, finds its parked result, and lands it. The collection
   // record is a second guarantee (the parked-bill direct fetch above); the
   // freeze is the first, and the one #255's invariant is written against.
-  const { cursor, frozen, lastFullDay } = resolveCursorRows(
-    cursorRows,
-    since,
-    new Set([...drainFailedSlugs, ...drainDeferredSlugs])
-  );
+  //
+  // Pinned (2026-09-25 fix pass): tests/decode-batch-park.unit.spec.ts reads
+  // this file and fails if this call is handed anything but
+  // `drainUnresolvedSlugs`, because handing it `drainFailedSlugs` alone would
+  // pass every behavioural test and skip every parked bill for good.
+  const { cursor, frozen, lastFullDay } = resolveCursorRows(cursorRows, since, drainUnresolvedSlugs);
 
   // Where the cursor lands. A run that left nothing behind advances to
   // runStart; a frozen one, or one whose window was truncated, advances only to

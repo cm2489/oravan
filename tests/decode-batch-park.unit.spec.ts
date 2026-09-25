@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildSummaryPrompt, textFingerprint } from '../scripts/bill-decode.mjs';
+import { runHonestyVerdict } from '../scripts/check-run-honesty.mjs';
 import {
   PARK_BLOCK_MAX_MS,
   PARK_RETENTION_MS,
@@ -13,6 +17,7 @@ import {
   liveVehicleSlugs,
   normalizeParkedState,
   pruneParkedState,
+  unresolvedSlugs,
 } from '../lib/decode-batch.mjs';
 import { formatSyncDoneLine, loadParkingContext, resolveCursorRows } from '../scripts/sync-bills.mjs';
 import { parseSyncDone } from '../lib/pipeline-health.mjs';
@@ -34,8 +39,10 @@ import { parseSyncDone } from '../lib/pipeline-health.mjs';
  *      request for a half it already holds.
  *   2. A PARKED BILL IS NEVER STEPPED OVER. It is not in the corpus, so the
  *      cursor freezes on it exactly as it would on a failed decode (#255).
- *   3. A PARKED BILL IS NOT A FAILURE. It never reaches failedSlugs, so it
- *      cannot trip the honesty alarm or the mostly-failed abort.
+ *   3. A PARKED BILL IS NOT A FAILURE. It never reaches failedSlugs, and it
+ *      is not counted in `decodeAttempts` either, so it cannot trip the
+ *      honesty alarm (not even alongside an unrelated refresh failure) or the
+ *      mostly-failed abort.
  *   4. TIME-CRITICAL BILLS KEEP THE OLD PATH — their own batch, cancelled at
  *      the deadline, decoded synchronously the same night.
  *
@@ -287,6 +294,65 @@ test.describe('decodeBatched: a slow batch is parked, not re-bought', () => {
     expect(api.requestsIn(api.created[0]).every((r) => isStructurePrompt(r.params.messages[0].content))).toBe(true);
     expect(out.get(j.slug)?.ok).toBe(true);
     expect(out.get(j.slug)?.dec?.ai_summary).toBe('A PARKED SUMMARY');
+  });
+
+  test('one failed status check does NOT park a batch that ends inside its wait', async () => {
+    // Parking early is no longer a double payment, but it is still a night's
+    // delay for every bill in the batch — too much to pay for one transient 503.
+    const api = fakeAnthropic();
+    api.setMode('stall');
+    const c = clock();
+    const realRetrieve = api.messages.batches.retrieve;
+    let polls = 0;
+    api.messages.batches.retrieve = async (id: string) => {
+      polls++;
+      if (polls === 1) throw new Error('503 transient');
+      api.finish(id); // the batch ends by the next look
+      return realRetrieve(id);
+    };
+    const parks: unknown[] = [];
+    const logs: string[] = [];
+    const j = job('hr-1515-119');
+    const out = await decodeBatched([j], {
+      anthropic: api, log: (m: string) => logs.push(m), now: c.now, sleep: c.sleep, maxWaitMs: 480_000,
+      canPark: () => true, onPark: (e: unknown) => parks.push(e),
+    });
+    expect(parks).toEqual([]);
+    expect(api.cancelled).toEqual([]);
+    expect(out.get(j.slug)?.ok).toBe(true);
+    expect(logs.some((m) => m.includes('could not be polled (503 transient)') && m.includes('polling again'))).toBe(true);
+  });
+
+  test('status checks that keep failing park the batch at the deadline, not before, and never cancel it', async () => {
+    const api = fakeAnthropic();
+    api.setMode('stall');
+    const c = clock();
+    api.messages.batches.retrieve = async () => { throw new Error('503 from the status check'); };
+    const parks: Array<{ id: string }> = [];
+    const out = await decodeBatched([job('hr-1515-119')], {
+      anthropic: api, log: quiet, now: c.now, sleep: c.sleep, maxWaitMs: 480_000,
+      canPark: () => true, onPark: (e: { id: string }) => parks.push(e),
+    });
+    expect(c.now() - NOW).toBeGreaterThanOrEqual(480_000);
+    expect(parks.map((p) => p.id)).toEqual(api.created);
+    expect(api.cancelled).toEqual([]);
+    expect(out.get('hr-1515-119')?.parked).toBe(true);
+  });
+
+  test('a failed status check on the TIME-CRITICAL batch still cancels and falls back at once', async () => {
+    const api = fakeAnthropic();
+    api.setMode('stall');
+    const c = clock();
+    api.messages.batches.retrieve = async () => { throw new Error('503 from the status check'); };
+    const urgent = job('s-4668-119', floorBill('s-4668-119'));
+    const out = await decodeBatched([urgent], {
+      anthropic: api, log: quiet, now: c.now, sleep: c.sleep, maxWaitMs: 480_000,
+      canPark: () => false, onPark: () => { throw new Error('nothing may park here'); },
+    });
+    // One poll interval, not the whole wait.
+    expect(c.now() - NOW).toBeLessThan(480_000);
+    expect(api.cancelled).toEqual(api.created);
+    expect(out.get(urgent.slug)).toEqual({ ok: false, reason: 'no-summary' });
   });
 });
 
@@ -541,9 +607,10 @@ test.describe('drainDecodeQueue: a slow night, then the night after', () => {
       { updateDate: '2026-09-23', day: '2026-09-23', slug: waits.slug, needsWork: false }, // queued: its row cannot know yet
       { updateDate: '2026-09-24', day: '2026-09-24', slug: 'hr-200-119', needsWork: false },
     ];
-    // Exactly the set scripts/sync-bills.mjs hands resolveCursorRows.
-    const unresolved = new Set([...res.failedSlugs, ...res.deferredSlugs]);
-    const out = resolveCursorRows(rows, '2026-09-21T00:00:00Z', unresolved);
+    // Exactly the set scripts/sync-bills.mjs hands resolveCursorRows — the
+    // drain's own `unresolvedSlugs`, pinned at the call site in section 6.
+    expect([...res.unresolvedSlugs]).toEqual([waits.slug]);
+    const out = resolveCursorRows(rows, '2026-09-21T00:00:00Z', res.unresolvedSlugs);
     expect(out.frozen).toBe(true);
     expect(out.cursor.startsWith('2026-09-22')).toBe(true);
     expect(out.lastFullDay).toBe('2026-09-22');
@@ -681,6 +748,117 @@ test.describe('drainDecodeQueue: a slow night, then the night after', () => {
     expect(res.syncFallback).toBe(1);
     expect(store.bySlug.has('hr-1515-119')).toBe(true);
   });
+
+  test('unresolvedSlugs is every bill the drain did not land — failed AND parked — and freezes the cursor on either', async () => {
+    const api = fakeAnthropic();
+    // The time-critical bill's synchronous fallback fails outright.
+    api.messages.create = async () => { throw new Error('529 overloaded'); };
+    const urgent = job('s-4668-119', floorBill('s-4668-119'));
+    const waits = job('hr-1515-119');
+    const { res } = await nightOne(api, [urgent, waits]);
+    expect([...res.failedSlugs]).toEqual([urgent.slug]);
+    expect([...res.deferredSlugs]).toEqual([waits.slug]);
+    expect(res.unresolvedSlugs).toEqual(new Set([urgent.slug, waits.slug]));
+    expect(unresolvedSlugs(res)).toEqual(res.unresolvedSlugs);
+
+    for (const slug of [urgent.slug, waits.slug]) {
+      const rows = [
+        { updateDate: '2026-09-22', day: '2026-09-22', slug: 'hr-100-119', needsWork: false },
+        { updateDate: '2026-09-23', day: '2026-09-23', slug, needsWork: false },
+        { updateDate: '2026-09-24', day: '2026-09-24', slug: 'hr-200-119', needsWork: false },
+      ];
+      const out = resolveCursorRows(rows, '2026-09-21T00:00:00Z', res.unresolvedSlugs);
+      expect(out.frozen).toBe(true);
+      expect(out.lastFullDay).toBe('2026-09-22');
+    }
+  });
+
+  test('an empty queue still hands back an (empty) unresolvedSlugs', async () => {
+    const res = await drainDecodeQueue([], { anthropic: fakeAnthropic(), ...corpus(), log: quiet, logError: quiet });
+    expect(res.unresolvedSlugs).toEqual(new Set());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4a. The honesty alarm — a night that parked is not a dead decode path
+// ---------------------------------------------------------------------------
+
+test.describe('decodeAttempts and the run-honesty alarm (rule 3)', () => {
+  /** Run `fn` with RUN_COUNTERS_FILE pointed at a fresh temp file, and hand
+   *  back what it wrote. Restores the env either way. */
+  async function withCounters(fn: () => Promise<void>): Promise<Record<string, number>> {
+    const dir = mkdtempSync(join(tmpdir(), 'park-counters-'));
+    const file = join(dir, 'counters.json');
+    const prev = process.env.RUN_COUNTERS_FILE;
+    process.env.RUN_COUNTERS_FILE = file;
+    try {
+      await fn();
+      try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return {}; }
+    } finally {
+      if (prev === undefined) delete process.env.RUN_COUNTERS_FILE;
+      else process.env.RUN_COUNTERS_FILE = prev;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  const drainStalled = (api: ReturnType<typeof fakeAnthropic>, jobs: Job[], isTimeCritical: (j: Job) => boolean) => {
+    const c = clock();
+    api.setMode('stall');
+    return drainDecodeQueue(jobs, {
+      anthropic: api, ...corpus(), isTimeCritical,
+      now: c.now, sleep: c.sleep, maxWaitMs: 120_000, log: quiet, logError: quiet,
+    });
+  };
+
+  test('a night where EVERY bill parks, plus one unrelated refresh failure, does not red the run', async () => {
+    const api = fakeAnthropic();
+    const jobs = ['hr-1515-119', 'hr-3706-119', 'hr-1461-119'].map((s) => job(s));
+    let parked = -1;
+    const counters = await withCounters(async () => { parked = (await drainStalled(api, jobs, () => false)).parked; });
+    expect(parked).toBe(3);
+    // The parked jobs reached the model, but their verdict is due next run.
+    expect(counters.decodeAttempts ?? 0).toBe(0);
+    // What scripts/sync-bills.mjs then writes: every parked bill came back out
+    // of `added`, and one Congress.gov refresh 500 lands in billsFailed.
+    const verdict = runHonestyVerdict({ ...counters, billsAdded: 0, billsFailed: 1 }, { job: 'nightly' });
+    expect(verdict.failures).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test('...but the one decode that was DUE tonight failing both ways still reds it', async () => {
+    const api = fakeAnthropic();
+    api.messages.create = async () => { throw new Error('529 overloaded'); };
+    const urgent = job('s-4668-119', floorBill('s-4668-119'));
+    const jobs = [urgent, job('hr-1515-119'), job('hr-3706-119')];
+    let failed: string[] = [];
+    let parked = -1;
+    const counters = await withCounters(async () => {
+      const res = await drainStalled(api, jobs, (j) => j.slug === urgent.slug);
+      failed = [...res.failedSlugs];
+      parked = res.parked;
+    });
+    expect(parked).toBe(2);
+    expect(failed).toEqual([urgent.slug]);
+    expect(counters.decodeAttempts).toBe(1);
+    const verdict = runHonestyVerdict({ ...counters, billsAdded: 0, billsFailed: 1 }, { job: 'nightly' });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.failures.join(' ')).toContain('dead decode path');
+  });
+
+  test('a bill that lands still counts as an attempt', async () => {
+    const api = fakeAnthropic(); // mode 'end': the batch finishes at once
+    const c = clock();
+    let batchDecoded = -1;
+    const counters = await withCounters(async () => {
+      const res = await drainDecodeQueue([job('hr-1515-119')], {
+        anthropic: api, ...corpus(), isTimeCritical: () => false,
+        now: c.now, sleep: c.sleep, maxWaitMs: 120_000, log: quiet, logError: quiet,
+      });
+      batchDecoded = res.batchDecoded;
+    });
+    expect(batchDecoded).toBe(1);
+    expect(counters.decodeAttempts).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -699,5 +877,32 @@ test('the DONE line the script prints still parses in lib/pipeline-health.mjs, w
   expect(parsed).toMatchObject({
     refreshed: 237, added: 3, gated: 324, queued: 1, ascendingFailed: 4, newFailed: 2,
     recentFailed: 1, forceFailed: 0, cursor: '2026-09-23T00:00:00Z', newSeen: 337, corpus: 3218,
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. The script really hands the cursor that set (source pins)
+// ---------------------------------------------------------------------------
+
+test.describe('scripts/sync-bills.mjs wires the drain to the cursor', () => {
+  // The script body is top-level await inside its argv guard, so no spec can
+  // run it; everything above tests the pieces. These pin the lines that join
+  // them. If resolveCursorRows were handed the failure set alone, every
+  // behavioural test above would still pass and every parked bill would be
+  // stepped over for good: #255's regression, back without a sound.
+  const src = readFileSync(join(process.cwd(), 'scripts/sync-bills.mjs'), 'utf8');
+
+  test('the one resolveCursorRows call site is handed the drain\'s unresolvedSlugs', () => {
+    const calls = src.match(/resolveCursorRows\([^)]*\)/g) ?? [];
+    // The first match is the function's own signature.
+    const callSites = calls.filter((c) => !c.startsWith('resolveCursorRows(rows,'));
+    expect(callSites).toEqual(['resolveCursorRows(cursorRows, since, drainUnresolvedSlugs)']);
+    expect(src).toMatch(/drainUnresolvedSlugs = drain\.unresolvedSlugs;/);
+  });
+
+  test('the parked-bill direct fetch skips a slug a pass already met tonight', () => {
+    expect(src).toMatch(
+      /if \(handledSlugs\.has\(slug\) \|\| metTonight\.has\(slug\) \|\| queuedTonight\.has\(slug\) \|\| bySlug\.has\(slug\)\) continue;/
+    );
   });
 });
