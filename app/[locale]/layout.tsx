@@ -83,8 +83,23 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'common' });
 
+  /* data-scroll-behavior="smooth" tells Next.js that app/globals.css sets
+     `scroll-behavior: smooth` on <html>, so the router turns it off while it
+     resets the scroll position on a page change. In the Next.js version this
+     app runs, the router does that ONLY when this attribute is present
+     (next/dist/shared/lib/router/utils/disable-smooth-scroll.js). Without it,
+     a link followed from a scrolled-down page glided the new page up to the
+     top, and a click made during that glide landed on whatever had moved
+     under the pointer: a Big Question's vehicle link, or a bill page's "Part
+     of a bigger question" link, could be clicked and go nowhere
+     (tests/moments.spec.ts, flaky under load). In-page #anchor jumps keep
+     the smooth scroll, which is what the CSS rule is for. */
   return (
-    <html lang={locale} className={`${franklin.variable} ${besley.variable}`}>
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      className={`${franklin.variable} ${besley.variable}`}
+    >
       <body className="min-h-dvh flex flex-col">
         {/* For the curious who open devtools: the no-trackers claim, verifiable */}
         <script

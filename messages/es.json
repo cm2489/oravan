@@ -942,7 +942,7 @@
     "evidenceLink": "Fuente {index}",
     "howMadeLink": "Cómo se crean las Grandes preguntas",
     "howMadeHeading": "Cómo se crean las Grandes preguntas",
-    "howMadeBody": "Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada por un control automático y luego revisada por una persona antes de publicarse.",
+    "howMadeBody": "Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada por controles automáticos antes de publicarse.",
     "howMadeRule1": "Algo todavía en marcha: al menos un proyecto de ley o una nominación ante el Senado, con seguimiento y sin haber llegado a su fin. El asunto todavía tiene que ser uno en el que una llamada pueda influir.",
     "howMadeRule2": "Una señal reciente: en los últimos 45 días apareció en un calendario del gobierno o en las actuaciones del pleno de una cámara (una votación en el pleno, una moción o una <cloture>solicitud de cierre de debate</cloture> en el pleno, la lista de proyectos de la semana, lo más visto de Congress.gov, el <execCalendar>Calendario Ejecutivo del Senado</execCalendar>), o en cobertura de prensa de al menos dos medios con orientaciones distintas.",
     "howMadeRule3": "Una acción posible: la página y el guion de llamada ya funcionan — todo proyecto de ley del corpus cumple por construcción, y una nominación solo cumple cuando el registro del Senado incluye la frase descriptiva con la que se escribe su guion. El control automático rechaza la que no la tenga.",
@@ -998,7 +998,7 @@
       "recordStepLabel": "El último paso del registro, en sus propias palabras (en inglés):",
       "recordStepEmpty": "El registro todavía no muestra texto de la acción.",
       "explainer": "Todos los proyectos de esta pregunta llegaron al final de su recorrido. Las tarjetas de abajo cuentan lo que pasó.",
-      "lastReviewed": "Resumen revisado por última vez por una persona el {date}.",
+      "lastReviewed": "Resumen actualizado el {date}.",
       "group": {
         "house": "Empezó en la Cámara",
         "senate": "Empezó en el Senado",

@@ -67,6 +67,7 @@ interface MomentRow {
   name?: { en: string; es: string };
   status?: string;
   review_by?: string;
+  reviewed?: string;
   vehicles?: { slug: string }[];
 }
 
@@ -707,11 +708,23 @@ test.describe('authorization', () => {
  * about the corpus on the day the suite runs, and the property under test is
  * not the corpus — so the extras are flipped to `retired` (which is what a
  * `/replace` would have done anyway) until LIVE_CAP - 1 remain.
+ *
+ * The same goes for an entry's `reviewed` date (the day its text last
+ * changed). NOW is pinned to the subject's record, which can sit days before
+ * the day a question's text was last updated, and the gate rightly refuses a
+ * `reviewed` date after its clock. That refusal is about the real file read
+ * on a back-dated clock, not about the issue under test, so a `reviewed`
+ * later than NOW is dropped here, which reads that entry as unchanged since
+ * it opened.
  */
 function withRoom(): Record<string, MomentRow> {
   const out = structuredClone(momentsFile);
   const live = Object.keys(out).filter((id) => out[id].status === 'live');
   for (const id of live.slice(LIVE_CAP - 1)) out[id].status = 'retired';
+  for (const id of Object.keys(out)) {
+    const reviewed = out[id].reviewed;
+    if (reviewed !== undefined && Date.parse(`${reviewed}T00:00:00Z`) > NOW) delete out[id].reviewed;
+  }
   return out;
 }
 

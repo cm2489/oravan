@@ -942,7 +942,7 @@
     "evidenceLink": "Source {index}",
     "howMadeLink": "How Big Questions get made",
     "howMadeHeading": "How Big Questions get made",
-    "howMadeBody": "A Big Question opens only when something real before Congress meets every rule below — checked by an automated gate, then reviewed by a person before it publishes.",
+    "howMadeBody": "A Big Question opens only when something real before Congress meets every rule below — checked by automated gates before it publishes.",
     "howMadeRule1": "Something still moving: at least one tracked bill or Senate nomination that has not reached its end. The question has to still be one a call can affect.",
     "howMadeRule2": "A recent signal: in the last 45 days it appeared on a government schedule or in a chamber's own floor proceedings (a floor vote, a motion or <cloture>cloture</cloture> filing on the floor, the week's bill list, Congress.gov's most-viewed, the <execCalendar>Senate Executive Calendar</execCalendar>), or in press coverage from at least two outlets of differing leanings.",
     "howMadeRule3": "A callable action: the page and the call script already work — every corpus bill qualifies by construction, and a nomination qualifies only when the Senate's record carries the description sentence its script is written from. The gate rejects one that doesn't.",
@@ -998,7 +998,7 @@
       "recordStepLabel": "The record's latest step, in its own words:",
       "recordStepEmpty": "The record shows no action text yet.",
       "explainer": "Every bill in this question has reached the end of its path. The cards below say what happened.",
-      "lastReviewed": "Summary last reviewed by a person {date}.",
+      "lastReviewed": "Summary updated {date}.",
       "group": {
         "house": "Started in the House",
         "senate": "Started in the Senate",
