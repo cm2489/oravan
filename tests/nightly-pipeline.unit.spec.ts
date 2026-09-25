@@ -497,3 +497,59 @@ test.describe('nightly phasing (Congress.gov publishes 13:35-14:00 UTC)', () => 
     }
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * 7 · 2026-09-25 (Phase 0 of the real-time plan) — the vote sync runs
+ *     INTRADAY, so the live layer can read a vote the day it is taken.
+ *
+ * On 2026-09-24 the Senate rejected H.Con.Res. 89 at 1:45 p.m. ET and the
+ * "Where it stands" written 72 minutes later said no votes had been recorded:
+ * scripts/sync-votes.mjs ran only in the nightly, and scripts/moment-updates.mjs
+ * never read its file. The order below is what makes the fix work: the vote
+ * sync must land data/votes.json BEFORE the collector reads it, on the hourly
+ * path, without ever costing that path its headline refreshes.
+ * ------------------------------------------------------------------ */
+test.describe('newsdesk: intraday roll-call vote sync', () => {
+  const newsdesk = wf('newsdesk.yml');
+  const stepOf = (name: string) => {
+    const at = newsdesk.indexOf(`- name: ${name}`);
+    expect(at, `${name} step not found`).toBeGreaterThan(0);
+    const rest = newsdesk.slice(at);
+    const next = rest.slice(1).search(/\n {6}- name:/);
+    return { at, body: next === -1 ? rest : rest.slice(0, next + 1) };
+  };
+
+  test('THE ORDER: after the newsdesk (the corpus it joins on), before the Moment updates (which read it), before the commit', () => {
+    const votes = stepOf('Sync roll-call votes');
+    expect(votes.at).toBeGreaterThan(stepOf('Run newsdesk').at);
+    expect(votes.at).toBeLessThan(stepOf('Collect Moment updates').at);
+    expect(votes.at).toBeLessThan(stepOf('Commit data').at);
+  });
+
+  test('it can never cost the hourly run, never spends, and never commits a cursor-only change', () => {
+    const { body } = stepOf('Sync roll-call votes');
+    expect(body).toContain('run: node scripts/sync-votes.mjs --only-new-rolls');
+    expect(body).toContain('continue-on-error: true');
+    expect(body).toContain('CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}');
+    // $0 by construction: this step is never handed the Anthropic key.
+    expect(body).not.toContain('ANTHROPIC_API_KEY');
+  });
+
+  test('--only-new-rolls really gates the WRITE (and the pre-write gate still runs first)', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
+    expect(src).toContain("const ONLY_NEW_ROLLS = process.argv.includes('--only-new-rolls');");
+    const gateAt = src.indexOf('verifyVotes({');
+    const skipAt = src.indexOf('ONLY_NEW_ROLLS && h.stored + s.stored === 0');
+    const writeAt = src.indexOf('writeFileSync(VOTES_PATH');
+    expect(gateAt).toBeGreaterThan(0);
+    expect(skipAt).toBeGreaterThan(gateAt);
+    expect(writeAt).toBeGreaterThan(skipAt);
+  });
+
+  test('the nightly keeps its own vote sync WITHOUT the flag, so the cursor is still persisted nightly', () => {
+    expect(syncBills).toMatch(/run: node scripts\/sync-votes\.mjs\s*\n/);
+    expect(syncBills).not.toContain('sync-votes.mjs --only-new-rolls');
+    // …and the newsdesk still shares the data-sync group, so the two writes serialize.
+    expect(newsdesk).toMatch(/concurrency:[\s\S]*?group:\s*data-sync/);
+  });
+});

@@ -141,6 +141,48 @@ jobs:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/newsdesk.mjs
+      - name: Sync roll-call votes (intraday, so the live layer reads today's votes)
+        # WHY HERE (2026-09-25, Phase 0 of the real-time plan): the Moment
+        # updates step below now reads data/votes.json — every roll call on a
+        # live question's vehicle becomes a `vote` update and part of the
+        # "Where it stands" grounding. Until now the vote sync ran only in the
+        # nightly, so on 2026-09-24 a vote taken at 1:45 p.m. ET could not
+        # reach the live layer until the next day. AFTER the newsdesk (which
+        # may refresh data/bills.json, the corpus this script joins on) and
+        # BEFORE the Moment updates step (which reads what this writes).
+        #
+        # EVERY RUN, not only on session days. The brief asked for a guard on
+        # "a chamber was in session today or yesterday" from
+        # data/floor-signals.json, and that state cannot answer it: `in_session`
+        # there is read from the Daily Digest's "Program for" blocks, i.e. the
+        # NEXT scheduled meeting, with no record of whether a chamber sat today
+        # or yesterday; on 2026-09-25 the same file reported the House
+        # out_of_session while naming a House meeting at 2:30 p.m. on
+        # 2026-09-24 (perhaps a pro forma session — the file cannot say, which
+        # is the point); and the step that writes it is continue-on-error, so
+        # a crash leaves it stale. An unreliable guard here fails CLOSED onto the
+        # exact failure this step exists to fix. Running it every time costs
+        # $0 (two free Congress.gov list requests and one senate.gov menu per
+        # run, plus one or two per NEW corpus roll call).
+        #
+        # --only-new-rolls: writes data/votes.json ONLY when a new roll call on
+        # a corpus bill was stored. The cursor moves on every roll call either
+        # chamber takes, so without the flag a session day would commit and
+        # deploy hourly for a progress marker; the nightly (no flag) still
+        # persists the cursor. So the commit step below stays commit-only-on-
+        # change for a real reason, not a restamp.
+        #
+        # continue-on-error, on the nightly's own precedent: a senate.gov or
+        # Congress.gov hiccup here must never cost the run its headline
+        # refreshes, and the script's own pre-write gate (verifyVotes) refuses
+        # to write a file that would fail scripts/check-votes.mjs — which CI
+        # runs again on the push this job dispatches. The shared `data-sync`
+        # concurrency group above already serializes this write with the
+        # nightly's.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/sync-votes.mjs --only-new-rolls
       - name: Collect Moment updates (Moments v2 live layer, incremental)
         # A SEPARATE step, not a change to scripts/newsdesk.mjs: the two
         # scripts own disjoint files (newsdesk owns bills.json/bills-es.json,
@@ -151,7 +193,10 @@ jobs:
         # It writes NOTHING when nothing moved (no _meta restamp), which is
         # what keeps an hourly cron from becoming an hourly deploy.
         # Cost: ONE batched Haiku call per run, skipped entirely on an empty
-        # batch — see scripts/moment-updates.mjs's SPEND section.
+        # batch, plus (since 2026-09-25) a Sonnet "Where it stands" rewrite
+        # ONLY for a question a roll-call vote landed on in this run, capped
+        # at 3 revisions per question per ET day — see
+        # scripts/moment-updates.mjs's SPEND section.
         continue-on-error: true
         env:
           MOMENT_UPDATES_MODE: incremental
@@ -191,7 +236,9 @@ jobs:
           # data/conversation.json (the conversation lamp's committed
           # evidence - no sync-state.json, no coverage.json; see
           # scripts/newsdesk.mjs's Boundaries section) plus
-          # data/moment-updates.json from the collector step above and
+          # data/moment-updates.json from the collector step above,
+          # data/votes.json from the intraday vote sync (only when a new
+          # roll call was stored) and
           # data/floor-signals.json from the announcement collector;
           # `git add data/` already stages all of them
           # - disjoint from refresh-legislators.yml's
