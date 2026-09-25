@@ -33,7 +33,36 @@ import { setPrefs, usePrefs } from '@/lib/local';
  */
 
 const FIELD_BASE =
-  'min-h-12 w-full rounded-control px-4 py-3 text-lg text-ink tabular-nums placeholder:text-ink-2';
+  'w-full rounded-control px-4 text-lg text-ink tabular-nums placeholder:text-ink-2';
+
+/*
+ * THE INLINE ROW IS ONE 48px LINE (B1-2, 2026-09-25). Measured at 390x844 it
+ * was 79px: the full "Find my representatives" label wrapped to two lines in
+ * the 214px track, the grid stretched the field to match, and the two ink
+ * boxes read as two inputs. Both controls are now exactly the button height
+ * DESIGN.md names (48px) — the field by a fixed `h-12` (its 18px text plus
+ * `py-3` set 57px), the submit by `min-h-12` with `py-2` — and the submit
+ * carries the short label (`home.zipCtaShort`), which fits one line in both
+ * locales at 390.
+ */
+const FIELD_ROW = {
+  inline: 'h-12',
+  stacked: 'min-h-12 py-3',
+} as const;
+
+const SUBMIT = {
+  primary:
+    'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep',
+  /*
+   * SECONDARY IS VISIBLY NOT A FIELD (B1-2). It used to be a 2px ink box on
+   * paper — the field's exact treatment — so the pair read as two inputs.
+   * Now: the ink edge belongs to the field alone; the submit is bold text and
+   * an arrow inside a `line-strong` edge (3.24:1 on paper, a component edge
+   * per the colour law), darkening to ink on hover and press.
+   */
+  secondary:
+    'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-line-strong bg-paper px-4 py-2 font-bold text-ink hover:border-ink active:border-ink',
+} as const;
 
 export function ZipForm({
   autoFocus = false,
@@ -44,8 +73,9 @@ export function ZipForm({
   autoFocus?: boolean;
   /**
    * The submit's visual weight. 'primary' (default) is the filled green
-   * control every instance has always had. 'secondary' is the ink outline
-   * the home hero passes (2026-09-24, finding B3): the hero keeps exactly ONE
+   * control every instance has always had. 'secondary' is the quiet outline
+   * the home hero passes (2026-09-24, finding B3; its `line-strong` edge since
+   * B1-2, see SUBMIT): the hero keeps exactly ONE
    * filled control, and under "Truth-first, call-next" (CLAUDE.md) that is
    * the jump to what is moving, not the field that asks for a ZIP. Keys,
    * behaviour and the ZIP-first funnel path are untouched by the tone.
@@ -57,6 +87,11 @@ export function ZipForm({
    * submit beside it keeps the hero's lowest control clear of the phone
    * thumb bar on short screens (390×664 in tests/home-fold.spec.ts). Other
    * instances keep the container-query stacking below.
+   *
+   * Inline is also the one row too narrow for the full submit label, so it
+   * takes `home.zipCtaShort` ("Find my reps" / "Buscar") and one 48px line
+   * (see FIELD_ROW). Every stacked instance — /reps, the bill rail, the call
+   * dialog — keeps `home.zipCta` unchanged.
    */
   inline?: boolean;
   /**
@@ -146,22 +181,20 @@ export function ZipForm({
           onChange={(e) => setTyped(e.target.value)}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : helpId}
-          className={
-            error
-              ? `${FIELD_BASE} border-[3px] border-ink bg-wash`
-              : `${FIELD_BASE} border-2 border-ink bg-paper hover:border-go-deep`
-          }
+          className={`${FIELD_BASE} ${inline ? FIELD_ROW.inline : FIELD_ROW.stacked} ${
+            error ? 'border-[3px] border-ink bg-wash' : 'border-2 border-ink bg-paper hover:border-go-deep'
+          }`}
         />
-        <button
-          type="submit"
-          className={
-            submitTone === 'secondary'
-              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
-              : 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep'
-          }
-        >
-          {t('zipCta')}
-          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+        <button type="submit" className={SUBMIT[submitTone]}>
+          {inline ? t('zipCtaShort') : t('zipCta')}
+          {/* Under 360px the inline track is 144px and the arrow is what
+              pushes "Find my reps" onto a second line (measured 71px at 320);
+              it is decoration, so it steps out there — the same breakpoint
+              the hero h1 steps down at. */}
+          <ArrowRight
+            className={`h-4 w-4 shrink-0 ${inline ? 'max-[22.5rem]:hidden' : ''}`}
+            aria-hidden
+          />
         </button>
       </div>
       {error ? (

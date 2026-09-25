@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import en from '../messages/en.json';
 
 test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await page.goto('/');
@@ -8,7 +9,8 @@ test('landing renders and ZIP search reaches reps', async ({ page }) => {
   // assertion previously read "It counts.").
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Then make it count.');
   await page.getByLabel('Your ZIP code').fill('78501');
-  await page.getByRole('button', { name: /find my representatives/i }).click();
+  // The hero's inline row carries the short label since B1-2.
+  await page.getByRole('button', { name: en.home.zipCtaShort, exact: true }).click();
   await expect(page).toHaveURL(/\/reps\?zip=78501/);
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
 });

@@ -545,16 +545,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 (tests/home-fold.spec.ts). Spanish is the long language and is
                 the one that failed (8px under the bar, 2026-09-10) — so the
                 lede is held to about twenty words and the hero's top rhythm is
-                tighter below md. */}
-            <a
-              href="#top-actions"
-              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
-            >
-              {t('heroJump')}
-              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-            </a>
+                tighter below md.
 
-            <div className="mt-4">
+                ONE COLUMN, ONE RIGHT EDGE (B1-2, 2026-09-25). The jump sized
+                to its words (296px at 390) over a ZIP row sized to the form
+                (358px), so the two controls ended 62px apart. Both now fill
+                the same track — the form's own 30rem cap — and every control
+                in the block is 48px tall, the button height DESIGN.md names
+                (the jump's `py-3` had set it 54). */}
+            <div className="mt-5 grid max-w-[30rem] gap-4">
+              <a
+                href="#top-actions"
+                className="ring-gap flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-2 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+              >
+                {t('heroJump')}
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+              </a>
               <ZipForm submitTone="secondary" inline />
             </div>
 

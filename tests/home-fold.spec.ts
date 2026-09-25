@@ -51,7 +51,9 @@ test.describe('home fold (phone)', () => {
       }) => {
         await page.setViewportSize({ width: 390, height });
         await page.goto(`${prefix}/`);
-        const cta = page.getByRole('button', { name: messages.home.zipCta });
+        // The hero's inline row carries the SHORT label (B1-2: the full one
+        // wrapped to two lines at 390); every other ZipForm keeps zipCta.
+        const cta = page.getByRole('button', { name: messages.home.zipCtaShort, exact: true });
         await expect(cta).toBeVisible();
         expect(await page.evaluate(() => window.scrollY)).toBe(0);
         const box = await cta.boundingBox();
@@ -87,7 +89,9 @@ test.describe('home fold (phone)', () => {
       expect(filled).toEqual([messages.home.heroJump]);
 
       // The ZIP path is still one tap away — demoted, not removed.
-      await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: messages.home.zipCtaShort, exact: true })
+      ).toBeVisible();
     });
 
     test(`${prefix || '/'}: the trust line is visible on the first screen`, async ({ page }) => {

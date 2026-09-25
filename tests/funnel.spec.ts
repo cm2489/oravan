@@ -210,12 +210,15 @@ for (const { locale, prefix, messages } of LOCALES) {
       await page.goto(`${prefix}/`);
 
       // Click 1 of <=3: submit a ZIP code. Since the 2026-09-24 fold pass
-      // the ZipForm is the hero's ONE filled control (tests/home-fold.spec.ts
-      // pins that it clears the thumb bar on the first screen); the jump to
-      // the week is the secondary text link under it. Either way it stays
-      // page-wide-locatable via getByLabel, so the budget is unchanged.
+      // the jump to the week is the hero's ONE filled control and the ZIP
+      // submit sits under it in the secondary tone (tests/home-fold.spec.ts
+      // pins both, and that the submit clears the thumb bar on the first
+      // screen). Either way it stays page-wide-locatable via getByLabel, so
+      // the budget is unchanged.
+      // The hero's inline row carries `home.zipCtaShort` since B1-2 (the full
+      // label wrapped to two lines at 390); same button, same one click.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: messages.home.zipCta }).click();
+      await page.getByRole('button', { name: messages.home.zipCtaShort, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
 
       // The rep-lookup result is not a dead end: the continuation section
@@ -295,7 +298,7 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       await page.goto(`${prefix}/`);
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: messages.home.zipCta }).click();
+      await page.getByRole('button', { name: messages.home.zipCtaShort, exact: true }).click();
       await expect(page.getByRole('heading', { name: messages.reps.nextTitle })).toBeVisible();
       await expect(
         page.locator('section[aria-labelledby="reps-next"]').getByRole('status')
