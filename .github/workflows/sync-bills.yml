@@ -244,11 +244,20 @@ jobs:
           # a batch is a minute the hourly live layer cannot publish in. That
           # is why lib/decode-batch.mjs's DECODE_BATCH_MAX_WAIT_MS defaults to
           # 8 minutes a round (16 worst case across the two rounds) rather than
-          # the 20 it was written with: a batch slower than that is abandoned
-          # and decoded synchronously at full price, because a stale homepage
-          # costs more than the discount saves. Override the env var for a
-          # one-off catch-up when nothing else is queued.
+          # the 20 it was written with. Override the env var for a one-off
+          # catch-up when nothing else is queued.
           DECODE_BATCH: '1'
+          # What happens to a batch slower than that (2026-09-25). Its bills
+          # that can wait a night are PARKED — the batch id and bill slugs go
+          # into data/decode-batch-parked.json, committed with the rest of
+          # data/ below — and the next run collects the result at the batch
+          # rate BEFORE submitting anything new, so nothing is bought twice.
+          # Time-critical bills (a live Big Question vehicle, a bill in the
+          # homepage's act-now pool, a force_decode_slugs entry) still fall
+          # back to a synchronous decode tonight at full price, as every slow
+          # bill did before. Set to '0' to stop parking for a night; batches
+          # parked on earlier nights are still collected either way.
+          DECODE_BATCH_PARK: '1'
         run: node scripts/sync-bills.mjs
       - name: Re-derive every stored status from its own last action (pre-commit)
         # A stored status is mapStatus(last_action_text), but the sync only
