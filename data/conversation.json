@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-25T07:42:37.384Z",
+    "fetched_at": "2026-09-25T19:37:14.035Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-25T07:42:37.384Z"
+        "checked_at": "2026-09-25T19:37:14.035Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-25T07:42:37.384Z"
+        "checked_at": "2026-09-25T19:37:14.035Z"
       },
       "leans": {
         "center": {
@@ -58,6 +58,17 @@
         "lastSeen": "2026-09-25",
         "lastWeek": "2026-09-20"
       }
+    },
+    "hr-10118-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "barrett.house.gov",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-1030-119": {
       "outlets7d": [],
@@ -238,6 +249,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "gasiantimes.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "abcnews.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
@@ -280,6 +296,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "cryptonews.net",
+          "firstSeen": "2026-09-20",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "digitaltoday.co.kr",
           "firstSeen": "2026-09-21",
           "lastSeen": "2026-09-21"
@@ -288,11 +309,6 @@
           "domain": "memeburn.com",
           "firstSeen": "2026-09-21",
           "lastSeen": "2026-09-21"
-        },
-        {
-          "domain": "cryptonews.net",
-          "firstSeen": "2026-09-20",
-          "lastSeen": "2026-09-20"
         },
         {
           "domain": "tradingkey.com",
@@ -400,7 +416,22 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "gov.ca.gov",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
+          "domain": "imdb.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "indiewire.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
+          "domain": "michaelfairmantv.com",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
         },
@@ -416,11 +447,6 @@
         },
         {
           "domain": "hollywoodreporter.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "imdb.com",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
         },
@@ -651,6 +677,17 @@
       ],
       "mostViewed": null
     },
+    "hr-5768-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medtechdive.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5772-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -794,6 +831,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "njspotlightnews.org",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
         {
           "domain": "tiffinohio.net",
           "firstSeen": "2026-09-21",
@@ -969,6 +1011,11 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "legis1.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "foodfix.co",
           "firstSeen": "2026-09-18",
           "lastSeen": "2026-09-18"
@@ -1065,6 +1112,11 @@
           "domain": "thecentersquare.com",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
+        },
+        {
+          "domain": "timesnews.net",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
         }
       ],
       "mostViewed": null
@@ -1124,6 +1176,17 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8885-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "en.cryptonomist.ch",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8902-119": {
@@ -1295,6 +1358,17 @@
       ],
       "mostViewed": null
     },
+    "s-1682-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "finance.biggo.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1887-119": {
       "outlets7d": [
         {
@@ -1422,6 +1496,18 @@
           "lastSeen": "2026-09-18"
         }
       ],
+      "mostViewed": null
+    },
+    "s-3257-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-3315-119": {
@@ -1615,6 +1701,17 @@
       ],
       "mostViewed": null
     },
+    "s-4559-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4560-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1637,12 +1734,29 @@
       ],
       "mostViewed": null
     },
+    "s-4630-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4668-119": {
       "outlets7d": [
         {
           "domain": "nytimes.com",
           "lean": "left",
           "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-25"
+        },
+        {
+          "domain": "thefederalist.com",
+          "lean": "right",
+          "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
         },
         {
@@ -1677,6 +1791,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "sportstalkflorida.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
         {
           "domain": "africa.espn.com",
           "firstSeen": "2026-09-24",
@@ -1796,11 +1915,6 @@
           "domain": "qconline.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "roanoke.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
         }
       ],
       "mostViewed": {
@@ -1918,6 +2032,18 @@
       ],
       "mostViewed": null
     },
+    "sjres-172-119": {
+      "outlets7d": [
+        {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "sjres-185-119": {
       "outlets7d": [
         {
@@ -1941,9 +2067,19 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
+          "domain": "bostonherald.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "orlandosentinel.com",
           "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "lastSeen": "2026-09-25"
         }
       ],
       "mostViewed": null

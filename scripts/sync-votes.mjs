@@ -72,6 +72,19 @@ import {
 } from '../lib/votes-core.mjs';
 
 const DRY_RUN = process.argv.includes('--dry-run');
+/**
+ * --only-new-rolls (the intraday newsdesk path, 2026-09-25): write the file
+ * ONLY when this run stored at least one new roll call. The one other thing a
+ * run can change is the cursor, and the cursor moves on EVERY roll call either
+ * chamber takes — corpus bill or not — so without this flag an hourly run on a
+ * session day would commit and deploy the whole site for a progress marker
+ * nobody reads. Nothing is lost by not persisting it: every run re-lists the
+ * whole window and fetches any corpus roll call it does not hold (see CURSOR
+ * SEMANTICS above), and the nightly — which runs without the flag — persists
+ * the cursor as it always has. When a new roll IS stored, the cursor is
+ * written in the same write, so the two can never disagree.
+ */
+const ONLY_NEW_ROLLS = process.argv.includes('--only-new-rolls');
 const THROTTLE_MS = Number(process.env.VOTES_THROTTLE_MS ?? 250);
 const UA = 'oravan-votes-sync (+https://oravan.org)';
 const UPSTREAM_LEGISLATORS = [
@@ -343,7 +356,11 @@ const h = stats.house;
 const s = stats.senate;
 if (DRY_RUN) console.log('--dry-run: nothing written');
 else if (unchanged) console.log(`${VOTES_PATH}: no change`);
-else writeFileSync(VOTES_PATH, text);
+else if (ONLY_NEW_ROLLS && h.stored + s.stored === 0) {
+  console.log(
+    `${VOTES_PATH}: --only-new-rolls and no new roll call stored — the cursor-only change (house ${existing?._meta?.cursor?.house ?? '-'} -> ${cursor.house}, senate ${existing?._meta?.cursor?.senate ?? '-'} -> ${cursor.senate}) is NOT written; the nightly persists it`,
+  );
+} else writeFileSync(VOTES_PATH, text);
 console.log(verdict.notes.join('\n'));
 console.log(
   `DONE: House ${h.stored} stored (${h.listed} listed, ${h.inWindow} in window, ${h.corpus} on corpus bills, ${h.viaClerk} via Clerk fallback, ${h.failed} failed); ` +

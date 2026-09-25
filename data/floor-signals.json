@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-25T07:42:33.580Z",
+    "fetched_at": "2026-09-25T19:37:09.548Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "1 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-25T07:42:33.580Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/23/d23se6-1.htm",
-        "published": "2026-09-23",
-        "covers": "2026-09-24",
-        "covers_label": "10 a.m., Thursday, September 24",
+        "checked_at": "2026-09-25T19:37:09.548Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/24/d24se6-1.htm",
+        "published": "2026-09-24",
+        "covers": "2026-09-28",
+        "covers_label": "3 p.m., Monday, September 28",
         "via": "congress.gov"
       },
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-09-25T07:42:33.580Z",
+        "checked_at": "2026-09-25T19:37:09.548Z",
         "url": "https://docs.house.gov/billsthisweek/20260921/20260921.xml",
         "published": "2026-09-21",
         "covers": "2026-09-21",
@@ -31,12 +31,12 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-09-24",
-        "label": "10 a.m., Thursday, September 24"
+        "date": "2026-09-28",
+        "label": "3 p.m., Monday, September 28"
       },
       "house": {
-        "date": "2026-09-24",
-        "label": "2:30 p.m., Thursday, September 24"
+        "date": "2026-09-28",
+        "label": "12 noon, Monday, September 28"
       }
     },
     "dropped": []
@@ -46,17 +46,17 @@
       "tier0": {
         "source": "daily-digest",
         "chamber": "senate",
-        "quote": "Senate will continue consideration of Thune (for Cruz) Amendment No. 6776 to S. 4668, Protect College Sports Act, post-cloture, and vote on adoption thereon at 10:45 a.m. Following disposition of Thune (for Cruz) Amendment No. 6776, Senate will vote on the motion to invoke cloture on S. 4668.",
+        "quote": "Senate will resume consideration of S. 4668, Protect College Sports Act, as amended, post-cloture, with the time from 4 p.m. to 5:30 p.m. equally divided between proponents and opponents of the bill.",
         "quote_lang": "en",
         "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/09/23/d23se6-1.htm",
-        "published": "2026-09-23",
-        "covers": "2026-09-24",
-        "covers_label": "10 a.m., Thursday, September 24",
+        "url": "https://www.congress.gov/119/crec/2026/09/24/d24se6-1.htm",
+        "published": "2026-09-24",
+        "covers": "2026-09-28",
+        "covers_label": "3 p.m., Monday, September 28",
         "track": "unspecified",
-        "certainty": "scheduled_vote"
+        "certainty": "consideration"
       },
-      "fetched_at": "2026-09-25T07:42:33.580Z",
+      "fetched_at": "2026-09-25T19:37:09.548Z",
       "first_seen": "2026-09-23T16:51:14.445Z",
       "stale": false
     }

@@ -1,10 +1,468 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-24T22:21:40.382Z"
+    "generated_at": "2026-09-25T19:08:59.888Z"
   },
   "government-funding-deadline": {
-    "updates": [],
+    "updates": [
+      {
+        "id": "u_389eaa30",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-09-02",
+        "occurred_at": "2026-09-02",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Signed by President.”",
+          "es": "Registro oficial, en inglés: “Signed by President.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Signed by President.",
+          "action_code": "E30000",
+          "action_type": "President",
+          "source_system": "Library of Congress"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_9ce3da18",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-09-02",
+        "occurred_at": "2026-09-02",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Became Public Law No: 119-103.”",
+          "es": "Registro oficial, en inglés: “Became Public Law No: 119-103.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Became Public Law No: 119-103.",
+          "action_code": "E40000",
+          "action_type": "President",
+          "source_system": "Library of Congress"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_e98c3438",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-09-02",
+        "occurred_at": "2026-09-02",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Presented to President.”",
+          "es": "Registro oficial, en inglés: “Presented to President.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Presented to President.",
+          "action_code": "E20000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_1b5774c6",
+        "class": "vote",
+        "vehicle": "hr-6500-119",
+        "day": "2026-09-01",
+        "occurred_at": "2026-09-01",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)”",
+          "es": "Registro oficial, en inglés: “On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: C…”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://clerk.house.gov/evs/2026/roll286.xml"
+          ]
+        },
+        "record": {
+          "action_text": "On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)",
+          "action_code": "H41610",
+          "action_type": "ResolvingDifferences",
+          "source_system": "House floor actions",
+          "roll_call": {
+            "chamber": "house",
+            "number": 286
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_1a49a743",
+        "class": "vote",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-08",
+        "occurred_at": "2026-08-08",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "Senate roll call vote 227: “On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file)” — “Motion to Table Agreed to”; Yeas 61, Nays 32, Not Voting 7.",
+          "es": "Votación nominal 227 del Senado, registro oficial en inglés: “On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500…” — “Motion to Table Agreed to”; a favor 61, en contra 32, no votaron 7."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00227.xml",
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file): Motion to Table Agreed to. Yeas 61, Nays 32, Not Voting 7. Senate roll call vote 227.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 227
+          },
+          "question": "On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file)",
+          "result": "Motion to Table Agreed to",
+          "totals": {
+            "yea": 61,
+            "nay": 32,
+            "present": 0,
+            "notVoting": 7
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_2749bbba",
+        "class": "vote",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-08",
+        "occurred_at": "2026-08-08",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.”",
+          "es": "Registro oficial, en inglés: “Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00228.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 228
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_766c4bad",
+        "class": "vote",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-07",
+        "occurred_at": "2026-08-07",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "Senate roll call vote 226: “On the Cloture Motion S.Amdt. 6732 to H.R. 6500 (No short title on file)” — “Cloture Motion Agreed to”; Yeas 91, Nays 6, Present 1, Not Voting 2.",
+          "es": "Votación nominal 226 del Senado, registro oficial en inglés: “On the Cloture Motion S.Amdt. 6732 to H.R. 6500 (No sh…” — “Cloture Motion Agreed to”; a favor 91, en contra 6, presentes 1, no votaron 2."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00226.xml",
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "On the Cloture Motion S.Amdt. 6732 to H.R. 6500 (No short title on file): Cloture Motion Agreed to. Yeas 91, Nays 6, Present 1, Not Voting 2. Senate roll call vote 226.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 226
+          },
+          "question": "On the Cloture Motion S.Amdt. 6732 to H.R. 6500 (No short title on file)",
+          "result": "Cloture Motion Agreed to",
+          "totals": {
+            "yea": 91,
+            "nay": 6,
+            "present": 1,
+            "notVoting": 2
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_fd7cb5c4",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-07",
+        "occurred_at": "2026-08-07",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was in…”",
+          "es": "Registro oficial, en inglés: “Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when clotur…”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was invoked in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_449e7991",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-05",
+        "occurred_at": "2026-08-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to proceed to measure considered in Senate. (CR S4448)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4448)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4448)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_aa379090",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-05",
+        "occurred_at": "2026-08-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Cloture motion on the measure presented in Senate. (CR S4449)”",
+          "es": "Registro oficial, en inglés: “Cloture motion on the measure presented in Senate. (CR S4449)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate. (CR S4449)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_b1f77ede",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-05",
+        "occurred_at": "2026-08-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_9d80be00",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-04",
+        "occurred_at": "2026-08-04",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to proceed to measure considered in Senate. (CR S4415)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4415)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4415)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_1fb325fc",
+        "class": "vote",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-03",
+        "occurred_at": "2026-08-03",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)”",
+          "es": "Registro oficial, en inglés: “Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00218.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 218
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_d7940568",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-08-03",
+        "occurred_at": "2026-08-03",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to proceed to measure considered in Senate. (CR S4414)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4414)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S4414)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_1982d6cf",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-07-30",
+        "occurred_at": "2026-07-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)”",
+          "es": "Registro oficial, en inglés: “Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4365)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_49911ab7",
+        "class": "floor_action",
+        "vehicle": "hr-6500-119",
+        "day": "2026-07-30",
+        "occurred_at": "2026-07-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to proceed to consideration of measure made in Senate. (CR S4360)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure made in Senate. (CR S4360)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4360)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      }
+    ],
     "summary_revisions": [
       {
         "id": "s_1856a409",
@@ -233,35 +691,184 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_4bd94d06",
+        "generated_at": "2026-09-25T13:41:59.691Z",
+        "as_of_day": "2026-09-25",
+        "text": {
+          "en": "H.R. 6500 stands as signed into law. H.R. 9770 stands as passed one chamber. No recorded votes were logged on either measure in the last 14 days, and nothing else was recorded in that window. H.R. 6500 completed the full legislative process and became law prior to this period. H.R. 9770 cleared one chamber and awaits further action, with no additional floor activity noted in the last 14 days. Named sources have not offered comment on either measure in this window, so no attribution is included here. These are the current statuses on record for both bills as of the most recent update available.",
+          "es": "El proyecto H.R. 6500 se mantiene promulgado como ley. El proyecto H.R. 9770 se mantiene aprobado por una cámara. No se registraron votaciones nominales sobre ninguna de las dos medidas en los últimos 14 días, y no se registró nada más en ese período. El H.R. 6500 completó el proceso legislativo completo y se convirtió en ley antes de este período. El H.R. 9770 fue aprobado por una cámara y espera acción adicional, sin actividad adicional registrada en el pleno durante los últimos 14 días. Ninguna fuente identificada ha ofrecido comentarios sobre ninguna de las medidas en este período, por lo que no se incluye atribución aquí."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-6500-119": "signed",
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "status:hr-6500-119 unknown→signed",
+          "updates:+16"
+        ],
+        "model": "claude-sonnet-5"
       }
-    ]
+    ],
+    "summary_attempts": {
+      "day": "2026-09-25",
+      "count": 1
+    }
   },
   "iran-war-powers": {
     "updates": [
       {
-        "id": "u_3b1d76f0",
-        "class": "scheduled",
+        "id": "u_40aa8bf1",
+        "class": "vote",
         "vehicle": "hconres-89-119",
         "day": "2026-09-24",
         "occurred_at": "2026-09-24",
         "occurred_precision": "day",
-        "recorded_at": "2026-09-24T22:21:40.382Z",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
         "text": {
-          "en": "“H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)”",
-          "es": "Registro oficial, en inglés: “H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2…”"
+          "en": "“Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.”",
+          "es": "Registro oficial, en inglés: “Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.”"
         },
         "source": {
-          "kind": "tier0_feed",
+          "kind": "congress_actions",
           "refs": [
-            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00244.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 244
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_fe66be12",
+        "class": "floor_action",
+        "vehicle": "hconres-89-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Senate Committee on Foreign Relations discharged, under the order of 8/8/26.”",
+          "es": "Registro oficial, en inglés: “Senate Committee on Foreign Relations discharged, under the order of 8/8/26.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
             "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
           ]
         },
         "record": {
-          "action_text": "H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)",
+          "action_text": "Senate Committee on Foreign Relations discharged, under the order of 8/8/26.",
           "action_code": null,
-          "action_type": "Senate Floor Today",
-          "source_system": "Congress.gov senate-floor-today RSS"
+          "action_type": "Discharge",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_470e18ff",
+        "class": "floor_action",
+        "vehicle": "hconres-93-119",
+        "day": "2026-09-16",
+        "occurred_at": "2026-09-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Received in the Senate and referred to the Committee on Foreign Relations.”",
+          "es": "Registro oficial, en inglés: “Received in the Senate and referred to the Committee on Foreign Relations.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the Senate and referred to the Committee on Foreign Relations.",
+          "action_code": null,
+          "action_type": "IntroReferral",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_06fa2260",
+        "class": "vote",
+        "vehicle": "hconres-93-119",
+        "day": "2026-09-15",
+        "occurred_at": "2026-09-15",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)”",
+          "es": "Registro oficial, en inglés: “On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://clerk.house.gov/evs/2026/roll307.xml"
+          ]
+        },
+        "record": {
+          "action_text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)",
+          "action_code": "H37100",
+          "action_type": "Floor",
+          "source_system": "House floor actions",
+          "roll_call": {
+            "chamber": "house",
+            "number": 307
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_a34355d9",
+        "class": "vote",
+        "vehicle": "sjres-181-119",
+        "day": "2026-07-30",
+        "occurred_at": "2026-07-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)”",
+          "es": "Registro oficial, en inglés: “Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00216.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 216
+          }
         },
         "ai": false
       }
@@ -614,8 +1221,68 @@
           "status:hconres-38-119 committee→floor_vote"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_0a74cf71",
+        "generated_at": "2026-09-25T13:41:54.769Z",
+        "as_of_day": "2026-09-25",
+        "text": {
+          "en": "The most recent floor action is a Senate defeat: H. Con. Res. 89 failed on a Yea-Nay vote of 49 to 50 (Roll no. 244) on September 24, 2026, after the Senate Foreign Relations Committee was discharged from further consideration under the order of August 8, 2026. That measure remains listed as passed one chamber, reflecting its earlier House action. Separately, H. Con. Res. 93 passed the House by a recorded vote of 220 to 204 (Roll no. 307) on September 15, 2026, and was received in the Senate on September 16, 2026, where it was referred to the Committee on Foreign Relations. H. Con. Res. 86 also stands as passed one chamber. Several other measures, including S.J.Res. 185, S.J.Res. 180, S.J.Res. 181, S.J.Res. 172, and H. Con. Res. 38, show floor activity, while S.J.Res. 200 and S.J.Res. 211 remain in committee.",
+          "es": "La acción más reciente en el pleno es una derrota en el Senado: la H. Con. Res. 89 no fue aprobada por votación nominal de 49 a 50 (votación núm. 244) el 24 de septiembre de 2026, después de que el Comité de Relaciones Exteriores del Senado fuera relevado de su consideración bajo la orden del 8 de agosto de 2026. Esa medida sigue figurando como aprobada por una cámara, en referencia a su acción previa en la Cámara. Por separado, la H. Con. Res. 93 fue aprobada en la Cámara por votación nominal de 220 a 204 (votación núm. 307) el 15 de septiembre de 2026, y fue recibida en el Senado el 16 de septiembre de 2026, donde se remitió al Comité de Relaciones Exteriores. La H. Con. Res. 86 también figura como aprobada por una cámara. Otras medidas, como la S.J.Res. 185, la S.J.Res. 180, la S.J.Res. 181, la S.J.Res. 172 y la H. Con. Res. 38, muestran actividad en el pleno, mientras que la S.J.Res. 200 y la S.J.Res. 211 permanecen en comité."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "passed_chamber",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_40aa8bf1",
+            "u_fe66be12",
+            "u_470e18ff",
+            "u_06fa2260"
+          ],
+          "roll_calls": [
+            "s-119-2-244",
+            "h-119-2-307"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "status:hconres-93-119 unknown→passed_chamber",
+          "status:hconres-86-119 unknown→passed_chamber",
+          "status:sjres-200-119 unknown→committee",
+          "status:sjres-211-119 unknown→committee",
+          "status:sjres-180-119 unknown→floor_vote",
+          "status:sjres-181-119 unknown→floor_vote",
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
       }
-    ]
+    ],
+    "summary_attempts": {
+      "day": "2026-09-25",
+      "count": 1
+    }
   },
   "syria-sanctions-repeal": {
     "updates": [
@@ -835,31 +1502,102 @@
   "paying-college-athletes": {
     "updates": [
       {
-        "id": "u_2530a6e7",
-        "class": "scheduled",
+        "id": "u_3385513a",
+        "class": "vote",
         "vehicle": "s-4668-119",
         "day": "2026-09-24",
         "occurred_at": "2026-09-24",
         "occurred_precision": "day",
-        "recorded_at": "2026-09-24T18:07:05.065Z",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
         "text": {
-          "en": "The Senate scheduled S. 4668, the Protect College Sports Act of 2026, for consideration on September 24, 2026.",
-          "es": "El Senado agendó S. 4668, la Ley de Protección del Deporte Universitario de 2026, para consideración el 24 de septiembre de 2026."
+          "en": "Senate roll call vote 242: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; Yeas 77, Nays 23.",
+          "es": "Votación nominal 242 del Senado, registro oficial en inglés: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; a favor 77, en contra 23."
         },
         "source": {
-          "kind": "tier0_feed",
+          "kind": "roll_call",
           "refs": [
-            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00242.xml",
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
         },
         "record": {
-          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/24/2026)",
+          "action_text": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 77, Nays 23. Senate roll call vote 242.",
           "action_code": null,
-          "action_type": "Senate Floor Today",
-          "source_system": "Congress.gov senate-floor-today RSS"
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 242
+          },
+          "question": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Agreed to",
+          "totals": {
+            "yea": 77,
+            "nay": 23,
+            "present": 0,
+            "notVoting": 0
+          }
         },
-        "ai": true
+        "ai": false
+      },
+      {
+        "id": "u_348552cd",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”",
+          "es": "Registro oficial, en inglés: “Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00243.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 243
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_d5eaf6d9",
+        "class": "status_change",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“The committee substitute withdrawn by Voice Vote.”",
+          "es": "Registro oficial, en inglés: “The committee substitute withdrawn by Voice Vote.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "The committee substitute withdrawn by Voice Vote.",
+          "action_code": null,
+          "action_type": "latestAction",
+          "source_system": "Congress.gov bill detail",
+          "status_from": "floor_vote",
+          "status_to": "committee"
+        },
+        "ai": false
       },
       {
         "id": "u_fcb078e5",
@@ -887,6 +1625,45 @@
           "source_system": "Congress.gov senate-floor-today RSS"
         },
         "ai": true
+      },
+      {
+        "id": "u_53ca06ca",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "Senate roll call vote 240: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)” — “Cloture Motion Agreed to”; Yeas 70, Nays 21, Not Voting 9.",
+          "es": "Votación nominal 240 del Senado, registro oficial en inglés: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on f…” — “Cloture Motion Agreed to”; a favor 70, en contra 21, no votaron 9."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00240.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file): Cloture Motion Agreed to. Yeas 70, Nays 21, Not Voting 9. Senate roll call vote 240.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 240
+          },
+          "question": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Cloture Motion Agreed to",
+          "totals": {
+            "yea": 70,
+            "nay": 21,
+            "present": 0,
+            "notVoting": 9
+          }
+        },
+        "ai": false
       },
       {
         "id": "u_c6a1ebcb",
@@ -917,6 +1694,32 @@
         "ai": true
       },
       {
+        "id": "u_fa1d2a34",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture…”",
+          "es": "Registro oficial, en inglés: “Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment…”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture was invoked on amendment SA 6776 in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
         "id": "u_a3cc6ca3",
         "class": "vote",
         "vehicle": "s-4668-119",
@@ -944,32 +1747,6 @@
             "chamber": "senate",
             "number": 236
           }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_05246d80",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "A cloture motion on S. 4668 was presented in the Senate on September 17, 2026.",
-          "es": "Una moción de cierre sobre S. 4668 fue presentada en el Senado el 17 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the measure presented in Senate. (CR S4789)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
         },
         "ai": true
       },
@@ -1026,32 +1803,6 @@
         "ai": true
       },
       {
-        "id": "u_d15dae4c",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 17, 2026.",
-          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 17 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4773-4774)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
         "id": "u_f0db9993",
         "class": "floor_action",
         "vehicle": "s-4668-119",
@@ -1071,32 +1822,6 @@
         },
         "record": {
           "action_text": "Cloture motion on the measure presented in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_48567655",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-16",
-        "occurred_at": "2026-09-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "A motion to proceed to S. 4668 was considered in the Senate on September 16, 2026.",
-          "es": "Una moción para pasar a S. 4668 fue considerada en el Senado el 16 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4743)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
@@ -1447,12 +2172,9 @@
             "u_fcb078e5",
             "u_c6a1ebcb",
             "u_a3cc6ca3",
-            "u_05246d80",
             "u_682cca41",
             "u_86b9e54f",
-            "u_d15dae4c",
             "u_f0db9993",
-            "u_48567655",
             "u_732a58b6",
             "u_317b9dc8",
             "u_04053945"
@@ -1480,16 +2202,12 @@
             "s-4668-119": "floor_vote"
           },
           "update_ids": [
-            "u_2530a6e7",
             "u_fcb078e5",
             "u_c6a1ebcb",
             "u_a3cc6ca3",
-            "u_05246d80",
             "u_682cca41",
             "u_86b9e54f",
-            "u_d15dae4c",
             "u_f0db9993",
-            "u_48567655",
             "u_732a58b6",
             "u_317b9dc8",
             "u_04053945"
@@ -1503,11 +2221,86 @@
           "updates:+1"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_960aec36",
+        "generated_at": "2026-09-25T13:42:05.694Z",
+        "as_of_day": "2026-09-25",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, is in committee, after a run of Senate floor action. On September 24, 2026, the Senate agreed to amendment S.Amdt. 6776 by a recorded vote of 77 to 23 (Roll no. 242), then agreed to cloture on the measure, as amended, by a recorded vote of 74 to 25 (Roll no. 243). The committee substitute was withdrawn by voice vote that same day. Earlier, the Senate invoked cloture on the amendment 70 to 21 (Roll no. 240) on September 22, agreed to a motion to proceed 77 to 22 (Roll no. 236) on September 17, and invoked cloture on the motion to proceed 74 to 24 (Roll no. 235) on September 15. A motion to recommit with instructions fell on September 22.",
+          "es": "El S. 4668, la Ley de Protección de los Deportes Universitarios de 2026 (Protect College Sports Act of 2026), está en comité, tras una serie de acciones en el pleno del Senado. El 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242), y luego aprobó la moción de clausura sobre la medida, ya enmendada, por votación nominal de 74 a 25 (votación núm. 243). El sustituto del comité fue retirado por votación de viva voz ese mismo día. Antes, el Senado invocó la clausura sobre la enmienda por 70 a 21 (votación núm. 240) el 22 de septiembre, aprobó una moción para proceder por 77 a 22 (votación núm. 236) el 17 de septiembre, e invocó la clausura sobre la moción para proceder por 74 a 24 (votación núm. 235) el 15 de septiembre. Una moción para reenviar con instrucciones no prosperó el 22 de septiembre."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "committee"
+          },
+          "update_ids": [
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→committee",
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
       }
-    ]
+    ],
+    "summary_attempts": {
+      "day": "2026-09-25",
+      "count": 1
+    }
   },
   "annual-defense-policy": {
     "updates": [
+      {
+        "id": "u_f8eea00b",
+        "class": "floor_action",
+        "vehicle": "hr-8800-119",
+        "day": "2026-09-14",
+        "occurred_at": "2026-09-14",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Received in the Senate.”",
+          "es": "Registro oficial, en inglés: “Received in the Senate.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/8800"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the Senate.",
+          "action_code": null,
+          "action_type": "IntroReferral",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
       {
         "id": "u_1a6021fb",
         "class": "floor_action",
@@ -1712,7 +2505,11 @@
         ],
         "model": "claude-sonnet-5"
       }
-    ]
+    ],
+    "summary_attempts": {
+      "day": "2026-09-25",
+      "count": 1
+    }
   },
   "crypto-oversight-split-between-sec-and-cftc": {
     "updates": [
