@@ -303,11 +303,17 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
     // WebKit honors their min-h-12 and 8px shape instead of painting a
     // 24px-tall, 5px-radius system control. Pinned here so a later edit that
     // drops the reset fails loudly on the WebKit projects.
+    // Retrying assertions, not one-shot reads: a single CI run once sampled
+    // the radius as 0px mid-load and passed on retry, so these wait for the
+    // styled state instead of racing it. They still fail if the reset is gone.
     for (const label of [en.embeds.radiusLabel, en.embeds.fontLabel, en.embeds.modeLabel]) {
-      const select = page.getByLabel(label);
-      const box = await select.boundingBox();
-      expect(box!.height, `${label} select height`).toBeGreaterThanOrEqual(48);
-      expect(await select.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('8px');
+      const select = page.getByLabel(label, { exact: true });
+      await expect(select).toHaveCSS('border-top-left-radius', '8px');
+      await expect
+        .poll(async () => (await select.boundingBox())?.height ?? 0, {
+          message: `${label} select height`,
+        })
+        .toBeGreaterThanOrEqual(48);
     }
     const toggleBox = await page
       .locator('label', { hasText: en.embeds.customColorsToggle })

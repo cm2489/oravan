@@ -14,7 +14,10 @@ test('DC explains the delegate situation instead of promising senators', async (
   await page.goto('/reps?zip=20002');
   await expect(page.getByText(/elects a delegate/)).toBeVisible();
   await expect(page.getByText('Eleanor Holmes Norton')).toBeVisible();
-  await expect(page.getByText(/Delegate ·/)).toBeVisible();
+  // `\s`, not a literal space: RepCard binds each "·" to the word before it
+  // with a no-break space (U+00A0) so the meta line never wraps onto a
+  // leading dot (UI audit F15), and JS's `\s` matches U+00A0.
+  await expect(page.getByText(/Delegate\s·/)).toBeVisible();
 });
 
 test('unknown ZIP gets a recoverable error', async ({ page }) => {
