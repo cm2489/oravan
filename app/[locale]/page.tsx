@@ -621,8 +621,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           still data-earned.
 
           The scarcity line rides with the promotion: at the front door,
-          "never more than 6" IS the credibility claim — it is the visible
-          proof that someone said no. */}
+          "never more than {cap}" IS the credibility claim — it is the
+          visible proof that someone said no. */}
       {liveMoments.length > 0 && (
         <section
           // THE SEAM (owner pick 8B, 2026-08-01): when the green crown
