@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-25T18:14:04.838Z",
+    "fetched_at": "2026-09-25T18:32:07.124Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-25T18:14:04.838Z"
+        "checked_at": "2026-09-25T18:32:07.124Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-25T18:14:04.838Z"
+        "checked_at": "2026-09-25T18:32:07.124Z"
       },
       "leans": {
         "center": {
@@ -249,6 +249,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "gasiantimes.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "abcnews.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
@@ -411,6 +416,11 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "imdb.com",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "indiewire.com",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
@@ -432,11 +442,6 @@
         },
         {
           "domain": "hollywoodreporter.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "imdb.com",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
         },
