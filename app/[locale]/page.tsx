@@ -507,7 +507,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* No md:items-start: the columns stretch to one height, which is
             what lets the specimen card fill its block to the foot. */}
-        <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
+        <div className="mt-6 grid gap-8 md:mt-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
           <div className="min-w-0">
             <p className="max-w-read text-lede text-pretty text-ink-2">{t('heroSub')}</p>
 
@@ -527,26 +527,46 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </span>
             </p>
 
-            {/* THE PROMOTED PRIMARY (2026-07-31): straight to what is moving.
-                Understanding is the front door, so the filled control is the
-                one that leads to reading — not the one that asks for a ZIP.
-                Same-page jump, no navigation. */}
+            {/* ONE PRIMARY (fold pass 2026-09-24, finding B3). The hero used
+                to carry TWO filled green controls — "See what's moving" and
+                the ZIP submit — pointing at two funnels with equal weight, so
+                neither read as the next step. The filled control is the jump
+                to what is moving: "Truth-first, call-next" (CLAUDE.md) and the
+                2026-07-31 ruling above both make READING the front door, and
+                the call apparatus is demoted, never buried. So the ZIP form
+                stays in the hero, directly under the jump, with its submit in
+                the secondary ink-outline tone (ZipForm's submitTone) — every
+                key and the ZIP-first funnel path are untouched (the form is
+                shared with the bill-page dialog and the embed widget).
+
+                THE FOLD IS MEASURED, NOT ASSUMED: at 390×844 the ZIP submit's
+                bottom edge — the lowest control in the hero — must clear the
+                fixed thumb bar's top edge in BOTH locales
+                (tests/home-fold.spec.ts). Spanish is the long language and is
+                the one that failed (8px under the bar, 2026-09-10) — so the
+                lede is held to about twenty words and the hero's top rhythm is
+                tighter below md. */}
             <a
               href="#top-actions"
-              className="ring-gap mt-6 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
             >
               {t('heroJump')}
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
             </a>
 
-            {/* ZIP demoted BY POSITION, not by removal — every key untouched
-                (they are shared with the bill-page dialog and the embed
-                widget). It stays in the hero and stays page-wide-locatable,
-                which is what keeps the ZIP-first funnel invariant true at the
-                same click count. */}
-            <div className="mt-8 border-t-[1.5px] border-line pt-6">
-              <ZipForm />
+            <div className="mt-4">
+              <ZipForm submitTone="secondary" inline />
             </div>
+
+            {/* THE TRUST LINE ON A PHONE. The header carries it inline at lg+
+                (EN) or in its sub-bar (ES), and the 56px phone bar has no room
+                for it — its own comment says "the phone already carries the
+                promise in the hero", which stopped being true when the hero
+                was cut. It is back here, beside the one field that asks for
+                something, and hidden at lg+ where the header says it. */}
+            <p className="mt-3 text-xs text-ink-2 lg:hidden">
+              {tShared('common.trustLine1')} {tShared('common.trustLine2')}
+            </p>
 
             {/* Thumb-reachable language switch (2026-07 critique round 2):
                 the header pill sits in the least reachable corner on mobile,
@@ -955,6 +975,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             ) : (
               t('weekNote')
             )}
+          </p>
+          {/* One line to the daily brief (plan item C3). Footer/nav placement
+              is left to the owner's review: the footer's Follow column is
+              claimed by a sibling PR. */}
+          <p className="mt-2 max-w-note text-sm">
+            <Link
+              href="/today"
+              className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('todayLink')}
+            </Link>
           </p>
 
           {/* The section closes with its exit: a full-width row under the

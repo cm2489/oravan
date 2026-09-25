@@ -197,6 +197,15 @@ export interface MomentEntry {
   context_refs?: ContextRef[];
   opened: string;
   review_by: string;
+  /**
+   * OPTIONAL — the day this entry's text (name, summary or a vehicle role)
+   * last changed (YYYY-MM-DD). Absent means it has not changed since it
+   * opened, so `opened` is the honest date; read it through
+   * `lastReviewedDay()` below, never directly. The question page prints it as
+   * "Summary updated {date}" (moments.status.lastReviewed), so any change to
+   * the text sets it to the day of the change.
+   */
+  reviewed?: string;
   status: StoredMomentStatus;
 }
 
@@ -275,9 +284,34 @@ export function getMoments(now: number = Date.now()): MomentWithState[] {
   return Object.entries(MOMENTS).map(([id, entry]) => withState(id, entry, now));
 }
 
-/** The moments the indexes and the homepage strip promote. */
+/**
+ * The day the entry's text last changed — `reviewed` when a change set it,
+ * otherwise `opened` (the merge that published it). The one normalizer, like
+ * vehicleKind. The name predates the "Summary updated" wording and is kept
+ * so the field and its readers stay one grep apart.
+ */
+export const lastReviewedDay = (m: Pick<MomentEntry, 'opened' | 'reviewed'>): string =>
+  m.reviewed ?? m.opened;
+
+/**
+ * The moments the indexes, the homepage strip and search pinning promote:
+ * every question still putting itself to readers — `live` AND `stale`.
+ *
+ * PAST-REVIEW IS NOT A HIDE SWITCH (owner, 2026-09-24). `stale` used to drop a
+ * question off the homepage and out of search, and PR #252 moved it into its
+ * own "Under review" section on /questions — so on the day every entry's
+ * review_by had passed, the site showed zero live questions while Congress was
+ * still voting on all six. The review date is a CURATION reminder for the
+ * owner, and it now does exactly that job: scripts/moment-watch.mjs flags a
+ * past-review question nightly in the standing moment-review issue, and the
+ * page itself says when the summary was last updated
+ * (`lastReviewedDay`) beside a status line re-derived from the record on every
+ * build (lib/moment-status.mjs). The state is still computed — the watcher
+ * reads it — it just no longer decides visibility. Same predicate as the
+ * backlink (`momentClaimsVehicles`).
+ */
 export function getLiveMoments(now: number = Date.now()): MomentWithState[] {
-  return getMoments(now).filter((m) => m.state === 'live');
+  return getMoments(now).filter(momentClaimsVehicles);
 }
 
 export function getMoment(id: string, now: number = Date.now()): MomentWithState | undefined {

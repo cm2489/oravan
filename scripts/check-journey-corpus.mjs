@@ -47,17 +47,22 @@ const MD_PATH = join(OUT_DIR, 'journey-corpus-report.md');
 // duplicating the corpus read.
 const driver = `
 import { readFileSync, writeFileSync } from 'node:fs';
-import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber } from './lib/journey';
+import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber, statusBasisText } from './lib/journey';
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const floorVote = bills.filter((b) => b.status === 'floor_vote');
-const row = (b) => ({ slug: \`\${b.bill_type}-\${b.bill_number}-\${b.congress_number}\`, text: b.last_action_text });
+// Every sweep reads the sentence the journey itself reads (statusBasisText):
+// the stored basis when the latest step is an ambiguous notice, else the
+// latest step. Sweeping the notice instead would file a nightly issue over a
+// sentence no surface derives anything from.
+const text = (b) => statusBasisText(b);
+const row = (b) => ({ slug: \`\${b.bill_type}-\${b.bill_number}-\${b.congress_number}\`, text: text(b) });
 
 /*
  * SWEEP 1 — UNCLASSIFIED: no matcher can even place the sentence in a chamber.
  * Renders nowFloorActivityNeutral (chamber-free) today.
  */
 const unclassified = floorVote.filter(
-  (b) => floorCalendarChamber(b.last_action_text) === null && floorActionChamber(b.last_action_text) === null
+  (b) => floorCalendarChamber(text(b)) === null && floorActionChamber(text(b)) === null
 ).map(row);
 
 /*
@@ -82,11 +87,11 @@ const unclassified = floorVote.filter(
  */
 const untensed = floorVote.filter(
   (b) =>
-    floorCalendarChamber(b.last_action_text) === null &&
-    floorActionChamber(b.last_action_text) !== null &&
-    floorPendingChamber(b.last_action_text) === null &&
-    floorSettledChamber(b.last_action_text) === null &&
-    !floorMakesNoClaim(b.last_action_text)
+    floorCalendarChamber(text(b)) === null &&
+    floorActionChamber(text(b)) !== null &&
+    floorPendingChamber(text(b)) === null &&
+    floorSettledChamber(text(b)) === null &&
+    !floorMakesNoClaim(text(b))
 ).map(row);
 
 writeFileSync(process.env.JOURNEY_CORPUS_JSON, JSON.stringify({ total: floorVote.length, unclassified, untensed }, null, 2));

@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
+import { MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
@@ -27,8 +28,24 @@ import {
   getRevisions,
   isAiSummary,
 } from '@/lib/moment-updates';
-import { QUALIFYING_SIGNAL_TYPES, getMoment, getMoments, vehicleKind } from '@/lib/moments';
-import { bothNoteKey, linkHost, momentDek, nominationCtaKey, revisionReasons } from '@/lib/moments-ui';
+import {
+  QUALIFYING_SIGNAL_TYPES,
+  getLiveMoments,
+  getMoment,
+  getMoments,
+  lastReviewedDay,
+  vehicleKind,
+} from '@/lib/moments';
+import {
+  bothNoteKey,
+  groupVehicleStatuses,
+  linkHost,
+  momentDek,
+  nominationCtaKey,
+  revisionReasons,
+  vehicleStatuses,
+} from '@/lib/moments-ui';
+import { questionStatus } from '@/lib/moment-status.mjs';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -144,9 +161,27 @@ export default async function MomentPage({
   const name = localeText(moment.name, locale);
   const summary = localeText(moment.summary, locale);
   const isSettled = moment.state === 'settled';
-  const isStale = moment.state === 'stale';
 
-  const liveCount = getMoments().filter((m) => m.state === 'live').length;
+  // Same count, same predicate, as /questions and the homepage band: live AND
+  // past-review (lib/moments.ts getLiveMoments — review dates no longer hide).
+  const liveCount = getLiveMoments().length;
+
+  /*
+   * WHERE IT STANDS, FROM THE RECORD (Big Questions v2, 2026-09-24). One line
+   * per vehicle and one for the question, derived at build time from each
+   * vehicle's corpus record through lib/moment-status.mjs — no model, no
+   * prose written at open time, so nothing here carries the AI chip: it is the
+   * record, mapped to fixed copy. The question's line is its most advanced
+   * LIVE vehicle's. When
+   * every vehicle has reached the end of its path the question is in
+   * EXPLAINER mode: it stays up, the cards read as what happened, and no card
+   * promises a call about a finished vehicle (each card's CTA below asks its
+   * own line's `terminal`).
+   */
+  const statuses = vehicleStatuses(moment.vehicles);
+  const { mode: statusMode, lead } = questionStatus(statuses.map((s) => s.line));
+  const explainer = statusMode === 'explainer';
+  const groups = groupVehicleStatuses(statuses);
 
   // ── The live layer (v2 spec §7) ────────────────────────────────────────
   const summaryRevision = getCurrentSummary(id);
@@ -249,7 +284,7 @@ export default async function MomentPage({
           {t('moments.crumb')}
         </Link>
         <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-          {isSettled ? t('moments.settledBadge') : isStale ? t('moments.staleBadge') : t('moments.liveBadge')}
+          {isSettled ? t('moments.settledBadge') : t('moments.liveBadge')}
         </span>
         <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
       </p>
@@ -263,12 +298,23 @@ export default async function MomentPage({
         <StalenessNote checkedAt={freshness.checkedAt} />
       </p>
 
-      {/* Late is not urgent: a review that lapsed is an ink caveat opened by
-          the "stop and read this" rule, never amber and never `alert`. */}
-      {isStale && (
-        <p className="mt-6 max-w-read border-t-[3px] border-ink bg-wash px-4 py-3 text-sm text-ink-2">
-          {t('moments.staleBanner', { date: fmtDate(moment.review_by) })}
-        </p>
+      {/* The record's own status for the whole question. The staleBanner that
+          stood here ("scheduled review passed…") is gone: a lapsed review date
+          is the owner's curation reminder, sent by the nightly watcher, and
+          the currency a reader needs is this line — re-derived from the
+          record on every build — plus the "Summary updated" date printed
+          under the summary it describes. */}
+      {lead && (
+        <section aria-labelledby="record-status" className="mt-6 max-w-read">
+          <h2
+            id="record-status"
+            className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
+          >
+            {t('moments.status.label')}
+          </h2>
+          <MomentStatusLine line={lead} size="md" className="mt-2" />
+          {explainer && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
+        </section>
       )}
 
       {/* THE DESK — the narrative on the left, the vehicles on the right, on
@@ -285,18 +331,17 @@ export default async function MomentPage({
               and so the one place Besley is spent. Provenance, spelled out because
               this page renders two passages with DIFFERENT provenance and the
               comment here has twice named it wrong: this one comes from
-              data/moments.json, whose name, summary and role sentences are AI
-              FIRST DRAFTS (scripts/moment-draft.mjs), which the owner edits and
-              merges by hand — CLAUDE.md's 2026-08-07 amendment, which retired the
-              "hand-authored" claim this comment used to make, and what
-              moments.howMadeBody still promises: an automated gate, then a person,
-              before it publishes. The "Where it stands" revision further down is
-              the one with NO human step at all: machine-written, gate-checked,
-              published by the collector. Never let the two blur — the difference
-              is the review and the merge, not the authorship. */}
+              data/moments.json, whose name, summary and role sentences are
+              AI-written (scripts/moment-draft.mjs) and reach the page through a
+              merge into that file, after check-moments.mjs's gates pass — which
+              is all moments.howMadeBody promises: automated gates before it
+              publishes. The "Where it stands" revision further down is written
+              nightly by the collector (scripts/moment-updates.mjs), gate-checked
+              and published with no merge at all. Never let the two blur — the
+              difference is the path to the page, not the authorship. */}
           <section aria-labelledby="deciding" className="border-t-[3px] border-ink pt-4">
             <h2 id="deciding" className="text-h2 font-extrabold text-ink">
-              {isSettled ? t('moments.decidingSettled') : t('moments.decidingLive')}
+              {isSettled || explainer ? t('moments.decidingSettled') : t('moments.decidingLive')}
             </h2>
             {isSettled && <p className="mt-4 max-w-read font-semibold text-ink">{t('moments.settledBanner')}</p>}
             {/* AI labeled at FIRST contact — directly above the passage it
@@ -311,6 +356,12 @@ export default async function MomentPage({
             </p>
             <p className="mt-4 max-w-read font-reading text-lg text-ink">{summary}</p>
             <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
+            {/* When this summary last changed — the honest replacement for
+                hiding a question past its review date. `reviewed` when a
+                change set it, else the day it opened. */}
+            <p className="mt-2 max-w-note text-xs text-ink-2">
+              {t('moments.status.lastReviewed', { date: fmtDate(lastReviewedDay(moment)) })}
+            </p>
           </section>
 
           {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
@@ -521,66 +572,90 @@ export default async function MomentPage({
                 In the 20–25rem rail the 15rem minimum resolves to one 400px
                 track on its own — the rail is still one card wide, and now
                 nothing has to name a breakpoint to say so. */}
-            <div className="mt-6 grid gap-4 grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
-              {moment.vehicles.map((v) => {
-                /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
-                   through the one normalizer (lib/moments.ts vehicleKind — absent
-                   means 'bill', stated in exactly one place), never on the shape
-                   of the slug. MomentNominationCard is MomentVehicleCard's
-                   sibling and not its generalization; the reasoning is in its own
-                   header. Both render at identical weight with the identical
-                   green CTA, so a mixed grid never reads as recommending one
-                   vehicle over the other. */
-                if (vehicleKind(v) === 'nomination') {
-                  const nomination = getNomination(v.slug);
-                  if (!nomination) return null;
-                  return (
-                    <MomentNominationCard
-                      key={v.slug}
-                      slug={v.slug}
-                      citation={nomination.citation}
-                      description={nomination.nominee_description}
-                      organization={nomination.organization}
-                      status={nomination.status}
-                      lastActionDate={nomination.last_action_date}
-                      receivedDate={nomination.received_date}
-                      execCalendarNumber={nomination.exec_calendar_number}
-                      role={localeText(v.role, locale)}
-                      /* "Read + call" is a promise about the page this button
-                         opens, so it is asked of the RECORD, not just of the
-                         moment's state — a nomination the Senate has finished
-                         with, or one its record never described, opens a page
-                         whose entire rail is "No call to make". See
-                         nominationCtaKey; `moments.vehiclesLedeNominations` makes
-                         the same distinction in prose directly above this grid. */
-                      ctaLabel={t(nominationCtaKey(nomination, isSettled))}
-                      noDecodeNote={t('nominations.noDecodeNote')}
-                    />
-                  );
-                }
-                const raw = getBill(v.slug);
-                if (!raw) return null;
-                const bill = localizeBill(raw, locale);
-                const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
-                return (
-                  <MomentVehicleCard
-                    key={v.slug}
-                    slug={v.slug}
-                    identifier={formatCitation(bill.bill_type, bill.bill_number)}
-                    headline={bill.ai_headline}
-                    title={bill.short_title ?? bill.title}
-                    status={bill.status}
-                    statusKey={statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}
-                    tags={bill.issue_tags ?? []}
-                    lastActionDate={bill.last_action_date}
-                    coverageCount={coverageCount}
-                    role={localeText(v.role, locale)}
-                    ctaLabel={isSettled ? t('moments.readBill') : t('moments.readCall')}
-                    calendarLabel={t('bills.onCalendar')}
-                  />
-                );
-              })}
-            </div>
+            {/* GROUPED BY CHAMBER (owner, 2026-09-24: "House and Senate movement
+                should always be recorded under a single Big Question even if they
+                may have different names"). House, Senate, then Enacted, each in
+                authoring order, so a House resolution and its Senate twin read
+                as two halves of one story. A question whose vehicles all sit in
+                one group prints no group heading — lib/moments-ui.ts
+                groupVehicleStatuses. */}
+            {groups.map(({ group, items }) => (
+              <div key={group} className="mt-6">
+                {groups.length > 1 && (
+                  <h3 className="border-b border-line pb-2 text-sm font-bold text-ink">
+                    {t(`moments.status.group.${group}`)}
+                  </h3>
+                )}
+                <div className="mt-4 grid gap-4 grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
+                  {items.map(({ vehicle: v, line }) => {
+                    /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
+                       through the one normalizer (lib/moments.ts vehicleKind — absent
+                       means 'bill', stated in exactly one place), never on the shape
+                       of the slug. MomentNominationCard is MomentVehicleCard's
+                       sibling and not its generalization; the reasoning is in its own
+                       header. Both render at identical weight with the identical
+                       green CTA, so a mixed grid never reads as recommending one
+                       vehicle over the other. */
+                    if (vehicleKind(v) === 'nomination') {
+                      const nomination = getNomination(v.slug);
+                      if (!nomination) return null;
+                      return (
+                        <MomentNominationCard
+                          key={v.slug}
+                          slug={v.slug}
+                          citation={nomination.citation}
+                          description={nomination.nominee_description}
+                          organization={nomination.organization}
+                          status={nomination.status}
+                          lastActionDate={nomination.last_action_date}
+                          receivedDate={nomination.received_date}
+                          execCalendarNumber={nomination.exec_calendar_number}
+                          role={localeText(v.role, locale)}
+                          /* "Read + call" is a promise about the page this button
+                             opens, so it is asked of the RECORD, not just of the
+                             moment's state — a nomination the Senate has finished
+                             with, or one its record never described, opens a page
+                             whose entire rail is "No call to make". See
+                             nominationCtaKey; `moments.vehiclesLedeNominations` makes
+                             the same distinction in prose directly above this grid. */
+                          ctaLabel={t(nominationCtaKey(nomination, isSettled || line.terminal))}
+                          statusLine={line}
+                          noDecodeNote={t('nominations.noDecodeNote')}
+                        />
+                      );
+                    }
+                    const raw = getBill(v.slug);
+                    if (!raw) return null;
+                    const bill = localizeBill(raw, locale);
+                    const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
+                    return (
+                      <MomentVehicleCard
+                        key={v.slug}
+                        slug={v.slug}
+                        identifier={formatCitation(bill.bill_type, bill.bill_number)}
+                        headline={bill.ai_headline}
+                        title={bill.short_title ?? bill.title}
+                        status={bill.status}
+                        statusKey={statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}
+                        tags={bill.issue_tags ?? []}
+                        lastActionDate={bill.last_action_date}
+                        coverageCount={coverageCount}
+                        role={localeText(v.role, locale)}
+                        /* A finished vehicle — signed, vetoed, a failed vote nobody
+                           moved to reconsider — is a record, not a call to make:
+                           the same rule a settled question already applied to all
+                           its cards, now asked per vehicle of its own line. The
+                           bill page behind it still mounts the call flow, which is
+                           why bothNote below stays true either way. */
+                        ctaLabel={isSettled || line.terminal ? t('moments.readBill') : t('moments.readCall')}
+                        statusLine={line}
+                        calendarLabel={t('bills.onCalendar')}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
             {/* "Every link above opens the same call flow" was printed here
                 unconditionally — true of every bill card (the bill page always

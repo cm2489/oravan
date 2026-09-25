@@ -484,6 +484,34 @@ test.describe('floorMakesNoClaim', () => {
     expect(floorMakesNoClaim(null)).toBe(false);
     expect(floorMakesNoClaim('')).toBe(false);
   });
+
+  /*
+   * THE FILED DISCHARGE PETITION (owner ruling 2026-09-24, issue #268). A
+   * House discharge petition being FILED is a signature drive, not a floor
+   * event, and the site makes no floor claim about it.
+   */
+  const DISCHARGE_PETITION_FILED =
+    'Motion to Discharge Committee filed by Mr. Kiley (CA). Petition No: 119-21. (<a href="https://clerk.house.gov/DischargePetition/2026051221">Discharge petition</a> text with signatures.)';
+
+  test('a filed House discharge petition reads as claim-free (hr-4889-119, verbatim)', () => {
+    expect(floorMakesNoClaim(DISCHARGE_PETITION_FILED)).toBe(true);
+    // And it stays out of both tensed matchers, so no surface can speak for it.
+    expect(floorPendingChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+    expect(floorSettledChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+    expect(floorCalendarChamber(DISCHARGE_PETITION_FILED)).toBeNull();
+  });
+
+  test('a Senate discharge motion that was VOTED ON is a real floor event, never claim-free', () => {
+    const SENATE_DISCHARGE_VOTE =
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.';
+    expect(floorMakesNoClaim(SENATE_DISCHARGE_VOTE)).toBe(false);
+    expect(floorSettledChamber(SENATE_DISCHARGE_VOTE)).toBe('senate');
+  });
+
+  test('both halves of the filing shape are required', () => {
+    expect(floorMakesNoClaim('Motion to Discharge Committee filed by Mr. Kiley (CA).')).toBe(false);
+    expect(floorMakesNoClaim('Petition No: 119-21.')).toBe(false);
+  });
 });
 
 /* ------------------------------------------------------------------ *
@@ -569,6 +597,32 @@ test.describe('passageState', () => {
       stage: 'second',
       passedBy: 'senate',
       next: null,
+    });
+  });
+
+  /*
+   * THE POST-PASSAGE NOTICE (2026-09-24, H.Con.Res. 86). mapStatus files
+   * "Message on Senate action sent to the House." as `passed_chamber`; left to
+   * the 'first' default, an hconres the Senate had just agreed to would route
+   * the live call to the Senate. The notice names the acting chamber and no
+   * amendment clause, so the second chamber's notice is 'second', never 'both'.
+   */
+  test('the post-passage message names the acting chamber and fails closed on the second one', () => {
+    expect(p('hconres', 'Message on Senate action sent to the House.')).toEqual({
+      stage: 'second',
+      passedBy: 'senate',
+      next: null,
+    });
+    expect(p('hr', 'Message on Senate action sent to the House.')).toEqual({
+      stage: 'second',
+      passedBy: 'senate',
+      next: null,
+    });
+    // The originating chamber's own notice is the ordinary first passage.
+    expect(p('hr', 'Message on House action sent to the Senate.')).toEqual({
+      stage: 'first',
+      passedBy: 'house',
+      next: 'senate',
     });
   });
 
@@ -1527,6 +1581,63 @@ test.describe('selectFloorVoteFeature floor gate', () => {
  *      Every announcement below is hand-written and injected exactly as the
  *      page injects it from `rungFor`.
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * 5a · THE ADOPTED RULE (issue #268, awaiting owner ruling). "Rule H. Res.
+ *      988 passed House." is the House adopting the terms of a debate on
+ *      the bill, and the bill's own vote is still ahead — the reading
+ *      mapStatus and floorAnsweredChamber already make of this sentence.
+ *      Fresh, it is pending and crowns; stale, it reads as past floor
+ *      action and never crowns.
+ * ------------------------------------------------------------------ */
+test.describe('the adopted special rule reads as a pending House vote', () => {
+  const ADOPTED_RULE = 'Rule H. Res. 988 passed House.';
+  const FAILED_RULE = 'Rule H. Res. 1175 failed passage of House.';
+  const journeyOf = (last_action_date: string) =>
+    deriveJourney({
+      bill_type: 'hr',
+      status: 'floor_vote',
+      last_action_text: ADOPTED_RULE,
+      last_action_date,
+    } as Parameters<typeof deriveJourney>[0]);
+
+  test('the adopted rule is pending in the House (hr-4366-119, verbatim)', () => {
+    expect(floorPendingChamber(ADOPTED_RULE)).toBe('house');
+    // With a Congressional-Record tail, which no `$` anchor may defeat.
+    expect(floorPendingChamber('Rule H. Res. 988 passed House. (CR H123)')).toBe('house');
+    // And it is never ALSO settled: "the last motion failed" would be false.
+    expect(floorSettledChamber(ADOPTED_RULE)).toBeNull();
+  });
+
+  test('a FAILED rule is never pending', () => {
+    expect(floorPendingChamber(FAILED_RULE)).toBeNull();
+  });
+
+  test('the subject is pinned to the rule: a bill passing the House is not pending', () => {
+    expect(floorPendingChamber('Passed House.')).toBeNull();
+    expect(
+      floorPendingChamber('On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 301). Passed House.')
+    ).toBeNull();
+  });
+
+  test('fresh: "the House is deciding whether to bring it to a vote", and it crowns', () => {
+    const fresh = dayOffset(1);
+    expect(isSignalFresh(fresh)).toBe(true);
+    expect(journeyOf(fresh)).toMatchObject({ nowKey: 'nowFloorActivity', nowChamber: 'house' });
+    expect(
+      billFloorBand({ status: 'floor_vote', last_action_date: fresh, last_action_text: ADOPTED_RULE }, null)
+    ).toEqual({ kind: 'pending', chamber: 'house', date: fresh, suspended: false });
+  });
+
+  test('stale: "the House has taken floor action on it", and it never crowns', () => {
+    const stale = dayOffset(SIGNAL_WINDOW_DAYS + 1);
+    expect(isSignalFresh(stale)).toBe(false);
+    expect(journeyOf(stale)).toMatchObject({ nowKey: 'nowFloorActivityStale', nowChamber: 'house' });
+    expect(
+      billFloorBand({ status: 'floor_vote', last_action_date: stale, last_action_text: ADOPTED_RULE }, null)
+    ).toBeNull();
+  });
+});
+
 test.describe('billFloorBand · the bill page runs the crown\'s gate', () => {
   /** The measured case: the CR and the SEED Act on the days they passed. */
   const OVERWRITTEN = {
@@ -2584,5 +2695,87 @@ test.describe('liveCallKey', () => {
       expect(typeof en.bill[k], `en.bill.${k}`).toBe('string');
       expect(typeof es.bill[k], `es.bill.${k}`).toBe('string');
     }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * status_basis_text (2026-09-24) — the sentence a status was READ from.
+ *
+ * "Motion to reconsider laid on the table Agreed to without objection." is
+ * the last action on S. 2403, S. 195, S. 2398 and S. 766, which the House
+ * PASSED, and on H.Con.Res. 38, which the House voted DOWN. Read on its own it
+ * says neither; the pipeline stores the vote before it as status_basis_text,
+ * and every chamber/tense derivation reads that. The page still shows the
+ * reconsider sentence as the latest step.
+ * ------------------------------------------------------------------ */
+test.describe('status_basis_text drives every chamber/tense derivation', () => {
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const HOUSE_PASSED =
+    'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by the Yeas and Nays: (2/3 required): 401 - 14 (Roll no. 314).';
+  const HOUSE_DEFEAT =
+    'Failed of passage/not agreed to in House On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).';
+  const fresh = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  test('a Senate bill the House passed claims NO next chamber (was: "the House decides next")', () => {
+    const s2403 = {
+      bill_type: 's',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: RECONSIDER,
+      last_action_date: fresh,
+      status_basis_text: HOUSE_PASSED,
+    };
+    expect(passageState(s2403)).toEqual({ stage: 'second', passedBy: 'house', next: null });
+    expect(liveCallTarget(s2403)).toBeNull();
+    const j = deriveJourney(s2403);
+    expect(j.nowKey).toBe('nowPassedSecond');
+    expect(j.nowChamber).toBe('house');
+    expect(en.bill.journey.nowPassedSecond).toBeTruthy();
+    expect(es.bill.journey.nowPassedSecond).toBeTruthy();
+    // Without the basis it is exactly the shipped defect this closes.
+    const bare = { ...s2403, status_basis_text: undefined };
+    expect(liveCallTarget(bare)).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
+  });
+
+  test('the same shape over a House DEFEAT renders the failed House vote through the settled branch', () => {
+    const hconres38 = {
+      bill_type: 'hconres',
+      status: 'floor_vote' as BillStatus,
+      last_action_text: RECONSIDER,
+      last_action_date: fresh,
+      status_basis_text: HOUSE_DEFEAT,
+    };
+    const j = deriveJourney(hconres38);
+    expect(j.nowKey).toBe('nowFloorMotionFailed');
+    expect(j.nowChamber).toBe('house');
+    expect(liveCallTarget(hconres38)).toBeNull();
+    expect(billFloorBand(hconres38, null)).toBeNull();
+    // Without the basis the same status would say "it's moving on the floor".
+    expect(deriveJourney({ ...hconres38, status_basis_text: undefined }).nowKey).toBe('nowFloorActivityNeutral');
+  });
+
+  test('a bill with no basis derives exactly as before', () => {
+    const plain = {
+      bill_type: 'hr',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: 'Received in the Senate.',
+      last_action_date: fresh,
+    };
+    expect(passageState(plain)).toEqual({ stage: 'first', passedBy: null, next: 'senate' });
+    expect(deriveJourney(plain).nowKey).toBe('nowPassed');
+    expect(liveCallTarget(plain)).toEqual({ chamber: 'senate', afterVote: true, soleChamber: false });
+  });
+
+  test('a concurrent resolution agreed to by the second chamber without amendment never "goes to the President"', () => {
+    // 'both' renders "It goes to the President next"; a concurrent resolution
+    // is never presented. The second chamber's summary line can now reach
+    // passageState as a basis, so this fails closed to 'second'.
+    expect(
+      passageState({
+        bill_type: 'sconres',
+        last_action_text: RECONSIDER,
+        status_basis_text: 'Passed/agreed to in House: On agreeing to the resolution Agreed to without amendment.',
+      })
+    ).toEqual({ stage: 'second', passedBy: 'house', next: null });
+    expect(passageState({ bill_type: 'hr', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }).stage).toBe('both');
   });
 });

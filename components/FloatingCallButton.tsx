@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -8,7 +8,8 @@ import { useTranslations } from 'next-intl';
  * A floating "Make the call" button that keeps the primary action reachable
  * anywhere on a long bill page — but stands down whenever another call CTA (the
  * inline prompt, or the action panel) is on screen, so two identical buttons are
- * never visible at once. It defers to every element marked [data-call-cta].
+ * never visible at once. It defers to every element marked [data-call-cta]
+ * once that element has risen into the visible screen above the button.
  *
  * While hidden it's inert: not clickable and out of the tab order. The fade is
  * neutralized under prefers-reduced-motion by the global rule in globals.css.
@@ -26,6 +27,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
   const t = useTranslations('bill');
   const label = t('actTitle');
   const [hidden, setHidden] = useState(true);
+  const ref = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const targets = Array.from(document.querySelectorAll('[data-call-cta]'));
@@ -41,24 +43,60 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
     // screen?" on the first frame after mount instead of one answering during
     // render. Behaviourally identical — the resting state is already
     // `opacity-0`, so this reveals by fading in rather than flashing.
-    if (targets.length === 0) {
+    const fab = ref.current;
+    if (!fab || targets.length === 0) {
       const frame = requestAnimationFrame(() => setHidden(false));
       return () => cancelAnimationFrame(frame);
     }
+
+    /*
+     * "ON SCREEN" MEANS THE PART OF THE SCREEN A READER CAN SEE (B2,
+     * 2026-09-24). The observer used to watch the whole viewport, so the call
+     * panel counted as on screen the moment its top edge slid in UNDER the
+     * fixed bottom nav and under this button — where nobody could see or
+     * reach it. Measured on webkit-mobile at 390x844: the button stood down
+     * with no call surface visible at all, and on a short decode that dead
+     * window opened while the reader was still in the decoded answers.
+     *
+     * So the root is shrunk by the strip this button itself stands in: its
+     * own resolved `bottom` offset (which already clears the nav and the
+     * safe-area inset), plus its height, plus an 8px gap. It yields only once
+     * a call surface has risen ABOVE its top edge — and by the same
+     * arithmetic, while it is showing, any panel below sits inside that strip,
+     * where only the panel's title bar fits (the first control is well below
+     * it; tests/bill-call-rail.spec.ts sweeps for overlap). Recomputed on
+     * resize, because the offset changes at `md`.
+     */
     const onScreen = new Set<Element>();
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) onScreen.add(e.target);
-        else onScreen.delete(e.target);
-      }
-      setHidden(onScreen.size > 0);
-    });
-    targets.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    let io: IntersectionObserver | null = null;
+    const observe = () => {
+      io?.disconnect();
+      onScreen.clear();
+      const offset = parseFloat(getComputedStyle(fab).bottom) || 0;
+      const strip = Math.ceil(offset + fab.offsetHeight + 8);
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) onScreen.add(e.target);
+            else onScreen.delete(e.target);
+          }
+          setHidden(onScreen.size > 0);
+        },
+        { rootMargin: `0px 0px -${strip}px 0px` }
+      );
+      targets.forEach((el) => io?.observe(el));
+    };
+    observe();
+    window.addEventListener('resize', observe);
+    return () => {
+      window.removeEventListener('resize', observe);
+      io?.disconnect();
+    };
   }, []);
 
   return (
     <a
+      ref={ref}
       href={href}
       data-floating-call
       aria-label={label}

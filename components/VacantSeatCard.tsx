@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 
 /**
  * Renders in the rep grid, in the House-member slot, when a district's seat
@@ -15,11 +16,27 @@ import { useTranslations } from 'next-intl';
  * The heading is an h3 so it sits at the same outline level as the rep names
  * beside it rather than dropping out of the document outline entirely.
  */
-export function VacantSeatCard() {
+export function VacantSeatCard({ href }: { href?: string } = {}) {
   const t = useTranslations('reps');
   return (
     <article className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
-      <h3 className="text-xl font-extrabold">{t('vacantSeat')}</h3>
+      {/* `href` is the seat's own page (/reps/fl-20), passed by the caller
+          rather than computed here, so this card never pulls the roster JSON
+          into a client bundle (ActionPanel renders it too, without a link).
+          Same hit-area rule as RepCard's name link: an ::after overlay adds a
+          44px target without moving anything or widening the focus ring. */}
+      <h3 className="text-xl font-extrabold">
+        {href ? (
+          <Link
+            href={href}
+            className="relative inline-block text-ink underline decoration-line-strong underline-offset-4 after:absolute after:inset-x-0 after:-inset-y-2 hover:decoration-ink"
+          >
+            {t('vacantSeat')}
+          </Link>
+        ) : (
+          t('vacantSeat')
+        )}
+      </h3>
       <p className="mt-2 text-sm text-ink-2">{t('vacantSeatBody')}</p>
       <a
         href="https://www.house.gov/representatives/find-your-representative"

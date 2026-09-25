@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { getAllBills } from '../lib/core';
+import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
+import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -13,7 +14,7 @@ import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind 
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 15; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/questions', '/glossary'
+const STATIC_PATH_COUNT = 17; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/follow', '/questions', '/glossary', '/today'
 
 /**
  * The nomination slugs app/sitemap.ts actually lists: ONLY those a moment in a
@@ -46,7 +47,7 @@ function citedNominationSlugs(): Set<string> {
 }
 
 test.describe('sitemap.xml', () => {
-  test('renders both locales for every static path, every bill, and every cited nomination', async ({
+  test('renders both locales for every static path, every bill, every member page, and every cited nomination', async ({
     request,
   }) => {
     const res = await request.get('/sitemap.xml');
@@ -58,8 +59,32 @@ test.describe('sitemap.xml', () => {
     // Moments (v2 slice S5): every non-retired moment ships, both locales.
     const totalMoments = getMoments().filter((m) => m.state !== 'retired').length;
     const cited = citedNominationSlugs();
+    // Member pages: every sitting member plus every vacant seat (keyed on the seat).
+    const totalRepPages = getAllLegislators().length + getVacancies().length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
-    expect(locCount).toBe((STATIC_PATH_COUNT + totalBills + totalMoments + cited.size) * 2);
+    expect(locCount).toBe(
+      (STATIC_PATH_COUNT + totalBills + totalMoments + cited.size + totalRepPages + BRIEF_WINDOW_DAYS) * 2
+    );
+
+    // One member and one vacant seat, both locales.
+    const member = getAllLegislators()[0].bioguide;
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${member}</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${member}</loc>`);
+    const seat = getVacancies()[0];
+    if (seat) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${vacancySlug(seat)}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${vacancySlug(seat)}</loc>`);
+    }
+
+    // The daily brief's dated permalinks: exactly the window the route
+    // prerenders, both locales, and nothing older.
+    for (const date of briefWindow()) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/today/${date}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/today/${date}</loc>`);
+    }
+    expect(body.match(/<loc>[^<]*\/today\/\d{4}-\d{2}-\d{2}<\/loc>/g) ?? []).toHaveLength(
+      BRIEF_WINDOW_DAYS * 2
+    );
 
     // Every cited nomination is listed, both locales…
     for (const slug of cited) {

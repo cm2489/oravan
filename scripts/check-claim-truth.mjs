@@ -310,24 +310,21 @@ function lineStartingWith(text, prefix) {
  * claim, not surfaces suspected of lying.
  *
  * `oversightOk: true` is R1b's allowlist — the surfaces where a claim that a
- * PERSON is in the publish path is TRUE. Exactly two are on it, both in the
- * Moments namespace: a Big Question's copy is AI-drafted
- * (scripts/moment-draft.mjs) and then edited and merged by the owner before
- * anything reaches data/moments.json, which is CLAUDE.md's 2026-07-25
- * carve-out as amended 2026-08-07. Everything else on this list describes
- * the nightly decode path, which has no human step whatsoever.
+ * PERSON is in the publish path would be TRUE. It is EMPTY (2026-09-24): the
+ * shipped copy no longer says a person reviews Big Question text, and what
+ * it does say is that the text publishes once the automated gates pass
+ * (lib/moments-gate.mjs, check-moments.mjs). So no surface on this list may
+ * put a person in front of a publish. The mechanism stays so the allowlist
+ * can be pinned at zero in --self-test; adding a surface to it is a claim
+ * someone has to be able to defend.
  *
- * WHERE `moments.howMadeBody` IS, and why it is not here. It carries the
- * fullest true human-review claim on the site — "checked by an automated
- * gate, then reviewed by a person before it publishes" / "revisada por una
- * persona" — and it is exempt STRUCTURALLY, in two independent places that
- * this change leaves exactly as it found them: it is not enumerated in
- * ANCHORS, so R1/R1b never read it at all; and the per-key message scan
- * below skips the whole `moments.` namespace (MOMENTS_NAMESPACE), so R2/R3
- * never read it either — which is the only reason its ES value, a verbatim
- * RETIRED match, does not fail this gate today. Adding it here would demand
- * an APPROVED verb it has no reason to carry. Both exemptions are asserted
- * in --self-test so a future edit cannot quietly remove them.
+ * `moments.howMadeBody` IS on the list since 2026-09-24. It used to carry
+ * the site's one human-review claim and was exempt structurally (never
+ * enumerated here). It now names the automated gates and nothing else, so it
+ * is pinned like every other provenance surface: an APPROVED verb present,
+ * every RETIRED wording absent, no person in the publish path. The per-key
+ * message scan below still skips the `moments.` namespace for R2/R3/R4 —
+ * see MOMENTS_NAMESPACE for why that skip remains true.
  */
 const ANCHORS = [
   { id: 'messages/en.json citations.aiBody', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'citations.aiBody' },
@@ -336,23 +333,18 @@ const ANCHORS = [
   { id: 'messages/es.json home.heroAiMeta', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'home.heroAiMeta' },
   { id: 'messages/en.json bills.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'bills.aiNote' },
   { id: 'messages/es.json bills.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'bills.aiNote' },
-  { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote', oversightOk: true },
-  { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote', oversightOk: true },
+  { id: 'messages/en.json moments.aiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.aiNote' },
+  { id: 'messages/es.json moments.aiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.aiNote' },
   // The vehicles-section label on /questions/[id] (2026-08-09). It makes the
   // same publication claim as the two above, over the decoded headline AND the
   // role sentence on each card, so it is enumerated the same way.
-  //
-  // NO `oversightOk`, deliberately, and this is the one place where being in
-  // the Moments namespace is NOT enough to earn it: the allowlist is about
-  // what a sentence CLAIMS, not where it lives. This one claims only that
-  // "nothing publishes until it passes automated checks" — true of every
-  // vehicle card, decoded nightly with no human step — so it must stay
-  // subject to R1b. `moments.aiNote` is allowlisted because it additionally
-  // says a person edits and merges the entry, which is true of Big Question
-  // copy alone. Adding the flag here would also break the --self-test that
-  // pins the allowlist at exactly two.
   { id: 'messages/en.json moments.vehiclesAiNote', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.vehiclesAiNote' },
   { id: 'messages/es.json moments.vehiclesAiNote', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.vehiclesAiNote' },
+  // "How Big Questions get made" on /questions (2026-09-24). It says what
+  // guards a Big Question's publish, so it carries an approved verb and may
+  // not put a person in the publish path.
+  { id: 'messages/en.json moments.howMadeBody', lang: 'en', kind: 'json', file: 'messages/en.json', path: 'moments.howMadeBody' },
+  { id: 'messages/es.json moments.howMadeBody', lang: 'es', kind: 'json', file: 'messages/es.json', path: 'moments.howMadeBody' },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.en', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'en:'] },
   { id: 'lib/core/mcp.ts AI_LABEL_TEXT.es', lang: 'es', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['AI_LABEL_TEXT', 'es:'] },
   { id: 'lib/core/mcp.ts TOOL_INFO.get_bill.description', lang: 'en', kind: 'ts', file: 'lib/core/mcp.ts', anchors: ['TOOL_INFO', 'get_bill:', 'description:'] },
@@ -656,24 +648,27 @@ const R3_ALLOWLIST = [
     /*
      * The one entry with no category predicate, and the reason is the file
      * itself: lib/moments-gate.mjs IS the Big Questions gate — every
-     * sentence in it is Moments-scoped by construction, so the sentence
-     * "Human review enforces the at-creation rule" needs no scope word to
-     * be true. Kept at max 1 so a second, differently-scoped claim landing
-     * in this file still fails.
+     * sentence in it is Moments-scoped by construction. Its one match is
+     * HISTORY in the header's softenings list: before the 2026-08-09
+     * baseline rule, terminality was warning-only and review enforced the
+     * at-creation rule. Kept at max 1 so a second claim landing in this file
+     * still fails.
      */
     path: 'lib/moments-gate.mjs',
     max: 1,
-    note: 'TRUE and Moments-scoped by file: a Moment entry is hand-authored and owner-merged (CLAUDE.md 2026-07-25 carve-out), so review really does enforce the at-creation rule this softening skips',
+    note: 'history, Moments-scoped by file: the header records how the at-creation terminality rule was enforced before the 2026-08-09 baseline check replaced it',
   },
 ];
 
 /*
  * The message-key allowlist is separate because messages are scanned per
- * key, not per file. Everything under `moments.` is skipped wholesale:
- * Moment entries genuinely are hand-authored and merged by the owner — the
- * explicit carve-out in CLAUDE.md's 2026-07-25 amendment — so
- * `moments.howMadeBody` saying "reviewed by a person" is the one place the
- * claim is simply true.
+ * key, not per file. Keys under `moments.` skip R2 and R4 only: on Big
+ * Questions the forbidden-vocabulary lint really does block the publish
+ * (lib/moments-gate.mjs via check-moments.mjs), so `moments.aiNote` naming
+ * "no advocacy language" among the checks is true there. They do NOT skip
+ * R3 (since 2026-09-24): no `moments.` string claims a person reviews Big
+ * Question text any more, so the retired review wordings are policed there
+ * like everywhere else.
  *
  * The claim unit for a message is the WHOLE VALUE, not a sentence: a
  * message is one authored string that ships to one reader as one paragraph,
@@ -1100,30 +1095,33 @@ function selfTest() {
         'the decode path and never gated a publish there.'
     ).length === 0
   );
-  clean('R1b: moments.aiNote is allowlisted, so the one TRUE oversight claim on the site can be written down', () => {
+  clean('R1b: the oversight allowlist is empty — a person in the Big Questions publish path fails on moments.aiNote too', () => {
+    // Until 2026-09-24 moments.aiNote was allowlisted so this sentence could
+    // be written there. The shipped copy no longer claims review by a person,
+    // so the allowlist is pinned at zero and the sentence is a failure on
+    // every enumerated surface, Big Questions included.
     const allowed = ANCHORS.filter((a) => a.oversightOk);
-    const trueClaim =
+    const aiNote = ANCHORS.find((a) => a.path === 'moments.aiNote' && a.lang === 'en');
+    const claim =
       "Every Big Question's name and summary are AI-drafted and labeled. Nothing publishes until it passes " +
       'automated checks, and a person edits and merges every entry first.';
     return (
-      allowed.length === 2 &&
-      allowed.every((a) => a.path?.startsWith(MOMENTS_NAMESPACE)) &&
-      checkAnchorText(trueClaim, 'en', { oversightOk: true }).length === 0
+      allowed.length === 0 &&
+      aiNote !== undefined &&
+      checkAnchorText(claim, 'en', { oversightOk: Boolean(aiNote.oversightOk) }).some((p) => p.startsWith('R1b'))
     );
   });
-  clean('R1b/R3: moments.howMadeBody keeps BOTH structural exemptions — unenumerated in R1, namespace-skipped in R3', () => {
-    // Its ES value is a verbatim RETIRED match, and it is TRUE: the owner
-    // edits and merges every Big Question before it reaches data/moments.json
-    // (CLAUDE.md 2026-07-25, as amended 2026-08-07). Losing either exemption
-    // would red this gate on an honest sentence, so both are asserted here.
-    const esReal =
+  clean('R1/R3: moments.howMadeBody is enumerated in both languages, and its old review wording fails it', () => {
+    // The ES value it shipped until 2026-09-24 — a verbatim RETIRED match,
+    // exempt only because the key was never enumerated and the `moments.`
+    // namespace skipped R3. Both exemptions are gone; this pins that.
+    const esOld =
       'Una Gran pregunta se abre solo cuando algo real ante el Congreso cumple cada regla de abajo — verificada ' +
       `por un control automático y luego ${REVISAD}a por una persona antes de publicarse.`;
-    return (
-      !ANCHORS.some((a) => a.path === 'moments.howMadeBody') &&
-      'moments.howMadeBody'.startsWith(MOMENTS_NAMESPACE) &&
-      retiredHits(esReal).length > 0
+    const enumerated = ['en', 'es'].every((l) =>
+      ANCHORS.some((a) => a.path === 'moments.howMadeBody' && a.lang === l && !a.oversightOk)
     );
+    return enumerated && checkAnchorText(esOld, 'es').some((p) => p.startsWith('makes the retired review claim'));
   });
   clean("R3: PRODUCT.md's real denial is a denial in its own sentence", () => {
     const line = `The nightly decode path is not ${HUMAN}-${REVIEW}ed and the product never claims it is; what IS hand-reviewed (Big Question entries) says so because it is true.`;
@@ -1217,11 +1215,12 @@ function scanTree() {
   for (const file of MESSAGE_FILES) {
     const entries = flattenMessages(JSON.parse(read(file)));
     for (const [key, value] of entries) {
-      if (key.startsWith(MOMENTS_NAMESPACE)) continue;
-      for (const sentence of twoFactorHits(value)) {
+      // R2/R4 only: the vocabulary lint really gates Big Questions (see MOMENTS_NAMESPACE).
+      const momentsKey = key.startsWith(MOMENTS_NAMESPACE);
+      for (const sentence of momentsKey ? [] : twoFactorHits(value)) {
         fail(`R2 ${key} names advocacy as a publish gate outside the Moments namespace: ${sentence.slice(0, 160)}`, file);
       }
-      for (const sentence of vocabLintHits(value)) {
+      for (const sentence of momentsKey ? [] : vocabLintHits(value)) {
         fail(
           `R4 ${key} names a forbidden-vocabulary lint as a publish gate, and the sentence is neither ` +
             `Moments-scoped nor a correction: ${sentence.slice(0, 160)}`,

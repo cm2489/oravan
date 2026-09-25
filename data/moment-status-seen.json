@@ -1,0 +1,82 @@
+{
+  "_meta": {
+    "schema": 1,
+    "note": "Big Questions status lines as last flagged by scripts/moment-watch.mjs --mode=status. Deleting it re-baselines (no status diff, review dates re-flagged)."
+  },
+  "pastReview": [
+    "annual-defense-policy",
+    "crypto-oversight-split-between-sec-and-cftc",
+    "government-funding-deadline",
+    "iran-war-powers",
+    "paying-college-athletes",
+    "syria-sanctions-repeal"
+  ],
+  "questions": {
+    "iran-war-powers": {
+      "review_by": "2026-08-22",
+      "vehicles": {
+        "sjres-185-119": {
+          "fingerprint": "failed|senate||2026-06-24",
+          "text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)"
+        },
+        "sjres-172-119": {
+          "fingerprint": "failed|senate||2026-06-16",
+          "text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174."
+        },
+        "hconres-38-119": {
+          "fingerprint": "failed|house||2026-03-05",
+          "text": "Motion to reconsider laid on the table Agreed to without objection."
+        },
+        "hconres-89-119": {
+          "fingerprint": "passedWaiting|senate||2026-07-23",
+          "text": "Received in the Senate and referred to the Committee on Foreign Relations."
+        }
+      }
+    },
+    "government-funding-deadline": {
+      "review_by": "2026-08-22",
+      "vehicles": {
+        "hr-9770-119": {
+          "fingerprint": "passedWaiting|senate||2026-07-22",
+          "text": "Received in the Senate."
+        }
+      }
+    },
+    "syria-sanctions-repeal": {
+      "review_by": "2026-09-08",
+      "vehicles": {
+        "s-3172-119": {
+          "fingerprint": "onCalendar|senate||2026-07-27",
+          "text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 501."
+        }
+      }
+    },
+    "paying-college-athletes": {
+      "review_by": "2026-09-08",
+      "vehicles": {
+        "s-4668-119": {
+          "fingerprint": "onFloor|senate||2026-09-23",
+          "text": "Considered by Senate. (consideration: CR S4885)"
+        }
+      }
+    },
+    "annual-defense-policy": {
+      "review_by": "2026-09-08",
+      "vehicles": {
+        "s-4784-119": {
+          "fingerprint": "recordStep|||2026-07-27",
+          "text": "Motion to proceed to consideration of measure made in Senate. (CR S4276)"
+        }
+      }
+    },
+    "crypto-oversight-split-between-sec-and-cftc": {
+      "review_by": "2026-09-08",
+      "vehicles": {
+        "hr-3633-119": {
+          "fingerprint": "failedReconsider|senate||2026-09-15",
+          "text": "Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate."
+        }
+      }
+    }
+  }
+}

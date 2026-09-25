@@ -47,7 +47,15 @@ export function LocaleSwitcher() {
       // label, which is what the note above always claimed and the flex
       // version never did (measured: English 72.8px vs Español 76.7px, so the
       // ink fill changed width when you switched language).
-      className="inline-grid grid-cols-2 rounded-stamp border-[1.5px] border-ink"
+      //
+      // QUIETER ON A PHONE (fold pass 2026-09-24, finding B3). Measured at
+      // 390×844 the ink-filled pair was the loudest object on the homepage's
+      // first screen — louder than the hero's one green action. Below md it
+      // keeps both cells, both endonyms, and the 44px target, and it stays
+      // in the bar on every page; it drops the solid ink fill for a wash
+      // cell with a bold, underlined label, and a `line-strong` edge (3.24:1
+      // on paper, still clears 1.4.11). md+ is unchanged: ink edge, ink fill.
+      className="inline-grid grid-cols-2 rounded-stamp border-[1.5px] border-line-strong md:border-ink"
     >
       {routing.locales.map((code) => {
         const current = code === locale;
@@ -70,7 +78,7 @@ export function LocaleSwitcher() {
             aria-current={current ? 'page' : undefined}
             aria-label={current ? undefined : t('switchLocale')}
             className={[
-              'inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold no-underline transition-colors',
+              'inline-flex min-h-11 items-center justify-center px-2.5 text-xs transition-colors md:px-3 md:text-sm',
               // NESTED-CORNER MATH, derived from the parent token rather than
               // hardcoded, so it can never drift from it. The parent's 3px
               // radius is drawn OUTSIDE a 1.5px border, so the inner corner it
@@ -80,7 +88,9 @@ export function LocaleSwitcher() {
               // used and the port dropped.
               'first:rounded-l-[calc(var(--radius-stamp)-1.5px)]',
               'last:rounded-r-[calc(var(--radius-stamp)-1.5px)]',
-              current ? 'bg-ink text-paper' : 'text-ink hover:bg-wash active:bg-wash',
+              current
+                ? 'bg-wash font-bold text-ink underline decoration-2 underline-offset-4 md:bg-ink md:font-semibold md:text-paper md:no-underline'
+                : 'font-semibold text-ink-2 no-underline hover:bg-wash hover:text-ink active:bg-wash md:text-ink',
             ].join(' ')}
           >
             {LOCALE_NAME[code] ?? code}

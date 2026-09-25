@@ -5,8 +5,8 @@
       "es": "Poderes de guerra sobre Irán"
     },
     "summary": {
-      "en": "Congress has not passed an authorization for U.S. military action against Iran. The question these resolutions put to a vote: do U.S. hostilities with Iran need Congress's approval to continue? The House has agreed three times: H.Con.Res. 86 (215–208, June 3), H.Con.Res. 89 (214–208, July 23) and H.Con.Res. 93 (220–204, September 15), the last with yes votes from both parties, including Rep. Thomas Massie. The Senate agreed to H.Con.Res. 86 on June 23, 50–48, also with yes votes from both parties. On June 24 it voted 47–50 against taking up S.J.Res. 185, and motions to pull two more Senate resolutions out of committee failed in July. A concurrent resolution never goes to the President, and the Congressional Research Service calls that path constitutionally suspect; the record does not show that H.Con.Res. 86 ended the operations. H.Con.Res. 89 and 93 sit in the Senate Foreign Relations Committee, with no vote date on the record.",
-      "es": "El Congreso no ha aprobado ninguna autorización para una acción militar de EE. UU. contra Irán. La pregunta que estas resoluciones llevan a votación: ¿necesitan las hostilidades de EE. UU. con Irán la aprobación del Congreso para continuar? La Cámara ha dicho que sí tres veces: H.Con.Res. 86 (215–208, 3 de junio), H.Con.Res. 89 (214–208, 23 de julio) y H.Con.Res. 93 (220–204, 15 de septiembre), esta última con votos a favor de ambos partidos, entre ellos el del representante Thomas Massie. El Senado aprobó la H.Con.Res. 86 el 23 de junio, 50–48, también con votos a favor de ambos partidos. El 24 de junio rechazó, 47–50, considerar la S.J.Res. 185, y en julio fracasaron las mociones para sacar de comité otras dos resoluciones. Una resolución concurrente nunca llega al Presidente, y el Servicio de Investigación del Congreso considera ese mecanismo de dudosa constitucionalidad; el expediente no muestra que la H.Con.Res. 86 haya puesto fin a las operaciones. Las H.Con.Res. 89 y 93 están en el Comité de Relaciones Exteriores del Senado, sin fecha de votación en el expediente."
+      "en": "Congress has not passed an authorization for U.S. military action against Iran. The question these resolutions put to a vote: do U.S. hostilities with Iran need Congress's approval to continue? The House has agreed three times: H.Con.Res. 86 (215–208, June 3), H.Con.Res. 89 (214–208, July 23) and H.Con.Res. 93 (220–204, September 15), the last with yes votes from both parties, including Rep. Thomas Massie. The Senate agreed to H.Con.Res. 86 on June 23, 50–48, and rejected H.Con.Res. 89 on September 24, 49–50. On June 24 it voted 47–50 against taking up S.J.Res. 185, and motions to pull two more Senate resolutions out of committee failed in July. A concurrent resolution never goes to the President, and the Congressional Research Service calls that path constitutionally suspect; the record does not show that H.Con.Res. 86 ended the operations. H.Con.Res. 93 is in the Senate Foreign Relations Committee, with no vote date on the record.",
+      "es": "El Congreso no ha aprobado ninguna autorización para una acción militar de EE. UU. contra Irán. La pregunta que estas resoluciones llevan a votación: ¿necesitan las hostilidades de EE. UU. con Irán la aprobación del Congreso para continuar? La Cámara ha dicho que sí tres veces: H.Con.Res. 86 (215–208, 3 de junio), H.Con.Res. 89 (214–208, 23 de julio) y H.Con.Res. 93 (220–204, 15 de septiembre), esta última con votos a favor de ambos partidos, entre ellos el del representante Thomas Massie. El Senado aprobó la H.Con.Res. 86 el 23 de junio, 50–48, y rechazó la H.Con.Res. 89 el 24 de septiembre, 49–50. El 24 de junio votó 47–50 en contra de considerar la S.J.Res. 185, y en julio fracasaron las mociones para sacar de comité otras dos resoluciones. Una resolución concurrente nunca llega al Presidente, y el Servicio de Investigación del Congreso considera ese mecanismo de dudosa constitucionalidad; el expediente no muestra que la H.Con.Res. 86 haya puesto fin a las operaciones. La H.Con.Res. 93 está en el Comité de Relaciones Exteriores del Senado, sin fecha de votación en el expediente."
     },
     "aliases": {
       "en": [
@@ -40,8 +40,8 @@
       {
         "slug": "hconres-89-119",
         "role": {
-          "en": "The House agreed to it on July 23, 2026, 214–208. It states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. The Senate referred it to the Foreign Relations Committee the same day, and it has had no action since. A yes vote in the Senate joins that direction; a no vote leaves current operations under the President's direction.",
-          "es": "La Cámara la aprobó el 23 de julio de 2026, 214–208. Declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. El Senado la remitió al Comité de Relaciones Exteriores ese mismo día y no ha tenido más acción. Un voto a favor en el Senado se suma a esa orden; un voto en contra deja las operaciones actuales bajo la dirección del Presidente."
+          "en": "The House agreed to it on July 23, 2026, 214–208. It states that U.S. combat with Iran requires Congress's approval and directs the President to end operations Congress has not authorized. On September 24, 2026, the Senate rejected it, 49–50, so it did not pass both chambers. That vote is closed.",
+          "es": "La Cámara la aprobó el 23 de julio de 2026, 214–208. Declara que el combate de EE. UU. con Irán requiere la aprobación del Congreso y ordena al Presidente poner fin a las operaciones que el Congreso no ha autorizado. El 24 de septiembre de 2026 el Senado la rechazó, 49–50, así que no fue aprobada por las dos cámaras. Esa votación está cerrada."
         }
       },
       {
@@ -109,11 +109,13 @@
         "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93/all-actions",
         "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86/all-actions",
         "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180/all-actions",
-        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181/all-actions"
+        "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181/all-actions",
+        "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89/all-actions"
       ]
     },
     "opened": "2026-07-23",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live",
     "context_refs": [
       {
@@ -132,8 +134,8 @@
       "es": "Fecha límite para financiar el gobierno"
     },
     "summary": {
-      "en": "Federal agencies are funded through December 11, 2026, under a stopgap law, so the September 30 deadline no longer applies. The House passed its own stopgap, H.R. 9770, on July 21 (220–205), running to December 4; the Senate received it the next day and has not acted on it. Instead, the Senate turned a different House bill, H.R. 6500, into a stopgap and passed it 90–6 on August 8. The House agreed 370–48 on September 1, and the President signed it on September 2 as Public Law 119-103. The next deadline is December 11: by then Congress has to pass the full-year spending bills or another stopgap. No new stopgap is on the record yet.",
-      "es": "Las agencias federales tienen fondos hasta el 11 de diciembre de 2026 gracias a una ley de financiamiento temporal, así que la fecha límite del 30 de septiembre ya no aplica. La Cámara aprobó su propia medida temporal, la H.R. 9770, el 21 de julio (220–205), con fondos hasta el 4 de diciembre; el Senado la recibió al día siguiente y no ha actuado sobre ella. En cambio, el Senado convirtió otro proyecto de la Cámara, la H.R. 6500, en una medida temporal y la aprobó 90–6 el 8 de agosto. La Cámara la aceptó 370–48 el 1 de septiembre, y el Presidente la firmó el 2 de septiembre como Ley Pública 119-103. La próxima fecha límite es el 11 de diciembre: para entonces el Congreso tiene que aprobar las leyes de gasto de todo el año u otra medida temporal. Todavía no hay una nueva medida temporal en el expediente."
+      "en": "Federal agencies are funded through December 11, 2026, under a stopgap law. The House passed its own stopgap, H.R. 9770, on July 21 (220–205), running to December 4; the Senate received it the next day and has not acted on it. Instead, the Senate turned a different House bill, H.R. 6500, into a stopgap and passed it 90–6 on August 8. The House agreed 370–48 on September 1, and the President signed it on September 2 as Public Law 119-103. The next deadline is December 11: by then Congress has to pass the full-year spending bills or another stopgap. No new stopgap is on the record yet.",
+      "es": "Las agencias federales tienen fondos hasta el 11 de diciembre de 2026 gracias a una ley de financiamiento temporal. La Cámara aprobó su propia medida temporal, la H.R. 9770, el 21 de julio (220–205), con fondos hasta el 4 de diciembre; el Senado la recibió al día siguiente y no ha actuado sobre ella. En cambio, el Senado convirtió otro proyecto de la Cámara, la H.R. 6500, en una medida temporal y la aprobó 90–6 el 8 de agosto. La Cámara la aceptó 370–48 el 1 de septiembre, y el Presidente la firmó el 2 de septiembre como Ley Pública 119-103. La próxima fecha límite es el 11 de diciembre: para entonces el Congreso tiene que aprobar las leyes de gasto de todo el año u otra medida temporal. Todavía no hay una nueva medida temporal en el expediente."
     },
     "aliases": {
       "en": [
@@ -187,6 +189,7 @@
     },
     "opened": "2026-07-23",
     "review_by": "2026-11-30",
+    "reviewed": "2026-09-24",
     "status": "live",
     "context_refs": [
       {
@@ -240,6 +243,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "paying-college-athletes": {
@@ -248,8 +252,8 @@
       "es": "Pago a atletas universitarios"
     },
     "summary": {
-      "en": "On what terms should college athletes be paid? S. 4668, the Protect College Sports Act of 2026, sets national rules. Among them: it bars schools, conferences and associations like the NCAA from keeping athletes out of name, image and likeness (NIL) deals, within the bill's limits; has agents register with a state, capping their fees on endorsement deals at 5%; gives athletes one transfer without losing eligibility; and grants schools and conferences a limited antitrust exemption to sell some media rights together. The Senate voted 74–24 to end debate on taking the bill up (September 15), 77–22 to take it up (September 17) and 70–21 to end debate on the Cruz–Cantwell substitute (September 22). On September 24 the Senate adopted the Cruz–Cantwell substitute 77–23 and voted 74–25 to end debate on the bill as amended. The final passage vote has no date on the record. A bill the Senate passes goes to the House, where neither House version has had a floor vote.",
-      "es": "¿En qué términos se debe pagar a los atletas universitarios? El S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, fija reglas nacionales. Entre ellas: prohíbe a universidades, conferencias y asociaciones como la NCAA impedir que los atletas firmen acuerdos de nombre, imagen y semejanza (NIL), dentro de sus límites; obliga a los agentes a registrarse en un estado y limita sus honorarios al 5% en patrocinios; da a los atletas una transferencia sin perder elegibilidad; y otorga a universidades y conferencias una exención antimonopolio limitada para vender en conjunto ciertos derechos de transmisión. El Senado votó 74–24 para cerrar el debate sobre considerar el proyecto (15 de septiembre), 77–22 para considerarlo (17 de septiembre) y 70–21 para cerrar el debate sobre la enmienda sustitutiva (22 de septiembre). El 24 de septiembre el Senado adoptó la enmienda sustitutiva Cruz–Cantwell (77–23) y cerró el debate sobre el proyecto enmendado (74–25); la votación final no tiene fecha. Si el Senado lo aprueba, pasa a la Cámara, que no ha votado ninguna versión propia."
+      "en": "On what terms should college athletes be paid? S. 4668, the Protect College Sports Act of 2026, sets national rules. As reported to the Senate in June, it bars schools, conferences and associations like the NCAA from keeping athletes out of name, image and likeness (NIL) deals, within the bill's limits; has agents register with a state, capping their fees on endorsement deals at 5%; gives athletes one transfer without losing eligibility; and grants schools and conferences a limited antitrust exemption to sell some media rights together. The Senate voted 74–24 to end debate on taking the bill up (September 15), 77–22 to take it up (September 17) and 70–21 to end debate on the Cruz–Cantwell substitute (September 22). On September 24 it adopted that substitute, which replaces the bill's text, 77–23, and voted 74–25 to end debate on the bill as amended. The Senate has not yet voted on passing it. If it passes, the bill goes to the House.",
+      "es": "¿En qué términos se debe pagar a los atletas universitarios? El S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, fija reglas nacionales. En el texto presentado al Senado en junio, prohíbe a universidades, conferencias y asociaciones como la NCAA impedir que los atletas firmen acuerdos de nombre, imagen y semejanza (NIL), dentro de sus límites; obliga a los agentes a registrarse en un estado, con honorarios de hasta 5% en patrocinios; da a los atletas una transferencia sin perder elegibilidad; y otorga a universidades y conferencias una exención antimonopolio limitada para vender en conjunto ciertos derechos de transmisión. El Senado votó 74–24 para cerrar el debate sobre considerarlo (15 de septiembre), 77–22 para considerarlo (17 de septiembre) y 70–21 para cerrar el debate sobre la enmienda sustitutiva Cruz–Cantwell (22 de septiembre). El 24 de septiembre adoptó esa enmienda, que reemplaza el texto, por 77–23, y cerró el debate sobre el proyecto enmendado por 74–25. Todavía no ha votado su aprobación; si lo aprueba, pasa a la Cámara."
     },
     "aliases": {
       "en": [
@@ -264,8 +268,8 @@
       {
         "slug": "s-4668-119",
         "role": {
-          "en": "A yes vote on ending debate on S. 4668 clears the way to a final Senate vote on nationwide rules for paying college athletes; a no vote keeps the bill on the floor without that step. The Senate took the bill up 77–22 on September 17, 2026, ended debate on the Cruz–Cantwell substitute 70–21 on September 22, adopted that substitute 77–23 on September 24, and ended debate on the bill as amended 74–25 the same day. The bill is on the Senate calendar as No. 449.",
-          "es": "Un voto a favor de cerrar el debate sobre el S. 4668 abre el camino a una votación final del Senado sobre reglas nacionales para pagar a los atletas universitarios; un voto en contra deja el proyecto en el pleno sin ese paso. El Senado lo tomó en consideración 77–22 el 17 de septiembre de 2026 cerró el debate sobre la enmienda sustitutiva Cruz–Cantwell 70–21 el 22 de septiembre adoptó esa enmienda por 77–23 el 24 de septiembre y cerró el debate sobre el proyecto enmendado por 74–25 ese mismo día. El proyecto figura en el calendario del Senado con el No. 449."
+          "en": "A yes vote on passage sends S. 4668, with its nationwide rules for paying college athletes, to the House; a no vote keeps it from passing the Senate. The Senate took the bill up 77–22 on September 17, 2026, adopted the Cruz–Cantwell substitute 77–23 on September 24, and the same day voted 74–25 to end debate on the bill as amended. It has not yet voted on passage. The bill is on the Senate calendar as No. 449.",
+          "es": "Un voto a favor de la aprobación envía el S. 4668, con sus reglas nacionales para pagar a los atletas universitarios, a la Cámara; un voto en contra impide que el Senado lo apruebe. El Senado lo tomó en consideración 77–22 el 17 de septiembre de 2026, adoptó la enmienda sustitutiva Cruz–Cantwell 77–23 el 24 de septiembre y ese mismo día votó 74–25 para cerrar el debate sobre el proyecto enmendado. Todavía no ha votado su aprobación. El proyecto figura en el calendario del Senado con el No. 449."
         },
         "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
         "_status_at_scaffold": "floor_vote",
@@ -281,6 +285,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "annual-defense-policy": {
@@ -332,6 +337,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "crypto-oversight-split-between-sec-and-cftc": {
@@ -373,6 +379,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "penny-production-and-cash-rounding": {

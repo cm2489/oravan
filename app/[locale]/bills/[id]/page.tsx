@@ -13,6 +13,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { ReadReceipt } from '@/components/ReadReceipt';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
+import { VoteRecord } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
@@ -467,50 +468,50 @@ export default async function BillPage({
             folded into a disclosure. */}
         <header className="pt-6 pb-4">
           <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
-          {/* THE PROVENANCE RITUAL (2026-08 design pick C1): one utility
-              voice for ALL metadata, same order every page — bill ·
-              congress · status · latest action · the AI label. The stamp
-              voice extended, no new font. The old
-              AI chip's whole sentence rides here VERBATIM in its own span:
-              funnel invariant I1 pins `bill.aiLabel` on this page, and this
-              position is first-contact, above the fold at 390px. Status
-              routes through statusKeyFor — the label can never outrun the
-              record — except where the fresh floor gate above has already
-              read a stronger, dated fact out of that same record, in which
-              case it prints THAT (see statusLabelKey). */}
-          <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase">
-            <span className="tabular-nums">{citation}</span>
-            <span aria-hidden> · </span>
-            <span>{t('bill.congressLabel', { congress: bill.congress_number })}</span>
-            <span aria-hidden> · </span>
-            <span>{t(statusLabelKey)}</span>
-            {bill.last_action_date && (
-              <>
-                <span aria-hidden> · </span>
-                <span className="tabular-nums">
-                  {t('bill.lastAction')} {fmtShort(bill.last_action_date)}
-                </span>
-              </>
-            )}
+          {/* Descends from the PROVENANCE RITUAL (2026-08 design pick C1):
+              the same facts in the same order — record, status, latest
+              action, the AI label — now as three marks instead of one run of
+              tracked capitals. Status routes through statusKeyFor — the label
+              can never outrun the record — except where the fresh floor gate
+              above has already read a stronger, dated fact out of that same
+              record, in which case it prints THAT (see statusLabelKey). */}
+          {/* THE CREDIBILITY BLOCK (B6, 2026-09-24) — three marks, no more:
+              one STATUS chip, one DATE line, one AI mark. It replaces a
+              four-line run of tracked capitals (citation · congress · status
+              · latest action · AI label) plus a short-title line and topic
+              chips, which at 390px pushed the decode below the fold. Nothing
+              it says changed: the status still routes through statusLabelKey
+              (statusKeyFor, or the fresh floor gate's stronger fact), the date
+              is the record's own last action, and the AI line is funnel
+              invariant I1's `bill.aiLabel`, verbatim, at first contact. The
+              congress, the short title and the topics moved into the
+              official-text disclosure below, unchanged.
+              The status and the date share the header's FIRST <p> on purpose:
+              tests/freshness.spec.ts reads the status off `main header p`. */}
+          <div className="mt-3 max-w-read border-t-[3px] border-ink pt-3">
+            <p>
+              <Chip tone="status">{t(statusLabelKey)}</Chip>
+              <span className="mt-2 block text-sm text-ink-2 tabular-nums">
+                <span className="font-semibold text-ink">{citation}</span>
+                {bill.last_action_date && (
+                  <>
+                    <span aria-hidden> · </span>
+                    <span>
+                      {t('bill.lastAction')}{' '}
+                      <time dateTime={bill.last_action_date}>
+                        {fmtShort(bill.last_action_date)}
+                      </time>
+                    </span>
+                  </>
+                )}
+              </span>
+            </p>
             {hasDecode && (
-              <>
-                <span aria-hidden> · </span>
-                <span>{t('bill.aiLabel')}</span>
-              </>
+              <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
+                {t('bill.aiLabel')}
+              </Chip>
             )}
-          </p>
-          {bill.short_title && (
-            <p className="mt-2 text-sm text-ink-2">{`“${bill.short_title}”`}</p>
-          )}
-          {(bill.issue_tags ?? []).length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              {(bill.issue_tags ?? []).slice(0, 2).map((tag) => (
-                <Chip key={tag} tone="tag">
-                  {t(`categories.${tag}`)}
-                </Chip>
-              ))}
-            </div>
-          )}
+          </div>
           {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
               a bill page said nothing about the Moment it is a vehicle of —
               the link existed in one direction only. It lands here, after
@@ -549,6 +550,24 @@ export default async function BillPage({
               <p>
                 <b className="font-semibold text-ink">{t('bill.officialTitle')}:</b> {bill.title}
               </p>
+              {bill.short_title && (
+                <p>
+                  <b className="font-semibold text-ink">{t('bill.shortTitleLabel')}:</b>{' '}
+                  {`“${bill.short_title}”`}
+                </p>
+              )}
+              <p>{t('bill.congressLabel', { congress: bill.congress_number })}</p>
+              {/* Topics as plain words, not chips: on this page a chip means
+                  status, and there is exactly one. */}
+              {(bill.issue_tags ?? []).length > 0 && (
+                <p>
+                  <b className="font-semibold text-ink">{t('bill.topicsLabel')}:</b>{' '}
+                  {(bill.issue_tags ?? [])
+                    .slice(0, 2)
+                    .map((tag) => t(`categories.${tag}`))
+                    .join(' · ')}
+                </p>
+              )}
               {bill.introduced_date && (
                 <p className="tabular-nums">
                   <b className="font-semibold text-ink">{t('bill.introduced')}:</b>{' '}
@@ -654,22 +673,23 @@ export default async function BillPage({
                 <p className="mt-3 text-sm text-ink-2">{t('bill.aiLede')}</p>
                 <TldrStrip bill={bill} />
                 <DecodedSections bill={bill} />
-                <p className="mt-6 text-sm text-ink-2">
-                  {t('bill.aiDisclaimer')}
-                  {bill.congress_gov_url && (
-                    <>
-                      {' '}
-                      <a
-                        href={bill.congress_gov_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
-                      >
-                        {t('bill.viewOfficial')}
-                      </a>
-                    </>
-                  )}
-                </p>
+                <p className="mt-6 text-sm text-ink-2">{t('bill.aiDisclaimer')}</p>
+                {/* Its own line and a full 44px target (a11y sweep,
+                    2026-09-24): it trailed the disclaimer inline, wrapped to
+                    two lines at 390px and measured 39px tall. It is the
+                    verification step the sentence above asks for, not a
+                    word inside it, so the inline exemption never fit. */}
+                {bill.congress_gov_url && (
+                  <a
+                    href={bill.congress_gov_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                  >
+                    {t('bill.viewOfficial')}
+                    <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+                  </a>
+                )}
               </>
             ) : (
               <p className="mt-3 text-ink-2">{t('bills.decodedPending')}</p>
@@ -727,6 +747,8 @@ export default async function BillPage({
               srLabel={dataAsOf}
             />
           </section>
+
+          <VoteRecord billId={id} className="min-[62rem]:col-start-1" />
 
           {/* For the hesitant: what a call actually looks like, on demand,
               collapsed so it never displaces the rail. */}

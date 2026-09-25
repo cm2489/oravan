@@ -357,3 +357,15 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     shape(raw, { coverageTier: tier as 'cross' | 'neutral', sourceCount: sources, caption: null })
   );
 }
+
+/**
+ * The corpus bills a member is the sponsor of, newest action first. Only
+ * DECODED bills: every link off a member page lands on a decoded, AI-labeled
+ * answer (funnel invariant I1). Cosponsorship is not in the corpus, so this
+ * says nothing about it.
+ */
+export function getBillsSponsoredBy(bioguide: string): Bill[] {
+  return BILLS.filter(
+    (b) => b.sponsor_bioguide_id === bioguide && Boolean(b.ai_summary || b.ai_sections)
+  ).sort((a, b) => (b.last_action_date ?? '').localeCompare(a.last_action_date ?? ''));
+}
