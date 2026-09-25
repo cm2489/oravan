@@ -195,8 +195,10 @@ jobs:
         # Cost: ONE batched Haiku call per run, skipped entirely on an empty
         # batch, plus (since 2026-09-25) a Sonnet "Where it stands" rewrite
         # ONLY for a question a roll-call vote landed on in this run, capped
-        # at 3 model calls per question per ET day (rejected replies count) —
-        # see scripts/moment-updates.mjs's SPEND section.
+        # at 3 model calls per question per ET day (rejected replies count),
+        # and spent out of the SAME MOMENT_SUMMARY_DAILY_CAP=8 calls per ET day
+        # the nightly uses, not a second allowance — see
+        # scripts/moment-updates.mjs's SPEND section.
         continue-on-error: true
         env:
           MOMENT_UPDATES_MODE: incremental

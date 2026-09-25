@@ -10,8 +10,10 @@
  * collects press clusters and regenerates any state summary whose issue moved
  * (flap-guarded). `incremental` regenerates a state summary ONLY on a run
  * where a roll-call vote landed on that question, at most
- * INTRADAY_SUMMARY_CAP (3) revisions per question per ET day (2026-09-25 —
- * see planSummaries). EVERYTHING ELSE runs in both — collection (including
+ * INTRADAY_SUMMARY_CAP (3) revisions or calls per question per ET day, and
+ * both modes share ONE budget of MOMENT_SUMMARY_DAILY_CAP (8) summary calls
+ * per ET day across all questions (2026-09-25 — see planSummaries and
+ * summaryCallsOnDay). EVERYTHING ELSE runs in both — collection (including
  * the roll calls in data/votes.json), the lint, the merge, the floor guard,
  * and **the storage envelopes**. The prune used to be nightly-only, which
  * left HARD_DAY_CEILING and MAX_UPDATES_PER_MOMENT unenforced on 24 of the
@@ -74,24 +76,33 @@
  * scripts/newsdesk.mjs). At $1/$5 per MTok a full 15-event batch is roughly 3K
  * in / 1.5K out ≈ $0.011; ~11 runs on a busy day ≈ $0.12/day. Summaries:
  * claude-sonnet-5, EN+ES in ONE call, at most MOMENT_SUMMARY_DAILY_CAP per
- * night and only when summaryNeedsRefresh says the issue actually moved —
- * ~$0.018/moment, so ≤ ~$0.15 on a night that hits the ceiling.
+ * ET day (nightly and intraday together, since 2026-09-25) and only when
+ * summaryNeedsRefresh says the issue actually moved or a vote landed —
+ * ~$0.018/moment, so ≤ ~$0.15 on a day that hits the ceiling.
  * MOMENT_UPDATE_DAILY_EVENTS bounds how many events can be decoded in a UTC
  * day at all, which is what makes the black-swan ceiling code-enforced rather
  * than hoped-for. Congress.gov adds at most one free actions request per
  * moment vehicle per run, and only for vehicles that actually moved.
  *
  * INTRADAY SUMMARIES (2026-09-25). An incremental run makes a Sonnet call only
- * for a question a roll-call vote landed on in THAT run, and never more than
- * INTRADAY_SUMMARY_CAP (3) intraday CALLS per question per ET day — counted in
- * `entry.summary_attempts` before each call, so a rejected or failed reply
- * spends its slot too — and never more than MOMENT_SUMMARY_DAILY_CAP per run.
- * At the brief's $2/$10 per MTok and ~1,450 in / 420 out a call is ≈ $0.0071
- * (the vote lines add ~50–150 input tokens). Roll calls on moment vehicles
- * are rare — 11 in data/votes.json from 2026-05-27 to 2026-09-24 — so the
- * expected added cost is cents per month; the code-enforced ceiling is 3
- * calls × live questions × days (6 live questions: ≈ $0.13/day, ≈ $3.83 over
- * 30 days). Reading data/votes.json costs nothing: it is a local file.
+ * for a question a roll-call vote landed on in THAT run (and that survived
+ * the prune), and never more than INTRADAY_SUMMARY_CAP (3) calls per question
+ * per ET day — counted in `entry.summary_attempts` before each call, in both
+ * modes, so a rejected or failed reply spends its slot too. Every call, in
+ * either mode, also comes out of the SAME daily budget the nightly always had:
+ * MOMENT_SUMMARY_DAILY_CAP (8) calls per ET day across all questions, summed
+ * off those counters (summaryCallsOnDay). So the code-enforced ceiling is the
+ * one the once-a-night run already had — 8 calls a day, 240 in 30 days — and
+ * intraday rewrites spend what the nightly left rather than adding a second
+ * allowance on top: the ADDED ceiling is zero calls. In dollars that is
+ * ≈ $1.70 per 30 days at ≈ $0.0071 a call ($2/$10 per MTok — Sonnet 5's list
+ * price in the claude-api reference table cached 2026-06-24, not re-read live
+ * — times the brief's ~1,450 in / 420 out; the vote lines add ~50–150 input
+ * tokens), or ≈ $4.32 at the ~$0.018/moment this header has carried since
+ * 2026-07-25; the token counts behind both are estimates, not measurements.
+ * Roll calls on moment vehicles are rare — 11 in data/votes.json from
+ * 2026-05-27 to 2026-09-24 — so the expected added cost is cents per month.
+ * Reading data/votes.json costs nothing: it is a local file.
  *
  * NO PROMPT CACHING, deliberately: both prompts sit under the models' minimum
  * cacheable prefix (1024 tokens on Haiku 4.5, 512 on Sonnet 5), so a
@@ -175,14 +186,28 @@ import {
 const MODE = process.env.MOMENT_UPDATES_MODE === 'nightly' ? 'nightly' : 'incremental';
 const BATCH_CAP = Number(process.env.MOMENT_UPDATE_BATCH_CAP ?? 15);
 const DAILY_EVENTS = Number(process.env.MOMENT_UPDATE_DAILY_EVENTS ?? 40);
+/**
+ * "Where it stands" model calls per ET DAY, across every question and both
+ * modes — summed off the stored `summary_attempts` counters
+ * (summaryCallsOnDay), so it holds across every hourly run. Before 2026-09-25
+ * only the once-a-night run made these calls, so a per-run cap WAS a daily
+ * cap; intraday rewrites come out of this same budget rather than adding a
+ * second one on top of it.
+ */
 const SUMMARY_DAILY_CAP = Number(process.env.MOMENT_SUMMARY_DAILY_CAP ?? 8);
 /**
- * At most this many "Where it stands" revisions per question per ET day, read
- * off the stored file (revisionsOnDay), so it holds across every hourly run.
- * The nightly's own revision counts toward it; only incremental runs are
+ * At most this many "Where it stands" revisions or calls per question per ET
+ * day before an incremental run stops asking, read off the stored file
+ * (revisionsOnDay / summaryAttemptsOnDay), so it holds across every hourly
+ * run. The nightly's own call counts toward it; only incremental runs are
  * stopped by it (the nightly keeps its behaviour — see planSummaries).
  */
 export const INTRADAY_SUMMARY_CAP = Number(process.env.MOMENT_SUMMARY_INTRADAY_CAP ?? 3);
+/**
+ * The floor guard never defers a question whose current summary is older
+ * than this (or missing): at most one nightly in a row is deferred.
+ */
+export const FLOOR_GUARD_MAX_DEFER_HOURS = 36;
 const PRESS_WINDOW_DAYS = Number(process.env.MOMENT_PRESS_WINDOW_DAYS ?? 1);
 export const SUMMARY_WINDOW_DAYS = 14;
 
@@ -719,7 +744,8 @@ export function lintPair(text, klass, outletNames) {
 }
 
 /* ------------------------------------------------------------------ *
- * 6 · state summaries (nightly only).
+ * 6 · state summaries — the nightly when the issue moved, and an incremental
+ *     run when a roll-call vote landed (planSummaries decides which).
  * ------------------------------------------------------------------ */
 
 /**
@@ -875,7 +901,7 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
     .map(([slug, status]) => `- ${billLabel(slug)}: EN "${phraseFor(slug, status, 'en')}" / ES "${phraseFor(slug, status, 'es')}"`)
     .join('\n');
   const nonEmptyRule = groundedEvents
-    ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
+    ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
     : '- If nothing has moved recently, say that plainly.';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
@@ -1197,6 +1223,87 @@ export function freshCandidates(candidates, storeArg) {
   return out;
 }
 
+/**
+ * Split `candidates` into the ones that would SURVIVE this run's own prune and
+ * the ones it would delete again (fix pass, 2026-09-25).
+ *
+ * THE LOOP THIS CLOSES. freshCandidates diffs against the stored file, so a
+ * candidate the prune removes is "new" again on the next run. For the
+ * /actions path that needed a vehicle to move; data/votes.json is re-read on
+ * EVERY run, so a roll call the HARD_DAY_CEILING envelope trims (a vote-a-rama:
+ * more than 12 roll calls on one question's day) came back every hour for the
+ * 60-day retention window — into the paid Haiku batch each time, and counted
+ * as a landed vote, which opened a Sonnet rewrite of "Where it stands" with
+ * nothing new in it. Reproduced with 15 same-day amendment rolls: run 1
+ * stores 12, and every later run re-collects the other 3.
+ *
+ * The test is the prune itself, not a copy of its rules: each candidate is
+ * merged into ITS moment's stored updates on its own (dedupeUpdates) and the
+ * result pruned (pruneEntry, the run's own clock). Selection there is a fixed
+ * order — class priority, then id — so a candidate that loses against what is
+ * already stored loses the same way on every run, and dropping it before the
+ * decode changes nothing that would have been stored. Candidates are tried one
+ * at a time, not together, on purpose: two new rows that crowd each other out
+ * are each stored-or-pruned once by the real merge, and the loser then fails
+ * this test on the next run against the winner.
+ *
+ * Pure (reads `storeArg`, mutates nothing).
+ *
+ * @param {Record<string, any>[]} candidates each tagged with MOMENT_KEY
+ * @param {Record<string, any>} storeArg
+ * @param {Date|number|string} nowArg
+ * @returns {{ kept: Record<string, any>[], dropped: Record<string, any>[] }}
+ */
+export function survivingCandidates(candidates, storeArg, nowArg) {
+  const kept = [];
+  const dropped = [];
+  for (const c of candidates ?? []) {
+    const stored = storeArg?.[c?.[MOMENT_KEY]]?.updates ?? [];
+    const trial = pruneEntry({ updates: dedupeUpdates(stored, [c]), summary_revisions: [] }, { now: nowArg });
+    if ((trial?.updates ?? []).some((u) => u?.id === c?.id)) kept.push(c);
+    else dropped.push(c);
+  }
+  return { kept, dropped };
+}
+
+/**
+ * The vehicles a VOTE landed on this run, per question — counted only for a
+ * vote row that is still in the store AFTER the prune (fix pass, 2026-09-25).
+ * Read before the prune, a row the envelope was about to delete counted as a
+ * landing and bought a rewrite over a vote that never reached the file.
+ *
+ * @param {{ momentId: string, id: string, vehicle: string }[]} merged the vote rows merged this run
+ * @param {Record<string, any>} storeArg the store, already pruned
+ * @returns {Map<string, Set<string>>} momentId -> vehicle slugs
+ */
+export function landedVoteVehicles(merged, storeArg) {
+  /** @type {Map<string, Set<string>>} */
+  const out = new Map();
+  for (const { momentId, id, vehicle } of merged ?? []) {
+    if (!(storeArg?.[momentId]?.updates ?? []).some((u) => u?.id === id)) continue;
+    if (!out.has(momentId)) out.set(momentId, new Set());
+    out.get(momentId)?.add(vehicle);
+  }
+  return out;
+}
+
+/**
+ * Every "Where it stands" model call already spent on one ET day, across all
+ * questions and both modes — the sum of each entry's summary_attempts. The
+ * day's remaining budget is MOMENT_SUMMARY_DAILY_CAP minus this.
+ * @param {Record<string, any>} storeArg
+ * @param {string} day 'YYYY-MM-DD' (ET)
+ * @returns {number}
+ */
+export function summaryCallsOnDay(storeArg, day) {
+  let n = 0;
+  for (const [momentId, entry] of Object.entries(storeArg ?? {})) {
+    if (momentId === '_meta') continue;
+    n += summaryAttemptsOnDay(entry, day);
+  }
+  return n;
+}
+
 /* ------------------------------------------------------------------ *
  * 6b · which summaries regenerate this run (Phase 0, 2026-09-25).
  * ------------------------------------------------------------------ */
@@ -1208,25 +1315,39 @@ export function freshCandidates(candidates, storeArg) {
  * whole decision with no filesystem, no network, and no model.
  *
  * NIGHTLY (unchanged in shape): regenerate when summaryRefreshReason says the
- * issue moved — now with the flap guard (a status that reverts a change made
- * inside 48h, or that its own status sentence does not support, is not
- * movement).
+ * issue moved — now with the flap guard (a flap that went A→B→A entirely
+ * between two revisions, or a status its own status sentence does not
+ * support, is not movement; a status that reverts what the page now says IS,
+ * because it is the correction).
  *
  * INCREMENTAL (new): regenerate ONLY when a `vote` update landed for that
- * question on THIS run (`landedVotes`), and only while today's ET day has
- * fewer than `intradayCap` of EITHER stored revisions or intraday model calls
- * (entry.summary_attempts, spent by writeSummaries before each call). Nothing
- * else opens the door intraday — a status change, a scheduled listing, a
- * re-anchor all wait for the nightly exactly as before. A rejected or failed
- * attempt is not retried until the next vote lands or the nightly runs, and it
- * still spends one of the day's slots, so the cap bounds what we pay, not
- * only what the page shows.
+ * question on THIS run and survived the prune (`landedVotes`), and only while
+ * today's ET day has fewer than `intradayCap` of EITHER stored revisions or
+ * model calls (entry.summary_attempts, spent by writeSummaries before each
+ * call, the nightly's included). Nothing else opens the door intraday — a
+ * status change, a scheduled listing, a re-anchor all wait for the nightly
+ * exactly as before. A rejected or failed attempt is not retried until the
+ * next vote lands or the nightly runs, and it still spends one of the day's
+ * slots, so the cap bounds what we pay, not only what the page shows. Every
+ * call in both modes also comes out of ONE daily budget across all questions
+ * (MOMENT_SUMMARY_DAILY_CAP, enforced by main() through writeSummaries' cap).
  *
  * BOTH MODES: the floor guard defers a question whose vehicle has a floor
  * event today and no roll call on it dated today in the vote data
  * (floorPendingVehicles) — the state in which a summary is most likely to be
  * contradicted within the hour. The vote that lifts the guard is itself a
  * landing, so the deferred question is picked up by the run that sees it.
+ * Two limits on it (fix pass, 2026-09-25), because a vote that has landed
+ * must reach the page and a scheduled vote can slip for days:
+ *   - intraday, only a vehicle a vote landed on can hold the rewrite back. A
+ *     SIBLING measure on the floor today is no reason to keep a vote that
+ *     already happened off the page; when the sibling's own vote lands, that
+ *     is another landing (inside the same caps);
+ *   - it never defers a question whose current summary is missing or older
+ *     than FLOOR_GUARD_MAX_DEFER_HOURS (36h). The nightly runs at 14:15 UTC
+ *     (10:15 ET), before most floor votes, so without this a question whose
+ *     vehicle stayed on the floor day after day without a roll call could
+ *     skip every nightly; with it, at most one nightly in a row is deferred.
  *
  * @param {{
  *   mode: 'nightly'|'incremental',
@@ -1235,7 +1356,7 @@ export function freshCandidates(candidates, storeArg) {
  *   billBySlug: Map<string, Record<string, any>>,
  *   rollCalls?: Record<string, any>[],
  *   floorSignals?: Record<string, any>|null,
- *   landedVotes?: Set<string>,
+ *   landedVotes?: Map<string, Iterable<string>>,
  *   now: Date|number,
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
@@ -1249,12 +1370,13 @@ export function planSummaries({
   billBySlug: bills,
   rollCalls: rolls = [],
   floorSignals: signals = null,
-  landedVotes = new Set(),
+  landedVotes = new Map(),
   now: nowArg,
   intradayCap = INTRADAY_SUMMARY_CAP,
   unsupportedStatus = statusUnsupported,
 }) {
   const today = etDay(nowArg);
+  const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
   const windowFloor = shiftDay(today, -SUMMARY_WINDOW_DAYS);
   const plan = [];
   for (const [momentId, moment] of Object.entries(momentsArg ?? {})) {
@@ -1284,8 +1406,7 @@ export function planSummaries({
     const votes = (rolls ?? [])
       .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
       .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : Number(b.roll) - Number(a.roll)));
-    // `intraday` + `day` tell writeSummaries to spend one of today's attempt
-    // slots before it calls the model.
+    // `day` tells writeSummaries which ET day's attempt slot a call spends.
     const base = { momentId, statuses, records, votes, intraday: mode !== 'nightly', day: today };
 
     let why;
@@ -1299,8 +1420,9 @@ export function planSummaries({
     } else {
       if (!landedVotes.has(momentId)) continue;
       // The cap counts whichever is larger: revisions stored today (the
-      // nightly's included) or intraday model calls spent today, successful
-      // or rejected. So it bounds BOTH what the page shows and what we pay.
+      // nightly's included) or model calls spent today, successful or
+      // rejected (the nightly's included). So it bounds BOTH what the page
+      // shows and what we pay.
       const revisions = revisionsOnDay(entry, today);
       const attempts = summaryAttemptsOnDay(entry, today);
       const already = Math.max(revisions, attempts);
@@ -1308,23 +1430,34 @@ export function planSummaries({
         plan.push({
           ...base,
           generate: false,
-          reason: `a vote landed, but ${today} already has ${revisions} revision(s) and ${attempts} intraday attempt(s) (intraday cap ${intradayCap})`,
+          reason: `a vote landed, but ${today} already has ${revisions} revision(s) and ${attempts} summary attempt(s) (intraday cap ${intradayCap})`,
         });
         continue;
       }
       why = 'a vote landed this run';
     }
 
-    const pending = floorPendingVehicles({ slugs, todayET: today, updates: entry.updates ?? [], rollCalls: rolls, floorSignals: signals });
+    let pending = floorPendingVehicles({ slugs, todayET: today, updates: entry.updates ?? [], rollCalls: rolls, floorSignals: signals });
+    // Intraday, only the vehicles a vote landed on can hold it back — never a
+    // sibling measure (see the docstring).
+    if (mode !== 'nightly') {
+      const landedOn = new Set(landedVotes.get(momentId) ?? []);
+      pending = pending.filter((p) => landedOn.has(p.slug));
+    }
     if (pending.length > 0) {
-      plan.push({
-        ...base,
-        generate: false,
-        reason: `deferred — floor live today with no roll call dated today in the vote record: ${pending
-          .map((p) => `${p.slug} (${p.signals.join(', ')})`)
-          .join('; ')}`,
-      });
-      continue;
+      const detail = pending.map((p) => `${p.slug} (${p.signals.join(', ')})`).join('; ');
+      const lastAt = Date.parse(entry.summary_revisions?.at(-1)?.generated_at ?? '');
+      const ageMs = Number.isFinite(lastAt) ? nowMs - lastAt : Number.POSITIVE_INFINITY;
+      if (ageMs <= FLOOR_GUARD_MAX_DEFER_HOURS * 3_600_000) {
+        plan.push({
+          ...base,
+          generate: false,
+          reason: `deferred — floor live today with no roll call dated today in the vote record: ${detail}`,
+        });
+        continue;
+      }
+      const age = Number.isFinite(ageMs) ? `${Math.round(ageMs / 3_600_000)}h old` : 'missing';
+      why = `${why}; floor guard NOT applied — the current summary is ${age}, past the ${FLOOR_GUARD_MAX_DEFER_HOURS}h deferral ceiling (${detail})`;
     }
     plan.push({ ...base, generate: true, reason: why });
   }
@@ -1332,22 +1465,27 @@ export function planSummaries({
 }
 
 /**
- * Execute a plan: generate, lint, and append — at most `cap` revisions this
- * run, and ZERO model calls for anything the plan did not mark `generate`.
- * Exported so the "no call when capped/deferred" promise is tested, not
- * assumed. Mutates `storeArg` (appends revisions), like the loop it replaced.
+ * Execute a plan: generate, lint, and append — at most `cap` MODEL CALLS this
+ * run (successful or not), and ZERO model calls for anything the plan did not
+ * mark `generate`. main() passes the day's remaining budget as `cap`
+ * (MOMENT_SUMMARY_DAILY_CAP minus summaryCallsOnDay), so the cap is a daily
+ * ceiling across every run of the ET day, not a per-run one. Exported so the
+ * "no call when capped/deferred" promise is tested, not assumed. Mutates
+ * `storeArg` (appends revisions, bumps summary_attempts), like the loop it
+ * replaced.
  *
  * @returns {Promise<number>} revisions written
  */
 export async function writeSummaries({ plan, store: storeArg, moments: momentsArg, anthropic, cap = SUMMARY_DAILY_CAP }) {
   let written = 0;
+  let calls = 0;
   for (const p of plan) {
     if (!p.generate) {
       console.log(`  summary ${p.momentId}: ${p.reason} — not regenerated`);
       continue;
     }
-    if (written >= cap) {
-      console.warn(`  summary ${p.momentId}: needs a refresh (${p.reason}) but this run hit its cap of ${cap} — next run`);
+    if (calls >= cap) {
+      console.warn(`  summary ${p.momentId}: needs a refresh (${p.reason}) but the ET day's summary budget is spent (${cap} call(s) were left for this run) — a later run`);
       continue;
     }
     if (!anthropic) {
@@ -1355,12 +1493,11 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
       continue;
     }
     const entry = storeArg[p.momentId];
-    if (p.intraday) {
-      // Counted BEFORE the call, so a call that throws or is rejected still
-      // spends its slot — the intraday cap is a bound on model calls, not on
-      // successes (summaryAttemptsOnDay).
-      entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
-    }
+    // Counted BEFORE the call, in both modes, so a call that throws or is
+    // rejected still spends its slot: the per-question intraday cap and the
+    // daily budget bound model calls, not successes (summaryAttemptsOnDay).
+    entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
+    calls++;
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
     const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes);
     if (!revision) continue;
@@ -1398,8 +1535,17 @@ async function main() {
   // endpoint) must render once, not twice — the action is the richer record.
   const afterSuppression = suppressRedundantStatusChanges(candidates);
 
-  const fresh = freshCandidates(afterSuppression, store);
-  console.log(`${candidates.length} candidate(s) collected, ${fresh.length} not already stored`);
+  const unstored = freshCandidates(afterSuppression, store);
+  // A candidate this run's own prune would delete is not collected at all —
+  // not decoded, not counted against the day's event room, never a landing.
+  // See survivingCandidates for the loop this closes.
+  const { kept: fresh, dropped: wouldPrune } = survivingCandidates(unstored, store, now);
+  for (const c of wouldPrune) {
+    console.log(`  not collected: ${c.id} (${c.class} ${c.vehicle} ${c.day}) — the storage envelope would prune it on this run's own prune`);
+  }
+  console.log(
+    `${candidates.length} candidate(s) collected, ${unstored.length} not already stored, ${fresh.length} that would survive the prune`,
+  );
 
   // Daily event ceiling, counted off the STORED file's recorded_at (§6) — no new
   // Actions cache has to exist for it to hold across runs.
@@ -1446,22 +1592,20 @@ async function main() {
 
   // ---- merge ----
   const touched = new Set();
-  // The questions a VOTE landed on this run — the only door an incremental run
-  // has to a "Where it stands" rewrite (planSummaries). Read back off the
-  // merged list, so a vote the dedupe folded into an existing row does not
-  // count as a landing.
-  const landedVotes = new Set();
+  // Every vote row merged this run. Whether it LANDED — the only door an
+  // incremental run has to a "Where it stands" rewrite (planSummaries) — is
+  // decided after the prune below, off what is still in the store: a vote the
+  // dedupe folded away or the envelope trimmed never counts (landedVoteVehicles).
+  const mergedVotes = [];
   for (const c of storable) {
     const momentId = c[MOMENT_KEY];
     delete c[MOMENT_KEY];
     if (!store[momentId]) store[momentId] = { updates: [], summary_revisions: [] };
     store[momentId].updates = dedupeUpdates(store[momentId].updates ?? [], [c]);
     touched.add(momentId);
-    if (c.class === 'vote' && store[momentId].updates.some((u) => u.id === c.id)) landedVotes.add(momentId);
+    if (c.class === 'vote') mergedVotes.push({ momentId, id: c.id, vehicle: c.vehicle });
   }
-  console.log(
-    `merge: ${storable.length} update(s) into ${touched.size} moment(s); a vote landed on ${landedVotes.size ? [...landedVotes].join(', ') : 'none'}`,
-  );
+  console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s), ${mergedVotes.length} of them vote(s)`);
 
   /* ---- prune: EVERY MODE, and that is the fix ----------------------------
    *
@@ -1510,6 +1654,12 @@ async function main() {
     console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
   }
 
+  // AFTER the prune: only a vote row that survived it is a landing.
+  const landedVotes = landedVoteVehicles(mergedVotes, store);
+  console.log(
+    `landed: ${landedVotes.size ? [...landedVotes].map(([m, v]) => `${m} (${[...v].join(', ')})`).join('; ') : 'no vote'} after the prune`,
+  );
+
   // ---- summarize: the nightly as before, plus a vote landing intraday ----
   // Both modes now, because a vote that lands at 2pm must not wait until
   // tomorrow's nightly to reach "Where it stands" (the 2026-09-24 failure).
@@ -1526,9 +1676,13 @@ async function main() {
     landedVotes,
     now,
   });
-  const summaries = await writeSummaries({ plan, store, moments, anthropic, cap: SUMMARY_DAILY_CAP });
+  // ONE daily budget for both modes: what the ET day has already spent, read
+  // off the stored counters, comes out of MOMENT_SUMMARY_DAILY_CAP.
+  const spentToday = summaryCallsOnDay(store, todayET);
+  const budget = Math.max(0, SUMMARY_DAILY_CAP - spentToday);
+  const summaries = await writeSummaries({ plan, store, moments, anthropic, cap: budget });
   console.log(
-    `summaries: ${summaries} revision(s) written (mode ${MODE}; per-run cap ${SUMMARY_DAILY_CAP}; intraday cap ${INTRADAY_SUMMARY_CAP} per question per ET day)`,
+    `summaries: ${summaries} revision(s) written (mode ${MODE}; ${spentToday} call(s) already spent on ${todayET} ET of a daily cap of ${SUMMARY_DAILY_CAP} across all questions; intraday cap ${INTRADAY_SUMMARY_CAP} per question per ET day)`,
   );
 
   // ---- write ----

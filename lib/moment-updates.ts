@@ -144,8 +144,9 @@ export interface SummaryRevision {
 export interface MomentUpdatesEntry {
   updates: MomentUpdate[];
   summary_revisions: SummaryRevision[];
-  /** The collector's intraday spend counter (2026-09-25): model calls made
-   *  for this question on one ET day. Never rendered. */
+  /** The collector's summary spend counter (2026-09-25): "Where it stands"
+   *  model calls made for this question on one ET day, nightly and intraday
+   *  alike. Never rendered. */
   summary_attempts?: { day: string; count: number };
 }
 

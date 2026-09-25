@@ -22,6 +22,10 @@ import { expect, test } from '@playwright/test';
  *   - the update rows and revisions: data/moment-updates.json as of
  *     2026-09-24, ids verbatim (each id is re-derived below, so a fixture
  *     that drifted from its content would fail loudly).
+ * ONE exception, labelled where it is built: the vote-a-rama in the phantom-
+ * landing test is SYNTHETIC — fifteen same-day roll calls on one question, a
+ * shape the record has not produced on a moment vehicle yet, built to cross
+ * the 12-row storage envelope on purpose.
  *
  * ZERO network and ZERO model calls: every Anthropic client here is a stub
  * that records what it was asked. messages/*.json is read (the status
@@ -36,6 +40,7 @@ import {
   collapseSameActions,
   computeUpdateId,
   dedupeUpdates,
+  etDay,
   flapStatusChangeIds,
   lintRevisionText,
   pruneEntry,
@@ -51,11 +56,16 @@ import {
   rollCallToCandidate,
 } from '../scripts/moment-updates-map.mjs';
 import {
+  FLOOR_GUARD_MAX_DEFER_HOURS,
   freshCandidates,
   generateStateSummary,
+  landedVoteVehicles,
   lintPair,
   planSummaries,
+  pruneStore,
   statusUnsupported,
+  summaryCallsOnDay,
+  survivingCandidates,
   voteGroundingLine,
   writeSummaries,
 } from '../scripts/moment-updates.mjs';
@@ -348,6 +358,53 @@ test.describe('the absence lint', () => {
     expect(absenceClaims('La moción no fue aprobada, por votación nominal de 49 a 50.', 'es')).toEqual([]);
   });
 
+  test("the record's own words are not an absence claim — \"(No short title on file)\" beside the prompt's \"by a recorded vote of\"", () => {
+    // Senate rolls 240 and 242 carry the placeholder in their question verbatim,
+    // and the prompt hands the question over word for word.
+    expect(ROLL_240.question).toContain('(No short title on file)');
+    expect(ROLL_242.question).toContain('(No short title on file)');
+    for (const s of [
+      'The Senate invoked cloture on S. 4668 (No short title on file) by a recorded vote of 74 to 25.',
+      'The Senate invoked cloture on S. 4668, No short title on file, by a recorded vote of 74 to 25.',
+      `"${ROLL_242.question}": ${ROLL_242.result}, by a recorded vote of 77 to 23 (Roll no. 242).`,
+    ]) {
+      expect(absenceClaims(s, 'en'), s).toEqual([]);
+    }
+    expect(absenceClaims('El Senado aprobó la clausura sobre S. 4668 (No short title on file) por votación nominal de 74 a 25.', 'es')).toEqual([]);
+    // …but "no … recorded" inside one clause is still a claim.
+    expect(absenceClaims('No action (on the floor) has been recorded since.', 'en')).not.toEqual([]);
+  });
+
+  test('"passed … unchanged" / "aprobó … sin cambios" is an outcome; "remains unchanged" is still absence', () => {
+    for (const s of [
+      'The Senate passed the House bill unchanged, 68 to 31.',
+      'The bill was passed unchanged by the Senate.',
+      'The House agreed to the Senate amendment unchanged.',
+      'The Senate passed H.R. 1234 unchanged on September 3.',
+    ]) {
+      expect(absenceClaims(s, 'en'), s).toEqual([]);
+    }
+    for (const s of ['El Senado aprobó el proyecto de ley de la Cámara sin cambios, 68 a 31.', 'El Senado aprobó sin cambios el proyecto de la Cámara.']) {
+      expect(absenceClaims(s, 'es'), s).toEqual([]);
+    }
+    for (const s of [
+      'The Senate passed S. 4668 last week and the status remains unchanged.',
+      'The bill passed the House in July and has sat unchanged since.',
+      'The measure passed the House in July; it is unchanged since.',
+    ]) {
+      expect(absenceClaims(s, 'en'), s).toEqual(['unchanged']);
+    }
+    expect(absenceClaims('La Cámara la aprobó en julio y su estado sigue sin cambios.', 'es')).not.toEqual([]);
+  });
+
+  test('a claim that nothing is SCHEDULED stays rejected — and the prompt now names it', async () => {
+    expect(absenceClaims('The cloture vote was 74 to 25; no vote on final passage has been scheduled.', 'en')).toEqual(['no vote']);
+    expect(absenceClaims('No hay fecha fijada para la votación final.', 'es')).toEqual(['No hay']);
+    const client = recordingClient(JSON.stringify(GROUNDED_SUMMARY));
+    await generateStateSummary(client, 'iran-war-powers', { updates: [], summary_revisions: [] }, IRAN_STATUSES, [], {}, [ROLL_244]);
+    expect(client.prompts[0]).toContain('that no vote or date has been scheduled');
+  });
+
   test('our own aged-placement phrase is exempt, in both languages — the lint and the prompt share one copy', () => {
     expect(absenceClaims(`S. 3172 ${STALE_PLACEMENT_PHRASE.en}.`, 'en')).toEqual([]);
     expect(absenceClaims(`S. 3172 ${STALE_PLACEMENT_PHRASE.es}.`, 'es')).toEqual([]);
@@ -393,41 +450,50 @@ test.describe('the absence lint', () => {
 /* ------------------------------------------------------------------ *
  * 4 · The flap guard.
  * ------------------------------------------------------------------ */
-test.describe('the flap guard — a status that reverts inside 48h buys no rewrite', () => {
+test.describe('the flap guard — the correction always publishes; a flap the page never showed buys nothing', () => {
   /** iran-war-powers' first two revisions, verbatim statuses and stamps. */
   const iranSeed = { id: 's_d26a6b43', generated_at: '2026-07-25T06:20:00Z', grounded_in: { vehicle_statuses: { 'sjres-185-119': 'floor_vote', 'sjres-172-119': 'floor_vote', 'hconres-38-119': 'committee', 'hconres-89-119': 'passed_chamber' }, update_ids: [] } };
   const iranFlip = { id: 's_1acc71ee', generated_at: '2026-07-25T20:03:31.611Z', grounded_in: { vehicle_statuses: { 'sjres-185-119': 'committee', 'sjres-172-119': 'committee', 'hconres-38-119': 'committee', 'hconres-89-119': 'passed_chamber' }, update_ids: [] } };
   const flippedBack = { 'sjres-185-119': 'floor_vote', 'sjres-172-119': 'floor_vote', 'hconres-38-119': 'committee', 'hconres-89-119': 'passed_chamber' };
 
-  test('sjres-185/172 floor_vote→committee→floor_vote (2026-07-25/26): the flip back is not movement', () => {
+  test('sjres-185/172 floor_vote→committee→floor_vote (2026-07-25/26): the flip BACK is the correction, so it triggers', () => {
+    // s_1acc71ee, the current revision here, was written from the misread
+    // `committee`. Holding back the flip back would keep it up; the first
+    // draft of this guard did exactly that. s_5ee764db was generated at
+    // 2026-07-26T09:35Z for this flip back and must still be.
     const entry = { updates: [], summary_revisions: [iranSeed, iranFlip] };
-    // s_5ee764db was generated at 2026-07-26T09:35Z for exactly this flip back.
     const at = Date.parse('2026-07-26T09:35:09Z');
     expect([...revertingSlugs(entry, flippedBack, at)].sort()).toEqual(['sjres-172-119', 'sjres-185-119']);
-    expect(summaryRefreshReason(entry, flippedBack, at)).toBeNull();
+    expect(summaryRefreshReason(entry, flippedBack, at)).toBe('status sjres-185-119 (reverts a change made inside 48h — the correction publishes)');
   });
 
-  test('outside the 48h window the same change IS movement', () => {
+  test('outside the 48h window the same change is movement, labelled plainly', () => {
     const entry = { updates: [], summary_revisions: [iranSeed, iranFlip] };
     expect(summaryRefreshReason(entry, flippedBack, Date.parse('2026-07-28T12:00:00Z'))).toBe('status sjres-185-119');
   });
 
-  test('s-4668-119 committee→floor_vote (2026-09-24) reverts the one-night misread — but a real new event still triggers', () => {
+  test('s-4668-119 committee→floor_vote (2026-09-24): the "is in committee" revision (s_c0bcbd35) is replaced on the next nightly', () => {
     const before = { id: 's_7e143c92', generated_at: '2026-09-18T17:56:27.567Z', grounded_in: { vehicle_statuses: { 's-4668-119': 'floor_vote' }, update_ids: [] } };
     const misread = { id: 's_c0bcbd35', generated_at: '2026-09-23T19:17:36.831Z', grounded_in: { vehicle_statuses: { 's-4668-119': 'committee' }, update_ids: [] } };
     // u_c6a1ebcb: the stored floor_vote→committee status_change, recorded before the misread revision.
     const statusChange = { id: 'u_c6a1ebcb', class: 'status_change', vehicle: 's-4668-119', day: '2026-09-22', recorded_at: '2026-09-23T16:51:20.985Z', record: { status_from: 'floor_vote', status_to: 'committee' } };
     const at = Date.parse('2026-09-24T18:57:12Z');
     const entry = { updates: [statusChange], summary_revisions: [before, misread] };
-    expect(summaryRefreshReason(entry, { 's-4668-119': 'floor_vote' }, at)).toBeNull();
+    expect(summaryRefreshReason(entry, { 's-4668-119': 'floor_vote' }, at)).toContain('status s-4668-119 (reverts');
 
-    // u_2530a6e7, the floor-today listing recorded at 18:07Z, is a record
-    // event — the guard never suppresses one of those.
-    const listing = { id: 'u_2530a6e7', class: 'scheduled', vehicle: 's-4668-119', day: '2026-09-24', recorded_at: '2026-09-24T18:07:05.065Z' };
-    expect(summaryRefreshReason({ ...entry, updates: [statusChange, listing] }, { 's-4668-119': 'floor_vote' }, at)).toBe('update u_2530a6e7');
+    // …and through the nightly plan, with no other trigger at all.
+    const [p] = planSummaries({
+      mode: 'nightly',
+      moments: { 'paying-college-athletes': { status: 'live', vehicles: [{ slug: 's-4668-119' }] } },
+      store: { 'paying-college-athletes': entry },
+      billBySlug: new Map([['s-4668-119', { full_identifier: 's-4668-119', status: 'floor_vote', last_action_text: null, last_action_date: null }]]),
+      now: at,
+      unsupportedStatus: () => false,
+    });
+    expect(p.generate).toBe(true);
   });
 
-  test('a status_change and its reversal inside 48h are both ignored; 3 days apart they are real', () => {
+  test('a flap entirely BETWEEN two revisions (A→B→A, the page never showed B) buys nothing; 3 days apart the rows are real', () => {
     const revision = { id: 's_1', generated_at: '2026-09-20T00:00:00Z', grounded_in: { vehicle_statuses: { v: 'floor_vote' }, update_ids: [] } };
     const there = { id: 'u_a', class: 'status_change', vehicle: 'v', recorded_at: '2026-09-21T10:00:00Z', record: { status_from: 'floor_vote', status_to: 'committee' } };
     const back = { id: 'u_b', class: 'status_change', vehicle: 'v', recorded_at: '2026-09-22T09:00:00Z', record: { status_from: 'committee', status_to: 'floor_vote' } };
@@ -543,6 +609,8 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
     grounded_in: { vehicle_statuses: IRAN_STATUSES, update_ids: [] },
   });
   const storeWith = (revisions: unknown[]) => ({ 'iran-war-powers': { updates: [], summary_revisions: revisions } });
+  /** Roll 244 landed on H.Con.Res. 89 this run (landedVoteVehicles' shape). */
+  const LANDED_244 = new Map([['iran-war-powers', new Set(['hconres-89-119'])]]);
   const plan = (over: Record<string, unknown>) =>
     planSummaries({
       mode: 'incremental',
@@ -551,7 +619,7 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
       billBySlug: BILLS,
       rollCalls: [ROLL_244],
       floorSignals: null,
-      landedVotes: new Set(['iran-war-powers']),
+      landedVotes: LANDED_244,
       now: NOW,
       unsupportedStatus: () => false,
       ...over,
@@ -600,7 +668,7 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
     // The fourth landing that day makes no call at all.
     const [fourth] = plan({ store });
     expect(fourth.generate).toBe(false);
-    expect(fourth.reason).toContain('3 intraday attempt(s)');
+    expect(fourth.reason).toContain('3 summary attempt(s)');
     await writeSummaries({ plan: [fourth], store, moments: MOMENTS, anthropic: rejecting });
     expect(calls).toBe(3);
     // Nothing was appended: the previous revision stands through all of it.
@@ -624,14 +692,14 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
   });
 
   test('no landed vote, no intraday rewrite — whatever else moved', () => {
-    expect(plan({ landedVotes: new Set() })).toEqual([]);
+    expect(plan({ landedVotes: new Map() })).toEqual([]);
   });
 
   test('the nightly is not stopped by the intraday cap (its behaviour is unchanged)', () => {
     const three = storeWith([rev('s_1', '2026-09-24T10:00:00Z'), rev('s_2', '2026-09-24T12:00:00Z'), rev('s_3', '2026-09-24T13:00:00Z')]);
     const bumped = new Map(BILLS);
     bumped.set('hconres-89-119', { ...BILLS.get('hconres-89-119')!, status: 'floor_vote' });
-    const [p] = plan({ mode: 'nightly', store: three, billBySlug: bumped, landedVotes: new Set() });
+    const [p] = plan({ mode: 'nightly', store: three, billBySlug: bumped, landedVotes: new Map() });
     expect(p.generate).toBe(true);
     expect(p.reason).toBe('status hconres-89-119');
   });
@@ -648,14 +716,49 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
     ]);
     // Rolls 242/243 (dated 2026-09-24) lift it.
     expect(floorPendingVehicles({ slugs: ['s-4668-119'], todayET: '2026-09-24', rollCalls: [ROLL_242, ROLL_243], floorSignals })).toEqual([]);
-    // A floor-today listing on the question's own vehicle defers too, and a
+    // A floor-today listing on the vehicle the vote landed on defers too (the
+    // landed row here is an older-dated one: no roll call on it TODAY), and a
     // same-day roll lifts it.
     const listing = { id: 'u_3b1d76f0', class: 'scheduled', vehicle: 'hconres-89-119', day: '2026-09-24', record: { source_system: 'Congress.gov senate-floor-today RSS' } };
-    const deferred = plan({ store: { 'iran-war-powers': { updates: [listing], summary_revisions: [] } }, rollCalls: [], landedVotes: new Set(['iran-war-powers']) });
+    const recent = [rev('s_088cc923', '2026-09-24T18:57:01.886Z')];
+    const deferred = plan({ store: { 'iran-war-powers': { updates: [listing], summary_revisions: recent } }, rollCalls: [] });
     expect(deferred[0].generate).toBe(false);
     expect(deferred[0].reason).toContain('deferred');
-    const lifted = plan({ store: { 'iran-war-powers': { updates: [listing], summary_revisions: [] } } });
+    const lifted = plan({ store: { 'iran-war-powers': { updates: [listing], summary_revisions: recent } } });
     expect(lifted[0].generate).toBe(true);
+  });
+
+  test('intraday, a SIBLING on the floor never holds a landed vote off the page; the nightly still waits for it', () => {
+    // S.J.Res. 185 listed on the floor today with no vote yet; roll 244 has
+    // landed on H.Con.Res. 89. The vote goes up now.
+    const siblingListing = { id: 'u_5a5a5a5a', class: 'scheduled', vehicle: 'sjres-185-119', day: '2026-09-24', record: { source_system: 'Congress.gov senate-floor-today RSS' } };
+    const store = { 'iran-war-powers': { updates: [siblingListing], summary_revisions: [rev('s_088cc923', '2026-09-24T18:57:01.886Z')] } };
+    const [intraday] = plan({ store });
+    expect(intraday.generate).toBe(true);
+    expect(intraday.reason).toBe('a vote landed this run');
+    // The nightly (no landing door, whole-question guard) defers on the same state.
+    const bumped = new Map(BILLS);
+    bumped.set('hconres-38-119', { ...BILLS.get('hconres-38-119')!, status: 'committee' });
+    const [nightly] = plan({ mode: 'nightly', store, billBySlug: bumped, landedVotes: new Map() });
+    expect(nightly.generate).toBe(false);
+    expect(nightly.reason).toContain('deferred');
+    expect(nightly.reason).toContain('sjres-185-119');
+  });
+
+  test(`the floor guard never defers past ${FLOOR_GUARD_MAX_DEFER_HOURS}h — or when there is no summary at all`, () => {
+    const siblingListing = { id: 'u_5a5a5a5a', class: 'scheduled', vehicle: 'sjres-185-119', day: '2026-09-24', record: { source_system: 'Congress.gov senate-floor-today RSS' } };
+    const bumped = new Map(BILLS);
+    bumped.set('hconres-38-119', { ...BILLS.get('hconres-38-119')!, status: 'committee' });
+    const nightlyAt = (revisions: unknown[]) =>
+      plan({ mode: 'nightly', store: { 'iran-war-powers': { updates: [siblingListing], summary_revisions: revisions } }, billBySlug: bumped, landedVotes: new Map() })[0];
+    // Yesterday's nightly (24h old at 20:00Z): one deferral is allowed.
+    expect(nightlyAt([rev('s_1', '2026-09-23T20:00:00Z')]).generate).toBe(false);
+    // Two nightlies ago (48h old): the guard gives way, and says so.
+    const stale = nightlyAt([rev('s_1', '2026-09-22T20:00:00Z')]);
+    expect(stale.generate).toBe(true);
+    expect(stale.reason).toContain(`floor guard NOT applied — the current summary is 48h old, past the ${FLOOR_GUARD_MAX_DEFER_HOURS}h deferral ceiling`);
+    // No summary yet: nothing on the page to protect, so write one.
+    expect(nightlyAt([]).generate).toBe(true);
   });
 
   test('ZERO model calls for anything the plan did not mark generate — and one call when it did', async () => {
@@ -685,5 +788,165 @@ test.describe('intraday regeneration: only on a landed vote, 3 per question per 
     const again = storeWith([rev('s_088cc923', '2026-09-24T18:57:01.886Z')]);
     expect(await writeSummaries({ plan: plan({ store: again }), store: again, moments: MOMENTS, anthropic: counting, cap: 0 })).toBe(0);
     expect(calls).toBe(0);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 7 · Fix pass (2026-09-25): no phantom landings, one daily budget.
+ * ------------------------------------------------------------------ */
+test.describe('a roll call the storage envelope trims is never re-collected, re-decoded, or counted as a landing', () => {
+  const MOMENT = 'paying-college-athletes';
+  const MOMENTS = { [MOMENT]: { status: 'live', vehicles: [{ slug: 's-4668-119' }] } };
+  /** SYNTHETIC (see the file header): a 15-roll vote-a-rama on S. 4668 in one ET day. */
+  const VOTE_A_RAMA = Array.from({ length: 15 }, (_, i) => ({
+    id: `s-119-2-${300 + i}`,
+    chamber: 'senate',
+    congress: 119,
+    session: 2,
+    roll: 300 + i,
+    date: '2026-09-24',
+    question: `On the Amendment S.Amdt. ${7000 + i} to S. 4668 (No short title on file)`,
+    result: i % 2 ? 'Amendment Rejected' : 'Amendment Agreed to',
+    bill: 's-4668-119',
+    totals: { yea: 50 + (i % 3), nay: 48 - (i % 3), present: 0, notVoting: 2 },
+    source: SENATE_XML(300 + i),
+  }));
+
+  type Store = Record<string, { updates: Record<string, unknown>[]; summary_revisions: unknown[] }>;
+
+  /** One collector run over the vote record, wired as main() wires it (no network, no model). */
+  function runOnce(store: Store, at: string) {
+    const now = Date.parse(at);
+    const candidates = rollCallCandidates({
+      vehicles: [{ momentId: MOMENT, slug: 's-4668-119' }],
+      rollCalls: VOTE_A_RAMA,
+      retentionFloor: '2026-07-26',
+      todayET: etDay(now),
+      recordedAt: at,
+    });
+    const unstored = freshCandidates(candidates, store);
+    const { kept } = survivingCandidates(unstored, store, now);
+    const mergedVotes: { momentId: string; id: string; vehicle: string }[] = [];
+    for (const c of kept) {
+      c.text = fallbackTextFor(c);
+      delete c.__moment;
+      store[MOMENT].updates = dedupeUpdates(store[MOMENT].updates, [c]);
+      mergedVotes.push({ momentId: MOMENT, id: c.id, vehicle: c.vehicle });
+    }
+    pruneStore(store, MOMENTS, { now, mode: 'incremental' });
+    return { unstored: unstored.length, decoded: kept.length, landed: landedVoteVehicles(mergedVotes, store) };
+  }
+
+  test('run 1 stores 12 and lands; every later run collects nothing and lands nothing', () => {
+    const store: Store = { [MOMENT]: { updates: [], summary_revisions: [] } };
+    const first = runOnce(store, '2026-09-24T22:00:00Z');
+    expect(first.unstored).toBe(15);
+    expect(first.decoded).toBe(15);
+    expect(store[MOMENT].updates).toHaveLength(12);
+    expect([...(first.landed.get(MOMENT) ?? [])]).toEqual(['s-4668-119']);
+
+    // The verifier's repro: +1h, +1 day, +17 days. Before the fix each of
+    // these re-collected the 3 trimmed rolls, sent them to the paid decode,
+    // and opened a "Where it stands" rewrite with nothing new in it.
+    for (const at of ['2026-09-24T23:00:00Z', '2026-09-25T22:00:00Z', '2026-10-11T22:00:00Z']) {
+      const later = runOnce(store, at);
+      expect(later.unstored, at).toBe(3);
+      expect(later.decoded, at).toBe(0);
+      expect(later.landed.size, at).toBe(0);
+      expect(store[MOMENT].updates, at).toHaveLength(12);
+    }
+  });
+
+  test('a vote row the prune removed is not a landing, even when it was merged this run', () => {
+    const kept = rollCallToCandidate({ momentId: MOMENT, vehicle: 's-4668-119', roll: ROLL_243 })!;
+    const store = { [MOMENT]: { updates: [kept], summary_revisions: [] } };
+    const landed = landedVoteVehicles(
+      [
+        { momentId: MOMENT, id: kept.id, vehicle: 's-4668-119' },
+        { momentId: MOMENT, id: 'u_deadbeef', vehicle: 's-4668-119' },
+        { momentId: 'iran-war-powers', id: 'u_cafebabe', vehicle: 'hconres-89-119' },
+      ],
+      store,
+    );
+    expect([...landed.keys()]).toEqual([MOMENT]);
+  });
+
+  test('main() drops would-be-pruned candidates BEFORE the decode, and decides landings AFTER the prune', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+    const body = src.slice(src.indexOf('\nasync function main() {'));
+    const at = (needle: string) => {
+      const i = body.indexOf(needle);
+      expect(i, needle).toBeGreaterThan(-1);
+      return i;
+    };
+    expect(at('survivingCandidates(unstored, store, now)')).toBeLessThan(at('await decodeUpdates('));
+    expect(at('pruneStore(store, moments,')).toBeLessThan(at('landedVoteVehicles(mergedVotes, store)'));
+    expect(at('landedVoteVehicles(mergedVotes, store)')).toBeLessThan(at('planSummaries({'));
+  });
+});
+
+test.describe('one daily summary budget — both modes, every question', () => {
+  const MOMENTS = { 'iran-war-powers': { status: 'live', vehicles: IRAN_VEHICLES.map((slug) => ({ slug })) } };
+  const replying = (reply: unknown) => {
+    const box = { calls: 0 };
+    const client = {
+      messages: {
+        create: async () => {
+          box.calls++;
+          return { content: [{ type: 'text', text: JSON.stringify(reply) }] };
+        },
+      },
+    };
+    return { box, client };
+  };
+  const generating = (momentId: string, day: string) => ({
+    momentId,
+    generate: true,
+    reason: 'test',
+    statuses: IRAN_STATUSES,
+    records: {},
+    votes: [ROLL_244],
+    intraday: false,
+    day,
+  });
+  type Entry = { updates: unknown[]; summary_revisions: unknown[]; summary_attempts?: unknown };
+
+  test("the day's spend is the sum of every question's counter; a stale day reads zero", () => {
+    const store = {
+      _meta: { schema: 1 },
+      'iran-war-powers': { updates: [], summary_revisions: [], summary_attempts: { day: '2026-09-24', count: 3 } },
+      'paying-college-athletes': { updates: [], summary_revisions: [], summary_attempts: { day: '2026-09-24', count: 2 } },
+      'crypto-oversight': { updates: [], summary_revisions: [], summary_attempts: { day: '2026-09-23', count: 5 } },
+    };
+    expect(summaryCallsOnDay(store, '2026-09-24')).toBe(5);
+    expect(summaryCallsOnDay(store, '2026-09-25')).toBe(0);
+  });
+
+  test("the NIGHTLY's call is counted too, so it and the hourly rewrites share one budget", async () => {
+    const store: Record<string, Entry> = { 'iran-war-powers': { updates: [], summary_revisions: [] } };
+    const { box, client } = replying(GROUNDED_SUMMARY);
+    expect(await writeSummaries({ plan: [generating('iran-war-powers', '2026-09-24')], store, moments: MOMENTS, anthropic: client })).toBe(1);
+    expect(box.calls).toBe(1);
+    expect(store['iran-war-powers'].summary_attempts).toEqual({ day: '2026-09-24', count: 1 });
+    expect(summaryCallsOnDay(store, '2026-09-24')).toBe(1);
+  });
+
+  test('the cap counts CALLS, rejected ones included — not only revisions written', async () => {
+    const store: Record<string, Entry> = {
+      'iran-war-powers': { updates: [], summary_revisions: [] },
+      'paying-college-athletes': { updates: [], summary_revisions: [] },
+    };
+    const { box, client } = replying(FALSE_ABSENCE);
+    const twoQuestions = [generating('iran-war-powers', '2026-09-24'), generating('paying-college-athletes', '2026-09-24')];
+    expect(await writeSummaries({ plan: twoQuestions, store, moments: MOMENTS, anthropic: client, cap: 1 })).toBe(0);
+    expect(box.calls).toBe(1);
+  });
+
+  test('main() hands writeSummaries what is LEFT of MOMENT_SUMMARY_DAILY_CAP, not a fresh per-run cap', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+    const body = src.slice(src.indexOf('\nasync function main() {'));
+    expect(body).toContain('const spentToday = summaryCallsOnDay(store, todayET);');
+    expect(body).toContain('const budget = Math.max(0, SUMMARY_DAILY_CAP - spentToday);');
+    expect(body).toMatch(/await writeSummaries\(\{ plan, store, moments, anthropic, cap: budget \}\)/);
   });
 });
