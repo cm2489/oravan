@@ -61,7 +61,7 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
   // review date is a curation reminder, not a signal about the record, so it
   // now does that job where the owner will see it: scripts/moment-watch.mjs
   // flags a past-review question in the standing moment-review issue, and the
-  // question's own page says when a person last reviewed its summary. What a
+  // question's own page says when its summary was last updated. What a
   // READER needs to know about currency is carried by each card's status line,
   // re-derived from the official record on every build (lib/moment-status.mjs).
   // `momentClaimsVehicles` is the same live-or-stale predicate the backlink,

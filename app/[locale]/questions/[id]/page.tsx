@@ -302,8 +302,8 @@ export default async function MomentPage({
           stood here ("scheduled review passed…") is gone: a lapsed review date
           is the owner's curation reminder, sent by the nightly watcher, and
           the currency a reader needs is this line — re-derived from the
-          record on every build — plus the "last reviewed" date printed under
-          the summary it describes. */}
+          record on every build — plus the "Summary updated" date printed
+          under the summary it describes. */}
       {lead && (
         <section aria-labelledby="record-status" className="mt-6 max-w-read">
           <h2
@@ -331,15 +331,14 @@ export default async function MomentPage({
               and so the one place Besley is spent. Provenance, spelled out because
               this page renders two passages with DIFFERENT provenance and the
               comment here has twice named it wrong: this one comes from
-              data/moments.json, whose name, summary and role sentences are AI
-              FIRST DRAFTS (scripts/moment-draft.mjs), which the owner edits and
-              merges by hand — CLAUDE.md's 2026-08-07 amendment, which retired the
-              "hand-authored" claim this comment used to make, and what
-              moments.howMadeBody still promises: an automated gate, then a person,
-              before it publishes. The "Where it stands" revision further down is
-              the one with NO human step at all: machine-written, gate-checked,
-              published by the collector. Never let the two blur — the difference
-              is the review and the merge, not the authorship. */}
+              data/moments.json, whose name, summary and role sentences are
+              AI-written (scripts/moment-draft.mjs) and reach the page through a
+              merge into that file, after check-moments.mjs's gates pass — which
+              is all moments.howMadeBody promises: automated gates before it
+              publishes. The "Where it stands" revision further down is written
+              nightly by the collector (scripts/moment-updates.mjs), gate-checked
+              and published with no merge at all. Never let the two blur — the
+              difference is the path to the page, not the authorship. */}
           <section aria-labelledby="deciding" className="border-t-[3px] border-ink pt-4">
             <h2 id="deciding" className="text-h2 font-extrabold text-ink">
               {isSettled || explainer ? t('moments.decidingSettled') : t('moments.decidingLive')}
@@ -357,9 +356,9 @@ export default async function MomentPage({
             </p>
             <p className="mt-4 max-w-read font-reading text-lg text-ink">{summary}</p>
             <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
-            {/* When a person last read this summary against the record — the
-                honest replacement for hiding a question past its review date.
-                `reviewed` when a renewal PR set it, else the day it opened. */}
+            {/* When this summary last changed — the honest replacement for
+                hiding a question past its review date. `reviewed` when a
+                change set it, else the day it opened. */}
             <p className="mt-2 max-w-note text-xs text-ink-2">
               {t('moments.status.lastReviewed', { date: fmtDate(lastReviewedDay(moment)) })}
             </p>

@@ -198,12 +198,12 @@ export interface MomentEntry {
   opened: string;
   review_by: string;
   /**
-   * OPTIONAL — the day a person last re-read this entry's prose against the
-   * record and merged the result (YYYY-MM-DD). Absent means the entry has not
-   * been re-reviewed since it opened, so `opened` is the honest last-reviewed
-   * date; read it through `lastReviewedDay()` below, never directly. Added
-   * 2026-09-24 when `review_by` stopped hiding questions: the page now says
-   * when a person last read the summary, and this is what a renewal PR bumps.
+   * OPTIONAL — the day this entry's text (name, summary or a vehicle role)
+   * last changed (YYYY-MM-DD). Absent means it has not changed since it
+   * opened, so `opened` is the honest date; read it through
+   * `lastReviewedDay()` below, never directly. The question page prints it as
+   * "Summary updated {date}" (moments.status.lastReviewed), so any change to
+   * the text sets it to the day of the change.
    */
   reviewed?: string;
   status: StoredMomentStatus;
@@ -285,9 +285,10 @@ export function getMoments(now: number = Date.now()): MomentWithState[] {
 }
 
 /**
- * The day a person last reviewed the entry's prose — `reviewed` when a renewal
- * PR set it, otherwise `opened` (the merge that published it). The one
- * normalizer, like vehicleKind.
+ * The day the entry's text last changed — `reviewed` when a change set it,
+ * otherwise `opened` (the merge that published it). The one normalizer, like
+ * vehicleKind. The name predates the "Summary updated" wording and is kept
+ * so the field and its readers stay one grep apart.
  */
 export const lastReviewedDay = (m: Pick<MomentEntry, 'opened' | 'reviewed'>): string =>
   m.reviewed ?? m.opened;
@@ -303,7 +304,7 @@ export const lastReviewedDay = (m: Pick<MomentEntry, 'opened' | 'reviewed'>): st
  * still voting on all six. The review date is a CURATION reminder for the
  * owner, and it now does exactly that job: scripts/moment-watch.mjs flags a
  * past-review question nightly in the standing moment-review issue, and the
- * page itself says when a person last reviewed the summary
+ * page itself says when the summary was last updated
  * (`lastReviewedDay`) beside a status line re-derived from the record on every
  * build (lib/moment-status.mjs). The state is still computed — the watcher
  * reads it — it just no longer decides visibility. Same predicate as the

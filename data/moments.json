@@ -115,6 +115,7 @@
     },
     "opened": "2026-07-23",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live",
     "context_refs": [
       {
@@ -188,6 +189,7 @@
     },
     "opened": "2026-07-23",
     "review_by": "2026-11-30",
+    "reviewed": "2026-09-24",
     "status": "live",
     "context_refs": [
       {
@@ -241,6 +243,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "paying-college-athletes": {
@@ -282,6 +285,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "annual-defense-policy": {
@@ -333,6 +337,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   },
   "crypto-oversight-split-between-sec-and-cftc": {
@@ -374,6 +379,7 @@
     },
     "opened": "2026-08-09",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-24",
     "status": "live"
   }
 }

@@ -407,8 +407,8 @@ export interface MomentSearchTeaser {
  * the argument that a lapsed review date made the summary an unrenewed claim.
  * The owner ruled the review date a curation reminder, not a hide switch —
  * "constituents need to be able to engage anytime on any issue" — so the
- * question stays findable, its page states when a person last reviewed the
- * summary, and the watcher flags the owner instead (lib/moments.ts
+ * question stays findable, its page states when the summary was last
+ * updated, and the watcher flags the owner instead (lib/moments.ts
  * getLiveMoments). `settled` and `retired` are still excluded by that call.
  *
  * The clock is a defaulted parameter (the idiom of lib/moments.ts and
