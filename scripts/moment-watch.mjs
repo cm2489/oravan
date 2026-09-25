@@ -276,6 +276,19 @@ export function seenSetAfter({ qualifying, newly, filed = null, seen = [], withS
  * literally `openSlots <= 0`, so an unbounded slot count is the honest way to
  * ask the question "would this pass if we had room?".
  */
+/**
+ * How many NEW candidate issues one push run may open: never more than there
+ * are open slots (2026-09-25). Raising the live cap from 6 to 8 with seven
+ * live questions opened exactly one slot, and without this the next push run
+ * would have filed every newly-qualifying candidate at once. The rest are not
+ * lost: they stay out of the --filed receipt, so seenSetAfter holds them back
+ * and a later run offers them again. `newly` is already in report order.
+ */
+export function pushBatch(newly, openSlots) {
+  const n = Number.isFinite(openSlots) ? Math.max(0, Math.floor(openSlots)) : newly.length;
+  return { batch: newly.slice(0, n), held: newly.slice(n) };
+}
+
 export function slugsWithSignal(report, now) {
   return report.candidates
     .filter((c) => passesFloors(c, { now, openSlots: Number.POSITIVE_INFINITY }).pass)
@@ -987,7 +1000,9 @@ async function main(argv) {
   });
 
   if (has('json')) {
-    console.log(JSON.stringify({ mode, generated: new Date(now).toISOString(), openSlots, qualifying: qualifyingSlugs, newly: newly.map((c) => c.slug), dropped, expiring: expiringMoments(moments, now) }, null, 2));
+    const { batch, held } = mode === 'push' ? pushBatch(newly, openSlots) : { batch: newly, held: [] };
+    if (held.length) console.error(`moment-watch: ${held.length} newly-qualifying candidate(s) held for a later run (only ${openSlots} slot(s) open): ${held.map((c) => c.slug).join(', ')}`);
+    console.log(JSON.stringify({ mode, generated: new Date(now).toISOString(), openSlots, qualifying: qualifyingSlugs, newly: batch.map((c) => c.slug), held: held.map((c) => c.slug), dropped, expiring: expiringMoments(moments, now) }, null, 2));
   } else if (mode === 'push') {
     if (newly.length) console.log(renderPush(newly, report, { grounds, drafts, structures, rejections }));
   } else {

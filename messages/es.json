@@ -906,7 +906,7 @@
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",
-    "scarcityNote": "{count, plural, =1 {1 Gran pregunta vigente} other {# Grandes preguntas vigentes}} hoy — nunca más de 6.",
+    "scarcityNote": "{count, plural, =1 {1 Gran pregunta vigente} other {# Grandes preguntas vigentes}} hoy — nunca más de {cap}.",
     "cardVehicleCount": "{count, plural, one {# proyecto de ley} other {# proyectos de ley}}",
     "cardNominationCount": "{count, plural, one {# nominación} other {# nominaciones}}",
     "cardMixedCount": "{bills, plural, one {# proyecto de ley} other {# proyectos de ley}} y {nominations, plural, one {# nominación} other {# nominaciones}}",

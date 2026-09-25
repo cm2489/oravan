@@ -46,6 +46,7 @@ import {
   vehicleStatuses,
 } from '@/lib/moments-ui';
 import { questionStatus } from '@/lib/moment-status.mjs';
+import { LIVE_CAP } from '@/lib/moments-gate.mjs';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -755,7 +756,7 @@ export default async function MomentPage({
         <Link href="/questions" className={CONTENT_LINK}>
           {t('moments.browseAll')} →
         </Link>
-        <span className="text-xs text-ink-2">{t('moments.scarcityNote', { count: liveCount })}</span>
+        <span className="text-xs text-ink-2">{t('moments.scarcityNote', { count: liveCount, cap: LIVE_CAP })}</span>
       </p>
     </article>
   );
