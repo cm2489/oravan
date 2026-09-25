@@ -466,7 +466,9 @@ export default async function BillPage({
             content it labels (above the fold at 390px), and 27 words of
             statute-speak that no first-time caller reads before deciding are
             folded into a disclosure. */}
-        <header className="pt-6 pb-4">
+        {/* data-call-hold: the floating call button stays down while any of
+            this title block is on screen (components/FloatingCallButton.tsx). */}
+        <header className="pt-6 pb-4" data-call-hold>
           <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
           {/* Descends from the PROVENANCE RITUAL (2026-08 design pick C1):
               the same facts in the same order — record, status, latest
@@ -775,11 +777,14 @@ export default async function BillPage({
         />
       </div>
 
-      {/* Keeps the call reachable while reading; yields whenever the rail is
-          on screen. On the desk that is the whole grid — but the coverage
-          section and the footer sit OUTSIDE it, so the rail scrolls away at
-          the page foot and this is what carries the call the rest of the way.
-          Measured, not assumed: tests/call-action.spec.ts asserts both ends. */}
+      {/* Keeps the call reachable while reading ON A PHONE; yields whenever
+          the rail is on screen, and holds while the title block, the green
+          panel or the footer is (B1-2, 2026-09-25). At 62rem and up it does
+          not render: the sticky rail is the call beside the whole grid. The
+          coverage section below the grid sits outside the rail's reach, one
+          scroll under it — measured and reported in the B1-2 PR rather than
+          assumed away. tests/call-action.spec.ts and
+          tests/bill-call-rail.spec.ts pin both layouts. */}
       <FloatingCallButton />
     </>
   );

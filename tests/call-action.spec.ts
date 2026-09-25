@@ -30,28 +30,48 @@ const slug = Object.keys(coverageData).find((k) => !k.startsWith('_'));
  * screen the floating button stands down; when none is, it stands up. That is
  * `ctaOnScreen === fabInert`, and it holds at every scroll depth, on every
  * layout, for whatever bill the corpus serves up.
+ *
+ * Two carve-outs since B1-2 (2026-09-25), both measured, both the component's
+ * own contract rather than exceptions to it: the button is also down while a
+ * HOLD ZONE reaches its strip (the title block, the green panel, the footer
+ * — it is never drawn over them), and it never renders at 62rem and up,
+ * where the sticky rail is the call. So the expected state is
+ * `inert === (desk || ctaOnScreen || held)`.
  */
 async function oneSurfaceHolds(page: Page) {
   await expect
     .poll(
       () =>
         page.evaluate(() => {
-          const cta = document.querySelector('[data-call-cta]');
-          const fab = document.querySelector('[data-floating-call]');
-          if (!cta || !fab) return null;
-          const r = cta.getBoundingClientRect();
+          const fab = document.querySelector('[data-floating-call]') as HTMLElement | null;
+          if (!document.querySelector('[data-call-cta]') || !fab) return null;
           // "On screen" is the part a reader can SEE: above the strip the
           // button itself stands in (B2, 2026-09-24 — a panel edge tucked
           // under the fixed nav and the button is not a visible call
-          // surface). Same arithmetic as FloatingCallButton's rootMargin.
-          const f = fab as HTMLElement;
-          const stripTop =
-            window.innerHeight - (parseFloat(getComputedStyle(f).bottom) || 0) - f.offsetHeight - 8;
-          const onScreen = r.height > 0 && r.top < stripTop && r.bottom > 0;
+          // surface). Same arithmetic as FloatingCallButton's rootMargin,
+          // over every CTA it observes, not only the first.
+          const offset = parseFloat(getComputedStyle(fab).bottom) || 0;
+          const stripTop = window.innerHeight - offset - fab.offsetHeight - 8;
+          const onScreen = [...document.querySelectorAll('[data-call-cta]')].some((el) => {
+            const r = el.getBoundingClientRect();
+            return r.height > 0 && r.top < stripTop && r.bottom > 0;
+          });
+          // Hold zones count down to the button's own bottom edge.
+          const holdBottom = window.innerHeight - offset;
+          const held = [
+            document.querySelector('[data-call-hold]'),
+            document.querySelector('.on-go'),
+            document.querySelector('main ~ footer'),
+          ].some((el) => {
+            if (!el) return false;
+            const r = el.getBoundingClientRect();
+            return r.height > 0 && r.top < holdBottom && r.bottom > 0;
+          });
+          const desk = window.matchMedia('(min-width: 62rem)').matches;
           const inert =
             fab.getAttribute('aria-hidden') === 'true' &&
             getComputedStyle(fab).opacity === '0';
-          return onScreen === inert;
+          return inert === (desk || onScreen || held);
         }),
       { message: 'exactly one call surface must be offered at this scroll depth' },
     )
@@ -88,49 +108,46 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
 
   if (onDesk) {
     // THE DESK. The two-column bill page parks a sticky call rail beside the
-    // reading column. Whether that rail's CTA is on screen AT THE TOP is
-    // corpus-dependent, not layout-dependent: a floor_vote bill renders the
-    // full-bleed deadline band above the grid, which at shorter desktop
-    // viewports (webkit-desktop) pushes the rail below the fold. The night
-    // hr-3937-119 (floor_vote) became coverage.json's first key, the old
-    // hardcoded `toBeInViewport` went red on main itself — first caught on
-    // 2026-07-25, by PR CI, because nightly-sync pushes use GITHUB_TOKEN and
-    // therefore never trigger main's own CI on a fresh corpus.
-    //
-    // The PROPERTY this test exists to pin is the component's contract:
-    // exactly one call surface at a time — the button stands down when a CTA
-    // is on screen and stands up when none is. Assert THAT, from measured
-    // visibility, for whichever bill the corpus serves up.
+    // reading column, and since B1-2 (2026-09-25) the floating button does
+    // not render here at all: measured at 1440x900 it only ever doubled a
+    // call already on screen (over the green panel, beside the panel's own
+    // CTA). Whether the rail's CTA is on screen AT THE TOP is still
+    // corpus-dependent — a floor_vote bill's band pushes it below the fold
+    // at webkit-desktop's height (the hr-3937-119 lesson, 2026-07-25) — so
+    // nothing here asserts where the rail is; what is pinned is that the
+    // button stays inert at both ends, whichever side of that boundary this
+    // bill and this engine land on. tests/bill-call-rail.spec.ts pins the
+    // rail's stickiness (DESIGN.md structural constraint 1).
     await oneSurfaceHolds(page);
+    await expect(fab).toHaveAttribute('aria-hidden', 'true');
+    await expect(fab).toHaveCSS('display', 'none');
 
-    // Past the foot of the grid the rail is USUALLY gone — but on a short
-    // bill (thin decode, thin coverage) the sticky rail can still be
-    // partially on screen at max scroll, and Linux webkit's text metrics
-    // shift the boundary vs a Mac (the second half of the same corpus-shape
-    // lesson as above: this went red in CI on hr-3937-119 while passing
-    // locally on identical code). The invariant this component exists for is
-    // that SOME call surface is on screen at every depth and never two —
-    // assert the complementary pair from measured visibility, whichever side
-    // of the boundary this bill and this engine land on.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await oneSurfaceHolds(page);
+    await expect(fab).toHaveAttribute('aria-hidden', 'true');
     return;
   }
 
-  // SINGLE COLUMN. No rail; on a long page no other CTA is on screen at the
-  // top — but measure rather than assume, for the same corpus-shape reason
-  // as the desk branch: a short bill can put the panel inside the first
-  // viewport, and then the button standing DOWN is the correct behavior.
+  // SINGLE COLUMN. At the top the title block is on screen on every bill
+  // page, so the button holds (B1-2: it used to sit over the first screen's
+  // own words). Measured, not assumed, by the same contract.
   await oneSurfaceHolds(page);
+  await expect(fab).toHaveAttribute('aria-hidden', 'true');
 
   // Bring the action panel into view — the floating button fades out (inert).
   await cta.scrollIntoViewIfNeeded();
   await expect(fab).toHaveCSS('opacity', '0');
   await expect(fab).toHaveAttribute('aria-hidden', 'true');
 
-  // Scroll back to a reading gap — it returns.
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(fab).toHaveCSS('opacity', '1');
+  // Scroll back to a reading gap PAST the title block — the top of the
+  // decoded read, with the title (and any green panel above it) scrolled
+  // away. Whether the button returns there is measured: a short decode can
+  // put the call panel above its strip, and then staying down is correct.
+  await page.evaluate(() => {
+    const read = document.querySelector('section[aria-labelledby="decoded"]')!;
+    window.scrollTo({ top: read.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+  });
+  await oneSurfaceHolds(page);
 });
 
 /*
