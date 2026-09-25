@@ -160,7 +160,13 @@ export function BillsBrowser({
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink"
+            /* WebKit's own search chrome is hidden: this field draws its own
+               clear button (below), and the native cancel button still
+               reserved its width while empty, which clipped the Spanish
+               placeholder at 390px (audit F27). Preflight already resets
+               the decoration; it is restated here so the pair reads as one
+               decision. */
+            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
           />
           {query ? (
             <button

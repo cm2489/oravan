@@ -91,7 +91,7 @@ export default function ImpactPageClient() {
              them from this very store), so a tap lands on the bills the
              chip names. */}
       {interests.length > 0 && (
-        <section className="mt-10" aria-labelledby="follows">
+        <section className="mt-12" aria-labelledby="follows">
           <h2 id="follows" className="text-h3 font-extrabold">
             {t('followTitle')}
           </h2>
@@ -121,7 +121,7 @@ export default function ImpactPageClient() {
              The per-item delete is not a convenience: a record you cannot
              edit is a record kept ON you rather than FOR you. */}
       {reads.length > 0 && (
-        <section className="mt-10" aria-labelledby="reads">
+        <section className="mt-12" aria-labelledby="reads">
           <h2 id="reads" className="text-h3 font-extrabold">
             {t('readsTitle')}
           </h2>
@@ -159,7 +159,7 @@ export default function ImpactPageClient() {
 
       {/* 3. YOUR CALLS — the celebrated outcome, kept whole, in third place. */}
       {calls.length > 0 && (
-        <dl className="mt-10 grid grid-cols-3 gap-3">
+        <dl className="mt-12 grid grid-cols-3 gap-3">
           {[
             { icon: PhoneCall, label: t('calls', { count: calls.length }), value: calls.length },
             { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
@@ -178,7 +178,7 @@ export default function ImpactPageClient() {
       )}
 
       {calls.length === 0 && !erased && (
-        <div className="mt-10 rounded-control border border-line-strong bg-paper p-8 text-center">
+        <div className="mt-12 rounded-control border border-line-strong bg-paper p-8 text-center">
           <h2 className="text-h3 font-extrabold">{t('emptyTitle')}</h2>
           <p className="mx-auto mt-2 max-w-read text-ink-2">{t('emptyBody')}</p>
           <Link
@@ -192,7 +192,7 @@ export default function ImpactPageClient() {
       )}
 
       {calls.length > 0 && (
-        <section className="mt-10" aria-labelledby="history">
+        <section className="mt-12" aria-labelledby="history">
           <h2 id="history" className="text-h3 font-extrabold">
             {t('historyTitle')}
           </h2>

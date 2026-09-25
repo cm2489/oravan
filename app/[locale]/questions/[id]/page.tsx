@@ -114,7 +114,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const moment = getMoment(id);
-  if (!moment || moment.state === 'retired') return {};
+  // notFound(), not `{}`: the same condition as the page body below, thrown
+  // here too so the 404's tab title comes from app/[locale]/not-found.tsx
+  // rather than the site default (UI audit F11; the bills/[id] posture).
+  if (!moment || moment.state === 'retired') notFound();
   const title = localeText(moment.name, locale);
   const description = momentDek(localeText(moment.summary, locale));
   return {

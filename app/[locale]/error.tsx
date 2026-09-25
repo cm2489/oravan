@@ -73,7 +73,9 @@ export default function LocaleError({
 
   return (
     <article className="mx-auto max-w-read px-4 py-16" role="alert">
-      <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
+      {/* text-h1-bill, the sitewide title rung: bare text-h1 belongs to the
+          home hero alone, and an error page must not out-shout it (audit F11). */}
+      <h1 className="text-h1-bill font-extrabold text-ink">{t('title')}</h1>
       <p className="mt-4 text-lede text-ink-2">{t('body')}</p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <button
@@ -97,7 +99,7 @@ export default function LocaleError({
           in the same trash-icon idiom the civic record's erase block uses.
           border-line-strong is on paper here, which is the side of the
           contrast ledger where it passes. */}
-      <p className="mt-10 max-w-note text-sm text-ink-2">{t('eraseHelp')}</p>
+      <p className="mt-12 max-w-note text-sm text-ink-2">{t('eraseHelp')}</p>
       {!confirming ? (
         <button
           type="button"

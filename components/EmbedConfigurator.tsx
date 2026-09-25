@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react
 // StalenessNote/UrgencyEmptyState).
 const emptySubscribe = () => () => {};
 import { useLocale, useTranslations } from 'next-intl';
+import { ChevronDown } from 'lucide-react';
 import { SITE_ORIGIN } from '@/lib/site';
 import { MIN_PAIR_CONTRAST, FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
 import { contrastRatio } from '@/lib/contrast';
@@ -80,6 +81,29 @@ const MOCKUP_LABEL_KEYS = {
   library: 'mockupLibrary',
   advocacy: 'mockupAdvocacy',
 } as const satisfies Record<MockupArchetype, string>;
+
+/*
+ * The theme <select>s, drawn in the system's own shape. `appearance-none` is
+ * the whole fix: under WebKit's `appearance: auto` (every iPhone and iPad)
+ * min-h-12 and rounded-control were ignored and the control painted as a
+ * 24px-tall, 5px-radius system widget — under the 44px touch floor and off
+ * the shape law (UI audit F18). It is still the NATIVE element — keyboard,
+ * screen readers and the iOS picker are untouched; only its paint is ours.
+ * The chevron is lucide's (the one icon set that ships), decorative and
+ * click-through. text-md, like the page's other fields: under 16px, iOS
+ * Safari zooms the page on focus.
+ */
+const SELECT_CLASS =
+  'min-h-12 w-full cursor-pointer appearance-none rounded-control border-2 border-ink bg-paper pr-12 pl-3 text-md text-ink';
+
+function SelectChevron() {
+  return (
+    <ChevronDown
+      className="pointer-events-none absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2 text-ink"
+      aria-hidden
+    />
+  );
+}
 
 export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
   const t = useTranslations('embeds');
@@ -566,58 +590,67 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                   <label htmlFor="oravan-radius" className="text-sm font-medium">
                     {t('radiusLabel')}
                   </label>
-                  <select
-                    id="oravan-radius"
-                    value={radius}
-                    onChange={(e) => setRadius(e.target.value as RadiusKey)}
-                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
-                  >
-                    {RADIUS_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {t(
-                          key === 'sharp'
-                            ? 'radiusSharp'
-                            : key === 'round'
-                              ? 'radiusRound'
-                              : 'radiusSoft'
-                        )}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="oravan-radius"
+                      value={radius}
+                      onChange={(e) => setRadius(e.target.value as RadiusKey)}
+                      className={SELECT_CLASS}
+                    >
+                      {RADIUS_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {t(
+                            key === 'sharp'
+                              ? 'radiusSharp'
+                              : key === 'round'
+                                ? 'radiusRound'
+                                : 'radiusSoft'
+                          )}
+                        </option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="oravan-font" className="text-sm font-medium">
                     {t('fontLabel')}
                   </label>
-                  <select
-                    id="oravan-font"
-                    value={font}
-                    onChange={(e) => setFont(e.target.value as FontKey)}
-                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
-                  >
-                    {FONT_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {t(FONT_LABEL_KEYS[key])}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="oravan-font"
+                      value={font}
+                      onChange={(e) => setFont(e.target.value as FontKey)}
+                      className={SELECT_CLASS}
+                    >
+                      {FONT_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {t(FONT_LABEL_KEYS[key])}
+                        </option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="oravan-mode" className="text-sm font-medium">
                     {t('modeLabel')}
                   </label>
-                  <select
-                    id="oravan-mode"
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value as ModeKey)}
-                    className="mt-1 min-h-12 w-full rounded-control border-2 border-ink bg-paper px-3 text-sm"
-                  >
-                    {MODE_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {t(MODE_LABEL_KEYS[key])}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="oravan-mode"
+                      value={mode}
+                      onChange={(e) => setMode(e.target.value as ModeKey)}
+                      className={SELECT_CLASS}
+                    >
+                      {MODE_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {t(MODE_LABEL_KEYS[key])}
+                        </option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </div>
                 </div>
               </div>
 

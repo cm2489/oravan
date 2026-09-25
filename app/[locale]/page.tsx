@@ -186,7 +186,10 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
       </h2>
       <div className="flex flex-1 flex-col p-4 md:p-6">
         <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
-          {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
+          {/* no-break space before the dot: the line may wrap after it,
+              never open on it */}
+          {formatCitation(bill.bill_type, bill.bill_number)}
+          {' · '}
           {tShared(
             `bills.status.${statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}`
           )}
@@ -829,7 +832,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             />
           </div>
         ) : (
-          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-10">
+          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-12">
             {/* Same straddle-band reservation as the hot-week masthead. */}
             <div className="relative border-b-[1.5px] border-line-strong pb-8 md:pb-3">
               <h2 id="top-actions" className="text-h2-loud font-extrabold">
@@ -1108,7 +1111,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           once. */}
       <div className="mx-auto max-w-5xl px-4 pt-8 pb-8 md:pt-16 md:pb-16">
         <div
-          className={`grid gap-10 border-t-[3px] border-ink pt-6 ${
+          className={`grid gap-8 border-t-[3px] border-ink pt-6 ${
             DONATE_URL ? 'md:grid-cols-2 md:items-start md:gap-12' : ''
           }`}
         >

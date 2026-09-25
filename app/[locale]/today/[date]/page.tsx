@@ -29,7 +29,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string; date: string }>;
 }): Promise<Metadata> {
   const { locale, date } = await params;
-  if (!isBriefDate(date)) return {};
+  // notFound(), not `{}`: the same condition as the page body below, thrown
+  // here too so the 404's tab title comes from app/[locale]/not-found.tsx
+  // rather than the site default (UI audit F11; the bills/[id] posture).
+  if (!isBriefDate(date)) notFound();
   const t = await getTranslations({ locale, namespace: 'today' });
   const format = await getFormatter({ locale });
   const label = format.dateTime(new Date(`${date}T00:00:00Z`), {

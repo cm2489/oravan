@@ -104,7 +104,12 @@ export default async function LocaleLayout({
               on the EN locale — see the component for why this is not a
               server redirect (localeDetection: false is deliberate). */}
           <LocalePreferenceNote />
-          <main id="main" className="flex-1 pb-24 md:pb-0">
+          {/* No bottom padding. The old phone-only pb-24 predates the
+              footer's own pb-16, which is what actually clears the fixed
+              thumb bar (components/Footer.tsx) — <main> is never the last
+              thing on the page, so its 96px only ever stacked blank paper
+              before the footer (UI audit F16). */}
+          <main id="main" className="flex-1">
             {children}
           </main>
           <Footer />

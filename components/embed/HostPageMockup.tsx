@@ -2,6 +2,7 @@
 
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { contrastRatio } from '@/lib/contrast';
 import { isAllowlistedWebfontUrl } from '@/lib/webfont-allowlist';
 
 /*
@@ -26,6 +27,19 @@ import { isAllowlistedWebfontUrl } from '@/lib/webfont-allowlist';
  * The webfont <link> is host-allowlisted twice (route + here) so this can
  * only ever load a stylesheet from a known font CDN, never arbitrary
  * third-party CSS from the submitted URL.
+ *
+ * Three things this chrome may NOT borrow from the tenant, because they are
+ * properties of OUR page rather than paint (UI audit F18):
+ *  - Headings. The mock headline is a <p>, and the article/aside wrappers are
+ *    plain <div>s: a fake "City council weighs…" h2 was entering the /embeds
+ *    document outline as if it were Oravan's own section.
+ *  - Off-ladder type. Sizes are the system ladder (12 / 13 / 14 / 16 / 21),
+ *    never the 10.4px and 11.2px fractions this used to print.
+ *  - Unreadable accent TEXT. The accent stays exact wherever it is a fill or
+ *    a rule, but where it colors WORDS (the kicker, the advocacy headline) it
+ *    must clear WCAG AA on the surface it sits on, or those words fall back to
+ *    the tenant's own ink. Oravan's default dark palette failed this itself:
+ *    `go` on the ink surface is 2.75:1.
  */
 
 export type MockupArchetype = 'generic' | 'newsroom' | 'library' | 'advocacy';
@@ -71,6 +85,9 @@ export function HostPageMockup({
   }, [webfontHref]);
 
   const muted = `color-mix(in srgb, ${ink} 62%, ${surface})`;
+  // Accent as a TEXT color: exact when it clears AA on the surface (4.5:1 for
+  // the 12px kicker, 3:1 for the large advocacy headline), else the ink.
+  const accentText = (min: number) => (contrastRatio(accent, surface) >= min ? accent : ink);
   const hairline = `color-mix(in srgb, ${ink} 16%, transparent)`;
   const faintFill = `color-mix(in srgb, ${accent} 10%, transparent)`;
 
@@ -92,7 +109,7 @@ export function HostPageMockup({
         <img src={logoUrl} alt="" className="h-7 w-7 shrink-0 object-contain" />
       )}
       <span className="truncate text-base font-bold tracking-tight">{name}</span>
-      <span className="ml-auto shrink-0 text-[0.65rem] uppercase tracking-widest" style={{ color: muted }}>
+      <span className="ml-auto shrink-0 text-2xs uppercase tracking-widest" style={{ color: muted }}>
         {t('mockupSimulated')}
       </span>
     </header>
@@ -107,28 +124,28 @@ export function HostPageMockup({
   let body: ReactNode;
   if (archetype === 'newsroom') {
     body = (
-      <article className="px-5 py-4">
-        <p className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: accent }}>
+      <div className="px-5 py-4">
+        <p className="text-2xs font-bold uppercase tracking-widest" style={{ color: accentText(4.5) }}>
           {t('mockupNewsKicker')}
         </p>
-        <h2 className="mt-1 text-2xl font-bold leading-tight">{t('mockupNewsHeadline')}</h2>
+        <p className="mt-1 text-xl font-bold leading-tight">{t('mockupNewsHeadline')}</p>
         <p className="mt-1 text-xs" style={{ color: muted }}>
           {t('mockupNewsByline')}
         </p>
         <p className="mt-3 text-sm leading-[1.625]">{t('mockupNewsBody1')}</p>
         <figure className="my-4">
           {widgetSlot}
-          <figcaption className="mt-1 text-[0.7rem]" style={{ color: muted }}>
+          <figcaption className="mt-1 text-2xs" style={{ color: muted }}>
             {t('mockupWidgetCaption')}
           </figcaption>
         </figure>
         <p className="text-sm leading-[1.625]">{t('mockupNewsBody2')}</p>
-      </article>
+      </div>
     );
   } else if (archetype === 'library') {
     body = (
       <div className="px-5 py-4">
-        <h2 className="text-xl font-bold">{t('mockupLibraryHeading')}</h2>
+        <p className="text-xl font-bold">{t('mockupLibraryHeading')}</p>
         <p className="mt-2 text-sm leading-[1.625]">{t('mockupLibraryBody')}</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_minmax(0,20rem)]">
           <div className="space-y-2 text-sm leading-[1.625]" style={{ color: muted }}>
@@ -137,24 +154,24 @@ export function HostPageMockup({
             </p>
             <p>{t('mockupLibraryBody2')}</p>
           </div>
-          <aside className="rounded-[6px] p-2" style={{ backgroundColor: faintFill }}>
+          <div className="rounded-[6px] p-2" style={{ backgroundColor: faintFill }}>
             {widgetSlot}
-            <p className="mt-1 text-[0.7rem]" style={{ color: muted }}>
+            <p className="mt-1 text-2xs" style={{ color: muted }}>
               {t('mockupWidgetCaption')}
             </p>
-          </aside>
+          </div>
         </div>
       </div>
     );
   } else if (archetype === 'advocacy') {
     body = (
       <div className="px-5 py-5 text-center">
-        <h2 className="text-2xl font-extrabold" style={{ color: accent }}>
+        <p className="text-xl font-extrabold" style={{ color: accentText(3) }}>
           {t('mockupAdvocacyHeading')}
-        </h2>
+        </p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-[1.625]">{t('mockupAdvocacyBody')}</p>
         <div className="mx-auto mt-4 max-w-md text-left">{widgetSlot}</div>
-        <p className="mt-2 text-[0.7rem]" style={{ color: muted }}>
+        <p className="mt-2 text-2xs" style={{ color: muted }}>
           {t('mockupWidgetCaption')}
         </p>
       </div>
@@ -162,7 +179,7 @@ export function HostPageMockup({
   } else {
     body = (
       <div className="px-5 py-4">
-        <h2 className="text-xl font-bold">{t('mockupGenericHeading')}</h2>
+        <p className="text-xl font-bold">{t('mockupGenericHeading')}</p>
         <p className="mt-2 text-sm leading-[1.625]">{t('mockupGenericBody')}</p>
         <div className="my-4">{widgetSlot}</div>
         <p className="text-sm leading-[1.625]" style={{ color: muted }}>

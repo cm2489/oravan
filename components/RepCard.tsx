@@ -139,8 +139,14 @@ export function RepCard({ rep }: { rep: Legislator }) {
       <div className="flex gap-4">
         <RepPortrait rep={rep} />
         <div className="min-w-0">
+          {/* No-break space before each "·": the meta may wrap after a
+              separator, never before one ("Representative / · Democrat"). */}
           <p className="text-xs font-semibold tracking-[0.04em] text-ink-2">
-            {role} · {party} · {rep.state}
+            {role}
+            {' · '}
+            {party}
+            {' · '}
+            {rep.state}
           </p>
           {/* The name is the way to the member's own page. Its 44px hit area
               is an ::after overlay (12px above, 4px below a 28px line), so the

@@ -299,10 +299,16 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
 
   test('new controls meet the 44px touch-target bar', async ({ page }) => {
     await gotoEmbeds(page);
-    // Native <select> ignores min-height in WebKit (the pre-existing radius/
-    // font selects render identically) — the mode select matches that shipped
-    // pattern, so the bounding-box assertion covers the controls that DO
-    // honor sizing: the checkbox row and the color inputs.
+    // The three theme selects are `appearance-none` since UI audit F18, so
+    // WebKit honors their min-h-12 and 8px shape instead of painting a
+    // 24px-tall, 5px-radius system control. Pinned here so a later edit that
+    // drops the reset fails loudly on the WebKit projects.
+    for (const label of [en.embeds.radiusLabel, en.embeds.fontLabel, en.embeds.modeLabel]) {
+      const select = page.getByLabel(label);
+      const box = await select.boundingBox();
+      expect(box!.height, `${label} select height`).toBeGreaterThanOrEqual(48);
+      expect(await select.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('8px');
+    }
     const toggleBox = await page
       .locator('label', { hasText: en.embeds.customColorsToggle })
       .boundingBox();
@@ -459,8 +465,11 @@ test.describe('host-page mockup preview', () => {
     ).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText(en.embeds.mockupNewsHeadline)).toBeVisible();
     await group.getByRole('button', { name: en.embeds.mockupAdvocacy }).click();
-    await expect(page.getByRole('heading', { name: en.embeds.mockupAdvocacyHeading })).toBeVisible();
+    await expect(page.getByText(en.embeds.mockupAdvocacyHeading)).toBeVisible();
     await expect(page.getByText(en.embeds.mockupNewsHeadline)).toHaveCount(0);
+    // The fake host page's headline is paint, not structure: it must never
+    // enter /embeds' own heading outline (UI audit F18).
+    await expect(page.getByRole('heading', { name: en.embeds.mockupAdvocacyHeading })).toHaveCount(0);
     // The switcher buttons meet the 44px touch-target bar.
     const box = await group.getByRole('button', { name: en.embeds.mockupAdvocacy }).boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);

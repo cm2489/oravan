@@ -34,6 +34,24 @@ for (const p of UNKNOWN_PATHS) {
   });
 }
 
+/*
+ * The 404's TAB TITLE (UI audit F11). It used to inherit the layout default —
+ * the site name and tagline — so a dead link looked like the homepage in the
+ * tab strip and in history. app/[locale]/not-found.tsx now exports
+ * generateMetadata with the already-reviewed `notFound.title`, run through the
+ * layout's "%s — Oravan" template. Asserted beside the status so the metadata
+ * export can never quietly trade the real 404 away (see the header above:
+ * metadata resolution is exactly the kind of thing that once flipped it).
+ */
+test('the 404 names itself in the tab, in both languages, and still answers 404', async ({ page }) => {
+  const en = await page.goto('/zzzz');
+  expect(en?.status()).toBe(404);
+  await expect(page).toHaveTitle(/^Page not found — Oravan$/);
+  const es = await page.goto('/es/zzzz');
+  expect(es?.status()).toBe(404);
+  await expect(page).toHaveTitle(/^Página no encontrada — Oravan$/);
+});
+
 test('bare /nominations 404s honestly rather than building an index', async ({ page }) => {
   const response = await page.goto('/nominations');
   expect(response?.status()).toBe(404);

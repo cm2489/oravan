@@ -169,7 +169,7 @@
     "showAllDistricts": "Show all districts for ZIP {zip}",
     "nextTitle": "Now you know who to call",
     "nextSub": "Here's what's worth a call to them this week.",
-    "nextSeeAll": "Browse all {count} active bills",
+    "nextSeeAll": "Browse all {count, number} active bills",
     "errorLabel": "Check this"
   },
   "rep": {
@@ -180,7 +180,7 @@
     "sponsoredHeading": "Bills they sponsor",
     "sponsoredNote": "{count, plural, one {# bill} other {# bills}} among the ones Oravan tracks, latest activity first.",
     "sponsoredNone": "None of the bills Oravan tracks lists {name} as the sponsor.",
-    "showAll": "Show all {count}",
+    "showAll": "Show all {count, number}",
     "aiNote": "Headlines decoded by AI, checked against the record",
     "houseSeat": "House seat",
     "senatorsHeading": "{state}'s senators",
@@ -223,7 +223,7 @@
     },
     "decodedPending": "We're still translating this one into plain language.",
     "updated": "Last action {date}",
-    "showAll": "Show all {count}",
+    "showAll": "Show all {count, number}",
     "showFewer": "Show fewer",
     "clearSearch": "Clear search",
     "clearFilters": "Clear all filters",

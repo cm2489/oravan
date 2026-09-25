@@ -123,13 +123,16 @@ export function Chip(props: ChipProps) {
 
   if (props.tone === 'urgent') {
     // Amber is a fill, so it resolves the same on every ground: ink text,
-    // 11.44:1, with the date printed beside the claim.
+    // 11.44:1, with the date printed beside the claim. The DATE never wraps:
+    // at 390px the claim and the date used to split the chip's width between
+    // them and both broke, printing "SEP 23, / 2026" — a date read as two
+    // facts. The claim takes the wrap; the date stays one unit.
     return (
       <span
         className={`${SHELL} bg-urgent px-3 py-1 text-xs font-bold tracking-[0.04em] text-ink uppercase tabular-nums ${className}`}
       >
         <span>{children}</span>
-        <span className="font-extrabold">{props.dateLabel}</span>
+        <span className="font-extrabold whitespace-nowrap">{props.dateLabel}</span>
       </span>
     );
   }

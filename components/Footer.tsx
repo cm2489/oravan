@@ -75,7 +75,11 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
     '-mx-1 inline-flex min-h-11 min-w-11 items-center px-1 text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
 
   return (
-    <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
+    /* md:mt-16, not mt-16. Below md the page's own bottom padding is the
+       whole gap before the back cover: this margin used to stack on it AND on
+       <main>'s old pb-24, leaving 192-224px of blank paper before every
+       footer at 390px (UI audit F16). */
+    <footer className="on-dark bg-ink-deep text-ink-pale md:mt-16">
       {/* pb clears the fixed thumb bar so footer links stay tappable on phones */}
       <div className="mx-auto max-w-5xl px-4 pt-8 pb-16 text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
@@ -199,15 +203,17 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             masses and read as a second footer (owner, 2026-07-25). A one-line
             colophon reads as the section's baseline instead. The `·`
             separators are decorative — each fact is its own <span>, so a
-            screen reader hears three sentences, not soup. The funding line
+            screen reader hears three sentences, not soup. Each is bound to
+            the sentence BEFORE it by a no-break space, so on a phone a line
+            can end on "·" but never open on one. The funding line
             still upgrades itself the moment DONATE_URL is set (same constant
             as the CTA above, no second flag) and never claims
             tax-deductibility or nonprofit status. */}
-        <p className="mt-10 text-xs text-ink-pale/90">
+        <p className="mt-8 text-xs text-ink-pale/90">
           <span>{t('footer.sourceNote')}</span>
-          <span aria-hidden> · </span>
+          <span aria-hidden>{'\u00A0· '}</span>
           <span>{t('footer.aiNote')}</span>
-          <span aria-hidden> · </span>
+          <span aria-hidden>{'\u00A0· '}</span>
           <span>{donateUrl ? t('footer.fundingLive') : t('footer.funding')}</span>
         </p>
       </div>

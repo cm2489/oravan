@@ -71,17 +71,20 @@ export function BillCard({
           status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
-          chunk so a wrapped line can never start with a floating "·". */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
+          chunk so a wrapped line can never start with a floating "·". The
+          separator's leading space is a no-break space and the flex gap is
+          gap-x-1, so the dot sits with an even ~4px on each side ("9340 · ON")
+          instead of a 4px space before it and an 8px gap after it. */}
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         {/* tabular figures, not a third typeface: the system has two voices
             and `font-mono` was neither */}
         <span className="whitespace-nowrap tabular-nums normal-case">
           {bill.identifier}
-          <span aria-hidden> ·</span>
+          <span aria-hidden>{' ·'}</span>
         </span>
         <span className="whitespace-nowrap">
           {t(`bills.status.${bill.statusKey}`)}
-          {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
+          {(annotation || coverageCount != null) && <span aria-hidden>{' ·'}</span>}
         </span>
         {/* THE RUNG'S FOOTNOTE, in ink like everything else in this row.
             `just_passed` exists because a bill that has just cleared a chamber
@@ -93,7 +96,7 @@ export function BillCard({
         {annotation && (
           <span className="whitespace-nowrap">
             {t(`bills.annotation.${ANNOTATION_KEYS[annotation]}`)}
-            {coverageCount != null && <span aria-hidden> ·</span>}
+            {coverageCount != null && <span aria-hidden>{' ·'}</span>}
           </span>
         )}
         {coverageCount != null && (

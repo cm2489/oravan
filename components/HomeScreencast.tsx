@@ -84,7 +84,10 @@ export function HomeScreencast() {
           />
           {/* The primary affordance whenever the player is not running. A
               rounded-control bar, never a circle — nothing in Oravan is a
-              circle. Restarts from step 1 when the run has finished. */}
+              circle. Restarts from step 1 when the run has finished. Hover
+              inverts to ink, like every 2px-ink secondary button (the ZIP
+              form's included) — never `tint`, which the colour law spends on
+              what the user chose, typed or was handed (audit F17). */}
           {!playing && (
             <button
               type="button"
@@ -92,7 +95,7 @@ export function HomeScreencast() {
                 if (step >= STEPS.length) setStep(1);
                 setPlaying(true);
               }}
-              className="ring-gap absolute top-1/2 left-1/2 inline-flex min-h-12 -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-tint"
+              className="ring-gap absolute top-1/2 left-1/2 inline-flex min-h-12 -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper"
             >
               <span aria-hidden>▶</span>
               {t('screencastPlay')}

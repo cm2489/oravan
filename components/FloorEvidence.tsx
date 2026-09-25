@@ -82,7 +82,12 @@ export async function FloorEvidence({
 
   return (
     <>
-      <span className="mb-1 block text-2xs font-extrabold tracking-[0.1em] text-go-pale uppercase not-italic">
+      {/* font-sans: this lead-in is OUR label on the chamber's words, so it
+          speaks in Oravan's voice (Franklin). It used to inherit Besley from
+          the panel's blockquote, and DESIGN.md is explicit that a heading set
+          in the reading voice is a bug. The quote body below keeps its
+          inherited voice until the owner rules on the V1 quote (audit F14/F20). */}
+      <span className="mb-1 block font-sans text-2xs font-extrabold tracking-[0.1em] text-go-pale uppercase not-italic">
         {t('evidenceLead')}
       </span>
       <span lang="en">{`“${announcement.quote}”`}</span>
@@ -93,9 +98,12 @@ export async function FloorEvidence({
               ? 'evidenceSourceDigest'
               : 'evidenceSourceWeekly'
           )}
-          {' · '}
+          {/* No-break space BEFORE each middot, ordinary space after: a wrap
+              can fall after a separator, never before one, so no line of
+              this row can open on a floating "·". */}
+          {' · '}
           <span className="tabular-nums">{day(announcement.published)}</span>
-          {covers ? ' · ' : ''}
+          {covers ? ' · ' : ''}
           {covers?.verbatim ? (
             /* The document's own words for the meeting it covers. English,
                unformatted, and marked as such — the ISO derivation beside it

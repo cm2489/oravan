@@ -128,7 +128,13 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
 
         {/* Link-out only, like every payment surface (§6): Stripe hosts the
             portal; Oravan never proxies or iframes billing. The portal has
-            plan switching disabled — copy promises only what it can do. */}
+            plan switching disabled — copy promises only what it can do.
+
+            The link sits INSIDE the sentence, so it is a plain inline link:
+            WCAG 2.5.8 exempts an in-sentence target, and the inline-flex
+            44px box it used to carry stretched its line to twice the
+            paragraph's leading (DESIGN.md, Contrast: "inflating it breaks the
+            line"). Same shape as the Terms link above. */}
         <div className="mt-8">
           <h3 className="text-h3 font-extrabold">{t('docsManageTitle')}</h3>
           <p className="mt-2">
@@ -137,7 +143,7 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
               href={BILLING_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center font-semibold text-go underline hover:text-go-deep"
+              className="font-semibold text-go underline hover:text-go-deep"
             >
               {t('docsManageLinkText')}
             </a>
