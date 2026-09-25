@@ -85,14 +85,32 @@ export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: b
  * by RepCard and the per-member page (app/[locale]/reps/[bioguide]) so the
  * two can never disagree about which number is the action.
  */
-export function RepContact({ rep }: { rep: Legislator }) {
+export function RepContact({
+  rep,
+  wrapNumber = false,
+}: {
+  rep: Legislator;
+  /**
+   * Let the number drop UNDER the label when the two cannot share a line
+   * (RepCard, B1-2 2026-09-25). In a card the dial is as narrow as the card:
+   * at 768 in the old three-up grid the label + number measured wider than
+   * the button and ran 5-7px past the card edge (55px in Spanish, where it
+   * also pushed the page 39px sideways). With `flex-wrap` the number moves to
+   * its own line instead of the label breaking or anything overflowing — and
+   * where the pair fits (English, every width) nothing changes. The member
+   * page's full-width dial keeps its one-line layout.
+   */
+  wrapNumber?: boolean;
+}) {
   const t = useTranslations('reps');
   return (
     <div className="grid gap-2">
       {rep.phone && (
         <a
           href={telHref(rep.phone)}
-          className="ring-gap flex min-h-12 items-center justify-between gap-3 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+          className={`ring-gap flex min-h-12 items-center justify-between rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep ${
+            wrapNumber ? 'flex-wrap gap-x-3 gap-y-0.5' : 'gap-3'
+          }`}
         >
           <span className="inline-flex items-center gap-2">
             <Phone className="h-4 w-4 shrink-0" aria-hidden />
@@ -134,9 +152,19 @@ export function RepCard({ rep }: { rep: Legislator }) {
   const role = t(repRoleKey(rep));
   const party = usePartyLabel(rep);
 
+  /*
+   * THE CARD SIZES ITSELF, NOT THE VIEWPORT (B1-2, 2026-09-25). `min-w-0`
+   * lets a grid track shrink the card instead of the card's own content
+   * widening the track. `@container` is what the portrait reads: beside the
+   * name while the card's content box is at least 18rem (one-up at 390 and
+   * two-up at 768 both measure ~317px), ABOVE it when narrower (three-up at
+   * lg+, ~277px), where beside it the meta line and the name both broke onto
+   * extra lines. Flex column + `mt-auto` on the contact block keeps every
+   * dial in a row on one line: they sat at 930/938/938 at 1440.
+   */
   return (
-    <article className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
-      <div className="flex gap-4">
+    <article className="@container flex min-w-0 flex-col rounded-control border-[1.5px] border-line-strong bg-paper p-5">
+      <div className="flex flex-col gap-3 @min-[18rem]:flex-row @min-[18rem]:gap-4">
         <RepPortrait rep={rep} />
         <div className="min-w-0">
           <p className="text-xs font-semibold tracking-[0.04em] text-ink-2">
@@ -170,8 +198,8 @@ export function RepCard({ rep }: { rep: Legislator }) {
         </div>
       </div>
 
-      <div className="mt-4">
-        <RepContact rep={rep} />
+      <div className="mt-auto pt-4">
+        <RepContact rep={rep} wrapNumber />
       </div>
     </article>
   );

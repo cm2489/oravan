@@ -115,7 +115,9 @@ export default async function RepsPage({
               dimmed with opacity, so nothing here is a faded copy of a real
               contrast pair. */}
           <p className="mt-12 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
-          <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-3">
+          {/* Same column steps as the real cards below, so the ghost shows
+              the layout a ZIP actually unlocks. */}
+          <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -191,7 +193,9 @@ export default async function RepsPage({
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
             {noSenators && <p className={`mt-4 max-w-read ${NOTE}`}>{t('delegateNote', { state: d.state })}</p>}
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {/* Two-up at md, three-up at lg (B1-2, 2026-09-25): three-up at
+                768 made 235px cards whose dial ran past the card edge. */}
+            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}
