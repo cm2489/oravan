@@ -345,7 +345,9 @@ export function assembleDecode(ai_summary, structureText) {
  *  This is the LATENCY-SENSITIVE transport: the hourly newsdesk's re-decodes
  *  heal a live page and cannot wait on a batch queue. The nightly sync uses
  *  lib/decode-batch.mjs instead (half price, minutes of wait) and falls back
- *  to exactly this function whenever the batch can't deliver. */
+ *  to exactly this function whenever the batch can't deliver — except for a
+ *  batch that is merely slow, whose bills that can wait a night are parked and
+ *  collected by the next run instead (2026-09-25, drainDecodeQueue). */
 export async function decodeBill(anthropic, bill, text) {
   const sum = await anthropic.messages.create({
     model: DECODE_MODEL,
