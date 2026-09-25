@@ -186,17 +186,23 @@
  * docs/solutions/pinned-sync-cursor.md's 2026-09-19 amendment.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
-  completeDecode,
-  decodeBill,
-  decodeStructureFrom,
   fetchTextVersions,
   loadJSON,
   redecodeBill,
   syncOneBill,
 } from './bill-decode.mjs';
-import { decodeBatched } from '../lib/decode-batch.mjs';
+import {
+  PARKED_PATH,
+  drainDecodeQueue,
+  emptyParkedState,
+  isTimeCriticalDecode,
+  liveVehicleSlugs,
+  normalizeParkedState,
+  parkedSlugs,
+  pruneParkedState,
+} from '../lib/decode-batch.mjs';
 import {
   BILL_TYPES,
   CONGRESS,
@@ -209,8 +215,7 @@ import {
   updateSlug,
 } from './congress-fetch.mjs';
 import { parseForceSlugs, passesGate } from './decode-gate.mjs';
-import { bumpCounter, recordApiError, setCounter } from './run-counters.mjs';
-import { classifyApiError } from './api-billing.mjs';
+import { setCounter } from './run-counters.mjs';
 import {
   DEFAULT_REDECODE_MAX_PER_NIGHT,
   DEFAULT_REDECODE_PROBE_LIMIT,
@@ -269,14 +274,88 @@ const RECENT_DECODE_RESERVE = Number(process.env.RECENT_DECODE_RESERVE ?? 20);
  * publish shape check all run exactly where they always ran; only the
  * transport for the two calls moves, and any bill the batch cannot deliver is
  * decoded synchronously in the same run at full price (see the drain below).
- * The cost is wall-clock: two batch rounds, measured at 2-5 minutes each on
- * this repo's existing batch user, with a ceiling past which it gives up and
- * falls back.
+ * The cost is wall-clock: two batch rounds, measured at 2-4 minutes each over
+ * the first seven batched nights, with a ceiling past which it stops waiting.
+ *
+ * ONE VISIBLE CHANGE SINCE 2026-09-25: a batch that is merely SLOW no longer
+ * falls back. The bills in it that can wait a night are PARKED (see
+ * DECODE_BATCH_PARK below) and appear the next night, at the batch rate,
+ * exactly as a bill the decode budget defers already does; the time-critical
+ * ones still fall back and land tonight.
  *
  * DECODE_BATCH=0 turns it off and restores the pre-2026-09-18 behaviour
- * exactly — the kill switch, if a batch ever misbehaves at 14:15 UTC.
+ * exactly — the kill switch, if a batch ever misbehaves at 14:15 UTC. It also
+ * skips collecting batches parked on earlier nights (the collection lives in
+ * the batch drain); a bill parked before the switch was thrown is then decoded
+ * synchronously when it next comes up, and its parked result is simply never
+ * read — one decode paid twice per such bill, for as long as the switch is off.
  */
 const DECODE_BATCH = (process.env.DECODE_BATCH ?? '1') !== '0';
+/*
+ * PARK A SLOW BATCH INSTEAD OF RE-BUYING IT (2026-09-25). On by default, only
+ * meaningful with DECODE_BATCH on. When a round outlasts its wait, the bills
+ * that can wait a night (lib/decode-batch.mjs's isTimeCriticalDecode says
+ * which) stay in their batch — parked in data/decode-batch-parked.json and
+ * collected at the batch rate by the next run — instead of being cancelled and
+ * decoded synchronously at full price. Time-critical bills keep the old path.
+ *
+ * DECODE_BATCH_PARK=0 turns PARKING off: every bill a slow batch strands is
+ * decoded synchronously the same night, exactly as before 2026-09-25. It does
+ * NOT turn COLLECTION off — a batch parked on an earlier night is still read
+ * back before anything new is submitted, because refusing to collect it would
+ * pay for those bills a second time.
+ */
+const DECODE_BATCH_PARK = (process.env.DECODE_BATCH_PARK ?? '1') !== '0';
+
+/**
+ * Read what isTimeCriticalDecode needs from the committed data: the live Big
+ * Question vehicles and the floor-signal file. Read FAIL-SAFE, and the two
+ * failures fail in different directions on purpose:
+ *   - data/floor-signals.json unreadable: the act-now test still runs, on the
+ *     record's own text (docketRung takes a null signal), exactly as
+ *     scripts/sync-coverage.mjs degrades. A bill loses only its T0 rung.
+ *   - data/moments.json unreadable: we cannot tell which bills are Big
+ *     Question vehicles, so NOTHING may wait tonight — the pre-parking
+ *     behaviour, at full price. A missed vehicle would be a live question
+ *     pointing at a page that does not exist for another day; the price of
+ *     refusing is one night of full-rate decodes.
+ *
+ * @param {(path: string) => string} [read]
+ * @param {(msg: string) => void} [log]
+ * @returns {{ ok: boolean, liveVehicles: Set<string>, floorSignals: Record<string, any> }}
+ */
+export function loadParkingContext(read = (p) => readFileSync(p, 'utf8'), log = console.log) {
+  let floorSignals = {};
+  try {
+    floorSignals = JSON.parse(read('data/floor-signals.json'))?.signals ?? {};
+  } catch {
+    log('::warning::decode-batch: data/floor-signals.json unreadable — time-critical decodes are judged on the record alone tonight.');
+  }
+  try {
+    return { ok: true, liveVehicles: liveVehicleSlugs(JSON.parse(read('data/moments.json'))), floorSignals };
+  } catch (e) {
+    log(`::warning::decode-batch: data/moments.json unreadable (${e.message}) — parking is OFF tonight, so no Big Question vehicle can be made to wait.`);
+    return { ok: false, liveVehicles: new Set(), floorSignals };
+  }
+}
+
+/**
+ * The run's DONE line — extracted (2026-09-25) so the one thing that reads it,
+ * lib/pipeline-health.mjs's parseSyncDone, can be tested against the line this
+ * script actually prints instead of a hand-copied sample.
+ *
+ * The parked-batch segment sits between "queued for next run," and the
+ * failure counts ON PURPOSE: parseSyncDone reads this line with a lazy `.*?`
+ * exactly there, and nowhere else in its pattern tolerates an extra segment.
+ * The new segment also avoids the word "failed" so the lazy match cannot stop
+ * inside it.
+ *
+ * @param {Record<string, number|string>} f
+ * @returns {string}
+ */
+export function formatSyncDoneLine(f) {
+  return `DONE: ${f.refreshed} refreshed, ${f.added} added+decoded, ${f.gated} gated (no real legislative motion), ${f.queued} queued for next run, ${f.deferredDecodes} waiting on a slow batch (${f.parkedTonight} parked tonight, ${f.heldTonight} held behind an earlier parked batch; collected next run, never re-bought), ${f.harvestedDecodes} completed from a parked batch, ${f.revisited} parked bill(s) re-fetched directly (${f.revisitFailed} with an error), ${f.partialSkipped} skipped: partial payload (left untouched), ${f.noTextSkipped} skipped: no bill text published yet (not decoded), ${f.forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${f.failed} failed in the ascending pass (${f.newFailed} new), ${f.recentFailed} in the recent-first pass, ${f.forceFailed} force-slug; cursor -> ${f.cursor} (${f.cursorReason}); new bills seen this run: ${f.newSeen}; corpus ${f.corpus}`;
+}
 
 /** Record which pass queued a decode, so the drain can put a failure in the
  *  same tally that pass's inline failure would have gone to. Matched by slug
@@ -664,6 +743,16 @@ export function resolveNextSync({ since, highWater, runStart, frozen = false, tr
 // stopped matching, the sync would no-op rather than misbehave - and
 // verify-sync.mjs fails the run when lastRun didn't advance, so even that
 // lands as a loud failure rather than a silent one.
+//
+// ONLY AWAIT IMPORTED FUNCTIONS IN THIS BLOCK (2026-09-25, learned the hard
+// way). The specs that import this file (sync-cursor, decode-batch, sync-abort,
+// …) load it through the test runner's babel-to-CommonJS transform, which
+// turns `await importedFn(x)` into `await (0, _mod.importedFn)(x)` — valid
+// CommonJS, because outside a module `await` is just an identifier being
+// called, in a block that never runs under test. `await localFn(x)` gets no
+// such wrapper, is a CommonJS syntax error, and makes every one of those specs
+// fail to load. A helper this block awaits belongs in an imported module
+// (lib/decode-batch.mjs's drainDecodeQueue is there for exactly this reason).
 if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // Constructed only when this run can actually spend money: the SDK throws on
   // a missing ANTHROPIC_API_KEY at construction, and a sizing run has no
@@ -713,6 +802,25 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // byte for byte.
   const decodeQueue = DECODE_BATCH ? [] : null;
   const ctxBase = { bills, es, bySlug, anthropic, forceSlugs, decodeQueue };
+
+  // Batches an earlier run PARKED (2026-09-25; lib/decode-batch.mjs). Loaded
+  // up front because the passes below need to know which new bills already
+  // have a decode waiting for them, and pruned of anything that has since
+  // reached the corpus. A missing file is an empty one; an unreadable one is
+  // reported and treated as empty — the cost of that is the batch rate on the
+  // bills it named, never a wrong decode.
+  let parkedState = emptyParkedState();
+  if (DECODE_BATCH && existsSync(PARKED_PATH)) {
+    try {
+      parkedState = normalizeParkedState(JSON.parse(readFileSync(PARKED_PATH, 'utf8')), console.log);
+    } catch (e) {
+      console.log(`::warning::decode-batch: ${PARKED_PATH} could not be read (${e.message}) — treating it as empty; the bills it named are resubmitted when they next come up.`);
+    }
+  }
+  parkedState = pruneParkedState(parkedState, { now: Date.now(), inCorpus: (s) => bySlug.has(s), log: console.log });
+  // Parked bills tonight's sync saw and found need no decode after all (the
+  // gate turned them away, or their text is gone): nothing left to collect.
+  const noDecodeNeeded = new Set();
 
   // The corpus pair, always written together: syncOneBill fills es[slug] and
   // pushes the bill in the same synchronous breath after a decode returns, so
@@ -769,7 +877,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       added++; recentAdded++; handledSlugs.add(result.slug);
       if (result.outcome === 'queued_decode') tagPass(decodeQueue, result.slug, 'recent');
     } else if (result.outcome === 'gated') {
-      gated++; recentGated++; handledSlugs.add(result.slug);
+      gated++; recentGated++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
     } else if (result.outcome === 'budget') {
       recentDeferred++; // new bill, gate cleared but reserve exhausted - left for pass 2 (same run) or next run
     } else if (result.outcome === 'skipped_partial') {
@@ -784,7 +892,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       // deferral — so it IS added to handledSlugs: pass 2 re-fetching it this
       // same run would ask the same /text endpoint the same question and spend
       // two more API calls to get the same empty answer.
-      noTextSkipped++; recentNoText++; handledSlugs.add(result.slug);
+      noTextSkipped++; recentNoText++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
     } else {
       recentFailed++; // logged only; deliberately NOT folded into the abort check below
     }
@@ -997,7 +1105,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         added++; handledSlugs.add(result.slug);
         tagPass(decodeQueue, result.slug, 'ascending');
       } else if (result.outcome === 'gated') {
-        gated++; handledSlugs.add(result.slug); // real legislative motion absent - fully handled, NOT queued/frozen
+        gated++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug); // real legislative motion absent - fully handled, NOT queued/frozen
       } else if (result.outcome === 'budget') {
         queued++; // decode budget exhausted; revisit next run
         needsWork = true;
@@ -1017,7 +1125,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         // updateDate when the text lands and the feed brings it back then.
         // Counted in newSeen below (unlike 'skipped_partial'): we really did
         // read this bill's record, so saying we saw it is honest.
-        noTextSkipped++; handledSlugs.add(result.slug);
+        noTextSkipped++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
       } else {
         failed++;
         // A new bill that failed to decode must be retried; a failed refresh of
@@ -1076,99 +1184,127 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       added++;
       tagPass(decodeQueue, slug, 'force');
     } else if (result.outcome === 'skipped_partial') partialSkipped++;
-    else if (result.outcome === 'skipped_no_text') noTextSkipped++;
+    else if (result.outcome === 'skipped_no_text') { noTextSkipped++; noDecodeNeeded.add(slug); }
     else if (result.outcome === 'failed') forceFailed++;
     handledSlugs.add(slug);
   }
+
+  // ---- Parked-bill direct fetch (2026-09-25) -----------------------------
+  // A bill parked in a slow batch is normally met again by the ascending pass
+  // on its own: the cursor froze on it (see the drain), so the window reopens
+  // there. That is not a guarantee for a bill pass 1 queued whose updateDate
+  // sits BEFORE the cursor — the recent-100 can reach back past it on a quiet
+  // night, and then no window contains it. Its summary is paid for; leaving it
+  // unmet would strand that payment. So, exactly like the force list, any
+  // parked slug neither pass reached is fetched directly by number. Unlike the
+  // force list it gets NO gate bypass and NO budget bypass: the gate may turn
+  // it away (and then there is nothing left to collect), and the budget may
+  // defer it (and then it stays parked for a later night). Free Congress.gov
+  // calls; the decode it queues is collected, not bought.
+  let revisitFailed = 0;
+  let revisited = 0;
+  if (decodeQueue) {
+    const queuedTonight = new Set(decodeQueue.map((j) => j.slug));
+    for (const slug of parkedSlugs(parkedState)) {
+      if (handledSlugs.has(slug) || queuedTonight.has(slug) || bySlug.has(slug)) continue;
+      const target = forceSlugTarget(slug);
+      if (!target.ok) continue; // a stored slug for another Congress: never substituted
+      revisited++;
+      const result = await syncOneBill(
+        { type: target.type, number: target.number },
+        { ...ctxBase, forceSlugs: new Set(), allowDecode: added < MAX_NEW_DECODES }
+      );
+      console.log(`parked-bill direct fetch: ${slug} -> ${result.outcome}`);
+      if (result.outcome === 'queued_decode') { added++; tagPass(decodeQueue, slug, 'parked'); }
+      else if (result.outcome === 'gated') { gated++; noDecodeNeeded.add(slug); }
+      else if (result.outcome === 'skipped_no_text') { noTextSkipped++; noDecodeNeeded.add(slug); }
+      else if (result.outcome === 'skipped_partial') partialSkipped++;
+      else if (result.outcome === 'budget') queued++;
+      else if (result.outcome === 'refreshed') { refreshed++; noteRefreshed(result); }
+      else if (result.outcome === 'failed') revisitFailed++;
+      handledSlugs.add(slug);
+    }
+  }
+
   // ---- THE BATCH DRAIN ---------------------------------------------------
   // Every decode this run decided to spend, spent here, in two batch rounds
-  // at half the standard rate (lib/decode-batch.mjs). It runs AFTER both
-  // passes and the force list so one batch covers the whole night rather than
-  // three, and BEFORE the cursor is resolved, because a decode that does not
-  // land is a bill that still needs work.
+  // at half the standard rate (lib/decode-batch.mjs) — after first COLLECTING
+  // whatever an earlier run parked, so nothing already paid for is bought
+  // again. It runs AFTER both passes and the force list so one batch covers
+  // the whole night rather than three, and BEFORE the cursor is resolved,
+  // because a decode that does not land is a bill that still needs work.
+  // lib/decode-batch.mjs's drainDecodeQueue owns the order and the rules.
   //
-  // THE FALLBACK IS THE POINT. A batch that times out, errors a row, or comes
-  // back with a reply that fails the publish shape check costs that bill
-  // nothing except the wait: it is decoded synchronously, right here, at full
-  // price, through the identical decodeBill/completeDecode pair the
-  // pre-batch nightly used. The only way a bill ends the night undecoded is
-  // the way it always could — both attempts failed — and that is counted and
-  // freezes the cursor exactly as an inline decode failure always did.
+  // THE FALLBACK IS STILL THE POINT for anything that cannot wait. A batch that
+  // errors a row, or comes back with a reply that fails the publish shape
+  // check, costs that bill nothing except the wait: it is decoded
+  // synchronously, right here, at full price, through the identical
+  // decodeBill/completeDecode pair the pre-batch nightly used. A batch that
+  // merely runs LONG is different since 2026-09-25: its bills that can wait a
+  // night are PARKED — not decoded, not failed, collected at the batch rate by
+  // the next run — and only the time-critical ones take the full-price path.
+  // The only way a bill ends the night undecoded AND unparked is the way it
+  // always could — both attempts failed — and that is counted and freezes the
+  // cursor exactly as an inline decode failure always did.
   let batchDecoded = 0;
   let syncFallback = 0;
+  let harvestedDecodes = 0;
+  let parkedTonight = 0;
+  let heldTonight = 0;
   // New bills whose queued decode produced nothing, outside the ascending
-  // window: the recent-first pass's and the force list's. They are real new
-  // bills this run SAW, so `newSeen` at the bottom has to count them, and
-  // their pass's own failure tally is where the DONE line reports them. Kept
-  // apart from `newFailed`, which stays the ascending pass's own number
-  // because lib/pipeline-health.mjs parses it out of the DONE line as such.
+  // window: the recent-first pass's, the force list's and the parked-bill
+  // fetch's. They are real new bills this run SAW, so `newSeen` at the bottom
+  // has to count them, and their pass's own failure tally is where the DONE
+  // line reports them. Kept apart from `newFailed`, which stays the ascending
+  // pass's own number because lib/pipeline-health.mjs parses it out of the DONE
+  // line as such.
   let newQueuedFailed = 0;
-  const drainFailedSlugs = new Set();
-  if (decodeQueue && decodeQueue.length) {
-    console.log(`decode-batch: draining ${decodeQueue.length} queued decode(s) — Message Batches API at half the standard rate, synchronous fallback for anything it can't deliver`);
-    const decoded = await decodeBatched(decodeQueue, { anthropic });
-    for (const job of decodeQueue) {
-      // #246's counter, moved to where the spend moved. `decodeAttempts` is
-      // what scripts/check-run-honesty.mjs's rule 3 measures a dead decode
-      // path against ("reached the model N times, landed none"), and with the
-      // batch transport syncOneBill no longer reaches the model at all — it
-      // hands the job here. One bump per job, exactly as syncOneBill bumps
-      // once per bill: every job below issues at least one request, through
-      // the batch or through the fallback.
-      bumpCounter('decodeAttempts');
-      const batched = decoded.get(job.slug);
-      let dec = batched?.ok ? batched.dec : null;
-      if (dec) {
-        batchDecoded++;
-      } else {
-        try {
-          // PAY FOR THE MISSING HALF, NOT THE WHOLE THING. When the batch
-          // delivered round 1 and lost round 2, its summary comes back on the
-          // failure (lib/decode-batch.mjs) and has already been billed at the
-          // batch rate — re-running decodeBill here would buy that paragraph a
-          // second time at full rate for nothing.
-          dec = batched?.summary
-            ? await decodeStructureFrom(anthropic, job.bill, batched.summary)
-            : await decodeBill(anthropic, job.bill, job.text);
-          syncFallback++;
-          console.log(`decode-batch: ${job.slug} fell back to a synchronous ${batched?.summary ? 'call 2 only (the batch delivered its summary)' : 'decode'} (${batched?.reason ?? 'no batch result'})`);
-        } catch (e) {
-          console.error(`FAIL ${job.slug}: batch (${batched?.reason ?? 'no batch result'}) then sync decode (${e.message})`);
-          // The other half of #246: a refusal the API never billed (a credit
-          // balance 400 above all) has to be classified where it is caught, or
-          // the post-commit alarm cannot tell an outage from a bad night.
-          recordApiError(classifyApiError(e));
-          drainFailedSlugs.add(job.slug);
-          continue;
-        }
-      }
-      try {
-        await completeDecode({
-          slug: job.slug, bill: job.bill, text: job.text,
-          version: job.version ?? null, count: job.count ?? null,
-          dec, bills, es, bySlug, anthropic,
-        });
-      } catch (e) {
-        // completeDecode is the write, not the decode: a throw here means the
-        // bill is not in the corpus, so it is a failure like any other.
-        console.error(`FAIL ${job.slug}: storing the decode threw (${e.message})`);
-        drainFailedSlugs.add(job.slug);
-      }
+  let drainFailedSlugs = new Set();
+  // Bills whose decode did not land AND did not fail: parked tonight, or held
+  // back behind an earlier run's batch that is still running. The cursor treats
+  // them exactly like a failure (resolveCursorRows below); nothing else does.
+  let drainDeferredSlugs = new Set();
+  if (decodeQueue) {
+    if (decodeQueue.length) {
+      console.log(`decode-batch: draining ${decodeQueue.length} queued decode(s) — parked batches collected first, then the Message Batches API at half the standard rate; a slow batch is parked for the next run (time-critical bills fall back synchronously)`);
     }
+    const parkingCtx = DECODE_BATCH_PARK ? loadParkingContext() : null;
+    if (!DECODE_BATCH_PARK) {
+      console.log('decode-batch: DECODE_BATCH_PARK=0 — nothing is parked tonight; earlier parked batches are still collected.');
+    }
+    const drain = await drainDecodeQueue(decodeQueue, {
+      anthropic, bills, es, bySlug, parkedState, noDecodeNeeded,
+      isTimeCritical: parkingCtx?.ok
+        ? (job) => isTimeCriticalDecode(job, { liveVehicles: parkingCtx.liveVehicles, floorSignals: parkingCtx.floorSignals, now: Date.now() })
+        : () => true,
+    });
+    drainFailedSlugs = drain.failedSlugs;
+    drainDeferredSlugs = drain.deferredSlugs;
+    batchDecoded = drain.batchDecoded;
+    syncFallback = drain.syncFallback;
+    harvestedDecodes = drain.harvested;
+    parkedTonight = drain.parked;
+    heldTonight = drain.held;
+    parkedState = drain.parkedState;
     // Reconcile the optimistic budget accounting the loops did (see their
     // 'queued_decode' branches): a queued decode that produced nothing is not
-    // an `added` bill, and it must land in the same tally its pass's inline
-    // failure would have.
+    // an `added` bill. A FAILED one lands in the same tally its pass's inline
+    // failure would have; a DEFERRED one is counted as waiting, never as a
+    // failure — it must not trip the honesty alarm or the mostly-failed abort.
     for (const job of decodeQueue) {
+      if (drainDeferredSlugs.has(job.slug)) { added--; continue; }
       if (!drainFailedSlugs.has(job.slug)) continue;
       added--;
       if (job.pass === 'recent') { recentFailed++; newQueuedFailed++; }
       else if (job.pass === 'force') { forceFailed++; newQueuedFailed++; }
+      else if (job.pass === 'parked') { revisitFailed++; newQueuedFailed++; }
       else { failed++; newFailed++; }
     }
-    console.log(
-      `decode-batch: ${batchDecoded} decoded via Batches (50% rate), ${syncFallback} via synchronous fallback (full rate), ${drainFailedSlugs.size} failed both`
-    );
+    if (decodeQueue.length) {
+      console.log(
+        `decode-batch: ${batchDecoded} decoded via Batches (50% rate), ${harvestedDecodes} completed from a batch an earlier run parked (50% rate, not re-bought), ${syncFallback} via synchronous fallback (full rate), ${parkedTonight} parked in a slow batch for the next run to collect, ${heldTonight} held back behind a parked batch still running, ${drainFailedSlugs.size} failed both`
+      );
+    }
     // PERSIST THE MOMENT THE MONEY IS SPENT. This is the 2026-08-09 guarantee
     // ("never discard work already paid for") moved to where payment now
     // happens: before batching, pass 1's write was the only thing standing
@@ -1180,7 +1316,14 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     // newsdesk is queued behind; a try/finally around the rest of the run
     // would put the write on the abort path too, which is exactly where the
     // mostly-failed rule says nothing should land.
-    writeCorpus();
+    //
+    // The parked-batch record is written in the same breath, for the same
+    // reason: a batch parked tonight is money already committed, and the file
+    // is the only way the next run can collect it instead of paying again.
+    if (decodeQueue.length) writeCorpus();
+    if (parkedState.batches.length || existsSync(PARKED_PATH)) {
+      writeFileSync(PARKED_PATH, `${JSON.stringify(parkedState, null, 2)}\n`);
+    }
   }
 
   if (forceFailed) {
@@ -1400,13 +1543,26 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
 
   // ---- THE CURSOR DECISION, IN ONE PURE FUNCTION -------------------------
   // Everything that can change a bill's verdict has now happened: the drain
-  // turned every queued decode into added-or-failed, and the re-decode pass
-  // above deliberately touches neither `frozen` nor the mark (a deferred
-  // re-decode says nothing about whether the BACKLOG SCAN got through here).
-  // resolveCursorRows near the top of this file owns the freeze rule and the
-  // day-walk together, so there is exactly one place to read - and to test -
-  // for "could this run skip a bill forever".
-  const { cursor, frozen, lastFullDay } = resolveCursorRows(cursorRows, since, drainFailedSlugs);
+  // turned every queued decode into added, failed, or DEFERRED (parked in a
+  // slow batch, or held behind one), and the re-decode pass above deliberately
+  // touches neither `frozen` nor the mark (a deferred re-decode says nothing
+  // about whether the BACKLOG SCAN got through here). resolveCursorRows near
+  // the top of this file owns the freeze rule and the day-walk together, so
+  // there is exactly one place to read - and to test - for "could this run
+  // skip a bill forever".
+  //
+  // A DEFERRED BILL FREEZES THE CURSOR JUST AS A FAILED ONE DOES (2026-09-25).
+  // It is not in the corpus, and the cursor means "the backlog scan has fully
+  // processed through here" — which a bill still waiting on its batch has not
+  // been. Freezing is what reopens tomorrow's window on it, so tomorrow's run
+  // meets it again, finds its parked result, and lands it. The collection
+  // record is a second guarantee (the parked-bill direct fetch above); the
+  // freeze is the first, and the one #255's invariant is written against.
+  const { cursor, frozen, lastFullDay } = resolveCursorRows(
+    cursorRows,
+    since,
+    new Set([...drainFailedSlugs, ...drainDeferredSlugs])
+  );
 
   // Where the cursor lands. A run that left nothing behind advances to
   // runStart; a frozen one, or one whose window was truncated, advances only to
@@ -1476,7 +1632,11 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // its payload was unreadable, so we can't honestly say we saw a bill at all.
   // 'skipped_no_text' IS counted: that bill's record read fine and the bill is
   // real - only its text is missing, so we saw it and declined to decode it.
-  const newSeen = added + gated + queued + newFailed + newQueuedFailed + noTextSkipped;
+  // `drainDeferredSlugs` (2026-09-25): a bill parked in a slow batch, or held
+  // behind one, came back out of `added` too — it was seen, it is simply
+  // waiting — so it is counted here and never as a failure.
+  const deferredDecodes = drainDeferredSlugs.size;
+  const newSeen = added + gated + queued + newFailed + newQueuedFailed + noTextSkipped + deferredDecodes;
   // What the post-commit honesty alarm judges the night on
   // (scripts/check-run-honesty.mjs). Written here, after both passes and the
   // force-slug pass have resolved, so the numbers are the same ones the DONE
@@ -1485,10 +1645,16 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // claim about the run, not about one window. No-ops with RUN_COUNTERS_FILE
   // unset, which is every local run.
   setCounter('billsAdded', added);
-  setCounter('billsFailed', failed + recentFailed + forceFailed);
+  setCounter('billsFailed', failed + recentFailed + forceFailed + revisitFailed);
   setCounter('billsRefreshed', refreshed);
   console.log(
-    `DONE: ${refreshed} refreshed, ${added} added+decoded, ${gated} gated (no real legislative motion), ${queued} queued for next run, ${partialSkipped} skipped: partial payload (left untouched), ${noTextSkipped} skipped: no bill text published yet (not decoded), ${forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${failed} failed in the ascending pass (${newFailed} new), ${recentFailed} in the recent-first pass, ${forceFailed} force-slug; cursor -> ${state.lastSync} (${next.reason}${finishedDay ? `, finished ${finishedDay}` : ''}); new bills seen this run: ${newSeen}; corpus ${bills.length}`
+    formatSyncDoneLine({
+      refreshed, added, gated, queued, deferredDecodes, parkedTonight, heldTonight, harvestedDecodes,
+      revisited, revisitFailed, partialSkipped, noTextSkipped, forceWrongCongress, failed, newFailed,
+      recentFailed, forceFailed, cursor: state.lastSync,
+      cursorReason: `${next.reason}${finishedDay ? `, finished ${finishedDay}` : ''}`,
+      newSeen, corpus: bills.length,
+    })
   );
   // Mostly-failed run: don't let CI commit garbage. Judged on the ascending
   // pass ALONE - its own failures against its own window - so neither the
