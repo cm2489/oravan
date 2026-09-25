@@ -304,10 +304,10 @@ export function liveMoments(moments) {
  * whole rule rather than a detail (fixed 2026-08-12). A `/replace` comment is
  * a durable artefact: it sits in the thread forever, and the label can be
  * re-applied days later. Reading it first meant a directive written for a
- * six-full attempt would still fire on a LATER approval that needed no slot —
+ * slots-full attempt would still fire on a LATER approval that needed no slot —
  * silently retiring a live Big Question to make room that already existed.
- * The directive answers exactly one question, "which of the six goes", so it
- * is only ever asked when there are six. When there is room it is IGNORED and
+ * The directive answers exactly one question, "which live question goes", so
+ * it is only ever asked when every slot is full. When there is room it is IGNORED and
  * reported as ignored (`ignoredDirective`), never obeyed and never swallowed.
  *
  * @param {{ moments: Record<string, any>, replaceId?: string | null, newId?: string | null }} args
@@ -744,7 +744,7 @@ export function prBody(decision, { issue, moments, messages, now }) {
       ? `\`${decision.retire}\` retires in the same commit, on the \`/replace ${decision.retire}\` directive in that thread — its entry stays in the file as the record that it existed, with \`status: "retired"\`, which is how \`lib/moments.ts\` takes a question off every surface.`
       : `There was room — ${LIVE_CAP - liveMoments(moments).length} of ${LIVE_CAP} slots open — so nothing retires.`,
     /* An ignored directive is REPORTED, never silently dropped. A `/replace`
-       comment written for an earlier six-full attempt stays in the thread
+       comment written for an earlier slots-full attempt stays in the thread
        forever; it is only obeyed at the cap (see slotDecision), and the owner
        has to be told when one was on the page and did not fire — otherwise he
        reads the merge as having retired something it did not. */

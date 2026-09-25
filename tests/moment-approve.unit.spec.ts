@@ -34,7 +34,7 @@ import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { draftFor, groundFor } from '../scripts/moment-draft.mjs';
 import { PLACEHOLDER_ID, structureFor } from '../scripts/moment-scaffold.mjs';
-import { APPROVE_INSTRUCTIONS, articlesFor, renderPush, scaffoldFor } from '../scripts/moment-watch.mjs';
+import { APPROVE_INSTRUCTIONS, articlesFor, renderPush, renderWeekly, scaffoldFor } from '../scripts/moment-watch.mjs';
 import {
   LIVE_CAP,
   applyEntry,
@@ -1056,4 +1056,19 @@ test('the candidate issue tells the owner how to approve, not only how to declin
   // letting the owner discover it from a bot comment.
   expect(APPROVE_INSTRUCTIONS(0).join('\n')).toContain('/replace <moment-id>');
   expect(APPROVE_INSTRUCTIONS(3).join('\n')).not.toContain('/replace <moment-id>');
+});
+
+test('the slot count the owner reads is the cap the gate enforces, never a hardcoded number', () => {
+  // moment-candidates reports the cap it counts against; it must be the same
+  // number moment-approve refuses at, or the issue and the refusal disagree.
+  expect(report.moments.cap).toBe(LIVE_CAP);
+  const oneOpen = { ...report, moments: { live: LIVE_CAP - 1, cap: report.moments.cap, openSlots: 1 } };
+  expect(renderPush([], oneOpen)).toContain(`**1 of ${LIVE_CAP} slots open.**`);
+  expect(
+    renderWeekly(oneOpen, { newly: [], dropped: [], expiring: [], now: NOW }),
+  ).toContain(`**1 of ${LIVE_CAP}** Moment slots open`);
+  // Read from the report, not typed into the template: a different cap prints.
+  const otherCap = { ...report, moments: { live: 3, cap: 5, openSlots: 2 } };
+  expect(renderPush([], otherCap)).toContain('**2 of 5 slots open.**');
+  expect(renderWeekly(otherCap, { newly: [], dropped: [], expiring: [], now: NOW })).toContain('**2 of 5** Moment slots open');
 });

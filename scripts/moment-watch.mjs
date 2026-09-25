@@ -600,8 +600,8 @@ export function passingCandidates(report, now) {
  * safe, and it is the whole reason the loop needs no copy-paste step.
  *
  * `openSlots` is printed because the answer changes what the label does: with
- * room, it publishes; without, the workflow comes back asking which of the six
- * retires. Being told that up front is cheaper than being told it by a bot.
+ * room, it publishes; without, the workflow comes back asking which live
+ * question retires. Being told that up front is cheaper than being told it by a bot.
  */
 export const APPROVE_INSTRUCTIONS = (openSlots) => [
   '',
@@ -624,7 +624,7 @@ export function renderPush(newly, report, { grounds = new Map(), drafts = new Ma
     '',
     `> ${standingLineFor(drafts)}`,
     '',
-    `Cleared the notification floor overnight. **${report.moments.openSlots} of 6 slots open.**`,
+    `Cleared the notification floor overnight. **${report.moments.openSlots} of ${report.moments.cap} slots open.**`,
     '',
     '---',
     '',
@@ -654,7 +654,7 @@ export function renderWeekly(report, { newly, dropped, expiring, now, grounds = 
     '',
     `- **${newly.length}** newly above the floor since last run`,
     `- **${dropped.length}** dropped below the floor`,
-    `- **${report.moments.openSlots} of 6** Moment slots open`,
+    `- **${report.moments.openSlots} of ${report.moments.cap}** Moment slots open`,
     `- **${expiring.length}** live Moment(s) with \`review_by\` inside 14 days`,
   ];
 
