@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "conversation/v1",
-    "fetched_at": "2026-09-25T13:41:31.297Z",
+    "fetched_at": "2026-09-25T18:14:04.838Z",
     "window_days": 7,
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 1,
-        "checked_at": "2026-09-25T13:41:31.297Z"
+        "checked_at": "2026-09-25T18:14:04.838Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-25T13:41:31.297Z"
+        "checked_at": "2026-09-25T18:14:04.838Z"
       },
       "leans": {
         "center": {
@@ -416,6 +416,11 @@
           "lastSeen": "2026-09-25"
         },
         {
+          "domain": "michaelfairmantv.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
+        {
           "domain": "sagaftra.org",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-25"
@@ -658,6 +663,17 @@
           "domain": "intrafish.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5768-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medtechdive.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
         }
       ],
       "mostViewed": null
@@ -1321,6 +1337,17 @@
       ],
       "mostViewed": null
     },
+    "s-1682-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "finance.biggo.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1887-119": {
       "outlets7d": [
         {
@@ -1674,6 +1701,17 @@
       ],
       "mostViewed": null
     },
+    "s-4630-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4668-119": {
       "outlets7d": [
         {
@@ -1720,6 +1758,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "sportstalkflorida.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
         {
           "domain": "africa.espn.com",
           "firstSeen": "2026-09-24",
@@ -1837,11 +1880,6 @@
         },
         {
           "domain": "qconline.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "roanoke.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
         }
@@ -1995,6 +2033,11 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "bostonherald.com",
+          "firstSeen": "2026-09-25",
+          "lastSeen": "2026-09-25"
+        },
         {
           "domain": "orlandosentinel.com",
           "firstSeen": "2026-09-24",
