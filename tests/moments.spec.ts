@@ -121,6 +121,12 @@ test.describe('/questions/[id] detail page', () => {
       // layer's "Where it stands" note carries it too;
       // tests/moment-updates-page.spec.ts asserts that occurrence.
       await expect(page.getByText(en.moments.aiVerify, { exact: true }).first()).toBeVisible();
+      // The label and the caveat are two lines on screen but one text run to
+      // a screen reader, so AiNote puts a visually hidden full stop between
+      // them, so the label ends as a sentence before the caveat starts. Read
+      // through textContent, which carries the hidden span verbatim.
+      const note = page.locator('p', { has: page.getByText(en.bill.aiChip, { exact: true }) });
+      expect(await note.first().textContent()).toContain(`${en.bill.aiChip}. ${en.moments.aiVerify}`);
       // And the trailing duplicate is gone from the question page: the
       // bill page keeps its own `bill.aiDisclaimer`, this page no longer
       // prints the same caveat twice around one passage.

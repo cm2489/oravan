@@ -65,6 +65,14 @@ export function AiNote({ marker, label, children, ground = 'paper', className = 
           inside a flex row instead of pushing the row wider. */}
       <span className="min-w-0 pt-0.5">
         {label && <span className="block font-semibold">{label}</span>}
+        {/* The label and the caption are two LINES on screen but one run of
+            text to a screen reader, which read them as "AI-decoded Verify it
+            against…" with no break between. A visually hidden full stop ends
+            the label as a sentence. It sits BETWEEN the two spans, never
+            inside the label, so each span still holds its message verbatim
+            (funnel I1 and the moments specs match them exactly). Punctuation
+            only, the same in both locales, so there is no string to translate. */}
+        {label && children && <span className="sr-only">. </span>}
         {children && (label ? <span className="block">{children}</span> : children)}
       </span>
     </p>
