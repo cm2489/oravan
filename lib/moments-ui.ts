@@ -10,6 +10,16 @@ import { getNomination, type Nomination } from './core/nominations';
 import { nominationHasCallScript } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
+import {
+  billStatusLine,
+  nominationStatusLine,
+  questionStatus,
+  vehicleGroup,
+  VEHICLE_GROUPS,
+  type StatusLine,
+  type VehicleGroup,
+} from './moment-status.mjs';
+import { TERMINAL_NOMINATION_STATUSES } from './nomination-status.mjs';
 
 /*
  * Sentence-final punctuation is ambiguous in legislative prose. "U.S. forces
@@ -393,13 +403,13 @@ export interface MomentSearchTeaser {
 /**
  * The live moments a query may pin, pre-localized for one locale.
  *
- * LIVE ONLY. `stale` still renders on /questions (with its own badge) and is
- * dropped from the homepage strip and search pinning — the rule
- * app/[locale]/questions/page.tsx already states in the comment above its own
- * filter. Pinning a moment whose scheduled review lapsed would push an
- * unrenewed claim in front of someone who asked about something else;
- * /questions is a page you chose to visit, a pin is not. `settled` and
- * `retired` are excluded by the same call.
+ * LIVE AND PAST-REVIEW (owner, 2026-09-24). This used to be `live` only, on
+ * the argument that a lapsed review date made the summary an unrenewed claim.
+ * The owner ruled the review date a curation reminder, not a hide switch —
+ * "constituents need to be able to engage anytime on any issue" — so the
+ * question stays findable, its page states when a person last reviewed the
+ * summary, and the watcher flags the owner instead (lib/moments.ts
+ * getLiveMoments). `settled` and `retired` are still excluded by that call.
  *
  * The clock is a defaulted parameter (the idiom of lib/moments.ts and
  * timelineDays above) so tests can pin the frame and pages never call an
@@ -450,4 +460,66 @@ export function matchMoments<T extends MomentSearchTeaser>(query: string, teaser
       return alias.includes(q) || q.includes(alias);
     });
   });
+}
+
+
+/* ---------------------------------------------------------------------------
+ * STATUS LINES (Big Questions v2, 2026-09-24) — the corpus binding for
+ * lib/moment-status.mjs, which is pure and holds the vocabulary. This is the
+ * only place a vehicle slug is resolved against the two corpora for a line.
+ * ------------------------------------------------------------------------ */
+
+export interface VehicleStatus {
+  vehicle: MomentVehicle;
+  line: StatusLine;
+  group: VehicleGroup;
+}
+
+/**
+ * One status line per RESOLVED vehicle, in authoring order. An unresolved slug
+ * (should never pass the CI gate) contributes nothing rather than a guess —
+ * the same posture as latestVehicleAction above.
+ */
+export function vehicleStatuses(vehicles: MomentVehicle[], now: number = Date.now()): VehicleStatus[] {
+  const out: VehicleStatus[] = [];
+  for (const v of vehicles) {
+    if (vehicleKind(v) === 'nomination') {
+      const n = getNomination(v.slug);
+      if (!n) continue;
+      out.push({
+        vehicle: v,
+        line: nominationStatusLine(n, TERMINAL_NOMINATION_STATUSES),
+        group: vehicleGroup({ kind: 'nomination' }),
+      });
+      continue;
+    }
+    const b = getBill(v.slug);
+    if (!b) continue;
+    out.push({
+      vehicle: v,
+      line: billStatusLine(b, now),
+      group: vehicleGroup({ kind: 'bill', bill_type: b.bill_type, status: b.status }),
+    });
+  }
+  return out;
+}
+
+/** The question-level line for a moment (see questionStatus). */
+export function momentStatus(vehicles: MomentVehicle[], now: number = Date.now()) {
+  return questionStatus(vehicleStatuses(vehicles, now).map((s) => s.line));
+}
+
+/**
+ * The page's grouping: House, Senate, Enacted, in that order, empty groups
+ * dropped. A question whose vehicles all sit in one group gets ONE group, and
+ * the page prints no group heading for it — a heading over the only group is
+ * verbiage, not information.
+ */
+export function groupVehicleStatuses(
+  statuses: VehicleStatus[],
+): { group: VehicleGroup; items: VehicleStatus[] }[] {
+  return VEHICLE_GROUPS.map((group) => ({
+    group,
+    items: statuses.filter((s) => s.group === group),
+  })).filter((g) => g.items.length > 0);
 }

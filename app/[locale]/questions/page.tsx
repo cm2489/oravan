@@ -5,8 +5,8 @@ import { glossaryTag } from '@/components/glossary-tags';
 import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
-import { getMoments, vehicleKind, type MomentWithState } from '@/lib/moments';
-import { latestVehicleAction, momentDek } from '@/lib/moments-ui';
+import { getMoments, momentClaimsVehicles, vehicleKind, type MomentWithState } from '@/lib/moments';
+import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -30,6 +30,7 @@ function toTeaser(m: MomentWithState, locale: string): MomentTeaser {
     // the legislative day); fall back to the bill-derived date otherwise.
     updatedDate: latestUpdateDay(m.id) ?? latestVehicleAction(m.vehicles),
     state: m.state,
+    status: momentStatus(m.vehicles).lead,
   };
 }
 
@@ -53,22 +54,20 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
   // Retired moments never render here — a stored owner decision that takes a
   // moment off every index (spec §4.3).
   //
-  // STALE IS NOT LIVE (2026-09-18). A stale entry used to render inside this
-  // page's live grid, carrying only a quiet badge on the card to say
-  // otherwise — so on a day when every entry's review_by had passed, six
-  // cards sat under a heading reading "Live" above a count line reading "0
-  // live Big Questions today". The count was the honest half; the heading and
-  // the grid it stood over were the false one.
-  //
-  // Stale entries now get their own labelled section below. That is a
-  // relabelling, not a withdrawal: they stay on this page, keep the "Needs
-  // review" badge on the card, keep the review-date banner on their own page,
-  // and keep their backlink from every vehicle (momentClaimsVehicles is
-  // unchanged — live + stale). What changes is that the heading over a card,
-  // the section it sits in, and the count under it now say the same thing.
+  // PAST-REVIEW RENDERS AS LIVE (owner, 2026-09-24). From 2026-09-18 (#252) a
+  // `stale` entry — one whose review_by had passed — sat in its own "Under
+  // review" section, which on the day every review date had lapsed left this
+  // page with zero live questions while Congress was voting on all six. The
+  // review date is a curation reminder, not a signal about the record, so it
+  // now does that job where the owner will see it: scripts/moment-watch.mjs
+  // flags a past-review question in the standing moment-review issue, and the
+  // question's own page says when a person last reviewed its summary. What a
+  // READER needs to know about currency is carried by each card's status line,
+  // re-derived from the official record on every build (lib/moment-status.mjs).
+  // `momentClaimsVehicles` is the same live-or-stale predicate the backlink,
+  // the homepage band and search pinning read.
   const all = getMoments();
-  const live = all.filter((m) => m.state === 'live');
-  const underReview = all.filter((m) => m.state === 'stale');
+  const live = all.filter(momentClaimsVehicles);
   const settled = all.filter((m) => m.state === 'settled');
 
   return (
@@ -140,26 +139,6 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           </p>
         )}
       </section>
-
-      {/* Under review — the zombie-curation tripwire, rendered rather than
-          hidden. Hairline rule and the quieter heading weight, the same
-          register as the settled record below: this section states a fact
-          about our own upkeep, it does not ask the reader for anything. */}
-      {underReview.length > 0 && (
-        <section className="mt-12 border-t border-line pt-4" aria-labelledby="moments-review">
-          <h2 id="moments-review" className="text-h3 font-bold text-ink-2">
-            {t('moments.reviewHeading')}
-          </h2>
-          <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.reviewSub')}</p>
-          {/* The same card with the same "Needs review" badge it already
-              carried — now inside a section that agrees with the badge. */}
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {underReview.map((m) => (
-              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {settled.length > 0 && (
         <section className="mt-12 border-t border-line pt-4" aria-labelledby="moments-settled">

@@ -40,7 +40,14 @@ async function oneSurfaceHolds(page: Page) {
           const fab = document.querySelector('[data-floating-call]');
           if (!cta || !fab) return null;
           const r = cta.getBoundingClientRect();
-          const onScreen = r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+          // "On screen" is the part a reader can SEE: above the strip the
+          // button itself stands in (B2, 2026-09-24 — a panel edge tucked
+          // under the fixed nav and the button is not a visible call
+          // surface). Same arithmetic as FloatingCallButton's rootMargin.
+          const f = fab as HTMLElement;
+          const stripTop =
+            window.innerHeight - (parseFloat(getComputedStyle(f).bottom) || 0) - f.offsetHeight - 8;
+          const onScreen = r.height > 0 && r.top < stripTop && r.bottom > 0;
           const inert =
             fab.getAttribute('aria-hidden') === 'true' &&
             getComputedStyle(fab).opacity === '0';

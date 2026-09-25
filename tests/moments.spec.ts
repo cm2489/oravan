@@ -30,29 +30,28 @@ const LOCALES = [
 test.describe('/questions index', () => {
   for (const { locale, prefix, messages, pick } of LOCALES) {
     /*
-     * THE HEADING, THE GRID AND THE COUNT HAVE TO AGREE.
+     * THE HEADING, THE GRID AND THE COUNT HAVE TO AGREE — and a past review
+     * date does not hide a question (owner, 2026-09-24).
      *
-     * Until 2026-09-18 a stale moment rendered inside the "Live" section, so
-     * this page could — and on 2026-09-18 did — print six cards under a
-     * heading saying Live above a count line saying "0 live Big Questions
-     * today". Stale now has its own "Under review" section, and the three
-     * assertions below are what stops the two ever being folded back
-     * together: every live card in the live section, every stale card in the
-     * review section, and NO stale card in the live one.
+     * From 2026-09-18 (#252) a `stale` moment sat in its own "Under review"
+     * section, and on the day every review date had lapsed this page showed
+     * zero live questions while Congress was voting on all six. The review
+     * date is now a curation reminder the nightly watcher sends the owner, so
+     * live and past-review questions render together in the one live grid,
+     * the count line counts them all, and the "Under review" section no
+     * longer exists. Settled keeps its own section.
      */
-    test(`${locale}: live, under-review and settled sections each hold exactly their own state`, async ({
+    test(`${locale}: live (including past-review) and settled sections each hold exactly their own state`, async ({
       page,
     }) => {
       const all = getMoments();
-      const live = all.filter((m) => m.state === 'live');
-      const underReview = all.filter((m) => m.state === 'stale');
+      const live = all.filter((m) => m.state === 'live' || m.state === 'stale');
       const settled = all.filter((m) => m.state === 'settled');
 
       await page.goto(`${prefix}/questions`);
       await expect(page.getByRole('heading', { level: 1, name: messages.moments.indexTitle })).toBeVisible();
 
       const liveSection = page.locator('section[aria-labelledby="moments-live"]');
-      const reviewSection = page.locator('section[aria-labelledby="moments-review"]');
       const settledSection = page.locator('section[aria-labelledby="moments-settled"]');
 
       if (live.length > 0) {
@@ -67,6 +66,8 @@ test.describe('/questions index', () => {
         await expect(
           liveSection.getByText(String(live.length), { exact: false }).first()
         ).toBeVisible();
+        // Every card carries the record's own dated status line.
+        await expect(liveSection.locator('a[href*="/questions/"] time')).toHaveCount(live.length);
       } else {
         // Nothing live: the empty state, no cards, and no count line boasting
         // a cap over an empty shelf.
@@ -74,23 +75,8 @@ test.describe('/questions index', () => {
         await expect(liveSection.locator('a[href*="/questions/"]')).toHaveCount(0);
       }
 
-      const reviewHeading = page.getByRole('heading', { level: 2, name: messages.moments.reviewHeading });
-      if (underReview.length > 0) {
-        await expect(reviewHeading).toBeVisible();
-        for (const m of underReview) {
-          const name = new RegExp(escapeRegex(pick(m.name)));
-          // Reachable, and labelled for what it is...
-          await expect(reviewSection.getByRole('link', { name })).toBeVisible();
-          // ...and never counted as live.
-          await expect(liveSection.getByRole('link', { name })).toHaveCount(0);
-        }
-        // The card keeps the honesty badge it always had.
-        await expect(
-          reviewSection.getByText(messages.moments.staleBadge, { exact: true }).first()
-        ).toBeVisible();
-      } else {
-        await expect(reviewHeading).toHaveCount(0);
-      }
+      // The retired "Under review" section is gone for good.
+      await expect(page.locator('section[aria-labelledby="moments-review"]')).toHaveCount(0);
 
       const settledHeading = page.getByRole('heading', { level: 2, name: messages.moments.settledHeading });
       if (settled.length > 0) {

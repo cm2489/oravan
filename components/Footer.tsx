@@ -1,8 +1,10 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { OravanLockup } from '@/components/brand/OravanLockup';
 import { DONATE_URL } from '@/lib/site';
+// Its own line on purpose: tests/donate.unit.spec.ts pins the DONATE_URL import verbatim.
+import { feedPaths } from '@/lib/site';
 
 /*
  * THE BACK COVER.
@@ -62,9 +64,15 @@ const TRUST_LINKS = [
 
 export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null } = {}) {
   const t = useTranslations('common');
+  const feeds = feedPaths(useLocale());
 
+  // 44px hit area in BOTH dimensions (WCAG 2.5.8 / CLAUDE.md): short labels
+  // like "About" and "Terms" set at 41-42px wide on webkit-mobile. The fix is
+  // padding, not type: px-1 widens the target by 8px, the matching -mx-1
+  // keeps the text flush with the column heading, and min-w-11 is the floor
+  // for any label shorter still. Pinned in tests/follow.spec.ts.
   const linkClass =
-    'inline-flex min-h-11 items-center text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
+    '-mx-1 inline-flex min-h-11 min-w-11 items-center px-1 text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
 
   return (
     <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
@@ -111,11 +119,11 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             </div>
           </div>
 
-          {/* One landmark, two columns: a screen reader hears a single footer
-              navigation, sighted readers get the site / trust split. */}
+          {/* One landmark, three columns: a screen reader hears a single footer
+              navigation, sighted readers get the site / trust / follow split. */}
           <nav
             aria-label={t('footer.navLabel')}
-            className="grid grid-cols-2 gap-8 md:col-span-2"
+            className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-2"
           >
             <div>
               <h2 className="text-xs font-bold tracking-[0.08em] text-paper uppercase">
@@ -143,6 +151,39 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
                     </Link>
                   </li>
                 ))}
+              </ul>
+            </div>
+            {/* FOLLOW (plan item B8: the feed one click from any page). The
+                feeds are static routes OUTSIDE the [locale] tree, so they
+                take a bare <a> with the locale's own path (lib/site.ts
+                feedPaths) — next-intl's <Link> would prefix them twice. On
+                phones this column wraps under Site/Trust; from `sm` up the
+                three sit in one row. */}
+            <div>
+              <h2 className="text-xs font-bold tracking-[0.08em] text-paper uppercase">
+                {t('footer.colFollow')}
+              </h2>
+              <ul className="mt-2 grid">
+                <li>
+                  <a href={feeds.xml} type="application/rss+xml" className={linkClass}>
+                    {t('footer.followRss')}
+                  </a>
+                </li>
+                <li>
+                  <a href={feeds.json} type="application/json" className={linkClass}>
+                    {t('footer.followJson')}
+                  </a>
+                </li>
+                <li>
+                  <Link href="/mcp" className={linkClass}>
+                    {t('footer.followMcp')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/follow" className={linkClass}>
+                    {t('footer.followAll')}
+                  </Link>
+                </li>
               </ul>
             </div>
           </nav>

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-23T19:17:29.722Z"
+    "generated_at": "2026-09-24T22:21:40.382Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -237,7 +237,35 @@
     ]
   },
   "iran-war-powers": {
-    "updates": [],
+    "updates": [
+      {
+        "id": "u_3b1d76f0",
+        "class": "scheduled",
+        "vehicle": "hconres-89-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-24T22:21:40.382Z",
+        "text": {
+          "en": "“H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)”",
+          "es": "Registro oficial, en inglés: “H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2…”"
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
+          ]
+        },
+        "record": {
+          "action_text": "H.Con.Res.89 — Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran. (09/24/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": false
+      }
+    ],
     "summary_revisions": [
       {
         "id": "s_d26a6b43",
@@ -557,6 +585,35 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_088cc923",
+        "generated_at": "2026-09-24T18:57:01.886Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "Where it stands: four related measures sit at different points, with no floor or committee action recorded in the last 14 days. S.J.Res. 185 and S.J.Res. 172 both show floor activity. H. Con. Res. 38 also shows floor activity. H. Con. Res. 89 has passed one chamber. No new votes, tallies, or roll-call numbers have been recorded for any of these measures in this period. Their status remains as listed above, unchanged from the prior record. No committee markups, amendments, or scheduling notices appear in the record for this window. Readers tracking these measures will find the current standing unchanged from the last reported update.",
+          "es": "Cómo están las cosas: cuatro medidas relacionadas se encuentran en distintas etapas, sin actividad de pleno o de comité registrada en los últimos 14 días. S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno. H. Con. Res. 38 también muestra actividad en el pleno. H. Con. Res. 89 fue aprobada por una cámara. No se registraron nuevas votaciones, conteos ni números de votación nominal para ninguna de estas medidas en este período. Su estado se mantiene igual al indicado arriba, sin cambios respecto al registro anterior. No aparecen en el registro sesiones de comité, enmiendas ni avisos de calendario durante esta ventana. Los lectores que sigan estas medidas encontrarán la situación actual sin cambios desde la última actualización reportada."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "sjres-185-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote",
+            "hconres-89-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "status:hconres-38-119 committee→floor_vote"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -750,11 +807,60 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_f3165f0f",
+        "generated_at": "2026-09-24T18:57:06.491Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "S. 3172 stands where it has stood for the last 14 days: the bill was placed on the floor calendar, and the official record shows no floor action on it since. No votes, amendments, or committee actions were recorded in this window. The measure remains available for floor consideration, but the record does not show a scheduled date for that to happen. Anyone tracking this bill will find the calendar placement as the most recent official step. There is nothing further to report from the record at this time. The status has not changed since it was last updated.",
+          "es": "El proyecto S. 3172 se encuentra donde ha estado durante los últimos 14 días: se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces. No se registraron votaciones, enmiendas ni acciones de comité en este período. La medida permanece disponible para consideración en el pleno, pero el registro no indica una fecha programada para ello. Quien siga este proyecto encontrará la inclusión en el calendario como el paso oficial más reciente. No hay más información que reportar del registro en este momento. El estado no ha cambiado desde la última actualización."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
   "paying-college-athletes": {
     "updates": [
+      {
+        "id": "u_2530a6e7",
+        "class": "scheduled",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-24T18:07:05.065Z",
+        "text": {
+          "en": "The Senate scheduled S. 4668, the Protect College Sports Act of 2026, for consideration on September 24, 2026.",
+          "es": "El Senado agendó S. 4668, la Ley de Protección del Deporte Universitario de 2026, para consideración el 24 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/24/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": true
+      },
       {
         "id": "u_fcb078e5",
         "class": "scheduled",
@@ -1360,6 +1466,43 @@
           "updates:+5"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_e5e3446b",
+        "generated_at": "2026-09-24T18:57:12.069Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "Where it stands: S. 4668, the Protect College Sports Act of 2026, is in floor activity in the Senate. The chamber began consideration on September 15, 2026, when cloture on the motion to proceed was invoked by a Yea-Nay Vote of 74 to 24 (Record Vote Number: 235). Debate on the motion to proceed continued over the following days. On September 17, 2026, cloture motions were presented on the measure itself and on amendment SA 6776, and the Senate agreed to the motion to proceed by a Yea-Nay Vote of 77 to 22 (Record Vote Number: 236). On September 22, 2026, the Senate took up the bill for consideration. Floor action was scheduled for September 23 and September 24, 2026.",
+          "es": "Donde estan las cosas: el S. 4668, la Ley de Proteccion de los Deportes Universitarios de 2026, esta en actividad en el pleno del Senado. La camara inicio su consideracion el 15 de septiembre de 2026, cuando se invoco la mocion de cierre de debate sobre la mocion para proceder por votacion nominal de 74 a 24 (votacion num. 235). El debate sobre la mocion para proceder continuo en los dias siguientes. El 17 de septiembre de 2026 se presentaron mociones de cierre de debate sobre la medida misma y sobre la enmienda SA 6776, y el Senado aprobo la mocion para proceder por votacion nominal de 77 a 22 (votacion num. 236). El 22 de septiembre de 2026, el Senado tomo el proyecto de ley para su consideracion. Se programo actividad en el pleno para el 23 y el 24 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_2530a6e7",
+            "u_fcb078e5",
+            "u_c6a1ebcb",
+            "u_a3cc6ca3",
+            "u_05246d80",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_d15dae4c",
+            "u_f0db9993",
+            "u_48567655",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 committee→floor_vote",
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5"
       }
     ]
   },
@@ -1532,6 +1675,28 @@
         "text": {
           "en": "S. 4784 stands at floor activity. No action on this bill was recorded in the last fourteen days. That means the last entry on the record remains the most recent official step taken on the measure, and no new vote, hearing, or procedural move has been logged since. The bill's status has not changed from what was previously reported. Anyone tracking this measure will see the same standing until the chamber records a new action. There is nothing further to report at this time based on the official record available.",
           "es": "El proyecto S. 4784 se encuentra en actividad en el pleno. No se registró ninguna acción sobre esta ley en los últimos catorce días. Esto significa que la última entrada en el registro sigue siendo el paso oficial más reciente tomado sobre la medida, y no se ha registrado ningún voto, audiencia o trámite nuevo desde entonces. El estatus del proyecto no ha cambiado respecto a lo informado anteriormente. Cualquiera que siga esta medida vera la misma situacion hasta que la camara registre una nueva accion. No hay mas novedades que informar por el momento segun el registro oficial disponible."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4784-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_230496a4",
+        "generated_at": "2026-09-24T18:57:16.846Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "S. 4784 stands at floor activity. Nothing new entered the record in the last 14 days, so the bill's position has not changed. The most recent public marker remains the floor activity status itself, with no additional roll call, vote tally, or procedural step logged since then. No committee action, no scheduling notice, and no amendment text have been added to the public record in this period. Until a new entry appears, floor activity is the last confirmed status for this bill, and no further detail is available.",
+          "es": "El S. 4784 se encuentra en actividad en el pleno. En los últimos 14 días no se registró nada nuevo, por lo que la posición del proyecto no ha cambiado. El marcador público más reciente sigue siendo el propio estado de actividad en el pleno, sin votación nominal adicional, conteo de votos ni paso procesal registrado desde entonces. No se ha añadido acción de comité, aviso de calendario ni texto de enmienda al registro público durante este período. Hasta que aparezca una nueva entrada, actividad en el pleno es el último estado confirmado de este proyecto, y no hay más detalles disponibles."
         },
         "grounded_in": {
           "vehicle_statuses": {
@@ -1800,6 +1965,31 @@
         },
         "changed_because": [
           "updates:+2"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_3b241fdf",
+        "generated_at": "2026-09-24T18:57:20.520Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "H.R. 3633 sits at floor activity in the Senate. On September 15, 2026, senators voted on cloture on the motion to proceed to the measure. Cloture was not invoked, by a recorded vote of 49 to 50 (Roll no. 234). That same day, Senator Tillis entered a motion to reconsider the vote by which cloture was not invoked. No further action on that motion appears in the record over the last 14 days.",
+          "es": "El proyecto H.R. 3633 se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, los senadores votaron sobre la clausura de debate para proceder a considerar la medida. La clausura no fue invocada, por votación nominal de 49 a 50 (votación núm. 234). Ese mismo día, el senador Tillis presentó una moción para reconsiderar la votación en la que no se invocó la clausura. No aparece ninguna otra acción sobre esa moción en el registro de los últimos 14 días."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_0f663f8a",
+            "u_ee8fd160"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
       }

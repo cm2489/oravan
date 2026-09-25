@@ -93,12 +93,14 @@ test.describe('real data/moments.json passes the CI gate', () => {
     }
   });
 
-  test('getLiveMoments is the live-state subset of getMoments', () => {
+  test('getLiveMoments is the live-or-past-review subset of getMoments', () => {
+    // Past review no longer hides a question (owner, 2026-09-24): the set is
+    // momentClaimsVehicles — live AND stale — never settled or retired.
     const now = Date.now();
     const live = getLiveMoments(now);
     const all = getMoments(now);
-    expect(live.every((m) => m.state === 'live')).toBe(true);
-    expect(live.length).toBe(all.filter((m) => m.state === 'live').length);
+    expect(live.every((m) => m.state === 'live' || m.state === 'stale')).toBe(true);
+    expect(live.length).toBe(all.filter((m) => m.state === 'live' || m.state === 'stale').length);
   });
 
   test('getMoment returns undefined for an unknown id; isSettled is false for it', () => {

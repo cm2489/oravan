@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { BILLING_PORTAL_URL } from '@/lib/site';
+import { BILLING_PORTAL_URL, feedPaths } from '@/lib/site';
 import { getTeasers } from '@/lib/core';
 import { EmbedConfigurator } from '@/components/EmbedConfigurator';
 
@@ -32,22 +32,13 @@ export async function generateMetadata({
   return { title: t('title'), alternates: hreflangAlternates(locale, '/embeds') };
 }
 
-// S21: the free "what moved this week" feed's two static routes. Locale-
-// explicit dotted-folder routes (app/feed/whats-moving.{json,xml} for en,
-// app/es/feed/whats-moving.{json,xml} for es) - see lib/core/feed.ts's
-// header comment for why one route + a `?locale=` param doesn't work for a
-// force-static handler.
-function feedUrls(locale: string): { json: string; xml: string } {
-  const prefix = locale === 'es' ? '/es/feed' : '/feed';
-  return { json: `${prefix}/whats-moving.json`, xml: `${prefix}/whats-moving.xml` };
-}
-
 export default async function EmbedsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('embeds');
   const bills = getTeasers(locale);
-  const feeds = feedUrls(locale);
+  // S21: the free feed's locale-explicit static routes (lib/site.ts).
+  const feeds = feedPaths(locale);
 
   return (
     <article className="mx-auto max-w-5xl px-4 py-12">
@@ -90,6 +81,15 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
           <p className="mt-2">{t('docsLoaderBody')}</p>
         </div>
 
+        {/* The third widget (S19), which the configurator above deliberately
+            doesn't build: it needs a paid-plan token, and paid plans aren't
+            open (docsPlansBody). Documented so a partner can see the whole
+            product, in the same register as the free widgets' notes. */}
+        <div className="mt-8">
+          <h3 className="text-h3 font-extrabold">{t('docsActionPanelTitle')}</h3>
+          <p className="mt-2">{t('docsActionPanelBody')}</p>
+        </div>
+
         <div className="mt-8">
           <h3 className="text-h3 font-extrabold">{t('docsFeedTitle')}</h3>
           <p className="mt-2">{t('docsFeedBody')}</p>
@@ -105,6 +105,15 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
               </a>
             </li>
           </ul>
+        </div>
+
+        {/* What is TRUE about plans today, and the same sentence /partners
+            says (licensingBody): four named in the Terms, only Free open.
+            Pinned by tests/plans-claim.unit.spec.ts — when checkout opens,
+            this copy and the partners copy change in the same PR. */}
+        <div className="mt-8">
+          <h3 className="text-h3 font-extrabold">{t('docsPlansTitle')}</h3>
+          <p className="mt-2">{t('docsPlansBody')}</p>
         </div>
 
         <div className="mt-8">

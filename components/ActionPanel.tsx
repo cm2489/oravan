@@ -19,6 +19,7 @@ import type { VehicleKind } from '@/lib/moments';
 // with a 400 rather than defaulting it, so a typo would be a dead control.
 import type { NominationAudience } from '@/lib/nomination-script';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
+import { shareRepLookup } from '@/lib/rep-lookup-share';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { OfficeHoursNote } from './OfficeHoursNote';
 import { VacantSeatCard } from './VacantSeatCard';
@@ -600,6 +601,9 @@ export function ActionPanel({
   const showHouseScript = kind === 'nomination' && showNominationNote && hasSenator;
 
   const fetchReps = useCallback(() => {
+    // The vote record's "your members" strip reads this lookup's answer from
+    // memory rather than making a second request (lib/rep-lookup-share.ts).
+    shareRepLookup(null);
     if (!zip) {
       setLookup({ status: 'idle' });
       return;
@@ -607,14 +611,15 @@ export function ActionPanel({
     setLookup({ status: 'loading' });
     fetch(`/api/reps?zip=${zip}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) =>
+      .then((d) => {
         setLookup({
           status: 'ready',
           reps: d.reps,
           vacancies: d.vacancies ?? [],
           multiDistrict: d.multiDistrict ?? false,
-        })
-      )
+        });
+        shareRepLookup({ zip, reps: d.reps, multiDistrict: d.multiDistrict ?? false });
+      })
       .catch(() => setLookup({ status: 'error' }));
   }, [zip]);
 

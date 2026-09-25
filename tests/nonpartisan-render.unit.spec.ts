@@ -27,7 +27,16 @@ import { expect, test } from '@playwright/test';
  * sources — every rule below passes on them today.
  */
 
-const SURFACES = ['components/CoverageSection.tsx', 'components/RepCard.tsx'] as const;
+// The vote record (C1b) joined the list: it names members beside how they
+// voted, which is the other place a red/blue "scoreboard" would be one diff away.
+const SURFACES = [
+  'components/CoverageSection.tsx',
+  'components/RepCard.tsx',
+  'app/[locale]/reps/[bioguide]/page.tsx',
+  'components/VoteRecord.tsx',
+  'components/VoteDelegation.tsx',
+] as const;
+const VOTE_SURFACES = ['components/VoteRecord.tsx', 'components/VoteDelegation.tsx'] as const;
 const GLOBALS = 'app/globals.css';
 const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 
@@ -157,6 +166,40 @@ test.describe('no party-coded color can be reached from either affiliation surfa
       }
     });
   }
+});
+
+test.describe('a vote position is words, never a color', () => {
+  for (const file of VOTE_SURFACES) {
+    test(`${file}: no position decides how anything is drawn`, () => {
+      // Yea is not green and Nay is not alert-red. The position is one of the
+      // record's four words in ink; a className keyed on it is the first step
+      // toward a scoreboard, whatever it is nominally for.
+      const source = read(file);
+      for (const expr of styleExpressions(source)) {
+        const line = source.slice(0, expr.index).split('\n').length;
+        expect(
+          /\b(yea|nay|present|notVoting|position)\b/i.test(expr.text),
+          `${file}:${line} styles on a vote position:\n  ${expr.text.slice(0, 200)}`
+        ).toBe(false);
+      }
+    });
+
+    test(`${file}: never characterizes a vote`, () => {
+      const source = stripComments(read(file));
+      expect(source, 'a position is Yea / Nay / Present / Not voting, never who a member "sided with"').not.toMatch(
+        /sided|siding|\bparty\b/i
+      );
+    });
+  }
+});
+
+test('the vote labels are the record\'s four words, in both languages, and nothing characterizes a vote', () => {
+  const en = JSON.parse(read('messages/en.json')).votes;
+  const es = JSON.parse(read('messages/es.json')).votes;
+  expect(en.position).toEqual({ yea: 'Yea', nay: 'Nay', present: 'Present', notVoting: 'Not voting' });
+  expect(es.position).toEqual({ yea: 'Sí', nay: 'No', present: 'Presente', notVoting: 'No votó' });
+  const all = JSON.stringify({ en, es });
+  expect(all).not.toMatch(/sided|siding|se puso del lado|partido|party|democrat|republican|demócrata|republicano/i);
 });
 
 test.describe('the lean glyph stays neutral', () => {
