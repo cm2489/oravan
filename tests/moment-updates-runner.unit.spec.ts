@@ -520,18 +520,27 @@ test('the prune call is outside the nightly guard and before the summary loop', 
   expect(mainAt, 'main() not found').toBeGreaterThan(-1);
   const body = src.slice(mainAt);
 
+  // 2026-09-25: the summary step is no longer inside an
+  // `if (MODE === 'nightly')` block at all — planSummaries decides per mode
+  // (a vote landing opens it intraday) and writeSummaries makes the calls.
+  // What this pins is unchanged in substance: the prune is unconditional, and
+  // it runs before anything that grounds a revision in `entry.updates`.
   const prune = body.indexOf('pruneStore(store, moments,');
-  const guard = body.indexOf("if (MODE === 'nightly') {\n    let summaries");
-  const summary = body.indexOf('await generateStateSummary(');
-  for (const [name, i] of [['prune call', prune], ['nightly guard', guard], ['summary call', summary]] as [string, number][]) {
+  const plan = body.indexOf('planSummaries({');
+  const write = body.indexOf('await writeSummaries({');
+  for (const [name, i] of [['prune call', prune], ['summary plan', plan], ['summary write', write]] as [string, number][]) {
     expect(i, `${name} not found inside main()`).toBeGreaterThan(-1);
   }
-  // Outside the nightly guard — the whole fix.
-  expect(prune).toBeLessThan(guard);
+  // Unconditional — no mode guard stands between main() and the prune.
+  expect(body.slice(0, prune)).not.toMatch(/if \(MODE === 'nightly'\) \{[^}]*$/);
   // …and still before the summary, which grounds its revision in
   // `entry.updates`; pruning afterwards would ground it in events on their
   // way out of the file.
-  expect(prune).toBeLessThan(summary);
+  expect(prune).toBeLessThan(plan);
+  expect(prune).toBeLessThan(write);
+  // The only generateStateSummary call site is inside writeSummaries, which
+  // main() reaches only after the prune.
+  expect(body.slice(0, body.indexOf('\n}\n'))).not.toContain('await generateStateSummary(');
 });
 
 test('newsdesk.yml really does run this script and commit its output hourly', () => {

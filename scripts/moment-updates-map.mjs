@@ -384,6 +384,208 @@ export function statusDiffToCandidate({ momentId, vehicle, before, after, billUr
 }
 
 /* ------------------------------------------------------------------ *
+ * Roll calls from data/votes.json -> `vote` (Phase 0, 2026-09-25).
+ *
+ * THE GAP THIS CLOSES. The live layer's only vote source was the Congress.gov
+ * /actions endpoint, which carries a Senate roll call hours to a day after the
+ * Senate's own record does. data/votes.json (scripts/sync-votes.mjs) reads
+ * that record directly — senate.gov's roll-call XML, the House Clerk's EVS
+ * XML, Congress.gov's house-vote API — and on 2026-09-24 it already held
+ * Senate rolls 240/242/243 on s-4668-119 when the "Where it stands" summary
+ * for that moment was written without them. This file never read it.
+ *
+ * Every roll call on a live question's vehicle now becomes a `vote` update
+ * whose record is the vote record's own fields, verbatim: the question, the
+ * result, the tally, the roll number; the date rides `day`; the XML is the
+ * first ref. `ai: false` until the batched decode writes a one-liner under the
+ * same three lint layers as every other update — and if that line fails, the
+ * quoted record stands in its place, exactly as for an /actions row.
+ *
+ * ONE EVENT, ONE ROW. The id recipe keys a roll call on chamber + number
+ * (identityKey), so a roll call seen here and later on the /actions endpoint
+ * hashes to the SAME id on the same day and collapses; the runner also skips
+ * a roll already stored on another day (a legislative-day mismatch would
+ * otherwise bucket one vote twice).
+ * ------------------------------------------------------------------ */
+
+const CHAMBER_NAME = { house: 'House', senate: 'Senate' };
+
+/** Who published a roll call's record, from its source URL's host. */
+function rollSourceSystem(roll) {
+  let host = '';
+  try {
+    host = new URL(String(roll?.source ?? '')).host.toLowerCase();
+  } catch {
+    host = '';
+  }
+  if (host.endsWith('senate.gov')) return 'senate.gov roll call vote record';
+  if (host.endsWith('clerk.house.gov')) return 'Clerk of the House roll call vote record';
+  if (host.endsWith('congress.gov')) return 'Congress.gov House roll call vote record';
+  return `${CHAMBER_NAME[roll?.chamber] ?? 'Chamber'} roll call vote record`;
+}
+
+/**
+ * The record sentence for one roll call, assembled ONLY from the vote record's
+ * own strings and numbers: `question: result. Yeas N, Nays N[, Present N][,
+ * Not Voting N][; tie-breaking vote]. Chamber roll call vote N.`
+ *
+ * STATED PLAINLY because every other `action_text` in the store is one
+ * sentence Congress.gov wrote: this one is an ASSEMBLY. The question and the
+ * result are the record's own strings, the numbers are its own counts, and the
+ * punctuation and the words "Yeas"/"Nays"/"roll call vote" are ours. Those
+ * fields also ride beside it untouched (record.question, record.result,
+ * record.totals), and the ai:false fallback line quotes only the two strings
+ * the record really wrote (rollCallFallbackText) — never this assembly.
+ * @param {Record<string, any>} roll a data/votes.json rollCalls[] item
+ * @returns {string}
+ */
+export function rollCallRecordText(roll) {
+  const t = roll?.totals ?? {};
+  const counts = [`Yeas ${t.yea ?? 0}`, `Nays ${t.nay ?? 0}`];
+  if (t.present) counts.push(`Present ${t.present}`);
+  if (t.notVoting) counts.push(`Not Voting ${t.notVoting}`);
+  const tie = roll?.tieBreaker?.position
+    ? `; tie-breaking vote${roll.tieBreaker.by ? ` by ${roll.tieBreaker.by}` : ''}: ${roll.tieBreaker.position}`
+    : '';
+  return `${String(roll.question).trim()}: ${String(roll.result).trim()}. ${counts.join(', ')}${tie}. ${CHAMBER_NAME[roll.chamber]} roll call vote ${roll.roll}.`;
+}
+
+/**
+ * One data/votes.json roll call -> one `vote` candidate for one (moment,
+ * vehicle), or null when the record lacks anything the sentence needs (a
+ * missing question or result is never papered over).
+ *
+ * @param {{momentId: string, vehicle: string, roll: Record<string, any>, recordedAt?: string}} args
+ */
+export function rollCallToCandidate({ momentId, vehicle, roll, recordedAt }) {
+  if (!roll || roll.bill !== vehicle) return null;
+  const chamber = String(roll.chamber ?? '').toLowerCase();
+  if (chamber !== 'house' && chamber !== 'senate') return null;
+  const day = String(roll.date ?? '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const number = Number(roll.roll);
+  if (!Number.isInteger(number) || number <= 0) return null;
+  if (typeof roll.question !== 'string' || !roll.question.trim()) return null;
+  if (typeof roll.result !== 'string' || !roll.result.trim()) return null;
+
+  const refs = [];
+  if (typeof roll.source === 'string' && /^https:\/\//.test(roll.source)) refs.push(roll.source);
+  refs.push(congressGovUrlForSlug(vehicle));
+
+  const t = roll.totals ?? {};
+  return withId(momentId, {
+    class: 'vote',
+    vehicle,
+    day,
+    occurred_at: day,
+    occurred_precision: 'day',
+    recorded_at: isoNow(recordedAt),
+    text: null,
+    source: { kind: 'roll_call', refs },
+    record: {
+      action_text: rollCallRecordText({ ...roll, chamber }),
+      action_code: null,
+      action_type: 'roll_call_vote',
+      source_system: rollSourceSystem({ ...roll, chamber }),
+      roll_call: { chamber, number },
+      question: roll.question.trim(),
+      result: roll.result.trim(),
+      totals: {
+        yea: Number(t.yea ?? 0),
+        nay: Number(t.nay ?? 0),
+        present: Number(t.present ?? 0),
+        notVoting: Number(t.notVoting ?? 0),
+      },
+    },
+    ai: false,
+  });
+}
+
+/**
+ * Every roll call on every (moment, vehicle) pair, inside [retentionFloor,
+ * todayET]. Pure; the runner supplies data/votes.json's rollCalls.
+ *
+ * @param {{ vehicles: {momentId: string, slug: string}[], rollCalls: Record<string, any>[], retentionFloor: string, todayET: string, recordedAt?: string }} args
+ * @returns {Record<string, any>[]} candidates, each tagged with `__moment`
+ */
+export function rollCallCandidates({ vehicles, rollCalls, retentionFloor, todayET, recordedAt }) {
+  const out = [];
+  for (const { momentId, slug } of vehicles ?? []) {
+    for (const roll of rollCalls ?? []) {
+      if (roll?.bill !== slug) continue;
+      const day = String(roll.date ?? '');
+      if (day < retentionFloor || day > todayET) continue;
+      const c = rollCallToCandidate({ momentId, vehicle: slug, roll, recordedAt });
+      if (!c) continue;
+      c.__moment = momentId;
+      out.push(c);
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * The floor guard (Phase 0, 2026-09-25): is the floor live on a vehicle
+ * TODAY while the vote record holds no roll call on it dated today?
+ * ------------------------------------------------------------------ */
+
+/**
+ * The vehicles of one moment whose floor is live today with no roll call on
+ * them dated today in the vote data — the state in which a "Where it stands"
+ * written now is most likely to be contradicted within the hour.
+ *
+ * "Floor live today" is read from three signals the pipeline already holds,
+ * all at DAY granularity, all free:
+ *   1. data/floor-signals.json: a tier-0 Daily Digest program sentence that
+ *      schedules a VOTE on the vehicle (`certainty: 'scheduled_vote'`) for a
+ *      session covering today;
+ *   2. a stored `scheduled` update from a chamber's floor-TODAY feed, dated
+ *      today (the weekly House look-ahead is not a floor event and is
+ *      excluded — its day is when the House added the listing);
+ *   3. a stored `floor_action` dated today.
+ * "Vote data" is data/votes.json's rollCalls plus every stored `vote` update
+ * (the /actions endpoint can land a roll the vote sync has not).
+ *
+ * WHAT THIS CANNOT SEE, stated rather than implied: a vote on a vehicle with
+ * no floor signal at all today. That was the 2026-09-24 iran-war-powers case —
+ * data/floor-signals.json named only S. 4668 for that day, and the nightly's
+ * own tier-0 pass at 18:57Z stored no floor-today listing for H.Con.Res. 89
+ * (the one stored was recorded at 22:21Z), so no stored signal put it on the
+ * floor until hours after the 17:45Z vote. Finer
+ * detection ("a floor event newer than the vote data READ", to the minute)
+ * would need the chamber vote menus re-fetched from inside the collector;
+ * scripts/sync-votes.mjs already runs minutes before this step in both
+ * workflows, so that second fetch was not added. The absence lint and the
+ * intraday regeneration are what bound that case instead.
+ *
+ * @param {{ slugs: string[], todayET: string, updates?: Record<string, any>[], rollCalls?: Record<string, any>[], floorSignals?: Record<string, any>|null }} args
+ * @returns {{ slug: string, signals: string[] }[]}
+ */
+export function floorPendingVehicles({ slugs, todayET, updates = [], rollCalls = [], floorSignals = null }) {
+  const out = [];
+  for (const slug of slugs ?? []) {
+    const signals = [];
+    const tier0 = floorSignals?.signals?.[slug]?.tier0;
+    if (tier0?.certainty === 'scheduled_vote' && tier0.covers === todayET) {
+      signals.push(`floor-signals scheduled_vote (${tier0.source ?? 'tier-0'})`);
+    }
+    for (const u of updates ?? []) {
+      if (u?.vehicle !== slug || u.day !== todayET) continue;
+      if (u.class === 'floor_action') signals.push(`floor_action ${u.id}`);
+      else if (u.class === 'scheduled' && /floor-today/i.test(String(u.record?.source_system ?? ''))) {
+        signals.push(`floor-today listing ${u.id}`);
+      }
+    }
+    if (signals.length === 0) continue;
+    const votedToday =
+      (rollCalls ?? []).some((r) => r?.bill === slug && r.date === todayET) ||
+      (updates ?? []).some((u) => u?.vehicle === slug && u.class === 'vote' && u.day === todayET);
+    if (!votedToday) out.push({ slug, signals });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
  * Tier-0 government feeds -> `scheduled` (v2 spec §5).
  * ------------------------------------------------------------------ */
 
@@ -773,6 +975,7 @@ export function fallbackTextFor(candidate) {
       es: `${a} y ${b}${more} publicaron cobertura sobre ${label}.`,
     };
   }
+  if (candidate?.source?.kind === 'roll_call') return rollCallFallbackText(candidate);
   // The record is English — Congress publishes it that way, and this path
   // exists precisely BECAUSE translation (the AI call) failed or was refused.
   // Putting the raw English sentence in the `es` field claimed a Spanish
@@ -788,6 +991,49 @@ export function fallbackTextFor(candidate) {
   const esLead = 'Registro oficial, en inglés: ';
   const esQuoted = quotedRecordText(candidate?.record?.action_text, TEXT_MAX_CHARS - esLead.length);
   return { en: quoted, es: `${esLead}${esQuoted}` };
+}
+
+/**
+ * The ai:false line for a roll call read from the vote record.
+ *
+ * NOT quotedRecordText(action_text): a roll call's action_text is ASSEMBLED
+ * from the vote record's fields (rollCallRecordText), and wrapping our own
+ * assembly in quotation marks would present our punctuation as the
+ * government's sentence. So only the two strings the record really wrote —
+ * the question and the result — sit inside quotation marks; the roll number
+ * and the tally are stated around them as numbers, which is what they are.
+ * The quote marks still carry the vocabulary lint's quoted-title exemption
+ * for exactly the government's words ("SAVE America Act" in a question).
+ *
+ * Budgeted to TEXT_MAX_CHARS per language: the question is the long part and
+ * is the one shortened, with the ellipsis inside its quote.
+ */
+function rollCallFallbackText(candidate) {
+  const rec = candidate?.record ?? {};
+  const t = rec.totals ?? {};
+  const chamber = rec.roll_call?.chamber === 'house' ? 'house' : 'senate';
+  const n = rec.roll_call?.number;
+  const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').replace(/["“”]/g, "'").trim();
+  const question = clean(rec.question);
+  const result = clean(rec.result);
+  const extraEn = [t.present ? `Present ${t.present}` : null, t.notVoting ? `Not Voting ${t.notVoting}` : null].filter(Boolean);
+  const extraEs = [t.present ? `presentes ${t.present}` : null, t.notVoting ? `no votaron ${t.notVoting}` : null].filter(Boolean);
+  const tallyEn = [`Yeas ${t.yea ?? 0}`, `Nays ${t.nay ?? 0}`, ...extraEn].join(', ');
+  const tallyEs = [`a favor ${t.yea ?? 0}`, `en contra ${t.nay ?? 0}`, ...extraEs].join(', ');
+  const build = (lead, tally, q) => `${lead}“${q}” — “${result}”; ${tally}.`;
+  const fit = (lead, tally) => {
+    let q = question;
+    let line = build(lead, tally, q);
+    while (line.length > TEXT_MAX_CHARS && q.length > 8) {
+      q = `${q.slice(0, Math.max(8, q.length - (line.length - TEXT_MAX_CHARS) - 1)).trimEnd()}…`;
+      line = build(lead, tally, q);
+    }
+    return line;
+  };
+  return {
+    en: fit(`${chamber === 'house' ? 'House' : 'Senate'} roll call vote ${n}: `, tallyEn),
+    es: fit(`Votación nominal ${n} ${chamber === 'house' ? 'de la Cámara' : 'del Senado'}, registro oficial en inglés: `, tallyEs),
+  };
 }
 
 /* ------------------------------------------------------------------ *

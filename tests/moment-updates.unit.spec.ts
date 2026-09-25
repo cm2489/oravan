@@ -1162,7 +1162,10 @@ test.describe('drift pins', () => {
     expect(HARD_DAY_CEILING).toBe(12);
     expect(SIZE_WARN_BYTES).toBe(393_216);
     expect(SIZE_FAIL_BYTES).toBe(524_288);
-    expect(SOURCE_KINDS).toEqual(['congress_actions', 'tier0_feed', 'press']);
+    // `roll_call` joined 2026-09-25 (Phase 0 of the real-time plan): a vote
+    // read from data/votes.json, the chamber's own roll-call record — named
+    // for where it came from, never filed under the /actions endpoint.
+    expect(SOURCE_KINDS).toEqual(['congress_actions', 'tier0_feed', 'press', 'roll_call']);
   });
 });
 

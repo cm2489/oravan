@@ -47,7 +47,9 @@ export type UpdateClass =
   | 'press_cluster'
   | 'correction';
 
-export type UpdateSourceKind = 'congress_actions' | 'tier0_feed' | 'press';
+/** `roll_call`: a vote read from data/votes.json — the chamber's own roll-call
+ *  record (lib/moment-updates-gate.mjs SOURCE_KINDS, 2026-09-25). */
+export type UpdateSourceKind = 'congress_actions' | 'tier0_feed' | 'press' | 'roll_call';
 
 export type MediaLean = 'left' | 'center' | 'right';
 
@@ -131,6 +133,8 @@ export interface SummaryRevision {
   grounded_in: {
     vehicle_statuses: Record<string, string>;
     update_ids: string[];
+    /** data/votes.json roll-call ids the summary was handed (2026-09-25+). */
+    roll_calls?: string[];
     refs?: string[];
   };
   changed_because: string[];
@@ -140,6 +144,10 @@ export interface SummaryRevision {
 export interface MomentUpdatesEntry {
   updates: MomentUpdate[];
   summary_revisions: SummaryRevision[];
+  /** The collector's summary spend counter (2026-09-25): "Where it stands"
+   *  model calls made for this question on one ET day, nightly and intraday
+   *  alike. Never rendered. */
+  summary_attempts?: { day: string; count: number };
 }
 
 /** One ET day of the timeline, including the days with nothing in them. */

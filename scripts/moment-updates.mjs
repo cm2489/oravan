@@ -7,12 +7,18 @@
  *
  * WHAT THE MODE ACTUALLY SELECTS, because both modes commit and deploy this
  * file and the difference is easy to over-read: `nightly` additionally
- * collects press clusters and writes state summaries (the two steps that cost
- * money and that only make sense once a day). EVERYTHING ELSE runs in both —
- * collection, the lint, the merge, and **the storage envelopes**. The prune
- * used to be nightly-only, which left HARD_DAY_CEILING and
- * MAX_UPDATES_PER_MOMENT unenforced on 24 of the day's 25 writes; see the
- * prune loop in main() for what that cost (2026-08-09).
+ * collects press clusters and regenerates any state summary whose issue moved
+ * (flap-guarded). `incremental` regenerates a state summary ONLY on a run
+ * where a roll-call vote landed on that question, at most
+ * INTRADAY_SUMMARY_CAP (3) revisions or calls per question per ET day, and
+ * both modes share ONE budget of MOMENT_SUMMARY_DAILY_CAP (8) summary calls
+ * per ET day across all questions (2026-09-25 — see planSummaries and
+ * summaryCallsOnDay). EVERYTHING ELSE runs in both — collection (including
+ * the roll calls in data/votes.json), the lint, the merge, the floor guard,
+ * and **the storage envelopes**. The prune used to be nightly-only, which
+ * left HARD_DAY_CEILING and MAX_UPDATES_PER_MOMENT unenforced on 24 of the
+ * day's 25 writes; see the prune loop in main() for what that cost
+ * (2026-08-09).
  *
  * Needs CONGRESS_API_KEY. ANTHROPIC_API_KEY is optional — without it the
  * decode and summary steps are skipped and every update carries the verbatim
@@ -70,12 +76,33 @@
  * scripts/newsdesk.mjs). At $1/$5 per MTok a full 15-event batch is roughly 3K
  * in / 1.5K out ≈ $0.011; ~11 runs on a busy day ≈ $0.12/day. Summaries:
  * claude-sonnet-5, EN+ES in ONE call, at most MOMENT_SUMMARY_DAILY_CAP per
- * night and only when summaryNeedsRefresh says the issue actually moved —
- * ~$0.018/moment, so ≤ ~$0.15 on a night that hits the ceiling.
+ * ET day (nightly and intraday together, since 2026-09-25) and only when
+ * summaryNeedsRefresh says the issue actually moved or a vote landed —
+ * ~$0.018/moment, so ≤ ~$0.15 on a day that hits the ceiling.
  * MOMENT_UPDATE_DAILY_EVENTS bounds how many events can be decoded in a UTC
  * day at all, which is what makes the black-swan ceiling code-enforced rather
  * than hoped-for. Congress.gov adds at most one free actions request per
  * moment vehicle per run, and only for vehicles that actually moved.
+ *
+ * INTRADAY SUMMARIES (2026-09-25). An incremental run makes a Sonnet call only
+ * for a question a roll-call vote landed on in THAT run (and that survived
+ * the prune), and never more than INTRADAY_SUMMARY_CAP (3) calls per question
+ * per ET day — counted in `entry.summary_attempts` before each call, in both
+ * modes, so a rejected or failed reply spends its slot too. Every call, in
+ * either mode, also comes out of the SAME daily budget the nightly always had:
+ * MOMENT_SUMMARY_DAILY_CAP (8) calls per ET day across all questions, summed
+ * off those counters (summaryCallsOnDay). So the code-enforced ceiling is the
+ * one the once-a-night run already had — 8 calls a day, 240 in 30 days — and
+ * intraday rewrites spend what the nightly left rather than adding a second
+ * allowance on top: the ADDED ceiling is zero calls. In dollars that is
+ * ≈ $1.70 per 30 days at ≈ $0.0071 a call ($2/$10 per MTok — Sonnet 5's list
+ * price in the claude-api reference table cached 2026-06-24, not re-read live
+ * — times the brief's ~1,450 in / 420 out; the vote lines add ~50–150 input
+ * tokens), or ≈ $4.32 at the ~$0.018/moment this header has carried since
+ * 2026-07-25; the token counts behind both are estimates, not measurements.
+ * Roll calls on moment vehicles are rare — 11 in data/votes.json from
+ * 2026-05-27 to 2026-09-24 — so the expected added cost is cents per month.
+ * Reading data/votes.json costs nothing: it is a local file.
  *
  * NO PROMPT CACHING, deliberately: both prompts sit under the models' minimum
  * cacheable prefix (1024 tokens on Haiku 4.5, 512 on Sonnet 5), so a
@@ -99,7 +126,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { CONGRESS, cg } from './congress-fetch.mjs';
+import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
+import { statusBasisText } from '../lib/floor-text.mjs';
 // The status-label clock, imported rather than copied a fourth time. The
 // canonical definition is lib/journey.ts `statusKeyFor`; that file is
 // TypeScript and this one is .mjs, and scripts/moment-candidates.mjs already
@@ -117,17 +145,23 @@ import {
 } from './newsdesk-match.mjs';
 import {
   MAX_REVISIONS,
+  RECORD_BEARING_CLASSES,
   RETENTION_DAYS,
   SCHEMA_VERSION,
+  STALE_PLACEMENT_PHRASE,
   TEXT_MAX_CHARS,
   dedupeUpdates,
   etDay,
+  identityKey,
   lintRevisionText,
   lintUpdateText,
   pruneEntry,
   revisionId,
+  revisionsOnDay,
+  summaryAttemptsOnDay,
+  sameActionKey,
   shiftDay,
-  summaryNeedsRefresh,
+  summaryRefreshReason,
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
@@ -135,11 +169,13 @@ import {
   congressGovUrlForSlug,
   dailyEventCount,
   fallbackTextFor,
+  floorPendingVehicles,
   floorScheduleItems,
   floorTodayItems,
   milestoneOf,
   momentVehicles,
   pressClusterToCandidate,
+  rollCallCandidates,
   scheduledToCandidate,
   slugParts,
   statusDiffToCandidate,
@@ -150,9 +186,30 @@ import {
 const MODE = process.env.MOMENT_UPDATES_MODE === 'nightly' ? 'nightly' : 'incremental';
 const BATCH_CAP = Number(process.env.MOMENT_UPDATE_BATCH_CAP ?? 15);
 const DAILY_EVENTS = Number(process.env.MOMENT_UPDATE_DAILY_EVENTS ?? 40);
+/**
+ * "Where it stands" model calls per ET DAY, across every question and both
+ * modes — summed off the stored `summary_attempts` counters
+ * (summaryCallsOnDay), so it holds across every hourly run. Before 2026-09-25
+ * only the once-a-night run made these calls, so a per-run cap WAS a daily
+ * cap; intraday rewrites come out of this same budget rather than adding a
+ * second one on top of it.
+ */
 const SUMMARY_DAILY_CAP = Number(process.env.MOMENT_SUMMARY_DAILY_CAP ?? 8);
+/**
+ * At most this many "Where it stands" revisions or calls per question per ET
+ * day before an incremental run stops asking, read off the stored file
+ * (revisionsOnDay / summaryAttemptsOnDay), so it holds across every hourly
+ * run. The nightly's own call counts toward it; only incremental runs are
+ * stopped by it (the nightly keeps its behaviour — see planSummaries).
+ */
+export const INTRADAY_SUMMARY_CAP = Number(process.env.MOMENT_SUMMARY_INTRADAY_CAP ?? 3);
+/**
+ * The floor guard never defers a question whose current summary is older
+ * than this (or missing): at most one nightly in a row is deferred.
+ */
+export const FLOOR_GUARD_MAX_DEFER_HOURS = 36;
 const PRESS_WINDOW_DAYS = Number(process.env.MOMENT_PRESS_WINDOW_DAYS ?? 1);
-const SUMMARY_WINDOW_DAYS = 14;
+export const SUMMARY_WINDOW_DAYS = 14;
 
 const DECODE_MODEL = 'claude-haiku-4-5-20251001';
 const SUMMARY_MODEL = 'claude-sonnet-5';
@@ -217,7 +274,10 @@ let originalText;
 let store;
 let vehicles;
 let vehicleSlugs;
-let knownIds;
+/** data/votes.json's rollCalls — the chamber vote record (scripts/sync-votes.mjs). */
+let rollCalls;
+/** data/floor-signals.json, or null — read only by the floor guard. */
+let floorSignals;
 
 function loadRunState() {
   moments = readJSON('data/moments.json');
@@ -230,12 +290,29 @@ function loadRunState() {
   vehicleSlugs = [...new Set(vehicles.map((v) => v.slug))];
   console.log(`scope: ${vehicles.length} (moment, vehicle) pair(s), ${vehicleSlugs.length} distinct vehicle(s)`);
 
-  // Every id already stored, so "what is new" is a diff and never a guess.
-  knownIds = new Set();
-  for (const [key, entry] of Object.entries(store)) {
-    if (key === '_meta') continue;
-    for (const u of entry?.updates ?? []) knownIds.add(u.id);
-  }
+  // "What is new" is a diff against the stored file and never a guess — by
+  // id, by roll call, and by action (freshCandidates, called from main()).
+
+  // The vote record. Absent is legal (a fresh branch before the first vote
+  // sync) and means "no roll calls known", never an error.
+  const votes = existsSync('data/votes.json') ? readJSON('data/votes.json') : null;
+  rollCalls = Array.isArray(votes?.rollCalls) ? votes.rollCalls : [];
+  floorSignals = existsSync('data/floor-signals.json') ? readJSON('data/floor-signals.json') : null;
+  console.log(
+    `vote record: ${rollCalls.length} roll call(s) in data/votes.json (updated ${votes?._meta?.updatedAt ?? 'never'}, cursor house ${votes?._meta?.cursor?.house ?? '-'} / senate ${votes?._meta?.cursor?.senate ?? '-'})`,
+  );
+}
+
+/**
+ * Does the bill's stored status follow from the sentence it was read from?
+ * Today every corpus bill passes (3,218 of 3,218 on 2026-09-25); a bill that
+ * does not carries a status some other path wrote, and a status change on it
+ * is not allowed to buy a summary rewrite (the flap guard).
+ * @param {Record<string, any>|undefined} bill
+ */
+export function statusUnsupported(bill) {
+  if (!bill?.status) return false;
+  return bill.status !== mapStatus(statusBasisText(bill));
 }
 
 /** Tag a candidate with its moment and collect it. */
@@ -354,6 +431,23 @@ async function collectVehicleActions() {
     );
   }
   console.log(`vehicle actions: ${out.length} candidate(s)`);
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2b · roll calls — data/votes.json, zero network (Phase 0, 2026-09-25).
+ *
+ * The chamber's own vote record, synced by scripts/sync-votes.mjs minutes
+ * before this step in BOTH workflows (nightly in sync-bills.yml, intraday in
+ * newsdesk.yml). Collected AFTER the /actions path on purpose: when both see
+ * the same roll call in one run they hash to the same id, and the first one
+ * collected is the one kept — so an existing /actions-shaped row is never
+ * displaced by this path, and this path only adds what /actions has not
+ * caught up to yet.
+ * ------------------------------------------------------------------ */
+function collectRollCalls() {
+  const out = rollCallCandidates({ vehicles, rollCalls, retentionFloor, todayET, recordedAt: nowISO });
+  console.log(`roll calls (data/votes.json): ${out.length} candidate(s) on moment vehicles inside retention`);
   return out;
 }
 
@@ -569,6 +663,12 @@ function decodePayload(candidate) {
     action_code: candidate.record.action_code,
     source_system: candidate.record.source_system,
     roll_call: candidate.record.roll_call ?? null,
+    // A roll call read from the vote record carries its question, result and
+    // tally as the record's own separate fields, so the one-liner never has
+    // to parse them back out of the assembled sentence.
+    ...(candidate.record.totals
+      ? { question: candidate.record.question, result: candidate.record.result, tally: candidate.record.totals }
+      : {}),
   };
 }
 
@@ -644,7 +744,8 @@ export function lintPair(text, klass, outletNames) {
 }
 
 /* ------------------------------------------------------------------ *
- * 6 · state summaries (nightly only).
+ * 6 · state summaries — the nightly when the issue moved, and an incremental
+ *     run when a roll-call vote landed (planSummaries decides which).
  * ------------------------------------------------------------------ */
 
 /**
@@ -718,10 +819,13 @@ function changedBecause(entry, statuses, previous) {
 // the weaker claim, never the calendar one.
 const RECORD_ONLY_PHRASE = {
   floor_vote: { en: 'on the floor calendar', es: 'en el calendario del pleno' },
-  floor_vote_stale: {
-    en: 'was placed on the floor calendar, and the official record shows no floor action on it since',
-    es: 'se incluyó en el calendario del pleno, y el registro oficial no muestra ninguna acción en el pleno desde entonces',
-  },
+  // The ONE copy lives in the gate (STALE_PLACEMENT_PHRASE) since 2026-09-25:
+  // it is an absence claim about one measure ("no floor action on it since"),
+  // and the absence lint exempts exactly this string — so the string the
+  // prompt hands out and the string the lint forgives can never drift apart.
+  // generateStateSummary never hands it to a measure with activity in the
+  // window (see activeSlugs there).
+  floor_vote_stale: STALE_PLACEMENT_PHRASE,
 };
 
 /**
@@ -753,8 +857,13 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  *   by summaryNeedsRefresh, so the clock rides a SEPARATE map rather than
  *   rewriting what a revision says it was grounded in.
  * @param {Record<string, {lastActionText: string|null, lastActionDate: string|null}>} [records]
+ * @param {Record<string, any>[]} [votes] data/votes.json roll calls on this
+ *   moment's vehicles inside the summary window (planSummaries selects them).
+ *   They are GROUNDING: printed into the prompt verbatim, persisted as
+ *   `grounded_in.roll_calls`, and — with any record event in the window —
+ *   they switch the absence lint on.
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = []) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -765,14 +874,35 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
         : `- ${u.day} [${u.class}] ${billLabel(u.vehicle)}: ${u.record?.action_text ?? ''}`,
     )
     .join('\n');
+  const voteLines = (votes ?? []).map(voteGroundingLine).join('\n');
+
+  // Is the record in this window EMPTY? Any record-bearing update (everything
+  // but a press cluster) or any roll call says it is not — and then "nothing
+  // happened" is a claim the record contradicts, so the prompt forbids it and
+  // the absence lint rejects it (lib/moment-updates-gate.mjs).
+  const groundedEvents = recent.some((u) => RECORD_BEARING_CLASSES.includes(u.class)) || (votes ?? []).length > 0;
+  // A measure with activity in the window is never handed the aged-placement
+  // phrase ("… shows no floor action on it since"): the vote record can be
+  // ahead of the bill's own last action, and that phrase is an absence claim
+  // about the measure. It falls back to the weaker "Floor activity".
+  const activeSlugs = new Set([
+    ...recent.filter((u) => RECORD_BEARING_CLASSES.includes(u.class)).map((u) => u.vehicle),
+    ...(votes ?? []).map((r) => r.bill),
+  ]);
+  const phraseFor = (slug, status, lang) => {
+    const rec = records[slug];
+    const key = statusKeyFor(status, rec?.lastActionText ?? null, rec?.lastActionDate ?? null, now.getTime());
+    if (key === 'floor_vote_stale' && activeSlugs.has(slug)) return statusPhrase('floor_activity', lang);
+    return recordStatusPhrase(status, rec, lang);
+  };
   // See RECORD_ONLY_PHRASE above: the phrase per measure is chosen by the same
   // clocked status key every rendered surface routes through.
   const statusLines = Object.entries(statuses)
-    .map(
-      ([slug, status]) =>
-        `- ${billLabel(slug)}: EN "${recordStatusPhrase(status, records[slug], 'en')}" / ES "${recordStatusPhrase(status, records[slug], 'es')}"`,
-    )
+    .map(([slug, status]) => `- ${billLabel(slug)}: EN "${phraseFor(slug, status, 'en')}" / ES "${phraseFor(slug, status, 'es')}"`)
     .join('\n');
+  const nonEmptyRule = groundedEvents
+    ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
+    : '- If nothing has moved recently, say that plainly.';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
   // Congress.gov page for each vehicle. cboCostEstimates ride the bill-DETAIL
@@ -814,10 +944,13 @@ VOICE — "where it stands", not a log:
 - Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
 - The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
 - No meta-commentary about this summary itself (never "this summary reflects…", "as of this record…"). The page already stamps the date.
-- If nothing has moved recently, say that plainly.
+${nonEmptyRule}
 
 CURRENT STATUS OF EACH MEASURE:
 ${statusLines}
+
+RECORDED VOTES, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the chamber's official roll-call record, newest first — question, result, and tally verbatim):
+${voteLines || '- no roll call recorded on these measures in this window'}
 
 THE RECORD, LAST ${SUMMARY_WINDOW_DAYS} DAYS (newest first):
 ${recordLines || '- nothing recorded in this window'}
@@ -848,7 +981,7 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
   for (const lang of ['en', 'es']) {
     const value = parsed[lang].trim();
     if (!value) failures.push(`${lang}: empty`);
-    for (const f of lintRevisionText(value, lang)) failures.push(`${lang}: ${f}`);
+    for (const f of lintRevisionText(value, lang, { groundedEvents })) failures.push(`${lang}: ${f}`);
   }
   if (failures.length) {
     // There is no fallback for a summary: a "where it stands" paragraph is
@@ -865,10 +998,32 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     generated_at: generatedAt,
     as_of_day: todayET,
     text: { en: parsed.en.trim(), es: parsed.es.trim() },
-    grounded_in: { vehicle_statuses: statuses, update_ids: recent.map((u) => u.id), refs },
+    grounded_in: {
+      vehicle_statuses: statuses,
+      update_ids: recent.map((u) => u.id),
+      // Always present on a revision this collector writes, even when empty:
+      // the field is also the gate's marker that this revision passed the
+      // absence lint before it was stored (checkMomentUpdates).
+      roll_calls: (votes ?? []).map((r) => r.id),
+      refs,
+    },
     changed_because: changedBecause(entry, statuses, (entry.summary_revisions ?? []).at(-1) ?? null),
     model: SUMMARY_MODEL,
   };
+}
+
+/**
+ * One roll call as a prompt line: every field verbatim from data/votes.json.
+ * The tally is printed the way the record counts it, never pre-phrased.
+ * @param {Record<string, any>} r
+ * @returns {string}
+ */
+export function voteGroundingLine(r) {
+  const t = r?.totals ?? {};
+  const chamber = r?.chamber === 'house' ? 'House' : 'Senate';
+  const counts = [`Yeas ${t.yea ?? 0}`, `Nays ${t.nay ?? 0}`, `Present ${t.present ?? 0}`, `Not Voting ${t.notVoting ?? 0}`];
+  const tie = r?.tieBreaker?.position ? `; tie-breaking vote ${r.tieBreaker.position}` : '';
+  return `- ${r?.date} · ${chamber} roll call no. ${r?.roll} · ${billLabel(r?.bill)} · question: "${r?.question ?? ''}" · result: "${r?.result ?? ''}" · ${counts.join(', ')}${tie}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -913,9 +1068,11 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
  * path: reserving holds a slot open for a revision the run is about to append
  * (the arithmetic fix for the night a moment at MAX_REVISIONS committed 31,
  * one past what check-moment-updates accepts, reddening main after the nightly
- * had already deployed — 2026-08-06). An incremental run appends no revision,
- * so reserving there would evict the oldest surviving revision every hour to
- * make room for nothing.
+ * had already deployed — 2026-08-06). An incremental run appends a revision
+ * only on the rare run where a vote lands (since 2026-09-25), so reserving
+ * there would evict the oldest surviving revision every hour to make room for
+ * nothing; the slice at the append in writeSummaries holds the cap on that
+ * path instead.
  *
  * @param {Record<string, any>} store   the parsed store, keyed by moment id
  * @param {Record<string, any>} moments parsed data/moments.json
@@ -1011,6 +1168,354 @@ export function assignUpdateText(batch, overflow, decodedByIndex) {
 }
 
 /* ------------------------------------------------------------------ *
+ * 5b · what is NEW — by id, by roll call, and by action (2026-09-25).
+ * ------------------------------------------------------------------ */
+
+/**
+ * The candidates the store does not already hold, in collection order.
+ *
+ * Three identities, each checked against the stored file AND against what
+ * this run already accepted:
+ *   1. the id (content hash) — the original rule;
+ *   2. the roll call (chamber + number), across days: the vote record and the
+ *      /actions endpoint can date one Senate vote on different days, and a
+ *      roll number names exactly one event;
+ *   3. the "same action" key (lib/moment-updates-gate.mjs sameActionKey): a
+ *      Congress.gov row re-worded days later with "(CR S4789)" is not new.
+ *      Without this, the re-worded row would be collected every hour, decoded
+ *      by a PAID call every hour, and then collapsed by the merge every hour.
+ *
+ * Pure (reads `storeArg`, mutates nothing). Candidates carry their moment
+ * under MOMENT_KEY.
+ *
+ * @param {Record<string, any>[]} candidates
+ * @param {Record<string, any>} storeArg
+ * @returns {Record<string, any>[]}
+ */
+export function freshCandidates(candidates, storeArg) {
+  const rollKey = (u) => (u?.record?.roll_call ? identityKey(u) : null);
+  const ids = new Set();
+  const rolls = new Set();
+  const actions = new Set();
+  for (const [momentId, entry] of Object.entries(storeArg ?? {})) {
+    if (momentId === '_meta') continue;
+    for (const u of entry?.updates ?? []) {
+      ids.add(u?.id);
+      const rk = rollKey(u);
+      if (rk) rolls.add(`${momentId}|${rk}`);
+      const ak = sameActionKey(u);
+      if (ak) actions.add(`${momentId}|${ak}`);
+    }
+  }
+  const out = [];
+  for (const c of candidates ?? []) {
+    const momentId = c?.[MOMENT_KEY];
+    if (ids.has(c.id)) continue;
+    const rk = rollKey(c);
+    if (rk && rolls.has(`${momentId}|${rk}`)) continue;
+    const ak = sameActionKey(c);
+    if (ak && actions.has(`${momentId}|${ak}`)) continue;
+    ids.add(c.id);
+    if (rk) rolls.add(`${momentId}|${rk}`);
+    if (ak) actions.add(`${momentId}|${ak}`);
+    out.push(c);
+  }
+  return out;
+}
+
+/**
+ * Split `candidates` into the ones that would SURVIVE this run's own prune and
+ * the ones it would delete again (fix pass, 2026-09-25).
+ *
+ * THE LOOP THIS CLOSES. freshCandidates diffs against the stored file, so a
+ * candidate the prune removes is "new" again on the next run. For the
+ * /actions path that needed a vehicle to move; data/votes.json is re-read on
+ * EVERY run, so a roll call the HARD_DAY_CEILING envelope trims (a vote-a-rama:
+ * more than 12 roll calls on one question's day) came back every hour for the
+ * 60-day retention window — into the paid Haiku batch each time, and counted
+ * as a landed vote, which opened a Sonnet rewrite of "Where it stands" with
+ * nothing new in it. Reproduced with 15 same-day amendment rolls: run 1
+ * stores 12, and every later run re-collects the other 3.
+ *
+ * The test is the prune itself, not a copy of its rules: each candidate is
+ * merged into ITS moment's stored updates on its own (dedupeUpdates) and the
+ * result pruned (pruneEntry, the run's own clock). Selection there is a fixed
+ * order — class priority, then id — so a candidate that loses against what is
+ * already stored loses the same way on every run, and dropping it before the
+ * decode changes nothing that would have been stored. Candidates are tried one
+ * at a time, not together, on purpose: two new rows that crowd each other out
+ * are each stored-or-pruned once by the real merge, and the loser then fails
+ * this test on the next run against the winner.
+ *
+ * Pure (reads `storeArg`, mutates nothing).
+ *
+ * @param {Record<string, any>[]} candidates each tagged with MOMENT_KEY
+ * @param {Record<string, any>} storeArg
+ * @param {Date|number|string} nowArg
+ * @returns {{ kept: Record<string, any>[], dropped: Record<string, any>[] }}
+ */
+export function survivingCandidates(candidates, storeArg, nowArg) {
+  const kept = [];
+  const dropped = [];
+  for (const c of candidates ?? []) {
+    const stored = storeArg?.[c?.[MOMENT_KEY]]?.updates ?? [];
+    const trial = pruneEntry({ updates: dedupeUpdates(stored, [c]), summary_revisions: [] }, { now: nowArg });
+    if ((trial?.updates ?? []).some((u) => u?.id === c?.id)) kept.push(c);
+    else dropped.push(c);
+  }
+  return { kept, dropped };
+}
+
+/**
+ * The vehicles a VOTE landed on this run, per question — counted only for a
+ * vote row that is still in the store AFTER the prune (fix pass, 2026-09-25).
+ * Read before the prune, a row the envelope was about to delete counted as a
+ * landing and bought a rewrite over a vote that never reached the file.
+ *
+ * @param {{ momentId: string, id: string, vehicle: string }[]} merged the vote rows merged this run
+ * @param {Record<string, any>} storeArg the store, already pruned
+ * @returns {Map<string, Set<string>>} momentId -> vehicle slugs
+ */
+export function landedVoteVehicles(merged, storeArg) {
+  /** @type {Map<string, Set<string>>} */
+  const out = new Map();
+  for (const { momentId, id, vehicle } of merged ?? []) {
+    if (!(storeArg?.[momentId]?.updates ?? []).some((u) => u?.id === id)) continue;
+    if (!out.has(momentId)) out.set(momentId, new Set());
+    out.get(momentId)?.add(vehicle);
+  }
+  return out;
+}
+
+/**
+ * Every "Where it stands" model call already spent on one ET day, across all
+ * questions and both modes — the sum of each entry's summary_attempts. The
+ * day's remaining budget is MOMENT_SUMMARY_DAILY_CAP minus this.
+ * @param {Record<string, any>} storeArg
+ * @param {string} day 'YYYY-MM-DD' (ET)
+ * @returns {number}
+ */
+export function summaryCallsOnDay(storeArg, day) {
+  let n = 0;
+  for (const [momentId, entry] of Object.entries(storeArg ?? {})) {
+    if (momentId === '_meta') continue;
+    n += summaryAttemptsOnDay(entry, day);
+  }
+  return n;
+}
+
+/* ------------------------------------------------------------------ *
+ * 6b · which summaries regenerate this run (Phase 0, 2026-09-25).
+ * ------------------------------------------------------------------ */
+
+/**
+ * Decide, per live question, whether its "Where it stands" regenerates on
+ * this run — and say why not when it does not. PURE: every input is a
+ * parameter, so tests/moment-updates-live-votes.unit.spec.ts can drive the
+ * whole decision with no filesystem, no network, and no model.
+ *
+ * NIGHTLY (unchanged in shape): regenerate when summaryRefreshReason says the
+ * issue moved — now with the flap guard (a flap that went A→B→A entirely
+ * between two revisions, or a status its own status sentence does not
+ * support, is not movement; a status that reverts what the page now says IS,
+ * because it is the correction).
+ *
+ * INCREMENTAL (new): regenerate ONLY when a `vote` update landed for that
+ * question on THIS run and survived the prune (`landedVotes`), and only while
+ * today's ET day has fewer than `intradayCap` of EITHER stored revisions or
+ * model calls (entry.summary_attempts, spent by writeSummaries before each
+ * call, the nightly's included). Nothing else opens the door intraday — a
+ * status change, a scheduled listing, a re-anchor all wait for the nightly
+ * exactly as before. A rejected or failed attempt is not retried until the
+ * next vote lands or the nightly runs, and it still spends one of the day's
+ * slots, so the cap bounds what we pay, not only what the page shows. Every
+ * call in both modes also comes out of ONE daily budget across all questions
+ * (MOMENT_SUMMARY_DAILY_CAP, enforced by main() through writeSummaries' cap).
+ *
+ * BOTH MODES: the floor guard defers a question whose vehicle has a floor
+ * event today and no roll call on it dated today in the vote data
+ * (floorPendingVehicles) — the state in which a summary is most likely to be
+ * contradicted within the hour. The vote that lifts the guard is itself a
+ * landing, so the deferred question is picked up by the run that sees it.
+ * Two limits on it (fix pass, 2026-09-25), because a vote that has landed
+ * must reach the page and a scheduled vote can slip for days:
+ *   - intraday, only a vehicle a vote landed on can hold the rewrite back. A
+ *     SIBLING measure on the floor today is no reason to keep a vote that
+ *     already happened off the page; when the sibling's own vote lands, that
+ *     is another landing (inside the same caps);
+ *   - it never defers a question whose current summary is missing or older
+ *     than FLOOR_GUARD_MAX_DEFER_HOURS (36h). The nightly runs at 14:15 UTC
+ *     (10:15 ET), before most floor votes, so without this a question whose
+ *     vehicle stayed on the floor day after day without a roll call could
+ *     skip every nightly; with it, at most one nightly in a row is deferred.
+ *
+ * @param {{
+ *   mode: 'nightly'|'incremental',
+ *   moments: Record<string, any>,
+ *   store: Record<string, any>,
+ *   billBySlug: Map<string, Record<string, any>>,
+ *   rollCalls?: Record<string, any>[],
+ *   floorSignals?: Record<string, any>|null,
+ *   landedVotes?: Map<string, Iterable<string>>,
+ *   now: Date|number,
+ *   intradayCap?: number,
+ *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
+ * }} args
+ * @returns {{ momentId: string, generate: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], intraday: boolean, day: string }[]}
+ */
+export function planSummaries({
+  mode,
+  moments: momentsArg,
+  store: storeArg,
+  billBySlug: bills,
+  rollCalls: rolls = [],
+  floorSignals: signals = null,
+  landedVotes = new Map(),
+  now: nowArg,
+  intradayCap = INTRADAY_SUMMARY_CAP,
+  unsupportedStatus = statusUnsupported,
+}) {
+  const today = etDay(nowArg);
+  const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
+  const windowFloor = shiftDay(today, -SUMMARY_WINDOW_DAYS);
+  const plan = [];
+  for (const [momentId, moment] of Object.entries(momentsArg ?? {})) {
+    if (!moment || moment.status === 'retired') continue;
+    const entry = storeArg?.[momentId];
+    if (!entry) continue;
+
+    const statuses = {};
+    // The record each status is read against — the two halves statusKeyFor
+    // needs to tell a live calendar placement from an aged one. Deliberately
+    // a SECOND map: `statuses` is persisted verbatim in the revision's
+    // grounded_in and diffed by summaryNeedsRefresh, so nothing here may
+    // change its shape.
+    const records = {};
+    for (const v of moment.vehicles ?? []) {
+      const bill = bills?.get(v.slug);
+      if (!bill?.status) continue;
+      statuses[v.slug] = bill.status;
+      records[v.slug] = {
+        lastActionText: bill.last_action_text ?? null,
+        lastActionDate: bill.last_action_date ?? null,
+      };
+    }
+    const slugs = Object.keys(statuses);
+    if (slugs.length === 0) continue;
+
+    const votes = (rolls ?? [])
+      .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
+      .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : Number(b.roll) - Number(a.roll)));
+    // `day` tells writeSummaries which ET day's attempt slot a call spends.
+    const base = { momentId, statuses, records, votes, intraday: mode !== 'nightly', day: today };
+
+    let why;
+    if (mode === 'nightly') {
+      const unsupported = new Set(slugs.filter((s) => unsupportedStatus(bills?.get(s))));
+      why = summaryRefreshReason(entry, statuses, nowArg, { unsupported });
+      if (!why) {
+        plan.push({ ...base, generate: false, reason: 'nothing moved' });
+        continue;
+      }
+    } else {
+      if (!landedVotes.has(momentId)) continue;
+      // The cap counts whichever is larger: revisions stored today (the
+      // nightly's included) or model calls spent today, successful or
+      // rejected (the nightly's included). So it bounds BOTH what the page
+      // shows and what we pay.
+      const revisions = revisionsOnDay(entry, today);
+      const attempts = summaryAttemptsOnDay(entry, today);
+      const already = Math.max(revisions, attempts);
+      if (already >= intradayCap) {
+        plan.push({
+          ...base,
+          generate: false,
+          reason: `a vote landed, but ${today} already has ${revisions} revision(s) and ${attempts} summary attempt(s) (intraday cap ${intradayCap})`,
+        });
+        continue;
+      }
+      why = 'a vote landed this run';
+    }
+
+    let pending = floorPendingVehicles({ slugs, todayET: today, updates: entry.updates ?? [], rollCalls: rolls, floorSignals: signals });
+    // Intraday, only the vehicles a vote landed on can hold it back — never a
+    // sibling measure (see the docstring).
+    if (mode !== 'nightly') {
+      const landedOn = new Set(landedVotes.get(momentId) ?? []);
+      pending = pending.filter((p) => landedOn.has(p.slug));
+    }
+    if (pending.length > 0) {
+      const detail = pending.map((p) => `${p.slug} (${p.signals.join(', ')})`).join('; ');
+      const lastAt = Date.parse(entry.summary_revisions?.at(-1)?.generated_at ?? '');
+      const ageMs = Number.isFinite(lastAt) ? nowMs - lastAt : Number.POSITIVE_INFINITY;
+      if (ageMs <= FLOOR_GUARD_MAX_DEFER_HOURS * 3_600_000) {
+        plan.push({
+          ...base,
+          generate: false,
+          reason: `deferred — floor live today with no roll call dated today in the vote record: ${detail}`,
+        });
+        continue;
+      }
+      const age = Number.isFinite(ageMs) ? `${Math.round(ageMs / 3_600_000)}h old` : 'missing';
+      why = `${why}; floor guard NOT applied — the current summary is ${age}, past the ${FLOOR_GUARD_MAX_DEFER_HOURS}h deferral ceiling (${detail})`;
+    }
+    plan.push({ ...base, generate: true, reason: why });
+  }
+  return plan;
+}
+
+/**
+ * Execute a plan: generate, lint, and append — at most `cap` MODEL CALLS this
+ * run (successful or not), and ZERO model calls for anything the plan did not
+ * mark `generate`. main() passes the day's remaining budget as `cap`
+ * (MOMENT_SUMMARY_DAILY_CAP minus summaryCallsOnDay), so the cap is a daily
+ * ceiling across every run of the ET day, not a per-run one. Exported so the
+ * "no call when capped/deferred" promise is tested, not assumed. Mutates
+ * `storeArg` (appends revisions, bumps summary_attempts), like the loop it
+ * replaced.
+ *
+ * @returns {Promise<number>} revisions written
+ */
+export async function writeSummaries({ plan, store: storeArg, moments: momentsArg, anthropic, cap = SUMMARY_DAILY_CAP }) {
+  let written = 0;
+  let calls = 0;
+  for (const p of plan) {
+    if (!p.generate) {
+      console.log(`  summary ${p.momentId}: ${p.reason} — not regenerated`);
+      continue;
+    }
+    if (calls >= cap) {
+      console.warn(`  summary ${p.momentId}: needs a refresh (${p.reason}) but the ET day's summary budget is spent (${cap} call(s) were left for this run) — a later run`);
+      continue;
+    }
+    if (!anthropic) {
+      console.warn(`  summary ${p.momentId}: needs a refresh (${p.reason}) but ANTHROPIC_API_KEY is unset — skipped`);
+      continue;
+    }
+    const entry = storeArg[p.momentId];
+    // Counted BEFORE the call, in both modes, so a call that throws or is
+    // rejected still spends its slot: the per-question intraday cap and the
+    // daily budget bound model calls, not successes (summaryAttemptsOnDay).
+    entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
+    calls++;
+    const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
+    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes);
+    if (!revision) continue;
+    // Belt and braces. On the nightly the prune's reserveRevisions holds the
+    // slot this append needs; on an incremental run the prune reserves
+    // nothing (reserving would evict a revision every hour for nothing), so
+    // THIS slice is what holds MAX_REVISIONS there — it is the only line that
+    // grows the array.
+    entry.summary_revisions = [...(entry.summary_revisions ?? []), revision].slice(-MAX_REVISIONS);
+    written++;
+    console.log(
+      `  summary ${p.momentId}: ${revision.id} (${p.reason}; ${revision.changed_because.join(', ')}; ${p.votes.length} roll call(s) in grounding)`,
+    );
+  }
+  return written;
+}
+
+/* ------------------------------------------------------------------ *
  * main
  * ------------------------------------------------------------------ */
 
@@ -1021,6 +1526,8 @@ async function main() {
   const candidates = [];
   candidates.push(...collectStatusChanges());
   candidates.push(...(await collectVehicleActions()));
+  // AFTER the /actions path: see collectRollCalls for why the order matters.
+  candidates.push(...collectRollCalls());
   candidates.push(...(await collectTier0()));
   if (MODE === 'nightly') candidates.push(...collectPressClusters());
 
@@ -1028,14 +1535,17 @@ async function main() {
   // endpoint) must render once, not twice — the action is the richer record.
   const afterSuppression = suppressRedundantStatusChanges(candidates);
 
-  const seen = new Set();
-  const fresh = [];
-  for (const c of afterSuppression) {
-    if (knownIds.has(c.id) || seen.has(c.id)) continue;
-    seen.add(c.id);
-    fresh.push(c);
+  const unstored = freshCandidates(afterSuppression, store);
+  // A candidate this run's own prune would delete is not collected at all —
+  // not decoded, not counted against the day's event room, never a landing.
+  // See survivingCandidates for the loop this closes.
+  const { kept: fresh, dropped: wouldPrune } = survivingCandidates(unstored, store, now);
+  for (const c of wouldPrune) {
+    console.log(`  not collected: ${c.id} (${c.class} ${c.vehicle} ${c.day}) — the storage envelope would prune it on this run's own prune`);
   }
-  console.log(`${candidates.length} candidate(s) collected, ${fresh.length} not already stored`);
+  console.log(
+    `${candidates.length} candidate(s) collected, ${unstored.length} not already stored, ${fresh.length} that would survive the prune`,
+  );
 
   // Daily event ceiling, counted off the STORED file's recorded_at (§6) — no new
   // Actions cache has to exist for it to hold across runs.
@@ -1082,14 +1592,20 @@ async function main() {
 
   // ---- merge ----
   const touched = new Set();
+  // Every vote row merged this run. Whether it LANDED — the only door an
+  // incremental run has to a "Where it stands" rewrite (planSummaries) — is
+  // decided after the prune below, off what is still in the store: a vote the
+  // dedupe folded away or the envelope trimmed never counts (landedVoteVehicles).
+  const mergedVotes = [];
   for (const c of storable) {
     const momentId = c[MOMENT_KEY];
     delete c[MOMENT_KEY];
     if (!store[momentId]) store[momentId] = { updates: [], summary_revisions: [] };
     store[momentId].updates = dedupeUpdates(store[momentId].updates ?? [], [c]);
     touched.add(momentId);
+    if (c.class === 'vote') mergedVotes.push({ momentId, id: c.id, vehicle: c.vehicle });
   }
-  console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s)`);
+  console.log(`merge: ${storable.length} update(s) into ${touched.size} moment(s), ${mergedVotes.length} of them vote(s)`);
 
   /* ---- prune: EVERY MODE, and that is the fix ----------------------------
    *
@@ -1131,60 +1647,43 @@ async function main() {
    * pruning afterwards would let the model summarize updates that are about to
    * be deleted and make changedBecause's `updates:+N` a count of events on
    * their way out of the file. Hoisting the loop out of the mode guard keeps
-   * that order exactly — prune, then (nightly only) summarize.
+   * that order exactly — prune, then summarize (the nightly always; an
+   * incremental run only when a vote landed, since 2026-09-25).
    * --------------------------------------------------------------------- */
   for (const momentId of pruneStore(store, moments, { now, mode: MODE })) {
     console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
   }
 
-  // ---- nightly: summarize ----
-  if (MODE === 'nightly') {
-    let summaries = 0;
-    for (const [momentId, moment] of Object.entries(moments)) {
-      if (moment?.status === 'retired') continue;
-      if (summaries >= SUMMARY_DAILY_CAP) break;
-      const entry = store[momentId];
-      if (!entry) continue;
+  // AFTER the prune: only a vote row that survived it is a landing.
+  const landedVotes = landedVoteVehicles(mergedVotes, store);
+  console.log(
+    `landed: ${landedVotes.size ? [...landedVotes].map(([m, v]) => `${m} (${[...v].join(', ')})`).join('; ') : 'no vote'} after the prune`,
+  );
 
-      const statuses = {};
-      // The record each status is read against — the two halves statusKeyFor
-      // needs to tell a live calendar placement from an aged one. Deliberately
-      // a SECOND map: `statuses` is persisted verbatim in the revision's
-      // grounded_in and diffed by summaryNeedsRefresh, so nothing here may
-      // change its shape.
-      const records = {};
-      for (const v of moment.vehicles ?? []) {
-        const bill = billBySlug.get(v.slug);
-        if (!bill?.status) continue;
-        statuses[v.slug] = bill.status;
-        records[v.slug] = {
-          lastActionText: bill.last_action_text ?? null,
-          lastActionDate: bill.last_action_date ?? null,
-        };
-      }
-      if (Object.keys(statuses).length === 0) continue;
-      if (!summaryNeedsRefresh(entry, statuses, now)) {
-        console.log(`  summary ${momentId}: nothing moved — not regenerated`);
-        continue;
-      }
-      if (!anthropic) {
-        console.warn(`  summary ${momentId}: needs a refresh but ANTHROPIC_API_KEY is unset — skipped`);
-        continue;
-      }
-      const contextRefs = (moment.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-      const revision = await generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records);
-      if (!revision) continue;
-      // Belt and braces. The reserveRevisions above is the belt — it holds the
-      // slot this append needs. This slice is the braces: if a second append
-      // path is ever added, or the prune is ever skipped for a moment this
-      // loop still reaches, the cap the CI gate enforces still holds at the
-      // only line that grows the array.
-      entry.summary_revisions = [...(entry.summary_revisions ?? []), revision].slice(-MAX_REVISIONS);
-      summaries++;
-      console.log(`  summary ${momentId}: ${revision.id} (${revision.changed_because.join(', ')})`);
-    }
-    console.log(`summaries: ${summaries} revision(s) written (cap ${SUMMARY_DAILY_CAP})`);
-  }
+  // ---- summarize: the nightly as before, plus a vote landing intraday ----
+  // Both modes now, because a vote that lands at 2pm must not wait until
+  // tomorrow's nightly to reach "Where it stands" (the 2026-09-24 failure).
+  // planSummaries is pure and says per question what happens and why;
+  // writeSummaries makes the calls. Still AFTER the prune, for the reason the
+  // prune's own note gives.
+  const plan = planSummaries({
+    mode: MODE,
+    moments,
+    store,
+    billBySlug,
+    rollCalls,
+    floorSignals,
+    landedVotes,
+    now,
+  });
+  // ONE daily budget for both modes: what the ET day has already spent, read
+  // off the stored counters, comes out of MOMENT_SUMMARY_DAILY_CAP.
+  const spentToday = summaryCallsOnDay(store, todayET);
+  const budget = Math.max(0, SUMMARY_DAILY_CAP - spentToday);
+  const summaries = await writeSummaries({ plan, store, moments, anthropic, cap: budget });
+  console.log(
+    `summaries: ${summaries} revision(s) written (mode ${MODE}; ${spentToday} call(s) already spent on ${todayET} ET of a daily cap of ${SUMMARY_DAILY_CAP} across all questions; intraday cap ${INTRADAY_SUMMARY_CAP} per question per ET day)`,
+  );
 
   // ---- write ----
   const entries = Object.fromEntries(Object.entries(store).filter(([k]) => k !== '_meta'));
