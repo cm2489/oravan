@@ -3,21 +3,42 @@
     "schema": 1,
     "note": "Big Questions status lines as last flagged by scripts/moment-watch.mjs --mode=status. Deleting it re-baselines (no status diff, review dates re-flagged)."
   },
-  "pastReview": [
-    "annual-defense-policy",
-    "crypto-oversight-split-between-sec-and-cftc",
-    "government-funding-deadline",
-    "iran-war-powers",
-    "paying-college-athletes",
-    "syria-sanctions-repeal"
-  ],
+  "pastReview": [],
   "questions": {
     "iran-war-powers": {
-      "review_by": "2026-08-22",
+      "review_by": "2026-10-05",
       "vehicles": {
+        "hconres-93-119": {
+          "fingerprint": "passedWaiting|senate||2026-09-16",
+          "text": "Received in the Senate and referred to the Committee on Foreign Relations."
+        },
+        "hconres-89-119": {
+          "fingerprint": "passedWaiting|senate||2026-07-23",
+          "text": "Received in the Senate and referred to the Committee on Foreign Relations."
+        },
+        "hconres-86-119": {
+          "fingerprint": "recordStep|||2026-06-24",
+          "text": "Message on Senate action sent to the House."
+        },
         "sjres-185-119": {
           "fingerprint": "failed|senate||2026-06-24",
           "text": "Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)"
+        },
+        "sjres-200-119": {
+          "fingerprint": "inCommittee|||2026-07-13",
+          "text": "Read twice and referred to the Committee on Foreign Relations."
+        },
+        "sjres-211-119": {
+          "fingerprint": "inCommittee|||2026-08-06",
+          "text": "Read twice and referred to the Committee on Foreign Relations."
+        },
+        "sjres-180-119": {
+          "fingerprint": "failed|senate||2026-07-23",
+          "text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207."
+        },
+        "sjres-181-119": {
+          "fingerprint": "failed|senate||2026-07-30",
+          "text": "Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)"
         },
         "sjres-172-119": {
           "fingerprint": "failed|senate||2026-06-16",
@@ -26,16 +47,16 @@
         "hconres-38-119": {
           "fingerprint": "failed|house||2026-03-05",
           "text": "Motion to reconsider laid on the table Agreed to without objection."
-        },
-        "hconres-89-119": {
-          "fingerprint": "passedWaiting|senate||2026-07-23",
-          "text": "Received in the Senate and referred to the Committee on Foreign Relations."
         }
       }
     },
     "government-funding-deadline": {
-      "review_by": "2026-08-22",
+      "review_by": "2026-11-30",
       "vehicles": {
+        "hr-6500-119": {
+          "fingerprint": "signed||119-103|2026-09-02",
+          "text": "Became Public Law No: 119-103."
+        },
         "hr-9770-119": {
           "fingerprint": "passedWaiting|senate||2026-07-22",
           "text": "Received in the Senate."
@@ -43,7 +64,7 @@
       }
     },
     "syria-sanctions-repeal": {
-      "review_by": "2026-09-08",
+      "review_by": "2026-10-05",
       "vehicles": {
         "s-3172-119": {
           "fingerprint": "onCalendar|senate||2026-07-27",
@@ -52,17 +73,21 @@
       }
     },
     "paying-college-athletes": {
-      "review_by": "2026-09-08",
+      "review_by": "2026-10-05",
       "vehicles": {
         "s-4668-119": {
-          "fingerprint": "onFloor|senate||2026-09-23",
-          "text": "Considered by Senate. (consideration: CR S4885)"
+          "fingerprint": "recordStep|||2026-09-24",
+          "text": "The committee substitute withdrawn by Voice Vote."
         }
       }
     },
     "annual-defense-policy": {
-      "review_by": "2026-09-08",
+      "review_by": "2026-10-05",
       "vehicles": {
+        "hr-8800-119": {
+          "fingerprint": "passedWaiting|senate||2026-09-14",
+          "text": "Received in the Senate."
+        },
         "s-4784-119": {
           "fingerprint": "recordStep|||2026-07-27",
           "text": "Motion to proceed to consideration of measure made in Senate. (CR S4276)"
@@ -70,7 +95,7 @@
       }
     },
     "crypto-oversight-split-between-sec-and-cftc": {
-      "review_by": "2026-09-08",
+      "review_by": "2026-10-05",
       "vehicles": {
         "hr-3633-119": {
           "fingerprint": "failedReconsider|senate||2026-09-15",
