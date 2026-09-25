@@ -9,7 +9,7 @@ import { BillCard } from '@/components/BillCard';
 import { RepCard, RepContact, RepPortrait, repRoleKey, usePartyLabel } from '@/components/RepCard';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
-import { Chip } from '@/components/system';
+import { AiNote } from '@/components/system';
 import {
   billSlug,
   getAllLegislators,
@@ -252,11 +252,11 @@ function MemberBody({
                 <p className="mt-3 max-w-read text-sm text-ink-2">
                   {t('sponsoredNote', { count: sponsored.length })}
                 </p>
-                <p className="mt-3">
-                  <Chip tone="ai" marker={tCommon('aiMarker')}>
-                    {t('aiNote')}
-                  </Chip>
-                </p>
+                {/* Eight words: over the ai chip's short-label budget, so a
+                    caption (AiNote), in the same first-contact spot. */}
+                <AiNote marker={tCommon('aiMarker')} className="mt-3 max-w-read">
+                  {t('aiNote')}
+                </AiNote>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {shown.map((b) => (
                     <BillCard key={b.slug} bill={b} />

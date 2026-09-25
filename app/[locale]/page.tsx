@@ -11,7 +11,7 @@ import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { FloorEvidence } from '@/components/FloorEvidence';
-import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
+import { AiMark, AiNote, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
 import {
   billSlug,
   getAllBills,
@@ -195,6 +195,12 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
         <p className="mt-4 border-t-[1.5px] border-line pt-4 text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
           {t('specimenPlain')}
         </p>
+        {/* The AI label, at FIRST contact with the decode it labels (it sat at
+            the card's foot, after the decode, until 2026-09-25) and as a
+            caption: seven words is over the ai chip's short-label budget. */}
+        <AiNote marker={t('aiMarker')} className="mt-2">
+          {t('aiReviewed')}
+        </AiNote>
         {/* `tint` means DECODED-FOR-YOU here, the same way it means "your own
             words" in the transcript: the plain-words half of the pair. */}
         <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
@@ -219,11 +225,6 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
               <span className="tabular-nums">{tShared('bills.updated', { date: dateLabel })}</span>
             )}
           </div>
-          <p className="mt-3">
-            <Chip tone="ai" marker={t('aiMarker')}>
-              {t('aiReviewed')}
-            </Chip>
-          </p>
           <Link
             href={`/bills/${billSlug(bill)}`}
             className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
@@ -688,9 +689,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 in sentence case (owner, 2026-08-01 — the bold-uppercase
                 version at the top read as shouting); every entry still lands
                 on a labeled surface one click away. */}
-            <p className="mt-2 max-w-read text-xs text-pretty text-ink-pale">
+            {/* AiNote (2026-09-25): the same caption in the same place, now
+                carrying the AI mark every other AI caption on the site
+                carries, and the dark ground's leading. */}
+            <AiNote ground="ink" marker={t('aiMarker')} className="mt-2 max-w-read">
               {tShared('moments.aiNote')}
-            </p>
+            </AiNote>
           </div>
         </section>
       )}
@@ -821,9 +825,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {tShared(`categories.${feature.bill.issue_tags[0]}`)}
                     </Chip>
                   )}
-                  <Chip tone="ai" ground="go" marker={t('aiMarker')}>
+                  <AiNote ground="go" marker={t('aiMarker')}>
                     {t('aiReviewed')}
-                  </Chip>
+                  </AiNote>
                 </>
               }
             />
@@ -864,16 +868,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               border-b rules carry the listing's structure. */}
           {listed.length > 0 && (
             <div className="mt-6">
-              {/* These headlines are `ai_headline` — decoded text. The hero's
-                  AI chip is scoped to "the bill and the script" and the panel
-                  above carries its own, so without this the only unlabeled
-                  AI content on the page was the part that reads most like
-                  editorial copy. The label sits with the content, per DESIGN.md. */}
-              <p>
-                <Chip tone="ai" marker={t('aiMarker')}>
-                  {t('aiReviewed')}
-                </Chip>
-              </p>
+              {/* These headlines are `ai_headline` — decoded text, and they
+                  need a label where they are the week's first AI content: a
+                  QUIET week, where no crown renders above them. On a HOT week
+                  the crown directly above is the first contact — its own meta
+                  row carries this same string, and these rows continue its
+                  list (one list, see above) — so a second copy here was the
+                  same sentence twice within ~160px at 390 (UI audit
+                  2026-09-25, F4). One label per block, at first contact:
+                  whichever of the two the week renders first. */}
+              {!crowned && (
+                <AiNote marker={t('aiMarker')}>{t('aiReviewed')}</AiNote>
+              )}
               {listed.map((b) => {
                 return (
                   <article

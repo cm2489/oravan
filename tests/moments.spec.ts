@@ -115,12 +115,16 @@ test.describe('/questions/[id] detail page', () => {
 
       // AI labeling — the existing bill.aiChip idiom, reused verbatim.
       await expect(page.getByText(en.bill.aiChip, { exact: true })).toBeVisible();
-      // .first(): the v2 live layer puts the SAME standing disclaimer under
-      // the "Where it stands" state summary too, so on a moment carrying a
-      // revision this string legitimately appears twice. One site-wide AI
-      // caveat, repeated under each AI passage, is the intended posture —
-      // tests/moment-updates-page.spec.ts asserts the second occurrence.
-      await expect(page.getByText(en.bill.aiDisclaimer).first()).toBeVisible();
+      // The standing caveat rides the SAME note as the label since
+      // 2026-09-25 (one disclosure per block, at first contact — it used to
+      // trail the passage as a second, bold caption). .first(): the v2 live
+      // layer's "Where it stands" note carries it too;
+      // tests/moment-updates-page.spec.ts asserts that occurrence.
+      await expect(page.getByText(en.moments.aiVerify, { exact: true }).first()).toBeVisible();
+      // And the trailing duplicate is gone from the question page: the
+      // bill page keeps its own `bill.aiDisclaimer`, this page no longer
+      // prints the same caveat twice around one passage.
+      await expect(page.getByText(en.bill.aiDisclaimer)).toHaveCount(0);
 
       // The vehicles grid leads with AI-decoded headlines and its CTA is the
       // phone call — the one place unlabeled AI text sat directly on the

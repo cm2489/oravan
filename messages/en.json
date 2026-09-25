@@ -923,6 +923,7 @@
     "vehiclesLedeNominations": "The Senate nominations this question actually runs through. Each opens the Senate's own record — and, where that record shows a decision the Senate can still make, the call flow, with support and oppose scripts equally one tap away.",
     "vehiclesLedeMixed": "The bills and Senate nominations this question actually runs through. Each opens the record — and, where that record still has a call to make, the call flow, with support and oppose scripts equally one tap away.",
     "vehiclesAiNote": "Plain-language text on these cards — the decoded headline, where there is one, and the summary of what a yes and a no vote do — is AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
+    "aiVerify": "Verify it against the official text before you act on it.",
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
     "bothNoteSomeNoCall": "No side is pre-selected. Where a record still has a call to make, the same call flow opens, with support and oppose scripts equally available.",
     "readCall": "Read + call",

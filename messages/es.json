@@ -923,6 +923,7 @@
     "vehiclesLedeNominations": "Las nominaciones ante el Senado por las que realmente pasa esta cuestión. Cada una abre el registro del propio Senado — y, cuando ese registro muestra una decisión que el Senado todavía puede tomar, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
     "vehiclesLedeMixed": "Los proyectos de ley y las nominaciones ante el Senado por los que realmente pasa esta cuestión. Cada uno abre el registro — y, cuando en ese registro todavía queda una llamada que hacer, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
     "vehiclesAiNote": "El texto en lenguaje claro de estas tarjetas — el titular descifrado, si lo hay, y el resumen de qué hacen un voto a favor y uno en contra — lo redacta la IA y lleva esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
+    "aiVerify": "Verifícalo con el texto oficial antes de actuar.",
     "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "bothNoteSomeNoCall": "Ningún lado está preseleccionado. Cuando en un registro todavía queda una llamada que hacer, se abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",

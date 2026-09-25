@@ -1,13 +1,19 @@
 import type { ReactNode } from 'react';
+import { AI_LABEL_MAX_WORDS, aiLabelWordCount } from './ai-label';
 
 /*
  * THE CHIP FAMILY — four tones, one shape, and a law behind each.
  *
- *   ai      The AI label at first contact. UNBOXED since 2026-08-01 (owner
- *           ruling): the filled marker holding the AI mark plus a small
- *           tracked caption, no outline — the label is a caption on the
- *           content, not a component competing with it. Still always WITH
- *           the AI content it labels, never in a footnote.
+ *   ai      A SHORT AI label (≤6 words, both locales — ./ai-label.ts). UNBOXED
+ *           since 2026-08-01 (owner ruling): the filled marker holding the AI
+ *           mark plus a small tracked caption, no outline. It is a LABEL
+ *           voice — tracked capitals — and is typed to a plain string so its
+ *           length can be checked. A disclosure SENTENCE never goes here: it
+ *           goes in `AiNote` (./AiNote.tsx), the same mark with a
+ *           sentence-case caption. (2026-09-25: five surfaces had fed 50–280
+ *           character disclosures into this chip and shipped them as 5–8
+ *           lines of capitals, the exact paragraph the 2026-08-01 ruling
+ *           demoted.) Still always WITH the AI content it labels.
  *   urgent  The ONLY amber in the product. One fact: a bill standing on the
  *           floor calendar. Ink text on amber (11.44:1), and the date is
  *           PRINTED — the type below makes `dateLabel` impossible to omit.
@@ -53,6 +59,12 @@ export type ChipProps = ChipBase &
     | {
         tone: 'ai';
         /**
+         * The label itself — a plain string, already localized, of at most
+         * AI_LABEL_MAX_WORDS words in either locale. Typed `string` (not
+         * ReactNode) so the budget is checkable; a sentence goes in AiNote.
+         */
+        children: string;
+        /**
          * The AI mark, from messages — "AI" (en) / "IA" (es). Omit only if
          * the children already carry the mark.
          */
@@ -81,10 +93,11 @@ const OUTLINE: Record<ChipGround, string> = {
   go: 'border-go-pale text-go-pale',
 };
 
-/** The unboxed AI caption's text tone per ground. Computed passes at 12px
- *  bold: ink-2-on-paper 7.87 · ink-pale-on-ink 10.82 · go-pale-on-go-deep
- *  6.86. */
-const AI_TEXT: Record<ChipGround, string> = {
+/** The unboxed AI caption's text tone per ground, shared with AiNote so the
+ *  two can never drift. Computed passes (AA at 12px bold and at 13px
+ *  regular alike): ink-2-on-paper 7.87 · ink-pale-on-ink 10.82 ·
+ *  go-pale-on-go-deep 6.86. */
+export const AI_TEXT: Record<ChipGround, string> = {
   paper: 'text-ink-2',
   ink: 'text-ink-pale',
   go: 'text-go-pale',
@@ -97,10 +110,9 @@ const AI_MARKER: Record<ChipGround, string> = {
 };
 
 /**
- * The filled AI mark on its own — for the one surface (the hero credit
- * line) whose caption is multi-line prose rather than a chip. Same colors
- * and stamp radius as the mark inside the chip, exported so the two can
- * never drift.
+ * The filled AI mark on its own — for a caption that is prose rather than a
+ * chip: the hero credit line, and every `AiNote`. Same colors and stamp
+ * radius as the mark inside the chip, exported so the two can never drift.
  */
 export function AiMark({ ground = 'paper', children }: ChipBase) {
   return (
@@ -135,6 +147,17 @@ export function Chip(props: ChipProps) {
   }
 
   if (props.tone === 'ai') {
+    // The budget is enforced by tests/ai-label.unit.spec.ts over every call
+    // site's message key; this is the same check, said once in dev, for a
+    // label that arrives some other way.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      aiLabelWordCount(props.children) > AI_LABEL_MAX_WORDS
+    ) {
+      console.warn(
+        `[Chip ai] "${props.children.slice(0, 40)}…" is over ${AI_LABEL_MAX_WORDS} words — a disclosure sentence belongs in AiNote, not a tracked-caps label.`
+      );
+    }
     // Unboxed: marker + tracked caption. items-start keeps the mark on the
     // first line when a narrow column wraps the caption.
     return (

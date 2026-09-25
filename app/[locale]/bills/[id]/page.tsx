@@ -17,7 +17,7 @@ import { VoteRecord } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
-import { Chip, FloorVotePanel, Stamp } from '@/components/system';
+import { AiNote, Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
@@ -506,10 +506,14 @@ export default async function BillPage({
                 )}
               </span>
             </p>
+            {/* The AI mark, as a caption (AiNote): `bill.aiLabel` is seven
+                words, over the ai chip's short-label budget, and set in tracked
+                capitals it wrapped to two lines under the status chip. Same
+                string, same first-contact spot, same `hasDecode` gate. */}
             {hasDecode && (
-              <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
+              <AiNote marker={t('bill.aiMarker')} className="mt-2">
                 {t('bill.aiLabel')}
-              </Chip>
+              </AiNote>
             )}
           </div>
           {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now

@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Chip } from '@/components/system';
+import { AiNote, Chip } from '@/components/system';
 import { collapseQuietDays, linkHost, timelineDays } from '@/lib/moments-ui';
 import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updates';
 
@@ -149,12 +149,12 @@ export function MomentTimeline({
 
   return (
     <div className="mt-6">
+      {/* A sentence, so a caption (AiNote) rather than the tracked-caps
+          chip — the label's position and its data gate are unchanged. */}
       {hasAi && (
-        <p className="mb-6">
-          <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-            {t('moments.updates.timelineAiChip')}
-          </Chip>
-        </p>
+        <AiNote marker={t('common.aiMarker')} className="mb-6 max-w-read">
+          {t('moments.updates.timelineAiChip')}
+        </AiNote>
       )}
 
       {collapseQuietDays(days).map((row) => {

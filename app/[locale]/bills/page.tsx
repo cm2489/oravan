@@ -3,7 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { BillsBrowser } from '@/components/BillsBrowser';
 import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
-import { Chip } from '@/components/system';
+import { AiNote } from '@/components/system';
 import { getNewsBills, getTeasers } from '@/lib/core';
 import { getMomentSearchTeasers } from '@/lib/moments-ui';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -41,12 +41,13 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
         <StalenessNote checkedAt={freshness.checkedAt} />
       </p>
       {/* AI labeled at first contact: every headline in the feed below is an
-          AI decode, so the label goes above the feed, not in a footnote. */}
-      <p className="mt-5">
-        <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-          {t('bills.aiNote')}
-        </Chip>
-      </p>
+          AI decode, so the label goes above the feed, not in a footnote. A
+          sentence, so a caption (AiNote) — as a tracked-caps chip it was five
+          lines of capitals at 390px, the paragraph the 2026-08-01 ruling
+          demoted. It sits under the "Data as of" line as one metadata pair. */}
+      <AiNote marker={t('common.aiMarker')} className="mt-2 max-w-read">
+        {t('bills.aiNote')}
+      </AiNote>
       {/* Search-first (2026-07 critique, majority P0): the page's stated
           purpose - find and browse bills - leads; the news lens follows as
           compact rows instead of a duplicated homepage card wall. */}

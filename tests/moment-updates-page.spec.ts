@@ -106,9 +106,14 @@ test.describe('"Where it stands" — the state summary', () => {
       const chip = page.getByText(en.moments.updates.summaryAiChip, { exact: true });
       if (isAiSummary(revision)) {
         await expect(chip.first()).toBeVisible();
-        // The standing site-wide AI disclaimer sits under it (it also sits
-        // under the hand-authored summary above, hence .last()).
-        await expect(page.getByText(en.bill.aiDisclaimer).last()).toBeVisible();
+        // The standing caveat rides the same note as the label, at first
+        // contact (2026-09-25 — it used to trail the passage as a second
+        // caption). The section above carries one too, hence the scope.
+        await expect(
+          page
+            .locator('section[aria-labelledby="where-it-stands"]')
+            .getByText(en.moments.aiVerify, { exact: true })
+        ).toBeVisible();
       } else {
         // Nothing labels the passage as AI: no chip stands over it (any chip
         // in the DOM at all would be the one inside the closed revision

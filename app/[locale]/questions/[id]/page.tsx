@@ -11,7 +11,7 @@ import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimelin
 import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
 import { StalenessNote } from '@/components/StalenessNote';
-import { Chip } from '@/components/system';
+import { AiNote, Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
 // Imported DIRECTLY, never through the lib/core barrel — that module's header
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
@@ -196,8 +196,9 @@ export default async function MomentPage({
   // stamped `hand-authored`, and a chip over human text is over-labeling,
   // which erodes the label exactly as under-labeling does).
   //
-  // The CURRENT summary decides the chip and the disclaimer, because both sit
-  // directly above and below the passage they describe (first contact). The
+  // The CURRENT summary decides the label (one AI note carrying the label and
+  // its standing caveat), because it sits directly above the passage it
+  // describes (first contact). The
   // history is checked separately so that a hand-authored current summary
   // over an AI history still labels the AI text — no summary a model wrote
   // ever renders unlabeled.
@@ -349,18 +350,28 @@ export default async function MomentPage({
                 labels. This chip stood in the header over the dek; the dek was
                 the summary's own first sentence rendered twice within one mobile
                 screen (2026-08 review), so the duplicate render dropped and the
-                label moved down with the passage. */}
-            <p className="mt-4">
-              <Chip tone="ai" marker={t('common.aiMarker')}>
-                {t('bill.aiChip')}
-              </Chip>
-            </p>
+                label moved down with the passage.
+
+                ONE DISCLOSURE, NOT TWO (2026-09-25). The label and its standing
+                caveat ("verify it against the official text…") used to print
+                on either side of the passage — a caps chip above, a bold
+                caption below, the same disclosure twice for one block. They are
+                one AiNote now, at first contact: the label line is still
+                `bill.aiChip` verbatim (funnel invariant I1 reads it), and the
+                caveat under it drops only the "AI-drafted summary." that the
+                label line already says. */}
+            <AiNote
+              marker={t('common.aiMarker')}
+              label={t('bill.aiChip')}
+              className="mt-4 max-w-read"
+            >
+              {t('moments.aiVerify')}
+            </AiNote>
             <p className="mt-4 max-w-read font-reading text-lg text-ink">{summary}</p>
-            <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
             {/* When a person last read this summary against the record — the
                 honest replacement for hiding a question past its review date.
                 `reviewed` when a renewal PR set it, else the day it opened. */}
-            <p className="mt-2 max-w-note text-xs text-ink-2">
+            <p className="mt-5 max-w-note text-xs text-ink-2">
               {t('moments.status.lastReviewed', { date: fmtDate(lastReviewedDay(moment)) })}
             </p>
           </section>
@@ -378,8 +389,9 @@ export default async function MomentPage({
               named sources speak or nobody does. Speculation never wears our
               voice." The gate lints this text in BOTH languages before it can
               land; what the page owes the law is the labeling and the receipts —
-              the AI chip above the passage, the standing disclaimer under it, and
-              the dated record of every time the summary was rewritten. */}
+              the AI note above the passage (its label and standing caveat in one
+              disclosure), and the dated record of every time the summary was
+              rewritten. */}
           {/* VERBATIM_MODE hides this entire block: unlike a timeline item, a
               summary has no government record to fall back to, so the honest
               off-state is silence (the section is already absent when no revision
@@ -390,14 +402,18 @@ export default async function MomentPage({
                 {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
               </h2>
               {/* AI labeled at FIRST contact — above the passage, never in a
-                  footnote. Reuses the page's own chip pattern, and appears only
-                  when a model wrote the passage below it (see `currentIsAi`). */}
+                  footnote — and only when a model wrote the passage below it
+                  (see `currentIsAi`). The standing caveat that used to trail
+                  the passage rides the same note (see the section above): one
+                  disclosure per block. */}
               {currentIsAi && (
-                <p className="mt-4">
-                  <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-                    {t('moments.updates.summaryAiChip')}
-                  </Chip>
-                </p>
+                <AiNote
+                  marker={t('common.aiMarker')}
+                  label={t('moments.updates.summaryAiChip')}
+                  className="mt-4 max-w-read"
+                >
+                  {t('moments.aiVerify')}
+                </AiNote>
               )}
               {/* Franklin, not Besley: the reading voice is spent on the ONE
                   passage above (a bill's decoded prose and the words a caller
@@ -407,12 +423,6 @@ export default async function MomentPage({
               <p className="mt-4 max-w-read text-md text-ink">
                 {localeText(summaryRevision.text, locale)}
               </p>
-              {/* The standing caveat describes AI text ("AI-drafted summary…"),
-                  so it travels with the chip: both are claims about how the
-                  passage above was written. */}
-              {currentIsAi && (
-                <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
-              )}
 
               {/* The site's existing native-disclosure idiom (WalkthroughDisclosure):
                   the browser's own marker is kept and merely toned, so the
@@ -423,16 +433,16 @@ export default async function MomentPage({
                     {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
                   </summary>
                   {/* The label follows the AI text. When the current summary is
-                      hand-authored the chip above is gone, and any model-written
+                      hand-authored the note above is gone, and any model-written
                       version in the history would otherwise render with no label
                       at all — so it moves here, once, over the list it describes.
-                      Still one AI chip per section (v2 spec §7), never two. */}
+                      Still one AI label per section (v2 spec §7), never two. */}
                   {!currentIsAi && historyIsAi && (
-                    <p className="mt-1 mb-2">
-                      <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-                        {t('moments.updates.summaryAiChip')}
-                      </Chip>
-                    </p>
+                    <AiNote
+                      marker={t('common.aiMarker')}
+                      label={t('moments.updates.summaryAiChip')}
+                      className="mt-1 mb-2 max-w-read"
+                    />
                   )}
                   <ol className="mt-2 list-none">
                     {priorRevisions.map((rev) => {
@@ -544,11 +554,11 @@ export default async function MomentPage({
                 one" clause is what keeps the headline half honest on a card that
                 fell back to its official title — including a nomination card,
                 whose headline is Congress.gov's own sentence verbatim. */}
-            <p className="mt-5">
-              <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
-                {t('moments.vehiclesAiNote')}
-              </Chip>
-            </p>
+            {/* A 49-word sentence: a caption (AiNote), never the tracked-caps
+                chip, which set it as eight lines of capitals at 390px. */}
+            <AiNote marker={t('common.aiMarker')} className="mt-5 max-w-note">
+              {t('moments.vehiclesAiNote')}
+            </AiNote>
 
             {/* THE TRACK COUNT IS THE CONTAINER'S TO DECIDE, not a breakpoint's.
                 `sm:grid-cols-2` came off when the desk landed, justified as

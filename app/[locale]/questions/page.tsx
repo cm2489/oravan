@@ -4,7 +4,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { glossaryTag } from '@/components/glossary-tags';
 import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
-import { Chip } from '@/components/system';
+import { AiNote } from '@/components/system';
 import { getMoments, momentClaimsVehicles, vehicleKind, type MomentWithState } from '@/lib/moments';
 import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
@@ -79,12 +79,12 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
         <StalenessNote checkedAt={freshness.checkedAt} />
       </p>
       {/* AI labeled at first contact: every dek below is the first sentence
-          of an AI-drafted summary, so the label sits above the grid. */}
-      <p className="mt-5">
-        <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-          {t('moments.aiNote')}
-        </Chip>
-      </p>
+          of an AI-drafted summary, so the label sits above the grid — as a
+          caption (AiNote), not the six lines of tracked capitals the chip
+          made of this sentence. */}
+      <AiNote marker={t('common.aiMarker')} className="mt-2 max-w-read">
+        {t('moments.aiNote')}
+      </AiNote>
       {/* The privacy line (v2 spec §7): threaded through, never a banner. It
           sits beside the AI note because the two are the same disclosure —
           here is what a machine wrote, and here is what nobody recorded about
