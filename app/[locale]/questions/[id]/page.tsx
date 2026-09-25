@@ -365,7 +365,7 @@ export default async function MomentPage({
           </section>
 
           {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
-              §7). It sits BELOW the hand-authored section above on purpose: the
+              §7). It sits BELOW the summary section above on purpose: the
               issue stays front-and-center and dated motion is subordinate to it.
               Renders NOTHING when no revision exists — an empty placeholder
               promising a summary later is a claim about our pipeline, not about
@@ -535,8 +535,7 @@ export default async function MomentPage({
                 closer to the green call CTA than the headline does. It is drafted
                 by scripts/moment-draft.mjs today (DRAFT_FIELDS, CLAUDE.md's
                 2026-08-07 amendment), and the two July moments' role clauses were
-                written in a PR the same way; the owner edits and merges them, which
-                is review, not authorship. So the note names both pieces, and it is
+                written in a PR the same way. So the note names both pieces, and it is
                 NO LONGER GATED ON THE DECODE: the gate requires a non-empty `role`
                 on every vehicle (lib/moments-gate.mjs), so this section always
                 carries AI-drafted prose, decode or no decode. The "where there is

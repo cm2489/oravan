@@ -75,9 +75,13 @@
  * rather than copied so this scaffold and the nightly journey-corpus sweep
  * cannot disagree about one sentence. lib/floor-text.mjs is likewise
  * import-free and free of import.meta.
+ *
+ * And `statusBasisText` from the same module (2026-09-25): the sentence a
+ * bill's status was READ from, which every other chamber/tense reader has used
+ * since #286. See floorActionInRecord's header for why this one must too.
  */
 import { CATEGORIES, SIGNAL_TYPES, lintForbidden } from '../lib/moments-gate.mjs';
-import { floorMakesNoClaim } from '../lib/floor-text.mjs';
+import { floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
 
 const DAY_MS = 86_400_000;
 
@@ -289,16 +293,37 @@ const FLOOR_ACTION_PATTERNS = [
  *   2. it is NOT a placement (`floorCalendar`, the strict gate in
  *      scripts/moment-candidates.mjs) — a placement is the other type, and
  *      the two must never both fire;
- *   3. the last action TEXT matches one of the measured shapes above. With no
+ *   3. the record TEXT matches one of the measured shapes above. With no
  *      text on file this is false, and the caller emits nothing.
  *
+ * WHICH TEXT: THE SENTENCE THE STATUS WAS READ FROM (2026-09-25). Condition 1
+ * only holds if this reads the same sentence the status came from, and since
+ * #285/#286 that is not always `last_action_text`. When the latest step is an
+ * ambiguous notice — "Motion to reconsider laid on the table Agreed to without
+ * objection." is laid after ANY recorded House vote, won or lost — the
+ * pipeline reads the action before it and stores that as `status_basis_text`
+ * (scripts/congress-fetch.mjs's AMBIGUOUS_WITHOUT_CONTEXT). The nightly of
+ * 2026-09-24 did exactly that for H.R. 2262, H.R. 1329 and four House
+ * concurrent resolutions: `floor_vote`, read from "Failed of passage/not
+ * agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll
+ * no. 19).". The journey, the docket ladder, the floor panel and the nightly
+ * journey-corpus sweep all read that defeat (lib/floor-text.mjs's
+ * statusBasisText) and say the House voted it down. This matcher was the one
+ * reader still looking at the bare notice, which says nothing about the
+ * floor in either direction. Callers pass `statusBasisText(bill)` (signalFor
+ * does, from its `basisText` option); the defeat then matches no
+ * floor-action shape and derives NOTHING — a settled vote is not "the chamber
+ * moving on the measure".
+ *
  * @param {Record<string, any>} c            one entry of buildReport().candidates
- * @param {string | null} [lastActionText]   the bill's own `last_action_text`
+ * @param {string | null} [recordText]       the sentence the bill's status was read
+ *        from: `statusBasisText(bill)` — `status_basis_text` behind an ambiguous
+ *        latest step, else the bill's own `last_action_text`
  */
-export function floorActionInRecord(c, lastActionText = null) {
+export function floorActionInRecord(c, recordText = null) {
   if (c?.status !== 'floor_vote') return false;
   if (c?.floorCalendar) return false;
-  const text = String(lastActionText ?? '');
+  const text = String(recordText ?? '');
   // A shape read and judged claim-free derives NOTHING. The live case is a
   // House discharge petition being FILED (owner ruling 2026-09-24, #268): it
   // says "motion to discharge", which the pattern list reads as floor action,
@@ -348,17 +373,28 @@ export function floorActionInRecord(c, lastActionText = null) {
  *
  * @param {Record<string, any>} c  one entry of buildReport().candidates
  * @param {{ url?: string, outlet?: string, lean?: string | null }[]} articles
- * @param {{ now?: number, lastActionText?: string | null }} [opts]
+ * @param {{ now?: number, lastActionText?: string | null, basisText?: string | null }} [opts]
  *        `lastActionText` is the bill's own `last_action_text`, which the
  *        candidate object does not carry (structureFor has the bill row and
  *        passes it). Omitting it cannot produce a signal — see
  *        floorActionInRecord — so a caller that forgets degrades to the empty
  *        box the owner already knows how to fill, never to a wrong type.
+ *        `basisText` is `statusBasisText(bill)` (lib/floor-text.mjs): the
+ *        sentence the status was READ from, which is what the floor-action
+ *        derivation reads (see floorActionInRecord's header). It differs from
+ *        `lastActionText` only behind an ambiguous notice such as "Motion to
+ *        reconsider laid on the table…"; absent, the last action is read, as
+ *        before. The notes name both sentences when they differ, so the owner
+ *        sees the latest step AND the one the scaffold reasoned from.
  * @returns {{ signal: { type: string, refs: string[] }, note: string | null }}
  */
-export function signalFor(c, articles = [], { now = Date.now(), lastActionText = null } = {}) {
+export function signalFor(c, articles = [], { now = Date.now(), lastActionText = null, basisText = null } = {}) {
   const empty = { type: '', refs: [] };
   const types = '`' + SIGNAL_TYPES.join('` · `') + '`';
+  // The sentence every floor derivation below reads: the stored basis behind
+  // an ambiguous latest step, else the latest step itself.
+  const recordText = basisText || lastActionText || null;
+  const readBehindNotice = !!(basisText && lastActionText && basisText !== lastActionText);
 
   if (c?.floorCalendar) {
     if (!isHttps(c?.url)) {
@@ -370,11 +406,11 @@ export function signalFor(c, articles = [], { now = Date.now(), lastActionText =
     return { signal: { type: 'tier0_floor', refs: [c.url.trim()] }, note: staleSignalNote(c, now) };
   }
 
-  if (floorActionInRecord(c, lastActionText)) {
+  if (floorActionInRecord(c, recordText)) {
     if (!isHttps(c?.url)) {
       return {
         signal: empty,
-        note: `**\`qualifying_signal\` is empty and needs you.** The record shows floor action on the measure — “${lastActionText}” — which is a \`tier0_floor_action\` signal, but the candidate carries no https congress.gov URL to cite as its ref. Add the record link.`,
+        note: `**\`qualifying_signal\` is empty and needs you.** The record shows floor action on the measure — “${recordText}” — which is a \`tier0_floor_action\` signal, but the candidate carries no https congress.gov URL to cite as its ref. Add the record link.`,
       };
     }
     const record = c.url.trim();
@@ -398,7 +434,7 @@ export function signalFor(c, articles = [], { now = Date.now(), lastActionText =
   return {
     signal: empty,
     note:
-      `**\`qualifying_signal\` is empty and needs you.** Nothing on this record earns a type on its own: its own last action neither says a chamber placed it on a calendar (so \`tier0_floor\` would be a claim the record does not make — it cleared the notification floor on its \`${c?.status}\` status alone) nor reads as floor action on the measure — ${lastActionText ? `it says “${lastActionText}”` : 'no last-action text was on file to read'} — so \`tier0_floor_action\` would be the same kind of claim; and its coverage is \`${c?.tier}\`, not \`cross\` (so \`press\`, which means "across the spectrum", would be false). ` +
+      `**\`qualifying_signal\` is empty and needs you.** Nothing on this record earns a type on its own: its own last action neither says a chamber placed it on a calendar (so \`tier0_floor\` would be a claim the record does not make — it cleared the notification floor on its \`${c?.status}\` status alone) nor reads as floor action on the measure — ${readBehindNotice ? `its latest step, “${lastActionText}”, cannot be read on its own, so its status was read from the action before it, which says “${recordText}”` : recordText ? `it says “${recordText}”` : 'no last-action text was on file to read'} — so \`tier0_floor_action\` would be the same kind of claim; and its coverage is \`${c?.tier}\`, not \`cross\` (so \`press\`, which means "across the spectrum", would be false). ` +
       `Deliberately NOT auto-filled with \`tier0_scheduled\`: the corpus holds no scheduled-vote date and none is derivable from a status. Pick from ${types} and attach https refs.`,
   };
 }
@@ -580,10 +616,13 @@ export function structureFor(c, bill, { now = Date.now(), articles = [], takenId
 
   /* The bill row is here and the candidate object is not, so this is the one
      place that can hand signalFor the record sentence its floor-action
-     derivation reads. Absent (no row, no text) it degrades to the empty box. */
+     derivation reads: the sentence the status was read from
+     (statusBasisText), plus the latest step the notes quote beside it.
+     Absent (no row, no text) it degrades to the empty box. */
   const { signal, note: signalNote } = signalFor(c, articles, {
     now,
     lastActionText: bill?.last_action_text ?? null,
+    basisText: statusBasisText(bill),
   });
   if (!SIGNAL_TYPES.includes(signal.type) || signal.refs.length === 0) gaps.push('qualifying_signal');
 
