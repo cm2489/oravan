@@ -28,7 +28,9 @@ import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mj
 // The read-but-claim-free reading, from the ONE copy (lib/floor-text.mjs) —
 // the totality sweep below has to exempt exactly what the nightly
 // journey-corpus sweep exempts, or the two disagree about the same sentence.
-import { FLOOR_SETTLED, floorMakesNoClaim } from '../lib/floor-text.mjs';
+// statusBasisText is the sentence a status was READ from — the same one that
+// sweep reads, for the same reason.
+import { FLOOR_SETTLED, floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -56,6 +58,7 @@ interface BillRow {
   status: string;
   issue_tags?: string[];
   last_action_text?: string | null;
+  status_basis_text?: string | null;
 }
 interface MomentRow {
   name: { en: string; es: string };
@@ -458,6 +461,60 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(signal).toEqual({ type: 'tier0_floor', refs: [ON_CALENDAR.url] });
   });
 
+  /* ---------------------------------------------------------------- *
+   * THE SENTENCE THE STATUS WAS READ FROM (2026-09-25). H.R. 2262's
+   * record, verbatim, as the nightly of 2026-09-24 stored it: the latest
+   * step is the reconsider notice the House lays after ANY recorded vote,
+   * and the status (`floor_vote`) was read from the defeat before it,
+   * stored as status_basis_text. Every other chamber/tense reader reads
+   * the defeat; this derivation must too, and a settled defeat is not
+   * "the chamber moving on the measure".
+   * ---------------------------------------------------------------- */
+  const RECONSIDER = 'Motion to reconsider laid on the table Agreed to without objection.';
+  const HOUSE_DEFEAT =
+    'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).';
+  const HR_2262 = {
+    ...FLOOR_ACTION,
+    slug: 'hr-2262-119',
+    citation: 'H.R. 2262',
+    lastActionDate: '2026-01-13',
+    url: 'https://www.congress.gov/bill/119th-congress/house-bill/2262',
+  };
+
+  test('a House defeat behind the reconsider notice derives nothing, and the note names both sentences', () => {
+    const { signal, note } = signalFor(HR_2262, [], {
+      now: NOW_FLOOR,
+      lastActionText: RECONSIDER,
+      basisText: HOUSE_DEFEAT,
+    });
+    expect(signal).toEqual({ type: '', refs: [] });
+    expect(note).toContain('`qualifying_signal` is empty');
+    expect(note).toContain(`its latest step, “${RECONSIDER}”, cannot be read on its own`);
+    expect(note).toContain(`which says “${HOUSE_DEFEAT}”`);
+    // The matcher is handed the basis, and reads it.
+    expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, HOUSE_DEFEAT)).toBe(false);
+    expect(FLOOR_SETTLED.test(HOUSE_DEFEAT)).toBe(true);
+  });
+
+  test('structureFor hands the matcher the stored basis, not the bare notice', () => {
+    const bill = {
+      full_identifier: 'hr-2262-119',
+      status: 'floor_vote',
+      last_action_text: RECONSIDER,
+      status_basis_text: HOUSE_DEFEAT,
+      status_basis_date: '2026-01-13',
+    };
+    const { signal, notes, gaps } = structureFor(HR_2262, bill, { now: NOW_FLOOR });
+    expect(signal).toEqual({ type: '', refs: [] });
+    expect(gaps).toContain('qualifying_signal');
+    expect(notes.join('\n')).toContain(`which says “${HOUSE_DEFEAT}”`);
+    // No basis stored: the latest step is read, exactly as before #286, and
+    // the bare notice matches no floor-action shape either — fail closed.
+    const bare = structureFor(HR_2262, { ...bill, status_basis_text: undefined, status_basis_date: undefined }, { now: NOW_FLOOR });
+    expect(bare.signal).toEqual({ type: '', refs: [] });
+    expect(bare.notes.join('\n')).toContain(`it says “${RECONSIDER}”`);
+  });
+
   test('with no last-action text on file nothing is derived — silence is not evidence', () => {
     const { signal, note } = signalFor(FLOOR_ACTION, [], { now: NOW_FLOOR });
     expect(signal).toEqual({ type: '', refs: [] });
@@ -489,11 +546,32 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     let claimFree = 0;
     let settledOutcome = 0;
     for (const b of bills) {
+      /*
+       * THE SENTENCE READ (2026-09-25): the one the status was derived FROM,
+       * which is the premise the first exemption below quotes. Since #286
+       * that is `status_basis_text` whenever the latest step is an ambiguous
+       * notice ("Motion to reconsider laid on the table…" follows a won vote
+       * and a lost one alike), and every other chamber/tense reader —
+       * including the nightly journey-corpus sweep, deliberately — reads it
+       * through statusBasisText. Reading the bare notice here is what went
+       * red on the nightly of 2026-09-24: six House defeats (H.R. 2262,
+       * H.R. 1329, H.Con.Res. 38/40/61/75) were re-derived to `floor_vote`
+       * from their stored defeat, and the notice over them names no floor
+       * action. Read through their basis they are SETTLED outcomes and land
+       * in the second exemption, which is what the record says.
+       *
+       * The placement check stays on `last_action_text`: it mirrors
+       * scripts/moment-candidates.mjs's isOnFloorCalendar gate, which is what
+       * sets `floorCalendar` on a real candidate. (A basis sits only behind a
+       * reconsider or message notice, which follow a vote, never a
+       * placement.)
+       */
+      const text = statusBasisText(b);
       const placement = isPlacement(b.last_action_text);
       const onFloor = b.status === 'floor_vote';
       const derived = floorActionInRecord(
         { status: b.status, floorCalendar: onFloor && placement },
-        b.last_action_text ?? null,
+        text,
       );
       /*
        * THE EXEMPTION, and why totality had to gain one (2026-09-18, issue
@@ -517,9 +595,9 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
        * genuinely novel floor-action sentence is still unexempted and still
        * fails this test. That is what the test is for.
        */
-      if (onFloor && !placement && floorMakesNoClaim(b.last_action_text)) {
+      if (onFloor && !placement && floorMakesNoClaim(text)) {
         claimFree++;
-        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
+        expect(derived, `${b.full_identifier}: ${text}`).toBe(false);
         continue;
       }
       /*
@@ -540,15 +618,15 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
        * rejected") and the matcher has always read that as floor action —
        * that reading is pre-existing and stays.
        */
-      if (onFloor && !placement && !derived && FLOOR_SETTLED.test(b.last_action_text ?? '')) {
+      if (onFloor && !placement && !derived && FLOOR_SETTLED.test(text ?? '')) {
         settledOutcome++;
         continue;
       }
       if (onFloor && !placement) {
         activityOnly++;
-        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(true);
+        expect(derived, `${b.full_identifier}: ${text}`).toBe(true);
       } else {
-        expect(derived, `${b.full_identifier}: ${b.last_action_text}`).toBe(false);
+        expect(derived, `${b.full_identifier}: ${text}`).toBe(false);
       }
     }
     // The exemption is a carve-out, never the rule: if it ever swallowed the
@@ -613,6 +691,7 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
           signalFor(c, articlesFor(coverage, c.slug), {
             now: NOW,
             lastActionText: billBySlug.get(c.slug)?.last_action_text ?? null,
+            basisText: statusBasisText(billBySlug.get(c.slug)),
           }).signal.type,
       ),
     );
