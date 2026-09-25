@@ -10,6 +10,21 @@ Each `CLAUDE.md` amendment points here with `(evidence: docs/constitution-log.md
 
 ---
 
+<a id="ai-content-2026-09-25"></a>
+
+## 2026-09-25 — AI content is always labeled, and never publishes unless the automated gates pass
+
+Evidence for the amendment that brought Big Questions under the same automated-gate rule as the rest of the AI content. The live rule stays inline in `CLAUDE.md`.
+
+What was true on the day:
+
+- The owner's ruling, 2026-09-25, recorded in his plan answers: Big Question text is written by AI and publishes automatically ("Everything automatic").
+- #280 (merged 2026-09-25) changed the three strings that described a person reviewing Big Questions, in both languages: `moments.howMadeBody`, `moments.status.lastReviewed` (now "Summary updated {date}") and `moments.aiNote`. They now describe the automated gates.
+- `CLAUDE.md` still quoted the old `moments.howMadeBody` wording as true after #280 merged. This amendment corrects that sentence and marks the 2026-08-07 draft-then-merge flow as retired.
+- Not changed: the labels, the gates, the forbidden-vocabulary lint on Big Questions, bilingual parity, and the vehicle rule.
+
+---
+
 <a id="merging-2026-09-24"></a>
 
 ## 2026-09-24 — Merging: the standing pipeline carve-out
