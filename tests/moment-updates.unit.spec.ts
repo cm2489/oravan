@@ -1346,10 +1346,36 @@ test.describe('checkMomentUpdates (fixtures)', () => {
     expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names thegatewaypundit.com'))).toBe(false);
   });
 
+  test('THE OUTLET FLOOR: a stored cluster of allowlisted outlets alone fails — it needs one rated outlet', () => {
+    // No allowlist ships; this pins the rule for the day one does. An
+    // allowlisted outlet carries no lean, so two of them are a set with no
+    // balance evidence at all.
+    const policy = pressOutletPolicy({
+      ratings: read('data/media-bias.json').outlets,
+      allowlist: { outlets: { 'enr.com': { name: 'ENR' }, 'pymnts.com': { name: 'PYMNTS' } } },
+    });
+    const cluster = (outlets: string[], names: string[]) =>
+      makeUpdate({
+        class: 'press_cluster',
+        record: null,
+        text: {
+          en: `${names[0]} and ${names[1]} published coverage of the bill.`,
+          es: `${names[0]} y ${names[1]} publicaron cobertura del proyecto.`,
+        },
+        source: { kind: 'press', refs: outlets.map((o) => `https://${o}/story`), outlets, outlet_names: names, lean_set: [] },
+      });
+    const opts = { pressOutletAdmits: policy.admits, pressOutletRated: policy.isRated };
+    const allowlistedOnly = runGate(wrap([cluster(['enr.com', 'pymnts.com'], ['ENR', 'PYMNTS'])]), opts).violations;
+    expect(allowlistedOnly.some((v) => v.includes('needs at least one rated outlet'))).toBe(true);
+    // One rated outlet beside an allowlisted one passes the floor.
+    expect(runGate(wrap([cluster(['enr.com', 'reuters.com'], ['ENR', 'Reuters'])]), opts).violations).toEqual([]);
+  });
+
   test('check-moment-updates.mjs always hands the gate the outlet floor, and reddens on a bad allowlist', () => {
     const src = readFileSync(join(process.cwd(), 'scripts/check-moment-updates.mjs'), 'utf8');
     expect(src).toMatch(/loadPressOutletPolicy\(/);
     expect(src).toMatch(/pressOutletAdmits: pressPolicy\.admits/);
+    expect(src).toMatch(/pressOutletRated: pressPolicy\.isRated/);
     expect(src).toMatch(/for \(const p of pressPolicy\.problems\) violations\.push/);
   });
 

@@ -171,6 +171,28 @@ export function readRateLimitRemaining(headers) {
  *   5. A bill that just became law stays in the sweep for ENACTED_GRACE_DAYS
  *      after its last action — the week its coverage peaks is exactly the week
  *      the old terminal-status filter stopped looking.
+ *
+ * FOLLOW-UPS (2026-09-26, after the first review of the above):
+ *   6. The priority set is queried WHATEVER its terminal status (the plan's
+ *      words: "always query vehicles, C1/C2 and tier-0 slugs"). The grace
+ *      window alone left H.R. 6500 — a live Big Question vehicle, enacted 23
+ *      days earlier — and the band's H.R. 1 and H.R. 4405 unchecked, and aged
+ *      their stored coverage out of the file. isCoverageEligible's `priority`
+ *      option.
+ *   7. The priority set has its own ceiling, PRIORITY_MAX_SHARE of the night,
+ *      so a busy news week cannot eat the least-recently-checked tail (the
+ *      2026-08-05 starvation the 50/50 split exists to prevent). Eligible
+ *      priority bills over the ceiling are reported, and still compete for an
+ *      ordinary head/tail slot.
+ *   8. Merging must not make the gate's NO permanent: a stored article that
+ *      tonight's gate was shown and rejected is dropped (withoutRejected) — but
+ *      only when the reply is a COMPLETE, WELL-FORMED answer (gateAnswered:
+ *      the API says the model finished, and the text is exactly "none" or a
+ *      comma-separated list of in-range indexes). A truncated, off-script or
+ *      empty reply erases nothing.
+ *   9. The date-sorted pass is measured by lean against the whole-life pass on
+ *      the same bills every night, and a shift past LEAN_DRIFT raises a
+ *      ::warning:: that lib/pipeline-health.mjs turns into a ⛔ (leanDrift).
  */
 
 /** When the 119th Congress convened; no coverage can predate a bill in it. */
@@ -209,6 +231,17 @@ export const ENACTED_GRACE_DAYS = 14;
 /** Requests a priority bill costs: the date-sorted pass + the relevance pass. */
 export const PRIORITY_REQUESTS_PER_BILL = 2;
 
+/**
+ * The most of one night's requests the priority set may take (both passes
+ * counted). 20% of the nightly 600 is 120 requests — 60 priority bills —
+ * against 31 eligible on the 2026-09-26 corpus (28 before the terminal-status
+ * bypass added H.R. 6500, H.R. 1 and H.R. 4405), so today it never binds; it
+ * exists for the week it would. Without it the only ceiling was half the
+ * budget, and with 30 priority slugs a 20-request run spent all 20 on 10
+ * priority bills and checked nothing else at all.
+ */
+export const PRIORITY_MAX_SHARE = 0.2;
+
 const DAY_MS = 86_400_000;
 const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
 const isDay = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -224,10 +257,22 @@ export function coverageSlug(b) {
  * for a signed bill is the signing or the public-law number). A vetoed bill is
  * not "newly enacted" and stays out, as before.
  *
- * @param {any} b @param {number} [now]
+ * `priority: true` (the bill is in coveragePriority's set tonight) skips the
+ * terminal-status test entirely: a live Big Question vehicle, a bill the news
+ * band is showing, or a bill on tonight's floor is asked about whatever its
+ * status. The motivating case is H.R. 6500, the stopgap that became law on
+ * 2026-09-02 and is still the funding question's vehicle — 23 days later it
+ * was past the grace window, so it was never checked and its stored coverage
+ * aged out of the file. Being decoded is still required: the Read section only
+ * exists on a decoded bill. It stays eligible exactly as long as it stays in
+ * the priority set; the night it leaves, the ordinary rule applies again and
+ * its coverage ages out as before.
+ *
+ * @param {any} b @param {number} [now] @param {{ priority?: boolean }} [opts]
  */
-export function isCoverageEligible(b, now = Date.now()) {
+export function isCoverageEligible(b, now = Date.now(), { priority = false } = {}) {
   if (!b?.ai_headline) return false;
+  if (priority) return true;
   if (!TERMINAL_STATUSES.has(b.status)) return true;
   if (b.status !== 'signed' || !isDay(b.last_action_date)) return false;
   // Whole calendar days (UTC), so "14 days" means the same thing at 01:00 and 23:00.
@@ -255,11 +300,33 @@ export function recentWindowStart(b, now = Date.now()) {
  * Every input is read tolerantly: this orders a nightly sweep, and a missing
  * or malformed file must shrink the priority set, never fail the run.
  *
- * NOT A FEEDBACK LOOP INTO BIG QUESTION SELECTION: this decides only which
- * bills are ASKED about earlier and more often. data/coverage.json still takes
- * only what the relevance gate keeps, and scripts/moment-candidates.mjs never
- * proposes a bill that is already a vehicle, so a live question cannot use
- * this to inflate its own ranking.
+ * WHAT THIS FEEDS, STATED PLAINLY. This decides only which bills are ASKED
+ * about earlier and more often; data/coverage.json still takes only what the
+ * relevance gate keeps. But asking twice as often finds more, so it is a
+ * feedback loop for every signal that reads stored coverage, and the honest
+ * accounting is per group:
+ *   - Big Question vehicles: no loop into question selection.
+ *     scripts/moment-candidates.mjs never proposes a bill that is already a
+ *     vehicle, so a live question cannot inflate its own ranking.
+ *   - News-band (C1/C2) and tier-0 bills: YES, a loop. They get two requests
+ *     a night where every other bill gets one every few days, and stored
+ *     coverage feeds (a) the fallback news band (lib/coverage.ts rankNews,
+ *     used only when data/conversation.json is not live) and (b) the
+ *     candidate paths — scripts/moment-candidates.mjs ranks on stored coverage
+ *     tier and outlet count, and scripts/moment-watch.mjs admits "neutral"
+ *     coverage at 3 outlets. The live band itself reads newsdesk evidence
+ *     (data/conversation.json), not this file, so the loop does not reach it.
+ *     Accepted because the loop runs on real, gate-kept articles; it can make
+ *     an already-covered bill look more covered, never invent coverage.
+ *   - Terminal bills, now queried while they are priority (isCoverageEligible):
+ *     neither candidate path admits a terminal status, so the loop stops at
+ *     the fallback band, where "enacted, but in the news" is the owner's rule.
+ *   OPEN, for the owner: both candidate paths count UNRATED outlets toward
+ *   "neutral" coverage (coverageTier treats 2+ outlets with no partisan lean as
+ *   neutral, and moment-watch's minOutletsForNeutral: 3 can be met by three
+ *   unrated outlets). With Big Questions becoming automatic, that is the next
+ *   place the rated-only outlet floor (lib/press-outlets.mjs) would apply. Not
+ *   changed here.
  *
  * @param {{ moments?: any, conversation?: any, floorSignals?: any, now?: number }} inputs
  * @returns {{ slugs: string[], vehicles: string[], band: string[], tier0: string[] }}
@@ -295,27 +362,38 @@ export function coveragePriority({ moments, conversation, floorSignals, now = Da
  *
  * `ranked` is the eligible set already in docket-ladder order (lib/docket.mjs),
  * each `{ b, eff }`. Priority bills that are eligible go first and cost
- * PRIORITY_REQUESTS_PER_BILL each; what is left is split between the ladder
+ * PRIORITY_REQUESTS_PER_BILL each, up to `priorityShare` of the budget
+ * (PRIORITY_MAX_SHARE by default); what is left is split between the ladder
  * head and the least-recently-checked tail exactly as before (TAIL_SHARE), with
  * the overflow absorbing any remainder the tail cannot use. Returns the bills
  * in processing order and the request count, which never exceeds `topN`.
  *
- * @param {{ ranked: {b: any, eff: number}[], prioritySlugs?: string[], topN: number, tailShare: number, checkedAt?: Record<string,string> }} args
+ * A priority bill over the ceiling is `deferred`, not dropped: it gets no
+ * 30-day pass tonight, but it is still in `ranked`, so it competes for an
+ * ordinary head or tail slot like any other bill.
+ *
+ * @param {{ ranked: {b: any, eff: number}[], prioritySlugs?: string[], topN: number, tailShare: number, priorityShare?: number, checkedAt?: Record<string,string> }} args
  */
-export function planCoverageRun({ ranked, prioritySlugs = [], topN, tailShare, checkedAt = {} }) {
+export function planCoverageRun({ ranked, prioritySlugs = [], topN, tailShare, priorityShare = PRIORITY_MAX_SHARE, checkedAt = {} }) {
   const budget = Math.max(0, Math.floor(topN));
   const bySlug = new Map(ranked.map((e) => [coverageSlug(e.b), e]));
-  const maxPriority = Math.floor(budget / PRIORITY_REQUESTS_PER_BILL);
+  const share = Number.isFinite(priorityShare) ? Math.min(1, Math.max(0, priorityShare)) : PRIORITY_MAX_SHARE;
+  const maxPriority = Math.floor((budget * share) / PRIORITY_REQUESTS_PER_BILL);
   const priority = [];
   const skipped = [];
+  const deferred = [];
   for (const slug of prioritySlugs) {
     const e = bySlug.get(slug);
     if (!e) {
       skipped.push(slug);
       continue;
     }
-    if (priority.length >= maxPriority) break;
-    if (!priority.includes(e)) priority.push(e);
+    if (priority.includes(e)) continue;
+    if (priority.length >= maxPriority) {
+      deferred.push(slug);
+      continue;
+    }
+    priority.push(e);
   }
   const claimed = new Set(priority.map((e) => coverageSlug(e.b)));
   const remaining = budget - priority.length * PRIORITY_REQUESTS_PER_BILL;
@@ -340,8 +418,11 @@ export function planCoverageRun({ ranked, prioritySlugs = [], topN, tailShare, c
     head: head.map((e) => e.b),
     tail: tail.map((e) => e.b),
     overflow: overflow.map((e) => e.b),
-    /** Priority slugs that are not in tonight's eligible set (terminal past grace, undecoded, unknown). */
+    /** Priority slugs that are not in tonight's eligible set (undecoded, or not in the corpus). */
     skipped,
+    /** Eligible priority slugs over the priorityShare ceiling: no 30-day pass tonight. */
+    deferred,
+    maxPriority,
     requests,
   };
 }
@@ -383,6 +464,99 @@ export function mergeArticles(fresh, stored, cap) {
     .sort((x, y) => articleDay(y.a).localeCompare(articleDay(x.a)) || x.i - y.i)
     .slice(0, Math.max(0, cap))
     .map((x) => x.a);
+}
+
+/**
+ * A predicate: is this article one of `list` — the same URL, or the same
+ * syndicated title? The identity mergeArticles and the pre-gate dedupe use, so
+ * "the same article" means one thing everywhere in the sync.
+ *
+ * @param {{url?: string, title?: string}[]} list
+ * @returns {(a: {url?: string, title?: string}) => boolean}
+ */
+export function articleMatcher(list) {
+  const urls = new Set();
+  const titles = new Set();
+  for (const a of list ?? []) {
+    const u = urlKey(a);
+    const t = titleKey(a);
+    if (u) urls.add(u);
+    if (t) titles.add(t);
+  }
+  return (a) => {
+    const u = urlKey(a);
+    const t = titleKey(a);
+    return Boolean((u && urls.has(u)) || (t && titles.has(t)));
+  };
+}
+
+/**
+ * The stored articles, minus every one tonight's gate was SHOWN and REJECTED.
+ *
+ * Why this exists: mergeArticles made a bad night unable to erase anything,
+ * which is right for an article tonight's search simply did not return — and
+ * wrong for one the gate looked at again and said no to. Without this, an
+ * article an earlier gate kept by mistake could only ever leave by being
+ * pushed out by PER_BILL newer ones, whatever every later gate said about it.
+ * The most recent verdict on an article the gate has actually seen is the one
+ * that stands; an article it has not seen tonight keeps its old verdict.
+ *
+ * Callers must pass `rejected` ONLY when gateAnswered says the reply was a
+ * complete, well-formed answer. Any doubt about the reply rejects nothing.
+ *
+ * @template {{url?: string, title?: string}} A
+ * @param {A[]} stored @param {{url?: string, title?: string}[]} rejected
+ * @returns {A[]}
+ */
+export function withoutRejected(stored, rejected) {
+  if (!Array.isArray(stored)) return [];
+  if (!rejected?.length) return stored.slice();
+  const wasRejected = articleMatcher(rejected);
+  return stored.filter((a) => !wasRejected(a));
+}
+
+/**
+ * Is this gate reply a COMPLETE, WELL-FORMED answer? Only such a reply may
+ * DELETE stored coverage (withoutRejected).
+ *
+ * This is deliberately stricter than parseKeptIndexes. That parser reads any
+ * in-range number out of any reply, and it still decides what tonight KEEPS,
+ * unchanged, so what a night adds is exactly what it added before. Dropping a
+ * stored article is different: nothing on a later night brings it back unless
+ * a later search happens to return it again. So a drop needs the exact reply
+ * relevancePrompt asks for, and nothing else:
+ *   - `stopReason` must be "end_turn", meaning the model finished. A reply cut
+ *     off at max_tokens is not an answer ("0, 3, 1" may have been going to be
+ *     "0, 3, 12"), and neither is a refusal. A missing stop reason is
+ *     unknown, and unknown counts as no.
+ *   - The trimmed text must be exactly `none`, or exactly a comma-separated
+ *     list of indexes, each one in range and none repeated. One pair of
+ *     wrapping quotes or backticks and one trailing period are tolerated.
+ *     These all fail: "0, 3 — the rest are about other bills",
+ *     "Articles 2 and 4", "none of 0-24", "7, 9" when 5 were shown, "0, 3,",
+ *     and "none" followed by an explanation.
+ * Any other reply keeps every stored article. The DONE line counts it as a
+ * reply that was not complete and well-formed.
+ *
+ * @param {string|null|undefined} text
+ * @param {number} n candidates shown
+ * @param {{ stopReason?: string|null }} [meta] the API response's stop_reason
+ */
+export function gateAnswered(text, n, { stopReason } = {}) {
+  if (stopReason !== 'end_turn') return false;
+  if (typeof text !== 'string' || !Number.isInteger(n) || n <= 0) return false;
+  let body = text.trim();
+  const wrapped = body.match(/^(["'`])([\s\S]*)\1$/);
+  if (wrapped) body = wrapped[2].trim();
+  body = body.replace(/\.$/, '').trim();
+  if (/^none$/i.test(body)) return true;
+  if (!/^\d+(?:[ \t]*,[ \t]*\d+)*$/.test(body)) return false;
+  const tokens = body.split(',').map((x) => x.trim());
+  // "03" is not how the prompt numbers an article.
+  if (tokens.some((x) => x.length > 1 && x.startsWith('0'))) return false;
+  const nums = tokens.map(Number);
+  if (nums.some((i) => !Number.isSafeInteger(i) || i >= n)) return false;
+  return new Set(nums).size === nums.length;
 }
 
 /**
@@ -434,6 +608,99 @@ export function parseKeptIndexes(text, n) {
       .map(Number)
       .filter((i) => i >= 0 && i < n),
   );
+}
+
+// ---- The lean measurement (nonpartisan by construction) -----------------
+/**
+ * WHEN THE DATE PASS'S OUTLET MIX HAS MOVED FAR ENOUGH TO LOOK AT.
+ *
+ * The 30-day pass asks TheNewsAPI a different question than the whole-life
+ * pass (newest, not most relevant), and the rule is that a change to how the
+ * source is asked is measured by lean, not assumed neutral. It could not be
+ * measured before merge without a keyed call, so it is measured every night,
+ * on the same priority bills, with the whole-life pass as the control — and
+ * this decides when the difference is big enough to raise a ::warning:: that
+ * lib/pipeline-health.mjs turns into a ⛔.
+ *
+ * Two questions, each a two-proportion z-test on what the gate KEPT:
+ *   1. rated share — rated / all kept. Does the date pass bring in more
+ *      outlets AllSides does not rate?
+ *   2. left/right split — right / (left + right) among partisan-rated kept
+ *      articles. Symmetric: a shift either way is the same size of finding.
+ * A question fires only when BOTH the shift is at least `minShift` (15
+ * points) AND |z| is at least `z` (2.58, about 1 in 100 by chance) — so a
+ * big-looking swing on a handful of articles does not fire, and neither does
+ * a tiny, statistically solid one. Below `minArticles` / `minPartisan` kept in
+ * EITHER pass the question is "too few to judge", never "ok".
+ *
+ * THESE THRESHOLDS ARE A FIRST SETTING, NOT A MEASURED ONE. No night has run
+ * with the date pass yet, so the typical noise is unknown; articles also
+ * cluster by bill (one busy vote week can dominate a night), which makes the
+ * z-test read more certain than it is. Expect to tune them after a week of
+ * LEAN DRIFT lines. Tune HERE — nothing else spells them.
+ */
+export const LEAN_DRIFT = Object.freeze({ minArticles: 10, minPartisan: 8, minShift: 0.15, z: 2.58 });
+
+/** @typedef {{left: number, center: number, right: number, unrated: number}} LeanMix */
+
+function twoProportion(k1, n1, k2, n2) {
+  const p1 = k1 / n1;
+  const p2 = k2 / n2;
+  const pooled = (k1 + k2) / (n1 + n2);
+  const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
+  return { p1, p2, z: se > 0 ? (p1 - p2) / se : 0 };
+}
+
+/**
+ * @param {LeanMix} recent what the gate kept from the 30-day pass
+ * @param {LeanMix} control what the gate kept from the whole-life pass, same bills
+ * @param {typeof LEAN_DRIFT} [t]
+ * @returns {{ verdict: 'ok'|'drift'|'thin', checks: {metric: 'rated'|'split', state: 'ok'|'drift'|'thin', p1: number|null, p2: number|null, n1: number, n2: number, z: number|null, need: number}[] }}
+ */
+export function leanDrift(recent, control, t = LEAN_DRIFT) {
+  const num = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
+  const mix = (m) => ({ left: num(m?.left), center: num(m?.center), right: num(m?.right), unrated: num(m?.unrated) });
+  const r = mix(recent);
+  const c = mix(control);
+  const rated = (m) => m.left + m.center + m.right;
+  const one = (metric, k1, n1, k2, n2, need) => {
+    if (n1 < need || n2 < need) return { metric, state: 'thin', p1: null, p2: null, n1, n2, z: null, need };
+    const { p1, p2, z } = twoProportion(k1, n1, k2, n2);
+    const fired = Math.abs(p1 - p2) >= t.minShift && Math.abs(z) >= t.z;
+    return { metric, state: fired ? 'drift' : 'ok', p1, p2, n1, n2, z, need };
+  };
+  const checks = [
+    one('rated', rated(r), rated(r) + r.unrated, rated(c), rated(c) + c.unrated, t.minArticles),
+    one('split', r.right, r.left + r.right, c.right, c.left + c.right, t.minPartisan),
+  ];
+  const verdict = checks.some((x) => x.state === 'drift') ? 'drift' : checks.some((x) => x.state === 'thin') ? 'thin' : 'ok';
+  return { verdict, checks };
+}
+
+/** The verdict word the LEAN DRIFT line starts with — what pipeline-health parses. */
+export const LEAN_DRIFT_WORD = Object.freeze({ ok: 'ok', drift: 'DRIFT', thin: 'too few to judge' });
+
+/**
+ * The LEAN DRIFT log line, after its `LEAN DRIFT: ` prefix. Wording is part of
+ * a contract: lib/pipeline-health.mjs parseCoverageLean reads the leading
+ * verdict word, and tests/sync-coverage-runner.unit.spec.ts feeds this
+ * script's real output to that parser.
+ *
+ * @param {ReturnType<typeof leanDrift>} drift @param {number} windowDays
+ */
+export function formatLeanDrift(drift, windowDays) {
+  const pct = (p) => `${Math.round(p * 100)}%`;
+  const parts = drift.checks.map((x) => {
+    if (x.metric === 'rated') {
+      return x.state === 'thin'
+        ? `rated share: too few to judge (${windowDays}-day ${x.n1}, whole-life ${x.n2} kept; need ${x.need} each)`
+        : `rated share: ${windowDays}-day ${pct(x.p1)} of ${x.n1} vs whole-life ${pct(x.p2)} of ${x.n2} (z=${x.z.toFixed(2)})${x.state === 'drift' ? ' SHIFTED' : ''}`;
+    }
+    return x.state === 'thin'
+      ? `left/right split: too few to judge (${windowDays}-day ${x.n1}, whole-life ${x.n2} partisan-rated; need ${x.need} each)`
+      : `left/right split: ${windowDays}-day L${pct(1 - x.p1)}/R${pct(x.p1)} of ${x.n1} vs whole-life L${pct(1 - x.p2)}/R${pct(x.p2)} of ${x.n2} (z=${x.z.toFixed(2)})${x.state === 'drift' ? ' SHIFTED' : ''}`;
+  });
+  return `${LEAN_DRIFT_WORD[drift.verdict]} — ${parts.join(' · ')}`;
 }
 
 /**

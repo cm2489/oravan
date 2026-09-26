@@ -63,6 +63,7 @@ const pressPolicy = loadPressOutletPolicy({ readJSON: read, exists: (p) => exist
 const { violations, warnings } = checkMomentUpdates(updates, moments, billSlugs, {
   fileBytes,
   pressOutletAdmits: pressPolicy.admits,
+  pressOutletRated: pressPolicy.isRated,
 });
 for (const p of pressPolicy.problems) violations.push(`${PRESS_ALLOWLIST_PATH}: ${p}`);
 
