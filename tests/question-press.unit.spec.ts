@@ -234,6 +234,11 @@ test.describe('the response', () => {
     const bad = parseArtList('The specified phrase is too short.');
     expect(bad.ok).toBe(false);
     expect(parseArtList(JSON.stringify({ articles: 'nope' })).ok).toBe(false);
+    // a raw control character inside a title is rescued, not a lost question
+    const raw = JSON.stringify({ articles: [art('npr.org', 'x', '20260924T211500Z', 'TITLE')] }).replace('TITLE', 'a\u0007b\tc');
+    const rescued = parseArtList(raw);
+    expect(rescued.ok).toBe(true);
+    if (rescued.ok) expect(rescued.articles[0].url).toBe('https://www.npr.org/x');
   });
 
   test('admission: rated, rated as the searched lean, on its own domain, inside the week', () => {
