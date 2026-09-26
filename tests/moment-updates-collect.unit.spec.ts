@@ -878,7 +878,13 @@ test.describe('press clusters', () => {
   test('an owner allowlist (none ships) would admit an unrated outlet WITHOUT a lean', () => {
     const policy = pressOutletPolicy({
       ratings: LEANS,
-      allowlist: { outlets: { 'rollcall.com': { approved_on: '2026-10-01' } } },
+      allowlist: {
+        outlets: {
+          'rollcall.com': { name: 'Roll Call', approved_on: '2026-10-01' },
+          'enr.com': { name: 'ENR', approved_on: '2026-10-01' },
+          'pymnts.com': { name: 'PYMNTS', approved_on: '2026-10-01' },
+        },
+      },
     });
     const withPolicy = (articles: Article[]) =>
       pressClusterToCandidate({
@@ -911,6 +917,22 @@ test.describe('press clusters', () => {
         { source: 'npr.org', url: 'https://www.npr.org/b', publishedAt: '2026-07-24' },
       ]),
     ).toBeNull();
+    // Allowlisted outlets ALONE: two admitted outlets, but no lean evidence at
+    // all — refused, where clusterIsPublishable([null, null]) would have passed
+    // it as the neutral case (the 2026-09-26 review's probe, exactly).
+    expect(
+      withPolicy([
+        { source: 'enr.com', url: 'https://www.enr.com/a', publishedAt: '2026-07-24' },
+        { source: 'pymnts.com', url: 'https://www.pymnts.com/b', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+    // An allowlisted outlet is named by its approved masthead, never by the
+    // capitalised-domain fallback ("Enr").
+    const named = withPolicy([
+      { source: 'enr.com', url: 'https://www.enr.com/a', publishedAt: '2026-07-24' },
+      { source: 'reuters.com', url: 'https://www.reuters.com/b', publishedAt: '2026-07-24' },
+    ])!;
+    expect(named.source.outlet_names).toEqual(['ENR', 'Reuters']);
   });
 
   test('pressClusterDaysHeld: one cluster per vehicle-day, the first one stands', () => {

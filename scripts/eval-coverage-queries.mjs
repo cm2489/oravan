@@ -9,8 +9,12 @@
  *
  * Cost model (deliberate): TheNewsAPI requests are plentiful (2/bill);
  * Anthropic spend is minimized — the Haiku relevance gate only runs with
- * --gate, only on arms that returned candidates, and reuses the EXACT prompt
- * from scripts/sync-coverage.mjs so kept-counts predict production.
+ * --gate, only on arms that returned candidates, and builds its prompt with
+ * production's own relevancePrompt and reads the reply with production's own
+ * parseKeptIndexes (both imported from scripts/coverage-query.mjs, never
+ * copied), so kept-counts predict production. This harness still runs ONE
+ * whole-life relevance-sorted request per arm; it does not model the nightly's
+ * 30-day date-sorted pass (see "The recency pass" in coverage-query.mjs).
  *
  * Sample strata:
  *   band     — the top-30 urgency band (what the site actually leads with)
@@ -22,7 +26,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { queryFor } from './coverage-query.mjs';
+import { parseKeptIndexes, queryFor, relevancePrompt } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) { console.error('NEWS_API_KEY required'); process.exit(1); }
@@ -102,6 +106,8 @@ async function fetchArticles(query, publishedAfter) {
       return (data.data ?? []).map((a) => ({
         title: a.title, url: a.url, source: a.source,
         snippet: a.description ?? a.snippet ?? null,
+        // relevancePrompt shows each article's date, as production does.
+        publishedAt: a.published_at ? a.published_at.slice(0, 10) : null,
       })).filter((a) => {
         const t = (a.title ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
         if (seen.has(t)) return false;
@@ -114,22 +120,20 @@ async function fetchArticles(query, publishedAfter) {
   throw new Error('exhausted retries');
 }
 
-/* Relevance gate — EXACT prompt from scripts/sync-coverage.mjs. */
+/* Relevance gate — production's prompt and reply parser, imported from
+   scripts/coverage-query.mjs (the same functions scripts/sync-coverage.mjs
+   calls), with production's max_tokens rule. The .slice(0, 5) stands in for
+   production's PER_BILL cap, which production applies after a merge with
+   stored coverage this harness does not model. */
 async function filterRelevant(b, candidates) {
   if (!GATE || candidates.length === 0) return null; // null = not gated
-  const list = candidates.map((a, i) => `${i}. ${a.title}${a.snippet ? ` — ${a.snippet}` : ''} (${a.source})`).join('\n');
   const msg = await anthropic.messages.create({
-    model: MODEL, max_tokens: 80,
-    messages: [{ role: 'user', content: `A US congressional bill:
-${b.bill_type.toUpperCase()} ${b.bill_number} — ${b.ai_headline ?? b.title}
-What it does: ${b.ai_sections?.tldr ?? b.ai_summary ?? b.title}
-
-Below are news articles. Return ONLY the numbers of articles specifically about THIS bill (its provisions, votes, debate, or signing) — not merely the general topic, and not a different bill. Reply with a comma-separated list of numbers, or "none".
-
-${list}` }],
+    model: MODEL,
+    max_tokens: Math.max(80, 4 * candidates.length),
+    messages: [{ role: 'user', content: relevancePrompt(b, candidates) }],
   });
-  const text = (msg.content[0]?.type === 'text' ? msg.content[0].text : '').toLowerCase();
-  const keep = new Set(text.split(/[^0-9]+/).filter(Boolean).map(Number).filter((n) => n >= 0 && n < candidates.length));
+  const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
+  const keep = parseKeptIndexes(text, candidates.length);
   return candidates.filter((_, i) => keep.has(i)).slice(0, 5);
 }
 

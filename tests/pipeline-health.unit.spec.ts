@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SIGNAL_STALE_HOURS } from '../lib/docket.mjs';
 import {
+  COVERAGE_KEPT_ZERO_MIN_CHECKED,
   COVERAGE_STALE_DAYS,
   CURSOR_FROZEN_DAYS,
   FLOOR_SIGNAL_ALARM_HOURS,
@@ -25,6 +26,7 @@ import {
   formatHealthIssueBody,
   formatHealthSection,
   parseCoverageDone,
+  parseCoverageLean,
   parseFailingTests,
   parsePregen,
   parseSyncDone,
@@ -121,11 +123,65 @@ test.describe('parseCoverageDone', () => {
       checked: 600,
       articles: 194,
       carriedForward: 310,
+      // An older line never said what tonight kept: null, not 0.
+      keptTonight: null,
+      billsKeptTonight: null,
+      droppedOnVerdict: null,
+      unansweredGates: null,
+    });
+  });
+
+  test('reads what TONIGHT kept off the post-merge line', () => {
+    // The exact shape scripts/sync-coverage.mjs prints since the 2026-09-26
+    // follow-up (tests/sync-coverage-runner.unit.spec.ts feeds this parser the
+    // script's real output). Before it, a night that kept nothing printed
+    // "85/572 bills with coverage" off carried-over articles alone.
+    const line =
+      "sync\tUNKNOWN STEP\t2026-09-27T18:31:20.1Z DONE: 85/572 bills with coverage, 205 articles total; " +
+      "kept tonight: 0 article(s) on 0 bill(s); 3 stored article(s) dropped on tonight's gate verdict; 2 gate reply(ies) with no usable answer";
+    expect(parseCoverageDone(line)).toEqual({
+      withCoverage: 85,
+      checked: 572,
+      articles: 205,
+      carriedForward: 0,
+      keptTonight: 0,
+      billsKeptTonight: 0,
+      droppedOnVerdict: 3,
+      unansweredGates: 2,
     });
   });
 
   test('null when absent', () => {
     expect(parseCoverageDone(NEWSDESK)).toBeNull();
+  });
+});
+
+test.describe('parseCoverageLean', () => {
+  const MIX =
+    'LEAN MIX (kept tonight, AllSides): priority bills — 30-day pass L3/C10/R9/unrated 20, ' +
+    'whole-life pass L6/C12/R5/unrated 7; all other bills L40/C60/R30/unrated 90';
+
+  test('reads the three buckets and the verdict the script printed', () => {
+    const drift = parseCoverageLean(`${MIX}\nLEAN DRIFT: DRIFT — rated share: 30-day 52% of 42 vs whole-life 77% of 30 (z=-2.61) SHIFTED · left/right split: x`);
+    expect(drift).toEqual({
+      windowDays: 30,
+      recent: { left: 3, center: 10, right: 9, unrated: 20 },
+      wholeLife: { left: 6, center: 12, right: 5, unrated: 7 },
+      rest: { left: 40, center: 60, right: 30, unrated: 90 },
+      verdict: 'drift',
+      detail: 'rated share: 30-day 52% of 42 vs whole-life 77% of 30 (z=-2.61) SHIFTED · left/right split: x',
+    });
+    expect(parseCoverageLean(`${MIX}\nLEAN DRIFT: ok — a`)!.verdict).toBe('ok');
+    expect(parseCoverageLean(`${MIX}\nLEAN DRIFT: too few to judge — a`)!.verdict).toBe('thin');
+  });
+
+  test('a MIX line with no DRIFT line has a null verdict — never "ok"', () => {
+    expect(parseCoverageLean(MIX)!.verdict).toBeNull();
+  });
+
+  test('null when the coverage sync did not run', () => {
+    expect(parseCoverageLean(NEWSDESK)).toBeNull();
+    expect(parseCoverageLean(NIGHTLY)).toBeNull();
   });
 });
 
@@ -576,6 +632,27 @@ test.describe('alarms', () => {
     expect(codes({ ...healthy, floorSignals: { pastAlarm: true, ageHours: 40, alarmHours: 36 } })).toContain(
       'floor-signals-stale'
     );
+    expect(
+      codes({ ...healthy, coverageLean: { windowDays: 30, verdict: 'drift', detail: 'rated share: … SHIFTED' } })
+    ).toContain('coverage-lean-drift');
+    expect(
+      codes({ ...healthy, coverageRun: { checked: 572, keptTonight: 0, billsKeptTonight: 0, withCoverage: 85 } })
+    ).toContain('coverage-kept-zero');
+  });
+
+  test('the coverage lean alarm fires on DRIFT only — not on ok, too-few, or a missing verdict', () => {
+    for (const verdict of ['ok', 'thin', null]) {
+      expect(alarms({ ...healthy, coverageLean: { windowDays: 30, verdict, detail: 'x' } }), String(verdict)).toEqual([]);
+    }
+  });
+
+  test('a coverage night that kept nothing is a ⛔ only on a real sweep, and only when the line said so', () => {
+    expect(COVERAGE_KEPT_ZERO_MIN_CHECKED).toBe(100);
+    // A small test run keeping nothing is not a dead source.
+    expect(alarms({ ...healthy, coverageRun: { checked: 20, keptTonight: 0 } })).toEqual([]);
+    // An older DONE line never said what tonight kept: not measured, not zero.
+    expect(alarms({ ...healthy, coverageRun: { checked: 600, keptTonight: null } })).toEqual([]);
+    expect(alarms({ ...healthy, coverageRun: { checked: 600, keptTonight: 41 } })).toEqual([]);
   });
 
   test('a nightly still in flight is not an alarm', () => {
@@ -638,6 +715,27 @@ test.describe('formatHealthSection', () => {
   test('the spend figure always carries its "estimate, not a bill" disclaimer', () => {
     expect(formatHealthSection({})).toContain('ESTIMATE');
     expect(formatHealthSection({})).toContain('Anthropic console');
+  });
+
+  test('the coverage run and lean rows say "not found" when absent, and what tonight kept when present', () => {
+    const empty = formatHealthSection({});
+    expect(empty).toMatch(/coverage run\s+not found in the log/);
+    expect(empty).toMatch(/coverage lean\s+not found in the log/);
+    const rendered = formatHealthSection({
+      coverageRun: { checked: 572, keptTonight: 41, billsKeptTonight: 23, droppedOnVerdict: 2, unansweredGates: 0, withCoverage: 90 },
+      coverageLean: {
+        windowDays: 30,
+        recent: { left: 3, center: 10, right: 9, unrated: 20 },
+        wholeLife: { left: 6, center: 12, right: 5, unrated: 7 },
+        verdict: 'thin',
+      },
+    });
+    expect(rendered).toContain('572 checked · kept tonight 41 on 23 bill(s) · 2 dropped on the gate');
+    expect(rendered).toContain('30d pass L3/C10/R9/unrated 20 vs whole-life L6/C12/R5/unrated 7 · too few to judge');
+    // An older log: the kept-tonight half is said to be missing, not zero.
+    expect(formatHealthSection({ coverageRun: { checked: 600, keptTonight: null, withCoverage: 90 } })).toContain(
+      'kept tonight not in this log (older format)'
+    );
   });
 
   test('when Anthropic errors exist, the section names which workflow produced them', () => {

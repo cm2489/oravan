@@ -14,8 +14,9 @@
  *                "articles": [{ title, url, source, description, published_at }] }],
  *     "rejectDateSort": false,          // 400 every sort=published_at request
  *     "brokenQueries": ["substring"],   // 400 every request for these, sorted or not
- *     "keepMarker": "KEEP"              // the fake gate keeps titles containing this
- *   }
+ *     "keepMarker": "KEEP",             // the fake gate keeps titles containing this
+ *     "gateNoAnswer": ["substring"]     // the fake gate replies with nothing usable
+ *   }                                   //   when its prompt contains one of these
  *
  * The log never records the api_token VALUE — only whether one was sent — so
  * the test can also assert the script never prints it.
@@ -66,13 +67,14 @@ globalThis.fetch = async (input, init = {}) => {
       const m = line.match(/^(\d+)\. \[[^\]]+\] (.*)$/);
       if (m && m[2].includes(scenario.keepMarker ?? 'KEEP')) kept.push(Number(m[1]));
     }
-    log({ kind: 'gate', prompt, max_tokens: body.max_tokens, kept });
+    const noAnswer = (scenario.gateNoAnswer ?? []).some((m) => String(prompt).includes(m));
+    log({ kind: 'gate', prompt, max_tokens: body.max_tokens, kept: noAnswer ? null : kept });
     return json(200, {
       id: 'msg_mock',
       type: 'message',
       role: 'assistant',
       model: body.model,
-      content: [{ type: 'text', text: kept.length ? kept.join(', ') : 'none' }],
+      content: [{ type: 'text', text: noAnswer ? '' : kept.length ? kept.join(', ') : 'none' }],
       stop_reason: 'end_turn',
       stop_sequence: null,
       usage: { input_tokens: 10, output_tokens: 5 },

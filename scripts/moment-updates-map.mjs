@@ -783,7 +783,11 @@ export function leanOf(source, leanByDomain) {
  * admits (lib/press-outlets.mjs — AllSides-rated, or on the owner's allowlist)
  * are counted or named at all, so the only null lean that can still reach
  * this function is an allowlisted outlet's, which counts as an outlet and can
- * never make a one-sided set look balanced.
+ * never make a one-sided set look balanced. It could still make a set with NO
+ * lean evidence look balanced — [null, null] passes here — so
+ * pressClusterToCandidate also requires at least one RATED outlet before it
+ * asks this question (2026-09-26 follow-up; no allowlist exists yet, so today
+ * that changes nothing that publishes).
  *
  * @param {(string|null)[]} leans
  */
@@ -942,6 +946,10 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
 
   const outlets = [...byDomain.keys()].sort();
   const leans = outlets.map((d) => floor.leanOf(d));
+  // At least one RATED outlet. An allowlisted outlet carries no lean, so a
+  // set of allowlisted outlets alone is a set with no balance evidence at
+  // all, and clusterIsPublishable would pass it as the neutral case.
+  if (!leans.some((l) => l !== null)) return null;
   if (!clusterIsPublishable(leans)) return null;
 
   return withId(momentId, {
@@ -956,7 +964,12 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
       kind: 'press',
       refs: outlets.map((d) => byDomain.get(d)),
       outlets,
-      outlet_names: outlets.map(outletDisplayName),
+      // A rated outlet's name comes from the table below; an allowlisted one's
+      // from the owner's own allowlist entry (its required `name`), never
+      // from the capitalised-domain fallback.
+      outlet_names: outlets.map((d) =>
+        OUTLET_DISPLAY_NAMES[d] ?? (typeof floor.allowlistName === 'function' ? floor.allowlistName(d) : null) ?? outletDisplayName(d),
+      ),
       // Deliberately a SET, not a fourth column. `refs`, `outlets` and
       // `outlet_names` above are all positional and same-length by
       // construction; this one is deduped and sorted, so it is shorter
