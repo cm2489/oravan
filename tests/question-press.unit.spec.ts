@@ -86,7 +86,9 @@ const MOMENTS: Record<string, Moment> = {
   'an-old-question': { status: 'retired', aliases: { en: ['war powers'] }, vehicles: [] },
 };
 
-/** One GDELT ArtList article, in the shape the DOC 2.0 API documents. */
+/** One GDELT ArtList article, in the shape the DOC 2.0 API returned live on
+ *  2026-09-26 (these eight keys, in this order; seendate as YYYYMMDDTHHMMSSZ;
+ *  domain bare, url on www.). */
 function art(domain: string, path: string, seendate = '20260924T211500Z', title = 'Senate votes on war powers resolution') {
   return {
     url: `https://www.${domain}/${path}`,
