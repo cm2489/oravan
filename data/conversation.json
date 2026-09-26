@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-26T07:35:59.874Z",
+    "fetched_at": "2026-09-26T13:01:20.265Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-26T07:35:59.874Z"
+        "checked_at": "2026-09-26T13:01:20.265Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-26T07:35:59.874Z"
+        "checked_at": "2026-09-26T13:01:20.265Z"
       },
       "leans": {
         "center": {
@@ -735,6 +735,24 @@
       ],
       "mostViewed": null
     },
+    "hr-5961-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "chippewa.com",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOel93Zk5mSWpBTU8zbzV1VG1RMmN1QUpmSzRheGtsd0ZqaFRMQXBCNl9sbG1JVU9RSm9DWVNNMUtPaUhXODJBX1VfR2I4SDVuU21jY0RkRkIzRkxwZ3JKRFhDR200eEQyZzVtNVVheTYyUzVvNlJEeXpwLUFHdmc1Z2RMRlN6T2lkUjgyS0wyWlRSS2ZkRzdwNG9waDJNNFZhblE?oc=5"
+        },
+        {
+          "domain": "wisfarmer.com",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOOUhWbHBTWk1VamxOeUw2NHlOcy1zcE5Yb0ExcWNBb2FSdWVfRlJGWnhQa3BLc0trSnROMnJ0aE1aSHppT3hORWVvRDBxZkloZnE5VDRvZXpDaVVibVdXU3JUSE0wOF9rMnN2aDB4NTF6MWFyRFhzdV85LTZiTmhpWVZqTEMzeGlIXzhScDJNeUlRZlFHYXNMYWI5RkZ6MURYMGZpTm1ac081TmJHZ0JYU242S2hyX3NoN1RoUzh3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6145-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -821,6 +839,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "thealaskacurrent.com",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE8yajRzY0F6czBPWUZ4MkFPdkxOTm4xNk5PUmkySXpJSTIwcThUR0RkYzlwcnhqa2JhenFzR1kyLWJnVk01V21VZHBGelB0OE5mUWhXb2pUd3MyM3d2RGNvaTNBV0JfdkhtTndqeWRWSjU?oc=5"
+        },
         {
           "domain": "wcpo.com",
           "firstSeen": "2026-09-25",
@@ -1665,7 +1689,8 @@
         {
           "domain": "sportstalkflorida.com",
           "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxON1FpMElmSUgyMFhSWkR4WFRrY1NXTUo3azN6RTh3dUQ4eVU3dGRoU3JNNWxkbnpwMjdiaFJOZnNiaXdyNEV1cDladmtEY3hiNUdsQ0YwWS1ZS2F4RmNkMnNGQllXeWl5a09STnlUeTZjTEtyRFpBQ1ZBWUROMkM1ZkhkYUlkZ21sQWlKTTZXdVlXamZNNG5hMzg0RE1ZaUFzX2w5clRUSXZqTkdhOHBOVHNNRTg1d1JtS19BdFVRUQ?oc=5"
         },
         {
           "domain": "whnt.com",
