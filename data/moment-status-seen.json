@@ -13,8 +13,8 @@
           "text": "Received in the Senate and referred to the Committee on Foreign Relations."
         },
         "hconres-89-119": {
-          "fingerprint": "passedWaiting|senate||2026-07-23",
-          "text": "Received in the Senate and referred to the Committee on Foreign Relations."
+          "fingerprint": "failed|senate||2026-09-24",
+          "text": "Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244."
         },
         "hconres-86-119": {
           "fingerprint": "recordStep|||2026-06-24",
@@ -77,7 +77,7 @@
       "vehicles": {
         "s-4668-119": {
           "fingerprint": "recordStep|||2026-09-24",
-          "text": "The committee substitute withdrawn by Voice Vote."
+          "text": "The committee substitute tabled by Voice Vote."
         }
       }
     },
@@ -100,6 +100,23 @@
         "hr-3633-119": {
           "fingerprint": "failedReconsider|senate||2026-09-15",
           "text": "Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate."
+        }
+      }
+    },
+    "penny-production-and-cash-rounding": {
+      "review_by": "2026-10-05",
+      "vehicles": {
+        "hr-10167-119": {
+          "fingerprint": "passedWaiting|senate||2026-09-15",
+          "text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs."
+        },
+        "s-1525-119": {
+          "fingerprint": "heldAtDesk|house||2026-08-10",
+          "text": "Held at the desk."
+        },
+        "hr-3074-119": {
+          "fingerprint": "passedWaiting|senate||2026-07-15",
+          "text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs."
         }
       }
     }
