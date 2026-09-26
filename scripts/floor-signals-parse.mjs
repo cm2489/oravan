@@ -1055,6 +1055,13 @@ export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetche
  */
 export { entersFloorWatch } from '../lib/docket.mjs';
 import { entersFloorWatch } from '../lib/docket.mjs';
+// The sentence the ladder's T1 rung reads (lib/docket.mjs's docketRung passes
+// statusBasisText, not last_action_text). Read here too, 2026-09-25, so "the
+// same thing by 'close enough to the floor'" stays true behind an ambiguous
+// latest step — e.g. "The committee substitute withdrawn by Voice Vote.",
+// which is no floor-watch sentence, over a basis of "Measure laid before
+// Senate by unanimous consent.", which is.
+import { statusBasisText } from '../lib/floor-text.mjs';
 
 /**
  * The ordered, capped queue of bills worth re-reading this run.
@@ -1080,7 +1087,7 @@ export function redecodeCandidates({ signals, bills, now, windowDays = 14, cap =
       out.push({ slug, tier: 't0', lastActionDate: b.last_action_date ?? '' });
       continue;
     }
-    if (!entersFloorWatch(b.last_action_text)) continue;
+    if (!entersFloorWatch(statusBasisText(b))) continue;
     const ms = Date.parse(`${b.last_action_date}T00:00:00Z`);
     if (!Number.isFinite(ms)) continue;
     if ((now - ms) / 86_400_000 > windowDays) continue;
