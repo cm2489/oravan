@@ -1034,6 +1034,7 @@ test.describe('the press basket', () => {
       'washingtontimes.com', // HTTP 403 to every GitHub runner, 2026-08-12 -> 2026-09-25
       'washingtonexaminer.com', // terms: RSS use requires an agreement
       'nypost.com', // robots.txt notice: automated collection prohibited without written permission
+      'pjmedia.com', // Salem terms: no robot or spider to copy or scrape without express written permission
       'breitbart.com', // terms: no bots or automated access
       'dailycaller.com', // terms: no automated means to access
       'thedispatch.com', // terms: no automated scraping or downloading
