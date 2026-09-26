@@ -8,13 +8,20 @@ import {
   CONGRESS_START,
   DATE_SORT,
   ENACTED_GRACE_DAYS,
+  LEAN_DRIFT,
+  LEAN_DRIFT_WORD,
+  PRIORITY_MAX_SHARE,
   PRIORITY_REQUESTS_PER_BILL,
   RECENT_WINDOW_DAYS,
   RELEVANCE_SORT,
   apiErrorDetail,
+  articleMatcher,
   coveragePriority,
+  formatLeanDrift,
+  gateAnswered,
   isCoverageEligible,
   isNewestFirst,
+  leanDrift,
   mergeArticles,
   parseKeptIndexes,
   planCoverageRun,
@@ -24,6 +31,7 @@ import {
   recentWindowStart,
   relevancePrompt,
   wholeLifeStart,
+  withoutRejected,
 } from '../scripts/coverage-query.mjs';
 
 const bill = (over: Record<string, unknown>) => ({
@@ -222,6 +230,21 @@ test.describe('isCoverageEligible — a newly enacted bill gets a 14-day grace',
     expect(isCoverageEligible(fullBill({ status: 'signed', last_action_date: null }), NOW)).toBe(false);
     expect(isCoverageEligible(fullBill({ status: 'signed', last_action_date: daysAgo(-2) }), NOW)).toBe(false);
   });
+
+  test('a PRIORITY bill is checked whatever its status — H.R. 6500 is still a live vehicle', () => {
+    // The plan's words: "always query vehicles, C1/C2 and tier-0 slugs". The
+    // grace window alone had left H.R. 6500 (the funding question's vehicle),
+    // and the band's H.R. 1 and H.R. 4405, unchecked.
+    const hr6500 = fullBill({ bill_number: 6500, status: 'signed', last_action_date: '2026-09-02' });
+    expect(isCoverageEligible(hr6500, NOW)).toBe(false);
+    expect(isCoverageEligible(hr6500, NOW, { priority: true })).toBe(true);
+    expect(isCoverageEligible(fullBill({ status: 'vetoed', last_action_date: daysAgo(90) }), NOW, { priority: true })).toBe(true);
+    expect(isCoverageEligible(fullBill({ status: 'signed', last_action_date: null }), NOW, { priority: true })).toBe(true);
+    // Being decoded is still required: the Read section only exists on a decoded bill.
+    expect(isCoverageEligible(fullBill({ ai_headline: null, status: 'signed' }), NOW, { priority: true })).toBe(false);
+    // priority: false is exactly the ordinary rule.
+    expect(isCoverageEligible(hr6500, NOW, { priority: false })).toBe(false);
+  });
 });
 
 test.describe('the two date floors', () => {
@@ -295,20 +318,20 @@ test.describe('planCoverageRun — the budget never grows', () => {
   });
 
   test('each priority bill costs two requests and the rotation shrinks to pay for it', () => {
-    const plan = planCoverageRun({ ranked, prioritySlugs: [slug(30), slug(35)], topN: 10, tailShare: 0.5 });
+    const plan = planCoverageRun({ ranked, prioritySlugs: [slug(30), slug(35)], topN: 20, tailShare: 0.5 });
     expect(plan.priority.map((b: { bill_number: number }) => b.bill_number)).toEqual([30, 35]);
-    expect(plan.head.length + plan.tail.length + plan.overflow.length).toBe(6);
-    expect(plan.requests).toBe(10);
+    expect(plan.head.length + plan.tail.length + plan.overflow.length).toBe(16);
+    expect(plan.requests).toBe(20);
     expect(PRIORITY_REQUESTS_PER_BILL).toBe(2);
   });
 
   test('a priority bill is never also in the head or the tail', () => {
-    const plan = planCoverageRun({ ranked, prioritySlugs: [slug(1), slug(2)], topN: 12, tailShare: 0.5 });
+    const plan = planCoverageRun({ ranked, prioritySlugs: [slug(1), slug(2)], topN: 20, tailShare: 0.5 });
     const all = [...plan.priority, ...plan.head, ...plan.tail, ...plan.overflow].map(
       (b: { bill_number: number }) => b.bill_number,
     );
     expect(new Set(all).size).toBe(all.length);
-    expect(plan.head.map((b: { bill_number: number }) => b.bill_number)).toEqual([3, 4, 5, 6]);
+    expect(plan.head.map((b: { bill_number: number }) => b.bill_number)).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test('the tail is still least-recently-checked first, never-checked ahead of all', () => {
@@ -327,10 +350,47 @@ test.describe('planCoverageRun — the budget never grows', () => {
     expect(plan.requests).toBe(10);
   });
 
-  test('a priority set larger than half the budget is capped — requests still ≤ topN', () => {
-    const plan = planCoverageRun({ ranked, prioritySlugs: ranked.map((e) => slug(e.b.bill_number as number)), topN: 7, tailShare: 0.5 });
-    expect(plan.priority).toHaveLength(3);
-    expect(plan.requests).toBeLessThanOrEqual(7);
+  test('the priority set has its OWN ceiling — 20% of the night — so the tail is never starved', () => {
+    // The 2026-09-26 review's probe: 30 priority slugs on a 20-request night.
+    // With only the old half-the-budget ceiling that was 10 priority bills,
+    // 0 head, 0 tail — the 2026-08-05 starvation the 50/50 split exists to stop.
+    expect(PRIORITY_MAX_SHARE).toBe(0.2);
+    const thirty = ranked.slice(0, 30).map((e) => slug(e.b.bill_number as number));
+    const plan = planCoverageRun({ ranked, prioritySlugs: thirty, topN: 20, tailShare: 0.5 });
+    expect(plan.maxPriority).toBe(2);
+    expect(plan.priority).toHaveLength(2);
+    expect(plan.head.length + plan.tail.length + plan.overflow.length).toBe(16);
+    expect(plan.tail.length).toBeGreaterThan(0);
+    expect(plan.requests).toBe(20);
+    // The other 28 are DEFERRED, not dropped: reported, and still in line for
+    // an ordinary slot (the head here is made of them).
+    expect(plan.deferred).toEqual(thirty.slice(2));
+    expect(plan.head.every((b: { bill_number: number }) => thirty.includes(slug(b.bill_number)))).toBe(true);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  test('the ceiling is a parameter, clamped to [0, 1], and requests never exceed topN', () => {
+    const all = ranked.map((e) => slug(e.b.bill_number as number));
+    expect(planCoverageRun({ ranked, prioritySlugs: all, topN: 7, tailShare: 0.5, priorityShare: 1 }).priority).toHaveLength(3);
+    expect(planCoverageRun({ ranked, prioritySlugs: all, topN: 7, tailShare: 0.5, priorityShare: 5 }).priority).toHaveLength(3);
+    expect(planCoverageRun({ ranked, prioritySlugs: all, topN: 20, tailShare: 0.5, priorityShare: 0 }).priority).toHaveLength(0);
+    expect(planCoverageRun({ ranked, prioritySlugs: all, topN: 20, tailShare: 0.5, priorityShare: -1 }).priority).toHaveLength(0);
+    expect(planCoverageRun({ ranked, prioritySlugs: all, topN: 20, tailShare: 0.5, priorityShare: Number.NaN }).priority).toHaveLength(2);
+    for (const topN of [0, 1, 7, 20, 39]) {
+      expect(planCoverageRun({ ranked, prioritySlugs: all, topN, tailShare: 0.5, priorityShare: 1 }).requests).toBeLessThanOrEqual(topN);
+    }
+  });
+
+  test('600 on the 2026-09-26 shape: 28 priority bills fit under the 60-bill ceiling', () => {
+    const big = Array.from({ length: 3000 }, (_, i) => ({ b: fullBill({ bill_number: i + 1 }), eff: 0.5 }));
+    const prio = Array.from({ length: 28 }, (_, i) => slug(1000 + i));
+    const plan = planCoverageRun({ ranked: big, prioritySlugs: prio, topN: 600, tailShare: 0.5 });
+    expect(plan.maxPriority).toBe(60);
+    expect(plan.priority).toHaveLength(28);
+    expect(plan.deferred).toEqual([]);
+    expect(plan.head).toHaveLength(272);
+    expect(plan.tail).toHaveLength(272);
+    expect(plan.requests).toBe(600);
   });
 
   test('600 against the 2026-09-25 corpus shape: 25 priority bills leave 550 rotating, 600 requests', () => {
@@ -376,6 +436,176 @@ test.describe('mergeArticles — merge by URL, newest first, never erase', () =>
     const copy = JSON.parse(JSON.stringify(fresh));
     expect(mergeArticles(fresh, [], 5).map((a) => a.url)).toEqual(['https://a/dated', 'https://a/undated']);
     expect(fresh).toEqual(copy);
+  });
+});
+
+test.describe('the gate’s NO is not made permanent by the merge', () => {
+  const art = (url: string, title = url) => ({ url, title, source: 'x.com', snippet: null, publishedAt: '2026-09-01' });
+
+  test('a stored article tonight’s gate was shown and rejected is dropped; one it did not see stays', () => {
+    const stored = [art('https://a/wrongly-kept', 'Fringe take'), art('https://a/not-seen-tonight', 'Old hearing')];
+    const rejected = [art('https://a/wrongly-kept', 'Fringe take'), art('https://a/other', 'Unrelated')];
+    expect(withoutRejected(stored, rejected).map((a) => a.url)).toEqual(['https://a/not-seen-tonight']);
+  });
+
+  test('the same syndicated title is the same article — as in the merge', () => {
+    const stored = [art('https://a/1', 'Senate  VOTES on it')];
+    expect(withoutRejected(stored, [art('https://b/1', 'senate votes on it')])).toEqual([]);
+  });
+
+  test('nothing rejected, nothing dropped; inputs are never mutated', () => {
+    const stored = [art('https://a/1')];
+    const copy = JSON.parse(JSON.stringify(stored));
+    expect(withoutRejected(stored, [])).toEqual(stored);
+    expect(withoutRejected(stored, [art('https://a/1')])).toEqual([]);
+    expect(stored).toEqual(copy);
+    expect(withoutRejected(undefined as never, [])).toEqual([]);
+  });
+
+  test('gateAnswered: only a COMPLETE, WELL-FORMED reply may delete stored coverage', () => {
+    const done = { stopReason: 'end_turn' };
+    // The exact shapes relevancePrompt asks for.
+    expect(gateAnswered('0, 3', 5, done)).toBe(true);
+    expect(gateAnswered('0,3,4', 5, done)).toBe(true);
+    expect(gateAnswered('4', 5, done)).toBe(true);
+    expect(gateAnswered('none', 5, done)).toBe(true);
+    // Tolerated wrapping: one trailing period, one pair of quotes/backticks, whitespace.
+    expect(gateAnswered('None.', 5, done)).toBe(true);
+    expect(gateAnswered('"none"', 5, done)).toBe(true);
+    expect(gateAnswered('`0, 3`', 5, done)).toBe(true);
+    expect(gateAnswered('  0, 3.\n', 5, done)).toBe(true);
+    expect(gateAnswered('10, 12', 20, done)).toBe(true);
+  });
+
+  test('gateAnswered: a TRUNCATED reply is not an answer, however clean the surviving text looks', () => {
+    // "0, 3, 1" cut off at max_tokens may have been "0, 3, 12".
+    expect(gateAnswered('0, 3, 1', 20, { stopReason: 'max_tokens' })).toBe(false);
+    expect(gateAnswered('none', 5, { stopReason: 'max_tokens' })).toBe(false);
+    expect(gateAnswered('0, 3', 5, { stopReason: 'refusal' })).toBe(false);
+    // No stop reason at all is unknown, and unknown is no.
+    expect(gateAnswered('0, 3', 5)).toBe(false);
+    expect(gateAnswered('0, 3', 5, { stopReason: null })).toBe(false);
+    expect(gateAnswered('0, 3', 5, {})).toBe(false);
+  });
+
+  test('gateAnswered: an OFF-SCRIPT reply is not an answer, even with in-range indexes in it', () => {
+    const done = { stopReason: 'end_turn' };
+    for (const text of [
+      '',
+      '   ',
+      'I cannot tell from these headlines.',
+      '0, 3 — the rest are about other bills',
+      'Articles 2 and 4',
+      '2 and 4',
+      '0 3',
+      '0;3',
+      '0, 3,',
+      ',0, 3',
+      '0,\n3',
+      'none of 0-24',
+      'None of these are about this bill.',
+      'none\n\nArticle 2 is close but covers a different bill.',
+      '0, 3\n\nThese discuss the vote.',
+      '1-3',
+      '-1',
+      '0.5',
+      '03',
+      '0, 03',
+      '0, 0', // repeated: a looping reply, not a verdict
+      '"0, 3', // unbalanced quote
+      '0, 3..', // one trailing period is tolerated, not two
+    ]) {
+      expect(gateAnswered(text, 5, done), JSON.stringify(text)).toBe(false);
+    }
+    expect(gateAnswered(null, 5, done)).toBe(false);
+    expect(gateAnswered(undefined, 5, done)).toBe(false);
+    // Out of range: not an answer about THESE candidates — whole reply or part of it.
+    expect(gateAnswered('7, 9', 5, done)).toBe(false);
+    expect(gateAnswered('0, 5', 5, done)).toBe(false);
+    // Nothing was shown.
+    expect(gateAnswered('none', 0, done)).toBe(false);
+  });
+
+  test('gateAnswered is stricter than parseKeptIndexes, which still decides what a night KEEPS', () => {
+    // An off-script reply keeps what it names (the keep path is unchanged)…
+    expect([...parseKeptIndexes('0, 3 — the rest are about other bills', 5)].sort()).toEqual([0, 3]);
+    // …but cannot delete anything.
+    expect(gateAnswered('0, 3 — the rest are about other bills', 5, { stopReason: 'end_turn' })).toBe(false);
+  });
+
+  test('articleMatcher matches by URL or by syndicated title', () => {
+    const isOne = articleMatcher([art('https://a/1', 'A title')]);
+    expect(isOne(art('https://a/1', 'something else'))).toBe(true);
+    expect(isOne(art('https://z/9', 'a  TITLE'))).toBe(true);
+    expect(isOne(art('https://z/9', 'Other'))).toBe(false);
+    expect(articleMatcher([])(art('https://a/1'))).toBe(false);
+  });
+});
+
+test.describe('leanDrift — the date pass is judged by lean against the whole-life pass', () => {
+  const mix = (left: number, center: number, right: number, unrated: number) => ({ left, center, right, unrated });
+
+  test('thresholds are one frozen constant', () => {
+    expect(LEAN_DRIFT).toEqual({ minArticles: 10, minPartisan: 8, minShift: 0.15, z: 2.58 });
+    expect(Object.isFrozen(LEAN_DRIFT)).toBe(true);
+  });
+
+  test('too few kept articles is "too few to judge" — never "ok"', () => {
+    const d = leanDrift(mix(2, 2, 1, 1), mix(0, 2, 0, 0));
+    expect(d.verdict).toBe('thin');
+    expect(d.checks.map((c) => c.state)).toEqual(['thin', 'thin']);
+    // One question judged ok, the other too thin: still not "ok" overall.
+    expect(leanDrift(mix(3, 10, 3, 4), mix(3, 10, 2, 5)).verdict).toBe('thin');
+  });
+
+  test('similar mixes are ok', () => {
+    const d = leanDrift(mix(10, 10, 10, 20), mix(12, 12, 10, 22));
+    expect(d.verdict).toBe('ok');
+    expect(d.checks.every((c) => c.state === 'ok')).toBe(true);
+  });
+
+  test('a date pass that brings in far more UNRATED outlets fires', () => {
+    const d = leanDrift(mix(5, 5, 5, 45), mix(15, 15, 15, 15));
+    expect(d.verdict).toBe('drift');
+    expect(d.checks.find((c) => c.metric === 'rated')!.state).toBe('drift');
+  });
+
+  test('the left/right split fires the same size of shift EITHER way', () => {
+    const toRight = leanDrift(mix(3, 20, 17, 10), mix(17, 20, 3, 10));
+    const toLeft = leanDrift(mix(17, 20, 3, 10), mix(3, 20, 17, 10));
+    expect(toRight.verdict).toBe('drift');
+    expect(toLeft.verdict).toBe('drift');
+    const zr = toRight.checks.find((c) => c.metric === 'split')!.z!;
+    const zl = toLeft.checks.find((c) => c.metric === 'split')!.z!;
+    expect(Math.abs(zr)).toBeCloseTo(Math.abs(zl), 10);
+  });
+
+  test('a big-looking swing on a handful of articles does not fire (z below 2.58)', () => {
+    // 8 vs 8 partisan: 75% vs 38% right is a 37-point swing, but not significant.
+    const d = leanDrift(mix(2, 10, 6, 2), mix(5, 10, 3, 2));
+    expect(d.checks.find((c) => c.metric === 'split')!.state).toBe('ok');
+  });
+
+  test('a statistically solid but TINY shift does not fire (under 15 points)', () => {
+    const d = leanDrift(mix(5000, 5000, 4500, 5500), mix(4500, 5000, 5000, 5500));
+    const split = d.checks.find((c) => c.metric === 'split')!;
+    expect(Math.abs(split.z!)).toBeGreaterThan(LEAN_DRIFT.z);
+    expect(split.state).toBe('ok');
+  });
+
+  test('junk input reads as zero, never throws', () => {
+    expect(leanDrift(undefined as never, { left: -3, center: Number.NaN } as never).verdict).toBe('thin');
+  });
+
+  test('formatLeanDrift leads with the verdict word pipeline-health parses', () => {
+    expect(LEAN_DRIFT_WORD).toEqual({ ok: 'ok', drift: 'DRIFT', thin: 'too few to judge' });
+    expect(formatLeanDrift(leanDrift(mix(5, 5, 5, 45), mix(15, 15, 15, 15)), 30)).toMatch(
+      /^DRIFT — rated share: 30-day 25% of 60 vs whole-life 75% of 60 \(z=-?\d+\.\d\d\) SHIFTED · left\/right split: /,
+    );
+    expect(formatLeanDrift(leanDrift(mix(1, 1, 1, 1), mix(1, 1, 1, 1)), 30)).toBe(
+      'too few to judge — rated share: too few to judge (30-day 4, whole-life 4 kept; need 10 each) · ' +
+        'left/right split: too few to judge (30-day 2, whole-life 2 partisan-rated; need 8 each)',
+    );
   });
 });
 

@@ -1,6 +1,8 @@
 /**
- * Nightly coverage sync. For every eligible bill (decoded, non-terminal),
- * fetch real news articles (TheNewsAPI), keep only the ones genuinely about
+ * Nightly coverage sync. For up to COVERAGE_TOP_N requests' worth of eligible
+ * bills a night (decoded and non-terminal, plus the exceptions
+ * isCoverageEligible names; planCoverageRun picks which), fetch real news
+ * articles (TheNewsAPI), keep only the ones genuinely about
  * the bill (a Haiku relevance gate — it authors nothing), and write
  * them to data/coverage.json keyed by bill slug. The render path joins each
  * article's source to an outlet lean from data/media-bias.json (AllSides).
@@ -11,7 +13,11 @@
  * MERGES into what is stored instead of replacing it; the relevance gate sees
  * dates; a newly enacted bill stays in the sweep for 14 days; and every stored
  * article records whether its outlet is AllSides-rated (`rated`), so the Read
- * section can later say "across the press" over rated outlets only.
+ * section can later say "across the press" over rated outlets only. Follow-ups
+ * the same week: the priority set is queried whatever its terminal status and
+ * is capped at PRIORITY_MAX_SHARE of the night; a stored article tonight's gate
+ * rejected is dropped; and the date pass's outlet mix is judged against the
+ * whole-life pass every night (LEAN DRIFT), loudly when it shifts.
  *
  *   node --env-file=.env.local scripts/sync-coverage.mjs
  *
@@ -28,13 +34,18 @@ import { compareDocket, docketKey, docketRung } from '../lib/docket.mjs';
 import { loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import {
   DATE_SORT,
+  PRIORITY_MAX_SHARE,
   RECENT_WINDOW_DAYS,
   RELEVANCE_SORT,
   apiErrorDetail,
+  articleMatcher,
   coveragePriority,
   coverageSlug,
+  formatLeanDrift,
+  gateAnswered,
   isCoverageEligible,
   isNewestFirst,
+  leanDrift,
   mergeArticles,
   parseKeptIndexes,
   planCoverageRun,
@@ -43,6 +54,7 @@ import {
   recentWindowStart,
   relevancePrompt,
   wholeLifeStart,
+  withoutRejected,
 } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
@@ -95,6 +107,8 @@ const MAX_CANDIDATES = envNum('COVERAGE_MAX_CANDIDATES', 25);
 // Fraction of the nightly budget reserved for the least-recently-checked tail.
 // 0 restores pure urgency order (the pre-2026-08-05 behaviour).
 const TAIL_SHARE = envNum('COVERAGE_TAIL_SHARE', 0.5);
+// The most of the night the priority set (two requests per bill) may take.
+const PRIORITY_SHARE = envNum('COVERAGE_PRIORITY_SHARE', PRIORITY_MAX_SHARE);
 // Bills processed concurrently. The loop was strictly sequential (one fetch +
 // one Haiku call at a time), which is what made a wide sweep impractical on
 // wall-clock rather than on cost. Keep this modest: TheNewsAPI rate-limits per
@@ -112,9 +126,13 @@ const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const bills = readJSON('data/bills.json');
 const NOW = Date.now();
 
-/* Tolerant reads: each of these only ORDERS the sweep (who is asked first,
-   and who gets the extra 30-day pass). A missing or unparseable file shrinks
-   the priority set; it never fails the run. */
+/* Tolerant reads: each of these builds the priority set, which decides who is
+   asked first, who gets the extra 30-day pass, and (since the terminal-status
+   bypass in isCoverageEligible) whether a terminal priority bill is in the
+   sweep at all, and so whether its stored coverage is kept. A missing or
+   unparseable file shrinks the priority set. For a signed Big Question
+   vehicle like H.R. 6500 that means one night out of the sweep, and its stored
+   coverage ages out of the file that night. It never fails the run. */
 const readOptional = (p) => {
   try {
     return existsSync(p) ? readJSON(p) : null;
@@ -133,9 +151,11 @@ const withRatedFlag = (a) => ({ ...a, rated: outletPolicy.isRated(a?.source) });
 
 // Last committed coverage. Eligible bills this run doesn't reach (quota stop,
 // per-bill failure, or a COVERAGE_TOP_N test run) carry their previous entry
-// forward, so a partial night can only ever update or add coverage — never
-// silently shrink the file. Bills the run DOES process always take tonight's
-// fresh result, even when that result is empty.
+// forward, re-stamped with `rated` and otherwise unchanged. Bills the run DOES
+// process merge tonight's kept articles into their stored ones (processBill):
+// an empty night keeps what was stored, and the only stored articles a
+// processed bill loses are ones pushed out by newer articles past PER_BILL, or
+// ones tonight's gate was shown and rejected in a complete, well-formed reply.
 let prevCoverage = {};
 try {
   prevCoverage = JSON.parse(readFileSync('data/coverage.json', 'utf8'));
@@ -188,8 +208,21 @@ try {
 // filter dropped a bill the night it became law — exactly its peak coverage
 // week (on the 2026-09-25 file, H.R. 5334, signed 09-18, had neither a check
 // date nor any stored coverage).
+//
+// PLUS every bill in tonight's priority set, whatever its status (the
+// `priority` option; 2026-09-26 follow-up): H.R. 6500 is still the funding
+// question's vehicle 23 days after it became law, and the grace window alone
+// had stopped checking it. The priority set is built FIRST for that reason.
+const priorityInputs = coveragePriority({
+  moments: readOptional('data/moments.json'),
+  conversation: readOptional('data/conversation.json'),
+  floorSignals: floorSignalsDoc,
+  now: NOW,
+});
+const priorityWanted = new Set(priorityInputs.slugs);
+const inSweep = (b) => isCoverageEligible(b, NOW, { priority: priorityWanted.has(slugOf(b)) });
 const eligible = bills
-  .filter((b) => isCoverageEligible(b, NOW))
+  .filter(inSweep)
   .map((b) => {
     const slug = slugOf(b);
     const rung = docketRung(b, floorSignals[slug] ?? null, { now: NOW });
@@ -209,26 +242,23 @@ const eligible = bills
    corpus this was measured against (main, 2026-09-26 00:40Z) 21 of the 28
    eligible ones were not in that night's 600 at all — most Big Question
    vehicles were rechecked only every 9-10 days, by the rotating tail. Each
-   priority bill costs TWO
-   requests (a date-sorted 30-day pass beside the whole-life relevance pass),
-   and the rotation below shrinks by exactly that much — the night still spends
-   at most COVERAGE_TOP_N requests, the same quota as before.
+   priority bill costs TWO requests (a date-sorted 30-day pass beside the
+   whole-life relevance pass), and the rotation below shrinks by exactly that
+   much — the night still spends at most COVERAGE_TOP_N requests, the same
+   quota as before. The priority set may take at most COVERAGE_PRIORITY_SHARE
+   of the night (PRIORITY_MAX_SHARE, 20%); past that a priority bill is
+   DEFERRED — no 30-day pass tonight, but still in line for a head/tail slot.
 
    Then, as before: the head is ladder order - what a reader is most likely to
    open tonight. The tail is whatever has gone longest without a look, oldest
    first, with never-checked bills sorted ahead of everything (empty string
    precedes any ISO date). A bill already claimed is never double-counted. */
-const priorityInputs = coveragePriority({
-  moments: readOptional('data/moments.json'),
-  conversation: readOptional('data/conversation.json'),
-  floorSignals: floorSignalsDoc,
-  now: NOW,
-});
 const plan = planCoverageRun({
   ranked: eligible,
   prioritySlugs: priorityInputs.slugs,
   topN: TOP_N,
   tailShare: TAIL_SHARE,
+  priorityShare: PRIORITY_SHARE,
   checkedAt,
 });
 const prioritySet = new Set(plan.priority.map(slugOf));
@@ -243,7 +273,14 @@ console.log(
     `PER_BILL=${PER_BILL}, CONCURRENCY=${CONCURRENCY}`
 );
 if (plan.skipped.length) {
-  console.log(`  priority slugs not in tonight's eligible set (terminal past the grace window, undecoded, or unknown): ${plan.skipped.join(', ')}`);
+  console.log(`  priority slugs not in tonight's eligible set (undecoded, or not in the corpus): ${plan.skipped.join(', ')}`);
+}
+if (plan.deferred.length) {
+  console.warn(
+    `::warning::coverage sync: ${plan.deferred.length} priority bill(s) over the ${Math.round(PRIORITY_SHARE * 100)}% priority ceiling ` +
+      `(${plan.maxPriority} bills of ${TOP_N} requests) get no ${RECENT_WINDOW_DAYS}-day pass tonight and compete for an ordinary slot: ` +
+      `${plan.deferred.join(', ')}. Raise COVERAGE_PRIORITY_SHARE (or COVERAGE_TOP_N) if this persists.`
+  );
 }
 
 /* Drop syndicated duplicates: the same wire story republished by many outlets
@@ -346,9 +383,18 @@ async function fetchArticles(query, { publishedAfter, sort }) {
    prompt (relevancePrompt) shows each article's date and the bill's own dates.
    It returns every kept article; the PER_BILL cap is applied AFTER the merge
    with what is stored (mergeArticles), newest first — so the cap chooses by
-   date, not by the order the search happened to return. */
+   date, not by the order the search happened to return.
+
+   It also returns what the gate REJECTED, and whether the reply was a
+   complete, well-formed answer (gateAnswered: the model finished, one text
+   block, and exactly "none" or a comma-separated list of in-range indexes).
+   processBill drops a stored article the gate was shown and rejected
+   tonight ONLY on such a reply. Any other reply rejects nothing, so it can
+   never delete stored coverage. What a reply KEEPS is read as it always has
+   been (parseKeptIndexes, any in-range number in the reply), so tightening
+   the drop rule did not change what a night adds. */
 async function filterRelevant(b, candidates) {
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { kept: [], rejected: [], answered: false };
   const msg = await anthropic.messages.create({
     model: MODEL,
     // Room for every index when a priority bill brings two passes' worth of
@@ -358,7 +404,15 @@ async function filterRelevant(b, candidates) {
   });
   const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
   const keep = parseKeptIndexes(text, candidates.length);
-  return candidates.filter((_, i) => keep.has(i));
+  const answered =
+    Array.isArray(msg.content) &&
+    msg.content.length === 1 &&
+    gateAnswered(text, candidates.length, { stopReason: msg.stop_reason });
+  return {
+    kept: candidates.filter((_, i) => keep.has(i)),
+    rejected: answered ? candidates.filter((_, i) => !keep.has(i)) : [],
+    answered,
+  };
 }
 
 // ---- main ----
@@ -367,6 +421,24 @@ const processedSlugs = new Set();
 let anyFetchOk = false;
 let withCoverage = 0;
 let totalArticles = 0;
+/* What TONIGHT found, apart from what was already stored. The DONE line's
+   stored counts include carried-over articles, so an empty night (an API that
+   answers with no articles, a gate that keeps nothing) would otherwise read
+   like a normal one. An API that answers NOTHING at all never reaches the DONE
+   line; it prints the COVERAGE OUTAGE line instead (below the batch loop). */
+let keptTonight = 0;
+let billsKeptTonight = 0;
+let droppedOnVerdict = 0;
+/* Stored articles that tonight's gate was shown again with a complete,
+   well-formed reply, which means their earlier verdict was up for review.
+   This is the denominator for the mass-drop alarm: droppedOnVerdict can never
+   exceed it. */
+let rejudgedStored = 0;
+let unansweredGates = 0;
+/* Bills whose news request or gate call threw (a FAIL line), and whether the
+   daily quota stopped the run. Used only by the COVERAGE OUTAGE line. */
+let failedBills = 0;
+let quotaStopped = false;
 
 /* The date-sorted pass's bookkeeping — printed as the DATE PASS summary, which
    is how the first nightly after 2026-09-26 verifies DATE_SORT against the live
@@ -380,9 +452,14 @@ const datePass = { sent: 0, unsorted: 0, ordered: 0, disordered: 0, rejected: nu
    be MEASURED by lean, not assumed neutral. The 30-day pass asks TheNewsAPI a
    different question (newest, not most relevant), and whether that shifts the
    outlet mix could not be measured without a keyed call — so every night
-   measures it: what the gate kept, split by which pass found it and by the
+   measures it: what the gate kept, split by which pass returned it and by the
    outlet's AllSides lean. The whole-life pass on the same priority bills is the
-   control. Printed as the LEAN MIX line. */
+   control. Each pass is counted on its own — an article both passes returned
+   counts in both — so the two columns are what each QUESTION yields after the
+   gate, not a split of one pile. Printed as the LEAN MIX line, judged by
+   leanDrift (scripts/coverage-query.mjs) as the LEAN DRIFT line, and a shift
+   past its thresholds is a ::warning:: that lib/pipeline-health.mjs raises to
+   a ⛔ in the daily digest. */
 const leanMix = () => ({ left: 0, center: 0, right: 0, unrated: 0 });
 const keptLean = { recent: leanMix(), wholeLife: leanMix(), rest: leanMix() };
 const tallyLean = (bucket, articles) => {
@@ -395,12 +472,13 @@ const fmtMix = (m) => `L${m.left}/C${m.center}/R${m.right}/unrated ${m.unrated}`
    COVERAGE_TOP_N selection. Used for every write so neither a checkpoint
    file nor a partial final write can drop an unprocessed bill's coverage.
    Entries for bills that went terminal (or left the corpus, or passed the
-   enacted grace window) still age out.
+   enacted grace window) still age out — unless the bill is in tonight's
+   priority set, which keeps it in the sweep (isCoverageEligible).
 
    Every article written carries `rated` — whether its outlet is AllSides-rated
    at write time — including carried-forward ones, so the whole file speaks
    the same shape after one night. */
-const eligibleSlugs = new Set(bills.filter((b) => isCoverageEligible(b, NOW)).map(slugOf));
+const eligibleSlugs = new Set(bills.filter(inSweep).map(slugOf));
 function withCarryForward() {
   const merged = {};
   for (const [slug, arts] of Object.entries(out)) merged[slug] = arts.map(withRatedFlag);
@@ -468,7 +546,10 @@ async function fetchRecent(b, query) {
    whole-life relevance pass) and ONE gate call over both candidate lists.
    Every processed bill's kept articles MERGE into what was stored — by URL,
    newest first, capped at PER_BILL — so an empty or unlucky night keeps what
-   an earlier night found instead of erasing it. */
+   an earlier night found instead of erasing it. The one exception is an
+   article the gate was SHOWN tonight and rejected: that verdict replaces the
+   earlier one (withoutRejected), and only when the reply was a complete,
+   well-formed answer (gateAnswered). */
 async function processBill(b) {
   const slug = slugOf(b);
   const query = queryFor(b);
@@ -484,19 +565,26 @@ async function processBill(b) {
     if (whole === null) return 'quota';
     anyFetchOk = true;
     const candidates = dedupeArticles([...recent, ...whole]);
-    const kept = await filterRelevant(b, candidates);
+    const { kept, rejected, answered } = await filterRelevant(b, candidates);
     processedSlugs.add(slug);
     checkedAt[slug] = RUN_DAY; // looked at tonight, regardless of what we found
-    const recentUrls = new Set(recent.map((a) => a.url));
-    const keptRecent = kept.filter((a) => recentUrls.has(a.url));
+    const noAnswer = candidates.length > 0 && !answered;
+    if (noAnswer) unansweredGates++;
+    keptTonight += kept.length;
+    if (kept.length) billsKeptTonight++;
+    const keptRecent = kept.filter(articleMatcher(recent));
     datePass.recentKept += keptRecent.length;
     if (isPriority) {
       tallyLean(keptLean.recent, keptRecent);
-      tallyLean(keptLean.wholeLife, kept.filter((a) => !recentUrls.has(a.url)));
+      tallyLean(keptLean.wholeLife, kept.filter(articleMatcher(whole)));
     } else {
       tallyLean(keptLean.rest, kept);
     }
-    const stored = Array.isArray(prevCoverage[slug]) ? prevCoverage[slug] : [];
+    const storedBefore = Array.isArray(prevCoverage[slug]) ? prevCoverage[slug] : [];
+    if (answered) rejudgedStored += storedBefore.filter(articleMatcher(candidates)).length;
+    const stored = withoutRejected(storedBefore, rejected);
+    const dropped = storedBefore.length - stored.length;
+    droppedOnVerdict += dropped;
     const merged = mergeArticles(kept, stored, PER_BILL);
     if (merged.length) {
       out[slug] = merged;
@@ -506,7 +594,10 @@ async function processBill(b) {
     console.log(
       `${slug}: ${candidates.length} candidates` +
         `${isPriority ? ` (${recent.length} from the ${RECENT_WINDOW_DAYS}-day pass)` : ''}` +
-        ` -> ${kept.length} kept -> ${merged.length} stored`
+        ` -> ${kept.length} kept` +
+        `${dropped ? `, ${dropped} stored article(s) dropped on tonight's gate verdict` : ''}` +
+        `${noAnswer ? " (the gate's reply was not complete and well-formed: no stored article dropped)" : ''}` +
+        ` -> ${merged.length} stored`
     );
     return 'ok';
   } catch (e) {
@@ -527,19 +618,42 @@ for (let i = 0; i < topBills.length; i += CONCURRENCY) {
   const results = await Promise.all(batch.map((b) => processBill(b)));
 
   processed += batch.length;
-  // Checkpoint per batch so a long, rate-limited run never loses progress.
-  writeFileSync('data/coverage.json', JSON.stringify(withCarryForward()));
+  failedBills += results.filter((r) => r === 'fail').length;
+  // Checkpoint per batch so a long, rate-limited run never loses progress —
+  // but only once the API has answered at least once. Before that there is
+  // nothing to keep, and a checkpoint would still rewrite the file (aging out
+  // entries, re-stamping `rated`, dropping `_note`), so the outage exit below
+  // could not honestly say the file was left unchanged.
+  if (anyFetchOk) writeFileSync('data/coverage.json', JSON.stringify(withCarryForward()));
 
   if (results.includes('quota')) {
+    quotaStopped = true;
     console.error(`TheNewsAPI daily quota exhausted after ${processed} bills — stopping early`);
     break;
   }
 }
 
-// Never clobber the existing file when the API never responded — preserve the
-// current coverage (or the committed sample) and let the next run self-heal.
+/* THE OUTAGE LINE. When TheNewsAPI never answered, the run keeps the committed
+   file exactly as it was (nothing above wrote it) and exits 0, so the rest of
+   the nightly still lands. It also exits BEFORE the DONE line, so
+   pipeline-health's coverage-kept-zero alarm, which reads the DONE line, never
+   saw a hard outage. It now reads this line instead, as the coverage-outage
+   ⛔ (lib/pipeline-health.mjs parseCoverageOutage). The wording is a contract
+   with that parser. tests/sync-coverage-runner.unit.spec.ts feeds this
+   script's real output to it. */
 if (!anyFetchOk) {
-  console.warn('No successful TheNewsAPI responses; leaving data/coverage.json unchanged.');
+  if (topBills.length === 0) {
+    console.warn('coverage sync: no eligible bill was planned tonight, so nothing was asked; data/coverage.json left unchanged.');
+    process.exit(0);
+  }
+  const outage =
+    `COVERAGE OUTAGE: 0 of ${topBills.length} planned bill(s) got a TheNewsAPI response tonight ` +
+    `(${failedBills} failed${quotaStopped ? '; the daily quota stopped the run' : ''}) — data/coverage.json left unchanged, no bill checked`;
+  console.log(outage);
+  console.warn(
+    `::warning::coverage sync: TheNewsAPI answered none of tonight's requests (${failedBills} bill(s) failed` +
+      `${quotaStopped ? '; the daily quota stopped the run' : ''}). No bill was checked and data/coverage.json is unchanged — see the FAIL lines above.`
+  );
   process.exit(0);
 }
 
@@ -570,9 +684,21 @@ const staleShare = newestAges.length
   ? ((100 * newestAges.filter((d) => d > 30).length) / newestAges.length).toFixed(1)
   : '0.0';
 
+/* The DONE line. Its first half is the shape lib/pipeline-health.mjs's
+   parseCoverageDone has always read (so older logs still parse); since the
+   merge, those counts include articles carried over from earlier nights, so
+   the second half says what TONIGHT found. An empty night now reads
+   "kept tonight: 0 article(s) on 0 bill(s)" instead of passing for normal.
+   "D of J re-judged" is how many stored articles tonight's gate dropped, out
+   of how many it was shown again with a complete, well-formed reply. The pair
+   is what pipeline-health's coverage-mass-drop alarm reads. The wording is a
+   contract with parseCoverageDone. */
 console.log(
   `DONE: ${withCoverage}/${topBills.length} bills with coverage, ${totalArticles} articles total` +
-    `${carried ? ` (+${carried} unprocessed bills carried forward)` : ''}`
+    `${carried ? ` (+${carried} unprocessed bills carried forward)` : ''}` +
+    `; kept tonight: ${keptTonight} article(s) on ${billsKeptTonight} bill(s)` +
+    `; ${droppedOnVerdict} of ${rejudgedStored} re-judged stored article(s) dropped on tonight's gate verdict` +
+    `; ${unansweredGates} gate reply(ies) not complete and well-formed (no stored article dropped on them)`
 );
 console.log(
   `FRESHNESS: ${ages.length - neverChecked - over30} checked within 30d, ` +
@@ -592,6 +718,16 @@ console.log(
   `LEAN MIX (kept tonight, AllSides): priority bills — ${RECENT_WINDOW_DAYS}-day pass ${fmtMix(keptLean.recent)}, ` +
     `whole-life pass ${fmtMix(keptLean.wholeLife)}; all other bills ${fmtMix(keptLean.rest)}`
 );
+const drift = leanDrift(keptLean.recent, keptLean.wholeLife);
+const driftLine = formatLeanDrift(drift, RECENT_WINDOW_DAYS);
+console.log(`LEAN DRIFT: ${driftLine}`);
+if (drift.verdict === 'drift') {
+  console.warn(
+    `::warning::coverage sync: LEAN DRIFT — the ${RECENT_WINDOW_DAYS}-day date-sorted pass kept a different outlet mix than ` +
+      `the whole-life pass on the same priority bills (${driftLine}). Nonpartisan by construction: a change to how the ` +
+      `source is asked is measured by lean — read tonight's per-bill lines before keeping DATE_SORT as it is.`
+  );
+}
 if (datePass.disordered > 0) {
   console.warn(
     `::warning::coverage sync: ${datePass.disordered} response(s) sent with sort=${DATE_SORT} were NOT newest-first — ` +

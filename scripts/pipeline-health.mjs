@@ -61,6 +61,8 @@ import {
   floorSignalFreshness,
   formatHealthSection,
   parseCoverageDone,
+  parseCoverageLean,
+  parseCoverageOutage,
   parseFailingTests,
   parsePregen,
   parseSyncDone,
@@ -268,6 +270,8 @@ export function buildReport({ now = Date.now() } = {}) {
   const t3 = { batched: 0, resolved: 0, runs: 0 };
   let sync = null;
   let coverageDone = null;
+  let coverageLean = null;
+  let coverageOutage = null;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
@@ -291,6 +295,8 @@ export function buildReport({ now = Date.now() } = {}) {
     if (r.workflowName === 'Nightly bill sync') {
       sync = parseSyncDone(log);
       coverageDone = parseCoverageDone(log);
+      coverageLean = parseCoverageLean(log);
+      coverageOutage = parseCoverageOutage(log);
       pregen = parsePregen(log);
       portrait404s = countPortrait404s(log);
       upstashCacheFailures = countUpstashCacheFailures(log);
@@ -438,6 +444,8 @@ export function buildReport({ now = Date.now() } = {}) {
     nightly,
     sync,
     coverageRun: coverageDone,
+    coverageOutage,
+    coverageLean,
     corpus: {
       bills: corpusBills,
       delta: corpusBills !== null && previousBills !== null ? corpusBills - previousBills : null,

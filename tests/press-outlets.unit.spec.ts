@@ -62,9 +62,11 @@ test.describe('the allowlist hook (for a later owner trial — no file ships)', 
   test('an allowlisted unrated outlet is admitted but carries NO lean', () => {
     const policy = pressOutletPolicy({
       ratings: RATINGS,
-      allowlist: { outlets: { 'rollcall.com': { approved_on: '2026-10-01' } } },
+      allowlist: { outlets: { 'rollcall.com': { name: 'Roll Call', approved_on: '2026-10-01' } } },
     });
     expect(policy.admits('rollcall.com')).toBe(true);
+    expect(policy.allowlistName('https://www.rollcall.com/x')).toBe('Roll Call');
+    expect(policy.allowlistName('foxnews.com')).toBeNull();
     expect(policy.isAllowlisted('https://www.rollcall.com/x')).toBe(true);
     expect(policy.isRated('rollcall.com')).toBe(false);
     expect(policy.leanOf('rollcall.com')).toBeNull();
@@ -90,12 +92,29 @@ test.describe('the allowlist hook (for a later owner trial — no file ships)', 
 
   test('one bad key rejects the WHOLE list — an approved list is approved as a list', () => {
     const parsed = parsePressAllowlist({
-      outlets: { 'rollcall.com': {}, 'https://www.punchbowl.news/': {}, 'Axios.com': {} },
+      outlets: { 'rollcall.com': { name: 'Roll Call' }, 'https://www.punchbowl.news/': { name: 'Punchbowl' }, 'Axios.com': { name: 'Axios' } },
     });
     expect(parsed.domains.size).toBe(0);
     expect(parsed.problems).toHaveLength(2);
-    const policy = pressOutletPolicy({ ratings: RATINGS, allowlist: { outlets: { 'rollcall.com': {}, 'WWW.x.com': {} } } });
+    const policy = pressOutletPolicy({
+      ratings: RATINGS,
+      allowlist: { outlets: { 'rollcall.com': { name: 'Roll Call' }, 'WWW.x.com': { name: 'X' } } },
+    });
     expect(policy.admits('rollcall.com')).toBe(false);
+  });
+
+  test('every entry must name its masthead — no name, and the whole list fails closed', () => {
+    // Without it a named outlet would print under the capitalised-domain
+    // fallback ("Enr", "Pymnts") on a Big Question timeline.
+    for (const entry of [{}, { approved_on: '2026-10-01' }, { name: '' }, { name: '   ' }, { name: 7 }, null]) {
+      const policy = pressOutletPolicy({
+        ratings: RATINGS,
+        allowlist: { outlets: { 'rollcall.com': { name: 'Roll Call' }, 'enr.com': entry } },
+      });
+      expect(policy.admits('enr.com'), JSON.stringify(entry)).toBe(false);
+      expect(policy.admits('rollcall.com'), JSON.stringify(entry)).toBe(false);
+      expect(policy.problems.join(' '), JSON.stringify(entry)).toContain('"enr.com" has no "name"');
+    }
   });
 
   test('loadPressOutletPolicy: absent allowlist is rated-only with no problems', () => {
@@ -112,7 +131,7 @@ test.describe('the allowlist hook (for a later owner trial — no file ships)', 
   test('loadPressOutletPolicy: a present, valid allowlist is honored', () => {
     const files: Record<string, unknown> = {
       [MEDIA_BIAS_PATH]: { outlets: RATINGS },
-      [PRESS_ALLOWLIST_PATH]: { outlets: { 'rollcall.com': { approved_on: '2026-10-01' } } },
+      [PRESS_ALLOWLIST_PATH]: { outlets: { 'rollcall.com': { name: 'Roll Call', approved_on: '2026-10-01' } } },
     };
     const policy = loadPressOutletPolicy({ readJSON: (p) => files[p], exists: (p) => p in files });
     expect(policy.admits('rollcall.com')).toBe(true);
