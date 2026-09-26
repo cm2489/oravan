@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-26T01:03:31.112Z",
+    "fetched_at": "2026-09-26T07:35:59.874Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-09-26T01:03:31.112Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-09-26T07:35:59.874Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-26T01:03:31.112Z"
+        "checked_at": "2026-09-26T07:35:59.874Z"
       },
       "leans": {
         "center": {
@@ -33,6 +33,118 @@
           "status": "ok",
           "last_live": "2026-09-26",
           "dark_days": 0
+        }
+      },
+      "feeds": {
+        "CBS News Politics": {
+          "status": "ok",
+          "url": "https://www.cbsnews.com/latest/rss/politics",
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "CNBC Politics": {
+          "status": "ok",
+          "url": "https://www.cnbc.com/id/10000113/device/rss/rss.html",
+          "domain": "cnbc.com",
+          "lean": "center",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "Fox News Politics": {
+          "status": "ok",
+          "url": "https://moxie.foxnews.com/google-publisher/politics.xml",
+          "domain": "foxnews.com",
+          "lean": "right",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "Google News (congress bill query)": {
+          "status": "ok",
+          "url": "https://news.google.com/rss/search?q=congress%20bill%20when:1d&hl=en-US&gl=US&ceid=US:en",
+          "domain": null,
+          "lean": null,
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "NPR Politics": {
+          "status": "ok",
+          "url": "https://feeds.npr.org/1014/rss.xml",
+          "domain": "npr.org",
+          "lean": "center",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "Politico Congress": {
+          "status": "ok",
+          "url": "https://rss.politico.com/congress.xml",
+          "domain": "politico.com",
+          "lean": "left",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "Reason": {
+          "status": "ok",
+          "url": "https://reason.com/latest/feed/",
+          "domain": "reason.com",
+          "lean": "right",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "Roll Call": {
+          "status": "ok",
+          "url": "https://rollcall.com/feed/",
+          "domain": "rollcall.com",
+          "lean": null,
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "The Hill": {
+          "status": "ok",
+          "url": "https://thehill.com/homenews/feed/",
+          "domain": "thehill.com",
+          "lean": "center",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "The Hill House": {
+          "status": "ok",
+          "url": "https://thehill.com/homenews/house/feed/",
+          "domain": "thehill.com",
+          "lean": "center",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
+        },
+        "The Hill Senate": {
+          "status": "ok",
+          "url": "https://thehill.com/homenews/senate/feed/",
+          "domain": "thehill.com",
+          "lean": "center",
+          "last_live": "2026-09-26",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
         }
       }
     }
@@ -1306,7 +1418,14 @@
           "lastSeen": "2026-09-25"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "avclub.com",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPbzQyQjk0QkpWc2x5MFoxQlNzYnpEN2hvaGVsUUFxdkd3eXN2c3RzS1gxS2N5OG9Hb3U0LXJLQ3plUW5TQXdFNzNTTVZXTDdGdGdwVjg4dHZZc2dobU1JSDJpbG5rbWlWc1VkZ3VsZ0pvNXg2QWJsMnQ4d29BV2NTQ1hWVUc1ajRXaEZ0Szlzdw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-3315-119": {
@@ -1538,6 +1657,12 @@
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQXzhKOG04aklPamo0Uks4czJTTWNuX2dRS0hQWEx0SnpFYm5rT09DLWluekw1ZWowVThMSDM0eFJVSDMwMUZBNmRPQVQxNVVBdGJPSFl5N1h2X3JLRjctRGh0NkVqTjlXOUE3UXR5WkpQNXBjSUc1U0Jka2dadHh6d0w1Nktvc2FYVnJVTTI1b08xbnl4Y2tCVFoxMGQ2a0xSZXBoUkNvWkxyLUszTW9JaWlVdGpCZEIwV3FJdA?oc=5"
         },
         {
+          "domain": "news10.com",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxNSm0tbkRTVllvTTJDTTRuNHgyV202VGlPWkRIRk1NUmNTQ2NyZTFSeHdIUE9fVUliVnJiNUpaemVUNVNpQTRqU1hhc2tCakhEMFlLVVZ2T0tBbjE5aFN5bmhYdmgwekFLTWRWVmstNHpLOXZjeFpsYUZBLVhNdkVPdWlPa181ekVzQzBrWUdFSC0zM2NXeWdVTTFWTlN2UUFjRUFtUmxicnl0UGlpdnFJUlNzRkVES3VwQU9jalpTUTlWZThiVDV2WFFHSdIB0AFBVV95cUxPb1RZbWM1cHllb2ZnYVVGWU05WTVtbXowNlM4eGFkaHpyYmxuYUw0TGN1Q0pmSnR0VFVIZndidm8ycTlpbE82WEpWNnpQbU9WNDd3OUFGVGxkR1dBNUdubGE4T2dtc3lIS3hmUGRoSk8tOTdhY0hOVkEwZmxkR0twRWJkWGlweUFndHh2bHhiY0M4TUNLd3p2QXRPelNYQThJYVZFbHZOOXhqRkl2OEEwQTlmZXFaX085QlNtTVVxVWVtWEN4M2NTNlZfbzByMDBu?oc=5"
+        },
+        {
           "domain": "sportstalkflorida.com",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
@@ -1651,11 +1776,6 @@
           "domain": "martinsvillebulletin.com",
           "firstSeen": "2026-09-19",
           "lastSeen": "2026-09-19"
-        },
-        {
-          "domain": "pinalcentral.com",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-19"
         }
       ],
       "mostViewed": {
@@ -1733,6 +1853,19 @@
           "lastSeen": "2026-09-23"
         }
       ],
+      "mostViewed": null
+    },
+    "s-766-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://www.cbsnews.com/news/trump-cancels-billion-spending-pocket-rescission/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-836-119": {

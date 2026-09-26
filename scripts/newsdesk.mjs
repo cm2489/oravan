@@ -496,7 +496,9 @@ import {
   anyDataChanged,
   assessFeeds,
   buildBillIndex,
+  buildFloorRecord,
   buildListIndex,
+  buildT3Prompt,
   chargeableDecode,
   decideFires,
   extractBillsThisWeekSlugs,
@@ -508,7 +510,9 @@ import {
   FEED_DARK_ESCALATE_RUNS,
   findCitations,
   floorBucket,
+  FLOOR_RECORD_SOURCES,
   hashHeadline,
+  headlineForMatching,
   looksLegislative,
   matchLocal,
   matchNickname,
@@ -518,6 +522,7 @@ import {
   prunePendingOutlets,
   rollDailyDecodes,
   rollFeedDarkness,
+  rollFloorRecord,
   summarizePendingOutlets,
   tier0SeenKey,
   UNRESOLVED_OUTLET,
@@ -728,8 +733,12 @@ function saveCache(cache) {
 
 /** ONE batched Haiku call resolving t2-ambiguous headlines against their
  *  own short candidate lists. Never trusts a slug the batch didn't offer -
- *  a hallucinated slug from the model can't enter the pipeline. */
-async function resolveWithHaiku(anthropic, batch) {
+ *  a hallucinated slug from the model can't enter the pipeline.
+ *  The prompt itself is built by newsdesk-match.mjs's buildT3Prompt (pure, so
+ *  the tests pin exactly what the model reads): each candidate carries its
+ *  latest action date, status and floor-record note, which is what lets t3
+ *  tell twelve identically-worded war-powers resolutions apart (2026-09-26). */
+async function resolveWithHaiku(anthropic, batch, { today } = {}) {
   // Counters, not log prose, are what the post-commit honesty alarm reads
   // (scripts/check-run-honesty.mjs). The two graceful degradations below are
   // correct for the RUN - no headline may cost a bill its refresh - and that
@@ -746,19 +755,12 @@ async function resolveWithHaiku(anthropic, batch) {
   // alarm fatigue this alarm's own header forbids. Zero is a measurement.
   setCounter('t3Batched', batch.length);
   if (batch.length === 0) return new Map(); // skip t3 entirely - zero API calls
-  const prompt = batch
-    .map((b, i) => `${i}. HEADLINE: ${b.title}\n   CANDIDATES: ${b.candidates.map((c) => `${c.slug} = ${c.title}`).join(' | ')}`)
-    .join('\n');
   let text;
   try {
     const msg = await anthropic.messages.create({
       model: T3_MODEL,
       max_tokens: 1024,
-      messages: [{ role: 'user', content: `For each numbered headline below, decide which ONE candidate bill (if any) it is actually reporting on. Only pick a candidate if the headline is clearly about that specific bill's provisions, vote, or status — not just a similar general topic. If none fit, use null.
-
-${prompt}
-
-Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slug":null}] — no prose, no markdown fences, no other text.` }],
+      messages: [{ role: 'user', content: buildT3Prompt(batch, { today }) }],
     });
     text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
   } catch (e) {
@@ -913,9 +915,76 @@ if (health.dark) {
 const newItems = items.filter((it) => !cache.seen.has(hashHeadline(it.title, it.outlet)));
 console.log(`${items.length} headlines fetched, ${newItems.length} new (not previously seen)`);
 
+// data/floor-signals.json, written by the sibling step (scripts/floor-signals.mjs)
+// immediately before this script, and read-only here. Loaded before matching
+// because the t3 floor record below reads its tier-0 announcements; the
+// re-decode trigger further down reads the same object.
+const floorSignals = (() => {
+  try {
+    return JSON.parse(readFileSync(FLOOR_SIGNALS_PATH, 'utf8'));
+  } catch {
+    // No file yet (before floor-signals.mjs's first run), or an unreadable
+    // one. The trigger simply falls back to its T1 half — this must never
+    // cost the newsdesk its refreshes.
+    return null;
+  }
+})();
+
+// ---- the floor record t3 reads (2026-09-26) ------------------------------
+// Which measures a chamber's own record put on the floor in the last
+// FLOOR_RECORD_HOURS: EVERY slug this run's floor-today feeds and the House
+// weekly schedule list (not only the ones still unrefreshed in this window -
+// this is about naming the measure a headline reports on, not about spending a
+// refresh), the rolling memory of earlier runs' floor feeds (the feeds roll
+// over to the next legislative day while a vote's coverage keeps arriving for a
+// day or two), and floor-signals.json's live tier-0 announcements. The measured
+// failure it closes: the 2026-09-24 Senate vote on H.Con.Res. 89 fired tier-0,
+// yet its coverage was routed to S.J.Res. 185, an identically-worded resolution
+// last acted on in June (newsdesk-match.mjs, "the floor record").
+// It changes only WHICH candidates t3 is offered and what it is told about them
+// (offerFloorFamily, buildT3Prompt): no fire, no budget, no docket position.
+// The memory rides the same actions/cache directory as seen.json but in its own
+// file, so nothing seen.json carries can collide with it; a lost cache costs
+// the memory and nothing else. Only slugs and dates are stored - never feed
+// content.
+const FLOOR_RECORD_FILE = `${CACHE_DIR}/floor-record.json`;
+const floorObservations = [];
+tier0Results.forEach((r, i) => {
+  const { label } = TIER0_SOURCES[i];
+  if (r.status !== 'fulfilled' || !FLOOR_RECORD_SOURCES[label]) return;
+  for (const slug of r.value.slugs) floorObservations.push({ slug, source: label });
+});
+const floorMemory = rollFloorRecord(
+  (() => {
+    try {
+      return JSON.parse(readFileSync(FLOOR_RECORD_FILE, 'utf8'));
+    } catch {
+      return null; // first run, evicted or corrupt - this run's feeds still count
+    }
+  })(),
+  floorObservations,
+  Date.now()
+);
+try {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(FLOOR_RECORD_FILE, JSON.stringify(floorMemory));
+} catch (e) {
+  console.error(`floor record not persisted (${e.message}) - next run starts from its own feeds`);
+}
+const floorRecord = buildFloorRecord({ persisted: floorMemory, signals: floorSignals?.signals, nowMs: Date.now() });
+console.log(
+  `t3 floor record (${floorRecord.size}): ${[...floorRecord].map(([slug, f]) => `${slug} ${f.kind}${f.chamber ? `:${f.chamber}` : ''}${f.date ? ` ${f.date}` : ''}`).join(', ') || 'none'}`
+);
+
 const citationSlugs = new Set();
 const t3Batch = [];
 const t3Items = []; // parallel to t3Batch
+// Ambiguous, legislative-looking headlines past the per-run t3 cap. Left OUT
+// of the seen-set below so the next run offers them to t3 (2026-09-26): until
+// then they were marked seen with the rest, which made "over the cap this
+// hour" mean "never matched". The cap - and so the one Haiku call per run and
+// its size - is unchanged; a headline waits an hour instead of being lost.
+const t3Overflow = new Set();
 const localOutletsBySlug = new Map(); // this run's t2/t3/bridge outlet contributions, per slug
 const bridgeItems = []; // legislative-looking headlines t1/t2 missed entirely - nickname-bridge input
 
@@ -964,7 +1033,11 @@ const addLocalOutlet = (slug, it) => {
 };
 
 for (const it of newItems) {
-  const citations = findCitations(it.title);
+  // The headline as the matcher reads it: a Google News title loses its
+  // trailing " - Outlet" (headlineForMatching). The raw it.title is still what
+  // the seen-set hashes, so no dedupe key moves.
+  const title = headlineForMatching(it.title, it.link);
+  const citations = findCitations(title);
   if (citations.length > 0) {
     for (const c of citations) {
       citationSlugs.add(c.slug);
@@ -972,25 +1045,31 @@ for (const it of newItems) {
     }
     continue; // citation tier wins outright - no need to also run t2/t3
   }
-  const local = matchLocal(it.title, billIndex);
+  const local = matchLocal(title, billIndex, { floorRecord });
   if (local?.tier === 't2') {
     addLocalOutlet(local.slug, it);
-  } else if (local?.tier === 'ambiguous' && looksLegislative(it.title) && t3Batch.length < T3_MAX_HEADLINES) {
-    t3Batch.push({ title: it.title, candidates: local.candidates });
-    t3Items.push(it);
-  } else if (local === null && looksLegislative(it.title)) {
+  } else if (local?.tier === 'ambiguous' && looksLegislative(title)) {
+    if (t3Batch.length < T3_MAX_HEADLINES) {
+      t3Batch.push({ title, candidates: local.candidates });
+      t3Items.push(it);
+    } else {
+      t3Overflow.add(it); // over the cap: retried next run, never marked seen
+    }
+  } else if (local === null && looksLegislative(title)) {
     // t2 can only ever resolve to a bill already in the corpus, by
     // construction - so a legislative-looking headline with NO local
     // signal at all is exactly the "brand-new big bill covered by name"
     // case. Hand it to the nickname bridge below.
     bridgeItems.push(it);
   }
-  // else: not legislative-looking (dropped), or ambiguous beyond the t3
-  // budget (dropped this run; fresh headlines next hour retry).
+  // else: not legislative-looking (dropped).
 }
 
-const t3Results = await resolveWithHaiku(anthropic, t3Batch);
+const t3Results = await resolveWithHaiku(anthropic, t3Batch, { today: todayUTC });
 console.log(`t3: ${t3Batch.length} headline(s) batched${t3Batch.length ? '' : ' (skipped - empty batch)'}, ${t3Results.size} resolved`);
+if (t3Overflow.size > 0) {
+  console.log(`t3 overflow: ${t3Overflow.size} ambiguous headline(s) past the ${T3_MAX_HEADLINES}-headline cap left unseen - offered to t3 next run`);
+}
 t3Items.forEach((it, i) => {
   const slug = t3Results.get(i);
   if (slug) addLocalOutlet(slug, it);
@@ -1008,7 +1087,7 @@ if (bridgeItems.length > 0) {
     const listIndex = buildListIndex(await fetchRecentlyUpdated(NICKNAME_LIST_LIMIT));
     let hits = 0;
     for (const it of bridgeItems) {
-      const match = matchNickname(extractNicknameTokens(it.title), listIndex);
+      const match = matchNickname(extractNicknameTokens(headlineForMatching(it.title, it.link)), listIndex);
       if (match) {
         hits++;
         addLocalOutlet(match.slug, it);
@@ -1142,16 +1221,9 @@ for (const slug of fired) {
 // with a matching title (critic A-8). The whole pre-2026-08-12 corpus has a
 // null stamp, and reading "unknown" as "stale" would have spent the entire
 // daily cap on day one re-explaining decodes that were fine.
-const floorSignals = (() => {
-  try {
-    return JSON.parse(readFileSync(FLOOR_SIGNALS_PATH, 'utf8'));
-  } catch {
-    // No file yet (before floor-signals.mjs's first run), or an unreadable
-    // one. The trigger simply falls back to its T1 half — this must never
-    // cost the newsdesk its refreshes.
-    return null;
-  }
-})();
+//
+// `floorSignals` is data/floor-signals.json, loaded (null-tolerant) above the
+// matching loop, where the t3 floor record reads it first.
 const candidates = redecodeCandidates({ signals: floorSignals?.signals, bills, now: Date.now() });
 console.log(
   `re-decode: ${candidates.length} candidate(s) at the front of the ladder (${candidates.filter((c) => c.tier === 't0').length} T0, ${candidates.filter((c) => c.tier === 't1').length} T1)`
@@ -1384,14 +1456,19 @@ cache.conversationRedecodeQueue = deferredRedecodes.slice(0, 25);
 
 // ---- persist: cache always, data files only if something actually changed ----
 // Every headline this run touched (matched or not, fired or not) is marked
-// seen so it isn't reprocessed next hour. The one accepted tradeoff: a
+// seen so it isn't reprocessed next hour - EXCEPT the t3 overflow, which this
+// run never looked at: those stay unseen and are offered to t3 next run
+// (2026-09-26; before then "over the cap" meant "never matched"). The one
+// accepted tradeoff: a
 // citation-matched brand-new bill that hits BOTH decode caps this run
 // ('budget' outcome) still gets its headline marked seen, so it won't
 // retrigger from that exact article next hour - but a genuinely newsworthy
 // bill almost always accumulates fresh headlines hour over hour, and even
 // absent that, the nightly sync's own priority gate (scripts/decode-gate.mjs)
 // will pick it up within a day once it has real recorded motion.
-for (const it of newItems) cache.seen.add(hashHeadline(it.title, it.outlet));
+for (const it of newItems) {
+  if (!t3Overflow.has(it)) cache.seen.add(hashHeadline(it.title, it.outlet));
+}
 saveCache(cache);
 
 // The conversation file has its OWN material-change rule and its own reasons
