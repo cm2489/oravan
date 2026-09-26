@@ -265,9 +265,9 @@
  * A sixth thing this script does, and the only one that writes a file of its
  * own. Everything above is about TRIGGERING — which bill to refresh, which
  * decode to re-run. This is about EVIDENCE: which rated outlets carried a
- * story matched to which bill in the last 7 days, and what congress.gov's own
- * weekly most-viewed list says, written down where it can be audited a month
- * later. The full design, and the four critic patches it enforces at write
+ * story matched to which bill in the last 7 days — and, since conversation/v2,
+ * the link to that story — and what congress.gov's own weekly most-viewed list
+ * says, written down where it can be audited a month later. The full design, and the four critic patches it enforces at write
  * time, live in lib/conversation.mjs's header. Three things matter here:
  *
  *   1. THE TRIGGER MACHINERY IS UNTOUCHED. `pendingOutlets`, its 7-day TTL and
@@ -315,6 +315,7 @@ import {
   enteredCorroborated,
   leanOf,
   leanStatuses,
+  normalizeArticleUrl,
   rollLeanHealth,
   shouldWrite as shouldWriteConversation,
 } from '../lib/conversation.mjs';
@@ -741,10 +742,25 @@ const bridgeItems = []; // legislative-looking headlines t1/t2 missed entirely -
 //   - nothing here is ever deleted on fire. The trigger spends corroboration
 //     when it acts; the evidence of what was published does not stop being
 //     true because we acted on it.
-const conversationOutlets = new Map();
+// And one thing the trigger's set never needed (conversation/v2, critic B-5):
+// the ARTICLE LINK, first one per outlet per slug per run, so every count the
+// band prints traces to a story a reader can open. An item whose link is not a
+// checkable http(s) URL is not recorded here at all — counted below, so a feed
+// that starts serving odd links shows up in the log instead of as a quietly
+// thinner band. (parseFeed already drops items with no link, so in practice
+// this counter should read 0.)
+const conversationOutlets = new Map(); // slug -> Map<outlet, url>
+let conversationLinkless = 0;
 const addConversationOutlet = (slug, it) => {
-  if (!conversationOutlets.has(slug)) conversationOutlets.set(slug, new Set());
-  conversationOutlets.get(slug).add(it.outlet ?? UNRESOLVED_OUTLET);
+  const url = normalizeArticleUrl(it.link);
+  if (!url) {
+    conversationLinkless++;
+    return;
+  }
+  if (!conversationOutlets.has(slug)) conversationOutlets.set(slug, new Map());
+  const outlets = conversationOutlets.get(slug);
+  const outlet = it.outlet ?? UNRESOLVED_OUTLET;
+  if (!outlets.has(outlet)) outlets.set(outlet, url);
 };
 
 const addLocalOutlet = (slug, it) => {
@@ -1065,6 +1081,11 @@ const pool = conversationPool(nextConversation, { today });
 console.log(
   `conversation: ${Object.keys(nextConversation.slugs).length} slug(s) tracked, ${pool.filter((p) => p.tier === 'c1').length} corroborated (C1), ${pool.filter((p) => p.tier === 'c2').length} most-viewed+ (C2)`
 );
+if (conversationLinkless > 0) {
+  console.log(
+    `::warning::newsdesk: ${conversationLinkless} matched press item(s) carried no checkable http(s) link and were NOT recorded as conversation evidence (critic B-5: a count must trace to a story a reader can open). Check the feed that served them in scripts/newsdesk.mjs's SOURCES.`
+  );
+}
 
 // ---- the re-decode half: only what the press JUST corroborated ------------
 // Entering C1 is the trigger, not being C1 (a bill corroborated three days ago
