@@ -48,6 +48,13 @@
  *     counts an outlet toward corroboration that data/media-bias.json carries
  *     no AllSides rating for. Skipped cleanly when the file doesn't exist. The
  *     judgement lives in lib/conversation.mjs (verifyConversation)
+ *   - data/question-press.json (the per-question GDELT evidence, 2026-09-26)
+ *     counts an outlet data/media-bias.json does not rate, carries a count
+ *     that is not its own stored links, a link off its outlet's domain, a day
+ *     outside its window, any key the format does not define (no tone, no
+ *     sentiment, no titles), or has lost the GDELT citation its terms require.
+ *     Skipped cleanly when the file doesn't exist. The judgement lives in
+ *     lib/question-press.mjs (verifyQuestionPress)
  *
  * WHAT THIS FILE NO LONGER DOES, and where it went (owner ruling 2026-08-12,
  * N8-A2). The CURSOR-AGE ceiling — "the cursor is more than 10 days old" —
@@ -73,6 +80,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -336,6 +344,30 @@ if (!existsSync(CONVERSATION_PATH)) {
       fileBytes: statSync(CONVERSATION_PATH).size,
       knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
       bias,
+    });
+    for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
+// --- question-press: per-question GDELT evidence, rated-only, link-backed ---
+//
+// data/question-press.json is written by scripts/gdelt-intake.mjs, a step of
+// the hourly newsdesk workflow, and nothing on the site reads it yet. It is
+// checked here for the same reason conversation.json is: the nightly's commit
+// stages all of data/, so a damaged file must fail before that commit, not
+// after. Skipped cleanly when the file doesn't exist.
+if (!existsSync(QUESTION_PRESS_PATH)) {
+  console.log(`${QUESTION_PRESS_PATH} not present — skipping the question-press checks`);
+} else {
+  const questionPress = parse(QUESTION_PRESS_PATH, readFileSync(QUESTION_PRESS_PATH, 'utf8'));
+  if (questionPress !== null) {
+    const { failures, warnings, notes } = verifyQuestionPress({
+      data: questionPress,
+      fileBytes: statSync(QUESTION_PRESS_PATH).size,
+      bias: parse('data/media-bias.json', readFileSync('data/media-bias.json', 'utf8'))?.outlets ?? null,
+      moments: parse('data/moments.json', readFileSync('data/moments.json', 'utf8')),
     });
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);
