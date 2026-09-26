@@ -80,9 +80,14 @@ const recordResolver = (b: Bill) =>
 const noApi = async () => null;
 
 test.describe('the ambiguous sentences', () => {
-  test('both shapes are declared, and matched in either chamber direction', () => {
-    expect(AMBIGUOUS_WITHOUT_CONTEXT).toHaveLength(2);
-    for (const t of [RECONSIDER, MESSAGE_SENATE, MESSAGE_HOUSE]) expect(isAmbiguousAction(t), t).toBe(true);
+  test('all three shapes are declared, and matched in either chamber direction', () => {
+    // The third (2026-09-25) is a committee's text disposed of on the floor —
+    // "The committee substitute withdrawn by Voice Vote." — pinned against the
+    // real record in tests/committee-text-on-floor.unit.spec.ts.
+    expect(AMBIGUOUS_WITHOUT_CONTEXT).toHaveLength(3);
+    for (const t of [RECONSIDER, MESSAGE_SENATE, MESSAGE_HOUSE, 'The committee substitute withdrawn by Voice Vote.']) {
+      expect(isAmbiguousAction(t), t).toBe(true);
+    }
     expect(isAmbiguousAction('Passed Senate without amendment by Unanimous Consent.')).toBe(false);
   });
 
