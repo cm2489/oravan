@@ -276,7 +276,11 @@ export async function collect({ moments, bills, bias, previous = null, conversat
       `Requests ${stats.requests} (429s ${stats.rateLimited}); updated ${stats.done.length}, failed/waiting ${stats.failed.length}, not searchable ${stats.skipped.length}, already checked today ${stats.notDue.length}.`
   );
 
-  return { doc, write: shouldWrite({ previous, next: doc }), stats, today };
+  // No file yet and nothing to put in one (every search refused, say): write
+  // nothing. An empty first file would be a commit and a deploy that records
+  // no evidence at all.
+  const nothingToRecord = !previous && Object.keys(doc.questions).length === 0;
+  return { doc, write: !nothingToRecord && shouldWrite({ previous, next: doc }), stats, today };
 }
 
 async function main() {

@@ -462,7 +462,7 @@ test.describe('the collector (mocked GDELT)', () => {
     expect(stats.circuitOpen).toBe(true);
     expect(stats.done).toEqual([]);
     expect(doc.questions).toEqual({});
-    expect(write).toBe(true); // first-ever file: an empty, attributed document
+    expect(write).toBe(false); // no file yet and no evidence: no empty first commit
     expect(lines.some((l) => /circuit open/.test(l))).toBe(true);
   });
 
