@@ -39,11 +39,17 @@
  *
  * ---- PRESS SOURCES: free RSS only, no paid APIs ----
  * NEWS_API_KEY / TheNewsAPI is deliberately NOT used here — that quota
- * belongs to scripts/sync-coverage.mjs (which already exceeds its own
- * daily quota some nights; pipeline-audit.md §4). Politically-balanced
+ * belongs to scripts/sync-coverage.mjs, and the reason is ownership, not
+ * exhaustion. (Until 2026-09-25 this line said sync-coverage "already exceeds
+ * its own daily quota some nights", citing pipeline-audit.md §4. The nightly
+ * logs no longer show that: the 2026-09-24 run processed 600 bills with a
+ * handful of per-minute 429 back-offs and no daily-quota stop, and the
+ * September 2026 news-band audit found no quota stop in the nights it read.)
+ * Politically-balanced
  * basket of 11 feeds (leans per data/media-bias.json), the original six
- * verified live 2026-07-16, the three 2026-07-23 additions marked * and
- * the two 2026-08-12 rebalance additions marked **:
+ * verified live 2026-07-16, the three 2026-07-23 additions marked *, the
+ * 2026-08-12 rebalance addition marked ** and the 2026-09-25 right-lean
+ * replacement marked ***:
  *   The Hill      thehill.com    center   https://thehill.com/homenews/feed/
  *   The Hill Senate* thehill.com center   https://thehill.com/homenews/senate/feed/
  *   The Hill House*  thehill.com center   https://thehill.com/homenews/house/feed/
@@ -59,8 +65,9 @@
  *                  admits rated outlets only; see lib/conversation.mjs)
  *   NPR Politics  npr.org        center   https://feeds.npr.org/1014/rss.xml
  *   Fox News      foxnews.com    right    https://moxie.foxnews.com/google-publisher/politics.xml
- *   Washington Times** washingtontimes.com right
- *                 https://www.washingtontimes.com/rss/headlines/news/politics/
+ *   Reason***     reason.com     right    https://reason.com/latest/feed/
+ *                 (replaced washingtontimes.com, which never delivered from
+ *                  CI; see "THE 2026-09-25 RIGHT-LEAN SWAP" below)
  *   CBS News      cbsnews.com    left     https://www.cbsnews.com/latest/rss/politics
  *   Politico*     politico.com   left     https://rss.politico.com/congress.xml
  *   CNBC Politics** cnbc.com     center   https://www.cnbc.com/id/10000113/device/rss/rss.html
@@ -91,6 +98,139 @@
  * Basket is now 2 right + 2 left + 3 center rated outlets (Hill counted once)
  * + 1 unrated congress trade pub + 1 cross-outlet aggregator, and no lean
  * depends on a single feed staying alive.
+ * CORRECTION (2026-09-25): that last sentence was true of the construction and
+ * false in operation from the first run. washingtontimes.com returned HTTP 403
+ * to the GitHub runner on the first newsdesk run after the rebalance merged
+ * (2026-08-12 21:59Z) and on all 21 runs sampled from then through 2026-09-25,
+ * while the same URL answered 200 to the same user-agent from a non-runner
+ * address. Why runners are refused is unverified (the site is behind
+ * Cloudflare; rss.politico.com is too, and it delivers). The vetting above was
+ * done from a non-runner address, which cannot see a block on runner
+ * addresses, and the dark-lean alarm below counts per LEAN, so Fox alone kept
+ * the right lean `ok`. For six weeks the right half of this basket was one
+ * feed, and nothing said so. The per-feed alarm below is what says so now,
+ * and the feed was replaced the same day (next section).
+ *
+ * ---- THE 2026-09-25 RIGHT-LEAN SWAP ----
+ * washingtontimes.com (403 from every runner, above) is out; reason.com is in,
+ * so the basket is again 2 right + 2 left + 3 center rated outlets. The
+ * replacement had to clear two bars the 2026-08-12 vetting never applied: the
+ * outlet's own robots.txt AND its terms, and — because a laptop cannot see a
+ * runner block — the per-feed alarm as its reachability proof. All 25 domains
+ * data/media-bias.json rates right are accounted for below (foxnews.com is the
+ * incumbent, washingtontimes.com the feed being replaced), checked on
+ * 2026-09-25 with this script's own USER_AGENT for every fetch (no other
+ * user-agent was tried against any refusal):
+ *   washingtonexaminer.com  /tag/congress/feed/ 200, 10 items, 3 match-
+ *     eligible. Robots allow it. TERMS (re-read in a real browser 2026-09-25;
+ *     the page renders client-side, so a plain GET cannot read it; "Last
+ *     updated and effective: 06/08/2026"): "You are further granted a right to
+ *     implement the RSS feeds or APIs offered by our Sites if you have entered
+ *     into an agreement with us for such use", and "With the exception of
+ *     search engines, you agree that you will not use any robot, spider, or
+ *     other automatic device … to monitor or copy our web pages … without
+ *     prior written permission". (The same page also says "a commercial web
+ *     site is permitted to integrate and display our RSS feeds and APIs
+ *     subject to these Terms of Service"; the specific RSS clause and the
+ *     robot clause both still ask for an agreement or written permission.)
+ *     Out without that agreement.
+ *   nypost.com              /politics/feed/ 200. ROBOTS.TXT NOTICE:
+ *     "Collection of content and other data on nypost.com through automated
+ *     means is prohibited unless you have express written permission". Out.
+ *   pjmedia.com  /feed 200, 1 match-eligible of 20. Its footer links Salem
+ *     Media's terms (cdn.townhall.com/web/privacypolicy/termsofuse.htm,
+ *     effective 2019-11-05), which forbid using "an automatic device (such as
+ *     a robot or spider) … to copy or 'scrape' the Website or Service Content
+ *     for any purpose (except … bona fide search engines) without our express
+ *     written permission". Out.
+ *   breitbart.com, dailycaller.com  terms forbid bots/automated access. Out.
+ *   thedispatch.com, theblaze.com   terms forbid scraping/downloading pages
+ *     by automated means. Out.
+ *   dailysignal.com  feed 200, but its terms pages answer this user-agent
+ *     with 403, so its terms could not be read. Out.
+ *   thefederalist.com  /feed/ 200 (Cloudflare), 20 items over ~36h, 3 match-
+ *     eligible (all t3). Robots allow /feed/. NO terms-of-use page was found:
+ *     /terms-of-use/ is a 404 and the footer links only a privacy policy.
+ *     That is UNVERIFIED as "no terms" — a missing page is not proof there are
+ *     none — so it was not chosen; it is the candidate to re-check first.
+ *   spectator.us  does not resolve (DNS) — the US edition now lives on
+ *     spectator.com, which data/media-bias.json does not rate, so its links
+ *     would count toward nothing. Out.
+ *   nationalreview.com /news/feed/ 403; newsmax.com timeout at 20s;
+ *     townhall.com, americanthinker.com 404; thepostmillennial.com 0 items;
+ *     dailywire, spectator.org, theamericanconservative, oann, marketwatch:
+ *     0 legislative-looking items in the sample.
+ *   freebeacon.com  200, ~5 items/day, 3 match-eligible of 20. Terms forbid
+ *     "unauthorized automated means to compile information" (whether a
+ *     published RSS feed counts as authorized is a judgement). The alternate.
+ *   wnd.com  200, 2 match-eligible of 24. No automated-access clause.
+ *     Passed over.
+ *   reason.com  /latest/feed/ is the feed its own RSS button links to; 200,
+ *     48 items over ~53h (~21/day, the Washington Times' volume), every link
+ *     on reason.com, served by nginx (not Cloudflare, the front the Times
+ *     refused runners from — though rss.politico.com is also Cloudflare and
+ *     delivers, so the front alone predicts nothing). Robots: `Disallow:`
+ *     (nothing). Terms (reason.com/terms-of-use/, read in full): no clause on
+ *     robots, scraping, crawling, automated access or RSS. They do say:
+ *     content is "intended for your personal, noncommercial use only"; "You
+ *     may not … transmit or distribute in any way any material from the
+ *     Websites except as provided"; "Accessing the Websites, in any manner,
+ *     for the purpose of obtaining information … constitutes use of the
+ *     Websites such that these Terms of Use bind the party accessing the
+ *     Websites"; and "You are free to link to and cite the Websites so long as
+ *     the context does not state or imply any sponsorship".
+ *     WHAT THIS SCRIPT DOES WITH A REASON ITEM — the same as with every feed:
+ *     it reads the headline and link; a headline t1/t2 leave ambiguous is SENT
+ *     TO ANTHROPIC'S API (the t3 Haiku batch) to pick a bill; and since
+ *     conversation/v2 (lib/conversation.mjs B-5) the ARTICLE LINK behind each
+ *     outlet's observation of a bill is stored in data/conversation.json and
+ *     committed to this public repository (no page or MCP tool renders the
+ *     links as of 2026-09-25; the file itself is public). Linking is the use
+ *     the terms expressly allow; whether sending headline text to a model API
+ *     is "transmit"ting material, and whether this project's use is
+ *     "noncommercial", are the owner's calls — the second is the same question
+ *     that already stands over the CC BY-NC AllSides table.
+ *     WHAT IT IS WORTH, honestly: Reason restores the 2-right CONSTRUCTION, but
+ *     the sample showed no bill-specific recall. All 7 match-eligible items
+ *     were ambiguous t3 candidates (0 by citation, 0 by local match); 4 of the
+ *     7 were "White House" headlines offered S. 4430 (White House Safety and
+ *     Security Act) — the false-positive shape the floor-disambiguation
+ *     change (#303) removes from looksLegislative — and under that change 3 of
+ *     48 remain, none about a specific bill. Reason is libertarian and covers
+ *     Congress through regulation, spending and civil liberties more than
+ *     floor mechanics.
+ *     THE VOLOKH CONSPIRACY: 16 of the 48 items are under reason.com/volokh/ —
+ *     a law-professor group blog Reason hosts, whose masthead reads "Mostly
+ *     law professors | Sometimes contrarian | Often libertarian | Always
+ *     independent" and links an "Editorial Independence" page. Its posts
+ *     arrive as reason.com items, so they count as right-rated reason.com
+ *     press and their links are stored as reason.com evidence. 2 of the 7
+ *     match-eligible items were Volokh posts (0 of the 3 left under the
+ *     looksLegislative fix). Whether AllSides' rating of Reason covers the
+ *     Volokh posts was not verified. Dropping items whose link path starts
+ *     /volokh/ is a one-line filter, and it is the owner's call, not made here.
+ *     /tag/congress/feed/ WAS MEASURED AND REJECTED: it has 48 items too, but
+ *     they span 2026-03-10 to 2026-09-22 (about 1.7 a week; the newest was
+ *     79h old at fetch), and nothing in this script filters by pubDate — the
+ *     lamp dates every observation by the run day (observeOutlets `today`).
+ *     Its first fetch, and every fetch after a seen-cache eviction, would feed
+ *     six months of backlog through the matcher and count months-old stories
+ *     as this week's coverage. Fewer Volokh posts (2 of 48) do not buy that.
+ * The match-eligible counts are ONE point-in-time fetch each, not a rate.
+ * AllSides' own 5-point ratings for these outlets were not re-read (allsides.com
+ * answers this user-agent with 403); data/media-bias.json rates all of them
+ * right, and that table is what the code counts.
+ * The feeds ALREADY in the basket were not re-vetted against their terms in
+ * this pass. One was spot-checked and it matters: Fox's terms (last revised
+ * 2025-08-27) say "Except as expressly permitted in these Terms of Use, you
+ * may not copy, download, stream, scrape, … frame, deep-link, make available
+ * or otherwise use any Content", and no RSS permission was found in them. The
+ * "deep-link" in that list bears on conversation/v2 too: the committed file,
+ * public in this repository, now stores links to individual foxnews.com
+ * articles. The bar applied to the replacement is stricter than the one the
+ * basket was built on; whether to hold the incumbents to it is an owner
+ * decision.
+ *
  * Dead/rejected candidates during verification — 2026-07-16/23:
  * apnews.com/hub/politics.rss and apnews.com/rss (both 404 — AP discontinued
  * most public RSS), politico.com/rss/politics08.xml (403; the congress.xml
@@ -106,7 +246,9 @@
  * parseable items). Rated-but-passed-over on congress relevance:
  * nationalreview.com (1/20), thedispatch.com (1/10), dailysignal.com (1/20),
  * nypost.com/politics (5/20 but heavily NY-local), washingtonexaminer.com
- * /tag/congress (3/10, healthy — the first alternate if either addition dies).
+ * /tag/congress (3/10, healthy — named here as "the first alternate if either
+ * addition dies"; its terms, read on 2026-09-25, require an agreement for RSS
+ * use, so it was not that alternate — see THE 2026-09-25 RIGHT-LEAN SWAP).
  *
  * ---- THE DARK-LEAN ALARM (critic B-4, 2026-08-12) ----
  * A rebalanced basket that quietly loses a side is the same failure with extra
@@ -119,6 +261,26 @@
  * article that happens to resolve to a right-rated domain does not, because
  * the thing being watched is whether the vetted basket still covers the
  * spectrum, not whether Google News does.
+ *
+ * ---- THE PER-FEED DARK ALARM (2026-09-25) ----
+ * The lean alarm above has a blind spot the Washington Times feed fell straight
+ * into: a lean reads `ok` while ANY feed of that lean is alive, so a dead feed
+ * with a live sibling never trips it. Every named feed in SOURCES is therefore
+ * tracked on its own as well (rollFeedHealth / darkFeeds / feedStatuses in
+ * lib/conversation.mjs), in the same cache: a feed that returns nothing — a
+ * non-200, a thrown fetch, or a 200 whose body parses to zero items — for
+ * FEED_DARK_ALARM_DAYS (3) days emits a ::warning:: naming the feed, its lean
+ * and its last failure, and is written into data/conversation.json's
+ * `source_status.feeds`. From there scripts/check-conversation.mjs (CI),
+ * scripts/verify-sync.mjs (nightly) and the pipeline-health digest all
+ * re-surface it. Only a feed's STATUS moving (ok <-> dark) counts as a
+ * material change to the committed file, so a feed missing one hour is not a
+ * commit. This alarm is also the ONLY reachability test a feed gets from a
+ * runner: vetting from a laptop cannot see a block on runner addresses, and
+ * this repo does not run live-network probes in CI, so the first newsdesk runs
+ * after a feed is added are its proof, and this alarm names a failing feed three
+ * days after its first failed run (for a feed never seen live, that is the
+ * fourth UTC day of failures).
  *
  * ---- Matching, cheapest first (full design in scripts/newsdesk-match.mjs) ----
  * t1 citation regex (free) -> t2 local token overlap against corpus
@@ -311,11 +473,15 @@ import {
   conversationEvidence,
   conversationPool,
   DARK_LEAN_ALARM_DAYS,
+  darkFeeds,
   darkLeans,
   enteredCorroborated,
+  FEED_DARK_ALARM_DAYS,
+  feedStatuses,
   leanOf,
   leanStatuses,
   normalizeArticleUrl,
+  rollFeedHealth,
   rollLeanHealth,
   shouldWrite as shouldWriteConversation,
 } from '../lib/conversation.mjs';
@@ -409,9 +575,16 @@ const SOURCES = [
   { name: 'Roll Call', domain: 'rollcall.com', url: 'https://rollcall.com/feed/' },
   { name: 'NPR Politics', domain: 'npr.org', url: 'https://feeds.npr.org/1014/rss.xml' },
   { name: 'Fox News Politics', domain: 'foxnews.com', url: 'https://moxie.foxnews.com/google-publisher/politics.xml' },
-  // 2026-08-12 rebalance (critic B-4): the second RIGHT-rated outlet, so no
-  // lean in this basket depends on one feed staying alive.
-  { name: 'Washington Times Politics', domain: 'washingtontimes.com', url: 'https://www.washingtontimes.com/rss/headlines/news/politics/' },
+  // The second RIGHT-rated outlet (critic B-4), since 2026-09-25. It replaces
+  // washingtontimes.com, which answered every GitHub runner with HTTP 403 from
+  // the day the 2026-08-12 rebalance added it. Chosen on terms as much as on
+  // lean: see the header's "THE 2026-09-25 RIGHT-LEAN SWAP" for the candidates
+  // whose robots.txt or terms ruled them out, what this script sends and stores
+  // from it, and the Volokh Conspiracy posts its feed carries. Whether a RUNNER
+  // can reach it is proven only by the first newsdesk runs after merge; if it is
+  // refused too, the per-feed alarm names it three days after its first failed
+  // run.
+  { name: 'Reason', domain: 'reason.com', url: 'https://reason.com/latest/feed/' },
   { name: 'CBS News Politics', domain: 'cbsnews.com', url: 'https://www.cbsnews.com/latest/rss/politics' },
   { name: 'Politico Congress', domain: 'politico.com', url: 'https://rss.politico.com/congress.xml' },
   // 2026-08-12 rebalance: a third CENTER-rated outlet, and the one with the
@@ -511,6 +684,12 @@ function loadCache() {
       // starts a lean's clock at today rather than reading a missing record as
       // infinitely dark, which fails toward silence exactly like feedHealth.
       leanHealth: raw.leanHealth ?? null,
+      // {feed name: {url, domain, lean, last_live, first_dark, last_error}} -
+      // the per-FEED liveness the lean record cannot see (header "THE PER-FEED
+      // DARK ALARM"). Losing it is covered twice: rollFeedHealth re-seeds a
+      // feed the committed file already calls dark, and any other feed starts
+      // its clock today.
+      feedLiveness: raw.feedLiveness ?? null,
       // Slugs that ENTERED corroborated state and whose re-decode the press
       // budget deferred. Carried so a bill does not lose its heal simply
       // because it was corroborated on a busy hour; dropped as soon as it
@@ -528,6 +707,7 @@ function loadCache() {
       dailyDecodes: null,
       feedHealth: null,
       leanHealth: null,
+      feedLiveness: null,
       conversationRedecodeQueue: [],
     };
   }
@@ -541,6 +721,7 @@ function saveCache(cache) {
     dailyDecodes: cache.dailyDecodes,
     feedHealth: cache.feedHealth,
     leanHealth: cache.leanHealth,
+    feedLiveness: cache.feedLiveness,
     conversationRedecodeQueue: cache.conversationRedecodeQueue,
   }));
 }
@@ -678,6 +859,10 @@ let pressSilent = 0;
 // ≥2-outlet rule and the conversation lamp both rest on.
 const basketLeans = new Set(SOURCES.map((s) => leanOf(s.domain, bias)).filter(Boolean));
 const liveLeans = new Set();
+// The per-FEED observation the lean set above deliberately flattens: which
+// named feed returned how many items, and why it returned none. Rolled into
+// the per-feed dark alarm further down (header "THE PER-FEED DARK ALARM").
+const feedObservations = [];
 results.forEach((r, i) => {
   const lean = leanOf(SOURCES[i].domain, bias);
   if (r.status === 'fulfilled') {
@@ -689,6 +874,15 @@ results.forEach((r, i) => {
     pressSilent++;
     console.error(`  ${SOURCES[i].name} FAILED: ${r.reason?.message ?? r.reason}`);
   }
+  const delivered = r.status === 'fulfilled' ? r.value.length : 0;
+  feedObservations.push({
+    name: SOURCES[i].name,
+    url: SOURCES[i].url,
+    domain: SOURCES[i].domain,
+    lean,
+    items: delivered,
+    error: r.status === 'rejected' ? String(r.reason?.message ?? r.reason) : delivered === 0 ? '0 items' : null,
+  });
 });
 
 // ---- the darkness tripwire ----------------------------------------------
@@ -1039,6 +1233,21 @@ for (const alarm of darkLeans(cache.leanHealth, { today })) {
   );
 }
 
+// The per-feed half, independent of the lean verdict above: a lean stays `ok`
+// while ANY of its feeds lives, which is exactly how washingtontimes.com sat at
+// HTTP 403 for six weeks with the right lean reading `ok` (header "THE
+// PER-FEED DARK ALARM").
+cache.feedLiveness = rollFeedHealth(cache.feedLiveness, {
+  feeds: feedObservations,
+  today,
+  committed: previousConversation?._meta?.source_status?.feeds ?? null,
+});
+for (const dark of darkFeeds(cache.feedLiveness, { today })) {
+  console.log(
+    `::warning::newsdesk: press feed "${dark.name}" (${dark.domain ?? 'aggregator'}${dark.lean ? `, ${dark.lean}-rated` : ''}) has returned nothing for ${dark.darkDays} days (last live ${dark.lastLive ?? 'never, in the history this run can see'}; last failure: ${dark.lastError ?? 'unknown'}; alarm at ${FEED_DARK_ALARM_DAYS}). ${dark.lean ? `The ${dark.lean} lean can read ok while this lasts if another ${dark.lean}-rated feed is alive, so the basket is narrower than its construction claims. ` : ''}Fix or replace it in scripts/newsdesk.mjs's SOURCES - after checking the replacement's robots.txt and terms, and never by changing the user-agent to get past a block.`
+  );
+}
+
 const mostViewedStatus = mostViewedRanked
   ? {
       status: 'ok',
@@ -1072,6 +1281,7 @@ const nextConversation = buildConversation({
     },
     most_viewed: mostViewedStatus,
     leans: leanStatuses(cache.leanHealth, { today }),
+    feeds: feedStatuses(cache.feedLiveness, { today }),
   },
   now: conversationNow,
   today,
