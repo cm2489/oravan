@@ -4,7 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { alarms, parseCoverageDone, parseCoverageLean } from '../lib/pipeline-health.mjs';
+import { alarms, parseCoverageDone, parseCoverageLean, parseCoverageOutage } from '../lib/pipeline-health.mjs';
 
 /*
  * scripts/sync-coverage.mjs, run END TO END against a throwaway data/ corpus
@@ -25,7 +25,12 @@ import { alarms, parseCoverageDone, parseCoverageLean } from '../lib/pipeline-he
  *   - a night's result MERGES into what is stored, newest first, instead of
  *     replacing it — an empty night erases nothing — EXCEPT a stored article
  *     tonight's gate was shown and rejected, which is dropped, and only when
- *     the gate actually answered;
+ *     the reply was complete and well-formed (a truncated or off-script reply
+ *     drops nothing);
+ *   - a night whose gate drops half or more of what it re-judged raises the
+ *     coverage-mass-drop ⛔, and a night TheNewsAPI answers not at all prints
+ *     the COVERAGE OUTAGE line (raised as coverage-outage), leaving
+ *     data/coverage.json byte-for-byte as it was;
  *   - the gate sees dates;
  *   - every stored article records `rated`;
  *   - the date pass is measured by lean against the whole-life pass, and a
@@ -93,7 +98,7 @@ const art = (title: string, source: string, day: string, path = title.replace(/\
 // A stored article an earlier gate kept by mistake — tonight's search returns
 // it again and tonight's gate says no.
 const WRONGLY_KEPT = art('Wrongly kept 102 piece', 'naturalnews.com', daysAgo(40));
-// A stored article tonight's search returns again, but the gate's reply is unusable.
+// A stored article tonight's search returns again, but the gate's reply is empty.
 const STORED_103 = art('Stored 103 piece', 'cnn.com', daysAgo(50));
 const stored = (a: ReturnType<typeof art>) => ({ title: a.title, url: a.url, source: a.source, snippet: null, publishedAt: a.published_at.slice(0, 10) });
 
@@ -145,17 +150,17 @@ const baseScenario = {
     // hr-101 finds nothing tonight: its stored coverage must survive.
     // hr-102: one new article, and the wrongly kept one shown again (no KEEP).
     { match: 'Ordinary 102 Act', sort: 'relevance_score', articles: [art('Ordinary 102 news KEEP', 'axios.com', daysAgo(10)), WRONGLY_KEPT] },
-    // hr-103: its stored article is shown again, but the gate gives no usable answer.
+    // hr-103: its stored article is shown again, but the gate's reply is empty.
     { match: 'Ordinary 103 Act', sort: 'relevance_score', articles: [STORED_103] },
   ],
 };
 
-function runSync(scenario: Json, env: Record<string, string> = {}) {
+function runSync(scenario: Json, env: Record<string, string> = {}, { stored = STORED as Json } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'sync-coverage-runner-'));
   mkdirSync(join(dir, 'data'));
   const put = (name: string, value: unknown) => writeFileSync(join(dir, 'data', name), JSON.stringify(value));
   put('bills.json', BILLS);
-  put('coverage.json', STORED);
+  put('coverage.json', stored);
   copyFileSync(join(REPO, 'data/media-bias.json'), join(dir, 'data/media-bias.json'));
   put('moments.json', {
     'iran-war-powers': { status: 'live', vehicles: [{ slug: 'hconres-89-119' }, { slug: 'hr-6500-119' }] },
@@ -201,11 +206,15 @@ function runSync(scenario: Json, env: Record<string, string> = {}) {
     .split('\n')
     .filter(Boolean)
     .map((l) => JSON.parse(l));
-  const coverage = JSON.parse(readFileSync(join(dir, 'data/coverage.json'), 'utf8'));
+  const coverageRaw = readFileSync(join(dir, 'data/coverage.json'), 'utf8');
+  const coverage = JSON.parse(coverageRaw);
   rmSync(dir, { recursive: true, force: true });
   const output = `${run.stdout}\n${run.stderr}`;
-  return { run, output, requests, coverage };
+  return { run, output, requests, coverage, coverageRaw };
 }
+
+// A nightly that succeeded, so alarms() raises only what the coverage lines say.
+const NIGHTLY_OK = { nightly: { conclusion: 'success' } };
 
 const newsFor = (requests: Json[], match: string) =>
   requests.filter((r) => r.kind === 'news' && String(r.search).includes(match));
@@ -290,16 +299,69 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(output).toContain("hr-102-119: 2 candidates -> 1 kept, 1 stored article(s) dropped on tonight's gate verdict -> 2 stored");
   });
 
-  test('…but only when the gate actually ANSWERED — an unusable reply keeps nothing and drops nothing', () => {
+  test('…but only on a complete, well-formed reply — an EMPTY reply keeps nothing and drops nothing', () => {
     const { output, coverage } = runSync(baseScenario);
     expect(coverage['hr-103-119'].map((a: Json) => a.title)).toEqual(['Stored 103 piece']);
-    expect(output).toContain('hr-103-119: 1 candidates -> 0 kept (the gate gave no usable answer: nothing kept, nothing dropped) -> 1 stored');
+    expect(output).toContain(
+      "hr-103-119: 1 candidates -> 0 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 1 stored",
+    );
+  });
+
+  test('a TRUNCATED reply drops nothing, even when what survived of it looks like a clean list', () => {
+    // hr-102's gate reply is "0" — exactly what a finished reply would say —
+    // but the API reports the model was cut off at max_tokens, so "0" may
+    // have been the start of "0, 1" or of "10". The wrongly kept article
+    // it would otherwise drop stays stored.
+    const truncated = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text: '{kept}', stop_reason: 'max_tokens' }] };
+    const { run, output, coverage, requests } = runSync(truncated);
+    expect(run.status, output).toBe(0);
+    const gate = requests.find((r) => r.kind === 'gate' && String(r.prompt).includes('HR 102 '))!;
+    expect(gate.text).toBe('0');
+    expect(gate.stop_reason).toBe('max_tokens');
+    expect(coverage['hr-102-119'].map((a: Json) => a.title)).toEqual([
+      'Ordinary 102 news KEEP', // 10 days old
+      'Wrongly kept 102 piece', // 40
+      'Kept 102 older', // 60
+    ]);
+    expect(output).toContain(
+      "hr-102-119: 2 candidates -> 1 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 3 stored",
+    );
+    const done = parseCoverageDone(output)!;
+    expect(done.droppedOnVerdict).toBe(0);
+    expect(done.rejudged).toBe(0);
+    expect(done.unansweredGates).toBe(2); // hr-102 and hr-103
+  });
+
+  test('an OFF-SCRIPT reply drops nothing, even with valid indexes in it', () => {
+    for (const text of [
+      '{kept} — the other article is about a different bill.',
+      'Article {kept} is about this bill.',
+      '{kept}\n\nThe second one is general news.',
+      '{kept},',
+      'none. Article 0 is close, but about another bill.',
+      '0, 0',
+    ]) {
+      const offScript = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text, stop_reason: 'end_turn' }] };
+      const { output, coverage } = runSync(offScript);
+      expect(coverage['hr-102-119'].map((a: Json) => a.title), text).toContain('Wrongly kept 102 piece');
+      expect(output, text).not.toContain("hr-102-119: 2 candidates -> 1 kept, 1 stored article(s) dropped");
+      expect(parseCoverageDone(output)!.droppedOnVerdict, text).toBe(0);
+    }
+  });
+
+  test('a well-formed reply in quotes, or with a trailing period, still counts', () => {
+    for (const text of ['"{kept}"', '{kept}.', '  {kept}\n']) {
+      const tidy = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text, stop_reason: 'end_turn' }] };
+      const { coverage, output } = runSync(tidy);
+      expect(coverage['hr-102-119'].map((a: Json) => a.title), text).toEqual(['Ordinary 102 news KEEP', 'Kept 102 older']);
+      expect(parseCoverageDone(output)!.droppedOnVerdict, text).toBe(1);
+    }
   });
 
   test('the DONE line says what TONIGHT found, and pipeline-health reads it off this real output', () => {
     const { output } = runSync(baseScenario);
     expect(output).toMatch(
-      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) with no usable answer/,
+      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 of 1 re-judged stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) not complete and well-formed \(no stored article dropped on them\)/,
     );
     const done = parseCoverageDone(output)!;
     expect(done).not.toBeNull();
@@ -307,16 +369,66 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(done.keptTonight).toBe(11);
     expect(done.billsKeptTonight).toBe(6);
     expect(done.droppedOnVerdict).toBe(1);
+    expect(done.rejudged).toBe(1);
     expect(done.unansweredGates).toBe(1);
+    // One drop out of one re-judged is 100%, but it is one article: no ⛔.
+    expect(alarms({ ...NIGHTLY_OK, coverageRun: done }).map((a) => a.code)).toEqual([]);
   });
 
   test('an EMPTY night still erases nothing, and now says it kept nothing', () => {
     const { run, output, coverage } = runSync({ keepMarker: 'KEEP', news: [] });
     expect(run.status, output).toBe(0);
-    expect(output).toContain('; kept tonight: 0 article(s) on 0 bill(s); 0 stored article(s) dropped');
+    expect(output).toContain('; kept tonight: 0 article(s) on 0 bill(s); 0 of 0 re-judged stored article(s) dropped');
     expect(parseCoverageDone(output)!.keptTonight).toBe(0);
     expect(coverage['hr-101-119']).toHaveLength(2);
     expect(coverage['hconres-89-119']).toHaveLength(1);
+  });
+
+  test('a gate that turns on what it kept before raises coverage-mass-drop off the real output', () => {
+    // hr-104 has 24 stored articles, tonight's search returns every one of
+    // them, and a well-formed "none" rejects them all. The drop is real (the
+    // reply is a complete answer) and it is loud.
+    const many = Array.from({ length: 24 }, (_, i) => art(`Stored 104 piece ${i}`, 'apnews.com', daysAgo(40 + i)));
+    const scenario = {
+      ...baseScenario,
+      news: [...baseScenario.news, { match: 'Ordinary 104 Act', sort: 'relevance_score', articles: many }],
+    };
+    const { run, output, coverage } = runSync(scenario, {}, { stored: { ...STORED, 'hr-104-119': many.map(stored) } });
+    expect(run.status, output).toBe(0);
+    expect(coverage['hr-104-119']).toBeUndefined();
+    const done = parseCoverageDone(output)!;
+    expect(done.droppedOnVerdict).toBe(25); // 24 on hr-104, 1 on hr-102
+    expect(done.rejudged).toBe(25);
+    const raised = alarms({ ...NIGHTLY_OK, coverageRun: done });
+    expect(raised.map((a) => a.code)).toEqual(['coverage-mass-drop']);
+    expect(raised[0].text).toContain('dropped 25 of the 25 stored articles its relevance gate re-judged (100%)');
+  });
+
+  test('a HARD outage — TheNewsAPI answers nothing — prints the OUTAGE line, leaves the file byte-for-byte, and raises coverage-outage', () => {
+    // Every request 400s: no retries, so the test stays fast; the exit path is
+    // the same one a night of 5xx or network errors reaches after retrying.
+    const { run, output, coverageRaw } = runSync({ ...baseScenario, brokenQueries: [''] });
+    expect(run.status, output).toBe(0);
+    expect(coverageRaw).toBe(JSON.stringify(STORED));
+    expect(output).not.toMatch(/^DONE: /m);
+    expect(output).toContain(
+      'COVERAGE OUTAGE: 0 of 11 planned bill(s) got a TheNewsAPI response tonight (11 failed) — data/coverage.json left unchanged, no bill checked',
+    );
+    expect(output).toContain("::warning::coverage sync: TheNewsAPI answered none of tonight's requests");
+    expect(parseCoverageDone(output)).toBeNull();
+    const outage = parseCoverageOutage(output);
+    expect(outage).toEqual({ planned: 11, failed: 11, quotaStopped: false });
+    const raised = alarms({ ...NIGHTLY_OK, coverageOutage: outage });
+    expect(raised.map((a) => a.code)).toEqual(['coverage-outage']);
+    expect(output).not.toContain(TOKEN);
+  });
+
+  test('a quota stop before any response is an outage too, and says so', () => {
+    const { run, output, coverageRaw } = runSync({ ...baseScenario, quotaExhausted: true });
+    expect(run.status, output).toBe(0);
+    expect(coverageRaw).toBe(JSON.stringify(STORED));
+    expect(output).toContain('(0 failed; the daily quota stopped the run)');
+    expect(parseCoverageOutage(output)).toEqual({ planned: 11, failed: 0, quotaStopped: true });
   });
 
   test('every stored article records whether its outlet is AllSides-rated — and nothing is filtered by it', () => {

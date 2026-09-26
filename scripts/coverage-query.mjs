@@ -186,8 +186,10 @@ export function readRateLimitRemaining(headers) {
  *      ordinary head/tail slot.
  *   8. Merging must not make the gate's NO permanent: a stored article that
  *      tonight's gate was shown and rejected is dropped (withoutRejected) — but
- *      only when the gate actually answered (gateAnswered), so a broken reply
- *      still erases nothing.
+ *      only when the reply is a COMPLETE, WELL-FORMED answer (gateAnswered:
+ *      the API says the model finished, and the text is exactly "none" or a
+ *      comma-separated list of in-range indexes). A truncated, off-script or
+ *      empty reply erases nothing.
  *   9. The date-sorted pass is measured by lean against the whole-life pass on
  *      the same bills every night, and a shift past LEAN_DRIFT raises a
  *      ::warning:: that lib/pipeline-health.mjs turns into a ⛔ (leanDrift).
@@ -232,7 +234,8 @@ export const PRIORITY_REQUESTS_PER_BILL = 2;
 /**
  * The most of one night's requests the priority set may take (both passes
  * counted). 20% of the nightly 600 is 120 requests — 60 priority bills —
- * against 28 eligible on the 2026-09-26 corpus, so today it never binds; it
+ * against 31 eligible on the 2026-09-26 corpus (28 before the terminal-status
+ * bypass added H.R. 6500, H.R. 1 and H.R. 4405), so today it never binds; it
  * exists for the week it would. Without it the only ceiling was half the
  * budget, and with 30 priority slugs a 20-request run spent all 20 on 10
  * priority bills and checked nothing else at all.
@@ -498,8 +501,8 @@ export function articleMatcher(list) {
  * The most recent verdict on an article the gate has actually seen is the one
  * that stands; an article it has not seen tonight keeps its old verdict.
  *
- * Callers must pass `rejected` ONLY when the gate gave a real answer
- * (gateAnswered) — an empty or garbled reply rejects nothing.
+ * Callers must pass `rejected` ONLY when gateAnswered says the reply was a
+ * complete, well-formed answer. Any doubt about the reply rejects nothing.
  *
  * @template {{url?: string, title?: string}} A
  * @param {A[]} stored @param {{url?: string, title?: string}[]} rejected
@@ -513,16 +516,47 @@ export function withoutRejected(stored, rejected) {
 }
 
 /**
- * Did the gate actually ANSWER? True when the reply names at least one
- * in-range index, or says "none" (the prompt's own word for an empty keep).
- * An empty, truncated or off-script reply is not an answer: it keeps nothing
- * tonight, and it must reject nothing either (withoutRejected).
+ * Is this gate reply a COMPLETE, WELL-FORMED answer? Only such a reply may
+ * DELETE stored coverage (withoutRejected).
  *
- * @param {string|null|undefined} text @param {number} n candidates shown
+ * This is deliberately stricter than parseKeptIndexes. That parser reads any
+ * in-range number out of any reply, and it still decides what tonight KEEPS,
+ * unchanged, so what a night adds is exactly what it added before. Dropping a
+ * stored article is different: nothing on a later night brings it back unless
+ * a later search happens to return it again. So a drop needs the exact reply
+ * relevancePrompt asks for, and nothing else:
+ *   - `stopReason` must be "end_turn", meaning the model finished. A reply cut
+ *     off at max_tokens is not an answer ("0, 3, 1" may have been going to be
+ *     "0, 3, 12"), and neither is a refusal. A missing stop reason is
+ *     unknown, and unknown counts as no.
+ *   - The trimmed text must be exactly `none`, or exactly a comma-separated
+ *     list of indexes, each one in range and none repeated. One pair of
+ *     wrapping quotes or backticks and one trailing period are tolerated.
+ *     These all fail: "0, 3 — the rest are about other bills",
+ *     "Articles 2 and 4", "none of 0-24", "7, 9" when 5 were shown, "0, 3,",
+ *     and "none" followed by an explanation.
+ * Any other reply keeps every stored article. The DONE line counts it as a
+ * reply that was not complete and well-formed.
+ *
+ * @param {string|null|undefined} text
+ * @param {number} n candidates shown
+ * @param {{ stopReason?: string|null }} [meta] the API response's stop_reason
  */
-export function gateAnswered(text, n) {
-  if (parseKeptIndexes(text, n).size > 0) return true;
-  return /\bnone\b/i.test(String(text ?? ''));
+export function gateAnswered(text, n, { stopReason } = {}) {
+  if (stopReason !== 'end_turn') return false;
+  if (typeof text !== 'string' || !Number.isInteger(n) || n <= 0) return false;
+  let body = text.trim();
+  const wrapped = body.match(/^(["'`])([\s\S]*)\1$/);
+  if (wrapped) body = wrapped[2].trim();
+  body = body.replace(/\.$/, '').trim();
+  if (/^none$/i.test(body)) return true;
+  if (!/^\d+(?:[ \t]*,[ \t]*\d+)*$/.test(body)) return false;
+  const tokens = body.split(',').map((x) => x.trim());
+  // "03" is not how the prompt numbers an article.
+  if (tokens.some((x) => x.length > 1 && x.startsWith('0'))) return false;
+  const nums = tokens.map(Number);
+  if (nums.some((i) => !Number.isSafeInteger(i) || i >= n)) return false;
+  return new Set(nums).size === nums.length;
 }
 
 /**

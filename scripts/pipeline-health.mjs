@@ -62,6 +62,7 @@ import {
   formatHealthSection,
   parseCoverageDone,
   parseCoverageLean,
+  parseCoverageOutage,
   parseFailingTests,
   parsePregen,
   parseSyncDone,
@@ -261,6 +262,7 @@ export function buildReport({ now = Date.now() } = {}) {
   let sync = null;
   let coverageDone = null;
   let coverageLean = null;
+  let coverageOutage = null;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
@@ -285,6 +287,7 @@ export function buildReport({ now = Date.now() } = {}) {
       sync = parseSyncDone(log);
       coverageDone = parseCoverageDone(log);
       coverageLean = parseCoverageLean(log);
+      coverageOutage = parseCoverageOutage(log);
       pregen = parsePregen(log);
       portrait404s = countPortrait404s(log);
       upstashCacheFailures = countUpstashCacheFailures(log);
@@ -403,6 +406,7 @@ export function buildReport({ now = Date.now() } = {}) {
     nightly,
     sync,
     coverageRun: coverageDone,
+    coverageOutage,
     coverageLean,
     corpus: {
       bills: corpusBills,

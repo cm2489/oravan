@@ -462,15 +462,75 @@ test.describe('the gate’s NO is not made permanent by the merge', () => {
     expect(withoutRejected(undefined as never, [])).toEqual([]);
   });
 
-  test('gateAnswered: indexes or "none" are an answer; an empty or off-script reply is not', () => {
-    expect(gateAnswered('0, 3', 5)).toBe(true);
-    expect(gateAnswered('none', 5)).toBe(true);
-    expect(gateAnswered('None.', 5)).toBe(true);
-    expect(gateAnswered('', 5)).toBe(false);
-    expect(gateAnswered(null, 5)).toBe(false);
-    expect(gateAnswered('I cannot tell from these headlines.', 5)).toBe(false);
-    // Only out-of-range numbers: not an answer about THESE candidates.
-    expect(gateAnswered('7, 9', 5)).toBe(false);
+  test('gateAnswered: only a COMPLETE, WELL-FORMED reply may delete stored coverage', () => {
+    const done = { stopReason: 'end_turn' };
+    // The exact shapes relevancePrompt asks for.
+    expect(gateAnswered('0, 3', 5, done)).toBe(true);
+    expect(gateAnswered('0,3,4', 5, done)).toBe(true);
+    expect(gateAnswered('4', 5, done)).toBe(true);
+    expect(gateAnswered('none', 5, done)).toBe(true);
+    // Tolerated wrapping: one trailing period, one pair of quotes/backticks, whitespace.
+    expect(gateAnswered('None.', 5, done)).toBe(true);
+    expect(gateAnswered('"none"', 5, done)).toBe(true);
+    expect(gateAnswered('`0, 3`', 5, done)).toBe(true);
+    expect(gateAnswered('  0, 3.\n', 5, done)).toBe(true);
+    expect(gateAnswered('10, 12', 20, done)).toBe(true);
+  });
+
+  test('gateAnswered: a TRUNCATED reply is not an answer, however clean the surviving text looks', () => {
+    // "0, 3, 1" cut off at max_tokens may have been "0, 3, 12".
+    expect(gateAnswered('0, 3, 1', 20, { stopReason: 'max_tokens' })).toBe(false);
+    expect(gateAnswered('none', 5, { stopReason: 'max_tokens' })).toBe(false);
+    expect(gateAnswered('0, 3', 5, { stopReason: 'refusal' })).toBe(false);
+    // No stop reason at all is unknown, and unknown is no.
+    expect(gateAnswered('0, 3', 5)).toBe(false);
+    expect(gateAnswered('0, 3', 5, { stopReason: null })).toBe(false);
+    expect(gateAnswered('0, 3', 5, {})).toBe(false);
+  });
+
+  test('gateAnswered: an OFF-SCRIPT reply is not an answer, even with in-range indexes in it', () => {
+    const done = { stopReason: 'end_turn' };
+    for (const text of [
+      '',
+      '   ',
+      'I cannot tell from these headlines.',
+      '0, 3 — the rest are about other bills',
+      'Articles 2 and 4',
+      '2 and 4',
+      '0 3',
+      '0;3',
+      '0, 3,',
+      ',0, 3',
+      '0,\n3',
+      'none of 0-24',
+      'None of these are about this bill.',
+      'none\n\nArticle 2 is close but covers a different bill.',
+      '0, 3\n\nThese discuss the vote.',
+      '1-3',
+      '-1',
+      '0.5',
+      '03',
+      '0, 03',
+      '0, 0', // repeated: a looping reply, not a verdict
+      '"0, 3', // unbalanced quote
+      '0, 3..', // one trailing period is tolerated, not two
+    ]) {
+      expect(gateAnswered(text, 5, done), JSON.stringify(text)).toBe(false);
+    }
+    expect(gateAnswered(null, 5, done)).toBe(false);
+    expect(gateAnswered(undefined, 5, done)).toBe(false);
+    // Out of range: not an answer about THESE candidates — whole reply or part of it.
+    expect(gateAnswered('7, 9', 5, done)).toBe(false);
+    expect(gateAnswered('0, 5', 5, done)).toBe(false);
+    // Nothing was shown.
+    expect(gateAnswered('none', 0, done)).toBe(false);
+  });
+
+  test('gateAnswered is stricter than parseKeptIndexes, which still decides what a night KEEPS', () => {
+    // An off-script reply keeps what it names (the keep path is unchanged)…
+    expect([...parseKeptIndexes('0, 3 — the rest are about other bills', 5)].sort()).toEqual([0, 3]);
+    // …but cannot delete anything.
+    expect(gateAnswered('0, 3 — the rest are about other bills', 5, { stopReason: 'end_turn' })).toBe(false);
   });
 
   test('articleMatcher matches by URL or by syndicated title', () => {

@@ -14,9 +14,14 @@
  *                "articles": [{ title, url, source, description, published_at }] }],
  *     "rejectDateSort": false,          // 400 every sort=published_at request
  *     "brokenQueries": ["substring"],   // 400 every request for these, sorted or not
+ *     "quotaExhausted": false,          // 402 (TheNewsAPI's quota answer) to every request
  *     "keepMarker": "KEEP",             // the fake gate keeps titles containing this
- *     "gateNoAnswer": ["substring"]     // the fake gate replies with nothing usable
- *   }                                   //   when its prompt contains one of these
+ *     "gateNoAnswer": ["substring"],    // the fake gate replies with nothing usable
+ *                                       //   when its prompt contains one of these
+ *     "gateReplies": [{ "match": "substring of the prompt",
+ *                       "text": "{kept} — and a sentence",   // {kept} = the indexes it would keep, or "none"
+ *                       "stop_reason": "end_turn" | "max_tokens" }]
+ *   }                                   // a scripted reply, for the off-script / truncated cases
  *
  * The log never records the api_token VALUE — only whether one was sent — so
  * the test can also assert the script never prints it.
@@ -47,6 +52,9 @@ globalThis.fetch = async (input, init = {}) => {
       token_sent: Boolean(url.searchParams.get('api_token')),
     });
     const rate = { 'x-ratelimit-remaining': '50' };
+    if (scenario.quotaExhausted) {
+      return json(402, { error: { code: 'usage_limit_reached', message: 'Daily usage limit reached.' } }, rate);
+    }
     if ((scenario.brokenQueries ?? []).some((m) => search.includes(m))) {
       return json(400, { error: { code: 'malformed_parameters', message: 'The search parameter is malformed.' } }, rate);
     }
@@ -67,15 +75,19 @@ globalThis.fetch = async (input, init = {}) => {
       const m = line.match(/^(\d+)\. \[[^\]]+\] (.*)$/);
       if (m && m[2].includes(scenario.keepMarker ?? 'KEEP')) kept.push(Number(m[1]));
     }
+    const keptText = kept.length ? kept.join(', ') : 'none';
     const noAnswer = (scenario.gateNoAnswer ?? []).some((m) => String(prompt).includes(m));
-    log({ kind: 'gate', prompt, max_tokens: body.max_tokens, kept: noAnswer ? null : kept });
+    const scripted = (scenario.gateReplies ?? []).find((r) => String(prompt).includes(r.match));
+    const text = scripted ? String(scripted.text).replace('{kept}', keptText) : noAnswer ? '' : keptText;
+    const stopReason = scripted?.stop_reason ?? 'end_turn';
+    log({ kind: 'gate', prompt, max_tokens: body.max_tokens, kept: noAnswer ? null : kept, text, stop_reason: stopReason });
     return json(200, {
       id: 'msg_mock',
       type: 'message',
       role: 'assistant',
       model: body.model,
-      content: [{ type: 'text', text: noAnswer ? '' : kept.length ? kept.join(', ') : 'none' }],
-      stop_reason: 'end_turn',
+      content: [{ type: 'text', text }],
+      stop_reason: stopReason,
       stop_sequence: null,
       usage: { input_tokens: 10, output_tokens: 5 },
     });

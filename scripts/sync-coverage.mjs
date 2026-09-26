@@ -1,7 +1,8 @@
 /**
- * Nightly coverage sync. For every eligible bill (decoded and non-terminal,
- * plus the exceptions isCoverageEligible names), fetch real news articles
- * (TheNewsAPI), keep only the ones genuinely about
+ * Nightly coverage sync. For up to COVERAGE_TOP_N requests' worth of eligible
+ * bills a night (decoded and non-terminal, plus the exceptions
+ * isCoverageEligible names; planCoverageRun picks which), fetch real news
+ * articles (TheNewsAPI), keep only the ones genuinely about
  * the bill (a Haiku relevance gate — it authors nothing), and write
  * them to data/coverage.json keyed by bill slug. The render path joins each
  * article's source to an outlet lean from data/media-bias.json (AllSides).
@@ -125,9 +126,13 @@ const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const bills = readJSON('data/bills.json');
 const NOW = Date.now();
 
-/* Tolerant reads: each of these only ORDERS the sweep (who is asked first,
-   and who gets the extra 30-day pass). A missing or unparseable file shrinks
-   the priority set; it never fails the run. */
+/* Tolerant reads: each of these builds the priority set, which decides who is
+   asked first, who gets the extra 30-day pass, and (since the terminal-status
+   bypass in isCoverageEligible) whether a terminal priority bill is in the
+   sweep at all, and so whether its stored coverage is kept. A missing or
+   unparseable file shrinks the priority set. For a signed Big Question
+   vehicle like H.R. 6500 that means one night out of the sweep, and its stored
+   coverage ages out of the file that night. It never fails the run. */
 const readOptional = (p) => {
   try {
     return existsSync(p) ? readJSON(p) : null;
@@ -146,10 +151,11 @@ const withRatedFlag = (a) => ({ ...a, rated: outletPolicy.isRated(a?.source) });
 
 // Last committed coverage. Eligible bills this run doesn't reach (quota stop,
 // per-bill failure, or a COVERAGE_TOP_N test run) carry their previous entry
-// forward unchanged. Bills the run DOES process merge tonight's kept articles
-// into their stored ones (processBill): an empty night keeps what was stored,
-// and the only stored articles a processed bill loses are ones pushed out by
-// newer articles past PER_BILL, or ones tonight's gate was shown and rejected.
+// forward, re-stamped with `rated` and otherwise unchanged. Bills the run DOES
+// process merge tonight's kept articles into their stored ones (processBill):
+// an empty night keeps what was stored, and the only stored articles a
+// processed bill loses are ones pushed out by newer articles past PER_BILL, or
+// ones tonight's gate was shown and rejected in a complete, well-formed reply.
 let prevCoverage = {};
 try {
   prevCoverage = JSON.parse(readFileSync('data/coverage.json', 'utf8'));
@@ -379,10 +385,14 @@ async function fetchArticles(query, { publishedAfter, sort }) {
    with what is stored (mergeArticles), newest first — so the cap chooses by
    date, not by the order the search happened to return.
 
-   Also returns what it REJECTED and whether it gave a real answer
-   (gateAnswered): processBill drops a stored article the gate was shown and
-   rejected tonight, and only when the gate answered — an empty or off-script
-   reply keeps nothing and rejects nothing. */
+   It also returns what the gate REJECTED, and whether the reply was a
+   complete, well-formed answer (gateAnswered: the model finished, one text
+   block, and exactly "none" or a comma-separated list of in-range indexes).
+   processBill drops a stored article the gate was shown and rejected
+   tonight ONLY on such a reply. Any other reply rejects nothing, so it can
+   never delete stored coverage. What a reply KEEPS is read as it always has
+   been (parseKeptIndexes, any in-range number in the reply), so tightening
+   the drop rule did not change what a night adds. */
 async function filterRelevant(b, candidates) {
   if (candidates.length === 0) return { kept: [], rejected: [], answered: false };
   const msg = await anthropic.messages.create({
@@ -394,7 +404,10 @@ async function filterRelevant(b, candidates) {
   });
   const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
   const keep = parseKeptIndexes(text, candidates.length);
-  const answered = gateAnswered(text, candidates.length);
+  const answered =
+    Array.isArray(msg.content) &&
+    msg.content.length === 1 &&
+    gateAnswered(text, candidates.length, { stopReason: msg.stop_reason });
   return {
     kept: candidates.filter((_, i) => keep.has(i)),
     rejected: answered ? candidates.filter((_, i) => !keep.has(i)) : [],
@@ -408,13 +421,24 @@ const processedSlugs = new Set();
 let anyFetchOk = false;
 let withCoverage = 0;
 let totalArticles = 0;
-/* What TONIGHT found, apart from what was already stored — the DONE line's
-   stored counts include carried-over articles, so an empty night (a dead API,
-   a gate keeping nothing) would otherwise read like a normal one. */
+/* What TONIGHT found, apart from what was already stored. The DONE line's
+   stored counts include carried-over articles, so an empty night (an API that
+   answers with no articles, a gate that keeps nothing) would otherwise read
+   like a normal one. An API that answers NOTHING at all never reaches the DONE
+   line; it prints the COVERAGE OUTAGE line instead (below the batch loop). */
 let keptTonight = 0;
 let billsKeptTonight = 0;
 let droppedOnVerdict = 0;
+/* Stored articles that tonight's gate was shown again with a complete,
+   well-formed reply, which means their earlier verdict was up for review.
+   This is the denominator for the mass-drop alarm: droppedOnVerdict can never
+   exceed it. */
+let rejudgedStored = 0;
 let unansweredGates = 0;
+/* Bills whose news request or gate call threw (a FAIL line), and whether the
+   daily quota stopped the run. Used only by the COVERAGE OUTAGE line. */
+let failedBills = 0;
+let quotaStopped = false;
 
 /* The date-sorted pass's bookkeeping — printed as the DATE PASS summary, which
    is how the first nightly after 2026-09-26 verifies DATE_SORT against the live
@@ -524,7 +548,8 @@ async function fetchRecent(b, query) {
    newest first, capped at PER_BILL — so an empty or unlucky night keeps what
    an earlier night found instead of erasing it. The one exception is an
    article the gate was SHOWN tonight and rejected: that verdict replaces the
-   earlier one (withoutRejected), when the gate gave a real answer. */
+   earlier one (withoutRejected), and only when the reply was a complete,
+   well-formed answer (gateAnswered). */
 async function processBill(b) {
   const slug = slugOf(b);
   const query = queryFor(b);
@@ -556,6 +581,7 @@ async function processBill(b) {
       tallyLean(keptLean.rest, kept);
     }
     const storedBefore = Array.isArray(prevCoverage[slug]) ? prevCoverage[slug] : [];
+    if (answered) rejudgedStored += storedBefore.filter(articleMatcher(candidates)).length;
     const stored = withoutRejected(storedBefore, rejected);
     const dropped = storedBefore.length - stored.length;
     droppedOnVerdict += dropped;
@@ -570,7 +596,7 @@ async function processBill(b) {
         `${isPriority ? ` (${recent.length} from the ${RECENT_WINDOW_DAYS}-day pass)` : ''}` +
         ` -> ${kept.length} kept` +
         `${dropped ? `, ${dropped} stored article(s) dropped on tonight's gate verdict` : ''}` +
-        `${noAnswer ? ' (the gate gave no usable answer: nothing kept, nothing dropped)' : ''}` +
+        `${noAnswer ? " (the gate's reply was not complete and well-formed: no stored article dropped)" : ''}` +
         ` -> ${merged.length} stored`
     );
     return 'ok';
@@ -592,19 +618,42 @@ for (let i = 0; i < topBills.length; i += CONCURRENCY) {
   const results = await Promise.all(batch.map((b) => processBill(b)));
 
   processed += batch.length;
-  // Checkpoint per batch so a long, rate-limited run never loses progress.
-  writeFileSync('data/coverage.json', JSON.stringify(withCarryForward()));
+  failedBills += results.filter((r) => r === 'fail').length;
+  // Checkpoint per batch so a long, rate-limited run never loses progress —
+  // but only once the API has answered at least once. Before that there is
+  // nothing to keep, and a checkpoint would still rewrite the file (aging out
+  // entries, re-stamping `rated`, dropping `_note`), so the outage exit below
+  // could not honestly say the file was left unchanged.
+  if (anyFetchOk) writeFileSync('data/coverage.json', JSON.stringify(withCarryForward()));
 
   if (results.includes('quota')) {
+    quotaStopped = true;
     console.error(`TheNewsAPI daily quota exhausted after ${processed} bills — stopping early`);
     break;
   }
 }
 
-// Never clobber the existing file when the API never responded — preserve the
-// current coverage (or the committed sample) and let the next run self-heal.
+/* THE OUTAGE LINE. When TheNewsAPI never answered, the run keeps the committed
+   file exactly as it was (nothing above wrote it) and exits 0, so the rest of
+   the nightly still lands. It also exits BEFORE the DONE line, so
+   pipeline-health's coverage-kept-zero alarm, which reads the DONE line, never
+   saw a hard outage. It now reads this line instead, as the coverage-outage
+   ⛔ (lib/pipeline-health.mjs parseCoverageOutage). The wording is a contract
+   with that parser. tests/sync-coverage-runner.unit.spec.ts feeds this
+   script's real output to it. */
 if (!anyFetchOk) {
-  console.warn('No successful TheNewsAPI responses; leaving data/coverage.json unchanged.');
+  if (topBills.length === 0) {
+    console.warn('coverage sync: no eligible bill was planned tonight, so nothing was asked; data/coverage.json left unchanged.');
+    process.exit(0);
+  }
+  const outage =
+    `COVERAGE OUTAGE: 0 of ${topBills.length} planned bill(s) got a TheNewsAPI response tonight ` +
+    `(${failedBills} failed${quotaStopped ? '; the daily quota stopped the run' : ''}) — data/coverage.json left unchanged, no bill checked`;
+  console.log(outage);
+  console.warn(
+    `::warning::coverage sync: TheNewsAPI answered none of tonight's requests (${failedBills} bill(s) failed` +
+      `${quotaStopped ? '; the daily quota stopped the run' : ''}). No bill was checked and data/coverage.json is unchanged — see the FAIL lines above.`
+  );
   process.exit(0);
 }
 
@@ -639,13 +688,17 @@ const staleShare = newestAges.length
    parseCoverageDone has always read (so older logs still parse); since the
    merge, those counts include articles carried over from earlier nights, so
    the second half says what TONIGHT found. An empty night now reads
-   "kept tonight: 0 article(s) on 0 bill(s)" instead of passing for normal. */
+   "kept tonight: 0 article(s) on 0 bill(s)" instead of passing for normal.
+   "D of J re-judged" is how many stored articles tonight's gate dropped, out
+   of how many it was shown again with a complete, well-formed reply. The pair
+   is what pipeline-health's coverage-mass-drop alarm reads. The wording is a
+   contract with parseCoverageDone. */
 console.log(
   `DONE: ${withCoverage}/${topBills.length} bills with coverage, ${totalArticles} articles total` +
     `${carried ? ` (+${carried} unprocessed bills carried forward)` : ''}` +
     `; kept tonight: ${keptTonight} article(s) on ${billsKeptTonight} bill(s)` +
-    `; ${droppedOnVerdict} stored article(s) dropped on tonight's gate verdict` +
-    `; ${unansweredGates} gate reply(ies) with no usable answer`
+    `; ${droppedOnVerdict} of ${rejudgedStored} re-judged stored article(s) dropped on tonight's gate verdict` +
+    `; ${unansweredGates} gate reply(ies) not complete and well-formed (no stored article dropped on them)`
 );
 console.log(
   `FRESHNESS: ${ages.length - neverChecked - over30} checked within 30d, ` +
