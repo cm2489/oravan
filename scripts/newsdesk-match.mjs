@@ -156,10 +156,16 @@ const STOPWORDS = new Set([
  * the corpus's war-powers resolutions are NAMED by: "War Powers Resolution"
  * tokenized to "powers resolution", so "Senate rejects Iran war powers vote"
  * shared nothing with them that it did not also share with a dozen other
- * resolutions. Measured 2026-09-26 over the 2026-09-24 Iran pull: keeping
- * "war" takes H.Con.Res. 89 from offered on 68 of 75 vote headlines to all 75,
- * and changes 56 shortlists across ~7,000 replayed headlines, Iran ones
- * included (by outlet lean: left 10, center 17, right 9, unrated 20).
+ * resolutions. Measured 2026-09-26 over the 2026-09-24 Iran pull, with the
+ * floor record: keeping "war" takes H.Con.Res. 89 from offered on 68 of 75
+ * vote headlines to all 75 (left-rated outlets' headlines: 4 of 8 to 8 of 8).
+ * Across ~6,900 unique replayed headlines it changes 38 t3-bound shortlists
+ * with the floor record applied (left 7, center 7, right 6, unrated 18), or
+ * 90 t2 results counted over every headline with no record (left 37, center
+ * 19, right 21, unrated 13) - two counting methods, both roughly in
+ * proportion to each lean's share of the corpus. When a headline says "war
+ * powers", the two words score as ONE token (PHRASE_UNITS), so keeping "war"
+ * adds nothing on those headlines; it matters for "the Iran war".
  * df("war") is 19, so it is an ordinary, un-doubled token.
  * The acronyms reviewed with it were NOT added: SEC, CR and NIL changed no
  * Iran routing and moved 21 unrelated shortlists, and lower-cased "sec" is as
@@ -248,25 +254,54 @@ const T2_CANDIDATE_MIN_SHARED = 2; // weighted: 2 common tokens OR 1 rare token
  *  structurally unmatchable; a lone COMMON shared token still can't. */
 export const RARE_TOKEN_MAX_DF = 3;
 
+/**
+ * Multi-word names that are ONE piece of evidence, not several. "War Powers"
+ * is the name of one law (the War Powers Resolution). Once "war" was kept
+ * (see SHORT_TOKENS_KEPT), every H.Con.Res. that cites it by name scored two
+ * points on a headline's "war powers". That tied them with the one rare token
+ * that names a different country's resolution: "Senate rejects Venezuela war
+ * powers resolution" listed five other war-powers resolutions and dropped
+ * S.J.Res. 98, the Venezuela one, off the shortlist. When a headline carries
+ * the whole name, it is scored as one token: an entry gets one point for it,
+ * and only if the entry carries the whole name too. Its words do not also
+ * count one by one, so a bill that merely has "war" in its title (the Iran
+ * War Oil Crisis Windfall Profits Tax Act) or "powers" (emergency-powers
+ * bills) gets nothing from "war powers". A headline that says "war" without
+ * "powers" ("the Iran war") still matches "war" as before.
+ */
+export const PHRASE_UNITS = Object.freeze([Object.freeze(['war', 'powers'])]);
+
 /** One index entry scored against a headline's tokens. Returns the scored
- *  shape whatever the weight — the caller applies the candidate floor. */
+ *  shape whatever the weight — the caller applies the candidate floor. A
+ *  PHRASE_UNITS name the headline carries whole counts as one token, in
+ *  `shared`, `weight` and the ratio's denominator alike. */
 function scoreEntry(entry, hTokens, df) {
   let shared = 0;
   let weight = 0;
   const matched = [];
+  const w = (t) => ((df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1);
+  const whole = PHRASE_UNITS.filter((u) => u.every((x) => hTokens.includes(x)));
+  const inWhole = new Set(whole.flat());
   for (const t of hTokens) {
-    if (entry.tokens.has(t)) {
-      shared++;
-      matched.push(t);
-      weight += (df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1;
-    }
+    if (inWhole.has(t) || !entry.tokens.has(t)) continue;
+    shared++;
+    matched.push(t);
+    weight += w(t);
+  }
+  let units = hTokens.length;
+  for (const u of whole) {
+    units -= u.length - 1;
+    if (!u.every((x) => entry.tokens.has(x))) continue;
+    shared++;
+    matched.push(...u);
+    weight += Math.min(...u.map(w));
   }
   return {
     slug: entry.slug,
     title: entry.title,
     shared,
     weight,
-    ratio: shared / hTokens.length,
+    ratio: shared / units,
     matched,
     lastActionDate: entry.lastActionDate ?? null,
     status: entry.status ?? null,
@@ -287,10 +322,14 @@ export function scoreCandidates(headline, billIndex) {
   const scored = [];
   for (const entry of billIndex) {
     // Cheap weight pass first: most of the ~3,200 entries share nothing, and
-    // only a candidate is worth building the full scored shape for.
+    // only a candidate is worth building the full scored shape for. This
+    // raw weight is an upper bound (a PHRASE_UNITS pair counts once in
+    // scoreEntry), so the floor is applied again to the real score.
     let weight = 0;
     for (const t of hTokens) if (entry.tokens.has(t)) weight += (df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1;
-    if (weight >= T2_CANDIDATE_MIN_SHARED) scored.push(scoreEntry(entry, hTokens, df));
+    if (weight < T2_CANDIDATE_MIN_SHARED) continue;
+    const s = scoreEntry(entry, hTokens, df);
+    if (s.weight >= T2_CANDIDATE_MIN_SHARED) scored.push(s);
   }
   scored.sort((a, b) => b.weight - a.weight || b.ratio - a.ratio);
   return scored;
@@ -352,11 +391,14 @@ export function matchLocal(headline, billIndex, opts = {}) {
  * WHAT CHANGES. Two things, both record-based and lean-free (the chamber's own
  * floor feed and schedule carry no outlet):
  *   1. offerFloorFamily: a measure on the floor record in the last 48 hours is
- *      ADDED to an ambiguous headline's shortlist when it is in the same title
- *      family as a candidate already on it (titleFamily below), and it is
- *      ordered at the head of that family. It only ever adds a candidate the
- *      headline already supports, and it never jumps an unrelated candidate
- *      the headline supports better.
+ *      ADDED to an ambiguous headline's shortlist when the headline cannot
+ *      tell it apart from a near-identical candidate already on it
+ *      (titleFamily + headlineCannotSeparate below), and it takes that
+ *      sibling's place in the order. A sibling whose own title names what the
+ *      headline says and the floor measure lacks (a Venezuela headline, an
+ *      Iran resolution on the floor) is never passed, and the floor measure
+ *      never lands ahead of a candidate the headline supports better unless
+ *      that candidate is such an indistinguishable sibling or ranks below one.
  *   2. buildT3Prompt: every candidate reaches t3 with its latest action date,
  *      its status and, when it has one, its floor-record note — so t3 can see
  *      that one of twelve identical-looking resolutions was on the Senate floor
@@ -392,7 +434,15 @@ export const FAMILY_MIN_SHARED = 3;
 export const FLOOR_RESCUE_MAX = 2;
 
 /** Are these two index entries near-identical measures? Counted on the formal
- *  titles only, over distinctive tokens only (see FAMILY_TOKEN_MAX_DF). */
+ *  titles only, over distinctive tokens only (see FAMILY_TOKEN_MAX_DF).
+ *
+ *  A family is a TEMPLATE, not a subject: every war-powers resolution in the
+ *  corpus is one family whatever the country (the Venezuela, Cuba and Western
+ *  Hemisphere resolutions share "armed", "forces" and "hostilities" with the
+ *  Iran ones), and the Internal Revenue Code amendments form families of up to
+ *  16. 499 of 3,219 bills have at least one sibling. So a family is never
+ *  enough on its own to put one member in another's place; the headline has to
+ *  be unable to tell the two apart (headlineCannotSeparate). */
 export function titleFamily(a, b, df) {
   if (!a?.titleTokens || !b?.titleTokens || a.slug === b.slug) return false;
   let shared = 0;
@@ -405,28 +455,97 @@ export function titleFamily(a, b, df) {
   return false;
 }
 
+/** Each entry's title family across the whole index, computed on first use.
+ *  Keyed on the index object, so offerFloorFamily stays observably pure. */
+const FAMILY_MEMO = new WeakMap();
+function familyOf(entry, billIndex, df) {
+  let memo = FAMILY_MEMO.get(billIndex);
+  if (!memo) {
+    memo = new Map();
+    FAMILY_MEMO.set(billIndex, memo);
+  }
+  let fam = memo.get(entry.slug);
+  if (!fam) {
+    fam = billIndex.filter((x) => titleFamily(entry, x, df));
+    memo.set(entry.slug, fam);
+  }
+  return fam;
+}
+
 /**
- * Offer the floor-record member of a near-identical family, and order ties by
- * the record. `shown` is t2's own shortlist (already cut to
- * T3_CANDIDATES_MAX). A bill F on the floor record that is NOT on it is added
- * when, for some shown candidate S:
- *   - F and S are one title family (titleFamily), AND
- *   - the headline matched F on at least one token it also matched S on —
- *     the headline is about whatever the family is about, not merely about
- *     something else that happens to share a word with it.
- * Added candidates are marked `rescued: true`. The order is headline weight
- * first, floor-record candidates ahead of equal-weight ones, t2's own order
- * after that — and then each floor-record candidate is moved up to lead its
- * own title family (see the comment at the move). A candidate outside that
- * family that the headline supports better is never jumped. Every candidate
- * on the floor record carries its entry as `floor`. Pure; never mutates
- * `shown`.
+ * Can this headline tell the floor-record measure F apart from its sibling S?
+ * offerFloorFamily lets F stand in for S (be added because S was shortlisted,
+ * or be listed ahead of S) ONLY when it cannot. `sMatched` is the headline
+ * tokens S matched (scoreCandidates' `matched`). Every test below counts
+ * distinctive tokens only (df <= FAMILY_TOKEN_MAX_DF): "resolution" (df 80)
+ * is in every one of these titles and says nothing about which one a story is
+ * on.
+ *   1. F and S are one title family (titleFamily).
+ *   2. The headline matched F on a distinctive token S also carries. Sharing
+ *      only "resolution" is not enough.
+ *   3. Nothing the headline matched on S's formal title names something F
+ *      lacks. A distinctive title token S has and F does not ("venezuela",
+ *      "cuba", "hemisphere" against an Iran resolution; "iran" against the
+ *      Venezuela one) says the headline is about S, not F, and F stays where
+ *      the headline put it.
+ *      The one exception is the family's template wording. The S.J.Res. form
+ *      says "hostilities within or AGAINST" for every country, so a headline
+ *      saying senators "voted against" the Iran resolution matches every
+ *      S.J.Res. on "against", and H.Con.Res. 89 ("hostilities WITH Iran") does
+ *      not. Such a token is wording, not a subject, when some OTHER sibling
+ *      carries it together with everything that sets F's title apart from S
+ *      (F's distinctive title tokens that S lacks). H.Con.Res. 75 is worded
+ *      like H.Con.Res. 89 and says "hostilities AGAINST … Iran", so "against"
+ *      does not separate 89 from an S.J.Res. No sibling carries "venezuela"
+ *      beside "iran", so "venezuela" separates 89 from S.J.Res. 98, and
+ *      "iran" separates 98 from every Iran resolution.
+ * An unknown case falls to the conservative side: F keeps the place the
+ * headline gave it, and its FLOOR RECORD note still reaches t3.
+ * `sMatched` may be omitted; it is then scored here.
+ */
+export function headlineCannotSeparate(hTokens, f, s, sMatched, billIndex, df = billIndex?.df ?? new Map()) {
+  if (!f || !s || !titleFamily(f, s, df)) return false;
+  const distinct = (t) => (df.get(t) ?? Infinity) <= FAMILY_TOKEN_MAX_DF;
+  const onS = sMatched ?? scoreEntry(s, hTokens, df).matched;
+  const onF = new Set(scoreEntry(f, hTokens, df).matched);
+  if (!onS.some((t) => distinct(t) && onF.has(t))) return false;
+  let fOnly = null;
+  for (const t of onS) {
+    // Only S's formal TITLE can name its subject: press_names and news_query
+    // are search phrasing (S.J.Res. 200's news_query adds "military action").
+    if (f.tokens.has(t) || !distinct(t) || !s.titleTokens.has(t)) continue;
+    fOnly ??= [...f.titleTokens].filter((x) => distinct(x) && !s.tokens.has(x));
+    const wording = familyOf(f, billIndex, df).some(
+      (g) => g.slug !== s.slug && g.tokens.has(t) && fOnly.every((x) => g.tokens.has(x))
+    );
+    if (!wording) return false;
+  }
+  return true;
+}
+
+/**
+ * Offer the floor-record member of a near-identical family, and let it lead
+ * the siblings the headline cannot tell it apart from. `shown` is t2's own
+ * shortlist (already cut to T3_CANDIDATES_MAX). A bill F on the floor record
+ * that is NOT on it is added when the headline cannot tell F apart from some
+ * shown candidate S (headlineCannotSeparate). Added candidates are marked
+ * `rescued: true` and join the list at their own headline weight. Then each
+ * floor-record candidate F moves up, and only up:
+ *   - ahead of equal-weight candidates (the record breaks a tie the headline
+ *     leaves), but never past a title sibling the headline tells apart from F;
+ *   - then into the place of the best-placed sibling the headline cannot tell
+ *     apart from F; that sibling and everything after it move down one.
+ * So F only ever lands ahead of a candidate the headline supports better when
+ * that candidate is such a sibling or ranks below one. The list is otherwise
+ * t2's own order. Every candidate on the floor record carries its entry as
+ * `floor`. Pure; never mutates `shown`.
  */
 export function offerFloorFamily(headline, shown, billIndex, floorRecord) {
   const df = billIndex.df ?? new Map();
   const bySlug = billIndex.bySlug ?? new Map(billIndex.map((e) => [e.slug, e]));
   const hTokens = tokenize(headline);
   const shownSlugs = new Set(shown.map((c) => c.slug));
+  const cannotSeparate = (f, c) => headlineCannotSeparate(hTokens, f, bySlug.get(c.slug), c.matched, billIndex, df);
   const eligible = [];
   for (const [slug, entry] of floorRecord) {
     if (shownSlugs.has(slug)) continue;
@@ -434,11 +553,7 @@ export function offerFloorFamily(headline, shown, billIndex, floorRecord) {
     if (!f) continue; // not in the corpus - t2/t3 can only ever offer corpus bills
     const scored = scoreEntry(f, hTokens, df);
     if (scored.shared === 0) continue;
-    const fMatched = new Set(scored.matched);
-    const sibling = shown.some(
-      (s) => s.matched?.some((t) => fMatched.has(t)) && titleFamily(f, bySlug.get(s.slug), df)
-    );
-    if (sibling) eligible.push({ ...scored, rescued: true, floor: entry });
+    if (shown.some((s) => cannotSeparate(f, s))) eligible.push({ ...scored, rescued: true, floor: entry });
   }
   // More eligible than slots (rare: it takes several members of ONE family on
   // the floor inside 48 hours): on-the-floor before announced, then the
@@ -451,24 +566,38 @@ export function offerFloorFamily(headline, shown, billIndex, floorRecord) {
     ...shown.map((c) => (floorRecord.has(c.slug) ? { ...c, floor: floorRecord.get(c.slug) } : c)),
     ...rescued,
   ]
-    // Array.prototype.sort is stable, so t2's own order survives every tie
-    // these two keys do not break.
-    .sort((a, b) => b.weight - a.weight || (b.floor ? 1 : 0) - (a.floor ? 1 : 0));
-  // Then a floor-record candidate LEADS ITS OWN FAMILY: it moves up to just
-  // ahead of the best-placed member of its title family, and no further.
-  // Inside a family the weight gap is lexical noise, not evidence - a headline
-  // saying senators "voted against" the resolution scores the S.J.Res. wording
-  // ("hostilities within or AGAINST … Iran") one point above the H.Con.Res.
-  // wording ("hostilities WITH Iran") for no reason that has anything to do
-  // with which one was voted on, and in the 2026-09-24 pull that noise sat
-  // almost entirely in right-rated outlets' headlines. An unrelated candidate
-  // the headline supports better is never jumped.
+    // Array.prototype.sort is stable, so t2's own order (weight, then ratio)
+    // survives every tie.
+    .sort((a, b) => b.weight - a.weight);
+  // A sibling whose own title names something the headline says and F lacks
+  // (the Cuba resolution, on a headline that says "Cuba") is never passed.
+  const separated = (fEntry, c) => titleFamily(fEntry, bySlug.get(c.slug), df) && !cannotSeparate(fEntry, c);
   for (const f of ordered.filter((c) => c.floor)) {
+    const fEntry = bySlug.get(f.slug);
     const at = ordered.indexOf(f);
-    const lead = ordered.findIndex((c, i) => i < at && !c.floor && titleFamily(bySlug.get(f.slug), bySlug.get(c.slug), df));
-    if (lead === -1) continue;
+    let to = at;
+    // 1. When the headline supports two measures equally, the one on the floor
+    //    record goes first. It does not pass a candidate the headline supports
+    //    even one point better, another floor-record candidate, or a separated
+    //    sibling.
+    while (to > 0) {
+      const prev = ordered[to - 1];
+      if (prev.weight !== f.weight || prev.floor || separated(fEntry, prev)) break;
+      to--;
+    }
+    // 2. Then it takes the place of the best-placed sibling the headline
+    //    cannot tell it apart from (headlineCannotSeparate). Between such
+    //    siblings the weight gap is lexical noise, not evidence. A headline
+    //    saying senators "voted against" the resolution scores the S.J.Res.
+    //    wording ("hostilities within or AGAINST … Iran") one point above the
+    //    H.Con.Res. wording ("hostilities WITH Iran") for no reason that has
+    //    anything to do with which one was voted on, and in the 2026-09-24
+    //    pull that noise sat almost entirely in right-rated outlets' headlines.
+    const lead = ordered.findIndex((c, i) => i < to && !c.floor && cannotSeparate(fEntry, c));
+    if (lead !== -1) to = lead;
+    if (to === at) continue;
     ordered.splice(at, 1);
-    ordered.splice(lead, 0, f);
+    ordered.splice(to, 0, f);
   }
   return ordered;
 }

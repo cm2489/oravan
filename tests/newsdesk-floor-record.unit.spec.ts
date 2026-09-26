@@ -12,10 +12,13 @@ import {
   FLOOR_RESCUE_MAX,
   floorNote,
   formatT3Candidate,
+  headlineCannotSeparate,
   headlineForMatching,
   looksLegislative,
   matchLocal,
+  PHRASE_UNITS,
   rollFloorRecord,
+  scoreCandidates,
   SHORT_TOKENS_KEPT,
   T3_CANDIDATES_MAX,
   titleFamily,
@@ -58,18 +61,41 @@ const IRAN = [
   // cost it the shortlist on every tie.
   { bill_type: 'hconres', bill_number: 89, title: HCONRES, news_query: 'President "Iran hostilities"', status: 'passed_chamber', last_action_date: '2026-07-23' },
 ];
+/*
+ * The same template for OTHER subjects, with their real titles, news_query
+ * values, statuses and dates (data/bills.json, 2026-09-25). Every one of them
+ * is a title family of every Iran resolution ("armed", "forces",
+ * "hostilities"), which is exactly why a family alone must never let one
+ * stand in for another. They precede the Iran resolutions, as in the corpus.
+ */
+const SIBLINGS = [
+  { bill_type: 'sjres', bill_number: 98, title: 'A joint resolution to direct the removal of United States Armed Forces from hostilities within or against Venezuela that have not been authorized by Congress.', news_query: 'President "Venezuela hostilities"', status: 'passed_chamber', last_action_date: '2026-01-14' },
+  { bill_type: 'sjres', bill_number: 124, title: 'A joint resolution to direct the removal of United States Armed Forces from hostilities within or against the Republic of Cuba that have not been authorized by Congress.', news_query: 'Congress "Cuba military"', status: 'floor_vote', last_action_date: '2026-04-28' },
+  { bill_type: 'hjres', bill_number: 153, title: 'To direct the removal of United States Armed Forces from hostilities within or against the Republic of Cuba that have not been authorized by Congress.', news_query: 'Congress "Cuba military"', status: 'committee', last_action_date: '2026-03-24' },
+  { bill_type: 'hconres', bill_number: 61, title: 'Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with presidentially designated terrorist organizations in the Western Hemisphere.', news_query: 'President "armed forces" Western', status: 'floor_vote', last_action_date: '2025-12-17' },
+];
 // Unrelated bills, so distinctive-token counts behave like a corpus rather
-// than like a list of twelve near-duplicates.
+// than like a list of near-duplicates: "resolution", "joint", "direct" and
+// "president" are common words (df 80, 70, 37, 33 in the real corpus), and
+// "venezuela" and "cuba" appear in a few other bills (df 3 and 4).
 const OTHERS = [
+  { bill_type: 's', bill_number: 3990, title: 'Collegiate Sports Media Rights Act', news_query: 'college sports broadcast', status: 'committee', last_action_date: '2026-06-01' },
   { bill_type: 's', bill_number: 4668, title: 'Protect College Sports Act', news_query: 'college sports athletes', status: 'floor_vote', last_action_date: '2026-09-24' },
   { bill_type: 's', bill_number: 4430, title: 'White House Safety and Security Act of 2026', news_query: 'White House "East Wing"', status: 'committee', last_action_date: '2026-09-10' },
   { bill_type: 'hr', bill_number: 8803, title: 'Iran War Oil Crisis Windfall Profits Tax Act', news_query: 'oil windfall tax', status: 'committee', last_action_date: '2026-08-01' },
   { bill_type: 's', bill_number: 3281, title: 'Sanctions on Iranian oil exports enforcement act', news_query: 'Iran oil sanctions', status: 'committee', last_action_date: '2026-05-01' },
+  { bill_type: 'hr', bill_number: 7001, title: 'Venezuela Advancing Democracy Act', news_query: null, status: 'committee', last_action_date: '2026-02-01' },
+  { bill_type: 'hr', bill_number: 7002, title: 'Venezuela Temporary Protected Status Act', news_query: null, status: 'committee', last_action_date: '2026-02-01' },
+  { bill_type: 'hr', bill_number: 7003, title: 'Cuba Democracy and Human Rights Act', news_query: null, status: 'committee', last_action_date: '2026-02-01' },
+  { bill_type: 'hr', bill_number: 7004, title: 'Cuba sanctions accountability act', news_query: null, status: 'committee', last_action_date: '2026-02-01' },
+  ...Array.from({ length: 30 }, (_, i) => ({
+    bill_type: 'hjres', bill_number: 500 + i, title: `A joint resolution to direct the President to proclaim observance week number ${i}`, news_query: null, status: 'committee', last_action_date: '2026-01-01',
+  })),
   ...Array.from({ length: 30 }, (_, i) => ({
     bill_type: 'hr', bill_number: 9000 + i, title: `Rural broadband grant improvement measure number ${i} for counties`, news_query: null, status: 'committee', last_action_date: '2026-01-01',
   })),
 ];
-const CORPUS = [...IRAN, ...OTHERS].map((b) => ({ congress_number: 119, press_names: null, ...b }));
+const CORPUS = [...SIBLINGS, ...IRAN, ...OTHERS].map((b) => ({ congress_number: 119, press_names: null, ...b }));
 const index = buildBillIndex(CORPUS);
 
 // The floor record a 2026-09-25 morning run held: H.Con.Res. 89 listed on
@@ -121,7 +147,7 @@ test.describe('the 2026-09-24 Iran vote: the measure on the floor is offered, an
     expect(slugsOf(matchLocal(VOTE, index, { floorRecord }))).not.toContain('s-4668-119');
   });
 
-  test('a floor-record candidate never jumps an unrelated candidate the headline supports better', () => {
+  test('a floor-record candidate never lands ahead of an unrelated candidate the headline supports better', () => {
     // The headline is about the oil-profits tax bill, which merely has "Iran
     // War" in its name; H.Con.Res. 89 may be offered, but not ahead of it.
     const h = 'House committee weighs Iran war oil crisis windfall profits tax bill';
@@ -164,6 +190,130 @@ test.describe('titleFamily (near-identical measures, counted on distinctive titl
   test('a bill is not its own sibling, and missing entries are never family', () => {
     expect(titleFamily(e('hconres-89-119'), e('hconres-89-119'), index.df)).toBe(false);
     expect(titleFamily(undefined, e('hconres-89-119'), index.df)).toBe(false);
+  });
+
+  test('a family is a template, not a subject: every other country\'s war-powers resolution is in it too', () => {
+    // Which is why a family alone never lets one member stand in for another.
+    for (const s of ['sjres-98-119', 'sjres-124-119', 'hjres-153-119', 'hconres-61-119']) {
+      expect(titleFamily(e('hconres-89-119'), e(s), index.df), s).toBe(true);
+    }
+  });
+});
+
+/*
+ * A family is a template. The floor record may put one member in another's
+ * place only where the HEADLINE cannot tell them apart. These pin that for
+ * the case the first version of this change got wrong: with an Iran
+ * resolution on the floor, Venezuela and Cuba coverage was routed to it (and
+ * the reverse), for the 48 hours the floor record lasts.
+ */
+const recordOf = (slug: string) =>
+  buildFloorRecord({ persisted: rollFloorRecord(null, [{ slug, source: 'senate-floor-today' }], NOW - 3_600_000), nowMs: NOW });
+
+test.describe('another country\'s resolution keeps its own coverage while an Iran resolution is on the floor', () => {
+  test('a Venezuela headline keeps the Venezuela resolution first; H.Con.Res. 89 never passes it', () => {
+    const slugs = slugsOf(matchLocal('Senate blocks resolution to halt Venezuela hostilities', index, { floorRecord }));
+    expect(slugs[0]).toBe('sjres-98-119');
+    if (slugs.includes('hconres-89-119')) expect(slugs.indexOf('hconres-89-119')).toBeGreaterThan(slugs.indexOf('sjres-98-119'));
+  });
+
+  test('"Venezuela war powers resolution": the Venezuela resolution is on the shortlist, first (war powers is one name)', () => {
+    const slugs = slugsOf(matchLocal('Senate rejects Venezuela war powers resolution', index, { floorRecord }));
+    expect(slugs[0]).toBe('sjres-98-119');
+  });
+
+  test('a Cuba headline: the floor record breaks no tie against the resolution whose title says Cuba', () => {
+    const slugs = slugsOf(matchLocal('House votes on Cuba war powers resolution', index, { floorRecord }));
+    expect(slugs).toContain('sjres-124-119');
+    expect(slugs[0]).not.toBe('hconres-89-119');
+    if (slugs.includes('hconres-89-119')) expect(slugs.indexOf('hconres-89-119')).toBeGreaterThan(slugs.indexOf('sjres-124-119'));
+    const cuba2 = slugsOf(matchLocal('Senate blocks resolution to halt Cuba hostilities', index, { floorRecord }));
+    expect(cuba2[0]).not.toBe('hconres-89-119');
+  });
+
+  test('the reverse: with the Venezuela resolution on the floor, Iran coverage is never led by it', () => {
+    const fr = recordOf('sjres-98-119');
+    // Shares only "resolution" with the Iran candidates: not added at all.
+    expect(slugsOf(matchLocal('Senate rejects Iran war powers resolution', index, { floorRecord: fr }))).not.toContain('sjres-98-119');
+    for (const h of ['Senate blocks resolution to end Iran hostilities', 'Senate votes against Iran war powers resolution']) {
+      expect(slugsOf(matchLocal(h, index, { floorRecord: fr }))[0], h).not.toBe('sjres-98-119');
+    }
+  });
+
+  test('when the headline IS about the measure on the floor, it still leads', () => {
+    expect(slugsOf(matchLocal('Senate rejects Venezuela war powers resolution', index, { floorRecord: recordOf('sjres-98-119') }))[0]).toBe('sjres-98-119');
+    expect(slugsOf(matchLocal('Senate rejects Cuba war powers resolution', index, { floorRecord: recordOf('sjres-124-119') }))[0]).toBe('sjres-124-119');
+    // "Western Hemisphere" is rare enough to make t2 confident on its own.
+    const r = matchLocal('House rejects Western Hemisphere war powers resolution', index, { floorRecord: recordOf('hconres-61-119') });
+    expect(r?.tier === 't2' ? r.slug : slugsOf(r)[0]).toBe('hconres-61-119');
+  });
+});
+
+test.describe('headlineCannotSeparate (when a floor measure may stand in for its sibling)', () => {
+  const e = (slug: string) => index.bySlug?.get(slug);
+  const can = (h: string, f: string, s: string) => headlineCannotSeparate(tokenize(h), e(f), e(s), undefined, index, index.df);
+
+  test('two wordings of the Iran resolution, on an Iran headline: cannot be told apart', () => {
+    expect(can('Senate rejects Iran war powers resolution', 'hconres-89-119', 'sjres-185-119')).toBe(true);
+  });
+
+  test('"against" is template wording, not a subject: every S.J.Res. says "within or against", and H.Con.Res. 75 says it too', () => {
+    expect(can('Senators vote against Iran war powers resolution', 'hconres-89-119', 'sjres-172-119')).toBe(true);
+  });
+
+  test('a country the headline names, in the sibling\'s title and not the floor measure\'s, separates them', () => {
+    expect(can('Senate blocks resolution to halt Venezuela hostilities', 'hconres-89-119', 'sjres-98-119')).toBe(false);
+    expect(can('Senate blocks resolution to halt Cuba hostilities', 'hconres-89-119', 'sjres-124-119')).toBe(false);
+    expect(can('Senate blocks resolution to end Iran hostilities', 'sjres-98-119', 'sjres-185-119')).toBe(false);
+  });
+
+  test('sharing only a common word ("resolution") is not shared evidence', () => {
+    expect(can('Senate rejects Iran war powers resolution', 'sjres-98-119', 'sjres-185-119')).toBe(false);
+  });
+
+  test('search phrasing never names a subject: S.J.Res. 200\'s news_query adds "military action"', () => {
+    expect(can('Senate rejects war powers resolution to halt military action in Iran', 'hconres-89-119', 'sjres-200-119')).toBe(true);
+  });
+
+  test('not a family, or a missing entry: never', () => {
+    expect(can('Iran war oil windfall tax', 'hconres-89-119', 'hr-8803-119')).toBe(false);
+    expect(headlineCannotSeparate(tokenize('Iran war powers'), undefined, e('sjres-185-119'), undefined, index, index.df)).toBe(false);
+  });
+});
+
+test.describe('PHRASE_UNITS: "war powers" is the name of one law, scored as one token', () => {
+  const find = (h: string, slug: string) => scoreCandidates(h, index).find((c: { slug: string }) => c.slug === slug) as { weight: number; shared: number; matched: string[] } | undefined;
+
+  test('the unit list is exactly what was measured', () => {
+    expect(PHRASE_UNITS.map((u: readonly string[]) => [...u])).toEqual([['war', 'powers']]);
+  });
+
+  test('a resolution citing the War Powers Resolution gets ONE point for "war powers", not two', () => {
+    const c = find('Senate rejects Iran war powers resolution', 'hconres-89-119');
+    // iran + "war powers" + resolution
+    expect(c?.weight).toBe(3);
+    expect(c?.shared).toBe(3);
+    expect(c?.matched).toEqual(expect.arrayContaining(['war', 'powers']));
+  });
+
+  test('a bill with only "war" in its title gets nothing from "war powers"; "the Iran war" still matches it', () => {
+    expect(find('Senate rejects Iran war powers vote', 'hr-8803-119')).toBeUndefined();
+    expect(find('Senators debate the cost of the Iran war', 'hr-8803-119')).toBeDefined();
+  });
+
+  test('tokenize itself is unchanged: both words are still tokens', () => {
+    expect(tokenize('Iran war powers')).toEqual(['iran', 'war', 'powers']);
+  });
+});
+
+test.describe('the floor record breaks ties the headline leaves', () => {
+  const h = 'College sports bill advances in the Senate';
+
+  test('equal support: the measure on the floor record goes first', () => {
+    expect(slugsOf(matchLocal(h, index))[0]).toBe('s-3990-119');
+    const cands = candsOf(matchLocal(h, index, { floorRecord }));
+    expect(cands[0].slug).toBe('s-4668-119');
+    expect(cands[0].weight).toBe(cands[1].weight);
   });
 });
 
