@@ -6,6 +6,7 @@ import { MomentCard, type MomentTeaser } from '@/components/MomentCard';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getMoments, momentClaimsVehicles, vehicleKind, type MomentWithState } from '@/lib/moments';
+import { LIVE_CAP } from '@/lib/moments-gate.mjs';
 import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -135,7 +136,7 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
             rather than printing a nought. */}
         {live.length > 0 && (
           <p className="mt-6 max-w-read text-sm text-ink-2">
-            {t('moments.scarcityNote', { count: live.length })}
+            {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
           </p>
         )}
       </section>

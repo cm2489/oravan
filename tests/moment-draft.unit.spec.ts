@@ -124,7 +124,7 @@ const CLOTURE_BILL = {
   last_action_text: 'Cloture motion on the motion to proceed to the measure presented in Senate.',
 };
 
-const REPORT = { moments: { live: 2, cap: 6, openSlots: 4 }, candidates: [CANDIDATE] };
+const REPORT = { moments: { live: 2, cap: 8, openSlots: 6 }, candidates: [CANDIDATE] };
 
 const GROUND = groundFor(CANDIDATE, BILL, STATUS_PHRASES);
 

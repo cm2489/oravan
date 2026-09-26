@@ -21,13 +21,15 @@ mechanism.
    issue to decline it, and append the reason to `docs/moment-rejections.json`
    (see `docs/moment-rejections.md` — a refusal is a finding, and the log is
    what makes "no Big Question without a real vehicle" auditable).
-4. **If all six slots are full**, also comment `/replace <moment-id>` naming the
-   question that retires. Without one the workflow comes back with the six ids
-   and asks. Retiring writes `status: "retired"` on that entry — it stays in the
+4. **If all eight slots are full**, also comment `/replace <moment-id>` naming the
+   question that retires. Without one the workflow comes back with the eight ids
+   and asks. (The cap was six until 2026-09-24, when the owner ruled to keep all
+   six live questions and publish a seventh; the scarcity rationale is
+   unchanged — the number moved, with one slot of headroom.) Retiring writes `status: "retired"` on that entry — it stays in the
    file as the record that it existed, and stops appearing anywhere.
 5. **The gates re-run**, on the entry as you approved it: schema, EN/ES parity,
    the vehicle resolving in the real corpus, qualifying-signal shape, the dates,
-   the six-live cap, the forbidden-vocabulary lint in both languages, and the
+   the eight-live cap, the forbidden-vocabulary lint in both languages, and the
    new-vehicle terminality rule against `main`. Plus two questions only the
    approve step can ask: has the record moved since the draft was written, and
    is the signal still inside the 45-day window the site publishes as its
@@ -66,7 +68,7 @@ takes the label off. Nothing is written. **Re-applying the label is the retry.**
 | no scaffold, or two | the body is not one approvable block | edit the body down to one, or use the per-candidate issue |
 | the id is still `REPLACE-WITH-MOMENT-ID` | nothing was derivable to name it | edit the id — it becomes `/questions/<id>` permanently |
 | the id already exists | a second entry under one key silently replaces the first | rename it in the body |
-| all six slots are full | the cap is the scarcity claim | comment `/replace <moment-id>`, then re-label |
+| all eight slots are full | the cap is the scarcity claim | comment `/replace <moment-id>`, then re-label |
 | the record has moved | Congress acted after the draft was written, so the approved sentences describe a state that is gone | wait for tonight's re-draft, or edit the body yourself |
 | the signal aged out | the newest action is over 45 days old, and `moments.whyCriteria` tells readers a question opens inside that window | wait for the next real signal |
 | `review_by` has already passed | it would read as `stale` the moment it published | edit `opened`/`review_by` in the body |

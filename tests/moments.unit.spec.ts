@@ -77,7 +77,7 @@ test.describe('real data/moments.json passes the CI gate', () => {
   test('every curated moment resolves and computes a valid lifecycle state', () => {
     const moments = getMoments();
     expect(moments.length).toBeGreaterThan(0);
-    expect(moments.length).toBeLessThanOrEqual(6);
+    expect(moments.length).toBeLessThanOrEqual(8); // the live cap (lib/moments-gate.mjs), 6 until 2026-09-24
     for (const m of moments) {
       expect(['live', 'settled', 'stale', 'retired']).toContain(m.state);
       expect(m.vehicles.length).toBeGreaterThan(0);
@@ -678,15 +678,15 @@ test.describe('checkMoments (fixtures)', () => {
     ).toBe(true);
   });
 
-  test('the live cap is 6 — a seventh live moment fails', () => {
-    const seven: Record<string, unknown> = {};
-    for (let i = 1; i <= 7; i++) seven[`moment-${i}`] = validMoment();
-    const v = run(seven).violations;
-    expect(v.some((x: string) => x.includes('the cap is 6'))).toBe(true);
+  test('the live cap is 8 — a ninth live moment fails', () => {
+    const nine: Record<string, unknown> = {};
+    for (let i = 1; i <= 9; i++) nine[`moment-${i}`] = validMoment();
+    const v = run(nine).violations;
+    expect(v.some((x: string) => x.includes('the cap is 8'))).toBe(true);
 
-    const six: Record<string, unknown> = {};
-    for (let i = 1; i <= 6; i++) six[`moment-${i}`] = validMoment();
-    expect(run(six).violations).toEqual([]);
+    const eight: Record<string, unknown> = {};
+    for (let i = 1; i <= 8; i++) eight[`moment-${i}`] = validMoment();
+    expect(run(eight).violations).toEqual([]);
   });
 
   test('a terminal vehicle is a warning, not a violation (settled moments persist in the file)', () => {

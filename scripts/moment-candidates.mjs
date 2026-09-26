@@ -10,7 +10,7 @@
  * repo: data/bills.json, data/coverage.json, data/media-bias.json,
  * data/moments.json, and docs/moment-rejections.json (optional). The report
  * exists to give the owner a shortlist to READ — it is the valve for the
- * surplus the 6-live cap creates, and the boundary printed on every run
+ * surplus the 8-live cap creates, and the boundary printed on every run
  * (STANDING_LINE below) is exactly what separates it from the automated
  * proposal system v1 deliberately never built.
  *
@@ -66,8 +66,9 @@ export const STANDING_LINE =
  */
 const COVERAGE_PER_BILL = Number(process.env.COVERAGE_PER_BILL ?? 5);
 
-/** The live-Moment cap. Source of truth: lib/moments-gate.mjs (`liveCount > 6`). */
-const LIVE_CAP = 6;
+/** The live-Moment cap. Source of truth: lib/moments-gate.mjs (`liveCount > 8`;
+ *  raised from 6 by owner ruling 2026-09-24). */
+const LIVE_CAP = 8;
 
 /*
  * Paths resolve from the working directory (run this from the repo root, like

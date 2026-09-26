@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 // tests/moment-scaffold.unit.spec.ts uses for the rest of this script's
 // exports.
 import {
+  pushBatch,
   rejectionsSentence,
   resolveDraftCap,
   seenSetAfter,
@@ -400,4 +401,14 @@ test('the fix for the pre-existing untracked-file guard is not regressed', () =>
   // state of the first run that ever writes the seen-set.
   const body = stepBody('Commit the seen-set');
   expect(body).toMatch(/git status --porcelain -- data\/candidates-seen\.json/);
+});
+
+test('a push run opens no more candidate issues than there are open slots, and holds the rest', () => {
+  const newly = [{ slug: 'a' }, { slug: 'b' }, { slug: 'c' }];
+  expect(pushBatch(newly, 1)).toEqual({ batch: [{ slug: 'a' }], held: [{ slug: 'b' }, { slug: 'c' }] });
+  expect(pushBatch(newly, 0)).toEqual({ batch: [], held: newly });
+  expect(pushBatch(newly, 5).batch).toEqual(newly);
+  // A held slug is not in the --filed receipt, so seenSetAfter keeps it unseen for a later run.
+  const next = seenSetAfter({ qualifying: ['a', 'b', 'c'], newly: ['a', 'b', 'c'], filed: ['a'], seen: [] });
+  expect(next).toEqual(['a']);
 });

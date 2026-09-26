@@ -15,7 +15,7 @@ name: Moment approve
 # THE SHAPE, in one line each:
 #   1. the labeler must be the repo owner, checked BEFORE anything is checked out
 #   2. scripts/moment-approve.mjs parses that issue's scaffold and runs the gate
-#   3. six slots full? a `/replace <id>` comment from the owner names the retiree
+#   3. every slot full? a `/replace <id>` comment from the owner names the retiree
 #   4. the entry is written byte-for-byte as the issue has it, then re-read and
 #      compared; anything else and the file is restored and nothing publishes
 #   5. branch, commit, PR, auto-merge on green — the PR closes the issue
@@ -52,7 +52,7 @@ on:
 
 concurrency:
   # ONE GROUP FOR THE WHOLE WORKFLOW, not one per issue (fixed 2026-08-12).
-  # The contended resource is data/moments.json — specifically the 6-live cap
+  # The contended resource is data/moments.json — specifically the live cap
   # inside it — and that is global, not per-issue. Keyed by issue number, two
   # DIFFERENT candidates labelled a minute apart ran concurrently, each read a
   # 5-live file, and each decided it had room; the second to push would either
