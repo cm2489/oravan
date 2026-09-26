@@ -112,6 +112,25 @@ if (process.argv.includes('--self-test')) {
     console.error('::error::check-conversation --self-test: a valid EMPTY file was REJECTED by the gate');
     ok = false;
   }
+  // The per-feed dark alarm is a WARNING, never a failure — but it must still
+  // come out. A refactor that dropped it would put the Washington Times case
+  // (a dead feed hidden behind a live sibling of its lean) back in the dark.
+  const darkFeed = {
+    _meta: {
+      ...meta,
+      source_status: {
+        feeds: {
+          'Example Feed': { status: 'dark', domain: 'foxnews.com', lean: 'right', last_live: null, first_dark: '2020-01-01', dark_days: 3, last_error: 'HTTP 403' },
+        },
+      },
+    },
+    slugs: {},
+  };
+  const darkFeedResult = verifyConversation({ data: darkFeed, fileBytes: 100, bias });
+  if (darkFeedResult.failures.length > 0 || !darkFeedResult.warnings.some((w) => w.includes('press feed "Example Feed"'))) {
+    console.error('::error::check-conversation --self-test: a dark press feed was not surfaced as a warning (or was wrongly failed)');
+    ok = false;
+  }
   if (!ok) process.exit(1);
   console.log('check-conversation --self-test passed');
   process.exit(0);

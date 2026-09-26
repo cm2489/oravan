@@ -39,8 +39,13 @@
  *
  * ---- PRESS SOURCES: free RSS only, no paid APIs ----
  * NEWS_API_KEY / TheNewsAPI is deliberately NOT used here — that quota
- * belongs to scripts/sync-coverage.mjs (which already exceeds its own
- * daily quota some nights; pipeline-audit.md §4). Politically-balanced
+ * belongs to scripts/sync-coverage.mjs, and the reason is ownership, not
+ * exhaustion. (Until 2026-09-25 this line said sync-coverage "already exceeds
+ * its own daily quota some nights", citing pipeline-audit.md §4. The nightly
+ * logs no longer show that: the 2026-09-24 run processed 600 bills with a
+ * handful of per-minute 429 back-offs and no daily-quota stop, and the
+ * September 2026 news-band audit found no quota stop in the nights it read.)
+ * Politically-balanced
  * basket of 11 feeds (leans per data/media-bias.json), the original six
  * verified live 2026-07-16, the three 2026-07-23 additions marked * and
  * the two 2026-08-12 rebalance additions marked **:
@@ -61,6 +66,9 @@
  *   Fox News      foxnews.com    right    https://moxie.foxnews.com/google-publisher/politics.xml
  *   Washington Times** washingtontimes.com right
  *                 https://www.washingtontimes.com/rss/headlines/news/politics/
+ *                 (HAS NEVER DELIVERED FROM CI — HTTP 403 to GitHub's
+ *                  runners on every run since it was added; see the
+ *                  correction under the rebalance below)
  *   CBS News      cbsnews.com    left     https://www.cbsnews.com/latest/rss/politics
  *   Politico*     politico.com   left     https://rss.politico.com/congress.xml
  *   CNBC Politics** cnbc.com     center   https://www.cnbc.com/id/10000113/device/rss/rss.html
@@ -91,6 +99,17 @@
  * Basket is now 2 right + 2 left + 3 center rated outlets (Hill counted once)
  * + 1 unrated congress trade pub + 1 cross-outlet aggregator, and no lean
  * depends on a single feed staying alive.
+ * CORRECTION (2026-09-25): that last sentence was true of the construction and
+ * false in operation from the first run. washingtontimes.com returned HTTP 403
+ * to the GitHub runner on the first newsdesk run after the rebalance merged
+ * (2026-08-12 21:59Z) and on all 21 runs sampled from then through 2026-09-25,
+ * while the same URL answered 200 to the same user-agent from a non-runner
+ * address. Why runners are refused is unverified (the site is behind
+ * Cloudflare; rss.politico.com is too, and it delivers). The vetting above was
+ * done from a non-runner address, which cannot see a block on runner
+ * addresses, and the dark-lean alarm below counts per LEAN, so Fox alone kept
+ * the right lean `ok`. For six weeks the right half of this basket was one
+ * feed, and nothing said so. The per-feed alarm below is what says so now.
  * Dead/rejected candidates during verification — 2026-07-16/23:
  * apnews.com/hub/politics.rss and apnews.com/rss (both 404 — AP discontinued
  * most public RSS), politico.com/rss/politics08.xml (403; the congress.xml
@@ -119,6 +138,25 @@
  * article that happens to resolve to a right-rated domain does not, because
  * the thing being watched is whether the vetted basket still covers the
  * spectrum, not whether Google News does.
+ *
+ * ---- THE PER-FEED DARK ALARM (2026-09-25) ----
+ * The lean alarm above has a blind spot the Washington Times feed fell straight
+ * into: a lean reads `ok` while ANY feed of that lean is alive, so a dead feed
+ * with a live sibling never trips it. Every named feed in SOURCES is therefore
+ * tracked on its own as well (rollFeedHealth / darkFeeds / feedStatuses in
+ * lib/conversation.mjs), in the same cache: a feed that returns nothing — a
+ * non-200, a thrown fetch, or a 200 whose body parses to zero items — for
+ * FEED_DARK_ALARM_DAYS (3) days emits a ::warning:: naming the feed, its lean
+ * and its last failure, and is written into data/conversation.json's
+ * `source_status.feeds`. From there scripts/check-conversation.mjs (CI),
+ * scripts/verify-sync.mjs (nightly) and the pipeline-health digest all
+ * re-surface it. Only a feed's STATUS moving (ok <-> dark) counts as a
+ * material change to the committed file, so a feed missing one hour is not a
+ * commit. This alarm is also the ONLY reachability test a feed gets from a
+ * runner: vetting from a laptop cannot see a block on runner addresses, and
+ * this repo does not run live-network probes in CI, so the first newsdesk runs
+ * after a feed is added are its proof, and this alarm reports a failure within
+ * three days.
  *
  * ---- Matching, cheapest first (full design in scripts/newsdesk-match.mjs) ----
  * t1 citation regex (free) -> t2 local token overlap against corpus
@@ -311,10 +349,14 @@ import {
   conversationEvidence,
   conversationPool,
   DARK_LEAN_ALARM_DAYS,
+  darkFeeds,
   darkLeans,
   enteredCorroborated,
+  FEED_DARK_ALARM_DAYS,
+  feedStatuses,
   leanOf,
   leanStatuses,
+  rollFeedHealth,
   rollLeanHealth,
   shouldWrite as shouldWriteConversation,
 } from '../lib/conversation.mjs';
@@ -510,6 +552,12 @@ function loadCache() {
       // starts a lean's clock at today rather than reading a missing record as
       // infinitely dark, which fails toward silence exactly like feedHealth.
       leanHealth: raw.leanHealth ?? null,
+      // {feed name: {url, domain, lean, last_live, first_dark, last_error}} -
+      // the per-FEED liveness the lean record cannot see (header "THE PER-FEED
+      // DARK ALARM"). Losing it is covered twice: rollFeedHealth re-seeds a
+      // feed the committed file already calls dark, and any other feed starts
+      // its clock today.
+      feedLiveness: raw.feedLiveness ?? null,
       // Slugs that ENTERED corroborated state and whose re-decode the press
       // budget deferred. Carried so a bill does not lose its heal simply
       // because it was corroborated on a busy hour; dropped as soon as it
@@ -527,6 +575,7 @@ function loadCache() {
       dailyDecodes: null,
       feedHealth: null,
       leanHealth: null,
+      feedLiveness: null,
       conversationRedecodeQueue: [],
     };
   }
@@ -540,6 +589,7 @@ function saveCache(cache) {
     dailyDecodes: cache.dailyDecodes,
     feedHealth: cache.feedHealth,
     leanHealth: cache.leanHealth,
+    feedLiveness: cache.feedLiveness,
     conversationRedecodeQueue: cache.conversationRedecodeQueue,
   }));
 }
@@ -677,6 +727,10 @@ let pressSilent = 0;
 // ≥2-outlet rule and the conversation lamp both rest on.
 const basketLeans = new Set(SOURCES.map((s) => leanOf(s.domain, bias)).filter(Boolean));
 const liveLeans = new Set();
+// The per-FEED observation the lean set above deliberately flattens: which
+// named feed returned how many items, and why it returned none. Rolled into
+// the per-feed dark alarm further down (header "THE PER-FEED DARK ALARM").
+const feedObservations = [];
 results.forEach((r, i) => {
   const lean = leanOf(SOURCES[i].domain, bias);
   if (r.status === 'fulfilled') {
@@ -688,6 +742,15 @@ results.forEach((r, i) => {
     pressSilent++;
     console.error(`  ${SOURCES[i].name} FAILED: ${r.reason?.message ?? r.reason}`);
   }
+  const delivered = r.status === 'fulfilled' ? r.value.length : 0;
+  feedObservations.push({
+    name: SOURCES[i].name,
+    url: SOURCES[i].url,
+    domain: SOURCES[i].domain,
+    lean,
+    items: delivered,
+    error: r.status === 'rejected' ? String(r.reason?.message ?? r.reason) : delivered === 0 ? '0 items' : null,
+  });
 });
 
 // ---- the darkness tripwire ----------------------------------------------
@@ -1023,6 +1086,21 @@ for (const alarm of darkLeans(cache.leanHealth, { today })) {
   );
 }
 
+// The per-feed half, independent of the lean verdict above: a lean stays `ok`
+// while ANY of its feeds lives, which is exactly how washingtontimes.com sat at
+// HTTP 403 for six weeks with the right lean reading `ok` (header "THE
+// PER-FEED DARK ALARM").
+cache.feedLiveness = rollFeedHealth(cache.feedLiveness, {
+  feeds: feedObservations,
+  today,
+  committed: previousConversation?._meta?.source_status?.feeds ?? null,
+});
+for (const dark of darkFeeds(cache.feedLiveness, { today })) {
+  console.log(
+    `::warning::newsdesk: press feed "${dark.name}" (${dark.domain ?? 'aggregator'}${dark.lean ? `, ${dark.lean}-rated` : ''}) has returned nothing for ${dark.darkDays} days (last live ${dark.lastLive ?? 'never, in the history this run can see'}; last failure: ${dark.lastError ?? 'unknown'}; alarm at ${FEED_DARK_ALARM_DAYS}). ${dark.lean ? `The ${dark.lean} lean can read ok while this lasts if another ${dark.lean}-rated feed is alive, so the basket is narrower than its construction claims. ` : ''}Fix or replace it in scripts/newsdesk.mjs's SOURCES - after checking the replacement's robots.txt and terms, and never by changing the user-agent to get past a block.`
+  );
+}
+
 const mostViewedStatus = mostViewedRanked
   ? {
       status: 'ok',
@@ -1056,6 +1134,7 @@ const nextConversation = buildConversation({
     },
     most_viewed: mostViewedStatus,
     leans: leanStatuses(cache.leanHealth, { today }),
+    feeds: feedStatuses(cache.feedLiveness, { today }),
   },
   now: conversationNow,
   today,

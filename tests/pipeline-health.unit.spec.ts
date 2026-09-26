@@ -29,6 +29,7 @@ import {
   parsePregen,
   parseSyncDone,
   parseT3,
+  pressFeedHealth,
   stripLogPrefix,
 } from '../lib/pipeline-health.mjs';
 
@@ -432,6 +433,66 @@ test('danglingConversationSlugs names only the slugs the corpus has lost', () =>
     new Set(['hr-1-119'])
   );
   expect(dangling).toEqual(['hr-999-119']);
+});
+
+test.describe('pressFeedHealth — the newsdesk basket, read from data/conversation.json', () => {
+  const now = Date.parse('2026-09-29T13:00:00Z');
+  const withStatus = (source_status: object) => ({ _meta: { schema: 'conversation/v1', source_status }, slugs: {} });
+  const WT_DARK = {
+    status: 'dark',
+    url: 'https://www.washingtontimes.com/rss/headlines/news/politics/',
+    domain: 'washingtontimes.com',
+    lean: 'right',
+    last_live: null,
+    first_dark: '2026-09-26',
+    dark_days: 3,
+    last_error: 'HTTP 403',
+  };
+  const FOX_OK = { status: 'ok', domain: 'foxnews.com', lean: 'right', last_live: '2026-09-29', first_dark: null, dark_days: 0, last_error: null };
+
+  test('names each dark feed with a day count recomputed from its dates', () => {
+    const press = pressFeedHealth(
+      withStatus({ feeds: { 'Washington Times Politics': { ...WT_DARK, first_dark: '2026-09-20', dark_days: 3 }, 'Fox News Politics': FOX_OK } }),
+      { now }
+    );
+    expect(press?.tracked).toBe(2);
+    expect(press?.darkFeeds).toEqual([
+      { name: 'Washington Times Politics', domain: 'washingtontimes.com', lean: 'right', darkDays: 9, since: '2026-09-20', lastError: 'HTTP 403' },
+    ]);
+    expect(press?.darkLeans).toEqual([]);
+  });
+
+  test('a file that predates the per-feed alarm reads "not tracked", never "all live"', () => {
+    const press = pressFeedHealth(withStatus({ press: { status: 'ok' }, leans: { right: { status: 'ok', last_live: '2026-09-29', dark_days: 0 } } }), { now });
+    expect(press?.tracked).toBeNull();
+    expect(formatHealthSection({ pressFeeds: press })).toContain('not tracked yet');
+    expect(formatHealthSection({ pressFeeds: null })).toMatch(/press feeds\s+not found/);
+  });
+
+  test('a dead feed is a ⛔; a healthy basket is not', () => {
+    const healthyPress = pressFeedHealth(withStatus({ feeds: { 'Fox News Politics': FOX_OK } }), { now });
+    expect(alarms({ nightly: { conclusion: 'success' }, pressFeeds: healthyPress }).map((a) => a.code)).toEqual([]);
+    const darkPress = pressFeedHealth(withStatus({ feeds: { 'Washington Times Politics': WT_DARK, 'Fox News Politics': FOX_OK } }), { now });
+    const raised = alarms({ nightly: { conclusion: 'success' }, pressFeeds: darkPress });
+    expect(raised.map((a) => a.code)).toEqual(['press-feed-dark']);
+    expect(raised[0].text).toContain('Washington Times Politics (washingtontimes.com, right) 3d');
+    const rendered = formatHealthSection({ pressFeeds: darkPress, alarms: raised });
+    expect(rendered).toMatch(/press feeds\s+1\/2 live · DARK: Washington Times Politics/);
+  });
+
+  test('a dark LEAN is its own ⛔ — the digest used to read neither', () => {
+    const press = pressFeedHealth(
+      withStatus({ feeds: {}, leans: { right: { status: 'dark', last_live: '2026-09-20', dark_days: 7 } } }),
+      { now }
+    );
+    expect(press?.darkLeans).toEqual([{ lean: 'right', darkDays: 9, lastLive: '2026-09-20' }]);
+    expect(alarms({ nightly: { conclusion: 'success' }, pressFeeds: press }).map((a) => a.code)).toEqual(['press-lean-dark']);
+  });
+
+  test('no source_status at all is null, not an empty healthy reading', () => {
+    expect(pressFeedHealth({ slugs: {} }, { now })).toBeNull();
+    expect(pressFeedHealth(null, { now })).toBeNull();
+  });
 });
 
 /* ------------------------------------------------------------------ *

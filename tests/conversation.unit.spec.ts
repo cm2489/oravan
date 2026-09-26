@@ -9,11 +9,15 @@ import {
   conversationEvidence,
   conversationPool,
   conversationTier,
+  committedDarkFeeds,
   CORROBORATION_MIN_RATED_OUTLETS,
   DARK_LEAN_ALARM_DAYS,
+  darkFeeds,
   darkLeans,
   daysBetween,
   enteredCorroborated,
+  FEED_DARK_ALARM_DAYS,
+  feedStatuses,
   isConsecutiveWeek,
   leanOf,
   leanStatuses,
@@ -24,6 +28,7 @@ import {
   observeMostViewed,
   observeOutlets,
   OUTLET_WINDOW_DAYS,
+  rollFeedHealth,
   rollLeanHealth,
   shouldWrite,
   verifyConversation,
@@ -547,6 +552,181 @@ test.describe('rollLeanHealth / darkLeans', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 6b · The per-feed dark alarm (2026-09-25)
+ * ------------------------------------------------------------------ */
+test.describe('rollFeedHealth / darkFeeds / feedStatuses', () => {
+  type Feed = { name: string; url: string; domain: string | null; lean: string | null };
+  const FOX: Feed = { name: 'Fox News Politics', url: 'https://fox.example/politics.xml', domain: 'foxnews.com', lean: 'right' };
+  const WT: Feed = { name: 'Washington Times Politics', url: 'https://wt.example/politics/', domain: 'washingtontimes.com', lean: 'right' };
+  const GN: Feed = { name: 'Google News (congress bill query)', url: 'https://news.example/rss', domain: null, lean: null };
+  const live = (f: Feed, items = 20) => ({ ...f, items, error: null });
+  const failed = (f: Feed, error = 'HTTP 403') => ({ ...f, items: 0, error });
+  const plus = (days: number) => new Date(Date.parse(`${T}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+  test('THE WASHINGTON TIMES SHAPE: a feed dead from its first run is named on day 3, while its lean never stops reading ok', () => {
+    // The exact failure this alarm exists for. From 2026-08-12 the right lean
+    // was Fox + Washington Times; the Times answered every runner with 403 and
+    // Fox kept the lean "live", so the lean alarm could never fire.
+    let feeds: Record<string, unknown> | null = null;
+    let leans: Record<string, unknown> | null = null;
+    const seen: { day: number; dark: string[]; darkLeans: string[] }[] = [];
+    for (let day = 0; day <= 4; day++) {
+      const today = plus(day);
+      feeds = rollFeedHealth(feeds, { feeds: [live(FOX), failed(WT)], today });
+      leans = rollLeanHealth(leans, { basketLeans: ['right'], liveLeans: ['right'], today });
+      seen.push({
+        day,
+        dark: darkFeeds(feeds, { today }).map((d) => d.name),
+        darkLeans: darkLeans(leans, { today }).map((d) => d.lean),
+      });
+    }
+    expect(seen.map((s) => s.dark)).toEqual([[], [], [], [WT.name], [WT.name]]);
+    expect(seen.every((s) => s.darkLeans.length === 0)).toBe(true);
+    const [alarm] = darkFeeds(feeds, { today: plus(3) });
+    expect(alarm).toMatchObject({ name: WT.name, domain: 'washingtontimes.com', lean: 'right', darkDays: 3, lastLive: null, lastError: 'HTTP 403' });
+    expect(FEED_DARK_ALARM_DAYS).toBe(3);
+  });
+
+  test('a 200 with zero parseable items is dark exactly like a non-200', () => {
+    const health = rollFeedHealth(null, { feeds: [{ ...WT, items: 0, error: null }], today: T });
+    expect(health[WT.name]).toMatchObject({ last_live: null, first_dark: T, last_error: '0 items' });
+  });
+
+  test('a feed live yesterday and silent for three days is named, with the day it was last live', () => {
+    const health = { [FOX.name]: { url: FOX.url, domain: FOX.domain, lean: 'right', last_live: minus(3), first_dark: minus(2), last_error: 'HTTP 500' } };
+    const rolled = rollFeedHealth(health, { feeds: [failed(FOX, 'HTTP 500')], today: T });
+    expect(darkFeeds(rolled, { today: T })).toEqual([
+      { name: FOX.name, domain: 'foxnews.com', lean: 'right', darkDays: 3, lastLive: minus(3), since: minus(3), lastError: 'HTTP 500' },
+    ]);
+  });
+
+  test('one failed run on a day the feed already delivered is not dark at all', () => {
+    const morning = rollFeedHealth(null, { feeds: [live(FOX)], today: T });
+    const afternoon = rollFeedHealth(morning, { feeds: [failed(FOX, 'The operation was aborted due to timeout')], today: T });
+    expect(feedStatuses(afternoon, { today: T })[FOX.name]).toMatchObject({ status: 'ok', last_live: T, dark_days: 0 });
+  });
+
+  test('two dark days are counted but not alarmed', () => {
+    const health = { [FOX.name]: { url: FOX.url, domain: FOX.domain, lean: 'right', last_live: minus(2), first_dark: minus(1), last_error: 'HTTP 403' } };
+    const rolled = rollFeedHealth(health, { feeds: [failed(FOX)], today: T });
+    expect(darkFeeds(rolled, { today: T })).toEqual([]);
+    expect(feedStatuses(rolled, { today: T })[FOX.name]).toMatchObject({ status: 'ok', dark_days: 2 });
+  });
+
+  test('recovery clears the alarm and ends the streak', () => {
+    const dark = { [WT.name]: { url: WT.url, domain: WT.domain, lean: 'right', last_live: null, first_dark: minus(40), last_error: 'HTTP 403' } };
+    const recovered = rollFeedHealth(dark, { feeds: [live(WT)], today: T });
+    expect(recovered[WT.name]).toMatchObject({ last_live: T, first_dark: null, last_error: null });
+    expect(darkFeeds(recovered, { today: T })).toEqual([]);
+  });
+
+  test('a lost cache re-seeds a feed the COMMITTED file already calls dark — a cache eviction cannot silence the alarm', () => {
+    const committed = feedStatuses(
+      { [WT.name]: { url: WT.url, domain: WT.domain, lean: 'right', last_live: null, first_dark: minus(40), last_error: 'HTTP 403' } },
+      { today: minus(1) }
+    );
+    expect(committed[WT.name].status).toBe('dark');
+    const rolled = rollFeedHealth(null, { feeds: [failed(WT)], today: T, committed });
+    expect(darkFeeds(rolled, { today: T })).toMatchObject([{ name: WT.name, darkDays: 40, since: minus(40) }]);
+  });
+
+  test('a lost cache does NOT seed from a committed ok record, whose last_live may lag behind the truth', () => {
+    // The file writes only on a status flip, so an ok record's last_live is as
+    // old as the last write. Seeding from it would invent darkness.
+    const committed = { [FOX.name]: { status: 'ok', url: FOX.url, last_live: minus(10), first_dark: null, dark_days: 0 } };
+    const rolled = rollFeedHealth(null, { feeds: [failed(FOX)], today: T, committed });
+    expect(rolled[FOX.name]).toMatchObject({ last_live: null, first_dark: T });
+    expect(darkFeeds(rolled, { today: T })).toEqual([]);
+  });
+
+  test('a replacement filed under the same name (a new URL) starts over rather than inheriting the old feed’s darkness', () => {
+    const old = { [WT.name]: { url: 'https://old.example/feed', domain: WT.domain, lean: 'right', last_live: null, first_dark: minus(40), last_error: 'HTTP 403' } };
+    const rolled = rollFeedHealth(old, { feeds: [failed(WT, 'HTTP 404')], today: T });
+    expect(rolled[WT.name]).toMatchObject({ url: WT.url, first_dark: T, last_error: 'HTTP 404' });
+    expect(darkFeeds(rolled, { today: T })).toEqual([]);
+  });
+
+  test('a feed that left the basket leaves the record', () => {
+    const before = rollFeedHealth(null, { feeds: [failed(WT), live(FOX)], today: minus(1) });
+    const after = rollFeedHealth(before, { feeds: [live(FOX)], today: T });
+    expect(Object.keys(after)).toEqual([FOX.name]);
+  });
+
+  test('the aggregator is watched too, with no lean; an unrated or unknown lean never enters the record', () => {
+    const rolled = rollFeedHealth(null, { feeds: [failed(GN, 'HTTP 503'), { ...live(FOX), lean: 'unrated' }], today: T });
+    expect(rolled[GN.name]).toMatchObject({ domain: null, lean: null, last_error: 'HTTP 503' });
+    expect(rolled[FOX.name].lean).toBeNull();
+  });
+
+  test('feedStatuses is what the committed file carries — url kept, error text bounded', () => {
+    const rolled = rollFeedHealth(null, { feeds: [failed(WT, 'x'.repeat(500)), live(FOX)], today: T });
+    const statuses = feedStatuses(rolled, { today: T });
+    expect(Object.keys(statuses)).toEqual([FOX.name, WT.name].sort());
+    expect(statuses[FOX.name]).toEqual({
+      status: 'ok', url: FOX.url, domain: 'foxnews.com', lean: 'right', last_live: T, first_dark: null, dark_days: 0, last_error: null,
+    });
+    expect(statuses[WT.name].last_error?.length).toBe(120);
+  });
+
+  test('committedDarkFeeds recomputes the day count from the dates, not from the stored dark_days', () => {
+    const status = { feeds: { [WT.name]: { status: 'dark', domain: WT.domain, lean: 'right', last_live: null, first_dark: minus(10), dark_days: 3, last_error: 'HTTP 403' } } };
+    expect(committedDarkFeeds(status, { today: T })).toEqual([
+      { name: WT.name, domain: 'washingtontimes.com', lean: 'right', darkDays: 10, since: minus(10), lastError: 'HTTP 403' },
+    ]);
+    expect(committedDarkFeeds({ feeds: { [FOX.name]: { status: 'ok' } } }, { today: T })).toEqual([]);
+    expect(committedDarkFeeds({}, { today: T })).toEqual([]);
+  });
+
+  test('a FEED going dark writes the file; one more dark day, and a one-run blip, do not', () => {
+    const okStatus = feedStatuses(rollFeedHealth(null, { feeds: [live(FOX), live(WT)], today: T }), { today: T });
+    const first = build({ sourceStatus: { feeds: okStatus } });
+    // A blip: failed the first run of the day after being live yesterday.
+    const blip = feedStatuses(
+      rollFeedHealth({ [FOX.name]: { url: FOX.url, last_live: minus(1), first_dark: null } }, { feeds: [failed(FOX)], today: T }),
+      { today: T }
+    );
+    expect(blip[FOX.name]).toMatchObject({ status: 'ok', dark_days: 1 });
+    expect(shouldWrite({ previous: first, next: build({ previous: first, sourceStatus: { feeds: { ...okStatus, ...blip } } }) })).toBe(false);
+    // Crossing the threshold writes: the alarm must land in the committed file.
+    const darkStatus = feedStatuses(
+      { [WT.name]: { url: WT.url, domain: WT.domain, lean: 'right', last_live: minus(3), first_dark: minus(2), last_error: 'HTTP 403' } },
+      { today: T }
+    );
+    const second = build({ previous: first, sourceStatus: { feeds: { ...okStatus, ...darkStatus } } });
+    expect(shouldWrite({ previous: first, next: second })).toBe(true);
+    // A fourth dark day is not a commit.
+    const darker = feedStatuses(
+      { [WT.name]: { url: WT.url, domain: WT.domain, lean: 'right', last_live: minus(4), first_dark: minus(3), last_error: 'HTTP 403' } },
+      { today: T }
+    );
+    expect(shouldWrite({ previous: second, next: build({ previous: second, sourceStatus: { feeds: { ...okStatus, ...darker } } }) })).toBe(false);
+    // Swapping a feed out of the basket IS a change.
+    const swapped = { [FOX.name]: okStatus[FOX.name], Reason: { ...okStatus[FOX.name], url: 'https://reason.example/feed/' } };
+    expect(shouldWrite({ previous: first, next: build({ previous: first, sourceStatus: { feeds: swapped } }) })).toBe(true);
+  });
+
+  test('the gate re-surfaces a dark feed BY NAME, as a warning, and the per-feed block is not a schema change', () => {
+    const statuses = feedStatuses(
+      { [WT.name]: { url: WT.url, domain: WT.domain, lean: 'right', last_live: null, first_dark: minus(44), last_error: 'HTTP 403' } },
+      { today: T }
+    );
+    const doc = build({ sourceStatus: { press: { status: 'ok', feeds_silent: 1, checked_at: 'x' }, feeds: statuses } });
+    const { failures, warnings } = verifyConversation({ data: doc, fileBytes: 100, now: NOW, bias: BIAS });
+    expect(failures).toEqual([]);
+    const text = warnings.join(' ');
+    expect(text).toContain('press feed "Washington Times Politics"');
+    expect(text).toContain('44 days');
+    expect(text).toContain('HTTP 403');
+    // lib/conversation.ts's conversationPosture returns `unknown` — silently
+    // flipping the homepage band to its stored-coverage fallback — the moment
+    // _meta.schema is not the one this build reads. The per-feed block rides
+    // inside source_status precisely so it needs no schema bump.
+    expect(doc._meta.schema).toBe(CONVERSATION_SCHEMA);
+    expect(CONVERSATION_SCHEMA).toBe('conversation/v1');
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 7 · The basket itself (critic B-4's structural half)
  * ------------------------------------------------------------------ */
 test.describe('the press basket', () => {
@@ -589,6 +769,20 @@ test.describe('the press basket', () => {
       if (!domain) continue;
       expect(normalizeDomain(domain)).toBe(domain);
     }
+  });
+
+  test('the invariants above are about CONSTRUCTION; every feed is also watched for LIVENESS, and the verdict reaches the committed file', () => {
+    // Two right-rated feeds in this literal did not mean two right-rated feeds
+    // delivering: washingtontimes.com answered every runner with 403 from the
+    // day it was added. Construction is pinned above; liveness can only be
+    // observed at run time, so what is pinned here is that the observation is
+    // wired: rolled per feed, persisted in the cache, re-seeded from the
+    // committed file, and written into source_status.feeds.
+    expect(source).toMatch(/cache\.feedLiveness = rollFeedHealth\(cache\.feedLiveness, \{/);
+    expect(source).toMatch(/committed: previousConversation\?\._meta\?\.source_status\?\.feeds/);
+    expect(source).toMatch(/feeds: feedStatuses\(cache\.feedLiveness, \{ today \}\)/);
+    expect(source).toMatch(/feedLiveness: cache\.feedLiveness/);
+    expect(source).toMatch(/for \(const dark of darkFeeds\(cache\.feedLiveness/);
   });
 });
 
