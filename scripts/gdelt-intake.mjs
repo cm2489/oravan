@@ -82,6 +82,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import { dirname } from 'node:path';
 import {
+  GDELT_LENGTH_EVIDENCE,
   GDELT_MAX_QUERY_CHARS,
   GDELT_MAX_RECORDS,
   QUERY_SHAPE,
@@ -609,10 +610,21 @@ export async function collect({
       `${stats.circuitOpen ? `; circuit OPEN (${stats.circuitWhy})` : ''}.`
   );
   if (stats.answeredLengths.length || stats.refused.length) {
+    const longest = stats.answeredLengths.length ? Math.max(...stats.answeredLengths) : null;
     log(
-      `gdelt-intake: query length — longest GDELT answered this run ${stats.answeredLengths.length ? Math.max(...stats.answeredLengths) : 'none'}, ` +
-        `refused as queries ${stats.refused.length ? stats.refused.map((r) => `${r.chars} ("${r.term}")`).join(', ') : 'none'} (cap ${limits.maxQueryChars}).`
+      `gdelt-intake: query length — longest GDELT answered this run ${longest ?? 'none'}, ` +
+        `refused as queries ${stats.refused.length ? stats.refused.map((r) => `${r.chars} ("${r.term}")`).join(', ') : 'none'} ` +
+        `(cap ${limits.maxQueryChars}${GDELT_LENGTH_EVIDENCE.capVerified ? '' : ', NOT yet verified by an answer at that length'}).`
     );
+    // The cap is a choice until an answer at it is on record
+    // (lib/question-press.mjs GDELT_MAX_QUERY_CHARS). Say when this run is
+    // the one that can settle it.
+    const maxLive = Math.max(0, ...due.flatMap((q) => q.terms.map((t) => buildGdeltQuery(t).length)));
+    if (!GDELT_LENGTH_EVIDENCE.capVerified && longest !== null && longest >= maxLive && stats.refused.length === 0) {
+      log(
+        `::notice::gdelt-intake: GDELT answered a ${longest}-character query and refused none — every live question's longest query (${maxLive}) is now measured as accepted. Record it in GDELT_LENGTH_EVIDENCE.answered (lib/question-press.mjs).`
+      );
+    }
   }
 
   const write = shouldWrite({ previous, next: doc });

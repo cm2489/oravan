@@ -254,12 +254,14 @@ test.describe('the request: short, and the same for every lean', () => {
     expect(() => buildGdeltQuery('')).toThrow();
   });
 
-  test('the cap is the longest length GDELT was MEASURED answering, far under the shortest it refused', () => {
+  test('the cap is held to the measurements: under a third of the shortest refusal, and claimed verified only once an answer at the cap exists', () => {
     const answered = GDELT_LENGTH_EVIDENCE.answered.map((a: { chars: number }) => a.chars);
     const refused = GDELT_LENGTH_EVIDENCE.refused.map((r: { chars: number }) => r.chars);
-    expect(answered.length).toBeGreaterThan(0);
-    expect(GDELT_MAX_QUERY_CHARS).toBeLessThanOrEqual(Math.max(...answered));
     expect(GDELT_MAX_QUERY_CHARS * 3).toBeLessThan(Math.min(...refused));
+    expect(GDELT_LENGTH_EVIDENCE.capVerified).toBe(Math.max(...answered) >= GDELT_MAX_QUERY_CHARS);
+    // the recorded queries are literal, and the inconclusive ones were in the shape this file sends
+    for (const a of [...GDELT_LENGTH_EVIDENCE.answered, ...GDELT_LENGTH_EVIDENCE.inconclusive]) expect(a.query.length).toBe(a.chars);
+    for (const r of GDELT_LENGTH_EVIDENCE.inconclusive) expect(r.query).toBe(buildGdeltQuery(/^"([^"]+)"/.exec(r.query)![1]));
   });
 
   test('every live question in data/moments.json searches only queries within the measured cap', () => {
@@ -626,6 +628,10 @@ test.describe('the collector (mocked GDELT): the happy path', () => {
     expect(lines.some((l) => /"war powers" — returned 5 in 1 page\(s\): 3 from rated outlets \(L1\/C1\/R1\), 2 unrated/.test(l))).toBe(true);
     expect(lines.some((l) => /term "operation epic fury" in titles L0\/C2\/R0/.test(l))).toBe(true);
     expect(lines.some((l) => /syria-sanctions-repeal has no multi-word press vocabulary/.test(l))).toBe(true);
+    // until an answer at the cap is on record, the run says the cap is unverified — and says when a run settles it
+    expect(GDELT_LENGTH_EVIDENCE.capVerified).toBe(false);
+    expect(lines.some((l) => /query length — longest GDELT answered this run 81, refused as queries none \(cap 100, NOT yet verified/.test(l))).toBe(true);
+    expect(lines.some((l) => /^::notice::.*every live question's longest query \(81\) is now measured as accepted/.test(l))).toBe(true);
   });
 
   test('a quiet week (GDELT answers {}) is recorded as zero, with no warning', async () => {
@@ -695,6 +701,7 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, answer: expect.stringMatching(/too short or too long/) }]);
     expect(lines.some((l) => /^::warning::.*GDELT refused the \d+-character query for "operation epic fury" \(GDELT refused the query: Your query was too short or too long/.test(l))).toBe(true);
     expect(lines.some((l) => /"operation epic fury" — REFUSED by GDELT as a query/.test(l))).toBe(true);
+    expect(lines.some((l) => /^::notice::/.test(l))).toBe(false); // a run with a refusal never claims the cap is settled
     expect(circuit).toBeNull();
   });
 
