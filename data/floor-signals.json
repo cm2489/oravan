@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-25T19:37:09.548Z",
+    "fetched_at": "2026-09-26T07:35:55.727Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "1 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-25T19:37:09.548Z",
+        "checked_at": "2026-09-26T07:35:55.727Z",
         "url": "https://www.congress.gov/119/crec/2026/09/24/d24se6-1.htm",
         "published": "2026-09-24",
         "covers": "2026-09-28",
@@ -16,7 +16,7 @@
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-09-25T19:37:09.548Z",
+        "checked_at": "2026-09-26T07:35:55.727Z",
         "url": "https://docs.house.gov/billsthisweek/20260921/20260921.xml",
         "published": "2026-09-21",
         "covers": "2026-09-21",
@@ -56,7 +56,7 @@
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-09-25T19:37:09.548Z",
+      "fetched_at": "2026-09-26T07:35:55.727Z",
       "first_seen": "2026-09-23T16:51:14.445Z",
       "stale": false
     }
