@@ -108,7 +108,10 @@ on:
         # blank for the nightly default of 600.
         #
         # SIZING IT: TheNewsAPI Basic allows 2,500 requests/day and the run
-        # spends one per bill, so 2400 is the largest value that fits a single
+        # plans at most COVERAGE_TOP_N requests — one per bill, two for each
+        # priority bill (Big Question vehicles, the news pool, live tier-0
+        # bills; the extra 30-day pass since 2026-09-26), paid for out of the
+        # same total — so 2400 is the largest value that fits a single
         # day with headroom — it does NOT cover the full ~2,507-bill eligible
         # set in one pass. That is fine and deliberate: one wide run plus the
         # 50/50 least-recently-checked rotation reaches the whole corpus within
@@ -554,7 +557,7 @@ jobs:
             local sha
             sha="$(git rev-parse HEAD)"
             echo "::error::THE SYNC ITSELF SUCCEEDED - only the commit failed. $1"
-            echo "::error::Discarded commit ${sha}: a full night of bills, coverage (PAID TheNewsAPI requests, one per bill - a wide run is ~2,400 and exhausts the daily quota), nominations, Moment updates and portraits. Re-running does NOT get the quota back."
+            echo "::error::Discarded commit ${sha}: a full night of bills, coverage (PAID TheNewsAPI requests, up to COVERAGE_TOP_N a night - a wide run is ~2,400 and exhausts the daily quota), nominations, Moment updates and portraits. Re-running does NOT get the quota back."
             echo "::error::The commit is preserved verbatim as the 'discarded-sync-${GITHUB_RUN_ID}' artifact on this run. Recover with: gh run download ${GITHUB_RUN_ID} -n discarded-sync-${GITHUB_RUN_ID} && git fetch ./discarded-commit.bundle main:salvaged && git cherry-pick salvaged"
             echo "--- what was in the discarded commit ---"
             git show --stat --oneline "${sha}" | head -20

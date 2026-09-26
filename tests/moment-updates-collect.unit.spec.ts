@@ -22,7 +22,10 @@ import {
   milestoneOf,
   momentVehicles,
   normalizeSource,
+  OUTLET_DISPLAY_NAMES,
+  OUTLET_NAMES_UNCONFIRMED,
   outletDisplayName,
+  pressClusterDaysHeld,
   pressClusterToCandidate,
   quotedRecordText,
   scheduledToCandidate,
@@ -46,6 +49,7 @@ import {
 // The TypeScript matcher whose normalizeSource this module duplicates. Both
 // are imported here so the drift pin can compare them directly.
 import { normalizeSource as tsNormalizeSource } from '../lib/coverage';
+import { pressOutletPolicy } from '../lib/press-outlets.mjs';
 
 const repo = (p: string) => join(__dirname, '..', p);
 const read = (p: string) => JSON.parse(readFileSync(repo(p), 'utf8'));
@@ -785,17 +789,141 @@ test.describe('press clusters', () => {
       recordedAt: '2026-07-25T06:20:00Z',
     });
 
-  test('a lean-free two-outlet day publishes, with attribution attached', () => {
+  test('THE OUTLET FLOOR: a day made only of unrated outlets is refused, not "neutral"', () => {
     // Real rows: khaama.com + juancole.com on 2026-06-04, neither AllSides-rated.
-    const c = build('2026-06-04')!;
+    // Before 2026-09-26 this published as the lean-free, balanced case — an
+    // outlet with no rating has no lean, so the one-sided rule never fired.
+    // An unrated outlet is not evidence of balance; it is no evidence at all.
+    expect(build('2026-06-04')).toBeNull();
+  });
+
+  test('the live 2026-09-25 examples are refused (s-4784, sjres-172, s-3172)', () => {
+    const day = '2026-09-20';
+    const cases = [
+      [
+        { source: 'thegatewaypundit.com', url: 'https://www.thegatewaypundit.com/a', publishedAt: day },
+        { source: 'thegatewaypundit.com', url: 'https://www.thegatewaypundit.com/b', publishedAt: day },
+        { source: 'khaama.com', url: 'https://khaama.com/c', publishedAt: day },
+      ],
+      [
+        { source: 'naturalnews.com', url: 'https://www.naturalnews.com/a', publishedAt: day },
+        { source: 'naturalnews.com', url: 'https://www.naturalnews.com/b', publishedAt: day },
+        { source: 'jns.org', url: 'https://jns.org/c', publishedAt: day },
+      ],
+      [
+        { source: 'sana.sy', url: 'https://sana.sy/en/a', publishedAt: day },
+        { source: 'juancole.com', url: 'https://juancole.com/b', publishedAt: day },
+      ],
+    ];
+    for (const articles of cases) expect(build(day, articles), articles[0].source).toBeNull();
+  });
+
+  test('a rated two-outlet day publishes, with attribution attached', () => {
+    const c = build('2026-07-24', [
+      { source: 'npr.org', url: 'https://www.npr.org/a', publishedAt: '2026-07-24' },
+      { source: 'reuters.com', url: 'https://www.reuters.com/b', publishedAt: '2026-07-24' },
+    ])!;
     expect(c.class).toBe('press_cluster');
     expect(c.record).toBeNull();
     expect(c.source.kind).toBe('press');
-    expect(c.source.outlets).toEqual(['juancole.com', 'khaama.com']);
-    expect(c.source.outlet_names).toEqual(['Juancole', 'Khaama']);
+    expect(c.source.outlets).toEqual(['npr.org', 'reuters.com']);
+    expect(c.source.outlet_names).toEqual(['NPR', 'Reuters']);
     expect(c.source.refs).toHaveLength(2);
     for (const r of c.source.refs) expect(r).toMatch(/^https:\/\//);
-    expect(c.source.lean_set).toEqual([]);
+    expect(c.source.lean_set).toEqual(['center']);
+  });
+
+  test('unrated outlets on a mixed day are neither counted, named nor linked', () => {
+    const c = build('2026-07-24', [
+      { source: 'foxnews.com', url: 'https://www.foxnews.com/a', publishedAt: '2026-07-24' },
+      { source: 'thegatewaypundit.com', url: 'https://www.thegatewaypundit.com/b', publishedAt: '2026-07-24' },
+      { source: 'cnn.com', url: 'https://www.cnn.com/c', publishedAt: '2026-07-24' },
+      { source: 'sana.sy', url: 'https://sana.sy/d', publishedAt: '2026-07-24' },
+    ])!;
+    expect(c.source.outlets).toEqual(['cnn.com', 'foxnews.com']);
+    expect(c.source.outlet_names).toEqual(['CNN', 'Fox News']);
+    expect(c.source.refs).toEqual(['https://www.cnn.com/c', 'https://www.foxnews.com/a']);
+    expect(JSON.stringify(c)).not.toMatch(/gatewaypundit|sana\.sy/);
+  });
+
+  test('one rated outlet plus unrated ones is ONE admissible outlet — refused', () => {
+    expect(
+      build('2026-07-24', [
+        { source: 'npr.org', url: 'https://www.npr.org/a', publishedAt: '2026-07-24' },
+        { source: 'khaama.com', url: 'https://khaama.com/b', publishedAt: '2026-07-24' },
+        { source: 'juancole.com', url: 'https://juancole.com/c', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+  });
+
+  test('the one-sided rule still runs over the rated outlets', () => {
+    // Two right-rated outlets and an unrated one: before the floor this was
+    // one-sided and refused; it still is.
+    expect(
+      build('2026-07-24', [
+        { source: 'foxnews.com', url: 'https://www.foxnews.com/a', publishedAt: '2026-07-24' },
+        { source: 'nypost.com', url: 'https://nypost.com/b', publishedAt: '2026-07-24' },
+        { source: 'khaama.com', url: 'https://khaama.com/c', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+    // Left + center is one partisan lean: refused.
+    expect(
+      build('2026-07-24', [
+        { source: 'cnn.com', url: 'https://www.cnn.com/a', publishedAt: '2026-07-24' },
+        { source: 'npr.org', url: 'https://www.npr.org/b', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+  });
+
+  test('an owner allowlist (none ships) would admit an unrated outlet WITHOUT a lean', () => {
+    const policy = pressOutletPolicy({
+      ratings: LEANS,
+      allowlist: { outlets: { 'rollcall.com': { approved_on: '2026-10-01' } } },
+    });
+    const withPolicy = (articles: Article[]) =>
+      pressClusterToCandidate({
+        momentId: 'iran-war-powers',
+        vehicle: 'sjres-185-119',
+        day: '2026-07-24',
+        articles,
+        policy,
+        recordedAt: '2026-07-25T06:20:00Z',
+      });
+    // Allowlisted + center: two admitted outlets, no partisan lean — publishes.
+    const c = withPolicy([
+      { source: 'rollcall.com', url: 'https://rollcall.com/a', publishedAt: '2026-07-24' },
+      { source: 'npr.org', url: 'https://www.npr.org/b', publishedAt: '2026-07-24' },
+    ])!;
+    expect(c.source.outlet_names).toEqual(['NPR', 'Roll Call']);
+    expect(c.source.lean_set).toEqual(['center']);
+    // Allowlisted + right: the allowlisted outlet brings no lean, so the set is
+    // one-sided and refused — an allowlist can never make a set look balanced.
+    expect(
+      withPolicy([
+        { source: 'rollcall.com', url: 'https://rollcall.com/a', publishedAt: '2026-07-24' },
+        { source: 'foxnews.com', url: 'https://www.foxnews.com/b', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+    // And without the allowlist, the same center + unrated day is refused.
+    expect(
+      build('2026-07-24', [
+        { source: 'rollcall.com', url: 'https://rollcall.com/a', publishedAt: '2026-07-24' },
+        { source: 'npr.org', url: 'https://www.npr.org/b', publishedAt: '2026-07-24' },
+      ]),
+    ).toBeNull();
+  });
+
+  test('pressClusterDaysHeld: one cluster per vehicle-day, the first one stands', () => {
+    const held = pressClusterDaysHeld({
+      updates: [
+        { class: 'press_cluster', vehicle: 'sjres-185-119', day: '2026-09-24' },
+        { class: 'vote', vehicle: 'sjres-185-119', day: '2026-09-23' },
+        { class: 'press_cluster', vehicle: 'hconres-89-119', day: '2026-09-24' },
+      ],
+    });
+    expect([...held].sort()).toEqual(['hconres-89-119|2026-09-24', 'sjres-185-119|2026-09-24']);
+    expect(pressClusterDaysHeld(undefined).size).toBe(0);
+    expect(pressClusterDaysHeld({}).size).toBe(0);
   });
 
   test('a SINGLE-LEAN day is refused outright', () => {
@@ -816,7 +944,7 @@ test.describe('press clusters', () => {
     expect(build('2026-06-23', dup)).toBeNull();
   });
 
-  test('clusterIsPublishable mirrors coverageTier: cross and neutral publish, one-sided does not', () => {
+  test('clusterIsPublishable (the second half of the rule) mirrors coverageTier: cross and neutral publish, one-sided does not', () => {
     expect(clusterIsPublishable(['left', 'right'])).toBe(true);
     expect(clusterIsPublishable([null, null])).toBe(true);
     expect(clusterIsPublishable(['center', null])).toBe(true);
@@ -868,6 +996,29 @@ test.describe('press clusters', () => {
     expect(outletDisplayName('npr.org')).toBe('NPR');
     expect(outletDisplayName('khaama.com')).toBe('Khaama');
     expect(outletDisplayName('someoutlet.co.uk')).toBe('Someoutlet');
+  });
+
+  test('every AllSides-rated outlet has a display name, or is knowingly on the fallback', () => {
+    // Only rated outlets can be named on a timeline now, so a newly rated
+    // outlet with no entry would publish as "Cnbc"-style fallback text. Adding
+    // an outlet to data/media-bias.json means adding its masthead here too.
+    const missing = Object.keys(LEANS).filter(
+      (d) => !(d in OUTLET_DISPLAY_NAMES) && !OUTLET_NAMES_UNCONFIRMED.includes(d),
+    );
+    expect(missing).toEqual([]);
+    for (const d of OUTLET_NAMES_UNCONFIRMED) expect(d in LEANS, d).toBe(true);
+    expect(outletDisplayName('cnbc.com')).toBe('CNBC');
+    expect(outletDisplayName('nypost.com')).toBe('New York Post');
+    expect(outletDisplayName('washingtonexaminer.com')).toBe('Washington Examiner');
+  });
+
+  test('the collector loads the floor through the shared loader and hands it to every cluster', () => {
+    const src = readText('scripts/moment-updates.mjs');
+    const fn = src.slice(src.indexOf('function collectPressClusters()'), src.indexOf('* 5 · decode'));
+    expect(fn).toMatch(/loadPressOutletPolicy\(\{ readJSON, exists: existsSync \}\)/);
+    expect(fn).toMatch(/pressClusterToCandidate\(\{[\s\S]*?policy,[\s\S]*?\}\)/);
+    expect(fn).not.toMatch(/leanByDomain/);
+    expect(fn).toMatch(/pressClusterDaysHeld\(store\?\.\[momentId\]\)/);
   });
 });
 

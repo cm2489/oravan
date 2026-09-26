@@ -128,6 +128,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
 import { statusBasisText } from '../lib/floor-text.mjs';
+import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 // The status-label clock, imported rather than copied a fourth time. The
 // canonical definition is lib/journey.ts `statusKeyFor`; that file is
 // TypeScript and this one is .mjs, and scripts/moment-candidates.mjs already
@@ -174,6 +175,7 @@ import {
   floorTodayItems,
   milestoneOf,
   momentVehicles,
+  pressClusterDaysHeld,
   pressClusterToCandidate,
   rollCallCandidates,
   scheduledToCandidate,
@@ -595,14 +597,21 @@ async function collectTier0() {
  * 4 · press clusters (nightly only).
  * ------------------------------------------------------------------ */
 function collectPressClusters() {
-  if (!existsSync('data/coverage.json') || !existsSync('data/media-bias.json')) {
+  if (!existsSync('data/coverage.json') || !existsSync(MEDIA_BIAS_PATH)) {
     console.log('press clusters: coverage or media-bias file missing — skipping');
     return [];
   }
   const coverage = readJSON('data/coverage.json');
-  const leanByDomain = readJSON('data/media-bias.json').outlets ?? {};
+  // THE OUTLET FLOOR (owner ruling 2026-09-26): only AllSides-rated outlets —
+  // plus an owner-approved allowlist, if one is ever added — are counted or
+  // named. A malformed allowlist fails closed to rated-only, loudly.
+  const policy = loadPressOutletPolicy({ readJSON, exists: existsSync });
+  for (const p of policy.problems) {
+    console.warn(`::warning::press clusters: ${PRESS_ALLOWLIST_PATH} ignored (rated outlets only tonight) — ${p}`);
+  }
   const floor = shiftDay(todayET, -PRESS_WINDOW_DAYS);
   const out = [];
+  let heldSkips = 0;
 
   for (const slug of vehicleSlugs) {
     const articles = Array.isArray(coverage[slug]) ? coverage[slug] : [];
@@ -619,6 +628,12 @@ function collectPressClusters() {
     for (const [day, group] of byDay) {
       for (const { momentId, slug: s } of vehicles) {
         if (s !== slug) continue;
+        // One cluster per vehicle-day, and the first one stands — see
+        // pressClusterDaysHeld for why a later night's wider set is not stored.
+        if (pressClusterDaysHeld(store?.[momentId]).has(`${slug}|${day}`)) {
+          heldSkips++;
+          continue;
+        }
         push(
           out,
           momentId,
@@ -627,14 +642,18 @@ function collectPressClusters() {
             vehicle: slug,
             day,
             articles: group,
-            leanByDomain,
+            policy,
             recordedAt: nowISO,
           }),
         );
       }
     }
   }
-  console.log(`press clusters: ${out.length} candidate(s) in the last ${PRESS_WINDOW_DAYS} day(s)`);
+  console.log(
+    `press clusters: ${out.length} candidate(s) in the last ${PRESS_WINDOW_DAYS} day(s)` +
+      ` (rated outlets${policy.allowlistSize ? ` + ${policy.allowlistSize} allowlisted` : ''} only` +
+      `${heldSkips ? `; ${heldSkips} vehicle-day(s) already carry a cluster` : ''})`,
+  );
   return out;
 }
 

@@ -48,9 +48,17 @@
  * B-4  Nothing to do here; the basket rebalance and the dark-lean alarm ride
  *      the writer. What this side owns is the consequence: a caption never
  *      claims a spread it does not hold (see `newsSpread`).
+ * B-5  Every outlet entry carries the link to the story that made it count
+ *      (conversation/v2), which is what makes the band's "every count comes
+ *      from stored evidence you can check" subhead true. What this side owns
+ *      is the schema-bump trap: the posture check reads EVERY readable schema
+ *      (CONVERSATION_READABLE_SCHEMAS), so a v1 file — what main holds between
+ *      this build deploying and the newsdesk's next write — keeps the lamp
+ *      live instead of silently handing the band back to stored coverage.
  */
 import conversationData from '../data/conversation.json';
 import {
+  CONVERSATION_READABLE_SCHEMAS,
   CONVERSATION_SCHEMA,
   MOST_VIEWED_CARD_CAP,
   MOST_VIEWED_MIN_WEEKS,
@@ -58,10 +66,12 @@ import {
   conversationEvidence,
   conversationPool,
   conversationTier,
+  isReadableConversationSchema,
 } from './conversation.mjs';
 import type { Lean } from './types';
 
 export {
+  CONVERSATION_READABLE_SCHEMAS,
   CONVERSATION_SCHEMA,
   MOST_VIEWED_CARD_CAP,
   MOST_VIEWED_MIN_WEEKS,
@@ -69,6 +79,7 @@ export {
   conversationEvidence,
   conversationPool,
   conversationTier,
+  isReadableConversationSchema,
 };
 
 /**
@@ -92,6 +103,20 @@ export interface ConversationOutlet {
   lean: Lean;
   firstSeen: string;
   lastSeen: string;
+  /** The first story this outlet published on `lastSeen` that was matched to
+   *  the bill (B-5). Absent only on v1-era entries, which the seven-day window
+   *  retires; the gate fails any entry seen after `_meta.links_since` without
+   *  one. */
+  url?: string;
+}
+
+export interface ConversationUnratedOutlet {
+  domain: string;
+  firstSeen: string;
+  lastSeen: string;
+  /** Same rule as ConversationOutlet.url — kept here too so an outlet the
+   *  bias table rates later moves across with its link. */
+  url?: string;
 }
 
 export interface ConversationMostViewed {
@@ -104,7 +129,7 @@ export interface ConversationMostViewed {
 export interface ConversationEntry {
   outlets7d: ConversationOutlet[];
   /** Recorded for observability and counted by NOTHING (critic B-3). */
-  unratedOutlets7d: { domain: string; firstSeen: string; lastSeen: string }[];
+  unratedOutlets7d: ConversationUnratedOutlet[];
   mostViewed: ConversationMostViewed | null;
 }
 
@@ -115,6 +140,8 @@ export interface ConversationFile {
     schema: string;
     fetched_at: string;
     window_days: number;
+    /** conversation/v2: the first day every observation carried its link. */
+    links_since?: string;
     source_status: {
       press?: { status: ConversationSourceStatus; feeds_total?: number; feeds_silent?: number; checked_at?: string | null };
       most_viewed?: { status: ConversationSourceStatus; week?: string | null; entries?: number; checked_at?: string | null };
@@ -159,11 +186,18 @@ export function conversationFor(slug: string): ConversationEntry | null {
  * MAY THE LAMP SPEAK AT ALL? — the one question every consumer asks first, and
  * the only place the fallback is decided.
  *
- * `live` requires all three: the schema this build knows how to read, a stamp
+ * `live` requires all three: a schema this build knows how to read, a stamp
  * inside CONVERSATION_STALE_HOURS, and a press status that says a run actually
  * observed something (the seed commit ships `unknown`, which means "no newsdesk
  * run has written this file yet" — a state the site will legitimately be in
  * between merge and the first hourly run).
+ *
+ * "A schema this build knows how to read" is the READABLE list, not the one
+ * schema the writer currently emits. Comparing against CONVERSATION_SCHEMA
+ * alone was the schema-bump trap: the moment a build that writes v2 deployed,
+ * the committed v1 file would have read as `unknown` and the band would have
+ * dropped to stored coverage, captionless, until the next hourly write — a
+ * silent fallback caused by nothing but a version string.
  *
  * DELIBERATELY NOT A FALLBACK TRIGGER: `press: 'dark' | 'degraded'` and
  * `most_viewed: 'error'`. Those describe a source, and the evidence window
@@ -173,8 +207,17 @@ export function conversationFor(slug: string): ConversationEntry | null {
  * backfilling, which is the failure this whole design exists to end.
  */
 export function conversationPosture(now: number = Date.now()): 'live' | 'unknown' {
-  const meta = FILE._meta;
-  if (meta?.schema !== CONVERSATION_SCHEMA) return 'unknown';
+  return conversationPostureOf(FILE, now);
+}
+
+/** The posture rule itself, over any file — pure, so the spec can prove the
+ *  schema-bump case on fixtures instead of on whatever main happens to hold. */
+export function conversationPostureOf(
+  file: Pick<ConversationFile, '_meta'> | null | undefined,
+  now: number = Date.now()
+): 'live' | 'unknown' {
+  const meta = file?._meta;
+  if (!isReadableConversationSchema(meta?.schema)) return 'unknown';
   const stamp = Date.parse(meta?.fetched_at ?? '');
   if (!Number.isFinite(stamp) || now - stamp > CONVERSATION_STALE_HOURS * 3_600_000) return 'unknown';
   const press = meta?.source_status?.press?.status;
@@ -280,9 +323,25 @@ export interface ConversationSelection {
  * because data/conversation.json is legitimately near-empty during a recess and
  * a corpus-only test would pass vacuously.
  *
- * ORDER comes from the pool and is not re-derived: C1 before C2, more rated
- * outlets first, then newest evidence, then slug. Two runs on the same evidence
- * therefore produce the same six cards in the same order.
+ * ORDER comes from the pool and is not re-derived: C1 before C2; C1 by more
+ * rated outlets, then newest evidence, then slug; C2 by congress.gov's own
+ * list — newest list first, then its rank, then slug (owner ruling
+ * 2026-09-26; lib/conversation.mjs's `conversationPool` has the measured
+ * reason). Two runs on the same evidence therefore produce the same six cards
+ * in the same order.
+ *
+ * AN ENACTED LAW TAKES NO MOST-VIEWED SLOT (owner ruling 2026-09-26: "enacted
+ * laws dropped unless in the news"). congress.gov's readers keep looking up a
+ * signed law for months — H.R. 1, a 2025 law, sat on the list seven weeks
+ * running — and a band headed "this week" is not about a bill whose last act
+ * is behind it. "In the news" is the band's OWN bar for news: C1, two or more
+ * rated outlets this week. So a law the press is covering still renders as
+ * any C1 card does, and a law the list alone put here does not; a C2 card
+ * with one rated article beside the listing is still not "in the news" — one
+ * outlet admits nothing anywhere (B-1). The dropped card is skipped BEFORE the
+ * most-viewed cap counts it, so it never costs a live bill its slot. The
+ * caller says which slugs are enacted (`enacted`), because the evidence file
+ * knows nothing about a bill's status and must not start to.
  *
  * THE THREE EXCLUSIONS, every one of them a caption obligation rather than a
  * ranking:
@@ -307,8 +366,16 @@ export function selectConversationBand(
   {
     limit,
     renderable,
+    enacted,
     mostViewedCap = MOST_VIEWED_CARD_CAP,
-  }: { limit: number; renderable?: (slug: string) => boolean; mostViewedCap?: number }
+  }: {
+    limit: number;
+    renderable?: (slug: string) => boolean;
+    /** True for a slug that is already law. Such a bill may render only on
+     *  press corroboration (C1), never on the most-viewed list (C2). */
+    enacted?: (slug: string) => boolean;
+    mostViewedCap?: number;
+  }
 ): ConversationSelection[] {
   const out: ConversationSelection[] = [];
   let mostViewedCards = 0;
@@ -339,6 +406,9 @@ export function selectConversationBand(
     // fact beside it (the module already enforced which: two consecutive weeks,
     // or at least one rated article).
     if (!evidence.mostViewed) continue; // unreachable via conversationEvidence; a defensive floor, not a policy
+    // A law is not "in the news" on the strength of the list — see the header.
+    // Skipped before the cap below, so it cannot spend a most-viewed slot.
+    if (enacted?.(item.slug)) continue;
     // ONE counter for both routes. Which fact admitted the card changes what it
     // SAYS, never whether the ceiling applies to it.
     if (mostViewedCards >= mostViewedCap) continue;

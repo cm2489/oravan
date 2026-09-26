@@ -283,13 +283,16 @@ export function docketSignalFor(
  *     C1 (two or more RATED outlets published inside the 7-day window) first,
  *     ordered by distinct rated outlets then newest evidence; then C2 (on
  *     congress.gov's own most-viewed list, with either two consecutive weeks or
- *     a rated article beside it), with EVERY most-viewed card — either route —
- *     capped at 2 of 6. A single outlet is not a rung and cannot render
- *     anything, anywhere, and cannot be PRINTED anywhere either: a most-viewed
- *     card states the listing alone, so `sourceCount` is 0 on it and no lean
- *     reaches the page. Each card carries the counted facts it was selected
- *     on, so the page can say WHY it is there in words a reader can check
- *     against stored evidence.
+ *     a rated article beside it), ordered by the list's own rank (newest list
+ *     first), with EVERY most-viewed card — either route — capped at 2 of 6,
+ *     and no most-viewed slot at all for a bill that is already law: a law
+ *     renders only when the press corroborates it, as C1. A single outlet is
+ *     not a rung and cannot render anything, anywhere, and cannot be PRINTED
+ *     anywhere either: a most-viewed card states the listing alone, so
+ *     `sourceCount` is 0 on it and no lean reaches the page. Each card carries
+ *     the counted facts it was selected on, so the page can say WHY it is
+ *     there in words a reader can check against stored evidence — and since
+ *     conversation/v2 that evidence includes each story's link.
  *
  *  2. FALLBACK — exactly #215's behavior: `rankNews` over stored coverage,
  *     cross/neutral only, gated to the signal window, ordered by breadth. The
@@ -328,6 +331,11 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     return selectConversationBand(conversationBandPool(now), {
       limit: n,
       renderable: (slug) => bySlug.has(slug),
+      // `signed` is the corpus's one enacted status (lib/urgency.mjs's
+      // TERMINAL_STATUSES pairs it with `vetoed`, which is settled but is not
+      // law — the owner's ruling names enacted laws, so a vetoed bill keeps
+      // its most-viewed eligibility).
+      enacted: (slug) => bySlug.get(slug)?.status === 'signed',
     }).map((sel) =>
       shape(bySlug.get(sel.slug)!, {
         // BOTH fields come off the CAPTION, never off the raw evidence, and
