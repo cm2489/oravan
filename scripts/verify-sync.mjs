@@ -48,16 +48,26 @@
  *     counts an outlet toward corroboration that data/media-bias.json carries
  *     no AllSides rating for. Skipped cleanly when the file doesn't exist. The
  *     judgement lives in lib/conversation.mjs (verifyConversation)
- *   - data/question-press.json (the per-question GDELT evidence, 2026-09-26)
- *     counts an outlet data/media-bias.json does not rate, carries a count
- *     that is not its own stored links, a link off its outlet's domain, a day
- *     outside the window ending the day the FILE was written (`_meta.as_of`,
- *     never the wall clock — a file the GDELT collector has not rewritten
- *     since yesterday is late, not damaged, and lateness only warns here, per
- *     N8-A2 below), any key the format does not define (no tone, no
- *     sentiment, no titles), or has lost the GDELT citation its terms require.
- *     Skipped cleanly when the file doesn't exist. The judgement lives in
- *     lib/question-press.mjs (verifyQuestionPress)
+ *
+ * WARNS, AND NEVER FAILS, on data/question-press.json (the per-question
+ * GDELT evidence, 2026-09-26). It is OPTIONAL evidence: nothing on the site
+ * reads it, the nightly never writes it (its own workflow, question-press.yml,
+ * does), and a failure here would throw away the night's already-paid work
+ * over a file the night did not touch — the same reasoning as the N8-A2 split
+ * below. So every finding about it is a ::warning:: here, whatever it is: a
+ * file that does not parse; damage in the file itself (a lean that is not
+ * left, center or right, a count that is not its own stored links, a link off its outlet's domain, a
+ * day outside the window ending the day the FILE was written, a key the
+ * format does not define, a lost GDELT citation) — which is still an ERROR in
+ * CI's scripts/check-question-press.mjs, before it can reach main; and drift
+ * against data/moments.json or data/media-bias.json (a question id that is
+ * gone, an outlet no longer rated or now rated with another lean) — which is
+ * a warning in CI too, and which the GDELT collector's next run repairs by
+ * itself. Skipped cleanly when the file doesn't exist. The judgement lives in
+ * lib/question-press.mjs (verifyQuestionPress);
+ * tests/question-press.unit.spec.ts runs this file against a temporary data/
+ * directory to pin that a question deleted from moments.json leaves the
+ * nightly green with a warning.
  *
  * WHAT THIS FILE NO LONGER DOES, and where it went (owner ruling 2026-08-12,
  * N8-A2). The CURSOR-AGE ceiling — "the cursor is more than 10 days old" —
@@ -354,30 +364,45 @@ if (!existsSync(CONVERSATION_PATH)) {
   }
 }
 
-// --- question-press: per-question GDELT evidence, rated-only, link-backed ---
+// --- question-press: OPTIONAL evidence — it WARNS here and never fails -------
 //
 // data/question-press.json is written by scripts/gdelt-intake.mjs in its own
-// workflow (question-press.yml), and nothing on the site reads it yet. It is
-// re-checked here because this is the whole-corpus check and the nightly's
-// commit stages all of data/. Only DAMAGE fails: every day in the file is
-// judged against the day the file was written, so a GDELT outage — which
-// leaves the file unwritten, never half-written — can only ever produce a
-// lateness warning here, never a failed nightly. Skipped cleanly when the
-// file doesn't exist.
+// workflow (question-press.yml); nothing on the site reads it and the nightly
+// never writes it. It is re-read here only so the nightly log says when it is
+// damaged or has drifted from data/moments.json / data/media-bias.json. Every
+// finding is a warning, including a file that does not parse, so this block
+// reads its inputs without the `parse` helper above (which fails the run on
+// a file that does not parse). Damage fails in CI
+// (scripts/check-question-press.mjs); drift is repaired by the collector's
+// next run. Skipped cleanly when the file doesn't exist.
 if (!existsSync(QUESTION_PRESS_PATH)) {
   console.log(`${QUESTION_PRESS_PATH} not present — skipping the question-press checks`);
 } else {
-  const questionPress = parse(QUESTION_PRESS_PATH, readFileSync(QUESTION_PRESS_PATH, 'utf8'));
+  const optional = `optional evidence, never a nightly failure`;
+  const readQuietly = (p) => {
+    try {
+      return JSON.parse(readFileSync(p, 'utf8'));
+    } catch {
+      return null; // media-bias.json and moments.json are judged by the blocks that own them
+    }
+  };
+  let questionPress = null;
+  try {
+    questionPress = JSON.parse(readFileSync(QUESTION_PRESS_PATH, 'utf8'));
+  } catch (e) {
+    warn(`question-press: ${QUESTION_PRESS_PATH} does not parse as JSON (${e.message}) — ${optional}; scripts/check-question-press.mjs fails on it in CI`);
+  }
   if (questionPress !== null) {
-    const { failures, warnings, notes } = verifyQuestionPress({
+    const { failures, drift, warnings, notes } = verifyQuestionPress({
       data: questionPress,
       fileBytes: statSync(QUESTION_PRESS_PATH).size,
-      bias: parse('data/media-bias.json', readFileSync('data/media-bias.json', 'utf8'))?.outlets ?? null,
-      moments: parse('data/moments.json', readFileSync('data/moments.json', 'utf8')),
+      bias: readQuietly('data/media-bias.json')?.outlets ?? null,
+      moments: readQuietly('data/moments.json'),
     });
     for (const n of notes) console.log(n);
+    for (const d of drift) warn(`${d} (${optional})`);
     for (const w of warnings) warn(w);
-    for (const f of failures) fail(f);
+    for (const f of failures) warn(`${f} — ${optional}; scripts/check-question-press.mjs fails on it in CI`);
   }
 }
 

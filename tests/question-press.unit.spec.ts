@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 // Pure module (no network, no disk) — see lib/question-press.mjs's header for
@@ -56,6 +57,8 @@ import { alarms, formatHealthIssueBody, formatHealthSection } from '../lib/pipel
 import { QUESTION_PRESS_WORKFLOW, SIDE_WORKFLOWS } from '../scripts/pipeline-health.mjs';
 // The one definition of a checkable article link (B-5), shared with the lamp.
 import { normalizeArticleUrl } from '../lib/conversation.mjs';
+// The Congress the nightly's corpus check pins — for the verify-sync fixture.
+import { CONGRESS } from '../scripts/congress-fetch.mjs';
 
 const ROOT = process.cwd();
 const NOW = Date.parse('2026-09-25T02:43:00Z');
@@ -358,6 +361,34 @@ test.describe('the response', () => {
     if (rescued.ok) expect(rescued.articles[0].url).toBe('https://www.npr.org/x');
   });
 
+  test('STRICT: only {} and an object with an articles array are answers — any other JSON object is malformed, never a zero', () => {
+    // the two answers
+    expect(parseArtList('{}')).toEqual({ ok: true, articles: [] });
+    expect(parseArtList(' { } ')).toEqual({ ok: true, articles: [] });
+    expect(parseArtList('{"articles": []}')).toEqual({ ok: true, articles: [] });
+    const extra = parseArtList(JSON.stringify({ articles: [art('npr.org', 'x')], count: 1 }));
+    expect(extra.ok).toBe(true); // an articles array with other keys beside it is still an article list
+    // every other object: an error or status envelope, a renamed list, a null list
+    for (const body of [
+      '{"error":"rate limited"}',
+      '{"status":"timeout","message":"x"}',
+      '{"message":"Please limit requests to one every 5 seconds"}',
+      '{"results":[]}',
+      '{"count":0}',
+      '{"articles":null}',
+      '{"articles":{}}',
+    ]) {
+      const r = parseArtList(body);
+      expect(r, body).toMatchObject({ ok: false, kind: 'malformed' });
+      expect(r.ok, body).toBe(false);
+    }
+    // the log says what came back, so a new envelope is diagnosable from the run
+    const env = parseArtList('{"error":"rate limited"}');
+    if (!env.ok) expect(env.error).toContain('{"error":"rate limited"}');
+    // scalars and arrays stay malformed
+    for (const body of ['null', '0', '"text"', 'true', '[]']) expect(parseArtList(body), body).toMatchObject({ ok: false, kind: 'malformed' });
+  });
+
   test('ANY plain-text answer is a refusal of that one search, quoted verbatim — not only the two sentences the first version knew', () => {
     // GDELT's documentation-example sentence (unverified live), and sentences
     // this project has never seen: each is a refusal, not a malformed body.
@@ -558,7 +589,9 @@ test.describe('the gate', () => {
   test('rated-only; the GDELT citation and the query shape must travel with the data', () => {
     const unrated = good();
     unrated.questions['iran-war-powers'].outlets[0].domain = 'rollcall.com';
-    expect(verifyQuestionPress({ data: unrated, bias: BIAS, now: NOW }).failures.join(' ')).toMatch(/no AllSides rating|not on rollcall/);
+    const u = verifyQuestionPress({ data: unrated, bias: BIAS, now: NOW });
+    expect(u.drift.join(' ')).toMatch(/rollcall\.com.*no AllSides rating/); // another file's verdict: drift
+    expect(u.failures.join(' ')).toMatch(/not on rollcall/); // the link on another outlet's domain: damage
     const uncited = good();
     uncited._meta.attribution = 'news';
     expect(verifyQuestionPress({ data: uncited, bias: BIAS, now: NOW }).failures.join(' ')).toMatch(/GDELT/);
@@ -649,13 +682,38 @@ test.describe('the gate', () => {
     expect(buildQuestionPress({ previous: prev, liveIds: ['iran-war-powers'], results: new Map(), bias: BIAS, today: TODAY }).questions['iran-war-powers']).toBeUndefined();
   });
 
-  test('a question no longer live is a warning; one never heard of is a failure; a stale check is a warning', () => {
+  test('a question no longer live is a warning; one deleted from moments.json is drift, never a failure; a stale check is a warning', () => {
     const d = good();
     const warned = verifyQuestionPress({ data: d, bias: BIAS, moments: { 'iran-war-powers': { status: 'retired' } }, now: NOW });
     expect(warned.failures).toEqual([]);
+    expect(warned.drift).toEqual([]);
     expect(warned.warnings.join(' ')).toMatch(/no longer live/);
-    expect(verifyQuestionPress({ data: d, bias: BIAS, moments: {}, now: NOW }).failures.join(' ')).toMatch(/no such question/);
+    const deleted = verifyQuestionPress({ data: d, bias: BIAS, moments: {}, now: NOW });
+    expect(deleted.failures).toEqual([]);
+    expect(deleted.drift.join(' ')).toMatch(/iran-war-powers: no such question in data\/moments\.json — the collector's next run removes it \(a repair write\)/);
     expect(verifyQuestionPress({ data: d, bias: BIAS, moments: MOMENTS, now: NOW + 3 * 86_400_000 }).warnings.join(' ')).toMatch(/has not succeeded for 3 days/);
+  });
+
+  test('DRIFT vs DAMAGE: only what another data file can cause is drift; everything wrong in the file itself is a failure', () => {
+    // drift: a deleted question, an outlet no longer rated, an outlet re-rated — and nothing else fails
+    const d = good();
+    const unRated = { ...BIAS } as Record<string, string>;
+    delete unRated['foxnews.com'];
+    const a = verifyQuestionPress({ data: d, bias: unRated, moments: MOMENTS, now: NOW });
+    expect(a.failures).toEqual([]);
+    expect(a.drift).toEqual([expect.stringMatching(/outlet "foxnews\.com": data\/media-bias\.json carries no AllSides rating for it/)]);
+    const b = verifyQuestionPress({ data: d, bias: { ...BIAS, 'foxnews.com': 'center' }, moments: MOMENTS, now: NOW });
+    expect(b.failures).toEqual([]);
+    expect(b.drift).toEqual([expect.stringMatching(/lean "right" disagrees with data\/media-bias\.json \("center"\) — the collector's next run moves it/)]);
+    // damage stays damage, whatever the other files say
+    const bad = good();
+    ((bad.questions['iran-war-powers'] as Entry).outlets[0] as Outlet & { tone?: number }).tone = -1;
+    (bad.questions['iran-war-powers'] as Entry).outlets[0].lean = 'far-right';
+    const c = verifyQuestionPress({ data: bad, bias: BIAS, moments: MOMENTS, now: NOW });
+    expect(c.failures.join(' ')).toMatch(/unknown key "tone"/);
+    expect(c.failures.join(' ')).toMatch(/lean "far-right" is not a rated lean/);
+    // a clean file carries neither
+    expect(verifyQuestionPress({ data: good(), bias: BIAS, moments: MOMENTS, now: NOW })).toMatchObject({ failures: [], drift: [] });
   });
 });
 
@@ -782,7 +840,7 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
     expect((doc.questions['iran-war-powers'] as Entry).terms).toEqual(['war powers']); // stored terms = what GDELT answered
     expect(stats.refused).toEqual([
-      { id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: true, answer: '"Your query was too short or too long."' },
+      { id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: true, answer: '"Your query was too short or too long."', page: 1 },
     ]);
     expect(lines.some((l) => /^::warning::.*GDELT refused the \d+-character query for "operation epic fury" — it answered in plain text instead of results \(its length refusal\), verbatim: "Your query was too short or too long\."/.test(l))).toBe(true);
     expect(lines.some((l) => /refused for length \d+ \("operation epic fury"\)/.test(l))).toBe(true);
@@ -816,7 +874,7 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(iran.checkedOn).toBe(TODAY);
     expect(iran.terms).toEqual(['war powers']); // only what GDELT ran
     expect(iran.counts.outlets).toEqual({ left: 1, center: 1, right: 1 });
-    expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: false, answer: JSON.stringify(SENTENCE) }]);
+    expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: false, answer: JSON.stringify(SENTENCE), page: 1 }]);
     // verbatim, on one log line
     const warning = lines.find((l) => /^::warning::.*"operation epic fury"/.test(l)) ?? '';
     expect(warning).toContain('verbatim: "Your search contained a phrase we could not parse.\\nPlease simplify it."');
@@ -917,8 +975,8 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(circuit).toBeNull(); // GDELT answered: not a circuit matter
   });
 
-  test('MALFORMED body (HTML error page, truncated JSON, wrong shape): the question is not updated', async () => {
-    for (const body of ['<html>502 Bad Gateway</html>', '{"articles": [{"url": "https://www.npr.org/x"', '{"articles": "nope"}']) {
+  test('MALFORMED body (HTML error page, truncated JSON, wrong shape, a JSON error envelope): the question is not updated', async () => {
+    for (const body of ['<html>502 Bad Gateway</html>', '{"articles": [{"url": "https://www.npr.org/x"', '{"articles": "nope"}', '{"error":"rate limited"}', '{"status":"timeout","message":"x"}']) {
       const net = fakeNet(() => ({ status: 200, body }));
       const lines: string[] = [];
       const { stats, write } = await run(net, { log: (l: string) => lines.push(l) });
@@ -926,6 +984,18 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
       expect(write, body).toBe(false);
       expect(lines.some((l) => /^::warning::.*a malformed body/.test(l)), body).toBe(true);
     }
+  });
+
+  test('a JSON error envelope ({"error": …}) is never recorded as "no coverage": the carried evidence stands', async () => {
+    const net = fakeNet(() => ({ status: 200, body: '{"error":"rate limited"}' }));
+    const lines: string[] = [];
+    const { doc, stats, write } = await run(net, { previous: prevWithIran(), log: (l: string) => lines.push(l) });
+    expect(stats.done).toEqual([]);
+    const iran = doc.questions['iran-war-powers'] as Entry;
+    expect(iran.checkedOn).toBe('2026-09-23'); // not re-dated to a zero-coverage "check"
+    expect(iran.outlets.map((o) => o.domain)).toEqual(['cnn.com']);
+    expect(write).toBe(false);
+    expect(lines.some((l) => /^::warning::.*a malformed body \(a JSON object that is neither \{\} nor an article list: \{"error":"rate limited"\}\)/.test(l))).toBe(true);
   });
 
   test('HTTP 5xx fails that question and the run moves on', async () => {
@@ -1115,12 +1185,214 @@ test.describe('the collector: paging a full page backwards in time', () => {
     expect(lines.some((l) => /^::warning::.*"war powers" still filled GDELT's 250-record page after 4 page\(s\)/.test(l))).toBe(true);
   });
 
+  test('a LATER page refused: the term keeps its place in the stored terms and its page-1 evidence, and is TRUNCATED loudly', async () => {
+    // The verifier's repro: page 1 of "war powers" is a full 250 records, one
+    // on a rated outlet; GDELT answers the page after it in plain text.
+    const moments = { 'iran-war-powers': { ...MOMENTS['iran-war-powers'], aliases: { en: ['war powers', 'operation epic fury'] } } };
+    const PAGE_REFUSAL = 'Please limit requests to one every 5 seconds.';
+    const page1 = Array.from({ length: GDELT_MAX_RECORDS }, (_, i) =>
+      i === 0
+        ? art('foxnews.com', 'politics/page-one-only', '20260924T230000Z')
+        : art(`unrated-${i}.example`, `a${i}`, `20260924T${String(22 - (i % 20)).padStart(2, '0')}0000Z`)
+    );
+    const net = fakeNet((url) => {
+      if (termOf(url) === 'operation epic fury') return { status: 200, body: '{}' };
+      const end = new URL(url).searchParams.get('enddatetime');
+      return end === gdeltDateTime(NOW) ? { status: 200, body: JSON.stringify({ articles: page1 }) } : { status: 200, body: PAGE_REFUSAL };
+    });
+    const lines: string[] = [];
+    const { doc, stats, write } = await run(net, { moments, log: (l: string) => lines.push(l) });
+    expect(net.calls.filter((c) => termOf(c.url) === 'war powers')).toHaveLength(2);
+    expect(stats.done).toEqual(['iran-war-powers']);
+    const iran = doc.questions['iran-war-powers'] as Entry;
+    // THE CLAIM: the stored terms are exactly the ones GDELT answered — and page 1 answered "war powers"
+    expect(iran.terms).toEqual(['war powers', 'operation epic fury']);
+    expect(iran.outlets.map((o) => [o.domain, o.articles.map((a) => a.url)])).toEqual([['foxnews.com', ['https://www.foxnews.com/politics/page-one-only']]]);
+    expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'war powers', chars: buildGdeltQuery('war powers').length, forLength: false, answer: JSON.stringify(PAGE_REFUSAL), page: 2 }]);
+    // GDELT's answer verbatim, and the SAME loud truncation warning as a term whose pages ran out
+    expect(lines.some((l) => /^::warning::.*GDELT refused page 2 of "war powers" after answering 1 full page\(s\).*verbatim: "Please limit requests to one every 5 seconds\." — the term stays in the stored terms/.test(l))).toBe(true);
+    expect(lines.some((l) => /^::warning::.*"war powers" still filled GDELT's 250-record page after 1 page\(s\) — the oldest part of its window was NOT seen, for every lean alike.*Paging stopped because GDELT refused page 2/.test(l))).toBe(true);
+    expect(lines.some((l) => /"war powers" — returned 250 in 1 page\(s\) \(TRUNCATED: GDELT refused page 2\)/.test(l))).toBe(true);
+    // never reported as a refused SEARCH
+    expect(lines.some((l) => /"war powers" — REFUSED by GDELT as a query|left out of this search/.test(l))).toBe(false);
+    expect(write).toBe(true);
+    expect(verifyQuestionPress({ data: doc, bias: BIAS, moments, now: NOW })).toMatchObject({ failures: [], drift: [] });
+  });
+
+  test('a FIRST page refused is still a refused search: the term leaves the stored terms and brings no evidence', async () => {
+    const moments = { 'iran-war-powers': { ...MOMENTS['iran-war-powers'], aliases: { en: ['war powers', 'operation epic fury'] } } };
+    const net = fakeNet((url) => (termOf(url) === 'war powers' ? { status: 200, body: 'Please limit requests to one every 5 seconds.' } : mixedReply(url)));
+    const { doc, stats } = await run(net, { moments });
+    expect((doc.questions['iran-war-powers'] as Entry).terms).toEqual(['operation epic fury']);
+    const links = Object.values(doc.questions).flatMap((q) => (q as Entry).outlets.flatMap((o) => o.articles.map((a) => a.url)));
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.filter((u) => u.includes('war-powers'))).toEqual([]); // no link from the refused search
+    expect(stats.refused.map((r: { page: number }) => r.page)).toEqual([1]);
+  });
+
   test('a full page that does not move backwards stops paging instead of looping', async () => {
     const moments = { 'iran-war-powers': { ...MOMENTS['iran-war-powers'], aliases: { en: ['war powers'] } } };
     const net = fakeNet(() => ({ status: 200, body: JSON.stringify({ articles: full(0, () => '20260924T120000Z') }) }));
     const { stats } = await run(net, { moments });
     expect(net.calls).toHaveLength(2);
     expect(stats.done).toEqual(['iran-war-powers']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ANOTHER DATA FILE CHANGES UNDER THE EVIDENCE. A question deleted from
+// data/moments.json, or an outlet data/media-bias.json stops rating (or
+// re-rates), makes the committed evidence DRIFT without damaging it. That
+// must never fail the nightly (this file is optional evidence nothing
+// reads), is only a warning in CI, and the collector's next run repairs it —
+// even a run on which GDELT answers nothing.
+test.describe('another data file changes under the evidence: drift warns, the collector repairs it', () => {
+  const evidence = (day: string) =>
+    buildQuestionPress({
+      previous: null,
+      liveIds: ['iran-war-powers', 'paying-college-athletes'],
+      results: new Map([
+        ['iran-war-powers', { terms: ['war powers'], admitted: [{ url: 'https://www.foxnews.com/politics/a', domain: 'foxnews.com', lean: 'right', seen: day }] }],
+        ['paying-college-athletes', { terms: ['protect college sports act'], admitted: [{ url: 'https://www.cnn.com/sports/b', domain: 'cnn.com', lean: 'left', seen: day }] }],
+      ]),
+      bias: BIAS,
+      today: day,
+    });
+  const withoutCollege = Object.fromEntries(Object.entries(MOMENTS).filter(([id]) => id !== 'paying-college-athletes'));
+  const refusing = () => fakeNet(() => ({ status: 200, body: 'Your query was too short or too long.' }));
+
+  /** Run the REAL scripts/verify-sync.mjs against a throwaway data/ directory:
+   *  a minimal valid corpus plus the files given. No git (GIT_DIR points
+   *  nowhere, so the HEAD comparisons only warn) and no RUN_STARTED_AT (the
+   *  local-run path), exactly as the script documents for a local run. */
+  const verifySync = (files: Record<string, unknown>) => {
+    const dir = mkdtempSync(join(tmpdir(), 'verify-sync-qp-'));
+    mkdirSync(join(dir, 'data'));
+    const base: Record<string, unknown> = {
+      'bills.json': [{ bill_type: 's', bill_number: 4668, congress_number: CONGRESS }],
+      'bills-es.json': {},
+      'coverage.json': {},
+      'sync-state.json': { lastSync: '2026-09-25T00:00:00Z' },
+      'moments.json': MOMENTS,
+      'media-bias.json': { outlets: BIAS },
+    };
+    for (const [name, value] of Object.entries({ ...base, ...files })) {
+      writeFileSync(join(dir, 'data', name), typeof value === 'string' ? value : JSON.stringify(value, null, 2));
+    }
+    const env: NodeJS.ProcessEnv = { ...process.env, GIT_DIR: join(dir, 'no-git-here') };
+    delete env.RUN_STARTED_AT;
+    const r = spawnSync(process.execPath, [join(ROOT, 'scripts/verify-sync.mjs')], { cwd: dir, env, encoding: 'utf8' });
+    return { status: r.status, out: `${r.stdout}\n${r.stderr}` };
+  };
+  const wallToday = () => new Date().toISOString().slice(0, 10); // verify-sync judges lateness by the wall clock
+
+  test('the NIGHTLY: a question deleted from moments.json leaves verify-sync GREEN, with a warning', () => {
+    const r = verifySync({ 'question-press.json': evidence(wallToday()), 'moments.json': withoutCollege });
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toMatch(/::warning::question-press: paying-college-athletes: no such question in data\/moments\.json — the collector's next run removes it \(a repair write\) \(optional evidence, never a nightly failure\)/);
+    expect(r.out).not.toMatch(/::error::question-press/);
+    expect(r.out).toContain('sync verification passed');
+  });
+
+  test('the NIGHTLY: an outlet un-rated or re-rated, damage in the file, even a file that does not parse — every one only warns', () => {
+    const today = wallToday();
+    const unRated = { ...BIAS } as Record<string, string>;
+    delete unRated['foxnews.com'];
+    const damaged = evidence(today) as unknown as { questions: Record<string, { outlets: Array<Record<string, unknown>> }> };
+    damaged.questions['iran-war-powers'].outlets[0].tone = -3;
+    const cases: Array<[string, Record<string, unknown>, RegExp]> = [
+      ['an outlet no longer rated', { 'question-press.json': evidence(today), 'media-bias.json': { outlets: unRated } }, /outlet "foxnews\.com": data\/media-bias\.json carries no AllSides rating/],
+      ['an outlet re-rated', { 'question-press.json': evidence(today), 'media-bias.json': { outlets: { ...BIAS, 'cnn.com': 'center' } } }, /lean "left" disagrees with data\/media-bias\.json \("center"\)/],
+      ['a tone key (damage)', { 'question-press.json': damaged }, /unknown key "tone" — optional evidence, never a nightly failure; scripts\/check-question-press\.mjs fails on it in CI/],
+      ['a file that does not parse', { 'question-press.json': '{"_meta": {' }, /question-press: data\/question-press\.json does not parse as JSON/],
+    ];
+    for (const [what, files, expected] of cases) {
+      const r = verifySync(files);
+      expect(r.status, `${what}\n${r.out}`).toBe(0);
+      expect(r.out, what).toMatch(new RegExp(`::warning::.*${expected.source}`));
+      expect(r.out, what).toContain('sync verification passed');
+    }
+  });
+
+  test('the NIGHTLY harness is not vacuous: the same fixture still FAILS on real corpus damage', () => {
+    const r = verifySync({ 'question-press.json': evidence(wallToday()), 'bills.json': [] });
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toMatch(/::error::data\/bills\.json is not a non-empty array/);
+  });
+
+  test('the COLLECTOR: its next run prunes the deleted question — a repair write even when GDELT refuses every search', async () => {
+    const prev = evidence('2026-09-24');
+    expect(verifyQuestionPress({ data: prev, bias: BIAS, moments: withoutCollege, now: NOW }).drift).toHaveLength(1);
+    const lines: string[] = [];
+    const net = refusing();
+    const r = await run(net, { previous: prev, moments: withoutCollege, log: (l: string) => lines.push(l) });
+    expect(net.calls.length).toBeGreaterThan(0); // Iran was due and GDELT refused it
+    expect(r.stats.done).toEqual([]); // nothing recorded...
+    expect(r.write).toBe(true); // ...and still written: a repair
+    expect(r.repair).toHaveLength(1);
+    expect(Object.keys(r.doc.questions)).toEqual(['iran-war-powers']);
+    // no checkedOn moves: the digest still reads the last RECORDED check
+    expect(r.doc.questions['iran-war-powers']).toEqual(prev.questions['iran-war-powers']);
+    expect(verifyQuestionPress({ data: r.doc, bias: BIAS, moments: withoutCollege, now: NOW })).toMatchObject({ failures: [], drift: [] });
+    expect(lines.some((l) => /^::notice::gdelt-intake: the committed data\/question-press\.json disagrees with data\/moments\.json or data\/media-bias\.json in 1 place/.test(l))).toBe(true);
+    // repaired: the next run is back to "write only what a run recorded"
+    const again = await run(refusing(), { previous: r.doc, moments: withoutCollege, now: NOW + 12 * 3_600_000 });
+    expect(again.repair).toEqual([]);
+    expect(again.write).toBe(false);
+  });
+
+  test('the COLLECTOR: the repair needs no GDELT at all — nothing due, or the circuit inside its cooldown', async () => {
+    // Everything was checked today, so nothing is due: still repaired.
+    const idle = fakeNet((url) => mixedReply(url));
+    const a = await run(idle, { previous: evidence(TODAY), moments: withoutCollege });
+    expect(idle.calls).toHaveLength(0);
+    expect(a.write).toBe(true);
+    expect(Object.keys(a.doc.questions)).toEqual(['iran-war-powers']);
+    // The circuit is open and inside its cooldown: no request, still repaired.
+    const shut = fakeNet((url) => mixedReply(url));
+    const circuit: Circuit = { open: true, reason: '429', openedAt: new Date(NOW - 3_600_000).toISOString(), lastTryAt: new Date(NOW - 60_000).toISOString(), tries: 1 };
+    const b = await run(shut, { previous: evidence('2026-09-24'), moments: withoutCollege, circuit });
+    expect(shut.calls).toHaveLength(0);
+    expect(b.stats.circuitSkipped).toBe(true);
+    expect(b.write).toBe(true);
+    expect(Object.keys(b.doc.questions)).toEqual(['iran-war-powers']);
+  });
+
+  test('the COLLECTOR: an outlet media-bias.json stopped rating leaves; a re-rated one moves lean — on the next run, GDELT or not', async () => {
+    const bias = { ...BIAS, 'cnn.com': 'center' } as Record<string, string>;
+    delete bias['foxnews.com'];
+    const prev = evidence('2026-09-24');
+    const r = await run(refusing(), { previous: prev, bias });
+    expect(r.stats.done).toEqual([]);
+    expect(r.write).toBe(true);
+    expect(r.repair).toHaveLength(2);
+    expect((r.doc.questions['iran-war-powers'] as Entry).outlets).toEqual([]);
+    expect((r.doc.questions['paying-college-athletes'] as Entry).outlets.map((o) => [o.domain, o.lean])).toEqual([['cnn.com', 'center']]);
+    expect((r.doc.questions['iran-war-powers'] as Entry).checkedOn).toBe('2026-09-24');
+    expect(verifyQuestionPress({ data: r.doc, bias, moments: MOMENTS, now: NOW })).toMatchObject({ failures: [], drift: [] });
+  });
+
+  test('no drift, no repair: retiring a question or adding an outlet still writes nothing on a run that recorded nothing', async () => {
+    const prev = evidence('2026-09-24');
+    const retired = { ...MOMENTS, 'paying-college-athletes': { ...MOMENTS['paying-college-athletes'], status: 'retired' } };
+    const r = await run(refusing(), { previous: prev, moments: retired, bias: { ...BIAS, 'apnews.com': 'center' } });
+    expect(r.repair).toEqual([]);
+    expect(r.write).toBe(false);
+  });
+
+  test('shouldWrite: a repair needs a committed file to repair and a document that differs', () => {
+    const prev = evidence(TODAY);
+    const pruned = buildQuestionPress({ previous: prev, liveIds: ['iran-war-powers'], results: new Map(), bias: BIAS, today: TODAY });
+    expect(shouldWrite({ previous: prev, next: pruned, recorded: 0, repair: true })).toBe(true);
+    expect(shouldWrite({ previous: prev, next: pruned, recorded: 0 })).toBe(false);
+    expect(shouldWrite({ previous: prev, next: prev, recorded: 0, repair: true })).toBe(false);
+    expect(shouldWrite({ previous: null, next: pruned, recorded: 0, repair: true })).toBe(false);
+  });
+
+  test("the collector's OWN document may carry no drift: its pre-write gate refuses drift like damage", () => {
+    const src = readFileSync(join(ROOT, 'scripts/gdelt-intake.mjs'), 'utf8');
+    expect(src).toMatch(/const refusals = \[\.\.\.failures, \.\.\.drift\.map\(/);
+    expect(src).toMatch(/if \(refusals\.length\) \{[\s\S]*?process\.exit\(1\)/);
   });
 });
 
@@ -1397,10 +1669,24 @@ test.describe('boundaries', () => {
     expect(readFileSync(join(ROOT, '.gitignore'), 'utf8')).toMatch(/^\.gdelt-state\/$/m);
   });
 
-  test('CI and the nightly still gate the file', () => {
+  test('CI gates the file; the nightly reads it and can only WARN — this optional file never fails the nightly', () => {
     const ci = wf('ci.yml');
     expect(ci).toContain('node scripts/check-question-press.mjs --self-test');
     expect(ci).toContain('node scripts/check-question-press.mjs\n');
-    expect(readFileSync(join(ROOT, 'scripts/verify-sync.mjs'), 'utf8')).toContain('verifyQuestionPress(');
+    const verifySync = readFileSync(join(ROOT, 'scripts/verify-sync.mjs'), 'utf8');
+    expect(verifySync).toContain('verifyQuestionPress(');
+    // the question-press block: no fail(), and no parse() (which fails the run on a bad file)
+    const from = verifySync.indexOf('// --- question-press');
+    const to = verifySync.indexOf('// --- sync-state');
+    expect(from).toBeGreaterThan(0);
+    expect(to).toBeGreaterThan(from);
+    const block = verifySync.slice(from, to);
+    expect(block).toContain('verifyQuestionPress(');
+    expect(block).not.toMatch(/\bfail\(/);
+    expect(block).not.toMatch(/(?<![.\w])parse\(/); // JSON.parse is fine; the run-failing helper is not
+    // the CI gate fails on damage and only warns on drift
+    const check = readFileSync(join(ROOT, 'scripts/check-question-press.mjs'), 'utf8');
+    expect(check).toMatch(/for \(const d of drift\) console\.warn\(`::warning::/);
+    expect(check).toMatch(/for \(const f of failures\) console\.error\(`::error::/);
   });
 });

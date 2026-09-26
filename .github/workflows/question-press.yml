@@ -37,8 +37,12 @@ name: Big Question press counts
 # coverage. Only a run that RECORDED a check can write the file, and only when
 # the file would change (lib/question-press.mjs shouldWrite) — at most one
 # write per question per UTC day; a run GDELT refuses throughout writes
-# nothing. Neither slot is on the hour or half hour, where GitHub's scheduler
-# backlog is worst.
+# nothing. The one exception is a REPAIR write: when the committed file names
+# a question data/moments.json no longer has, or an outlet
+# data/media-bias.json no longer rates (or rates with another lean), the next
+# run rewrites it without them whether or not GDELT answers. The gates only
+# warn on that drift, so this write is what clears it. Neither slot is on the
+# hour or half hour, where GitHub's scheduler backlog is worst.
 #
 # A GREEN RUN IS NOT A RECORDED CHECK. The collector exits 0 on every GDELT
 # outcome, so this workflow stays green through a week of 429s. The alarm is

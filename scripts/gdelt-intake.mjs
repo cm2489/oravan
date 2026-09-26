@@ -38,6 +38,18 @@
  * later successful check with unchanged counts is still saved (its
  * `checkedOn` is what the gate's lateness warning reads).
  *
+ * ONE EXCEPTION, THE REPAIR WRITE. When the COMMITTED file disagrees with
+ * data/moments.json or data/media-bias.json (a question id moments.json no
+ * longer has, an outlet media-bias.json no longer rates or now rates with
+ * another lean: the gate's `drift`), the run writes the ordinary document
+ * even though it recorded nothing, and even if GDELT answered nothing or the
+ * circuit kept it from asking. That document keeps live questions only and
+ * re-judges every carried outlet, so the orphan and the un-rated outlet are
+ * gone and a re-rated outlet has moved lean. It moves no `checkedOn`. The
+ * gates only WARN on drift (CI and the nightly alike), so this write is what
+ * makes the file agree again without anyone editing it by hand, and a GDELT
+ * outage cannot hold the disagreement in place.
+ *
  * ---- BUDGETS: TIME AND COUNT, checked before every request --------------------
  *   - a RUN deadline (GDELT_RUN_DEADLINE_MS, 10 min) and a PER-QUESTION
  *     deadline (GDELT_QUESTION_DEADLINE_MS, 4 min). Before each request —
@@ -67,7 +79,10 @@
  *   - ONE refused search is that search's problem only: the term is left out
  *     of this run's search, GDELT's answer is quoted verbatim in a
  *     ::warning::, and the question still updates from its other searches
- *     (lib/question-press.mjs `parseArtList`, and its header, ALL OR NOTHING);
+ *     (lib/question-press.mjs `parseArtList`, and its header, ALL OR NOTHING).
+ *     A refused LATER page is different: page 1 already answered the search,
+ *     so the term stays in the stored terms with the evidence its answered
+ *     pages returned, and is marked TRUNCATED with the usual loud warning;
  *   - THE CIRCUIT IS PERSISTED (GDELT_STATE_PATH, carried between runs in the
  *     Actions cache). A later run inside GDELT_CIRCUIT_COOLDOWN_MS (6 h) of
  *     the last failed attempt makes NO request. After the cooldown the run is
@@ -93,8 +108,9 @@
  * digest instead: scripts/pipeline-health.mjs reads the committed file's
  * newest `checkedOn` (lib/question-press.mjs `questionPressActivity`) and
  * raises a ⛔ once no check has been recorded for QUESTION_PRESS_SILENT_DAYS
- * days — which it can trust, because a run that records nothing writes
- * nothing.
+ * days — which it can trust, because only a recorded check ever moves a
+ * `checkedOn` (a run that records nothing writes nothing, and a repair write
+ * carries every `checkedOn` over unchanged).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
@@ -271,6 +287,19 @@ export async function collect({
     .map(([id, m]) => ({ id, moment: m }));
   const liveIds = live.map((q) => q.id).sort();
 
+  // ---- the committed file's cross-file drift: the REPAIR WRITE ---------------
+  // A question id data/moments.json no longer has, or an outlet
+  // data/media-bias.json no longer rates (or rates with another lean). The
+  // gates only warn on it, so this run writes the repaired document whether
+  // or not GDELT answers (lib/question-press.mjs `shouldWrite`, `repair`).
+  const repair = previous ? verifyQuestionPress({ data: previous, bias, moments, now }).drift : [];
+  if (repair.length) {
+    for (const d of repair) log(`gdelt-intake: committed file drift (this run repairs it) — ${d}`);
+    log(
+      `::notice::gdelt-intake: the committed ${QUESTION_PRESS_PATH} disagrees with data/moments.json or data/media-bias.json in ${repair.length} place(s) (listed above) — this run writes a repair (orphaned questions and un-rated outlets pruned, re-rated outlets moved; no checkedOn moves) whether or not GDELT answers.`
+    );
+  }
+
   // A standing condition (a question with no searchable vocabulary) is worth
   // ONE ::warning:: a day, not one per run: the first run of a UTC day is the
   // one whose previous file was pruned against an earlier day.
@@ -290,7 +319,8 @@ export async function collect({
     /** @type {string[]} */ failed: [],
     /** @type {string[]} */ skipped: [],
     /** @type {string[]} */ notDue: [],
-    /** @type {Array<{ id: string, term: string, chars: number, forLength: boolean, answer: string }>} */ refused: [],
+    /** `page` > 1 = a later page of a term GDELT had already answered (the term is kept, truncated) */
+    /** @type {Array<{ id: string, term: string, chars: number, forLength: boolean, answer: string, page: number }>} */ refused: [],
     /** query lengths GDELT answered with an article list — the runner-side record of what it accepts */
     /** @type {number[]} */ answeredLengths: [],
   };
@@ -428,7 +458,7 @@ export async function collect({
 
   /** @type {Map<string, { terms: string[], admitted: any[] }>} */
   const results = new Map();
-  /** @type {Map<string, { perTerm: Array<{ term: string, requests: number, returned: number, unrated: number, outOfWindow: number, unreadable: number, admitted: number, byLean: Record<string, number>, truncated: boolean, refused: boolean }>, admitted: any[] }>} */
+  /** @type {Map<string, { perTerm: Array<{ term: string, requests: number, pages: number, returned: number, unrated: number, outOfWindow: number, unreadable: number, admitted: number, byLean: Record<string, number>, truncated: boolean, refused: boolean, pageRefused: number | null }>, admitted: any[] }>} */
   const perQuestion = new Map();
   outer: for (const q of due) {
     if (stats.requests + q.terms.length > limits.maxRequests) {
@@ -450,7 +480,10 @@ export async function collect({
     let ok = true;
     terms: for (const term of q.terms) {
       const query = buildGdeltQuery(term);
-      const tally = { term, requests: 0, returned: 0, unrated: 0, outOfWindow: 0, unreadable: 0, admitted: 0, byLean: { left: 0, center: 0, right: 0 }, truncated: false, refused: false };
+      // `requests` = GDELT's 200 answers for this term, refused ones included;
+      // `pages` = the answers that were article lists (the evidence);
+      // `pageRefused` = the page number GDELT refused after answering page 1.
+      const tally = { term, requests: 0, pages: 0, returned: 0, unrated: 0, outOfWindow: 0, unreadable: 0, admitted: 0, byLean: { left: 0, center: 0, right: 0 }, truncated: false, refused: false, pageRefused: /** @type {number | null} */ (null) };
       /** @type {number | string} */
       let end = now;
       let refusedThisTerm = false;
@@ -498,16 +531,31 @@ export async function collect({
         tally.requests += 1;
         const parsed = parseArtList(r.body);
         if (!parsed.ok && parsed.kind === 'refused') {
-          // Any plain-text answer is a refusal of THIS search only
-          // (lib/question-press.mjs parseArtList): the term is skipped, the
-          // question still updates from its other searches.
           refusedInARow++;
-          refusedThisTerm = true;
-          tally.refused = true;
-          stats.refused.push({ id: q.id, term, chars: query.length, forLength: parsed.forLength, answer: parsed.answer });
-          log(
-            `::warning::gdelt-intake: ${q.id}: GDELT refused the ${query.length}-character query for "${term}" — it answered in plain text instead of results${parsed.forLength ? ' (its length refusal)' : ''}, verbatim: ${parsed.answer} — the term is left out of this search and out of the stored terms; the question still updates from its other searches.`
-          );
+          stats.refused.push({ id: q.id, term, chars: query.length, forLength: parsed.forLength, answer: parsed.answer, page: tally.requests });
+          if (tally.pages > 0) {
+            // A LATER page refused, after a full page 1 was answered. GDELT
+            // already ran this search, so the term KEEPS its place in the
+            // stored terms with the evidence its answered pages returned,
+            // and is TRUNCATED: the older part of its window was not seen.
+            // Dropping it here would leave links in the file from a search
+            // the stored terms no longer name (lib/question-press.mjs header,
+            // A REFUSED LATER PAGE IS NOT A REFUSED SEARCH).
+            tally.truncated = true;
+            tally.pageRefused = tally.requests;
+            log(
+              `::warning::gdelt-intake: ${q.id}: GDELT refused page ${tally.requests} of "${term}" after answering ${tally.pages} full page(s) — it answered in plain text instead of results${parsed.forLength ? ' (its length refusal)' : ''}, verbatim: ${parsed.answer} — the term stays in the stored terms with the evidence its answered page(s) returned, and paging stops here (TRUNCATED, below).`
+            );
+          } else {
+            // Any plain-text answer to a term's FIRST request is a refusal of
+            // THIS search only (lib/question-press.mjs parseArtList): the term
+            // is skipped, the question still updates from its other searches.
+            refusedThisTerm = true;
+            tally.refused = true;
+            log(
+              `::warning::gdelt-intake: ${q.id}: GDELT refused the ${query.length}-character query for "${term}" — it answered in plain text instead of results${parsed.forLength ? ' (its length refusal)' : ''}, verbatim: ${parsed.answer} — the term is left out of this search and out of the stored terms; the question still updates from its other searches.`
+            );
+          }
           if (refusedInARow >= REFUSAL_CIRCUIT) {
             openCircuit('queries refused');
             log(
@@ -525,6 +573,7 @@ export async function collect({
           break terms;
         }
         stats.answeredLengths.push(query.length);
+        tally.pages += 1;
         const a = admitArticles(parsed.articles, { bias, today });
         tally.returned += parsed.articles.length;
         tally.unrated += a.unrated;
@@ -538,7 +587,7 @@ export async function collect({
         // article it returned — a cut in time, the same instant for every lean.
         const oldest = parsed.articles.map((x) => seenStamp(x.seendate)).filter(Boolean).sort()[0] ?? null;
         const endStamp = typeof end === 'number' ? null : end;
-        if (!oldest || tally.requests >= limits.maxPagesPerTerm || (endStamp !== null && oldest >= endStamp)) {
+        if (!oldest || tally.pages >= limits.maxPagesPerTerm || (endStamp !== null && oldest >= endStamp)) {
           tally.truncated = true;
           break;
         }
@@ -548,7 +597,10 @@ export async function collect({
       if (refusedThisTerm) continue;
       searched.push(term);
       if (tally.truncated) {
-        log(`::warning::gdelt-intake: ${q.id}: "${term}" still filled GDELT's ${GDELT_MAX_RECORDS}-record page after ${tally.requests} page(s) — the oldest part of its window was NOT seen, for every lean alike (a cut in time, newest kept). A heavy week, not a quiet one.`);
+        log(
+          `::warning::gdelt-intake: ${q.id}: "${term}" still filled GDELT's ${GDELT_MAX_RECORDS}-record page after ${tally.pages} page(s) — the oldest part of its window was NOT seen, for every lean alike (a cut in time, newest kept). A heavy week, not a quiet one.` +
+            (tally.pageRefused ? ` Paging stopped because GDELT refused page ${tally.pageRefused} (its answer is quoted above).` : '')
+        );
       }
       // A response whose articles carry no usable link or seen-date is what a
       // changed response shape looks like — never let it read as "0 outlets".
@@ -613,7 +665,7 @@ export async function collect({
           continue;
         }
         log(
-          `gdelt-intake: ${id}: "${t.term}" — returned ${t.returned} in ${t.requests} page(s)${t.truncated ? ' (TRUNCATED)' : ''}: ` +
+          `gdelt-intake: ${id}: "${t.term}" — returned ${t.returned} in ${t.pages} page(s)${t.truncated ? (t.pageRefused ? ` (TRUNCATED: GDELT refused page ${t.pageRefused})` : ' (TRUNCATED)') : ''}: ` +
             `${t.admitted} from rated outlets (L${t.byLean.left}/C${t.byLean.center}/R${t.byLean.right}), ${t.unrated} unrated, ${t.outOfWindow} outside the window, ${t.unreadable} unreadable`
         );
       }
@@ -642,7 +694,7 @@ export async function collect({
     const otherRefusals = stats.refused.length - forLength.length;
     log(
       `gdelt-intake: query length — longest GDELT answered this run ${longest ?? 'none'}, ` +
-        `refused for length ${forLength.length ? forLength.map((r) => `${r.chars} ("${r.term}")`).join(', ') : 'none'}` +
+        `refused for length ${forLength.length ? forLength.map((r) => `${r.chars} ("${r.term}"${r.page > 1 ? `, page ${r.page}` : ''})`).join(', ') : 'none'}` +
         `${otherRefusals ? `, ${otherRefusals} other plain-text refusal(s)` : ''} ` +
         `(cap ${limits.maxQueryChars}; ${
           limits.maxQueryChars <= GDELT_VERIFIED_QUERY_CHARS
@@ -660,8 +712,8 @@ export async function collect({
     }
   }
 
-  const write = shouldWrite({ previous, next: doc, recorded: stats.done.length });
-  return { doc, write, stats, today, circuit: nextCircuit };
+  const write = shouldWrite({ previous, next: doc, recorded: stats.done.length, repair: repair.length > 0 });
+  return { doc, write, stats, today, circuit: nextCircuit, repair };
 }
 
 /**
@@ -699,7 +751,7 @@ async function main() {
     );
   }
   const now = Date.now();
-  const { doc, write, stats, circuit } = await collect({
+  const { doc, write, stats, circuit, repair } = await collect({
     moments,
     bills,
     bias,
@@ -723,16 +775,25 @@ async function main() {
     return;
   }
   const text = `${JSON.stringify(doc, null, 2)}\n`;
-  const { failures, warnings, notes } = verifyQuestionPress({ data: doc, fileBytes: Buffer.byteLength(text), bias, moments, now });
+  // The gates only warn on drift in the COMMITTED file (another data file
+  // changed under it). A document this run just built from those same files
+  // must carry none, so here drift is a refusal like any damage.
+  const { failures, drift, warnings, notes } = verifyQuestionPress({ data: doc, fileBytes: Buffer.byteLength(text), bias, moments, now });
   for (const n of notes) console.log(n);
   for (const w of warnings) console.log(`::warning::${w}`);
-  if (failures.length) {
-    for (const f of failures) console.error(`::error::${f}`);
+  const refusals = [...failures, ...drift.map((d) => `${d} (in the document this run built from the same files — a bug, never a repair)`)];
+  if (refusals.length) {
+    for (const f of refusals) console.error(`::error::${f}`);
     console.error(`::error::gdelt-intake: refusing to write ${QUESTION_PRESS_PATH} — the document failed its own gate.`);
     process.exit(1);
   }
   writeFileSync(QUESTION_PRESS_PATH, text);
-  console.log(`gdelt-intake: wrote ${QUESTION_PRESS_PATH} (${Object.keys(doc.questions).length} question(s), window ${QUESTION_PRESS_WINDOW_DAYS} days).`);
+  console.log(
+    `gdelt-intake: wrote ${QUESTION_PRESS_PATH} (${Object.keys(doc.questions).length} question(s), window ${QUESTION_PRESS_WINDOW_DAYS} days)` +
+      (stats.done.length === 0 && repair.length
+        ? ` — a REPAIR write: no check was recorded this run, and the committed file disagreed with data/moments.json or data/media-bias.json in ${repair.length} place(s).`
+        : '.')
+  );
 }
 
 if (/(^|\/)gdelt-intake\.mjs$/.test(process.argv[1] ?? '')) {

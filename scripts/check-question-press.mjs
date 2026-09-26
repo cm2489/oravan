@@ -1,7 +1,9 @@
 /**
  * CI gate for data/question-press.json — the per-question GDELT evidence
  * (lib/question-press.mjs). The same judgement runs in the nightly
- * scripts/verify-sync.mjs and, before every write, in scripts/gdelt-intake.mjs.
+ * scripts/verify-sync.mjs (where every finding only WARNS: this optional file
+ * can never fail the nightly) and, before every write, in
+ * scripts/gdelt-intake.mjs.
  *
  *   node scripts/check-question-press.mjs
  *   node scripts/check-question-press.mjs --self-test
@@ -16,6 +18,18 @@
  * text: any key the format does not define fails here. And GDELT's terms ask
  * that any redistribution cite the GDELT Project with a link, so a file
  * without that citation fails too.
+ *
+ * WHAT FAILS HERE, AND WHAT ONLY WARNS. Only DAMAGE IN THE FILE ITSELF fails
+ * (`failures`): a finding no change to another data file can cause. DRIFT
+ * (`drift`) only warns: the file names a question data/moments.json no longer
+ * has, or an outlet data/media-bias.json no longer rates or now rates with
+ * another lean. Those come from a change to THOSE files, so failing here
+ * would block a moments or bias PR over a file it did not touch, and turn
+ * main red until GDELT answered again. The collector repairs drift by itself
+ * on its next run, even a run on which GDELT answers nothing (a repair write,
+ * lib/question-press.mjs `shouldWrite`). The cost: CI cannot tell an outlet
+ * media-bias.json stopped rating from a never-rated outlet added by hand.
+ * Both warn here, and the next collector run removes either.
  *
  * A MISSING file is not a failure: scripts/gdelt-intake.mjs is what first
  * writes it.
@@ -74,9 +88,17 @@ if (process.argv.includes('--self-test')) {
       'q-live': { checkedOn: today, terms: ['war powers'], counts: countsFor(outlets), outlets, ...entryOver },
     },
   });
-  const cases = [
+  // DRIFT: the file disagrees with data/moments.json or data/media-bias.json.
+  // Each must be reported as drift — a warning, never a failure — and never
+  // accepted silently.
+  const driftCases = [
     ['an unrated outlet', doc([outlet({ domain: 'example-blog.test', articles: [{ url: 'https://example-blog.test/a', seen: today }] })])],
     ['a lean that disagrees with data/media-bias.json', doc([outlet({ lean: 'left' })])],
+    ['an unknown question id (deleted from data/moments.json)', { _meta: meta, questions: { 'no-such-question': { checkedOn: today, terms: ['war powers'], counts: countsFor([]), outlets: [] } } }],
+  ];
+  // DAMAGE: wrong in the file itself, whatever the other files say.
+  const cases = [
+    ['a lean that is not a rated lean', doc([outlet({ lean: 'far-left' })])],
     ['a tone score on an outlet', doc([outlet({ tone: -3.2 })])],
     ['a headline stored with a link', doc([outlet({ articles: [{ url: 'https://www.foxnews.com/politics/a', seen: today, title: 'x' }] })])],
     ['a sentiment block on a question', doc([outlet()], { sentiment: { avg: 1 } })],
@@ -89,7 +111,6 @@ if (process.argv.includes('--self-test')) {
     ['a bill-number search term', doc([outlet()], { terms: ['s. 3172'] })],
     ['a missing GDELT citation', doc([outlet()], {}, { attribution: 'from the internet' })],
     ['an unknown schema', doc([outlet()], {}, { schema: 'question-press/v99' })],
-    ['an unknown question id', { _meta: meta, questions: { 'no-such-question': { checkedOn: today, terms: ['war powers'], counts: countsFor([]), outlets: [] } } }],
     ['no _meta.as_of (nothing to judge the days against)', doc([outlet()], {}, { as_of: undefined })],
     ['an _meta.as_of in the future', doc([outlet()], {}, { as_of: '2099-01-01' })],
     ['a link seen after the day the file was written', doc([outlet()], {}, { as_of: '2020-01-01' })],
@@ -102,6 +123,17 @@ if (process.argv.includes('--self-test')) {
     const { failures } = verifyQuestionPress({ data, fileBytes: 100, bias, moments, now });
     if (failures.length === 0) {
       console.error(`::error::check-question-press --self-test: "${name}" was ACCEPTED by the gate`);
+      ok = false;
+    }
+  }
+  for (const [name, data] of driftCases) {
+    const { failures, drift } = verifyQuestionPress({ data, fileBytes: 100, bias, moments, now });
+    if (drift.length === 0) {
+      console.error(`::error::check-question-press --self-test: drift "${name}" was not reported`);
+      ok = false;
+    }
+    if (failures.length > 0) {
+      console.error(`::error::check-question-press --self-test: drift "${name}" FAILED the gate (another file's change must only warn): ${failures[0]}`);
       ok = false;
     }
   }
@@ -137,16 +169,23 @@ if (!existsSync(url(QUESTION_PRESS_PATH))) {
 const data = JSON.parse(readFileSync(url(QUESTION_PRESS_PATH), 'utf8'));
 const bias = JSON.parse(readFileSync(url('data/media-bias.json'), 'utf8')).outlets ?? {};
 const moments = JSON.parse(readFileSync(url('data/moments.json'), 'utf8'));
-const { failures, warnings, notes } = verifyQuestionPress({
+const { failures, drift, warnings, notes } = verifyQuestionPress({
   data,
   fileBytes: statSync(url(QUESTION_PRESS_PATH)).size,
   bias,
   moments,
 });
 for (const n of notes) console.log(`check-question-press: ${n}`);
+// Drift is another data file's change, never damage here: it warns, and the
+// GDELT collector's next run repairs it by itself.
+for (const d of drift) console.warn(`::warning::check-question-press: ${d}`);
 for (const w of warnings) console.warn(`::warning::check-question-press: ${w}`);
 if (failures.length) {
   for (const f of failures) console.error(`::error::check-question-press: ${f}`);
   process.exit(1);
 }
-console.log('check-question-press passed — every counted outlet is AllSides-rated, every count is a stored link on that outlet, inside the week it claims, and the GDELT citation travels with the data.');
+console.log(
+  drift.length
+    ? `check-question-press passed with ${drift.length} drift warning(s) — the file is undamaged, but data/moments.json or data/media-bias.json changed under it; the GDELT collector's next run repairs it.`
+    : 'check-question-press passed — every counted outlet is AllSides-rated, every count is a stored link on that outlet, inside the week it claims, and the GDELT citation travels with the data.'
+);

@@ -133,7 +133,11 @@ jobs:
         # count derived from stored links on the outlet's own domain, inside
         # the 7-day window, no key the format does not define (no tone, no
         # sentiment, no titles), and the GDELT citation + link its terms
-        # require. Exits 0 when the file doesn't exist yet.
+        # require. Only damage in the file itself fails. Drift caused by a
+        # change to data/moments.json or data/media-bias.json (a deleted
+        # question, an outlet no longer rated or re-rated) only warns, and
+        # the collector's next run repairs it. Exits 0 when the file doesn't
+        # exist yet.
         run: |
           node scripts/check-question-press.mjs --self-test
           node scripts/check-question-press.mjs
