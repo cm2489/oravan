@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-26T07:36:01.991Z"
+    "generated_at": "2026-09-26T18:09:48.428Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1277,10 +1277,60 @@
           "updates:+5"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_5341187d",
+        "generated_at": "2026-09-26T18:09:58.193Z",
+        "as_of_day": "2026-09-26",
+        "text": {
+          "en": "The most recent floor action was in the Senate, where H. Con. Res. 89 failed by a recorded vote of 49 to 50 (Roll no. 244) on September 24, 2026, after the Foreign Relations Committee was discharged under the order of August 8, 2026. That measure's status is Floor activity. H. Con. Res. 93 passed the House on September 15, 2026 by a recorded vote of 220 to 204 (Roll no. 307) and was received in the Senate and referred to the Committee on Foreign Relations; its status is Passed one chamber. H. Con. Res. 86 is also listed as Passed one chamber. S.J.Res. 185, 180, 181, 172, and H. Con. Res. 38 show Floor activity. S.J.Res. 200 and S.J.Res. 211 remain In committee.",
+          "es": "La actuación más reciente en el pleno fue en el Senado, donde la H. Con. Res. 89 fue rechazada por votación nominal de 49 a 50 (votación núm. 244) el 24 de septiembre de 2026, después de que el Comité de Relaciones Exteriores fuera relevado bajo la orden del 8 de agosto de 2026. Esa medida figura como Actividad en el pleno. La H. Con. Res. 93 fue aprobada por la Cámara el 15 de septiembre de 2026 por votación nominal de 220 a 204 (votación núm. 307) y fue recibida en el Senado y remitida al Comité de Relaciones Exteriores; su estado es Aprobado por una cámara. La H. Con. Res. 86 también figura como Aprobado por una cámara. Las S.J.Res. 185, 180, 181, 172 y la H. Con. Res. 38 muestran Actividad en el pleno. Las S.J.Res. 200 y S.J.Res. 211 permanecen En comité."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_40aa8bf1",
+            "u_fe66be12",
+            "u_470e18ff",
+            "u_06fa2260"
+          ],
+          "roll_calls": [
+            "s-119-2-244",
+            "h-119-2-307"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "status:hconres-89-119 passed_chamber→floor_vote"
+        ],
+        "model": "claude-sonnet-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-25",
+      "day": "2026-09-26",
       "count": 1
     }
   },
@@ -2210,10 +2260,54 @@
           "updates:+5"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_95f51aab",
+        "generated_at": "2026-09-26T18:10:04.667Z",
+        "as_of_day": "2026-09-26",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, sits at floor activity in the Senate. On September 15, 2026, the Senate invoked cloture on the motion to proceed by a recorded vote of 74 to 24 (Roll no. 235), then agreed to the motion to proceed on September 17 by a recorded vote of 77 to 22 (Roll no. 236). On September 22, the Senate invoked cloture on amendment S.Amdt. 6776 by a recorded vote of 70 to 21, with 9 not voting (Roll no. 240); a recommittal motion from Senator Thune fell when that cloture was invoked. On September 24, the Senate agreed to S.Amdt. 6776 by a recorded vote of 77 to 23 (Roll no. 242), withdrew the committee substitute by voice vote, and invoked cloture on the measure as amended by a recorded vote of 74 to 25, with 1 not voting (Roll no. 243).",
+          "es": "El proyecto S. 4668, la Ley de Protección del Deporte Universitario de 2026, se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invocó la clausura sobre la moción para proceder por votación nominal de 74 a 24 (votación núm. 235), y luego aprobó la moción para proceder el 17 de septiembre por votación nominal de 77 a 22 (votación núm. 236). El 22 de septiembre, el Senado invocó la clausura sobre la enmienda S.Amdt. 6776 por votación nominal de 70 a 21, con 9 sin votar (votación núm. 240); una moción de reenvío del senador Thune quedó sin efecto al invocarse esa clausura. El 24 de septiembre, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242), retiró el sustituto del comité por votación de voz, e invocó la clausura sobre la medida enmendada por votación nominal de 74 a 25, con 1 sin votar (votación núm. 243)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 committee→floor_vote"
+        ],
+        "model": "claude-sonnet-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-25",
+      "day": "2026-09-26",
       "count": 1
     }
   },
@@ -2425,7 +2519,7 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-25",
+      "day": "2026-09-26",
       "count": 1
     }
   },
@@ -2869,6 +2963,10 @@
         "ai": true
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [],
+    "summary_attempts": {
+      "day": "2026-09-26",
+      "count": 1
+    }
   }
 }
