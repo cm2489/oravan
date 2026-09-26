@@ -52,8 +52,8 @@
  *     counts an outlet data/media-bias.json does not rate, carries a count
  *     that is not its own stored links, a link off its outlet's domain, a day
  *     outside the window ending the day the FILE was written (`_meta.as_of`,
- *     never the wall clock — a file the newsdesk has not rewritten since
- *     yesterday is late, not damaged, and lateness only warns here, per
+ *     never the wall clock — a file the GDELT collector has not rewritten
+ *     since yesterday is late, not damaged, and lateness only warns here, per
  *     N8-A2 below), any key the format does not define (no tone, no
  *     sentiment, no titles), or has lost the GDELT citation its terms require.
  *     Skipped cleanly when the file doesn't exist. The judgement lives in
@@ -356,11 +356,14 @@ if (!existsSync(CONVERSATION_PATH)) {
 
 // --- question-press: per-question GDELT evidence, rated-only, link-backed ---
 //
-// data/question-press.json is written by scripts/gdelt-intake.mjs, a step of
-// the hourly newsdesk workflow, and nothing on the site reads it yet. It is
-// checked here for the same reason conversation.json is: the nightly's commit
-// stages all of data/, so a damaged file must fail before that commit, not
-// after. Skipped cleanly when the file doesn't exist.
+// data/question-press.json is written by scripts/gdelt-intake.mjs in its own
+// workflow (question-press.yml), and nothing on the site reads it yet. It is
+// re-checked here because this is the whole-corpus check and the nightly's
+// commit stages all of data/. Only DAMAGE fails: every day in the file is
+// judged against the day the file was written, so a GDELT outage — which
+// leaves the file unwritten, never half-written — can only ever produce a
+// lateness warning here, never a failed nightly. Skipped cleanly when the
+// file doesn't exist.
 if (!existsSync(QUESTION_PRESS_PATH)) {
   console.log(`${QUESTION_PRESS_PATH} not present — skipping the question-press checks`);
 } else {

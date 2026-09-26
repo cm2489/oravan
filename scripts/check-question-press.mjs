@@ -6,9 +6,9 @@
  *   node scripts/check-question-press.mjs
  *   node scripts/check-question-press.mjs --self-test
  *
- * WHY HERE TOO: the file is written by the hourly newsdesk workflow, which
- * commits straight to main and dispatches ci.yml against the pushed data —
- * the same reasoning scripts/check-conversation.mjs gives for itself.
+ * WHY HERE TOO: the file is written by .github/workflows/question-press.yml,
+ * which commits straight to main and dispatches ci.yml against the pushed
+ * data — the same reasoning scripts/check-conversation.mjs gives for itself.
  *
  * WHAT IT PROTECTS: every count in the file is a number of links a reader can
  * open, from an outlet AllSides rates, inside the week it claims — and the
@@ -23,7 +23,8 @@
  * TIME: every day in the file is judged against the day it was written
  * (`_meta.as_of`), never against the clock this check runs at — so the file
  * the collector committed yesterday still passes at 00:30 UTC today, before
- * the first run of the day has rewritten it. Lateness (a file or a question
+ * the first run of the day has rewritten it, and a file GDELT's outage left
+ * unwritten for a week still passes. Lateness (a file or a question
  * not refreshed for days) is a ::warning::, never a failure: it says "we are
  * behind", not "the file is damaged" (the owner's N8-A2 ruling, CLAUDE.md).
  */
@@ -32,6 +33,7 @@ import {
   GDELT_ATTRIBUTION,
   MATCH_RULE,
   OUTLET_POLICY,
+  QUERY_SHAPE,
   QUESTION_PRESS_PATH,
   QUESTION_PRESS_SCHEMA,
   QUESTION_PRESS_WINDOW_DAYS,
@@ -54,6 +56,7 @@ if (process.argv.includes('--self-test')) {
     as_of: today,
     outlet_policy: OUTLET_POLICY,
     bias_table: 'data/media-bias.json',
+    query_shape: QUERY_SHAPE,
     matches: MATCH_RULE,
     stores: 'counts and links',
   };
@@ -92,6 +95,7 @@ if (process.argv.includes('--self-test')) {
     ['a link seen after the day the file was written', doc([outlet()], {}, { as_of: '2020-01-01' })],
     ['a last check outside the window (zero counts that would read as "no coverage")', doc([], { checkedOn: '2020-01-01' })],
     ['no statement of what a count means', doc([outlet()], {}, { matches: '' })],
+    ['no recorded query shape (the counts could not be re-run)', doc([outlet()], {}, { query_shape: undefined })],
   ];
   let ok = true;
   for (const [name, data] of cases) {

@@ -64,7 +64,7 @@ test.describe('appeared — did a new run actually show up', () => {
 test.describe('every data workflow dispatches CI through the script', () => {
   // moment-approve.yml is deliberately absent: it dispatches ci.yml against a
   // PR branch with its own flags, not main's post-commit suite.
-  for (const name of ['sync-bills.yml', 'hot-bills.yml', 'newsdesk.yml', 'refresh-legislators.yml']) {
+  for (const name of ['sync-bills.yml', 'hot-bills.yml', 'newsdesk.yml', 'refresh-legislators.yml', 'question-press.yml']) {
     test(`${name} uses scripts/dispatch-ci.mjs, not a bare gh workflow run`, () => {
       const step = dispatchStep(wf(name));
       expect(step).toContain('run: node scripts/dispatch-ci.mjs');

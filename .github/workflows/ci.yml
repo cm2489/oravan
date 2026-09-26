@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-  # Dispatched by the four data workflows after their bot pushes: a push made
+  # Dispatched by the five data workflows after their bot pushes: a push made
   # with GITHUB_TOKEN never fires `on: push`, so before this existed main's
   # own CI never tested a freshly-synced corpus. The drift then surfaced on
   # whatever innocent PR ran next (2026-07-25: call-action.spec vs the new
@@ -126,9 +126,9 @@ jobs:
           node scripts/check-conversation.mjs --self-test
           node scripts/check-conversation.mjs
       - name: Question-press gate (per-question GDELT evidence — rated outlets only, every count a stored link, never tone or text)
-        # data/question-press.json is written by scripts/gdelt-intake.mjs, a
-        # step of the same hourly newsdesk workflow that commits to main and
-        # dispatches this run. Nothing on the site reads it yet; the gate keeps
+        # data/question-press.json is written by scripts/gdelt-intake.mjs in
+        # its own twice-daily workflow (question-press.yml), which commits to
+        # main and dispatches this run. Nothing on the site reads it yet; the gate keeps
         # it honest before anything does: only AllSides-rated outlets, every
         # count derived from stored links on the outlet's own domain, inside
         # the 7-day window, no key the format does not define (no tone, no

@@ -205,52 +205,6 @@ jobs:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/moment-updates.mjs
-      - name: Collect Big Question press counts (GDELT, once per question per UTC day)
-        # Per-question intake (owner ruling relayed 2026-09-26: keep the ONE
-        # generic Google News search, add no more Google News queries, take
-        # per-question intake from GDELT — counts only). For each live Big
-        # Question: GDELT DOC 2.0 searches made separately per AllSides lean, each
-        # restricted to that lean's rated domains; stores the rated outlets
-        # found, their lean, the day GDELT saw each article and its link in
-        # data/question-press.json. Never tone or sentiment, never titles or
-        # text, no model call. NOT read by scripts/moment-candidates.mjs (a
-        # live question must not inflate its own ranking) and NOT read by any
-        # page — whether question cards may enter the news band is an open
-        # owner decision. Design + alias rules: lib/question-press.mjs.
-        #
-        # CADENCE: a question is searched only when its `checkedOn` is not
-        # today (UTC), so the first run after midnight does the day's work and
-        # later runs make no request unless a search failed. Runs AFTER the
-        # newsdesk so the run log's lean-parity comparison reads this hour's
-        # data/conversation.json; it writes only data/question-press.json, and
-        # only when the evidence or a check-day moved (at most ~1 commit a
-        # day), which the commit step below stages with the rest of data/.
-        #
-        # RATE LIMIT: GDELT asks for one request per 5 s per IP and answers
-        # 429 otherwise. The script spaces requests 6 s apart, backs off 30 s
-        # then 90 s on a 429, and after that opens a circuit and stops for the
-        # run (≤3 requests reach GDELT in a refused run); two requests in a row
-        # with no answer at all (network error, timeout) open the same circuit;
-        # 36 requests / 6 min per run caps everything, and a question the
-        # remaining cap cannot finish is not started. timeout-minutes is the
-        # outer bound on top.
-        #
-        # QUERY LENGTH: GDELT refuses a long query ("Your query was too short
-        # or too long", measured 2026-09-26 at 333-1,002 characters), so each
-        # lean's rated domains are split across as many searches as it takes
-        # to fit (GDELT_MAX_QUERY_CHARS in lib/question-press.mjs) — several
-        # searches per lean, all of which must answer before the question
-        # moves. The exact limit is unmeasured; a refusal halves the group and
-        # lowers the run's limit, and the run log prints the longest length
-        # GDELT answered. A day's searches spread over the first few hourly
-        # runs after midnight UTC rather than one.
-        #
-        # continue-on-error: this is additive evidence nothing renders yet; a
-        # GDELT outage must never cost the hour its bill refreshes or the
-        # Moment updates above. Cost: $0 — free API, no key, no model.
-        continue-on-error: true
-        timeout-minutes: 10
-        run: node scripts/gdelt-intake.mjs
       - name: Save seen-headlines cache
         # Always saves under this run's own unique key (see the restore
         # step's comment) - if: always() so a mid-run failure still persists
@@ -286,9 +240,7 @@ jobs:
           # scripts/newsdesk.mjs's Boundaries section) plus
           # data/moment-updates.json from the collector step above,
           # data/votes.json from the intraday vote sync (only when a new
-          # roll call was stored),
-          # data/question-press.json from the GDELT press-count step (at
-          # most once per question per UTC day) and
+          # roll call was stored) and
           # data/floor-signals.json from the announcement collector;
           # `git add data/` already stages all of them
           # - disjoint from refresh-legislators.yml's

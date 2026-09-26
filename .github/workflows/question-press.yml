@@ -1,0 +1,150 @@
+name: Big Question press counts
+
+# Per-question press counts from GDELT (owner ruling relayed 2026-09-26: keep
+# the ONE generic Google News search, add no more Google News queries, take
+# per-question intake from GDELT — counts only). For each live Big Question,
+# short GDELT DOC 2.0 searches (one quoted phrase AND a small congressional
+# word group, over the days since the last check); the AllSides-rated outlets
+# are picked out of what GDELT returns, and their domain, lean, the day GDELT
+# saw each article and its link go into data/question-press.json. Never tone
+# or sentiment, never titles or text, no model call. NOT read by
+# scripts/moment-candidates.mjs (a live question must not inflate its own
+# ranking) and NOT read by any page — whether question cards may enter the
+# news band is an open owner decision. Design, query shape and alias rules:
+# lib/question-press.mjs. Budgets and the circuit breaker:
+# scripts/gdelt-intake.mjs.
+#
+# WHY ITS OWN WORKFLOW (2026-09-26 review). The first build ran as a step of
+# newsdesk.yml, BEFORE the newsdesk's "Commit data" step, so a slow or
+# refusing GDELT held every hourly headline commit behind it. Here, a GDELT
+# outage can only make THIS workflow slow or quiet:
+#   - its own concurrency group, NOT `data-sync`. A shared group holds one
+#     running and one pending run, and a newly queued run evicts the pending
+#     one (refresh-legislators.yml's header has the 2026-08-08 incident), so a
+#     ten-minute GDELT run inside `data-sync` would delay — and could get
+#     cancelled — the newsdesk, hot-bills and nightly commits queued behind it.
+#   - it writes ONE file no other workflow writes (data/question-press.json),
+#     and its commit step stages that file and nothing else. A concurrent push
+#     from a data-sync member is therefore a fast-forward problem, never a
+#     content conflict: the rebase-retry loop below is what makes that safe,
+#     exactly as it does for refresh-legislators.yml. The other members' own
+#     loops absorb this workflow's push the same way (a rebase over a file
+#     they never touch cannot conflict).
+#
+# CADENCE: twice a day. A question is searched at most once per UTC day, over
+# the days since its last check, so the second slot is a retry for whatever
+# the first could not finish (a 429, a deadline) and a missed slot loses no
+# coverage. The file is written at most once a day unless a count changes
+# (lib/question-press.mjs shouldWrite). Neither slot is on the hour or half
+# hour, where GitHub's scheduler backlog is worst.
+#
+# COST: $0 — GDELT is free and keyless, no model call. Actions minutes: $0 on a
+# public repo; a run is capped at ~10 minutes by the collector's own deadline
+# (GDELT_RUN_DEADLINE_MS) and at 15 by the job.
+
+on:
+  schedule:
+    - cron: '43 2,14 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write  # lets the workflow dispatch ci.yml after its own push
+
+concurrency:
+  # ITS OWN GROUP, on refresh-legislators.yml's footing (disjoint files plus
+  # rebase-retry, not serialization) — see the header for why `data-sync` is
+  # the wrong home for a job whose duration is set by an outside API.
+  group: data-sync-question-press
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The branch tip, not the event SHA — newsdesk.yml's checkout step
+          # has the 2026-09-14/16 incidents this closes.
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v6
+        # The collector and its libraries are stdlib-only (node:https, no npm
+        # package), so no `npm ci`.
+        with:
+          node-version: 24
+      - name: Restore the GDELT circuit state
+        # The breaker's memory between runs (scripts/gdelt-intake.mjs, THE
+        # CIRCUIT IS PERSISTED): a GDELT that refused the last run is skipped,
+        # or given one half-open request, instead of being asked again from
+        # scratch. Same ever-growing-cache pattern as newsdesk.yml's
+        # seen-headlines cache (a cache entry cannot be overwritten under one
+        # key). A miss reads as a closed circuit — one ordinary run at worst.
+        uses: actions/cache/restore@v4
+        with:
+          path: .gdelt-state
+          key: gdelt-state-${{ github.run_id }}
+          restore-keys: |
+            gdelt-state-
+      - name: Collect Big Question press counts (GDELT)
+        # Exits 0 on every GDELT outcome — 429s, silence, refusals, an open
+        # circuit — and says so in ::warning:: lines. It exits 1 only when the
+        # document it built fails its own gate, and then it writes nothing.
+        # timeout-minutes sits above the collector's own 10-minute run deadline.
+        timeout-minutes: 12
+        env:
+          GDELT_STATE_PATH: .gdelt-state/state.json
+        run: node scripts/gdelt-intake.mjs
+      - name: Save the GDELT circuit state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .gdelt-state
+          key: gdelt-state-${{ github.run_id }}
+      - name: Commit data
+        id: commit
+        # Stages data/question-press.json and NOTHING else — the disjoint file
+        # set is what makes this workflow's push safe outside `data-sync`.
+        # The author email must map to the Vercel-linked GitHub account
+        # (docs/solutions/vercel-bot-push-blocked-deploys.md).
+        run: |
+          git config user.name "oravan-sync"
+          git config user.email "223600121+cm2489@users.noreply.github.com"
+          git add data/question-press.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git commit -m "chore(data): Big Question press counts $(date -u +%FT%HZ)"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "push rejected, rebasing onto latest main (attempt $i)"
+            if ! git fetch origin main; then
+              echo "fetch failed (attempt $i) - retrying"
+              continue
+            fi
+            if git rebase origin/main; then
+              continue
+            fi
+            # Only this workflow writes data/question-press.json, so a stopped
+            # rebase means something outside the design touched it (a PR
+            # merge). Not retryable; name the files and stop.
+            conflicted="$(git diff --name-only --diff-filter=U | sort | tr '\n' ' ' | sed 's/ $//')"
+            git rebase --abort || true
+            echo "::error::rebase conflict in: ${conflicted:-<unknown>} - a human must resolve it. The press counts this run collected are NOT committed."
+            exit 1
+          done
+          exit 1
+      - name: Dispatch CI against the pushed data
+        # Bot pushes (GITHUB_TOKEN) never trigger `on: push`; ci.yml's
+        # question-press gate should see the file main now carries. Same
+        # main-ref guard and script as every other data workflow.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/dispatch-ci.mjs
