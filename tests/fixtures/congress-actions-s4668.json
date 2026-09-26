@@ -1,0 +1,209 @@
+{
+  "actions": [
+    {
+      "actionDate": "2026-09-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "The committee substitute withdrawn by Voice Vote.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-24",
+      "recordedVotes": [
+        {
+          "chamber": "Senate",
+          "rollNumber": 243,
+          "date": "2026-09-24T16:42:08Z",
+          "sessionNumber": 2,
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00243.xml"
+        }
+      ],
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Considered by Senate. (consideration: CR S4959-4962)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-23",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Considered by Senate. (consideration: CR S4885)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-22",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Considered by Senate. (consideration: CR S4851)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-22",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture was invoked on amendment SA 6776 in Senate.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-17",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture motion on the measure presented in Senate. (CR S4789)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-17",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) made in Senate. (CR S4789)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-17",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Measure laid before Senate by motion. (consideration: CR S4777-4790)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-17",
+      "recordedVotes": [
+        {
+          "chamber": "Senate",
+          "rollNumber": 236,
+          "date": "2026-09-17T16:53:44Z",
+          "sessionNumber": 2,
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00236.xml"
+        }
+      ],
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 77 - 22. Record Vote Number: 236. (CR S4773-4774)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-17",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to measure considered in Senate. (CR S4773-4774)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-16",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to measure considered in Senate. (CR S4743)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-15",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to measure considered in Senate.",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-09-15",
+      "recordedVotes": [
+        {
+          "chamber": "Senate",
+          "rollNumber": 235,
+          "date": "2026-09-15T22:25:00Z",
+          "sessionNumber": 2,
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00235.xml"
+        }
+      ],
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 235. (CR S4715-4716)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-08-05",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-08-05",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Motion to proceed to consideration of measure made in Senate. (CR S4449)",
+      "type": "Floor"
+    },
+    {
+      "actionDate": "2026-06-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Placed on Senate Legislative Calendar under General Orders. Calendar No. 449.",
+      "type": "Calendars"
+    },
+    {
+      "actionDate": "2026-06-24",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Committee on Commerce, Science, and Transportation. Reported by Senator Cruz with an amendment in the nature of a substitute. Without written report.",
+      "type": "Committee"
+    },
+    {
+      "actionDate": "2026-06-24",
+      "actionCode": "14000",
+      "sourceSystem": {
+        "name": "Library of Congress"
+      },
+      "text": "Committee on Commerce, Science, and Transportation. Reported by Senator Cruz with an amendment in the nature of a substitute. Without written report.",
+      "type": "Committee"
+    },
+    {
+      "actionDate": "2026-06-18",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Committee on Commerce, Science, and Transportation. Ordered to be reported with an amendment in the nature of a substitute favorably.",
+      "type": "Committee"
+    },
+    {
+      "actionDate": "2026-06-02",
+      "sourceSystem": {
+        "name": "Senate"
+      },
+      "text": "Read twice and referred to the Committee on Commerce, Science, and Transportation.",
+      "type": "IntroReferral"
+    },
+    {
+      "actionDate": "2026-06-02",
+      "actionCode": "10000",
+      "sourceSystem": {
+        "name": "Library of Congress"
+      },
+      "text": "Introduced in Senate",
+      "type": "IntroReferral"
+    }
+  ]
+}

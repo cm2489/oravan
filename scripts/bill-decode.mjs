@@ -27,6 +27,7 @@ import {
   refreshBillFields,
   resolveAmbiguousStatus,
   tagBill,
+  unresolvedAmbiguousStatus,
   writeStatusBasis,
   updateSlug,
   urgencyScore,
@@ -601,8 +602,11 @@ export async function syncOneBill(u, ctx) {
     // An ambiguous last action (congress-fetch.mjs's AMBIGUOUS_WITHOUT_CONTEXT)
     // is resolved from the action before it, through the same helper the
     // refresh path uses. A new bill has no stored status to keep, so when the
-    // lookup fails it enters at `committee`: a missed passage, never a wrong
-    // one, and the nightly re-derivation pass retries it.
+    // lookup fails it enters at `committee` if the sentence's default reading
+    // would claim a passage — a missed passage, never a wrong one — and at
+    // that default otherwise (a committee-text disposition is only written on
+    // the floor, so it enters at `floor_vote`, never `committee`; see
+    // unresolvedAmbiguousStatus). The nightly re-derivation pass retries it.
     let status = mapStatus(action.text);
     let basis = null;
     if (isAmbiguousAction(action.text)) {
@@ -613,8 +617,8 @@ export async function syncOneBill(u, ctx) {
         // the page reasons from the vote the status was read from.
         basis = { text: resolved.basis, date: resolved.basisDate ?? null };
       } else {
-        console.warn(`WARN ${slug}: ambiguous last action ("${action.text}") and the action before it could not be read; entering at committee`);
-        status = 'committee';
+        status = unresolvedAmbiguousStatus(action.text);
+        console.warn(`WARN ${slug}: ambiguous last action ("${action.text}") and the action before it could not be read; entering at ${status}`);
       }
     }
     const forced = forceSlugs.has(slug);
