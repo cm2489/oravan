@@ -10,10 +10,11 @@
  * the same way twice: scripts/newsdesk.mjs / scripts/newsdesk-match.mjs, and
  * scripts/check-moments.mjs / lib/moments-gate.mjs. So the runner keeps the
  * spec's filename and this module holds every pure transform the suite
- * exercises. Its imports are limited to three modules that are themselves
+ * exercises. Its imports are limited to four modules that are themselves
  * import-clean (newsdesk-match.mjs — node:crypto only; moment-updates-gate.mjs
- * — the v1 vocabulary table only; moments-gate.mjs — zero imports by design),
- * so the whole chain loads under Playwright's transform.
+ * — the v1 vocabulary table only; moments-gate.mjs and press-outlets.mjs —
+ * zero imports by design), so the whole chain loads under Playwright's
+ * transform.
  *
  * ---------------------------------------------------------------------------
  * THE EDITORIAL LAW (owner-settled 2026-07-25, v2 spec §2) — this module is
@@ -36,6 +37,7 @@
  */
 import { findCitations, parseFeed } from './newsdesk-match.mjs';
 import { vehicleKind } from '../lib/moments-gate.mjs';
+import { normalizeSource, pressOutletPolicy } from '../lib/press-outlets.mjs';
 import {
   RECORD_EVENT_CLASSES,
   TEXT_MAX_CHARS,
@@ -750,22 +752,15 @@ export function scheduledToCandidate({
  * Reduce an API source to a bare lowercase domain.
  *
  * DRIFT PIN: this is character-for-character the behaviour of
- * lib/coverage.ts's `normalizeSource`. It is duplicated rather than imported
- * because an .mjs script cannot import TypeScript, and the two are asserted
- * equal over a shared input table in tests/moment-updates-collect.unit.spec.ts
- * — the same "one copy, or a test that proves the copies agree" discipline
- * check-moments.mjs applies to TERMINAL_VEHICLE_STATUSES. If the coverage
- * matcher ever changes, that test goes red before a cluster can be attributed
- * to the wrong outlet.
+ * lib/coverage.ts's `normalizeSource`. It lives in lib/press-outlets.mjs (the
+ * outlet floor needs the same normalizer, and one copy beats two) and is
+ * re-exported here so every existing import keeps working; the two are
+ * asserted equal over a shared input table AND the whole real corpus in
+ * tests/moment-updates-collect.unit.spec.ts. If the coverage matcher ever
+ * changes, that test goes red before a cluster can be attributed to the wrong
+ * outlet.
  */
-export function normalizeSource(source) {
-  return (source ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, '')
-    .replace(/\/.*$/, '')
-    .replace(/^www\./, '');
-}
+export { normalizeSource };
 
 /** AllSides lean for a source, or null when the outlet is unrated. */
 export function leanOf(source, leanByDomain) {
@@ -778,8 +773,17 @@ export function leanOf(source, leanByDomain) {
  * The rule is lib/coverage.ts's `coverageTier` verbatim in effect: a cluster
  * whose partisan leans are all on ONE side is 'one_sided' and is dropped, the
  * same way rankNews drops one-sided coverage from discovery. Cross-spectrum
- * and lean-free clusters publish. Never a single-lean channel (v2 spec §5) —
+ * and center-only clusters publish. Never a single-lean channel (v2 spec §5) —
  * which is the whole reason press is allowed on the timeline at all.
+ *
+ * THIS IS ONLY THE SECOND HALF OF THE RULE (2026-09-26). A null lean passes
+ * this function, and before the outlet floor that let a set made ENTIRELY of
+ * unrated outlets publish as if it were the balanced case. The first half now
+ * runs before this one, in pressClusterToCandidate: only outlets the floor
+ * admits (lib/press-outlets.mjs — AllSides-rated, or on the owner's allowlist)
+ * are counted or named at all, so the only null lean that can still reach
+ * this function is an allowlisted outlet's, which counts as an outlet and can
+ * never make a one-sided set look balanced.
  *
  * @param {(string|null)[]} leans
  */
@@ -789,13 +793,23 @@ export function clusterIsPublishable(leans) {
 }
 
 /**
- * Display names for the outlets the pipeline actually sees. Domains not
- * listed fall back to the domain with its TLD dropped and its first letter
+ * Display names for the outlets a press update may name. Domains not listed
+ * fall back to the domain with its TLD dropped and its first letter
  * capitalized — deterministic, never invented, and the attribution lint
  * checks the update text against whatever this returns, so a fallback name
  * simply means the one-liner must use the fallback spelling.
+ *
+ * Since the outlet floor (2026-09-26) only AllSides-rated outlets (and, one
+ * day, allowlisted ones) can be named on a timeline at all, so this table now
+ * covers the rated set — the fallback would otherwise have put "Cnbc" and
+ * "Nypost" into published text. Three rated domains are left on the fallback
+ * on purpose, because their exact current mastheads could not be confirmed
+ * when this was written: spectator.us, theblaze.com and oann.com (they render
+ * as "Spectator", "Theblaze" and "Oann"). A later edit can name them once
+ * someone has checked. Pinned by tests/moment-updates-collect.unit.spec.ts,
+ * which fails when a newly rated outlet arrives with no entry here.
  */
-const OUTLET_DISPLAY_NAMES = {
+export const OUTLET_DISPLAY_NAMES = {
   'thehill.com': 'The Hill',
   'rollcall.com': 'Roll Call',
   'npr.org': 'NPR',
@@ -815,7 +829,68 @@ const OUTLET_DISPLAY_NAMES = {
   'bloomberg.com': 'Bloomberg',
   'pbs.org': 'PBS',
   'propublica.org': 'ProPublica',
+  // The rest of the AllSides-rated set (data/media-bias.json), alphabetical.
+  'alternet.org': 'AlterNet',
+  'americanthinker.com': 'American Thinker',
+  'bbc.co.uk': 'BBC News',
+  'bbc.com': 'BBC News',
+  'breitbart.com': 'Breitbart',
+  'businessinsider.com': 'Business Insider',
+  'buzzfeednews.com': 'BuzzFeed News',
+  'cnbc.com': 'CNBC',
+  'csmonitor.com': 'The Christian Science Monitor',
+  'dailycaller.com': 'The Daily Caller',
+  'dailykos.com': 'Daily Kos',
+  'dailysignal.com': 'The Daily Signal',
+  'dailywire.com': 'The Daily Wire',
+  'forbes.com': 'Forbes',
+  'freebeacon.com': 'The Washington Free Beacon',
+  'huffpost.com': 'HuffPost',
+  'insider.com': 'Business Insider',
+  'jacobin.com': 'Jacobin',
+  'latimes.com': 'Los Angeles Times',
+  'marketwatch.com': 'MarketWatch',
+  'mediaite.com': 'Mediaite',
+  'motherjones.com': 'Mother Jones',
+  'msnbc.com': 'MSNBC',
+  'nationalinterest.org': 'The National Interest',
+  'nationalreview.com': 'National Review',
+  'newrepublic.com': 'The New Republic',
+  'newsmax.com': 'Newsmax',
+  'newsweek.com': 'Newsweek',
+  'newyorker.com': 'The New Yorker',
+  'nypost.com': 'New York Post',
+  'people.com': 'People',
+  'pjmedia.com': 'PJ Media',
+  'rawstory.com': 'Raw Story',
+  'realclearpolitics.com': 'RealClearPolitics',
+  'reason.com': 'Reason',
+  'salon.com': 'Salon',
+  'slate.com': 'Slate',
+  'spectator.org': 'The American Spectator',
+  'theamericanconservative.com': 'The American Conservative',
+  'theatlantic.com': 'The Atlantic',
+  'thedailybeast.com': 'The Daily Beast',
+  'thedispatch.com': 'The Dispatch',
+  'thefederalist.com': 'The Federalist',
+  'theguardian.com': 'The Guardian',
+  'theintercept.com': 'The Intercept',
+  'thenation.com': 'The Nation',
+  'thepostmillennial.com': 'The Post Millennial',
+  'theweek.com': 'The Week',
+  'time.com': 'Time',
+  'townhall.com': 'Townhall',
+  'truthout.org': 'Truthout',
+  'usnews.com': 'U.S. News & World Report',
+  'vox.com': 'Vox',
+  'washingtonexaminer.com': 'Washington Examiner',
+  'washingtontimes.com': 'The Washington Times',
+  'wnd.com': 'WND',
 };
+
+/** Rated domains deliberately left on the fallback name — see the table's
+ *  comment. Exported so the pin can tell "not yet named" from "forgotten". */
+export const OUTLET_NAMES_UNCONFIRMED = Object.freeze(['oann.com', 'spectator.us', 'theblaze.com']);
 
 export function outletDisplayName(domain) {
   const d = normalizeSource(domain);
@@ -826,18 +901,33 @@ export function outletDisplayName(domain) {
 
 /**
  * One (vehicle, day) group of coverage.json articles -> one press_cluster, or
- * null when it fails the inherited guardrail.
+ * null when it fails the guardrail.
  *
- * Requirements, all inherited rather than invented: ≥2 DISTINCT normalized
- * outlet domains, never a single-lean set, ≥2 https refs, `record: null`, and
- * `outlet_names` populated so the attribution lint has something to check the
- * text against. "When the record is silent … named sources speak or nobody
- * does."
+ * Requirements, in order:
+ *   1. THE OUTLET FLOOR (owner ruling 2026-09-26): an article counts only when
+ *      its outlet is admitted by lib/press-outlets.mjs — AllSides-rated, or on
+ *      the owner's allowlist (none today). Every other article is dropped
+ *      BEFORE counting, so an unrated outlet is never counted toward the two,
+ *      never named in `outlet_names`, and never linked in `refs`. A day whose
+ *      coverage came from thegatewaypundit.com and naturalnews.com is not a
+ *      balanced day; it is a day with no admissible press at all.
+ *   2. ≥2 DISTINCT admitted outlet domains, never a single-lean set (the
+ *      one-sided rule, asked of the admitted outlets — see
+ *      clusterIsPublishable), ≥2 https refs, `record: null`, and
+ *      `outlet_names` populated so the attribution lint has something to check
+ *      the text against. "When the record is silent … named sources speak or
+ *      nobody does."
  *
- * @param {{momentId: string, vehicle: string, day: string, articles: {url?: string, source?: string}[], leanByDomain?: Record<string,string>, recordedAt?: string}} args
+ * `policy` is the outlet floor (lib/press-outlets.mjs's pressOutletPolicy /
+ * loadPressOutletPolicy). A caller that passes only `leanByDomain` gets the
+ * floor built from that table with no allowlist — i.e. rated-only — so there
+ * is no call shape that skips it.
+ *
+ * @param {{momentId: string, vehicle: string, day: string, articles: {url?: string, source?: string}[], leanByDomain?: Record<string,string>, policy?: {admits: (s: string) => boolean, leanOf: (s: string) => string|null}, recordedAt?: string}} args
  */
-export function pressClusterToCandidate({ momentId, vehicle, day, articles, leanByDomain, recordedAt }) {
+export function pressClusterToCandidate({ momentId, vehicle, day, articles, leanByDomain, policy, recordedAt }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day ?? ''))) return null;
+  const floor = policy ?? pressOutletPolicy({ ratings: leanByDomain });
 
   /** @type {Map<string, string>} domain -> first https url */
   const byDomain = new Map();
@@ -845,12 +935,13 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
     const domain = normalizeSource(a?.source);
     const url = typeof a?.url === 'string' && /^https:\/\//.test(a.url) ? a.url : null;
     if (!domain || !url) continue;
+    if (!floor.admits(domain)) continue;
     if (!byDomain.has(domain)) byDomain.set(domain, url);
   }
   if (byDomain.size < 2) return null;
 
   const outlets = [...byDomain.keys()].sort();
-  const leans = outlets.map((d) => leanOf(d, leanByDomain));
+  const leans = outlets.map((d) => floor.leanOf(d));
   if (!clusterIsPublishable(leans)) return null;
 
   return withId(momentId, {
@@ -869,8 +960,9 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
       // Deliberately a SET, not a fourth column. `refs`, `outlets` and
       // `outlet_names` above are all positional and same-length by
       // construction; this one is deduped and sorted, so it is shorter
-      // whenever two outlets share a lean and shorter still when an outlet is
-      // unrated (leanOf returns null and it drops out entirely). The only
+      // whenever two outlets share a lean and shorter still when an admitted
+      // outlet carries no rating (an allowlisted one: leanOf returns null and
+      // it drops out entirely). The only
       // consumer is clusterIsPublishable, three lines up, which asks a set
       // question. Named `lean_set` so nobody writes
       // `outlets.map((o, i) => ({ o, lean: lean_set[i] }))` and silently
@@ -915,6 +1007,31 @@ export function suppressRedundantStatusChanges(candidates) {
     const key = `${c.vehicle}|${c.day}`;
     return !richTextByBucket.get(key)?.has(normalizeText(c.record?.action_text));
   });
+}
+
+/**
+ * The (vehicle, day) pairs a moment's stored timeline already carries a press
+ * cluster for — ONE cluster per vehicle per day, and the first one stands.
+ *
+ * A press cluster's identity is its outlet set (lib/moment-updates-gate.mjs's
+ * identityKey), so the same vehicle-day re-evaluated on a later night with one
+ * more outlet in it hashes to a DIFFERENT id and would store a second cluster
+ * beside the first: "Fox News and CNN published coverage", then "Fox News, CNN
+ * and NPR published coverage", on one day. That is padding. It could not
+ * happen in practice while press clusters never fired (0 of 10 nightly runs
+ * before 2026-09-26) — the coverage recency pass is what makes a vehicle-day
+ * visible on more than one night, so the guard lands with it. The published
+ * line is never rewritten to widen it; the day already said what it said.
+ *
+ * @param {{ updates?: Record<string, any>[] }|null|undefined} entry one moment's stored entry
+ * @returns {Set<string>} `${vehicle}|${day}` keys
+ */
+export function pressClusterDaysHeld(entry) {
+  const held = new Set();
+  for (const u of entry?.updates ?? []) {
+    if (u?.class === 'press_cluster' && u.vehicle && u.day) held.add(`${u.vehicle}|${u.day}`);
+  }
+  return held;
 }
 
 /* ------------------------------------------------------------------ *

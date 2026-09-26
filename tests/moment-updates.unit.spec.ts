@@ -37,6 +37,7 @@ import {
 // The nightly dead-man's-switch's moment-updates block, extracted so it can be
 // driven here — scripts/verify-sync.mjs now only supplies the bytes.
 import { verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+import { pressOutletPolicy } from '../lib/press-outlets.mjs';
 import {
   RENDER_DAY_CAP as READER_RENDER_DAY_CAP,
   RETENTION_DAYS as READER_RETENTION_DAYS,
@@ -1310,6 +1311,46 @@ test.describe('checkMomentUpdates (fixtures)', () => {
 
     const withRecord = cluster({ record: { action_text: 'x', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
     expect(runGate(wrap([withRecord])).violations.some((v) => v.includes('must be null on a press_cluster'))).toBe(true);
+  });
+
+  test('THE OUTLET FLOOR: with the floor supplied, a stored cluster naming an unrated outlet fails', () => {
+    // scripts/check-moment-updates.mjs always passes the floor's `admits`
+    // (lib/press-outlets.mjs); the collector already refuses these at write
+    // time, so this is the second lock on the same door.
+    const policy = pressOutletPolicy({ ratings: read('data/media-bias.json').outlets });
+    const cluster = (outlets: string[], names: string[]) =>
+      makeUpdate({
+        class: 'press_cluster',
+        record: null,
+        text: {
+          en: `${names[0]} and ${names[1]} published coverage of the bill.`,
+          es: `${names[0]} y ${names[1]} publicaron cobertura del proyecto.`,
+        },
+        source: {
+          kind: 'press',
+          refs: outlets.map((o) => `https://${o}/story`),
+          outlets,
+          outlet_names: names,
+          lean_set: [],
+        },
+      });
+    const unrated = cluster(['thegatewaypundit.com', 'naturalnews.com'], ['Thegatewaypundit', 'Naturalnews']);
+    const refused = runGate(wrap([unrated]), { pressOutletAdmits: policy.admits }).violations;
+    expect(refused.some((v) => v.includes('names thegatewaypundit.com, naturalnews.com'))).toBe(true);
+
+    const rated = cluster(['reuters.com', 'apnews.com'], ['Reuters', 'The Associated Press']);
+    expect(runGate(wrap([rated]), { pressOutletAdmits: policy.admits }).violations).toEqual([]);
+
+    // Without the option the gate keeps its pre-floor call shape (fixture
+    // suites); the CLI never runs it that way — pinned below.
+    expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names thegatewaypundit.com'))).toBe(false);
+  });
+
+  test('check-moment-updates.mjs always hands the gate the outlet floor, and reddens on a bad allowlist', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/check-moment-updates.mjs'), 'utf8');
+    expect(src).toMatch(/loadPressOutletPolicy\(/);
+    expect(src).toMatch(/pressOutletAdmits: pressPolicy\.admits/);
+    expect(src).toMatch(/for \(const p of pressPolicy\.problems\) violations\.push/);
   });
 
   test('revisions: chronological order, resolving update_ids, https refs, vehicles that exist', () => {
