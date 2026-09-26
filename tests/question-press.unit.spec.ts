@@ -24,7 +24,6 @@ import {
   gdeltUrl,
   lampLeanCounts,
   leanParity,
-  normalizeArticleUrl,
   parseArtList,
   questionTerms,
   seenDay,
@@ -34,6 +33,8 @@ import {
   verifyQuestionPress,
 } from '../lib/question-press.mjs';
 import { USER_AGENT, collect, limitsFrom } from '../scripts/gdelt-intake.mjs';
+// The one definition of a checkable article link (B-5), shared with the lamp.
+import { normalizeArticleUrl } from '../lib/conversation.mjs';
 
 const ROOT = process.cwd();
 const NOW = Date.parse('2026-09-25T00:30:00Z');
@@ -254,7 +255,8 @@ test.describe('the response', () => {
       ],
       { lean: 'right', bias: BIAS, today: TODAY }
     );
-    expect(admitted.map((a) => a.url)).toEqual(['https://www.foxnews.com/politics/ok']);
+    // the lamp's B-5 link gate: query and fragment are quoted evidence, kept as-is
+    expect(admitted.map((a) => a.url)).toEqual(['https://www.foxnews.com/politics/ok?utm_source=x#frag']);
     expect(admitted[0]).toMatchObject({ domain: 'foxnews.com', lean: 'right', seen: '2026-09-24' });
     expect(rejected).toBe(6);
     expect(seenDay('20260924T211500Z')).toBe('2026-09-24');

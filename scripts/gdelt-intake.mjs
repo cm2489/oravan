@@ -66,6 +66,7 @@ import {
   verifyQuestionPress,
 } from '../lib/question-press.mjs';
 import { RATED_LEANS, dayKey } from '../lib/conversation.mjs';
+import { PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 
 export const USER_AGENT = 'oravan-gdelt-intake/1.0 (+https://github.com/cm2489/oravan)';
 
@@ -290,6 +291,17 @@ async function main() {
   const bias = read('data/media-bias.json').outlets ?? {};
   const previous = existsSync(QUESTION_PRESS_PATH) ? read(QUESTION_PRESS_PATH) : null;
   const conversation = existsSync('data/conversation.json') ? read('data/conversation.json') : null;
+  // The owner's outlet floor is "rated, plus an optional approved allowlist"
+  // (lib/press-outlets.mjs). This intake takes the rated half only, because
+  // every search and count here is per lean and an allowlisted outlet has
+  // none. Say so out loud the day an allowlist exists, rather than let an
+  // approved outlet go silently unsearched.
+  const policy = loadPressOutletPolicy({ readJSON: read, exists: existsSync });
+  if (policy.allowlistSize > 0) {
+    console.log(
+      `::warning::gdelt-intake: ${PRESS_ALLOWLIST_PATH} approves ${policy.allowlistSize} outlet(s) beyond the AllSides-rated set; this intake searches rated outlets only (its counts are per lean) — allowlisted outlets are not searched until a lean-less group is added to lib/question-press.mjs.`
+    );
+  }
   const now = Date.now();
   const { doc, write } = await collect({
     moments,
