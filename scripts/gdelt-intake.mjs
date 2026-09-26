@@ -225,7 +225,12 @@ export async function collect({ moments, bills, bias, previous = null, conversat
   }
   for (const q of due) if (!stats.done.includes(q.id) && !stats.failed.includes(q.id)) stats.failed.push(q.id);
 
-  const doc = buildQuestionPress({ previous, liveIds, results, bias, today });
+  // A question with no usable search terms has no entry at all — not a carried
+  // one with yesterday's terms. Absence means "not searched", never "no
+  // coverage", and an entry whose terms the question no longer has would be a
+  // record of a search nobody can re-run.
+  const searchableIds = liveIds.filter((id) => !stats.skipped.includes(id));
+  const doc = buildQuestionPress({ previous, liveIds: searchableIds, results, bias, today });
 
   // ---- the lean-parity log (plan §4: measured, not assumed) ------------------
   const total = { left: new Set(), center: new Set(), right: new Set() };

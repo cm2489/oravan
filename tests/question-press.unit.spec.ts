@@ -494,6 +494,19 @@ test.describe('the collector (mocked GDELT)', () => {
     expect(third.calls.every((c) => new URL(c.url).searchParams.get('timespan') === '2d')).toBe(true);
   });
 
+  test('a question that lost its search terms loses its entry — no record of a search nobody can re-run', async () => {
+    const prev = buildQuestionPress({
+      previous: null,
+      liveIds: ['syria-sanctions-repeal'],
+      results: new Map([['syria-sanctions-repeal', { terms: ['syria sanctions'], admitted: [{ url: 'https://www.npr.org/s', domain: 'npr.org', lean: 'center', seen: TODAY }] }]]),
+      bias: BIAS,
+      today: TODAY,
+    });
+    const net = fakeNet((url) => byLeanReply(url));
+    const { doc } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, previous: prev, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    expect(doc.questions['syria-sanctions-repeal']).toBeUndefined();
+  });
+
   test('network errors are a failed question, never a crash', async () => {
     const net = fakeNet(() => new Error('ECONNRESET'));
     const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
