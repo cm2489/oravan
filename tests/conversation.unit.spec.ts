@@ -4,7 +4,10 @@ import { join } from 'node:path';
 // Pure, I/O-free module (no keys, no network, no fs) — see lib/conversation.mjs's
 // header for the whole design these pin, and which critic patch each rule is.
 import {
+  ARTICLE_URL_MAX_LENGTH,
   buildConversation,
+  CONVERSATION_MAX_BYTES,
+  CONVERSATION_READABLE_SCHEMAS,
   CONVERSATION_SCHEMA,
   conversationEvidence,
   conversationPool,
@@ -20,6 +23,7 @@ import {
   materialFingerprint,
   MOST_VIEWED_MIN_WEEKS,
   MOST_VIEWED_CARD_CAP,
+  normalizeArticleUrl,
   normalizeDomain,
   observeMostViewed,
   observeOutlets,
@@ -49,7 +53,19 @@ const T = '2026-08-12';
 const NOW = Date.parse(`${T}T18:00:00Z`);
 const minus = (days: number) => new Date(Date.parse(`${T}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
 
-const outlet = (domain: string, lean: string, lastSeen = T, firstSeen = lastSeen) => ({ domain, lean, firstSeen, lastSeen });
+/** The article link a fixture observation carries (B-5): canonical, so what
+ *  the writer stores is byte-identical to what the fixture expects. */
+const link = (domain: string, story = 'story') => `https://www.${domain}/politics/${story}`;
+/** One observation as scripts/newsdesk.mjs hands it over. */
+const seen = (outlet: string, story = 'story') => ({ outlet, url: link(outlet, story) });
+const outlet = (domain: string, lean: string, lastSeen = T, firstSeen = lastSeen) => ({
+  domain,
+  lean,
+  firstSeen,
+  lastSeen,
+  url: link(domain),
+});
+const unratedEntry = (domain: string, lastSeen = T, firstSeen = lastSeen) => ({ domain, firstSeen, lastSeen, url: link(domain) });
 
 /* ------------------------------------------------------------------ *
  * 1 · The rated-outlet rule (critic B-3) — who may corroborate at all
@@ -86,26 +102,26 @@ test.describe('leanOf — the B-3 gate', () => {
 test.describe('observeOutlets — rated and unrated are split at WRITE time', () => {
   test('a rated outlet lands in outlets7d with its lean; an unrated one lands beside it, counted by nothing', () => {
     const folded = observeOutlets(undefined, {
-      observed: ['foxnews.com', 'rollcall.com', 'unknown'],
+      observed: [seen('foxnews.com'), seen('rollcall.com'), { outlet: 'unknown', url: 'https://news.google.com/x' }],
       bias: BIAS,
       today: T,
     });
     expect(folded.outlets7d).toEqual([outlet('foxnews.com', 'right')]);
-    expect(folded.unratedOutlets7d).toEqual([{ domain: 'rollcall.com', firstSeen: T, lastSeen: T }]);
+    expect(folded.unratedOutlets7d).toEqual([unratedEntry('rollcall.com')]);
     // the sentinel never becomes an outlet on either side
     expect(JSON.stringify(folded)).not.toContain('unknown');
   });
 
   test('re-seeing an outlet moves lastSeen and keeps firstSeen', () => {
     const prev = { outlets7d: [outlet('npr.org', 'center', minus(2))], unratedOutlets7d: [] };
-    const folded = observeOutlets(prev, { observed: ['npr.org'], bias: BIAS, today: T });
+    const folded = observeOutlets(prev, { observed: [seen('npr.org')], bias: BIAS, today: T });
     expect(folded.outlets7d).toEqual([outlet('npr.org', 'center', T, minus(2))]);
   });
 
   test('an observation that falls out of the 7-day window is dropped, not carried', () => {
     const prev = {
       outlets7d: [outlet('npr.org', 'center', minus(OUTLET_WINDOW_DAYS + 1)), outlet('cbsnews.com', 'left', minus(OUTLET_WINDOW_DAYS))],
-      unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: minus(20), lastSeen: minus(20) }],
+      unratedOutlets7d: [unratedEntry('rollcall.com', minus(20))],
     };
     const folded = observeOutlets(prev, { observed: [], bias: BIAS, today: T });
     expect(folded.outlets7d.map((o) => o.domain)).toEqual(['cbsnews.com']);
@@ -113,10 +129,123 @@ test.describe('observeOutlets — rated and unrated are split at WRITE time', ()
   });
 
   test('a domain that gains a rating stops being an unrated observation', () => {
-    const prev = { outlets7d: [], unratedOutlets7d: [{ domain: 'foxnews.com', firstSeen: minus(1), lastSeen: minus(1) }] };
-    const folded = observeOutlets(prev, { observed: ['foxnews.com'], bias: BIAS, today: T });
+    const prev = { outlets7d: [], unratedOutlets7d: [unratedEntry('foxnews.com', minus(1))] };
+    const folded = observeOutlets(prev, { observed: [seen('foxnews.com')], bias: BIAS, today: T });
     expect(folded.outlets7d).toEqual([outlet('foxnews.com', 'right', T, minus(1))]);
     expect(folded.unratedOutlets7d).toEqual([]);
+  });
+
+  test('a domain the table has JUST rated moves across without waiting to be seen again', () => {
+    // The regression: only carried RATED entries were re-judged, so a bias-
+    // table edit left the new domain's carried entries in the unrated list —
+    // exactly what the gate's "rates it — it belongs in outlets7d" check
+    // fails on — until the outlet happened to publish again. abcnews.com sat
+    // in two unrated lists on 2026-09-25 with an alias rating proposed.
+    const bias = { ...BIAS, 'example-wire.test': 'center' };
+    const prev = { outlets7d: [], unratedOutlets7d: [unratedEntry('example-wire.test', minus(3), minus(4))] };
+    const folded = observeOutlets(prev, { observed: [], bias, today: T });
+    expect(folded.outlets7d.map((o) => [o.domain, o.lean, o.firstSeen, o.lastSeen])).toEqual([['example-wire.test', 'center', minus(4), minus(3)]]);
+    expect(folded.unratedOutlets7d).toEqual([]);
+    // ...and a whole document built after the edit passes the gate that edit
+    // would otherwise have failed.
+    const doc = buildConversation({ previous: { slugs: { 'hr-1-119': prev } }, bias, now: NOW, today: T });
+    expect(verifyConversation({ data: doc, fileBytes: 1000, now: NOW, bias }).failures).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 1b · B-5 — every observation carries the link to its story
+ *      (conversation/v2, owner ruling 2026-09-26: the band's "every count
+ *      comes from stored evidence you can check" is made true by storing it)
+ * ------------------------------------------------------------------ */
+test.describe('B-5: the article link', () => {
+  test('normalizeArticleUrl accepts http(s) article links and returns the canonical form', () => {
+    expect(normalizeArticleUrl('https://www.foxnews.com/politics/story?utm_source=rss')).toBe(
+      'https://www.foxnews.com/politics/story?utm_source=rss'
+    );
+    // Google News redirect links are what the aggregator feed serves; stored as given.
+    expect(normalizeArticleUrl('https://news.google.com/rss/articles/CBMiabc?oc=5')).toBe('https://news.google.com/rss/articles/CBMiabc?oc=5');
+    // surrounding whitespace from a feed body is trimmed; the host is lower-cased by the URL standard
+    expect(normalizeArticleUrl('  https://WWW.NPR.org/x  ')).toBe('https://www.npr.org/x');
+  });
+
+  test('normalizeArticleUrl refuses anything a reader could not safely follow', () => {
+    for (const bad of [
+      'javascript:alert(1)',
+      'data:text/html,hi',
+      'ftp://example.com/x',
+      '/relative/path',
+      'https://localhost/x', // no dotted host
+      'https://user:pass@example.com/x', // embedded credentials
+      'https://example.com/a b', // whitespace inside
+      `https://example.com/${'a'.repeat(ARTICLE_URL_MAX_LENGTH)}`,
+      '',
+      null,
+      undefined,
+      42,
+    ]) {
+      expect(normalizeArticleUrl(bad as unknown as string), String(bad).slice(0, 40)).toBeNull();
+    }
+  });
+
+  test('an observation with no checkable link records NOTHING — a count must trace to a story', () => {
+    const folded = observeOutlets(undefined, {
+      observed: [
+        'foxnews.com', // bare outlet, no link
+        { outlet: 'npr.org', url: 'javascript:alert(1)' },
+        { outlet: 'cbsnews.com', url: null },
+      ],
+      bias: BIAS,
+      today: T,
+    });
+    expect(folded).toEqual({ outlets7d: [], unratedOutlets7d: [] });
+  });
+
+  test('a Map<outlet, url> — the newsdesk accumulator — folds in directly', () => {
+    const folded = observeOutlets(undefined, {
+      observed: new Map([['foxnews.com', link('foxnews.com')], ['rollcall.com', link('rollcall.com')]]),
+      bias: BIAS,
+      today: T,
+    });
+    expect(folded.outlets7d).toEqual([outlet('foxnews.com', 'right')]);
+    expect(folded.unratedOutlets7d).toEqual([unratedEntry('rollcall.com')]);
+  });
+
+  test('a second story from the same outlet on the same day keeps the first link — no byte moves', () => {
+    const first = observeOutlets(undefined, { observed: [seen('foxnews.com', 'morning')], bias: BIAS, today: T });
+    const again = observeOutlets(first, { observed: [seen('foxnews.com', 'evening')], bias: BIAS, today: T });
+    expect(again).toEqual(first);
+    expect(again.outlets7d[0].url).toBe(link('foxnews.com', 'morning'));
+  });
+
+  test('the first story on a NEW day replaces the link along with the date', () => {
+    const before = { outlets7d: [{ ...outlet('foxnews.com', 'right', minus(1)), url: link('foxnews.com', 'yesterday') }] };
+    const folded = observeOutlets(before, { observed: [seen('foxnews.com', 'today')], bias: BIAS, today: T });
+    expect(folded.outlets7d).toEqual([{ domain: 'foxnews.com', lean: 'right', firstSeen: minus(1), lastSeen: T, url: link('foxnews.com', 'today') }]);
+  });
+
+  test('the link moves WITH an entry when the bias table re-rates its domain', () => {
+    // An owner edit to data/media-bias.json can rate a domain that was only
+    // ever unrated. Its carried entry must arrive in outlets7d still holding
+    // its link — otherwise the gate would red the next hourly write for an
+    // entry nobody could have linked.
+    const bias = { ...BIAS, 'example-wire.test': 'center' };
+    const prev = { outlets7d: [], unratedOutlets7d: [unratedEntry('example-wire.test', minus(2))] };
+    const folded = observeOutlets(prev, { observed: [], bias, today: T });
+    expect(folded.outlets7d).toEqual([{ domain: 'example-wire.test', lean: 'center', firstSeen: minus(2), lastSeen: minus(2), url: link('example-wire.test') }]);
+  });
+
+  test('a v1-era entry with no link is carried as it was — no url key invented', () => {
+    const legacy = { domain: 'npr.org', lean: 'center', firstSeen: minus(1), lastSeen: minus(1) };
+    const folded = observeOutlets({ outlets7d: [legacy] }, { observed: [], bias: BIAS, today: T });
+    expect(folded.outlets7d).toEqual([legacy]);
+    expect('url' in folded.outlets7d[0]).toBe(false);
+  });
+
+  test('a carried link that is not canonical is dropped rather than carried', () => {
+    const tainted = { ...outlet('npr.org', 'center', minus(1)), url: 'javascript:alert(1)' };
+    const folded = observeOutlets({ outlets7d: [tainted] }, { observed: [], bias: BIAS, today: T });
+    expect('url' in folded.outlets7d[0]).toBe(false);
   });
 });
 
@@ -206,6 +335,60 @@ test.describe('conversationPool', () => {
       },
     };
     expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-3-119', 'hr-2-119', 'hr-4-119']);
+  });
+
+  /* ---- C2 is ordered by the LIST'S OWN RANK (owner ruling 2026-09-26) ---- *
+   * Before the ruling C2 shared C1's comparator. A bill the list alone admits
+   * has no rated outlets and was last seen the same day as the rest of that
+   * week's list, so every tie fell through to the slug: "hr-1-119" sorts
+   * first, and H.R. 1 (rank 7, a 2025 law) held a band slot on 25 of the 32
+   * days replayed 2026-08-25 -> 2026-09-25 while rank 1 never did.           */
+  const listed = (lastRank: number, lastWeek: string | null = '2026-08-09', weeksOnList = 3) => ({
+    outlets7d: [],
+    mostViewed: { weeksOnList, lastRank, lastSeen: T, lastWeek },
+  });
+
+  test('C2: rank 1 before rank 7, whatever the slugs say — the H.R. 1 tiebreak, pinned', () => {
+    const doc = { slugs: { 'hr-1-119': listed(7), 'hr-6509-119': listed(1), 's-2296-119': listed(5) } };
+    expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-6509-119', 's-2296-119', 'hr-1-119']);
+  });
+
+  test('C2: an article beside the listing does not buy a better slot — only the rank orders', () => {
+    // It used to: rated outlets were C2's first key, so a rank-6 bill with one
+    // article outranked a rank-1 bill with none. The card never prints that
+    // article (B-1), so it must not decide the order either.
+    const doc = {
+      slugs: {
+        's-5025-119': { outlets7d: [outlet('cbsnews.com', 'left')], mostViewed: { weeksOnList: 1, lastRank: 6, lastSeen: T, lastWeek: '2026-08-09' } },
+        'hr-6509-119': listed(1),
+      },
+    };
+    expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-6509-119', 's-5025-119']);
+  });
+
+  test('C2: the NEWEST list comes first — a rank from an older list is not comparable', () => {
+    // A bill that fell off this week's list stays inside the seven-day window
+    // for up to a week. Its old rank 1 must not outrank this week's rank 4.
+    const doc = { slugs: { 'hr-2-119': listed(1, '2026-08-02'), 'hr-3-119': listed(4, '2026-08-09') } };
+    expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-3-119', 'hr-2-119']);
+  });
+
+  test('C2: a listing with no printed week sorts after every labelled one; equal ranks fall back to slug', () => {
+    const doc = { slugs: { 'hr-9-119': listed(1, null), 'hr-8-119': listed(3), 'hr-7-119': listed(3) } };
+    expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-7-119', 'hr-8-119', 'hr-9-119']);
+  });
+
+  test('C1 order is unchanged by the C2 ruling — press is still ordered by breadth', () => {
+    const doc = {
+      slugs: {
+        'hr-1-119': {
+          outlets7d: [outlet('foxnews.com', 'right'), outlet('npr.org', 'center')],
+          mostViewed: { weeksOnList: 2, lastRank: 9, lastSeen: T, lastWeek: T },
+        },
+        'hr-2-119': { outlets7d: [outlet('foxnews.com', 'right'), outlet('npr.org', 'center'), outlet('cbsnews.com', 'left')] },
+      },
+    };
+    expect(conversationPool(doc, { today: T }).map((p) => p.slug)).toEqual(['hr-2-119', 'hr-1-119']);
   });
 });
 
@@ -300,6 +483,7 @@ test.describe('observeMostViewed — weeksOnList counts CONSECUTIVE weeks', () =
  * ------------------------------------------------------------------ */
 type BuildOpts = {
   previous?: unknown;
+  /** slug -> outlet domains; each becomes an observation carrying link(domain). */
   outlets?: Map<string, string[]>;
   mostViewed?: { week?: string | null; weekLabel?: string | null; entries: { slug: string; rank: number }[] } | null;
   sourceStatus?: Record<string, unknown>;
@@ -310,7 +494,7 @@ type BuildOpts = {
 const build = (opts: BuildOpts) =>
   buildConversation({
     previous: opts.previous ?? null,
-    outletsBySlug: opts.outlets ?? new Map(),
+    outletsBySlug: new Map([...(opts.outlets ?? new Map<string, string[]>())].map(([slug, domains]) => [slug, domains.map((d) => seen(d))])),
     mostViewed: opts.mostViewed ?? null,
     bias: BIAS,
     sourceStatus: opts.sourceStatus ?? { press: { status: 'ok', feeds_silent: 0, checked_at: 'x' } },
@@ -395,6 +579,63 @@ test.describe('buildConversation', () => {
     expect(doc._meta.schema).toBe(CONVERSATION_SCHEMA);
     expect(doc._meta.window_days).toBe(OUTLET_WINDOW_DAYS);
     expect(Object.keys(doc.slugs)).toEqual(['hr-1-119', 's-1-119']);
+  });
+
+  test('B-5: every recorded observation carries its link, rated and unrated alike', () => {
+    const doc = build({ outlets: new Map([['hr-1-119', ['foxnews.com', 'rollcall.com']]]) });
+    expect(doc.slugs['hr-1-119'].outlets7d[0].url).toBe(link('foxnews.com'));
+    expect(doc.slugs['hr-1-119'].unratedOutlets7d[0].url).toBe(link('rollcall.com'));
+  });
+
+  test('B-5: a first file stamps links_since today, and a later v2 write carries it forward', () => {
+    const first = build({ today: minus(3) });
+    expect(first._meta.links_since).toBe(minus(3));
+    const later = build({ previous: first, today: T });
+    expect(later._meta.links_since).toBe(minus(3));
+  });
+
+  test('THE UPGRADE: a v1 file becomes v2 on the next write, writes once, and changes no evidence', () => {
+    // The shape main holds when this build deploys: conversation/v1, no links,
+    // no links_since. The first v2 write must (a) happen even if nothing else
+    // moved, so the file stops announcing the old schema, (b) stamp
+    // links_since today, and (c) carry every v1 entry exactly as it was —
+    // the upgrade has no links to add to evidence it did not observe.
+    const v1 = {
+      _meta: {
+        schema: 'conversation/v1',
+        fetched_at: `${T}T10:00:00.000Z`,
+        window_days: OUTLET_WINDOW_DAYS,
+        source_status: { press: { status: 'ok' } },
+      },
+      slugs: {
+        'hr-1-119': {
+          outlets7d: [
+            { domain: 'foxnews.com', lean: 'right', firstSeen: minus(1), lastSeen: T },
+            { domain: 'npr.org', lean: 'center', firstSeen: T, lastSeen: T },
+          ],
+          unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: T, lastSeen: T }],
+          mostViewed: null,
+        },
+      },
+    };
+    const up = build({ previous: v1, sourceStatus: v1._meta.source_status });
+    expect(up._meta.schema).toBe(CONVERSATION_SCHEMA);
+    expect(up._meta.links_since).toBe(T);
+    expect(up.slugs).toEqual(v1.slugs);
+    expect(shouldWrite({ previous: v1, next: up })).toBe(true);
+    // ...and the upgraded file passes the gate, though its v1-era entries
+    // (seen ON links_since, not after it) carry no link.
+    expect(verifyConversation({ data: up, fileBytes: 1000, now: NOW, bias: BIAS }).failures).toEqual([]);
+    // One hour later, nothing new observed: no second write.
+    const hourLater = build({ previous: up, sourceStatus: v1._meta.source_status, now: NOW + 3_600_000 });
+    expect(shouldWrite({ previous: up, next: hourLater })).toBe(false);
+  });
+
+  test('every schema this build writes is one it can read, and v1 stays readable', () => {
+    expect(CONVERSATION_READABLE_SCHEMAS).toContain(CONVERSATION_SCHEMA);
+    // v2 only ADDED fields. Dropping v1 from the list is what a non-additive
+    // bump must do, in the same change.
+    expect(CONVERSATION_READABLE_SCHEMAS).toContain('conversation/v1');
   });
 
   test('the real most-viewed feed folds straight in, ranks and all', () => {
@@ -590,13 +831,35 @@ test.describe('the press basket', () => {
       expect(normalizeDomain(domain)).toBe(domain);
     }
   });
+
+  test('B-5 wiring: the newsdesk hands the lamp each item\'s LINK, not a bare outlet', () => {
+    // The failure this pins is silent and total: observeOutlets records
+    // nothing for an observation without a checkable link, so a newsdesk that
+    // went back to accumulating bare outlet strings would empty the band
+    // within a week without a single error. Read as text for the same reason
+    // as the SOURCES pin above — the script runs its whole job at import.
+    const accumulator = /const addConversationOutlet = \(slug, it\) => \{([\s\S]*?)\n\};/.exec(source)?.[1] ?? '';
+    expect(accumulator).toContain('normalizeArticleUrl(it.link)');
+    expect(accumulator).toContain('new Map()');
+    expect(accumulator).toMatch(/outlets\.set\(outlet, url\)/);
+    // ...and the feed item actually carries the link that reads.
+    expect(source).toMatch(/link: it\.link,/);
+  });
 });
 
 /* ------------------------------------------------------------------ *
  * 8 · The gate
  * ------------------------------------------------------------------ */
 test.describe('verifyConversation', () => {
-  const meta = { schema: CONVERSATION_SCHEMA, fetched_at: `${T}T18:00:00.000Z`, window_days: OUTLET_WINDOW_DAYS, source_status: {} };
+  // Links have been stored for a week, so every observation fixture dated
+  // after minus(7) is one B-5 REQUIRES a link on.
+  const meta = {
+    schema: CONVERSATION_SCHEMA,
+    fetched_at: `${T}T18:00:00.000Z`,
+    window_days: OUTLET_WINDOW_DAYS,
+    links_since: minus(7),
+    source_status: {},
+  };
   const doc = (slugs: Record<string, unknown>) => ({ _meta: meta, slugs });
   const failuresOf = (data: unknown, extra: { fileBytes?: number; knownSlugs?: Set<string> } = {}) =>
     verifyConversation({ data, fileBytes: 500, now: NOW, bias: BIAS, ...extra }).failures.join(' | ');
@@ -611,7 +874,7 @@ test.describe('verifyConversation', () => {
   });
 
   test('a rated outlet filed as unrated fails too — the split must be honest in both directions', () => {
-    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [], unratedOutlets7d: [{ domain: 'npr.org', firstSeen: T, lastSeen: T }] } }))).toContain('it belongs in outlets7d');
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [], unratedOutlets7d: [unratedEntry('npr.org')] } }))).toContain('it belongs in outlets7d');
   });
 
   test('a lean that disagrees with data/media-bias.json fails', () => {
@@ -627,13 +890,58 @@ test.describe('verifyConversation', () => {
   });
 
   test('first-seen after last-seen fails', () => {
-    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [{ domain: 'foxnews.com', lean: 'right', firstSeen: T, lastSeen: minus(2) }] } }))).toContain('after it was last seen');
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [{ ...outlet('foxnews.com', 'right'), firstSeen: T, lastSeen: minus(2) }] } }))).toContain('after it was last seen');
   });
 
   test('an unknown schema, a foreign window and a blown size ceiling all fail', () => {
     expect(failuresOf({ ...doc({}), _meta: { ...meta, schema: 'conversation/v99' } })).toContain('unknown _meta.schema');
     expect(failuresOf({ ...doc({}), _meta: { ...meta, window_days: 30 } })).toContain('evidence window is 7 days');
     expect(failuresOf(doc({}), { fileBytes: 5_000_000 })).toContain('byte ceiling');
+  });
+
+  test('the size ceiling leaves room for a busy week of links, and still trips on a writer that stopped pruning', () => {
+    // Largest v1 file in the history: 64 KB (84 rated + 270 unrated entries).
+    // With a link on every entry that week is ~170 KB — under the ceiling.
+    expect(failuresOf(doc({}), { fileBytes: 170 * 1024 })).toBe('');
+    expect(CONVERSATION_MAX_BYTES).toBe(512 * 1024);
+    expect(failuresOf(doc({}), { fileBytes: CONVERSATION_MAX_BYTES + 1 })).toContain('byte ceiling');
+  });
+
+  /* ---- B-5 at the gate ------------------------------------------------ */
+  test('B-5: a rated outlet seen after links_since with no link fails the build', () => {
+    const { url: _drop, ...noLink } = outlet('foxnews.com', 'right');
+    void _drop;
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [noLink, outlet('npr.org', 'center')] } }))).toContain('not evidence a reader can check');
+  });
+
+  test('B-5: so does an UNRATED one — a later rating must be able to move it across with its link', () => {
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [], unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: T, lastSeen: T }] } }))).toContain('carries none');
+  });
+
+  test('B-5: an entry last seen ON or BEFORE links_since may lack a link — v1-era evidence the window retires', () => {
+    const legacy = (lastSeen: string) => ({ domain: 'foxnews.com', lean: 'right', firstSeen: lastSeen, lastSeen });
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [legacy(minus(7))] } }))).toBe('');
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [legacy(minus(6))] } }))).toContain('carries none');
+  });
+
+  test('B-5: a stored link must be a canonical http(s) URL — never a javascript: value', () => {
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [{ ...outlet('foxnews.com', 'right'), url: 'javascript:alert(1)' }] } }))).toContain('not a canonical http(s) URL');
+    // Canonical means byte-identical to what the writer would have stored.
+    expect(failuresOf(doc({ 'hr-1-119': { outlets7d: [{ ...outlet('foxnews.com', 'right'), url: 'https://WWW.FOXNEWS.com/x' }] } }))).toContain('not a canonical http(s) URL');
+  });
+
+  test('B-5: a current-schema file with no links_since fails; a v1 file passes with a note', () => {
+    expect(failuresOf({ _meta: { ...meta, links_since: undefined }, slugs: {} })).toContain('links_since');
+    expect(failuresOf({ _meta: { ...meta, links_since: '2099-01-01' }, slugs: {} })).toContain('in the future');
+    const v1 = {
+      _meta: { schema: 'conversation/v1', fetched_at: meta.fetched_at, window_days: OUTLET_WINDOW_DAYS, source_status: {} },
+      slugs: {
+        'hr-1-119': { outlets7d: [{ domain: 'foxnews.com', lean: 'right', firstSeen: T, lastSeen: T }], unratedOutlets7d: [], mostViewed: null },
+      },
+    };
+    const res = verifyConversation({ data: v1, fileBytes: 500, now: NOW, bias: BIAS });
+    expect(res.failures).toEqual([]);
+    expect(res.notes.join(' ')).toContain('conversation/v1');
   });
 
   test('a broken most-viewed block fails', () => {
@@ -660,12 +968,13 @@ test.describe('verifyConversation', () => {
 
   test('the notes line counts the tiers and says the unrated ones count for nothing', () => {
     const { notes } = verifyConversation({
-      data: doc({ 'hr-1-119': { outlets7d: [outlet('foxnews.com', 'right'), outlet('npr.org', 'center')], unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: T, lastSeen: T }] } }),
+      data: doc({ 'hr-1-119': { outlets7d: [outlet('foxnews.com', 'right'), outlet('npr.org', 'center')], unratedOutlets7d: [unratedEntry('rollcall.com')] } }),
       fileBytes: 500,
       now: NOW,
       bias: BIAS,
     });
     expect(notes.join(' ')).toContain('1 corroborated');
     expect(notes.join(' ')).toContain('counted by nothing');
+    expect(notes.join(' ')).toContain('2 of 2 rated observation(s) carry an article link');
   });
 });
