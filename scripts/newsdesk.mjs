@@ -182,21 +182,23 @@
  *     WHAT THIS SCRIPT DOES WITH A REASON ITEM — the same as with every feed:
  *     it reads the headline and link; a headline t1/t2 leave ambiguous is SENT
  *     TO ANTHROPIC'S API (the t3 Haiku batch) to pick a bill; and since
- *     conversation/v2 (lib/conversation.mjs B-5) the ARTICLE LINK of every
- *     matched item is stored in data/conversation.json, which is committed and
- *     published as the band's evidence. Linking is the use the terms expressly
- *     allow; whether sending headline text to a model API is "transmit"ting
- *     material, and whether this project's use is "noncommercial", are the
- *     owner's calls — the second is the same question that already stands over
- *     the CC BY-NC AllSides table.
+ *     conversation/v2 (lib/conversation.mjs B-5) the ARTICLE LINK behind each
+ *     outlet's observation of a bill is stored in data/conversation.json and
+ *     committed to this public repository (no page or MCP tool renders the
+ *     links as of 2026-09-25; the file itself is public). Linking is the use
+ *     the terms expressly allow; whether sending headline text to a model API
+ *     is "transmit"ting material, and whether this project's use is
+ *     "noncommercial", are the owner's calls — the second is the same question
+ *     that already stands over the CC BY-NC AllSides table.
  *     WHAT IT IS WORTH, honestly: Reason restores the 2-right CONSTRUCTION, but
  *     the sample showed no bill-specific recall. All 7 match-eligible items
  *     were ambiguous t3 candidates (0 by citation, 0 by local match); 4 of the
  *     7 were "White House" headlines offered S. 4430 (White House Safety and
  *     Security Act) — the false-positive shape the floor-disambiguation
  *     change (#303) removes from looksLegislative — and under that change 3 of
- *     48 remain, none about a specific bill. Reason is libertarian and covers Congress through
- *     regulation, spending and civil liberties more than floor mechanics.
+ *     48 remain, none about a specific bill. Reason is libertarian and covers
+ *     Congress through regulation, spending and civil liberties more than
+ *     floor mechanics.
  *     THE VOLOKH CONSPIRACY: 16 of the 48 items are under reason.com/volokh/ —
  *     a law-professor group blog Reason hosts, whose masthead reads "Mostly
  *     law professors | Sometimes contrarian | Often libertarian | Always
@@ -223,8 +225,8 @@
  * 2025-08-27) say "Except as expressly permitted in these Terms of Use, you
  * may not copy, download, stream, scrape, … frame, deep-link, make available
  * or otherwise use any Content", and no RSS permission was found in them. The
- * "deep-link" in that list bears on conversation/v2 too: the committed file
- * now stores, and the site publishes, links to individual foxnews.com
+ * "deep-link" in that list bears on conversation/v2 too: the committed file,
+ * public in this repository, now stores links to individual foxnews.com
  * articles. The bar applied to the replacement is stricter than the one the
  * basket was built on; whether to hold the incumbents to it is an owner
  * decision.
