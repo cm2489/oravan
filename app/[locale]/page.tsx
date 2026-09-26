@@ -36,6 +36,7 @@ import {
 import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { getLiveMoments } from '@/lib/moments';
+import { LIVE_CAP } from '@/lib/moments-gate.mjs';
 import { momentDek } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
@@ -681,7 +682,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {/* True live count, never the stored total: the file also holds
                 settled and stale entries, and the claim is about today. */}
             <p className="mt-4 text-sm font-semibold text-ink-pale">
-              {tShared('moments.scarcityNote', { count: liveMoments.length })}
+              {tShared('moments.scarcityNote', { count: liveMoments.length, cap: LIVE_CAP })}
             </p>
             {/* The dek under each entry is AI-drafted summary text; /questions
                 labels it, so the front door must too. At the band's FOOT and

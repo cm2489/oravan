@@ -130,7 +130,7 @@
   },
   "reps": {
     "title": "Tus representantes",
-    "sub": "Cada residente de EE. UU. tiene un representante en la Cámara y dos senadores. Aquí están los tuyos, con todos sus números de contacto.",
+    "sub": "Tus miembros del Congreso, con todos sus números de contacto.",
     "noZip": "Escribe tu código postal para encontrar a tus tres miembros del Congreso.",
     "previewNote": "Aquí aparecerán tus tres — tu representante en la Cámara y tus dos senadores, con sus números en Washington y en tu zona.",
     "multiDistrict": "Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
@@ -906,7 +906,7 @@
     "emptyTitle": "No hay Grandes preguntas vigentes en este momento",
     "emptyBody": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, reales y con acción posible, cumplen los criterios publicados abajo — no porque una noticia tenga mucho ruido. Explora todo lo que avanza por el Congreso.",
     "browseBillsCta": "Ver todos los proyectos de ley",
-    "scarcityNote": "{count, plural, =1 {1 Gran pregunta vigente} other {# Grandes preguntas vigentes}} hoy — nunca más de 6.",
+    "scarcityNote": "{count, plural, =1 {1 Gran pregunta vigente} other {# Grandes preguntas vigentes}} hoy — nunca más de {cap}.",
     "cardVehicleCount": "{count, plural, one {# proyecto de ley} other {# proyectos de ley}}",
     "cardNominationCount": "{count, plural, one {# nominación} other {# nominaciones}}",
     "cardMixedCount": "{bills, plural, one {# proyecto de ley} other {# proyectos de ley}} y {nominations, plural, one {# nominación} other {# nominaciones}}",

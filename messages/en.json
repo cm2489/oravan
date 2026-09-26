@@ -130,7 +130,7 @@
   },
   "reps": {
     "title": "Your representatives",
-    "sub": "Every US resident has one House representative and two senators. Here are yours, with every number that reaches them.",
+    "sub": "Your members of Congress, with every number that reaches them.",
     "noZip": "Enter your ZIP code to find your three members of Congress.",
     "previewNote": "Your three will appear here — one House representative and two senators, with their DC and local numbers.",
     "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same either way.",
@@ -906,7 +906,7 @@
     "emptyTitle": "No live Big Questions right now",
     "emptyBody": "A Big Question opens only when a real, callable bill or Senate nomination meets the published criteria below — not because a story is loud. Browse everything moving through Congress instead.",
     "browseBillsCta": "Browse all bills",
-    "scarcityNote": "{count, plural, =1 {1 live Big Question} other {# live Big Questions}} today — never more than 6.",
+    "scarcityNote": "{count, plural, =1 {1 live Big Question} other {# live Big Questions}} today — never more than {cap}.",
     "cardVehicleCount": "{count, plural, one {# bill} other {# bills}}",
     "cardNominationCount": "{count, plural, one {# nomination} other {# nominations}}",
     "cardMixedCount": "{bills, plural, one {# bill} other {# bills}} and {nominations, plural, one {# nomination} other {# nominations}}",

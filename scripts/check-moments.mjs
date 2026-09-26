@@ -10,7 +10,7 @@
  * Validates data/moments.json: schema, bilingual parity, vehicle resolution
  * against data/bills.json (or data/nominations.json, for a vehicle whose
  * `kind` says so), the callable-record rule for nomination vehicles,
- * qualifying-signal shape, dates, the 6-live cap, and the
+ * qualifying-signal shape, dates, the 8-live cap, and the
  * forbidden-vocabulary lint in both languages. Exits 1 on any violation;
  * warnings (terminal vehicles, elapsed review_by) print without failing — see
  * lib/moments-gate.mjs's header for why those are soft.

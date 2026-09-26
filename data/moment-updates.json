@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-25T19:08:59.888Z"
+    "generated_at": "2026-09-26T01:03:33.669Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2791,5 +2791,166 @@
         "model": "claude-sonnet-5"
       }
     ]
+  },
+  "penny-production-and-cash-rounding": {
+    "updates": [
+      {
+        "id": "u_dc66e9a4",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-09-15",
+        "occurred_at": "2026-09-15",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "H.R. 10167 was received in the Senate on September 15, 2026, read twice, and referred to the Committee on Banking, Housing, and Urban Affairs.",
+          "es": "H.R. 10167 fue recibido en el Senado el 15 de septiembre de 2026, leído dos veces, y remitido al Comité de Banca, Vivienda y Asuntos Urbanos."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs.",
+          "action_code": null,
+          "action_type": "IntroReferral",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_8ad1a209",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-09-14",
+        "occurred_at": "2026-09-14",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "H.R. 10167 passed the House on September 14, 2026, by voice vote under suspension of the rules.",
+          "es": "H.R. 10167 pasó la Cámara el 14 de septiembre de 2026, por votación de viva voz bajo la suspensión de las reglas."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by voice vote.",
+          "action_code": "8000",
+          "action_type": "Floor",
+          "source_system": "Library of Congress"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_a17faed4",
+        "class": "floor_action",
+        "vehicle": "s-1525-119",
+        "day": "2026-08-10",
+        "occurred_at": "2026-08-10",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "S. 1525 was received in the House on August 10, 2026.",
+          "es": "S. 1525 fue recibido en la Cámara el 10 de agosto de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the House.",
+          "action_code": "H14000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f0e363d9",
+        "class": "floor_action",
+        "vehicle": "s-1525-119",
+        "day": "2026-08-10",
+        "occurred_at": "2026-08-10",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "S. 1525 was held at the desk in the House on August 10, 2026.",
+          "es": "S. 1525 fue retenido en la mesa de la Cámara el 10 de agosto de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525"
+          ]
+        },
+        "record": {
+          "action_text": "Held at the desk.",
+          "action_code": "H15000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_97c1b067",
+        "class": "floor_action",
+        "vehicle": "s-1525-119",
+        "day": "2026-08-07",
+        "occurred_at": "2026-08-07",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "S. 1525 passed the Senate on August 7, 2026, with an amendment by unanimous consent.",
+          "es": "S. 1525 pasó el Senado el 7 de agosto de 2026, con una enmienda por consentimiento unánime."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525"
+          ]
+        },
+        "record": {
+          "action_text": "Passed Senate with an amendment by Unanimous Consent. (text of amendment in the nature of a substitute: CR S4586-4588)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f80dcf53",
+        "class": "floor_action",
+        "vehicle": "s-1525-119",
+        "day": "2026-08-07",
+        "occurred_at": "2026-08-07",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-26T01:03:33.669Z",
+        "text": {
+          "en": "The Senate Committee on Banking, Housing, and Urban Affairs discharged S. 1525 by unanimous consent on August 7, 2026.",
+          "es": "El Comité de Banca, Vivienda y Asuntos Urbanos del Senado liberó S. 1525 por consentimiento unánime el 7 de agosto de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525"
+          ]
+        },
+        "record": {
+          "action_text": "Senate Committee on Banking, Housing, and Urban Affairs discharged by Unanimous Consent.",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate"
+        },
+        "ai": true
+      }
+    ],
+    "summary_revisions": []
   }
 }

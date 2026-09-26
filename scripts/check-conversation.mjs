@@ -23,6 +23,13 @@
  * quietly reopen the single-outlet prioritization channel the repo already
  * closed once on the trigger path.
  *
+ * AND ONE MORE PROMISE SINCE conversation/v2 (critic B-5): the band's subhead
+ * says every count comes from stored evidence a reader can check, so every
+ * outlet entry seen after `_meta.links_since` must carry the http(s) link to
+ * the story that made it count. A v1 file — no links yet — still passes: it is
+ * what main holds for the hour or so between this build deploying and the
+ * newsdesk's next write upgrading it.
+ *
  * A MISSING file is not a failure: scripts/newsdesk.mjs is what first writes
  * it, and a gate that reddens CI for a file nobody has generated yet teaches
  * people to ignore the gate.
@@ -44,8 +51,12 @@ const today = nowISO.slice(0, 10);
 // a refactor that quietly turned it into a no-op is caught by the gate itself —
 // the same pattern check-floor-signals/check-claim-truth/check-server-json keep.
 if (process.argv.includes('--self-test')) {
-  const meta = { schema: CONVERSATION_SCHEMA, fetched_at: nowISO, window_days: OUTLET_WINDOW_DAYS, source_status: {} };
-  const rated = { domain: 'foxnews.com', lean: 'right', firstSeen: today, lastSeen: today };
+  // links_since is a week back, so every observation dated `today` below is
+  // one the B-5 rule REQUIRES a link on.
+  const weekAgo = new Date(Date.parse(`${today}T00:00:00Z`) - 7 * 86_400_000).toISOString().slice(0, 10);
+  const meta = { schema: CONVERSATION_SCHEMA, fetched_at: nowISO, window_days: OUTLET_WINDOW_DAYS, links_since: weekAgo, source_status: {} };
+  const link = (domain) => `https://www.${domain}/politics/story`;
+  const rated = { domain: 'foxnews.com', lean: 'right', firstSeen: today, lastSeen: today, url: link('foxnews.com') };
   const bias = { 'foxnews.com': 'right', 'npr.org': 'center' };
   const cases = [
     [
@@ -79,6 +90,26 @@ if (process.argv.includes('--self-test')) {
       bias,
     ],
     ['an unknown schema', { _meta: { ...meta, schema: 'conversation/v99' }, slugs: {} }, bias],
+    [
+      'a current-schema file with no links_since stamp',
+      { _meta: { ...meta, links_since: undefined }, slugs: {} },
+      bias,
+    ],
+    [
+      'a rated outlet seen after links_since with no article link (B-5)',
+      { _meta: meta, slugs: { 'hr-1-119': { outlets7d: [{ domain: 'foxnews.com', lean: 'right', firstSeen: today, lastSeen: today }], unratedOutlets7d: [], mostViewed: null } } },
+      bias,
+    ],
+    [
+      'an unrated outlet seen after links_since with no article link (B-5)',
+      { _meta: meta, slugs: { 'hr-1-119': { outlets7d: [], unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: today, lastSeen: today }], mostViewed: null } } },
+      bias,
+    ],
+    [
+      'a javascript: value stored as an article link (B-5)',
+      { _meta: meta, slugs: { 'hr-1-119': { outlets7d: [{ ...rated, url: 'javascript:alert(1)' }], unratedOutlets7d: [], mostViewed: null } } },
+      bias,
+    ],
     ['a window that is not the one this build reads', { _meta: { ...meta, window_days: 30 }, slugs: {} }, bias],
     [
       'a most-viewed block with no weeks on the list',
@@ -98,8 +129,8 @@ if (process.argv.includes('--self-test')) {
     _meta: meta,
     slugs: {
       'hr-1-119': {
-        outlets7d: [rated, { domain: 'npr.org', lean: 'center', firstSeen: today, lastSeen: today }],
-        unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: today, lastSeen: today }],
+        outlets7d: [rated, { domain: 'npr.org', lean: 'center', firstSeen: today, lastSeen: today, url: link('npr.org') }],
+        unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: today, lastSeen: today, url: link('rollcall.com') }],
         mostViewed: { weeksOnList: 2, lastRank: 3, lastSeen: today, lastWeek: today },
       },
     },
@@ -110,6 +141,26 @@ if (process.argv.includes('--self-test')) {
   }
   if (verifyConversation({ data: { _meta: meta, slugs: {} }, fileBytes: 100, bias }).failures.length > 0) {
     console.error('::error::check-conversation --self-test: a valid EMPTY file was REJECTED by the gate');
+    ok = false;
+  }
+  // The schema-bump half of B-5: a v1 file (no links, no links_since) is what
+  // main holds between this build deploying and the newsdesk's next write. It
+  // must still pass, or the hourly gate would red on a file nobody broke.
+  const legacy = {
+    _meta: { schema: 'conversation/v1', fetched_at: nowISO, window_days: OUTLET_WINDOW_DAYS, source_status: {} },
+    slugs: {
+      'hr-1-119': {
+        outlets7d: [
+          { domain: 'foxnews.com', lean: 'right', firstSeen: today, lastSeen: today },
+          { domain: 'npr.org', lean: 'center', firstSeen: today, lastSeen: today },
+        ],
+        unratedOutlets7d: [{ domain: 'rollcall.com', firstSeen: today, lastSeen: today }],
+        mostViewed: null,
+      },
+    },
+  };
+  if (verifyConversation({ data: legacy, fileBytes: 100, bias }).failures.length > 0) {
+    console.error('::error::check-conversation --self-test: a readable conversation/v1 file was REJECTED by the gate');
     ok = false;
   }
   if (!ok) process.exit(1);
@@ -138,4 +189,4 @@ if (failures.length) {
   for (const f of failures) console.error(`::error::check-conversation: ${f}`);
   process.exit(1);
 }
-console.log('check-conversation passed — every corroborating outlet is AllSides-rated, dated, and inside the 7-day window it claims.');
+console.log('check-conversation passed — every corroborating outlet is AllSides-rated, dated, inside the 7-day window it claims, and (since links_since) carries the link to its story.');

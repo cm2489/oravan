@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createFormatter, createTranslator } from 'next-intl';
 import {
+  CONVERSATION_READABLE_SCHEMAS,
   CONVERSATION_SCHEMA,
   CONVERSATION_STALE_HOURS,
   MOST_VIEWED_CARD_CAP,
@@ -10,6 +11,7 @@ import {
   OUTLET_WINDOW_DAYS,
   conversationBandPool,
   conversationPosture,
+  conversationPostureOf,
   newsSpread,
   selectConversationBand,
   type ConversationPoolItem,
@@ -381,14 +383,114 @@ test.describe('the selected band', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 4b · The most-viewed slots (owner ruling 2026-09-26): ordered by the
+ *      list's own rank, and no slot for a bill that is already law unless
+ *      the press is covering it
+ * ------------------------------------------------------------------ */
+test.describe('most-viewed slots: rank order, and enacted laws only when in the news', () => {
+  const listed = (lastRank: number, weeksOnList = 3, lastWeek = '2026-08-09') => ({
+    ...corroborated(),
+    mostViewed: { weeksOnList, lastRank, lastSeen: T, lastWeek },
+  });
+
+  test('the two slots go to the two best-ranked bills — not the two earliest slugs', () => {
+    // The replayed failure: H.R. 1 (rank 7) sorted ahead of H.R. 6509 (rank 1)
+    // on slug order alone and held a slot on 25 of 32 days.
+    const band = selectConversationBand(
+      poolOf({ 'hr-1-119': listed(7), 'hr-139-119': listed(10), 'hr-6509-119': listed(1), 's-2296-119': listed(5) }),
+      { limit: 6 }
+    );
+    expect(band.map((c) => c.slug)).toEqual(['hr-6509-119', 's-2296-119']);
+    expect(band.map((c) => c.caption.rank)).toEqual([1, 5]);
+  });
+
+  test('an enacted law takes no most-viewed slot — and does not spend one either', () => {
+    const enacted = new Set(['hr-1-119', 'hr-6500-119']);
+    const band = selectConversationBand(
+      poolOf({ 'hr-1-119': listed(1), 'hr-6500-119': listed(2), 'hr-6509-119': listed(3), 's-2296-119': listed(4) }),
+      { limit: 6, enacted: (slug) => enacted.has(slug) }
+    );
+    // Two laws ranked ahead of everything; both skipped BEFORE the cap counts,
+    // so the two live bills behind them still get the two slots.
+    expect(band.map((c) => c.slug)).toEqual(['hr-6509-119', 's-2296-119']);
+  });
+
+  test('...not even with one rated article beside the listing — one outlet is not "in the news" (B-1)', () => {
+    const band = selectConversationBand(
+      poolOf({ 'hr-1-119': { ...corroborated(outlet('cnn.com', 'left')), mostViewed: mostViewed(1, 1) } }),
+      { limit: 6, enacted: () => true }
+    );
+    expect(band).toEqual([]);
+  });
+
+  test('an enacted law the PRESS is covering still renders — C1 is the band\'s own bar for news', () => {
+    const band = selectConversationBand(
+      poolOf({
+        'hr-6500-119': { ...corroborated(outlet('cnn.com', 'left'), outlet('foxnews.com', 'right')), mostViewed: mostViewed(2, 6) },
+      }),
+      { limit: 6, enacted: () => true }
+    );
+    expect(band).toHaveLength(1);
+    expect(band[0]).toMatchObject({ slug: 'hr-6500-119', tier: 'c1' });
+    expect(band[0].caption.kind).toBe('corroborated');
+  });
+
+  test('getNewsBills: no card in the live band is a signed law that only the list put there', () => {
+    const at = Date.now();
+    test.skip(conversationPosture(at) !== 'live', 'the lamp is not live — the fallback band carries no most-viewed slots');
+    const status = new Map(corpus.map((b) => [slugOf(b), b.status]));
+    for (const b of getNewsBills('en', 7, at)) {
+      if (status.get(b.slug) !== 'signed') continue;
+      expect(b.caption?.kind, `${b.slug} is law and rendered on the most-viewed list alone`).toMatch(/^corroborated/);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 5 · The posture gate — when the lamp may speak at all
  * ------------------------------------------------------------------ */
 test.describe('posture: the fallback is a decision, not an accident', () => {
   const FILE = JSON.parse(readFileSync(join(__dirname, '..', 'data', 'conversation.json'), 'utf8'));
 
-  test('the committed file is the schema this build reads', () => {
-    expect(FILE._meta.schema).toBe(CONVERSATION_SCHEMA);
+  test('the committed file is a schema this build reads', () => {
+    // READS, not writes: the committed file is whatever the hourly newsdesk
+    // last wrote, and in the hour after a writer bump deploys it is still the
+    // previous (additive) schema. That state must be legitimate.
+    expect(CONVERSATION_READABLE_SCHEMAS).toContain(FILE._meta.schema);
     expect(FILE._meta.window_days).toBe(OUTLET_WINDOW_DAYS);
+  });
+
+  /* ---- THE SCHEMA-BUMP TRAP, pinned on fixtures (conversation/v2) ------ *
+   * A posture check that compared against the one schema the writer emits
+   * would have read the committed v1 file as `unknown` the moment the v2
+   * writer deployed, and the band would have silently dropped to stored
+   * coverage, captionless, until the next hourly write.                    */
+  const fixture = (schema: string) => ({
+    _meta: {
+      schema,
+      fetched_at: '2026-08-12T10:00:00.000Z',
+      window_days: OUTLET_WINDOW_DAYS,
+      source_status: { press: { status: 'ok' as const } },
+    },
+  });
+  const oneHourLater = Date.parse('2026-08-12T11:00:00.000Z');
+
+  test('a v1 file stays LIVE under a build that writes v2 — no silent fallback on a version string', () => {
+    expect(CONVERSATION_SCHEMA).toBe('conversation/v2');
+    expect(conversationPostureOf(fixture('conversation/v1'), oneHourLater)).toBe('live');
+    expect(conversationPostureOf(fixture(CONVERSATION_SCHEMA), oneHourLater)).toBe('live');
+  });
+
+  test('a schema this build cannot read still falls back — the guard is narrowed, not removed', () => {
+    expect(conversationPostureOf(fixture('conversation/v99'), oneHourLater)).toBe('unknown');
+    expect(conversationPostureOf({ _meta: { ...fixture('conversation/v1')._meta, schema: undefined as unknown as string } }, oneHourLater)).toBe('unknown');
+    expect(conversationPostureOf(null, oneHourLater)).toBe('unknown');
+  });
+
+  test('conversationPosture is conversationPostureOf over the committed file', () => {
+    for (const at of [Date.parse(FILE._meta.fetched_at) + 1_000, Date.parse(FILE._meta.fetched_at) + (CONVERSATION_STALE_HOURS + 1) * 3_600_000]) {
+      expect(conversationPosture(at)).toBe(conversationPostureOf(FILE, at));
+    }
   });
 
   test('a file no run has written yet is NOT live, however fresh its stamp', () => {

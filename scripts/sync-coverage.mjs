@@ -5,6 +5,14 @@
  * them to data/coverage.json keyed by bill slug. The render path joins each
  * article's source to an outlet lean from data/media-bias.json (AllSides).
  *
+ * Since 2026-09-26 (see scripts/coverage-query.mjs, "The recency pass"): the
+ * Big Question vehicles, the news-band pool and live tier-0 floor bills are
+ * queried every night with an extra date-sorted 30-day pass; a night's result
+ * MERGES into what is stored instead of replacing it; the relevance gate sees
+ * dates; a newly enacted bill stays in the sweep for 14 days; and every stored
+ * article records whether its outlet is AllSides-rated (`rated`), so the Read
+ * section can later say "across the press" over rated outlets only.
+ *
  *   node --env-file=.env.local scripts/sync-coverage.mjs
  *
  * Gated on NEWS_API_KEY: with no key this is a no-op that leaves the committed
@@ -14,10 +22,28 @@
  * site makes zero runtime third-party calls.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { effectiveUrgency } from '../lib/urgency.mjs';
 import { compareDocket, docketKey, docketRung } from '../lib/docket.mjs';
-import { queryFor, readRateLimitRemaining } from './coverage-query.mjs';
+import { loadPressOutletPolicy } from '../lib/press-outlets.mjs';
+import {
+  DATE_SORT,
+  RECENT_WINDOW_DAYS,
+  RELEVANCE_SORT,
+  apiErrorDetail,
+  coveragePriority,
+  coverageSlug,
+  isCoverageEligible,
+  isNewestFirst,
+  mergeArticles,
+  parseKeptIndexes,
+  planCoverageRun,
+  queryFor,
+  readRateLimitRemaining,
+  recentWindowStart,
+  relevancePrompt,
+  wholeLifeStart,
+} from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -75,7 +101,6 @@ const TAIL_SHARE = envNum('COVERAGE_TAIL_SHARE', 0.5);
 // 60s window and the pacing logic in fetchArticles is shared mutable state.
 const CONCURRENCY = envNum('COVERAGE_CONCURRENCY', 6);
 const NEWS_API = 'https://api.thenewsapi.com/v1/news/all';
-const CONGRESS_START = '2025-01-03'; // 119th Congress convened; coverage can't predate a bill
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let rlRemaining = Infinity; // X-RateLimit-Remaining from the last response
@@ -83,7 +108,28 @@ let rlRemaining = Infinity; // X-RateLimit-Remaining from the last response
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-haiku-4-5-20251001';
 
-const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
+const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
+const bills = readJSON('data/bills.json');
+const NOW = Date.now();
+
+/* Tolerant reads: each of these only ORDERS the sweep (who is asked first,
+   and who gets the extra 30-day pass). A missing or unparseable file shrinks
+   the priority set; it never fails the run. */
+const readOptional = (p) => {
+  try {
+    return existsSync(p) ? readJSON(p) : null;
+  } catch {
+    console.warn(`coverage sync: ${p} unreadable — the priority set is built without it.`);
+    return null;
+  }
+};
+
+/* The outlet floor (lib/press-outlets.mjs). Used here only to RECORD, per
+   article, whether its outlet is AllSides-rated — the fact the render path
+   needs to say "across the press" over rated outlets alone. It filters nothing
+   out of this file: what the Read section shows is the page's decision. */
+const outletPolicy = loadPressOutletPolicy({ readJSON, exists: existsSync });
+const withRatedFlag = (a) => ({ ...a, rated: outletPolicy.isRated(a?.source) });
 
 // Last committed coverage. Eligible bills this run doesn't reach (quota stop,
 // per-bill failure, or a COVERAGE_TOP_N test run) carry their previous entry
@@ -97,9 +143,7 @@ try {
   /* first run or unreadable file — nothing to carry forward */
 }
 
-function slugOf(b) {
-  return `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
-}
+const slugOf = coverageSlug;
 
 /* When each bill was last LOOKED AT (not when its newest article was
    published). Carried in coverage.json under a "_"-prefixed key, which
@@ -126,9 +170,11 @@ const RUN_DAY = new Date().toISOString().slice(0, 10);
    data/floor-signals.json is read tolerantly: this is the nightly coverage
    sweep, and a missing or unparseable signal file must degrade the ORDER, never
    fail the run. With no file every bill simply lands on a record-only rung. */
+let floorSignalsDoc = null;
 let floorSignals = {};
 try {
-  floorSignals = JSON.parse(readFileSync('data/floor-signals.json', 'utf8')).signals ?? {};
+  floorSignalsDoc = JSON.parse(readFileSync('data/floor-signals.json', 'utf8'));
+  floorSignals = floorSignalsDoc.signals ?? {};
 } catch {
   console.warn('coverage sync: data/floor-signals.json unreadable — ordering on the record alone.');
 }
@@ -136,11 +182,17 @@ try {
 // `effectiveUrgency` stays as the TAIL's tiebreak (below): among bills nobody
 // has looked at for the longest, the score is still the honest way to break a
 // tie, and the tail is not a claim about the week.
+//
+// ELIGIBLE = decoded and not terminal, PLUS a signed bill for
+// ENACTED_GRACE_DAYS after its last action (isCoverageEligible). The old
+// filter dropped a bill the night it became law — exactly its peak coverage
+// week (on the 2026-09-25 file, H.R. 5334, signed 09-18, had neither a check
+// date nor any stored coverage).
 const eligible = bills
-  .filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status))
+  .filter((b) => isCoverageEligible(b, NOW))
   .map((b) => {
     const slug = slugOf(b);
-    const rung = docketRung(b, floorSignals[slug] ?? null, { now: Date.now() });
+    const rung = docketRung(b, floorSignals[slug] ?? null, { now: NOW });
     return {
       b,
       eff: effectiveUrgency(b.status, b.last_action_date),
@@ -149,31 +201,50 @@ const eligible = bills
   })
   .sort((x, y) => compareDocket(x.key, y.key));
 
-/* THE HEAD/TAIL SPLIT. The head is ladder order - what a reader is most
-   likely to open tonight. The tail is whatever has gone longest without a look,
-   oldest first, with never-checked bills sorted ahead of everything (empty
-   string precedes any ISO date). A bill already claimed by the head is never
-   double-counted. If the tail runs dry the head absorbs the remainder, so a
-   small corpus still uses the full budget. */
-const headSize = Math.max(0, Math.min(TOP_N, Math.round(TOP_N * (1 - TAIL_SHARE))));
-const head = eligible.slice(0, headSize);
-const claimed = new Set(head.map(({ b }) => slugOf(b)));
-const tail = eligible
-  .filter(({ b }) => !claimed.has(slugOf(b)))
-  .map((e) => ({ ...e, seen: checkedAt[slugOf(e.b)] ?? '' }))
-  .sort((x, y) => x.seen.localeCompare(y.seen) || y.eff - x.eff)
-  .slice(0, TOP_N - head.length);
-const overflow = eligible
-  .filter(({ b }) => !claimed.has(slugOf(b)) && !tail.some((t) => slugOf(t.b) === slugOf(b)))
-  .slice(0, TOP_N - head.length - tail.length);
+/* THE PRIORITY SET, THEN THE HEAD/TAIL SPLIT (planCoverageRun).
 
-const topBills = [...head, ...tail, ...overflow].map(({ b }) => b);
+   Priority first: every live Big Question vehicle, every bill in the news
+   band's C1/C2 pool, every bill with a live tier-0 floor signal. Those are the
+   bills a reader is shown as "in the news" or as a Big Question, and on the
+   corpus this was measured against (main, 2026-09-26 00:40Z) 21 of the 28
+   eligible ones were not in that night's 600 at all — most Big Question
+   vehicles were rechecked only every 9-10 days, by the rotating tail. Each
+   priority bill costs TWO
+   requests (a date-sorted 30-day pass beside the whole-life relevance pass),
+   and the rotation below shrinks by exactly that much — the night still spends
+   at most COVERAGE_TOP_N requests, the same quota as before.
+
+   Then, as before: the head is ladder order - what a reader is most likely to
+   open tonight. The tail is whatever has gone longest without a look, oldest
+   first, with never-checked bills sorted ahead of everything (empty string
+   precedes any ISO date). A bill already claimed is never double-counted. */
+const priorityInputs = coveragePriority({
+  moments: readOptional('data/moments.json'),
+  conversation: readOptional('data/conversation.json'),
+  floorSignals: floorSignalsDoc,
+  now: NOW,
+});
+const plan = planCoverageRun({
+  ranked: eligible,
+  prioritySlugs: priorityInputs.slugs,
+  topN: TOP_N,
+  tailShare: TAIL_SHARE,
+  checkedAt,
+});
+const prioritySet = new Set(plan.priority.map(slugOf));
+const { head, tail, overflow } = plan;
+const topBills = [...plan.priority, ...head, ...tail, ...overflow];
 
 console.log(
-  `coverage sync: ${topBills.length} bills of ${eligible.length} eligible ` +
-    `(${head.length} by docket rung + ${tail.length} least-recently-checked${overflow.length ? ` + ${overflow.length} overflow` : ''}), ` +
+  `coverage sync: ${topBills.length} bills of ${eligible.length} eligible, ${plan.requests} requests planned of ${TOP_N} ` +
+    `(${plan.priority.length} priority x2 [${priorityInputs.vehicles.length} Big Question vehicle(s), ` +
+    `${priorityInputs.band.length} news-band, ${priorityInputs.tier0.length} tier-0] + ` +
+    `${head.length} by docket rung + ${tail.length} least-recently-checked${overflow.length ? ` + ${overflow.length} overflow` : ''}), ` +
     `PER_BILL=${PER_BILL}, CONCURRENCY=${CONCURRENCY}`
 );
+if (plan.skipped.length) {
+  console.log(`  priority slugs not in tonight's eligible set (terminal past the grace window, undecoded, or unknown): ${plan.skipped.join(', ')}`);
+}
 
 /* Drop syndicated duplicates: the same wire story republished by many outlets
    shares a title (and would otherwise count as many separate "sources"). */
@@ -196,15 +267,23 @@ function dedupeArticles(arts) {
  * reimplement this to return the same {title,url,source,snippet,publishedAt}
  * shape (source = bare outlet domain, e.g. "cnn.com"). Returns null on a
  * quota/rate signal so the caller can stop early and commit what it has.
+ *
+ * `sort` is RELEVANCE_SORT for the whole-life pass, DATE_SORT for the 30-day
+ * pass, or null to send no sort at all (the API's default order). A 400 or 422
+ * is a request the API will never accept, so it is NOT retried (six retries
+ * would spend six more requests of the night's budget on a certain refusal):
+ * it throws at once with the status and the API's own error detail attached,
+ * which is how fetchRecent tells a rejected sort value from a bad query.
+ * Nothing here ever logs the request URL — it carries the API token.
  */
-async function fetchArticles(query, publishedAfter) {
+async function fetchArticles(query, { publishedAfter, sort }) {
   const url = new URL(NEWS_API);
   url.searchParams.set('api_token', NEWS_API_KEY);
   url.searchParams.set('search', query);
   url.searchParams.set('language', 'en');
   url.searchParams.set('locale', 'us'); // US outlets only - US bills, AllSides-rated world
   url.searchParams.set('limit', String(MAX_CANDIDATES));
-  url.searchParams.set('sort', 'relevance_score');
+  if (sort) url.searchParams.set('sort', sort);
   if (publishedAfter) url.searchParams.set('published_after', publishedAfter); // coverage can't predate the bill
 
   let lastErr;
@@ -243,8 +322,17 @@ async function fetchArticles(query, publishedAfter) {
         continue;
       }
       if (res.status === 402) { console.error('TheNewsAPI 402 (quota) — stopping early'); return null; }
+      if (res.status === 400 || res.status === 422) {
+        const body = await res.json().catch(() => ({}));
+        const detail = apiErrorDetail(body);
+        const err = new Error(`TheNewsAPI ${res.status} (${detail})`);
+        err.status = res.status;
+        err.detail = detail;
+        throw err;
+      }
       lastErr = new Error(`TheNewsAPI ${res.status}`);
     } catch (e) {
+      if (e?.status === 400 || e?.status === 422) throw e; // a refusal, not a blip
       lastErr = e; // network error / timeout — retry
     }
   }
@@ -254,28 +342,23 @@ async function fetchArticles(query, publishedAfter) {
 /* Search query construction lives in scripts/coverage-query.mjs (shared with
    the eval harness and pinned by tests/coverage-query.unit.spec.ts). */
 
-/* Haiku relevance gate: keep only articles specifically about THIS bill. */
+/* Haiku relevance gate: keep only articles specifically about THIS bill. The
+   prompt (relevancePrompt) shows each article's date and the bill's own dates.
+   It returns every kept article; the PER_BILL cap is applied AFTER the merge
+   with what is stored (mergeArticles), newest first — so the cap chooses by
+   date, not by the order the search happened to return. */
 async function filterRelevant(b, candidates) {
   if (candidates.length === 0) return [];
-  const list = candidates
-    .map((a, i) => `${i}. ${a.title}${a.snippet ? ` — ${a.snippet}` : ''} (${a.source})`)
-    .join('\n');
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 80,
-    messages: [{ role: 'user', content: `A US congressional bill:
-${b.bill_type.toUpperCase()} ${b.bill_number} — ${b.ai_headline ?? b.title}
-What it does: ${b.ai_sections?.tldr ?? b.ai_summary ?? b.title}
-
-Below are news articles. Return ONLY the numbers of articles specifically about THIS bill (its provisions, votes, debate, or signing) — not merely the general topic, and not a different bill. Reply with a comma-separated list of numbers, or "none".
-
-${list}` }],
+    // Room for every index when a priority bill brings two passes' worth of
+    // candidates (up to 2 x MAX_CANDIDATES); output is billed as written.
+    max_tokens: Math.max(80, 4 * candidates.length),
+    messages: [{ role: 'user', content: relevancePrompt(b, candidates) }],
   });
-  const text = (msg.content[0]?.type === 'text' ? msg.content[0].text : '').toLowerCase();
-  const keep = new Set(
-    text.split(/[^0-9]+/).filter(Boolean).map(Number).filter((n) => n >= 0 && n < candidates.length)
-  );
-  return candidates.filter((_, i) => keep.has(i)).slice(0, PER_BILL);
+  const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
+  const keep = parseKeptIndexes(text, candidates.length);
+  return candidates.filter((_, i) => keep.has(i));
 }
 
 // ---- main ----
@@ -285,20 +368,46 @@ let anyFetchOk = false;
 let withCoverage = 0;
 let totalArticles = 0;
 
+/* The date-sorted pass's bookkeeping — printed as the DATE PASS summary, which
+   is how the first nightly after 2026-09-26 verifies DATE_SORT against the live
+   API (see its comment in scripts/coverage-query.mjs). `dateSort` flips to null
+   for the rest of the run the first time the API refuses the value; the 30-day
+   pass then continues in the API's default order, still recency-bounded. */
+let dateSort = DATE_SORT;
+const datePass = { sent: 0, unsorted: 0, ordered: 0, disordered: 0, rejected: null, recentKept: 0 };
+
+/* NONPARTISAN BY CONSTRUCTION means a change to how the source is asked must
+   be MEASURED by lean, not assumed neutral. The 30-day pass asks TheNewsAPI a
+   different question (newest, not most relevant), and whether that shifts the
+   outlet mix could not be measured without a keyed call — so every night
+   measures it: what the gate kept, split by which pass found it and by the
+   outlet's AllSides lean. The whole-life pass on the same priority bills is the
+   control. Printed as the LEAN MIX line. */
+const leanMix = () => ({ left: 0, center: 0, right: 0, unrated: 0 });
+const keptLean = { recent: leanMix(), wholeLife: leanMix(), rest: leanMix() };
+const tallyLean = (bucket, articles) => {
+  for (const a of articles) bucket[outletPolicy.leanOf(a?.source) ?? 'unrated']++;
+};
+const fmtMix = (m) => `L${m.left}/C${m.center}/R${m.right}/unrated ${m.unrated}`;
+
 /* Fresh results plus previous coverage for still-eligible bills not (yet)
    processed this run — whether unreached (quota stop), failed, or outside a
    COVERAGE_TOP_N selection. Used for every write so neither a checkpoint
    file nor a partial final write can drop an unprocessed bill's coverage.
-   Entries for bills that went terminal (or left the corpus) still age out. */
-const eligibleSlugs = new Set(
-  bills.filter((b) => b.ai_headline && !TERMINAL_STATUSES.has(b.status)).map(slugOf)
-);
+   Entries for bills that went terminal (or left the corpus, or passed the
+   enacted grace window) still age out.
+
+   Every article written carries `rated` — whether its outlet is AllSides-rated
+   at write time — including carried-forward ones, so the whole file speaks
+   the same shape after one night. */
+const eligibleSlugs = new Set(bills.filter((b) => isCoverageEligible(b, NOW)).map(slugOf));
 function withCarryForward() {
-  const merged = { ...out };
+  const merged = {};
+  for (const [slug, arts] of Object.entries(out)) merged[slug] = arts.map(withRatedFlag);
   for (const [slug, arts] of Object.entries(prevCoverage)) {
     if (slug.startsWith('_') || processedSlugs.has(slug)) continue;
     if (eligibleSlugs.has(slug) && Array.isArray(arts) && arts.length) {
-      merged[slug] = arts;
+      merged[slug] = arts.map(withRatedFlag);
     }
   }
   /* Ages out with the corpus: a bill that went terminal or left entirely
@@ -311,26 +420,94 @@ function withCarryForward() {
   return merged;
 }
 
+/* The 30-day pass for one priority bill. Returns the candidates, null on a
+   quota stop, or throws like fetchArticles. A 400/422 while DATE_SORT is being
+   sent is PROBED rather than trusted: the same request goes again with no sort.
+   If that succeeds, the sort value was the problem — say so loudly, once, and
+   stop sending it; if it fails too, the query was the problem and the error
+   propagates as an ordinary per-bill failure. */
+async function fetchRecent(b, query) {
+  const publishedAfter = recentWindowStart(b, NOW);
+  if (!dateSort) {
+    datePass.unsorted++;
+    return fetchArticles(query, { publishedAfter, sort: null });
+  }
+  try {
+    datePass.sent++;
+    const res = await fetchArticles(query, { publishedAfter, sort: dateSort });
+    if (res) {
+      const order = isNewestFirst(res);
+      if (order === true) datePass.ordered++;
+      if (order === false) datePass.disordered++;
+    }
+    return res;
+  } catch (e) {
+    if (e?.status !== 400 && e?.status !== 422) throw e;
+    datePass.unsorted++;
+    const res = await fetchArticles(query, { publishedAfter, sort: null }); // throws if the query itself is bad
+    if (dateSort) {
+      datePass.rejected = `HTTP ${e.status}: ${e.detail}`;
+      console.warn(
+        `::warning::coverage sync: TheNewsAPI REJECTED sort=${dateSort} (HTTP ${e.status}: ${e.detail}). ` +
+          `The same request without a sort succeeded, so the value is the problem — fix DATE_SORT in scripts/coverage-query.mjs. ` +
+          `The ${RECENT_WINDOW_DAYS}-day pass continues for the rest of this run in the API's default order (still limited to the last ${RECENT_WINDOW_DAYS} days).`
+      );
+      dateSort = null;
+    }
+    return res;
+  }
+}
+
 /* One bill, start to finish. Returns 'quota' when TheNewsAPI signals the daily
    ceiling so the caller can stop the whole run; 'ok' or 'fail' otherwise. A
    FAILED bill is deliberately NOT marked checked - it carries its old coverage
    forward AND stays at the front of tomorrow's tail, so a transient error can
-   never quietly retire a bill from rotation. */
+   never quietly retire a bill from rotation.
+
+   A priority bill makes two requests (the 30-day pass first, then the
+   whole-life relevance pass) and ONE gate call over both candidate lists.
+   Every processed bill's kept articles MERGE into what was stored — by URL,
+   newest first, capped at PER_BILL — so an empty or unlucky night keeps what
+   an earlier night found instead of erasing it. */
 async function processBill(b) {
   const slug = slugOf(b);
+  const query = queryFor(b);
+  const isPriority = prioritySet.has(slug);
   try {
-    const candidates = await fetchArticles(queryFor(b), b.introduced_date ?? CONGRESS_START);
-    if (candidates === null) return 'quota';
-    anyFetchOk = true;
-    const kept = await filterRelevant(b, candidates);
-    processedSlugs.add(slug); // fresh result stands, even when empty
-    checkedAt[slug] = RUN_DAY; // looked at tonight, regardless of what we found
-    if (kept.length) {
-      out[slug] = kept;
-      withCoverage++;
-      totalArticles += kept.length;
+    let recent = [];
+    if (isPriority) {
+      recent = await fetchRecent(b, query);
+      if (recent === null) return 'quota';
+      anyFetchOk = true;
     }
-    console.log(`${slug}: ${candidates.length} candidates -> ${kept.length} kept`);
+    const whole = await fetchArticles(query, { publishedAfter: wholeLifeStart(b), sort: RELEVANCE_SORT });
+    if (whole === null) return 'quota';
+    anyFetchOk = true;
+    const candidates = dedupeArticles([...recent, ...whole]);
+    const kept = await filterRelevant(b, candidates);
+    processedSlugs.add(slug);
+    checkedAt[slug] = RUN_DAY; // looked at tonight, regardless of what we found
+    const recentUrls = new Set(recent.map((a) => a.url));
+    const keptRecent = kept.filter((a) => recentUrls.has(a.url));
+    datePass.recentKept += keptRecent.length;
+    if (isPriority) {
+      tallyLean(keptLean.recent, keptRecent);
+      tallyLean(keptLean.wholeLife, kept.filter((a) => !recentUrls.has(a.url)));
+    } else {
+      tallyLean(keptLean.rest, kept);
+    }
+    const stored = Array.isArray(prevCoverage[slug]) ? prevCoverage[slug] : [];
+    const merged = mergeArticles(kept, stored, PER_BILL);
+    if (merged.length) {
+      out[slug] = merged;
+      withCoverage++;
+      totalArticles += merged.length;
+    }
+    console.log(
+      `${slug}: ${candidates.length} candidates` +
+        `${isPriority ? ` (${recent.length} from the ${RECENT_WINDOW_DAYS}-day pass)` : ''}` +
+        ` -> ${kept.length} kept -> ${merged.length} stored`
+    );
     return 'ok';
   } catch (e) {
     console.error(`FAIL ${slug}: ${e.message}`); // not processed — carries forward
@@ -371,17 +548,27 @@ const finalOut = withCarryForward();
 // which would otherwise show up as one phantom carried-forward bill.
 const carried =
   Object.keys(finalOut).filter((k) => !k.startsWith('_')).length - Object.keys(out).length;
-finalOut._note = 'Generated by scripts/sync-coverage.mjs. Articles via TheNewsAPI; outlet lean is joined at render from data/media-bias.json (AllSides). Keys starting with "_" are metadata, ignored by getCoverage().';
+finalOut._note = 'Generated by scripts/sync-coverage.mjs. Articles via TheNewsAPI; outlet lean is joined at render from data/media-bias.json (AllSides). Each article\'s "rated" records whether its outlet was AllSides-rated when it was written. Keys starting with "_" are metadata, ignored by getCoverage().';
 
 writeFileSync('data/coverage.json', JSON.stringify(finalOut));
 /* Staleness is now measurable, so print it: this is the number that went
    unwatched until 2026-08-05 and the one to check after a wide refresh. */
 const staleDays = (iso) => Math.round((Date.now() - Date.parse(`${iso}T00:00:00Z`)) / 86_400_000);
-const ages = Object.keys(finalOut)
-  .filter((k) => !k.startsWith('_'))
-  .map((slug) => (finalOut._checkedAt[slug] ? staleDays(finalOut._checkedAt[slug]) : Infinity));
+const coveredSlugs = Object.keys(finalOut).filter((k) => !k.startsWith('_'));
+const ages = coveredSlugs.map((slug) => (finalOut._checkedAt[slug] ? staleDays(finalOut._checkedAt[slug]) : Infinity));
 const neverChecked = ages.filter((d) => d === Infinity).length;
 const over30 = ages.filter((d) => d !== Infinity && d > 30).length;
+/* The number the recency pass exists to move (86.2% over 30 days, median 116,
+   on the 2026-09-25 corpus): how old each covered bill's NEWEST article is. */
+const newestAges = coveredSlugs
+  .map((slug) => finalOut[slug].map((a) => a.publishedAt).filter(Boolean).sort().pop())
+  .filter(Boolean)
+  .map(staleDays)
+  .sort((a, b) => a - b);
+const median = newestAges.length ? newestAges[Math.floor(newestAges.length / 2)] : null;
+const staleShare = newestAges.length
+  ? ((100 * newestAges.filter((d) => d > 30).length) / newestAges.length).toFixed(1)
+  : '0.0';
 
 console.log(
   `DONE: ${withCoverage}/${topBills.length} bills with coverage, ${totalArticles} articles total` +
@@ -391,3 +578,23 @@ console.log(
   `FRESHNESS: ${ages.length - neverChecked - over30} checked within 30d, ` +
     `${over30} older than 30d, ${neverChecked} never checked`
 );
+console.log(
+  `ARTICLE AGE: newest stored article is older than 30d for ${staleShare}% of covered bills ` +
+    `(median ${median ?? 'n/a'} days, ${newestAges.length} dated bills)`
+);
+console.log(
+  `DATE PASS: sort=${DATE_SORT} sent on ${datePass.sent} request(s); ${datePass.ordered} came back newest-first, ` +
+    `${datePass.disordered} did not (responses with 2+ dated articles only); ${datePass.unsorted} sent without a sort; ` +
+    `${datePass.recentKept} kept article(s) came from the ${RECENT_WINDOW_DAYS}-day pass` +
+    `${datePass.rejected ? `; REJECTED: ${datePass.rejected}` : ''}`
+);
+console.log(
+  `LEAN MIX (kept tonight, AllSides): priority bills — ${RECENT_WINDOW_DAYS}-day pass ${fmtMix(keptLean.recent)}, ` +
+    `whole-life pass ${fmtMix(keptLean.wholeLife)}; all other bills ${fmtMix(keptLean.rest)}`
+);
+if (datePass.disordered > 0) {
+  console.warn(
+    `::warning::coverage sync: ${datePass.disordered} response(s) sent with sort=${DATE_SORT} were NOT newest-first — ` +
+      `the API may be accepting the value but ignoring it. The ${RECENT_WINDOW_DAYS}-day window still applies; check DATE_SORT in scripts/coverage-query.mjs.`
+  );
+}
