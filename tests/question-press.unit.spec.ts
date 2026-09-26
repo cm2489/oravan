@@ -14,15 +14,19 @@ import {
   GDELT_LENGTH_EVIDENCE,
   GDELT_MAX_QUERY_CHARS,
   GDELT_MAX_RECORDS,
+  GDELT_VERIFIED_QUERY_CHARS,
   LEGISLATIVE_CONTEXT_TERMS,
   MATCH_RULE,
   MAX_ARTICLES_PER_OUTLET,
   MAX_TERMS_PER_QUESTION,
   OUTLET_POLICY,
   QUERY_SHAPE,
+  QUESTION_PRESS_LATE_DAYS,
   QUESTION_PRESS_PATH,
   QUESTION_PRESS_SCHEMA,
+  QUESTION_PRESS_SILENT_DAYS,
   QUESTION_PRESS_WINDOW_DAYS,
+  REFUSAL_QUOTE_CHARS,
   admitArticles,
   buildGdeltQuery,
   buildQuestionPress,
@@ -34,6 +38,7 @@ import {
   lampLeanCounts,
   leanParity,
   parseArtList,
+  questionPressActivity,
   questionTerms,
   ratedDomainFor,
   seenDay,
@@ -45,6 +50,10 @@ import {
   windowStartDay,
 } from '../lib/question-press.mjs';
 import { REFUSAL_CIRCUIT, SILENT_CIRCUIT, USER_AGENT, collect, limitsFrom, readCircuit } from '../scripts/gdelt-intake.mjs';
+// The daily digest: the one place a run that records nothing is seen (the
+// collector's runs are green on every GDELT outcome).
+import { alarms, formatHealthIssueBody, formatHealthSection } from '../lib/pipeline-health.mjs';
+import { QUESTION_PRESS_WORKFLOW, SIDE_WORKFLOWS } from '../scripts/pipeline-health.mjs';
 // The one definition of a checkable article link (B-5), shared with the lamp.
 import { normalizeArticleUrl } from '../lib/conversation.mjs';
 
@@ -254,14 +263,30 @@ test.describe('the request: short, and the same for every lean', () => {
     expect(() => buildGdeltQuery('')).toThrow();
   });
 
-  test('the cap is held to the measurements: under a third of the shortest refusal, and claimed verified only once an answer at the cap exists', () => {
-    const answered = GDELT_LENGTH_EVIDENCE.answered.map((a: { chars: number }) => a.chars);
+  test('the cap is held to the evidence: never above the longest query GDELT has answered in this shape, under a third of the shortest refusal', () => {
+    type Measured = { chars: number; query: string; shape?: string; at?: string; result?: string };
+    const phrase = (q: string) => /^"([^"]+)"/.exec(q)![1];
+    const answered = GDELT_LENGTH_EVIDENCE.answered as readonly Measured[];
+    const current = answered.filter((a) => a.shape === 'current');
     const refused = GDELT_LENGTH_EVIDENCE.refused.map((r: { chars: number }) => r.chars);
+    expect(current.length).toBeGreaterThan(0);
+    expect(GDELT_VERIFIED_QUERY_CHARS).toBe(Math.max(...current.map((a) => a.chars)));
+    expect(GDELT_MAX_QUERY_CHARS).toBeLessThanOrEqual(GDELT_VERIFIED_QUERY_CHARS);
     expect(GDELT_MAX_QUERY_CHARS * 3).toBeLessThan(Math.min(...refused));
-    expect(GDELT_LENGTH_EVIDENCE.capVerified).toBe(Math.max(...answered) >= GDELT_MAX_QUERY_CHARS);
-    // the recorded queries are literal, and the inconclusive ones were in the shape this file sends
-    for (const a of [...GDELT_LENGTH_EVIDENCE.answered, ...GDELT_LENGTH_EVIDENCE.inconclusive]) expect(a.query.length).toBe(a.chars);
-    for (const r of GDELT_LENGTH_EVIDENCE.inconclusive) expect(r.query).toBe(buildGdeltQuery(/^"([^"]+)"/.exec(r.query)![1]));
+    // The 2026-09-26T07:36:12Z answer that settled the cap: the live questions'
+    // longest query, in exactly the shape buildGdeltQuery builds, run by GDELT
+    // (its no-match body), not refused.
+    expect(current.find((a) => a.at === '2026-09-26T07:36:12Z')).toMatchObject({
+      chars: 99,
+      query: buildGdeltQuery('continuing appropriations and extensions act'),
+      result: expect.stringMatching(/HTTP 200, body \{\}/),
+    });
+    // The recorded queries are literal; every 'current' answer and every
+    // inconclusive request was in the shape this file sends — an answer in
+    // another shape can never verify the cap.
+    for (const a of [...answered, ...GDELT_LENGTH_EVIDENCE.inconclusive]) expect(a.query.length).toBe(a.chars);
+    for (const r of [...current, ...GDELT_LENGTH_EVIDENCE.inconclusive]) expect(r.query).toBe(buildGdeltQuery(phrase(r.query)));
+    for (const a of answered.filter((x) => x.shape !== 'current')) expect(a.query).not.toBe(buildGdeltQuery(phrase(a.query)));
   });
 
   test('every live question in data/moments.json searches only queries within the measured cap', () => {
@@ -309,12 +334,21 @@ test.describe('the response', () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(Object.keys(r.articles[0]).sort()).toEqual(['domain', 'seendate', 'title', 'url']);
     expect(parseArtList('{}')).toEqual({ ok: true, articles: [] }); // GDELT's "no matches"
-    expect(parseArtList('Your query was too short or too long. ')).toMatchObject({ ok: false, kind: 'refused' });
-    expect(parseArtList('The specified phrase is too short.')).toMatchObject({ ok: false, kind: 'refused' });
+    expect(parseArtList('\uFEFF{}')).toEqual({ ok: true, articles: [] }); // a byte-order mark is not a refusal
+    expect(parseArtList('Your query was too short or too long. ')).toEqual({
+      ok: false,
+      kind: 'refused',
+      forLength: true,
+      answer: '"Your query was too short or too long."',
+      error: 'GDELT answered in plain text instead of results: "Your query was too short or too long."',
+    });
     expect(parseArtList('')).toMatchObject({ ok: false, kind: 'empty' });
     expect(parseArtList('   \n')).toMatchObject({ ok: false, kind: 'empty' });
+    // Transport failures, never a verdict on the search: markup and broken JSON stay malformed.
     expect(parseArtList('<html><body>502 Bad Gateway</body></html>')).toMatchObject({ ok: false, kind: 'malformed' });
+    expect(parseArtList('\n  <!DOCTYPE html><title>Error</title>')).toMatchObject({ ok: false, kind: 'malformed' });
     expect(parseArtList('{"articles": [{"url": "https://www.npr.org/x"')).toMatchObject({ ok: false, kind: 'malformed' }); // truncated
+    expect(parseArtList('[{"url": "https://www.npr.org/x"')).toMatchObject({ ok: false, kind: 'malformed' });
     expect(parseArtList(JSON.stringify({ articles: 'nope' }))).toMatchObject({ ok: false, kind: 'malformed' });
     expect(parseArtList('[1,2]')).toMatchObject({ ok: false, kind: 'malformed' });
     // a raw control character inside a title is rescued, not a lost question
@@ -322,6 +356,30 @@ test.describe('the response', () => {
     const rescued = parseArtList(raw);
     expect(rescued.ok).toBe(true);
     if (rescued.ok) expect(rescued.articles[0].url).toBe('https://www.npr.org/x');
+  });
+
+  test('ANY plain-text answer is a refusal of that one search, quoted verbatim — not only the two sentences the first version knew', () => {
+    // GDELT's documentation-example sentence (unverified live), and sentences
+    // this project has never seen: each is a refusal, not a malformed body.
+    for (const text of [
+      'The specified phrase is too short.',
+      'Invalid query: unmatched quotation mark',
+      'Your search contained an unsupported operator.',
+      'Timespan is too long.',
+    ]) {
+      const r = parseArtList(text);
+      expect(r, text).toMatchObject({ ok: false, kind: 'refused', forLength: false, answer: JSON.stringify(text) });
+    }
+    // Verbatim, but one log line: newlines stay escaped inside the quotes.
+    const multi = parseArtList('Query refused.\nReason: phrase contains a stop word\n');
+    expect(multi).toMatchObject({ kind: 'refused', answer: '"Query refused.\\nReason: phrase contains a stop word"' });
+    // A long answer is quoted up to the cap, and says it was cut.
+    const long = parseArtList(`Refused: ${'x'.repeat(2000)}`);
+    expect(long.ok).toBe(false);
+    if (!long.ok && long.kind === 'refused') {
+      expect(long.answer.length).toBeLessThanOrEqual(REFUSAL_QUOTE_CHARS + 3);
+      expect(long.answer.endsWith('…"')).toBe(true);
+    }
   });
 
   test('the local rated filter: GDELT’s domain or the link’s host, and the link must be on the rated domain', () => {
@@ -436,32 +494,39 @@ test.describe('the evidence document', () => {
     expect((next.questions['iran-war-powers'] as Entry).outlets.map((o) => [o.domain, o.lean])).toEqual([['cnn.com', 'center']]);
   });
 
-  test('WRITES: at most once a day, unless the counts actually change', () => {
-    const doc = (today: string, admittedList: ReturnType<typeof admitted>[], checked = true, previous: Doc | null = null) =>
+  test('WRITES: only what a run recorded — nothing on a run that recorded no check, and every later recorded check is saved', () => {
+    const doc = (today: string, admittedList: ReturnType<typeof admitted>[], checked = true, previous: Doc | null = null, terms = ['war powers']) =>
       buildQuestionPress({
         previous,
         liveIds: ['iran-war-powers'],
-        results: checked ? new Map([['iran-war-powers', { terms: ['war powers'], admitted: admittedList }]]) : new Map(),
+        results: checked ? new Map([['iran-war-powers', { terms, admitted: admittedList }]]) : new Map(),
         bias: BIAS,
         today,
       });
     const a = [admitted('cnn.com', 'left', 'a', '2026-09-24')];
-    // no file yet: write only when there is something to record
-    expect(shouldWrite({ previous: null, next: doc(TODAY, a) })).toBe(true);
-    expect(shouldWrite({ previous: null, next: buildQuestionPress({ previous: null, liveIds: [], results: new Map(), bias: BIAS, today: TODAY }) })).toBe(false);
+    // no file yet: write only when something was recorded
+    expect(shouldWrite({ previous: null, next: doc(TODAY, a), recorded: 1 })).toBe(true);
+    expect(shouldWrite({ previous: null, next: buildQuestionPress({ previous: null, liveIds: [], results: new Map(), bias: BIAS, today: TODAY }), recorded: 0 })).toBe(false);
     const d1 = doc(TODAY, a);
-    // same day, same counts (even a re-found link on another day): no write
-    expect(shouldWrite({ previous: d1, next: doc(TODAY, a, true, d1) })).toBe(false);
-    // same day, a count moved: write
-    expect(shouldWrite({ previous: d1, next: doc(TODAY, [...a, admitted('foxnews.com', 'right', 'b')], true, d1) })).toBe(true);
-    // next day, the question was checked again with the same result: ONE write
+    // same day, the same search re-recorded with the same result (GDELT_FORCE): nothing changed, no write
+    expect(shouldWrite({ previous: d1, next: doc(TODAY, a, true, d1), recorded: 1 })).toBe(false);
+    // same day, a recorded search found more: write
+    expect(shouldWrite({ previous: d1, next: doc(TODAY, [...a, admitted('foxnews.com', 'right', 'b')], true, d1), recorded: 1 })).toBe(true);
+    // same day, same counts, but the search itself changed (its stored terms moved): write
+    expect(shouldWrite({ previous: d1, next: doc(TODAY, a, true, d1, ['war powers', 'strikes on iran']), recorded: 1 })).toBe(true);
+    // next day, recorded again with the same counts: its checkedOn moved — ONE write, then quiet
     const d2 = doc('2026-09-26', a, true, d1);
-    expect(shouldWrite({ previous: d1, next: d2 })).toBe(true);
-    expect(shouldWrite({ previous: d2, next: doc('2026-09-26', a, true, d2) })).toBe(false);
-    // next day, nothing checked and nothing aged out: only as_of would move — no restamp
-    expect(shouldWrite({ previous: d1, next: doc('2026-09-26', [], false, d1) })).toBe(false);
-    // ...but a link aging out IS a count change
-    expect(shouldWrite({ previous: d1, next: doc('2026-10-02', [], false, d1) })).toBe(true);
+    expect(countsFor(d2.questions['iran-war-powers'].outlets)).toEqual(countsFor(d1.questions['iran-war-powers'].outlets));
+    expect(shouldWrite({ previous: d1, next: d2, recorded: 1 })).toBe(true);
+    expect(shouldWrite({ previous: d2, next: doc('2026-09-26', a, true, d2), recorded: 1 })).toBe(false);
+    // a run that recorded NOTHING writes nothing — no restamp...
+    expect(shouldWrite({ previous: d1, next: doc('2026-09-26', [], false, d1), recorded: 0 })).toBe(false);
+    // ...and not even when a link aged out, which moves the counts (the rule the first version broke)
+    const aged = doc('2026-10-02', [], false, d1);
+    expect(aged.questions['iran-war-powers'].counts).not.toEqual(d1.questions['iran-war-powers'].counts);
+    expect(shouldWrite({ previous: d1, next: aged, recorded: 0 })).toBe(false);
+    // ...and not when a question left the live set either
+    expect(shouldWrite({ previous: d1, next: buildQuestionPress({ previous: d1, liveIds: [], results: new Map(), bias: BIAS, today: TODAY }), recorded: 0 })).toBe(false);
   });
 });
 
@@ -628,10 +693,28 @@ test.describe('the collector (mocked GDELT): the happy path', () => {
     expect(lines.some((l) => /"war powers" — returned 5 in 1 page\(s\): 3 from rated outlets \(L1\/C1\/R1\), 2 unrated/.test(l))).toBe(true);
     expect(lines.some((l) => /term "operation epic fury" in titles L0\/C2\/R0/.test(l))).toBe(true);
     expect(lines.some((l) => /syria-sanctions-repeal has no multi-word press vocabulary/.test(l))).toBe(true);
-    // until an answer at the cap is on record, the run says the cap is unverified — and says when a run settles it
-    expect(GDELT_LENGTH_EVIDENCE.capVerified).toBe(false);
-    expect(lines.some((l) => /query length — longest GDELT answered this run 81, refused as queries none \(cap 100, NOT yet verified/.test(l))).toBe(true);
-    expect(lines.some((l) => /^::notice::.*every live question's longest query \(81\) is now measured as accepted/.test(l))).toBe(true);
+    // the length line: what GDELT answered this run, against a cap the evidence holds
+    expect(lines.some((l) => /query length — longest GDELT answered this run 81, refused for length none \(cap 99; GDELT has answered a 99-character query in this shape\)/.test(l))).toBe(true);
+    expect(lines.some((l) => /^::notice::/.test(l))).toBe(false); // nothing longer than the evidence was sent
+  });
+
+  test('re-measuring (a cap raised locally): an answer longer than any on record is announced, so the evidence moves before the cap does', async () => {
+    const alias = 'continuing appropriations and extensions act of the fiscal year';
+    expect(buildGdeltQuery(alias).length).toBeGreaterThan(GDELT_VERIFIED_QUERY_CHARS);
+    const moments = { q: { status: 'live', aliases: { en: [alias] }, vehicles: [] } };
+    // at the production cap the phrase is never sent
+    const held = fakeNet(() => ({ status: 200, body: '{}' }));
+    const kept = await run(held, { moments, bills: [] });
+    expect(held.calls).toHaveLength(0);
+    expect(kept.stats.skipped).toEqual(['q']);
+    // with the cap raised for a local measurement, it is sent, answered, and announced
+    const net = fakeNet(() => ({ status: 200, body: '{}' }));
+    const lines: string[] = [];
+    await run(net, { moments, bills: [], limits: { ...LIMITS, maxQueryChars: 150 }, log: (l: string) => lines.push(l) });
+    expect(net.calls).toHaveLength(1);
+    const chars = buildGdeltQuery(alias).length;
+    expect(lines.some((l) => new RegExp(`cap 150; NOT verified above ${GDELT_VERIFIED_QUERY_CHARS}, the longest answer on record`).test(l))).toBe(true);
+    expect(lines.some((l) => new RegExp(`^::notice::gdelt-intake: GDELT answered a ${chars}-character query in this shape — longer than any on record \\(${GDELT_VERIFIED_QUERY_CHARS}\\)`).test(l))).toBe(true);
   });
 
   test('a quiet week (GDELT answers {}) is recorded as zero, with no warning', async () => {
@@ -698,8 +781,11 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(net.calls).toHaveLength(TERMS_PER_RUN); // one request for the refused term, never a halving loop
     expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
     expect((doc.questions['iran-war-powers'] as Entry).terms).toEqual(['war powers']); // stored terms = what GDELT answered
-    expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, answer: expect.stringMatching(/too short or too long/) }]);
-    expect(lines.some((l) => /^::warning::.*GDELT refused the \d+-character query for "operation epic fury" \(GDELT refused the query: Your query was too short or too long/.test(l))).toBe(true);
+    expect(stats.refused).toEqual([
+      { id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: true, answer: '"Your query was too short or too long."' },
+    ]);
+    expect(lines.some((l) => /^::warning::.*GDELT refused the \d+-character query for "operation epic fury" — it answered in plain text instead of results \(its length refusal\), verbatim: "Your query was too short or too long\."/.test(l))).toBe(true);
+    expect(lines.some((l) => /refused for length \d+ \("operation epic fury"\)/.test(l))).toBe(true);
     expect(lines.some((l) => /"operation epic fury" — REFUSED by GDELT as a query/.test(l))).toBe(true);
     expect(lines.some((l) => /^::notice::/.test(l))).toBe(false); // a run with a refusal never claims the cap is settled
     expect(circuit).toBeNull();
@@ -715,6 +801,53 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(net.calls).toHaveLength(REFUSAL_CIRCUIT);
     expect(stats.circuitWhy).toBe('queries refused');
     expect(circuit).toMatchObject({ open: true, reason: 'queries refused', tries: 1 });
+    expect(write).toBe(false);
+  });
+
+  test('ANY PLAIN-TEXT REFUSAL: that one search is skipped with GDELT\'s answer verbatim, and the question updates from its other searches', async () => {
+    const SENTENCE = 'Your search contained a phrase we could not parse.\nPlease simplify it.';
+    const net = fakeNet((url) => (termOf(url) === 'operation epic fury' ? { status: 200, body: SENTENCE } : mixedReply(url)));
+    const lines: string[] = [];
+    const { doc, stats, circuit, write } = await run(net, { previous: prevWithIran(), log: (l: string) => lines.push(l) });
+    // the first version read this as a MALFORMED body and froze the whole question, every run
+    expect(stats.failed).toEqual([]);
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    const iran = doc.questions['iran-war-powers'] as Entry;
+    expect(iran.checkedOn).toBe(TODAY);
+    expect(iran.terms).toEqual(['war powers']); // only what GDELT ran
+    expect(iran.counts.outlets).toEqual({ left: 1, center: 1, right: 1 });
+    expect(stats.refused).toEqual([{ id: 'iran-war-powers', term: 'operation epic fury', chars: buildGdeltQuery('operation epic fury').length, forLength: false, answer: JSON.stringify(SENTENCE) }]);
+    // verbatim, on one log line
+    const warning = lines.find((l) => /^::warning::.*"operation epic fury"/.test(l)) ?? '';
+    expect(warning).toContain('verbatim: "Your search contained a phrase we could not parse.\\nPlease simplify it."');
+    expect(warning).not.toContain('its length refusal');
+    expect(warning.includes('\n')).toBe(false);
+    // not a length measurement: the length line counts it apart
+    expect(lines.some((l) => /refused for length none, 1 other plain-text refusal\(s\)/.test(l))).toBe(true);
+    expect(circuit).toBeNull();
+    expect(write).toBe(true);
+  });
+
+  test('ANY PLAIN-TEXT REFUSAL on every search of one question: that question waits, the next is still searched', async () => {
+    const net = fakeNet((url) => (termOf(url) === 'protect college sports act' ? mixedReply(url) : { status: 200, body: 'The specified phrase is too short.' }));
+    const lines: string[] = [];
+    const { stats, circuit } = await run(net, { log: (l: string) => lines.push(l) });
+    expect(net.calls).toHaveLength(TERMS_PER_RUN); // two refusals in a row, then an answer: under REFUSAL_CIRCUIT
+    expect(stats.failed).toEqual(['iran-war-powers']);
+    expect(stats.done).toEqual(['paying-college-athletes']);
+    expect(lines.some((l) => /iran-war-powers: GDELT refused every one of its queries/.test(l))).toBe(true);
+    expect(circuit).toBeNull();
+  });
+
+  test('ANY PLAIN-TEXT REFUSAL, three in a row: the circuit opens exactly as for the length sentence', async () => {
+    const moments = { q: { status: 'live', aliases: { en: ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta'] }, vehicles: [] } };
+    const net = fakeNet(() => ({ status: 200, body: 'Service notice: this endpoint is not accepting queries.' }));
+    const lines: string[] = [];
+    const { stats, circuit, write } = await run(net, { moments, bills: [], log: (l: string) => lines.push(l) });
+    expect(net.calls).toHaveLength(REFUSAL_CIRCUIT);
+    expect(circuit).toMatchObject({ open: true, reason: 'queries refused' });
+    expect(stats.refused.every((r: { forLength: boolean }) => r.forLength === false)).toBe(true);
+    expect(lines.some((l) => /^::warning::.*3 searches in a row refused \(plain-text answers, quoted above\)/.test(l))).toBe(true);
     expect(write).toBe(false);
   });
 
@@ -821,6 +954,75 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     const lines: string[] = [];
     await run(net, { log: (l: string) => lines.push(l) });
     expect(lines.filter((l) => /^::warning::.*not one had a usable link and seen-date/.test(l))).toHaveLength(TERMS_PER_RUN);
+  });
+});
+
+// ---------------------------------------------------------------------------
+test.describe('the collector: what a run writes', () => {
+  const iranTerms = ['war powers', 'operation epic fury'];
+  const oldLink = (seen: string) => ({ url: `https://www.cnn.com/${seen}`, domain: 'cnn.com', lean: 'left', seen });
+
+  test('a run GDELT refuses throughout writes NOTHING — even when a link ages out of the window overnight', async () => {
+    // Written 2026-09-18 with a link seen 09-17: at NOW (09-25) that link is 8 days old.
+    const prev = buildQuestionPress({
+      previous: null,
+      liveIds: ['iran-war-powers'],
+      results: new Map([['iran-war-powers', { terms: iranTerms, admitted: [oldLink('2026-09-17'), oldLink('2026-09-18')] }]]),
+      bias: BIAS,
+      today: '2026-09-18',
+    });
+    for (const [what, reply] of [
+      ['every search refused', { status: 200, body: 'Your query was too short or too long.' }],
+      ['every request rate-limited', { status: 429, body: '' }],
+      ['every answer a 503', { status: 503, body: '' }],
+    ] as const) {
+      const { doc, write, stats } = await run(fakeNet(() => reply), { previous: prev });
+      expect(stats.done, what).toEqual([]);
+      // the rebuilt document WOULD differ (the 09-17 link aged out)...
+      expect((doc.questions['iran-war-powers'] as Entry).counts, what).not.toEqual((prev.questions['iran-war-powers'] as Entry).counts);
+      // ...and still nothing is written: no restamp, no prune, no as_of
+      expect(write, what).toBe(false);
+    }
+  });
+
+  test('a later successful check with unchanged counts is saved; after that the day is quiet', async () => {
+    // Iran was last checked 09-23, and GDELT's answer today is the same link it held.
+    const prev = buildQuestionPress({
+      previous: null,
+      liveIds: ['iran-war-powers'],
+      results: new Map([['iran-war-powers', { terms: iranTerms, admitted: [{ url: 'https://www.cnn.com/old', domain: 'cnn.com', lean: 'left', seen: '2026-09-23' }] }]]),
+      bias: BIAS,
+      today: '2026-09-23',
+    });
+    const sameLink = () => ({ status: 200, body: JSON.stringify({ articles: [art('cnn.com', 'old', '20260923T120000Z')] }) });
+    // 02:43 — Iran's first search fails (a 503); college is recorded, so the file is written once.
+    const first = await run(
+      fakeNet((url) => (termOf(url) === 'war powers' ? { status: 503, body: '' } : mixedReply(url))),
+      { previous: prev }
+    );
+    expect(first.stats.done).toEqual(['paying-college-athletes']);
+    expect(first.write).toBe(true);
+    expect((first.doc.questions['iran-war-powers'] as Entry).checkedOn).toBe('2026-09-23');
+    // 14:43, the SAME UTC day — Iran is recorded now, with exactly the counts it had.
+    const second = await run(
+      fakeNet((url) => (termOf(url) === 'protect college sports act' ? mixedReply(url) : sameLink())),
+      { previous: first.doc, now: NOW + 12 * 3_600_000 }
+    );
+    expect(second.stats.done).toEqual(['iran-war-powers']);
+    const before = first.doc.questions['iran-war-powers'] as Entry;
+    const after = second.doc.questions['iran-war-powers'] as Entry;
+    expect(after.counts).toEqual(before.counts);
+    expect(after.terms).toEqual(before.terms);
+    expect(after.checkedOn).toBe(TODAY);
+    // The first version dropped this write (same day, same counts), so the gate warned
+    // "has not succeeded" about a question that had just succeeded.
+    expect(second.write).toBe(true);
+    expect(verifyQuestionPress({ data: second.doc, bias: BIAS, moments: MOMENTS, now: NOW + 3 * 86_400_000 }).warnings.join(' ')).not.toMatch(/iran-war-powers: last checked 2026-09-23/);
+    // A third run the same day has nothing due: no request, no write.
+    const idle = fakeNet((url) => mixedReply(url));
+    const third = await run(idle, { previous: second.doc, now: NOW + 13 * 3_600_000 });
+    expect(idle.calls).toHaveLength(0);
+    expect(third.write).toBe(false);
   });
 });
 
@@ -1021,6 +1223,103 @@ test.describe('parity helpers', () => {
 });
 
 // ---------------------------------------------------------------------------
+// THE DAILY DIGEST. The collector's runs are green on every GDELT outcome, so
+// "recorded nothing for days" can only be seen from the committed file.
+test.describe('the daily digest: is the collector recording anything?', () => {
+  const at = (day: string) => Date.parse(`${day}T13:00:00Z`); // the digest's hour
+  const checked = (day: string, ids = ['iran-war-powers']) =>
+    buildQuestionPress({
+      previous: null,
+      liveIds: ids,
+      results: new Map(ids.map((id) => [id, { terms: ['war powers'], admitted: [] }])),
+      bias: BIAS,
+      today: day,
+    });
+  const SEARCHABLE = ['iran-war-powers', 'paying-college-athletes'];
+  const codes = (report: Record<string, unknown>) => alarms(report).map((x: { code: string }) => x.code);
+
+  test("the alarm window is the gate's lateness warning, plus one: both speak up on the same day", () => {
+    expect(QUESTION_PRESS_SILENT_DAYS).toBe(3);
+    expect(QUESTION_PRESS_SILENT_DAYS).toBe(QUESTION_PRESS_LATE_DAYS + 1);
+    const doc = checked('2026-09-22');
+    const quiet = questionPressActivity({ data: doc, searchableIds: ['iran-war-powers'], now: at('2026-09-24') });
+    expect(quiet).toMatchObject({ lastChecked: '2026-09-22', silentDays: 2, silent: false });
+    expect(codes({ questionPress: quiet })).not.toContain('question-press-silent');
+    expect(verifyQuestionPress({ data: doc, bias: BIAS, moments: MOMENTS, now: at('2026-09-24') }).warnings.join(' ')).not.toMatch(/has not succeeded/);
+    const loud = questionPressActivity({ data: doc, searchableIds: ['iran-war-powers'], now: at('2026-09-25') });
+    expect(loud).toMatchObject({ lastChecked: '2026-09-22', silentDays: 3, silent: true, alarmDays: 3 });
+    expect(codes({ questionPress: loud })).toContain('question-press-silent');
+    expect(verifyQuestionPress({ data: doc, bias: BIAS, moments: MOMENTS, now: at('2026-09-25') }).warnings.join(' ')).toMatch(/has not succeeded for 3 days/);
+  });
+
+  test('the newest check is what counts: one question recorded today keeps the alarm quiet, and the lagging one is counted in the row', () => {
+    const old = checked('2026-09-21', ['paying-college-athletes']);
+    const doc = buildQuestionPress({
+      previous: old,
+      liveIds: SEARCHABLE,
+      results: new Map([['iran-war-powers', { terms: ['war powers'], admitted: [] }]]),
+      bias: BIAS,
+      today: TODAY,
+    });
+    const a = questionPressActivity({ data: doc, searchableIds: SEARCHABLE, now: at(TODAY) });
+    expect(a).toMatchObject({ lastChecked: TODAY, silentDays: 0, silent: false, onRecord: 2, searchable: 2, lagging: ['paying-college-athletes'] });
+    const report = { questionPress: a };
+    expect(codes(report)).not.toContain('question-press-silent');
+    expect(formatHealthSection(report)).toMatch(/question press\s+last check 2026-09-25 \(0d ago\) · 2\/2 questions on record · 1 not checked in 3d\+/);
+  });
+
+  test('silent: a ⛔ that names the last recorded day and says where the reason is', () => {
+    const a = questionPressActivity({ data: checked('2026-09-21'), searchableIds: SEARCHABLE, now: at(TODAY) });
+    const raised = alarms({ questionPress: a }).find((x: { code: string }) => x.code === 'question-press-silent');
+    expect(raised?.text).toMatch(/recorded no check since 2026-09-21 — 4d, past the 3-day alarm; its runs stay green on every GDELT outcome/);
+    const rendered = formatHealthSection({ questionPress: a, alarms: alarms({ questionPress: a }) });
+    expect(rendered).toContain('⛔ the Big Question press collector (GDELT) has recorded no check since 2026-09-21');
+  });
+
+  test('no file yet: quiet while the collector is new, a ⛔ once it has run for the alarm window without recording anything', () => {
+    const runningFor = (days: number) => new Date(at(TODAY) - days * 86_400_000).toISOString();
+    expect(questionPressActivity({ data: null, searchableIds: SEARCHABLE, now: at(TODAY), firstRunAt: runningFor(1) })).toMatchObject({ file: false, silent: false, never: false });
+    expect(questionPressActivity({ data: null, searchableIds: SEARCHABLE, now: at(TODAY), firstRunAt: null })).toMatchObject({ silent: false });
+    const never = questionPressActivity({ data: null, searchableIds: SEARCHABLE, now: at(TODAY), firstRunAt: runningFor(4) });
+    expect(never).toMatchObject({ silent: true, never: true, lastChecked: null, onRecord: 0 });
+    expect(alarms({ questionPress: never }).find((x: { code: string }) => x.code === 'question-press-silent')?.text).toMatch(/running for 4d and has never recorded a check/);
+    expect(formatHealthSection({ questionPress: never })).toMatch(/question press\s+no check recorded yet \(collector runs seen for 4d\) · 0\/2 questions on record/);
+  });
+
+  test('nothing to search is not silence: no live question with search terms never alarms', () => {
+    const a = questionPressActivity({ data: checked('2026-09-01'), searchableIds: [], now: at(TODAY), firstRunAt: '2026-09-01T00:00:00Z' });
+    expect(a).toMatchObject({ nothingToSearch: true, silent: false });
+    expect(formatHealthSection({ questionPress: a })).toMatch(/question press\s+no live question has search terms/);
+  });
+
+  test('end to end: days of refusals write nothing, so the committed file itself carries the silence to the digest', async () => {
+    const doc: Doc = checked('2026-09-22');
+    const moments = { 'iran-war-powers': MOMENTS['iran-war-powers'] };
+    for (const day of ['2026-09-23', '2026-09-24', '2026-09-25']) {
+      for (const hour of ['02', '14']) {
+        const r = await run(fakeNet(() => ({ status: 200, body: 'Your query was too short or too long.' })), { previous: doc, moments, now: Date.parse(`${day}T${hour}:43:00Z`) });
+        expect(r.write, `${day} ${hour}:43`).toBe(false); // every one of these runs exits green
+      }
+    }
+    expect(questionPressActivity({ data: doc, searchableIds: ['iran-war-powers'], now: at(TODAY) })).toMatchObject({ lastChecked: '2026-09-22', silent: true });
+  });
+
+  test("reads each entry's checkedOn and nothing else — no count, outlet or link reaches the digest", () => {
+    const bare = { questions: { 'iran-war-powers': { checkedOn: '2026-09-24' } } };
+    expect(questionPressActivity({ data: bare, searchableIds: ['iran-war-powers'], now: at(TODAY) })).toMatchObject({ lastChecked: '2026-09-24', onRecord: 1, silent: false });
+    const shown = JSON.stringify(questionPressActivity({ data: checked(TODAY), searchableIds: ['iran-war-powers'], now: at(TODAY) }));
+    expect(shown).not.toMatch(/outlets|counts|articles|https?:/);
+  });
+
+  test('the workflow is a side workflow of the digest, by its exact name, and the standing issue says what raises its ⛔', () => {
+    const name = /^name:\s*(.+)$/m.exec(readFileSync(join(ROOT, '.github/workflows/question-press.yml'), 'utf8'))?.[1].trim();
+    expect(name).toBe(QUESTION_PRESS_WORKFLOW);
+    expect(SIDE_WORKFLOWS).toContain(QUESTION_PRESS_WORKFLOW);
+    expect(formatHealthIssueBody({ generatedAt: '2026-09-25T13:00:00Z' })).toContain(`press collector (GDELT) recorded no check for ${QUESTION_PRESS_SILENT_DAYS} days`);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // THE BOUNDARIES. Evidence gathered because a question is live must never
 // feed the report that decides which questions should be live, nothing on the
 // site reads it until the owner rules on question-level cards, and nothing
@@ -1043,16 +1342,20 @@ test.describe('boundaries', () => {
     const readers = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components')), ...walk(join(ROOT, 'lib'))]
       .filter((p) => /\.(ts|tsx|mjs|js)$/.test(p))
       .filter((p) => /question-press/.test(readFileSync(p, 'utf8')))
-      .map((p) => p.slice(ROOT.length + 1));
-    expect(readers).toEqual(['lib/question-press.mjs']);
+      .map((p) => p.slice(ROOT.length + 1))
+      .sort();
+    // lib/pipeline-health.mjs is the daily digest's pure half, not a page: it
+    // imports only the alarm window, and the digest reads only each entry's
+    // checkedOn (questionPressActivity, pinned above).
+    expect(readers).toEqual(['lib/pipeline-health.mjs', 'lib/question-press.mjs']);
   });
 
-  test('only the collector, the gates and this test touch it', () => {
+  test('only the collector, the gates, the daily digest and this test touch it', () => {
     const touching = walk(join(ROOT, 'scripts'))
       .filter((p) => p.endsWith('.mjs') && readFileSync(p, 'utf8').includes('question-press'))
       .map((p) => p.slice(ROOT.length + 1))
       .sort();
-    expect(touching).toEqual(['scripts/check-question-press.mjs', 'scripts/gdelt-intake.mjs', 'scripts/verify-sync.mjs']);
+    expect(touching).toEqual(['scripts/check-question-press.mjs', 'scripts/gdelt-intake.mjs', 'scripts/pipeline-health.mjs', 'scripts/verify-sync.mjs']);
     expect(QUESTION_PRESS_PATH).toBe('data/question-press.json');
   });
 

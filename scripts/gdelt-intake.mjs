@@ -28,11 +28,15 @@
  * could not finish. A day the collector did not run at all loses nothing: the
  * next search starts from the last day checked.
  *
- * ---- WRITES: at most once a day, unless the counts change ---------------------
- * `shouldWrite` (lib/question-press.mjs) is the rule: the first run of a UTC
- * day that checked something writes once; any other run writes only when a
- * count actually moved. A day on which nothing could be checked writes
- * nothing at all.
+ * ---- WRITES: only what a run recorded -----------------------------------------
+ * `shouldWrite` (lib/question-press.mjs) is the rule. A run that recorded no
+ * check — every due question failed, was refused on every term, or waited on
+ * the circuit or a budget — writes NOTHING, not even a link aging out of the
+ * window or a new `as_of`. A run that recorded a check writes when the file
+ * would change in anything but `as_of`; since a question is searched at most
+ * once per UTC day, that is at most one write per question per day, and a
+ * later successful check with unchanged counts is still saved (its
+ * `checkedOn` is what the gate's lateness warning reads).
  *
  * ---- BUDGETS: TIME AND COUNT, checked before every request --------------------
  *   - a RUN deadline (GDELT_RUN_DEADLINE_MS, 10 min) and a PER-QUESTION
@@ -56,9 +60,14 @@
  *   - the CIRCUIT OPENS, and the run makes no further request, on: a request
  *     still 429 after its retries; SILENT_CIRCUIT (2) requests in a row with no
  *     answer (network error, timeout, or a body that hung); or
- *     REFUSAL_CIRCUIT (3) queries in a row GDELT refused as queries (the
- *     failure that sank the first build: every run would otherwise spend its
- *     whole budget on queries GDELT will never run);
+ *     REFUSAL_CIRCUIT (3) searches in a row GDELT refused — answered with
+ *     plain text instead of results (the failure that sank the first build:
+ *     every run would otherwise spend its whole budget on queries GDELT will
+ *     never run);
+ *   - ONE refused search is that search's problem only: the term is left out
+ *     of this run's search, GDELT's answer is quoted verbatim in a
+ *     ::warning::, and the question still updates from its other searches
+ *     (lib/question-press.mjs `parseArtList`, and its header, ALL OR NOTHING);
  *   - THE CIRCUIT IS PERSISTED (GDELT_STATE_PATH, carried between runs in the
  *     Actions cache). A later run inside GDELT_CIRCUIT_COOLDOWN_MS (6 h) of
  *     the last failed attempt makes NO request. After the cooldown the run is
@@ -66,9 +75,10 @@
  *     answer is enough — if GDELT is still refusing, the run ends after ONE
  *     request and at most one timeout, and the circuit stays open. A cache
  *     miss reads as a closed circuit, which costs one ordinary run at worst.
- *   - any other failure (5xx, an empty body, a malformed body) fails THAT
- *     question for this run, without spending its remaining searches, since a
- *     question only updates when every one of its searches answered.
+ *   - any other failure (5xx, an empty body, a malformed body — truncated
+ *     JSON or an HTML error page) fails THAT question for this run, without
+ *     spending its remaining searches, since a question only updates when
+ *     every one of its searches answered.
  * The User-Agent names this project honestly. Nothing here imitates a browser
  * or works around a rate limit; the backoff IS the respect for it.
  *
@@ -77,14 +87,22 @@
  * says so in a ::warning::). 1 only when the document it built fails
  * lib/question-press.mjs's own gate — it then refuses to write, so a damaged
  * file can never reach the commit step.
+ *
+ * A GREEN RUN IS NOT A RECORDED CHECK. Because every GDELT outcome exits 0, a
+ * week of refusals is a week of green runs. The alarm lives in the daily
+ * digest instead: scripts/pipeline-health.mjs reads the committed file's
+ * newest `checkedOn` (lib/question-press.mjs `questionPressActivity`) and
+ * raises a ⛔ once no check has been recorded for QUESTION_PRESS_SILENT_DAYS
+ * days — which it can trust, because a run that records nothing writes
+ * nothing.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import { dirname } from 'node:path';
 import {
-  GDELT_LENGTH_EVIDENCE,
   GDELT_MAX_QUERY_CHARS,
   GDELT_MAX_RECORDS,
+  GDELT_VERIFIED_QUERY_CHARS,
   QUERY_SHAPE,
   QUESTION_PRESS_PATH,
   QUESTION_PRESS_WINDOW_DAYS,
@@ -113,9 +131,11 @@ export const USER_AGENT = 'oravan-gdelt-intake/1.0 (+https://github.com/cm2489/o
  *  that never finished) that open the circuit. */
 export const SILENT_CIRCUIT = 2;
 
-/** Queries in a row GDELT refused AS QUERIES ("too short or too long") that
- *  open the circuit. One refused term is that term's problem; three in a row
- *  means GDELT's rules moved, and every further request would be refused too. */
+/** Searches in a row GDELT refused — answered with plain text instead of
+ *  results ("too short or too long", or any other sentence) — that open the
+ *  circuit. One refused term is that term's problem; three in a row means
+ *  GDELT's rules moved (or it is refusing everything), and every further
+ *  request would be refused too. */
 export const REFUSAL_CIRCUIT = 3;
 
 /** Where the circuit state lives between runs: outside data/, never committed
@@ -270,7 +290,7 @@ export async function collect({
     /** @type {string[]} */ failed: [],
     /** @type {string[]} */ skipped: [],
     /** @type {string[]} */ notDue: [],
-    /** @type {Array<{ id: string, term: string, chars: number, answer: string }>} */ refused: [],
+    /** @type {Array<{ id: string, term: string, chars: number, forLength: boolean, answer: string }>} */ refused: [],
     /** query lengths GDELT answered with an article list — the runner-side record of what it accepts */
     /** @type {number[]} */ answeredLengths: [],
   };
@@ -478,14 +498,21 @@ export async function collect({
         tally.requests += 1;
         const parsed = parseArtList(r.body);
         if (!parsed.ok && parsed.kind === 'refused') {
+          // Any plain-text answer is a refusal of THIS search only
+          // (lib/question-press.mjs parseArtList): the term is skipped, the
+          // question still updates from its other searches.
           refusedInARow++;
           refusedThisTerm = true;
           tally.refused = true;
-          stats.refused.push({ id: q.id, term, chars: query.length, answer: parsed.error });
-          log(`::warning::gdelt-intake: ${q.id}: GDELT refused the ${query.length}-character query for "${term}" (${parsed.error}) — the term is left out of this search and out of the stored terms; nothing else about the question changes.`);
+          stats.refused.push({ id: q.id, term, chars: query.length, forLength: parsed.forLength, answer: parsed.answer });
+          log(
+            `::warning::gdelt-intake: ${q.id}: GDELT refused the ${query.length}-character query for "${term}" — it answered in plain text instead of results${parsed.forLength ? ' (its length refusal)' : ''}, verbatim: ${parsed.answer} — the term is left out of this search and out of the stored terms; the question still updates from its other searches.`
+          );
           if (refusedInARow >= REFUSAL_CIRCUIT) {
             openCircuit('queries refused');
-            log(`::warning::gdelt-intake: ${refusedInARow} queries in a row refused as queries — GDELT's rules have moved; circuit open, no further requests this run or for ${Math.round(limits.circuitCooldownMs / 60_000)} min. Re-measure the query shape (lib/question-press.mjs, GDELT_MAX_QUERY_CHARS).`);
+            log(
+              `::warning::gdelt-intake: ${refusedInARow} searches in a row refused (plain-text answers, quoted above) — GDELT is not running this shape of search; circuit open, no further requests this run or for ${Math.round(limits.circuitCooldownMs / 60_000)} min. If the answers are the length sentence, re-measure the query shape (lib/question-press.mjs, GDELT_MAX_QUERY_CHARS); otherwise they say what GDELT wants.`
+            );
             stats.failed.push(q.id);
             break outer;
           }
@@ -611,23 +638,29 @@ export async function collect({
   );
   if (stats.answeredLengths.length || stats.refused.length) {
     const longest = stats.answeredLengths.length ? Math.max(...stats.answeredLengths) : null;
+    const forLength = stats.refused.filter((r) => r.forLength);
+    const otherRefusals = stats.refused.length - forLength.length;
     log(
       `gdelt-intake: query length — longest GDELT answered this run ${longest ?? 'none'}, ` +
-        `refused as queries ${stats.refused.length ? stats.refused.map((r) => `${r.chars} ("${r.term}")`).join(', ') : 'none'} ` +
-        `(cap ${limits.maxQueryChars}${GDELT_LENGTH_EVIDENCE.capVerified ? '' : ', NOT yet verified by an answer at that length'}).`
+        `refused for length ${forLength.length ? forLength.map((r) => `${r.chars} ("${r.term}")`).join(', ') : 'none'}` +
+        `${otherRefusals ? `, ${otherRefusals} other plain-text refusal(s)` : ''} ` +
+        `(cap ${limits.maxQueryChars}; ${
+          limits.maxQueryChars <= GDELT_VERIFIED_QUERY_CHARS
+            ? `GDELT has answered a ${GDELT_VERIFIED_QUERY_CHARS}-character query in this shape`
+            : `NOT verified above ${GDELT_VERIFIED_QUERY_CHARS}, the longest answer on record`
+        }).`
     );
-    // The cap is a choice until an answer at it is on record
-    // (lib/question-press.mjs GDELT_MAX_QUERY_CHARS). Say when this run is
-    // the one that can settle it.
-    const maxLive = Math.max(0, ...due.flatMap((q) => q.terms.map((t) => buildGdeltQuery(t).length)));
-    if (!GDELT_LENGTH_EVIDENCE.capVerified && longest !== null && longest >= maxLive && stats.refused.length === 0) {
+    // Only a run whose cap was raised for re-measurement (GDELT_MAX_QUERY_CHARS,
+    // locally) can send a query longer than any answer on record. Say when one
+    // was answered, so the evidence — and only then the cap — can move.
+    if (longest !== null && longest > GDELT_VERIFIED_QUERY_CHARS && forLength.length === 0) {
       log(
-        `::notice::gdelt-intake: GDELT answered a ${longest}-character query and refused none — every live question's longest query (${maxLive}) is now measured as accepted. Record it in GDELT_LENGTH_EVIDENCE.answered (lib/question-press.mjs).`
+        `::notice::gdelt-intake: GDELT answered a ${longest}-character query in this shape — longer than any on record (${GDELT_VERIFIED_QUERY_CHARS}). Record it in GDELT_LENGTH_EVIDENCE.answered (lib/question-press.mjs) before raising GDELT_MAX_QUERY_CHARS.`
       );
     }
   }
 
-  const write = shouldWrite({ previous, next: doc });
+  const write = shouldWrite({ previous, next: doc, recorded: stats.done.length });
   return { doc, write, stats, today, circuit: nextCircuit };
 }
 
@@ -666,7 +699,7 @@ async function main() {
     );
   }
   const now = Date.now();
-  const { doc, write, circuit } = await collect({
+  const { doc, write, stats, circuit } = await collect({
     moments,
     bills,
     bias,
@@ -682,7 +715,11 @@ async function main() {
   mkdirSync(dirname(statePath), { recursive: true });
   writeFileSync(statePath, `${JSON.stringify({ circuit }, null, 2)}\n`);
   if (!write) {
-    console.log(`gdelt-intake: ${QUESTION_PRESS_PATH} not written — no count moved, and the file already carries today's check or nothing was checked today.`);
+    console.log(
+      stats.done.length === 0
+        ? `gdelt-intake: ${QUESTION_PRESS_PATH} not written — this run recorded no check (the lines above say why), so the file stays exactly as the last run that recorded one left it.`
+        : `gdelt-intake: ${QUESTION_PRESS_PATH} not written — the ${stats.done.length} check(s) recorded this run change nothing in it.`
+    );
     return;
   }
   const text = `${JSON.stringify(doc, null, 2)}\n`;

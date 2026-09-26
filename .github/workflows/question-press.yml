@@ -34,9 +34,18 @@ name: Big Question press counts
 # CADENCE: twice a day. A question is searched at most once per UTC day, over
 # the days since its last check, so the second slot is a retry for whatever
 # the first could not finish (a 429, a deadline) and a missed slot loses no
-# coverage. The file is written at most once a day unless a count changes
-# (lib/question-press.mjs shouldWrite). Neither slot is on the hour or half
-# hour, where GitHub's scheduler backlog is worst.
+# coverage. Only a run that RECORDED a check can write the file, and only when
+# the file would change (lib/question-press.mjs shouldWrite) — at most one
+# write per question per UTC day; a run GDELT refuses throughout writes
+# nothing. Neither slot is on the hour or half hour, where GitHub's scheduler
+# backlog is worst.
+#
+# A GREEN RUN IS NOT A RECORDED CHECK. The collector exits 0 on every GDELT
+# outcome, so this workflow stays green through a week of 429s. The alarm is
+# in the daily digest instead: scripts/pipeline-health.mjs lists this
+# workflow's conclusion among its side workflows and raises a ⛔ once the
+# committed file's newest check is three days old (lib/question-press.mjs
+# QUESTION_PRESS_SILENT_DAYS).
 #
 # COST: $0 — GDELT is free and keyless, no model call. Actions minutes: $0 on a
 # public repo; a run is capped at ~10 minutes by the collector's own deadline
@@ -88,8 +97,10 @@ jobs:
             gdelt-state-
       - name: Collect Big Question press counts (GDELT)
         # Exits 0 on every GDELT outcome — 429s, silence, refusals, an open
-        # circuit — and says so in ::warning:: lines. It exits 1 only when the
-        # document it built fails its own gate, and then it writes nothing.
+        # circuit — and says so in ::warning:: lines; a run that recorded no
+        # check is green too, and shows up in the daily digest instead. It
+        # exits 1 only when the document it built fails its own gate, and then
+        # it writes nothing.
         # timeout-minutes sits above the collector's own 10-minute run deadline.
         timeout-minutes: 12
         env:
