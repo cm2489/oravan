@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-26T17:31:44.365Z",
+    "fetched_at": "2026-09-26T18:22:01.397Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-26T17:31:44.365Z"
+        "checked_at": "2026-09-26T18:22:01.397Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-26T17:31:44.365Z"
+        "checked_at": "2026-09-26T18:22:01.397Z"
       },
       "leans": {
         "center": {
@@ -1094,6 +1094,18 @@
           "domain": "washingtonstand.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8495-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "presstv.co.uk",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNY3RpanRGM0I5dy05RDMwR1hwUnpoNHpOQWttVC1jSjFBOHlUR0QyZjZXQ0hjV1NEbUtjQUtXVC16VVZ1MlRwNVZfbWR3NHIwS094bUFWc19WdzNpTDVsWGUwNnZiV3pWTk1zM2EzNDFRQXBmZXhFMGY5NV9BSUxTa2VoVEs5UWxYLWpDSTA2MU9FamQxRWpqLTUyeXdzdVRqUm5XdnhjbDZkRXpzOHpwYkpjZFp3M19tTGpPNkFnZG1QWmNlWWNVMldTYzFtWVR0VlFvVQ?oc=5"
         }
       ],
       "mostViewed": null
