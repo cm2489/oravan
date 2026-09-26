@@ -11,6 +11,10 @@
  * Needs CONGRESS_API_KEY in the importing process's env.
  */
 import { STATUS_BASE } from '../lib/urgency.mjs';
+// The one copy of the committee-text-on-the-floor vocabulary (2026-09-25):
+// lib/floor-text.mjs is import-free, so this module reading it adds no data
+// and no secret to anything that imports mapStatus.
+import { COMMITTEE_TEXT_ON_FLOOR } from '../lib/floor-text.mjs';
 
 export const CONGRESS = 119;
 // hconres/sconres added 2026-07-23: concurrent resolutions carry War Powers
@@ -191,6 +195,22 @@ export function mapStatus(actionText) {
   // lib/docket.mjs's `floorAnsweredChamber` carries the same guard, one layer
   // up, for the same sentence.
   if (/\brule h\.? ?res\.? ?\d+ passed house/.test(text)) return 'floor_vote';
+  // A COMMITTEE'S TEXT, DISPOSED OF ON THE FLOOR (2026-09-25, S. 4668). "The
+  // committee substitute withdrawn by Voice Vote." is the Senate acting on its
+  // own floor on the substitute a committee reported — Congress.gov types it
+  // "Floor" — and it matched no rule here, so it fell through to the
+  // `committee` default at the bottom and the live page said "In committee"
+  // over a bill whose cloture vote had carried 74-25 the same day. `floor_vote`
+  // is the stage the sentence is written in. It is only the DEFAULT reading:
+  // the sentence does not say whether the measure's own vote is still ahead
+  // or has already happened (eight of the nine read in the record sit directly
+  // before "Passed Senate with an amendment…" on the same day), so it is listed in
+  // AMBIGUOUS_WITHOUT_CONTEXT below and every write path reads the action
+  // before it. Runs BEFORE the defeat and passage branches: the subject is an
+  // amendment, so no "agreed to" or "not agreed to" in it is the measure's.
+  // The vocabulary and the real-record shapes live in lib/floor-text.mjs's
+  // COMMITTEE_TEXT_ON_FLOOR.
+  if (COMMITTEE_TEXT_ON_FLOOR.test(text)) return 'floor_vote';
   // A DEFEAT IS NOT A PASSAGE (2026-09-24). "Failed of passage/not agreed to
   // in House On agreeing to the resolution Failed by the Yeas and Nays: 212 -
   // 219" (the House's own summary line for H.Con.Res. 38's defeat) contains
@@ -334,6 +354,17 @@ export function mapStatus(actionText) {
  *     notice that follows the acting chamber's action on the measure. Usually
  *     that action is passage, but the notice does not say so.
  *
+ * AND ONE THAT `mapStatus` FILES AS `floor_vote` (2026-09-25, S. 4668):
+ *
+ *   - "The committee substitute withdrawn by Voice Vote." and its siblings
+ *     (lib/floor-text.mjs's COMMITTEE_TEXT_ON_FLOOR) are the chamber disposing
+ *     of a committee's text on its floor. They say the measure is on the
+ *     floor and nothing about where it stands — eight of the nine read in
+ *     the record sit directly before a same-day "Passed Senate with an
+ *     amendment…", and S. 4668's follows a cloture vote on the bill. Read on
+ *     their own they were worse than ambiguous: no rule matched, so they
+ *     fell to `committee`.
+ *
  * So no write path may store a status for one of these without first reading
  * the action BEFORE it (see `resolveAmbiguousStatus`). One missed passage is
  * cheaper than one wrong one.
@@ -341,6 +372,7 @@ export function mapStatus(actionText) {
 export const AMBIGUOUS_WITHOUT_CONTEXT = [
   /\bmotion to reconsider laid on the table\b/i,
   /\bmessage on (?:house|senate) action sent to the (?:house|senate)\b/i,
+  COMMITTEE_TEXT_ON_FLOOR,
 ];
 
 /** @param {string | null | undefined} text */
@@ -494,6 +526,28 @@ export async function fetchBillActions(bill) {
 export async function resolveAmbiguousStatus(bill, { fetchActions = fetchBillActions } = {}) {
   const actions = await fetchActions(bill);
   return actions ? statusFromActions(actions) : null;
+}
+
+/**
+ * The status a write path with NOTHING stored may give an ambiguous latest
+ * action when the action before it could not be read — the new-bill path in
+ * scripts/bill-decode.mjs, the only such caller (refreshBillFields and the
+ * re-derivation pass keep the status they already hold). Pure.
+ *
+ * #285's rule stands: a default reading that claims a PASSAGE is never
+ * stored unread ("Motion to reconsider laid on the table…", "Message on …
+ * action sent to …"), so those enter at `committee` — a missed passage,
+ * never a wrong one. But `committee` is not the safe miss for every
+ * ambiguous sentence. "The committee substitute withdrawn by Voice Vote." is
+ * only ever written on the floor (2026-09-25, S. 4668), so entering it at
+ * `committee` is exactly the false claim this exists to prevent; its default
+ * reading, `floor_vote`, claims no outcome and is what it enters at.
+ * @param {string | null | undefined} actionText
+ * @returns {string}
+ */
+export function unresolvedAmbiguousStatus(actionText) {
+  const status = mapStatus(actionText);
+  return status === 'passed_chamber' ? 'committee' : status;
 }
 
 // Stored sync-time score (freshness bonus, no decay) - the FEED never ranks
