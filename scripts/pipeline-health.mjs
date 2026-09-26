@@ -65,6 +65,7 @@ import {
   parsePregen,
   parseSyncDone,
   parseT3,
+  pressFeedHealth,
 } from '../lib/pipeline-health.mjs';
 
 const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
@@ -424,6 +425,9 @@ export function buildReport({ now = Date.now() } = {}) {
     conversation: conversation
       ? { slugs: Object.keys(conversation.slugs ?? {}).length, dangling: danglingConversationSlugs(conversation, billIds) }
       : null,
+    // The newsdesk's own verdict on its press basket, per feed and per lean,
+    // read from the same committed file (source_status). No log read needed.
+    pressFeeds: conversation ? pressFeedHealth(conversation, { now }) : null,
     momentCandidates: readMomentCandidates(now),
     logsRead: Math.min(logTargets.length, MAX_LOG_FETCHES),
     logsSkipped: skippedLogs,

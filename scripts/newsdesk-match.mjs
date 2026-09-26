@@ -643,9 +643,14 @@ export function parseFeed(xml) {
 
 /** Congress.gov house-floor-today.xml / senate-floor-today.xml: each item's
  *  TITLE is a bare bill number ("H.R.8884", "S.4784", "H.Con.Res.89").
- *  findCitations over the titles resolves the tracked types and silently
- *  drops the untracked ones (H.Con.Res/H.Res/S.Res/treaties/nominations) —
- *  no partial matches, by the same regex discipline t1 already pins.
+ *  findCitations over the titles resolves the tracked types — which include
+ *  H.Con.Res./S.Con.Res. since 2026-07-23 (TRACKED_TYPES), so "H.Con.Res.89"
+ *  becomes hconres-89-119 and fires tier-0 like any bill — and silently drops
+ *  the untracked ones (H.Res/S.Res simple resolutions, treaties, nominations),
+ *  with no partial matches, by the same regex discipline t1 already pins.
+ *  (Until 2026-09-25 this comment listed H.Con.Res among the dropped types;
+ *  the 2026-09-24 Senate vote on H.Con.Res. 89 fired as
+ *  `TIER0 FIRE: hconres-89-119 <- senate-floor-today`.)
  *  Returns deduped slugs. */
 export function extractFloorFeedSlugs(xml) {
   const slugs = new Set();
