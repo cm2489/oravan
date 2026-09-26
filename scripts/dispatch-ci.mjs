@@ -5,9 +5,9 @@
  *
  * Bot pushes (GITHUB_TOKEN) never trigger `on: push`, so without a dispatch
  * main's own suite never runs against a fresh corpus and test/corpus drift
- * lands on the next open PR instead (2026-07-25 incident). Four workflows do
- * this after their commit: sync-bills, hot-bills, newsdesk and
- * refresh-legislators.
+ * lands on the next open PR instead (2026-07-25 incident). Five workflows do
+ * this after their commit: sync-bills, hot-bills, newsdesk,
+ * refresh-legislators and the twice-daily Big Question press counts.
  *
  * WHY THIS IS NOT A ONE-LINE `gh workflow run`, which is what it used to be.
  * On 2026-09-21 the nightly's dispatch step failed with

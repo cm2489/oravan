@@ -49,6 +49,26 @@
  *     no AllSides rating for. Skipped cleanly when the file doesn't exist. The
  *     judgement lives in lib/conversation.mjs (verifyConversation)
  *
+ * WARNS, AND NEVER FAILS, on data/question-press.json (the per-question
+ * GDELT evidence, 2026-09-26). It is OPTIONAL evidence: nothing on the site
+ * reads it, the nightly never writes it (its own workflow, question-press.yml,
+ * does), and a failure here would throw away the night's already-paid work
+ * over a file the night did not touch — the same reasoning as the N8-A2 split
+ * below. So every finding about it is a ::warning:: here, whatever it is: a
+ * file that does not parse; damage in the file itself (a lean that is not
+ * left, center or right, a count that is not its own stored links, a link off its outlet's domain, a
+ * day outside the window ending the day the FILE was written, a key the
+ * format does not define, a lost GDELT citation) — which is still an ERROR in
+ * CI's scripts/check-question-press.mjs, before it can reach main; and drift
+ * against data/moments.json or data/media-bias.json (a question id that is
+ * gone, an outlet no longer rated or now rated with another lean) — which is
+ * a warning in CI too, and which the GDELT collector's next run repairs by
+ * itself. Skipped cleanly when the file doesn't exist. The judgement lives in
+ * lib/question-press.mjs (verifyQuestionPress);
+ * tests/question-press.unit.spec.ts runs this file against a temporary data/
+ * directory to pin that a question deleted from moments.json leaves the
+ * nightly green with a warning.
+ *
  * WHAT THIS FILE NO LONGER DOES, and where it went (owner ruling 2026-08-12,
  * N8-A2). The CURSOR-AGE ceiling — "the cursor is more than 10 days old" —
  * used to fail here, which meant it failed BEFORE sync-bills.yml's commit
@@ -73,6 +93,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -340,6 +361,48 @@ if (!existsSync(CONVERSATION_PATH)) {
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);
     for (const f of failures) fail(f);
+  }
+}
+
+// --- question-press: OPTIONAL evidence — it WARNS here and never fails -------
+//
+// data/question-press.json is written by scripts/gdelt-intake.mjs in its own
+// workflow (question-press.yml); nothing on the site reads it and the nightly
+// never writes it. It is re-read here only so the nightly log says when it is
+// damaged or has drifted from data/moments.json / data/media-bias.json. Every
+// finding is a warning, including a file that does not parse, so this block
+// reads its inputs without the `parse` helper above (which fails the run on
+// a file that does not parse). Damage fails in CI
+// (scripts/check-question-press.mjs); drift is repaired by the collector's
+// next run. Skipped cleanly when the file doesn't exist.
+if (!existsSync(QUESTION_PRESS_PATH)) {
+  console.log(`${QUESTION_PRESS_PATH} not present — skipping the question-press checks`);
+} else {
+  const optional = `optional evidence, never a nightly failure`;
+  const readQuietly = (p) => {
+    try {
+      return JSON.parse(readFileSync(p, 'utf8'));
+    } catch {
+      return null; // media-bias.json and moments.json are judged by the blocks that own them
+    }
+  };
+  let questionPress = null;
+  try {
+    questionPress = JSON.parse(readFileSync(QUESTION_PRESS_PATH, 'utf8'));
+  } catch (e) {
+    warn(`question-press: ${QUESTION_PRESS_PATH} does not parse as JSON (${e.message}) — ${optional}; scripts/check-question-press.mjs fails on it in CI`);
+  }
+  if (questionPress !== null) {
+    const { failures, drift, warnings, notes } = verifyQuestionPress({
+      data: questionPress,
+      fileBytes: statSync(QUESTION_PRESS_PATH).size,
+      bias: readQuietly('data/media-bias.json')?.outlets ?? null,
+      moments: readQuietly('data/moments.json'),
+    });
+    for (const n of notes) console.log(n);
+    for (const d of drift) warn(`${d} (${optional})`);
+    for (const w of warnings) warn(w);
+    for (const f of failures) warn(`${f} — ${optional}; scripts/check-question-press.mjs fails on it in CI`);
   }
 }
 

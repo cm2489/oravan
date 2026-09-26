@@ -69,6 +69,7 @@ import {
   parseT3,
   pressFeedHealth,
 } from '../lib/pipeline-health.mjs';
+import { QUESTION_PRESS_PATH, questionPressActivity, questionTerms } from '../lib/question-press.mjs';
 
 const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
 
@@ -96,8 +97,16 @@ const DATA_WORKFLOWS = new Set([
   'Weekly legislators refresh',
 ]);
 
+/**
+ * .github/workflows/question-press.yml's `name:`. Its conclusion is always
+ * green (the collector exits 0 on every GDELT outcome), so the side-workflow
+ * row only says it RAN; whether it recorded anything is the `question press`
+ * row and its ⛔ (lib/question-press.mjs questionPressActivity).
+ */
+export const QUESTION_PRESS_WORKFLOW = 'Big Question press counts';
+
 /** Workflows reported as a bare conclusion, no log read needed. */
-const SIDE_WORKFLOWS = ['Hot-bill refresh', 'Moment watch', 'Weekly legislators refresh'];
+export const SIDE_WORKFLOWS = ['Hot-bill refresh', 'Moment watch', 'Weekly legislators refresh', QUESTION_PRESS_WORKFLOW];
 
 const warn = (msg) => console.log(`::warning::pipeline-health: ${msg}`);
 
@@ -357,11 +366,17 @@ export function buildReport({ now = Date.now() } = {}) {
   // set the dangling-slug check compares against.
   let corpusBills = null;
   const billIds = new Set();
+  /** @type {Map<string, any> | null} full_identifier -> bill, for the question-press row's search terms */
+  let billsBySlug = null;
   try {
     const raw = readFileSync('data/bills.json', 'utf8');
     corpusBills = (raw.match(/"full_identifier":/g) ?? []).length;
+    billsBySlug = new Map();
     for (const b of JSON.parse(raw)) {
-      if (b?.full_identifier) billIds.add(b.full_identifier);
+      if (b?.full_identifier) {
+        billIds.add(b.full_identifier);
+        billsBySlug.set(b.full_identifier, b);
+      }
     }
   } catch (e) {
     warn(`could not read data/bills.json (${e.message})`);
@@ -400,6 +415,29 @@ export function buildReport({ now = Date.now() } = {}) {
 
   const staleness = coverage ? coverageStaleness(coverage, { now }) : null;
 
+  // Is the Big Question press collector recording anything? Its runs are
+  // green on every GDELT outcome, so this reads the committed file's newest
+  // check, against the live questions that have search terms today (the same
+  // `questionTerms` the collector searches with). A question with no terms is
+  // never searched, so it cannot be "not recorded". The oldest collector run
+  // in the 7-day list only matters when no check was ever recorded: it tells
+  // "never recorded" from "just started" (a list that misses older runs can
+  // only under-alarm).
+  const moments = readJsonFile('data/moments.json');
+  const searchableIds =
+    moments && billsBySlug
+      ? Object.entries(moments)
+          .filter(([, m]) => m?.status === 'live' && questionTerms(m, billsBySlug).terms.length > 0)
+          .map(([id]) => id)
+      : null;
+  const questionPressRuns = allRuns.filter((r) => r.workflowName === QUESTION_PRESS_WORKFLOW);
+  const questionPress = questionPressActivity({
+    data: readJsonFile(QUESTION_PRESS_PATH),
+    searchableIds,
+    now,
+    firstRunAt: questionPressRuns.length ? questionPressRuns[questionPressRuns.length - 1].createdAt ?? null : null,
+  });
+
   const report = {
     generatedAt: new Date(now).toISOString(),
     windowHours: 24,
@@ -436,6 +474,9 @@ export function buildReport({ now = Date.now() } = {}) {
     // The newsdesk's own verdict on its press basket, per feed and per lean,
     // read from the same committed file (source_status). No log read needed.
     pressFeeds: conversation ? pressFeedHealth(conversation, { now }) : null,
+    // Whether the GDELT collector recorded anything lately — read from the
+    // committed data/question-press.json, never from a run's colour.
+    questionPress,
     momentCandidates: readMomentCandidates(now),
     logsRead: Math.min(logTargets.length, MAX_LOG_FETCHES),
     logsSkipped: skippedLogs,

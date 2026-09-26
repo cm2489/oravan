@@ -63,3 +63,9 @@ journey-corpus-report.md
 .impeccable/config.local.json
 .impeccable/design.json
 .impeccable/live/
+
+# scripts/gdelt-intake.mjs's circuit-breaker state (GDELT_STATE_PATH). Carried
+# between runs by question-press.yml's Actions cache and never committed: that
+# workflow's commit step stages data/question-press.json only, and this keeps
+# a local run from ever staging it either.
+.gdelt-state/
