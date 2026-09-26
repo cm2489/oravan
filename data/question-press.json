@@ -1,0 +1,48 @@
+{
+  "_meta": {
+    "schema": "question-press/v1",
+    "source": "GDELT DOC 2.0 API (https://api.gdeltproject.org/api/v2/doc/doc), ArtList mode — one search per term in the query shape below, over the days since the question was last checked; the rated outlets are picked out of GDELT’s results using the AllSides table, never named in the query",
+    "attribution": "Article discovery by the GDELT Project (https://www.gdeltproject.org/), used under its terms of use with citation and link. Outlet leans by AllSides (https://www.allsides.com/media-bias/ratings), CC BY-NC 4.0.",
+    "window_days": 7,
+    "as_of": "2026-09-26",
+    "outlet_policy": "allsides-rated-only",
+    "bias_table": "data/media-bias.json",
+    "query_shape": "\"<term>\" (congress OR senate OR representatives OR lawmakers)",
+    "matches": "An article counts when GDELT finds one of the question’s search terms AND one congressional word anywhere in its text — coverage of the topic that mentions Congress, not only coverage of the vote itself.",
+    "stores": "Per question: the exact search terms, the day it was last checked, and for each AllSides-rated outlet GDELT found, its domain, lean, the days GDELT saw it and up to five article links. Never titles, article text, tone or sentiment."
+  },
+  "questions": {
+    "annual-defense-policy": {
+      "checkedOn": "2026-09-26",
+      "terms": [
+        "national defense authorization act"
+      ],
+      "counts": {
+        "outlets": {
+          "left": 0,
+          "center": 0,
+          "right": 1
+        },
+        "articles": {
+          "left": 0,
+          "center": 0,
+          "right": 1
+        }
+      },
+      "outlets": [
+        {
+          "domain": "dailycaller.com",
+          "lean": "right",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-23",
+          "articles": [
+            {
+              "url": "https://dailycaller.com/2026/09/23/lauren-boebert-congress-drones-surveillance-technology-law-enforcement-colorado/",
+              "seen": "2026-09-23"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
