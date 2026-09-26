@@ -771,6 +771,26 @@ test.describe('the press basket', () => {
     }
   });
 
+  test('the basket carries no outlet the 2026-09-25 sweep ruled out on its own robots.txt or terms, nor the feed that refused every runner', () => {
+    // scripts/newsdesk.mjs's header ("THE 2026-09-25 RIGHT-LEAN SWAP") quotes
+    // each clause. The 2026-08-12 header named washingtonexaminer.com as "the
+    // first alternate" without ever reading its terms, which require a signed
+    // agreement for RSS use — so this list exists to make the next swap read
+    // them too. Lifting an entry takes the outlet's written permission (or, for
+    // washingtontimes.com, evidence that runners are no longer refused), and a
+    // line in that header saying so.
+    const ruledOut = [
+      'washingtontimes.com', // HTTP 403 to every GitHub runner, 2026-08-12 -> 2026-09-25
+      'washingtonexaminer.com', // terms: RSS use requires an agreement
+      'nypost.com', // robots.txt notice: automated collection prohibited without written permission
+      'breitbart.com', // terms: no bots or automated access
+      'dailycaller.com', // terms: no automated means to access
+      'thedispatch.com', // terms: no automated scraping or downloading
+      'theblaze.com', // terms: no scraping, crawling or spidering
+    ];
+    for (const domain of ruledOut) expect(feeds, `${domain} is back in SOURCES`).not.toContain(domain);
+  });
+
   test('the invariants above are about CONSTRUCTION; every feed is also watched for LIVENESS, and the verdict reaches the committed file', () => {
     // Two right-rated feeds in this literal did not mean two right-rated feeds
     // delivering: washingtontimes.com answered every runner with 403 from the

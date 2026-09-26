@@ -47,8 +47,9 @@
  * September 2026 news-band audit found no quota stop in the nights it read.)
  * Politically-balanced
  * basket of 11 feeds (leans per data/media-bias.json), the original six
- * verified live 2026-07-16, the three 2026-07-23 additions marked * and
- * the two 2026-08-12 rebalance additions marked **:
+ * verified live 2026-07-16, the three 2026-07-23 additions marked *, the
+ * 2026-08-12 rebalance addition marked ** and the 2026-09-25 right-lean
+ * replacement marked ***:
  *   The Hill      thehill.com    center   https://thehill.com/homenews/feed/
  *   The Hill Senate* thehill.com center   https://thehill.com/homenews/senate/feed/
  *   The Hill House*  thehill.com center   https://thehill.com/homenews/house/feed/
@@ -64,11 +65,9 @@
  *                  admits rated outlets only; see lib/conversation.mjs)
  *   NPR Politics  npr.org        center   https://feeds.npr.org/1014/rss.xml
  *   Fox News      foxnews.com    right    https://moxie.foxnews.com/google-publisher/politics.xml
- *   Washington Times** washingtontimes.com right
- *                 https://www.washingtontimes.com/rss/headlines/news/politics/
- *                 (HAS NEVER DELIVERED FROM CI — HTTP 403 to GitHub's
- *                  runners on every run since it was added; see the
- *                  correction under the rebalance below)
+ *   Reason***     reason.com     right    https://reason.com/latest/feed/
+ *                 (replaced washingtontimes.com, which never delivered from
+ *                  CI; see "THE 2026-09-25 RIGHT-LEAN SWAP" below)
  *   CBS News      cbsnews.com    left     https://www.cbsnews.com/latest/rss/politics
  *   Politico*     politico.com   left     https://rss.politico.com/congress.xml
  *   CNBC Politics** cnbc.com     center   https://www.cnbc.com/id/10000113/device/rss/rss.html
@@ -109,7 +108,62 @@
  * done from a non-runner address, which cannot see a block on runner
  * addresses, and the dark-lean alarm below counts per LEAN, so Fox alone kept
  * the right lean `ok`. For six weeks the right half of this basket was one
- * feed, and nothing said so. The per-feed alarm below is what says so now.
+ * feed, and nothing said so. The per-feed alarm below is what says so now,
+ * and the feed was replaced the same day (next section).
+ *
+ * ---- THE 2026-09-25 RIGHT-LEAN SWAP ----
+ * washingtontimes.com (403 from every runner, above) is out; reason.com is in,
+ * so the basket is again 2 right + 2 left + 3 center rated outlets. The
+ * replacement had to clear two bars the 2026-08-12 vetting never applied: the
+ * outlet's own robots.txt AND its terms, and — because a laptop cannot see a
+ * runner block — the per-feed alarm as its reachability proof. Every
+ * right-rated outlet in data/media-bias.json with a findable feed was checked
+ * on 2026-09-25 with this script's own USER_AGENT (no other user-agent was
+ * tried against any refusal):
+ *   washingtonexaminer.com  /tag/congress/feed/ 200, 10 items, 3 match-
+ *     eligible. Robots allow it. TERMS: "a right to implement the RSS feeds or
+ *     APIs offered by our Sites if you have entered into an agreement with us"
+ *     (Terms of Service effective 2025-07-02). Out without that agreement.
+ *   nypost.com              /politics/feed/ 200. ROBOTS.TXT NOTICE:
+ *     "Collection of content and other data on nypost.com through automated
+ *     means is prohibited unless you have express written permission". Out.
+ *   breitbart.com, dailycaller.com  terms forbid bots/automated access. Out.
+ *   thedispatch.com, theblaze.com   terms forbid scraping/downloading pages
+ *     by automated means. Out.
+ *   dailysignal.com  feed 200, but its terms pages answer this user-agent
+ *     with 403, so its terms could not be read. Out.
+ *   nationalreview.com /news/feed/ 403; newsmax.com timeout at 20s;
+ *     townhall.com, americanthinker.com 404; thepostmillennial.com 0 items;
+ *     dailywire, spectator.org, theamericanconservative, oann, marketwatch:
+ *     0 legislative-looking items in the sample.
+ *   freebeacon.com  200, ~5 items/day, 3 match-eligible of 20. Terms forbid
+ *     "unauthorized automated means to compile information" (whether a
+ *     published RSS feed counts as authorized is a judgement). The alternate.
+ *   wnd.com  200, 2 match-eligible of 24. No automated-access clause.
+ *     Passed over.
+ *   reason.com  /latest/feed/ is the feed its own RSS button links to; 200,
+ *     48 items over ~54h (~21/day, the Washington Times' volume), 7
+ *     legislative-looking and t3-eligible, every link on reason.com, served by
+ *     nginx (not Cloudflare, the front the Times refused runners from — though
+ *     rss.politico.com is also Cloudflare and delivers, so the front alone
+ *     predicts nothing). Robots: `Disallow:` (nothing). Terms: no clause on
+ *     automated access or RSS at all; content is "intended for your personal,
+ *     noncommercial use only" and may not be republished. This script
+ *     republishes nothing — a headline is matched and discarded, and only the
+ *     outlet's domain and the day reach a committed file — but whether this
+ *     project's use is "noncommercial" is the owner's call, and the same
+ *     question already stands over the CC BY-NC AllSides table.
+ * The match-eligible counts are ONE point-in-time fetch each, not a rate.
+ * AllSides' own 5-point ratings for these outlets were not re-read (allsides.com
+ * answers this user-agent with 403); data/media-bias.json rates all of them
+ * right, and that table is what the code counts.
+ * The feeds ALREADY in the basket were not re-vetted against their terms in
+ * this pass. One was spot-checked and it matters: Fox's terms (last revised
+ * 2025-08-27) forbid downloading or scraping content "except as expressly
+ * permitted in these Terms of Use", and no RSS permission was found in them.
+ * The bar applied to the replacement is stricter than the one the basket was
+ * built on; whether to hold the incumbents to it is an owner decision.
+ *
  * Dead/rejected candidates during verification — 2026-07-16/23:
  * apnews.com/hub/politics.rss and apnews.com/rss (both 404 — AP discontinued
  * most public RSS), politico.com/rss/politics08.xml (403; the congress.xml
@@ -125,7 +179,9 @@
  * parseable items). Rated-but-passed-over on congress relevance:
  * nationalreview.com (1/20), thedispatch.com (1/10), dailysignal.com (1/20),
  * nypost.com/politics (5/20 but heavily NY-local), washingtonexaminer.com
- * /tag/congress (3/10, healthy — the first alternate if either addition dies).
+ * /tag/congress (3/10, healthy — named here as "the first alternate if either
+ * addition dies"; its terms, read on 2026-09-25, require an agreement for RSS
+ * use, so it was not that alternate — see THE 2026-09-25 RIGHT-LEAN SWAP).
  *
  * ---- THE DARK-LEAN ALARM (critic B-4, 2026-08-12) ----
  * A rebalanced basket that quietly loses a side is the same failure with extra
@@ -450,9 +506,14 @@ const SOURCES = [
   { name: 'Roll Call', domain: 'rollcall.com', url: 'https://rollcall.com/feed/' },
   { name: 'NPR Politics', domain: 'npr.org', url: 'https://feeds.npr.org/1014/rss.xml' },
   { name: 'Fox News Politics', domain: 'foxnews.com', url: 'https://moxie.foxnews.com/google-publisher/politics.xml' },
-  // 2026-08-12 rebalance (critic B-4): the second RIGHT-rated outlet, so no
-  // lean in this basket depends on one feed staying alive.
-  { name: 'Washington Times Politics', domain: 'washingtontimes.com', url: 'https://www.washingtontimes.com/rss/headlines/news/politics/' },
+  // The second RIGHT-rated outlet (critic B-4), since 2026-09-25. It replaces
+  // washingtontimes.com, which answered every GitHub runner with HTTP 403 from
+  // the day the 2026-08-12 rebalance added it. Chosen on terms as much as on
+  // lean: see the header's "THE 2026-09-25 RIGHT-LEAN SWAP" for the candidates
+  // whose robots.txt or terms ruled them out. Whether a RUNNER can reach it is
+  // proven only by the first newsdesk runs after merge; the per-feed alarm
+  // names it within three days if it is refused too.
+  { name: 'Reason', domain: 'reason.com', url: 'https://reason.com/latest/feed/' },
   { name: 'CBS News Politics', domain: 'cbsnews.com', url: 'https://www.cbsnews.com/latest/rss/politics' },
   { name: 'Politico Congress', domain: 'politico.com', url: 'https://rss.politico.com/congress.xml' },
   // 2026-08-12 rebalance: a third CENTER-rated outlet, and the one with the
