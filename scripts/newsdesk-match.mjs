@@ -34,9 +34,13 @@
  *    CHIPS Act" clears the candidate floor instead of being unmatchable.
  * t3 (resolved by scripts/newsdesk.mjs's one batched Haiku call): ONLY
  *    headlines t2 left ambiguous. This module supplies the batch
- *    membership test (looksLegislative) and validates the LLM's output
- *    against the offered candidates (a hallucinated slug is never trusted
- *    — see newsdesk.mjs's resolveWithHaiku).
+ *    membership test (looksLegislative), the prompt itself (buildT3Prompt:
+ *    each candidate with its latest action date, status and floor-record
+ *    note), the floor-record family offer (offerFloorFamily — see "the floor
+ *    record" below), and newsdesk.mjs validates the LLM's output against the
+ *    offered candidates (a hallucinated slug is never trusted — see
+ *    resolveWithHaiku). Every tier reads headlineForMatching's view of the
+ *    title: an aggregator item without its " - Outlet" suffix.
  * nickname bridge (extractNicknameTokens + buildListIndex + matchNickname):
  *    for a legislative-looking headline t1/t2/t3 ALL missed — the
  *    "brand-new big bill covered only by name" gap. newsdesk.mjs resolves
@@ -146,6 +150,24 @@ const STOPWORDS = new Set([
   'national', 'federal', 'government', 'law', 'laws', 'program', 'programs',
 ]);
 
+/**
+ * Words shorter than 4 characters that are still kept. The length floor exists
+ * to drop scraps ("gop", "new", "say"), and it also dropped the one short word
+ * the corpus's war-powers resolutions are NAMED by: "War Powers Resolution"
+ * tokenized to "powers resolution", so "Senate rejects Iran war powers vote"
+ * shared nothing with them that it did not also share with a dozen other
+ * resolutions. Measured 2026-09-26 over the 2026-09-24 Iran pull: keeping
+ * "war" takes H.Con.Res. 89 from offered on 68 of 75 vote headlines to all 75,
+ * and changes 56 shortlists across ~7,000 replayed headlines, Iran ones
+ * included (by outlet lean: left 10, center 17, right 9, unrated 20).
+ * df("war") is 19, so it is an ordinary, un-doubled token.
+ * The acronyms reviewed with it were NOT added: SEC, CR and NIL changed no
+ * Iran routing and moved 21 unrelated shortlists, and lower-cased "sec" is as
+ * often "Sec." (Secretary) as the Commission. Extending this list is a
+ * measurement, not a guess — rerun the replay first.
+ */
+export const SHORT_TOKENS_KEPT = new Set(['war']);
+
 /** Lower-case, strip punctuation/accents, drop short + stop words. Returns
  *  a de-duplicated token array. */
 export function tokenize(s) {
@@ -155,7 +177,7 @@ export function tokenize(s) {
     .replace(/[̀-ͯ]/g, '') // strip combining diacritics after NFKD (e.g. é -> e)
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter((t) => t.length >= 4 && !STOPWORDS.has(t));
+    .filter((t) => (t.length >= 4 || SHORT_TOKENS_KEPT.has(t)) && !STOPWORDS.has(t));
   return Array.from(new Set(raw));
 }
 
@@ -174,21 +196,46 @@ export function attachDf(index) {
   return index;
 }
 
+/**
+ * @typedef {{ slug: string, title: string, tokens: Set<string>, titleTokens: Set<string>, lastActionDate: string | null, status: string | null }} IndexEntry
+ * @typedef {IndexEntry[] & { df?: Map<string, number>, bySlug?: Map<string, IndexEntry> }} BillIndex
+ * @typedef {{ kind: 'floor' | 'scheduled' | 'announced', chamber: 'senate' | 'house' | null, date: string | null, source: string, certainty?: string | null }} FloorEntry
+ * @typedef {Record<string, { source: string, last_seen: string }>} FloorMemory
+ */
+
 /** Build the free-match index once per run: slug -> token set drawn from
  *  the bill's title + press_names + news_query (data/bills.json fields;
  *  there is no separate search-inputs.json). news_query is the corpus's
  *  own press-search phrasing (~2,255 bills carry one) — exactly the
  *  vocabulary headlines use, so it belongs in the t2 index alongside the
- *  formal title. Bills with no usable tokens are skipped. */
+ *  formal title. Bills with no usable tokens are skipped.
+ *
+ *  Each entry also carries what t3 needs to tell near-identical measures
+ *  apart (2026-09-26): the bill's own latest action date and status, and the
+ *  token set of its formal TITLE alone (titleTokens), which is what the
+ *  floor-record family test compares — press_names/news_query are search
+ *  phrasing, not what the measure is. `bySlug` is a non-serialized lookup,
+ *  like `df`.
+ *  @param {any[]} bills
+ *  @returns {BillIndex} */
 export function buildBillIndex(bills) {
   const index = [];
   for (const b of bills) {
     const text = [b.title, ...((b.press_names ?? [])), b.news_query].filter(Boolean).join(' ');
     const tokens = new Set(tokenize(text));
     if (tokens.size === 0) continue;
-    index.push({ slug: slugOfBill(b), title: b.title, tokens });
+    index.push({
+      slug: slugOfBill(b),
+      title: b.title,
+      tokens,
+      titleTokens: new Set(tokenize(b.title)),
+      lastActionDate: typeof b.last_action_date === 'string' ? b.last_action_date : null,
+      status: typeof b.status === 'string' ? b.status : null,
+    });
   }
-  return attachDf(index);
+  const built = /** @type {BillIndex} */ (attachDf(index));
+  built.bySlug = new Map(index.map((e) => [e.slug, e]));
+  return built;
 }
 
 const T2_CONFIDENT_MIN_SHARED = 3; // weighted (rare tokens count double)
@@ -201,32 +248,57 @@ const T2_CANDIDATE_MIN_SHARED = 2; // weighted: 2 common tokens OR 1 rare token
  *  structurally unmatchable; a lone COMMON shared token still can't. */
 export const RARE_TOKEN_MAX_DF = 3;
 
+/** One index entry scored against a headline's tokens. Returns the scored
+ *  shape whatever the weight — the caller applies the candidate floor. */
+function scoreEntry(entry, hTokens, df) {
+  let shared = 0;
+  let weight = 0;
+  const matched = [];
+  for (const t of hTokens) {
+    if (entry.tokens.has(t)) {
+      shared++;
+      matched.push(t);
+      weight += (df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1;
+    }
+  }
+  return {
+    slug: entry.slug,
+    title: entry.title,
+    shared,
+    weight,
+    ratio: shared / hTokens.length,
+    matched,
+    lastActionDate: entry.lastActionDate ?? null,
+    status: entry.status ?? null,
+  };
+}
+
 /** Score every indexed bill against a headline's tokens. `shared` is the
  *  raw shared-token count; `weight` is rarity-weighted (rare tokens count
  *  double — see RARE_TOKEN_MAX_DF); `ratio` stays raw-count-based so it
  *  keeps meaning "what fraction of the headline's own tokens matched".
- *  Sorted best-first by weight, then ratio. */
+ *  Sorted best-first by weight, then ratio. Each candidate also carries
+ *  `matched` (the headline tokens it shared) and the bill's own
+ *  `lastActionDate`/`status`, which t3's prompt prints. */
 export function scoreCandidates(headline, billIndex) {
   const hTokens = tokenize(headline);
   if (hTokens.length === 0) return [];
   const df = billIndex.df ?? new Map();
   const scored = [];
   for (const entry of billIndex) {
-    let shared = 0;
+    // Cheap weight pass first: most of the ~3,200 entries share nothing, and
+    // only a candidate is worth building the full scored shape for.
     let weight = 0;
-    for (const t of hTokens) {
-      if (entry.tokens.has(t)) {
-        shared++;
-        weight += (df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1;
-      }
-    }
-    if (weight >= T2_CANDIDATE_MIN_SHARED) {
-      scored.push({ slug: entry.slug, title: entry.title, shared, weight, ratio: shared / hTokens.length });
-    }
+    for (const t of hTokens) if (entry.tokens.has(t)) weight += (df.get(t) ?? Infinity) <= RARE_TOKEN_MAX_DF ? 2 : 1;
+    if (weight >= T2_CANDIDATE_MIN_SHARED) scored.push(scoreEntry(entry, hTokens, df));
   }
   scored.sort((a, b) => b.weight - a.weight || b.ratio - a.ratio);
   return scored;
 }
+
+/** How many candidates t2 hands t3 for one ambiguous headline, before any
+ *  floor-record family member is added (see offerFloorFamily). */
+export const T3_CANDIDATES_MAX = 5;
 
 /** t2 verdict for one headline against the index:
  *   { tier: 't2', slug }        - one candidate is clearly the best match
@@ -237,8 +309,14 @@ export function scoreCandidates(headline, billIndex) {
  *  one common token (weight 3) can be confident where two common tokens
  *  (weight 2) cannot; a lone rare token (weight 2) is a candidate but
  *  never confident — it goes to t3 for disambiguation, not straight to a
- *  fire. */
-export function matchLocal(headline, billIndex) {
+ *  fire.
+ *
+ *  `opts.floorRecord` (Map<slug, FloorEntry>, see buildFloorRecord) changes
+ *  ONLY the ambiguous branch: which candidates t3 is offered and in what
+ *  order (offerFloorFamily). It never makes a headline confident, never
+ *  turns a null into a match, and never touches the t2 verdict — the
+ *  confident path is byte-for-byte what it was. */
+export function matchLocal(headline, billIndex, opts = {}) {
   const candidates = scoreCandidates(headline, billIndex);
   if (candidates.length === 0) return null;
   const [top, runnerUp] = candidates;
@@ -247,7 +325,296 @@ export function matchLocal(headline, billIndex) {
     top.ratio >= T2_CONFIDENT_MIN_RATIO &&
     (!runnerUp || top.weight >= runnerUp.weight * 1.5);
   if (confident) return { tier: 't2', slug: top.slug };
-  return { tier: 'ambiguous', candidates: candidates.slice(0, 5) };
+  const shown = candidates.slice(0, T3_CANDIDATES_MAX);
+  const floorRecord = opts.floorRecord;
+  if (!floorRecord || floorRecord.size === 0) return { tier: 'ambiguous', candidates: shown };
+  return { tier: 'ambiguous', candidates: offerFloorFamily(headline, shown, billIndex, floorRecord) };
+}
+
+// ---- the floor record: which near-identical measure was actually voted on ----
+/*
+ * WHY (2026-09-26). On 2026-09-24 the Senate voted 49-50 on H.Con.Res. 89, the
+ * House-passed Iran war-powers resolution. Tier-0 knew: the run log says
+ * `TIER0 FIRE: hconres-89-119 <- senate-floor-today`. The press matcher did
+ * not. The corpus holds TWELVE Iran war-powers resolutions whose titles are
+ * the same sentence in two wordings (six S.J.Res. "to direct the removal of
+ * United States Armed Forces from hostilities within or against the Islamic
+ * Republic of Iran…", six H.Con.Res. "Directing the President, pursuant to
+ * section 5(c) of the War Powers Resolution, to remove…"), so a headline like
+ * "Senate rejects war powers resolution" scores them all the same. The
+ * shortlist is cut at five by corpus order, t3 was shown titles only, and the
+ * week's vote coverage landed on S.J.Res. 185 — a resolution last acted on in
+ * June — while the measure actually on the floor got nothing. Replayed over
+ * the 99-item Google News Iran pull of 2026-09-24: 79 headlines reached t3,
+ * 62 of them listed S.J.Res. 185 first, 0 listed H.Con.Res. 89 first, and 15
+ * did not offer it at all.
+ *
+ * WHAT CHANGES. Two things, both record-based and lean-free (the chamber's own
+ * floor feed and schedule carry no outlet):
+ *   1. offerFloorFamily: a measure on the floor record in the last 48 hours is
+ *      ADDED to an ambiguous headline's shortlist when it is in the same title
+ *      family as a candidate already on it (titleFamily below), and it is
+ *      ordered at the head of that family. It only ever adds a candidate the
+ *      headline already supports, and it never jumps an unrelated candidate
+ *      the headline supports better.
+ *   2. buildT3Prompt: every candidate reaches t3 with its latest action date,
+ *      its status and, when it has one, its floor-record note — so t3 can see
+ *      that one of twelve identical-looking resolutions was on the Senate floor
+ *      yesterday and the others were last touched in June.
+ * t3 still makes the call, and it can still only return a slug it was
+ * offered. Nothing here fires anything or moves a bill up the docket.
+ */
+
+/** A floor-record entry stays eligible this long after it was last seen on a
+ *  chamber floor feed. The feeds roll over to the next legislative day, while
+ *  the coverage of a vote keeps arriving for a day or two after it. */
+export const FLOOR_RECORD_HOURS = 48;
+
+/** Tier-0 sources that ARE the floor record. Most-viewed is not: a bill being
+ *  read on congress.gov says nothing about which measure a chamber acted on. */
+export const FLOOR_RECORD_SOURCES = Object.freeze({
+  'senate-floor-today': { kind: 'floor', chamber: 'senate' },
+  'house-floor-today': { kind: 'floor', chamber: 'house' },
+  'house-bills-this-week': { kind: 'scheduled', chamber: 'house' },
+});
+
+/** A token shared by this many index entries or fewer is DISTINCTIVE for the
+ *  family test ("iran" 21, "hostilities" 16, "armed" 19, "forces" 22 in the
+ *  2026-09-25 corpus; "resolution" 80, "security" 86, "health" 112 are not). */
+export const FAMILY_TOKEN_MAX_DF = 25;
+/** Two titles are one family when they share at least this many distinctive
+ *  tokens. The S.J.Res. and H.Con.Res. Iran wordings share four (hostilities,
+ *  armed, forces, iran) while their raw-token Jaccard is only 0.24 — a plain
+ *  title-similarity threshold would have split exactly the pair that matters. */
+export const FAMILY_MIN_SHARED = 3;
+/** At most this many floor-record family members are ADDED to one headline's
+ *  shortlist (it can then hold T3_CANDIDATES_MAX + this many). */
+export const FLOOR_RESCUE_MAX = 2;
+
+/** Are these two index entries near-identical measures? Counted on the formal
+ *  titles only, over distinctive tokens only (see FAMILY_TOKEN_MAX_DF). */
+export function titleFamily(a, b, df) {
+  if (!a?.titleTokens || !b?.titleTokens || a.slug === b.slug) return false;
+  let shared = 0;
+  for (const t of a.titleTokens) {
+    if (b.titleTokens.has(t) && (df?.get(t) ?? Infinity) <= FAMILY_TOKEN_MAX_DF) {
+      shared++;
+      if (shared >= FAMILY_MIN_SHARED) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Offer the floor-record member of a near-identical family, and order ties by
+ * the record. `shown` is t2's own shortlist (already cut to
+ * T3_CANDIDATES_MAX). A bill F on the floor record that is NOT on it is added
+ * when, for some shown candidate S:
+ *   - F and S are one title family (titleFamily), AND
+ *   - the headline matched F on at least one token it also matched S on —
+ *     the headline is about whatever the family is about, not merely about
+ *     something else that happens to share a word with it.
+ * Added candidates are marked `rescued: true`. The order is headline weight
+ * first, floor-record candidates ahead of equal-weight ones, t2's own order
+ * after that — and then each floor-record candidate is moved up to lead its
+ * own title family (see the comment at the move). A candidate outside that
+ * family that the headline supports better is never jumped. Every candidate
+ * on the floor record carries its entry as `floor`. Pure; never mutates
+ * `shown`.
+ */
+export function offerFloorFamily(headline, shown, billIndex, floorRecord) {
+  const df = billIndex.df ?? new Map();
+  const bySlug = billIndex.bySlug ?? new Map(billIndex.map((e) => [e.slug, e]));
+  const hTokens = tokenize(headline);
+  const shownSlugs = new Set(shown.map((c) => c.slug));
+  const eligible = [];
+  for (const [slug, entry] of floorRecord) {
+    if (shownSlugs.has(slug)) continue;
+    const f = bySlug.get(slug);
+    if (!f) continue; // not in the corpus - t2/t3 can only ever offer corpus bills
+    const scored = scoreEntry(f, hTokens, df);
+    if (scored.shared === 0) continue;
+    const fMatched = new Set(scored.matched);
+    const sibling = shown.some(
+      (s) => s.matched?.some((t) => fMatched.has(t)) && titleFamily(f, bySlug.get(s.slug), df)
+    );
+    if (sibling) eligible.push({ ...scored, rescued: true, floor: entry });
+  }
+  // More eligible than slots (rare: it takes several members of ONE family on
+  // the floor inside 48 hours): on-the-floor before announced, then the
+  // headline's own weight, then slug order so the pick is deterministic.
+  const kindRank = (e) => (e.floor.kind === 'floor' ? 0 : e.floor.kind === 'scheduled' ? 1 : 2);
+  const rescued = eligible
+    .sort((a, b) => kindRank(a) - kindRank(b) || b.weight - a.weight || (a.slug < b.slug ? -1 : 1))
+    .slice(0, FLOOR_RESCUE_MAX);
+  const ordered = [
+    ...shown.map((c) => (floorRecord.has(c.slug) ? { ...c, floor: floorRecord.get(c.slug) } : c)),
+    ...rescued,
+  ]
+    // Array.prototype.sort is stable, so t2's own order survives every tie
+    // these two keys do not break.
+    .sort((a, b) => b.weight - a.weight || (b.floor ? 1 : 0) - (a.floor ? 1 : 0));
+  // Then a floor-record candidate LEADS ITS OWN FAMILY: it moves up to just
+  // ahead of the best-placed member of its title family, and no further.
+  // Inside a family the weight gap is lexical noise, not evidence - a headline
+  // saying senators "voted against" the resolution scores the S.J.Res. wording
+  // ("hostilities within or AGAINST … Iran") one point above the H.Con.Res.
+  // wording ("hostilities WITH Iran") for no reason that has anything to do
+  // with which one was voted on, and in the 2026-09-24 pull that noise sat
+  // almost entirely in right-rated outlets' headlines. An unrelated candidate
+  // the headline supports better is never jumped.
+  for (const f of ordered.filter((c) => c.floor)) {
+    const at = ordered.indexOf(f);
+    const lead = ordered.findIndex((c, i) => i < at && !c.floor && titleFamily(bySlug.get(f.slug), bySlug.get(c.slug), df));
+    if (lead === -1) continue;
+    ordered.splice(at, 1);
+    ordered.splice(lead, 0, f);
+  }
+  return ordered;
+}
+
+/**
+ * The floor record t3 reads, as Map<slug, {kind, chamber, date, source,
+ * certainty?}>. Two inputs, both the government's own record:
+ *   - `persisted`: the newsdesk cache's rolling 48-hour memory of what the
+ *     chamber floor feeds listed (rollFloorRecord) — kind 'floor' for the
+ *     congress.gov floor-today feeds, 'scheduled' for the House's weekly
+ *     schedule. `date` is the UTC day the feed last listed it.
+ *   - `signals`: data/floor-signals.json's tier-0 announcements (the Senate
+ *     Daily Digest program, the House weekly schedule), kind 'announced',
+ *     `date` = the day it was announced FOR. Stale entries (a source that went
+ *     quiet, carried forward) are skipped: carried-forward is not current.
+ * A slug in both keeps the 'floor' entry — having been on the floor is the
+ * stronger fact than having been announced.
+ */
+/**
+ * @param {{ persisted?: unknown, signals?: Record<string, any> | null, nowMs?: number }} [input]
+ * @returns {Map<string, FloorEntry>}
+ */
+export function buildFloorRecord({ persisted = null, signals = null, nowMs = Date.now() } = {}) {
+  /** @type {Map<string, FloorEntry>} */
+  const out = new Map();
+  const fresh = rollFloorRecord(persisted, [], nowMs);
+  for (const [slug, e] of Object.entries(fresh)) {
+    const meta = FLOOR_RECORD_SOURCES[e.source];
+    if (!meta) continue;
+    out.set(slug, { kind: /** @type {FloorEntry['kind']} */ (meta.kind), chamber: /** @type {FloorEntry['chamber']} */ (meta.chamber), date: e.last_seen.slice(0, 10), source: e.source });
+  }
+  for (const [slug, s] of Object.entries(signals ?? {})) {
+    if (!s || s.stale === true || !s.tier0 || out.has(slug)) continue;
+    const chamber = s.tier0.chamber === 'senate' || s.tier0.chamber === 'house' ? s.tier0.chamber : null;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(s.tier0.covers ?? '')) ? s.tier0.covers : null;
+    out.set(slug, {
+      kind: 'announced',
+      chamber,
+      date,
+      source: typeof s.tier0.source === 'string' ? s.tier0.source : 'floor-signals',
+      certainty: typeof s.tier0.certainty === 'string' ? s.tier0.certainty : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Roll the persisted floor-feed memory forward: merge this run's
+ * observations ([{slug, source}], stamped `nowMs`) and drop anything last seen
+ * more than FLOOR_RECORD_HOURS ago, or stamped in the future, or from a source
+ * that is not a floor-record source. Returns a fresh plain object (JSON-safe,
+ * `{[slug]: {source, last_seen}}`) and never mutates its input. A lost or
+ * corrupt cache is `{}`, which costs the floor record its memory of earlier
+ * runs and nothing else — this run's own floor feeds still count.
+ *
+ * A floor-today listing outranks a weekly-schedule listing: the first says the
+ * measure WAS on the floor, the second that it may be. So a schedule sighting
+ * never overwrites a floor sighting still inside the window (the floor fact
+ * simply ages out on its own clock), while a floor sighting always replaces a
+ * schedule one, and a same-kind sighting refreshes the clock.
+ */
+/**
+ * @param {unknown} prev
+ * @param {{ slug: string, source: string }[]} [observations]
+ * @param {number} [nowMs]
+ * @returns {FloorMemory}
+ */
+export function rollFloorRecord(prev, observations = [], nowMs = Date.now()) {
+  /** @type {FloorMemory} */
+  const out = {};
+  const cutoff = nowMs - FLOOR_RECORD_HOURS * 3_600_000;
+  const src = /** @type {Record<string, any>} */ (prev && typeof prev === 'object' && !Array.isArray(prev) ? prev : {});
+  for (const [slug, e] of Object.entries(src)) {
+    const t = Date.parse(e?.last_seen ?? '');
+    if (!Number.isFinite(t) || t < cutoff || t > nowMs + 3_600_000) continue;
+    if (!FLOOR_RECORD_SOURCES[e?.source]) continue;
+    out[slug] = { source: e.source, last_seen: new Date(t).toISOString() };
+  }
+  const nowIso = new Date(nowMs).toISOString();
+  const isFloor = (source) => FLOOR_RECORD_SOURCES[source]?.kind === 'floor';
+  for (const o of observations ?? []) {
+    if (!o?.slug || !FLOOR_RECORD_SOURCES[o.source]) continue;
+    const prior = out[o.slug];
+    if (prior && isFloor(prior.source) && !isFloor(o.source)) continue;
+    out[o.slug] = { source: o.source, last_seen: nowIso };
+  }
+  return out;
+}
+
+// ---- the t3 prompt (pure, so the tests can read exactly what Haiku reads) ----
+const STATUS_WORDS = {
+  committee: 'in committee',
+  markup: 'committee markup',
+  floor_vote: 'floor action on record',
+  passed_chamber: 'passed one chamber',
+  signed: 'signed into law',
+};
+
+const CHAMBER_WORDS = { senate: 'Senate', house: 'House' };
+
+/** The floor-record note for one candidate, or null. Plain record facts only —
+ *  which chamber, which day, which government source — never an outlet. */
+export function floorNote(floor) {
+  if (!floor) return null;
+  const chamber = CHAMBER_WORDS[floor.chamber] ?? 'chamber';
+  if (floor.kind === 'floor') {
+    return `listed on the ${chamber} floor by congress.gov's floor-today feed, last listed ${floor.date}`;
+  }
+  if (floor.kind === 'scheduled') {
+    return `on the ${chamber}'s published weekly floor schedule, seen ${floor.date}`;
+  }
+  const when = floor.date ? ` for ${floor.date}` : '';
+  const how = floor.certainty ? ` (${String(floor.certainty).replace(/_/g, ' ')})` : '';
+  return `announced for ${chamber} floor action${when} in the chamber's own schedule${how}`;
+}
+
+/** One candidate as t3 sees it: slug, formal title, latest action date,
+ *  status, and the floor-record note when there is one. */
+export function formatT3Candidate(c) {
+  const facts = [
+    `latest action ${c.lastActionDate ?? 'unknown'}`,
+    `status: ${STATUS_WORDS[c.status] ?? c.status ?? 'unknown'}`,
+  ];
+  const note = floorNote(c.floor);
+  if (note) facts.push(`FLOOR RECORD: ${note}`);
+  return `${c.slug} = ${c.title} [${facts.join('; ')}]`;
+}
+
+/**
+ * The whole t3 user message for one batch ([{title, candidates}]). `today` is
+ * the run's UTC date, printed so "last listed 2026-09-24" has a reference
+ * point. The instruction is written to stay neutral: the floor record is
+ * offered as a way to tell near-identical measures apart when a headline
+ * reports a recent floor event, and explicitly NOT as evidence on its own.
+ */
+export function buildT3Prompt(batch, { today } = {}) {
+  const lines = batch
+    .map((b, i) => `${i}. HEADLINE: ${b.title}\n   CANDIDATES: ${b.candidates.map(formatT3Candidate).join(' | ')}`)
+    .join('\n');
+  return `${today ? `Today is ${today} (UTC). ` : ''}For each numbered headline below, decide which ONE candidate bill (if any) it is actually reporting on. Only pick a candidate if the headline is clearly about that specific bill's provisions, vote, or status — not just a similar general topic. If none fit, use null.
+
+Each candidate shows its latest recorded action date and status. Some also carry a FLOOR RECORD note: the chamber's own record listed that measure for floor action within the last two days. Candidates can be near-identical measures with almost the same title (for example a joint resolution and a concurrent resolution on the same subject). When a headline reports a recent floor event — a vote, passage, rejection or debate — and more than one candidate fits its wording, pick the one whose floor record matches that chamber and timing, not an older measure with the same wording. A floor record is not evidence by itself: if the headline is not about a recent floor event, or the measure does not fit the headline, ignore the note.
+
+${lines}
+
+Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slug":null}] — no prose, no markdown fences, no other text.`;
 }
 
 // ---- t3 gating: only headlines that look legislative -------------------
@@ -260,12 +627,76 @@ export function matchLocal(headline, billIndex) {
 // admits a headline to the cheap Haiku disambiguation batch (capped at
 // T3_MAX_HEADLINES) or the nickname bridge; it never fires anything by
 // itself.
-const LEGISLATIVE_SIGNAL_RE = /\b(bill|act|legislation|resolution|congress|senate|house|vote|voted|passed|introduced|amendment|committee|markup|filibuster|cloture|veto|vetoed|lawmakers?|representatives?|senators?|megabill|package|stopgap|continuing resolution|budget blueprint|reconciliation)\b/i;
+//
+// 2026-09-26 precision/recall pass (measured over the 2026-09-24 Google News
+// pulls and ~6,300 publisher-sitemap headlines; numbers in the PR):
+//   - "White House" is not a chamber. It used to satisfy the `house`
+//     alternative, so every White House story - a press-credential fight, a
+//     state dinner, a ballroom lawsuit - reached t3 with S. 4430 (the White
+//     House Safety and Security Act, "White House" in its title) on the
+//     shortlist: 142 replayed headlines did, 14 still do, each because it also
+//     says bill/Senate/vote or the like. The phrase is blanked before the
+//     test; a White House story that also says one of those still passes.
+//   - Added the budget and defense shorthand headlines actually use: NDAA,
+//     shutdown, and CR (matched CASE-SENSITIVELY, as the acronym only).
+//     Measured: in a Google News pull that searched for "NDAA", the word
+//     admitted 7 defense-bill headlines the gate had dropped and 6 that use
+//     the letters for something else (a school's initials, "NDAA-compliant"
+//     products); "shutdown" admitted 2 funding stories and 3 that are not
+//     (an airport, a refinery, a regional strike). The politics basket rarely
+//     carries the off-topic kind, and t3 answers null to them.
+//   - NIL was reviewed and NOT added. Every NIL headline about the college
+//     sports bill already says bill/act/Senate; the only headlines NIL alone
+//     admitted were two sports-business stories (an endorsement deal, a
+//     celebrity's opinion), both from one lean, and both would have been
+//     offered the Protect College Sports Act as a candidate.
+//   - No party nouns: widening the gate to "GOP"/"Democrats" is an open owner
+//     decision (campaign coverage would flood t3), and a one-sided list would
+//     not be neutral.
+const LEGISLATIVE_SIGNAL_RE = /\b(bill|act|legislation|resolution|congress|senate|house|vote|voted|passed|introduced|amendment|committee|markup|filibuster|cloture|veto|vetoed|lawmakers?|representatives?|senators?|megabill|package|stopgap|continuing resolution|budget blueprint|reconciliation|ndaa|shutdowns?)\b/i;
+const LEGISLATIVE_ACRONYM_RE = /\bCR\b/;
+const NOT_A_CHAMBER_RE = /\bwhite\s+house\b/gi;
 
 /** Cheap pre-filter: does this headline look like it MIGHT be about a
  *  specific bill, before spending an LLM call disambiguating it? */
 export function looksLegislative(headline) {
-  return LEGISLATIVE_SIGNAL_RE.test(String(headline ?? ''));
+  const h = String(headline ?? '').replace(NOT_A_CHAMBER_RE, ' ');
+  return LEGISLATIVE_SIGNAL_RE.test(h) || LEGISLATIVE_ACRONYM_RE.test(h);
+}
+
+// ---- the aggregator's outlet suffix -------------------------------------
+/** Hosts whose item titles carry the outlet's name as a trailing " - Outlet"
+ *  segment. Google News is the only aggregator in the basket. */
+export const AGGREGATOR_TITLE_HOSTS = new Set(['news.google.com']);
+
+/**
+ * The headline as the matcher should read it. Google News appends the outlet
+ * to every title ("Senate rejects Iran war powers resolution - Washington
+ * Examiner"), and until 2026-09-26 that suffix was tokenized with the
+ * headline: "washington", "examiner", "review" (National Review), "post",
+ * "york", "times", "hill" all became evidence about which BILL the story was
+ * on. That is not only noise, it is lean-dependent noise — which bills a
+ * story's candidates drift toward depended on the name of the outlet that ran
+ * it. Only an aggregator item (its link on an AGGREGATOR_TITLE_HOSTS host) is
+ * cut, and only at the LAST " - ", which is where Google News puts the
+ * outlet; a direct feed's title is returned untouched, hyphens and all.
+ *
+ * The raw title is still what the seen-cache hashes (hashHeadline), so this
+ * changes no dedupe key and re-surfaces no already-seen headline.
+ */
+export function headlineForMatching(title, link) {
+  const t = String(title ?? '').trim();
+  let host = null;
+  try {
+    host = new URL(String(link ?? '')).hostname.toLowerCase();
+  } catch {
+    host = null;
+  }
+  if (!host || !AGGREGATOR_TITLE_HOSTS.has(host)) return t;
+  const cut = t.lastIndexOf(' - ');
+  if (cut <= 0) return t;
+  const head = t.slice(0, cut).trim();
+  return head || t;
 }
 
 // ---- the ≥2-outlet rule -------------------------------------------------
