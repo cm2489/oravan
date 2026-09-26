@@ -30,12 +30,30 @@
  *     making requests entirely, and the unfinished questions wait for the
  *     next hourly run. No retry storm is possible: at most three requests
  *     reach GDELT in a run where it is refusing us;
+ *   - SILENT_CIRCUIT (2) requests in a row that get no HTTP answer at all
+ *     (network error, timeout) open the same circuit, so a GDELT that hangs
+ *     costs one run at most ~2 × the timeout, not 45 s per question per hour;
  *   - GDELT_MAX_REQUESTS (36, retries included) and GDELT_MAX_RUN_MS (6 min)
- *     cap every run regardless;
- *   - any other failure (5xx, timeout, GDELT's plain-text query errors) fails
- *     THAT question and the run moves on — without spending the question's
- *     remaining lean searches, since a question only updates when all three
- *     succeed.
+ *     cap every run regardless, and a question the remaining request cap
+ *     cannot finish is not started;
+ *   - any other failure (5xx, GDELT's plain-text query errors) fails THAT
+ *     question and the run moves on — without spending the question's
+ *     remaining searches, since a question only updates when every search of
+ *     every lean succeeded.
+ *
+ * ---- GDELT'S QUERY-LENGTH LIMIT (measured 2026-09-26) -------------------------
+ * GDELT answers a query that is too long with HTTP 200 and the sentence "Your
+ * query was too short or too long." Its docs name no limit, and every query
+ * the first build of this file made (637–1,120 characters) was over it. Each
+ * lean's rated domains are now split into as many searches as it takes to
+ * stay under `GDELT_MAX_QUERY_CHARS` (`domainChunks`), and a lean's evidence is
+ * the union of its searches. The exact limit is UNMEASURED (below 436), so a
+ * refusal is handled, not fatal: the refused group is halved, the run's limit
+ * drops to the half's length for every later search, and the lean is
+ * re-split — at most log2(group) extra requests, inside the request cap. A
+ * single domain still refused fails the question with GDELT's own sentence in
+ * the log. The run's summary prints the longest query GDELT answered and the
+ * shortest it refused, which is the measurement to set the constant from.
  * The User-Agent names this project honestly. Nothing here imitates a browser
  * or works around a rate limit; the backoff IS the respect for it.
  *
@@ -49,11 +67,14 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
+  GDELT_MAX_QUERY_CHARS,
+  GDELT_MAX_RECORDS,
   QUESTION_PRESS_PATH,
   QUESTION_PRESS_WINDOW_DAYS,
   admitArticles,
   buildGdeltQuery,
   buildQuestionPress,
+  domainChunks,
   eligibleDomainsByLean,
   gdeltUrl,
   lampLeanCounts,
@@ -63,12 +84,21 @@ import {
   shouldWrite,
   termTitleHits,
   timespanFor,
+  titleTermShare,
   verifyQuestionPress,
 } from '../lib/question-press.mjs';
 import { RATED_LEANS, dayKey } from '../lib/conversation.mjs';
 import { PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 
 export const USER_AGENT = 'oravan-gdelt-intake/1.0 (+https://github.com/cm2489/oravan)';
+
+/** Requests in a row with no HTTP answer at all (network error, timeout)
+ *  that open the circuit for the run. */
+export const SILENT_CIRCUIT = 2;
+
+/** GDELT's answer to a query past its length limit (HTTP 200, plain text):
+ *  "Your query was too short or too long." */
+export const TOO_LONG = /too short or too long/i;
 
 const num = (v, d) => {
   const n = Number(v);
@@ -83,6 +113,9 @@ export function limitsFrom(env = {}) {
     maxRequests: num(env.GDELT_MAX_REQUESTS, 36),
     maxRunMs: num(env.GDELT_MAX_RUN_MS, 6 * 60_000),
     timeoutMs: num(env.GDELT_TIMEOUT_MS, 45_000),
+    // The measured query-length ceiling (lib/question-press.mjs). Overridable
+    // for local re-measurement only; never set in the workflow.
+    maxQueryChars: num(env.GDELT_MAX_QUERY_CHARS, GDELT_MAX_QUERY_CHARS),
     // Local measurement only: search every live question even if it was
     // already checked today. Never set in the workflow.
     force: env.GDELT_FORCE === '1',
@@ -117,15 +150,44 @@ export async function collect({ moments, bills, bias, previous = null, conversat
     .map(([id, m]) => ({ id, moment: m }));
   const liveIds = live.map((q) => q.id).sort();
 
-  /** @type {Array<{ id: string, moment: any, terms: string[] }>} */
+  // A standing condition (a question with no searchable vocabulary) is worth
+  // ONE ::warning:: a day, not one per hourly run: the first run of a UTC day
+  // is the one whose previous file was pruned against an earlier day.
+  const firstRunToday = previous?._meta?.as_of !== today;
+  const standing = (line) => log(firstRunToday ? `::warning::${line}` : line);
+
+  /** @type {Array<{ id: string, moment: any, terms: string[], checkedOn: string | null, requests: number }>} */
   const due = [];
-  const stats = { requests: 0, rateLimited: 0, circuitOpen: false, budgetStop: null, done: [], failed: [], skipped: [], notDue: [] };
+  const stats = {
+    requests: 0,
+    rateLimited: 0,
+    circuitOpen: false,
+    circuitWhy: null,
+    budgetStop: null,
+    done: [],
+    failed: [],
+    skipped: [],
+    notDue: [],
+    /** query lengths GDELT answered with an article list / refused as too long — the runner-side measurement of its limit */
+    answeredLengths: [],
+    refusedLengths: [],
+  };
+  // The query-length limit this run plans under. Starts at the configured
+  // value; a "too short or too long" answer lowers it for the rest of the run.
+  let queryLimit = limits.maxQueryChars;
   for (const { id, moment } of live) {
     const { terms, dropped } = questionTerms(moment, billsBySlug);
     for (const d of dropped) log(`gdelt-intake: ${id}: dropped ${d.source} "${d.term}" — ${d.reason}`);
     if (terms.length === 0) {
       stats.skipped.push(id);
-      log(`::warning::gdelt-intake: ${id} has no multi-word press vocabulary (aliases are bill-number placeholders and the vehicles carry no multi-word name) — not searched. Real aliases in data/moments.json are the owner's call.`);
+      standing(`gdelt-intake: ${id} has no multi-word press vocabulary (aliases are bill-number placeholders and the vehicles carry no multi-word name) — not searched. Real aliases in data/moments.json are the owner's call.`);
+      continue;
+    }
+    // Every lean's domains, split so each query fits GDELT's length limit.
+    const plan = RATED_LEANS.map((lean) => ({ lean, chunks: domainChunks({ terms, domains: domainsByLean[lean], maxChars: limits.maxQueryChars }) }));
+    if (plan.some((p) => p.chunks === null)) {
+      stats.skipped.push(id);
+      standing(`gdelt-intake: ${id}: its search terms alone do not fit GDELT's ${limits.maxQueryChars}-character query limit beside one domain — not searched. Shorter aliases in data/moments.json are the owner's call.`);
       continue;
     }
     const checkedOn = previous?.questions?.[id]?.checkedOn ?? null;
@@ -133,7 +195,7 @@ export async function collect({ moments, bills, bias, previous = null, conversat
       stats.notDue.push(id);
       continue;
     }
-    due.push({ id, moment, terms, checkedOn });
+    due.push({ id, moment, terms, checkedOn, requests: 0 });
   }
   // Oldest check first (never-checked first of all), so a run that stops
   // early never starves the same question two days running.
@@ -142,7 +204,12 @@ export async function collect({ moments, bills, bias, previous = null, conversat
 
   const startedAt = clock();
   let lastRequestAt = -Infinity;
-  /** @returns {Promise<{ kind: 'ok', body: string } | { kind: 'rate_limited' } | { kind: 'error', error: string } | { kind: 'budget', why: string }>} */
+  // Consecutive requests that got no HTTP answer at all (network error or
+  // timeout). A hang costs up to `timeoutMs` per request, so a GDELT that has
+  // stopped answering opens the circuit the same way a GDELT that answers 429
+  // does, instead of adding minutes to every hourly run until it recovers.
+  let silentInARow = 0;
+  /** @returns {Promise<{ kind: 'ok', body: string } | { kind: 'rate_limited' } | { kind: 'silent', error: string } | { kind: 'error', error: string } | { kind: 'budget', why: string }>} */
   const request = async (url) => {
     for (let attempt = 0; ; attempt++) {
       if (stats.requests >= limits.maxRequests) return { kind: 'budget', why: `request cap ${limits.maxRequests}` };
@@ -155,8 +222,11 @@ export async function collect({ moments, bills, bias, previous = null, conversat
       try {
         res = await fetchImpl(url, { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(limits.timeoutMs) });
       } catch (err) {
-        return { kind: 'error', error: `fetch failed: ${err?.message ?? err}` };
+        silentInARow++;
+        const code = err?.cause?.code ?? err?.name;
+        return { kind: 'silent', error: `no answer: ${err?.message ?? err}${code ? ` (${code})` : ''}` };
       }
+      silentInARow = 0;
       if (res.status === 429) {
         stats.rateLimited++;
         if (attempt >= limits.backoffMs.length) return { kind: 'rate_limited' };
@@ -175,46 +245,119 @@ export async function collect({ moments, bills, bias, previous = null, conversat
 
   /** @type {Map<string, { terms: string[], admitted: any[] }>} */
   const results = new Map();
-  /** @type {Map<string, { byLean: Record<string, { returned: number, admitted: number, rejected: number, truncated: boolean }>, admitted: any[] }>} */
+  /** @type {Map<string, { byLean: Record<string, { requests: number, returned: number, admitted: number, rejected: number, truncated: boolean }>, admitted: any[] }>} */
   const perQuestion = new Map();
   outer: for (const q of due) {
+    // Re-plan at this run's limit, which a refusal earlier in the run may
+    // have lowered (see TOO_LONG below).
+    const plan = RATED_LEANS.map((lean) => ({ lean, chunks: domainChunks({ terms: q.terms, domains: domainsByLean[lean], maxChars: queryLimit }) }));
+    if (plan.some((p) => p.chunks === null)) {
+      stats.failed.push(q.id);
+      log(`::warning::gdelt-intake: ${q.id}: its search terms do not fit this run's lowered ${queryLimit}-character query limit beside one domain — not searched this run`);
+      continue;
+    }
+    q.requests = plan.reduce((n, p) => n + /** @type {string[][]} */ (p.chunks).length, 0);
+    // Never start a question the request cap cannot finish: a question moves
+    // only when every group of every lean answered, so a half-searched one
+    // would spend requests and record nothing.
+    if (q.requests > limits.maxRequests) {
+      stats.failed.push(q.id);
+      log(`::warning::gdelt-intake: ${q.id} needs ${q.requests} requests (its lean domains split to fit GDELT's query limit), more than the per-run cap of ${limits.maxRequests} — not searched`);
+      continue;
+    }
+    if (stats.requests + q.requests > limits.maxRequests) {
+      stats.budgetStop = `request cap ${limits.maxRequests}`;
+      log(`::warning::gdelt-intake: stopping — ${q.id} needs ${q.requests} more requests and the run has ${limits.maxRequests - stats.requests} left of its cap; it and later questions wait for the next run`);
+      break;
+    }
     const timespanDays = timespanFor(q.checkedOn, today);
     const admittedAll = [];
     const byLean = {};
     let ok = true;
-    for (const lean of RATED_LEANS) {
-      const domains = domainsByLean[lean];
-      if (!domains.length) {
+    leans: for (const { lean, chunks } of plan) {
+      if (!chunks?.length) {
         ok = false;
         log(`::warning::gdelt-intake: ${q.id}: data/media-bias.json rates no ${lean} domains — cannot search every lean, question not updated`);
         break;
       }
-      const url = gdeltUrl({ query: buildGdeltQuery({ terms: q.terms, domains }), timespanDays });
-      const r = await request(url);
-      if (r.kind === 'budget') {
-        stats.budgetStop = r.why;
-        log(`::warning::gdelt-intake: stopping — ${r.why} reached; ${q.id} and later questions wait for the next run`);
-        break outer;
+      const tally = { requests: 0, returned: 0, admitted: 0, rejected: 0, truncated: false };
+      let queue = [...chunks];
+      while (queue.length) {
+        const domains = /** @type {string[]} */ (queue.shift());
+        const query = buildGdeltQuery({ terms: q.terms, domains });
+        const url = gdeltUrl({ query, timespanDays });
+        const r = await request(url);
+        if (r.kind === 'budget') {
+          stats.budgetStop = r.why;
+          log(`::warning::gdelt-intake: stopping — ${r.why} reached; ${q.id} and later questions wait for the next run`);
+          break outer;
+        }
+        if (r.kind === 'rate_limited') {
+          stats.circuitOpen = true;
+          stats.circuitWhy = '429';
+          log(`::warning::gdelt-intake: GDELT is still answering 429 after ${limits.backoffMs.length} backoffs — circuit open, no further requests this run. ${q.id} and later questions carry forward and retry next run.`);
+          break outer;
+        }
+        if (r.kind === 'silent' && silentInARow >= SILENT_CIRCUIT) {
+          stats.circuitOpen = true;
+          stats.circuitWhy = 'no answer';
+          log(`::warning::gdelt-intake: ${silentInARow} requests in a row got no answer from GDELT (${r.error}) — circuit open, no further requests this run. ${q.id} and later questions carry forward and retry next run.`);
+          break outer;
+        }
+        if (r.kind === 'silent' || r.kind === 'error') {
+          ok = false;
+          log(`::warning::gdelt-intake: ${q.id} (${lean}): ${r.error} — question not updated this run`);
+          break leans;
+        }
+        const parsed = parseArtList(r.body);
+        if (!parsed.ok && TOO_LONG.test(parsed.error) && domains.length > 1) {
+          // GDELT refused the query's length. Halve this group, lower the
+          // run's limit to the half's length so every later search is planned
+          // under it too, and re-split what is left of this lean. Each refusal
+          // halves the group, so this ends in at most log2(group) refusals;
+          // the request cap bounds it regardless.
+          const half = domains.slice(0, Math.ceil(domains.length / 2));
+          const lowered = buildGdeltQuery({ terms: q.terms, domains: half }).length;
+          stats.refusedLengths.push(query.length);
+          log(
+            `::warning::gdelt-intake: GDELT refused a ${query.length}-character query as too long — this run now plans searches at ≤${lowered} characters. ` +
+              `GDELT_MAX_QUERY_CHARS (${limits.maxQueryChars}) is above GDELT's real limit and should be lowered to the largest length it answered (see the summary line).`
+          );
+          queryLimit = Math.min(queryLimit, lowered);
+          const replanned = domainChunks({ terms: q.terms, domains: [domains, ...queue].flat(), maxChars: queryLimit });
+          if (!replanned) {
+            // A longer domain name left in this lean no longer fits beside the
+            // terms: searching the rest would silently skip it, so the whole
+            // question waits rather than record a lean with a hole in it.
+            ok = false;
+            log(`::warning::gdelt-intake: ${q.id} (${lean}): a remaining domain does not fit the lowered ${queryLimit}-character limit beside the terms — question not updated this run`);
+            break leans;
+          }
+          queue = replanned;
+          continue;
+        }
+        if (!parsed.ok) {
+          ok = false;
+          log(`::warning::gdelt-intake: ${q.id} (${lean}): GDELT answered ${parsed.error} — question not updated this run`);
+          break leans;
+        }
+        stats.answeredLengths.push(query.length);
+        const { admitted, rejected } = admitArticles(parsed.articles, { lean, bias, today });
+        tally.requests += 1;
+        tally.returned += parsed.articles.length;
+        tally.admitted += admitted.length;
+        tally.rejected += rejected;
+        tally.truncated ||= parsed.articles.length >= GDELT_MAX_RECORDS;
+        admittedAll.push(...admitted);
       }
-      if (r.kind === 'rate_limited') {
-        stats.circuitOpen = true;
-        log(`::warning::gdelt-intake: GDELT is still answering 429 after ${limits.backoffMs.length} backoffs — circuit open, no further requests this run. ${q.id} and later questions carry forward and retry next run.`);
-        break outer;
+      byLean[lean] = tally;
+      // GDELT was restricted to this lean's rated domains, so everything it
+      // returns should be admissible. Returned-but-none-admitted means the
+      // response shape or the admission rules disagree with reality — and if
+      // it went unremarked, "0 outlets" would read as an absence finding.
+      if (tally.returned > 0 && tally.admitted === 0) {
+        log(`::warning::gdelt-intake: ${q.id} (${lean}): GDELT returned ${tally.returned} article(s) and none was admitted — check the returned→admitted line; if GDELT's response fields changed, a zero here is a parse failure, not an absence`);
       }
-      if (r.kind === 'error') {
-        ok = false;
-        log(`::warning::gdelt-intake: ${q.id} (${lean}): ${r.error} — question not updated this run`);
-        break;
-      }
-      const parsed = parseArtList(r.body);
-      if (!parsed.ok) {
-        ok = false;
-        log(`::warning::gdelt-intake: ${q.id} (${lean}): GDELT answered ${parsed.error} — question not updated this run`);
-        break;
-      }
-      const { admitted, rejected } = admitArticles(parsed.articles, { lean, bias, today });
-      byLean[lean] = { returned: parsed.articles.length, admitted: admitted.length, rejected, truncated: parsed.articles.length >= 250 };
-      admittedAll.push(...admitted);
     }
     if (ok) {
       results.set(q.id, { terms: q.terms, admitted: admittedAll });
@@ -264,8 +407,19 @@ export async function collect({ moments, bills, bias, previous = null, conversat
     );
     const run = perQuestion.get(id);
     if (run) {
-      const lb = RATED_LEANS.map((l) => `${l[0].toUpperCase()} ${run.byLean[l]?.returned ?? 0}→${run.byLean[l]?.admitted ?? 0}${run.byLean[l]?.truncated ? ' (TRUNCATED at 250)' : ''}`);
+      const lb = RATED_LEANS.map(
+        (l) =>
+          `${l[0].toUpperCase()} ${run.byLean[l]?.returned ?? 0}→${run.byLean[l]?.admitted ?? 0} in ${run.byLean[l]?.requests ?? 0} request(s)${run.byLean[l]?.truncated ? ' (a request TRUNCATED at 250)' : ''}`
+      );
       log(`gdelt-intake: ${id}: returned→admitted this run: ${lb.join(', ')}`);
+      // The precision reading (lib/question-press.mjs, titleTermShare): a
+      // full-text match is the ceiling, a title naming a term is the floor.
+      const share = titleTermShare(run.admitted, entry.terms);
+      log(
+        `gdelt-intake: ${id}: precision — admitted articles whose TITLE names a search term: ` +
+          RATED_LEANS.map((l) => `${l[0].toUpperCase()} ${share[l].titled}/${share[l].admitted}`).join(', ') +
+          ' (the rest matched a term and a congressional word somewhere in the body)'
+      );
       const hits = termTitleHits(run.admitted, entry.terms);
       for (const [term, h] of Object.entries(hits)) {
         log(`gdelt-intake: ${id}: term "${term}" in titles L${h.left}/C${h.center}/R${h.right}`);
@@ -276,6 +430,22 @@ export async function collect({ moments, bills, bias, previous = null, conversat
     `gdelt-intake: distinct rated outlets across all questions — left ${total.left.size}, center ${total.center.size}, right ${total.right.size}. ` +
       `Requests ${stats.requests} (429s ${stats.rateLimited}); updated ${stats.done.length}, failed/waiting ${stats.failed.length}, not searchable ${stats.skipped.length}, already checked today ${stats.notDue.length}.`
   );
+  if (stats.answeredLengths.length || stats.refusedLengths.length) {
+    log(
+      `gdelt-intake: query length — longest GDELT answered this run ${stats.answeredLengths.length ? Math.max(...stats.answeredLengths) : 'none'}, ` +
+        `shortest it refused as too long ${stats.refusedLengths.length ? Math.min(...stats.refusedLengths) : 'none'} ` +
+        `(configured limit ${limits.maxQueryChars}, run ended at ${queryLimit}).`
+    );
+  }
+  // A whole run that searched and admitted nothing, across every question it
+  // finished, is far more likely a parse or admission failure than a week in
+  // which no rated outlet covered any live question. Say so, loudly.
+  const admittedThisRun = [...perQuestion.values()].reduce((n, r) => n + r.admitted.length, 0);
+  if (stats.done.length > 0 && admittedThisRun === 0) {
+    log(
+      `::warning::gdelt-intake: ${stats.done.length} question(s) searched in every lean and not one article was admitted — before reading this as "no coverage", check the returned→admitted lines above`
+    );
+  }
 
   // No file yet and nothing to put in one (every search refused, say): write
   // nothing. An empty first file would be a commit and a deploy that records

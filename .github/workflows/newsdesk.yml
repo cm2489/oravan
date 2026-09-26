@@ -209,7 +209,7 @@ jobs:
         # Per-question intake (owner ruling relayed 2026-09-26: keep the ONE
         # generic Google News search, add no more Google News queries, take
         # per-question intake from GDELT — counts only). For each live Big
-        # Question: three GDELT DOC 2.0 searches, one per AllSides lean, each
+        # Question: GDELT DOC 2.0 searches made separately per AllSides lean, each
         # restricted to that lean's rated domains; stores the rated outlets
         # found, their lean, the day GDELT saw each article and its link in
         # data/question-press.json. Never tone or sentiment, never titles or
@@ -229,8 +229,21 @@ jobs:
         # RATE LIMIT: GDELT asks for one request per 5 s per IP and answers
         # 429 otherwise. The script spaces requests 6 s apart, backs off 30 s
         # then 90 s on a 429, and after that opens a circuit and stops for the
-        # run (≤3 requests reach GDELT in a refused run); 36 requests / 6 min
-        # per run caps everything. timeout-minutes is the outer bound on top.
+        # run (≤3 requests reach GDELT in a refused run); two requests in a row
+        # with no answer at all (network error, timeout) open the same circuit;
+        # 36 requests / 6 min per run caps everything, and a question the
+        # remaining cap cannot finish is not started. timeout-minutes is the
+        # outer bound on top.
+        #
+        # QUERY LENGTH: GDELT refuses a long query ("Your query was too short
+        # or too long", measured 2026-09-26 at 436-1,002 characters), so each
+        # lean's rated domains are split across as many searches as it takes
+        # to fit (GDELT_MAX_QUERY_CHARS in lib/question-press.mjs) — several
+        # searches per lean, all of which must answer before the question
+        # moves. The exact limit is unmeasured; a refusal halves the group and
+        # lowers the run's limit, and the run log prints the longest length
+        # GDELT answered. A day's searches spread over the first few hourly
+        # runs after midnight UTC rather than one.
         #
         # continue-on-error: this is additive evidence nothing renders yet; a
         # GDELT outage must never cost the hour its bill refreshes or the

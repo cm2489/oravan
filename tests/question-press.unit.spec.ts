@@ -9,7 +9,9 @@ import { join } from 'node:path';
 import {
   GDELT_ATTRIBUTION,
   GDELT_HOME,
+  GDELT_MAX_QUERY_CHARS,
   LEGISLATIVE_CONTEXT_TERMS,
+  MATCH_RULE,
   MAX_ARTICLES_PER_OUTLET,
   MAX_TERMS_PER_QUESTION,
   OUTLET_POLICY,
@@ -20,8 +22,10 @@ import {
   buildGdeltQuery,
   buildQuestionPress,
   countsFor,
+  domainChunks,
   eligibleDomainsByLean,
   gdeltUrl,
+  inWindow,
   lampLeanCounts,
   leanParity,
   parseArtList,
@@ -30,9 +34,10 @@ import {
   shouldWrite,
   termTitleHits,
   timespanFor,
+  titleTermShare,
   verifyQuestionPress,
 } from '../lib/question-press.mjs';
-import { USER_AGENT, collect, limitsFrom } from '../scripts/gdelt-intake.mjs';
+import { SILENT_CIRCUIT, TOO_LONG, USER_AGENT, collect, limitsFrom } from '../scripts/gdelt-intake.mjs';
 // The one definition of a checkable article link (B-5), shared with the lamp.
 import { normalizeArticleUrl } from '../lib/conversation.mjs';
 
@@ -300,7 +305,7 @@ test.describe('the evidence document', () => {
       previous: null,
       liveIds: ['iran-war-powers', 'paying-college-athletes'],
       results: new Map([
-        ['iran-war-powers', { terms: ['war powers'], admitted: [admitted('cnn.com', 'left', 'old', '2026-09-18'), admitted('cnn.com', 'left', 'new', '2026-09-23')] }],
+        ['iran-war-powers', { terms: ['war powers'], admitted: [admitted('cnn.com', 'left', 'old', '2026-09-17'), admitted('cnn.com', 'left', 'new', '2026-09-23')] }],
         ['paying-college-athletes', { terms: ['protect college sports act'], admitted: [admitted('nypost.com', 'right', 'c')] }],
       ]),
       bias: BIAS,
@@ -310,7 +315,7 @@ test.describe('the evidence document', () => {
     const iran = next.questions['iran-war-powers'] as Entry;
     expect(iran.checkedOn).toBe('2026-09-23'); // NOT advanced — nothing was checked
     expect(iran.terms).toEqual(['war powers']);
-    expect(iran.outlets[0].articles.map((a) => a.url)).toEqual(['https://www.cnn.com/new']); // 09-18 aged out
+    expect(iran.outlets[0].articles.map((a) => a.url)).toEqual(['https://www.cnn.com/new']); // 09-17 (8 days old) aged out
     expect(shouldWrite({ previous: prev, next })).toBe(true);
     expect(shouldWrite({ previous: next, next: buildQuestionPress({ previous: next, liveIds: ['iran-war-powers', 'paying-college-athletes'], results: new Map(), bias: BIAS, today: TODAY }) })).toBe(false);
   });
@@ -367,6 +372,95 @@ test.describe('the gate', () => {
     uncited._meta.attribution = 'news';
     expect(verifyQuestionPress({ data: uncited, bias: BIAS, now: NOW }).failures.join(' ')).toMatch(/GDELT/);
     expect(GDELT_ATTRIBUTION).toContain('GDELT Project');
+  });
+
+  test('the file is judged against the day it was written, never the wall clock (the midnight bug)', () => {
+    // Day D. The first run admits a link GDELT saw on the window's edge (7
+    // days old) and one from yesterday — an edge link is near-certain on any
+    // active question, since the first search spans the whole window.
+    const D = '2026-09-26';
+    const doc = buildQuestionPress({
+      previous: null,
+      liveIds: ['iran-war-powers'],
+      results: new Map([
+        [
+          'iran-war-powers',
+          {
+            terms: ['war powers'],
+            admitted: [
+              { url: 'https://www.foxnews.com/politics/edge', domain: 'foxnews.com', lean: 'right', seen: '2026-09-19' },
+              { url: 'https://www.npr.org/2026/09/25/b', domain: 'npr.org', lean: 'center', seen: '2026-09-25' },
+            ],
+          },
+        ],
+      ]),
+      bias: BIAS,
+      today: D,
+    });
+    expect(doc._meta.as_of).toBe(D);
+    expect((doc.questions['iran-war-powers'] as Entry).outlets.map((o) => o.domain)).toEqual(['npr.org', 'foxnews.com']); // the 7-day-old link is IN
+    const at = (iso: string) => verifyQuestionPress({ data: doc, fileBytes: 1000, bias: BIAS, moments: MOMENTS, now: Date.parse(iso) });
+    // Before the fix this failed from 00:00 UTC until the first collector run
+    // of D+1 — in CI, and in the nightly's pre-commit verify-sync.
+    for (const iso of ['2026-09-26T23:59:00Z', '2026-09-27T00:30:00Z', '2026-09-27T09:30:00Z']) expect(at(iso).failures).toEqual([]);
+    // Days later: still no failure — lateness is a warning (N8-A2), never damage.
+    const late = at('2026-09-29T12:00:00Z');
+    expect(late.failures).toEqual([]);
+    expect(late.warnings.join(' ')).toMatch(/last pruned on 2026-09-26, 3 days ago/);
+    expect(late.warnings.join(' ')).toMatch(/has not succeeded for 3 days/);
+    expect(at('2026-12-01T00:00:00Z').failures).toEqual([]);
+    // The only wall-clock failure: a file dated more than a day in the future.
+    expect(at('2026-09-24T12:00:00Z').failures.join(' ')).toMatch(/as_of 2026-09-26 is in the future/);
+    expect(at('2026-09-25T12:00:00Z').failures).toEqual([]); // one day of clock skew is tolerated, like the lamp's gate
+  });
+
+  test('damage is still damage when judged against the file\'s own day', () => {
+    const base = good();
+    const past = structuredClone(base);
+    (past.questions['iran-war-powers'] as Entry).outlets[0].articles[0].seen = '2026-09-17'; // 8 days before as_of
+    (past.questions['iran-war-powers'] as Entry).outlets[0].firstSeen = '2026-09-17';
+    (past.questions['iran-war-powers'] as Entry).outlets[0].lastSeen = '2026-09-17';
+    expect(verifyQuestionPress({ data: past, bias: BIAS, moments: MOMENTS, now: NOW }).failures.join(' ')).toMatch(/outside the 7-day window ending 2026-09-25/);
+    const after = structuredClone(base);
+    after._meta.as_of = '2026-09-24'; // the link (seen 09-25) postdates the file
+    expect(verifyQuestionPress({ data: after, bias: BIAS, moments: MOMENTS, now: NOW }).failures.join(' ')).toMatch(/after the day the file was written/);
+    const noDay = structuredClone(base) as unknown as { _meta: Record<string, unknown> };
+    delete noDay._meta.as_of;
+    expect(verifyQuestionPress({ data: noDay, bias: BIAS, moments: MOMENTS, now: NOW }).failures.join(' ')).toMatch(/as_of undefined is not a YYYY-MM-DD day/);
+    const stale = structuredClone(base);
+    (stale.questions['iran-war-powers'] as Entry).checkedOn = '2026-09-10';
+    expect(verifyQuestionPress({ data: stale, bias: BIAS, moments: MOMENTS, now: NOW }).failures.join(' ')).toMatch(/last checked 2026-09-10, outside the 7-day window/);
+    const unstated = structuredClone(base);
+    (unstated._meta as Record<string, unknown>).matches = '';
+    expect(verifyQuestionPress({ data: unstated, bias: BIAS, moments: MOMENTS, now: NOW }).failures.join(' ')).toMatch(/_meta.matches/);
+    expect(base._meta.matches).toBe(MATCH_RULE);
+    expect(MATCH_RULE).toMatch(/anywhere in its text/);
+  });
+
+  test('the window is the lamp\'s: 0 to 7 whole days old, inclusive — the same edge in the writer, the admission rule and the gate', () => {
+    expect(inWindow('2026-09-18', TODAY)).toBe(true); // 7 days
+    expect(inWindow('2026-09-17', TODAY)).toBe(false); // 8 days
+    expect(inWindow('2026-09-26', TODAY)).toBe(false); // after the day
+    const { admitted } = admitArticles([art('foxnews.com', 'edge', '20260918T010000Z'), art('foxnews.com', 'over', '20260917T235900Z')], { lean: 'right', bias: BIAS, today: TODAY });
+    expect(admitted.map((a) => a.url)).toEqual(['https://www.foxnews.com/edge']);
+    // The lamp keeps the same edge (lib/conversation.mjs pruneList: age <= 7).
+    const conversation = { _meta: { window_days: 7 }, slugs: { 'hconres-89-119': { outlets7d: [{ domain: 'foxnews.com', lean: 'right', lastSeen: '2026-09-18' }, { domain: 'nypost.com', lean: 'right', lastSeen: '2026-09-17' }] } } };
+    expect(lampLeanCounts(conversation, ['hconres-89-119'], TODAY).right).toEqual(['foxnews.com']);
+  });
+
+  test('a carried entry whose last check fell out of the window leaves the file: "not checked", never "no coverage"', () => {
+    const prev = buildQuestionPress({
+      previous: null,
+      liveIds: ['iran-war-powers'],
+      results: new Map([['iran-war-powers', { terms: ['war powers'], admitted: [] }]]),
+      bias: BIAS,
+      today: '2026-09-17',
+    });
+    expect((prev.questions['iran-war-powers'] as Entry).counts).toEqual(countsFor([]));
+    const within = buildQuestionPress({ previous: prev, liveIds: ['iran-war-powers'], results: new Map(), bias: BIAS, today: '2026-09-24' });
+    expect(within.questions['iran-war-powers']).toBeDefined(); // 7 days: kept, and the gate warns it is late
+    const beyond = buildQuestionPress({ previous: prev, liveIds: ['iran-war-powers'], results: new Map(), bias: BIAS, today: TODAY });
+    expect(beyond.questions['iran-war-powers']).toBeUndefined(); // 8 days: gone
   });
 
   test('a question no longer live is a warning; one never heard of is a failure; a stale check is a warning', () => {
@@ -478,7 +572,9 @@ test.describe('the collector (mocked GDELT)', () => {
   test('the request cap and the run-time cap both stop a run', async () => {
     const net = fakeNet((url) => byLeanReply(url));
     const capped = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, limits: { ...LIMITS, maxRequests: 4 }, log: quiet });
-    expect(net.calls).toHaveLength(4);
+    // Iran spends 3; college needs 3 more and only 1 is left, so it is never
+    // started — no half-searched question that spends requests and records nothing.
+    expect(net.calls).toHaveLength(3);
     expect(capped.stats.budgetStop).toMatch(/request cap/);
     expect(capped.stats.done).toHaveLength(1);
     const net2 = fakeNet((url) => byLeanReply(url));
@@ -514,11 +610,157 @@ test.describe('the collector (mocked GDELT)', () => {
     expect(doc.questions['syria-sanctions-repeal']).toBeUndefined();
   });
 
-  test('network errors are a failed question, never a crash', async () => {
+  test('network errors are a failed question, never a crash — and two in a row open the circuit', async () => {
     const net = fakeNet(() => new Error('ECONNRESET'));
-    const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    const lines: string[] = [];
+    const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: (l) => lines.push(l) });
     expect(stats.done).toEqual([]);
     expect(stats.failed.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    expect(SILENT_CIRCUIT).toBe(2);
+    expect(net.calls).toHaveLength(SILENT_CIRCUIT);
+    expect(stats.circuitOpen).toBe(true);
+    expect(lines.some((l) => /got no answer from GDELT .*circuit open/.test(l))).toBe(true);
+  });
+
+  test('a hang is a silent request too: timeouts open the circuit instead of adding 45 s per question per hour', async () => {
+    const net = fakeNet(() => Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' }));
+    const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    expect(net.calls).toHaveLength(SILENT_CIRCUIT);
+    expect(stats.circuitWhy).toBe('no answer');
+  });
+
+  test('one silent request between answers does not open the circuit', async () => {
+    const net = fakeNet((url, n) => (n === 1 ? new Error('ECONNRESET') : byLeanReply(url)));
+    const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    expect(stats.circuitOpen).toBe(false);
+    expect(stats.failed).toEqual(['iran-war-powers']);
+    expect(stats.done).toEqual(['paying-college-athletes']);
+  });
+
+  test('GDELT returning articles that are all refused is a ::warning::, never a silent "0 outlets"', async () => {
+    // A response whose field names changed (`link` for `url`): every article
+    // is refused, and the run must say so instead of recording an absence.
+    const net = fakeNet((url) => {
+      const lean = leanOfRequest(url);
+      const d = lean === 'left' ? 'cnn.com' : lean === 'center' ? 'npr.org' : 'foxnews.com';
+      const { url: link, ...rest } = art(d, 'x');
+      return { status: 200, body: JSON.stringify({ articles: [{ ...rest, link }] }) };
+    });
+    const lines: string[] = [];
+    const { stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: (l) => lines.push(l) });
+    expect(stats.done.length).toBe(2);
+    expect(lines.filter((l) => /^::warning::.*returned 1 article\(s\) and none was admitted/.test(l))).toHaveLength(6);
+    expect(lines.some((l) => /^::warning::.*not one article was admitted/.test(l))).toBe(true);
+  });
+
+  test('a quiet week (GDELT returns nothing) is not a warning', async () => {
+    const net = fakeNet(() => ({ status: 200, body: '{}' }));
+    const lines: string[] = [];
+    await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: (l) => lines.push(l) });
+    expect(lines.some((l) => /none was admitted/.test(l))).toBe(false);
+  });
+
+  test('an unsearchable question warns once a day, not every hourly run', async () => {
+    const first = fakeNet((url) => byLeanReply(url));
+    const linesA: string[] = [];
+    const a = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: first.fetchImpl, sleep: first.sleep, clock: first.clock, log: (l) => linesA.push(l) });
+    expect(linesA.some((l) => /^::warning::.*syria-sanctions-repeal has no multi-word press vocabulary/.test(l))).toBe(true);
+    const linesB: string[] = [];
+    const second = fakeNet((url) => byLeanReply(url));
+    await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, previous: a.doc, now: NOW + 3_600_000, fetchImpl: second.fetchImpl, sleep: second.sleep, clock: second.clock, log: (l) => linesB.push(l) });
+    expect(linesB.some((l) => /syria-sanctions-repeal has no multi-word press vocabulary/.test(l))).toBe(true);
+    expect(linesB.some((l) => /^::warning::.*syria-sanctions-repeal/.test(l))).toBe(false);
+  });
+
+  test("GDELT's query-length limit: each lean is split into searches that fit, and every rated domain is searched exactly once", async () => {
+    const real = JSON.parse(readFileSync(join(ROOT, 'data/media-bias.json'), 'utf8')).outlets as Record<string, string>;
+    const byLean = eligibleDomainsByLean(real);
+    const net = fakeNet((url) => {
+      const q = new URL(url).searchParams.get('query')!;
+      const domains = [...q.matchAll(/domainis:([a-z0-9.-]+)/g)].map((m) => m[1]);
+      // one article per searched domain, so every search shows up in the evidence
+      return { status: 200, body: JSON.stringify({ articles: domains.map((d) => art(d, `p-${d}`)) }) };
+    });
+    const { doc, stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: real, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    expect(net.calls.length).toBeGreaterThan(6); // more than one search per lean at the real table's size
+    for (const c of net.calls) expect(new URL(c.url).searchParams.get('query')!.length).toBeLessThanOrEqual(GDELT_MAX_QUERY_CHARS);
+    for (const id of stats.done) {
+      const marker = id === 'iran-war-powers' ? '"war powers"' : '"protect college sports act"';
+      const searched = net.calls
+        .map((c) => new URL(c.url).searchParams.get('query')!)
+        .filter((q) => q.includes(marker))
+        .flatMap((q) => [...q.matchAll(/domainis:([a-z0-9.-]+)/g)].map((m) => m[1]));
+      expect(searched.sort()).toEqual([...byLean.left, ...byLean.center, ...byLean.right].sort()); // each once, none missing
+      const counts = (doc.questions[id] as Entry).counts as { outlets: Record<string, number> };
+      expect(counts.outlets).toEqual({ left: byLean.left.length, center: byLean.center.length, right: byLean.right.length });
+    }
+  });
+
+  // GDELT's real answer to an over-long query, measured 2026-09-26 at 436–1,002 characters.
+  const REFUSAL = 'Your query was too short or too long. ';
+
+  test('GDELT refusing a query as too long halves the group, lowers the run\'s limit, and still searches every domain once', async () => {
+    expect(TOO_LONG.test(REFUSAL)).toBe(true);
+    const real = JSON.parse(readFileSync(join(ROOT, 'data/media-bias.json'), 'utf8')).outlets as Record<string, string>;
+    const byLean = eligibleDomainsByLean(real);
+    const CEILING = 300; // a GDELT stricter than the configured starting limit
+    const net = fakeNet((url) => {
+      const q = new URL(url).searchParams.get('query')!;
+      if (q.length > CEILING) return { status: 200, body: REFUSAL };
+      const domains = [...q.matchAll(/domainis:([a-z0-9.-]+)/g)].map((m) => m[1]);
+      return { status: 200, body: JSON.stringify({ articles: domains.map((d) => art(d, `p-${d}`)) }) };
+    });
+    const lines: string[] = [];
+    const { doc, stats } = await collect({
+      moments: MOMENTS,
+      bills: BILLS,
+      bias: real,
+      now: NOW,
+      fetchImpl: net.fetchImpl,
+      sleep: net.sleep,
+      clock: net.clock,
+      limits: { ...LIMITS, maxRequests: 200, maxRunMs: 1e9 },
+      log: (l) => lines.push(l),
+    });
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    const answered = net.calls.map((c) => new URL(c.url).searchParams.get('query')!).filter((q) => q.length <= CEILING);
+    for (const id of stats.done) {
+      const marker = id === 'iran-war-powers' ? '"war powers"' : '"protect college sports act"';
+      const searched = answered.filter((q) => q.includes(marker)).flatMap((q) => [...q.matchAll(/domainis:([a-z0-9.-]+)/g)].map((m) => m[1]));
+      expect(searched.sort()).toEqual([...byLean.left, ...byLean.center, ...byLean.right].sort()); // none lost to a refusal, none twice
+      const counts = (doc.questions[id] as Entry).counts as { outlets: Record<string, number> };
+      expect(counts.outlets).toEqual({ left: byLean.left.length, center: byLean.center.length, right: byLean.right.length });
+    }
+    // The limit is learned once and kept: the refusals are few, not one per search.
+    const refused = net.calls.length - answered.length;
+    expect(refused).toBeGreaterThan(0);
+    expect(refused).toBeLessThanOrEqual(3);
+    expect(lines.some((l) => /^::warning::.*GDELT refused a \d+-character query as too long/.test(l))).toBe(true);
+    expect(lines.some((l) => /query length — longest GDELT answered this run \d+, shortest it refused as too long \d+ \(configured limit 400/.test(l))).toBe(true);
+    expect(GDELT_MAX_QUERY_CHARS).toBeLessThan(436); // below the shortest length GDELT was measured refusing
+  });
+
+  test('a single domain GDELT still refuses fails the question with GDELT\'s own sentence — never a silent partial lean', async () => {
+    const net = fakeNet(() => ({ status: 200, body: REFUSAL }));
+    const lines: string[] = [];
+    const { doc, stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: (l) => lines.push(l) });
+    expect(stats.done).toEqual([]);
+    expect(Object.keys(doc.questions)).toEqual([]);
+    expect(lines.some((l) => /GDELT answered not JSON: Your query was too short or too long/.test(l))).toBe(true);
+  });
+
+  test('one failed search inside a lean leaves the whole question as it was', async () => {
+    const real = JSON.parse(readFileSync(join(ROOT, 'data/media-bias.json'), 'utf8')).outlets as Record<string, string>;
+    let n = 0;
+    const net = fakeNet((url) => {
+      const q = new URL(url).searchParams.get('query')!;
+      if (q.includes('"war powers"') && ++n === 2) return { status: 503, body: '' }; // Iran's SECOND search — still the left lean
+      return { status: 200, body: '{}' };
+    });
+    const { doc, stats } = await collect({ moments: MOMENTS, bills: BILLS, bias: real, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: quiet });
+    expect(stats.failed).toContain('iran-war-powers');
+    expect(doc.questions['iran-war-powers']).toBeUndefined();
   });
 });
 
@@ -539,6 +781,50 @@ test.describe('parity helpers', () => {
     };
     expect(lampLeanCounts(conversation, ['hconres-89-119'], TODAY)).toEqual({ left: ['politico.com'], center: [], right: [] });
     expect(termTitleHits([{ lean: 'right', title: 'War Powers vote fails' }], ['war powers'])).toEqual({ 'war powers': { left: 0, center: 0, right: 1 } });
+  });
+
+  test('the precision reading: per lean, admitted articles whose TITLE names a term (the rest matched in the body)', () => {
+    const share = titleTermShare(
+      [
+        { lean: 'left', title: 'Senate rejects War Powers resolution' },
+        { lean: 'left', title: 'Oil prices climb as Strait of Hormuz tensions rise' },
+        { lean: 'right', title: 'What the Iran war means for gas prices' },
+        { lean: 'center', title: 'Markets close higher' },
+      ],
+      ['war powers', 'iran war']
+    );
+    expect(share).toEqual({ left: { admitted: 2, titled: 1 }, center: { admitted: 1, titled: 0 }, right: { admitted: 1, titled: 1 } });
+  });
+
+  test('domainChunks: every query fits the limit, every domain once, in order; terms too long for one domain → null', () => {
+    const domains = Array.from({ length: 30 }, (_, i) => `outlet${String(i).padStart(2, '0')}.example.com`);
+    const terms = ['war powers', 'operation epic fury'];
+    const chunks = domainChunks({ terms, domains, maxChars: 400 })!;
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.flat()).toEqual(domains);
+    for (const c of chunks) expect(buildGdeltQuery({ terms, domains: c }).length).toBeLessThanOrEqual(400);
+    expect(domainChunks({ terms, domains, maxChars: 100_000 })).toEqual([domains]);
+    expect(domainChunks({ terms, domains: [], maxChars: 400 })).toEqual([]);
+    expect(domainChunks({ terms: ['a very long alias '.repeat(40).trim()], domains, maxChars: 400 })).toBeNull();
+  });
+
+  test('every live question in data/moments.json fits GDELT\'s measured query limit with the real rated table', () => {
+    const real = JSON.parse(readFileSync(join(ROOT, 'data/media-bias.json'), 'utf8')).outlets as Record<string, string>;
+    const moments = JSON.parse(readFileSync(join(ROOT, 'data/moments.json'), 'utf8')) as Record<string, Moment>;
+    const bills = JSON.parse(readFileSync(join(ROOT, 'data/bills.json'), 'utf8')) as Array<{ full_identifier: string }>;
+    const bySlug = new Map(bills.map((b) => [b.full_identifier, b]));
+    const byLean = eligibleDomainsByLean(real);
+    for (const [id, m] of Object.entries(moments)) {
+      if (m.status !== 'live') continue;
+      const { terms } = questionTerms(m, bySlug);
+      if (!terms.length) continue;
+      for (const lean of ['left', 'center', 'right'] as const) {
+        const chunks = domainChunks({ terms, domains: byLean[lean] });
+        expect(chunks, `${id} ${lean}`).not.toBeNull();
+        expect(chunks!.flat().sort(), `${id} ${lean}`).toEqual([...byLean[lean]].sort());
+        for (const c of chunks!) expect(buildGdeltQuery({ terms, domains: c }).length, `${id} ${lean}`).toBeLessThanOrEqual(GDELT_MAX_QUERY_CHARS);
+      }
+    }
   });
 });
 

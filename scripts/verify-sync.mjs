@@ -51,7 +51,10 @@
  *   - data/question-press.json (the per-question GDELT evidence, 2026-09-26)
  *     counts an outlet data/media-bias.json does not rate, carries a count
  *     that is not its own stored links, a link off its outlet's domain, a day
- *     outside its window, any key the format does not define (no tone, no
+ *     outside the window ending the day the FILE was written (`_meta.as_of`,
+ *     never the wall clock — a file the newsdesk has not rewritten since
+ *     yesterday is late, not damaged, and lateness only warns here, per
+ *     N8-A2 below), any key the format does not define (no tone, no
  *     sentiment, no titles), or has lost the GDELT citation its terms require.
  *     Skipped cleanly when the file doesn't exist. The judgement lives in
  *     lib/question-press.mjs (verifyQuestionPress)
