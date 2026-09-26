@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-26T13:01:20.265Z",
+    "fetched_at": "2026-09-26T17:06:50.071Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-26T13:01:20.265Z"
+        "checked_at": "2026-09-26T17:06:50.071Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-26T13:01:20.265Z"
+        "checked_at": "2026-09-26T17:06:50.071Z"
       },
       "leans": {
         "center": {
@@ -1637,6 +1637,13 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-24",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQSWRhRVJLLV9CbTd1YW5uZjF3QXBRVnBFRzlKTDJsV2xDWGJrSUZzX0tnT0J1QzJ5T0dWMDZoV3lQdGpYUUtHZXRhRWpkWGJ0Y2xlc1FHU05FZnAzUHdQUnVRTkRnaTNhSWJYX0J5TFp6akt0dzdVVG5Ic1dWYTNKZ3BDTmNMY2FLX0FXUm9wQkd6TDkyRUd6OE1jd29wRVR5TWlLSGVFRFVHZw?oc=5"
+        },
+        {
           "domain": "nytimes.com",
           "lean": "left",
           "firstSeen": "2026-09-21",
@@ -1656,12 +1663,6 @@
         },
         {
           "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
