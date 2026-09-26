@@ -25,6 +25,7 @@
  */
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { checkMomentUpdates, CLASS_PRIORITY, UPDATE_CLASSES } from '../lib/moment-updates-gate.mjs';
+import { PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 
 // The priority table and the class list must never drift apart: a class with
 // no priority silently sorts last and can be crowded out of its own day.
@@ -53,7 +54,17 @@ const fileBytes = statSync(url(UPDATES_PATH)).size;
 
 const billSlugs = new Set(bills.map((b) => b.full_identifier));
 
-const { violations, warnings } = checkMomentUpdates(updates, moments, billSlugs, { fileBytes });
+// The outlet floor (owner ruling 2026-09-26): a stored press cluster may name
+// only AllSides-rated outlets, plus an owner-approved allowlist if one exists.
+// A malformed allowlist is a violation HERE, so it is red on the pull request
+// that adds it — the collector itself fails closed to rated-only either way.
+const pressPolicy = loadPressOutletPolicy({ readJSON: read, exists: (p) => existsSync(url(p)) });
+
+const { violations, warnings } = checkMomentUpdates(updates, moments, billSlugs, {
+  fileBytes,
+  pressOutletAdmits: pressPolicy.admits,
+});
+for (const p of pressPolicy.problems) violations.push(`${PRESS_ALLOWLIST_PATH}: ${p}`);
 
 for (const w of warnings) console.warn(`::warning::check-moment-updates: ${w}`);
 if (violations.length) {
