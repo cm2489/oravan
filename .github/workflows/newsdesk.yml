@@ -236,7 +236,7 @@ jobs:
         # outer bound on top.
         #
         # QUERY LENGTH: GDELT refuses a long query ("Your query was too short
-        # or too long", measured 2026-09-26 at 436-1,002 characters), so each
+        # or too long", measured 2026-09-26 at 333-1,002 characters), so each
         # lean's rated domains are split across as many searches as it takes
         # to fit (GDELT_MAX_QUERY_CHARS in lib/question-press.mjs) — several
         # searches per lean, all of which must answer before the question

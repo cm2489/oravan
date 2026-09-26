@@ -739,8 +739,19 @@ test.describe('the collector (mocked GDELT)', () => {
     expect(refused).toBeGreaterThan(0);
     expect(refused).toBeLessThanOrEqual(3);
     expect(lines.some((l) => /^::warning::.*GDELT refused a \d+-character query as too long/.test(l))).toBe(true);
-    expect(lines.some((l) => /query length — longest GDELT answered this run \d+, shortest it refused as too long \d+ \(configured limit 400/.test(l))).toBe(true);
-    expect(GDELT_MAX_QUERY_CHARS).toBeLessThan(436); // below the shortest length GDELT was measured refusing
+    expect(lines.some((l) => new RegExp(`query length — longest GDELT answered this run \\d+, shortest it refused as too long \\d+ \\(configured limit ${GDELT_MAX_QUERY_CHARS}`).test(l))).toBe(true);
+    expect(GDELT_MAX_QUERY_CHARS).toBeLessThan(333); // below the shortest length GDELT was measured refusing
+  });
+
+  test('a question whose terms cannot fit beside one domain is not searched: no request, a once-a-day warning, no entry', async () => {
+    const long = { status: 'live', aliases: { en: Array.from({ length: 10 }, (_, i) => `a rather long press phrase number ${i}`) }, vehicles: [] };
+    const net = fakeNet((url) => byLeanReply(url));
+    const lines: string[] = [];
+    const { doc, stats } = await collect({ moments: { 'too-long': long }, bills: [], bias: BIAS, now: NOW, fetchImpl: net.fetchImpl, sleep: net.sleep, clock: net.clock, log: (l) => lines.push(l) });
+    expect(net.calls).toHaveLength(0);
+    expect(stats.skipped).toEqual(['too-long']);
+    expect(doc.questions).toEqual({});
+    expect(lines.some((l) => new RegExp(`^::warning::.*too-long: its search terms alone do not fit GDELT's ${GDELT_MAX_QUERY_CHARS}-character query limit`).test(l))).toBe(true);
   });
 
   test('a single domain GDELT still refuses fails the question with GDELT\'s own sentence — never a silent partial lean', async () => {
@@ -810,7 +821,7 @@ test.describe('parity helpers', () => {
     expect(domainChunks({ terms: ['a very long alias '.repeat(40).trim()], domains, maxChars: 400 })).toBeNull();
   });
 
-  test('every live question in data/moments.json fits GDELT\'s measured query limit with the real rated table', () => {
+  test('every live question in data/moments.json either fits the query limit with every rated domain once, or is not searchable at all', () => {
     const real = JSON.parse(readFileSync(join(ROOT, 'data/media-bias.json'), 'utf8')).outlets as Record<string, string>;
     const moments = JSON.parse(readFileSync(join(ROOT, 'data/moments.json'), 'utf8')) as Record<string, Moment>;
     const bills = JSON.parse(readFileSync(join(ROOT, 'data/bills.json'), 'utf8')) as Array<{ full_identifier: string }>;
@@ -820,11 +831,15 @@ test.describe('parity helpers', () => {
       if (m.status !== 'live') continue;
       const { terms } = questionTerms(m, bySlug);
       if (!terms.length) continue;
-      for (const lean of ['left', 'center', 'right'] as const) {
-        const chunks = domainChunks({ terms, domains: byLean[lean] });
-        expect(chunks, `${id} ${lean}`).not.toBeNull();
-        expect(chunks!.flat().sort(), `${id} ${lean}`).toEqual([...byLean[lean]].sort());
-        for (const c of chunks!) expect(buildGdeltQuery({ terms, domains: c }).length, `${id} ${lean}`).toBeLessThanOrEqual(GDELT_MAX_QUERY_CHARS);
+      // Never a partial split: either every lean fits, or none is searched
+      // (the collector then skips the question with a warning — pinned below).
+      const plans = (['left', 'center', 'right'] as const).map((lean) => [lean, domainChunks({ terms, domains: byLean[lean] })] as const);
+      const fits = plans.map(([, c]) => c !== null);
+      expect(new Set(fits).size, id).toBe(1);
+      for (const [lean, chunks] of plans) {
+        if (!chunks) continue;
+        expect(chunks.flat().sort(), `${id} ${lean}`).toEqual([...byLean[lean]].sort());
+        for (const c of chunks) expect(buildGdeltQuery({ terms, domains: c }).length, `${id} ${lean}`).toBeLessThanOrEqual(GDELT_MAX_QUERY_CHARS);
       }
     }
   });

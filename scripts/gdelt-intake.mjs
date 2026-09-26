@@ -47,7 +47,7 @@
  * the first build of this file made (637–1,120 characters) was over it. Each
  * lean's rated domains are now split into as many searches as it takes to
  * stay under `GDELT_MAX_QUERY_CHARS` (`domainChunks`), and a lean's evidence is
- * the union of its searches. The exact limit is UNMEASURED (below 436), so a
+ * the union of its searches. The exact limit is UNMEASURED (below 333), so a
  * refusal is handled, not fatal: the refused group is halved, the run's limit
  * drops to the half's length for every later search, and the lean is
  * re-split — at most log2(group) extra requests, inside the request cap. A
@@ -187,7 +187,7 @@ export async function collect({ moments, bills, bias, previous = null, conversat
     const plan = RATED_LEANS.map((lean) => ({ lean, chunks: domainChunks({ terms, domains: domainsByLean[lean], maxChars: limits.maxQueryChars }) }));
     if (plan.some((p) => p.chunks === null)) {
       stats.skipped.push(id);
-      standing(`gdelt-intake: ${id}: its search terms alone do not fit GDELT's ${limits.maxQueryChars}-character query limit beside one domain — not searched. Shorter aliases in data/moments.json are the owner's call.`);
+      standing(`gdelt-intake: ${id}: its search terms alone do not fit GDELT's ${limits.maxQueryChars}-character query limit beside one domain — not searched. Fewer or shorter aliases in data/moments.json (the owner's call), or a shorter legislative-context group (a query change to be measured by lean first), would let it fit.`);
       continue;
     }
     const checkedOn = previous?.questions?.[id]?.checkedOn ?? null;
