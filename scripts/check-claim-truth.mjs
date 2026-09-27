@@ -94,6 +94,20 @@ const RETIRED = [
     name: `"revisión ${HUMAN}a" (ES)`,
     src: `revisi[óo]n\\s+${HUMAN}a`,
   },
+  /*
+   * Added 2026-09-27. PRODUCT.md said Big Question entries were "hand-
+   * reviewed" for two days after that stopped being true (the owner ruled
+   * Big Questions fully automatic on 2026-09-25, and #280 changed the site
+   * copy), and none of the wordings above could see it: "hand" is not
+   * "human". The 2026-09-27 audit caught it by reading. This is that wording
+   * and its two nearest spellings, in both languages. Not added: "manual
+   * review", which lib/ honestly uses for a redistricting map change awaiting
+   * a person — a publish claim it is not.
+   */
+  {
+    name: `"hand-${REVIEW}ed" (EN/ES)`,
+    src: `hand[\\s-]?${REVIEW}|${REVIEW}ed\\s+by\\s+hand|${REVISAD}[oa]s?\\s+a\\s+mano`,
+  },
 ];
 const retiredRe = (p) => new RegExp(p.src, 'i');
 const retiredReG = (p) => new RegExp(p.src, 'gi');
@@ -436,25 +450,38 @@ function twoFactorHits(text) {
  * R1 only knows the surfaces it was told about. R3 is the net under it: a
  * plain scan for the retired claim anywhere a claim could plausibly ship.
  *
- * SCANNED: the app, components, lib, scripts, i18n, the four constitution
- * documents, AGENTS.md, and docs/mcp-server-readme.md (the only doc that is
- * redistributed to third-party directories, so the only doc whose staleness
- * reaches strangers). messages/*.json are scanned separately, per key, so
- * the Moments namespace can be excluded precisely rather than by file.
+ * SCANNED: the app, components, lib, scripts, i18n, the constitution
+ * documents (CLAUDE.md, README.md, PRODUCT.md), AGENTS.md, and
+ * docs/mcp-server-readme.md (the only doc that is redistributed to
+ * third-party directories, so the only doc whose staleness reaches
+ * strangers). messages/*.json are scanned separately, per key, so the
+ * Moments namespace can be excluded precisely rather than by file.
  *
- * ALSO SCANNED, and the reason is a move: docs/constitution-log.md (added
- * 2026-08-12, in the change that created it). CLAUDE.md's hard rules kept
- * their live claims, their dated amendment markers and their instructions,
- * and sent only the forensic evidence — measurements, file:line tracing,
- * inventories — to that log. Text that moves out of a scanned document into
- * an unscanned one leaves gate coverage while looking tidier, which is the
- * failure the NOT SCANNED list below exists to make impossible by accident.
- * Note it carries no R3 allowlist entry, and needs none: every retired-claim
- * quotation stayed behind in CLAUDE.md's marker sentences, so a retired
- * claim appearing in the log is a real violation, not a record of one.
+ * ALSO SCANNED, and the reason each time is a move. Text that moves out of a
+ * scanned document into an unscanned one leaves gate coverage while looking
+ * tidier, which is the failure the NOT SCANNED list below exists to make
+ * impossible by accident.
+ *   - docs/constitution-log.md (added 2026-08-12, in the change that created
+ *     it). Until 2026-09-27 it held only forensic evidence and needed no R3
+ *     entry. Constitution v2 (2026-09-27) moved CLAUDE.md's dated amendment
+ *     markers into it, retired-wording quotations included, so it now
+ *     carries an R3 entry scoped to amendment records only (see
+ *     R3_ALLOWLIST), and CLAUDE.md, which no longer quotes one, carries none.
+ *   - the living documents Constitution v2 split out of CLAUDE.md and
+ *     DESIGN.md on 2026-09-27: docs/current-direction.md, docs/process.md,
+ *     docs/record-truth.md, docs/accessibility.md, docs/runbooks/secrets.md.
+ *     DESIGN.md itself left the set the same day (see docs/history/ below).
  *
  * NOT SCANNED, and why — written down because an unexplained exclusion is
  * how a gate rots:
+ *   - docs/history/   dated records kept verbatim after retirement — today
+ *                     DESIGN-2026-07-24.md, retired by the owner 2026-09-25
+ *                     and moved there 2026-09-27. Nothing in it is a rule
+ *                     or a claim surface. Its one publication-provenance
+ *                     sentence ("labeled at first contact…") moved to
+ *                     README principle 5 in the same change, so it stayed
+ *                     in the scan set and tests/claim-truth.spec.ts pins it
+ *                     there.
  *   - tests/          builds hostile fixtures on purpose (tests/claim-truth.
  *                     spec.ts literally seeds this gate's violations); a
  *                     scan here would fail on its own test suite.
@@ -474,10 +501,14 @@ const SCAN_FILES = [
   'README.md',
   'CLAUDE.md',
   'PRODUCT.md',
-  'DESIGN.md',
   'AGENTS.md',
   'docs/mcp-server-readme.md',
   'docs/constitution-log.md',
+  'docs/current-direction.md',
+  'docs/process.md',
+  'docs/record-truth.md',
+  'docs/accessibility.md',
+  'docs/runbooks/secrets.md',
 ];
 const SCAN_EXT = /\.(ts|tsx|mjs|js|md)$/;
 const MESSAGE_FILES = ['messages/en.json', 'messages/es.json'];
@@ -561,11 +592,20 @@ const DENIAL = {
 };
 
 /**
- * TRUE AND MOMENTS-SCOPED. Big Question entries really are hand-authored
- * and owner-merged — the explicit carve-out in CLAUDE.md's 2026-07-25
- * amendment — so a review claim whose own sentence names Moments is simply
- * true. Note what this does NOT match: "reviewed by the human before any
- * call" names no scope at all, which is why the pre-fix README still fails.
+ * MOMENTS-SCOPED. A sentence that names Moments / Big Questions. R4 uses it
+ * as an escape, and that use is still TRUE: the forbidden-vocabulary lint
+ * really does gate a Big Question's publish.
+ *
+ * It was also an R3 category until 2026-09-27, for CLAUDE.md's carve-out
+ * that Big Question entries were hand-authored and owner-merged. That stopped
+ * being true on 2026-09-25 (the owner ruled Big Questions fully automatic;
+ * #280 changed the copy), and Constitution v2 moved the carve-out's history
+ * to docs/constitution-log.md, whose R3 entry allows amendment records only.
+ * So no R3 entry names this category any more: a review claim scoped to
+ * Moments is no longer excused by the scope, because the claim is no longer
+ * true there either. Note what this never matched: "reviewed by the human
+ * before any call" names no scope at all, which is why the pre-fix README
+ * still fails.
  */
 const MOMENTS_SCOPED = { name: 'true and Moments-scoped', re: /\bmoments?\b|big question|gran(des)? pregunta/i };
 
@@ -615,16 +655,28 @@ const R3_ALLOWLIST = [
     note: "principle 5's amendment parenthetical quotes the wording it retired on 2026-08-06",
   },
   {
-    path: 'CLAUDE.md',
-    max: 4,
-    allow: [AMENDMENT_RECORD, MOMENTS_SCOPED],
-    note: 'the 2026-07-25 amendment quotes the retired wording (1), and the sentence after it carves out the one thing that IS reviewed — a Moment entry, hand-authored and owner-merged (2). Raised 3→4 on 2026-08-07: the carve-out itself was amended when scripts/moment-draft.mjs began writing a Moment\'s first draft, and that amendment has to quote the shipped `moments.howMadeBody` wording it is keeping true (1)',
+    /*
+     * Added 2026-09-27, in the change that removed CLAUDE.md's entry.
+     * CLAUDE.md held 2 quotations when Constitution v2 replaced it (the
+     * 2026-07-25 marker, and the 2026-08-07 marker quoting
+     * `moments.howMadeBody`) under an entry that still allowed 4 — the
+     * other two were the Moments carve-out's, already rewritten away. v2
+     * moved its amendment history here and CLAUDE.md now quotes none, so
+     * its entry would be stale and is gone.
+     * Amendment records ONLY: the Moments carve-out is no longer true
+     * (see MOMENTS_SCOPED), so each quotation here must sit in a sentence
+     * that marks it as retired history.
+     */
+    path: 'docs/constitution-log.md',
+    max: 2,
+    allow: [AMENDMENT_RECORD],
+    note: 'the 2026-07-25 marker ("previously read …") and the 2026-08-07 marker\'s quotation of `moments.howMadeBody` ("Until #280 retired that wording …"), moved here from CLAUDE.md on 2026-09-27',
   },
   {
     path: 'PRODUCT.md',
-    max: 2,
+    max: 3,
     allow: [AMENDMENT_RECORD, DENIAL],
-    note: "design principle 5 denies the claim for the decode path (1) and records the 2026-08-02 amendment that retired it (1), mirroring CLAUDE.md's",
+    note: "design principle 5 denies the claim for the decode path (1) and records the 2026-08-02 amendment that retired it (1), mirroring CLAUDE.md's; raised 2→3 on 2026-09-27, when the hand-review wording joined RETIRED and the correction that retired it from this line quotes it (1)",
   },
   {
     path: 'lib/core/mcp.ts',
@@ -942,6 +994,29 @@ function selfTest() {
   seed('R3: "reviewed by a human before publication" in prose', () =>
     retiredHits(`Content under /bills is ${REVIEW}ed by a ${HUMAN} before publication.`).length > 0
   );
+  seed('R1/R3: "hand-reviewed" — the wording PRODUCT.md carried for two days after it stopped being true', () => {
+    const claim = `Every Big Question entry is hand-${REVIEW}ed before it publishes, and automated checks run first.`;
+    return (
+      checkAnchorText(claim, 'en').some((p) => p.startsWith('makes the retired review claim')) &&
+      retiredHits(claim).length > 0 &&
+      retiredHits(`Cada resumen es ${REVISAD}o a mano antes de publicarse.`).length > 0
+    );
+  });
+  seed("R3: the old Moments carve-out is no longer excused anywhere — Moments-scoped, but not an amendment record", () => {
+    // CLAUDE.md carried this until 2026-08-07 and the Moments category
+    // excused it. Since 2026-09-27 no R3 entry allows MOMENTS_SCOPED, and the
+    // log (where the history now lives) allows amendment records only.
+    const line = `**What IS ${HUMAN}-${REVIEW}ed stays ${HUMAN}-${REVIEW}ed:** a Moment entry is hand-authored and merged by Colby, and \`moments.howMadeBody\` still says so because it is true.`;
+    const hits = retiredHits(line, { markdown: true });
+    const logEntry = R3_ALLOWLIST.find((e) => e.path === 'docs/constitution-log.md');
+    return (
+      hits.length > 0 &&
+      hits.every((h) => MOMENTS_SCOPED.re.test(h.context) && !AMENDMENT_RECORD.re.test(h.context)) &&
+      logEntry !== undefined &&
+      !logEntry.allow.includes(MOMENTS_SCOPED) &&
+      !R3_ALLOWLIST.some((e) => e.allow?.includes(MOMENTS_SCOPED))
+    );
+  });
   seed('R3: allowlisted file, but the quotation is a live claim rather than an amendment record', () => {
     const blob = ['// unrelated line', `// every decode is ${HUMAN}-${REVIEW}ed first`, '// unrelated line'].join('\n');
     const hits = retiredHits(blob);
@@ -1027,7 +1102,11 @@ function selfTest() {
     labelEs:
       'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. ' +
       'No es el texto oficial del proyecto de ley.',
-    nonpartisanRule: '- **Nonpartisan by construction.** No party-coded colors, no advocacy language, in either language.',
+    // CLAUDE.md rule 3 as Constitution v2 wrote it (2026-09-27); until then
+    // this fixture was the older one-line "no advocacy language" bullet.
+    nonpartisanRule:
+      '3. **Nonpartisan by construction.** No party-coded colour anywhere, in either language; outlet lean is shown ' +
+      'by text and position only; party is text, never a hue; no advocacy vocabulary in anything Oravan writes.',
     scriptPrompt: '- Strictly nonpartisan tone: no party language, no attacks, no alarmism, no advocacy-group jargon.',
     decodePrompt: 'Strictly nonpartisan, no advocacy, no preamble, no markdown.',
     momentsAiNoteEn:
@@ -1078,10 +1157,15 @@ function selfTest() {
     const hits = retiredHits(blob);
     return hits.length === 1 && AMENDMENT_RECORD.re.test(hits[0].context);
   });
-  clean("R3: CLAUDE.md's real Moments carve-out is TRUE, and its own sentence names the scope", () => {
-    const line = `**What IS ${HUMAN}-${REVIEW}ed stays ${HUMAN}-${REVIEW}ed:** a Moment entry is hand-authored and merged by Colby, and \`moments.howMadeBody\` still says so because it is true.`;
+  clean("R3: docs/constitution-log.md's real 2026-08-07 quotation is an amendment record in its own sentence", () => {
+    // Moved from CLAUDE.md on 2026-09-27. The log's R3 entry allows amendment
+    // records ONLY, so this sentence has to carry its own marker ("retired").
+    const line =
+      'Until #280 retired that wording on 2026-09-25, the marker quoted `moments.howMadeBody` — ' +
+      `*"checked by an automated gate, then ${REVIEW}ed by a person before it publishes"* — as the string the ` +
+      'instruction kept true.';
     const hits = retiredHits(line, { markdown: true });
-    return hits.length > 0 && hits.every((h) => MOMENTS_SCOPED.re.test(h.context));
+    return hits.length === 1 && AMENDMENT_RECORD.re.test(hits[0].context);
   });
   clean('R4: the TRUE Big-Questions vocabulary sentence in real aiBody copy, both languages', () =>
     vocabLintHits(REAL.aiBodyEn).length === 0 && vocabLintHits(REAL.aiBodyEs).length === 0
@@ -1124,9 +1208,22 @@ function selfTest() {
     return enumerated && checkAnchorText(esOld, 'es').some((p) => p.startsWith('makes the retired review claim'));
   });
   clean("R3: PRODUCT.md's real denial is a denial in its own sentence", () => {
-    const line = `The nightly decode path is not ${HUMAN}-${REVIEW}ed and the product never claims it is; what IS hand-reviewed (Big Question entries) says so because it is true.`;
+    // PRODUCT.md principle 5 as corrected on 2026-09-27. Until then the same
+    // sentence went on to say Big Question entries were hand-reviewed.
+    const line =
+      `The nightly decode path is not ${HUMAN}-${REVIEW}ed and the product never claims it is; Big Question text ` +
+      'is written by AI too and publishes on the same automated gates, and nothing on the site says a person ' +
+      'reviews it.';
     const hits = retiredHits(line, { markdown: true });
     return hits.length > 0 && hits.every((h) => DENIAL.re.test(h.context));
+  });
+  clean("R3: PRODUCT.md's real 2026-09-27 correction quotes the hand-review wording as an amendment record", () => {
+    const line =
+      `Corrected 2026-09-27: this line said Big Question entries were hand-${REVIEW}ed, which stopped being true ` +
+      'on 2026-09-25, when the owner ruled that Big Questions run fully automatically and #280 changed the site ' +
+      'copy to match.';
+    const hits = retiredHits(line, { markdown: true });
+    return hits.length === 1 && AMENDMENT_RECORD.re.test(hits[0].context);
   });
 
   if (failures.length) {
@@ -1162,6 +1259,16 @@ function scanTree() {
 
   const files = execSync('git ls-files', { encoding: 'utf8' }).trim().split('\n');
   const scanned = files.filter(inScanSet);
+
+  // A named document that moves or is deleted would otherwise take its
+  // coverage with it silently: inScanSet only filters what exists. Added
+  // 2026-09-27, when DESIGN.md moved to docs/history/ — its entry had to go
+  // in the same change, on purpose, rather than go quietly dead.
+  for (const f of SCAN_FILES) {
+    if (!files.includes(f)) {
+      fail(`SCAN_FILES names ${f}, which is not a tracked file — re-point or remove the entry in the change that moved it`);
+    }
+  }
   const allowUsage = new Map();
   const keyAllowUsage = new Map();
 
@@ -1261,7 +1368,7 @@ function scanTree() {
   if (failures) {
     console.error(
       `check-claim-truth: ${failures} failure(s). A publication-provenance claim must describe what actually runs — ` +
-        "see CLAUDE.md's AI-content hard rule and README design principle 5."
+        "see CLAUDE.md hard rule 4 and README design principle 5."
     );
     process.exit(1);
   }

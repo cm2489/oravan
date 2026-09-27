@@ -360,6 +360,56 @@ jobs:
             gh issue comment --repo cm2489/oravan "$NUM" \
               --body-file "${RUNNER_TEMP}/journey-corpus-report.md"
           fi
+      - name: Scaffold-corpus tripwire (a sentence the Moment scaffold misreads opens an issue, never costs the night)
+        id: scaffold
+        # The 2026-09-27 audit (SY-47): the Moment-scaffold floor-action
+        # totality sweep lived in tests/moment-scaffold.unit.spec.ts, where a
+        # sentence Congress wrote could red main's CI and every unrelated PR -
+        # it did, 2026-09-22 through 09-25. It tests DATA, so it runs here, on
+        # tonight's corpus, the way the journey-corpus sweep above has since
+        # the owner's 2026-08-04 ruling. The fixtures that test the matcher's
+        # CODE stay in the PR suite.
+        #
+        # SOFTER than the journey step, on purpose: there is no hard verdict.
+        # No page reads this matcher (it drafts a moment-watch scaffold's
+        # qualifying signal), and the corpus-size floor that proves the sync
+        # did its job already runs, hard, in the journey step above. So every
+        # verdict - clean, findings, error - keeps the night green; anything
+        # but `clean` files an issue (the next step), including a sweep that
+        # could not run, so a crash never reads as an all-clear. $0: plain
+        # node, no key, no network.
+        continue-on-error: true
+        run: node scripts/check-scaffold-corpus.mjs
+      - name: Open a scaffold-corpus issue for what the sweep found
+        # An ALLOW-LIST like the journey gate's: only `clean` is quiet. An
+        # empty verdict (the script died before writing one) files too, with
+        # a fallback body, because silence would read as clean. Search-first:
+        # one open issue, and a repeat finding comments on it.
+        # continue-on-error: a GitHub API hiccup filing the issue must never
+        # skip the commit below and cost the night's data.
+        if: steps.scaffold.outputs.verdict != 'clean'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BODY="${RUNNER_TEMP}/scaffold-corpus-report.md"
+          if [ ! -s "$BODY" ]; then
+            printf 'The nightly Moment-scaffold floor-action sweep returned no usable verdict (got "%s"). See the run log: %s/%s/actions/runs/%s\n' \
+              "${{ steps.scaffold.outputs.verdict }}" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$BODY"
+          fi
+          gh label create scaffold-corpus --color FBCA04 --force \
+            --description "A floor sentence the Moment scaffold's floor-action matcher misreads"
+          # `.[].number | head -1`, NOT `.[0].number` - same reason as the
+          # journey-corpus step above (an empty list prints "null").
+          NUM=$(gh issue list --repo cm2489/oravan --state open --label scaffold-corpus \
+                --json number --jq '.[].number' | head -1)
+          if [ -z "$NUM" ]; then
+            gh issue create --repo cm2489/oravan --label scaffold-corpus \
+              --title "Scaffold corpus: a floor sentence the Moment scaffold misreads" \
+              --body-file "$BODY"
+          else
+            gh issue comment --repo cm2489/oravan "$NUM" --body-file "$BODY"
+          fi
       - name: Sync Senate nominations
         # A SEPARATE script and a SEPARATE step, on the sync-coverage.mjs
         # precedent: the bill corpus is the product's spine, and a
@@ -775,11 +825,39 @@ jobs:
         # built from refs/heads/main only, so on a branch validation run this
         # poll can only run out its deadline and paint the run red for
         # something that is not a fault. On main the switch is unchanged.
+        id: deploy
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
         run: node scripts/verify-deploy.mjs
+      - name: Tell IndexNow which pages changed (best-effort - never fails the run)
+        # The 2026-09-27 audit (SY-19): the site is indexed but not ranking,
+        # and nothing told a search engine WHEN a page's record moved. This is
+        # one POST to the shared IndexNow endpoint listing the pages THIS
+        # commit changed, in both locales, derived from the commit's own diff
+        # of data/ - scripts/indexnow-urls.mjs holds the file-to-page mapping,
+        # and public/<key>.txt is the ownership file (a public key, by design).
+        #
+        # AFTER THE DEPLOY CHECK, ON PURPOSE. A ping can prompt a crawl soon
+        # after it lands, so it waits until verify-deploy.mjs above has seen
+        # production serve this exact SHA; pinging earlier could point that
+        # crawl at the old page. If
+        # that check fails or times out this step is skipped: nothing is
+        # pinged, sitemap.xml still lists every page, and each page's next
+        # change pings it. No fixed sleep.
+        #
+        # IT CANNOT COST THE RUN ANYTHING. The script exits 0 on every path,
+        # this step is continue-on-error with a short ceiling, and because it
+        # can never fail it can never skip the CI dispatch below it. It posts
+        # only from Actions on main (scripts/indexnow-ping.mjs's shouldPost).
+        # No secret, no visitor data, $0.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main' && steps.deploy.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          INDEXNOW_HEAD_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/indexnow-ping.mjs
       - name: Dispatch CI against the pushed data
         # Bot pushes (GITHUB_TOKEN) never trigger `on: push`, so without this
         # main's own suite never runs against a fresh corpus and test/corpus

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments } from '../lib/moments';
@@ -19,45 +19,46 @@ import { mockScriptApi } from './helpers';
  * thesis, mechanically: understanding is one click away, the call is still
  * two, and a quiet week is admitted rather than faked.
  *
- *   I1 - TRUTH (new, primary). Every truth surface on the homepage is <=1
- *        CLICK from a decoded, AI-labeled answer. Boundaries: bill links in
- *        section[aria-labelledby="top-actions"], and Big Questions links in
- *        the promoted band, section[aria-labelledby="moments-strip-title"].
- *        Proof AT THE DESTINATION, never at the link: the decode's own
- *        `bill.sec.what` heading plus the AI chip beside it, visible.
- *        (The spec drafted this as "`bill.sec.what` + `bill.aiChip`". The
- *        bill page's AI chip is actually `bill.aiLabel` - "Decoded by AI ·
- *        checked against the record", gated on `hasDecode`; `bill.aiChip` is
- *        the string the MOMENT page reuses. Both are asserted below, each on
- *        the page that renders it.)
+ *   I1 - TRUTH (new, primary). Every truth surface on the homepage is within
+ *        BUDGET.truthClicks of a decoded, AI-labeled answer. Boundaries: the
+ *        week's bill links and the Big Questions band's entry links, each
+ *        read by its `[data-front-door]` hook. Proof AT THE DESTINATION, never
+ *        at the link: the decode's own `bill.sec.what` heading plus the AI
+ *        chip beside it, visible. (The spec drafted this as "`bill.sec.what` +
+ *        `bill.aiChip`". The bill page's AI chip is actually `bill.aiLabel` -
+ *        "Decoded by AI · checked against the record", gated on `hasDecode`;
+ *        `bill.aiChip` is the string the MOMENT page reuses. Both are asserted
+ *        below, each on the page that renders it.)
  *
  *   I2 - CALL PATH (preserved). From any decoded answer, a completed,
- *        editable script is <=2 INTERACTIONS away (stance radio -> a visible
- *        `bill.scriptTitle` textbox), and the ZIP-first route stays <=3
- *        CLICKS end to end through section[aria-labelledby="reps-next"].
- *        Assertions unchanged from the pre-repositioning suite; only the
- *        narration moved. The bill page's sticky two-column rail (DESIGN.md
- *        structural constraint 1) is what makes this true: DEMOTE, NEVER
- *        BURY, enforced structurally.
+ *        editable script is within BUDGET.callInteractions (stance radio -> a
+ *        visible `bill.scriptTitle` textbox), and the ZIP-first route stays
+ *        within BUDGET.zipFirstClicks end to end through the /reps
+ *        continuation. Demote the call apparatus, never bury it.
  *
  *   MEMBER PAGES (/reps/[bioguide], added 2026-09-24 with plan item C2) are a
  *        truth surface too, so both invariants are asserted there as well:
- *        a sponsored-bill link is <=1 click from a decoded, AI-labeled
- *        answer (I1), and a completed script is <=2 interactions from the
- *        member page (I2: the bill click, then the stance). A member who
- *        sponsors nothing Oravan tracks gets section[aria-labelledby=
- *        "rep-next"] instead - the /reps continuation under its own id, so
- *        the frozen `reps-next` stays the lookup's alone.
+ *        a sponsored-bill link is within BUDGET.truthClicks of a decoded,
+ *        AI-labeled answer (I1), and a completed script is within
+ *        BUDGET.callInteractions of the member page (I2: the bill click, then
+ *        the stance). A member who sponsors nothing Oravan tracks gets the
+ *        member page's own continuation instead, under a hook distinct from
+ *        the lookup's.
  *
  *   I3 - QUIET-WEEK HONESTY (unchanged). When the truth surfaces are empty
  *        they say so in a role=status empty state (never a false "quiet"
  *        claim - AE3), and neither entry point dead-ends.
  *
- * FROZEN IDENTIFIERS, read by this file and by freshness.spec.ts:
- * `top-actions`, `reps-next`, `moments-strip-title`. Heading copy may change
- * freely - it did, twice, in this train - but the ids may not. DESIGN.md
- * structural constraint 2 states the same budgets in prose; the numbers there
- * and the numbers here must always agree.
+ * THE BUDGETS ARE COUNTED, NOT NARRATED. Every click or stance a budgeted
+ * path spends goes through `countSteps()`, and each such test ends by
+ * comparing what it spent with BUDGET below — so a flow that grows a step
+ * fails here, and so does a budget lowered under what the flow needs. BUDGET
+ * is the only place these numbers live (Constitution v2, rule 8).
+ *
+ * The hooks this file reads (SURFACE below) are test plumbing, not rules: a
+ * redesign may move, re-wrap or re-title any of those sections and only has
+ * to carry the hook with it. Headings, class names and section ids are never
+ * read here; copy is read only through its message key.
  *
  * CORPUS COUPLING (unchanged idiom): these suites branch on the live,
  * nightly-synced data/bills.json and data/moments.json rather than hardcoding
@@ -66,6 +67,28 @@ import { mockScriptApi } from './helpers';
  * CORPUS_STABLE additionally skips when the corpus sits at a scoring boundary
  * and the baked pages could disagree with this assert-time recomputation.
  */
+
+/** THE BUDGETS (rule 8). Lower one below what its path spends and that path
+ *  fails; grow a path by a step and it fails against the unchanged number. */
+const BUDGET = {
+  /** I1: a front-door surface -> a decoded, AI-labeled answer. */
+  truthClicks: 1,
+  /** I2: a decoded answer (or a member page) -> a completed, editable script. */
+  callInteractions: 2,
+  /** I2: the homepage ZIP field -> a completed script, end to end. Typing
+   *  the ZIP is not a click; submitting it is. */
+  zipFirstClicks: 3,
+} as const;
+
+/** The surfaces the budgets are measured from, by hook. */
+const SURFACE = {
+  week: '[data-front-door="week"]',
+  questions: '[data-front-door="questions"]',
+  repsContinuation: '[data-testid="reps-continuation"]',
+  memberSponsored: '[data-testid="rep-sponsored"]',
+  memberContinuation: '[data-testid="rep-continuation"]',
+} as const;
+
 /** Same condition as lib/core's getTopActions: a decoded bill clearing the "now" floor. */
 const anyTop = anyTopAt(Date.now());
 const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
@@ -84,8 +107,8 @@ const NON_SPONSOR = getAllLegislators().find((l) => getBillsSponsoredBy(l.biogui
 
 const ZIP = '78501'; // single district + two senators, no address-refinement detour (see reps.spec.ts)
 
-async function clickFirstBillCardIn(page: Page, sectionSelector: string) {
-  await page.locator(`${sectionSelector} a[href*="/bills/"]`).first().click();
+function firstBillLinkIn(page: Page, surface: string): Locator {
+  return page.locator(`${surface} a[href*="/bills/"]`).first();
 }
 
 // Declare a stance robust against the click-before-hydration race (same
@@ -108,6 +131,27 @@ async function declareStance(page: Page, stanceLabel: string) {
     await button.click();
     await request;
   }).toPass({ timeout: 30_000 });
+}
+
+/** One visitor's path, counted. `click` and `stance` are the only ways a
+ *  budgeted test spends an interaction, so `used` is the real number. */
+function countSteps(page: Page) {
+  let used = 0;
+  return {
+    async click(target: Locator) {
+      used += 1;
+      await target.click();
+    },
+    async stance(label: string) {
+      // declareStance may re-click a stance lost to the hydration race; a
+      // lost click is not an interaction the visitor spent, so it counts once.
+      used += 1;
+      await declareStance(page, label);
+    },
+    get used() {
+      return used;
+    },
+  };
 }
 
 async function expectCompletedScript(page: Page, scriptTitleLabel: string) {
@@ -143,45 +187,49 @@ const LOCALES = [
 ] as const;
 
 for (const { locale, prefix, messages } of LOCALES) {
-  test.describe(`${locale} locale: I1 - Truth (<=1 click to a decoded, AI-labeled answer)`, () => {
-    test('I1: a bill link in the week reaches a decoded answer in 1 click', async ({ page }) => {
+  test.describe(`${locale} locale: I1 - Truth (a decoded, AI-labeled answer within BUDGET.truthClicks)`, () => {
+    test('I1: a bill link in the week reaches a decoded answer within the truth budget', async ({ page }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
       test.skip(!anyTop, 'corpus is quiet this week - no bill card in the week to drive this path');
       await page.goto(`${prefix}/`);
+      const steps = countSteps(page);
 
-      // The ONLY click. The front door promises understanding, so the very
-      // next thing on screen has to be the understanding - not a form, not a
-      // stance, not an ask.
-      await clickFirstBillCardIn(page, 'section[aria-labelledby="top-actions"]');
+      // The front door promises understanding, so the very next thing on
+      // screen has to be the understanding - not a form, not a stance, not
+      // an ask.
+      await steps.click(firstBillLinkIn(page, SURFACE.week));
       await expect(page).toHaveURL(/\/bills\//);
       await expectDecodedAnswer(page, messages);
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.truthClicks);
     });
 
-    test('I1: a Big Questions band link reaches its decoded answer in 1 click', async ({ page }) => {
+    test('I1: a Big Questions band link reaches its decoded answer within the truth budget', async ({ page }) => {
       test.skip(!anyLiveMoment, 'no live Big Question in the corpus - the band is absent by design');
       await page.goto(`${prefix}/`);
 
-      const band = page.locator('section[aria-labelledby="moments-strip-title"]');
+      const band = page.locator(SURFACE.questions);
       await expect(band).toBeVisible();
+      const steps = countSteps(page);
 
-      // The ONLY click. `/questions` (the band's see-all CTA) has no trailing
-      // slash, so this selector can only pick an entry link.
-      await band.locator('a[href*="/questions/"]').first().click();
+      // `/questions` (the band's see-all CTA) has no trailing slash, so this
+      // selector can only pick an entry link.
+      await steps.click(band.locator('a[href*="/questions/"]').first());
       await expect(page).toHaveURL(/\/questions\/[^/]+$/);
 
-      // Proof at the destination: the hand-authored answer to the question,
-      // under its own heading, with the page's AI label visible. Note the
-      // band is live-only, so the heading is the LIVE framing - a settled
-      // entry never appears on the front door.
+      // Proof at the destination: the answer to the question, under its own
+      // heading, with the page's AI label visible. Note the band is
+      // live-only, so the heading is the LIVE framing - a settled entry never
+      // appears on the front door.
       await expect(
         page.getByRole('heading', { name: messages.moments.decidingLive })
       ).toBeVisible();
       await expect(page.getByText(messages.bill.aiChip, { exact: true }).first()).toBeVisible();
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.truthClicks);
     });
   });
 
-  test.describe(`${locale} locale: I2 - Call path (<=2 interactions, ZIP-first <=3 clicks)`, () => {
-    test('I2: from a decoded answer, stance = a completed script in 1 more interaction', async ({
+  test.describe(`${locale} locale: I2 - Call path (BUDGET.callInteractions, ZIP-first BUDGET.zipFirstClicks)`, () => {
+    test('I2: from a decoded answer, a completed script within the call budget', async ({
       page,
     }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
@@ -189,33 +237,33 @@ for (const { locale, prefix, messages } of LOCALES) {
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
 
-      // I1's click, replayed to reach the decoded answer I2 starts from.
-      await clickFirstBillCardIn(page, 'section[aria-labelledby="top-actions"]');
+      // I1's click, replayed to reach the decoded answer I2 starts from. Not
+      // counted: I2's budget is measured FROM the decoded answer.
+      await firstBillLinkIn(page, SURFACE.week).click();
       await expect(page).toHaveURL(/\/bills\//);
 
-      // Interaction 1 of <=2: declare a stance - the script appears
-      // immediately, no further navigation required. (The budget is 2 because
-      // an undecided visitor may open the rail's ZIP dialog first; the
-      // straight line is 1.)
-      await declareStance(page, messages.bill.stance.support);
+      // Declare a stance - the script appears immediately, no further
+      // navigation required. (The budget is 2 because an undecided visitor
+      // may open the rail's ZIP dialog first; the straight line is 1.)
+      const steps = countSteps(page);
+      await steps.stance(messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.callInteractions);
     });
 
-    test('I2: ZIP-first - find reps -> reps-page continuation -> stance = completed script in 3 clicks', async ({
+    test('I2: ZIP-first - find reps -> reps-page continuation -> stance = a completed script within the ZIP-first budget', async ({
       page,
     }) => {
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked homepage could flip before the assert');
       test.skip(!anyTop, 'corpus is quiet this week - the reps continuation has no bill card to drive this path');
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
+      const steps = countSteps(page);
 
-      // Click 1 of <=3: submit a ZIP code. Since the 2026-09-24 fold pass
-      // the ZipForm is the hero's ONE filled control (tests/home-fold.spec.ts
-      // pins that it clears the thumb bar on the first screen); the jump to
-      // the week is the secondary text link under it. Either way it stays
-      // page-wide-locatable via getByLabel, so the budget is unchanged.
+      // Submit a ZIP code. The field is located page-wide by its label key,
+      // so wherever the homepage puts it the budget is measured the same way.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: messages.home.zipCta }).click();
+      await steps.click(page.getByRole('button', { name: messages.home.zipCta }));
       await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
 
       // The rep-lookup result is not a dead end: the continuation section
@@ -224,42 +272,46 @@ for (const { locale, prefix, messages } of LOCALES) {
       // app/[locale]/reps/page.tsx) - call-forward language is earned here.
       await expect(page.getByRole('heading', { name: messages.reps.nextTitle })).toBeVisible();
 
-      // Click 2 of <=3: a callable bill from that continuation section.
-      await clickFirstBillCardIn(page, 'section[aria-labelledby="reps-next"]');
+      // A callable bill from that continuation section.
+      await steps.click(firstBillLinkIn(page, SURFACE.repsContinuation));
       await expect(page).toHaveURL(/\/bills\//);
 
-      // Click 3 of <=3: declare a stance - script appears.
-      await declareStance(page, messages.bill.stance.support);
+      // Declare a stance - script appears.
+      await steps.stance(messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.zipFirstClicks);
     });
   });
 
   test.describe(`${locale} locale: member page (I1 + I2 on /reps/[bioguide])`, () => {
-    test('I1: a sponsored-bill link reaches a decoded answer in 1 click', async ({ page }) => {
+    test('I1: a sponsored-bill link reaches a decoded answer within the truth budget', async ({ page }) => {
       test.skip(!SPONSOR || SPONSOR.n === 0, 'no member sponsors a decoded bill in this corpus');
       await page.goto(`${prefix}/reps/${SPONSOR.id}`);
-      await clickFirstBillCardIn(page, 'section[aria-labelledby="rep-sponsored"]');
+      const steps = countSteps(page);
+      await steps.click(firstBillLinkIn(page, SURFACE.memberSponsored));
       await expect(page).toHaveURL(/\/bills\//);
       await expectDecodedAnswer(page, messages);
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.truthClicks);
     });
 
-    test('I2: from a member page, a completed script in 2 interactions', async ({ page }) => {
+    test('I2: from a member page, a completed script within the call budget', async ({ page }) => {
       test.skip(!SPONSOR || SPONSOR.n === 0, 'no member sponsors a decoded bill in this corpus');
       await mockScriptApi(page);
       await page.goto(`${prefix}/reps/${SPONSOR.id}`);
-      // Interaction 1 of <=2: a sponsored bill.
-      await clickFirstBillCardIn(page, 'section[aria-labelledby="rep-sponsored"]');
+      const steps = countSteps(page);
+      // A sponsored bill, then a stance - the script appears.
+      await steps.click(firstBillLinkIn(page, SURFACE.memberSponsored));
       await expect(page).toHaveURL(/\/bills\//);
-      // Interaction 2 of <=2: a stance - the script appears.
-      await declareStance(page, messages.bill.stance.support);
+      await steps.stance(messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);
+      expect(steps.used).toBeLessThanOrEqual(BUDGET.callInteractions);
     });
 
     test('a member with no sponsored bill never dead-ends', async ({ page }) => {
       test.skip(!NON_SPONSOR, 'every member sponsors a tracked bill this run');
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary - the baked page could flip before the assert');
       await page.goto(`${prefix}/reps/${NON_SPONSOR!.bioguide}`);
-      const next = page.locator('section[aria-labelledby="rep-next"]');
+      const next = page.locator(SURFACE.memberContinuation);
       await expect(next).toBeVisible();
       if (anyTop) {
         await expect(next.locator('a[href*="/bills/"]').first()).toBeVisible();
@@ -283,9 +335,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       await mockScriptApi(page);
 
       await page.goto(`${prefix}/`);
-      await expect(
-        page.locator('section[aria-labelledby="top-actions"]').getByRole('status')
-      ).toBeVisible();
+      await expect(page.locator(SURFACE.week).getByRole('status')).toBeVisible();
       await page.getByRole('link', { name: messageRegex(messages.home.seeAll) }).click();
       await expect(page).toHaveURL(/\/bills$/);
       await page.locator('a[href*="/bills/"]').first().click();
@@ -297,9 +347,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
       await page.getByRole('button', { name: messages.home.zipCta }).click();
       await expect(page.getByRole('heading', { name: messages.reps.nextTitle })).toBeVisible();
-      await expect(
-        page.locator('section[aria-labelledby="reps-next"]').getByRole('status')
-      ).toBeVisible();
+      await expect(page.locator(SURFACE.repsContinuation).getByRole('status')).toBeVisible();
     });
   });
 }

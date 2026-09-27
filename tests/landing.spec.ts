@@ -1,16 +1,23 @@
 import { expect, test } from '@playwright/test';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
+import { districtsForZip, repsForDistrict } from '../lib/core';
+
+/** A ZIP with one district, a seated House member and two senators — the
+ *  names the lookup must print come from the same data the page reads. */
+const ZIP = '78501';
+const ZIP_REPS = districtsForZip(ZIP).flatMap(repsForDistrict).map((l) => l.name);
 
 test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await page.goto('/');
-  // The hero is a two-beat promise: the truth clause, then the phrase the 6px
-  // green go-stroke is drawn under. Assert the stroked beat, because it is
-  // the one the owner pinned (truth-first flip, decided 2026-07-31 — this
-  // assertion previously read "It counts.").
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Then make it count.');
-  await page.getByLabel('Your ZIP code').fill('78501');
-  await page.getByRole('button', { name: /find my representatives/i }).click();
-  await expect(page).toHaveURL(/\/reps\?zip=78501/);
-  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(en.home.heroTitle);
+  await page.getByLabel(en.home.zipLabel).fill(ZIP);
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+  await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
+  expect(ZIP_REPS.length, `the fixture ZIP ${ZIP} must resolve to members in data/`).toBeGreaterThan(0);
+  for (const name of ZIP_REPS) {
+    await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+  }
 });
 
 test('no horizontal overflow on either landing locale @reflow', async ({ page }) => {
@@ -45,14 +52,15 @@ test('no horizontal overflow at the 320px reflow width, either locale', async ({
 
 test('spanish landing is fully localized', async ({ page }) => {
   await page.goto('/es');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Luego haz que cuente.');
-  await expect(page.getByLabel('Tu código postal')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(es.home.heroTitle);
+  await expect(page.getByLabel(es.home.zipLabel)).toBeVisible();
+  await expect(page.getByRole('button', { name: es.home.zipCta })).toBeVisible();
 });
 
 test('footer privacy link is reachable and clickable on mobile', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'regression guard for the mobile tab-bar overlap');
   await page.goto('/');
-  const link = page.locator('footer').getByRole('link', { name: 'Privacy' });
+  const link = page.locator('footer').getByRole('link', { name: en.common.footer.privacy });
   await link.scrollIntoViewIfNeeded();
   await link.click();
   await expect(page).toHaveURL(/\/privacy/);
@@ -65,47 +73,27 @@ test('Enter in the hero ZIP field always submits (2026-08 gate)', async ({
   // runs — at the moment of highest intent. Ours must submit either way:
   // hydrated (onSubmit) or not (the form's own action="/reps" method=get).
   await page.goto('/');
-  await page.getByLabel('Your ZIP code').fill('78501');
-  await page.getByLabel('Your ZIP code').press('Enter');
-  await expect(page).toHaveURL(/\/reps\?zip=78501/);
+  await page.getByLabel(en.home.zipLabel).fill(ZIP);
+  await page.getByLabel(en.home.zipLabel).press('Enter');
+  await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
 });
 
-test('A1 trust line: in the header chrome on wide screens, absent from the phone bar, no overflow at 1024', async ({
+test('the Spanish language switcher keeps full-size cells beside the header trust line', async ({
   page,
   isMobile,
 }) => {
-  await page.goto('/');
-  const line = page.locator('header').getByText('Free. Nonpartisan.');
-  if (isMobile) {
-    await expect(line).toBeHidden();
-    return;
-  }
-  await expect(line).toBeVisible();
-  // The lg breakpoint's tightest width: the bar must hold its one row.
-  await page.setViewportSize({ width: 1024, height: 800 });
-  await expect(line).toBeVisible();
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
-  ).toBe(true);
-});
-
-test('A1-es: the Spanish trust line takes the sub-bar (the 686px nav can never fit it inline) and the switcher keeps full-size cells', async ({
-  page,
-  isMobile,
-}) => {
+  test.skip(isMobile, 'the header sub-bar that crowded the switcher is a wide-screen layout');
   await page.goto('/es');
-  const line = page.locator('header').getByText(/Gratis\. No partidista\./);
-  if (isMobile) {
-    await expect(line).toBeHidden();
-    return;
-  }
-  await expect(line).toBeVisible();
-  // The regression that found this: the inline variant crushed the language
-  // switcher to 25px cells and swallowed its clicks. Both cells must hold
-  // their full tap width.
-  const cells = page.locator('header [role="group"] a');
-  for (const box of await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width))) {
-    expect(box).toBeGreaterThan(60);
+  // The regression that found this: an inline trust line crushed the
+  // language switcher to 25px cells and swallowed its clicks. Both cells
+  // must hold their full tap width.
+  const cells = page
+    .locator('header')
+    .getByRole('group', { name: es.common.localeGroupLabel })
+    .getByRole('link');
+  await expect(cells).toHaveCount(2);
+  for (const width of await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width))) {
+    expect(width).toBeGreaterThan(60);
   }
 });
 
@@ -119,23 +107,36 @@ test('A1-es: the Spanish trust line takes the sub-bar (the 686px nav can never f
  * bill wore the crown AND appeared again in the list 200px below it. An
  * English-only smoke test cannot see that, which is the entire reason this
  * drives both locales; the fix is slug equality, and this is its pin.
+ *
+ * Read through hooks and hrefs only: `[data-crown]` is the panel, and the
+ * crowned bill is whatever page its links point at.
  */
 test('the crowned bill appears exactly once in the week, in both locales', async ({ page }) => {
   for (const path of ['/', '/es']) {
     await page.goto(path);
-    const week = page.locator('section[aria-labelledby="top-actions"]');
-    // The FloorVotePanel's own full-bleed enamel section. Absent on a quiet
-    // week, which is a valid state and not this test's subject.
-    const crown = week.locator('section.bg-go-deep');
+    const crown = page.locator('[data-crown]');
+    // Absent on a quiet week, which is a valid state and not this test's subject.
     if ((await crown.count()) === 0) {
-      test.skip(true, `quiet week: no green crown rendered on ${path}`);
+      test.skip(true, `quiet week: no crown rendered on ${path}`);
       return;
     }
-    const headline = (await crown.getByRole('heading').first().innerText()).trim();
-    expect(headline.length, `${path}: the crown must carry a headline`).toBeGreaterThan(0);
-    await expect(
-      week.getByText(headline, { exact: true }),
-      `${path}: "${headline}" is crowned, so it must not also be listed below`
-    ).toHaveCount(1);
+    // One crown per page, and it wears the week.
+    await expect(crown, `${path}: exactly one crown`).toHaveCount(1);
+    const week = page.locator('[data-front-door="week"]');
+    await expect(week.locator('[data-crown]'), `${path}: the crown sits in the week`).toHaveCount(1);
+
+    const crowned = await crown.evaluate((el) => {
+      const a = el.querySelector<HTMLAnchorElement>('a[href*="/bills/"]');
+      return a ? new URL(a.href).pathname : null;
+    });
+    expect(crowned, `${path}: the crown links to its bill`).toBeTruthy();
+    const listedAgain = await week.evaluate(
+      (el, target) =>
+        [...el.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(
+          (a) => new URL(a.href).pathname === target && !a.closest('[data-crown]')
+        ).length,
+      crowned
+    );
+    expect(listedAgain, `${path}: ${crowned} is crowned, so it must not also be listed below`).toBe(0);
   }
 });

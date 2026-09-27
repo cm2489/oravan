@@ -130,6 +130,65 @@ test('the panel reads that scope and never borrows the per-caller wording for it
 });
 
 /* ------------------------------------------------------------------ *
+ * 3b · Every 429 is COUNTED, by guard (the 2026-09-27 audit, SY-48).
+ *
+ * A fail-closed breaker that trips used to leave only "0 generations" in
+ * the digest — the same number a quiet day produces. Each of the route's
+ * three 429 sites now records which guard said no, via after() so the count
+ * can never delay the refusal. Asserted over source text for the reason in
+ * this file's header (the route cannot be required here). Each block is
+ * sliced between two anchors so a count at the WRONG site cannot satisfy it.
+ * ------------------------------------------------------------------ */
+
+test.describe('refusals are counted at each 429 site, by guard', () => {
+  const between = (from: string, to: string) => {
+    const a = routeSrc.indexOf(from);
+    const b = routeSrc.indexOf(to, a + 1);
+    expect(a, `anchor: ${from}`).toBeGreaterThan(-1);
+    expect(b, `anchor: ${to}`).toBeGreaterThan(a);
+    return routeSrc.slice(a, b);
+  };
+
+  test("the per-caller limiter's trip counts 'burst', before either 429 shape returns", () => {
+    const block = between('if (gate.limited) {', 'if (oravanKey !== null) {\n    const access');
+    const count = block.indexOf("after(() => noteScriptRefusal('burst'));");
+    expect(count, 'counted inside the per-caller trip').toBeGreaterThan(-1);
+    // Before BOTH returns (token path and citizen path), so neither escapes it.
+    expect(count).toBeLessThan(block.indexOf('return NextResponse.json'));
+  });
+
+  test("a tenant limiter's trip counts 'tenant' — the scope names the guard, never the tenant", () => {
+    const block = between('if (tenantLimited) {', "return NextResponse.json({ error: 'rate_limited' }, { status: 429 });");
+    expect(block).toContain("after(() => noteScriptRefusal('tenant'));");
+    expect(block).not.toMatch(/noteScriptRefusal\([^)]*tenantId/);
+  });
+
+  test("the daily breaker's trip counts 'daily' on BOTH paths, and only after the cache read (a hit still costs nothing)", () => {
+    const block = between('if (await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)) {', 'try {');
+    const count = block.indexOf("after(() => noteScriptRefusal('daily'));");
+    expect(count, 'counted inside the breaker trip').toBeGreaterThan(-1);
+    expect(count, 'before the token-path return').toBeLessThan(block.indexOf('if (tokenPath) return'));
+    expect(routeSrc.indexOf("noteScriptRefusal('daily')")).toBeGreaterThan(
+      routeSrc.indexOf('if (cached) return NextResponse.json({ script: cached, cached: true });')
+    );
+  });
+
+  test('exactly three refusal counts, one per guard, each deferred with after() — and nothing else is passed to them', () => {
+    const calls = [...routeSrc.matchAll(/noteScriptRefusal\(([^)]*)\)/g)].map((m) => m[1]);
+    expect(calls.sort()).toEqual(["'burst'", "'daily'", "'tenant'"]);
+    expect(routeSrc.split('after(() => noteScriptRefusal(').length - 1).toBe(3);
+  });
+
+  test('every 429 the route can return sits behind a counted guard', () => {
+    // Five 429 literals across the three counted blocks: the per-caller trip
+    // (token + citizen shapes), the tenant trip, and the breaker trip (token +
+    // citizen shapes). A sixth means a new refusal path — it must bring its
+    // own count, and its own scope in lib/usage.ts, before this goes green.
+    expect(routeSrc.split('status: 429').length - 1).toBe(5);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 4 · The breaker's own behaviour, against the mocked counters database.
  * ------------------------------------------------------------------ */
 

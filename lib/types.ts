@@ -66,6 +66,21 @@ export interface Bill {
    * `redecodeVerdict` as the later of the two freshness days.
    */
   decode_text_verified_at?: string | null;
+  /**
+   * WHICH TEXT VERSION the stored decode was produced from, in Congress.gov's
+   * own words ("Reported to Senate") and with its date (ISO instant, or null
+   * where Congress.gov dates the version with nothing, as it does
+   * `Enrolled Bill`). Written only at decode time, beside the decode it
+   * describes (scripts/text-version.mjs `textVersionStamp`); absent on every
+   * bill decoded before the stamp existed, and absent means UNKNOWN. The bill
+   * page prints it through lib/bill-provenance.ts `decodeSource` (audit
+   * 2026-09-27, SY-25) and prints nothing when it is absent.
+   */
+  text_version_type?: string | null;
+  text_version_date?: string | null;
+  /** How many text versions Congress.gov listed when the pipeline last looked.
+   *  PIPELINE-ONLY and NOT provenance — see scripts/text-version.mjs. */
+  text_version_count?: number | null;
   sponsor_bioguide_id: string | null;
   introduced_date: string | null;
   last_action_date: string | null;

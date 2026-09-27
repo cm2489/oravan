@@ -1,13 +1,19 @@
 import { expect, test } from '@playwright/test';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
+import { referenceBill } from './corpus-fixtures';
 
 /*
  * SharePanel: the canonical, slug-only share URL (no query params, no stance,
  * no locale-tracking params) and the no-native-share fallback. The origin is
  * pinned to lib/site.ts on purpose — when the rename lands, that constant and
- * these expectations change together, and nothing else.
+ * these expectations change together, and nothing else. The bill is any
+ * decoded one (tests/corpus-fixtures.ts); controls are found by message key.
  */
 
-const CANONICAL = 'https://oravan.org/bills/hr-5582-119';
+const REF = referenceBill();
+const PATH = `/bills/${REF.slug}`;
+const CANONICAL = `https://oravan.org${PATH}`;
 
 // Deterministic native-share stub: capture the payload instead of opening a sheet.
 const stubNativeShare = () => {
@@ -31,26 +37,26 @@ test.describe('native share', () => {
   });
 
   test('shares the canonical slug-only URL — no query params, no stance', async ({ page }) => {
-    await page.goto('/bills/hr-5582-119');
-    await page.getByRole('button', { name: 'Share', exact: true }).click();
+    await page.goto(PATH);
+    await page.getByRole('button', { name: en.bill.share.share, exact: true }).click();
     const shared = await page.evaluate(
       () => (window as unknown as { __shared: { title: string; text: string; url: string } }).__shared
     );
     expect(shared.url).toBe(CANONICAL);
     expect(shared.url).not.toContain('?');
     // Neutral text: citation + headline (the citation may live inside the headline)
-    expect(shared.text).toContain('5582');
+    expect(shared.text).toContain(String(REF.bill.bill_number));
     // Native mode replaces the fallback affordances entirely
-    await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: en.bill.share.whatsapp })).toHaveCount(0);
   });
 
   test('spanish page shares its own canonical (/es path, still no params)', async ({ page }) => {
-    await page.goto('/es/bills/hr-5582-119');
-    await page.getByRole('button', { name: 'Compartir', exact: true }).click();
+    await page.goto('/es' + PATH);
+    await page.getByRole('button', { name: es.bill.share.share, exact: true }).click();
     const shared = await page.evaluate(
       () => (window as unknown as { __shared: { url: string } }).__shared
     );
-    expect(shared.url).toBe('https://oravan.org/es/bills/hr-5582-119');
+    expect(shared.url).toBe(`https://oravan.org/es${PATH}`);
   });
 });
 
@@ -73,19 +79,19 @@ test.describe('fallback (no navigator.share)', () => {
         },
       });
     });
-    await page.goto('/bills/hr-5582-119');
+    await page.goto(PATH);
     // The copy button appears only after hydration, so this click can't wedge.
-    await page.getByRole('button', { name: 'Copy link' }).click();
-    await expect(page.getByRole('button', { name: 'Link copied' })).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: 'Link copied' })).toHaveCount(1);
+    await page.getByRole('button', { name: en.bill.share.copyLink }).click();
+    await expect(page.getByRole('button', { name: en.bill.share.copied })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: en.bill.share.copied })).toHaveCount(1);
     expect(await page.evaluate(() => (window as unknown as { __copied: string | null }).__copied)).toBe(
       CANONICAL
     );
   });
 
   test('WhatsApp share is a plain anchor embedding the slug-only URL', async ({ page }) => {
-    await page.goto('/bills/hr-5582-119');
-    const wa = page.getByRole('link', { name: 'Share on WhatsApp' });
+    await page.goto(PATH);
+    const wa = page.getByRole('link', { name: en.bill.share.whatsapp });
     await expect(wa).toBeVisible();
     await expect(wa).toHaveAttribute('target', '_blank');
     await expect(wa).toHaveAttribute('rel', 'noopener noreferrer');
@@ -97,8 +103,8 @@ test.describe('fallback (no navigator.share)', () => {
   });
 
   test('spanish fallback renders localized labels', async ({ page }) => {
-    await page.goto('/es/bills/hr-5582-119');
-    await expect(page.getByRole('button', { name: 'Copiar enlace' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Compartir por WhatsApp' })).toBeVisible();
+    await page.goto('/es' + PATH);
+    await expect(page.getByRole('button', { name: es.bill.share.copyLink })).toBeVisible();
+    await expect(page.getByRole('link', { name: es.bill.share.whatsapp })).toBeVisible();
   });
 });

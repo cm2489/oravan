@@ -3,19 +3,15 @@ import { readFileSync } from 'node:fs';
 import { DONATE_URL } from '../lib/site';
 
 /*
- * §6 donate wiring guard. The full "lit" state (DONATE_URL set) can't be
- * exercised as a real e2e test in this suite - Playwright Test compiles
- * every .tsx file (including component sources, not just spec files)
- * through its own component-testing JSX runtime, which produces inert
- * `{ __pw_type, ... }` objects instead of real React elements - so
- * react-dom/server can't render Oravan's own components here, and a
- * second `next build` under a different constant is out of scope for a
- * single test run (see tests/donate.spec.ts for what IS exercised live:
- * today's real "lit" behavior). This test instead pins the two
- * requirements that keep the donate wiring a one-constant change:
- * the constant is the live Stripe payment link (lit 2026-07-18), and
- * every gated surface reads that exact constant with no separate flag
- * to keep in sync.
+ * §6 donate guard, rule 9 of the constitution: donations are link-outs only —
+ * never a form, iframe or input on an Oravan page; never a partisan payment
+ * rail; never a false nonprofit claim; one Stripe URL constant.
+ *
+ * What is pinned here is those promises, not how a component spells its JSX:
+ * the rendered behaviour (every ask is a target=_blank, noopener link-out to
+ * DONATE_URL) is checked live by tests/donate.spec.ts, and "the only Stripe
+ * URLs in shipped code are the constants in lib/site.ts" by
+ * tests/plans-claim.unit.spec.ts.
  *
  * History: the HCB fiscal-sponsorship application was denied 2026-07-15
  * (teen-builds-only policy), so the former DonateSupport section and its
@@ -23,6 +19,14 @@ import { DONATE_URL } from '../lib/site';
  * below pins that no such claim ever returns to user-facing copy while
  * the project has no sponsor behind it.
  */
+
+/** The files that render a donate ask today. */
+const DONATE_SURFACES = [
+  'lib/site.ts',
+  'components/Footer.tsx',
+  'app/[locale]/about/page.tsx',
+  'app/[locale]/page.tsx',
+];
 
 test.describe('DONATE_URL wiring (§6)', () => {
   test('is lit: the exact live Stripe payment link, https, link-out only', () => {
@@ -32,62 +36,16 @@ test.describe('DONATE_URL wiring (§6)', () => {
     expect(DONATE_URL).toBe('https://buy.stripe.com/00w8wIcX74px0CH8EJ8k804');
   });
 
-  test('Footer gates its funding line and single Support CTA on the DONATE_URL default, not a hardcoded value', () => {
-    const src = readFileSync('components/Footer.tsx', 'utf8');
-    expect(src).toContain("import { DONATE_URL } from '@/lib/site'");
-    // Prop defaults to the real constant - production call sites (`<Footer />`,
-    // no prop) render exactly what DONATE_URL says; the prop only exists so
-    // tests can inject a fixture value without a second build.
-    expect(src).toMatch(/donateUrl\s*=\s*DONATE_URL/);
-    // BOTH gates, because there are now two: the funding line swaps copy on
-    // the same constant, and the CTA is rendered only when it is set. Pinning
-    // both is strictly stronger than the single `{donateUrl ? (` this replaced
-    // — that one gate could not tell the two surfaces apart.
-    expect(src).toContain("{donateUrl ? t('footer.fundingLive') : t('footer.funding')}");
-    expect(src).toContain('{donateUrl && (');
-    // Dark today = the founder-funded line; lit = the supporters line + CTA.
-    expect(src).toContain("t('footer.funding')");
-    expect(src).toContain("t('footer.fundingLive')");
-    expect(src).toContain("t('footer.fundingCta')");
-    expect(src).toContain('target="_blank"');
-    expect(src).toContain('rel="noopener noreferrer"');
-    // 2026-07 critique round 2: the footer's money surfaces consolidated to
-    // ONE ask - the Support CTA. The separate nav "Donate" link never returns.
-    expect(src).not.toContain("t('footer.donate')");
-  });
-
-  test('the About page gates its support ask on the same DONATE_URL constant - no second flag', () => {
+  test('the About page never embeds a payment: no iframe, input or form in its source', () => {
     const page = readFileSync('app/[locale]/about/page.tsx', 'utf8');
-    expect(page).toContain("import { DONATE_URL } from '@/lib/site'");
-    expect(page).toContain('{DONATE_URL && (');
-    expect(page).toContain("t('fundingSupportBody')");
-    expect(page).toContain("t('fundingSupportCta')");
-    expect(page).toContain('target="_blank"');
-    expect(page).toContain('rel="noopener noreferrer"');
-    // Never an iframe or a payment field on Oravan's own infra (§6, hard rule).
     expect(page).not.toMatch(/<iframe/i);
     expect(page).not.toMatch(/<input/i);
     expect(page).not.toMatch(/<form/i);
   });
 
-  test('the homepage support band gates on the same DONATE_URL constant - no second flag', () => {
-    const page = readFileSync('app/[locale]/page.tsx', 'utf8');
-    expect(page).toContain("import { DONATE_URL, SITE_ORIGIN } from '@/lib/site'");
-    expect(page).toContain('{DONATE_URL && (');
-    expect(page).toContain("t('supportCta')");
-    expect(page).toContain("t('supportNote')");
-    expect(page).toContain('target="_blank"');
-    expect(page).toContain('rel="noopener noreferrer"');
-  });
-
   test('no partisan-rail processor is named anywhere near the donate surfaces (§6 hard exclusion)', () => {
     const forbidden = /actblue|winred|anedot/i;
-    for (const file of [
-      'lib/site.ts',
-      'components/Footer.tsx',
-      'app/[locale]/about/page.tsx',
-      'app/[locale]/page.tsx',
-    ]) {
+    for (const file of DONATE_SURFACES) {
       expect(readFileSync(file, 'utf8')).not.toMatch(forbidden);
     }
     for (const messages of ['messages/en.json', 'messages/es.json']) {

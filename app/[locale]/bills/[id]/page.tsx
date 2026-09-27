@@ -20,7 +20,15 @@ import { FloorRecessNote } from '@/components/FloorRecessNote';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
-import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
+import { repRoleKey } from '@/components/RepCard';
+import {
+  amendedInCommitteeSince,
+  amendedSince,
+  billSponsor,
+  changedSince,
+  decodeSource,
+} from '@/lib/bill-provenance';
+import { billSlug, getAllBills, getBill, getLegislator, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -34,6 +42,7 @@ import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
+import { votesForBill, votingMember } from '@/lib/votes';
 
 /*
  * THE BILL PAGE — a desk, not a scroll.
@@ -271,6 +280,15 @@ export default async function BillPage({
   const citation = formatCitation(bill.bill_type, bill.bill_number);
   const displayTitle = bill.ai_headline ?? bill.short_title ?? bill.title;
   const hasDecode = Boolean(bill.ai_summary || bill.ai_sections);
+  /* TWO RECORD FACTS THE PAGE NEVER PRINTED (audit 2026-09-27). /citations
+     lists the sponsor among the copied official-record fields, and until now
+     no bill page showed one (SY-33). And a decode never said which text it
+     read, so a bill amended in committee or on the floor after that text
+     still read as current (SY-25). Both come from lib/bill-provenance.ts, and
+     both print nothing when the stored record does not hold the fact. */
+  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember });
+  const source = hasDecode ? decodeSource(bill) : null;
+  const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
   // reads the date as well as the sentence since N3 (see statusLabelKey below).
   const statusKey = statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date);
@@ -390,6 +408,33 @@ export default async function BillPage({
   const floorCopy = floorBand ? FLOOR_COPY[floorBand.kind][floorBand.chamber] : null;
 
   /*
+   * THE RAIL ROUTES ON THE SAME DATED FACT THE BAND QUOTES (2026-09-27 audit,
+   * SY-06). The band above has read the chamber's own schedule since
+   * 2026-08-12; the call rail read only the bill's record, so on the one bill
+   * the Senate's program named for its next meeting the header said "On the
+   * floor schedule" while the panel listed the reader's House member first
+   * with no line saying the senators were the live call.
+   *
+   * Same `announcement`, same gate (`rungFor`: terminal-first, `signalIsLive`,
+   * retired once the announcing chamber votes). `liveCallTarget` adds two
+   * stricter conditions of its own — the announcement must be dated, and the
+   * announcing chamber must be `in_session` — so this can only ever ADD the
+   * existing routing line and the reordering where the chamber is actually
+   * meeting on the bill, never remove a dial. Without an announcement the
+   * rail routes exactly as it did before.
+   */
+  const liveTarget = liveCallTarget(
+    bill,
+    announcement
+      ? {
+          chamber: announcement.chamber,
+          published: announcement.published,
+          session: chamberSession(announcement.chamber),
+        }
+      : null
+  );
+
+  /*
    * THE STATUS LABEL — this page's refinement on top of the shared gate.
    *
    * WHAT MOVED (N3, owner ruling 2026-08-11). Half of what this comment used
@@ -487,7 +532,9 @@ export default async function BillPage({
               congress, the short title and the topics moved into the
               official-text disclosure below, unchanged.
               The status and the date share the header's FIRST <p> on purpose:
-              tests/freshness.spec.ts reads the status off `main header p`. */}
+              tests/freshness.spec.ts reads the status off `main header p`.
+              One plain line joined it on 2026-09-27 — the sponsor, under the
+              citation (SY-33) — as its own <p>, so that first <p> is unchanged. */}
           <div className="mt-3 max-w-read border-t-[3px] border-ink pt-3">
             <p>
               <Chip tone="status">{t(statusLabelKey)}</Chip>
@@ -506,6 +553,31 @@ export default async function BillPage({
                 )}
               </span>
             </p>
+            {/* THE SPONSOR, under the citation (audit 2026-09-27, SY-33):
+                name · seat · state, the member page's own chunks minus the
+                party, linked to /reps/[bioguide] when that page exists — a
+                sponsor who has left Congress is named without a link rather
+                than linked to a 404. The link is a full 44px target. */}
+            {sponsor && (
+              <p className="text-sm text-ink-2" data-sponsor={sponsor.bioguide}>
+                {t.rich('bill.sponsorLine', {
+                  name: sponsor.name,
+                  role: t(`reps.${repRoleKey(sponsor)}`),
+                  state: sponsor.state,
+                  who: (chunks) =>
+                    sponsor.hasPage ? (
+                      <Link
+                        href={`/reps/${sponsor.bioguide}`}
+                        className="inline-flex min-h-11 items-center font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                      >
+                        {chunks}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-ink">{chunks}</span>
+                    ),
+                })}
+              </p>
+            )}
             {hasDecode && (
               <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
                 {t('bill.aiLabel')}
@@ -655,8 +727,12 @@ export default async function BillPage({
         {/* THE DESK: reading column + call rail. The rail spans every row, so
             a sticky item is not confined to row 1 and holds to the page foot. */}
         <div className="grid max-w-read gap-8 pt-6 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8">
+          {/* data-read-zone: FloatingCallButton stands down while any of the
+              decoded answer is on screen, so it never sits over the text the
+              page exists to deliver (2026-09-27 audit, SY-07). */}
           <section
             aria-labelledby="decoded"
+            data-read-zone
             className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1"
           >
             {/* Records this bill in the visitor's own reading history
@@ -674,6 +750,37 @@ export default async function BillPage({
                 <TldrStrip bill={bill} />
                 <DecodedSections bill={bill} />
                 <p className="mt-6 text-sm text-ink-2">{t('bill.aiDisclaimer')}</p>
+                {/* WHICH TEXT THIS DECODE READ (audit 2026-09-27, SY-25): the
+                    version name is Congress.gov's own label, English verbatim
+                    on /es with lang="en" (ruling V4), and the date is that
+                    version's. Unstamped decodes print neither line. The second
+                    line appears only when the record shows changes to the
+                    bill after that text's day: a stored roll call agreeing to
+                    an amendment to it (amendedSince), or a committee ordering
+                    it reported with changes (amendedInCommitteeSince). Never
+                    both: changedSince keeps the newer, so it stays one line. */}
+                {source && (
+                  <p className="mt-1 text-sm text-ink-2" data-decode-source={source.date ?? 'undated'}>
+                    {t.rich(source.date ? 'bill.decodedFromVersion' : 'bill.decodedFromVersionUndated', {
+                      version: source.version,
+                      date: source.date ? fmtShort(source.date) : '',
+                      v: (chunks) => <span lang="en">{chunks}</span>,
+                    })}
+                  </p>
+                )}
+                {changedAfter?.kind === 'floor' && (
+                  <p className="mt-1 text-sm text-ink-2" data-decode-amended={changedAfter.date}>
+                    {t('bill.decodedAmendedSince', {
+                      chamber: changedAfter.chamber,
+                      date: fmtShort(changedAfter.date),
+                    })}
+                  </p>
+                )}
+                {changedAfter?.kind === 'committee' && (
+                  <p className="mt-1 text-sm text-ink-2" data-decode-committee-amended={changedAfter.date}>
+                    {t('bill.decodedCommitteeChangedSince', { date: fmtShort(changedAfter.date) })}
+                  </p>
+                )}
                 {/* Its own line and a full 44px target (a11y sweep,
                     2026-09-24): it trailed the disclaimer inline, wrapped to
                     two lines at 390px and measured 39px tall. It is the
@@ -704,7 +811,7 @@ export default async function BillPage({
               identifier={citation}
               title={bill.ai_headline ?? bill.short_title ?? bill.title}
               recordLabels={recordLabels}
-              liveTarget={liveCallTarget(bill)}
+              liveTarget={liveTarget}
             />
           </div>
 
@@ -775,11 +882,13 @@ export default async function BillPage({
         />
       </div>
 
-      {/* Keeps the call reachable while reading; yields whenever the rail is
-          on screen. On the desk that is the whole grid — but the coverage
-          section and the footer sit OUTSIDE it, so the rail scrolls away at
-          the page foot and this is what carries the call the rest of the way.
-          Measured, not assumed: tests/call-action.spec.ts asserts both ends. */}
+      {/* Keeps the call reachable past the read; yields whenever the rail is
+          on screen AND whenever the decoded answer is (SY-07 — it used to sit
+          over three lines of it on every phone screen). On the desk that is
+          the whole grid — but the coverage section and the footer sit OUTSIDE
+          it, so the rail scrolls away at the page foot and this is what
+          carries the call the rest of the way. Measured, not assumed:
+          tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
       <FloatingCallButton />
     </>
   );

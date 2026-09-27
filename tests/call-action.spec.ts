@@ -3,7 +3,7 @@ import coverageData from '../data/coverage.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mockScriptApi, seedZip } from './helpers';
-import { senateLiveBillSlugs } from './corpus';
+import { announcedRoutingSlugs, senateLiveBillSlugs, stableAcross } from './corpus';
 
 /*
  * The "surface the call" behavior: a floating Make-the-call button keeps the
@@ -30,30 +30,45 @@ const slug = Object.keys(coverageData).find((k) => !k.startsWith('_'));
  * screen the floating button stands down; when none is, it stands up. That is
  * `ctaOnScreen === fabInert`, and it holds at every scroll depth, on every
  * layout, for whatever bill the corpus serves up.
+ *
+ * AMENDED 2026-09-27 (audit SY-07): the button ALSO stands down while any of
+ * the decoded answer ([data-read-zone]) is on screen, because it sat over
+ * three lines of it on every phone screen. So the pair is now
+ * `(ctaOnScreen || readOnScreen) === fabInert` — still never two call
+ * surfaces at once, and never the button over the read.
  */
 async function oneSurfaceHolds(page: Page) {
   await expect
     .poll(
       () =>
         page.evaluate(() => {
-          const cta = document.querySelector('[data-call-cta]');
+          const ctas = [...document.querySelectorAll('[data-call-cta]')];
           const fab = document.querySelector('[data-floating-call]');
-          if (!cta || !fab) return null;
-          const r = cta.getBoundingClientRect();
+          if (ctas.length === 0 || !fab) return null;
           // "On screen" is the part a reader can SEE: above the strip the
           // button itself stands in (B2, 2026-09-24 — a panel edge tucked
           // under the fixed nav and the button is not a visible call
           // surface). Same arithmetic as FloatingCallButton's rootMargin.
           const f = fab as HTMLElement;
-          const stripTop =
-            window.innerHeight - (parseFloat(getComputedStyle(f).bottom) || 0) - f.offsetHeight - 8;
-          const onScreen = r.height > 0 && r.top < stripTop && r.bottom > 0;
+          const offset = parseFloat(getComputedStyle(f).bottom) || 0;
+          const stripTop = window.innerHeight - offset - f.offsetHeight - 8;
+          const ctaOnScreen = ctas.some((el) => {
+            const r = el.getBoundingClientRect();
+            return r.height > 0 && r.top < stripTop && r.bottom > 0;
+          });
+          // The read counts anywhere above the fixed nav — INCLUDING the
+          // strip the button stands in, which is exactly the text it would
+          // cover. Same arithmetic as the component's second observer.
+          const readOnScreen = [...document.querySelectorAll('[data-read-zone]')].some((el) => {
+            const r = el.getBoundingClientRect();
+            return r.height > 0 && r.top < window.innerHeight - offset && r.bottom > 0;
+          });
           const inert =
             fab.getAttribute('aria-hidden') === 'true' &&
             getComputedStyle(fab).opacity === '0';
-          return onScreen === inert;
+          return (ctaOnScreen || readOnScreen) === inert;
         }),
-      { message: 'exactly one call surface must be offered at this scroll depth' },
+      { message: 'exactly one call surface must be offered at this scroll depth, and never the button over the read' },
     )
     .toBe(true);
 }
@@ -117,10 +132,20 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
     return;
   }
 
-  // SINGLE COLUMN. No rail; on a long page no other CTA is on screen at the
-  // top — but measure rather than assume, for the same corpus-shape reason
-  // as the desk branch: a short bill can put the panel inside the first
-  // viewport, and then the button standing DOWN is the correct behavior.
+  // SINGLE COLUMN. No rail. At the top the decoded answer is normally on
+  // screen, so since SY-07 the button stands down there — but measure rather
+  // than assume, for the same corpus-shape reason as the desk branch.
+  await oneSurfaceHolds(page);
+
+  // Inside the read — the decoded answer filling the screen — the button is
+  // down, whatever else is or is not on screen (2026-09-27 audit, SY-07: it
+  // sat over three lines of this text on every phone screen).
+  await page.evaluate(() => {
+    const read = document.querySelector('[data-read-zone]')!.getBoundingClientRect();
+    window.scrollTo({ top: read.top + window.scrollY + 40, behavior: 'instant' });
+  });
+  await expect(fab).toHaveCSS('opacity', '0');
+  await expect(fab).toHaveAttribute('aria-hidden', 'true');
   await oneSurfaceHolds(page);
 
   // Bring the action panel into view — the floating button fades out (inert).
@@ -128,9 +153,14 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
   await expect(fab).toHaveCSS('opacity', '0');
   await expect(fab).toHaveAttribute('aria-hidden', 'true');
 
-  // Scroll back to a reading gap — it returns.
-  await page.evaluate(() => window.scrollTo(0, 0));
+  // Past the panel, at the page foot, neither the panel nor the read is on
+  // screen — it returns, and still leads back to the call.
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })
+  );
+  await oneSurfaceHolds(page);
   await expect(fab).toHaveCSS('opacity', '1');
+  await expect(fab).toHaveAttribute('href', '#act');
 });
 
 /*
@@ -561,6 +591,68 @@ test('Senate routing demotes the House member without burying him — rail and c
   await expect(dials.nth(0)).toContainText('John Cornyn');
   await expect(dials.nth(1)).toContainText('Ted Cruz');
   await expect(dials.nth(2)).toContainText('Monica De La Cruz');
+});
+
+/*
+ * SY-06 (2026-09-27 audit): THE RAIL ROUTES ON THE CHAMBER'S OWN SCHEDULE.
+ *
+ * The one bill the Senate's program named for its next meeting wore the green
+ * "On the floor schedule" band, and the rail under it listed the reader's
+ * House member first with no line saying the senators were the live call: the
+ * record half of the routing returned null (Congress had overwritten the last
+ * action with a procedural step naming no chamber) and the rail never looked
+ * at the announcement the band was quoting.
+ *
+ * Corpus-derived, like SENATE_LIVE: `announcedRoutingSlugs` asks the ladder
+ * for a decoded bill on T0 whose announcing chamber is meeting and whose record
+ * routes nowhere — so this drives exactly the case the fix is for, and skips
+ * honestly on a week when no chamber has published one. Both languages: the
+ * routing line is the one sentence this change makes appear.
+ */
+test('a bill on a meeting chamber\'s own floor schedule routes that chamber first (SY-06)', async ({
+  page,
+}) => {
+  const pool = announcedRoutingSlugs();
+  test.skip(pool.length === 0, 'no decoded bill is on a meeting chamber\'s published floor schedule with a record that routes nowhere today');
+  test.skip(
+    !stableAcross((at) => announcedRoutingSlugs(at)),
+    'an announcement or session verdict sits at its window edge — the baked page could disagree with this assertion'
+  );
+  const { slug, chamber } = pool[0];
+  await mockScriptApi(page);
+  await page.goto(`/bills/${slug}`);
+  await seedZip(page, '78501'); // TX-15: two senators + one House member
+  for (const locale of ['en', 'es'] as const) {
+    const messages = locale === 'en' ? en : es;
+    await page.goto(`${locale === 'es' ? '/es' : ''}/bills/${slug}`);
+    await page.getByRole('radio', { name: messages.bill.stance.support }).click();
+    await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
+
+    // The existing routing line for that chamber — no new copy.
+    const line = chamber === 'senate' ? messages.bill.liveSenateFloor : messages.bill.liveHouseFloor;
+    await expect(page.getByText(line)).toBeVisible();
+
+    // The chamber that is acting leads; nobody is removed.
+    const rows = page.locator('section[aria-labelledby="act"] ul > li');
+    await expect(rows).toHaveCount(3);
+    if (chamber === 'senate') {
+      await expect(rows.nth(0)).toContainText('John Cornyn');
+      await expect(rows.nth(1)).toContainText('Ted Cruz');
+      await expect(rows.nth(2)).toContainText('Monica De La Cruz');
+    } else {
+      await expect(rows.nth(0)).toContainText('Monica De La Cruz');
+    }
+    // Demoted, never buried: every row — the demoted one included — keeps a
+    // real, dialable number (a row can carry more than one office's).
+    for (let i = 0; i < 3; i++) {
+      await expect(rows.nth(i).locator('a[href^="tel:"]').first()).toHaveAttribute(
+        'href',
+        /^tel:\+1\d{10}$/
+      );
+    }
+    // Never the nomination framing on a bill.
+    await expect(page.getByText(messages.bill.liveSenateNomination)).toHaveCount(0);
+  }
 });
 
 /*

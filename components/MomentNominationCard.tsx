@@ -73,6 +73,7 @@ export function MomentNominationCard({
   execCalendarNumber,
   role,
   ctaLabel,
+  ctaHref,
   noDecodeNote,
   statusLine,
 }: {
@@ -98,6 +99,10 @@ export function MomentNominationCard({
   /** The both-directions confirm/don't-confirm framing, already localized. */
   role: string;
   ctaLabel: string;
+  /** Where the green button lands — lib/moments-ui.ts `vehicleCtaHref`, which
+   *  adds `#act` only when the label is "Read + call" (a call script is
+   *  waiting and the panel renders). Absent = the nomination page's top. */
+  ctaHref?: string;
   /** "Oravan does not rewrite nominations…" — already localized. */
   noDecodeNote: string;
   /** The record's latest step (lib/moment-status.mjs nominationStatusLine —
@@ -184,7 +189,7 @@ export function MomentNominationCard({
       </div>
       <p className="mt-auto pt-5">
         <Link
-          href={`/nominations/${slug}`}
+          href={ctaHref ?? `/nominations/${slug}`}
           className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper transition-colors hover:border-go-deep hover:bg-go-deep"
         >
           <PhoneCall className="h-4 w-4" aria-hidden />

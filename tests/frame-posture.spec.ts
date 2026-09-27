@@ -1,18 +1,13 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { getAllNominations, nominationSlug } from '../lib/core/nominations';
+import { callableBillSlug, firstHouseRepName, splitZip } from './corpus-samples';
 import { startCrossOriginHost } from './helpers';
-
-/** A real nomination URL for the frame-posture probe below, resolved off the
- *  committed corpus so a confirmed-and-rotated fixture can never turn this
- *  security check into a 404 that happens to carry the right header anyway.
- *  The corpus is never empty (scripts/check-nominations.mjs fails the build if
- *  it is), so the fallback is unreachable and exists only to keep this total. */
-function nominationProbePath(): string {
-  const first = getAllNominations()[0];
-  return first ? `/nominations/${nominationSlug(first)}` : '/nominations/pn-0-119';
-}
+import {
+  API_PROBES,
+  appTopLevelDirs,
+  embedProbes,
+  localeProbes,
+  unresolvedLocaleRoutes,
+} from './routes';
 
 /*
  * S17 - the frame-ancestors split posture (the project records, ledger items F1 and F2; see also
@@ -52,8 +47,9 @@ function csp(res: { headers(): Record<string, string> }) {
 
 test.describe('F1: site-wide frame-ancestors lock, app/embed/* the sole carve-out', () => {
   test("bill page returns frame-ancestors 'self'", async ({ request }) => {
-    // Same stable slug tests/flow.spec.ts and tests/es-parity.spec.ts drive.
-    const res = await request.get('/bills/sjres-99-119');
+    // A bill page with the full call panel on it — the surface a frame
+    // would target (tests/corpus-samples.ts).
+    const res = await request.get(`/bills/${callableBillSlug()}`);
     expect(csp(res)).toContain(SITE_LOCK);
   });
 
@@ -89,132 +85,65 @@ test.describe('F1: site-wide frame-ancestors lock, app/embed/* the sole carve-ou
 });
 
 test.describe(
-  "regression guard: every top-level app/ route segment has a registered frame-ancestors check",
+  "regression guard: every app/ route has a registered frame-ancestors check",
   () => {
-    const APP_DIR = path.join(process.cwd(), 'app');
-
-    function topLevelDirs(rel: string): string[] {
-      const dir = path.join(APP_DIR, rel);
-      if (!fs.existsSync(dir)) return [];
-      return fs
-        .readdirSync(dir, { withFileTypes: true })
-        .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
-        .map((e) => e.name);
-    }
-
-    // One concrete, fetchable URL per known app/[locale]/*, app/api/*, and
-    // app/embed/* segment, reusing fixtures other suites already depend on
-    // (tests/flow.spec.ts's bill slug, tests/district.spec.ts's split ZIP).
-    // A segment absent from these maps fails the coverage test below FIRST
-    // - a new route class can't ship silently; someone has to add an entry
-    // here and state what its frame-ancestors answer is.
-    const LOCALE_ROUTES: Record<string, string> = {
-      about: '/about',
-      bills: '/bills/sjres-99-119',
-      citations: '/citations',
-      partners: '/partners', // S5b's partner GTM page - standard locked-down posture
-      embeds: '/embeds', // S16's configurator + docs page
-      // The procedural glossary (issue #181): static explainers, no form, no
-      // call apparatus, no visitor state — nothing a frame could harvest. It
-      // takes the standard locked-down posture anyway, because the guard's
-      // whole point is that a new segment gets an explicit answer rather than
-      // a default nobody looked at.
-      glossary: '/glossary',
-      record: '/record',
-      // The daily brief (plan item C3): read-only record lines and links, no
-      // form, no call apparatus — standard locked-down posture.
-      today: '/today',
-      mcp: '/mcp', // S12's MCP server docs page - standard locked-down posture
-      follow: '/follow', // B8's every-way-to-follow page: links only, no form - standard locked-down posture
-      // The Senate nomination record + call page (2026-08-06). It mounts the
-      // SAME ActionPanel the bill page does — stance selection, the generated
-      // script, the dials — so it takes the identical locked-down posture, and
-      // for the identical reason: a framed call surface is a clickjacking
-      // target. The probe path is a real corpus slug, resolved at run time
-      // below rather than pinned, because nominations confirm and the corpus
-      // turns over.
-      nominations: nominationProbePath(),
-      questions: '/questions/iran-war-powers', // the discovery layer (2026-07-23) - standard locked-down posture
-      // S6: per-locale PWA manifest (a route handler, not a page). Non-embed,
-      // so next.config.ts's site-wide block locks it to 'self' like everything
-      // else - a JSON manifest is never framed, but the guard still demands an
-      // explicit frame-ancestors decision for every new app/[locale]/ segment.
-      'manifest.webmanifest': '/en/manifest.webmanifest',
-      privacy: '/privacy',
-      reps: '/reps',
-      terms: '/terms',
-      'why-call': '/why-call',
-      // The locale catch-all (true 404s inside the locale boundary): a path
-      // no real route claims. The 404 response still carries the site-wide
-      // frame-ancestors lock — CSP headers are path-pattern-based, never
-      // status-based.
-      '[...rest]': '/definitely-not-a-real-page-frame-posture-probe',
-    };
-    const API_ROUTES: Record<string, string> = {
-      // Brand-preview build: POST-only (stateless homepage → theme suggestion).
-      // A GET here 405s, which — like stripe/tenant below — proves the
-      // site-wide frame-ancestors block applies regardless of status code.
-      brand: '/api/brand',
-      district: '/api/district',
-      feedback: '/api/feedback',
-      mcp: '/api/mcp/mcp',
-      reps: '/api/reps?zip=78501',
-      script: '/api/script',
-      // S18: POST-only (Stripe webhook). A GET here 405s (no STRIPE_WEBHOOK_SECRET
-      // in the test env either, so it'd 503 even on POST) - either way this proves
-      // the site-wide frame-ancestors block still applies on a non-2xx response.
-      stripe: '/api/stripe/webhook',
-      // S20: tenant-authenticated impression read. No X-Oravan-Key header on
-      // this bare request -> 403 unauthorized - again proving the site-wide
-      // block applies regardless of status code.
-      tenant: '/api/tenant/impressions',
-    };
-    const EMBED_ROUTES: Record<string, string> = {
-      'rep-lookup': '/embed/rep-lookup?locale=en',
-      'bill-card': '/embed/bill-card?locale=en&slug=hr-5582-119',
-      // S15: same-origin portrait proxy. 404s in the shipped (no Blob store
-      // yet) state - see tests/embed-portrait.unit.spec.ts for that behavior
-      // and the Owner enable checklist for what lights it up. Still under
-      // /embed/:path*, so next.config.ts's embed CSP block applies
-      // regardless of the response's status code.
-      portrait: '/embed/portrait/C000127',
-      // S19: paid-tier action panel. No token -> the "unauthorized" refusal
-      // state (tests/embed-action-panel.spec.ts covers that render), but
-      // CSP headers are path-pattern-based (next.config.ts), not render-
-      // state-based - still under /embed/:path*, so the carve-out applies
-      // regardless of which state this bare request happens to render.
-      'action-panel': '/embed/action-panel?locale=en&slug=sjres-99-119',
-    };
+    /*
+     * Every route under app/[locale] — each page, the per-locale PWA manifest
+     * handler and the locale catch-all's 404 — is read off the tree by
+     * tests/routes.ts and takes the site-wide lock, with no list to forget to
+     * extend: a new page is checked the day it lands. A new DYNAMIC route
+     * fails the coverage test below until tests/routes.ts gives it a corpus
+     * probe (a real record, so the check can never pass on a 404 that happens
+     * to carry the right header). The CSP headers are path-pattern-based
+     * (next.config.ts), never status- or render-state-based, so the 404, the
+     * 405s and the unauthorized states below still prove the posture.
+     *
+     * The call surfaces are why this matters: the bill page and the Senate
+     * nomination page mount the same ActionPanel — stance selection, the
+     * generated script, the dials — and a framed call surface is a
+     * clickjacking target.
+     *
+     * app/api/* and app/embed/* are listed per segment in tests/routes.ts
+     * (API_PROBES, embedProbes()); a segment absent there fails the coverage
+     * test FIRST — a new route class can't ship silently; someone has to add
+     * an entry and so state what its frame-ancestors answer is: the lock for
+     * every API, the carve-out for every embed.
+     */
+    const LOCALE_PROBES = localeProbes(['en']);
+    const EMBED_PROBES = embedProbes();
 
     test('coverage maps match the actual app/ tree - no undecided segment slipped in', () => {
-      for (const name of topLevelDirs('[locale]')) {
+      expect(
+        unresolvedLocaleRoutes(),
+        'app/[locale] routes with no corpus probe - add one to DYNAMIC_ROUTE_PROBES in tests/routes.ts'
+      ).toEqual([]);
+      // Never vacuous: the tree always holds the homepage (tests/routes.unit.spec.ts
+      // cross-checks the walker against an independent listing of the tree).
+      expect(LOCALE_PROBES.map((p) => p.route.pattern)).toContain('/');
+      for (const name of appTopLevelDirs('api')) {
         expect(
-          Object.keys(LOCALE_ROUTES),
-          `app/[locale]/${name} shipped with no registered frame-ancestors check - add one to tests/frame-posture.spec.ts`
+          Object.keys(API_PROBES),
+          `app/api/${name} shipped with no registered frame-ancestors check - add one to API_PROBES in tests/routes.ts`
         ).toContain(name);
       }
-      for (const name of topLevelDirs('api')) {
+      for (const name of appTopLevelDirs('embed')) {
         expect(
-          Object.keys(API_ROUTES),
-          `app/api/${name} shipped with no registered frame-ancestors check - add one to tests/frame-posture.spec.ts`
-        ).toContain(name);
-      }
-      for (const name of topLevelDirs('embed')) {
-        expect(
-          Object.keys(EMBED_ROUTES),
-          `app/embed/${name} shipped with no registered frame-ancestors check - add one to tests/frame-posture.spec.ts`
+          Object.keys(EMBED_PROBES),
+          `app/embed/${name} shipped with no registered frame-ancestors check - add one to embedProbes() in tests/routes.ts`
         ).toContain(name);
       }
     });
 
-    for (const [name, url] of Object.entries(LOCALE_ROUTES)) {
-      test(`app/[locale]/${name} -> ${url}: frame-ancestors 'self'`, async ({ request }) => {
+    // Titles name the route, not the probe URL: a dynamic route's probe is a
+    // corpus record that turns over, and a test's identity should not.
+    for (const { route, url } of LOCALE_PROBES) {
+      test(`app/[locale]${route.pattern}: frame-ancestors 'self'`, async ({ request }) => {
         const res = await request.get(url);
-        expect(csp(res)).toContain(SITE_LOCK);
+        expect(csp(res), url).toContain(SITE_LOCK);
       });
     }
 
-    for (const [name, url] of Object.entries(API_ROUTES)) {
+    for (const [name, url] of Object.entries(API_PROBES)) {
       test(`app/api/${name} -> ${url}: frame-ancestors 'self' (even on a non-2xx response)`, async ({
         request,
       }) => {
@@ -223,14 +152,12 @@ test.describe(
       });
     }
 
-    for (const [name, url] of Object.entries(EMBED_ROUTES)) {
-      test(`app/embed/${name} -> ${url}: the permissive carve-out, never 'self'`, async ({
-        request,
-      }) => {
+    for (const [name, url] of Object.entries(EMBED_PROBES)) {
+      test(`app/embed/${name}: the permissive carve-out, never 'self'`, async ({ request }) => {
         const res = await request.get(url);
         const policy = csp(res);
-        expect(policy).toContain(EMBED_CARVEOUT);
-        expect(policy).not.toContain(SITE_LOCK);
+        expect(policy, url).toContain(EMBED_CARVEOUT);
+        expect(policy, url).not.toContain(SITE_LOCK);
       });
     }
   }
@@ -258,9 +185,10 @@ test.describe('F2: street-address refinement is unreachable inside an iframe', (
     page,
     baseURL,
   }) => {
-    // 10001 is the real split ZIP (NY-10/NY-12) tests/district.spec.ts
-    // drives - the one URL on the whole site where AddressForm renders.
-    const target = `${baseURL}/reps?zip=10001`;
+    // A real split ZIP from the committed Census table (tests/corpus-samples.ts)
+    // - the one input on the whole site that renders AddressForm.
+    const zip = splitZip();
+    const target = `${baseURL}/reps?zip=${zip}`;
     const host = await startCrossOriginHost(
       `<!doctype html><html><body><iframe id="probe" src="${target}" title="probe"></iframe></body></html>`
     );
@@ -286,8 +214,10 @@ test.describe('F2: street-address refinement is unreachable inside an iframe', (
       // never appears in this iframe.
       await expect(frame.locator('input[name="street-address"]')).toHaveCount(0);
       // Nor does any of the page's real content - the framing was refused,
-      // not just the address form selectively hidden.
-      await expect(frame.locator('body')).not.toContainText('Daniel S. Goldman');
+      // not just the address form selectively hidden. The name is the ZIP's
+      // own House member, read from the roster, so this can never pass
+      // because the member changed.
+      await expect(frame.locator('body')).not.toContainText(firstHouseRepName(zip));
 
       expect(
         cspViolations,

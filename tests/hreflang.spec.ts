@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { decodedBillSlug, undecodedBillSlug } from './corpus-samples';
+import { localeRoutes, probePathFor } from './routes';
 
 /*
  * S22 — hreflang correctness pass. Industry data says ~75% of hreflang
@@ -9,41 +11,35 @@ import type { Page } from '@playwright/test';
  * /why-call, /record) had none, which is its own kind of error (a silent
  * absence, not a subtly-wrong tag).
  *
- * This crawls a representative sample of built pages — every static page
- * type once, plus three bill pages spanning the decode-status range (a
- * heavily-decoded bill, another decoded bill, and one of the corpus's two
- * fully undecoded bills) — and asserts the actual Google reciprocity rules:
- * every alternate is absolute, every page is self-referential (its own
- * locale's alternate equals its own canonical), every pair is reciprocal
- * (page A's alternate to B equals B's own canonical, and vice versa), and
- * x-default is present and consistent everywhere.
+ * This crawls every PAGE route under app/[locale] (tests/routes.ts reads them
+ * off the tree, so a new page is covered the day it lands) — each static page
+ * once and each dynamic route through its corpus probe — plus the bill page
+ * across the decode-status range (two decoded bills and one undecoded one,
+ * all drawn from the committed corpus by tests/corpus-samples.ts) and
+ * asserts the actual Google reciprocity rules: every alternate is absolute,
+ * every page is self-referential (its own locale's alternate equals its own
+ * canonical), every pair is reciprocal (page A's alternate to B equals B's
+ * own canonical, and vice versa), and x-default is present and consistent
+ * everywhere.
+ *
+ * The locale catch-all is the one page route left out: it is a 404, and a 404
+ * declares no canonical.
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
 
-const PATHS = [
-  '/',
-  '/bills',
-  '/reps',
-  '/about',
-  '/privacy',
-  '/terms',
-  '/why-call',
-  '/record',
-  '/citations', // S23's citability/correction page
-  '/embeds', // S16's configurator + docs page
-  '/questions', // the discovery layer index (2026-07-23)
-  '/questions/iran-war-powers', // a live Moment page (id from data/moments.json)
-  '/embeds/terms', // S21's embeds Terms of Service
-  '/partners', // S5b's partner GTM page
-  '/mcp', // S12's MCP server docs page
-  '/follow', // B8's every-way-to-follow page
-  '/glossary', // the procedural glossary (issue #181)
-  '/today', // the daily brief (plan item C3)
-  '/bills/hr-5582-119',
-  '/bills/sjres-99-119',
-  '/bills/hr-8553-119', // one of the corpus's two undecoded bills
-] as const;
+/** [test label, locale-relative path]. Labels name the route, not the
+ *  corpus record behind a dynamic probe, so a test keeps its identity when the
+ *  corpus turns over. */
+const PATHS: Array<[string, string]> = [
+  ...localeRoutes()
+    .filter((r) => r.kind === 'page' && !r.catchAll)
+    .map((r): [string, string] => [r.pattern, probePathFor(r)]),
+  // The bill page across the decode-status range (the route's own probe above
+  // is decoded bill #1).
+  ['/bills/[id] (a second decoded bill)', `/bills/${decodedBillSlug(1)}`],
+  ['/bills/[id] (an undecoded bill)', `/bills/${undecodedBillSlug()}`],
+];
 
 function localePath(locale: 'en' | 'es', path: string): string {
   if (locale !== 'es') return path;
@@ -80,8 +76,8 @@ async function readHreflang(page: Page): Promise<HreflangDoc> {
 }
 
 test.describe('hreflang correctness (Google reciprocity rules)', () => {
-  for (const path of PATHS) {
-    test(`${path}: absolute, self-referential, reciprocal, x-default consistent`, async ({ page }) => {
+  for (const [label, path] of PATHS) {
+    test(`${label}: absolute, self-referential, reciprocal, x-default consistent`, async ({ page }) => {
       const enUrl = localeUrl('en', path);
       const esUrl = localeUrl('es', path);
 

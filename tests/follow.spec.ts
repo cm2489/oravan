@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { decodedBillSlug } from './corpus-samples';
 import { mcpRpc } from './helpers';
 
 /*
@@ -17,7 +18,7 @@ import { mcpRpc } from './helpers';
  * spec can only ever agree on one number.
  */
 
-const BILL = '/bills/hr-5582-119';
+const BILL = `/bills/${decodedBillSlug()}`; // any bill page: the footer is on every page
 const MCP_ENDPOINT_URL = 'https://oravan.org/api/mcp/mcp';
 
 const LOCALES = [

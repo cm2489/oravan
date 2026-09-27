@@ -172,7 +172,7 @@ export default async function RepsPage({
           {/* {count}: 841 ZIPs map to 3-6 districts, and the old copy said
               "both" under six district headings (Phase-1 P1 — a miscount on
               the truth surface). The message pluralizes on the real count. */}
-          <p className={`mt-6 max-w-read ${NOTE}`}>
+          <p data-multi-district className={`mt-6 max-w-read ${NOTE}`}>
             {t('multiDistrict', { count: districts.length })}
           </p>
           <AddressForm zip={zip} />
@@ -231,12 +231,13 @@ export default async function RepsPage({
           they already did rather than assigning them a task. The
           de-assignment rule bites on surfaces a visitor reaches before
           engaging (the homepage front door, the bills index bands); it does
-          not bite here. The section id `reps-next` is frozen — invariant I2
-          in tests/funnel.spec.ts reads it. */}
+          not bite here. Invariant I2 in tests/funnel.spec.ts reads this
+          section by its `data-testid="reps-continuation"` hook. */}
       {zip && districts.length > 0 && (
         <section
           className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
           aria-labelledby="reps-next"
+          data-testid="reps-continuation"
         >
           <h2 id="reps-next" className="text-h2 font-extrabold">
             {t('nextTitle')}

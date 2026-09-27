@@ -5,11 +5,13 @@ import { createTranslator } from 'next-intl';
 import enMessages from '../messages/en.json';
 import esMessages from '../messages/es.json';
 import {
+  billCtaKey,
   bothNoteKey,
   collapseQuietDays,
   momentDek,
   nominationCtaKey,
   revisionReasons,
+  vehicleCtaHref,
 } from '../lib/moments-ui';
 import { getAllNominations, getNomination, nominationSlug, type Nomination } from '../lib/core/nominations';
 import { getMoments, vehicleKind, type MomentVehicle } from '../lib/moments';
@@ -279,6 +281,54 @@ test.describe('nominationCtaKey', () => {
     // sees one of them proves nothing.
     expect(all.some((n) => nominationCtaKey(n, false) === 'moments.readCall')).toBe(true);
     expect(all.some((n) => nominationCtaKey(n, false) === 'nominations.readRecord')).toBe(true);
+  });
+});
+
+/*
+ * WHERE THE BUTTON LANDS (2026-09-27 audit, SY-10).
+ *
+ * Every "Read + call" on a Big Question opened the top of the vehicle's page;
+ * on the Iran question on a phone the call panel sat 1,857px below where the
+ * link landed. The label promises the call, so it lands on the call — and only
+ * the label that promises it does. tests/moments.spec.ts follows a real one
+ * into the page and checks the panel is on screen when it arrives.
+ */
+test.describe('billCtaKey + vehicleCtaHref (SY-10)', () => {
+  test('a live bill vehicle says "Read + call"; a settled one says "Read the bill"', () => {
+    expect(billCtaKey(false)).toBe('moments.readCall');
+    expect(billCtaKey(true)).toBe('moments.readBill');
+  });
+
+  test('"Read + call" lands on the call panel, on either kind of page', () => {
+    expect(vehicleCtaHref('/bills/hr-1-119', 'moments.readCall')).toBe('/bills/hr-1-119#act');
+    expect(vehicleCtaHref('/nominations/pn1-119', 'moments.readCall')).toBe(
+      '/nominations/pn1-119#act',
+    );
+  });
+
+  test('every other label lands at the top — a record link never jumps to a call', () => {
+    expect(vehicleCtaHref('/bills/hr-1-119', 'moments.readBill')).toBe('/bills/hr-1-119');
+    // On a nomination with no call waiting the panel is not rendered at all,
+    // so a fragment here would point at nothing.
+    expect(vehicleCtaHref('/nominations/pn1-119', 'nominations.readRecord')).toBe(
+      '/nominations/pn1-119',
+    );
+  });
+
+  test('the fragment follows the label, never the vehicle — one decision for both', () => {
+    for (const settled of [false, true]) {
+      const key = billCtaKey(settled);
+      expect(vehicleCtaHref('/bills/x', key).endsWith('#act'), String(settled)).toBe(
+        key === 'moments.readCall',
+      );
+    }
+    const DESCRIBED = 'Jane Doe, of Ohio, to be United States District Judge.';
+    for (const status of ['received', 'confirmed', 'unclassified'] as const) {
+      const key = nominationCtaKey({ status, nominee_description: DESCRIBED }, false);
+      expect(vehicleCtaHref('/nominations/x', key).endsWith('#act'), status).toBe(
+        key === 'moments.readCall',
+      );
+    }
   });
 });
 

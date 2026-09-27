@@ -29,11 +29,14 @@ import {
   formatDistinctLine,
   formatMcpClientsLine,
   formatPercent,
+  formatScriptRefusalLine,
   isoDateDaysAgo,
   MCP_CLIENTS_LINE_MAX,
   MCP_SPIKE_FLOOR,
   median,
   NEVER_CLOSE_LABELS,
+  SCRIPT_REFUSAL_CAVEAT,
+  SCRIPT_REFUSAL_SCOPE_WORDS,
   SCRIPT_SPIKE_FLOOR,
   seriesStats,
   spikeClosedComment,
@@ -47,6 +50,8 @@ import {
   trailingWindowDays,
   weekOverWeek,
 } from '../lib/traffic-metrics.mjs';
+// The closed scope union the refusal words must cover, from its one registry.
+import { SCRIPT_REFUSAL_SCOPES } from '../lib/usage';
 
 /*
  * Traffic-watch design (2026-07): pins the digest math independently of any
@@ -614,6 +619,62 @@ test.describe('formatMcpClientsLine', () => {
   });
 });
 
+test.describe('formatScriptRefusalLine (the 2026-09-27 audit, SY-48)', () => {
+  const win = (day1: number, rest: number[] = []) => [day1, ...rest, ...new Array(27 - rest.length).fill(0)];
+
+  test('every scope in lib/usage.ts has words, and no scope exists here that the registry does not', () => {
+    expect(Object.keys(SCRIPT_REFUSAL_SCOPE_WORDS)).toEqual([...SCRIPT_REFUSAL_SCOPES]);
+  });
+
+  test('yesterday is index 0 and the 7-day figure is a SUM of day-1..day-7 — rare events hide in a median', () => {
+    const line = formatScriptRefusalLine([
+      { scope: 'daily', window: win(0) },
+      // day-1 = 2, day-2..day-7 = 1 each, day-8 = 50 (outside the 7 days)
+      { scope: 'burst', window: win(2, [1, 1, 1, 1, 1, 1, 50]) },
+      { scope: 'tenant', window: win(0, [0, 0, 4]) },
+    ]);
+    expect(line).toBe(
+      '  refusals (HTTP 429) yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 2 (7d 8), embed tenant limit 0 (7d 4)'
+    );
+  });
+
+  test('a daily-breaker refusal yesterday is flagged — each one was a request for a draft that got a 429', () => {
+    const line = formatScriptRefusalLine([
+      { scope: 'daily', window: win(3) },
+      { scope: 'burst', window: win(0) },
+      { scope: 'tenant', window: win(0) },
+    ]);
+    expect(line).toContain('daily spend breaker 3 (7d 3)');
+    expect(line).toContain('⚠ the daily breaker refused uncached scripts yesterday');
+  });
+
+  test('burst and tenant refusals alone are reported, never flagged — one caller or one tenant is not the path going dark', () => {
+    const line = formatScriptRefusalLine([
+      { scope: 'daily', window: win(0, [9]) }, // a breaker trip two days ago: in the 7d sum, not flagged
+      { scope: 'burst', window: win(40) },
+      { scope: 'tenant', window: win(12) },
+    ]);
+    expect(line).toContain('daily spend breaker 0 (7d 9)');
+    expect(line).not.toContain('⚠');
+  });
+
+  test('no window supplied: an honest "not computed", never a line of invented zeros', () => {
+    expect(formatScriptRefusalLine(undefined)).toBe('  refusals: not computed (no refusal window supplied)');
+    expect(formatScriptRefusalLine([])).toBe('  refusals: not computed (no refusal window supplied)');
+  });
+
+  test('the reading guide says the one thing a zero cannot prove', () => {
+    // The refusal count lives in the database the breaker reads; an outage
+    // silences both. The caveat has to say so, and name the tell.
+    expect(SCRIPT_REFUSAL_CAVEAT).toContain('fail-closed');
+    expect(SCRIPT_REFUSAL_CAVEAT).toContain('lost with it');
+    expect(SCRIPT_REFUSAL_CAVEAT).toContain('page-view counts collapse');
+    // And the one dark path a refusal count cannot see at all: a generation
+    // that fails upstream is a 502, not a 429.
+    expect(SCRIPT_REFUSAL_CAVEAT).toContain('failed upstream');
+  });
+});
+
 test.describe('formatDigestBody / spikeIssueContent', () => {
   const mcpTools = [
     { tool: 'lookup_representatives', stats: seriesStats([12, 9, 9, 9, 9, 9, 9, 9], Infinity) },
@@ -664,6 +725,32 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     // rule as the 28-day trend line, never a silently absent section.
     const without = formatDigestBody({ date: '2026-09-17', mcpTools, mcpTotal, script });
     expect(without).toContain('Site page views: not computed (no page-view window supplied)');
+  });
+
+  test('the script-refusal line prints EVERY day under the generations line, by guard, yesterday and the 7-day sum', () => {
+    // The 2026-09-27 audit (SY-48): "0 generations" alone could not tell a
+    // quiet site from a path that refused every uncached request.
+    const quiet = formatDigestBody({
+      date: '2026-09-26',
+      mcpTools,
+      mcpTotal,
+      script,
+      scriptRefusals: SCRIPT_REFUSAL_SCOPES.map((scope) => ({ scope, window: new Array(28).fill(0) })),
+    });
+    const lines = quiet.split('\n');
+    const genAt = lines.indexOf('Script generations (production, cache-miss only)');
+    expect(genAt).toBeGreaterThan(-1);
+    // Directly under the generations number it explains.
+    expect(lines[genAt + 2]).toBe(
+      '  refusals (HTTP 429) yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 0 (7d 0), embed tenant limit 0 (7d 0)'
+    );
+    expect(quiet).not.toContain('⚠ the daily breaker');
+    // And the reading guide rides along every day.
+    expect(quiet).toContain(SCRIPT_REFUSAL_CAVEAT);
+
+    // Omitted entirely: the line still prints, honestly empty.
+    const without = formatDigestBody({ date: '2026-09-26', mcpTools, mcpTotal, script });
+    expect(without).toContain('  refusals: not computed (no refusal window supplied)');
   });
 
   test('the distinct-address row (owner ruling 2026-09-25): labelled honestly, printed beside page views, with its caveat every day', () => {
