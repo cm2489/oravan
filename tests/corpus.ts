@@ -27,7 +27,7 @@
 import billsJson from '../data/bills.json';
 import syncState from '../data/sync-state.json';
 import { TERMINAL_STATUSES, isSignalFresh } from '../lib/urgency.mjs';
-import { floorCalendarChamber, floorPendingChamber, passageState } from '../lib/journey';
+import { floorCalendarChamber, floorPendingChamber, liveCallTarget, passageState } from '../lib/journey';
 /*
  * THE LADDER ITSELF IS IMPORTED, NOT MIRRORED — the one deliberate break in
  * this file's mirror rule, and the ladder is exactly why it is safe.
@@ -42,6 +42,7 @@ import { floorCalendarChamber, floorPendingChamber, passageState } from '../lib/
  */
 import {
   bandForRung,
+  chamberSessionFrom,
   compareDocket,
   docketKey,
   docketRung,
@@ -49,6 +50,7 @@ import {
   isDecidingNow,
 } from '../lib/docket.mjs';
 import floorSignalsJson from '../data/floor-signals.json';
+import floorSignalsCheckedJson from '../data/floor-signals-checked.json';
 import { BAND_SIZES } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
 
@@ -75,6 +77,10 @@ export const slugOf = (b: CorpusBill): string =>
   `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 
 const FLOOR_SIGNALS = (floorSignalsJson as { signals?: Record<string, unknown> }).signals ?? {};
+/** The session half of the same committed file, and the heartbeat that keeps
+ *  it fresh — read exactly as lib/docket.ts `chamberSession` reads them. */
+const FLOOR_META = (floorSignalsJson as { _meta?: unknown })._meta ?? null;
+const FLOOR_CHECKED = floorSignalsCheckedJson as unknown;
 
 /** One bill's rung at instant `at` — the mirror's entry point into the ladder. */
 export function rungAt(b: CorpusBill, at: number) {
@@ -351,6 +357,42 @@ export function senateLiveBillSlugs(at: number = Date.now()): string[] {
     )
     .map(slugOf)
     .sort();
+}
+
+/**
+ * DECODED bills the rail routes on the chamber's OWN published schedule alone
+ * (2026-09-27 audit, SY-06): the bill stands on T0 (its announcement is live
+ * and unanswered — the ladder's own rung, imported above), the announcing
+ * chamber's session verdict is `in_session`, and the bill's RECORD routes
+ * nowhere. That is the exact case the fix exists for: before it, the band
+ * quoted the Senate's program while the rail listed the House member first
+ * with no routing line.
+ *
+ * Record-routed bills are left out on purpose — SENATE_LIVE (above) already
+ * drives those, and the page's answer for them is unchanged when the
+ * announcement agrees.
+ *
+ * `at` drives the ladder and the session read, both of which the page
+ * resolves at build time; pair with `stableAcross` so a signal expiring
+ * between `next build` and the assertion reads as a skip, not a flake. The
+ * record half reads the real clock (liveCallTarget has no `now`), but its
+ * window is day-granular and a floor record's freshness cannot flip inside
+ * the build-to-assert gap except across a UTC midnight.
+ */
+export function announcedRoutingSlugs(
+  at: number = Date.now()
+): { slug: string; chamber: 'house' | 'senate' }[] {
+  const out: { slug: string; chamber: 'house' | 'senate' }[] = [];
+  for (const b of corpus) {
+    if (!b.ai_headline) continue;
+    const rung = rungAt(b, at);
+    const announced = rung.announced as { chamber?: 'house' | 'senate' } | null;
+    if (rung.tier !== 't0' || !announced?.chamber) continue;
+    if (chamberSessionFrom(FLOOR_META, announced.chamber, at, FLOOR_CHECKED) !== 'in_session') continue;
+    if (liveCallTarget(b as unknown as Parameters<typeof liveCallTarget>[0]) !== null) continue;
+    out.push({ slug: slugOf(b), chamber: announced.chamber });
+  }
+  return out.sort((a, b) => a.slug.localeCompare(b.slug));
 }
 
 /** Generous bound on how far the assertion clock can sit from the clock

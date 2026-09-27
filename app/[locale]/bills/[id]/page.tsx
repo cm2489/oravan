@@ -390,6 +390,33 @@ export default async function BillPage({
   const floorCopy = floorBand ? FLOOR_COPY[floorBand.kind][floorBand.chamber] : null;
 
   /*
+   * THE RAIL ROUTES ON THE SAME DATED FACT THE BAND QUOTES (2026-09-27 audit,
+   * SY-06). The band above has read the chamber's own schedule since
+   * 2026-08-12; the call rail read only the bill's record, so on the one bill
+   * the Senate's program named for its next meeting the header said "On the
+   * floor schedule" while the panel listed the reader's House member first
+   * with no line saying the senators were the live call.
+   *
+   * Same `announcement`, same gate (`rungFor`: terminal-first, `signalIsLive`,
+   * retired once the announcing chamber votes). `liveCallTarget` adds two
+   * stricter conditions of its own — the announcement must be dated, and the
+   * announcing chamber must be `in_session` — so this can only ever ADD the
+   * existing routing line and the reordering where the chamber is actually
+   * meeting on the bill, never remove a dial. Without an announcement the
+   * rail routes exactly as it did before.
+   */
+  const liveTarget = liveCallTarget(
+    bill,
+    announcement
+      ? {
+          chamber: announcement.chamber,
+          published: announcement.published,
+          session: chamberSession(announcement.chamber),
+        }
+      : null
+  );
+
+  /*
    * THE STATUS LABEL — this page's refinement on top of the shared gate.
    *
    * WHAT MOVED (N3, owner ruling 2026-08-11). Half of what this comment used
@@ -655,8 +682,12 @@ export default async function BillPage({
         {/* THE DESK: reading column + call rail. The rail spans every row, so
             a sticky item is not confined to row 1 and holds to the page foot. */}
         <div className="grid max-w-read gap-8 pt-6 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8">
+          {/* data-read-zone: FloatingCallButton stands down while any of the
+              decoded answer is on screen, so it never sits over the text the
+              page exists to deliver (2026-09-27 audit, SY-07). */}
           <section
             aria-labelledby="decoded"
+            data-read-zone
             className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1"
           >
             {/* Records this bill in the visitor's own reading history
@@ -704,7 +735,7 @@ export default async function BillPage({
               identifier={citation}
               title={bill.ai_headline ?? bill.short_title ?? bill.title}
               recordLabels={recordLabels}
-              liveTarget={liveCallTarget(bill)}
+              liveTarget={liveTarget}
             />
           </div>
 
@@ -775,11 +806,13 @@ export default async function BillPage({
         />
       </div>
 
-      {/* Keeps the call reachable while reading; yields whenever the rail is
-          on screen. On the desk that is the whole grid — but the coverage
-          section and the footer sit OUTSIDE it, so the rail scrolls away at
-          the page foot and this is what carries the call the rest of the way.
-          Measured, not assumed: tests/call-action.spec.ts asserts both ends. */}
+      {/* Keeps the call reachable past the read; yields whenever the rail is
+          on screen AND whenever the decoded answer is (SY-07 — it used to sit
+          over three lines of it on every phone screen). On the desk that is
+          the whole grid — but the coverage section and the footer sit OUTSIDE
+          it, so the rail scrolls away at the page foot and this is what
+          carries the call the rest of the way. Measured, not assumed:
+          tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
       <FloatingCallButton />
     </>
   );
