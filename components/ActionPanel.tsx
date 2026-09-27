@@ -1389,7 +1389,7 @@ export function ActionPanel({
                     key={rep.bioguide}
                     className="rounded-control border-[1.5px] border-line-strong p-4"
                   >
-                    <p className="font-bold text-ink">{rep.name}</p>
+                    <p className="font-bold text-ink" data-rep-name="">{rep.name}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {rep.phone && (
                         <>
