@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-27T01:04:14.635Z",
+    "fetched_at": "2026-09-27T08:03:26.147Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-27T01:04:14.635Z"
+        "checked_at": "2026-09-27T08:03:26.147Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-27T01:04:14.635Z"
+        "checked_at": "2026-09-27T08:03:26.147Z"
       },
       "leans": {
         "center": {
@@ -588,6 +588,12 @@
     "hr-5334-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "theindianeye.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE93cE9fWnUzaVlXTzd4Z1YwckdWcHJTM01wdWNucHMxR0pCd1pnTF9jM0NGd2o4U1FHWmRpajdUcnd1ZmZFTE1WdkMzNGh5akFvUVNjSlhuQWVjZ2MtcldwSWZDZk0wVUQ2VlE1cGhXanpYSlVmT2xwVW9mOA?oc=5"
+        },
         {
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-22",
@@ -1460,6 +1466,18 @@
           "firstSeen": "2026-09-26",
           "lastSeen": "2026-09-26",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQZ05DS3BxSjRwaEhnWFlueEd1MjhnZWgwRk1hRnoyNlRndi1uMTJaclVWbTJ3M1JTVEEzTHpTVXpDQjZDcG5tVDdvM1UyRld6ZWp4YUFPZzNmNERsM2xSdG5lbzVnWktPSXoxTTB6eVM4bEEzbjVHY3Jla2FDUk5fZkpJbXZubXNwN2RoY3poSTZwMDI0OHZDbW1yVWFPRG9aVmtnRnNVVFlFQdIBrwFBVV95cUxNU0RTa0hHSzdfcGJHNXgyRTVYMmI5NjBEaXRjTl9OZ2lNcnJHMGdDSlIzMUkzZHQzNUViZWxfMDhXYklkSi1wR3EyZ2h6eDlUOEs2OTBYa1VFbmlFQWpMRjNNaHlhN0EwamhLREt6WW84RF95Vndxdk04anNETEhfN3BjTzZaOFp0UVNDeGlHcHQtTVpUbl9mUzJ1RDFNVFZhejQ4dmJEUjhjZlFPNDk0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4189-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nola.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOMUp5bFF5MGpmQi1sMFRzZWoyUWlESG51RjJfdENBMkJjMVpxSkZPNnVTYktkQ0ZfZ202d0JBNFp4Q3VQcTEtTWJQNnRZZTB4RjBtb2tEeWtjMXpiaVV0Ymd5SktSYW9rdDhNX3U5Y1c1bDNtVXAyZVVjbUswTXNSR05VS0pHb1ZEN0JWUEJlTjJpcVJsc3JmeVhzQmFQRmplMUFHZ2ZTSGU3eVBFTVE4MklWM3g5YnYxTkZsR1JBeG1FUjlxc0Q0Mld1TndfdGtNR1luTElaa3pxNldiREhIUmNMMkVVQTlrUW9UQXFEME5oZThDN2V3QmxtRHNBUHdz0gGAAkFVX3lxTE4xSnlsUXkwamZCLWwwVHNlajJRaURIbnVGMl90Q0EyQmMxWnFKRk82dVNiS2RDRl9nbTZ3QkE0WnhDdVBxMS1NYlA2dFllMHhGMG1va0R5a2MxemJpVXRiZ3lKS1Jhb2t0OE1fdTljVzVsM21VcDJlVWNtSzBNc1JHTlVLSkdvVkQ3QlZQQmVOMmlxUmxzcmZ5WHNCYVBGamUxQUdnZlNIZTd5UEVNUTgySVYzeDlidjFORmxHUkF4bUVSOXFzRDQyV3VOd190a01HWW5MSVprenE2V2JESEhSY0wyRVVBOWtRb1RBcUQwTmhlOEM3ZXdCbG1Ec0FQd3M?oc=5"
         }
       ],
       "mostViewed": null
