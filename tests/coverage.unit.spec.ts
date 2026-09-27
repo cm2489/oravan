@@ -1,7 +1,16 @@
 import { expect, test } from '@playwright/test';
 // Relative import (not '@/'): lib/coverage.ts is plain (no 'server-only') and
 // imports its JSON relatively, so the matcher resolves under the test runner.
-import { coverageTier, leanFor, normalizeSource, rankNews } from '../lib/coverage';
+import coverageData from '../data/coverage.json';
+import {
+  coverageOutletCount,
+  coverageTier,
+  getCoverage,
+  leanFor,
+  normalizeSource,
+  rankNews,
+  ratedCoverage,
+} from '../lib/coverage';
 import type { CoverageArticle, CoverageTier, Lean } from '../lib/types';
 
 const article = (source: string, lean: Lean | null = null): CoverageArticle => ({
@@ -89,5 +98,70 @@ test.describe('rankNews (the "In the news" lens order)', () => {
 
   test('caps at n', () => {
     expect(rankNews([item('cross', 1), item('cross', 2), item('neutral', 1)], 1, NOW)).toHaveLength(1);
+  });
+});
+
+/*
+ * THE RATED-ONLY FLOOR (owner ruling n1, 2026-09-26; the 2026-09-27 audit's
+ * SY-04). The Read section, the Big Question vehicle card's "N outlets" chip
+ * and the fallback news band all read getCoverage, which now keeps only
+ * articles from outlets with a lean in data/media-bias.json and returns
+ * nothing below two distinct rated outlets.
+ */
+test.describe('ratedCoverage / coverageOutletCount — rated outlets only', () => {
+  const raw = (source: string, title = `on ${source}`) => ({
+    title,
+    url: `https://${source}/${title.replace(/\W+/g, '-')}`,
+    source,
+    snippet: null,
+    publishedAt: '2026-09-20',
+  });
+
+  test('unrated articles are never shown, and the rated ones carry their lean', () => {
+    const shown = ratedCoverage([raw('cnn.com'), raw('naturalnews.com'), raw('foxnews.com'), raw('rttnews.com')]);
+    expect(shown.map((a) => a.source)).toEqual(['cnn.com', 'foxnews.com']);
+    expect(shown.map((a) => a.lean)).toEqual(['left', 'right']);
+  });
+
+  test('the H.Con.Res. 89 shape — unrated outlets only — shows nothing', () => {
+    expect(
+      ratedCoverage([
+        raw('thestockmarketwatch.com'),
+        raw('hurriyetdailynews.com'),
+        raw('naturalnews.com'),
+        raw('rttnews.com'),
+        raw('timesofindia.indiatimes.com'),
+      ]),
+    ).toEqual([]);
+  });
+
+  test('one rated outlet among unrated ones is still too thin — the floor is two RATED outlets', () => {
+    expect(ratedCoverage([raw('cnn.com'), raw('naturalnews.com'), raw('rttnews.com')])).toEqual([]);
+    expect(ratedCoverage([raw('cnn.com', 'a'), raw('cnn.com', 'b')])).toEqual([]);
+  });
+
+  test('the tier is judged on the rated set alone', () => {
+    // Two right-rated outlets plus an unrated one: one-sided, whatever the unrated one says.
+    const shown = ratedCoverage([raw('breitbart.com'), raw('dailycaller.com'), raw('naturalnews.com')]);
+    expect(coverageTier(shown)).toBe('one_sided');
+  });
+
+  test('the chip counts distinct rated outlets, and is 0 when the section would not render', () => {
+    const shown = ratedCoverage([raw('cnn.com', 'a'), raw('https://www.cnn.com', 'b'), raw('foxnews.com'), raw('naturalnews.com')]);
+    expect(coverageOutletCount(shown)).toBe(2);
+    expect(coverageOutletCount(ratedCoverage([raw('naturalnews.com'), raw('rttnews.com')]))).toBe(0);
+  });
+
+  test('getCoverage never returns an unrated article anywhere in the committed corpus', () => {
+    let shownBills = 0;
+    for (const slug of Object.keys(coverageData).filter((k) => !k.startsWith('_'))) {
+      const shown = getCoverage(slug);
+      if (shown.length === 0) continue;
+      shownBills++;
+      for (const a of shown) expect(leanFor(a.source), `${slug} ${a.source}`).not.toBeNull();
+      expect(coverageOutletCount(shown), slug).toBeGreaterThanOrEqual(2);
+    }
+    // Non-vacuity: the corpus still renders some sections.
+    expect(shownBills).toBeGreaterThan(0);
   });
 });

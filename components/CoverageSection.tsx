@@ -66,7 +66,9 @@ export function CoverageSection({
   const t = useTranslations('coverage');
   const format = useFormatter();
   const locale = useLocale();
-  // No coverage -> render nothing (the graceful-empty path).
+  // No coverage -> render nothing (the graceful-empty path). Since
+  // 2026-09-27 `articles` holds rated outlets only, and is empty below two of
+  // them (lib/coverage.ts ratedCoverage), so this is also the rated floor.
   if (articles.length === 0) return null;
 
   const newestAt = newestPublishedAt(articles);
@@ -76,29 +78,39 @@ export function CoverageSection({
       <h2 id="coverage-heading" className="text-h2 font-extrabold text-ink">
         {t('heading')}
       </h2>
-      <p className="mt-2 max-w-read text-ink-2">{t('subhead')}</p>
-      {/* THE AGE OF WHAT THIS SECTION IS ACTUALLY SHOWING.
-          The bill page prints a "Data as of" stamp ~20 lines above this
-          section, and that stamp tracks the Congress.gov BILL sync — it says
-          nothing about when these articles were gathered, and a reader has no
-          way to tell the two dates apart. So the section states its own age,
-          from the dates already stored on the articles: one line, one date,
-          the same shape as the tracker's "Last action" line above it. */}
-      {newestAt && (
-        <p className="mt-2 max-w-note text-sm text-ink-2">
-          <span className="font-semibold text-ink">{t('newestLabel')}:</span>{' '}
-          <time dateTime={newestAt} className="tabular-nums">
-            {format.dateTime(new Date(newestAt), {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              timeZone: 'UTC',
-            })}
-          </time>
-          <CoverageCheckedNote checkedAt={checkedAt} />
-          <CoverageAgeNote newestAt={newestAt} />
-        </p>
-      )}
+      {/* THE CLAIM, AND THE AGE OF WHAT IT IS SHOWING, IN ONE PARAGRAPH.
+          The subhead used to promise "coverage of this bill from across the
+          press" over whatever the sync stored, rated or not, and it carried no
+          date of its own (the 2026-09-27 audit, SY-04). It now says what the
+          list is — outlets that carry a lean rating, the only ones this
+          section shows — and ends on the newest article's date.
+
+          That date is the section's own clock. The bill page prints a "Data
+          as of" stamp ~20 lines above this section, and that stamp tracks the
+          Congress.gov BILL sync — it says nothing about when these articles
+          were gathered. So the section states its own age from the dates
+          stored on the articles, prerendered, because a stored date is a
+          fact rather than a verdict read off the visitor's clock. With no
+          dated article the subhead simply carries no date: a missing date is
+          never printed as a recent one. */}
+      <p className="mt-2 max-w-read text-ink-2">
+        {newestAt
+          ? t.rich('subheadDated', {
+              date: format.dateTime(new Date(newestAt), {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'UTC',
+              }),
+              when: (chunks) => (
+                <time dateTime={newestAt} className="tabular-nums">
+                  {chunks}
+                </time>
+              ),
+            })
+          : t('subhead')}
+      </p>
+      {newestAt && <CoverageLookNote newestAt={newestAt} checkedAt={checkedAt} />}
       {/* ES readers land on a predominantly English press corpus; flag it up
           front so a language switch isn't a surprise after the click (S6). */}
       {locale === 'es' && <p className="mt-2 max-w-read text-sm text-ink-2">{t('foreignLanguageNote')}</p>}
@@ -122,19 +134,40 @@ export function CoverageSection({
 }
 
 /*
- * WHEN WE LAST LOOKED — the other half of the sentence above.
+ * THE LINE UNDER THE SUBHEAD: when we last looked, and the age caveat. Both
+ * halves are hydration-gated (below), so the whole line renders nothing
+ * before hydration and nothing when neither half has anything to say — no
+ * empty paragraph in the prerendered HTML. Until 2026-09-27 this line also
+ * opened with the newest article's date ("Newest of these articles: …"); that
+ * date now ends the subhead sentence instead, so it is printed once.
+ */
+function CoverageLookNote({ newestAt, checkedAt }: { newestAt: string; checkedAt: string | null }) {
+  const hydrated = useHydrated();
+  if (!hydrated) return null;
+  const aged = freshnessAgeDays(newestAt) > COVERAGE_AGE_NOTE_DAYS;
+  if (!checkedAt && !aged) return null;
+  return (
+    <p className="mt-2 max-w-note text-sm text-ink-2">
+      <CoverageCheckedNote checkedAt={checkedAt} />
+      {aged && <CoverageAgeNote afterChecked={Boolean(checkedAt)} />}
+    </p>
+  );
+}
+
+/*
+ * WHEN WE LAST LOOKED — the other half of the subhead's date.
  *
- * The date beside it is the newest ARTICLE. This one is the newest LOOK:
+ * The date in the subhead is the newest ARTICLE. This one is the newest LOOK:
  * scripts/sync-coverage.mjs's `_checkedAt` rotation (#158) has recorded it
  * every night since August and nothing ever rendered it, so a bill whose
  * press went quiet in April read exactly like a bill nobody had checked since
- * April. Printing the look separates them: "Newest of these articles: 5 May ·
- * Checked: 12 Aug" says the silence is the press's, not ours. It is a bare
+ * April. Printing the look separates them: "Newest article: 5 May" then
+ * "Checked: 12 Aug" says the silence is the press's, not ours. It is a bare
  * fact — a date this pipeline actually wrote — and it makes no claim about
  * what was found, which is why the caveat that follows it survives untouched.
  *
  * HYDRATION-GATED, same useSyncExternalStore gate as StalenessNote and
- * CoverageAgeNote above (owner ruling, N11b, 2026-08-12). Worth being precise
+ * CoverageAgeNote below (owner ruling, N11b, 2026-08-12). Worth being precise
  * about what the gate does and does not buy here, because this line differs
  * from the other two: `_checkedAt` is a stored date, not a verdict read off
  * the visitor's clock, so it cannot go false the way a baked "fresh" can — a
@@ -147,12 +180,13 @@ export function CoverageSection({
  * `role="status"` announces it when it arrives, and nothing else on the line
  * depends on it.
  *
- * It rides the newest-article line rather than standing alone, so a bill whose
- * every stored article is undated prints neither date (0 of the 391 bills
- * carrying articles are in that state on the committed corpus). That is the
- * right way round: the check date is here to give the article date a
- * reference, and on its own it would read as a freshness claim about coverage
- * we cannot actually date.
+ * It renders only when the subhead carries a newest-article date
+ * (CoverageLookNote is mounted only then), so a bill whose every stored
+ * article is undated prints neither date (0 of the 391 bills carrying
+ * articles are in that state on the committed corpus). That is the right way
+ * round: the check date is here to give the article date a reference, and on
+ * its own it would read as a freshness claim about coverage we cannot
+ * actually date.
  */
 function CoverageCheckedNote({ checkedAt }: { checkedAt: string | null }) {
   const t = useTranslations('coverage');
@@ -163,7 +197,6 @@ function CoverageCheckedNote({ checkedAt }: { checkedAt: string | null }) {
 
   return (
     <span role="status">
-      {' · '}
       <span className="font-semibold text-ink">{t('checkedLabel')}:</span>{' '}
       <time dateTime={checkedAt} className="tabular-nums">
         {format.dateTime(new Date(checkedAt), {
@@ -183,8 +216,9 @@ function CoverageCheckedNote({ checkedAt }: { checkedAt: string | null }) {
  * baked at build time would freeze at the moment of the deploy and an article
  * set would keep reading as recent forever. It is re-diffed against the
  * VISITOR's clock and renders nothing pre-hydration, so the prerendered HTML
- * never carries a clock-dependent claim. One line, one date — the caveat
- * continues the sentence the date is already in rather than opening a second.
+ * never carries a clock-dependent claim. It continues the check date's
+ * sentence ("Checked: 26 Sep — newer coverage may exist…"); in the rare case
+ * with no check date it stands alone as its own sentence (`ageNoteLead`).
  *
  * WHAT IT DELIBERATELY DOES NOT SAY: anything about what the press has
  * published. Re-checked as of #158: scripts/sync-coverage.mjs now reaches
@@ -208,13 +242,10 @@ function CoverageCheckedNote({ checkedAt }: { checkedAt: string | null }) {
  * daily quota. A recent check date makes this caveat SMALLER, never false —
  * which is exactly why the date was added rather than the caveat softened.
  */
-function CoverageAgeNote({ newestAt }: { newestAt: string }) {
+function CoverageAgeNote({ afterChecked }: { afterChecked: boolean }) {
   const t = useTranslations('coverage');
-  const hydrated = useHydrated();
-
-  if (!hydrated || freshnessAgeDays(newestAt) <= COVERAGE_AGE_NOTE_DAYS) return null;
-
-  return <span role="status"> — {t('ageNote')}</span>;
+  // The age verdict itself is taken by CoverageLookNote, after hydration.
+  return <span role="status">{afterChecked ? ` — ${t('ageNote')}` : t('ageNoteLead')}</span>;
 }
 
 function CoverageRow({ article }: { article: CoverageArticle }) {
@@ -303,9 +334,11 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
 }
 
 /** Neutral lean chip: text label + a 3-segment position glyph. Never
- *  color-coded. `lean: null` = AllSides has no rating for the outlet — all
- *  three segments stay muted and the label says so, because absence must
- *  never be readable as "center". */
+ *  color-coded. `lean: null` = the outlet has no rating — all three segments
+ *  stay muted and the label says so, because absence must never be readable
+ *  as "center". Since 2026-09-27 no unrated article reaches this section
+ *  (lib/coverage.ts ratedCoverage); the branch stays so this primitive can
+ *  never print a guessed lean if a caller ever hands it one. */
 function LeanChip({ lean }: { lean: Lean | null }) {
   const t = useTranslations('coverage');
   const position = lean ? LEAN_POSITION[lean] : null;

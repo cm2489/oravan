@@ -17,7 +17,7 @@ import { getBill, localizeBill } from '@/lib/core';
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
 // accident. This page renders one, so it pays for it deliberately.
 import { getNomination } from '@/lib/core/nominations';
-import { getCoverage, normalizeSource } from '@/lib/coverage';
+import { coverageOutletCount, getCoverage } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -627,7 +627,9 @@ export default async function MomentPage({
                     const raw = getBill(v.slug);
                     if (!raw) return null;
                     const bill = localizeBill(raw, locale);
-                    const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
+                    // Rated outlets only, and 0 below two of them — the same
+                    // floor the bill page's Read section applies (getCoverage).
+                    const coverageCount = coverageOutletCount(getCoverage(v.slug));
                     return (
                       <MomentVehicleCard
                         key={v.slug}

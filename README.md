@@ -63,7 +63,7 @@ npm run dev
 - ZIP→district mapping is ZCTA-based; a split ZIP shows all candidate districts by default (senators are unaffected). Entering a street address — optional, sent once by POST, never stored or logged — narrows it to the actual district via a server-proxied Census-geocoder lookup; the all-candidates view remains the graceful fallback whenever the geocoder can't help. The geocoder request pins the "119th Congressional Districts" layer, which needs a bump when the Census rolls the vintage to the 120th.
 - Script cache and rate limits are in-memory per serverless instance — fine at demo scale, should move to a shared store before heavy traffic.
 - New bills can lag behind Congress.gov: the nightly sync decodes at most `MAX_NEW_DECODES` new bills per run (cost ceiling), so after a missed window the corpus catches up over several nights (decode-before-publish; the backlog drains oldest-first).
-- "Read" coverage exists only for top-band bills (the long tail shows nothing); the ES locale shows the same English articles with localized chrome; outlets absent from `data/media-bias.json` appear without a lean chip.
+- "Read" coverage exists only for top-band bills (the long tail shows nothing); the ES locale shows the same English articles with localized chrome. Since 2026-09-27 the section lists only outlets that carry a lean in `data/media-bias.json`, and renders only when at least two of them remain, so a bill covered mostly by unrated outlets shows no section at all (`data/coverage.json` still stores those articles, each with its `rated` flag).
 
 ## License
 

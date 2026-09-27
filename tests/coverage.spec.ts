@@ -112,9 +112,30 @@ test('the section states the age of what it is showing, in both languages', asyn
     await page.goto(`${prefix}/bills/${slug}`);
     const line = section(page).locator(`time[datetime="${newest}"]`);
     await expect(line).toHaveCount(1);
-    // The label sits with the date, so a reader can't mistake it for the
-    // page's sync stamp.
-    await expect(section(page).getByText(messages.coverage.newestLabel)).toBeVisible();
+    // The date ends the subhead sentence (coverage.subheadDated, 2026-09-27),
+    // so its label sits with it and a reader can't mistake it for the page's
+    // sync stamp. Asserted by the message's own words before the tag.
+    const lead = messages.coverage.subheadDated.split('<when>')[0].trim();
+    const subhead = section(page).locator('p', { has: page.locator(`time[datetime="${newest}"]`) });
+    await expect(subhead).toBeVisible();
+    await expect(subhead).toContainText(lead);
+  }
+});
+
+/*
+ * THE RATED-ONLY FLOOR (2026-09-27, the 2026-09-27 audit's SY-04): the section
+ * lists outlets with a lean rating and nothing else, so no row ever carries
+ * the "Not rated" chip, in either language.
+ */
+test('no row in a rendered Read section is an unrated outlet', async ({ page }) => {
+  test.skip(!shownSlug, 'no showable coverage in current data');
+  for (const { prefix, messages } of [
+    { prefix: '', messages: en },
+    { prefix: '/es', messages: es },
+  ] as const) {
+    await page.goto(`${prefix}/bills/${shownSlug}`);
+    await expect(section(page).getByRole('listitem').first()).toBeVisible();
+    await expect(section(page).getByText(messages.coverage.lean.unrated, { exact: true })).toHaveCount(0);
   }
 });
 
@@ -184,16 +205,21 @@ test('the check date is absent from the prerendered HTML (the KTD-2 gate)', asyn
      element to the article list, which is exactly where the age line lives. */
   const start = html.indexOf('aria-labelledby="coverage-heading"');
   expect(start, 'the coverage section must be in the prerendered HTML at all').toBeGreaterThan(-1);
-  const header = html.slice(start, html.indexOf('<ul', start));
+  // Lower-cased: React serialises the attribute as `dateTime=`, so a
+  // case-sensitive `datetime=` search could never match and the negative
+  // check below would pass whatever the HTML held (found 2026-09-27, when the
+  // positive control beside it came up empty against a real build).
+  const header = html.slice(start, html.indexOf('<ul', start)).toLowerCase();
   // Only meaningful when the check date is not also the newest-article date —
   // that <time> IS prerendered, by design. checkedSlug prefers a distinct pair;
   // this guard covers the fallback, and the label assertion above still holds.
   if (checked !== newestPublishedAt(checkedSlug!)) {
     expect(header).not.toContain(`datetime="${checked}"`);
   }
-  // Control: the non-gated half of the same line IS prerendered, so this test
-  // fails for the right reason rather than because the slice came up empty.
-  expect(header).toContain(en.coverage.newestLabel);
+  // Control: the non-gated date — the newest article's, ending the subhead —
+  // IS prerendered, so this test fails for the right reason rather than
+  // because the slice came up empty.
+  expect(header).toContain(`datetime="${newestPublishedAt(checkedSlug!)}"`);
 });
 
 test('coverage older than the age window carries the caveat; recent coverage does not', async ({
