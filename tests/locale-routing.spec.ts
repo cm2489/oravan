@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 
 /*
  * S6 persona gate (founder decision, 2026-07-07): URLs are authoritative.
@@ -20,6 +22,8 @@ import { expect, test } from '@playwright/test';
  * is remembered on-device instead (lib/locale-pref.ts,
  * tests/locale-preference.spec.ts), and the main site now sets the same
  * number of cookies as the embeds: zero — pinned below.
+ *
+ * Copy is read by message key only, never as an English (or Spanish) literal.
  */
 
 test.describe('locale routing — URLs authoritative (localeDetection off)', () => {
@@ -31,7 +35,9 @@ test.describe('locale routing — URLs authoritative (localeDetection off)', () 
     expect(res.status()).toBe(200); // NOT 307 -> /es/bills
     const html = await res.text();
     expect(html).toContain('<html lang="en"');
-    expect(html).not.toContain('Proyectos de ley activos'); // the ES bills heading
+    // The page's own title, in each language: English present, Spanish absent.
+    expect(html).toContain(en.bills.title);
+    expect(html).not.toContain(es.bills.title);
   });
 
   test('a prefixed /es URL stays Spanish regardless of an en cookie', async ({ request }) => {
@@ -46,22 +52,24 @@ test.describe('locale routing — URLs authoritative (localeDetection off)', () 
   test('the language switcher still performs an explicit locale change', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    // exact: the homepage hero gained its own thumb-reachable "Ver en
-    // español" link (2026-07 critique round 2), whose accessible name
-    // contains this one as a substring.
-    await page.getByRole('link', { name: 'En español', exact: true }).click();
+    // exact: the homepage hero carries its own thumb-reachable language link
+    // (home.heroLocaleLink), whose accessible name contains this one as a
+    // substring.
+    await page.getByRole('link', { name: en.common.switchLocale, exact: true }).click();
     await expect(page).toHaveURL(/\/es$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   });
 
+  // Dated (2026-07 critique round 2): the hero carries a second,
+  // thumb-reachable language link. Delete this test if the hero drops it.
   test('the hero language link is a second, thumb-reachable switch into Spanish (and back)', async ({
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: 'Ver en español' }).click();
+    await page.getByRole('link', { name: en.home.heroLocaleLink }).click();
     await expect(page).toHaveURL(/\/es$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-    await page.getByRole('link', { name: 'View in English' }).click();
+    await page.getByRole('link', { name: es.home.heroLocaleLink }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
@@ -75,7 +83,7 @@ test.describe('locale routing — URLs authoritative (localeDetection off)', () 
       expect(res.headers()['set-cookie'], `${path} set a cookie`).toBeUndefined();
     }
     await page.goto('/');
-    await page.getByRole('link', { name: 'En español', exact: true }).click();
+    await page.getByRole('link', { name: en.common.switchLocale, exact: true }).click();
     await expect(page).toHaveURL(/\/es$/);
     await page.goto('/es/bills');
     expect(await page.context().cookies()).toHaveLength(0);
