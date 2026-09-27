@@ -159,7 +159,7 @@ test.describe('the nomination page', () => {
     }
 
     // Demoted, never buried: senators lead, the House member keeps his row.
-    const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+    const railNames = page.locator('[data-rep-name]');
     await expect(railNames).toHaveCount(3);
     await expect(railNames.nth(2)).toHaveText('Monica De La Cruz');
     const houseRow = page
@@ -215,7 +215,7 @@ test.describe('the nomination page', () => {
     await page.getByRole('radio', { name: en.bill.stance.support }).click();
 
     // The office they DO have is present and dialable — nothing is taken away.
-    const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+    const railNames = page.locator('[data-rep-name]');
     await expect(railNames).toHaveCount(1);
     await expect(railNames.nth(0)).toHaveText('Eleanor Holmes Norton');
     await expect(

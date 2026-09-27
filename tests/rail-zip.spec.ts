@@ -3,6 +3,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mockScriptApi } from './helpers';
 import { senateLiveBillSlugs } from './corpus';
+import { floorActivityBill, referenceBill } from './corpus-fixtures';
 
 /*
  * "The panel scrolls · the call stays" — and so does a ZIP submit (2026-08,
@@ -21,9 +22,14 @@ import { senateLiveBillSlugs } from './corpus';
  * mount a ZipForm and (in the new states) duplicate loading/not-found copy —
  * the exact e2e trap ActionPanel's own dialog comment documents. Every
  * locator here is scoped to the dialog or left rail-only (dialog closed).
+ * The rail's member names carry `data-rep-name`; the dialog's dial links do
+ * not, so that hook is rail-only by construction.
  */
 
-const BILL = '/bills/sjres-99-119'; // same stable slug flow/es-parity/call-action pin
+// Any bill with a call panel — asked of the corpus by property
+// (tests/corpus-fixtures.ts), never named.
+const REF = referenceBill();
+const BILL = `/bills/${REF.slug}`;
 
 for (const locale of ['en', 'es'] as const) {
   test(`${locale}: rail ZIP submit stays on the bill page — script intact, reps load in-panel`, async ({
@@ -148,7 +154,7 @@ test('split ZIP (10001): honest multi-district copy, senators lead, refinement o
 
   // Four rows, with BOTH ambiguous House members demoted below the two
   // certainly-yours senators.
-  const rowNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  const rowNames = page.locator('[data-rep-name]');
   await expect(rowNames).toHaveCount(4);
   const names = await rowNames.allTextContents();
   expect(names.findIndex((n) => /Goldman|Nadler/.test(n))).toBeGreaterThanOrEqual(2);
@@ -189,18 +195,16 @@ test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, 
  * Two 2026-08 benchmark gates in one flow. (1) Enter submits the rail ZIP
  * form — a silent Enter at the moment of highest intent is the exact
  * failure this gate exists to prevent. (2) Chamber-aware routing (lib/journey.ts
- * liveCallTarget): S.J.Res. 99's floor activity sits in the Senate (the CR
- * S-page in its own last action), so the live-call line names the senators
- * and they lead the list — the House member keeps her dial, demoted never
- * buried.
+ * liveCallTarget): a bill whose floor activity sits in the Senate names the
+ * senators as the live call and they lead the list — the House member keeps
+ * her dial, demoted never buried.
  */
 test('Enter submits the rail ZIP form, and chamber routing names the senators as the live call', async ({
   page,
 }) => {
-  // NOT the module-level BILL. S.J.Res. 99's last action is a rejected motion
-  // to proceed, and since the 2026-08-09 floor-truth fix a settled motion
-  // correctly prints no live-call sentence — so the routing half of this gate
-  // needs a bill genuinely in the Senate's hands (tests/corpus.ts).
+  // NOT the module-level BILL: the routing half of this gate needs a bill
+  // genuinely in the Senate's hands, and since the 2026-08-09 floor-truth fix
+  // a settled motion correctly prints no live-call sentence (tests/corpus.ts).
   const senateLive = senateLiveBillSlugs();
   test.skip(senateLive.length === 0, 'no Senate-live bill in the corpus today');
   await mockScriptApi(page);
@@ -215,23 +219,29 @@ test('Enter submits the rail ZIP form, and chamber routing names the senators as
   await expect(page).toHaveURL(new RegExp(`/bills/${senateLive[0]}`));
 
   await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();
-  const firstRow = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold').first();
+  const firstRow = page.locator('[data-rep-name]').first();
   await expect(firstRow).not.toHaveText('Monica De La Cruz');
 });
 
 /*
- * 2026-08 mockup picks (owner: A1/B1/C1/D1/E1). The three that live on this
- * page's rail are pinned here; A1 is pinned in landing.spec.
+ * 2026-08 mockup picks (owner: A1/B1/C1/D1/E1). The ones that live on this
+ * page's rail are pinned here; A1 is pinned in landing.spec. E1 (the rail's
+ * scroll hint) was a layout pick with no promise behind it and is no longer
+ * pinned (2026-09-27 audit, card a3).
  */
 
 test('C1 provenance, as the B6 credibility block under the h1 — gated status chip, citation + latest action, the AI label', async ({
   page,
 }) => {
-  await page.goto(BILL);
+  // A decoded bill whose record shows floor ACTIVITY and nothing the page
+  // could print a stronger floor fact from (tests/corpus-fixtures.ts).
+  const fx = floorActivityBill();
+  test.skip(!fx, 'no floor-activity bill without a floor band in the corpus today');
+  await page.goto(`/bills/${fx!.slug}`);
   const header = page.locator('main header');
-  await expect(header.getByText('S.J.Res. 99')).toBeVisible();
-  // The status fragment routes through statusKeyFor: S.J.Res. 99 carries
-  // floor ACTIVITY, so the ritual may never print "On the floor calendar".
+  await expect(header.getByText(fx!.citation)).toBeVisible();
+  // The status fragment routes through statusKeyFor: this bill carries floor
+  // ACTIVITY, so the ritual may never print "On the floor calendar".
   await expect(header.getByText(en.bills.status.floor_activity, { exact: true })).toBeVisible();
   await expect(header.getByText(en.bills.status.floor_vote, { exact: true })).toHaveCount(0);
   await expect(header.getByText(new RegExp(en.bill.lastAction))).toBeVisible();
@@ -257,32 +267,6 @@ test("D1 both-sides ghosts: the unselected stances' templates render collapsed �
   // the AI disclaimer — the label may not ride non-AI text.
   const ghost = page.locator('details', { hasText: summaryFor(en.bill.stance.oppose) }).first();
   await ghost.locator('summary').click();
-  await expect(ghost.getByText(/S\.J\.Res\. 99/)).toBeVisible();
+  await expect(ghost.getByText(REF.citation, { exact: false })).toBeVisible();
   await expect(ghost.getByText(en.bill.scriptDisclaimer)).toHaveCount(0);
-});
-
-test('E1 scroll hint: rides the fade while the rail overflows unscrolled, retires on the first scroll', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(!!isMobile, 'the rail only scrolls internally on the desk layout');
-  await mockScriptApi(page);
-  await page.goto(BILL);
-  // The hint's real window: a stance just picked, the script mounted, the
-  // ZIP block now below the rail's fold — BEFORE any in-panel interaction.
-  // (A ZIP submit would end the window on purpose: filling the field
-  // scrolls it into view, and the post-submit focus move scrolls again —
-  // either genuine scroll retires the hint, which is the design.)
-  await page.getByRole('radio', { name: en.bill.stance.support }).click();
-  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
-
-  const rail = page.locator('section[aria-labelledby="act"]');
-  const scrollBody = rail.locator('[class*="overflow-y-auto"]').first();
-  const overflows = await scrollBody.evaluate((el) => el.scrollHeight - el.clientHeight > 40);
-  test.skip(!overflows, 'panel content fits this viewport — nothing to hint');
-
-  const hint = rail.getByText(`↓ ${en.bill.railMoreHint}`);
-  await expect(hint).toBeVisible();
-  await scrollBody.evaluate((el) => el.scrollTo({ top: 200 }));
-  await expect(hint).toBeHidden();
 });
