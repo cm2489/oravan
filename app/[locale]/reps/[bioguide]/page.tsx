@@ -241,7 +241,7 @@ function MemberBody({
         </section>
 
         <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
-          <section aria-labelledby="rep-sponsored">
+          <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored">
             <div className="border-t-[3px] border-ink pt-4">
               <h2 id="rep-sponsored" className="text-h2 font-extrabold">
                 {t('sponsoredHeading')}
@@ -341,8 +341,9 @@ function VacancyBody({
 /**
  * The /reps continuation, for a page with no sponsored bill to follow: the
  * same callable bills (or the honest quiet-week state), so the member page is
- * never a dead end. Its id is `rep-next`, NOT the frozen `reps-next` - that
- * one belongs to the lookup, and tests/funnel.spec.ts reads each separately.
+ * never a dead end. Its hook is `data-testid="rep-continuation"`, distinct
+ * from the lookup's `reps-continuation`, so tests/funnel.spec.ts reads each
+ * separately.
  */
 function Continuation({ locale, t }: { locale: string; t: RepT }) {
   const topActions = getTopActions(2, locale);
@@ -351,6 +352,7 @@ function Continuation({ locale, t }: { locale: string; t: RepT }) {
     <section
       className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
       aria-labelledby="rep-next"
+      data-testid="rep-continuation"
     >
       <h2 id="rep-next" className="text-h2 font-extrabold">
         {t('nextTitle')}

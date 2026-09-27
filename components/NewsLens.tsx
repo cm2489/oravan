@@ -75,7 +75,7 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
   // without competing with the browser above it.
   if (compact) {
     return (
-      <section aria-labelledby="news">
+      <section aria-labelledby="news" data-news-band="">
         {/* text-h2, not text-xl: an outside craft review (2026-08-02) caught
             this compact variant's heading rendering 21px beside 34px sibling
             h2s on /bills — same rank in the outline, same rung on the
@@ -112,7 +112,7 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
   }
 
   return (
-    <section aria-labelledby="news">
+    <section aria-labelledby="news" data-news-band="">
       <div className="flex items-center gap-2">
         <Newspaper className="h-5 w-5 flex-none text-ink-2" aria-hidden />
         <h2 id="news" className="text-h2 font-extrabold text-ink">

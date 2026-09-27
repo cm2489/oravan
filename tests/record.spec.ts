@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { corpus, slugOf } from './corpus';
 
 /*
  * THE CIVIC RECORD HAS TO SURVIVE ITS OWN STORAGE.
@@ -27,11 +28,13 @@ import es from '../messages/es.json';
  */
 
 /* A row of each kind that this device can read, for the "the good rows
-   survive" half. The slugs are corpus fixtures the sibling specs already
-   pin (tests/flow.spec.ts); a corpus refresh that breaks one breaks both. */
+   survive" half. The record page renders a row from what the row itself
+   stores (its label); the slug only builds the row's link. So the slugs are
+   taken from the corpus rather than named — any two distinct bills will do. */
+const [BILL_A, BILL_B] = corpus.map(slugOf);
 const CALL = {
-  billSlug: 'sjres-99-119',
-  billLabel: 'S.J.Res. 99 · a readable call row',
+  billSlug: BILL_A,
+  billLabel: 'A readable call row',
   repBioguide: 'D000399',
   repName: 'Monica De La Cruz',
   stance: 'support',
@@ -40,13 +43,13 @@ const CALL = {
 };
 const CALL_2 = {
   ...CALL,
-  billSlug: 'hr-6500-119',
-  billLabel: 'H.R. 6500 · a second readable call row',
+  billSlug: BILL_B,
+  billLabel: 'The second readable call row',
   at: '2026-07-02T12:00:00.000Z',
 };
 const READ = {
-  billSlug: 'sjres-99-119',
-  billLabel: 'S.J.Res. 99 · a readable read row',
+  billSlug: BILL_A,
+  billLabel: 'A readable read row',
   at: '2026-07-01T12:00:00.000Z',
 };
 
@@ -270,13 +273,14 @@ for (const locale of ['en', 'es'] as const) {
 test('the escape hatch is there when the crash arrives via the header nav', async ({ page }) => {
   await seed(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
   await page.goto('/');
-  // The home page's hydration probe. The seeded ZIP reaches this field only
+  // The home page's hydration probe: the ZIP field, by its `data-zip-field`
+  // hook. The seeded ZIP reaches this field only
   // from the client store, so the field carrying it is proof the hero has
   // hydrated — which is what makes the next line "a console paste on a
   // settled page" rather than a claim about it. `goto` alone does NOT get
   // there: it resolves 20-40ms before this page's own subscribe, which is
   // what the sentence that used to sit on this line got wrong.
-  await expect(page.getByLabel(en.home.zipLabel)).toHaveValue('78501');
+  await expect(page.locator('[data-zip-field]')).toHaveValue('78501');
   await page.evaluate(CRASH_ONCE_ON_RECORD_SUBSCRIBE);
 
   // Both navs are in the DOM and exactly one is ever displayed (Header.tsx's

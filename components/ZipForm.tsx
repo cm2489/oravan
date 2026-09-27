@@ -136,6 +136,7 @@ export function ZipForm({
       >
         <input
           id={fieldId}
+          data-zip-field=""
           name="zip"
           inputMode="numeric"
           maxLength={5}

@@ -3,20 +3,26 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 
 /*
- * THE HOMEPAGE'S FIRST SCREEN ON A PHONE (fold pass, 2026-09-24).
+ * THE HOMEPAGE'S FIRST SCREEN (fold pass 2026-09-24; un-pinned 2026-09-27).
  *
- * Measured on real WebKit at 390×844 on 2026-09-10: on /es the hero's primary
- * ZIP button sat 8px UNDER the fixed thumb bar, the hero carried two co-equal
- * filled buttons pointing at two funnels, and the "No accounts, no ads, no
- * trackers" line was hidden on phones. Three facts pinned here, both locales:
+ * Measured on real WebKit at 390×844 on 2026-09-10: on /es the hero's ZIP
+ * button sat 8px UNDER the fixed thumb bar — a control the visitor could see
+ * the top of and not tap. What is pinned here is the promise behind that
+ * finding, not the layout that fixed it, in both locales:
  *
- *   1. The lowest hero control (the ZIP submit) clears the thumb bar: its bottom edge
- *      is above the bar's top edge with the page at scroll 0. Checked at the
- *      measured 390×844 AND at the iPhone 13 project's own 390×664, the
- *      shorter screen where it is tightest.
- *   2. Exactly ONE filled primary control in the hero, and it is the jump to
- *      what is moving ("Truth-first, call-next"); the ZIP submit is secondary.
- *   3. The trust line is visible on the first screen.
+ *   1. No control inside the hero (`[data-hero]`) is hidden under a fixed
+ *      bar at scroll 0. A control that starts on the first screen is wholly
+ *      clear of every position:fixed element; one that starts below the
+ *      first screen is simply below the fold. Checked at 390×844 AND at the
+ *      iPhone 13 project's own 390×664, the shorter screen where it is
+ *      tightest.
+ *   2. The hero's first action leads to understanding ("Truth-first,
+ *      call-next", Constitution v2 rule 8), whatever its fill: it links to a
+ *      decoded surface — a /bills or /questions page, or an in-page anchor
+ *      that lands inside a `[data-front-door]` surface. The ZIP path stays in
+ *      the hero, demoted, never buried.
+ *   3. (Dated — fold pass 2026-09-24; delete if the hero drops the line.) The
+ *      trust line is visible on the first screen.
  *
  * Spanish is the long language and is the one that failed; it is never
  * optional here.
@@ -29,68 +35,82 @@ const LOCALES = [
 
 const HEIGHTS = [844, 664] as const;
 
-/** The fixed thumb bar — the one `nav` that is position:fixed. */
-async function thumbBarTop(page: Page): Promise<number> {
+type Rect = { top: number; bottom: number; left: number; right: number };
+
+/** Every visible element pinned to the screen (position fixed or sticky) that
+ *  is neither inside the hero nor wrapping it — the thumb bar today, whatever
+ *  else a redesign pins to the screen tomorrow. */
+async function fixedRects(page: Page): Promise<Rect[]> {
   return page.evaluate(() => {
-    const nav = [...document.querySelectorAll('nav')].find(
-      (n) => getComputedStyle(n).position === 'fixed'
-    );
-    if (!nav) throw new Error('no fixed thumb bar on the page');
-    return nav.getBoundingClientRect().top;
+    const hero = document.querySelector('[data-hero]');
+    return [...document.querySelectorAll('body *')]
+      .filter((el) => ['fixed', 'sticky'].includes(getComputedStyle(el).position))
+      .filter((el) => !hero || !(hero.contains(el) || el.contains(hero)))
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 1 && r.height > 1)
+      .map((r) => ({ top: r.top, bottom: r.bottom, left: r.left, right: r.right }));
   });
 }
 
+const overlaps = (a: Rect, b: Rect) =>
+  a.top < b.bottom && a.bottom > b.top && a.left < b.right && a.right > b.left;
+
 test.describe('home fold (phone)', () => {
-  // The thumb bar exists below md only, so this is a phone-project spec.
+  // The thumb bar exists below md only, so this is a phone-project suite.
   test.skip(({ isMobile }) => !isMobile, 'the thumb bar exists below md only');
 
   for (const { prefix, messages } of LOCALES) {
     for (const height of HEIGHTS) {
-      test(`${prefix || '/'} @390×${height}: the ZIP submit (lowest hero control) clears the thumb bar at scroll 0`, async ({
+      test(`${prefix || '/'} @390×${height}: no hero control is hidden under a fixed bar at scroll 0`, async ({
         page,
       }) => {
         await page.setViewportSize({ width: 390, height });
         await page.goto(`${prefix}/`);
-        const cta = page.getByRole('button', { name: messages.home.zipCta });
-        await expect(cta).toBeVisible();
+        // The ZIP submit is the control that failed on 2026-09-10; waiting on
+        // it (by key) also means the hero has rendered before we measure.
+        await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
         expect(await page.evaluate(() => window.scrollY)).toBe(0);
-        const box = await cta.boundingBox();
-        expect(box).not.toBeNull();
-        const barTop = await thumbBarTop(page);
-        expect(box!.y + box!.height).toBeLessThan(barTop);
+
+        const bars = await fixedRects(page);
+        // Precondition, not a design pin: with nothing pinned to the screen
+        // this test has no subject. If the thumb bar is ever retired, delete
+        // the test; if it moves somewhere fixedRects cannot see, fix the helper.
+        expect(bars.length, 'no fixed or sticky bar found on a phone page').toBeGreaterThan(0);
+
+        const controls = await page.evaluate(() => {
+          const hero = document.querySelector('[data-hero]');
+          if (!hero) throw new Error('no [data-hero] on the homepage');
+          return [
+            ...hero.querySelectorAll(
+              'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            ),
+          ]
+            .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+            .map((el) => ({ el, r: el.getBoundingClientRect() }))
+            .filter(({ r }) => r.width > 0 && r.height > 0)
+            .map(({ el, r }) => ({
+              name:
+                el.getAttribute('aria-label') ||
+                el.textContent?.trim() ||
+                (el as HTMLInputElement).name ||
+                el.tagName,
+              rect: { top: r.top, bottom: r.bottom, left: r.left, right: r.right },
+            }));
+        });
+        expect(controls.length, 'the hero carries at least one control').toBeGreaterThan(0);
+
+        const viewportHeight = height;
+        const onFirstScreen = controls.filter((c) => c.rect.top < viewportHeight);
+        const hidden = onFirstScreen
+          .filter((c) => bars.some((bar) => overlaps(c.rect, bar)))
+          .map((c) => c.name);
+        expect(hidden, 'hero controls partly or wholly under a fixed bar at scroll 0').toEqual([]);
       });
     }
 
-    test(`${prefix || '/'}: exactly one filled primary control in the hero, and it is the jump to what is moving`, async ({
+    test(`${prefix || '/'} (dated 2026-09-24): the trust line is visible on the first screen`, async ({
       page,
     }) => {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(`${prefix}/`);
-      const jump = page.getByRole('link', { name: messages.home.heroJump });
-      await expect(jump).toBeVisible();
-      // "Truth-first, call-next": the filled control leads to READING. The ZIP
-      // form is still in the hero (demoted, never buried) with an ink-outline
-      // submit, so the ZIP-first funnel path is unchanged.
-      const filled = await page.evaluate((jumpName) => {
-        const hero = document.querySelector('main h1')?.parentElement;
-        if (!hero) throw new Error('no hero');
-        const primary = [...hero.querySelectorAll('a')].find(
-          (a) => a.textContent?.trim() === jumpName
-        );
-        if (!primary) throw new Error('no jump link in the hero');
-        const go = getComputedStyle(primary).backgroundColor;
-        return [...hero.querySelectorAll('a, button')]
-          .filter((el) => el.getBoundingClientRect().height > 0)
-          .filter((el) => getComputedStyle(el).backgroundColor === go)
-          .map((el) => el.textContent?.trim());
-      }, messages.home.heroJump);
-      expect(filled).toEqual([messages.home.heroJump]);
-
-      // The ZIP path is still one tap away — demoted, not removed.
-      await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
-    });
-
-    test(`${prefix || '/'}: the trust line is visible on the first screen`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`${prefix}/`);
       // Scoped to <main>: the Spanish header also carries the same sentence
@@ -102,7 +122,50 @@ test.describe('home fold (phone)', () => {
       await expect(trust).toBeVisible();
       const box = await trust.boundingBox();
       expect(box).not.toBeNull();
-      expect(box!.y + box!.height).toBeLessThan(await thumbBarTop(page));
+      const rect = { top: box!.y, bottom: box!.y + box!.height, left: box!.x, right: box!.x + box!.width };
+      expect(rect.bottom).toBeLessThanOrEqual(844);
+      for (const bar of await fixedRects(page)) expect(overlaps(rect, bar)).toBe(false);
+    });
+  }
+});
+
+/** A same-page anchor lands on a truth surface; a path lands on a decoded page. */
+test.describe('home hero: the first action leads to understanding', () => {
+  for (const { prefix, messages } of LOCALES) {
+    test(`${prefix || '/'}: the hero's first action links to a decoded surface, whatever its fill`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/`);
+      const first = await page.evaluate(() => {
+        const hero = document.querySelector('[data-hero]');
+        if (!hero) throw new Error('no [data-hero] on the homepage');
+        const action = [...hero.querySelectorAll('a[href], button')].find((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+        });
+        if (!action) return null;
+        const href = action.getAttribute('href');
+        if (href === null) return { href: null, path: null, landsOnFrontDoor: false };
+        const url = new URL(href, location.href);
+        const samePage = url.pathname === location.pathname && url.hash.length > 1;
+        const target = samePage ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+        return {
+          href,
+          path: url.pathname,
+          landsOnFrontDoor: Boolean(target?.closest('[data-front-door]')),
+        };
+      });
+      expect(first, 'the hero has an action').not.toBeNull();
+      const decodedPath = /^(\/es)?\/(bills|questions)(\/|$)/.test(first!.path ?? '');
+      expect(
+        first!.landsOnFrontDoor || decodedPath,
+        `the hero's first action (${first!.href}) must lead to a decoded surface, not to the call`
+      ).toBe(true);
+
+      // The ZIP path is still in the hero — demoted, never buried.
+      await expect(
+        page.locator('[data-hero]').getByRole('button', { name: messages.home.zipCta })
+      ).toBeVisible();
     });
   }
 });
