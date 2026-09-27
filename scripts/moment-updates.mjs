@@ -881,8 +881,13 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  *   They are GROUNDING: printed into the prompt verbatim, persisted as
  *   `grounded_in.roll_calls`, and — with any record event in the window —
  *   they switch the absence lint on.
+ * @param {string[] | null} [onRecord] EVERY roll call data/votes.json holds on
+ *   these measures at any date (rollCallsOnRecord; planSummaries computes it),
+ *   or null when the collector cannot vouch for that count. Persisted as
+ *   `grounded_in.roll_calls_on_record` when known; it is the only count the
+ *   roll-call absence exemption reads. Omitted → no exemption.
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = []) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -919,9 +924,16 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   const statusLines = Object.entries(statuses)
     .map(([slug, status]) => `- ${billLabel(slug)}: EN "${phraseFor(slug, status, 'en')}" / ES "${phraseFor(slug, status, 'es')}"`)
     .join('\n');
+  // The else branch used to read "If nothing has moved recently, say that
+  // plainly." — the invitation behind the quiet-week paragraphs of nothing
+  // the 2026-09-27 audit measured (SY-28). A question where nothing moved no
+  // longer reaches the model at all on a re-anchor or a first summary
+  // (planSummaries' record-only path); what is left here is a window whose
+  // only news is press coverage, and the rule is the same one: write what
+  // is there.
   const nonEmptyRule = groundedEvents
     ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
-    : '- If nothing has moved recently, say that plainly.';
+    : '- Write only what the votes, actions and sources below show, each with its date. Do not write sentences about what did not happen, was not reported, or has not changed.';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
   // Congress.gov page for each vehicle. cboCostEstimates ride the bill-DETAIL
@@ -957,8 +969,8 @@ RULES:
 - 90 to 140 words per language. Plain text, no markdown, no headings.
 
 VOICE — "where it stands", not a log:
-- Open with the single most important CURRENT fact (where the live question sits right now), then how it got there. Group measures that are in the same place instead of reciting them one by one.
-- Status words: use ONLY the quoted plain-language phrases given per measure below. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, stop.
+- Write only what MOVED: the votes and actions in the record below, each with its date, most important first. Group measures that moved together instead of reciting them one by one.
+- The page prints every measure's current status itself, from the record, right above this summary. Do NOT recite it: never write a sentence whose point is a measure's status or label (not "its status is Floor activity", not "H. Con. Res. 86 is also listed as Passed one chamber"). The phrases given per measure below are context; if a sentence about what happened must say where a measure stands, use only the quoted phrase given for it, never a label of your own. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, stop.
 - Dates as a reader says them: "July 23, 2026" in English, "23 de julio de 2026" in Spanish. Never ISO "2026-07-23" in prose.
 - Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
 - The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
@@ -1000,7 +1012,13 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
   for (const lang of ['en', 'es']) {
     const value = parsed[lang].trim();
     if (!value) failures.push(`${lang}: empty`);
-    for (const f of lintRevisionText(value, lang, { groundedEvents })) failures.push(`${lang}: ${f}`);
+    // `rollCallsOnRecord` is the count this revision is about to store as
+    // grounded_in.roll_calls_on_record — the same number the gate re-lints it
+    // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
+    const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord })) {
+      failures.push(`${lang}: ${f}`);
+    }
   }
   if (failures.length) {
     // There is no fallback for a summary: a "where it stands" paragraph is
@@ -1024,11 +1042,59 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
       // the field is also the gate's marker that this revision passed the
       // absence lint before it was stored (checkMomentUpdates).
       roll_calls: (votes ?? []).map((r) => r.id),
+      // Present only when the collector could vouch for it (see
+      // rollCallsOnRecord): the count the gate's roll-call exemption reads.
+      ...(Array.isArray(onRecord) ? { roll_calls_on_record: [...onRecord] } : {}),
       refs,
     },
     changed_because: changedBecause(entry, statuses, (entry.summary_revisions ?? []).at(-1) ?? null),
     model: SUMMARY_MODEL,
   };
+}
+
+/**
+ * An action sentence that names a RECORDED vote, in the record's own
+ * vocabulary: the House's "(Roll no. 282)" and "by recorded vote", the
+ * Senate's "Yea-Nay Vote. 49 - 50. Record Vote Number: 244." and "(Record
+ * Vote No. 234)", and "the Yeas and Nays". A voice vote or unanimous consent
+ * never matches. Over-matching ("the yeas and nays were ordered", a vote
+ * requested but not yet held) only ever withholds the exemption below.
+ */
+const NAMES_RECORDED_VOTE = /\b(?:roll(?:[- ]call)?\s+(?:no\.|number\b|votes?\b)|record(?:ed)?\s+votes?\b|yea-nay\s+vote\b|yeas\s+and\s+nays\b)/i;
+
+/**
+ * EVERY roll call data/votes.json holds on these measures, at any date — the
+ * number the roll-call absence exemption reads (lib/moment-updates-gate.mjs,
+ * ROLL_CALL_ABSENCE; the 2026-09-27 audit SY-23) — or null when this
+ * collector cannot vouch for it.
+ *
+ * NOT the summary window's roll calls: "The House passed H.R. 8800 with no
+ * recorded vote" is false over House roll 278 (2026-07-22) whether or not
+ * roll 278 falls inside the last 14 days.
+ *
+ * NULL — no exemption — when an action sentence this collector holds for the
+ * measures (their retained updates, each bill's last action) names a recorded
+ * vote and the vote file holds none on these measures. That is the vote
+ * file's own blind spot showing: it starts at its `_meta.floor` (2026-05-27),
+ * and a recorded vote before that is not in it. A roll call before the floor
+ * that no held sentence mentions stays invisible; that residue is stated in
+ * the gate's section note, not hidden.
+ *
+ * @param {string[]} slugs
+ * @param {Record<string, any>[]} rolls  data/votes.json rollCalls
+ * @param {Iterable<string | null | undefined>} actionTexts
+ * @returns {string[] | null}
+ */
+export function rollCallsOnRecord(slugs, rolls, actionTexts) {
+  const ids = (rolls ?? [])
+    .filter((r) => slugs.includes(r?.bill) && typeof r?.id === 'string')
+    .map((r) => r.id)
+    .sort();
+  if (ids.length > 0) return ids;
+  for (const t of actionTexts ?? []) {
+    if (NAMES_RECORDED_VOTE.test(String(t ?? ''))) return null;
+  }
+  return ids;
 }
 
 /**
@@ -1043,6 +1109,137 @@ export function voteGroundingLine(r) {
   const counts = [`Yeas ${t.yea ?? 0}`, `Nays ${t.nay ?? 0}`, `Present ${t.present ?? 0}`, `Not Voting ${t.notVoting ?? 0}`];
   const tie = r?.tieBreaker?.position ? `; tie-breaking vote ${r.tieBreaker.position}` : '';
   return `- ${r?.date} · ${chamber} roll call no. ${r?.roll} · ${billLabel(r?.bill)} · question: "${r?.question ?? ''}" · result: "${r?.result ?? ''}" · ${counts.join(', ')}${tie}`;
+}
+
+/* ------------------------------------------------------------------ *
+ * 6a · the record-only revision — when nothing moved, no model call
+ *      (2026-09-27, the 2026-09-27 audit SY-28; owner card a5).
+ * ------------------------------------------------------------------ */
+
+/**
+ * The `model` a record-only revision carries. Not a model: the sentence is a
+ * fixed template filled from the record by this script, so it names no model
+ * that did not write it. lib/moment-updates.ts isAiSummary reads any token it
+ * does not know as AI — the safe direction — until it is taught this one.
+ */
+export const RECORD_ONLY_MODEL = 'record-only';
+
+/**
+ * WHY THIS EXISTS. The nightly re-anchors a question's "Where it stands" every
+ * SUMMARY_REANCHOR_DAYS even when nothing moved, and a first summary is
+ * written even over an empty window. Both paid a Sonnet call to say nothing:
+ * syria-sanctions-repeal s_f3165f0f (2026-09-24, reanchor:7d) ended "There is
+ * nothing further to report from the record at this time. The status has not
+ * changed since it was last updated."; annual-defense-policy s_230496a4 listed
+ * what had NOT been added to the record; the funding question's said named
+ * sources had not commented. Paragraphs of nothing, in both languages, and
+ * every one an absence claim of exactly the kind the absence lint exists to
+ * police.
+ *
+ * So when the window holds no update and no roll call the last revision was
+ * not already grounded in, the page gets ONE sentence built from the record
+ * — the date of the newest action on the question's measures — and the status
+ * itself is left to the line the page already prints from the record
+ * (lib/moment-status.mjs, in the header and on every vehicle card).
+ *
+ * THE SENTENCE IS A POSITIVE FACT, NOT AN ABSENCE CLAIM: "the latest action …
+ * is dated …". It is true by construction (the max last_action_date across the
+ * vehicles), it carries none of the absence lint's shapes, and so the gate's
+ * re-lint of stored revisions — which runs whenever the grounding holds a
+ * record event — cannot redden main over it. Written in both languages here,
+ * the same way this pipeline already writes its bilingual fallback lines
+ * (scripts/moment-updates-map.mjs fallbackTextFor).
+ *
+ * @param {string} isoDay  YYYY-MM-DD
+ * @param {number} count   how many measures the question holds
+ * @returns {{ en: string, es: string }}
+ */
+export function recordOnlyText(isoDay, count) {
+  const at = new Date(`${isoDay}T00:00:00Z`);
+  const en = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(at);
+  const es = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(at);
+  return count === 1
+    ? {
+        en: `The latest action in the official record on this measure is dated ${en}.`,
+        es: `La última acción del registro oficial sobre esta medida es del ${es}.`,
+      }
+    : {
+        en: `The latest action in the official record on these measures is dated ${en}.`,
+        es: `La última acción del registro oficial sobre estas medidas es del ${es}.`,
+      };
+}
+
+/**
+ * Has anything entered the record since the last revision? False when every
+ * update in the summary window and every roll call on the question's measures
+ * in that window is one the last revision was already grounded in. With no
+ * revision at all, that means the window is empty.
+ *
+ * A revision written before `grounded_in.roll_calls` existed grounds no roll
+ * call, so any roll call in the window counts as new — the model is called,
+ * which is the old behaviour.
+ *
+ * @param {Record<string, any>} entry
+ * @param {Record<string, any>[]} votes  roll calls in the window (planSummaries)
+ * @param {string} windowFloor  YYYY-MM-DD
+ * @returns {boolean}
+ */
+export function recordMovedSince(entry, votes, windowFloor) {
+  const last = (entry?.summary_revisions ?? []).at(-1);
+  const groundedUpdates = new Set(last?.grounded_in?.update_ids ?? []);
+  const groundedRolls = new Set(last?.grounded_in?.roll_calls ?? []);
+  const newUpdate = (entry?.updates ?? []).some((u) => String(u?.day) >= windowFloor && !groundedUpdates.has(u?.id));
+  const newRoll = (votes ?? []).some((r) => !groundedRolls.has(r?.id));
+  return newUpdate || newRoll;
+}
+
+/**
+ * Build the record-only revision for one planned question, or null when the
+ * record holds no dated action to state (then nothing is written, and the
+ * previous revision — if any — stands). PURE apart from `generatedAt`'s
+ * default.
+ *
+ * Grounded in the SAME window a model-written revision would have been, so
+ * the next nightly's recordMovedSince compares against it correctly — a
+ * record-only revision grounded in nothing would make every old update in the
+ * window look new, and buy the model call this path exists to avoid.
+ *
+ * @param {{ momentId: string, entry: Record<string, any>, statuses: Record<string, string>, records: Record<string, { lastActionDate?: string | null }>, votes: Record<string, any>[], rollCallsOnRecord?: string[] | null, day: string, contextRefs?: string[], generatedAt?: string }} p
+ * @returns {Record<string, any> | null}
+ */
+export function recordOnlyRevision({ momentId, entry, statuses, records, votes, rollCallsOnRecord: onRecord = null, day, contextRefs = [], generatedAt = new Date().toISOString() }) {
+  const latest = Object.values(records ?? {})
+    .map((r) => /^(\d{4}-\d{2}-\d{2})/.exec(String(r?.lastActionDate ?? ''))?.[1])
+    .filter((d) => typeof d === 'string')
+    .sort()
+    .at(-1);
+  if (!latest) return null;
+  const text = recordOnlyText(latest, Object.keys(statuses ?? {}).length);
+  // The same two lint layers every stored revision passes (and the gate
+  // re-runs). A template should never fail them; if an edit to it ever does,
+  // nothing is written rather than something the gate would reject.
+  for (const lang of /** @type {const} */ (['en', 'es'])) {
+    if (lintRevisionText(text[lang], lang).length > 0) return null;
+  }
+  const windowFloor = shiftDay(day, -SUMMARY_WINDOW_DAYS);
+  const recent = (entry?.updates ?? []).filter((u) => String(u?.day) >= windowFloor).slice(0, 30);
+  const refs = [...new Set([...Object.keys(statuses ?? {}).map(congressGovUrlForSlug), ...contextRefs.filter((r) => /^https:\/\//.test(r))])];
+  return {
+    id: revisionId([momentId, day, generatedAt, RECORD_ONLY_MODEL]),
+    generated_at: generatedAt,
+    as_of_day: day,
+    text,
+    grounded_in: {
+      vehicle_statuses: statuses,
+      update_ids: recent.map((u) => u.id),
+      roll_calls: (votes ?? []).map((r) => r.id),
+      // The same shape a model-written revision stores (generateStateSummary).
+      ...(Array.isArray(onRecord) ? { roll_calls_on_record: [...onRecord] } : {}),
+      refs,
+    },
+    changed_because: changedBecause(entry, statuses, (entry?.summary_revisions ?? []).at(-1) ?? null),
+    model: RECORD_ONLY_MODEL,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -1333,11 +1530,17 @@ export function summaryCallsOnDay(storeArg, day) {
  * parameter, so tests/moment-updates-live-votes.unit.spec.ts can drive the
  * whole decision with no filesystem, no network, and no model.
  *
- * NIGHTLY (unchanged in shape): regenerate when summaryRefreshReason says the
+ * NIGHTLY: regenerate when summaryRefreshReason says the
  * issue moved — now with the flap guard (a flap that went A→B→A entirely
  * between two revisions, or a status its own status sentence does not
  * support, is not movement; a status that reverts what the page now says IS,
  * because it is the correction).
+ *
+ * RECORD-ONLY (2026-09-27, SY-28): when the nightly's only reason is the
+ * re-anchor clock or a first summary, and recordMovedSince says nothing entered
+ * the record since the last revision, the entry is `recordOnly` instead of
+ * `generate` — writeSummaries writes the one-sentence record-only revision
+ * with no model call (recordOnlyRevision).
  *
  * INCREMENTAL (new): regenerate ONLY when a `vote` update landed for that
  * question on THIS run and survived the prune (`landedVotes`), and only while
@@ -1380,7 +1583,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  * }} args
- * @returns {{ momentId: string, generate: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], intraday: boolean, day: string }[]}
+ * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
 export function planSummaries({
   mode,
@@ -1425,8 +1628,17 @@ export function planSummaries({
     const votes = (rolls ?? [])
       .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
       .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : Number(b.roll) - Number(a.roll)));
+    // EVERY roll call on these measures, no date filter — the only count the
+    // roll-call absence exemption may read (SY-23; see rollCallsOnRecord).
+    // The action sentences it checks for a recorded vote the file lacks: every
+    // retained update's record sentence and each bill's last action.
+    const actionTexts = [
+      ...(entry.updates ?? []).map((u) => u?.record?.action_text),
+      ...slugs.map((s) => records[s]?.lastActionText),
+    ];
+    const onRecord = rollCallsOnRecord(slugs, rolls, actionTexts);
     // `day` tells writeSummaries which ET day's attempt slot a call spends.
-    const base = { momentId, statuses, records, votes, intraday: mode !== 'nightly', day: today };
+    const base = { momentId, statuses, records, votes, rollCallsOnRecord: onRecord, intraday: mode !== 'nightly', day: today };
 
     let why;
     if (mode === 'nightly') {
@@ -1434,6 +1646,21 @@ export function planSummaries({
       why = summaryRefreshReason(entry, statuses, nowArg, { unsupported });
       if (!why) {
         plan.push({ ...base, generate: false, reason: 'nothing moved' });
+        continue;
+      }
+      // NOTHING MOVED, AND THE CLOCK ASKED ANYWAY (2026-09-27, SY-28): a
+      // re-anchor, or a first summary over an empty window, with no update
+      // and no roll call the last revision was not already grounded in. No
+      // model call — the record-only revision (recordOnlyRevision) is written
+      // instead, at no cost and outside the daily budget. A status change or
+      // a new update is movement and still reaches the model.
+      if ((why === 'reanchor' || why === 'first summary') && !recordMovedSince(entry, votes, windowFloor)) {
+        plan.push({
+          ...base,
+          generate: false,
+          recordOnly: true,
+          reason: `${why}, and nothing entered the record since the last revision — record-only sentence, no model call`,
+        });
         continue;
       }
     } else {
@@ -1499,6 +1726,35 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
   let written = 0;
   let calls = 0;
   for (const p of plan) {
+    if (p.recordOnly) {
+      // No model call, no budget, no attempt counter: nothing is paid for.
+      // See recordOnlyRevision.
+      const entry = storeArg[p.momentId];
+      const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
+      const revision = recordOnlyRevision({
+        momentId: p.momentId,
+        entry,
+        statuses: p.statuses,
+        records: p.records,
+        votes: p.votes,
+        rollCallsOnRecord: p.rollCallsOnRecord,
+        day: p.day,
+        contextRefs,
+      });
+      if (!revision) {
+        console.log(`  summary ${p.momentId}: ${p.reason} — the record holds no dated action to state, nothing written`);
+        continue;
+      }
+      const current = (entry.summary_revisions ?? []).at(-1);
+      if (current?.model === RECORD_ONLY_MODEL && current.text?.en === revision.text.en && current.text?.es === revision.text.es) {
+        console.log(`  summary ${p.momentId}: ${p.reason} — the current revision already says this, nothing written`);
+        continue;
+      }
+      entry.summary_revisions = [...(entry.summary_revisions ?? []), revision].slice(-MAX_REVISIONS);
+      written++;
+      console.log(`  summary ${p.momentId}: ${revision.id} (${p.reason}; ${revision.changed_because.join(', ')})`);
+      continue;
+    }
     if (!p.generate) {
       console.log(`  summary ${p.momentId}: ${p.reason} — not regenerated`);
       continue;
@@ -1518,7 +1774,7 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
     entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
     calls++;
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes);
+    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord);
     if (!revision) continue;
     // Belt and braces. On the nightly the prune's reserveRevisions holds the
     // slot this append needs; on an incremental run the prune reserves

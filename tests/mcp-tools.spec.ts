@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
 import { conversationBandPool } from '../lib/conversation';
 import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
+import { decisionState } from '../lib/docket.mjs';
+import { floorReconsiderPendingChamber, statusBasisText } from '../lib/floor-text.mjs';
 import { callTool } from './helpers';
 
 /*
@@ -183,7 +185,60 @@ test.describe('get_bill', () => {
     expect(bill.congress_gov_url).toContain('congress.gov');
     expect(bill.url).toBe(`${SITE_ORIGIN}/bills/${BILL_SLUG}`);
     expect(bill.act_url).toBe(bill.url); // the only "act" link this tool ever returns
+    // 2026-09-27 (the 2026-09-27 audit SY-03): the decision is still ahead on
+    // this record, so the call-to-action stands and no settled reason is set.
+    expect(bill.decision_state).toBe('pending');
+    expect(bill.settled_reason).toBeNull();
     expectMeta(result.structuredContent!.meta as Record<string, unknown>, `/bills/${BILL_SLUG}`, true);
+  });
+
+  /*
+   * SY-03 (the 2026-09-27 audit; owner card a5): get_bill returned the
+   * Senate's 49-50 rejection of H.Con.Res. 89 as "Floor activity" with an
+   * act_url. decision_state is the field that says the floor already
+   * answered, act_url is withdrawn, and settled_reason quotes the record.
+   * Fixtures are found in the committed corpus by the SAME pure function the
+   * route calls (lib/docket.mjs decisionState), so the corpus moving nightly
+   * never strands this test on a slug.
+   */
+  test('a settled decision: decision_state "settled", the record\'s own sentence, and NO act_url', async ({ request }) => {
+    const settled = corpus.find((b) => decisionState(b).state === 'settled' && b.status === 'floor_vote');
+    test.skip(!settled, 'no floor-settled bill in the committed corpus');
+    const slug = slugOf(settled!);
+    for (const locale of ['en', 'es'] as const) {
+      const result = await callTool(request, 'get_bill', { slug, locale });
+      const bill = result.structuredContent!.bill as Record<string, unknown>;
+      expect(bill.decision_state).toBe('settled');
+      // English in both locales: a quote is never translated (owner ruling V4).
+      expect(bill.settled_reason).toBe(statusBasisText(settled!));
+      expect(bill.act_url).toBeNull();
+      // The citation stays; only the invitation to act is withdrawn.
+      expect(bill.url).toContain(`/bills/${slug}`);
+      // `status` is unchanged for existing clients: additive, not a rename.
+      expect(bill.status).toBe(settled!.status);
+    }
+  });
+
+  test('a failed vote with a motion to reconsider entered: decision_state "pending", and the act_url stays', async ({ request }) => {
+    // The Big Questions line reads this as "another vote is possible"
+    // (failedReconsider); the API must not call it settled.
+    const reconsider = corpus.find((b) => b.status === 'floor_vote' && floorReconsiderPendingChamber(statusBasisText(b)) !== null);
+    test.skip(!reconsider, 'no pending motion to reconsider in the committed corpus');
+    const result = await callTool(request, 'get_bill', { slug: slugOf(reconsider!), locale: 'en' });
+    const bill = result.structuredContent!.bill as Record<string, unknown>;
+    expect(bill.decision_state).toBe('pending');
+    expect(bill.settled_reason).toBeNull();
+    expect(bill.act_url).toBe(bill.url);
+  });
+
+  test('a law: decision_state "enacted", and NO act_url', async ({ request }) => {
+    const law = corpus.find((b) => b.status === 'signed');
+    test.skip(!law, 'no signed bill in the committed corpus');
+    const result = await callTool(request, 'get_bill', { slug: slugOf(law!), locale: 'en' });
+    const bill = result.structuredContent!.bill as Record<string, unknown>;
+    expect(bill.decision_state).toBe('enacted');
+    expect(bill.settled_reason).toBe(law!.last_action_text ?? null);
+    expect(bill.act_url).toBeNull();
   });
 
   test('resolves by slug, Spanish: decode is the ES translation, not English', async ({ request }) => {
@@ -290,6 +345,16 @@ test.describe('search_bills', () => {
     expect((data.total_matches as number)).toBeLessThanOrEqual(SEARCH_MAX_LIMIT);
     expect(results.length).toBe(data.total_matches as number);
     expect(results.some((r) => r.slug === BILL_SLUG)).toBe(true);
+  });
+
+  test('every teaser carries decision_state, read the same way get_bill reads it (SY-03)', async ({ request }) => {
+    const result = await callTool(request, 'search_bills', { status: 'signed', limit: 5, locale: 'en' });
+    const results = result.structuredContent!.results as Array<{ decision_state: string; settled_reason: string | null }>;
+    test.skip(results.length === 0, 'no signed bill in the committed corpus');
+    for (const r of results) {
+      expect(r.decision_state).toBe('enacted');
+      expect(typeof r.settled_reason === 'string' || r.settled_reason === null).toBe(true);
+    }
   });
 
   test('active_only excludes terminal (signed/vetoed) bills', async ({ request }) => {

@@ -43,6 +43,7 @@ import {
   parseBillQuery,
   type BillSearchDoc,
 } from '../bill-search.mjs';
+import { decisionState } from '../docket.mjs';
 /* The conversation lamp, for `whats_moving`'s optional evidence facet only. It
  * never touches the POOL or its order — that is the docket ladder's, and this
  * tool's whole contract is that Congress's own record decides what is moving. */
@@ -400,6 +401,15 @@ export interface BillConversationOut {
   most_viewed_weeks: number;
 }
 
+/**
+ * IS A DECISION STILL AHEAD (2026-09-27, the 2026-09-27 audit SY-03) — see
+ * lib/docket.mjs `decisionState` for the three values and what each is read
+ * from. ADDITIVE: `status` and `status_label` are unchanged for every existing
+ * client; this is the field that says what they could not — that the floor
+ * already answered, or that the measure is law.
+ */
+export type DecisionStateOut = 'pending' | 'settled' | 'enacted';
+
 export interface BillTeaserOut {
   slug: string;
   citation: string;
@@ -411,6 +421,11 @@ export interface BillTeaserOut {
   title: string;
   status: BillStatus;
   status_label: string;
+  decision_state: DecisionStateOut;
+  /** The record's own sentence the decision was read from, verbatim and in
+   *  English in both locales (a quote is never translated - owner ruling V4);
+   *  null while `decision_state` is `pending`. */
+  settled_reason: string | null;
   topics: TeaserTopic[];
   last_action_date: string | null;
   urgency_score: number;
@@ -426,6 +441,7 @@ export interface BillTeaserOut {
 /** `bill` must already be locale-resolved (see localizeBill) before shaping. */
 function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
   const slug = billSlug(bill);
+  const decision = decisionState(bill);
   return {
     slug,
     citation: formatCitation(bill.bill_type, bill.bill_number),
@@ -435,6 +451,8 @@ function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
     title: bill.short_title ?? bill.title,
     status: bill.status,
     status_label: statusLabel(bill.status, locale, bill.last_action_text, bill.last_action_date),
+    decision_state: decision.state,
+    settled_reason: decision.reason,
     topics: (bill.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
     last_action_date: bill.last_action_date,
     urgency_score: effectiveUrgency(bill.status, bill.last_action_date),
@@ -554,6 +572,7 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
   // it - the one copy of "what counts as Act now" this week.
   const band = getTeasers(locale).find((t) => t.slug === slug)?.band ?? 'radar';
   const hasAiContent = Boolean(localized.ai_headline);
+  const decision = decisionState(localized);
 
   // NOT in scope, by settled decision (the project records (kept out of this repo)
   // §2): this tool never drafts a call script. That's the product's only
@@ -591,6 +610,8 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
         localized.last_action_text,
         localized.last_action_date
       ),
+      decision_state: decision.state,
+      settled_reason: decision.reason,
       urgency_score: effectiveUrgency(localized.status, localized.last_action_date),
       urgency_band: band,
       topics: (localized.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
@@ -610,10 +631,17 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
       congress_gov_url: localized.congress_gov_url,
       url,
       // The only on-site call flow this tool ever hands back (see the
-      // draft_call_script decision above) - identical to `url` today since
-      // the bill page IS the call-flow entry point, kept as its own field
-      // because the two mean different things (citation vs. call-to-action).
-      act_url: url,
+      // draft_call_script decision above) - identical to `url` while a
+      // decision is still ahead, since the bill page IS the call-flow entry
+      // point, kept as its own field because the two mean different things
+      // (citation vs. call-to-action).
+      //
+      // NULL ONCE THE DECISION IS SETTLED OR ENACTED (2026-09-27, the
+      // 2026-09-27 audit SY-03). A call-to-action for a resolution the Senate
+      // has already voted down, or for a law, sends an agent's user to call
+      // about a question with no vote left on it. `url` still carries the
+      // citation; only the invitation to act is withdrawn.
+      act_url: decision.state === 'pending' ? url : null,
     },
     meta: buildEnvelope(`/bills/${slug}`, locale, hasAiContent),
   };

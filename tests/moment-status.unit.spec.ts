@@ -14,6 +14,7 @@ import {
   nominationStatusLine,
   pastReview,
   questionStatus,
+  RECENCY_GAP_DAYS,
   statusFingerprint,
   vehicleGroup,
   type StatusLine,
@@ -94,6 +95,18 @@ test.describe('each vocabulary state, over the record’s own words', () => {
     ['considered by the Senate (fresh; #279’s reading, status lags the record)', bill('s', 'committee', 'Considered by Senate. (consideration: CR S4851)'), { key: 'onFloor', chamber: 'senate' }],
     ['motion to proceed made (fresh)', bill('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)'), { key: 'onFloor', chamber: 'senate' }],
     [
+      // Owner card a5 (2026-09-27), the #304 question: S. 4668's record,
+      // verbatim. Debate is closing; the vote on the measure is still ahead.
+      'cloture invoked on the measure (fresh; S. 4668)',
+      bill('s', 'floor_vote', 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.'),
+      { key: 'onFloor', chamber: 'senate', terminal: false },
+    ],
+    [
+      'failed of passage (H.Con.Res. 89, verbatim) — a failed vote, terminal',
+      bill('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.'),
+      { key: 'failed', chamber: 'senate', terminal: true },
+    ],
+    [
       'postponed proceedings (fresh)',
       bill('hr', 'floor_vote', 'POSTPONED PROCEEDINGS - Pursuant to clause 8(c) of rule XIX, the Chair announced that the further proceedings on the motion would be postponed.'),
       { key: 'onFloor', chamber: 'house' },
@@ -142,6 +155,11 @@ test.describe('the verbatim fallback — what no matcher has read', () => {
     ['a withdrawn motion is settled but is not a failed vote', bill('s', 'floor_vote', 'Motion to proceed to consideration of measure withdrawn in Senate.')],
     ['an AGED floor motion does not claim a vote is ahead', bill('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)', OLD)],
     ['an AGED cloture filing does not claim a vote within days', bill('s', 'floor_vote', 'Cloture motion on the measure presented in Senate.', OLD)],
+    ['an AGED cloture-invoked sentence does not claim a vote is ahead', bill('s', 'floor_vote', 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25.', OLD)],
+    [
+      'cloture on the MOTION TO PROCEED invoked is not read (a different next step, nobody has read it for this line)',
+      bill('s', 'floor_vote', 'Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 62 - 36.'),
+    ],
     ['an empty record sentence', bill('hr', 'committee', '')],
   ];
   for (const [name, input] of verbatim) {
@@ -180,23 +198,76 @@ test.describe('the reconsider matcher (lib/floor-text.mjs)', () => {
   });
 });
 
-test.describe('question level: most advanced live vehicle, else explainer mode', () => {
+test.describe('question level: enacted leads, then rank — unless a newer floor event disagrees by days', () => {
   const failed = billStatusLine(bill('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50.', '2026-06-24'), NOW);
   const waiting = billStatusLine(bill('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.', '2026-07-23'), NOW);
   const committee = billStatusLine(bill('hr', 'committee', 'Referred to the House Committee on Foreign Affairs.', '2026-09-01'), NOW);
   const signed = billStatusLine(bill('hr', 'signed', 'Became Public Law No: 119-103.', '2026-09-02'), NOW);
 
-  test('leads with the most advanced LIVE vehicle, even over a newer, less advanced one', () => {
+  test('leads with the most advanced LIVE vehicle, even over a newer COMMITTEE line (a referral is not news)', () => {
     expect(questionStatus([failed, committee, waiting])).toEqual({ mode: 'live', lead: waiting });
-  });
-  test('a terminal vehicle never leads while any vehicle is live', () => {
-    expect(questionStatus([signed, committee]).lead).toBe(committee);
   });
   test('every vehicle terminal → explainer mode, led by the most recent', () => {
     expect(questionStatus([failed, signed])).toEqual({ mode: 'explainer', lead: signed });
   });
   test('no resolved vehicle → no line at all', () => {
     expect(questionStatus([])).toEqual({ mode: 'live', lead: null });
+  });
+
+  /*
+   * The 2026-09-27 audit, SY-05 (owner card a5). Each case is the live index
+   * line that read wrong that morning, from data/bills.json at 3be584d.
+   */
+  test('AN ENACTED VEHICLE LEADS (the funding question: H.R. 6500 signed Sep 2, H.R. 9770 still "waiting on the Senate")', () => {
+    const hr9770 = billStatusLine(bill('hr', 'passed_chamber', 'Received in the Senate.', '2026-07-22'), NOW);
+    const hr6500 = billStatusLine(bill('hr', 'signed', 'Became Public Law No: 119-103.', '2026-09-02'), NOW);
+    expect(questionStatus([hr6500, hr9770])).toEqual({ mode: 'live', lead: hr6500 });
+    expect(questionStatus([signed, committee])).toEqual({ mode: 'live', lead: signed });
+    // …in explainer mode too, even when a failure is newer than the law.
+    const newerFailure = billStatusLine(bill('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50.', '2026-09-20'), NOW);
+    expect(questionStatus([newerFailure, signed])).toEqual({ mode: 'explainer', lead: signed });
+  });
+
+  test('RECENCY BEATS RANK by more than RECENCY_GAP_DAYS (Iran: the 49–50 rejection, 8 days after "waiting on the Senate")', () => {
+    const hconres93 = billStatusLine(bill('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.', '2026-09-16'), NOW);
+    const hconres89 = billStatusLine(bill('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', '2026-09-24'), NOW);
+    const sjres211 = billStatusLine(bill('sjres', 'committee', 'Read twice and referred to the Committee on Foreign Relations.', '2026-08-06'), NOW);
+    const q = questionStatus([hconres93, hconres89, sjres211]);
+    expect(q.mode).toBe('live'); // H.Con.Res. 93 is still live: the cards keep their calls
+    expect(q.lead).toBe(hconres89);
+    expect(RECENCY_GAP_DAYS).toBe(3);
+  });
+
+  test('inside the gap, rank still decides', () => {
+    const hconres93 = billStatusLine(bill('hconres', 'passed_chamber', 'Received in the Senate.', '2026-09-21'), NOW);
+    const hconres89 = billStatusLine(bill('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50.', '2026-09-24'), NOW);
+    expect(questionStatus([hconres93, hconres89]).lead).toBe(hconres93);
+  });
+
+  test('the record\'s raw procedural sentence never heads the question while any line is readable', () => {
+    const unread = billStatusLine(bill('hconres', 'passed_chamber', 'Message on Senate action sent to the House.', '2026-06-24'), NOW);
+    expect(unread.key).toBe('recordStep');
+    const onFloor = billStatusLine(bill('s', 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)', '2026-09-20'), NOW);
+    expect(unread.rank).toBeGreaterThan(onFloor.rank);
+    expect(questionStatus([unread, onFloor]).lead).toBe(onFloor);
+    // Only when nothing else is readable does the record speak for itself.
+    expect(questionStatus([unread]).lead).toBe(unread);
+  });
+
+  test('college sports: S. 4668 no longer heads its question with "The committee substitute tabled by Voice Vote."', () => {
+    const s4668 = billStatusLine(
+      {
+        bill_type: 's',
+        status: 'floor_vote',
+        last_action_text: 'The committee substitute tabled by Voice Vote.',
+        // status_basis_text: the sentence the status was read from (#286).
+        ...{ status_basis_text: 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.' },
+        last_action_date: FRESH,
+      } as Parameters<typeof billStatusLine>[0],
+      NOW,
+    );
+    expect(s4668).toMatchObject({ key: 'onFloor', chamber: 'senate' });
+    expect(questionStatus([s4668]).lead).toBe(s4668);
   });
 });
 
