@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-27T19:05:04.505Z",
+    "fetched_at": "2026-09-27T22:04:23.627Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-27T19:05:04.505Z"
+        "checked_at": "2026-09-27T22:04:23.627Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-27T19:05:04.505Z"
+        "checked_at": "2026-09-27T22:04:23.627Z"
       },
       "leans": {
         "center": {
@@ -1138,6 +1138,30 @@
           "domain": "timesnews.net",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8770-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cbc.ca",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1JejBZd3A0dWx0MHZHbnN3bnZzenB2OTV2SnpXaGhYSUEyQ01yeVBjdElQQllDWDNDbVdTam9kc0pVRTNzNm5RQW5DSWFkSXBZdmk3Y282MTExaGVNalpMTHcwb1dqRVV2WmVWRndTWHQ0QQ?oc=5"
+        },
+        {
+          "domain": "newscord.org",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxPYVF3MFlhME1HR1hQaHdramh6eFpPY0ttbnVUOEpNeEgwYWNZREQ5WWlHYXRWbTJVVmdPVnVMWnhoVFBSN01oNW0waFNCa1Y2aWZycU5OQmp3UmFVVnJ5ZFZXM2VrTS11eXhIZ1pidlp5NWF0dGZZVUFJdmVseUZPa1dORmk5Nk9hMEpaSzFUcy1UVkxRSGRqTW56VFczYXRuVGZsR2R4Q1RhMDl5d2xqOW00QUhfS2JBdXRoUkcyZWlPXzZsSU1YRjhWRnRkbF9FaFBWV0xpcjFvMTFwem1lWl9OMXBXVWZsX2c?oc=5"
+        },
+        {
+          "domain": "pymnts.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPR0RJTFl3X2lvdUlFbmlDVjZ0Q3h2Rm1RbXdTVDMwdGtlS0VkdjJRaTl5MzczS2QwMlV1SC14UVdfQ19aeVh2QmoyRXR1akZscWJGRGFhMUcxdm04WDZ1OS1xbkNzTGJ5QzBMTkJPcDBEOFVSRm9HbFFGcFFGWlhKeEt5SGpyRG5ybkFzeTBDZWYtQkk?oc=5"
         }
       ],
       "mostViewed": null
