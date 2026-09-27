@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import syncState from '../data/sync-state.json';
+// Empty-state titles are asserted by message KEY, never by an English literal.
+import en from '../messages/en.json';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 // The session verdict the site itself reads, from the one copy — these are
 // corpus-derived tests and the corpus is now not the only input to the band.
@@ -11,7 +13,6 @@ import {
   anyTopAt,
   calendarPlacementSlugs,
   corpus,
-  decidingNowAt,
   floorPendingSlugs,
   newestActionDate,
   pendingChamberOf,
@@ -46,29 +47,21 @@ const fmt = (iso: string, locale: string) =>
 const anyNow = anyNowAt(Date.now());
 /** Any DECODED active bill clears it (site: getTopActions — the homepage cards). */
 const anyTop = anyTopAt(Date.now());
-/**
- * /bills' LEAD BAND membership (T0 + T1), which is NOT the act-now pool
- * (T0 + T1 + T2) that `anyNow` mirrors. The divergence is deliberate and
- * documented on lib/docket.mjs's `isActNow` (2026-08-12): a dated calendar
- * placement is worth a call, so it sits in the pool, but /bills renders it
- * under "Moving" rather than in the lead band. The pool is a superset, so the
- * AE3 promise still holds in the direction that matters - a quiet homepage
- * implies an empty lead band, a false quiet stays unrepresentable. The
- * converse is allowed and honest, and it is exactly the week that reddened
- * this test from 2026-09-06: a non-empty pool of placements, an empty lead
- * band, and an assertion demanding a bill link in the band on the pool's
- * say-so. The band assertion reads the band's own predicate now; the homepage
- * tests above keep reading the pool, because the homepage claim is the pool's.
+/*
+ * /bills' LEAD BAND is not mirrored here any more (2026-09-27, the 2026-09-27
+ * audit, SY-47). Its AE3 test predicted the band from the corpus twice, and
+ * both predictions went red on a real corpus: from 2026-09-06, when the act-now
+ * pool held only placements that /bills renders under "Moving", and on
+ * 2026-09-25, when the lead band emptied and the page said "Nothing is up for a
+ * floor decision", a message the test had never been taught. That test now
+ * reads the band's branch off the page it rendered (see its own comment
+ * below), so nothing here predicts the lead band. The homepage tests above
+ * keep reading the act-now pool, because the homepage's claim is the pool's.
  */
-const anyDecidingNow = decidingNowAt(Date.now()).length > 0;
 /** The build baked one branch of the tri-state; when the corpus sits at a
  *  scoring boundary the assert-time recomputation can disagree with it —
  *  skip the branch-dependent tests then, never gamble (tests/corpus.ts). */
-const CORPUS_STABLE = stableAcross((at) => [
-  anyNowAt(at),
-  anyTopAt(at),
-  decidingNowAt(at).length > 0,
-]);
+const CORPUS_STABLE = stableAcross((at) => [anyNowAt(at), anyTopAt(at)]);
 
 const LAST_RUN = new Date(syncState.lastRun).getTime();
 const FRESH_CLOCK = LAST_RUN + 60 * 60 * 1000; // 1h after the last check
@@ -192,36 +185,79 @@ test.describe('AE3: quiet-week vs data-stale tri-state (homepage)', () => {
 });
 
 test.describe('AE3: /bills "Act now" band mirrors the same tri-state', () => {
-  test('unfiltered empty band shows the honest empty state; a filter never fakes one', async ({ page }) => {
-    test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary — the baked branch could flip before the assert');
+  /*
+   * READ THE BRANCH OFF THE PAGE, NOT OFF THE CORPUS (the 2026-09-27 audit,
+   * SY-47).
+   *
+   * This test used to ask the corpus mirror (decidingNowAt) which branch the
+   * band WOULD render, then demand "Quiet week" whenever it predicted an empty
+   * band. #276 (2026-09-24, finding B4) gave the empty band a third fresh
+   * message, "Nothing is up for a floor decision right now", for whenever the
+   * Moving band has bills, which is nearly always. The test was never taught
+   * that message, and the only time it ran that branch was a week the corpus
+   * happened to empty the lead band. On 2026-09-25 it did (0 deciding, 300
+   * moving on that day's corpus and code), and main's CI went red on this
+   * test from 13:48 to 19:16 UTC. The next empty week would go red the same
+   * way.
+   *
+   * The promise here (KTD-2) does not depend on which branch the corpus picks,
+   * so the test now reads what rendered and holds the promise for that
+   * branch:
+   *   - bills in the band: no empty-state claim of any kind inside it;
+   *   - an empty band: exactly ONE card, and it says the true thing. That is
+   *     "Data check needed" when the cursor or the corpus is dead-window stale
+   *     at this clock (deterministic, from sync-state and the corpus dates);
+   *     otherwise "Nothing is up for a floor decision" when the Moving band on
+   *     the same page has bills; otherwise "Quiet week".
+   * Nothing is predicted from the docket, so there is no knife-edge to skip
+   * on. Titles come from messages/en.json by key, not English literals.
+   */
+  test('the unfiltered band says exactly one true thing; a filter never fakes one', async ({ page }) => {
+    const f = en.freshness;
+    const EMPTY_TITLES = [f.dataStaleTitle, f.nothingDecidingTitle, f.quietWeekTitle];
     await page.clock.setFixedTime(FRESH_CLOCK);
     await page.goto('/bills');
     // The search interaction below drives a controlled input — wedged if it
     // fires before React attaches (tests/helpers.ts) — and the 2026-07-22 CI
     // reds were exactly that lost fill on webkit. Wait it out up front.
     await waitForFeedHydrated(page);
-    const quietCard = page.getByRole('status').filter({ hasText: /Quiet week/ });
-    const staleCard = page.getByRole('status').filter({ hasText: /Data check needed/ });
-    if (!anyDecidingNow) {
-      // The unfiltered now band renders the empty-state card under its
-      // header — quiet_week only when the cursor/corpus are also genuinely
-      // current at this clock (audit §5 item 4), data_stale otherwise.
-      await expect(page.locator('section[aria-labelledby="band-now"]').getByRole('status')).toBeVisible();
-      if (contentStaleAtFreshClock) {
-        await expect(staleCard).toBeVisible();
-        await expect(quietCard).toHaveCount(0);
-      } else {
-        await expect(quietCard).toBeVisible();
+
+    const bandNow = page.locator('section[aria-labelledby="band-now"]');
+    const bandMoving = page.locator('section[aria-labelledby="band-moving"]');
+    const billLinks = 'a[href*="/bills/"]';
+    // One of the band's two shapes renders; wait for whichever it is before
+    // reading it, so the branch is never decided on a half-rendered page.
+    await expect(bandNow.locator(`${billLinks}, [role="status"]`).first()).toBeVisible();
+
+    if ((await bandNow.locator(billLinks).count()) > 0) {
+      // A populated band makes no empty-state claim, anywhere on the page.
+      for (const title of EMPTY_TITLES) {
+        await expect(page.getByRole('status').filter({ hasText: title }), title).toHaveCount(0);
       }
     } else {
-      await expect(page.locator('section[aria-labelledby="band-now"] a[href*="/bills/"]').first()).toBeVisible();
-      await expect(quietCard).toHaveCount(0);
+      const card = bandNow.getByRole('status');
+      await expect(card).toHaveCount(1);
+      const movingHasBills = (await bandMoving.locator(billLinks).count()) > 0;
+      const expected = contentStaleAtFreshClock
+        ? f.dataStaleTitle
+        : movingHasBills
+          ? f.nothingDecidingTitle
+          : f.quietWeekTitle;
+      // toContainText retries through hydration: the pre-hydration card is
+      // the verdict-neutral "Data as of" line, never one of these titles.
+      await expect(card).toContainText(expected);
+      for (const other of EMPTY_TITLES.filter((t) => t !== expected)) {
+        await expect(card, `the empty band must not also claim "${other}"`).not.toContainText(other);
+      }
     }
+
     // A search that matches nothing empties every band — that's filtering,
-    // not a quiet week, and must never render the claim (KTD-2 guard).
+    // not a quiet week, and must never render any empty-band claim (KTD-2).
     await page.getByRole('searchbox').fill('zzzzqqq');
-    await expect(page.getByText(/No bills match/)).toBeVisible();
-    await expect(quietCard).toHaveCount(0);
+    await expect(page.getByText(en.bills.noResults)).toBeVisible();
+    for (const title of EMPTY_TITLES) {
+      await expect(page.getByRole('status').filter({ hasText: title }), title).toHaveCount(0);
+    }
   });
 });
 
