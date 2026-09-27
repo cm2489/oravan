@@ -10,6 +10,7 @@ import { getNomination, type Nomination } from './core/nominations';
 import { nominationHasCallScript } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
+import type { MomentSearchTeaser } from './moments-search';
 import {
   billStatusLine,
   nominationStatusLine,
@@ -378,27 +379,11 @@ export function revisionReasons(tokens: readonly string[]): RevisionReason[] {
  * of. The moment that answers them was one route away and invisible.
  * ------------------------------------------------------------------------ */
 
-/**
- * A live moment reduced to exactly what a pinned search row needs: the two
- * strings it RENDERS (name, dek) and the strings it MATCHES ON and never
- * renders.
- */
-export interface MomentSearchTeaser {
-  id: string;
-  /** Localized display name. */
-  name: string;
-  /** First sentence of the localized summary — AI-drafted, labeled at the
-   *  render site like every other dek. */
-  dek: string;
-  /**
-   * SEARCH-ONLY, NEVER RENDERED — the contract lib/moments.ts states on the
-   * field itself. Aliases are the words the press uses ("shutdown",
-   * "strikes on iran"); a moment's NAME is the neutral one we chose. Echoing
-   * an alias back to a reader would put a headline's framing in our voice on
-   * a nonpartisan surface, so no consumer of this type may print them.
-   */
-  aliases: string[];
-}
+/* The teaser type and the matcher live in lib/moments-search.ts, which imports
+ * nothing: the bills browser is a client component, and importing the matcher
+ * from THIS file shipped every corpus this file reads to the browser. They are
+ * re-exported here so server code and the specs keep one import site. */
+export { matchMoments, type MomentSearchTeaser } from './moments-search';
 
 /**
  * The live moments a query may pin, pre-localized for one locale.
@@ -425,41 +410,6 @@ export function getMomentSearchTeasers(locale: string, now: number = Date.now())
     // safe — there is no "fall back to English aliases" path to get wrong.
     aliases: locale === 'es' ? m.aliases.es : m.aliases.en,
   }));
-}
-
-/**
- * Two characters. Below that every query matches something under the
- * containment rule below ("a" is inside "war powers"), which is not a search
- * result, it is noise on top of the reader's actual results.
- */
-const MIN_QUERY = 2;
-
-/**
- * Which moments a query pins. Pure — no data access, no clock, no locale
- * logic — so the browser can call it on every keystroke and a unit test can
- * pin its rules without the corpus.
- *
- * BIDIRECTIONAL CONTAINMENT, because the two failures are opposite shapes:
- *   - the reader is still typing: "ukr" is a prefix of the alias "ukraine"
- *   - the reader typed a sentence: "war with iran today" CONTAINS the alias
- * A one-directional `alias.includes(q)` catches only the first. The same
- * containment runs against the localized name, so someone who typed the
- * moment's actual title finds it whether or not an alias repeats it.
- *
- * Aliases shorter than MIN_QUERY are skipped in the query-contains-alias
- * direction as well; a one-letter alias would pin every query in the corpus.
- */
-export function matchMoments<T extends MomentSearchTeaser>(query: string, teasers: T[]): T[] {
-  const q = query.trim().toLowerCase();
-  if (q.length < MIN_QUERY) return [];
-  return teasers.filter((m) => {
-    if (m.name.toLowerCase().includes(q)) return true;
-    return m.aliases.some((raw) => {
-      const alias = raw.trim().toLowerCase();
-      if (alias.length < MIN_QUERY) return false;
-      return alias.includes(q) || q.includes(alias);
-    });
-  });
 }
 
 

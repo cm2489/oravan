@@ -72,6 +72,15 @@ jobs:
         run: |
           node scripts/check-embed-fingerprinting.mjs --self-test
           node scripts/check-embed-fingerprinting.mjs
+      - name: Client-import gate (no 'use client' module may reach data/)
+        # The pre-build half of the client-bundle rule (2026-09-27 audit,
+        # card a6): one pure function imported from a corpus-reading module
+        # put all of data/ into a 23 MB client chunk. Runs before the build so
+        # it names the import chain in seconds; the post-build half below
+        # checks what actually shipped. Same self-test-first convention.
+        run: |
+          node scripts/check-client-imports.mjs --self-test
+          node scripts/check-client-imports.mjs
       - name: Resolve origin/main (the Moments new-vehicle baseline)
         # actions/checkout lands a PR at depth 1 with no origin/main ref, so
         # the new-vehicle terminality rule's baseline (check-moments.mjs's
@@ -241,6 +250,16 @@ jobs:
       - name: E2E (builds the app via webServer)
         if: steps.paths.outputs.docs_only != 'true'
         run: npx playwright test
+      - name: Client bundle gate (no data/ text in client JS, no chunk over 300 KB)
+        # Reads the .next/static/chunks the E2E step's webServer just built
+        # (`npm run build`), so it costs no second build. !cancelled() so the
+        # bundle verdict is still reported when an unrelated E2E spec is red;
+        # when the build itself failed there are no chunks and this step says
+        # so instead of passing.
+        if: ${{ !cancelled() && steps.paths.outputs.docs_only != 'true' }}
+        run: |
+          node scripts/check-client-bundle.mjs --self-test
+          node scripts/check-client-bundle.mjs
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
