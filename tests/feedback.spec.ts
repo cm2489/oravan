@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 
 /*
  * Beta feedback dialog. /api/feedback is intercepted at the browser edge
@@ -9,7 +12,18 @@ import { expect, test, type Page } from '@playwright/test';
  * Note on pacing: the dialog holds submission until it has been open ~3s
  * (bot friction), so the success/error expectations use a generous timeout
  * instead of asserting immediacy.
+ *
+ * Copy is read BY KEY (feedback.*), formatted the way the dialog formats it,
+ * so rewording a label or a notice in messages/*.json never fails this file.
+ * What stays pinned is behaviour and privacy: the page context is editable
+ * text the visitor can delete, the note travels in a POST body and never in a
+ * URL, the honeypot stays empty, and a failed send keeps the draft.
  */
+const t = createTranslator({ locale: 'en', messages: en, namespace: 'feedback' });
+const tEs = createTranslator({ locale: 'es', messages: es, namespace: 'feedback' });
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** The prefill the dialog writes for `path`: the key's prefix, then the path. */
+const prefill = (prefix: string, path: string) => new RegExp(escapeRegExp(`${prefix}${path}`));
 
 function mockFeedbackApi(page: Page, response: { status: number; body: Record<string, unknown> }) {
   const requests: { method: string; postData: string | null }[] = [];
@@ -25,7 +39,7 @@ function mockFeedbackApi(page: Page, response: { status: number; body: Record<st
 }
 
 async function openDialog(page: Page) {
-  const trigger = page.getByRole('button', { name: 'Beta feedback' });
+  const trigger = page.getByRole('button', { name: t('trigger') });
   await expect(trigger).toBeVisible({ timeout: 15_000 }); // renders post-hydration
   await trigger.click();
 }
@@ -39,16 +53,16 @@ test('feedback flow: prefilled page context is editable, POST body only, success
 
   // Context by consent: the current path sits INSIDE the textarea as
   // ordinary deletable text, not attached invisibly.
-  const textarea = page.getByLabel('Your feedback');
-  await expect(textarea).toHaveValue(/Page: \/why-call/);
-  await expect(page.getByText(/Don't include personal details/)).toBeVisible();
+  const textarea = page.getByLabel(t('messageLabel'));
+  await expect(textarea).toHaveValue(prefill(t('pagePrefix'), '/why-call'));
+  await expect(page.getByText(t('notice'))).toBeVisible();
 
-  await page.getByRole('radio', { name: "Something's broken" }).check();
+  await page.getByRole('radio', { name: t('categoryBug') }).check();
   // Replacing the prefill wholesale = withholding the page context.
   await textarea.fill('The staffer counter reads NaN sometimes.');
-  await page.getByRole('button', { name: 'Send feedback' }).click();
+  await page.getByRole('button', { name: t('send') }).click();
 
-  await expect(page.getByRole('status').filter({ hasText: /thank you/i })).toBeVisible({
+  await expect(page.getByRole('status').filter({ hasText: t('success') })).toBeVisible({
     timeout: 10_000,
   });
 
@@ -59,10 +73,10 @@ test('feedback flow: prefilled page context is editable, POST body only, success
   expect(body.category).toBe('bug');
   expect(body.message).toBe('The staffer counter reads NaN sometimes.');
   expect(body.website).toBe(''); // honeypot untouched by a real user
-  expect(body.message).not.toContain('Page:'); // the deleted prefill stayed deleted
+  expect(body.message).not.toContain(t('pagePrefix').trim()); // the deleted prefill stayed deleted
   expect(page.url()).not.toContain('NaN');
 
-  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: t('close') }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
 });
 
@@ -73,8 +87,8 @@ test('dialog is escapable and validates before sending', async ({ page }) => {
   await expect(page.getByRole('dialog')).toBeVisible();
 
   // No category yet: submitting explains instead of sending.
-  await page.getByRole('button', { name: 'Send feedback' }).click();
-  await expect(page.getByRole('alert').filter({ hasText: /pick a category/i })).toBeVisible();
+  await page.getByRole('button', { name: t('send') }).click();
+  await expect(page.getByRole('alert').filter({ hasText: t('errorIncomplete') })).toBeVisible();
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -84,14 +98,14 @@ test('server error: calm inline message, the draft is not lost', async ({ page }
   mockFeedbackApi(page, { status: 503, body: { error: 'unavailable' } });
   await page.goto('/');
   await openDialog(page);
-  await page.getByRole('radio', { name: 'Something else' }).check();
-  await page.getByLabel('Your feedback').fill('A note that must survive the failure.');
-  await page.getByRole('button', { name: 'Send feedback' }).click();
+  await page.getByRole('radio', { name: t('categoryOther') }).check();
+  await page.getByLabel(t('messageLabel')).fill('A note that must survive the failure.');
+  await page.getByRole('button', { name: t('send') }).click();
 
-  await expect(page.getByRole('alert').filter({ hasText: /didn't go through/i })).toBeVisible({
+  await expect(page.getByRole('alert').filter({ hasText: t('errorGeneric') })).toBeVisible({
     timeout: 10_000,
   });
-  await expect(page.getByLabel('Your feedback')).toHaveValue(
+  await expect(page.getByLabel(t('messageLabel'))).toHaveValue(
     'A note that must survive the failure.'
   );
 });
@@ -100,20 +114,22 @@ test('rate limited: a gentle try-again-later message', async ({ page }) => {
   mockFeedbackApi(page, { status: 429, body: { error: 'rate_limited' } });
   await page.goto('/');
   await openDialog(page);
-  await page.getByRole('radio', { name: 'An idea or request' }).check();
-  await page.getByLabel('Your feedback').fill('hello');
-  await page.getByRole('button', { name: 'Send feedback' }).click();
-  await expect(page.getByRole('alert').filter({ hasText: /try again soon/i })).toBeVisible({
+  await page.getByRole('radio', { name: t('categoryFeature') }).check();
+  await page.getByLabel(t('messageLabel')).fill('hello');
+  await page.getByRole('button', { name: t('send') }).click();
+  await expect(page.getByRole('alert').filter({ hasText: t('errorRateLimited') })).toBeVisible({
     timeout: 10_000,
   });
 });
 
 test('bilingual parity in the flesh: the ES dialog is fully Spanish', async ({ page }) => {
   await page.goto('/es');
-  const trigger = page.getByRole('button', { name: 'Comentarios de la beta' });
+  const trigger = page.getByRole('button', { name: tEs('trigger') });
   await expect(trigger).toBeVisible({ timeout: 15_000 });
   await trigger.click();
-  await expect(page.getByText('No incluyas datos personales', { exact: false })).toBeVisible();
-  await expect(page.getByLabel('Tu comentario')).toHaveValue(/Página: \//);
-  await expect(page.getByRole('button', { name: 'Enviar comentario' })).toBeVisible();
+  await expect(page.getByText(tEs('notice'))).toBeVisible();
+  await expect(page.getByLabel(tEs('messageLabel'))).toHaveValue(
+    prefill(tEs('pagePrefix'), '/')
+  );
+  await expect(page.getByRole('button', { name: tEs('send') })).toBeVisible();
 });
