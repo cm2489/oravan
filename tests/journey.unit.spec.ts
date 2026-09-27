@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  announcedCallTarget,
   billFloorBand,
   deriveJourney,
   floorActionChamber,
@@ -2483,6 +2484,154 @@ test.describe('liveCallTarget', () => {
     // population would mean the filter above stopped filtering.
     expect(aged).toBeLessThanOrEqual(passed.length);
     expect(live).toBeLessThanOrEqual(aged);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5b · liveCallTarget reads the T0 announcement (2026-09-27 audit,
+ *      SY-06). The bill page's green band has quoted the chamber's own
+ *      schedule since 2026-08-12; the rail now routes on the same dated
+ *      fact, so the chamber actually acting sorts first and its line
+ *      prints. Only while the fact is dated and the announcing chamber
+ *      is meeting; never a nomination framing; never over the record's
+ *      own relational reading of the same chamber.
+ * ------------------------------------------------------------------ */
+test.describe('liveCallTarget · the T0 announcement (SY-06)', () => {
+  const ANNOUNCED_ON = dateDaysAgo(3);
+  const senate = (session: 'in_session' | 'out_of_session' | 'unknown' = 'in_session') => ({
+    chamber: 'senate' as const,
+    published: ANNOUNCED_ON,
+    session,
+  });
+  const house = (session: 'in_session' | 'out_of_session' | 'unknown' = 'in_session') => ({
+    chamber: 'house' as const,
+    published: ANNOUNCED_ON,
+    session,
+  });
+
+  /* S. 4668's record on the night of the audit, verbatim: the latest step is
+     a procedural notice that names no chamber, and the status basis is a
+     cloture vote the Senate has already taken — so the record half
+     (correctly) routes nowhere, and before this change so did the rail,
+     while the band above it quoted the Senate's program. */
+  const SY06_RECORD = {
+    bill_type: 's',
+    status: 'floor_vote' as BillStatus,
+    last_action_text: 'The committee substitute tabled by Voice Vote.',
+    last_action_date: FRESH,
+    status_basis_text:
+      'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.',
+  };
+
+  test('the audited shape: the record routes nowhere, the Senate schedule routes the Senate', () => {
+    expect(liveCallTarget(SY06_RECORD)).toBeNull();
+    const target = liveCallTarget(SY06_RECORD, senate());
+    expect(target).toEqual({ chamber: 'senate', afterVote: false, soleChamber: false });
+    // …and the panel's existing line is the one it earns — for a reader who
+    // has senators, and for no one else (liveCallKey's reader gate, unchanged).
+    expect(liveCallKey(target, { hasSenator: true })).toBe('liveSenateFloor');
+    expect(liveCallKey(target, { hasSenator: false })).toBeNull();
+  });
+
+  test('a House schedule routes the House member, with the House line', () => {
+    const target = liveCallTarget({ ...SY06_RECORD, bill_type: 'hr' }, house());
+    expect(target).toEqual({ chamber: 'house', afterVote: false, soleChamber: false });
+    expect(liveCallKey(target, { hasSenator: true })).toBe('liveHouseFloor');
+  });
+
+  test('ONLY WHILE THE CHAMBER IS MEETING: out of session or unknown routes nowhere', () => {
+    expect(liveCallTarget(SY06_RECORD, senate('out_of_session'))).toBeNull();
+    expect(liveCallTarget(SY06_RECORD, senate('unknown'))).toBeNull();
+    expect(announcedCallTarget(house('out_of_session'))).toBeNull();
+    expect(announcedCallTarget(house('unknown'))).toBeNull();
+  });
+
+  test('ONLY WHILE THE FACT IS DATED: an undated or malformed publication day routes nowhere', () => {
+    for (const published of ['', 'September 24', '2026-9-24', '2026-13-45', '24/09/2026']) {
+      expect(announcedCallTarget({ ...senate(), published }), published).toBeNull();
+      expect(liveCallTarget(SY06_RECORD, { ...senate(), published }), published).toBeNull();
+    }
+    expect(announcedCallTarget({ ...senate(), published: null as unknown as string })).toBeNull();
+  });
+
+  test('no announcement is byte-for-byte the record half — every existing caller is unchanged', () => {
+    expect(announcedCallTarget(null)).toBeNull();
+    expect(announcedCallTarget(undefined)).toBeNull();
+    let routed = 0;
+    for (const b of corpus) {
+      const input = {
+        bill_type: b.bill_type,
+        status: b.status as BillStatus,
+        last_action_text: b.last_action_text,
+        last_action_date: b.last_action_date,
+      };
+      const bare = liveCallTarget(input);
+      expect(liveCallTarget(input, null), slugOf(b)).toEqual(bare);
+      if (bare) routed += 1;
+    }
+    expect(routed, 'nothing in the corpus routes at all — is the corpus loaded?').toBeGreaterThan(0);
+  });
+
+  test('SAME CHAMBER: the record keeps its relational reading ("the House has already voted")', () => {
+    const received = {
+      bill_type: 'hr',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: 'Received in the Senate.',
+      last_action_date: STALE,
+    };
+    const target = liveCallTarget(received, senate());
+    expect(target).toEqual({ chamber: 'senate', afterVote: true, soleChamber: false });
+    expect(liveCallKey(target, { hasSenator: true })).toBe('liveSenateAfterHouse');
+    // A fresh Senate placement agrees with a Senate schedule: the record stands.
+    expect(
+      liveCallTarget(
+        { bill_type: 'hr', status: 'floor_vote', last_action_text: CALENDAR_PLACEMENT, last_action_date: FRESH },
+        senate()
+      )
+    ).toEqual({ chamber: 'senate', afterVote: false, soleChamber: false });
+  });
+
+  test('OTHER CHAMBER: this week\'s schedule outranks an unclocked passage months old', () => {
+    const received = {
+      bill_type: 'hr',
+      status: 'passed_chamber' as BillStatus,
+      last_action_text: 'Received in the Senate.',
+      last_action_date: STALE,
+    };
+    expect(liveCallTarget(received)).toEqual({ chamber: 'senate', afterVote: true, soleChamber: false });
+    expect(liveCallTarget(received, house())).toEqual({
+      chamber: 'house',
+      afterVote: false,
+      soleChamber: false,
+    });
+    // …but a gated-off schedule leaves the record exactly where it was.
+    expect(liveCallTarget(received, house('out_of_session'))).toEqual({
+      chamber: 'senate',
+      afterVote: true,
+      soleChamber: false,
+    });
+  });
+
+  test('A SETTLED BILL IGNORES ANY ANNOUNCEMENT — no call apparatus on a decision', () => {
+    for (const status of ['signed', 'vetoed'] as const) {
+      expect(
+        liveCallTarget({ ...SY06_RECORD, status, last_action_text: 'Became Public Law No: 119-99.' }, senate()),
+        status
+      ).toBeNull();
+    }
+  });
+
+  test('never the nomination framing, never soleChamber — on any status, chamber or session', () => {
+    const statuses: BillStatus[] = ['introduced', 'committee', 'markup', 'floor_vote', 'passed_chamber', 'conference'];
+    for (const status of statuses) {
+      for (const a of [senate(), house(), senate('out_of_session'), house('unknown')]) {
+        const target = liveCallTarget({ ...SY06_RECORD, status }, a);
+        if (target) {
+          expect(target.soleChamber, `${status}/${a.chamber}/${a.session}`).toBe(false);
+          expect(liveCallKey(target, { hasSenator: true })).not.toBe('liveSenateNomination');
+        }
+      }
+    }
   });
 });
 
