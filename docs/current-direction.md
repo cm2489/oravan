@@ -52,10 +52,13 @@ Owner, 2026-07-09 → 2026-08-09, 2026-09-26: every UI change is seen on a runni
 
 The impeccable design hook is **off since 2026-09-27** (audit card a2). Do not re-arm it until a new token file exists for the rebuilt system, and then re-arm it from that file only — it was enforcing the retired `DESIGN.md` on every edit.
 
+The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 2026-09-27: "Update to 4.4.0; use it as lint and rubric only, not during exploration"). Do not invoke it while exploring a new direction; its setup treats committed tokens as the identity to preserve, which is the opposite of a rebuild brief. Use it to check finished work.
+
 ## Log
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-09-27 · owner · audit card a8 answered "a" (10:17:35Z) → tooling: impeccable is lint and rubric only, never during exploration`
 - `2026-09-27 · owner · audit cards a1 + a2 answered "a" (10:15:55Z, 10:16:07Z) → Constitution v2 adopted; this page created from the audit draft; DESIGN.md moved to docs/history/`
 - `2026-09-27 · owner · "nail down features and flow before we add back in color" → order of work`
 - `2026-09-27 · owner · "I meant a lighter complementary color not a gradient shift" → colour: tints`
