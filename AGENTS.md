@@ -1,8 +1,10 @@
 # AGENTS.md
 
-Agent-facing project context. `CLAUDE.md` holds the hard rules and
-architecture; `README.md` holds the product constitution; `DESIGN.md` holds
-the visual system. This file carries what design tooling reads directly.
+Agent-facing project context. `CLAUDE.md` holds the hard rules (page 1 of
+the constitution) and architecture; `README.md` holds the product's public
+statement of them; `docs/current-direction.md` holds the current look-and-feel
+direction, dated and not enforced. This file carries what design tooling reads
+directly.
 
 ## Design Context
 

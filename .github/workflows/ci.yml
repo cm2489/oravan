@@ -187,10 +187,12 @@ jobs:
           echo "docs_only=$DOCS_ONLY"
       - name: Constitution consistency (the one spec the docs-only fast path used to skip)
         # THE GAP THIS CLOSES: tests/claim-truth.spec.ts is the only thing that
-        # polices edits to README/CLAUDE/PRODUCT/DESIGN — that the four
-        # documents name the SAME three publish gates, that no retired
-        # human-review claim comes back, that DESIGN.md keeps its review clause
-        # scoped to the call script. It lived in the Playwright job, which the
+        # polices edits to README/CLAUDE/PRODUCT and docs/constitution-log.md —
+        # that the three documents name the SAME three publish gates, that no
+        # retired human-review claim comes back, that README principle 5 keeps
+        # its review clause scoped to the call script, and that every gate
+        # CLAUDE.md names exists. (DESIGN.md was the fourth document until its
+        # retirement on 2026-09-27.) It lived in the Playwright job, which the
         # docs-only fast path skips. So the exact change class those tests
         # police — a markdown-only edit to the constitution — was the one class
         # that never gated. Re-adding "human-reviewed" to principle 5 in a
