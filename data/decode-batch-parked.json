@@ -1,4 +1,30 @@
 {
   "schema": "decode-batch-parked/v1",
-  "batches": []
+  "batches": [
+    {
+      "id": "msgbatch_018ZVWy9WzPRGxCQxJcM6LcF",
+      "round": "structure",
+      "parkedAt": "2026-09-27T18:39:58.964Z",
+      "jobs": [
+        {
+          "slug": "sjres-118-119",
+          "promptSha": "c96a61111cf2486c",
+          "summaryBatch": "msgbatch_01FBuCP3sJejJgZw7M8cAM4K",
+          "summaryAt": "2026-09-27T18:28:48.237Z"
+        },
+        {
+          "slug": "s-5354-119",
+          "promptSha": "2cc9426facfc2cc6",
+          "summaryBatch": "msgbatch_01FBuCP3sJejJgZw7M8cAM4K",
+          "summaryAt": "2026-09-27T18:28:48.237Z"
+        },
+        {
+          "slug": "s-2548-119",
+          "promptSha": "125d35c2d7855ead",
+          "summaryBatch": "msgbatch_01FBuCP3sJejJgZw7M8cAM4K",
+          "summaryAt": "2026-09-27T18:28:48.237Z"
+        }
+      ]
+    }
+  ]
 }
