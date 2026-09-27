@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-27T17:57:21.418Z",
+    "fetched_at": "2026-09-27T18:19:04.952Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-27T17:57:21.418Z"
+        "checked_at": "2026-09-27T18:19:04.952Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-27T17:57:21.418Z"
+        "checked_at": "2026-09-27T18:19:04.952Z"
       },
       "leans": {
         "center": {
@@ -1284,6 +1284,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-1257-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cbc.ca",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxORnZkQWRycG9zeFB5T25CN25yeG9xeTBrNlJfalk4bXN4QkJpNEJOVnNvamJ0bjRPMlNKMkt3Um8xd1J5RHpOLVVwNUo2VXlMOEloOC1kSFNQNHJ6d1NTR0VVQnE0SGtCVktLNEEybERKX2Fmb1ZKeWp0b2R1SVdGakVXYl8zT0ZmTVl3bkJuMzFfU09rLVdkZWotNW05bWN5Z3lHRXdUWTRBckFuaDczcm5MbFVIcE0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1281-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1699,6 +1711,18 @@
           "domain": "quiverquant.com",
           "firstSeen": "2026-09-25",
           "lastSeen": "2026-09-25"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4665-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "theautowire.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxObHpOMjhDRXRIT0FULUhoS0xtbTZ6ZGQzYkptTFkwM3Zya0xaTHpBR2FfQ3hlOEpsV3lzMUxKcmpKTnlsV3M3cEpwb29Da2N6WkQ4MG1XeXlNTWljdG1MLU5EYXNPNkZYWWlESlBIU3lqeFZOWDgzTGlEa1JlR0lCYU1ZTHZjOEd6U2Uw?oc=5"
         }
       ],
       "mostViewed": null
