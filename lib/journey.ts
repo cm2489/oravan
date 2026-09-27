@@ -31,7 +31,7 @@ import type { ChamberSession } from './docket';
 // crown (components/system/FloorVotePanel.tsx) gate on: three surfaces, one
 // definition of "now", so they cannot disagree about which floor facts are
 // still live.
-import { isSignalFresh } from './urgency.mjs';
+import { isSignalFresh, TERMINAL_STATUSES } from './urgency.mjs';
 /*
  * THE FLOOR-TEXT VOCABULARY, from the ONE copy — and the reason it moved out
  * of this file rather than being copied into a second one.
@@ -688,7 +688,119 @@ export function passageState(
   return passageStateMjs(bill);
 }
 
+/**
+ * THE CHAMBER'S OWN SCHEDULE, AS A ROUTING SOURCE (2026-09-27 audit, SY-06).
+ *
+ * THE SEAM. The bill page's green band has read the T0 announcement since
+ * 2026-08-12 (`billFloorBand` above), and the rail never did: routing read the
+ * bill's record alone. So on S. 4668 — the one measure the Senate's own
+ * program named for its next meeting ("Senate will resume consideration of
+ * S. 4668 … post-cloture") — the header said "On the floor schedule" and the
+ * panel one screen down listed the reader's House member FIRST, with no line
+ * saying the senators were the live call. The record half returned null
+ * because Congress had overwritten the last action with a procedural step
+ * that names no chamber ("The committee substitute tabled by Voice Vote."),
+ * which is the exact reason the band learned to read the schedule in the
+ * first place. Two surfaces reading one bill now run one fact.
+ *
+ * THE ANNOUNCEMENT IS PASSED IN, ALREADY GATED — the same contract
+ * `billFloorBand` states. This module holds no data import and no clock of the
+ * schedule's own; the caller resolves it through lib/docket.ts (`rungFor` →
+ * `rung.announced`), which is terminal-first, `signalIsLive`-gated (a pulled
+ * bill stops being announced within the hour, a dead workflow within
+ * SIGNAL_STALE_HOURS, a covered meeting a few days after it), and retired by
+ * `announcementAnswered` the moment the record shows the announcing chamber
+ * has voted.
+ *
+ * TWO MORE GATES HERE, and both only ever SUBTRACT a routing claim:
+ *
+ *   1. DATED. The announcement's own publication day must be a real
+ *      YYYY-MM-DD. The band prints that date beside the chamber's quote; a
+ *      routing sentence may not stand on a fact that cannot be dated.
+ *   2. MEETING. The announcing chamber's session verdict must be
+ *      `in_session` (lib/docket.ts `chamberSession`, read out of the Daily
+ *      Digest's own "Program for" blocks). `out_of_session` is the digest
+ *      saying the chamber is gaveling in and out; `unknown` is us not being
+ *      able to say. Both return null here, which is stricter than the band:
+ *      `floorFactSuspended` exempts `announced` because a published schedule
+ *      is itself evidence of a sitting, and that is the right rule for a
+ *      label that quotes the schedule. "Your senators are the live call" is
+ *      a stronger sentence than the quote, so it waits for the stronger
+ *      evidence. The cost of that asymmetry is the quiet path every
+ *      committee-stage bill already takes — no reordering, no sentence, every
+ *      dial and the script untouched — never a false claim.
+ *
+ * NEVER A NOMINATION. The bill ladder's signals and the Senate's nominations
+ * are separate maps in data/floor-signals.json by construction (owner ruling
+ * V3), `floorSignalFor` reads only the first, and the target built here is
+ * relational (`soleChamber: false`) — so nothing on this path can ever print
+ * the nomination framing, and a House announcement only ever speaks about a
+ * bill the House votes on.
+ */
+export interface RoutingAnnouncement {
+  chamber: Chamber;
+  /** The announcing document's own date (`FloorSignalTier0.published`). */
+  published: string;
+  /** The announcing chamber's session verdict, as `chamberSession` answers it. */
+  session: ChamberSession;
+}
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+export function announcedCallTarget(
+  announcement: RoutingAnnouncement | null | undefined
+): LiveCallTarget | null {
+  if (!announcement) return null;
+  const { chamber, published, session } = announcement;
+  if (chamber !== 'house' && chamber !== 'senate') return null;
+  if (typeof published !== 'string' || !ISO_DAY.test(published)) return null;
+  if (!Number.isFinite(Date.parse(`${published}T00:00:00Z`))) return null;
+  if (session !== 'in_session') return null;
+  // `afterVote: false`: a schedule says who acts NEXT, never that the other
+  // chamber has already had its turn. The record says that, when it does —
+  // see the same-chamber merge in liveCallTarget below.
+  return { chamber, afterVote: false, soleChamber: false };
+}
+
+/**
+ * `announcement` is the SECOND argument and optional, so every existing caller
+ * keeps its meaning exactly: omit it (or pass null) and this returns
+ * byte-for-byte what the record half always returned. The page passes the T0
+ * announcement it already resolved for the band.
+ *
+ * ORDER, WHEN BOTH SPEAK. The announcement names the chamber — it is the
+ * chamber's own statement about this week, and it outranks the record exactly
+ * as the ladder ranks T0 over T1–T3 and the band ranks `announced` over both
+ * record facts. When the record names the SAME chamber, the record's reading
+ * is returned instead, because it can carry the one thing a schedule cannot:
+ * `afterVote` ("the House has already voted on this bill — the Senate decides
+ * next"). When the record names the OTHER chamber, the schedule wins: an
+ * unclocked passage months old ("Received in the Senate.") cannot outvote the
+ * House's own program for this week, and the band on the same page is already
+ * quoting that program.
+ *
+ * A SETTLED BILL IGNORES ANY ANNOUNCEMENT. `rungFor` is terminal-first and
+ * never hands a signed or vetoed bill an announcement, so this is belt and
+ * braces rather than the gate — but "a settled decision shows no call
+ * apparatus" is a promise about THIS function's output, and it should hold
+ * whatever a future caller passes in.
+ */
 export function liveCallTarget(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis,
+  announcement: RoutingAnnouncement | null = null
+): LiveCallTarget | null {
+  const record = recordCallTarget(bill);
+  if (TERMINAL_STATUSES.has(bill.status)) return record;
+  const announced = announcedCallTarget(announcement);
+  if (!announced) return record;
+  if (record && record.chamber === announced.chamber) return record;
+  return announced;
+}
+
+/** The record half — where the bill's OWN last action places the live
+ *  decision. Unchanged from the body `liveCallTarget` carried before the
+ *  announcement could reach it; every header above still describes it. */
+function recordCallTarget(
   bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis
 ): LiveCallTarget | null {
   if (bill.status === 'floor_vote') {

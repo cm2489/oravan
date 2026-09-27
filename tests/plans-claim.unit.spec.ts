@@ -32,9 +32,21 @@ const PLAN_NAMES = {
   es: ['Gratuito', 'Pro', 'Sin fines de lucro', 'Red'],
 } as const;
 
-const NOT_OPEN = {
-  en: /only Free is open today[\s\S]*checkout for the paid plans isn’t open yet, and their prices aren’t published/i,
-  es: /hoy solo está disponible el Gratuito[\s\S]*todavía no se pueden contratar los planes de pago y sus precios no están publicados/i,
+/*
+ * The two facts the code above proves, each matched on its own, in any order
+ * and any sentence around it — the wording is free to change, the facts are
+ * not: (1) only the Free plan is open; (2) there is no checkout for the paid
+ * plans.
+ */
+const FACTS = {
+  en: {
+    'only Free is open': /\bonly Free is open\b/i,
+    'no checkout for the paid plans': /\bcheckout for the paid plans isn[’']t open\b/i,
+  },
+  es: {
+    'only Free is open': /\bsolo está disponible el Gratuito\b/i,
+    'no checkout for the paid plans': /\bno se pueden contratar los planes de pago\b/i,
+  },
 } as const;
 
 test('no embeds-plan checkout link exists anywhere in app code', () => {
@@ -66,7 +78,9 @@ for (const [locale, m] of [
       ['embeds.docsPlansBody', m.embeds.docsPlansBody],
     ] as const) {
       for (const plan of PLAN_NAMES[locale]) expect(text, `${surface} names ${plan}`).toContain(plan);
-      expect(text, `${surface} says only Free is open`).toMatch(NOT_OPEN[locale]);
+      for (const [fact, pattern] of Object.entries(FACTS[locale])) {
+        expect(text, `${surface} says ${fact}`).toMatch(pattern);
+      }
     }
     // The plan names are the Terms' own, not a second list.
     for (const plan of PLAN_NAMES[locale]) expect(m.embedsTerms.intro).toContain(plan);

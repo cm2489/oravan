@@ -4,6 +4,7 @@ import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
 import { getTeasers } from '../lib/core';
+import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
 import { getNomination } from '../lib/core/nominations';
 import { nominationHasCallScript } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
@@ -359,6 +360,45 @@ test.describe('accessibility basics', () => {
 });
 
 /*
+ * SY-10 (2026-09-27 audit): "READ + CALL" LANDS ON THE CALL.
+ *
+ * Every "Read + call" on a Big Question opened the top of the vehicle's page;
+ * on the Iran question on a phone the call panel sat 1,857px below where the
+ * link landed. The label promises the call, so the link now carries the call
+ * panel's anchor (#act) — and only that label does: "Read the bill" is a
+ * record link and still opens the top. Proof at the destination, in both
+ * languages: the panel's own heading is on screen when the page arrives.
+ */
+test.describe('Big Question vehicle links (SY-10)', () => {
+  for (const { locale, prefix, messages } of [
+    { locale: 'en', prefix: '', messages: en },
+    { locale: 'es', prefix: '/es', messages: es },
+  ] as const) {
+    test(`${locale}: "Read + call" opens the bill page at its call panel`, async ({ page }) => {
+      const m = getMoments()[0];
+      test.skip(!m, 'no moments in the corpus');
+      await page.goto(`${prefix}/questions/${m.id}`);
+      const calls = page.getByRole('link', { name: messages.moments.readCall, exact: true });
+      test.skip((await calls.count()) === 0, 'no vehicle on this question can take a call today');
+      for (const href of await calls.evaluateAll((els) => els.map((e) => e.getAttribute('href')))) {
+        expect(href, 'every "Read + call" carries the call anchor').toMatch(/#act$/);
+      }
+      // A record link never jumps to a call.
+      for (const href of await page
+        .getByRole('link', { name: messages.moments.readBill, exact: true })
+        .evaluateAll((els) => els.map((e) => e.getAttribute('href')))) {
+        expect(href, '"Read the bill" opens the page top').not.toContain('#');
+      }
+
+      await calls.first().click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/bills/[^/#]+#act$`));
+      // The panel heading the anchor names is on screen, not 1,857px below.
+      await expect(page.locator('#act')).toBeInViewport();
+    });
+  }
+});
+
+/*
  * SEARCH PINNING (spec §7.3) — the promise data/moments.json has carried
  * since its first entry while nothing read the field. Corpus-derived like the
  * rest of this file: which alias to type, and whether that alias can produce
@@ -368,18 +408,18 @@ test.describe('accessibility basics', () => {
  */
 test.describe('bills search pins a live Moment', () => {
   /*
-   * BillsBrowser's own bill-match rule, replicated so "this query returns no
-   * bills" is derived rather than assumed. Saved interests are empty in a
-   * fresh browser context, so the topic filter is not part of it.
+   * BillsBrowser's own bill-match rule — not a replica of it: the same
+   * lib/bill-search.mjs matcher and the same card field list
+   * (teaserSearchDoc) the page runs, so "this query returns no bills" is
+   * derived rather than assumed and cannot drift from the page. Saved
+   * interests are empty in a fresh browser context, so the topic filter is
+   * not part of it.
    */
   const billsMatch = (q: string): boolean => {
     const categories = en.categories as Record<string, string>;
-    return getTeasers('en').some(
-      (b) =>
-        b.title.toLowerCase().includes(q) ||
-        (b.headline ?? '').toLowerCase().includes(q) ||
-        b.identifier.toLowerCase().includes(q) ||
-        b.tags.some((tag) => (categories[tag] ?? '').toLowerCase().includes(q))
+    const query = parseBillQuery(q);
+    return getTeasers('en').some((b) =>
+      matchesBillQuery(query, teaserSearchDoc(b, (tag) => categories[tag] ?? tag))
     );
   };
 

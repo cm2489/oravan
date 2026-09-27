@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { callableBillSlug, splitZip } from './corpus-samples';
 import { seedZip } from './helpers';
 
 /*
@@ -13,7 +14,10 @@ import { seedZip } from './helpers';
  * sends: /api/script must receive locale "es" for every stance on an ES page.
  */
 
-const BILL = '/bills/sjres-99-119'; // same stable slug flow.spec.ts drives
+// A decoded bill in the call panel's plain state (tests/corpus-samples.ts):
+// every stance, the script, the dials and the outcomes render with no floor
+// band or settled-record treatment in front of them.
+const BILL = `/bills/${callableBillSlug()}`;
 
 const STANCES = ['support', 'oppose', 'undecided'] as const;
 
@@ -218,9 +222,9 @@ test('no /es page ever renders a raw null/undefined/NaN', async ({
   const routes = [
     '/es',
     '/es/bills',
-    '/es/bills/sjres-99-119',
+    `/es${BILL}`,
     '/es/reps',
-    '/es/reps?zip=10001',
+    `/es/reps?zip=${splitZip()}`,
     '/es/record',
     '/es/questions',
     '/es/why-call',

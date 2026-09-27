@@ -35,6 +35,14 @@ import { emptyStateVerdict } from '../freshness-state';
 import { formatCitation } from '../format';
 import { SITE_ORIGIN } from '../site';
 import { TERMINAL_STATUSES } from '../urgency.mjs';
+import {
+  billSearchDoc,
+  compareLastActionDesc,
+  isEmptyBillQuery,
+  matchesBillQuery,
+  parseBillQuery,
+  type BillSearchDoc,
+} from '../bill-search.mjs';
 import { decisionState } from '../docket.mjs';
 /* The conversation lamp, for `whats_moving`'s optional evidence facet only. It
  * never touches the POOL or its order — that is the docket ladder's, and this
@@ -643,11 +651,35 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
  * Tool 3: search_bills
  * ---------------------------------------------------------------------- */
 
-function matchesQuery(bill: Bill, query: string): boolean {
-  const q = query.toLowerCase();
-  return [bill.title, bill.short_title, bill.ai_headline, bill.ai_summary]
-    .filter((v): v is string => Boolean(v))
-    .some((v) => v.toLowerCase().includes(q));
+/*
+ * The matcher is lib/bill-search.mjs, built to be shared with the site's
+ * bills search (the 2026-09-27 audit, SY-21: both surfaces used to match the
+ * whole query as a single substring, so "Iran war powers" found 1 of 12 and
+ * "hconres 89" found nothing). What this tool contributes is only its list
+ * of fields: the official title, the short title, the AI headline and summary
+ * in the requested locale, and the localized topic labels. The citation
+ * joins them inside billSearchDoc.
+ *
+ * Folding a summary is the expensive part (the whole corpus takes a few
+ * hundred ms), so each bill's searchable form is built once per locale and
+ * kept. The key is the raw corpus object, which lives as long as the module
+ * does: the corpus is baked JSON and never changes inside a process.
+ */
+const SEARCH_DOCS: Record<Locale, WeakMap<Bill, BillSearchDoc>> = { en: new WeakMap(), es: new WeakMap() };
+
+function searchDocFor(raw: Bill, locale: Locale): BillSearchDoc {
+  const cached = SEARCH_DOCS[locale].get(raw);
+  if (cached) return cached;
+  const b = localizeBill(raw, locale);
+  const doc = billSearchDoc(billSlug(b), [
+    b.title,
+    b.short_title,
+    b.ai_headline,
+    b.ai_summary,
+    ...(b.issue_tags ?? []).map((id) => categoryLabel(id, locale)),
+  ]);
+  SEARCH_DOCS[locale].set(raw, doc);
+  return doc;
 }
 
 export interface SearchBillsParams {
@@ -666,14 +698,20 @@ export function searchBills(params: SearchBillsParams, locale: Locale) {
   if (params.status) bills = bills.filter((b) => b.status === params.status);
   if (params.activeOnly) bills = bills.filter((b) => !TERMINAL_STATUSES.has(b.status));
   if (params.query) {
-    const query = params.query;
-    bills = bills.filter((b) => matchesQuery(localizeBill(b, locale), query));
+    // A query with nothing searchable in it (blank, punctuation only) is no
+    // filter, exactly as an omitted one.
+    const query = parseBillQuery(params.query);
+    if (!isEmptyBillQuery(query)) bills = bills.filter((b) => matchesBillQuery(query, searchDocFor(b, locale)));
   }
 
   // Most urgent first - the same "consequence, not novelty, decides
-  // prominence" rule the rest of the corpus's feeds use.
+  // prominence" rule the rest of the corpus's feeds use. Equal urgency is
+  // broken by the most recent last action (SY-21: a phrase search that
+  // surfaced one stale resolution while a newer one had just been voted).
   const sorted = [...bills].sort(
-    (a, b) => effectiveUrgency(b.status, b.last_action_date) - effectiveUrgency(a.status, a.last_action_date)
+    (a, b) =>
+      effectiveUrgency(b.status, b.last_action_date) - effectiveUrgency(a.status, a.last_action_date) ||
+      compareLastActionDesc(a.last_action_date, b.last_action_date)
   );
   const limit = params.limit ?? 20;
   const limited = sorted.slice(0, limit).map((b) => shapeBillTeaser(localizeBill(b, locale), locale));

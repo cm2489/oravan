@@ -16,7 +16,7 @@ import { contentVersion, createScriptCache, nominationContentVersion } from '@/l
 import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
-import { noteScriptGeneration } from '@/lib/usage';
+import { noteScriptGeneration, noteScriptRefusal } from '@/lib/usage';
 
 /*
  * The only Anthropic-calling endpoint in Oravan. Stateless by design:
@@ -206,6 +206,12 @@ export async function POST(req: NextRequest) {
   const oravanKey = readOravanKey(req.headers);
   const gate = await limiter.check(ip);
   if (gate.limited) {
+    // Counted by GUARD, never by caller (lib/usage.ts, SCRIPT_REFUSAL_SCOPES):
+    // one of the three refusal counts the digest prints beside "Script
+    // generations", so a zero there can be told apart from a path that said
+    // no all day (the 2026-09-27 audit, SY-48). after() so a slow counter
+    // write never delays the 429 itself.
+    after(() => noteScriptRefusal('burst'));
     // Token path: uniform bare 429 — indistinguishable from the tenant
     // limiter's own trip below, by doctrine (§4 above).
     if (oravanKey !== null) {
@@ -228,6 +234,8 @@ export async function POST(req: NextRequest) {
     const tenantLimited =
       (await tenantMinuteLimiter.isLimited(tenantId)) || (await tenantDayLimiter.isLimited(tenantId));
     if (tenantLimited) {
+      // The scope names the guard, never the tenant — no tenantId reaches it.
+      after(() => noteScriptRefusal('tenant'));
       return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
     }
   }
@@ -382,6 +390,11 @@ async function serveScript(
    * breaker forever. Same semantics as brand-day.
    */
   if (await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)) {
+    // The refusal the audit found invisible (SY-48): a fail-closed breaker
+    // that trips — at its ceiling OR because the counters database is
+    // unreachable — used to leave only "0 generations" behind. Counted for
+    // both paths, since a dollar not spent for either is the same signal.
+    after(() => noteScriptRefusal('daily'));
     // Token path: the uniform bare 429, per §4's doctrine above.
     if (tokenPath) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
     /*

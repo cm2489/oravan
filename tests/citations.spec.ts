@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { getBill } from '../lib/core';
+import { decodedBillSlug } from './corpus-samples';
 import { callTool } from './helpers';
+
+/** A bill URL as the page prints it: absolute, either locale, capturing the slug. */
+const BILL_URL = /^\s*https:\/\/oravan\.org(?:\/es)?\/bills\/([a-z]+-\d+-\d+)\s*$/;
 
 /*
  * S23 — the citability/correction page (the project records §1.3 S23). Covers the sprint's own done-criteria: the page
@@ -31,7 +36,17 @@ for (const [locale, prefix, messages] of [
 
   test(`${locale}: canonical example URL uses the live example bill`, async ({ page }) => {
     await page.goto(`${prefix}/citations`);
-    await expect(page.getByText(`/bills/hr-1787-119`)).toBeVisible();
+    // Whatever bill the page chooses as its example, the URL it prints must be
+    // an absolute canonical bill URL in this page's own locale, and the bill
+    // must be one the committed corpus actually holds — a dead example link on
+    // the page that tells people how to cite us is the failure this guards.
+    const example = page.getByText(BILL_URL);
+    await expect(example).toBeVisible();
+    const slug = (await example.innerText()).match(BILL_URL)![1];
+    expect((await example.innerText()).trim()).toBe(
+      `https://oravan.org${prefix}/bills/${slug}`
+    );
+    expect(getBill(slug), `the example bill ${slug} is not in data/bills.json`).toBeDefined();
   });
 
   test(`${locale}: no horizontal overflow on the Citations page`, async ({ page }) => {
@@ -44,7 +59,7 @@ for (const [locale, prefix, messages] of [
 }
 
 test('footer Citations link is reachable from a bill page, not just the homepage', async ({ page }) => {
-  await page.goto('/bills/hr-1787-119');
+  await page.goto(`/bills/${decodedBillSlug()}`);
   const link = page.locator('footer').getByRole('link', { name: en.common.footer.citations });
   await expect(link).toHaveAttribute('href', '/citations');
   await link.scrollIntoViewIfNeeded();
@@ -86,8 +101,8 @@ test("the page quotes the live MCP envelope's localized source/ai_label text ver
   // plain Node test runner). This is also the more honest check: it proves
   // the /citations copy matches what an agent actually receives right now,
   // not a compile-time copy of the same constant.
-  const resultEn = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'en' });
-  const resultEs = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'es' });
+  const resultEn = await callTool(request, 'get_bill', { slug: decodedBillSlug(), locale: 'en' });
+  const resultEs = await callTool(request, 'get_bill', { slug: decodedBillSlug(), locale: 'es' });
   const metaEn = resultEn.structuredContent!.meta as { source: string; ai_label: string };
   const metaEs = resultEs.structuredContent!.meta as { source: string; ai_label: string };
   expect(metaEn.source).toBeTruthy();

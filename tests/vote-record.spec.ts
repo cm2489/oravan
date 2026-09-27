@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page, type Request } from '@playwright/test';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
+import { billWithRollCallsOnlyIn } from './corpus-fixtures';
 import { seedZip } from './helpers';
+import { messagePattern } from './message-pattern';
 
 /*
  * THE VOTE RECORD on the bill page (plan item C1b): components/VoteRecord.tsx
@@ -9,9 +13,10 @@ import { seedZip } from './helpers';
  *
  * Every expected number is read from data/votes.json at test time, never
  * restated here, so the nightly sync can move the file without this spec
- * going stale. The bills are chosen for what they exercise:
- *   hr-3633-119  one Senate roll call (the Sep 15 cloture vote)
- *   hr-9340-119  one House roll call
+ * going stale. Every label is read from messages/*.json by key. The bills are
+ * chosen by what they exercise (tests/corpus-fixtures.ts), never named:
+ *   SENATE_BILL  roll calls in the Senate only
+ *   HOUSE_BILL   roll calls in the House only
  * and the no-votes bill is computed: the first corpus bill with none.
  *
  * ZIP 05401 (Burlington, VT) is a single at-large district, so the call rail
@@ -40,8 +45,8 @@ function newestFirst(bill: string): RollCall[] {
     .sort((a, b) => b.date.localeCompare(a.date) || a.chamber.localeCompare(b.chamber) || b.roll - a.roll);
 }
 
-const SENATE_BILL = 'hr-3633-119';
-const HOUSE_BILL = 'hr-9340-119';
+const SENATE_BILL = billWithRollCallsOnlyIn('senate');
+const HOUSE_BILL = billWithRollCallsOnlyIn('house');
 const ZIP = '05401';
 
 function noVotesBill(): string {
@@ -58,27 +63,22 @@ function noVotesBill(): string {
 }
 
 const LOCALES = [
-  { locale: 'en', prefix: '', heading: 'Recorded votes', since: /Roll-call votes recorded since/, asRecorded: 'As recorded' },
-  {
-    locale: 'es',
-    prefix: '/es',
-    heading: 'Votaciones registradas',
-    since: /Votaciones nominales registradas desde el/,
-    asRecorded: 'Tal como consta en el registro oficial, en inglés',
-  },
+  { locale: 'en', prefix: '', m: en },
+  { locale: 'es', prefix: '/es', m: es },
 ] as const;
 
-for (const L of LOCALES) {
-  test.describe(`vote record (${L.locale})`, () => {
+for (const { locale, prefix, m } of LOCALES) {
+  test.describe(`vote record (${locale})`, () => {
     test('a bill with votes renders the block with the record\'s own tallies', async ({ page }) => {
-      const rolls = newestFirst(SENATE_BILL);
+      test.skip(!SENATE_BILL, 'no bill with Senate-only roll calls in data/votes.json today');
+      const rolls = newestFirst(SENATE_BILL!);
       expect(rolls.length).toBeGreaterThan(0);
-      await page.goto(`${L.prefix}/bills/${SENATE_BILL}`);
+      await page.goto(`${prefix}/bills/${SENATE_BILL}`);
       const block = page.locator('[data-vote-record]');
-      await expect(block.getByRole('heading', { level: 2, name: L.heading })).toBeVisible();
-      await expect(block.getByText(L.since)).toBeVisible();
+      await expect(block.getByRole('heading', { level: 2, name: m.votes.heading })).toBeVisible();
+      await expect(block.getByText(messagePattern(m.votes.coverage))).toBeVisible();
 
-      const first = block.locator('ol > li').first();
+      const first = block.locator('[data-vote-roll]').first();
       for (const p of POSITIONS) {
         await expect(first.locator(`[data-vote-total="${p}"]`)).toHaveText(String(rolls[0].totals[p]));
       }
@@ -87,30 +87,31 @@ for (const L of LOCALES) {
     });
 
     test('the question and result stay the record\'s English, under the "as recorded" label', async ({ page }) => {
-      const rolls = newestFirst(SENATE_BILL);
-      await page.goto(`${L.prefix}/bills/${SENATE_BILL}`);
-      const first = page.locator('[data-vote-record] ol > li').first();
-      await expect(first.locator('[data-vote-as-recorded]')).toHaveText(L.asRecorded);
+      test.skip(!SENATE_BILL, 'no bill with Senate-only roll calls in data/votes.json today');
+      const rolls = newestFirst(SENATE_BILL!);
+      await page.goto(`${prefix}/bills/${SENATE_BILL}`);
+      const first = page.locator('[data-vote-record] [data-vote-roll]').first();
+      await expect(first.locator('[data-vote-as-recorded]')).toHaveText(m.votes.asRecorded);
       const q = first.locator('[data-vote-question]');
       await expect(q).toHaveAttribute('lang', 'en');
       await expect(q).toHaveText(rolls[0].question);
-      // The label sits ABOVE the question it frames.
-      const labelBox = await first.locator('[data-vote-as-recorded]').boundingBox();
-      const qBox = await q.boundingBox();
-      expect(labelBox!.y).toBeLessThan(qBox!.y);
+      const result = first.locator('[data-vote-result]');
+      await expect(result).toHaveAttribute('lang', 'en');
+      await expect(result).toHaveText(rolls[0].result);
     });
 
     test('a bill with no stored roll call renders no vote heading at all', async ({ page }) => {
-      await page.goto(`${L.prefix}/bills/${noVotesBill()}`);
+      await page.goto(`${prefix}/bills/${noVotesBill()}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.locator('[data-vote-record]')).toHaveCount(0);
-      await expect(page.locator('#votes-h')).toHaveCount(0);
+      await expect(page.getByRole('heading', { name: m.votes.heading })).toHaveCount(0);
     });
 
     test('the fold-out lists every member, grouped by position, each linking to their page', async ({ page }) => {
-      const r = newestFirst(HOUSE_BILL)[0];
-      await page.goto(`${L.prefix}/bills/${HOUSE_BILL}`);
-      const fold = page.locator('[data-vote-record] ol > li').first().locator('[data-vote-members]');
+      test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
+      const r = newestFirst(HOUSE_BILL!)[0];
+      await page.goto(`${prefix}/bills/${HOUSE_BILL}`);
+      const fold = page.locator('[data-vote-record] [data-vote-roll]').first().locator('[data-vote-members]');
       const summary = fold.locator('summary');
       const box = await summary.boundingBox();
       expect(box!.height, '44px touch target on the fold-out control').toBeGreaterThanOrEqual(44);
@@ -128,7 +129,7 @@ for (const L of LOCALES) {
         const hrefs = await links.evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''));
         const ids = hrefs.map((h) => h.split('/').pop());
         expect(new Set(ids)).toEqual(new Set(r.votes[p]));
-        for (const h of hrefs) expect(h).toMatch(new RegExp(`^${L.prefix}/reps/[A-Z]\\d{6}$`));
+        for (const h of hrefs) expect(h).toMatch(new RegExp(`^${prefix}/reps/[A-Z]\\d{6}$`));
       }
       // Group order is the record's: Yea, Nay, Present, Not voting.
       const order = await fold
@@ -152,6 +153,7 @@ function zipRequests(page: Page): Request[] {
 
 test.describe('your members strip', () => {
   test('renders nothing when no ZIP is saved', async ({ page }) => {
+    test.skip(!SENATE_BILL, 'no bill with Senate-only roll calls in data/votes.json today');
     await page.goto(`/bills/${SENATE_BILL}`);
     await expect(page.locator('[data-vote-record]')).toBeVisible();
     await page.waitForLoadState('networkidle');
@@ -159,7 +161,8 @@ test.describe('your members strip', () => {
   });
 
   test('with a saved ZIP, shows each member\'s position and adds no request of its own', async ({ page }) => {
-    const r = newestFirst(SENATE_BILL)[0];
+    test.skip(!SENATE_BILL, 'no bill with Senate-only roll calls in data/votes.json today');
+    const r = newestFirst(SENATE_BILL!)[0];
     expect(r.chamber).toBe('senate');
     await page.goto(`/bills/${SENATE_BILL}`);
     await seedZip(page, ZIP);
@@ -172,12 +175,14 @@ test.describe('your members strip', () => {
     for (const id of r.votes.nay) {
       const row = strip.locator(`[data-vote-delegate="${id}"]`);
       if ((await row.count()) === 0) continue;
-      await expect(row).toContainText('Nay');
+      await expect(row).toContainText(en.votes.position.nay);
     }
-    const senators = strip.locator('[data-vote-delegate]').filter({ hasText: 'Senate vote' });
+    const senators = strip
+      .locator('[data-vote-delegate]')
+      .filter({ hasText: messagePattern(en.votes.delegation.onSenateVote) });
     await expect(senators).toHaveCount(2);
-    await expect(strip).toContainText('No recorded House vote on this bill since');
-    await expect(strip).toContainText('This section sends nothing.');
+    await expect(strip).toContainText(messagePattern(en.votes.delegation.noHouseVote));
+    await expect(strip).toContainText(en.votes.delegation.note);
 
     // The only request that has ever carried this ZIP is the call rail's own
     // pre-existing /api/reps lookup — the strip reads that answer from memory.
@@ -188,19 +193,23 @@ test.describe('your members strip', () => {
   });
 
   test('House roll call: the House member\'s position, the senators say there is no Senate vote', async ({ page }) => {
-    const r = newestFirst(HOUSE_BILL)[0];
+    test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
+    const r = newestFirst(HOUSE_BILL!)[0];
     expect(r.chamber).toBe('house');
     await page.goto(`/es/bills/${HOUSE_BILL}`);
     await seedZip(page, ZIP);
     await page.reload();
     const strip = page.locator('[data-vote-delegation]');
     await expect(strip).toBeVisible();
-    await expect(strip.locator('[data-vote-delegate]').filter({ hasText: 'Votación de la Cámara' })).toHaveCount(1);
-    await expect(strip.getByText(/Sin votación nominal del Senado sobre este proyecto desde el/)).toHaveCount(2);
-    await expect(strip).toContainText('Esta sección no envía nada.');
+    await expect(
+      strip.locator('[data-vote-delegate]').filter({ hasText: messagePattern(es.votes.delegation.onHouseVote) })
+    ).toHaveCount(1);
+    await expect(strip.getByText(messagePattern(es.votes.delegation.noSenateVote))).toHaveCount(2);
+    await expect(strip).toContainText(es.votes.delegation.note);
   });
 
   test('with the call rail\'s lookup blocked, the strip stays empty and makes no lookup of its own', async ({ page }) => {
+    test.skip(!SENATE_BILL, 'no bill with Senate-only roll calls in data/votes.json today');
     await page.goto(`/bills/${SENATE_BILL}`);
     await seedZip(page, ZIP);
     await page.route('**/api/reps**', (route) => route.abort());

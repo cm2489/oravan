@@ -37,12 +37,14 @@ import {
   vehicleKind,
 } from '@/lib/moments';
 import {
+  billCtaKey,
   bothNoteKey,
   groupVehicleStatuses,
   linkHost,
   momentDek,
   nominationCtaKey,
   revisionReasons,
+  vehicleCtaHref,
   vehicleStatuses,
 } from '@/lib/moments-ui';
 import { questionStatus } from '@/lib/moment-status.mjs';
@@ -599,6 +601,7 @@ export default async function MomentPage({
                     if (vehicleKind(v) === 'nomination') {
                       const nomination = getNomination(v.slug);
                       if (!nomination) return null;
+                      const ctaKey = nominationCtaKey(nomination, isSettled || line.terminal);
                       return (
                         <MomentNominationCard
                           key={v.slug}
@@ -618,7 +621,11 @@ export default async function MomentPage({
                              whose entire rail is "No call to make". See
                              nominationCtaKey; `moments.vehiclesLedeNominations` makes
                              the same distinction in prose directly above this grid. */
-                          ctaLabel={t(nominationCtaKey(nomination, isSettled || line.terminal))}
+                          ctaLabel={t(ctaKey)}
+                          /* "Read + call" lands ON the call panel, anything
+                             else at the page's top — one decision, read off the
+                             same key as the label (SY-10; vehicleCtaHref). */
+                          ctaHref={vehicleCtaHref(`/nominations/${v.slug}`, ctaKey)}
                           statusLine={line}
                           noDecodeNote={t('nominations.noDecodeNote')}
                         />
@@ -628,6 +635,7 @@ export default async function MomentPage({
                     if (!raw) return null;
                     const bill = localizeBill(raw, locale);
                     const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
+                    const ctaKey = billCtaKey(isSettled || line.terminal);
                     return (
                       <MomentVehicleCard
                         key={v.slug}
@@ -647,7 +655,11 @@ export default async function MomentPage({
                            its cards, now asked per vehicle of its own line. The
                            bill page behind it still mounts the call flow, which is
                            why bothNote below stays true either way. */
-                        ctaLabel={isSettled || line.terminal ? t('moments.readBill') : t('moments.readCall')}
+                        ctaLabel={t(ctaKey)}
+                        /* "Read + call" opens the bill page AT the call panel
+                           (#act) instead of its top (SY-10); "Read the bill"
+                           still opens the top. Same key as the label. */
+                        ctaHref={vehicleCtaHref(`/bills/${v.slug}`, ctaKey)}
                         statusLine={line}
                         calendarLabel={t('bills.onCalendar')}
                       />

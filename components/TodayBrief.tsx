@@ -75,6 +75,20 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
   const chamberLine = (c: BriefChamber, published: string | null) => {
     const name = chamberName(c.chamber);
     if (c.session === 'unknown' || !published) return t.rich('chamberUnknown', { chamber: name, name: strong });
+    /* In session, but not on the brief's day (SY-31, lib/today.ts
+       meetsAfterDay): say when it next meets, from the same Digest line the
+       schedule block quotes, rather than "in session" on a day it is not. */
+    if (c.meetsLater && c.nextMeeting?.iso) {
+      return t.rich('chamberInNext', {
+        chamber: name,
+        published: day(published),
+        meeting: c.nextMeeting.label ?? day(c.nextMeeting.iso),
+        when: c.nextMeeting.label
+          ? (chunks: ReactNode) => <Verbatim>{chunks}</Verbatim>
+          : (chunks: ReactNode) => <span className="tabular-nums">{chunks}</span>,
+        name: strong,
+      });
+    }
     if (c.session === 'in_session') {
       return t.rich('chamberIn', { chamber: name, published: day(published), name: strong });
     }
@@ -144,7 +158,13 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           </h2>
           <ul className="mt-4 grid max-w-read gap-3">
             {brief.chamber.chambers.map((c) => (
-              <li key={c.chamber} className="text-md text-ink" data-chamber={c.chamber} data-session={c.session}>
+              <li
+                key={c.chamber}
+                className="text-md text-ink"
+                data-chamber={c.chamber}
+                data-session={c.session}
+                data-meets-later={c.meetsLater ? 'true' : undefined}
+              >
                 {chamberLine(c, brief.chamber!.source?.published ?? null)}
               </li>
             ))}

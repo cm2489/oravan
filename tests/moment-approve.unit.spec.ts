@@ -53,6 +53,7 @@ import {
   sanitizeForLog,
   slotDecision,
 } from '../scripts/moment-approve.mjs';
+import { questionId } from './corpus-samples';
 
 const read = (p: string) => JSON.parse(readFileSync(join(__dirname, '..', p), 'utf8'));
 
@@ -824,7 +825,13 @@ test.describe('decide(), end to end', () => {
     const d = decide({ body, comments: [], moments: room, bills, nominations, owner: OWNER, now: NOW });
     if (d.decision !== 'approve') throw new Error('expected approve');
     expect(prTitle(d, room)).toBe(`${DRAFTED.name.en} opens as a Big Question`);
-    expect(prTitle({ ...d, retire: 'iran-war-powers' }, momentsFile)).toContain('retires');
+    // Retiring a question the committed file really holds (tests/corpus-samples.ts).
+    const retiring = questionId();
+    const title = prTitle({ ...d, retire: retiring }, momentsFile);
+    expect(title).toContain('retires');
+    const retiringName = momentsFile[retiring]?.name?.en;
+    expect(retiringName, `${retiring} is not in data/moments.json`).toBeTruthy();
+    expect(title).toContain(retiringName!.replace(/\s+/g, ' ').trim());
   });
 });
 

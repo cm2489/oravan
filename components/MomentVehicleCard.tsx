@@ -15,9 +15,11 @@ import { MomentStatusLine } from '@/components/MomentStatusLine';
  * own words (spec §3.3's both-directions guarantee). The headline and the
  * "Read + call" CTA both land on the real /bills/[slug] page, where support
  * and oppose scripts are equally one tap away — this card never carries a
- * stance of its own. `ctaLabel` swaps to a neutral "Read the bill" once the
- * moment has settled (still linking to the same page, in its real, current
- * status — never implying a live vote that's already over).
+ * stance of its own. The headline opens the page's top; "Read + call" opens
+ * its call panel (`#act`, 2026-09-27 audit SY-10 — see `ctaHref`). `ctaLabel`
+ * swaps to a neutral "Read the bill" once the moment has settled (linking to
+ * the page's top, in its real, current status — never implying a live vote
+ * that's already over).
  *
  * ── Variant B, and the two laws ──────────────────────────────────────────
  *
@@ -56,6 +58,7 @@ export function MomentVehicleCard({
   role,
   statusKey,
   ctaLabel,
+  ctaHref,
   calendarLabel,
   statusLine,
 }: {
@@ -77,6 +80,12 @@ export function MomentVehicleCard({
   /** The both-directions yes/no framing, already localized. */
   role: string;
   ctaLabel: string;
+  /** Where the green button lands. The question page passes
+   *  lib/moments-ui.ts `vehicleCtaHref`, which sends "Read + call" straight to
+   *  the call panel (`#act`, SY-10) and every other label to the top. Absent
+   *  = the bill page's top, so any other caller renders exactly as before.
+   *  The headline link above is a read link and always lands at the top. */
+  ctaHref?: string;
   /** "On the floor calendar", already localized. Claims placement, not a
       scheduled vote — the corpus cannot support the latter. */
   calendarLabel: string;
@@ -172,7 +181,7 @@ export function MomentVehicleCard({
       </div>
       <p className="mt-auto pt-5">
         <Link
-          href={`/bills/${slug}`}
+          href={ctaHref ?? `/bills/${slug}`}
           className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper transition-colors hover:border-go-deep hover:bg-go-deep"
         >
           <PhoneCall className="h-4 w-4" aria-hidden />
