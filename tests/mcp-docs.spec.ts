@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { decodedBillSlug } from './corpus-samples';
 import { callTool, mcpRpc } from './helpers';
 
 /*
@@ -111,8 +112,8 @@ test("the envelope's localized source/ai_label text is quoted verbatim, both lan
   // that only resolves inside Next's bundler, not Playwright's Node runner)
   // - and the more honest check besides, since it proves the page matches
   // what an agent actually receives right now.
-  const resultEn = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'en' });
-  const resultEs = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'es' });
+  const resultEn = await callTool(request, 'get_bill', { slug: decodedBillSlug(), locale: 'en' });
+  const resultEs = await callTool(request, 'get_bill', { slug: decodedBillSlug(), locale: 'es' });
   const metaEn = resultEn.structuredContent!.meta as { source: string; ai_label: string };
   const metaEs = resultEs.structuredContent!.meta as { source: string; ai_label: string };
   expect(metaEn.source).toBeTruthy();
@@ -216,7 +217,7 @@ test('docs/mcp-server-readme.md quotes the live server, not a stale copy of it',
   expect(normalizeQuoted(quoted)).toBe(normalizeQuoted(liveDescription));
 
   // The envelope's ai_label is the other redistributed provenance string.
-  const result = await callTool(request, 'get_bill', { slug: 'hr-1787-119', locale: 'en' });
+  const result = await callTool(request, 'get_bill', { slug: decodedBillSlug(), locale: 'en' });
   const { ai_label: aiLabel } = result.structuredContent!.meta as { ai_label: string };
   expect(normalizeQuoted(readme)).toContain(normalizeQuoted(aiLabel));
 

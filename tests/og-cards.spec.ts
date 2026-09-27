@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { decodedBill, decodedBillSlug } from './corpus-samples';
 
 /*
  * Per-bill Open Graph / Twitter cards: the metadata a chat app's crawler
@@ -12,12 +13,15 @@ import { expect, test } from '@playwright/test';
  */
 
 const ORIGIN = 'https://oravan.org';
-const CANONICAL = `${ORIGIN}/bills/hr-5582-119`;
-const CANONICAL_ES = `${ORIGIN}/es/bills/hr-5582-119`;
+// A bill decoded in both languages, drawn from the committed corpus.
+const SLUG = decodedBillSlug();
+const BILL_PATH = `/bills/${SLUG}`;
+const CANONICAL = `${ORIGIN}${BILL_PATH}`;
+const CANONICAL_ES = `${ORIGIN}/es${BILL_PATH}`;
 
 test.describe('bill page social metadata', () => {
   test('og:url is absolute, canonical, and query-free; card is summary_large_image', async ({ page }) => {
-    await page.goto('/bills/hr-5582-119');
+    await page.goto(BILL_PATH);
 
     const ogUrl = page.locator('meta[property="og:url"]');
     await expect(ogUrl).toHaveAttribute('content', CANONICAL);
@@ -29,17 +33,19 @@ test.describe('bill page social metadata', () => {
     );
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute('content', 'en_US');
     // Neutral title: citation + headline, no advocacy framing to assert against
-    expect(await page.locator('meta[property="og:title"]').getAttribute('content')).toContain('5582');
+    expect(await page.locator('meta[property="og:title"]').getAttribute('content')).toContain(
+      String(decodedBill().bill_number)
+    );
   });
 
   test('spanish page carries its own canonical og:url and locale', async ({ page }) => {
-    await page.goto('/es/bills/hr-5582-119');
+    await page.goto(`/es${BILL_PATH}`);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', CANONICAL_ES);
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute('content', 'es_ES');
   });
 
   test('hreflang alternates point at both locales, slug-only', async ({ page }) => {
-    await page.goto('/bills/hr-5582-119');
+    await page.goto(BILL_PATH);
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute(
       'href',
       CANONICAL
@@ -68,7 +74,7 @@ test.describe('bill og:image', () => {
   };
 
   test('resolves 200 as a PNG under the size budget (en)', async ({ page, request }) => {
-    const res = await fetchOgImage(page, request, '/bills/hr-5582-119');
+    const res = await fetchOgImage(page, request, BILL_PATH);
     expect(res.status()).toBe(200);
     expect(res.headers()['content-type']).toContain('image/png');
     // Chat apps skip heavyweight previews; keep every card well under 300KB.
@@ -76,7 +82,7 @@ test.describe('bill og:image', () => {
   });
 
   test('resolves 200 as a PNG under the size budget (es)', async ({ page, request }) => {
-    const res = await fetchOgImage(page, request, '/es/bills/hr-5582-119');
+    const res = await fetchOgImage(page, request, `/es${BILL_PATH}`);
     expect(res.status()).toBe(200);
     expect(res.headers()['content-type']).toContain('image/png');
     expect((await res.body()).byteLength).toBeLessThan(300_000);

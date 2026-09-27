@@ -6,6 +6,7 @@ import { billSlug, getAllBills } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { deriveJourney, type FloorCalendar } from '../lib/journey';
 import { GLOSSARY_TERM_IDS } from '../lib/glossary';
+import { decodedBillSlug } from './corpus-samples';
 
 /*
  * THE PROCEDURAL GLOSSARY, LIVE (issue #181).
@@ -122,7 +123,7 @@ test('a term anchor lands on that term, not the top of the page', async ({ page 
 test('the footer Glossary link is reachable from a bill page, not just the homepage', async ({
   page,
 }) => {
-  await page.goto('/bills/hr-1787-119');
+  await page.goto(`/bills/${decodedBillSlug()}`);
   const link = page.locator('footer').getByRole('link', { name: en.common.footer.glossary });
   await expect(link).toHaveAttribute('href', '/glossary');
   await link.scrollIntoViewIfNeeded();
