@@ -161,7 +161,14 @@ export function registerOravanTools(server: McpServer, opts: RegisterOravanTools
     {
       ...TOOL_INFO.search_bills,
       inputSchema: {
-        query: z.string().optional().describe('Free-text search over the bill title and plain-language summary.'),
+        query: z
+          .string()
+          .optional()
+          .describe(
+            'Free-text search. Every word must appear somewhere in the bill title, short title, plain-language ' +
+              'headline and summary, or topic names (any order, accents ignored). A bill number in any common ' +
+              'form ("H.Con.Res. 89", "hconres 89", "hconres-89-119") matches that bill exactly.'
+          ),
         topic: z.enum(CATEGORIES).optional().describe('One of the 12 issue categories.'),
         status: z.enum(BILL_STATUSES).optional().describe('Bill status to filter to.'),
         active_only: z.boolean().optional().describe('Exclude signed/vetoed (terminal) bills when true.'),
