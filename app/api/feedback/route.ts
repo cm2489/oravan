@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 
 /*
- * Beta feedback intake -> one GitHub issue in this repo (private tracker).
+ * Beta feedback intake -> one GitHub issue in this repo. The repository is
+ * PUBLIC, so every issue this creates is readable by anyone; the dialog's
+ * notice says exactly that, in both languages, and asks for no contact
+ * details (feedback.notice / feedback.noticePartnership — corrected in the
+ * 2026-09-27 audit, SY-43, after both called it a private tracker).
  * Stateless by design, like every dynamic route here: nothing about the
  * caller is stored or forwarded. The issue contains ONLY what the visitor
  * volunteered - the message, a category, and (if they kept it) a page path.

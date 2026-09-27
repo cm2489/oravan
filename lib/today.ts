@@ -197,6 +197,35 @@ export interface BriefChamber {
   /** The Daily Digest's own next-meeting line (English verbatim), or our
    *  derived ISO date when it printed none; null when no meeting ahead. */
   nextMeeting: { iso: string | null; label: string | null } | null;
+  /** True when the verdict is `in_session` but the chamber's next sitting
+   *  falls after the brief's day — see `meetsAfterDay`. */
+  meetsLater: boolean;
+}
+
+/**
+ * "IN SESSION" IS A CLAIM ABOUT A DAY (audit 2026-09-27, SY-31).
+ *
+ * `_meta.in_session` is read off the Daily Digest's "Program for" blocks: a
+ * program that is not pro forma makes the verdict `in_session`, whatever day
+ * that program is FOR (scripts/floor-signals-parse.mjs `sessionFromProgram`).
+ * So on Saturday, Sep 26, 2026 the brief printed "Senate: in session" off the
+ * program for 3 p.m., Monday, September 28 — while quoting that same Monday
+ * meeting in its schedule block. The verdict is not wrong about the program;
+ * it is wrong as a sentence about the brief's day.
+ *
+ * True when the verdict is `in_session` AND the next meeting's derived date
+ * is strictly after `day`; the page then says when the chamber next meets
+ * instead. A meeting ON the brief's day keeps "in session", and so does a
+ * next meeting with no derivable date — a label alone cannot be ordered
+ * against the day, so nothing is claimed about it. The stored verdict itself
+ * is untouched: other surfaces read it with their own rules.
+ */
+export function meetsAfterDay(
+  c: Pick<BriefChamber, 'session' | 'nextMeeting'>,
+  day: string,
+): boolean {
+  const iso = c.nextMeeting?.iso ?? null;
+  return c.session === 'in_session' && iso !== null && DATE_RE.test(iso) && DATE_RE.test(day) && iso > day;
 }
 
 export interface BriefChamberState {
@@ -205,13 +234,13 @@ export interface BriefChamberState {
   source: { url: string | null; published: string | null } | null;
 }
 
-function chamberState(): BriefChamberState {
+function chamberState(day: string): BriefChamberState {
   return {
-    chambers: (['senate', 'house'] as const).map((chamber) => ({
-      chamber,
-      session: chamberSession(chamber),
-      nextMeeting: chamberNextMeeting(chamber),
-    })),
+    chambers: (['senate', 'house'] as const).map((chamber) => {
+      const session = chamberSession(chamber);
+      const nextMeeting = chamberNextMeeting(chamber);
+      return { chamber, session, nextMeeting, meetsLater: meetsAfterDay({ session, nextMeeting }, day) };
+    }),
     source: floorSessionSource(),
   };
 }
@@ -343,7 +372,7 @@ export function buildBrief(date: string): Brief {
     date,
     isToday,
     days: dates.map(dayOf),
-    chamber: isToday ? chamberState() : null,
+    chamber: isToday ? chamberState(date) : null,
     schedule: isToday ? scheduleAhead(date) : [],
     questions: questionsMoved(dates),
     stamps: briefStamps(),
