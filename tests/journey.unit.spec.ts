@@ -2509,18 +2509,22 @@ test.describe('liveCallTarget · the T0 announcement (SY-06)', () => {
     session,
   });
 
-  /* S. 4668's record on the night of the audit, verbatim: the latest step is
-     a procedural notice that names no chamber, and the status basis is a
-     cloture vote the Senate has already taken — so the record half
-     (correctly) routes nowhere, and before this change so did the rail,
-     while the band above it quoted the Senate's program. */
+  /* S. 4668's record on the night of the audit: the latest step is a
+     procedural notice that names no chamber, so the record half routes
+     nowhere, and before this change so did the rail, while the band above it
+     quoted the Senate's program. That night's status basis was a cloture vote
+     ("Cloture on the measure, as amended, invoked in Senate …"); the
+     settled-state change (#318, same audit, SY-05) reads "cloture … invoked"
+     as a Senate vote still ahead, which routes the record half by itself.
+     These tests pin the ANNOUNCEMENT half, so the fixture carries only the
+     procedural notice as its basis — a record that routes nowhere under
+     either reading, so nothing here depends on which change lands first. */
   const SY06_RECORD = {
     bill_type: 's',
     status: 'floor_vote' as BillStatus,
     last_action_text: 'The committee substitute tabled by Voice Vote.',
     last_action_date: FRESH,
-    status_basis_text:
-      'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.',
+    status_basis_text: 'The committee substitute tabled by Voice Vote.',
   };
 
   test('the audited shape: the record routes nowhere, the Senate schedule routes the Senate', () => {
