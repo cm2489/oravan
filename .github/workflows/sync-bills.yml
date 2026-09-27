@@ -825,11 +825,39 @@ jobs:
         # built from refs/heads/main only, so on a branch validation run this
         # poll can only run out its deadline and paint the run red for
         # something that is not a fault. On main the switch is unchanged.
+        id: deploy
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
         env:
           PROD_URL: ${{ vars.PROD_URL }}
           EXPECT_SHA: ${{ steps.commit.outputs.sha }}
         run: node scripts/verify-deploy.mjs
+      - name: Tell IndexNow which pages changed (best-effort - never fails the run)
+        # The 2026-09-27 audit (SY-19): the site is indexed but not ranking,
+        # and nothing told a search engine WHEN a page's record moved. This is
+        # one POST to the shared IndexNow endpoint listing the pages THIS
+        # commit changed, in both locales, derived from the commit's own diff
+        # of data/ - scripts/indexnow-urls.mjs holds the file-to-page mapping,
+        # and public/<key>.txt is the ownership file (a public key, by design).
+        #
+        # AFTER THE DEPLOY CHECK, ON PURPOSE. A ping can prompt a crawl soon
+        # after it lands, so it waits until verify-deploy.mjs above has seen
+        # production serve this exact SHA; pinging earlier could point that
+        # crawl at the old page. If
+        # that check fails or times out this step is skipped: nothing is
+        # pinged, sitemap.xml still lists every page, and each page's next
+        # change pings it. No fixed sleep.
+        #
+        # IT CANNOT COST THE RUN ANYTHING. The script exits 0 on every path,
+        # this step is continue-on-error with a short ceiling, and because it
+        # can never fail it can never skip the CI dispatch below it. It posts
+        # only from Actions on main (scripts/indexnow-ping.mjs's shouldPost).
+        # No secret, no visitor data, $0.
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main' && steps.deploy.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          INDEXNOW_HEAD_SHA: ${{ steps.commit.outputs.sha }}
+        run: node scripts/indexnow-ping.mjs
       - name: Dispatch CI against the pushed data
         # Bot pushes (GITHUB_TOKEN) never trigger `on: push`, so without this
         # main's own suite never runs against a fresh corpus and test/corpus
