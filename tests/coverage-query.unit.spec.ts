@@ -16,10 +16,15 @@ import {
   RELEVANCE_SORT,
   apiErrorDetail,
   articleMatcher,
+  billNames,
+  citationPattern,
+  citesBill,
   coveragePriority,
   formatLeanDrift,
   gateAnswered,
+  holdToKeepRule,
   isCoverageEligible,
+  keepRuleMatch,
   isNewestFirst,
   leanDrift,
   mergeArticles,
@@ -119,6 +124,155 @@ test.describe('unbackfilled fallback keeps the title arm (2026-07-03 regression)
   });
   test('generated inputs still take precedence over the title', () => {
     expect(queryFor(bill({ press_names: ['GEO Act'], title: 'Geothermal Energy Orderly Decisions Act of 2025' }))).toBe('"GEO Act" | "H.R. 8463"');
+  });
+  test('the query still searches at most four phrases, apostrophe variants included', () => {
+    const q = queryFor(bill({ press_names: ["Kayleigh's Law Act", 'B Act', 'C Act', 'D Act', 'E Act'] }));
+    expect(q).toBe('"Kayleigh’s Law Act" | "Kayleigh\'s Law Act" | "B Act" | "C Act" | "H.R. 8463"');
+  });
+});
+
+/*
+ * THE KEEP RULE (2026-09-27, the 2026-09-27 audit's SY-04). An article reaches
+ * the relevance gate only when its title or snippet cites the bill or prints a
+ * name it is known by. The H.Con.Res. 89 rows below are the ones the live page
+ * listed as "Coverage of this bill from across the press".
+ */
+test.describe('billNames — the names the search asks for, and the keep rule accepts', () => {
+  test('usable press names, deduped; never a bare citation, never an oversized string', () => {
+    expect(billNames(bill({ press_names: ['SAVE Act', ' SAVE Act ', 'HR 7086', 'x'.repeat(61), '', null] }))).toEqual(['SAVE Act']);
+  });
+  test('a subject-covered bill has NO names — only its citation can say an article is about it', () => {
+    expect(billNames(bill({ bill_type: 'hconres', bill_number: 89, news_query: 'President "Iran hostilities"', title: 'Directing the President…' }))).toEqual([]);
+  });
+  test('with no generated inputs, a usable title stands in (the same fallback the query uses)', () => {
+    expect(billNames(bill({ title: 'SCAM Act' }))).toEqual(['SCAM Act']);
+    expect(billNames(bill({ title: 'To establish governmentwide requirements for pre-payment fraud prevention' }))).toEqual([]);
+  });
+});
+
+test.describe('citationPattern — every form the press prints a number in', () => {
+  const cites = (over: Record<string, unknown>, text: string) => Boolean(citationPattern(bill(over))?.test(text));
+  test('House bills: periods and spaces optional', () => {
+    for (const t of ['H.R. 8463 passed', 'the H.R.8463 vote', 'HR 8463', 'H. R. 8463', '(HR8463)']) expect(cites({}, t), t).toBe(true);
+  });
+  test('the number may not continue, or be glued to something before it', () => {
+    expect(cites({ bill_number: 1 }, 'H.R. 12 passed')).toBe(false);
+    expect(cites({ bill_number: 1 }, 'H.R. 1 passed')).toBe(true);
+    expect(cites({ bill_type: 's', bill_number: 180 }, 'the U.S. 180-day window')).toBe(false);
+    expect(cites({ bill_type: 's', bill_number: 180 }, 'Senate passes S. 180')).toBe(true);
+  });
+  test('resolutions, abbreviated and spelled out', () => {
+    const hconres = { bill_type: 'hconres', bill_number: 89 };
+    for (const t of ['H.Con.Res. 89', 'H. Con. Res. 89', 'HConRes 89', 'House Concurrent Resolution 89']) expect(cites(hconres, t), t).toBe(true);
+    const sjres = { bill_type: 'sjres', bill_number: 185 };
+    for (const t of ['S.J.Res. 185', 'S.J. Res. 185', 'SJRes 185', 'Senate Joint Resolution 185']) expect(cites(sjres, t), t).toBe(true);
+    expect(cites(sjres, 'S.J.Res. 18')).toBe(false);
+    expect(cites({ bill_type: 'hres', bill_number: 5 }, 'H.Res. 5 adopted')).toBe(true);
+    expect(cites({ bill_type: 'sres', bill_number: 5 }, 'Senate Resolution 5')).toBe(true);
+    expect(cites({ bill_type: 'hjres', bill_number: 7 }, 'H.J.Res. 7')).toBe(true);
+    expect(cites({ bill_type: 'sconres', bill_number: 7 }, 'S.Con.Res. 7')).toBe(true);
+  });
+  test("another type's citation with the same number is not this bill", () => {
+    expect(cites({ bill_type: 'hconres', bill_number: 89 }, 'H.Res. 89')).toBe(false);
+    expect(cites({ bill_type: 'hr', bill_number: 89 }, 'S. 89')).toBe(false);
+  });
+  test('state-bill forms are not a federal citation', () => {
+    expect(cites({ bill_type: 's', bill_number: 180 }, 'Texas SB 180 and Senate Bill 180')).toBe(false);
+  });
+  test('an unknown bill type or a missing number has no pattern', () => {
+    expect(citationPattern(bill({ bill_type: 'xyz' }))).toBeNull();
+    expect(citationPattern(bill({ bill_number: null }))).toBeNull();
+  });
+});
+
+test.describe('keepRuleMatch / citesBill — cite before you rate', () => {
+  const HCONRES89 = bill({ bill_type: 'hconres', bill_number: 89, news_query: 'President "Iran hostilities"', press_names: null });
+  const PCSA = bill({ bill_type: 's', bill_number: 4668, press_names: ['Protect College Sports Act'] });
+
+  test("the four off-topic H.Con.Res. 89 rows and the other-resolution row all fail it", () => {
+    const rows = [
+      { title: 'EU Proposes Sweeping Social Media Bans for Minors Amid Global Regulatory Push', snippet: 'In a major policy shift, the European Union is preparing to introduce the "Kids Act," which would prohibit children under 13 from accessing social' },
+      { title: 'Cabinet meets with security, economy and regional conflicts on agenda', snippet: 'Türkiye’s cabinet convened under President Recep Tayyip Erdoğan at the Presidential Complex in Ankara on Sept. 7' },
+      { title: 'South Korea Weighs Military Deployment to Strait of Hormuz, Presidential Office Says', snippet: 'The presidential office in Seoul said on Sept. 4 that military measures are among the options under review' },
+      { title: 'Indian Shares Seen Higher At Open As Yields Dip From Recent Highs', snippet: 'Indian shares are seen opening a tad higher on Thursday as U.S. Treasury yields eased' },
+      { title: "'End this war': Senate Democrats turn up heat on Donald Trump, seek end to 'unauthorised' Iran hostilities", snippet: 'A group of US Senate Democrats led by Colorado Senator John Hickenlooper has introduced a joint resolution' },
+    ];
+    for (const r of rows) expect(keepRuleMatch(HCONRES89, r), r.title).toBeNull();
+  });
+
+  test('an article that gives the resolution its number passes, on the citation', () => {
+    expect(keepRuleMatch(HCONRES89, { title: 'House rejects Iran war powers measure', snippet: 'H.Con.Res. 89 failed 212-219.' })).toBe('citation');
+  });
+
+  test('a press name passes as whole words, in any case, with curly quotes and dashes folded', () => {
+    expect(keepRuleMatch(PCSA, { title: 'Senators push the PROTECT COLLEGE SPORTS ACT', snippet: null })).toBe('name');
+    expect(keepRuleMatch(bill({ press_names: ["Kayleigh's Law"] }), { title: 'Kayleigh’s Law heads to the floor', snippet: '' })).toBe('name');
+    expect(keepRuleMatch(bill({ press_names: ['Pro-Life Act'] }), { title: 'The Pro Life Act advances', snippet: '' })).toBe('name');
+    expect(keepRuleMatch(bill({ press_names: ['GEO Act'] }), { title: 'GEO Actually matters', snippet: '' })).toBeNull();
+  });
+
+  test('a loose paraphrase of the name does NOT pass — the known cost, fixed by better press names', () => {
+    expect(keepRuleMatch(PCSA, { title: 'College sports act overcomes filibuster in Senate', snippet: null })).toBeNull();
+  });
+
+  test('the snippet counts as much as the title; a missing snippet is not an error', () => {
+    expect(keepRuleMatch(PCSA, { title: 'Coaches weigh in', snippet: 'The Protect College Sports Act would cap…' })).toBe('name');
+    expect(keepRuleMatch(PCSA, { title: null, snippet: null })).toBeNull();
+    expect(citesBill(PCSA)({ title: 'S. 4668 clears cloture' })).toBe(true);
+  });
+});
+
+test.describe('holdToKeepRule — the replay over what is stored', () => {
+  const BILLS = [
+    bill({ bill_type: 'hconres', bill_number: 89, news_query: 'President "Iran hostilities"' }),
+    bill({ bill_type: 's', bill_number: 4668, press_names: ['Protect College Sports Act'] }),
+    bill({ bill_type: 'hr', bill_number: 101, press_names: ['Ordinary Act'] }),
+  ];
+  const junk = { title: 'Indian Shares Seen Higher At Open', url: 'https://x.example/a', source: 'rttnews.com', snippet: null, publishedAt: '2026-09-03' };
+  const onPcsa = { title: 'Protect College Sports Act clears cloture', url: 'https://y.example/b', source: 'cbsnews.com', snippet: null, publishedAt: '2026-09-20' };
+  const offPcsa = { title: 'College sports act overcomes filibuster', url: 'https://z.example/c', source: 'washingtontimes.com', snippet: null, publishedAt: '2026-09-21' };
+  const COVERAGE = {
+    'hconres-89-119': [junk],
+    's-4668-119': [offPcsa, onPcsa],
+    'hr-101-119': [junk],
+    'hr-9999-119': [junk],
+    _checkedAt: { 'hconres-89-119': '2026-09-26' },
+    _note: 'metadata',
+  };
+
+  test('drops what fails, removes a slug left empty, and never touches a slug it was not asked about', () => {
+    const { coverage, report } = holdToKeepRule({ coverage: COVERAGE, bills: BILLS, slugs: ['hconres-89-119', 's-4668-119'] });
+    expect(coverage['hconres-89-119']).toBeUndefined();
+    expect(coverage['s-4668-119']).toEqual([onPcsa]);
+    expect(coverage['hr-101-119']).toEqual([junk]); // not a listed slug
+    expect(coverage._checkedAt).toEqual(COVERAGE._checkedAt);
+    expect(coverage._note).toBe('metadata');
+    expect(report.map((r) => [r.slug, r.before, r.after, r.dropped.length])).toEqual([
+      ['hconres-89-119', 1, 0, 1],
+      ['s-4668-119', 2, 1, 1],
+    ]);
+  });
+
+  test('pure: the input is not mutated, and a second pass changes nothing', () => {
+    const before = JSON.stringify(COVERAGE);
+    const once = holdToKeepRule({ coverage: COVERAGE, bills: BILLS, slugs: ['hconres-89-119', 's-4668-119'] });
+    expect(JSON.stringify(COVERAGE)).toBe(before);
+    const twice = holdToKeepRule({ coverage: once.coverage, bills: BILLS, slugs: ['hconres-89-119', 's-4668-119'] });
+    expect(JSON.stringify(twice.coverage)).toBe(JSON.stringify(once.coverage));
+    expect(twice.report.every((r) => r.dropped.length === 0)).toBe(true);
+  });
+
+  test('a slug with no bill record is left as it is and reported as not judged; metadata keys are never judged', () => {
+    const { coverage, report } = holdToKeepRule({ coverage: COVERAGE, bills: BILLS, slugs: ['hr-9999-119', '_checkedAt', 'HCONRES-89-119'] });
+    expect(coverage['hr-9999-119']).toEqual([junk]);
+    expect(report.find((r) => r.slug === 'hr-9999-119')).toMatchObject({ judged: false, before: 1, after: 1 });
+    expect(coverage._checkedAt).toEqual(COVERAGE._checkedAt);
+    expect(coverage['hconres-89-119']).toBeUndefined(); // slugs are matched case-insensitively
+  });
+
+  test('missing inputs do not throw', () => {
+    expect(holdToKeepRule({ coverage: {}, bills: [], slugs: [] })).toEqual({ coverage: {}, report: [] });
+    expect(holdToKeepRule({ coverage: undefined as never, bills: undefined as never, slugs: undefined as never }).report).toEqual([]);
   });
 });
 
