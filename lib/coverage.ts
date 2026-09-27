@@ -64,15 +64,52 @@ export function coverageTier(articles: CoverageArticle[]): CoverageTier {
 }
 
 /**
- * Articles covering a bill, each enriched with its outlet's lean. Empty when
- * coverage is too thin to surface (tier 'none'); otherwise the full list, and
- * the page renders the section (disclaimed when one-sided).
+ * THE RATED-ONLY FLOOR (owner ruling n1, 2026-09-26; the 2026-09-27 audit's
+ * SY-04). What the Read section, the Big Question vehicle card's "N outlets"
+ * chip and the fallback news band may show of a bill's stored coverage: only
+ * articles whose outlet carries a lean in the vendored ratings table
+ * (data/media-bias.json), each enriched with that lean, and nothing at all
+ * unless at least two DISTINCT rated outlets remain (coverageTier's 'none'
+ * rule, now asked of the rated set alone).
+ *
+ * WHY. The section's claim is "coverage of this bill from across the press",
+ * and an outlet with no rating is not evidence of anything about the press —
+ * it is the absence of evidence. On 2026-09-27 the section listed four
+ * off-topic, unrated articles under H.Con.Res. 89 (the week's most-watched
+ * vote), and 53 of the 171 sections that rendered had no rated outlet at all.
+ * The same floor already governs the Big Question timeline's press updates
+ * (lib/press-outlets.mjs); this brings the bill page's own section under it.
+ *
+ * The data file still stores unrated articles (scripts/sync-coverage.mjs
+ * records `rated` on each and filters nothing): what is shown is decided here,
+ * at render, against the table this build ships with. Pure over its input, so
+ * the unit suite drives it without the corpus.
+ */
+export function ratedCoverage(raw: CoverageArticleRaw[]): CoverageArticle[] {
+  const rated = raw
+    .map((a) => ({ ...a, lean: leanFor(a.source) }))
+    .filter((a) => a.lean === 'left' || a.lean === 'center' || a.lean === 'right');
+  return coverageTier(rated) === 'none' ? [] : rated;
+}
+
+/**
+ * Articles covering a bill that the page may show — rated outlets only, and
+ * empty below two of them (ratedCoverage). Non-empty means the page renders
+ * the section (disclaimed when one-sided).
  */
 export function getCoverage(slug: string): CoverageArticle[] {
   const raw = COVERAGE[slug];
   if (!Array.isArray(raw)) return [];
-  const articles = raw.map((a) => ({ ...a, lean: leanFor(a.source) }));
-  return coverageTier(articles) === 'none' ? [] : articles;
+  return ratedCoverage(raw);
+}
+
+/**
+ * How many distinct outlets a list of articles comes from — the number an
+ * "N outlets" chip prints. Given getCoverage's output it counts RATED outlets
+ * only, and is 0 whenever the section itself would not render.
+ */
+export function coverageOutletCount(articles: Pick<CoverageArticleRaw, 'source'>[]): number {
+  return new Set(articles.map((a) => normalizeSource(a.source))).size;
 }
 
 /**

@@ -22,7 +22,7 @@ import {
   type DocketEvidence,
   type DocketRung,
 } from '../docket';
-import { coverageTier, getCoverage, newestArticleDate, normalizeSource, rankNews } from '../coverage';
+import { coverageOutletCount, coverageTier, getCoverage, newestArticleDate, rankNews } from '../coverage';
 /* THE LAMP, and this is the ONLY module in lib/core that may import it: the
  * conversation selects and captions the news band and touches nothing else.
  * See getNewsBills' header for the boundary and why it is drawn here. */
@@ -356,7 +356,7 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     return {
       raw,
       tier: coverageTier(articles),
-      sources: new Set(articles.map((a) => normalizeSource(a.source))).size,
+      sources: coverageOutletCount(articles), // rated outlets only (getCoverage)
       urgency: effectiveUrgency(raw.status, raw.last_action_date),
       newestArticle: newestArticleDate(articles),
     };
