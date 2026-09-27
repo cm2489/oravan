@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-27T18:19:04.952Z",
+    "fetched_at": "2026-09-27T19:05:04.505Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-27T18:19:04.952Z"
+        "checked_at": "2026-09-27T19:05:04.505Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-27T18:19:04.952Z"
+        "checked_at": "2026-09-27T19:05:04.505Z"
       },
       "leans": {
         "center": {
@@ -718,6 +718,18 @@
           "domain": "wdet.org",
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-24"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5775-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "northeastlivetv.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPNVQwWXpraWlycU93allSSEdpY3htdzkwN0RJRTVoLTFjSC11UXM4NXliWk9xQlY4ZVB4ckx5cVZfS29KNXRPZVUzb1ROb3djWmhyeWtTdWRNLWFOUGVmT3FPeWsyUU5RVDdIcUlsZWpFRlI1Y3QtcUFiaWZBRUhVM2NpNXFUbTZqT3BLR0YxNkcyelRaME9sTmxvOHlsaEVNdnNSQWZBcW5wV0FqUnFXektJdlEwbUNycHh1T0dQU1NQb2pCRlhDVXIwUVBCX2tGNmFETw?oc=5"
         }
       ],
       "mostViewed": null
