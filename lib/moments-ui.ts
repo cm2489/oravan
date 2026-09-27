@@ -249,6 +249,41 @@ export function nominationCtaKey(
 }
 
 /**
+ * THE BILL CARD'S BUTTON KEY — the question page's former inline ternary,
+ * named so the label and the href below are read off ONE decision and cannot
+ * drift apart. A finished vehicle (signed, vetoed, a failed vote nobody moved
+ * to reconsider) or a settled question is a record, not a call to make.
+ */
+export function billCtaKey(settled: boolean): 'moments.readCall' | 'moments.readBill' {
+  return settled ? 'moments.readBill' : 'moments.readCall';
+}
+
+export type VehicleCtaKey = 'moments.readCall' | 'moments.readBill' | 'nominations.readRecord';
+
+/**
+ * WHERE A VEHICLE CARD'S BUTTON LANDS (2026-09-27 audit, SY-10).
+ *
+ * Every "Read + call" button on a Big Question opened the TOP of the vehicle's
+ * page, so the caller who had just chosen to call arrived at the headline and
+ * had to find the panel themselves — measured on the Iran question on a phone,
+ * the panel sat 1,857px below where the link landed. The button's own label
+ * promises the call, so it now lands ON the call: `#act`, the call panel's
+ * heading id (components/ActionPanel.tsx; the same anchor FloatingCallButton
+ * and the floor band's CTA already use). The decode is still one scroll up —
+ * on the desk it sits beside the panel in the same row.
+ *
+ * Keyed on the LABEL, deliberately: the fragment is added exactly when the
+ * button says "Read + call" and never otherwise. "Read the bill" and "Read
+ * the record" promise a record, so they land at the top — and on a nomination
+ * whose page has no call script, `#act` would point at a panel that is not
+ * rendered at all. The card's headline link is untouched: it is a read link
+ * and always lands at the top.
+ */
+export function vehicleCtaHref(path: string, ctaKey: VehicleCtaKey): string {
+  return ctaKey === 'moments.readCall' ? `${path}#act` : path;
+}
+
+/**
  * WHAT THE NOTE UNDER THE VEHICLES GRID IS ALLOWED TO PROMISE.
  *
  * `moments.bothNote` — "No side is pre-selected. Every link above opens the
