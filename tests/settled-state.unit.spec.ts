@@ -135,6 +135,24 @@ test.describe('SY-03 · decisionState, the MCP envelope\'s decision_state', () =
     expect(decisionState({ status: 'floor_vote', last_action_text: MOTION_TO_PROCEED_REJECTED }).state).toBe('settled');
   });
 
+  test('a failed vote with a motion to reconsider ENTERED is pending — the Big Questions line and the API say the same thing', () => {
+    // H.R. 3633's latest action on 2026-09-27, verbatim. The act-now pool
+    // still leaves it out (isSettledFloor), but the record says the question
+    // can come back, and "settled" would claim more than the record does.
+    const reconsider =
+      'Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate.';
+    const b = { bill_type: 'hr', status: 'floor_vote' as const, last_action_text: reconsider, last_action_date: today() };
+    expect(isSettledFloor(b)).toBe(true);
+    expect(billStatusLine(b)).toMatchObject({ key: 'failedReconsider', terminal: false });
+    expect(decisionState(b)).toEqual({ state: 'pending', reason: null });
+    // …and once the motion is disposed of, the failure stands again.
+    const tabled = 'Motion to reconsider laid on the table Agreed to without objection.';
+    expect(decisionState({ status: 'floor_vote', last_action_text: tabled, status_basis_text: CLOTURE_NOT_INVOKED })).toEqual({
+      state: 'settled',
+      reason: CLOTURE_NOT_INVOKED,
+    });
+  });
+
   test('a law is enacted; a veto is settled', () => {
     expect(decisionState({ status: 'signed', last_action_text: 'Became Public Law No: 119-103.' })).toEqual({
       state: 'enacted',

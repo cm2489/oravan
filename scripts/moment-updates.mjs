@@ -881,8 +881,13 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  *   They are GROUNDING: printed into the prompt verbatim, persisted as
  *   `grounded_in.roll_calls`, and — with any record event in the window —
  *   they switch the absence lint on.
+ * @param {string[] | null} [onRecord] EVERY roll call data/votes.json holds on
+ *   these measures at any date (rollCallsOnRecord; planSummaries computes it),
+ *   or null when the collector cannot vouch for that count. Persisted as
+ *   `grounded_in.roll_calls_on_record` when known; it is the only count the
+ *   roll-call absence exemption reads. Omitted → no exemption.
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = []) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -1007,9 +1012,11 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
   for (const lang of ['en', 'es']) {
     const value = parsed[lang].trim();
     if (!value) failures.push(`${lang}: empty`);
-    // `rollCalls` is the count this revision is about to store as
-    // grounded_in.roll_calls — the same number the gate re-lints it with.
-    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCalls: (votes ?? []).length })) {
+    // `rollCallsOnRecord` is the count this revision is about to store as
+    // grounded_in.roll_calls_on_record — the same number the gate re-lints it
+    // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
+    const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord })) {
       failures.push(`${lang}: ${f}`);
     }
   }
@@ -1035,11 +1042,59 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
       // the field is also the gate's marker that this revision passed the
       // absence lint before it was stored (checkMomentUpdates).
       roll_calls: (votes ?? []).map((r) => r.id),
+      // Present only when the collector could vouch for it (see
+      // rollCallsOnRecord): the count the gate's roll-call exemption reads.
+      ...(Array.isArray(onRecord) ? { roll_calls_on_record: [...onRecord] } : {}),
       refs,
     },
     changed_because: changedBecause(entry, statuses, (entry.summary_revisions ?? []).at(-1) ?? null),
     model: SUMMARY_MODEL,
   };
+}
+
+/**
+ * An action sentence that names a RECORDED vote, in the record's own
+ * vocabulary: the House's "(Roll no. 282)" and "by recorded vote", the
+ * Senate's "Yea-Nay Vote. 49 - 50. Record Vote Number: 244." and "(Record
+ * Vote No. 234)", and "the Yeas and Nays". A voice vote or unanimous consent
+ * never matches. Over-matching ("the yeas and nays were ordered", a vote
+ * requested but not yet held) only ever withholds the exemption below.
+ */
+const NAMES_RECORDED_VOTE = /\b(?:roll(?:[- ]call)?\s+(?:no\.|number\b|votes?\b)|record(?:ed)?\s+votes?\b|yea-nay\s+vote\b|yeas\s+and\s+nays\b)/i;
+
+/**
+ * EVERY roll call data/votes.json holds on these measures, at any date — the
+ * number the roll-call absence exemption reads (lib/moment-updates-gate.mjs,
+ * ROLL_CALL_ABSENCE; the 2026-09-27 audit SY-23) — or null when this
+ * collector cannot vouch for it.
+ *
+ * NOT the summary window's roll calls: "The House passed H.R. 8800 with no
+ * recorded vote" is false over House roll 278 (2026-07-22) whether or not
+ * roll 278 falls inside the last 14 days.
+ *
+ * NULL — no exemption — when an action sentence this collector holds for the
+ * measures (their retained updates, each bill's last action) names a recorded
+ * vote and the vote file holds none on these measures. That is the vote
+ * file's own blind spot showing: it starts at its `_meta.floor` (2026-05-27),
+ * and a recorded vote before that is not in it. A roll call before the floor
+ * that no held sentence mentions stays invisible; that residue is stated in
+ * the gate's section note, not hidden.
+ *
+ * @param {string[]} slugs
+ * @param {Record<string, any>[]} rolls  data/votes.json rollCalls
+ * @param {Iterable<string | null | undefined>} actionTexts
+ * @returns {string[] | null}
+ */
+export function rollCallsOnRecord(slugs, rolls, actionTexts) {
+  const ids = (rolls ?? [])
+    .filter((r) => slugs.includes(r?.bill) && typeof r?.id === 'string')
+    .map((r) => r.id)
+    .sort();
+  if (ids.length > 0) return ids;
+  for (const t of actionTexts ?? []) {
+    if (NAMES_RECORDED_VOTE.test(String(t ?? ''))) return null;
+  }
+  return ids;
 }
 
 /**
@@ -1149,10 +1204,10 @@ export function recordMovedSince(entry, votes, windowFloor) {
  * record-only revision grounded in nothing would make every old update in the
  * window look new, and buy the model call this path exists to avoid.
  *
- * @param {{ momentId: string, entry: Record<string, any>, statuses: Record<string, string>, records: Record<string, { lastActionDate?: string | null }>, votes: Record<string, any>[], day: string, contextRefs?: string[], generatedAt?: string }} p
+ * @param {{ momentId: string, entry: Record<string, any>, statuses: Record<string, string>, records: Record<string, { lastActionDate?: string | null }>, votes: Record<string, any>[], rollCallsOnRecord?: string[] | null, day: string, contextRefs?: string[], generatedAt?: string }} p
  * @returns {Record<string, any> | null}
  */
-export function recordOnlyRevision({ momentId, entry, statuses, records, votes, day, contextRefs = [], generatedAt = new Date().toISOString() }) {
+export function recordOnlyRevision({ momentId, entry, statuses, records, votes, rollCallsOnRecord: onRecord = null, day, contextRefs = [], generatedAt = new Date().toISOString() }) {
   const latest = Object.values(records ?? {})
     .map((r) => /^(\d{4}-\d{2}-\d{2})/.exec(String(r?.lastActionDate ?? ''))?.[1])
     .filter((d) => typeof d === 'string')
@@ -1178,6 +1233,8 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
       vehicle_statuses: statuses,
       update_ids: recent.map((u) => u.id),
       roll_calls: (votes ?? []).map((r) => r.id),
+      // The same shape a model-written revision stores (generateStateSummary).
+      ...(Array.isArray(onRecord) ? { roll_calls_on_record: [...onRecord] } : {}),
       refs,
     },
     changed_because: changedBecause(entry, statuses, (entry?.summary_revisions ?? []).at(-1) ?? null),
@@ -1526,7 +1583,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  * }} args
- * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], intraday: boolean, day: string }[]}
+ * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
 export function planSummaries({
   mode,
@@ -1571,8 +1628,17 @@ export function planSummaries({
     const votes = (rolls ?? [])
       .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
       .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : Number(b.roll) - Number(a.roll)));
+    // EVERY roll call on these measures, no date filter — the only count the
+    // roll-call absence exemption may read (SY-23; see rollCallsOnRecord).
+    // The action sentences it checks for a recorded vote the file lacks: every
+    // retained update's record sentence and each bill's last action.
+    const actionTexts = [
+      ...(entry.updates ?? []).map((u) => u?.record?.action_text),
+      ...slugs.map((s) => records[s]?.lastActionText),
+    ];
+    const onRecord = rollCallsOnRecord(slugs, rolls, actionTexts);
     // `day` tells writeSummaries which ET day's attempt slot a call spends.
-    const base = { momentId, statuses, records, votes, intraday: mode !== 'nightly', day: today };
+    const base = { momentId, statuses, records, votes, rollCallsOnRecord: onRecord, intraday: mode !== 'nightly', day: today };
 
     let why;
     if (mode === 'nightly') {
@@ -1671,6 +1737,7 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
         statuses: p.statuses,
         records: p.records,
         votes: p.votes,
+        rollCallsOnRecord: p.rollCallsOnRecord,
         day: p.day,
         contextRefs,
       });
@@ -1707,7 +1774,7 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
     entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
     calls++;
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes);
+    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord);
     if (!revision) continue;
     // Belt and braces. On the nightly the prune's reserveRevisions holds the
     // slot this append needs; on an incremental run the prune reserves

@@ -3,7 +3,7 @@ import { SITE_ORIGIN } from '../lib/site';
 import { conversationBandPool } from '../lib/conversation';
 import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
 import { decisionState } from '../lib/docket.mjs';
-import { statusBasisText } from '../lib/floor-text.mjs';
+import { floorReconsiderPendingChamber, statusBasisText } from '../lib/floor-text.mjs';
 import { callTool } from './helpers';
 
 /*
@@ -217,6 +217,18 @@ test.describe('get_bill', () => {
       // `status` is unchanged for existing clients: additive, not a rename.
       expect(bill.status).toBe(settled!.status);
     }
+  });
+
+  test('a failed vote with a motion to reconsider entered: decision_state "pending", and the act_url stays', async ({ request }) => {
+    // The Big Questions line reads this as "another vote is possible"
+    // (failedReconsider); the API must not call it settled.
+    const reconsider = corpus.find((b) => b.status === 'floor_vote' && floorReconsiderPendingChamber(statusBasisText(b)) !== null);
+    test.skip(!reconsider, 'no pending motion to reconsider in the committed corpus');
+    const result = await callTool(request, 'get_bill', { slug: slugOf(reconsider!), locale: 'en' });
+    const bill = result.structuredContent!.bill as Record<string, unknown>;
+    expect(bill.decision_state).toBe('pending');
+    expect(bill.settled_reason).toBeNull();
+    expect(bill.act_url).toBe(bill.url);
   });
 
   test('a law: decision_state "enacted", and NO act_url', async ({ request }) => {
