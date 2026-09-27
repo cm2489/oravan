@@ -8,6 +8,19 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="call-reach-2026-09-27"></a>
+
+## 2026-09-27 — Rule 8: the floating call button stands down over the decoded answer on phones
+
+Rule touched: page 1, rule 8 (truth first; the call is never buried).
+
+- The conflict: the audit (SY-07) measured the floating "Make the call" button covering about three lines of the decoded answer on every phone screen (16 of 19 scroll positions; three personas of three). The owner approved hiding it while the decode is on screen (audit card a5, answered **a** at 2026-09-27T10:16:56Z, whose PR list read "the floating button hidden while the decode is on screen"). The same day's Constitution v2 draft carried rule 8's older clause, "on a bill page a way to call is on screen at every scroll depth", which the change (#314) breaks by design.
+- The owner's ruling, typed in session on 2026-09-27, answering the build report's card "Rule 8 clashes with the floating-button change (#314 vs #315)" with **"1. a"**. Option a, verbatim from the report: *"Amend rule 8's clause: '…at every scroll depth, except on a phone while the decode itself is on screen, where the call panel follows it directly.' Cost: one line in #315 and one log entry. The rebuild's Call tab replaces the button anyway."*
+- What the amended clause keeps: never two call surfaces at once; the button never sits over the decoded answer; the call panel is the next thing after the answer in the page; past the panel the button carries the rest of the page back to it; funnel invariant I2 (a completed script within two interactions) is unchanged, because it counts interactions and never read the button.
+- Gate: `tests/bill-call-rail.spec.ts` as amended by #314 (11 scroll positions on webkit-mobile: the button shows exactly when neither a call surface nor the answer is on screen, never over the answer, and the panel follows the answer). Until #314 merges, main still shows the button during the read, which satisfies both wordings.
+
+---
+
 <a id="constitution-v2-2026-09-27"></a>
 
 ## 2026-09-27 — Constitution v2: hard rules on page 1, direction on page 2, DESIGN.md retired
