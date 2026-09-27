@@ -6,7 +6,11 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { setPrefs, usePrefs } from '@/lib/local';
-import { matchMoments, type MomentSearchTeaser } from '@/lib/moments-ui';
+/* From the import-free module, never from lib/moments-ui: that file reads the
+   corpora at module scope, and this is a client component — importing the
+   matcher from there shipped all of data/ to the browser (2026-09-27 audit,
+   card a6). scripts/check-client-imports.mjs fails CI if it comes back. */
+import { matchMoments, type MomentSearchTeaser } from '@/lib/moments-search';
 import { Chip } from './system';
 import type { FreshnessSignals } from '@/lib/freshness-state';
 import type { FeedTeaser } from '@/lib/types';
