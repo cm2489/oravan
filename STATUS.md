@@ -1,5 +1,7 @@
 # STATUS — Oravan build
 
+> **Archived 2026-08-05 — not maintained; see CLAUDE.md.** Nothing below is current. The header was added on 2026-09-27; the ledger under it is unchanged.
+
 > Durable sprint ledger. **Each PR updates ONLY its own sprint bullet — nothing else in this file.** Queue/merge-train state lives in orchestrator session reports, never here (the retired Now/Next/Last-updated header was the #1 merge-conflict hotspot; `.gitattributes` union-merges this file as belt-and-suspenders).
 > Convention: every sprint entry records **done-ness, PR, and issues encountered** — problems are captured here first, then compounded into `docs/solutions/` when they're durable lessons (compound-engineering rule: never solve the same problem twice).
 > Operating rules: rename is the ONLY gate · Claude orchestrates, Colby reviews/merges everything · subagents on Sonnet 5 · every $ decision surfaced before commit.

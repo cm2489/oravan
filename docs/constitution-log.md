@@ -1,12 +1,141 @@
 # Constitution log
 
-The forensic record behind `CLAUDE.md`'s hard rules: the measurements, the file-and-line tracing, and the inventories of what each amendment had to go fix. Newest first, append-only — an entry is never edited or deleted once written, because the point of it is what was true on the day it was written.
+The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wording it retired, the measurements, the file-and-line tracing, the owner rulings, and the inventories of what each amendment had to go fix. Newest first, append-only — an entry is never edited or deleted once written, because the point of it is what was true on the day it was written.
 
-**What is NOT here, deliberately.** Every live rule, every dated `Amended YYYY-MM-DD:` marker sentence, and every instruction an agent must act on stays inline in `CLAUDE.md` — including the two that this repo has already broken once ("the list is not widened" and "nothing on this path writes `data/moments.json` and nothing publishes"). A link is only load-bearing if it gets followed, so nothing that changes what you should DO lives behind one. This file is where you check the arithmetic, not where you learn the rule.
+**What is NOT here, deliberately.** Every live rule, and every instruction an agent must act on, stays in `CLAUDE.md`, short, next to its gate — including the one this repo has already broken once ("the list is not widened", now in rule 3). A link is only load-bearing if it gets followed, so nothing that changes what you should DO lives behind one. Since Constitution v2 (2026-09-27) the dated amendment markers live here instead of inline: this file is where you learn how a rule got its shape, and where you check the arithmetic. Amending a hard rule is one PR that changes the rule, its gate and the public copy that states it, plus one entry appended here. The preamble this replaced is quoted in the 2026-09-27 entry.
 
-Each `CLAUDE.md` amendment points here with `(evidence: docs/constitution-log.md#anchor)` at the spot its paragraph used to sit.
+**Gate coverage:** this file is in `scripts/check-claim-truth.mjs`'s `SCAN_FILES`, added in the same change that created it. Moving text out of a scanned document into an unscanned one is how a gate quietly stops covering what it was written for; it was covered from its first line. Since 2026-09-27 it also carries an R3 allowlist entry: the retired review wordings quoted below are amendment records, each in a sentence that says so, and `tests/claim-truth.spec.ts` requires at least one to remain here.
 
-**Gate coverage:** this file is in `scripts/check-claim-truth.mjs`'s `SCAN_FILES`, added in the same change that created it. Moving text out of a scanned document into an unscanned one is how a gate quietly stops covering what it was written for; it was covered from its first line.
+---
+
+<a id="call-reach-2026-09-27"></a>
+
+## 2026-09-27 — Rule 8: the floating call button stands down over the decoded answer on phones
+
+Rule touched: page 1, rule 8 (truth first; the call is never buried).
+
+- The conflict: the audit (SY-07) measured the floating "Make the call" button covering about three lines of the decoded answer on every phone screen (16 of 19 scroll positions; three personas of three). The owner approved hiding it while the decode is on screen (audit card a5, answered **a** at 2026-09-27T10:16:56Z, whose PR list read "the floating button hidden while the decode is on screen"). The same day's Constitution v2 draft carried rule 8's older clause, "on a bill page a way to call is on screen at every scroll depth", which the change (#314) breaks by design.
+- The owner's ruling, typed in session on 2026-09-27, answering the build report's card "Rule 8 clashes with the floating-button change (#314 vs #315)" with **"1. a"**. Option a, verbatim from the report: *"Amend rule 8's clause: '…at every scroll depth, except on a phone while the decode itself is on screen, where the call panel follows it directly.' Cost: one line in #315 and one log entry. The rebuild's Call tab replaces the button anyway."*
+- What the amended clause keeps: never two call surfaces at once; the button never sits over the decoded answer; the call panel is the next thing after the answer in the page; past the panel the button carries the rest of the page back to it; funnel invariant I2 (a completed script within two interactions) is unchanged, because it counts interactions and never read the button.
+- Gate: `tests/bill-call-rail.spec.ts` as amended by #314 (11 scroll positions on webkit-mobile: the button shows exactly when neither a call surface nor the answer is on screen, never over the answer, and the panel follows the answer). Until #314 merges, main still shows the button during the read, which satisfies both wordings.
+
+---
+
+<a id="constitution-v2-2026-09-27"></a>
+
+## 2026-09-27 — Constitution v2: hard rules on page 1, direction on page 2, DESIGN.md retired
+
+The owner's ruling, on the decision cards of the 2026-09-27 audit (collection `audit-decisions`, kept out of this repo): card a1, "Adopt Constitution v2?", answered **a** at 2026-09-27T10:15:55Z; card a2, "Disarm the impeccable hook and retire DESIGN.md?", answered **a** at 2026-09-27T10:16:07Z. The scrap itself is the owner's ruling of 2026-09-25 ("scrap DESIGN.md + rebuild UI"), which until this change had no home in the repo. The text adopted is the draft in §3 of the audit's trap analysis (kept out of this repo), with the deviations listed below.
+
+What moved where:
+
+| From | To |
+|---|---|
+| `CLAUDE.md` line 3: "its **Design principles** section is the product constitution" | `CLAUDE.md` is page 1; README's principles are the public statement of it |
+| `CLAUDE.md` "Hard rules": seven bullets, one of them a 726-word paragraph | `CLAUDE.md`, twelve numbered rules, each naming its gate |
+| `CLAUDE.md` "Constitutional conflicts" | `CLAUDE.md` "When something conflicts", narrowed to page 1 |
+| `CLAUDE.md` "How work is handed back" and "How big work is delegated" | `docs/process.md` |
+| `CLAUDE.md` secrets inventory | `docs/runbooks/secrets.md` |
+| `CLAUDE.md` "Architecture in one breath": page counts, the dynamic-route list, the `proxy.ts` paragraph | one paragraph without counts; the page-view count moved into rule 1 |
+| `CLAUDE.md` dated amendment markers | this log — the parts it did not already hold are below |
+| `DESIGN.md` record-truth rulings ("the amber law", and the news band's counted caption) | `docs/record-truth.md` |
+| `DESIGN.md` Focus, Contrast, accessibility floor, reduced motion | `docs/accessibility.md` |
+| `DESIGN.md` "AI content is **labeled at first contact**…" | README design principle 5 |
+| `DESIGN.md` "Embed lockstep" | `docs/process.md`, rebuild checklist |
+| the rest of `DESIGN.md` | `docs/history/DESIGN-2026-07-24.md` — verbatim but for the removed token front matter; no force |
+| the owner's current look-and-feel rulings, which had no home | `docs/current-direction.md` (page 2) |
+
+Why the conflict duty stayed, narrowed. It caught three real conflicts in September, all page-1 matters: a research agent would not build a page counter against "no analytics trackers" without a ruling (raised 2026-09-10; shipped with the owner's approval as #247 on 2026-09-24); a Big Questions agent held computed party counts against the nonpartisan lint and asked (card l12, below); and an agent pulled a Moment-qualification vocabulary widening out of a spend-reduction PR for its own ruling. It also turned colours, radii and layouts into constitutional questions — the audit counted about fifty decision cards in three days. v2 keeps the duty for page 1 and takes taste out of its reach.
+
+Deviations from the draft, each made for accuracy against the code on `origin/main`:
+
+- Rule 1 states what the server really counts: short-lived rate-limit counters (a salted hash of the caller) and aggregate daily counts, including the page-shape count since #247, all fixed by `scripts/check-key-namespaces.mjs`. "The only server-side counts are aggregate" would have been false, because rate-limit counters are keyed per caller. `tests/upstash-privacy.spec.ts` added to its gates; no gate exists for third-party requests from main-site pages, and the rule says so.
+- Rule 2: the draft said the only dynamic routes are APIs listed in `tests/static-rendering.spec.ts`. That spec lists the pages that must prerender and names the two that do not (`/reps`, `/nominations/[slug]`); the rule now says that. `tests/frame-posture.spec.ts` moved to rule 12, where the frame split it pins is stated.
+- Rule 3 keeps the 2026-08-06 instruction that the lint is not widened to decodes, with its measurement link.
+- Rule 4 names Big Questions (owner, 2026-09-25) so the 2026-09-25 amendment survives the move.
+- Rule 6 carries "absence is a finding, and news stays instrumental" (from the 2026-07-26 rule), and marks "a settled decision shows no call apparatus" as not yet true on bill pages (audit SY-02).
+- Rule 7: the reflow gate is the `webkit-320` Playwright project; `tests/bill-a11y.spec.ts` covers the bill page only (audit SY-56), and the rule says so.
+- Rule 8 names `tests/bill-call-rail.spec.ts` for "a way to call at every scroll depth", and does not claim the funnel spec reads `data-testid`s (it reads section ids today).
+- Rule 9: `scripts/check-public-allowlist.mjs` keeps `public/` to allowlisted files; it does not check competitor names, so that clause and "git history is never rewritten" say they have no automated gate yet.
+- Rule 10 names the one partial gate (`scripts/check-key-namespaces.mjs` confines the Upstash env vars).
+- Rule 12 names the palette mirrors the code names (`lib/embed-theme.ts` lists four for the embed's default pair).
+- Merging keeps the grant's scope path list, which the unattended pipeline-doctor routine reads; only its history is here (`#merging-2026-09-24`).
+- Page 2 (`docs/current-direction.md`) says plainly that the live site still carries the July 2026 system until the rebuild, names the two message keys that print the word "green" in both languages, records that the impeccable hook is off and why, and replaces two product names with a note that they are kept out of this repo.
+
+Gate changes in the same change:
+
+- `scripts/check-claim-truth.mjs`: `CLAUDE.md`'s R3 allowlist entry removed (its last retired-wording quotation moved here), an entry for this file added, `DESIGN.md` dropped from `SCAN_FILES`, the new living documents added to it, and `docs/history/` listed as not scanned, with the reason.
+- `tests/claim-truth.spec.ts`: the labeling-clause test now reads README principle 5; "the amendment records must still be in the files" now requires them in this log.
+
+The preamble of this file until this entry, verbatim:
+
+> **What is NOT here, deliberately.** Every live rule, every dated `Amended YYYY-MM-DD:` marker sentence, and every instruction an agent must act on stays inline in `CLAUDE.md` — including the two that this repo has already broken once ("the list is not widened" and "nothing on this path writes `data/moments.json` and nothing publishes"). A link is only load-bearing if it gets followed, so nothing that changes what you should DO lives behind one. This file is where you check the arithmetic, not where you learn the rule.
+>
+> Each `CLAUDE.md` amendment points here with `(evidence: docs/constitution-log.md#anchor)` at the spot its paragraph used to sit.
+
+### Moved from CLAUDE.md: the amendment history this log did not yet hold
+
+Each item is what `CLAUDE.md` said, dated, as it stood on 2026-09-27. Where an older entry below already held the evidence, the item links to it rather than repeat it.
+
+<a id="ai-content-2026-07-25-marker"></a>
+
+**2026-07-25 — AI content: the founding correction** (evidence: [#ai-content-2026-07-25](#ai-content-2026-07-25)). The rule was "AI content is always labeled, and never publishes unless the automated gates pass", and its marker read that this line previously read "human-reviewed", which the decode path never did — the nightly sync commits decodes straight to `main`, and the Moments live layer publishes its summaries the same way.
+
+<a id="truth-first-2026-07-26"></a>
+
+**2026-07-26 — Truth-first, call-next.** The hard rule, as amended that day: *"the product leads as the unbiased plain-words source on any issue; calling is the natural next step after engagement, not the price of admission. Enforced by named invariants in `tests/funnel.spec.ts`: every homepage truth surface is ≤1 click from a decoded, AI-labeled answer (I1), and every decoded answer keeps a completed call script within 2 interactions, ZIP-first ≤3 clicks (I2). Demote the call apparatus, never bury it. Unchanged: no Moment without a legislative vehicle, absence is a finding, news stays instrumental."* The single invariant it replaced was "≤3 clicks to a completed call script" (the header of `tests/funnel.spec.ts` records the rewrite). Now page 1, rules 6 and 8; the budgets live in the spec only.
+
+<a id="conflicts-2026-08-05"></a>
+
+**2026-08-05 — The conflict duty reaches shipped claims.** The sentence added to the "Constitutional conflicts" section: *"The same duty covers **shipped claims that have quietly stopped being true.** A rule that the code no longer honors is a conflict, not a detail — surface it the same way. Added 2026-08-05 after three went unflagged in one session: the `/citations` "no advocacy language" gate (a prompt instruction, never a gate), the House-has-no-vote problem in any non-bill vehicle, and coverage staleness (88.5% of `data/coverage.json` entries older than 30 days behind a page that reads as nightly-fresh)."* The section's scope line was *"Applies to: the hard rules above, README Design principles 1–6, and the named invariants in `tests/funnel.spec.ts`."* v2 narrows the scope to page 1 and keeps the shipped-claims duty as a rule-4 conflict.
+
+<a id="ai-content-2026-08-06-vocab-marker"></a>
+
+**2026-08-06 — AI content: the vocabulary lint dropped from the gate list** (evidence: [#ai-content-2026-08-06-vocab](#ai-content-2026-08-06-vocab)). The marker: *"Amended 2026-08-06: the gate list above also named a "forbidden-vocabulary lint", which has never run on the decode path — `lintForbidden` (`lib/moments-gate.mjs`) is wired into `scripts/check-moments.mjs` and `scripts/check-moment-updates.mjs` only."* Its instruction, *"The list is not widened; the claim is corrected"*, is now in page 1, rule 3.
+
+<a id="ai-content-2026-08-06-schema-marker"></a>
+
+**2026-08-06 (second pass) — AI content: the schema mechanism named correctly** (evidence: [#ai-content-2026-08-06-schema](#ai-content-2026-08-06-schema)). The marker: *"Amended 2026-08-06, second pass: the gate parenthetical at the top of this rule said a schema failure "fails the whole sync rather than shipping a partial record", which named the wrong mechanism. The promise held — nothing partial ships, the bill is simply not added — so the parenthetical now names the two mechanisms that actually run, including the pre-commit corpus check in `scripts/verify-sync.mjs` that really does fail the whole nightly run."* Now page 1, rule 11.
+
+<a id="ai-content-2026-08-07-marker"></a>
+
+**2026-08-07 — AI content: Moment first drafts by `scripts/moment-draft.mjs`** (evidence: [#ai-content-2026-08-07](#ai-content-2026-08-07)). Written on the owner's directive *"I want to review and edit the writing and the choice of what goes up. I don't actually want to write them"*. The marker recorded that the carve-out's *hand-authored and merged by Colby* was no longer accurate in its first half: `scripts/moment-draft.mjs` wrote the FIRST DRAFT of a candidate's `name`, `summary`, and each vehicle's `role` — both languages — from the record printed in the same `moment-watch` issue and nothing else, labelled there as an unreviewed AI draft, and lint-checked (`lintForbidden` via `lintRevisionText`, plus the speculation lint and an asserted-vote-date check) before it was ever offered. Its instruction, in bold: **the owner edits that draft and merges it; nothing on this path writes `data/moments.json` and nothing publishes**. Until #280 retired that wording on 2026-09-25, the marker quoted `moments.howMadeBody` — *"checked by an automated gate, then reviewed by a person before it publishes"* — as the string the instruction kept true. The draft-then-merge flow was retired on 2026-09-25 (below). The marker's last guarantee is still pinned: delivery never depends on the model — with no key, an API error, an unparseable reply, or a lint-rejected field the scaffold falls back to the blank form and the issue still opens (`tests/moment-draft.unit.spec.ts`).
+
+<a id="cursor-age-2026-08-12"></a>
+
+**2026-08-12 — Corpus integrity: the cursor-age alarm moved after the commit (owner's N8-A2 ruling).** The marker, in substance and mostly verbatim: `scripts/verify-sync.mjs` still fails the whole nightly run before anything is committed rather than commit a damaged corpus — with ONE check subtracted from it. The cursor-age ceiling (`CURSOR_MAX_AGE_DAYS = 10`) moved out to `scripts/check-cursor-age.mjs`, which runs as the LAST step of `sync-bills.yml`, **after** the commit. It was never a corpus claim: a stalled cursor says *we are behind*, not *the corpus is damaged*, and failing it before the commit made a stalled night discard its own already-paid decodes, coverage, nominations and Moment updates — which made the backlog it was complaining about strictly worse, with no self-healing path (the same stall recurs the next night, so `main` simply stops advancing). It was also the less honest option: the site's freshness math reads that same `lastSync` (`lib/freshness-state.ts`), so refusing the commit froze the staleness signal at an older value than the truth. **Every integrity gate stayed pre-commit** — bilingual parity, corpus uniformity, the count-drop floor, the floor-signals evidence check, the moment-updates retention caps, and the cursor's FORMAT (a bare-date cursor is damage, not lateness: it 400s Congress.gov). The run still goes red when the alarm fires; the night's data lands anyway. No user-facing string needed a correction: `citations.aiBody` claims in both languages that "the whole corpus is re-checked before the nightly sync is allowed to publish anything", and the corpus re-check is precisely what stayed. Pinned by `tests/nightly-pipeline.unit.spec.ts`, which asserts which check lives in which file AND the step order in the workflow. Now page 1, rule 11.
+
+<a id="architecture-2026-09-24"></a>
+
+**2026-09-24 — Architecture counts and the page-view count.** The architecture paragraph said: *"~7,500 SSG pages (7,566 prerendered HTML pages in the 2026-09-24 build: 6,410 bill pages, 1,082 member pages, 30 daily-brief pages and the flat pages, in both languages — pinned by `tests/static-rendering.spec.ts`)"*, and, of `proxy.ts`: *"(since #247, owner-approved 2026-09-24): after the response is sent it adds one to a per-day page-view count keyed by the page's SHAPE (`home`, `bill`, `question`, … — nine labels pinned by `scripts/check-key-namespaces.mjs`), never by path, slug, query, locale, or anything about the visitor; the count lives in the counters database and feeds the daily digest only."* The counts were dropped from `CLAUDE.md` because a test pins the posture and a count needed three corrections in two days. The page-view count is now part of rule 1. One note the move surfaced: member pages, `/today`, `/follow` and 404s are filed under the `other` label, so "nine labels" did not mean member pages were counted apart (audit SY-49).
+
+<a id="ai-content-2026-09-25-marker"></a>
+
+**2026-09-25 — Big Questions under the automated gates** (evidence: [#ai-content-2026-09-25](#ai-content-2026-09-25)). One sentence of the marker is not in that entry: *"Until the automated Big Questions writer ships, changes to `data/moments.json` still reach `main` through PRs."* It still holds, through the merging rule: `data/moments.json` is outside the standing grant, so it waits for the owner.
+
+---
+
+<a id="privacy-lines-2026-09-27"></a>
+
+## 2026-09-27 — Two privacy lines known to be false, left live until launch (card l16)
+
+Rules touched: page 1, rules 1 and 4 (a shipped claim that has stopped being true is a rule-4 conflict). Recorded here so the decision has a date and a tripwire rather than living only in session memory.
+
+- The owner's card l16, "Correct the two false privacy lines", answered **b** at 2026-09-27T00:59:39Z, with the note, verbatim: *"Bring this back up prior to launch."* The option text behind **b** was not exported with the answer; with the note, it leaves both lines as they are for now.
+- The two lines, as shipped on 2026-09-27, in both languages: `privacy.p1` says Oravan never asks for your name, email or address — and the optional street-address refinement for split ZIPs asks for an address (sent once by POST, never stored or logged), and the partnership feedback form asks for contact details. `privacy.p8` says Oravan keeps "one plain count" — the page-shape count — while `lib/usage.ts` also keeps daily script-generation, MCP-tool, MCP-client and brand-preview counts, and `lib/impressions.ts` keeps per-partner embed impression counts.
+- Not changed by the change that wrote this entry. **Tripwire: before the press hold lifts; date not yet set by the owner.** Whoever lifts the hold brings this card back to the owner first.
+
+---
+
+<a id="party-counts-2026-09-26"></a>
+
+## 2026-09-26 — Party counts on votes vs the nonpartisan lint (card l12), recorded 2026-09-27
+
+Rule touched: page 1, rule 3 (nonpartisan by construction).
+
+- The question: party breakdowns on recorded votes as mechanical counts in text (for example "R 4 yea / 49 nay"). They collide with two shipped rules: `lintForbidden` (`lib/moments-gate.mjs`) rejects party names in Big Question text, and `components/VoteRecord.tsx` documents the vote record as naming no party.
+- The owner's card l12, "Party breakdowns: how they appear", answered **b** at 2026-09-26T21:16:56Z, with the note, verbatim: *"You handle the rule change. This is not that big of a deal to me, I just need it to work."* The option text behind **b** was not exported with the answer, so which display **b** chose is not recorded here.
+- What the note delegates: the rule change itself — a scoped lint exception for mechanical count patterns, and the vote-record wording to match — is Claude's to write, as a page-1 amendment with its gate, its tests and both languages in one PR. **Not made yet**: this entry records the delegation, and the change that makes it appends its own entry. Rule 3 as written in v2 ("party is text, never a hue") already allows a count in text; the lint does not yet (audit SY-27).
 
 ---
 

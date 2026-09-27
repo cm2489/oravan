@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -16,10 +16,17 @@ import { expect, test } from '@playwright/test';
  * inherited the false claim from whichever document their author happened to
  * read. Four documents describing the same rule is fine. Four documents
  * describing it DIFFERENTLY is how a false claim ships.
+ *
+ * Constitution v2 (2026-09-27) retired DESIGN.md to docs/history/ (no force,
+ * not scanned) and moved its one provenance sentence into README principle
+ * 5, so three documents state the rule now. It also moved CLAUDE.md's dated
+ * amendment markers into docs/constitution-log.md, so that is where the
+ * amendment records must survive (see LOG below).
  */
 
 const ROOT = process.cwd();
-const CONSTITUTION = ['README.md', 'CLAUDE.md', 'PRODUCT.md', 'DESIGN.md'] as const;
+const CONSTITUTION = ['README.md', 'CLAUDE.md', 'PRODUCT.md'] as const;
+const LOG = 'docs/constitution-log.md';
 
 function runGate(...args: string[]) {
   return spawnSync('node', ['scripts/check-claim-truth.mjs', ...args], {
@@ -73,15 +80,26 @@ test.describe('the CI gate', () => {
  * .not.toMatch() inside a three-iteration loop below, where a global
  * regex's lastIndex survives between calls and can silently skip a match —
  * a latent false green in the one file whose entire job is not to be one.
+ *
+ * The hand-review wordings joined on 2026-09-27, with the gate's RETIRED
+ * list: PRODUCT.md said Big Question entries were "hand-reviewed" for two
+ * days after the owner made Big Questions fully automatic.
  */
-const RETIRED = /human[\s-]?review|reviewed by (a|the) (human|person)|revisad[oa]s? por (una? )?persona|revisión humana/i;
+const RETIRED =
+  /human[\s-]?review|reviewed by (a|the) (human|person)|revisad[oa]s? por (una? )?persona|revisión humana|hand[\s-]?review|reviewed by hand|revisad[oa]s? a mano/i;
 
 /**
  * A retired-claim mention is legitimate in a constitution document only when
  * ITS OWN SENTENCE marks it as an AMENDMENT RECORD (the file quoting what it
  * used to say), a DENIAL ("the decode path is not human-reviewed"), or an
- * EXPLICIT SCOPE — Moments and call scripts, the two places human review
- * genuinely happens.
+ * EXPLICIT SCOPE — call scripts, the one place human review genuinely
+ * happens.
+ *
+ * Moments were the second scope until 2026-09-27. Big Question entries were
+ * owner-merged then; since the owner's 2026-09-25 ruling they publish on the
+ * automated gates with no person in the path, so a review claim scoped to
+ * Moments is no longer true, and naming Moments no longer excuses one (the
+ * gate dropped the same category from R3 in the same change).
  *
  * "Its own sentence" is the 2026-08-06 correction, and it is the whole test.
  * This used to test a ±2-line window, which meant that in a markdown
@@ -95,7 +113,7 @@ const RETIRED = /human[\s-]?review|reviewed by (a|the) (human|person)|revisad[oa
  */
 const AMENDMENT = /amended|corrected|reworded|retired|previously|inherited the false claim|no longer|never did|\bused to\b|\bit (said|claimed|read)\b/i;
 const DENIAL = /\b(is|are|was|were|has|have|had)\s+not\b|\bnever\s+(been\s+)?(human|review|claim|did|does|do)/i;
-const SCOPE = /\bmoments?\b|big question|call script|\bcaller\b|guion|gran(des)? pregunta/i;
+const SCOPE = /call script|\bcaller\b|guion/i;
 
 /*
  * The claim unit: reassemble wrapped lines into a paragraph, then take the
@@ -109,7 +127,8 @@ const SCOPE = /\bmoments?\b|big question|call script|\bcaller\b|guion|gran(des)?
  */
 const MD_BLOCK_START = /^\s{0,3}([-*+]\s|\d+[.)]\s|#{1,6}\s|>|\|)/;
 
-function claimSentences(text: string): { line: number; sentence: string }[] {
+/** Every sentence of a markdown document, with the line its paragraph starts on. */
+function sentencesOf(text: string): { line: number; sentence: string }[] {
   const lines = text.split('\n');
   const out: { line: number; sentence: string }[] = [];
   let i = 0;
@@ -126,32 +145,44 @@ function claimSentences(text: string): { line: number; sentence: string }[] {
       .replace(/\s+/g, ' ')
       .trim();
     for (const sentence of paragraph.split(/(?<=[.!?])\s+/)) {
-      if (RETIRED.test(sentence)) out.push({ line: i + 1, sentence: sentence.trim() });
+      out.push({ line: i + 1, sentence: sentence.trim() });
     }
     i = end + 1;
   }
   return out;
 }
 
+const claimSentences = (text: string) => sentencesOf(text).filter(({ sentence }) => RETIRED.test(sentence));
+
 const legitimate = (sentence: string) =>
   AMENDMENT.test(sentence) || DENIAL.test(sentence) || SCOPE.test(sentence);
 
-test.describe('the four constitution documents agree on what guards a publish', () => {
-  test('every human-review mention is an amendment record, a denial, or explicitly scoped', () => {
-    let mentions = 0;
-    for (const file of CONSTITUTION) {
+test.describe('the constitution documents agree on what guards a publish', () => {
+  test('every human-review mention is an amendment record, a denial, or scoped to the call script', () => {
+    for (const file of [...CONSTITUTION, LOG]) {
       for (const { line, sentence } of claimSentences(read(file))) {
-        mentions++;
         expect(
           legitimate(sentence),
           `${file}:${line} makes a bare human-review claim. It must read as an amendment record, ` +
-            `a denial, or be explicitly scoped to Moments or call scripts:\n  ${sentence.slice(0, 200)}`
+            `a denial, or be explicitly scoped to call scripts:\n  ${sentence.slice(0, 200)}`
         ).toBe(true);
       }
     }
-    // A zero here would mean the amendment records themselves were deleted,
-    // which is how the history of a correction gets lost.
-    expect(mentions, 'the amendment records must still be in the files').toBeGreaterThan(0);
+  });
+
+  test('the amendment records are still in the constitution log', () => {
+    // Since 2026-09-27 the dated amendment markers, and the retired wordings
+    // they quote, live in the log rather than inline in CLAUDE.md. A zero
+    // here would mean they were deleted, which is how the history of a
+    // correction gets lost. Each must also be marked as a record in its own
+    // sentence — a Moments scope no longer excuses one (see SCOPE).
+    const records = claimSentences(read(LOG));
+    expect(records.length, 'the amendment records must still be in docs/constitution-log.md').toBeGreaterThan(0);
+    for (const { line, sentence } of records) {
+      expect(AMENDMENT.test(sentence), `${LOG}:${line} quotes a retired wording without marking it:\n  ${sentence}`).toBe(
+        true
+      );
+    }
   });
 
   /*
@@ -216,19 +247,76 @@ test.describe('the four constitution documents agree on what guards a publish', 
     }
   });
 
-  test('DESIGN.md scopes its review clause to the call script rather than all AI content', () => {
-    const design = read('DESIGN.md');
-    const labelLine = design.split('\n').find((l) => /labeled at first contact/i.test(l));
-    expect(labelLine, 'DESIGN.md must still state the labeling rule').toBeTruthy();
-    expect(labelLine!, 'the review clause names the caller and the script').toMatch(
-      /call script is read .*by the caller|caller before it drives a call/i
-    );
-    expect(labelLine!, 'no blanket human-review claim over all AI content').not.toMatch(RETIRED);
+  /*
+   * Retargeted 2026-09-27. This clause lived in DESIGN.md until that file was
+   * retired to docs/history/ (no force, not scanned); its sentence moved to
+   * README principle 5 in the same change. Read by SENTENCE rather than by
+   * line: principle 5's first line is one long list item that also carries
+   * the 2026-08-06 amendment record, and that record quotes the retired
+   * wording on purpose.
+   */
+  test('README principle 5 scopes its review clause to the call script rather than all AI content', () => {
+    const labelSentences = sentencesOf(read('README.md'))
+      .map(({ sentence }) => sentence)
+      .filter((s) => /labeled at first contact/i.test(s));
+    expect(labelSentences.length, 'README must still state the labeling rule').toBeGreaterThan(0);
+    expect(
+      labelSentences.some((s) => /call script is read .*by the caller|caller before it drives a call/i.test(s)),
+      'the review clause names the caller and the script'
+    ).toBe(true);
+    for (const s of labelSentences) {
+      expect(s, 'no blanket human-review claim over all AI content').not.toMatch(RETIRED);
+    }
+    // The sentence that scopes the clause — decodes and Moment summaries
+    // publish with no human step, so the label is the whole disclosure there.
+    expect(read('README.md')).toMatch(/scoped to call scripts on purpose/);
   });
 });
 
 /*
- * GATE-COVERAGE: everything above polices markdown-only edits to the four
+ * PAGE 1 NAMES ONLY GATES THAT EXIST (added 2026-09-27, Constitution v2).
+ * Each hard rule in CLAUDE.md names the gate that enforces it, and a rule
+ * whose gate does not exist is decoration — the draft v2 was adopted from
+ * named one script that checks something else, and put a gate on the wrong
+ * rule. So every repo path CLAUDE.md names in backticks must exist, every
+ * constitution-log anchor the constitution documents link must resolve, and
+ * the one gate named by a non-path (the 320px Playwright project) must be
+ * configured. Globs (`scripts/*.mjs`) are scope descriptions, not paths, and
+ * are skipped. Runs on the docs-only fast path with the rest of this file,
+ * which is where a CLAUDE.md-only edit lands.
+ */
+test.describe('page 1 names only gates that exist', () => {
+  const PATH_PREFIX = /^(tests|scripts|lib|components|app|docs|data|messages|\.github)\//;
+
+  test('every repo path CLAUDE.md names in backticks exists', () => {
+    const claude = read('CLAUDE.md');
+    const named = [...claude.matchAll(/`([^`\s]+)`/g)]
+      .map((m) => m[1].split('#')[0])
+      .filter((p) => PATH_PREFIX.test(p) && !p.includes('*'));
+    expect(named.length, 'CLAUDE.md should name its gates by path').toBeGreaterThan(20);
+    const missing = named.filter((p) => !existsSync(join(ROOT, p)));
+    expect(missing, 'CLAUDE.md names a path that does not exist').toEqual([]);
+  });
+
+  test('every constitution-log anchor linked from the constitution documents resolves', () => {
+    const anchors = new Set([...read(LOG).matchAll(/<a id="([^"]+)"><\/a>/g)].map((m) => m[1]));
+    const linked = ['CLAUDE.md', 'README.md', 'PRODUCT.md'].flatMap((f) =>
+      [...read(f).matchAll(/docs\/constitution-log\.md#([\w-]+)/g)].map((m) => ({ f, id: m[1] }))
+    );
+    expect(linked.length).toBeGreaterThan(0);
+    for (const { f, id } of linked) {
+      expect(anchors.has(id), `${f} links docs/constitution-log.md#${id}, which has no anchor`).toBe(true);
+    }
+  });
+
+  test('the reflow gate rule 7 names is a configured Playwright project', () => {
+    expect(read('CLAUDE.md')).toMatch(/`webkit-320` Playwright project/);
+    expect(read('playwright.config.ts')).toMatch(/name:\s*'webkit-320'[\s\S]{0,200}grep:\s*\/@reflow\//);
+  });
+});
+
+/*
+ * GATE-COVERAGE: everything above polices markdown-only edits to the
  * constitution documents — and it lived in the Playwright job, which ci.yml's
  * docs-only fast path skips precisely because a PR touched nothing but
  * markdown. The exact change class these tests exist for was the one class
