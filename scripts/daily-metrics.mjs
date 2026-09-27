@@ -91,6 +91,14 @@
  * counter needs neither. A shipped claim that has stopped being true is a
  * conflict, not a detail (CLAUDE.md, "Constitutional conflicts").
  *
+ * SCRIPT REFUSALS joined the digest 2026-09-27 (the 2026-09-27 audit, SY-48):
+ * one line under "Script generations", the 429s /api/script returned, by the
+ * guard that returned them (lib/usage.ts SCRIPT_REFUSAL_SCOPES). They ride in
+ * the SAME MGET as the generations (readUsageWindow), so there is no new read
+ * and no new failure mode — a counters read error still refuses the whole
+ * digest rather than print an invented zero. Descriptive only, like the site
+ * block: no spike or decline check runs on it.
+ *
  * PIPELINE HEALTH (2026-09) rides along on this same run, the same way issue
  * hygiene does and for the same reason: this is the job that already runs
  * every morning holding the token it needs. It appends one "Pipeline health"
@@ -106,7 +114,14 @@ import { join } from 'node:path';
 // directly — lib/core/mcp.ts transitively imports 'server-only' (via
 // lib/freshness.ts), which only resolves inside Next's own bundler, not
 // under tsx. See lib/usage.ts's header/MCP_TOOL_NAMES comments.
-import { MCP_TOOL_NAMES, PAGEVIEW_SURFACES, readMcpClientDay, readPageviewWindow, readUsageWindow } from '../lib/usage';
+import {
+  MCP_TOOL_NAMES,
+  PAGEVIEW_SURFACES,
+  SCRIPT_REFUSAL_SCOPES,
+  readMcpClientDay,
+  readPageviewWindow,
+  readUsageWindow,
+} from '../lib/usage';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -586,6 +601,11 @@ async function main() {
   const mcpTotal = seriesStats(spikeWindow(totalWindow), MCP_SPIKE_FLOOR);
   const script = seriesStats(spikeWindow(window.script), SCRIPT_SPIKE_FLOOR);
 
+  // The refusals behind that generations number, by guard, full 28-day window
+  // (the line reads day-1 and the day-1..day-7 sum). Never alarmed on.
+  const scriptRefusals = SCRIPT_REFUSAL_SCOPES.map((scope) => ({ scope, window: window.scriptRefusals[scope] }));
+  const refusedYesterday = scriptRefusals.reduce((n, r) => n + (r.window[0] ?? 0), 0);
+
   // Page views reuse the same 8-day prefix and the same seriesStats, with
   // floor Infinity — the per-tool lines' own trick, and here it is the
   // whole story: this series is reported, never alarmed on (no calibrated
@@ -637,6 +657,7 @@ async function main() {
     mcpTools,
     mcpTotal,
     script,
+    scriptRefusals,
     mcpClients: clientHandshakes.clients,
     spikeIssueUrls,
     mcpDecline,
@@ -671,7 +692,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 

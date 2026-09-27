@@ -31,6 +31,7 @@ import {
   parseCoverageOutage,
   parseFailingTests,
   parsePregen,
+  parseRedecodeDone,
   parseSyncDone,
   parseT3,
   pressFeedHealth,
@@ -60,6 +61,10 @@ const CREDIT = fixture('pipeline-health-credit-outage.log');
 const NEWSDESK = fixture('pipeline-health-newsdesk.log');
 const CI_FAILURE = fixture('pipeline-health-ci-failure.log');
 const PREGEN_ABORT = fixture('pipeline-health-pregen-abort.log');
+// The re-decode pass, cut from the 2026-09-26 scheduled nightly (run
+// 36260101319) — both of the lines it prints with the same prefix, so the
+// parser has to tell the outcome from the plan.
+const REDECODE = fixture('pipeline-health-redecode.log');
 
 /* ------------------------------------------------------------------ *
  * 1 · Log-line normalisation
@@ -116,6 +121,31 @@ test.describe('parseSyncDone', () => {
 
   test('a log with no sync line is null, never a zeroed record', () => {
     expect(parseSyncDone('nothing to see here')).toBeNull();
+  });
+});
+
+test.describe('parseRedecodeDone — the night\'s SECOND paid decode path', () => {
+  test('reads the outcome line, not the plan line printed under the same prefix', () => {
+    // The run prints "re-decode on new text:" twice. The first says what it
+    // WILL do ("10 will be re-decoded (cap 10)") and the second what it DID.
+    // A parser that took the first would report 192 re-decodes on a night that
+    // made 10, because "192 refreshed bill(s) seen" leads that line.
+    const done = parseRedecodeDone(REDECODE);
+    expect(done).not.toBeNull();
+    expect(done).toMatchObject({
+      redecoded: 10,
+      vetoed: 0,
+      skipped: 0,
+      notInCorpus: 0,
+      failed: 0,
+    });
+  });
+
+  test('a log without the line reads null, never 0 re-decodes', () => {
+    // The governing rule of this file: a missing reading and a healthy reading
+    // must never look the same. The nightly fixture predates the line.
+    expect(parseRedecodeDone(NIGHTLY)).toBeNull();
+    expect(parseRedecodeDone('nothing to see here')).toBeNull();
   });
 });
 
@@ -665,6 +695,34 @@ test.describe('estimateDaySpend', () => {
     expect(s.assumptions.decodeOutputTokens).toBeGreaterThan(0);
   });
 
+  test('a re-decode costs what a decode costs, and lands in the total', () => {
+    // It is the same Sonnet call on the same document shape. Leaving it out is
+    // what made the standing issue print a decode figure smaller than the
+    // night's decode calls: on 2026-09-26 the nightly re-decoded 10 bills and
+    // added 3, and only the 3 were counted.
+    const decodesOnly = estimateDaySpend({ decodes: 3 });
+    const withRedecodes = estimateDaySpend({ decodes: 3, redecodes: 10 });
+    expect(withRedecodes.redecodeUsd).toBeCloseTo(decodesOnly.decodeUsd * (10 / 3), 5);
+    expect(withRedecodes.totalLow).toBeCloseTo(decodesOnly.totalLow + withRedecodes.redecodeUsd, 5);
+    expect(withRedecodes.redecodeUsd).toBeGreaterThan(withRedecodes.decodeUsd);
+  });
+
+  test('a night with no re-decodes adds nothing, and the day still totals its other paths', () => {
+    const s = estimateDaySpend({ decodes: 3, t3Batched: 20, t3Runs: 2 });
+    expect(s.redecodeUsd).toBe(0);
+    expect(s.totalLow).toBeCloseTo(s.decodeUsd + s.t3Usd, 5);
+  });
+
+  test('the paid paths it does NOT count are named in the shape, not only in prose', () => {
+    // Coverage classifications and the Moments live-layer summary calls print
+    // no call count this estimator can read, so the total is a floor on the
+    // day. A reader of the JSON has to be able to see that without reading
+    // lib/pipeline-health.mjs.
+    const s = estimateDaySpend({ decodes: 1 });
+    expect(s.excludes).toContain('coverage relevance classifications');
+    expect(s.excludes).toContain('Moments live-layer summary calls');
+  });
+
   test('a day that ran nothing costs nothing', () => {
     expect(estimateDaySpend({}).totalLow).toBe(0);
   });
@@ -836,6 +894,33 @@ test.describe('formatHealthSection', () => {
   test('the spend figure always carries its "estimate, not a bill" disclaimer', () => {
     expect(formatHealthSection({})).toContain('ESTIMATE');
     expect(formatHealthSection({})).toContain('Anthropic console');
+  });
+
+  test('the disclaimer names the paid paths the figure leaves out', () => {
+    // A number labelled "spend" that silently omits two paid paths reads as
+    // the day's bill. It is a floor, and the sentence under the block says so.
+    const rendered = formatHealthSection({});
+    expect(rendered).toContain('relevance classifications');
+    expect(rendered).toContain('floor on');
+  });
+
+  test('re-decodes appear in the spend line and in the sync counters row', () => {
+    const rendered = formatHealthSection({
+      sync: { refreshed: 192, added: 3, gated: 388, ascendingFailed: 0, recentFailed: 0 },
+      redecode: { redecoded: 10, vetoed: 0, skipped: 0, notInCorpus: 0, failed: 0 },
+      spend: estimateDaySpend({ decodes: 3, redecodes: 10 }),
+    });
+    expect(rendered).toContain('10 re-decoded');
+    expect(rendered).toContain('re-decodes $');
+  });
+
+  test('a night whose log carried no re-decode line says nothing about re-decodes', () => {
+    // Null, not "0 re-decoded": the row must not invent a reading.
+    const rendered = formatHealthSection({
+      sync: { refreshed: 212, added: 11, gated: 366, ascendingFailed: 0, recentFailed: 0 },
+      redecode: null,
+    });
+    expect(rendered).not.toContain('re-decoded');
   });
 
   test('the coverage run and lean rows say "not found" when absent, and what tonight kept when present', () => {

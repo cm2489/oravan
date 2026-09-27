@@ -1,10 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { referenceBill } from './corpus-fixtures';
 import { mockScriptApi, seedZip } from './helpers';
 
-const BILL = '/bills/sjres-99-119';
-const BILL_SLUG = 'sjres-99-119';
+/*
+ * The bill page's call flow, end to end, and the civic record it writes.
+ *
+ * Controls and copy are found by message key; the bill is the corpus's
+ * reference fixture (tests/corpus-fixtures.ts) — decoded, in committee, with
+ * Spanish of its own. Any bill with a call panel would do, so the spec asks
+ * for one by property rather than naming whichever the last sync left behind.
+ * ZIP 78501 is TX-15 (Monica De La Cruz), the fixture tests/reps.spec.ts
+ * proves.
+ */
+const REF = referenceBill();
+const BILL_SLUG = REF.slug;
+const BILL = `/bills/${BILL_SLUG}`;
 
 test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await mockScriptApi(page);
@@ -13,16 +25,16 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await page.reload();
 
   // Stance -> mocked script appears, editable
-  await page.getByRole('radio', { name: 'I support it' }).click();
-  const textarea = page.getByRole('textbox', { name: 'Your script' });
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  const textarea = page.getByRole('textbox', { name: en.bill.scriptTitle });
   await expect(textarea).toBeVisible();
   await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
   await textarea.fill('My edited script.');
 
   // Switching stance does not destroy the edit
-  await page.getByRole('radio', { name: 'I oppose it' }).click();
+  await page.getByRole('radio', { name: en.bill.stance.oppose }).click();
   await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
-  await page.getByRole('radio', { name: 'I support it' }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
   await expect(textarea).toHaveValue('My edited script.');
 
   // Call section: reps render with tel links
@@ -30,14 +42,14 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
 
   // Outcome: selected state + upsert (change, not duplicate)
-  await page.getByRole('button', { name: 'Left a voicemail' }).first().click();
+  await page.getByRole('button', { name: en.bill.outcome.voicemail }).first().click();
   await expect(
-    page.getByRole('button', { name: 'Left a voicemail' }).first()
+    page.getByRole('button', { name: en.bill.outcome.voicemail }).first()
   ).toHaveAttribute('aria-pressed', 'true');
   // First-call milestone fires inline, adjacent to the tapped chip
-  await expect(page.getByText(/your first call/i)).toBeVisible();
+  await expect(page.getByText(en.bill.loggedFirst)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Spoke to someone' }).first().click();
+  await page.getByRole('button', { name: en.bill.outcome.contact }).first().click();
   const calls = await page.evaluate(() => JSON.parse(localStorage.getItem('oravan.calls') ?? '[]'));
   expect(calls).toHaveLength(1);
   expect(calls[0].outcome).toBe('contact');
@@ -49,10 +61,10 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   // match would be ambiguous about which one it proved.
   await page.goto('/record');
   await expect(
-    page.locator('section[aria-labelledby="history"]').getByText('S.J.Res. 99', { exact: false })
+    page.locator('section[aria-labelledby="history"]').getByText(REF.citation, { exact: false })
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Delete this record' }).click();
-  await expect(page.getByText('No calls logged yet')).toBeVisible();
+  await page.getByRole('button', { name: en.impact.deleteRecord }).click();
+  await expect(page.getByText(en.impact.emptyTitle)).toBeVisible();
 });
 
 test('call mode shows nudge, script, and dial buttons; Escape closes', async ({ page }) => {
@@ -60,12 +72,12 @@ test('call mode shows nudge, script, and dial buttons; Escape closes', async ({ 
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
-  await page.getByRole('radio', { name: 'I support it' }).click();
-  await page.getByRole('button', { name: 'Start the call' }).click();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await page.getByRole('button', { name: en.bill.startCall }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   // Fresh profile: the first-call after-hours nudge shows
-  await expect(dialog.getByText('Your first call?')).toBeVisible();
+  await expect(dialog.getByText(en.bill.firstCallTitle)).toBeVisible();
   await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
   expect(await dialog.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
   await page.keyboard.press('Escape');
@@ -80,17 +92,21 @@ test('script failure shows a retry that recovers', async ({ page }) => {
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ script: 'RECOVERED SCRIPT', cached: false }) });
   });
   await page.goto(BILL);
-  await page.getByRole('radio', { name: "I'm concerned" }).click();
-  // Next.js's route announcer is also role=alert - filter to ours
-  await expect(page.getByRole('alert').filter({ hasText: /try again/i })).toBeVisible();
-  await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByRole('textbox', { name: 'Your script' })).toHaveValue('RECOVERED SCRIPT');
+  await page.getByRole('radio', { name: en.bill.stance.undecided }).click();
+  // Next.js's route announcer is also role=alert - filter to ours, and the
+  // retry has to live inside it.
+  const failure = page.getByRole('alert').filter({ hasText: en.bill.scriptError });
+  await expect(failure).toBeVisible();
+  await failure.getByRole('button', { name: en.bill.retry }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveValue('RECOVERED SCRIPT');
 });
 
 test('spanish bill page serves translated decoded content', async ({ page }) => {
   await page.goto('/es' + BILL);
-  await expect(page.getByRole('heading', { name: 'En claro' })).toBeVisible();
-  await expect(page.locator('main')).toContainText(/El Congreso|El Senado|La Cámara|regla/i);
+  await expect(page.getByRole('heading', { name: es.bill.decoded })).toBeVisible();
+  // The Spanish decode itself (data/bills-es.json through lib/core), not the
+  // English one wearing Spanish chrome.
+  await expect(page.locator('main')).toContainText(REF.es.ai_sections!.what);
 });
 
 /*
@@ -121,45 +137,46 @@ async function visitAndWaitForReceipt(page: Page, url: string) {
  * history. Both locales' labels are captured when the row is written (the
  * record's contents are never resolved over the network — they are private
  * to the device), so the record prints in whichever language it is read in.
- * The ES headline literal is the same fixture tests/embed-bill-card.spec.ts
- * pins for this slug — a corpus refresh that breaks one breaks both.
+ * Both headlines are read from the fixture (data/bills.json and its Spanish
+ * overlay), so a re-decode moves the expectation along with the page.
  */
 test('a bill read in ENGLISH prints its SPANISH headline on /es/record', async ({ page }) => {
   await visitAndWaitForReceipt(page, BILL); // the EN page
   await page.goto('/es' + '/record');
   const reads = page.locator('section[aria-labelledby="reads"]');
-  await expect(reads.locator(`a[href$="/bills/${BILL_SLUG}"]`)).toContainText(
-    'El Senado busca restablecer'
-  );
+  await expect(reads.locator(`a[href$="/bills/${BILL_SLUG}"]`)).toContainText(REF.es.ai_headline!);
   // And back on the EN record, the same row prints English.
   await page.goto('/record');
-  await expect(
-    page
-      .locator('section[aria-labelledby="reads"]')
-      .locator(`a[href$="/bills/${BILL_SLUG}"]`)
-  ).not.toContainText('El Senado');
+  const enRow = page
+    .locator('section[aria-labelledby="reads"]')
+    .locator(`a[href$="/bills/${BILL_SLUG}"]`);
+  await expect(enRow).toContainText(REF.bill.ai_headline!);
+  await expect(enRow).not.toContainText(REF.es.ai_headline!);
 });
 
 test('legacy rows without bilingual labels still print their stored label on /es/record', async ({
   page,
 }) => {
   await page.goto('/es/record');
-  await page.evaluate(() => {
-    localStorage.setItem(
-      'oravan.calls',
-      JSON.stringify([
-        {
-          billSlug: 'sjres-99-119',
-          billLabel: 'S.J.Res. 99 · legacy stored label',
-          repBioguide: 'D000399',
-          repName: 'Monica De La Cruz',
-          stance: 'support',
-          outcome: 'contact',
-          at: '2026-07-01T12:00:00.000Z',
-        },
-      ])
-    );
-  });
+  await page.evaluate(
+    ({ slug, label }) => {
+      localStorage.setItem(
+        'oravan.calls',
+        JSON.stringify([
+          {
+            billSlug: slug,
+            billLabel: label,
+            repBioguide: 'D000399',
+            repName: 'Monica De La Cruz',
+            stance: 'support',
+            outcome: 'contact',
+            at: '2026-07-01T12:00:00.000Z',
+          },
+        ])
+      );
+    },
+    { slug: BILL_SLUG, label: `${REF.citation} · legacy stored label` }
+  );
   await page.reload();
   await expect(
     page.locator('section[aria-labelledby="history"]').getByText('legacy stored label', { exact: false })
@@ -194,23 +211,26 @@ for (const locale of ['en', 'es'] as const) {
   }) => {
     await visitAndWaitForReceipt(page, at(BILL));
     // A full profile: ZIP + a followed topic + a logged call + the read above.
-    await page.evaluate(() => {
-      localStorage.setItem('oravan.prefs', JSON.stringify({ zip: '78501', interests: ['health'] }));
-      localStorage.setItem(
-        'oravan.calls',
-        JSON.stringify([
-          {
-            billSlug: 'sjres-99-119',
-            billLabel: 'S.J.Res. 99',
-            repBioguide: 'D000399',
-            repName: 'Monica De La Cruz',
-            stance: 'support',
-            outcome: 'contact',
-            at: '2026-07-01T12:00:00.000Z',
-          },
-        ])
-      );
-    });
+    await page.evaluate(
+      ({ slug, label }) => {
+        localStorage.setItem('oravan.prefs', JSON.stringify({ zip: '78501', interests: ['health'] }));
+        localStorage.setItem(
+          'oravan.calls',
+          JSON.stringify([
+            {
+              billSlug: slug,
+              billLabel: label,
+              repBioguide: 'D000399',
+              repName: 'Monica De La Cruz',
+              stance: 'support',
+              outcome: 'contact',
+              at: '2026-07-01T12:00:00.000Z',
+            },
+          ])
+        );
+      },
+      { slug: BILL_SLUG, label: REF.citation }
+    );
     await page.goto(at('/record'));
 
     // All three sections are present, in the spec's order.

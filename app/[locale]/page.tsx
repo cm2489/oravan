@@ -82,12 +82,12 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  *    crowd out the one bill with a live floor fact and the page showed no
  *    crown at all. Everything else in the week is a plain ruled listing.
  *
- * 3. EVERY CALLABLE BILL LINK stays inside section[aria-labelledby=
- *    "top-actions"]. The funnel and freshness specs both read that boundary,
- *    and the panel carries a bill link — which is why that section is
- *    full-width with the max-width wrapper INSIDE it. The id is frozen; only
- *    the heading copy moved ("Worth a call this week" -> "Moving in Congress
- *    this week"), because the section stopped being an assignment.
+ * 3. EVERY CALLABLE BILL LINK stays inside the week's section. The funnel
+ *    spec reads that boundary through its `data-front-door="week"` hook (a
+ *    test hook, not a rule), and the panel carries a bill link — which is why
+ *    that section is full-width with the max-width wrapper INSIDE it.
+ *    freshness.spec.ts and moments.spec.ts still read the `top-actions` id
+ *    until their own un-pinning follow-ups move them to the hook.
  *
  * 4. THE GO-MARK APPEARS ONCE, MEASURING. Hero C's SECOND BEAT — "Then make
  *    it count." — is the measured promise, and the stroke under it survives
@@ -461,7 +461,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           on the right. Paper, not a dark slab: the only ground change on this
           page belongs to the green panel below.
           --------------------------------------------------------------- */}
-      <div className="mx-auto max-w-5xl px-4 pt-5 pb-6 md:pt-16 md:pb-12">
+      <div data-hero="" className="mx-auto max-w-5xl px-4 pt-5 pb-6 md:pt-16 md:pb-12">
         {/* THE GO-MARK AS A STROKE: the same 6px bar at the same 3px cap
             the route gauge is built from, drawn under the SECOND BEAT —
             because that clause is the thing being measured. The first
@@ -632,6 +632,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           // sliver. On a crownless week the band keeps both edges.
           className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-12`}
           aria-labelledby="moments-strip-title"
+          data-front-door="questions"
         >
           <div className="mx-auto max-w-5xl px-4">
             <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -698,11 +699,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* ---------------------------------------------------------------
           THE WEEK. Full-width by construction: the green panel is full-bleed
-          and it MUST stay inside this section (the funnel + freshness specs
-          read this boundary), so the max-width wrapper is inside, around the
-          section's other children. The id `top-actions` is frozen.
+          and it MUST stay inside this section (the funnel spec reads this
+          boundary by `data-front-door="week"`; freshness.spec.ts still reads
+          the `top-actions` id), so the max-width wrapper is inside, around the
+          section's other children.
           --------------------------------------------------------------- */}
-      <section aria-labelledby="top-actions">
+      <section aria-labelledby="top-actions" data-front-door="week">
         {/* THE MASTHEAD (M3 "green crown", owner decision 2026-08-01): the
             section opens as a dateline row — heading with the Stamp pressed
             across the row's closing hairline, sub beneath — instead of a
@@ -1097,9 +1099,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           headings sit at the same rung (text-h2; privacy dropped from
           h2-loud) so neither reads subordinate. The columns do not
           bottom-align and should not: this is ruled paper, not cards. Each
-          half keeps its own <section> — donate.spec.ts reads
-          section[aria-labelledby="support-title"], and the privacy
-          guarantees stay a ruled list, which is how a document states terms.
+          half keeps its own <section>, and the privacy guarantees stay a
+          ruled list, which is how a document states terms. (donate.spec.ts
+          checks every DONATE_URL link on the page is a link-out; it no
+          longer pins this band's presence.)
           §6 rules unchanged: the support half is gated on the same
           DONATE_URL constant as every donate affordance (setting it back to
           null darkens all of them at once, and this band quietly becomes the

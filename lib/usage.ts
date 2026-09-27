@@ -60,15 +60,23 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                                never which page (see the
  *                                                CONSTITUTIONAL CONSTRAINT
  *                                                comment at PAGEVIEW_SURFACES)
+ *   <env>:usage:script-refusal:<scope>:<YYYY-MM-DD>
+ *                                                an INCR'd daily counter per
+ *                                                /api/script 429 LIMITER —
+ *                                                which guard said no, never
+ *                                                to whom or about what (see
+ *                                                SCRIPT_REFUSAL_SCOPES)
  *
- * All four families are content-free (no slug/stance/locale/query/bill)
+ * All five families are content-free (no slug/stance/locale/query/bill)
  * and caller-free (no IP/UA/referer/salt) by construction: noteMcpToolCall's
  * only parameter is a closed-union tool name, noteScriptGeneration takes no
  * parameter at all, noteMcpClientHandshake's one input is force-
  * sanitized into a bounded software-name alphabet before any key is built
  * (see the CONSTITUTIONAL CONSTRAINT comment at sanitizeMcpClientName), and
- * notePageview's is force-narrowed to a closed 9-member route-template
- * union the same structural way.
+ * notePageview's and noteScriptRefusal's are each force-narrowed to a closed
+ * label union the same structural way (the route-template vocabulary and the
+ * refusal-scope vocabulary below, both pinned by
+ * scripts/check-key-namespaces.mjs).
  */
 
 // 90 days: long enough for month-over-month trend context beyond a single
@@ -175,7 +183,7 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data", "no
  * analytics trackers"): the <surface> segment is drawn from the closed
  * PAGEVIEW_SURFACES union below — route-template labels, fixed at compile
- * time, nine of them. A path, a slug, a query string, a locale prefix, a
+ * time, eleven of them. A path, a slug, a query string, a locale prefix, a
  * referer, an IP, or a User-Agent can never become one, and the narrowing
  * is STRUCTURAL rather than advisory: pageviewUsageKey pipes its own
  * argument through asPageviewSurface, so even an untyped or hostile caller
@@ -213,6 +221,14 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * reads it); 'other' is last and is the fallback every unrecognised path
  * collapses into.
  *
+ * 'member' and 'today' joined on 2026-09-27 (the 2026-09-27 audit, SY-49):
+ * until then the 1,082 member pages and the daily brief were counted under
+ * 'other', which on 2026-09-25 held 1,824 of 4,529 views — the digest's one
+ * traffic instrument could not see the member pages at all. Both are still
+ * TEMPLATE labels ('member' is the member-page template, never which member;
+ * 'today' is the daily-brief template, never which date), so the privacy
+ * posture is unchanged: one integer per template per UTC day.
+ *
  * scripts/check-key-namespaces.mjs parses THIS declaration by name and
  * fails CI on any label outside its own allowlist — keep the two in sync
  * deliberately, which is the point.
@@ -224,8 +240,10 @@ export const PAGEVIEW_SURFACES = [
   'questions-index',
   'question',
   'reps',
+  'member',
   'record',
   'nominations',
+  'today',
   'other',
 ] as const;
 
@@ -262,11 +280,25 @@ export function pageviewUsageKey(surface: PageviewSurface, day: string): string 
  * Bare /nominations is 'other' on purpose: there is no nominations index
  * route (only app/[locale]/nominations/[slug]), so that path 404s, and
  * counting a 404 as the nominations surface would overstate it.
+ *
+ * The two labels added 2026-09-27 (SY-49) match their routes' exact depth,
+ * and a deeper path under either is 'other' — neither route has a child
+ * segment, so /reps/<id>/<anything> and /today/<date>/<anything> are 404s:
+ *   - /reps/<bioguide> is 'member' (app/[locale]/reps/[bioguide]). The
+ *     bioguide segment is matched and dropped like every other segment; it
+ *     never travels onward.
+ *   - /today AND /today/<date> are both 'today'. They are one template, not
+ *     two: app/[locale]/today/page.tsx renders the newest brief and its dated
+ *     twin renders the identical derivation for a named day (that file's own
+ *     header), so splitting them would count a date, which is content.
+ * The three older segment labels ('bill', 'question', 'nominations') keep
+ * their original any-depth match — unchanged here on purpose, so their
+ * series stay comparable across this change.
  */
 export function pageviewSurfaceForPath(pathname: string, locales: readonly string[] = []): PageviewSurface {
   const segments = pathname.split('/').filter((segment) => segment !== '');
   if (segments.length > 0 && locales.includes(segments[0])) segments.shift();
-  const [head, second] = segments;
+  const [head, second, third] = segments;
   if (head === undefined) return 'home';
   switch (head) {
     case 'bills':
@@ -276,7 +308,10 @@ export function pageviewSurfaceForPath(pathname: string, locales: readonly strin
     case 'nominations':
       return second === undefined ? OTHER_PAGEVIEW_SURFACE : 'nominations';
     case 'reps':
-      return second === undefined ? 'reps' : OTHER_PAGEVIEW_SURFACE;
+      if (second === undefined) return 'reps';
+      return third === undefined ? 'member' : OTHER_PAGEVIEW_SURFACE;
+    case 'today':
+      return third === undefined ? 'today' : OTHER_PAGEVIEW_SURFACE;
     case 'record':
       return second === undefined ? 'record' : OTHER_PAGEVIEW_SURFACE;
     default:
@@ -308,6 +343,68 @@ export function isCountablePageviewRequest(req: {
   if (req.headers.get('next-router-prefetch') !== null) return false;
   if (req.headers.get('next-router-state-tree') !== null) return false;
   return (req.headers.get('accept') ?? '').includes('text/html');
+}
+
+// --- /api/script refusal counters (2026-09-27) ------------------------------
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: one integer per /api/script LIMITER per UTC
+ * day — "the daily spend breaker answered 429 three times yesterday". Never
+ * which bill, which stance, which caller, which tenant, or from where.
+ *
+ * WHY IT EXISTS (the 2026-09-27 audit, SY-48): usage:script counts only
+ * SUCCESSFUL cache-miss generations, and `script-day` (app/api/script/
+ * route.ts) is a fail-CLOSED spend breaker. So a digest reading "Script
+ * generations 0" could mean a quiet site or a call path that refused every
+ * uncached request all day, and nothing told the two apart. This family is
+ * the other half of that number: how many times each guard said no.
+ *
+ * The scopes are the three places the route answers 429, named for the guard,
+ * not the person:
+ *   'daily'   the GLOBAL spend breaker (script-day). Fail-closed, so it also
+ *             refuses when the counters database cannot be reached.
+ *   'burst'   the per-caller limiter (20 requests / 10 min).
+ *   'tenant'  an embed tenant's own limiters (embed-script / -day).
+ *
+ * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data"): the
+ * <scope> segment is drawn from the closed union below, fixed at compile
+ * time, and scriptRefusalUsageKey narrows its own argument through
+ * asScriptRefusalScope — the pageview family's structural discipline, not a
+ * convention. scripts/check-key-namespaces.mjs holds the canonical scope
+ * allowlist and fails CI on any other label.
+ *
+ * NO NEW LINKAGE CLASS: the write happens in the same request as that
+ * request's rl:script:<callerHash> check, which is exactly the usage:script
+ * precedent argued above (the most a log-level correlation could yield is
+ * "that caller hash was refused", which the 429 in the same log line already
+ * says).
+ *
+ * WHAT IT CANNOT SEE, said here so nobody reads a zero as an all-clear: a
+ * counters-database OUTAGE cannot count itself. The breaker refuses
+ * (fail-closed) and this write, which goes to the same database, falls back
+ * to per-instance memory with it. On such a day the digest shows zero here
+ * AND the site page-view counts collapse too — that collapse is the tell.
+ */
+export const SCRIPT_REFUSAL_SCOPES = ['daily', 'burst', 'tenant'] as const;
+
+export type ScriptRefusalScope = (typeof SCRIPT_REFUSAL_SCOPES)[number];
+
+const SCRIPT_REFUSAL_SCOPE_SET: ReadonlySet<string> = new Set<string>(SCRIPT_REFUSAL_SCOPES);
+
+/**
+ * Force any input onto the closed union. Unlike the page-view vocabulary
+ * there is no 'other' bucket: an unrecognised scope is a programming error,
+ * and it collapses onto 'daily' — the one scope whose non-zero count the
+ * digest flags — so a mistaken call site is noticed rather than hidden.
+ */
+export function asScriptRefusalScope(raw: unknown): ScriptRefusalScope {
+  return typeof raw === 'string' && SCRIPT_REFUSAL_SCOPE_SET.has(raw) ? (raw as ScriptRefusalScope) : 'daily';
+}
+
+export function scriptRefusalUsageKey(scope: ScriptRefusalScope, day: string): string {
+  // Narrowing applied HERE, not just at the call site — same structural rule
+  // as pageviewUsageKey.
+  return `${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${day}`;
 }
 
 // --- the ingestion calls ------------------------------------------------------
@@ -403,6 +500,17 @@ export async function noteBrandPreview(): Promise<void> {
 }
 
 /**
+ * Record one /api/script 429, by the guard that returned it. Called via
+ * `after()` from app/api/script/route.ts at each of its three 429 sites, so a
+ * slow or failed write never delays the refusal itself. Content-free and
+ * caller-free: the one input is narrowed onto SCRIPT_REFUSAL_SCOPES before
+ * any key is built. Never throws.
+ */
+export async function noteScriptRefusal(scope: ScriptRefusalScope): Promise<void> {
+  await noteUsage(scriptRefusalUsageKey(scope, usageDayKey()));
+}
+
+/**
  * Record one MCP initialize HANDSHAKE — a client software connecting, NOT a
  * tool call. Handshakes are the honest unit for this family: the HTTP route
  * is deliberately stateless (fresh McpServer per POST), so the SDK's
@@ -437,12 +545,19 @@ export async function notePageview(surface: PageviewSurface): Promise<void> {
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
 
 export type UsageWindowResult =
-  | { ok: true; mcp: Record<McpToolName, number[]>; script: number[] }
+  | {
+      ok: true;
+      mcp: Record<McpToolName, number[]>;
+      script: number[];
+      scriptRefusals: Record<ScriptRefusalScope, number[]>;
+    }
   | { ok: false };
 
 /**
  * Read `days.length` days' worth of counts for all 5 MCP tools + script
- * generations, ONE Upstash round trip via MGET, never N sequential GETs —
+ * generations + script refusals by scope (added 2026-09-27, SY-48 — read
+ * beside the generations they explain), ONE Upstash round trip via MGET,
+ * never N sequential GETs —
  * mirrors lib/impressions.ts's readImpressionsWindow. `days` is caller-
  * supplied (scripts/daily-metrics.mjs's trailingWindowDays, from
  * lib/traffic-metrics.mjs) and this function is order-agnostic beyond
@@ -466,6 +581,7 @@ export async function readUsageWindow(days: string[]): Promise<UsageWindowResult
   const allKeys = [
     ...MCP_TOOL_NAMES.flatMap((tool) => days.map((day) => mcpUsageKey(tool, day))),
     ...days.map((day) => scriptUsageKey(day)),
+    ...SCRIPT_REFUSAL_SCOPES.flatMap((scope) => days.map((day) => scriptRefusalUsageKey(scope, day))),
   ];
 
   let raw: unknown;
@@ -485,8 +601,14 @@ export async function readUsageWindow(days: string[]): Promise<UsageWindowResult
     cursor += days.length;
   }
   const script = raw.slice(cursor, cursor + days.length).map(toNum);
+  cursor += days.length;
+  const scriptRefusals = {} as Record<ScriptRefusalScope, number[]>;
+  for (const scope of SCRIPT_REFUSAL_SCOPES) {
+    scriptRefusals[scope] = raw.slice(cursor, cursor + days.length).map(toNum);
+    cursor += days.length;
+  }
 
-  return { ok: true, mcp, script };
+  return { ok: true, mcp, script, scriptRefusals };
 }
 
 export type PageviewWindowResult =
@@ -494,7 +616,7 @@ export type PageviewWindowResult =
   | { ok: false };
 
 /**
- * Read `days.length` days' worth of counts for all 9 surfaces, ONE Upstash
+ * Read `days.length` days' worth of counts for every surface, ONE Upstash
  * round trip via MGET — same shape and same DELIBERATE WRITE/READ ASYMMETRY
  * as readUsageWindow above (the write fails open and silent; this fails
  * LOUD with `{ ok: false }` rather than hand the digest a degraded number).

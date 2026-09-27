@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { briefWindow } from '../lib/today';
+import { localeRoutes, staticLocalePages } from './routes';
 
 /*
  * README principle 2 ("Static-first … baked into statically generated pages")
@@ -57,34 +58,38 @@ const MANIFEST = join(process.cwd(), '.next/prerender-manifest.json');
 const LOCALE_DIR = join(process.cwd(), 'app/[locale]');
 
 /**
- * Every [locale] page that must be prerendered HTML, in BOTH locales. The
- * list is deliberately the whole flat surface rather than a sample: a
- * regression that catches one page catches all of them, but a regression that
- * catches only the newest page is exactly what a sample misses.
- *
- * Absent on purpose: `/reps` (reads searchParams — legitimately dynamic; its
- * per-member children `/reps/[bioguide]` ARE static, pinned separately below),
- * `/nominations/[slug]` (declares no generateStaticParams on purpose; see its
- * page comment) and the [...rest] catch-all.
+ * THE PAGES THAT RENDER ON DEMAND, AND WHY — CLAUDE.md rule 2 ("the few that
+ * do not are named, with the reason, in tests/static-rendering.spec.ts").
+ * Keyed by the route as it sits under app/[locale]. Every other page must
+ * prerender, and the registry test below fails on a page that is in neither
+ * camp — a new route has to be given one answer or the other.
  */
-const STATIC_PAGES = [
-  '',
-  '/about',
-  '/bills',
-  '/citations',
-  '/embeds',
-  '/embeds/terms',
-  '/follow',
-  '/glossary',
-  '/mcp',
-  '/partners',
-  '/privacy',
-  '/questions',
-  '/record',
-  '/terms',
-  '/today',
-  '/why-call',
-] as const;
+const RENDERED_ON_DEMAND: Record<string, string> = {
+  '/reps':
+    'reads searchParams (the ZIP lookup) — legitimately dynamic; its per-member children ' +
+    '/reps/[bioguide] ARE static, pinned separately below',
+  '/nominations/[slug]': 'declares no generateStaticParams on purpose; see its page comment',
+  '/[...rest]': 'the locale catch-all: every path no real route claims is a 404',
+};
+
+/**
+ * The dynamic routes whose prerendered ids each have their own test below
+ * (the id set is the route's own generateStaticParams, recomputed here).
+ */
+const PRERENDERED_DYNAMIC = ['/bills/[id]', '/questions/[id]', '/reps/[bioguide]', '/today/[date]'];
+
+/**
+ * Every [locale] page that must be prerendered HTML, in BOTH locales: every
+ * page with no dynamic segment (read off the tree by tests/routes.ts), less
+ * the ones named above. Deliberately the whole flat surface rather than a
+ * sample: a regression that catches one page catches all of them, but a
+ * regression that catches only the newest page is exactly what a sample
+ * misses. Paths are locale-relative with the homepage as '' (so
+ * `/${locale}${path}` is the manifest key).
+ */
+const STATIC_PAGES = staticLocalePages()
+  .filter((path) => !(path in RENDERED_ON_DEMAND))
+  .map((path) => (path === '/' ? '' : path));
 
 function routes(): Record<string, unknown> {
   if (!existsSync(MANIFEST)) {
@@ -95,6 +100,27 @@ function routes(): Record<string, unknown> {
   }
   return JSON.parse(readFileSync(MANIFEST, 'utf8')).routes ?? {};
 }
+
+test('every [locale] page route is either prerendered or named here as rendered on demand', () => {
+  const pages = localeRoutes().filter((r) => r.kind === 'page');
+  const unclassified = pages
+    .filter((r) => r.dynamic)
+    .map((r) => r.pattern)
+    .filter((p) => !PRERENDERED_DYNAMIC.includes(p) && !(p in RENDERED_ON_DEMAND));
+  expect(
+    unclassified,
+    'A dynamic [locale] route with no answer: add its prerender test below (and list it in ' +
+      'PRERENDERED_DYNAMIC), or name it in RENDERED_ON_DEMAND with the reason.',
+  ).toEqual([]);
+
+  // No stale entries: every route either list names still exists on disk.
+  const patterns = new Set(pages.map((r) => r.pattern));
+  const stale = [...PRERENDERED_DYNAMIC, ...Object.keys(RENDERED_ON_DEMAND)].filter((p) => !patterns.has(p));
+  expect(stale, 'named routes that no longer exist under app/[locale]').toEqual([]);
+
+  // And the flat list is never vacuous: the homepage is always in it.
+  expect(STATIC_PAGES).toContain('');
+});
 
 test('every flat [locale] page is prerendered as static HTML, in both languages', () => {
   const prerendered = routes();

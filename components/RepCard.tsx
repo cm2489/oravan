@@ -139,7 +139,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
       <div className="flex gap-4">
         <RepPortrait rep={rep} />
         <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-[0.04em] text-ink-2">
+          <p data-rep-role={repRoleKey(rep)} className="text-xs font-semibold tracking-[0.04em] text-ink-2">
             {role} · {party} · {rep.state}
           </p>
           {/* The name is the way to the member's own page. Its 44px hit area

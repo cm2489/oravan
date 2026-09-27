@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-27T08:03:26.147Z",
+    "fetched_at": "2026-09-27T13:54:18.698Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-27T08:03:26.147Z"
+        "checked_at": "2026-09-27T13:54:18.698Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-27T08:03:26.147Z"
+        "checked_at": "2026-09-27T13:54:18.698Z"
       },
       "leans": {
         "center": {
@@ -867,6 +867,18 @@
       ],
       "mostViewed": null
     },
+    "hr-6832-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hoodline.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPSFk1XzRZeFZjMEhVaWRIN293Rmg3TGRLTU8yak1UdXN6S2xiZVZYNWlKNThMWXVWWlJCOVVENW5TN18xSWx0X2gtNDF1X2VYa2x1b0htQ1ZaVWdVaVlKbmUwM2RzMHBIUnl1Y3pidFdNU1NiTzcwVXR4WkZSb2tJZ1lZa28zMnU1b0t2WGxFbHdHQlZoMkQ3SjZDMmswZkg4cFBCdWtsZGdKUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6856-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1478,6 +1490,12 @@
           "firstSeen": "2026-09-27",
           "lastSeen": "2026-09-27",
           "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOMUp5bFF5MGpmQi1sMFRzZWoyUWlESG51RjJfdENBMkJjMVpxSkZPNnVTYktkQ0ZfZ202d0JBNFp4Q3VQcTEtTWJQNnRZZTB4RjBtb2tEeWtjMXpiaVV0Ymd5SktSYW9rdDhNX3U5Y1c1bDNtVXAyZVVjbUswTXNSR05VS0pHb1ZEN0JWUEJlTjJpcVJsc3JmeVhzQmFQRmplMUFHZ2ZTSGU3eVBFTVE4MklWM3g5YnYxTkZsR1JBeG1FUjlxc0Q0Mld1TndfdGtNR1luTElaa3pxNldiREhIUmNMMkVVQTlrUW9UQXFEME5oZThDN2V3QmxtRHNBUHdz0gGAAkFVX3lxTE4xSnlsUXkwamZCLWwwVHNlajJRaURIbnVGMl90Q0EyQmMxWnFKRk82dVNiS2RDRl9nbTZ3QkE0WnhDdVBxMS1NYlA2dFllMHhGMG1va0R5a2MxemJpVXRiZ3lKS1Jhb2t0OE1fdTljVzVsM21VcDJlVWNtSzBNc1JHTlVLSkdvVkQ3QlZQQmVOMmlxUmxzcmZ5WHNCYVBGamUxQUdnZlNIZTd5UEVNUTgySVYzeDlidjFORmxHUkF4bUVSOXFzRDQyV3VOd190a01HWW5MSVprenE2V2JESEhSY0wyRVVBOWtRb1RBcUQwTmhlOEM3ZXdCbG1Ec0FQd3M?oc=5"
+        },
+        {
+          "domain": "theadvocate.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMilAJBVV95cUxNMWZnejdESXh3YTdLUVBBTWxPVnN3d21pZnVsX3VQRTRSNk03ZndPWTRkakpqX3pMcTR6QlhMMzlLckxnbDBGd25mMWxERjNaT3pyWS1RLWJnSTNYTFFBQTdBQzFyZ2M0MnNabkxFMklDOW1YSEhCLTM5TWdXSnh0cFd2NENmUFBGOE9FQzdVd0Y3V3Q1dGZFVXB4YnotWkdSbEx6dTVfaHdLRGpxdGVPa1BDMFh6a1pEaHdPTFVMTzBOSTVhQXo0djJlZm84Y1ZwYUNEMlJZLUhzcmpHb0J3NDY2TjdaZFNreTdBTnRySWJqY20tNXNoQ1pUdUluT1ZjcDJwSXZSVW5QSDc3TUt6WEdTOVQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1644,6 +1662,13 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://www.npr.org/2026/09/27/nx-s1-5978973/as-former-athletes-some-senators-have-extra-say-on-the-college-sports-reform-bill"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-09-24",
@@ -1682,6 +1707,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "tennessean.com",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-27",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxONWdHOVJTSWtEcXpOVDhVTWlwdm5vdlVhaFVyNUFRUGhzY2hiNEVEbnZTYW8wcVJHV2E1SWlZOXF3b0xkOEpCQ29BS292UWlSSGlVa3dJREtQRTZfYXRfRE10T2hHUXdEN05QZHVTVER2NTdGaF91aFgxOThwSUlZYW42NU1hbFRZa3ZJM0pFblJBOUJ6dDljVmQ2R1RZRC16cDU5SUdnV1pzdjhyUzNldFdZYVQ3Tm1SWXI4ZVB6c0xNSGpzbGl6Q05vVkdiRTR3MDdvYVZ3?oc=5"
+        },
         {
           "domain": "yellowhammernews.com",
           "firstSeen": "2026-09-27",

@@ -237,10 +237,13 @@ export function FeedbackDialog() {
               }`}
             />
             <p id="feedback-notice" className="mt-2 max-w-note text-sm text-ink-2">
-              {/* Partnership is a business inquiry, not anonymous citizen
-                  feedback: it invites an opt-in contact method (so a reply is
-                  possible) instead of the default "don't include personal
-                  details / we can't reply." */}
+              {/* Every note becomes a PUBLIC GitHub issue (app/api/feedback),
+                  so neither notice asks for contact details. Partnership is a
+                  business inquiry that usually wants a reply, so its notice
+                  points to the published email address instead of the
+                  default "we can't reply" (audit 2026-09-27, SY-43: both
+                  notices used to promise a private tracker, and this one
+                  asked for an email or phone number). */}
               {category === 'partnership' ? t('noticePartnership') : t('notice')}
             </p>
 

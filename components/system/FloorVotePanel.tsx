@@ -193,7 +193,10 @@ export function FloorVotePanel({
   return (
     // `on-go` retunes the focus indicator for this ground: white ring, go-deep
     // gap. The ring is never green, because the buttons here are green-filled.
+    // `data-crown` is a test hook (the homepage crown and the bill page's
+    // band alike), so specs never have to find this panel by its colour class.
     <section
+      data-crown=""
       className={`on-go bg-go-deep text-paper ${
         flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-go py-8 md:py-12'
       } ${className}`}

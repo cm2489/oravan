@@ -65,6 +65,7 @@ import {
   parseCoverageOutage,
   parseFailingTests,
   parsePregen,
+  parseRedecodeDone,
   parseSyncDone,
   parseT3,
   pressFeedHealth,
@@ -269,6 +270,7 @@ export function buildReport({ now = Date.now() } = {}) {
   const anthropicByWorkflow = {};
   const t3 = { batched: 0, resolved: 0, runs: 0 };
   let sync = null;
+  let redecode = null;
   let coverageDone = null;
   let coverageLean = null;
   let coverageOutage = null;
@@ -294,6 +296,7 @@ export function buildReport({ now = Date.now() } = {}) {
     t3.runs += runT3.runs;
     if (r.workflowName === 'Nightly bill sync') {
       sync = parseSyncDone(log);
+      redecode = parseRedecodeDone(log);
       coverageDone = parseCoverageDone(log);
       coverageLean = parseCoverageLean(log);
       coverageOutage = parseCoverageOutage(log);
@@ -461,6 +464,9 @@ export function buildReport({ now = Date.now() } = {}) {
         }
       : null,
     anthropic: { ...anthropic, byWorkflow: anthropicByWorkflow },
+    // The night's SECOND paid decode path. Null, never 0, when the line was
+    // absent — the same rule every other collector here follows.
+    redecode,
     newsdesk: { scheduledRuns: newsdeskScheduled, expectedSlots: NEWSDESK_EXPECTED_SLOTS, t3 },
     floorSignals: signals ? floorSignalFreshness(signals, { now, staleHours: SIGNAL_STALE_HOURS }) : null,
     workflows,
@@ -484,6 +490,10 @@ export function buildReport({ now = Date.now() } = {}) {
 
   report.spend = estimateDaySpend({
     decodes: sync?.added ?? 0,
+    // A re-decode is a paid Sonnet call exactly like a new-bill decode, and
+    // leaving it out made the printed decode figure a minority of the night's
+    // decode calls (2026-09-26: 10 re-decodes against 3 added+decoded).
+    redecodes: redecode?.redecoded ?? 0,
     t3Batched: t3.batched,
     t3Runs: t3.runs,
     pregen,

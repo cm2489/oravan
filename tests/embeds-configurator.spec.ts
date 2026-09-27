@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { decodedBill, decodedBillSlug } from './corpus-samples';
 
 /**
  * Every test that DRIVES a control must wait for React to attach first: a
@@ -120,9 +121,13 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
     await gotoEmbeds(page);
     await page.locator('input[type="radio"][value="bill-card"]').check();
 
+    // A bill decoded in both languages, drawn from the committed corpus; the
+    // search runs on its own headline so exactly that bill is offered.
+    const bill = decodedBill();
+    const headline = bill.ai_headline!;
     const search = page.getByRole('searchbox', { name: en.embeds.billSearchLabel });
-    await search.fill('5582');
-    const result = page.getByRole('button', { name: /Hospitals and insurers/ });
+    await search.fill(headline);
+    const result = page.getByRole('button', { name: headline });
     await expect(result).toBeVisible();
     await result.click();
 
@@ -131,15 +136,13 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
 
     const snippet = page.locator('pre code');
     await expect(snippet).toContainText('data-oravan-widget="bill-card"');
-    await expect(snippet).toContainText('data-slug="hr-5582-119"');
+    await expect(snippet).toContainText(`data-slug="${decodedBillSlug()}"`);
     await expect(snippet).toContainText('data-radius="round"');
     await expect(snippet).toContainText('data-font="serif"');
 
     // The live preview reflects the exact same pick, not a stale iframe.
     const preview = page.frameLocator('iframe[title]').first();
-    await expect(
-      preview.getByText('Hospitals and insurers must publish real prices under HR 5582')
-    ).toBeVisible();
+    await expect(preview.getByText(headline)).toBeVisible();
   });
 
   test('the locale toggle sets data-locale in the snippet without needing a bill for rep-lookup', async ({
@@ -186,7 +189,7 @@ test.describe('configurator behavior (rep-lookup is the default, no picks requir
 });
 
 test('footer Embeds link is reachable from a bill page, not just the homepage', async ({ page }) => {
-  await page.goto('/bills/hr-1787-119');
+  await page.goto(`/bills/${decodedBillSlug()}`);
   const link = page.locator('footer').getByRole('link', { name: en.common.footer.embeds });
   await expect(link).toHaveAttribute('href', '/embeds');
   await link.scrollIntoViewIfNeeded();

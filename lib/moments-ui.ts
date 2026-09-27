@@ -10,6 +10,7 @@ import { getNomination, type Nomination } from './core/nominations';
 import { nominationHasCallScript } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
+import type { MomentSearchTeaser } from './moments-search';
 import {
   billStatusLine,
   nominationStatusLine,
@@ -249,6 +250,41 @@ export function nominationCtaKey(
 }
 
 /**
+ * THE BILL CARD'S BUTTON KEY — the question page's former inline ternary,
+ * named so the label and the href below are read off ONE decision and cannot
+ * drift apart. A finished vehicle (signed, vetoed, a failed vote nobody moved
+ * to reconsider) or a settled question is a record, not a call to make.
+ */
+export function billCtaKey(settled: boolean): 'moments.readCall' | 'moments.readBill' {
+  return settled ? 'moments.readBill' : 'moments.readCall';
+}
+
+export type VehicleCtaKey = 'moments.readCall' | 'moments.readBill' | 'nominations.readRecord';
+
+/**
+ * WHERE A VEHICLE CARD'S BUTTON LANDS (2026-09-27 audit, SY-10).
+ *
+ * Every "Read + call" button on a Big Question opened the TOP of the vehicle's
+ * page, so the caller who had just chosen to call arrived at the headline and
+ * had to find the panel themselves — measured on the Iran question on a phone,
+ * the panel sat 1,857px below where the link landed. The button's own label
+ * promises the call, so it now lands ON the call: `#act`, the call panel's
+ * heading id (components/ActionPanel.tsx; the same anchor FloatingCallButton
+ * and the floor band's CTA already use). The decode is still one scroll up —
+ * on the desk it sits beside the panel in the same row.
+ *
+ * Keyed on the LABEL, deliberately: the fragment is added exactly when the
+ * button says "Read + call" and never otherwise. "Read the bill" and "Read
+ * the record" promise a record, so they land at the top — and on a nomination
+ * whose page has no call script, `#act` would point at a panel that is not
+ * rendered at all. The card's headline link is untouched: it is a read link
+ * and always lands at the top.
+ */
+export function vehicleCtaHref(path: string, ctaKey: VehicleCtaKey): string {
+  return ctaKey === 'moments.readCall' ? `${path}#act` : path;
+}
+
+/**
  * WHAT THE NOTE UNDER THE VEHICLES GRID IS ALLOWED TO PROMISE.
  *
  * `moments.bothNote` — "No side is pre-selected. Every link above opens the
@@ -378,27 +414,11 @@ export function revisionReasons(tokens: readonly string[]): RevisionReason[] {
  * of. The moment that answers them was one route away and invisible.
  * ------------------------------------------------------------------------ */
 
-/**
- * A live moment reduced to exactly what a pinned search row needs: the two
- * strings it RENDERS (name, dek) and the strings it MATCHES ON and never
- * renders.
- */
-export interface MomentSearchTeaser {
-  id: string;
-  /** Localized display name. */
-  name: string;
-  /** First sentence of the localized summary — AI-drafted, labeled at the
-   *  render site like every other dek. */
-  dek: string;
-  /**
-   * SEARCH-ONLY, NEVER RENDERED — the contract lib/moments.ts states on the
-   * field itself. Aliases are the words the press uses ("shutdown",
-   * "strikes on iran"); a moment's NAME is the neutral one we chose. Echoing
-   * an alias back to a reader would put a headline's framing in our voice on
-   * a nonpartisan surface, so no consumer of this type may print them.
-   */
-  aliases: string[];
-}
+/* The teaser type and the matcher live in lib/moments-search.ts, which imports
+ * nothing: the bills browser is a client component, and importing the matcher
+ * from THIS file shipped every corpus this file reads to the browser. They are
+ * re-exported here so server code and the specs keep one import site. */
+export { matchMoments, type MomentSearchTeaser } from './moments-search';
 
 /**
  * The live moments a query may pin, pre-localized for one locale.
@@ -425,41 +445,6 @@ export function getMomentSearchTeasers(locale: string, now: number = Date.now())
     // safe — there is no "fall back to English aliases" path to get wrong.
     aliases: locale === 'es' ? m.aliases.es : m.aliases.en,
   }));
-}
-
-/**
- * Two characters. Below that every query matches something under the
- * containment rule below ("a" is inside "war powers"), which is not a search
- * result, it is noise on top of the reader's actual results.
- */
-const MIN_QUERY = 2;
-
-/**
- * Which moments a query pins. Pure — no data access, no clock, no locale
- * logic — so the browser can call it on every keystroke and a unit test can
- * pin its rules without the corpus.
- *
- * BIDIRECTIONAL CONTAINMENT, because the two failures are opposite shapes:
- *   - the reader is still typing: "ukr" is a prefix of the alias "ukraine"
- *   - the reader typed a sentence: "war with iran today" CONTAINS the alias
- * A one-directional `alias.includes(q)` catches only the first. The same
- * containment runs against the localized name, so someone who typed the
- * moment's actual title finds it whether or not an alias repeats it.
- *
- * Aliases shorter than MIN_QUERY are skipped in the query-contains-alias
- * direction as well; a one-letter alias would pin every query in the corpus.
- */
-export function matchMoments<T extends MomentSearchTeaser>(query: string, teasers: T[]): T[] {
-  const q = query.trim().toLowerCase();
-  if (q.length < MIN_QUERY) return [];
-  return teasers.filter((m) => {
-    if (m.name.toLowerCase().includes(q)) return true;
-    return m.aliases.some((raw) => {
-      const alias = raw.trim().toLowerCase();
-      if (alias.length < MIN_QUERY) return false;
-      return alias.includes(q) || q.includes(alias);
-    });
-  });
 }
 
 

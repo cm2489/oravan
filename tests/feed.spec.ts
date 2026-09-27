@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import en from '../messages/en.json';
+import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
+import { getTeasers } from '../lib/core';
 import { anyBandExceedsCapAt, bandCountsAt, stableAcross } from './corpus';
 import { waitForFeedHydrated } from './helpers';
 
@@ -123,6 +126,52 @@ test('bare bill-number search: "hr 5582" finds H.R. 5582 without the punctuation
   // punctuation-stripped path (only digit-carrying queries do).
   await search.fill('care');
   await expect(page.locator('a[href*="/bills/"]').first()).toBeVisible();
+});
+
+/*
+ * Every word, in any order; a citation in any spelling (the 2026-09-27 audit,
+ * SY-21). The search used to match the whole query as one substring, so
+ * "Iran war powers" found 1 of 12 resolutions and "H. Con. Res. 89" found
+ * nothing. Corpus-derived, like the rest of this file: the target is a card
+ * whose own title yields three long words that, typed BACKWARDS, match only a
+ * few cards — backwards so the old whole-phrase rule could never have passed,
+ * and few so the card is inside its band's first page. The expectation is
+ * computed with the page's own matcher and field list (lib/bill-search.mjs).
+ */
+test('search matches every word in any order, and a bill number in any spelling', async ({ page }) => {
+  const categories = en.categories as Record<string, string>;
+  const teasers = getTeasers('en');
+  const docs = teasers.map((b) => teaserSearchDoc(b, (tag) => categories[tag] ?? tag));
+  const matches = (q: string) => teasers.filter((_, i) => matchesBillQuery(parseBillQuery(q), docs[i]));
+  let target: (typeof teasers)[number] | undefined;
+  let query = '';
+  for (const b of teasers) {
+    const words = b.title.split(/[^A-Za-z]+/).filter((w) => w.length >= 7);
+    if (words.length < 3) continue;
+    const q = words.slice(0, 3).reverse().join(' ');
+    if (b.title.toLowerCase().includes(q.toLowerCase())) continue;
+    if (matches(q).length > 3) continue;
+    target = b;
+    query = q;
+    break;
+  }
+  test.skip(!target, 'no card title in this corpus yields a narrow three-word query');
+
+  await page.goto('/bills');
+  await waitForFeedHydrated(page);
+  const search = page.getByRole('searchbox');
+  const card = page.locator(`a[href$="/bills/${target!.slug}"]`).first();
+
+  await search.fill(query);
+  await expect(card).toBeVisible();
+
+  // The citation, spelled three ways a reader types it; each names this bill.
+  const compact = target!.slug.split('-').slice(0, 2).join(''); // "hconres89"
+  const spaced = target!.identifier.replace(/\./g, '. ').replace(/\s+/g, ' ').trim(); // "H. Con. Res. 89"
+  for (const q of [compact, spaced, compact.toUpperCase()]) {
+    await search.fill(q);
+    await expect(card, q).toBeVisible();
+  }
 });
 
 test('the corpus trust line renders at the point of first input, with a live four-digit count', async ({

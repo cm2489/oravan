@@ -12,7 +12,9 @@ import {
   noteMcpToolCall,
   notePageview,
   noteScriptGeneration,
+  noteScriptRefusal,
   PAGEVIEW_SURFACES,
+  SCRIPT_REFUSAL_SCOPES,
   pageviewSurfaceForPath,
   pageviewUsageKey,
   usageDayKey,
@@ -602,16 +604,31 @@ test('AE5 (usage-counter family, traffic-watch): MCP tool calls + script generat
     await noteScriptGeneration();
     await noteScriptGeneration();
     await noteScriptGeneration();
+    // The refusal counters (2026-09-27, SY-48) are written from the same
+    // route, at the moment it knows the most about a request it is REFUSING:
+    // the caller it limited and, on the daily path, the bill and stance.
+    // None of it may reach this wire.
+    await noteScriptRefusal('daily');
+    await noteScriptRefusal('burst');
+    await noteScriptRefusal('burst');
+    await noteScriptRefusal('tenant');
 
     const countersCommandText = counters.commands.map((c) => c.join(' ')).join('\n');
 
     // 1. Every usage key stays inside the closed shape: usage:mcp:<one of
-    //    the 5 tool literals>:<day>, or usage:script:<day>. No other shape
-    //    (this ALSO proves rule usage-content/usage-caller's real-world
-    //    counterpart: nothing besides `tool` and a date ever appears).
+    //    the 5 tool literals>:<day>, usage:script:<day>, or
+    //    usage:script-refusal:<one of the 3 guard labels>:<day>. No other
+    //    shape (this ALSO proves rule usage-content/usage-caller's real-world
+    //    counterpart: nothing besides `tool`, a guard label and a date ever
+    //    appears).
     const toolAlternation = MCP_TOOL_NAMES.join('|');
+    const scopeAlternation = SCRIPT_REFUSAL_SCOPES.join('|');
     for (const key of counters.keys()) {
-      expect(key).toMatch(new RegExp(`^dev:usage:(mcp:(${toolAlternation}):\\d{4}-\\d{2}-\\d{2}|script:\\d{4}-\\d{2}-\\d{2})$`));
+      expect(key).toMatch(
+        new RegExp(
+          `^dev:usage:(mcp:(${toolAlternation}):\\d{4}-\\d{2}-\\d{2}|script:\\d{4}-\\d{2}-\\d{2}|script-refusal:(${scopeAlternation}):\\d{4}-\\d{2}-\\d{2})$`
+        )
+      );
     }
 
     // 2. No content identifier (a bill slug/citation, a search query, a
@@ -635,6 +652,14 @@ test('AE5 (usage-counter family, traffic-watch): MCP tool calls + script generat
     const scriptKey = counters.keys().find((k) => k.startsWith('dev:usage:script:'));
     expect(scriptKey).toBeDefined();
     expect(counters.store.get(scriptKey!)?.value).toBe('3');
+    // Refusals bucket by guard only — daily 1, burst 2, tenant 1 — and never
+    // fold into the generation count above.
+    const refusalCount = (scope: string) =>
+      counters.store.get(counters.keys().find((k) => k.startsWith(`dev:usage:script-refusal:${scope}:`)) ?? '')
+        ?.value;
+    expect(refusalCount('daily')).toBe('1');
+    expect(refusalCount('burst')).toBe('2');
+    expect(refusalCount('tenant')).toBe('1');
   } finally {
     restoreUsageFetch();
   }
@@ -652,6 +677,10 @@ test('AE5 (usage-counter family, traffic-watch): MCP tool calls + script generat
  * This is the family's load-bearing claim, so it is asserted over the
  * whole recorded command surface, not just the keys that stuck.
  */
+// A real member id shape and a brief date that can never be today's UTC key.
+const MEMBER_ID = 'A000370';
+const BRIEF_DATE = '2026-01-05';
+
 test('AE5 (site page-view family, site-counter): a burst of real paths leaves only route-template counters on the counters wire', async () => {
   const counters = new MockUpstash();
   const restorePageviewFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
@@ -674,6 +703,12 @@ test('AE5 (site page-view family, site-counter): a burst of real paths leaves on
       '/about',
       `/${CALLER_IPS[0]}`,
       '/definitely-not-a-route',
+      // SY-49 (2026-09-27): the member-page and daily-brief templates. The
+      // member id and the brief's date are exactly what must NOT survive.
+      `/reps/${MEMBER_ID}`,
+      `/es/reps/${MEMBER_ID}`,
+      '/today',
+      `/today/${BRIEF_DATE}`,
     ];
     for (const path of paths) {
       // Exactly proxy.ts's call shape: the pathname (no query - NextRequest
@@ -683,7 +718,7 @@ test('AE5 (site page-view family, site-counter): a burst of real paths leaves on
 
     const countersCommandText = counters.commands.map((c) => c.join(' ')).join('\n');
 
-    // 1. Every key stays inside the closed shape: pageview:<one of the 9
+    // 1. Every key stays inside the closed shape: pageview:<one of the 11
     //    label literals>:<day>. No other shape exists - which is also
     //    rule pageview-surface's real-world counterpart.
     const surfaceAlternation = PAGEVIEW_SURFACES.join('|');
@@ -694,7 +729,7 @@ test('AE5 (site page-view family, site-counter): a burst of real paths leaves on
     // 2. Nothing the paths carried reaches the wire: not the bill slug, not
     //    the stance, not the locale prefix, not an address-shaped segment,
     //    not a slash, not a query string.
-    for (const marker of [SLUG, 'stance', 'support', '/es/', 'definitely-not-a-route', ...CALLER_IPS]) {
+    for (const marker of [SLUG, 'stance', 'support', '/es/', 'definitely-not-a-route', MEMBER_ID, BRIEF_DATE, ...CALLER_IPS]) {
       expect(countersCommandText, `page-view wire surface must not carry "${marker}"`).not.toContain(marker);
     }
 
@@ -710,8 +745,10 @@ test('AE5 (site page-view family, site-counter): a burst of real paths leaves on
     expect(countFor('questions-index')).toBe(1);
     expect(countFor('question')).toBe(1);
     expect(countFor('reps')).toBe(1);
+    expect(countFor('member')).toBe(2); // en + es of ONE member page
     expect(countFor('record')).toBe(1);
     expect(countFor('nominations')).toBe(1);
+    expect(countFor('today')).toBe(2); // /today and its dated twin: one template
     expect(countFor('other')).toBe(3); // /about, the IP-shaped path, the unknown route
   } finally {
     restorePageviewFetch();

@@ -202,8 +202,10 @@ export function leanDiverseRefs(articles, max = 4) {
  * instead of "On the floor calendar". This module may not import that file
  * (TypeScript, and this script runs on bare node — the same constraint
  * scripts/moment-candidates.mjs solves with its own documented copies), so
- * the patterns live here and tests/moment-scaffold.unit.spec.ts pins them
- * against the real corpus.
+ * the patterns live here. tests/moment-scaffold.unit.spec.ts pins them
+ * against fixtures, and the nightly scripts/check-scaffold-corpus.mjs sweeps
+ * them against the real corpus (moved out of the PR suite 2026-09-27, the
+ * 2026-09-27 audit, SY-47).
  *
  * WHY A POSITIVE MATCHER RATHER THAN `statusKeyFor`'s ABSENCE TEST. The page
  * label may be derived by absence — a `floor_vote` bill whose text is not a
@@ -267,7 +269,8 @@ const FLOOR_ACTION_PATTERNS = [
    * S. 4668's last action on the morning of its cloture vote was "Considered
    * by Senate. (consideration: CR S4851)" and it read as `committee`. Once a
    * sync re-derives that status, this list has to read the sentence or the
-   * totality test in tests/moment-scaffold.unit.spec.ts goes red on it, and
+   * nightly totality sweep (scripts/check-scaffold-corpus.mjs) files an
+   * issue on it, and
    * it is exactly the fact `tier0_floor_action` names. Same shapes as
    * lib/floor-text.mjs's SENATE_/HOUSE_/CHAMBER_SILENT_CONSIDERATION (this
    * file keeps import-free copies; see the header above). "Considered as

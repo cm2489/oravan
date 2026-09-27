@@ -74,7 +74,11 @@ export async function VoteRecord({ billId, className = '' }: { billId: string; c
   const entry = (r: RollCall) => {
     const hId = `vote-${r.id}`;
     return (
-      <li key={r.id} className="rounded-control border border-line-strong px-4 pt-3 pb-2">
+      <li
+        key={r.id}
+        className="rounded-control border border-line-strong px-4 pt-3 pb-2"
+        data-vote-roll={r.id}
+      >
         <h3 id={hId} className="text-sm font-semibold text-ink-2 tabular-nums">
           {t(`chamber.${r.chamber}`)} · <time dateTime={r.date}>{fmtDate(r.date)}</time> ·{' '}
           {t('roll', { roll: r.roll })}

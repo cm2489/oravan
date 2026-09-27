@@ -22,6 +22,25 @@ import { useTranslations } from 'next-intl';
  * the desk layout is every desktop bill page: the sticky call rail sits in the
  * first row. Deferring costs a fade-in where the button is genuinely wanted;
  * the other way round costs a green flash where it is not.
+ *
+ * IT ALSO STANDS DOWN OVER THE READ (2026-09-27 audit, SY-07 — interim). A
+ * fixed button 173x62px at the foot of a phone screen sits over about three
+ * lines of whatever is behind it, and on a bill page that was the decoded
+ * answer itself: measured across three personas, it covered "Who does it
+ * affect?" and "Why does it matter?" text and the roll-call tallies. The text
+ * is the product. So it now yields to a second kind of element too — anything
+ * marked [data-read-zone], which on the bill page is the decoded section —
+ * whenever any part of it is on screen above the fixed nav, i.e. anywhere the
+ * button could be standing over it.
+ *
+ * What that costs, stated rather than hidden: on a phone the button no longer
+ * shows while the reader is in the decode. The call is not buried — the
+ * panel follows the decode directly in flow (read → pick → edit → call), the
+ * page's green floor band carries its own CTA when there is one, and the
+ * button still carries the rest of the page (the stepper, the votes, the
+ * coverage) back to #act. Funnel invariant I2 counts interactions (stance →
+ * a completed script), not this button, and is untouched. The rebuild retires
+ * this component for the ruled Call tab; this is the stopgap until then.
  */
 export function FloatingCallButton({ href = '#act' }: { href?: string }) {
   const t = useTranslations('bill');
@@ -31,6 +50,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
 
   useEffect(() => {
     const targets = Array.from(document.querySelectorAll('[data-call-cta]'));
+    const reads = Array.from(document.querySelectorAll('[data-read-zone]'));
     // Nothing to defer to: reveal, rather than staying inert forever. (With
     // the resting state shown this branch could be a bare return.)
     //
@@ -44,7 +64,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
     // render. Behaviourally identical — the resting state is already
     // `opacity-0`, so this reveals by fading in rather than flashing.
     const fab = ref.current;
-    if (!fab || targets.length === 0) {
+    if (!fab || (targets.length === 0 && reads.length === 0)) {
       const frame = requestAnimationFrame(() => setHidden(false));
       return () => cancelAnimationFrame(frame);
     }
@@ -66,31 +86,44 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
      * where only the panel's title bar fits (the first control is well below
      * it; tests/bill-call-rail.spec.ts sweeps for overlap). Recomputed on
      * resize, because the offset changes at `md`.
+     *
+     * THE READ USES A TALLER ROOT, on purpose. A call surface only counts once
+     * the reader can SEE it above the button; a read zone counts the moment
+     * any of it is anywhere above the fixed nav — including the strip the
+     * button stands in, because that is exactly the text it would cover. One
+     * set holds both kinds, so the button shows only when neither is on
+     * screen, and the handoff from the decode to the panel below it never
+     * opens a gap where the button flashes up over the panel's title bar.
      */
     const onScreen = new Set<Element>();
     let io: IntersectionObserver | null = null;
+    let readIo: IntersectionObserver | null = null;
+    const settle = (entries: IntersectionObserverEntry[]) => {
+      for (const e of entries) {
+        if (e.isIntersecting) onScreen.add(e.target);
+        else onScreen.delete(e.target);
+      }
+      setHidden(onScreen.size > 0);
+    };
     const observe = () => {
       io?.disconnect();
+      readIo?.disconnect();
       onScreen.clear();
       const offset = parseFloat(getComputedStyle(fab).bottom) || 0;
       const strip = Math.ceil(offset + fab.offsetHeight + 8);
-      io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) onScreen.add(e.target);
-            else onScreen.delete(e.target);
-          }
-          setHidden(onScreen.size > 0);
-        },
-        { rootMargin: `0px 0px -${strip}px 0px` }
-      );
+      io = new IntersectionObserver(settle, { rootMargin: `0px 0px -${strip}px 0px` });
       targets.forEach((el) => io?.observe(el));
+      readIo = new IntersectionObserver(settle, {
+        rootMargin: `0px 0px -${Math.floor(offset)}px 0px`,
+      });
+      reads.forEach((el) => readIo?.observe(el));
     };
     observe();
     window.addEventListener('resize', observe);
     return () => {
       window.removeEventListener('resize', observe);
       io?.disconnect();
+      readIo?.disconnect();
     };
   }, []);
 

@@ -358,7 +358,10 @@ test.describe('the journey-corpus tripwire no longer costs the night', () => {
   test('a novel floor text opens a labeled issue, search-first', () => {
     const issueAt = syncBills.indexOf('- name: Open a journey-corpus issue');
     expect(issueAt).toBeGreaterThan(0);
-    const step = syncBills.slice(issueAt, syncBills.indexOf('- name: Sync Senate nominations'));
+    // Sliced to the NEXT step (the scaffold-corpus tripwire since 2026-09-27),
+    // so the assertions below cannot be satisfied by that step's own gh calls.
+    const step = syncBills.slice(issueAt, syncBills.indexOf('- name: Scaffold-corpus tripwire'));
+    expect(step.length).toBeGreaterThan(0);
     expect(step).toContain("steps.journey.outputs.verdict == 'novel'");
     expect(step).toContain('gh label create journey-corpus');
     expect(step).toContain('gh issue list'); // search-first: no duplicate issues
@@ -367,6 +370,69 @@ test.describe('the journey-corpus tripwire no longer costs the night', () => {
 
   test('the sweep still runs before the commit, so its issue names TONIGHT\'s corpus', () => {
     expect(stepAt).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 3b · The 2026-09-27 audit (SY-47) — the Moment-scaffold floor-action
+ *      sweep left the PR suite for the nightly, with NO hard verdict.
+ * ------------------------------------------------------------------ */
+test.describe('the scaffold-corpus tripwire files an issue and never costs the night', () => {
+  const stepOf = (name: string) => {
+    const at = syncBills.indexOf(`- name: ${name}`);
+    expect(at, `${name} step not found`).toBeGreaterThan(0);
+    const rest = syncBills.slice(at);
+    const next = rest.slice(1).search(/\n {6}- name:/);
+    return { at, body: next === -1 ? rest : rest.slice(0, next + 1) };
+  };
+  const sweep = () => stepOf('Scaffold-corpus tripwire');
+  const issue = () => stepOf('Open a scaffold-corpus issue');
+
+  test('the sweep runs the script, and is continue-on-error', () => {
+    const { body } = sweep();
+    expect(body).toContain('id: scaffold');
+    expect(body).toContain('run: node scripts/check-scaffold-corpus.mjs');
+    expect(body).toContain('continue-on-error: true');
+    // $0 by construction: plain node over a local file, never handed a key.
+    expect(body).not.toMatch(/ANTHROPIC_API_KEY|CONGRESS_API_KEY|UPSTASH_/);
+  });
+
+  test('THE ORDER: after the status re-derivation and the journey sweep, before the commit', () => {
+    const at = sweep().at;
+    expect(at).toBeGreaterThan(syncBills.indexOf('run: node scripts/rederive-status.mjs'));
+    expect(at).toBeGreaterThan(syncBills.indexOf('- name: Open a journey-corpus issue'));
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    expect(issue().at).toBeGreaterThan(at);
+    expect(issue().at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+  });
+
+  test('the issue step is an ALLOW-LIST on `clean` — a crashed or silent sweep files too', () => {
+    const { body } = issue();
+    expect(body).toContain("if: steps.scaffold.outputs.verdict != 'clean'");
+    // A sweep that died before writing its report still gets a body.
+    expect(body).toContain('if [ ! -s "$BODY" ]; then');
+  });
+
+  test('filing is labeled, search-first, and can never skip the commit', () => {
+    const { body } = issue();
+    expect(body).toContain('gh label create scaffold-corpus');
+    expect(body).toContain('gh issue list');
+    expect(body).toContain('gh issue comment');
+    expect(body).toContain('continue-on-error: true');
+  });
+
+  test('no step fails the night on this sweep\'s verdict', () => {
+    // Unlike the journey sweep's vacuity gate, nothing here is hard: the only
+    // reads of the verdict are the issue step's `if:`.
+    const reads = [...syncBills.matchAll(/steps\.scaffold\.outputs\.verdict/g)].length;
+    const inIssueStep = [...issue().body.matchAll(/steps\.scaffold\.outputs\.verdict/g)].length;
+    expect(reads).toBe(inIssueStep);
+  });
+
+  test('the corpus sweep is gone from the PR suite; the matcher fixtures stay', () => {
+    const spec = readFileSync(join(process.cwd(), 'tests/moment-scaffold.unit.spec.ts'), 'utf8');
+    expect(spec).not.toContain("test('the floor-action vocabulary is total over the corpus it is for");
+    expect(spec).toContain('floorActionInRecord');
   });
 });
 

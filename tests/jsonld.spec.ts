@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { decodedBillSlug, undecodedBillSlug } from './corpus-samples';
 
 /*
  * S22 — structural assertions on the JSON-LD this pass adds (lib/jsonld.ts,
@@ -15,6 +16,15 @@ import es from '../messages/es.json';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
+
+/*
+ * Bills drawn from the committed corpus by the property each test needs
+ * (tests/corpus-samples.ts): two decoded in both languages with both record
+ * dates and what/who/why sections, and one with no AI content at all.
+ */
+const DECODED_EN = `/bills/${decodedBillSlug(0)}`;
+const DECODED_ES = `/es/bills/${decodedBillSlug(1)}`;
+const UNDECODED = `/bills/${undecodedBillSlug()}`;
 
 /*
  * The AI-content disclosure lib/jsonld.ts emits, pinned literally and per
@@ -42,7 +52,7 @@ async function readJsonLd(page: Page, scriptId: string): Promise<Record<string, 
 
 test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
   test('decoded bill: Article + FAQPage, real dates, AI disclosure, en', async ({ page }) => {
-    await page.goto('/bills/hr-5582-119');
+    await page.goto(DECODED_EN);
     const doc = await readJsonLd(page, 'bill-jsonld');
 
     expect(doc['@context']).toBe('https://schema.org');
@@ -53,7 +63,7 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
     expect(article, 'Article node').toBeTruthy();
     expect(typeof article!.headline).toBe('string');
     expect((article!.headline as string).length).toBeGreaterThan(0);
-    expect(article!.url).toBe(`${SITE_ORIGIN}/bills/hr-5582-119`);
+    expect(article!.url).toBe(`${SITE_ORIGIN}${DECODED_EN}`);
     expect(article!.inLanguage).toBe('en');
     expect(article!.publisher).toMatchObject({ '@type': 'Organization', name: 'Oravan' });
 
@@ -99,13 +109,13 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
   });
 
   test('decoded bill: es locale carries es question labels and inLanguage', async ({ page }) => {
-    await page.goto('/es/bills/sjres-99-119');
+    await page.goto(DECODED_ES);
     const doc = await readJsonLd(page, 'bill-jsonld');
     const graph = doc['@graph'] as Array<Record<string, unknown>>;
 
     const article = graph.find((n) => n['@type'] === 'Article');
     expect(article!.inLanguage).toBe('es');
-    expect(article!.url).toBe(`${SITE_ORIGIN}/es/bills/sjres-99-119`);
+    expect(article!.url).toBe(`${SITE_ORIGIN}${DECODED_ES}`);
 
     const faq = graph.find((n) => n['@type'] === 'FAQPage');
     expect(faq, 'FAQPage node').toBeTruthy();
@@ -133,8 +143,8 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
     // publish" on 2026-07-25 because the nightly sync commits decodes
     // straight to main. This constant kept saying it until 2026-08-06.
     for (const [prefix, expected] of [
-      ['/bills/hr-5582-119', EXPECTED_DISCLOSURE.en],
-      ['/es/bills/sjres-99-119', EXPECTED_DISCLOSURE.es],
+      [DECODED_EN, EXPECTED_DISCLOSURE.en],
+      [DECODED_ES, EXPECTED_DISCLOSURE.es],
     ] as const) {
       await page.goto(prefix);
       const doc = await readJsonLd(page, 'bill-jsonld');
@@ -149,7 +159,7 @@ test.describe('bill page JSON-LD (@graph: Article + FAQPage)', () => {
   });
 
   test('undecoded bill: Article only, no fabricated FAQ, still real dates', async ({ page }) => {
-    await page.goto('/bills/hr-8553-119');
+    await page.goto(UNDECODED);
     const doc = await readJsonLd(page, 'bill-jsonld');
     const graph = doc['@graph'] as Array<Record<string, unknown>>;
 
