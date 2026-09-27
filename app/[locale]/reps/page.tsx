@@ -172,7 +172,7 @@ export default async function RepsPage({
           {/* {count}: 841 ZIPs map to 3-6 districts, and the old copy said
               "both" under six district headings (Phase-1 P1 — a miscount on
               the truth surface). The message pluralizes on the real count. */}
-          <p className={`mt-6 max-w-read ${NOTE}`}>
+          <p data-multi-district className={`mt-6 max-w-read ${NOTE}`}>
             {t('multiDistrict', { count: districts.length })}
           </p>
           <AddressForm zip={zip} />

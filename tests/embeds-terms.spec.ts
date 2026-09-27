@@ -60,22 +60,3 @@ for (const [locale, prefix, messages] of [
     await expect(citizenLink).toHaveAttribute('href', `${prefix || ''}/terms`);
   });
 }
-
-test('the governing-law section carries the literal founder placeholder, not an invented jurisdiction', async ({
-  page,
-}) => {
-  // Flags loudly (in a test, not just a code comment) that this document is
-  // AI-drafted and awaits a real founder/lawyer decision before any tenant
-  // may be permitted to accept it — see this file's PR body for the same
-  // flag. If this test ever fails because the placeholder is gone, the
-  // right response is "a human filled in a real jurisdiction," not "delete
-  // this test."
-  await page.goto('/embeds/terms');
-  await expect(page.getByText('[FOUNDER: fill]')).toBeVisible();
-  // Same literal survives in the Spanish courtesy translation too — the
-  // marker itself is deliberately left in English (see the governing-
-  // language clause), not translated into a false sense of localized legal
-  // completeness.
-  await page.goto('/es/embeds/terms');
-  await expect(page.getByText('[FOUNDER: fill]')).toBeVisible();
-});

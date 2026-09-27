@@ -27,13 +27,29 @@ test.describe('CATEGORIES', () => {
 });
 
 test.describe('BAND_SIZES is a display cap and nothing else', () => {
+  test('every cap is a positive whole number of cards', () => {
+    // The numbers themselves are a display choice (components/BillsBrowser.tsx)
+    // and free to change; what must hold is that each is a usable card count.
+    for (const [band, size] of Object.entries(BAND_SIZES)) {
+      expect(Number.isInteger(size), `BAND_SIZES.${band} is an integer`).toBe(true);
+      expect(size, `BAND_SIZES.${band} is positive`).toBeGreaterThan(0);
+    }
+  });
+
   test('it decides how many cards a band shows, never which band a bill is in', () => {
-    expect(BAND_SIZES).toEqual({ now: 6, moving: 12 });
-    // The proof that it is not a cutoff any more: a band's membership is a pure
-    // function of the rung, with no reference to a size or a rank.
+    // A band's membership is a pure function of the rung, with no reference
+    // to a size or a rank.
     expect(bandForRung({ tier: 't0' })).toBe('now');
     expect(bandForRung({ tier: 't2' })).toBe('moving');
     expect(bandForRung({ tier: 't4' })).toBe('radar');
+    // The proof that the cap is not a cutoff: fill each capped band past its
+    // cap and every bill still lands in it. Nothing is demoted for arriving
+    // after the band is "full".
+    const TIER_OF = { now: 't0', moving: 't2' } as const;
+    for (const [band, size] of Object.entries(BAND_SIZES) as [keyof typeof TIER_OF, number][]) {
+      const bands = Array.from({ length: size * 2 + 1 }, () => bandForRung({ tier: TIER_OF[band] }));
+      expect(bands.every((b) => b === band), `${bands.length} ${band} bills all land in ${band}`).toBe(true);
+    }
   });
 });
 

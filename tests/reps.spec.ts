@@ -1,25 +1,39 @@
 import { expect, test } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+
+/*
+ * Copy is read BY KEY (reps.*), formatted the way the page formats it; the
+ * member names and the house.gov URL are record facts and stay literal.
+ */
+const t = createTranslator({ locale: 'en', messages: en, namespace: 'reps' });
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 test('normal district shows one rep and two senators with local offices', async ({ page }) => {
   await page.goto('/reps?zip=78501');
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
   await expect(page.getByText('John Cornyn')).toBeVisible();
   await expect(page.getByText('Ted Cruz')).toBeVisible();
-  await expect(page.getByText(/^Local offices/).first()).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`^${escapeRegExp(t('localOffices'))}`)).first()
+  ).toBeVisible();
 });
 
 test('DC explains the delegate situation instead of promising senators', async ({ page }) => {
   await page.goto('/reps?zip=20002');
-  await expect(page.getByText(/elects a delegate/)).toBeVisible();
+  await expect(page.getByText(t('delegateNote', { state: 'DC' }))).toBeVisible();
   await expect(page.getByText('Eleanor Holmes Norton')).toBeVisible();
-  await expect(page.getByText(/Delegate ·/)).toBeVisible();
+  // The member's role label (components/RepCard.tsx) is the delegate key,
+  // not "Representative": one card, labeled delegate, printing that key.
+  const role = page.locator('[data-rep-role="delegate"]');
+  await expect(role).toHaveCount(1);
+  await expect(role).toContainText(t('delegate'));
 });
 
 test('unknown ZIP gets a recoverable error', async ({ page }) => {
   await page.goto('/reps?zip=00000');
-  await expect(page.getByRole('alert').filter({ hasText: /couldn't match/i })).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: t('zipNotFound') })).toBeVisible();
 });
 
 /*
