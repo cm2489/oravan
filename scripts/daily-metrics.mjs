@@ -91,6 +91,17 @@
  * counter needs neither. A shipped claim that has stopped being true is a
  * conflict, not a detail (CLAUDE.md, "Constitutional conflicts").
  *
+ * DISTINCT NETWORK ADDRESSES joined 2026-09-25, on the owner's card-15 (D4)
+ * ruling: one site-wide HyperLogLog estimate per UTC day, read with PFCOUNT
+ * from lib/ratelimit.ts's single daily key and printed beside page views as
+ * "Distinct network addresses (bots included)" — never "users", never
+ * "people". Its read is ADDITIVE, unlike the three counters reads above it:
+ * a failure prints "not read" on that one line and warns, and the digest
+ * still posts. That is not the invented-number case the fail-loud reads
+ * exist to prevent — the line says it has no number rather than showing
+ * one — and it keeps a new, never-yet-exercised command (PFCOUNT) from
+ * being able to cost the whole digest on its first morning.
+ *
  * PIPELINE HEALTH (2026-09) rides along on this same run, the same way issue
  * hygiene does and for the same reason: this is the job that already runs
  * every morning holding the token it needs. It appends one "Pipeline health"
@@ -107,6 +118,10 @@ import { join } from 'node:path';
 // lib/freshness.ts), which only resolves inside Next's own bundler, not
 // under tsx. See lib/usage.ts's header/MCP_TOOL_NAMES comments.
 import { MCP_TOOL_NAMES, PAGEVIEW_SURFACES, readMcpClientDay, readPageviewWindow, readUsageWindow } from '../lib/usage';
+// The daily distinct-address sketch lives in the caller-keyed registry, not
+// lib/usage.ts, because its input is caller-derived (see that module's
+// DAILY DISTINCT-ADDRESS COUNT section). This script only ever READS it.
+import { readDistinctAddressCount } from '../lib/ratelimit';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -564,6 +579,21 @@ async function main() {
     return;
   }
 
+  // Yesterday's distinct-address estimate — ONE number, no window: each
+  // day's sketch expires 48h after its day ends, so there is nothing older
+  // to read and no median to compute. Additive (see this file's header): a
+  // failed read renders "not read", never a number, and never fails the run.
+  const siteDistinct = await readDistinctAddressCount(date);
+  if (!siteDistinct.ok) {
+    console.log(
+      '::warning::could not read the daily distinct-address sketch from the counters database — the digest line says "not read" instead of showing a number'
+    );
+  } else if (siteDistinct.noExpiry) {
+    console.log(
+      `::warning::the distinct-address sketch for ${date} has NO expiry — it will not age out on its own; the digest line flags it`
+    );
+  }
+
   // The aggregate series, full 28 days — the spike half slices its first 8
   // below, the decline half reads all of it.
   const totalWindow = sumWindows(MCP_TOOL_NAMES.map((tool) => window.mcp[tool]));
@@ -644,6 +674,7 @@ async function main() {
     declineIssueUrl,
     sitePageviews,
     siteTotal,
+    siteDistinct,
   });
 
   // Issue hygiene, read once and appended to the SAME comment — one place
@@ -671,7 +702,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''}; 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 

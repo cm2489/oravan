@@ -1,6 +1,7 @@
 import type { NextFetchEvent, NextRequest } from 'next/server';
 import createProxy from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { callerIp, noteDistinctAddress } from './lib/ratelimit';
 import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath } from './lib/usage';
 
 // Next.js 16: middleware.ts -> proxy.ts. next-intl's handler still only does
@@ -9,16 +10,27 @@ import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath } from
 const handler = createProxy(routing);
 
 /*
- * The one thing this file does BEYOND locale negotiation (site-counter,
- * 2026-09): increment a first-party, server-side page-view counter.
+ * The two things this file does BEYOND locale negotiation, both after the
+ * response is on its way out:
  *
- * What travels onward is a route-TEMPLATE label from a closed 9-member
- * union - 'bill', not which bill - and a UTC date. The path is matched and
- * dropped inside lib/usage.ts's pageviewSurfaceForPath; no path, query,
- * locale, referer, IP, User-Agent, or cookie reaches a key, and nothing
- * per-visitor is stored or derivable (no identity exists here to store).
- * lib/usage.ts is the single registry and carries the full argument;
- * scripts/check-key-namespaces.mjs gates it in CI.
+ * 1. (site-counter, 2026-09) increment a first-party, server-side page-view
+ *    counter. What travels onward is a route-TEMPLATE label from a closed
+ *    9-member union - 'bill', not which bill - and a UTC date. The path is
+ *    matched and dropped inside lib/usage.ts's pageviewSurfaceForPath; no
+ *    path, query, locale, referer, IP, User-Agent, or cookie reaches that
+ *    key, and nothing per-visitor is stored in it. lib/usage.ts is the
+ *    single registry and carries the full argument.
+ *
+ * 2. (daily distinct-address count, owner ruling 2026-09-25) add the SAME
+ *    salted address hash the rate limiter already computes to ONE
+ *    site-wide HyperLogLog sketch for the UTC day. It is the only thing here
+ *    derived from the caller, and it is deliberately joined to nothing: no
+ *    path, no page label, no locale - the sketch has no dimension at all, so
+ *    it can never say which page an address read. A sketch keeps register
+ *    maxima, never the hash or the address. lib/ratelimit.ts is its registry
+ *    and carries the full argument, including its honest limits.
+ *
+ * scripts/check-key-namespaces.mjs gates both in CI.
  *
  * ORDERING IS DELIBERATE. next-intl's handler runs FIRST and its response
  * is what gets returned; the counter write is handed to
@@ -38,6 +50,14 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
     } catch {
       // No waitUntil available (or it refused) - drop the count, never the page.
     }
+    // Separate waitUntil, separate try: the two counts never share a fate,
+    // and the address is read here and handed straight to the one registry
+    // that may hash it - it is never passed alongside the page label.
+    try {
+      event.waitUntil(noteDistinctAddress(callerIp(req.headers)).catch(() => {}));
+    } catch {
+      // Same rule: drop the count, never the page.
+    }
   }
   return res;
 }
@@ -48,7 +68,8 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
 // /embed/* would try to locale-redirect a path structure that doesn't have
 // one, and would risk setting next-intl's locale cookie on a route whose
 // whole privacy claim is zero cookies, ever. It also keeps the page-view
-// counter off the embeds entirely, which is what keeps
+// counter AND the daily distinct-address sketch off the embeds entirely -
+// a tenant's visitors are never added to it - which is what keeps
 // embeds.docsPrivacyNoData ("No visitor data reaches Oravan beyond an
 // ordinary page load") true word for word on a tenant's own site.
 //

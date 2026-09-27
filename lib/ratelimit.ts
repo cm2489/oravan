@@ -18,6 +18,13 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                      createTenantRateLimiter's own doc
  *                                      comment for why that's the right call
  *                                      here and not a caller-privacy gap)
+ *   <env>:uniques:<YYYY-MM-DD>        ONE HyperLogLog sketch per UTC day for
+ *                                      the whole site — the daily distinct-
+ *                                      address count (owner ruling
+ *                                      2026-09-25). No route, page, or any
+ *                                      other dimension, ever. See the
+ *                                      DAILY DISTINCT-ADDRESS COUNT section
+ *                                      below for the full argument.
  *
  * The caller hash is sha256(ip + salt). These are short-lived rate-limit
  * counters — pseudonymous, NOT anonymous: a 32-bit IPv4 space brute-forces
@@ -211,6 +218,16 @@ export function saltKey(): string {
 
 export function counterKey(route: RouteName, callerHash: string): string {
   return `${keyPrefix()}:rl:${route}:${callerHash}`;
+}
+
+/**
+ * The daily distinct-address sketch's key. ONE argument, the UTC day, on
+ * purpose: there is no second parameter through which a route, a page, or a
+ * bill could ever reach it. scripts/check-key-namespaces.mjs pins this exact
+ * literal (rule distinct-shape) and confines the family to this file.
+ */
+export function distinctAddressKey(day: string): string {
+  return `${keyPrefix()}:uniques:${day}`;
 }
 
 // --- caller identity ---------------------------------------------------------
@@ -542,4 +559,165 @@ export function createTenantRateLimiter(opts: {
       }
     },
   };
+}
+
+// --- daily distinct-address count (owner ruling 2026-09-25) -------------------
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: one number a day for the whole site — how
+ * many different network addresses requested at least one HTML page during a
+ * UTC day, bots included. It answers "how many daily users" more honestly
+ * than page views can, and it is NOT a count of people: a household, office,
+ * or carrier NAT shares one address (undercount), a phone that changes
+ * networks shows several (overcount).
+ *
+ * THE RULING. Card 15 (D4), answered "a" by the owner on 2026-09-25T02:50Z:
+ * "Count each day's unique visitors with HyperLogLog, built from the salted
+ * hash the rate limiter already makes." docs/constitution-log.md carries the
+ * entry; privacy.p9 is the public sentence, in both languages.
+ *
+ * WHAT IS STORED — AND WHAT IS NOT. Each counted request PFADDs callerHash
+ * (sha256 of the address plus the rotating salt above — the exact value the
+ * rate limiter already computes, from the same salt record) into the day's
+ * ONE key. A HyperLogLog does not store its elements: it keeps 2^14 six-bit
+ * registers (per bucket, the longest run of zero bits any element's own
+ * hash produced), so neither an address nor a hash is stored by this path,
+ * and the sketch cannot be enumerated or reversed. The address itself never leaves
+ * this process — only the hash crosses the wire, inside the PFADD command,
+ * the same way it already does inside every rate-limit key.
+ *
+ * THE HONEST LIMIT (stated, not waved away): while the salt that fed a sketch
+ * is still alive, anyone holding BOTH the counters database and a candidate
+ * address can compute that address's hash and ask whether adding it would
+ * change the sketch. At low daily counts that test is fairly reliable. That
+ * is the same exposure the rate-limit keys above already carry (they are
+ * discrete, per-caller keys, which is strictly more testable), not a new
+ * class of it — though it reaches more people, since the rate-limit keys
+ * exist only for callers of a limited route and the sketch covers every page
+ * load. It ends when the salt rotates: the salt is ≤24h old by
+ * construction and lib/salt.mjs's 25h dead-man's switch polices it nightly.
+ * After that the sketch is inert — there is no hash left to test with.
+ *
+ * NO DIMENSION, EVER. One key per UTC day, no route, no page, no locale, no
+ * bill. A per-page or per-bill sketch would pair an address-derived token
+ * with a political interest — precisely what CLAUDE.md's "no logs linking
+ * network addresses to political positions" forbids — so the key builder
+ * takes the day and nothing else, and scripts/check-key-namespaces.mjs pins
+ * the literal (distinct-shape), confines the family and the HLL commands to
+ * this file (distinct-confinement), and forbids the raw address as a PFADD
+ * element (distinct-raw-address; a raw element would be hashed by the
+ * database's own UNSALTED function and stay testable forever).
+ *
+ * LIFETIME. The key dies at a fixed instant: 48 hours after its UTC day ends
+ * (EXPIREAT, an absolute deadline, so every re-assertion sets the same time
+ * and never extends it). The digest (scripts/daily-metrics.mjs) reads
+ * yesterday's sketch once each morning; the extra day lets a late or re-run
+ * digest still read it. The last salt that fed day D is dead within ~24h of
+ * D's end, so the sketch holds nothing testable for most of that tail.
+ *
+ * KNOWN OVERCOUNT, KEPT ON PURPOSE: the salt rotates 24h after it was
+ * created, not at UTC midnight. An address seen on both sides of that day's
+ * rotation hashes to two different elements and counts twice. Removing it
+ * needs a second, midnight-aligned salt — a new stored secret-like value the
+ * ruling did not ask for — so it is disclosed in the digest caveat instead.
+ *
+ * BEST-EFFORT, NEVER IN THE WAY: called from proxy.ts inside
+ * event.waitUntil, after the response is dispatched. It never throws. With
+ * the counters database unconfigured it does NOTHING — deliberately no
+ * in-memory fallback, because a per-instance set of addresses would be the
+ * one thing here that really is a list of addresses. On an error the count
+ * for that request is dropped and the error counted, status code only.
+ */
+
+/** How long a day's sketch outlives the end of its UTC day. */
+export const DISTINCT_ADDRESS_GRACE_SECONDS = 48 * 60 * 60;
+
+/** UTC calendar date, YYYY-MM-DD — the day a request's address is counted under. */
+export function distinctAddressDay(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/**
+ * Unix seconds at which `day`'s sketch dies: the end of that UTC day plus
+ * DISTINCT_ADDRESS_GRACE_SECONDS. Absolute, so re-asserting it is idempotent.
+ */
+export function distinctAddressExpiresAt(day: string): number {
+  const dayStartSec = Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000);
+  return dayStartSec + 24 * 60 * 60 + DISTINCT_ADDRESS_GRACE_SECONDS;
+}
+
+/**
+ * Count one request's network address toward today's distinct-address
+ * sketch. `ip` is callerIp(headers) — the rate limiter's own derivation. An
+ * absent address ('unknown', the callerIp default) is not an address and is
+ * not counted. Never throws; see the section comment above for everything
+ * else.
+ */
+export async function noteDistinctAddress(ip: string, now: Date = new Date()): Promise<void> {
+  const address = ip.trim();
+  if (address === '' || address === 'unknown') return;
+  const client = countersClient();
+  if (!client) return; // unconfigured: nothing at all, not even in memory
+  const day = distinctAddressDay(now);
+  const key = distinctAddressKey(day);
+  try {
+    const hash = callerHash(address, await currentSalt(client));
+    const altered = await client.cmd(['PFADD', key, hash]);
+    // PFADD answers 1 whenever the sketch changed, which always includes the
+    // call that CREATED the key — so the deadline is attached at creation and
+    // re-asserted (same instant) whenever the sketch grows, which also heals a
+    // key whose first EXPIREAT was lost. A repeat address changes nothing and
+    // costs one command, not two.
+    if (altered === 1) {
+      await client.cmd(['EXPIREAT', key, String(distinctAddressExpiresAt(day))]);
+    }
+  } catch (err) {
+    // Same absence signal as the limiter: whatever failed might BE the
+    // rotation, so never hold a memoized salt across it.
+    forgetSalt();
+    noteUpstashError('counters', err, "dropping this request's distinct-address count (best-effort; the page is unaffected)");
+  }
+}
+
+export type DistinctAddressCountResult =
+  | {
+      ok: true;
+      /** The sketch's estimate, or null when no sketch exists for that day. */
+      count: number | null;
+      /** True when the key exists but carries no expiry — it would never age out. */
+      noExpiry: boolean;
+    }
+  | { ok: false };
+
+/**
+ * Read ONE day's distinct-address estimate for the digest: TTL (to tell an
+ * absent sketch from a real zero, and to catch a key that lost its
+ * deadline), then PFCOUNT. Read-only — it never writes, never repairs.
+ *
+ * Fails CLOSED like every digest read in this repo (`{ ok: false }` on an
+ * unconfigured database, a request error, or a malformed reply), so the
+ * caller can say "not read" instead of printing an invented number.
+ */
+export async function readDistinctAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  const client = countersClient();
+  if (!client) return { ok: false };
+  const key = distinctAddressKey(day);
+  let ttl: unknown;
+  let count: unknown;
+  try {
+    ttl = await client.cmd(['TTL', key]);
+    if (ttl === -2) return { ok: true, count: null, noExpiry: false };
+    count = await client.cmd(['PFCOUNT', key]);
+  } catch (err) {
+    noteUpstashError(
+      'counters',
+      err,
+      'failing closed to a digest read error (distinct addresses, never a degraded number)'
+    );
+    return { ok: false };
+  }
+  if (typeof ttl !== 'number' || typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
+    return { ok: false };
+  }
+  return { ok: true, count, noExpiry: ttl === -1 };
 }

@@ -80,6 +80,30 @@
  *                     vocabulary this gate itself pins, never an
  *                     interpolated value.)
  *
+ * counters DB gains a FIFTH family (daily distinct-address count, owner
+ *                 ruling 2026-09-25): ONE HyperLogLog sketch per UTC day for
+ *                 the whole site, fed the rate limiter's own salted caller
+ *                 hash. It is the first structure whose VALUE (not just its
+ *                 key) is derived from caller material, so it lives in the
+ *                 caller-keyed registry (lib/ratelimit.ts) and never in the
+ *                 content-free usage registry, and it gets three teeth of
+ *                 its own:
+ *                   - distinct-shape: inside lib/ratelimit.ts the family's
+ *                     key is exactly the literal DISTINCT_KEY_LITERAL below
+ *                     (env prefix + day, nothing else) — a route, page,
+ *                     surface, bill, or locale folded into it is a failure,
+ *                     because a per-page sketch would pair an address-derived
+ *                     token with a political interest. PFMERGE (a multi-day
+ *                     sketch) is banned outright.
+ *                   - distinct-confinement: the family's key marker and the
+ *                     HyperLogLog commands appear in NO other scanned file,
+ *                     so a second sketch cannot be built somewhere else.
+ *                   - distinct-raw-address: a PFADD element is never the raw
+ *                     address — the database would hash it with its own
+ *                     UNSALTED function and it would stay testable forever.
+ *                 Comments are ignored by these three (they describe the
+ *                 shape in prose); code is not.
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -188,6 +212,55 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
 // check below turns into a failure rather than a silent pass.
 const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
 const PAGEVIEW_KEY_MARKER = 'usage:pageview:';
+// The daily distinct-address family (owner ruling 2026-09-25). The ONE key
+// shape it may ever have, as the exact source literal lib/ratelimit.ts's
+// distinctAddressKey returns: the env prefix and the UTC day, nothing else.
+// Deliberately literal, like PAGEVIEW_SURFACES_DECL — a rename of `day` or
+// any extra segment stops matching, which is a failure rather than a pass.
+const DISTINCT_KEY_LITERAL = '`${keyPrefix()}:uniques:${day}`';
+const DISTINCT_KEY_MARKER = 'uniques:';
+// HyperLogLog commands, as quoted command names in a command array.
+const HLL_COMMAND = /['"`]PF(ADD|COUNT|MERGE)['"`]/i;
+const HLL_MERGE = /['"`]PFMERGE['"`]/i;
+// A PFADD command array, capturing everything after the command name.
+const PFADD_ARRAY = /\[\s*['"`]PFADD['"`]\s*,([^\]]*)\]/gi;
+// Raw-address material that must never be a PFADD element: the address
+// variable itself (as a standalone identifier — `ip`, `address`, `addr`),
+// callerIp(...), or anything read straight off the forwarding headers.
+// Narrower than CALLER_MATERIAL on purpose — `callerHash(...)` and `salt`
+// ARE the intended element, and `distinctAddressKey(day)` names the key
+// (the standalone-identifier form is what keeps that call from matching).
+const RAW_ADDRESS_ELEMENT = /(^|[^a-z])(ip|address|addr)([^a-z]|$)|callerip|forwarded|headers/i;
+
+/**
+ * The source text with comments blanked out, line structure preserved, for
+ * the distinct-address rules only (every older rule reads comments too, and
+ * keeps doing so). Handles the two comment shapes this codebase writes —
+ * whole-line `//` comments, block comments that open at the start of a line
+ * (JSDoc and the section banners), and a trailing ` // note` after code —
+ * without trying to be a tokenizer: a `/*` inside a string (an Accept
+ * header's `image/*`, say) is never mistaken for a comment opener, because
+ * only a line-leading one is honoured.
+ */
+function codeOnly(text) {
+  let inBlock = false;
+  return text
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.trimStart();
+      if (inBlock) {
+        if (trimmed.includes('*/')) inBlock = false;
+        return '';
+      }
+      if (trimmed.startsWith('/*')) {
+        if (!trimmed.includes('*/', 2)) inBlock = true;
+        return '';
+      }
+      if (trimmed.startsWith('//') || trimmed.startsWith('*')) return '';
+      return line.replace(/\s\/\/\s.*$/, '');
+    })
+    .join('\n');
+}
 
 /** Every ${...} interpolation inside template literals of a source text. */
 function templateInterpolations(text) {
@@ -439,6 +512,62 @@ export function scanText(file, text) {
         0,
         `the usage registry writes ${PAGEVIEW_KEY_MARKER} keys but declares no parsable PAGEVIEW_SURFACES list — the closed vocabulary cannot be checked`
       );
+    }
+  }
+
+  // 4g. the daily distinct-address sketch (owner ruling 2026-09-25): one
+  //     key per UTC day, no dimension, built in one file, never fed a raw
+  //     address. Read against codeOnly(text) — these rules police CODE, and
+  //     the registry's own comments spell the shape out in prose.
+  {
+    const code = codeOnly(text);
+    const lineOf = (index) => code.slice(0, index).split('\n').length;
+    if (file === COUNTERS_REGISTRY) {
+      // Every appearance of the family marker must sit inside the canonical
+      // literal — anything else (an extra segment, a concatenated string, a
+      // second builder) is a stray.
+      const markerOffset = DISTINCT_KEY_LITERAL.indexOf(DISTINCT_KEY_MARKER);
+      for (let at = code.indexOf(DISTINCT_KEY_MARKER); at !== -1; at = code.indexOf(DISTINCT_KEY_MARKER, at + 1)) {
+        if (code.startsWith(DISTINCT_KEY_LITERAL, at - markerOffset)) continue;
+        add(
+          'distinct-shape',
+          lineOf(at),
+          `the daily distinct-address key is built as something other than ${DISTINCT_KEY_LITERAL} — one key per UTC day, never a route, page, surface, bill, or locale dimension`
+        );
+      }
+      const merge = HLL_MERGE.exec(code);
+      if (merge) {
+        add('distinct-shape', lineOf(merge.index), 'PFMERGE would build a multi-day distinct-address sketch — one sketch per UTC day, never combined');
+      }
+      for (const m of code.matchAll(PFADD_ARRAY)) {
+        // callerHash(address, salt) inline IS the salted hash — its own
+        // arguments are the one place the address may appear.
+        const elements = m[1].replace(/callerHash\([^)]*\)/g, 'HASHED');
+        if (RAW_ADDRESS_ELEMENT.test(elements)) {
+          add(
+            'distinct-raw-address',
+            lineOf(m.index),
+            `a PFADD element carries raw-address material ("${m[1].trim()}") — only the salted caller hash may be added`
+          );
+        }
+      }
+    } else {
+      const marker = code.indexOf(DISTINCT_KEY_MARKER);
+      if (marker !== -1) {
+        add(
+          'distinct-confinement',
+          lineOf(marker),
+          `the daily distinct-address key family is referenced outside ${COUNTERS_REGISTRY}`
+        );
+      }
+      const hll = HLL_COMMAND.exec(code);
+      if (hll) {
+        add(
+          'distinct-confinement',
+          lineOf(hll.index),
+          `a HyperLogLog command is used outside ${COUNTERS_REGISTRY} — the site has exactly one sketch family, and it lives there`
+        );
+      }
     }
   }
 
@@ -695,6 +824,70 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:usage:pageview:${surface}:${day}`;',
     rule: 'pageview-surface',
   },
+  {
+    // The hazard the whole family is built around: a route dimension. Rule 3
+    // (counters-content) cannot see this one — `route` is not a content
+    // identifier anywhere else in this registry — which is why distinct-shape
+    // exists.
+    name: 'a route label folded into the daily distinct-address key (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${route}:${day}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a per-page-surface distinct-address sketch (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${day}:${surface}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'the distinct-address key assembled by string concatenation, dodging the literal (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "const k = keyPrefix() + ':uniques:' + day + ':' + page;",
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a multi-day sketch via PFMERGE (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFMERGE', weekKey, distinctAddressKey(a), distinctAddressKey(b)]);",
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'the raw address added to the sketch instead of its salted hash (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', distinctAddressKey(day), ip]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'the trimmed address variable added to the sketch raw (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', distinctAddressKey(day), address]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'a forwarding header added to the sketch raw (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', key, req.headers.get('x-forwarded-for')]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'a per-page distinct-address sketch built in the usage registry (2026-09-25)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${asPageviewSurface(surface)}:${day}`;',
+    rule: 'distinct-confinement',
+  },
+  {
+    name: 'a HyperLogLog command outside the counters registry (2026-09-25)',
+    file: 'lib/usage.ts',
+    text: "await client.cmd(['PFADD', pageviewUsageKey(surface, day), hash]);",
+    rule: 'distinct-confinement',
+  },
+  {
+    name: 'a per-bill sketch in a page component (2026-09-25)',
+    file: 'app/[locale]/bills/[slug]/page.tsx',
+    text: "await counters.cmd(['PFADD', `uniques:bills/${slug}`, hash]);",
+    rule: 'distinct-confinement',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -772,6 +965,29 @@ const SELF_TEST_CLEAN = [
       "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'record', 'nominations', 'other'] as const;\n" +
       'const k = `${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`;',
   },
+  {
+    // The real daily distinct-address shape (2026-09-25), exactly as
+    // lib/ratelimit.ts ships it: the canonical key literal, the salted hash
+    // as the PFADD element, the absolute deadline, the digest's PFCOUNT, and
+    // a doc comment that spells the shape out in prose. Must produce zero
+    // violations across every rule, including rule 3.
+    file: COUNTERS_REGISTRY,
+    text:
+      '/**\n * Key: <env>:uniques:<YYYY-MM-DD>, one per UTC day, with a :uniques:route shape never allowed.\n */\n' +
+      'const k = `${keyPrefix()}:uniques:${day}`;\n' +
+      "const hash = callerHash(address, await currentSalt(client));\n" +
+      "const altered = await client.cmd(['PFADD', key, hash]);\n" +
+      "await client.cmd(['EXPIREAT', key, String(distinctAddressExpiresAt(day))]); // re-asserts the same uniques: deadline\n" +
+      "const count = await client.cmd(['PFCOUNT', key]);",
+  },
+  {
+    // proxy.ts and lib/usage.ts DESCRIBE the family in comments; only code
+    // is confined, so prose about it elsewhere must not false-positive.
+    file: 'proxy.ts',
+    text:
+      '// adds the salted hash to <env>:uniques:<day> (PFADD) in lib/ratelimit.ts\n' +
+      'event.waitUntil(noteDistinctAddress(callerIp(req.headers)).catch(() => {}));',
+  },
 ];
 
 function selfTest() {
@@ -809,7 +1025,13 @@ function main() {
   console.log('key namespaces clean: counters DB sees only hashed callers, cache DB sees only content keys, no content identifiers in caller-originating query strings');
 }
 
-// Run when invoked as a script; stay importable for tests.
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+// Run when invoked as a script; stay importable for tests. The argv[1]
+// test is the same guard scripts/check-run-honesty.mjs and
+// scripts/check-cursor-age.mjs use. It replaced a module-URL comparison
+// (2026-09-27) because the Playwright unit runner failed to load this file
+// with one ("exports is not defined in ES module scope"), and
+// tests/key-namespaces.spec.ts now imports scanText to run the
+// distinct-address rules against the real shipped files.
+if (/(^|[\\/])check-key-namespaces\.mjs$/.test(process.argv[1] ?? '')) {
   main();
 }
