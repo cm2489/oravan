@@ -44,11 +44,11 @@ All five are `readOnlyHint: true`, `openWorldHint: false` — nothing here write
 
 `{ slug?, citation?, locale? }` — description quoted verbatim from the live server's `tools/list`:
 
-> Get the full plain-language decode of a federal bill by slug (e.g. `"hr-2701-119"`) or citation (e.g. `"H.R. 2701"` — resolves to the most recent Congress on a match). Returns the AI-generated summary (headline, tl;dr, what/who/why/cost — automatically checked before publish and clearly labeled when present), the official status in plain language, an urgency band, sponsor, key dates, the official Congress.gov page, and an `act_url` to Oravan's on-site call flow. This tool never drafts a phone script — script generation happens only on-site, where the caller reads and can edit the script before dialing; that is not available over this API.
+> Get the full plain-language decode of a federal bill by slug (e.g. `"hr-2701-119"`) or citation (e.g. `"H.R. 2701"` — resolves to the most recent Congress on a match). Returns the AI-generated summary (headline, tl;dr, what/who/why/cost — automatically checked before publish and clearly labeled when present), the official status in plain language, a `decision_state` (pending, settled or enacted, with the official record's own sentence in `settled_reason` once the decision is settled or enacted), an urgency band, sponsor, key dates, the official Congress.gov page, and — while the decision is still pending — an `act_url` to Oravan's on-site call flow. This tool never drafts a phone script — script generation happens only on-site, where the caller reads and can edit the script before dialing; that is not available over this API.
 
 ### `search_bills`
 
-`{ query?, topic?, status?, active_only?, locale?, limit? }` → short teasers (headline, status, urgency) for bills matching a free-text query, issue topic, status, or active-only filter, most urgent first, across Oravan's bilingual federal bill corpus.
+`{ query?, topic?, status?, active_only?, locale?, limit? }` → short teasers (headline, status, `decision_state`, urgency) for bills matching a free-text query, issue topic, status, or active-only filter, most urgent first, across Oravan's bilingual federal bill corpus.
 
 ### `whats_moving`
 

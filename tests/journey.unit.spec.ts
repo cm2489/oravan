@@ -9,6 +9,7 @@ import {
   floorFactSuspended,
   floorCalendarChamber,
   floorMakesNoClaim,
+  floorPassageRejectedChamber,
   floorPendingChamber,
   floorSettledChamber,
   liveCallKey,
@@ -16,6 +17,7 @@ import {
   liveCallTargetForNomination,
   nominationHasCallScript,
   passageState,
+  statusBasisText,
   statusKeyFor,
   type LiveCallKey,
 } from '../lib/journey';
@@ -1096,6 +1098,12 @@ test.describe('deriveJourney', () => {
   const icuParams = (state: ReturnType<typeof deriveJourney>) => ({
     chamber: state.nowChamber === 'house' ? 'House' : 'Senate',
     other: state.origin === 'house' ? 'Senate' : 'House',
+    // The two tally sentences (2026-09-27) are rendered through next-intl in
+    // tests/settled-state.unit.spec.ts — their nested arguments are beyond
+    // this resolver — but the mirror carries the parameters all the same.
+    tally: state.tally ? 'yes' : 'none',
+    yeas: String(state.tally?.yeas ?? 0),
+    nays: String(state.tally?.nays ?? 0),
   });
 
   /** A minimal ICU `select` resolver: enough for this catalog's
@@ -1531,8 +1539,14 @@ test.describe('selectFloorVoteFeature floor gate', () => {
     const pick = selectFloorVoteFeature(corpus as ReadonlyArray<CorpusBill & { status: BillStatus }>);
     if (pick === null) return;
     const winner = pick.bill;
-    const calendar = floorCalendarChamber(winner.last_action_text);
-    const pending = floorPendingChamber(winner.last_action_text);
+    // The selector reads the sentence the status was read from
+    // (components/system/FloorVotePanel.tsx, status_basis_text first), so the
+    // sweep does too. Reading last_action_text here was a stale mirror that
+    // held only while no fresh winner sat behind an ambiguous latest step;
+    // S. 4668's cloture vote under "The committee substitute tabled by Voice
+    // Vote." (2026-09-24) is the first.
+    const calendar = floorCalendarChamber(statusBasisText(winner));
+    const pending = floorPendingChamber(statusBasisText(winner));
     expect(calendar ?? pending, slugOf(winner)).not.toBeNull();
     expect(pick.kind).toBe(calendar ? 'calendar' : 'pending');
     expect(pick.chamber).toBe(calendar ?? pending);
@@ -1543,9 +1557,9 @@ test.describe('selectFloorVoteFeature floor gate', () => {
     for (const b of floorVote) {
       if (!isSignalFresh(b.last_action_date)) continue;
       // Pending first, as the selector reads it.
-      const bKind = floorPendingChamber(b.last_action_text)
+      const bKind = floorPendingChamber(statusBasisText(b))
         ? 'pending'
-        : floorCalendarChamber(b.last_action_text)
+        : floorCalendarChamber(statusBasisText(b))
           ? 'calendar'
           : null;
       if (bKind === null) continue;
@@ -2157,6 +2171,13 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
       }
       if (nowKey === 'nowFloorMotionFailed') {
         expect(floorSettledChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+        expect(floorPassageRejectedChamber(b.last_action_text), slugOf(b)).toBeNull();
+      }
+      if (nowKey === 'nowFloorPassageRejected') {
+        expect(floorPassageRejectedChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
+      }
+      if (nowKey === 'nowFloorClotureInvoked') {
+        expect(floorPendingChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
       }
     }
   });
@@ -2898,8 +2919,12 @@ test.describe('status_basis_text drives every chamber/tense derivation', () => {
       status_basis_text: HOUSE_DEFEAT,
     };
     const j = deriveJourney(hconres38);
-    expect(j.nowKey).toBe('nowFloorMotionFailed');
+    // A defeat of the MEASURE, not a failed motion (2026-09-27, the 2026-09-27
+    // audit SY-01): it says the House voted it down, with the record's tally.
+    expect(j.nowKey).toBe('nowFloorPassageRejected');
     expect(j.nowChamber).toBe('house');
+    expect(j.tally).toEqual({ yeas: 212, nays: 219 });
+    expect(j.showTrailer).toBe(false);
     expect(liveCallTarget(hconres38)).toBeNull();
     expect(billFloorBand(hconres38, null)).toBeNull();
     // Without the basis the same status would say "it's moving on the floor".
