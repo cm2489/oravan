@@ -1,7 +1,14 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { amendedSince, billSponsor, decodeSource } from '../lib/bill-provenance';
+import {
+  amendedInCommitteeSince,
+  amendedSince,
+  billSponsor,
+  changedSince,
+  decodeSource,
+} from '../lib/bill-provenance';
+import type { Bill } from '../lib/types';
 import { billSlug, getAllBills, getLegislator } from '../lib/core';
 import { chamberNextMeeting, chamberSession } from '../lib/docket';
 import { briefToday, meetsAfterDay } from '../lib/today';
@@ -20,10 +27,12 @@ const lookups = { legislator: getLegislator, formerMember: votingMember };
 const decoded = getAllBills().filter((b) => b.ai_summary || b.ai_sections);
 const stamped = decoded.find((b) => decodeSource(b)?.date && billSponsor(b, lookups)?.hasPage);
 const unstamped = decoded.find((b) => !decodeSource(b));
-const amended = decoded.find((b) => amendedSince(decodeSource(b), votesForBill(billSlug(b))));
-const notAmended = decoded.find(
-  (b) => decodeSource(b)?.date && !amendedSince(decodeSource(b), votesForBill(billSlug(b))),
-);
+// The page's own call: of the floor and committee facts, the newer one.
+const changed = (b: Bill) =>
+  changedSince(amendedSince(decodeSource(b), votesForBill(billSlug(b))), amendedInCommitteeSince(decodeSource(b), b));
+const amended = decoded.find((b) => changed(b)?.kind === 'floor');
+const committeeAmended = decoded.find((b) => changed(b)?.kind === 'committee');
+const notAmended = decoded.find((b) => decodeSource(b)?.date && !changed(b));
 
 test.describe('SY-33 + SY-25 on the bill page', () => {
   for (const [prefix, locale] of [
@@ -60,15 +69,35 @@ test.describe('SY-33 + SY-25 on the bill page', () => {
 
   test('an amendment agreed to after the decoded text is said once, and only there', async ({ page }) => {
     test.skip(!amended, 'no stored roll call records an amendment agreed to after a decoded text');
-    const hit = amendedSince(decodeSource(amended!), votesForBill(billSlug(amended!)))!;
+    const hit = changed(amended!)!;
     await page.goto(`/bills/${billSlug(amended!)}`);
     await expect(page.locator(`[data-decode-amended="${hit.date}"]`)).toHaveCount(1);
+    await expect(page.locator('[data-decode-committee-amended]')).toHaveCount(0);
     if (notAmended) {
       await page.goto(`/bills/${billSlug(notAmended)}`);
       await expect(page.locator('[data-decode-source]')).toHaveCount(1);
       await expect(page.locator('[data-decode-amended]')).toHaveCount(0);
+      await expect(page.locator('[data-decode-committee-amended]')).toHaveCount(0);
     }
   });
+
+  for (const [prefix, locale] of [
+    ['', 'en'],
+    ['/es', 'es'],
+  ] as const) {
+    test(`${locale}: a committee's changes after the decoded text are said once, under the version line`, async ({
+      page,
+    }) => {
+      test.skip(!committeeAmended, 'no decoded bill has a committee markup with changes after its decoded text');
+      const hit = changed(committeeAmended!)!;
+      await page.goto(`${prefix}/bills/${billSlug(committeeAmended!)}`);
+      await expect(page.locator('[data-decode-source]')).toHaveCount(1);
+      const line = page.locator(`[data-decode-committee-amended="${hit.date}"]`);
+      await expect(line).toHaveCount(1);
+      await expect(line).toBeVisible();
+      await expect(page.locator('[data-decode-amended]')).toHaveCount(0);
+    });
+  }
 });
 
 test.describe('SY-31 /today', () => {

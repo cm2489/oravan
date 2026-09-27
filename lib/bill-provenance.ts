@@ -1,8 +1,8 @@
 /*
  * WHAT A BILL PAGE SAYS ABOUT ITS OWN SOURCES — two record facts the page
  * never printed until the 2026-09-27 audit found them missing (SY-33, SY-25).
- * Pure functions: every lookup is passed in, so tests/bill-provenance.unit
- * .spec.ts drives them with synthetic records and no corpus. Nothing here
+ * Pure functions: every lookup is passed in, so tests/copy-truth.unit.spec.ts
+ * drives them with synthetic records and no corpus. Nothing here
  * fetches, writes, calls a model, or renders a string — the page maps every
  * field to a message key.
  *
@@ -17,7 +17,15 @@ import type { Bill, Legislator, RollCall, VotingMember } from './types';
 export interface BillSponsor {
   bioguide: string;
   name: string;
-  /** Senate or House seat, in data/legislators.json's own vocabulary. */
+  /**
+   * The seat the member held WHEN THEY SPONSORED THIS BILL, in
+   * data/legislators.json's vocabulary. Only a member of the originating
+   * chamber can sponsor a bill, so it is read off the bill's own type
+   * (`s…` Senate, `h…` House) — never off the roster's current seat, which
+   * would print "Senator" on a member's old House bills after a move across
+   * the Capitol. The roster's seat is the fallback only for a bill type this
+   * does not recognise.
+   */
   type: 'sen' | 'rep';
   state: string;
   /**
@@ -36,28 +44,38 @@ export interface SponsorLookups {
   formerMember: (bioguide: string) => VotingMember | undefined;
 }
 
+/** The originating chamber's seat, from Congress.gov's bill type
+ *  (`s`, `sres`, `sjres`, `sconres` / `hr`, `hres`, `hjres`, `hconres`). */
+function sponsorSeat(billType: string): 'sen' | 'rep' | null {
+  const t = billType.trim().toLowerCase();
+  if (/^s(?:res|jres|conres)?$/.test(t)) return 'sen';
+  if (/^h(?:r|res|jres|conres)$/.test(t)) return 'rep';
+  return null;
+}
+
 /**
  * The bill's sponsor as the record names them, or null when no stored file
  * names the bioguide id. The id itself comes from Congress.gov via the nightly
- * sync (`sponsor_bioguide_id`); the name, seat and state come from the same
- * roster files the member pages read.
+ * sync (`sponsor_bioguide_id`); the name and state come from the same roster
+ * files the member pages read, and the seat from the bill's own chamber.
  */
 export function billSponsor(
-  bill: Pick<Bill, 'sponsor_bioguide_id'>,
+  bill: Pick<Bill, 'sponsor_bioguide_id' | 'bill_type'>,
   lookups: SponsorLookups,
 ): BillSponsor | null {
   const id = bill.sponsor_bioguide_id;
   if (!id) return null;
+  const seat = sponsorSeat(bill.bill_type ?? '');
   const sitting = lookups.legislator(id);
   if (sitting) {
-    return { bioguide: id, name: sitting.name, type: sitting.type, state: sitting.state, hasPage: true };
+    return { bioguide: id, name: sitting.name, type: seat ?? sitting.type, state: sitting.state, hasPage: true };
   }
   const former = lookups.formerMember(id);
   if (former?.name && former.state) {
     return {
       bioguide: id,
       name: former.name,
-      type: former.chamber === 'senate' ? 'sen' : 'rep',
+      type: seat ?? (former.chamber === 'senate' ? 'sen' : 'rep'),
       state: former.state,
       hasPage: false,
     };
@@ -156,4 +174,81 @@ export function amendedSince(
     }
   }
   return best;
+}
+
+export interface CommitteeChangedSince {
+  /** The committee action's own date, `YYYY-MM-DD` (`last_action_date`). */
+  date: string;
+}
+
+/**
+ * A COMMITTEE ORDERING THE BILL REPORTED WITH CHANGES, matched on the
+ * record's own words in `last_action_text`. Every shape below is one the
+ * stored corpus holds (census 2026-09-27), and nothing else is matched:
+ *
+ *   House  "Ordered to be Reported (Amended) by …"
+ *          "Ordered to be Reported in the Nature of a Substitute [(Amended)] by …"
+ *          "Ordered to be Reported Unfavorably (Amended) by …"
+ *          "Reported (Amended) by the Committee on … H. Rept. …"
+ *   Senate "Committee on …. Ordered to be reported with an amendment
+ *           [in the nature of a substitute] favorably." / "… with amendments …"
+ *
+ * Deliberately NOT matched: an order or report "without amendment" (the
+ * Senate pattern needs "with an amendment" / "with amendments", which
+ * "without amendment" never spells), a plain "Ordered to be Reported by …"
+ * (no changes), "Forwarded by Subcommittee to Full Committee (Amended)" (the
+ * full committee has not acted), "The committee substitute tabled" (set
+ * aside, not adopted), and any report shape the corpus does not hold yet,
+ * because an unseen shape cannot be checked against the record. A
+ * committee's changes are PROPOSED until the chamber adopts them, which is
+ * why the page says "with changes" and "may not reflect them", and never
+ * that the bill's text changed.
+ */
+const COMMITTEE_CHANGED: readonly RegExp[] = [
+  /^Ordered to be Reported (?:Unfavorably )?(?:\(Amended\)|in the Nature of a Substitute)/,
+  /^Reported \(Amended\) by the Committee on /,
+  /\bOrdered to be reported with (?:an amendment|amendments)\b/,
+];
+
+/**
+ * The committee action that ordered this bill reported with changes AFTER
+ * the day of the text the decode describes, or null.
+ *
+ * Only the LATEST action is stored (`last_action_text` / `last_action_date`),
+ * so this sees a markup only while it is still the bill's latest step. Once
+ * the reported text is published, the nightly sync's new-text re-decode
+ * (scripts/sync-bills.mjs → scripts/bill-decode.mjs `redecodeBill`) moves the
+ * stamp to it and this stops firing. Strictly after, and a dated source only,
+ * for the same reasons as amendedSince.
+ */
+export function amendedInCommitteeSince(
+  source: DecodeSource | null,
+  bill: Pick<Bill, 'last_action_text' | 'last_action_date'>,
+): CommitteeChangedSince | null {
+  if (!source?.date) return null;
+  const text = typeof bill.last_action_text === 'string' ? bill.last_action_text.trim() : '';
+  const raw = typeof bill.last_action_date === 'string' ? bill.last_action_date : '';
+  if (!text || !DAY_RE.test(raw)) return null;
+  const day = raw.slice(0, 10);
+  if (day <= source.date) return null;
+  if (!COMMITTEE_CHANGED.some((re) => re.test(text))) return null;
+  return { date: day };
+}
+
+export type ChangedSince =
+  | ({ kind: 'floor' } & AmendedSince)
+  | ({ kind: 'committee' } & CommitteeChangedSince);
+
+/**
+ * ONE QUIET LINE, not a list: of the two record facts that the decoded text
+ * may be out of date, the page prints the newer. On the same day the recorded
+ * floor vote wins, as the more specific fact.
+ */
+export function changedSince(
+  floor: AmendedSince | null,
+  committee: CommitteeChangedSince | null,
+): ChangedSince | null {
+  if (floor && (!committee || floor.date >= committee.date)) return { kind: 'floor', ...floor };
+  if (committee) return { kind: 'committee', ...committee };
+  return null;
 }

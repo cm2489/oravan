@@ -242,6 +242,7 @@
     "decodedFromVersion": "Decoded from the “<v>{version}</v>” text of {date}.",
     "decodedFromVersionUndated": "Decoded from the “<v>{version}</v>” text.",
     "decodedAmendedSince": "After that text, {chamber, select, senate {the Senate} other {the House}} agreed to an amendment to the bill by recorded vote on {date}, so this decode may not reflect it.",
+    "decodedCommitteeChangedSince": "After that text, a committee agreed on {date} to send the bill to the full chamber with changes, so this decode may not reflect them.",
     "officialTitle": "Official title",
     "statusLabel": "Status",
     "lastAction": "Latest action",

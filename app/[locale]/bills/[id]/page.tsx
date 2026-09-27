@@ -21,7 +21,13 @@ import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
-import { amendedSince, billSponsor, decodeSource } from '@/lib/bill-provenance';
+import {
+  amendedInCommitteeSince,
+  amendedSince,
+  billSponsor,
+  changedSince,
+  decodeSource,
+} from '@/lib/bill-provenance';
 import { billSlug, getAllBills, getBill, getLegislator, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -277,12 +283,12 @@ export default async function BillPage({
   /* TWO RECORD FACTS THE PAGE NEVER PRINTED (audit 2026-09-27). /citations
      lists the sponsor among the copied official-record fields, and until now
      no bill page showed one (SY-33). And a decode never said which text it
-     read, so a bill rewritten on the floor after that text still read as
-     current (SY-25). Both come from lib/bill-provenance.ts, and both print
-     nothing when the stored record does not hold the fact. */
+     read, so a bill amended in committee or on the floor after that text
+     still read as current (SY-25). Both come from lib/bill-provenance.ts, and
+     both print nothing when the stored record does not hold the fact. */
   const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember });
   const source = hasDecode ? decodeSource(bill) : null;
-  const amendedAfter = amendedSince(source, votesForBill(id));
+  const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
   // reads the date as well as the sentence since N3 (see statusLabelKey below).
   const statusKey = statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date);
@@ -717,9 +723,11 @@ export default async function BillPage({
                     version name is Congress.gov's own label, English verbatim
                     on /es with lang="en" (ruling V4), and the date is that
                     version's. Unstamped decodes print neither line. The second
-                    line appears only when a stored roll call records the
-                    chamber agreeing to an amendment to the bill after that
-                    text's day — see amendedSince for exactly which shapes. */}
+                    line appears only when the record shows changes to the
+                    bill after that text's day: a stored roll call agreeing to
+                    an amendment to it (amendedSince), or a committee ordering
+                    it reported with changes (amendedInCommitteeSince). Never
+                    both: changedSince keeps the newer, so it stays one line. */}
                 {source && (
                   <p className="mt-1 text-sm text-ink-2" data-decode-source={source.date ?? 'undated'}>
                     {t.rich(source.date ? 'bill.decodedFromVersion' : 'bill.decodedFromVersionUndated', {
@@ -729,12 +737,17 @@ export default async function BillPage({
                     })}
                   </p>
                 )}
-                {amendedAfter && (
-                  <p className="mt-1 text-sm text-ink-2" data-decode-amended={amendedAfter.date}>
+                {changedAfter?.kind === 'floor' && (
+                  <p className="mt-1 text-sm text-ink-2" data-decode-amended={changedAfter.date}>
                     {t('bill.decodedAmendedSince', {
-                      chamber: amendedAfter.chamber,
-                      date: fmtShort(amendedAfter.date),
+                      chamber: changedAfter.chamber,
+                      date: fmtShort(changedAfter.date),
                     })}
+                  </p>
+                )}
+                {changedAfter?.kind === 'committee' && (
+                  <p className="mt-1 text-sm text-ink-2" data-decode-committee-amended={changedAfter.date}>
+                    {t('bill.decodedCommitteeChangedSince', { date: fmtShort(changedAfter.date) })}
                   </p>
                 )}
                 {/* Its own line and a full 44px target (a11y sweep,

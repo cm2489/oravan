@@ -242,6 +242,7 @@
     "decodedFromVersion": "Esta versión en claro se basa en el texto «<v>{version}</v>» del {date}.",
     "decodedFromVersionUndated": "Esta versión en claro se basa en el texto «<v>{version}</v>».",
     "decodedAmendedSince": "Después de ese texto, {chamber, select, senate {el Senado} other {la Cámara}} aprobó una enmienda al proyecto en votación nominal el {date}, así que puede que esta versión en claro no la refleje.",
+    "decodedCommitteeChangedSince": "Después de ese texto, un comité acordó el {date} enviar el proyecto al pleno con cambios, así que puede que esta versión en claro no los refleje.",
     "officialTitle": "Título oficial",
     "statusLabel": "Estado",
     "lastAction": "Última acción",

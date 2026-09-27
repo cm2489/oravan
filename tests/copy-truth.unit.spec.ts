@@ -1,7 +1,14 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { amendedSince, billSponsor, decodeSource, type DecodeSource } from '../lib/bill-provenance';
+import {
+  amendedInCommitteeSince,
+  amendedSince,
+  billSponsor,
+  changedSince,
+  decodeSource,
+  type DecodeSource,
+} from '../lib/bill-provenance';
 import { getAllBills, getAllLegislators, getLegislator } from '../lib/core';
 import { meetsAfterDay } from '../lib/today';
 import { votingMember } from '../lib/votes';
@@ -71,7 +78,7 @@ test.describe('SY-33 billSponsor', () => {
   };
 
   test('a sitting member: name, seat, state, and a page to link to', () => {
-    expect(billSponsor({ sponsor_bioguide_id: 'X000001' }, lookups)).toEqual({
+    expect(billSponsor({ sponsor_bioguide_id: 'X000001', bill_type: 's' }, lookups)).toEqual({
       bioguide: 'X000001',
       name: 'Pat Example',
       type: 'sen',
@@ -81,7 +88,7 @@ test.describe('SY-33 billSponsor', () => {
   });
 
   test('a member who left the roster but is named in a roll call: printed, never linked', () => {
-    expect(billSponsor({ sponsor_bioguide_id: 'X000002' }, lookups)).toEqual({
+    expect(billSponsor({ sponsor_bioguide_id: 'X000002', bill_type: 'sres' }, lookups)).toEqual({
       bioguide: 'X000002',
       name: 'Sam Former',
       type: 'sen',
@@ -90,9 +97,19 @@ test.describe('SY-33 billSponsor', () => {
     });
   });
 
+  test('the seat is the one the bill was sponsored from, not the roster seat today', () => {
+    // A member who moved from the House to the Senate: their old House bill
+    // still names a Representative, and the state carries over.
+    expect(billSponsor({ sponsor_bioguide_id: 'X000001', bill_type: 'hr' }, lookups)?.type).toBe('rep');
+    expect(billSponsor({ sponsor_bioguide_id: 'X000001', bill_type: 'hjres' }, lookups)?.type).toBe('rep');
+    expect(billSponsor({ sponsor_bioguide_id: 'X000002', bill_type: 'hconres' }, lookups)?.type).toBe('rep');
+    // A bill type this does not recognise falls back to the roster's seat.
+    expect(billSponsor({ sponsor_bioguide_id: 'X000001', bill_type: 'zz' }, lookups)?.type).toBe('sen');
+  });
+
   test('an id no stored file names, or no id at all: nothing', () => {
-    expect(billSponsor({ sponsor_bioguide_id: 'X000009' }, lookups)).toBeNull();
-    expect(billSponsor({ sponsor_bioguide_id: null }, lookups)).toBeNull();
+    expect(billSponsor({ sponsor_bioguide_id: 'X000009', bill_type: 's' }, lookups)).toBeNull();
+    expect(billSponsor({ sponsor_bioguide_id: null, bill_type: 's' }, lookups)).toBeNull();
   });
 
   test('corpus: every linked sponsor has a generated member page (the link never 404s)', () => {
@@ -181,6 +198,65 @@ test.describe('SY-25 decodeSource / amendedSince', () => {
   });
 });
 
+test.describe('SY-25 amendedInCommitteeSince / changedSince', () => {
+  const src: DecodeSource = { version: 'Introduced in House', date: '2026-09-02' };
+  const act = (last_action_text: string | null, last_action_date: string | null = '2026-09-16') => ({
+    last_action_text,
+    last_action_date,
+  });
+
+  test('every committee shape the corpus holds, after the text day, is reported with its date', () => {
+    for (const text of [
+      'Ordered to be Reported (Amended) by the Yeas and Nays: 42 - 7.',
+      'Ordered to be Reported (Amended) by Voice Vote.',
+      'Ordered to be Reported in the Nature of a Substitute by the Yeas and Nays: 23 - 0.',
+      'Ordered to be Reported in the Nature of a Substitute (Amended) by Unanimous Consent.',
+      'Ordered to be Reported Unfavorably (Amended) by the Yeas and Nays: 20 - 15.',
+      'Reported (Amended) by the Committee on Natural Resources. H. Rept. 119-400, Part I.',
+      'Committee on Veterans\' Affairs. Ordered to be reported with an amendment in the nature of a substitute favorably.',
+      'Committee on Commerce, Science, and Transportation. Ordered to be reported with amendments favorably.',
+    ]) {
+      expect(amendedInCommitteeSince(src, act(text)), text).toEqual({ date: '2026-09-16' });
+    }
+  });
+
+  test('no changes, not yet the full committee, or set aside: nothing', () => {
+    for (const text of [
+      'Ordered to be Reported by the Yeas and Nays: 30 - 0.',
+      'Ordered to be Reported by Voice Vote.',
+      'Committee on Finance. Ordered to be reported without amendment favorably.',
+      'Reported by the Committee on Natural Resources. H. Rept. 119-401, Part I.',
+      'Forwarded by Subcommittee to Full Committee (Amended) by Voice Vote.',
+      'The committee substitute tabled by Voice Vote.',
+      'Passed Senate without amendment by Unanimous Consent.',
+      'Referred to the House Committee on the Judiciary.',
+    ]) {
+      expect(amendedInCommitteeSince(src, act(text)), text).toBeNull();
+    }
+  });
+
+  test('on or before the text day, undated, or no action on file: nothing', () => {
+    const markup = 'Ordered to be Reported (Amended) by Voice Vote.';
+    expect(amendedInCommitteeSince(src, act(markup, '2026-09-02'))).toBeNull();
+    expect(amendedInCommitteeSince(src, act(markup, '2026-08-30'))).toBeNull();
+    expect(amendedInCommitteeSince(src, act(markup, null))).toBeNull();
+    expect(amendedInCommitteeSince(src, act(null))).toBeNull();
+    expect(amendedInCommitteeSince({ version: 'Enrolled Bill', date: null }, act(markup))).toBeNull();
+    expect(amendedInCommitteeSince(null, act(markup))).toBeNull();
+  });
+
+  const floor = { chamber: 'senate' as const, date: '2026-09-24', roll: 242, source: 'https://www.senate.gov/x.xml' };
+
+  test('one line: the newer fact wins, and the floor vote wins a tie', () => {
+    expect(changedSince(null, null)).toBeNull();
+    expect(changedSince(floor, null)).toEqual({ kind: 'floor', ...floor });
+    expect(changedSince(null, { date: '2026-09-16' })).toEqual({ kind: 'committee', date: '2026-09-16' });
+    expect(changedSince(floor, { date: '2026-09-16' })?.kind).toBe('floor');
+    expect(changedSince(floor, { date: '2026-09-30' })).toEqual({ kind: 'committee', date: '2026-09-30' });
+    expect(changedSince(floor, { date: '2026-09-24' })?.kind).toBe('floor');
+  });
+});
+
 // ---- SY-31: "in session" is a claim about a day ------------------------------
 
 test.describe('SY-31 meetsAfterDay', () => {
@@ -210,6 +286,7 @@ test('every key this sweep added is in both locales', () => {
     [en.bill, es.bill, 'decodedFromVersion'],
     [en.bill, es.bill, 'decodedFromVersionUndated'],
     [en.bill, es.bill, 'decodedAmendedSince'],
+    [en.bill, es.bill, 'decodedCommitteeChangedSince'],
     [en.today, es.today, 'chamberInNext'],
   ];
   const args = (s: string) => [...s.matchAll(/\{(\w+)[,}]/g)].map((x) => x[1]).sort();
