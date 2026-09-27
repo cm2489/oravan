@@ -377,6 +377,11 @@ test.describe('in-place wiring', () => {
  * gets inert objects — see tests/donate.unit.spec.ts's header). What IS
  * assertable without a browser is that the wiring exists at all, which is the
  * half a live e2e cannot cheaply prove for every call site.
+ *
+ * GlossaryTerm's own contract — a link to its entry, never a disclosure;
+ * opened by hover or focus, closed by Escape; never opened by touch — is
+ * asserted on the rendered page (tests/glossary.spec.ts,
+ * tests/glossary-wiring.spec.ts), not read out of its source.
  * ------------------------------------------------------------------ */
 test.describe('source wiring', () => {
   test('the page is in the sitemap and linked from the footer', () => {
@@ -412,16 +417,17 @@ test.describe('source wiring', () => {
 
     // The 2026-08-15 pair, same contract: each message opens `<term>`, so each
     // call site must hand next-intl a handler for it or the render throws.
-    // Both import from the NO-directive module for the reason above.
-    for (const path of ['components/FloorRecessNote.tsx', 'app/[locale]/page.tsx']) {
-      const src = readText(path);
-      expect(src, `${path} imports the server-safe tag helper`).toContain(
-        "from '@/components/glossary-tags'"
-      );
-      expect(src, `${path} hands a handler for <term>`).toContain(
-        "term: glossaryTag('pro-forma-session')"
-      );
-    }
+    // The bill page's note imports from the NO-directive module for the reason
+    // above. The homepage's note is asserted on the rendered page instead —
+    // tests/glossary-wiring.spec.ts: the recess note on / carries a link
+    // whose href ends #pro-forma-session.
+    const recessNote = readText('components/FloorRecessNote.tsx');
+    expect(recessNote, 'FloorRecessNote imports the server-safe tag helper').toContain(
+      "from '@/components/glossary-tags'"
+    );
+    expect(recessNote, 'FloorRecessNote hands a handler for <term>').toContain(
+      "term: glossaryTag('pro-forma-session')"
+    );
 
     // One renderer for the nomination status label, used by both surfaces.
     for (const path of [
@@ -432,50 +438,6 @@ test.describe('source wiring', () => {
         '<NominationStatusLabel'
       );
     }
-  });
-
-  test('the term is a LINK with a described-by box — not a disclosure button', () => {
-    /*
-     * The 2026-08-12 redesign (owner review of PR #217). Pinned at source
-     * because the difference is a contract, not a style: `aria-expanded` on
-     * something whose activation NAVIGATES is a false promise to a screen
-     * reader, and a hover box that only mouse users can reach is the exact
-     * failure the issue's a11y constraint named.
-     */
-    const src = readText('components/GlossaryTerm.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(src, 'the term must render as a Link, not a button').toContain('<Link');
-    expect(src).toContain('href={glossaryHref(id)}');
-    expect(src, 'a navigating control is not a disclosure').not.toContain('aria-expanded');
-    expect(src).toContain('aria-describedby={open ? panelId : undefined}');
-    // Hover in, focus in, Escape out — all three, or the box is mouse-only.
-    expect(src).toContain('onPointerEnter');
-    expect(src).toContain('onPointerLeave');
-    expect(src).toContain('onFocus');
-    expect(src).toMatch(/e\.key !== 'Escape'/);
-    // Touch has no hover: a synthetic touch pointerenter must not open a box
-    // over the finger that asked to navigate.
-    expect(src).toMatch(/pointerType !== 'mouse'/);
-    // The box holds no interactive content — that is what makes describedby
-    // the honest wiring rather than a keyboard trap.
-    expect(src).not.toContain('fullGlossary');
-  });
-
-  test('the term is ink and never amber, and introduces no third radius', () => {
-    // DESIGN.md's colour law: `urgent` carries ONE dated floor fact with the
-    // date printed beside it, and a glossary entry is dateless by
-    // construction. The shape law: two radii, assigned by scale — the panel is
-    // hand-sized (control), the trigger is a run of text and takes none.
-    // Block comments stripped first — this file EXPLAINS the laws it obeys,
-    // and a scan that reads its own reasoning as a violation is a gate that
-    // punishes documentation.
-    const src = readText('components/GlossaryTerm.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(src).not.toMatch(/\b(bg|text|border|decoration)-urgent\b/);
-    expect(src).toContain('rounded-control');
-    expect(src).not.toContain('rounded-stamp');
-    expect(src).not.toContain('rounded-full');
-    // The one radius that is never a component's: globals.css owns it for the
-    // focus indicator.
-    expect(src).not.toContain('rounded-hair');
   });
 });
 

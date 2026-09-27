@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { FONT_VALUES, MODE_DEFAULTS } from '../lib/embed-theme';
+import { hexToRgb } from '../lib/contrast';
+import { FONT_VALUES, MODE_DEFAULTS, resolveEmbedTheme } from '../lib/embed-theme';
+import { decodedCommitteeBill } from './corpus-fixtures';
+import { colorToken, rgbOf } from './palette';
 
 /*
  * Brand-preview build — the widened theming surface, driven against the
@@ -10,7 +13,16 @@ import { FONT_VALUES, MODE_DEFAULTS } from '../lib/embed-theme';
  * so the original .re-root readings elsewhere keep working untouched.
  */
 
-const DECODED_SLUG = 'hr-5582-119';
+/*
+ * Every expected colour below is READ — the defaults from lib/embed-theme.ts's
+ * MODE_DEFAULTS (the pair embed.css's fallbacks must mirror), a tenant colour
+ * from the tenant input the test sent — never an rgb() literal. A default
+ * that drifts from embed.css fails here; a palette change does not.
+ */
+const DECODED_SLUG = decodedCommitteeBill().slug;
+
+/** A tenant's dark palette — any valid pair that is not the default. */
+const TENANT_DARK = { surface: '#0f1a2b', ink: '#f5f7fa' };
 
 function readVar() {
   return (el: Element, n: string) => getComputedStyle(el).getPropertyValue(n).trim();
@@ -45,17 +57,19 @@ function parseColor(value: string): { r: number; g: number; b: number; a: number
 test('a valid surface/ink pair re-keys the whole document, band below content included', async ({
   page,
 }) => {
-  await page.goto('/embed/rep-lookup?locale=en&surface=%230f1a2b&ink=%23f5f7fa');
+  await page.goto(
+    `/embed/rep-lookup?locale=en&surface=${encodeURIComponent(TENANT_DARK.surface)}&ink=${encodeURIComponent(TENANT_DARK.ink)}`
+  );
   const html = page.locator('html');
-  await expect.poll(() => html.evaluate(readVar(), '--oravan-surface')).toBe('#0f1a2b');
-  await expect.poll(() => html.evaluate(readVar(), '--oravan-ink')).toBe('#f5f7fa');
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-surface')).toBe(TENANT_DARK.surface);
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-ink')).toBe(TENANT_DARK.ink);
   // The BODY background is the pair's surface — that's the band a fixed-height
   // iframe shows below short content, the thing inline vars on <main> could
   // never recolor.
   const bodyBg = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bodyBg).toBe('rgb(15, 26, 43)');
+  expect(bodyBg).toBe(rgbOf(TENANT_DARK.surface));
   const bodyColor = await page.locator('body').evaluate((el) => getComputedStyle(el).color);
-  expect(bodyColor).toBe('rgb(245, 247, 250)');
+  expect(bodyColor).toBe(rgbOf(TENANT_DARK.ink));
 });
 
 test('a pair below AA contrast is discarded as a pair (default background survives)', async ({
@@ -85,21 +99,23 @@ test('mode=dark forces the dark default palette on a light-preference visitor', 
   const scheme = await html.evaluate((el) => getComputedStyle(el).colorScheme);
   expect(scheme).toBe('dark');
   const bodyBg = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bodyBg).toBe('rgb(22, 25, 27)'); // #16191b — variant B's one dark
+  expect(bodyBg).toBe(rgbOf(MODE_DEFAULTS.dark.surface));
 });
 
 test('mode=light forces the light palette on a dark-preference visitor', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/embed/rep-lookup?locale=en&mode=light');
   const bodyBg = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bodyBg).toBe('rgb(255, 255, 255)'); // #ffffff — `paper`
+  expect(bodyBg).toBe(rgbOf(MODE_DEFAULTS.light.surface));
 });
 
 test('junk mode falls back to auto (visitor preference rules)', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/embed/rep-lookup?locale=en&mode=midnight');
   const bodyBg = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bodyBg).toBe('rgb(22, 25, 27)'); // dark default via media query
+  // Nothing forced, so this is embed.css's own dark fallback via its media
+  // query — which must be the dark default the server pins for mode=dark.
+  expect(bodyBg).toBe(rgbOf(MODE_DEFAULTS.dark.surface));
 });
 
 test('the two new font stacks land as computed --oravan-font', async ({ page }) => {
@@ -115,23 +131,28 @@ test('the two new font stacks land as computed --oravan-font', async ({ page }) 
 test('a themed widget shows no Oravan-palette leak: note box re-tints, toggle text is the tenant color', async ({
   page,
 }) => {
-  // The NYT-shaped case Colby flagged: black accent, white surface, near-black
-  // ink. The note box must NOT be Oravan amber, and the pressed toggle text
-  // must be the tenant's white, not Oravan's #fbf8f0.
+  // The case the owner flagged: a publisher's black accent, light surface and
+  // near-black ink. The surface is an off-white on purpose — it differs from
+  // every Oravan default, so a fallback to Oravan's own colours cannot pass
+  // for the tenant's. The note box must wear the tint derived from THEIR
+  // colours, and the pressed toggle text must be THEIR light colour.
+  const tenant = { accent: '#000000', surface: '#fdfcfa', ink: '#121212', mode: 'light' };
+  expect([MODE_DEFAULTS.light.surface, MODE_DEFAULTS.dark.surface]).not.toContain(tenant.surface);
+  const expected = resolveEmbedTheme(tenant);
   await page.goto(
-    '/embed/rep-lookup?locale=en&accent=%23000000&surface=%23ffffff&ink=%23121212&mode=light'
+    `/embed/rep-lookup?locale=en&accent=${encodeURIComponent(tenant.accent)}&surface=${encodeURIComponent(tenant.surface)}&ink=${encodeURIComponent(tenant.ink)}&mode=${tenant.mode}`
   );
   const note = page.locator('.re-note');
   await expect(note).toBeVisible();
-  const noteBorder = await note.evaluate((el) => getComputedStyle(el).borderTopColor);
-  // Oravan amber is rgb(232, 163, 23); a themed box must not be that hue.
-  expect(noteBorder).not.toContain('232, 163, 23');
+  const noteBorder = parseColor(await note.evaluate((el) => getComputedStyle(el).borderTopColor));
+  const tint = hexToRgb(expected.noteBorder!)!;
+  expect([noteBorder.r, noteBorder.g, noteBorder.b]).toEqual([tint.r, tint.g, tint.b]);
 
   const toggleText = await page
     .locator('.re-toggle[aria-pressed="true"]')
     .evaluate((el) => getComputedStyle(el).color);
-  // #fbf8f0 (Oravan paper) is rgb(251, 248, 240); tenant white is rgb(255,255,255).
-  expect(toggleText).toBe('rgb(255, 255, 255)');
+  expect(expected.accentInk).toBe(tenant.surface);
+  expect(toggleText).toBe(rgbOf(tenant.surface));
 });
 
 test('accent-only theme keeps a visible focus ring (falls back to ink, not the raw accent)', async ({
@@ -152,24 +173,25 @@ test('accent-only theme keeps a visible focus ring (falls back to ink, not the r
   expect(focus).not.toBe(accent);
 });
 
-test('the UN-themed default widget keeps Oravan\'s own note treatment — a neutral ink wash, never amber', async ({
+test('the UN-themed default widget keeps Oravan\'s own note treatment — a neutral ink wash, never the live-floor colour', async ({
   page,
 }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/embed/rep-lookup?locale=en');
   const noteBorder = await page
     .locator('.re-note')
     .evaluate((el) => getComputedStyle(el).borderTopColor);
-  // Same property as before — an un-themed widget gets Oravan's OWN default
-  // note treatment rather than nothing — re-keyed to the treatment the colour
-  // law now assigns it. Amber is spent site-wide on exactly one fact (a bill
-  // standing on the floor calendar, with its date printed) and no widget can
-  // render that fact, so the amber fallback was retired for --_line-strong,
-  // half the default ink. The old amber is asserted ABSENT so the retirement
-  // itself is pinned, not just the replacement.
+  // An un-themed widget gets Oravan's OWN default note treatment rather than
+  // nothing: --_line-strong, half the default ink. What this protects: the
+  // site's live-floor colour (--color-urgent) marks one fact — a bill
+  // standing on the floor calendar, with its date printed — and no widget
+  // can render that fact, so a widget must never wear that colour.
   const border = parseColor(noteBorder);
-  expect([border.r, border.g, border.b]).not.toEqual([232, 163, 23]); // no amber
-  expect([border.r, border.g, border.b]).toEqual([22, 25, 27]); // #16191b, the default ink
-  expect(border.a).toBeCloseTo(0.5, 2); // --_line-strong: half ink, an edge at 3.37:1
+  const urgent = hexToRgb(colorToken('urgent'))!;
+  expect([border.r, border.g, border.b]).not.toEqual([urgent.r, urgent.g, urgent.b]);
+  const ink = hexToRgb(MODE_DEFAULTS.light.ink)!;
+  expect([border.r, border.g, border.b]).toEqual([ink.r, ink.g, ink.b]); // the default ink
+  expect(border.a).toBeCloseTo(0.5, 2); // --_line-strong: half ink
 });
 
 test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink mark', async ({
@@ -177,19 +199,21 @@ test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink m
 }) => {
   // A pale accent whose readable text color is the dark ink, not the default
   // near-white — proves the derivation is computed, not hardcoded.
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/embed/bill-card?locale=en&slug=' + DECODED_SLUG + '&accent=%23ffe680');
   const html = page.locator('html');
   await expect
     .poll(() => html.evaluate(readVar(), '--oravan-accent-ink'))
-    .toBe('#16191b');
+    .toBe(MODE_DEFAULTS.light.ink);
   // The chip half of this test changed MEANING, not just its hex: .bc-chip-ai
   // no longer fills with the accent (embed.css — "the AI label is an INTEGRITY
   // MARK, not brand chrome"), so it renders in --_ink on a transparent ground.
   // Asserting the transparent ground is what keeps this a real check: with the
-  // ink and the derived accent-ink both #16191b today, a color assertion alone
-  // would pass either way and would no longer notice the accent coming back.
+  // ink and the derived accent-ink the same colour today, a color assertion
+  // alone would pass either way and would no longer notice the accent coming
+  // back.
   const chip = page.locator('.bc-chip-ai');
-  expect(await chip.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(22, 25, 27)');
+  expect(await chip.evaluate((el) => getComputedStyle(el).color)).toBe(rgbOf(MODE_DEFAULTS.light.ink));
   expect(await chip.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
 });
 
@@ -224,13 +248,13 @@ test('injection through the new knobs never reaches the document', async ({ page
 test('action-panel refusal state (garbage token) is fully themed', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto(
-    '/embed/action-panel?locale=en&token=not-a-real-token&mode=dark&surface=%230f1a2b&ink=%23f5f7fa'
+    `/embed/action-panel?locale=en&token=not-a-real-token&mode=dark&surface=${encodeURIComponent(TENANT_DARK.surface)}&ink=${encodeURIComponent(TENANT_DARK.ink)}`
   );
   // The refusal copy renders (not a crash, not the live widget)…
   await expect(page.locator('.re-note[role="alert"]')).toBeVisible();
   // …and the tenant palette carried through to the whole document.
   const bodyBg = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bodyBg).toBe('rgb(15, 26, 43)');
+  expect(bodyBg).toBe(rgbOf(TENANT_DARK.surface));
   const scheme = await page.locator('html').evaluate((el) => getComputedStyle(el).colorScheme);
   expect(scheme).toBe('dark');
 });

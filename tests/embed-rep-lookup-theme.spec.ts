@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { FONT_VALUES, RADIUS_VALUES } from '../lib/embed-theme';
 import en from '../messages/en.json';
+import { decodedCommitteeBill } from './corpus-fixtures';
 
 /*
  * S5a: the rep-lookup widget accepts the same three validated theme params
@@ -83,7 +84,9 @@ test('white-label (bill-card): brandless drops the app-name fallback, never the 
   await expect(page.locator('.bc-citation')).toHaveText('');
 
   // Found-bill state: AI-integrity chip survives every white-label mode.
-  await page.goto('/embed/bill-card?locale=en&slug=hr-5582-119&brandless=1&attribution=none');
+  await page.goto(
+    `/embed/bill-card?locale=en&slug=${decodedCommitteeBill().slug}&brandless=1&attribution=none`
+  );
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toBeVisible();
   await expect(page.getByText(en.embed.poweredBy)).toHaveCount(0);
 });

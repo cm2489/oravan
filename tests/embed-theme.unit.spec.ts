@@ -114,19 +114,25 @@ test.describe('resolveEmbedTheme', () => {
   });
 
   test('accentInk derives from accent by contrast; focus needs a surface', () => {
+    // With no tenant pair the pick is between the shipped default pair's two
+    // halves (pickTextColor's defaults mirror MODE_DEFAULTS.light).
     const noSurface = resolveEmbedTheme({ accent: '#82632a' });
-    expect(noSurface.accentInk).toBe('#ffffff'); // pickTextColor's variant-B paper
+    expect(noSurface.accentInk).toBe(MODE_DEFAULTS.light.surface);
     expect(noSurface.focus).toBeUndefined();
 
     const light = resolveEmbedTheme({ accent: '#ffe680' });
-    expect(light.accentInk).toBe('#16191b');
+    expect(light.accentInk).toBe(MODE_DEFAULTS.light.ink);
 
     // With a tenant pair, accentInk uses the TENANT's own light/dark, not
-    // Oravan's own paper/ink — a black accent on a white/near-black brand
-    // yields the tenant's #ffffff because THEY supplied it, not because it is
-    // the default. (Proved by the #121212 ink below: the pick is measured.)
-    const themed = resolveEmbedTheme({ accent: '#000000', surface: '#ffffff', ink: '#121212' });
-    expect(themed.accentInk).toBe('#ffffff');
+    // Oravan's defaults — a black accent on a light/near-black brand yields
+    // the tenant's own surface because THEY supplied it. The surface is an
+    // off-white on purpose: it differs from every default, so a fallback to
+    // Oravan's pair cannot pass for the tenant's colour. (The #121212 ink
+    // proves the pick is measured.)
+    const tenant = { accent: '#000000', surface: '#fdfcfa', ink: '#121212' };
+    const themed = resolveEmbedTheme(tenant);
+    expect([MODE_DEFAULTS.light.surface, MODE_DEFAULTS.dark.surface]).not.toContain(tenant.surface);
+    expect(themed.accentInk).toBe(tenant.surface);
 
     // Accent readable on the surface -> focus = accent.
     const readable = resolveEmbedTheme({ accent: '#82632a', surface: '#ffffff', ink: '#111111' });
@@ -153,7 +159,8 @@ test.describe('buildThemeCss', () => {
   });
 
   test('note tint tokens are emitted only for a themed widget, never on the default', () => {
-    // Un-themed default → no note tokens, so embed.css keeps its amber fallback.
+    // Un-themed default → no note tokens, so embed.css keeps its own neutral
+    // note treatment (never amber: amber is the site's live-floor colour).
     expect(buildThemeCss(resolveEmbedTheme({}))).not.toContain('--oravan-note');
     // Accent alone (no known surface) is still not "themed" enough to tint.
     expect(buildThemeCss(resolveEmbedTheme({ accent: '#000000' }))).not.toContain('--oravan-note');
