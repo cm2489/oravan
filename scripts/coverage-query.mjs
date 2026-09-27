@@ -7,10 +7,12 @@
  * Shared with the eval harness (scripts/eval-coverage-queries.mjs) and pinned
  * by tests/coverage-query.unit.spec.ts.
  *
- * Contents: the search-query builder (below), the TheNewsAPI rate-limit
- * header reader, and the recency pass's pure half (bottom): who is eligible,
- * who is always queried, how the nightly request budget is split, how a
- * night's articles merge into what is stored, and the relevance-gate prompt.
+ * Contents: the search-query builder (below), the keep rule every article
+ * must pass before the relevance gate sees it (citesBill, after the builder),
+ * the TheNewsAPI rate-limit header reader, and the recency pass's pure half
+ * (bottom): who is eligible, who is always queried, how the nightly request
+ * budget is split, how a night's articles merge into what is stored, and the
+ * relevance-gate prompt.
  *
  * ---- The search-query builder ----
  *
@@ -82,31 +84,193 @@ const apostropheVariants = (n) => (/['’]/.test(n)
   : [n]);
 
 export function queryFor(b) {
-  const names = (b.press_names ?? [])
-    .map((n) => (n ?? '').trim())
-    .filter((n) => n && n.length <= 60 && !CITATION_SHAPED.test(n))
+  const clauses = billNames(b)
     .flatMap(apostropheVariants)
     .filter((n, i, arr) => arr.indexOf(n) === i)
-    .slice(0, 4);
-  const clauses = names.map((n) => `"${n}"`);
+    .slice(0, 4)
+    .map((n) => `"${n}"`);
 
   if (clauses.length === 0 && b.news_query) {
     // Subject query: raw terms, may embed its own quoted phrase.
     clauses.push(`(${b.news_query.trim()})`);
   }
 
-  if (clauses.length === 0) {
-    // No generated inputs (backfill hasn't reached this bill, or decode-time
-    // generation failed): fall back to the bill's own title when usable —
-    // the pre-#22 heuristic. Many titles ARE the press name ("SCAM Act").
-    const title = (b.short_title ?? b.title ?? '').trim();
-    if (title && title.length <= 80 && !/^an act|^a bill|^to |^a joint resolution/i.test(title)) {
-      clauses.push(...apostropheVariants(title).map((t) => `"${t}"`));
-    }
-  }
-
   clauses.push(citationClause(b));
   return clauses.join(' | ');
+}
+
+/**
+ * The names a bill is known by — what the search asks for by name, and what
+ * the keep rule (citesBill) accepts as the article naming THIS bill.
+ *
+ * The usable press names (b.press_names: trimmed, at most 60 characters, never
+ * a bare citation). With none, and no subject query either, the bill's own
+ * short title or title when it is usable — the pre-#22 fallback, because many
+ * titles ARE the press name ("SCAM Act"). A bill covered by SUBJECT
+ * (b.news_query and no press names) has no names at all: a subject query finds
+ * the topic, and only the citation can say an article is about this bill
+ * rather than another one on the same topic.
+ *
+ * @param {any} b @returns {string[]}
+ */
+export function billNames(b) {
+  const names = (b?.press_names ?? [])
+    .map((n) => (typeof n === 'string' ? n : '').trim())
+    .filter((n) => n && n.length <= 60 && !CITATION_SHAPED.test(n))
+    .filter((n, i, arr) => arr.indexOf(n) === i);
+  if (names.length || b?.news_query) return names;
+  // No generated inputs (backfill hasn't reached this bill, or decode-time
+  // generation failed).
+  const title = String(b?.short_title ?? b?.title ?? '').trim();
+  return title && title.length <= 80 && !/^an act|^a bill|^to |^a joint resolution/i.test(title) ? [title] : [];
+}
+
+// ---- The keep rule: cite before you rate (2026-09-27) ----------------------
+/*
+ * WHAT WAS WRONG. The relevance gate was the only thing between a search hit
+ * and data/coverage.json, and it was asked a judgment question ("is this
+ * specifically about THIS bill?") over a list the search had filled by
+ * SUBJECT. On H.Con.Res. 89 — the Iran war-powers vote, the week's most
+ * watched page — it kept four off-topic articles, all from unrated outlets
+ * (not in data/media-bias.json: EU social-media rules, a Turkish cabinet
+ * meeting, a Korean deployment story, an Indian market open), and a fifth
+ * about a different resolution, and the page listed them as "Coverage of this
+ * bill from across the press" (the 2026-09-27 audit, SY-04). The drop path had
+ * been made strict (gateAnswered); the keep path had not.
+ *
+ * THE RULE. An article is shown to the gate only when its title or snippet
+ * CITES the bill (its number, in any of the forms the press prints) or prints
+ * one of the names it is known by (billNames). Deterministic, free, and
+ * testable; it runs before the model and never instead of it. A subject-only
+ * bill (a war-powers or CRA resolution with no press name) therefore keeps
+ * only articles that give its number: "a war powers resolution failed" cannot
+ * say WHICH of ten Iran resolutions failed, and listing it under one of them is
+ * the error being fixed.
+ *
+ * WHAT IT COSTS, MEASURED on data/coverage.json at 2026-09-27T08Z: of 926
+ * stored articles, 289 pass (267 on a name, 22 on a citation), on 155 of the
+ * 449 covered bills; of the 324 from rated outlets (data/media-bias.json), 98
+ * pass. (The nightly applies it to every new search hit, but to a stored
+ * article only when the search returns it again — or, on a live Big Question
+ * vehicle, every night — so the stored corpus is not cut to those numbers at
+ * once.) It also rejects real articles that name a bill loosely —
+ * "College sports act overcomes filibuster" for the Protect College Sports
+ * Act, "CLARITY Act fails" for a bill whose stored press names are "Digital
+ * Asset Market Clarity Act" and "DAMC Act". Those are fixed by better press
+ * names, never by loosening the rule.
+ */
+
+/* The forms the press prints a citation in, per bill type. Periods and the
+   spaces between the parts are optional ("H.R. 8463", "H.R.8463", "HR 8463",
+   "H. Con. Res. 89", "HConRes 89"), and resolutions also go by their long
+   names ("Senate Joint Resolution 185"). "House Bill" / "Senate Bill" are
+   left out on purpose: that is how state legislatures number bills. */
+const CITATION_FORMS = {
+  hr: ['H\\.?\\s?R\\.?'],
+  s: ['S\\.?'],
+  hjres: ['H\\.?\\s?J\\.?\\s?Res\\.?', 'House\\s+Joint\\s+Resolution'],
+  sjres: ['S\\.?\\s?J\\.?\\s?Res\\.?', 'Senate\\s+Joint\\s+Resolution'],
+  hconres: ['H\\.?\\s?Con\\.?\\s?Res\\.?', 'House\\s+Concurrent\\s+Resolution'],
+  sconres: ['S\\.?\\s?Con\\.?\\s?Res\\.?', 'Senate\\s+Concurrent\\s+Resolution'],
+  hres: ['H\\.?\\s?Res\\.?', 'House\\s+Resolution'],
+  sres: ['S\\.?\\s?Res\\.?', 'Senate\\s+Resolution'],
+};
+
+/**
+ * A regex that finds this bill's citation in running text, or null for a bill
+ * type with no known citation form. The citation may not be glued to a
+ * preceding letter, digit or period (so "U.S. 180" is not S. 180), and its
+ * number may not continue ("H.R. 12" is not H.R. 1).
+ *
+ * @param {any} b @returns {RegExp|null}
+ */
+export function citationPattern(b) {
+  const forms = CITATION_FORMS[String(b?.bill_type ?? '').toLowerCase()];
+  const number = String(b?.bill_number ?? '').trim();
+  if (!forms || !/^\d+$/.test(number)) return null;
+  return new RegExp(`(?<![A-Za-z0-9.])(?:${forms.join('|')})\\s?${number}(?![0-9])`, 'i');
+}
+
+/* Case, curly quotes, dashes and runs of whitespace never decide a match. */
+const foldText = (s) =>
+  String(s ?? '')
+    .toLowerCase()
+    .replace(/[’‘ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[-‐‑‒–—]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Why an article passes the keep rule: 'citation' (its title or snippet cites
+ * the bill), 'name' (it prints a name the bill is known by, as whole words),
+ * or null (it does neither, and the gate never sees it).
+ *
+ * @param {any} b the bill
+ * @param {{title?: string|null, snippet?: string|null}} article
+ * @returns {'citation'|'name'|null}
+ */
+export function keepRuleMatch(b, article) {
+  const text = `${article?.title ?? ''} ${article?.snippet ?? ''}`.replace(/\s+/g, ' ');
+  const cite = citationPattern(b);
+  if (cite && cite.test(text)) return 'citation';
+  const folded = foldText(text);
+  for (const name of billNames(b)) {
+    const n = foldText(name);
+    if (n && new RegExp(`(?<![a-z0-9])${escapeRegExp(n)}(?![a-z0-9])`).test(folded)) return 'name';
+  }
+  return null;
+}
+
+/**
+ * The keep rule as a predicate over one bill's articles. The nightly shows the
+ * relevance gate only the candidates this accepts, and holdToKeepRule applies
+ * it to what is already stored.
+ *
+ * @param {any} b @returns {(a: {title?: string|null, snippet?: string|null}) => boolean}
+ */
+export function citesBill(b) {
+  return (a) => keepRuleMatch(b, a) !== null;
+}
+
+/**
+ * Re-apply the keep rule to STORED coverage for the given slugs, and drop every
+ * article that fails it. Pure: returns a new coverage object and never mutates
+ * its input. Deterministic — no network, no model — so it can run over the
+ * committed file (scripts/replay-coverage-keep.mjs) and inside the nightly
+ * (scripts/sync-coverage.mjs, for live Big Question vehicles) with the same
+ * answer.
+ *
+ * Only the listed slugs are judged. A slug with no bill record is left exactly
+ * as it is and reported as not judged — the rule needs the bill's number and
+ * names. A slug whose every article fails is removed from the file, the same
+ * shape an uncovered bill has. "_"-prefixed metadata keys are never touched.
+ *
+ * @param {{ coverage: Record<string, any>, bills: any[], slugs: Iterable<string> }} args
+ * @returns {{ coverage: Record<string, any>, report: { slug: string, judged: boolean, before: number, after: number, dropped: any[] }[] }}
+ */
+export function holdToKeepRule({ coverage, bills, slugs }) {
+  const bySlug = new Map((bills ?? []).map((b) => [coverageSlug(b), b]));
+  const out = { ...(coverage ?? {}) };
+  const report = [];
+  for (const slug of new Set([...(slugs ?? [])].map((s) => String(s).toLowerCase()))) {
+    if (slug.startsWith('_')) continue;
+    const arts = out[slug];
+    if (!Array.isArray(arts)) continue;
+    const b = bySlug.get(slug);
+    if (!b) {
+      report.push({ slug, judged: false, before: arts.length, after: arts.length, dropped: [] });
+      continue;
+    }
+    const cites = citesBill(b);
+    const kept = arts.filter((a) => cites(a));
+    const dropped = arts.filter((a) => !cites(a));
+    if (kept.length) out[slug] = kept;
+    else delete out[slug];
+    report.push({ slug, judged: true, before: arts.length, after: kept.length, dropped });
+  }
+  return { coverage: out, report };
 }
 
 // ---- TheNewsAPI rate-limit header ---------------------------------------
@@ -193,6 +357,14 @@ export function readRateLimitRemaining(headers) {
  *   9. The date-sorted pass is measured by lean against the whole-life pass on
  *      the same bills every night, and a shift past LEAN_DRIFT raises a
  *      ::warning:: that lib/pipeline-health.mjs turns into a ⛔ (leanDrift).
+ *
+ * THE KEEP PATH (2026-09-27, the 2026-09-27 audit's SY-04):
+ *  10. A candidate reaches the gate only when it cites the bill or prints a
+ *      name it is known by (citesBill, above), and the gate's reply keeps
+ *      anything only when it is complete and well-formed (gateAnswered) — the
+ *      bar a drop already needed. A stored article that fails the keep rule is
+ *      dropped when tonight's search returns it again, and on a live Big
+ *      Question vehicle whether or not it does (holdToKeepRule).
  */
 
 /** When the 119th Congress convened; no coverage can predate a bill in it. */
@@ -517,14 +689,19 @@ export function withoutRejected(stored, rejected) {
 
 /**
  * Is this gate reply a COMPLETE, WELL-FORMED answer? Only such a reply may
- * DELETE stored coverage (withoutRejected).
+ * DELETE stored coverage (withoutRejected) — and, since 2026-09-27, only such
+ * a reply may KEEP anything either.
  *
- * This is deliberately stricter than parseKeptIndexes. That parser reads any
- * in-range number out of any reply, and it still decides what tonight KEEPS,
- * unchanged, so what a night adds is exactly what it added before. Dropping a
- * stored article is different: nothing on a later night brings it back unless
- * a later search happens to return it again. So a drop needs the exact reply
- * relevancePrompt asks for, and nothing else:
+ * This is deliberately stricter than parseKeptIndexes, which reads any
+ * in-range number out of any reply. Until 2026-09-27 that lenient read still
+ * decided what a night KEPT, so "none of 0-24" kept articles 0 and 24, and
+ * "0, 3 — the rest are about other bills" kept 0 and 3 on a reply nobody could
+ * vouch for. The keep path is now as strict as the drop path: the nightly
+ * reads the kept indexes (parseKeptIndexes) only off a reply this accepts, and
+ * any other reply keeps nothing and drops nothing. A stored article's drop has
+ * always needed this bar because nothing on a later night brings it back
+ * unless a later search happens to return it again. So a verdict — keep or
+ * drop — needs the exact reply relevancePrompt asks for, and nothing else:
  *   - `stopReason` must be "end_turn", meaning the model finished. A reply cut
  *     off at max_tokens is not an answer ("0, 3, 1" may have been going to be
  *     "0, 3, 12"), and neither is a refusal. A missing stop reason is
@@ -535,8 +712,8 @@ export function withoutRejected(stored, rejected) {
  *     These all fail: "0, 3 — the rest are about other bills",
  *     "Articles 2 and 4", "none of 0-24", "7, 9" when 5 were shown, "0, 3,",
  *     and "none" followed by an explanation.
- * Any other reply keeps every stored article. The DONE line counts it as a
- * reply that was not complete and well-formed.
+ * Any other reply keeps every stored article and adds none. The DONE line
+ * counts it as a reply that was not complete and well-formed.
  *
  * @param {string|null|undefined} text
  * @param {number} n candidates shown

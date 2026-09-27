@@ -19,6 +19,17 @@
  * rejected is dropped; and the date pass's outlet mix is judged against the
  * whole-life pass every night (LEAN DRIFT), loudly when it shifts.
  *
+ * Since 2026-09-27 (the 2026-09-27 audit, SY-04 — see "The keep rule" in
+ * scripts/coverage-query.mjs): the KEEP path is as strict as the drop path. A
+ * candidate reaches the relevance gate only when its title or snippet cites the
+ * bill or prints a name it is known by (citesBill), and the gate's reply keeps
+ * anything only when it is complete and well-formed (gateAnswered). A stored
+ * article that fails the keep rule is dropped when tonight's search returns it
+ * again, and a live Big Question vehicle's stored coverage is held to the rule
+ * every night whether or not it is returned (holdToKeepRule — the same function
+ * scripts/replay-coverage-keep.mjs runs over the committed file). Printed as
+ * the CITE RULE line.
+ *
  *   node --env-file=.env.local scripts/sync-coverage.mjs
  *
  * Gated on NEWS_API_KEY: with no key this is a no-op that leaves the committed
@@ -39,10 +50,12 @@ import {
   RELEVANCE_SORT,
   apiErrorDetail,
   articleMatcher,
+  citesBill,
   coveragePriority,
   coverageSlug,
   formatLeanDrift,
   gateAnswered,
+  holdToKeepRule,
   isCoverageEligible,
   isNewestFirst,
   leanDrift,
@@ -220,7 +233,27 @@ const priorityInputs = coveragePriority({
   now: NOW,
 });
 const priorityWanted = new Set(priorityInputs.slugs);
-const inSweep = (b) => isCoverageEligible(b, NOW, { priority: priorityWanted.has(slugOf(b)) });
+
+/* THE KEEP RULE ON WHAT IS ALREADY STORED, FOR LIVE BIG QUESTION VEHICLES.
+   Their stored coverage is held to the rule before anything else reads it —
+   by holdToKeepRule, the same function scripts/replay-coverage-keep.mjs runs
+   over the committed file — so a vehicle added to a question tomorrow cannot
+   bring along articles an earlier, laxer night kept. Every later read of
+   stored coverage in this run (processBill's merge, the carry-forward) reads
+   `storedCoverage`, never `prevCoverage`. Nothing is written until the API has
+   answered at least once, so an outage night still leaves the file as it was. */
+const vehicleHold = holdToKeepRule({ coverage: prevCoverage, bills, slugs: priorityInputs.vehicles });
+const storedCoverage = vehicleHold.coverage;
+const heldOnVehicles = vehicleHold.report.reduce((n, r) => n + r.dropped.length, 0);
+for (const r of vehicleHold.report) {
+  if (r.dropped.length) {
+    console.log(
+      `keep rule: ${r.slug} (live Big Question vehicle) — ${r.dropped.length} of ${r.before} stored article(s) cite neither the bill nor a name it is known by, dropped`
+    );
+  }
+}
+
+const inSweep =(b) => isCoverageEligible(b, NOW, { priority: priorityWanted.has(slugOf(b)) });
 const eligible = bills
   .filter(inSweep)
   .map((b) => {
@@ -390,9 +423,15 @@ async function fetchArticles(query, { publishedAfter, sort }) {
    block, and exactly "none" or a comma-separated list of in-range indexes).
    processBill drops a stored article the gate was shown and rejected
    tonight ONLY on such a reply. Any other reply rejects nothing, so it can
-   never delete stored coverage. What a reply KEEPS is read as it always has
-   been (parseKeptIndexes, any in-range number in the reply), so tightening
-   the drop rule did not change what a night adds. */
+   never delete stored coverage.
+
+   KEEPING NEEDS THE SAME BAR (2026-09-27). What a reply kept used to be read
+   off ANY reply (parseKeptIndexes: any in-range number), so a reply that was
+   not an answer — "none of 0-24", "0, 3 — the rest are about other bills" —
+   still added articles. Now the kept indexes are read only off a complete,
+   well-formed reply; any other reply adds nothing and drops nothing. And
+   `candidates` is already only what passed the keep rule (citesBill), so the
+   gate is only ever asked about articles that cite or name this bill. */
 async function filterRelevant(b, candidates) {
   if (candidates.length === 0) return { kept: [], rejected: [], answered: false };
   const msg = await anthropic.messages.create({
@@ -403,15 +442,16 @@ async function filterRelevant(b, candidates) {
     messages: [{ role: 'user', content: relevancePrompt(b, candidates) }],
   });
   const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
-  const keep = parseKeptIndexes(text, candidates.length);
   const answered =
     Array.isArray(msg.content) &&
     msg.content.length === 1 &&
     gateAnswered(text, candidates.length, { stopReason: msg.stop_reason });
+  if (!answered) return { kept: [], rejected: [], answered: false };
+  const keep = parseKeptIndexes(text, candidates.length);
   return {
     kept: candidates.filter((_, i) => keep.has(i)),
-    rejected: answered ? candidates.filter((_, i) => !keep.has(i)) : [],
-    answered,
+    rejected: candidates.filter((_, i) => !keep.has(i)),
+    answered: true,
   };
 }
 
@@ -435,6 +475,13 @@ let droppedOnVerdict = 0;
    exceed it. */
 let rejudgedStored = 0;
 let unansweredGates = 0;
+/* The keep rule's bookkeeping, printed as the CITE RULE line. Kept apart from
+   droppedOnVerdict on purpose: the mass-drop alarm reads that pair to catch a
+   MODEL turning on its earlier yeses, and a deterministic rule dropping what
+   it was always going to drop is not that signal. */
+let candidatesTonight = 0;
+let uncitedTonight = 0;
+let droppedOnCitation = 0;
 /* Bills whose news request or gate call threw (a FAIL line), and whether the
    daily quota stopped the run. Used only by the COVERAGE OUTAGE line. */
 let failedBills = 0;
@@ -477,12 +524,16 @@ const fmtMix = (m) => `L${m.left}/C${m.center}/R${m.right}/unrated ${m.unrated}`
 
    Every article written carries `rated` — whether its outlet is AllSides-rated
    at write time — including carried-forward ones, so the whole file speaks
-   the same shape after one night. */
+   the same shape after one night.
+
+   It carries `storedCoverage`, not the raw file: a live Big Question vehicle
+   the run did not reach still leaves with its stored coverage held to the
+   keep rule (holdToKeepRule, above). */
 const eligibleSlugs = new Set(bills.filter(inSweep).map(slugOf));
 function withCarryForward() {
   const merged = {};
   for (const [slug, arts] of Object.entries(out)) merged[slug] = arts.map(withRatedFlag);
-  for (const [slug, arts] of Object.entries(prevCoverage)) {
+  for (const [slug, arts] of Object.entries(storedCoverage)) {
     if (slug.startsWith('_') || processedSlugs.has(slug)) continue;
     if (eligibleSlugs.has(slug) && Array.isArray(arts) && arts.length) {
       merged[slug] = arts.map(withRatedFlag);
@@ -549,7 +600,15 @@ async function fetchRecent(b, query) {
    an earlier night found instead of erasing it. The one exception is an
    article the gate was SHOWN tonight and rejected: that verdict replaces the
    earlier one (withoutRejected), and only when the reply was a complete,
-   well-formed answer (gateAnswered). */
+   well-formed answer (gateAnswered).
+
+   THE KEEP RULE COMES FIRST (2026-09-27). Only the candidates that cite the
+   bill or print a name it is known by (citesBill) are shown to the gate; the
+   rest never reach it, and cost no gate call. A STORED article the search
+   returned again tonight and that fails the rule is dropped the same way a
+   gate rejection drops it — the rule is deterministic, so there is no reply
+   to doubt. (A live Big Question vehicle's stored coverage was already held
+   to the rule, whole, before the run began.) */
 async function processBill(b) {
   const slug = slugOf(b);
   const query = queryFor(b);
@@ -565,10 +624,15 @@ async function processBill(b) {
     if (whole === null) return 'quota';
     anyFetchOk = true;
     const candidates = dedupeArticles([...recent, ...whole]);
-    const { kept, rejected, answered } = await filterRelevant(b, candidates);
+    const cites = citesBill(b);
+    const cited = candidates.filter(cites);
+    const uncited = candidates.filter((a) => !cites(a));
+    const { kept, rejected, answered } = await filterRelevant(b, cited);
     processedSlugs.add(slug);
     checkedAt[slug] = RUN_DAY; // looked at tonight, regardless of what we found
-    const noAnswer = candidates.length > 0 && !answered;
+    candidatesTonight += candidates.length;
+    uncitedTonight += uncited.length;
+    const noAnswer = cited.length > 0 && !answered;
     if (noAnswer) unansweredGates++;
     keptTonight += kept.length;
     if (kept.length) billsKeptTonight++;
@@ -580,10 +644,13 @@ async function processBill(b) {
     } else {
       tallyLean(keptLean.rest, kept);
     }
-    const storedBefore = Array.isArray(prevCoverage[slug]) ? prevCoverage[slug] : [];
-    if (answered) rejudgedStored += storedBefore.filter(articleMatcher(candidates)).length;
-    const stored = withoutRejected(storedBefore, rejected);
-    const dropped = storedBefore.length - stored.length;
+    const storedBefore = Array.isArray(storedCoverage[slug]) ? storedCoverage[slug] : [];
+    const storedCited = withoutRejected(storedBefore, uncited);
+    const droppedUncited = storedBefore.length - storedCited.length;
+    droppedOnCitation += droppedUncited;
+    if (answered) rejudgedStored += storedCited.filter(articleMatcher(cited)).length;
+    const stored = withoutRejected(storedCited, rejected);
+    const dropped = storedCited.length - stored.length;
     droppedOnVerdict += dropped;
     const merged = mergeArticles(kept, stored, PER_BILL);
     if (merged.length) {
@@ -594,9 +661,11 @@ async function processBill(b) {
     console.log(
       `${slug}: ${candidates.length} candidates` +
         `${isPriority ? ` (${recent.length} from the ${RECENT_WINDOW_DAYS}-day pass)` : ''}` +
+        `${uncited.length ? `, ${uncited.length} citing neither the bill nor a name it is known by (not shown to the gate)` : ''}` +
         ` -> ${kept.length} kept` +
+        `${droppedUncited ? `, ${droppedUncited} stored article(s) dropped on the keep rule` : ''}` +
         `${dropped ? `, ${dropped} stored article(s) dropped on tonight's gate verdict` : ''}` +
-        `${noAnswer ? " (the gate's reply was not complete and well-formed: no stored article dropped)" : ''}` +
+        `${noAnswer ? " (the gate's reply was not complete and well-formed: nothing kept, no stored article dropped)" : ''}` +
         ` -> ${merged.length} stored`
     );
     return 'ok';
@@ -698,10 +767,19 @@ console.log(
     `${carried ? ` (+${carried} unprocessed bills carried forward)` : ''}` +
     `; kept tonight: ${keptTonight} article(s) on ${billsKeptTonight} bill(s)` +
     `; ${droppedOnVerdict} of ${rejudgedStored} re-judged stored article(s) dropped on tonight's gate verdict` +
-    `; ${unansweredGates} gate reply(ies) not complete and well-formed (no stored article dropped on them)`
+    `; ${unansweredGates} gate reply(ies) not complete and well-formed (nothing kept and no stored article dropped on them)`
+);
+/* The keep rule's line (2026-09-27). "Not shown to the gate" is the share of
+   tonight's search hits that cited neither the bill nor a name it is known by
+   — the junk the gate used to be asked to judge. The stored drops are counted
+   apart from the gate's (see droppedOnCitation). */
+console.log(
+  `CITE RULE: ${uncitedTonight} of ${candidatesTonight} candidate(s) cited neither the bill nor a name it is known by and were not shown to the gate; ` +
+    `${droppedOnCitation + heldOnVehicles} stored article(s) dropped on the keep rule ` +
+    `(${heldOnVehicles} held on live Big Question vehicles, ${droppedOnCitation} returned again by tonight's search)`
 );
 console.log(
-  `FRESHNESS: ${ages.length - neverChecked - over30} checked within 30d, ` +
+  `FRESHNESS:${ages.length - neverChecked - over30} checked within 30d, ` +
     `${over30} older than 30d, ${neverChecked} never checked`
 );
 console.log(

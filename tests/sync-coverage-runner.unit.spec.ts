@@ -100,14 +100,26 @@ const art = (title: string, source: string, day: string, path = title.replace(/\
 const WRONGLY_KEPT = art('Wrongly kept 102 piece', 'naturalnews.com', daysAgo(40));
 // A stored article tonight's search returns again, but the gate's reply is empty.
 const STORED_103 = art('Stored 103 piece', 'cnn.com', daysAgo(50));
+// A search hit the fake gate WOULD keep (its title carries the marker), but
+// that names neither the resolution nor its number — the H.Con.Res. 89 shape
+// in the 2026-09-27 audit (SY-04).
+const UNCITED_IRAN = art('Market open KEEP', 'naturalnews.com', daysAgo(4));
+// A non-vehicle's stored article from a laxer night, returned again tonight,
+// still naming nothing.
+const UNCITED_105 = art('Unrelated 105 piece KEEP', 'rttnews.com', daysAgo(15));
 const stored = (a: ReturnType<typeof art>) => ({ title: a.title, url: a.url, source: a.source, snippet: null, publishedAt: a.published_at.slice(0, 10) });
 
 const STORED = {
   'hconres-89-119': [
-    { title: 'Old Iran story', url: 'https://www.politico.com/old-iran', source: 'politico.com', snippet: null, publishedAt: daysAgo(120) },
+    { title: 'Old Iran Powers Resolution story', url: 'https://www.politico.com/old-iran', source: 'politico.com', snippet: null, publishedAt: daysAgo(120) },
+    // Kept by an earlier, laxer night: it names neither the resolution nor its
+    // number (the H.Con.Res. 89 case in the 2026-09-27 audit, SY-04). This is
+    // a live Big Question vehicle, so it is held to the keep rule tonight
+    // whether or not the search returns it.
+    { title: 'Indian shares seen higher at open', url: 'https://www.marketwire.example/open', source: 'marketwire.example', snippet: 'Shares opened higher as yields eased.', publishedAt: daysAgo(20) },
   ],
   'hr-6500-119': [
-    { title: 'Old stopgap story', url: 'https://www.apnews.com/old-stopgap', source: 'apnews.com', snippet: null, publishedAt: daysAgo(30) },
+    { title: 'Old Stopgap Funding Act story', url: 'https://www.apnews.com/old-stopgap', source: 'apnews.com', snippet: null, publishedAt: daysAgo(30) },
   ],
   'hr-6400-119': [
     { title: 'Old law story', url: 'https://www.apnews.com/old-law', source: 'apnews.com', snippet: null, publishedAt: daysAgo(25) },
@@ -121,37 +133,56 @@ const STORED = {
     { title: 'Kept 102 older', url: 'https://www.npr.org/102-older', source: 'npr.org', snippet: null, publishedAt: daysAgo(60) },
   ],
   'hr-103-119': [stored(STORED_103)],
+  'hr-105-119': [stored(UNCITED_105)],
   _checkedAt: { 'hconres-89-119': daysAgo(6), 'hr-101-119': daysAgo(6), 'hr-6400-119': daysAgo(9) },
 };
+
+/* Every search hit a rule below returns NAMES the bill it was searched for (the
+   press name is in its snippet), so it reaches the fake gate exactly as it did
+   before the keep rule existed — except the hits passed as `uncited`, which
+   come back as they are. Those are what exercise the keep rule (citesBill,
+   scripts/coverage-query.mjs). */
+type Article = ReturnType<typeof art>;
+const named = (match: string, articles: Article[]) =>
+  articles.map((a) => ({ ...a, description: `${a.description} On the ${match}.` }));
+const rule = (match: string, sort: string | null, articles: Article[], uncited: Article[] = []) => ({
+  match,
+  sort,
+  articles: [...named(match, articles), ...uncited],
+});
 
 const baseScenario = {
   keepMarker: 'KEEP',
   gateNoAnswer: ['HR 103 '],
   news: [
-    // hconres-89: the date pass finds the vote week; the relevance pass finds old history.
-    {
-      match: 'Iran Powers Resolution',
-      sort: 'published_at',
-      articles: [
+    // hconres-89: the date pass finds the vote week (and one hit that never
+    // names the resolution); the relevance pass finds old history.
+    rule(
+      'Iran Powers Resolution',
+      'published_at',
+      [
         art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)),
         art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2)),
         art('Unrelated war story', 'nbcnews.com', daysAgo(3)),
       ],
-    },
-    { match: 'Iran Powers Resolution', sort: null, articles: [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2))] },
-    { match: 'Iran Powers Resolution', sort: 'relevance_score', articles: [art('Spring hearing KEEP', 'reuters.com', daysAgo(150))] },
-    { match: 'Stopgap Funding Act', sort: 'published_at', articles: [art('Shutdown deadline KEEP', 'apnews.com', daysAgo(2))] },
-    { match: 'Protect College Sports Act', sort: 'published_at', articles: [art('Cloture KEEP', 'nytimes.com', daysAgo(1)), art('Floor fight KEEP', 'foxnews.com', daysAgo(2))] },
-    { match: 'Protect College Sports Act', sort: null, articles: [art('Cloture KEEP', 'nytimes.com', daysAgo(1))] },
-    { match: 'Protect College Sports Act', sort: 'relevance_score', articles: [art('Markup KEEP', 'apnews.com', daysAgo(60))] },
-    { match: 'Tier Zero Act', sort: 'published_at', articles: [art('Tier zero KEEP', 'npr.org', daysAgo(0)), art('Tier zero two KEEP', 'reuters.com', daysAgo(1))] },
-    { match: 'Tier Zero Act', sort: null, articles: [art('Tier zero KEEP', 'npr.org', daysAgo(0))] },
-    { match: 'Russia Sanctions Act', sort: 'relevance_score', articles: [art('Signed into law KEEP', 'reuters.com', daysAgo(7))] },
+      [UNCITED_IRAN],
+    ),
+    rule('Iran Powers Resolution', null, [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2))]),
+    rule('Iran Powers Resolution', 'relevance_score', [art('Spring hearing KEEP', 'reuters.com', daysAgo(150))]),
+    rule('Stopgap Funding Act', 'published_at', [art('Shutdown deadline KEEP', 'apnews.com', daysAgo(2))]),
+    rule('Protect College Sports Act', 'published_at', [art('Cloture KEEP', 'nytimes.com', daysAgo(1)), art('Floor fight KEEP', 'foxnews.com', daysAgo(2))]),
+    rule('Protect College Sports Act', null, [art('Cloture KEEP', 'nytimes.com', daysAgo(1))]),
+    rule('Protect College Sports Act', 'relevance_score', [art('Markup KEEP', 'apnews.com', daysAgo(60))]),
+    rule('Tier Zero Act', 'published_at', [art('Tier zero KEEP', 'npr.org', daysAgo(0)), art('Tier zero two KEEP', 'reuters.com', daysAgo(1))]),
+    rule('Tier Zero Act', null, [art('Tier zero KEEP', 'npr.org', daysAgo(0))]),
+    rule('Russia Sanctions Act', 'relevance_score', [art('Signed into law KEEP', 'reuters.com', daysAgo(7))]),
     // hr-101 finds nothing tonight: its stored coverage must survive.
     // hr-102: one new article, and the wrongly kept one shown again (no KEEP).
-    { match: 'Ordinary 102 Act', sort: 'relevance_score', articles: [art('Ordinary 102 news KEEP', 'axios.com', daysAgo(10)), WRONGLY_KEPT] },
+    rule('Ordinary 102 Act', 'relevance_score', [art('Ordinary 102 news KEEP', 'axios.com', daysAgo(10)), WRONGLY_KEPT]),
     // hr-103: its stored article is shown again, but the gate's reply is empty.
-    { match: 'Ordinary 103 Act', sort: 'relevance_score', articles: [STORED_103] },
+    rule('Ordinary 103 Act', 'relevance_score', [STORED_103]),
+    // hr-105: its stored article comes back again, still naming nothing.
+    rule('Ordinary 105 Act', 'relevance_score', [], [UNCITED_105]),
   ],
 };
 
@@ -255,7 +286,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     const { coverage, output } = runSync(baseScenario);
     // H.R. 6500: signed 23 days ago, still the question's vehicle — checked,
     // and tonight's find merged with what was stored.
-    expect(coverage['hr-6500-119'].map((a: Json) => a.title)).toEqual(['Shutdown deadline KEEP', 'Old stopgap story']);
+    expect(coverage['hr-6500-119'].map((a: Json) => a.title)).toEqual(['Shutdown deadline KEEP', 'Old Stopgap Funding Act story']);
     expect(coverage._checkedAt['hr-6500-119']).toBe(TODAY);
     expect(output).toMatch(/hr-6500-119: 1 candidates \(1 from the 30-day pass\) -> 1 kept -> 2 stored/);
     // H.R. 6400: signed 23 days ago, not priority — not checked, and its
@@ -272,7 +303,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(iran.map((a: Json) => a.title)).toEqual([
       'Senate vote KEEP',
       'Fringe take KEEP',
-      'Old Iran story', // stored 120 days ago — newer than the 150-day-old relevance hit
+      'Old Iran Powers Resolution story', // stored 120 days ago — newer than the 150-day-old relevance hit
       'Spring hearing KEEP',
     ]);
     expect(iran.map((a: Json) => a.title)).not.toContain('Unrelated war story');
@@ -303,15 +334,17 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     const { output, coverage } = runSync(baseScenario);
     expect(coverage['hr-103-119'].map((a: Json) => a.title)).toEqual(['Stored 103 piece']);
     expect(output).toContain(
-      "hr-103-119: 1 candidates -> 0 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 1 stored",
+      "hr-103-119: 1 candidates -> 0 kept (the gate's reply was not complete and well-formed: nothing kept, no stored article dropped) -> 1 stored",
     );
   });
 
-  test('a TRUNCATED reply drops nothing, even when what survived of it looks like a clean list', () => {
+  test('a TRUNCATED reply keeps nothing and drops nothing, even when what survived of it looks like a clean list', () => {
     // hr-102's gate reply is "0" — exactly what a finished reply would say —
     // but the API reports the model was cut off at max_tokens, so "0" may
     // have been the start of "0, 1" or of "10". The wrongly kept article
-    // it would otherwise drop stays stored.
+    // it would otherwise drop stays stored — and, since 2026-09-27, the
+    // article it would otherwise KEEP is not added either: the keep path is
+    // as strict as the drop path.
     const truncated = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text: '{kept}', stop_reason: 'max_tokens' }] };
     const { run, output, coverage, requests } = runSync(truncated);
     expect(run.status, output).toBe(0);
@@ -319,12 +352,11 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(gate.text).toBe('0');
     expect(gate.stop_reason).toBe('max_tokens');
     expect(coverage['hr-102-119'].map((a: Json) => a.title)).toEqual([
-      'Ordinary 102 news KEEP', // 10 days old
-      'Wrongly kept 102 piece', // 40
+      'Wrongly kept 102 piece', // 40 days old
       'Kept 102 older', // 60
     ]);
     expect(output).toContain(
-      "hr-102-119: 2 candidates -> 1 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 3 stored",
+      "hr-102-119: 2 candidates -> 0 kept (the gate's reply was not complete and well-formed: nothing kept, no stored article dropped) -> 2 stored",
     );
     const done = parseCoverageDone(output)!;
     expect(done.droppedOnVerdict).toBe(0);
@@ -332,7 +364,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(done.unansweredGates).toBe(2); // hr-102 and hr-103
   });
 
-  test('an OFF-SCRIPT reply drops nothing, even with valid indexes in it', () => {
+  test('an OFF-SCRIPT reply keeps nothing and drops nothing, even with valid indexes in it', () => {
     for (const text of [
       '{kept} — the other article is about a different bill.',
       'Article {kept} is about this bill.',
@@ -344,6 +376,11 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
       const offScript = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text, stop_reason: 'end_turn' }] };
       const { output, coverage } = runSync(offScript);
       expect(coverage['hr-102-119'].map((a: Json) => a.title), text).toContain('Wrongly kept 102 piece');
+      // The keep path reads the same bar: an index inside a reply that is not
+      // an answer adds nothing (before 2026-09-27, "Article 0 is about this
+      // bill." kept article 0).
+      expect(coverage['hr-102-119'].map((a: Json) => a.title), text).not.toContain('Ordinary 102 news KEEP');
+      expect(parseCoverageDone(output)!.keptTonight, text).toBe(10);
       expect(output, text).not.toContain("hr-102-119: 2 candidates -> 1 kept, 1 stored article(s) dropped");
       expect(parseCoverageDone(output)!.droppedOnVerdict, text).toBe(0);
     }
@@ -361,7 +398,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
   test('the DONE line says what TONIGHT found, and pipeline-health reads it off this real output', () => {
     const { output } = runSync(baseScenario);
     expect(output).toMatch(
-      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 of 1 re-judged stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) not complete and well-formed \(no stored article dropped on them\)/,
+      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 of 1 re-judged stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) not complete and well-formed \(nothing kept and no stored article dropped on them\)/,
     );
     const done = parseCoverageDone(output)!;
     expect(done).not.toBeNull();
@@ -391,7 +428,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     const many = Array.from({ length: 24 }, (_, i) => art(`Stored 104 piece ${i}`, 'apnews.com', daysAgo(40 + i)));
     const scenario = {
       ...baseScenario,
-      news: [...baseScenario.news, { match: 'Ordinary 104 Act', sort: 'relevance_score', articles: many }],
+      news: [...baseScenario.news, rule('Ordinary 104 Act', 'relevance_score', many)],
     };
     const { run, output, coverage } = runSync(scenario, {}, { stored: { ...STORED, 'hr-104-119': many.map(stored) } });
     expect(run.status, output).toBe(0);
@@ -488,8 +525,8 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     const shifted = {
       ...baseScenario,
       news: [
-        { match: 'Iran Powers Resolution', sort: 'published_at', articles: unrated },
-        { match: 'Iran Powers Resolution', sort: 'relevance_score', articles: rated },
+        rule('Iran Powers Resolution', 'published_at', unrated),
+        rule('Iran Powers Resolution', 'relevance_score', rated),
         ...baseScenario.news.filter((r) => r.match !== 'Iran Powers Resolution'),
       ],
     };
@@ -561,5 +598,105 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
       const { output } = runSync(scenario);
       expect(output).not.toContain(TOKEN);
     }
+  });
+});
+
+/*
+ * THE KEEP RULE (2026-09-27, the 2026-09-27 audit's SY-04): the keep path is as
+ * strict as the drop path. A search hit reaches the relevance gate only when
+ * its title or snippet cites the bill or prints a name it is known by; stored
+ * articles that fail the rule leave when the search returns them again, and a
+ * live Big Question vehicle's stored coverage is held to the rule every night.
+ */
+test.describe('sync-coverage.mjs keep rule (mocked network)', () => {
+  const gateFor = (requests: Json[], marker: string) =>
+    requests.filter((r) => r.kind === 'gate' && String(r.prompt).includes(marker));
+
+  test('a hit that names neither the bill nor its number never reaches the gate — even one the gate would keep', () => {
+    const { run, output, coverage, requests } = runSync(baseScenario);
+    expect(run.status, output).toBe(0);
+    // The fake gate keeps any title carrying the marker, and UNCITED_IRAN does:
+    // only the keep rule stands between it and the page.
+    const iranGate = gateFor(requests, 'HCONRES 89')[0];
+    expect(iranGate.prompt).toContain('Senate vote KEEP');
+    expect(iranGate.prompt).not.toContain(UNCITED_IRAN.title);
+    expect(coverage['hconres-89-119'].map((a: Json) => a.url)).not.toContain(UNCITED_IRAN.url);
+    expect(output).toContain(
+      'hconres-89-119: 5 candidates (4 from the 30-day pass), 1 citing neither the bill nor a name it is known by (not shown to the gate) -> 3 kept -> 4 stored',
+    );
+  });
+
+  test('a bill whose every hit is uncited costs no gate call at all', () => {
+    const { requests, output } = runSync(baseScenario);
+    expect(newsFor(requests, 'Ordinary 105 Act')).toHaveLength(1);
+    expect(gateFor(requests, 'HR 105 ')).toEqual([]);
+    expect(output).toContain('hr-105-119: 1 candidates, 1 citing neither the bill nor a name it is known by (not shown to the gate) -> 0 kept');
+  });
+
+  test('a STORED article the search returns again and that fails the rule is dropped — on the rule, not as a gate verdict', () => {
+    const { output, coverage } = runSync(baseScenario);
+    // hr-105 is not a Big Question vehicle; its stored article came back
+    // tonight, still naming nothing, and leaves. With nothing else stored the
+    // bill leaves the file, as an uncovered bill does.
+    expect(coverage['hr-105-119']).toBeUndefined();
+    expect(output).toContain('hr-105-119: 1 candidates, 1 citing neither the bill nor a name it is known by (not shown to the gate) -> 0 kept, 1 stored article(s) dropped on the keep rule -> 0 stored');
+    // The mass-drop alarm reads the GATE's drops; a deterministic rule doing
+    // what it always does is not a model turning on its earlier yeses.
+    const done = parseCoverageDone(output)!;
+    expect(done.droppedOnVerdict).toBe(1); // hr-102's, as before
+    expect(done.rejudged).toBe(1);
+  });
+
+  test('a stored article the search does NOT return keeps its old verdict — on a bill that is not a live vehicle', () => {
+    const { coverage } = runSync(baseScenario);
+    // hr-101's two stored articles name nothing either, but nothing re-judged
+    // them tonight and hr-101 is not a Big Question vehicle.
+    expect(coverage['hr-101-119'].map((a: Json) => a.title)).toEqual(['Older 101 piece two', 'Older 101 piece']);
+  });
+
+  test("a live Big Question vehicle's stored coverage is held to the rule whether or not tonight's search returns it", () => {
+    const { output, coverage } = runSync(baseScenario);
+    const titles = coverage['hconres-89-119'].map((a: Json) => a.title);
+    expect(titles).toContain('Old Iran Powers Resolution story'); // names the resolution: stays
+    expect(titles).not.toContain('Indian shares seen higher at open'); // names nothing: goes
+    expect(output).toContain(
+      'keep rule: hconres-89-119 (live Big Question vehicle) — 1 of 2 stored article(s) cite neither the bill nor a name it is known by, dropped',
+    );
+  });
+
+  test('…including a vehicle the run never reached (carried forward, still held)', () => {
+    // Every request fails for the Iran vehicle, so it is not processed and its
+    // stored coverage is carried forward — held to the rule all the same.
+    const { run, output, coverage } = runSync({ ...baseScenario, brokenQueries: ['Iran Powers Resolution'] });
+    expect(run.status, output).toBe(0);
+    expect(output).toContain('FAIL hconres-89-119');
+    expect(coverage['hconres-89-119'].map((a: Json) => a.title)).toEqual(['Old Iran Powers Resolution story']);
+  });
+
+  test('a hit that CITES the bill by number passes with no name at all — how a subject-only resolution is covered', () => {
+    const cited = art('Senate rejects war powers measure KEEP', 'apnews.com', daysAgo(1));
+    const scenario = {
+      ...baseScenario,
+      news: [
+        rule('Iran Powers Resolution', 'published_at', [], [{ ...cited, description: 'The Senate voted 47-53 on H. Con. Res. 89 on Thursday.' }]),
+        ...baseScenario.news.filter((r) => r.match !== 'Iran Powers Resolution'),
+      ],
+    };
+    const { coverage, output } = runSync(scenario);
+    expect(coverage['hconres-89-119'].map((a: Json) => a.title)).toContain(cited.title);
+    expect(output).toMatch(/hconres-89-119: 1 candidates \(1 from the 30-day pass\) -> 1 kept/);
+  });
+
+  test('the CITE RULE line counts what the rule stopped and what it dropped', () => {
+    const { output } = runSync(baseScenario);
+    expect(output).toMatch(
+      /CITE RULE: 2 of \d+ candidate\(s\) cited neither the bill nor a name it is known by and were not shown to the gate; 2 stored article\(s\) dropped on the keep rule \(1 held on live Big Question vehicles, 1 returned again by tonight's search\)/,
+    );
+  });
+
+  test('an outage night still leaves the file byte-for-byte — the vehicle hold is never written on its own', () => {
+    const { coverageRaw, output } = runSync({ ...baseScenario, brokenQueries: [''] });
+    expect(output).toContain('COVERAGE OUTAGE:');
+    expect(coverageRaw).toBe(JSON.stringify(STORED));
   });
 });

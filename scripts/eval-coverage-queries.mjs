@@ -26,7 +26,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { parseKeptIndexes, queryFor, relevancePrompt } from './coverage-query.mjs';
+import { citesBill, gateAnswered, parseKeptIndexes, queryFor, relevancePrompt } from './coverage-query.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) { console.error('NEWS_API_KEY required'); process.exit(1); }
@@ -120,21 +120,30 @@ async function fetchArticles(query, publishedAfter) {
   throw new Error('exhausted retries');
 }
 
-/* Relevance gate — production's prompt and reply parser, imported from
-   scripts/coverage-query.mjs (the same functions scripts/sync-coverage.mjs
-   calls), with production's max_tokens rule. The .slice(0, 5) stands in for
-   production's PER_BILL cap, which production applies after a merge with
-   stored coverage this harness does not model. */
+/* Relevance gate — production's keep rule, prompt and reply reading, imported
+   from scripts/coverage-query.mjs (the same functions scripts/sync-coverage.mjs
+   calls), with production's max_tokens rule. As in production since
+   2026-09-27: only candidates that cite the bill or print a name it is known by
+   (citesBill) are shown to the gate — so an arm whose hits all fail it costs
+   no gate call — and a reply keeps anything only when it is complete and
+   well-formed (gateAnswered). The .slice(0, 5) stands in for production's
+   PER_BILL cap, which production applies after a merge with stored coverage
+   this harness does not model. */
 async function filterRelevant(b, candidates) {
   if (!GATE || candidates.length === 0) return null; // null = not gated
+  const cited = candidates.filter(citesBill(b));
+  if (cited.length === 0) return [];
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: Math.max(80, 4 * candidates.length),
-    messages: [{ role: 'user', content: relevancePrompt(b, candidates) }],
+    max_tokens: Math.max(80, 4 * cited.length),
+    messages: [{ role: 'user', content: relevancePrompt(b, cited) }],
   });
   const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
-  const keep = parseKeptIndexes(text, candidates.length);
-  return candidates.filter((_, i) => keep.has(i)).slice(0, 5);
+  const answered =
+    Array.isArray(msg.content) && msg.content.length === 1 && gateAnswered(text, cited.length, { stopReason: msg.stop_reason });
+  if (!answered) return [];
+  const keep = parseKeptIndexes(text, cited.length);
+  return cited.filter((_, i) => keep.has(i)).slice(0, 5);
 }
 
 // ---- run ----
