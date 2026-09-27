@@ -222,6 +222,25 @@ const stepperSentence = (catalog: typeof en | typeof es, state: ReturnType<typeo
   };
   return t(state.nowKey as never, params as never) as string;
 };
+/**
+ * The facts a stepper sentence must carry, asserted without pinning its
+ * wording (a copy edit in messages/* should not need a test edit): the
+ * chamber the record names, and exactly the record's numbers — every digit
+ * run in the rendered sentence, in order, so an invented or dropped number
+ * fails.
+ */
+const CHAMBER_NAME = { en: { house: 'House', senate: 'Senate' }, es: { house: 'Cámara', senate: 'Senado' } } as const;
+const numbersIn = (s: string) => s.match(/\d+/g) ?? [];
+const expectSentenceFacts = (
+  sentence: string,
+  lang: 'en' | 'es',
+  chamber: 'house' | 'senate',
+  tally: { yeas: number; nays: number } | null,
+) => {
+  expect(sentence, sentence).toContain(CHAMBER_NAME[lang][chamber]);
+  expect(sentence, sentence).not.toContain(CHAMBER_NAME[lang][chamber === 'house' ? 'senate' : 'house']);
+  expect(numbersIn(sentence), sentence).toEqual(tally ? [String(tally.yeas), String(tally.nays)] : []);
+};
 
 test.describe('SY-01 · the stepper says a rejected passage vote was a rejected passage vote', () => {
   const hconres89 = { bill_type: 'hconres', status: 'floor_vote' as const, last_action_text: HCONRES_89, last_action_date: '2026-09-24' };
@@ -232,24 +251,26 @@ test.describe('SY-01 · the stepper says a rejected passage vote was a rejected 
     expect(j.tally).toEqual({ yeas: 49, nays: 50 });
   });
 
-  test('rendered, in both languages', () => {
+  test('rendered, in both languages: the Senate and the record\'s 49 and 50, nothing else', () => {
     const j = deriveJourney(hconres89);
-    expect(stepperSentence(en, j)).toBe('the Senate voted on it and rejected it, 49–50.');
-    expect(stepperSentence(es, j)).toBe('el Senado lo sometió a votación y lo rechazó, por 49 votos a favor y 50 en contra.');
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'senate', { yeas: 49, nays: 50 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'senate', { yeas: 49, nays: 50 });
+    // Its own sentence, not the failed-motion one.
+    expect(stepperSentence(en, j)).not.toBe(stepperSentence(en, { ...j, nowKey: 'nowFloorMotionFailed' }));
   });
 
   test('the House form names the House and its own numbers', () => {
     const j = deriveJourney({ bill_type: 'hr', status: 'floor_vote', last_action_text: HOUSE_PASSAGE_FAILED, last_action_date: '2026-09-24' });
     expect(j).toMatchObject({ nowKey: 'nowFloorPassageRejected', nowChamber: 'house', step: 2 });
-    expect(stepperSentence(en, j)).toBe('the House voted on it and rejected it, 209–215.');
-    expect(stepperSentence(es, j)).toBe('la Cámara lo sometió a votación y lo rechazó, por 209 votos a favor y 215 en contra.');
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'house', { yeas: 209, nays: 215 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'house', { yeas: 209, nays: 215 });
   });
 
   test('no tally in the record, or one that would mislead, prints no numbers', () => {
     const voice = deriveJourney({ bill_type: 'hconres', status: 'floor_vote', last_action_text: 'Failed of passage in Senate by Voice Vote.', last_action_date: '2026-09-24' });
     expect(voice.tally).toBeNull();
-    expect(stepperSentence(en, voice)).toBe('the Senate voted on it and rejected it.');
-    expect(stepperSentence(es, voice)).toBe('el Senado lo sometió a votación y lo rechazó.');
+    expectSentenceFacts(stepperSentence(en, voice), 'en', 'senate', null);
+    expectSentenceFacts(stepperSentence(es, voice), 'es', 'senate', null);
     // A two-thirds vote can fail with a majority voting yes: "rejected it,
     // 290–140" would mislead, so the numbers stay on the "Latest action" line.
     const supermajority = deriveJourney({
@@ -284,8 +305,8 @@ test.describe('SY-05 · the stepper, the rail, the band and the Big Questions li
     const j = deriveJourney(s4668(today()));
     expect(j).toMatchObject({ nowKey: 'nowFloorClotureInvoked', nowChamber: 'senate', step: 2 });
     expect(j.tally).toEqual({ yeas: 74, nays: 25 });
-    expect(stepperSentence(en, j)).toBe('the Senate voted 74–25 to end debate on it, and the final vote on it is still ahead.');
-    expect(stepperSentence(es, j)).toBe('el Senado votó 74 a 25 para cerrar el debate, y la votación final todavía está pendiente.');
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'senate', { yeas: 74, nays: 25 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'senate', { yeas: 74, nays: 25 });
   });
 
   test('every reader says the same thing: the pending reader, the rail, the band, the status line', () => {

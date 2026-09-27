@@ -135,6 +135,11 @@ export interface SummaryRevision {
     update_ids: string[];
     /** data/votes.json roll-call ids the summary was handed (2026-09-25+). */
     roll_calls?: string[];
+    /** EVERY data/votes.json roll call on the question's measures at any date
+     *  when the revision was written (2026-09-27+, the 2026-09-27 audit
+     *  SY-23): the count the roll-call absence exemption reads. Absent when
+     *  the collector could not vouch for it. Never rendered. */
+    roll_calls_on_record?: string[];
     refs?: string[];
   };
   changed_because: string[];

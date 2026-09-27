@@ -223,7 +223,9 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
       'AI-generated summary (headline, tl;dr, what/who/why/cost - automatically checked before ' +
       'publish and clearly labeled when present), the official status in plain language, a ' +
       'decision_state (pending, settled or enacted, with the official record\'s own sentence in ' +
-      'settled_reason once the decision is settled or enacted), an urgency band, sponsor, key dates, the ' +
+      'settled_reason once the decision is settled or enacted), an urgency band and an urgency_score (the ' +
+      'score is ranked from status and recency alone; decision_state, not the score, says whether a ' +
+      'decision is still ahead), sponsor, key dates, the ' +
       "official Congress.gov page, and - while the decision is still pending - an act_url to Oravan's " +
       'on-site call flow. This tool never drafts a phone script - script generation happens only on-site, ' +
       'where the caller reads and can edit the script before dialing; that is not available over ' +
@@ -234,7 +236,8 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
     description:
       "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
       'active-only. Returns short teasers (headline, status, decision_state, urgency) for matching ' +
-      'bills, most urgent first.',
+      'bills, most urgent first. The urgency_score is ranked from status and recency alone; ' +
+      'decision_state says whether a decision is still ahead.',
   },
   whats_moving: {
     title: "What's moving in Congress",
