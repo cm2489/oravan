@@ -25,12 +25,11 @@ import { join } from 'node:path';
 // ZERO network. The Anthropic client is a stub; every other input is a file
 // already in the repo.
 import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mjs';
-// The read-but-claim-free reading, from the ONE copy (lib/floor-text.mjs) —
-// the totality sweep below has to exempt exactly what the nightly
-// journey-corpus sweep exempts, or the two disagree about the same sentence.
-// statusBasisText is the sentence a status was READ from — the same one that
-// sweep reads, for the same reason.
-import { FLOOR_SETTLED, floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
+// The settled vocabulary and the sentence a status was READ from, from the ONE
+// copy (lib/floor-text.mjs). The corpus totality sweep that also used the
+// claim-free reading from there moved to scripts/check-scaffold-corpus.mjs
+// (the 2026-09-27 audit, SY-47) — see the note where it used to be.
+import { FLOOR_SETTLED, statusBasisText } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -535,107 +534,19 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(note).toContain(committeeText);
   });
 
-  /* The matcher is measured against the corpus, not guessed — the same
-     totality discipline categoryFor gets above. Two directions matter: it
-     must cover the whole population it exists for, and it must never fire
-     on a bill whose record says something else. */
-  test('the floor-action vocabulary is total over the corpus it is for, and fires nowhere else', () => {
-    const isPlacement = (t?: string | null) =>
-      /placed on (?:the )?(senate legislative|union|house|senate)\s+calendar/i.test(t ?? '');
-    let activityOnly = 0;
-    let claimFree = 0;
-    let settledOutcome = 0;
-    for (const b of bills) {
-      /*
-       * THE SENTENCE READ (2026-09-25): the one the status was derived FROM,
-       * which is the premise the first exemption below quotes. Since #286
-       * that is `status_basis_text` whenever the latest step is an ambiguous
-       * notice ("Motion to reconsider laid on the table…" follows a won vote
-       * and a lost one alike), and every other chamber/tense reader —
-       * including the nightly journey-corpus sweep, deliberately — reads it
-       * through statusBasisText. Reading the bare notice here is what went
-       * red on the nightly of 2026-09-24: six House defeats (H.R. 2262,
-       * H.R. 1329, H.Con.Res. 38/40/61/75) were re-derived to `floor_vote`
-       * from their stored defeat, and the notice over them names no floor
-       * action. Read through their basis they are SETTLED outcomes and land
-       * in the second exemption, which is what the record says.
-       *
-       * The placement check stays on `last_action_text`: it mirrors
-       * scripts/moment-candidates.mjs's isOnFloorCalendar gate, which is what
-       * sets `floorCalendar` on a real candidate. (A basis sits only behind a
-       * reconsider or message notice, which follow a vote, never a
-       * placement.)
-       */
-      const text = statusBasisText(b);
-      const placement = isPlacement(b.last_action_text);
-      const onFloor = b.status === 'floor_vote';
-      const derived = floorActionInRecord(
-        { status: b.status, floorCalendar: onFloor && placement },
-        text,
-      );
-      /*
-       * THE EXEMPTION, and why totality had to gain one (2026-09-18, issue
-       * #241). This matcher's header states its own premise: a `floor_vote`
-       * status is derived FROM the action text, "so this is never a
-       * committee-stage bill with a stray word in its sentence". The corpus
-       * falsified that on 2026-09-11. S. 1602's last action is a Senate
-       * SEQUENTIAL-REFERRAL order — the bill goes to a second committee, and
-       * the discharge and the calendar placement in it are the conditional
-       * consequence of a 30-session-day clock — and the keyword bucket read
-       * "placed on the calendar" out of that conditional clause and called
-       * the bill floor_vote. It is in committee. No chamber has acted on it
-       * on any floor.
-       *
-       * So the honest population is "floor_vote, not a placement, and not a
-       * shape we have READ and judged claim-free", and `floorMakesNoClaim`
-       * (lib/floor-text.mjs) is that reading — the same one the nightly
-       * journey-corpus sweep uses, deliberately, so the two cannot disagree
-       * about one sentence. Note which way this exemption points: a claim-free
-       * record must derive NOTHING, which is the stricter assertion, and a
-       * genuinely novel floor-action sentence is still unexempted and still
-       * fails this test. That is what the test is for.
-       */
-      if (onFloor && !placement && floorMakesNoClaim(text)) {
-        claimFree++;
-        expect(derived, `${b.full_identifier}: ${text}`).toBe(false);
-        continue;
-      }
-      /*
-       * THE SECOND EXEMPTION (2026-09-19): a SETTLED floor outcome. The
-       * nightly of 2026-09-19 refreshed S.J.Res. 71 and S.J.Res. 10 into
-       * `floor_vote` on "Failed of passage in Senate by Yea-Nay Vote" — the
-       * chamber acted on the measure, and the action was a defeat. That is
-       * not "the chamber MOVING on the measure" (tier0_floor_action, a
-       * pending fact); it is the answer. FLOOR_SETTLED (lib/floor-text.mjs,
-       * the one settled vocabulary four readers share) already reads it that
-       * way — chamber named or not, as in the House's "On motion to suspend
-       * the rules and pass the bill Failed by the Yeas and Nays" — so the
-       * scaffold must derive NOTHING
-       * for it. So a settled sentence that matches NO activity shape is
-       * excused from totality: it derives nothing, and nothing is the honest
-       * answer. It is NOT forced to false, because a settled sentence can
-       * also name the activity that settled it ("Motion to proceed ...
-       * rejected") and the matcher has always read that as floor action —
-       * that reading is pre-existing and stays.
-       */
-      if (onFloor && !placement && !derived && FLOOR_SETTLED.test(text ?? '')) {
-        settledOutcome++;
-        continue;
-      }
-      if (onFloor && !placement) {
-        activityOnly++;
-        expect(derived, `${b.full_identifier}: ${text}`).toBe(true);
-      } else {
-        expect(derived, `${b.full_identifier}: ${text}`).toBe(false);
-      }
-    }
-    // The exemption is a carve-out, never the rule: if it ever swallowed the
-    // whole population the assertion above would go vacuous.
-    expect(claimFree + settledOutcome).toBeLessThan(activityOnly);
-    // Guards the guard: if the population ever empties, the loop above would
-    // pass vacuously and stop meaning anything.
-    expect(activityOnly).toBeGreaterThan(0);
-  });
+  /* THE CORPUS SWEEP MOVED TO THE NIGHTLY (the 2026-09-27 audit, SY-47).
+     "The floor-action vocabulary is total over the corpus it is for, and
+     fires nowhere else" used to be a test here, sweeping data/bills.json. It
+     tests DATA — a sentence Congress writes tonight — and it reddened main's
+     CI from 2026-09-22 to 09-25 (H.R. 4366, then H.R. 2262), blocking
+     unrelated PRs, until each new shape got a matcher rule. It now
+     runs where the corpus changes: scripts/check-scaffold-corpus.mjs, wired
+     into sync-bills.yml, files a labeled `scaffold-corpus` issue with the
+     sentence in it and keeps the night green — the same move the owner ruled
+     for the journey-corpus sweep on 2026-08-04. The same two directions, the
+     same two exemptions and the same two guards live there, pinned against
+     fixtures by tests/scaffold-corpus.unit.spec.ts. The fixtures in this
+     block keep pinning the matcher's CODE, here, with PRs. */
 
   test('cross-spectrum coverage is press, with one https ref per lean-diverse outlet', () => {
     const articles = [

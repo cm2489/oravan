@@ -79,6 +79,23 @@
  *                     only because it is a fixed member of the closed
  *                     vocabulary this gate itself pins, never an
  *                     interpolated value.)
+ *                 Widened 2026-09-27 (the 2026-09-27 audit, SY-49) by two
+ *                 template labels, 'member' (/reps/<id>) and 'today'
+ *                 (/today and /today/<date>) — still templates, never which
+ *                 member or which date.
+ *
+ * The usage family gains a FIFTH key shape (script refusals, 2026-09-27,
+ *                 the 2026-09-27 audit, SY-48): a daily counter per
+ *                 /api/script 429 LIMITER — 'daily' (the global spend
+ *                 breaker), 'burst' (the per-caller limiter), 'tenant' (an
+ *                 embed tenant's limiters). Same closed-vocabulary teeth as
+ *                 the pageview shape: the `script-refusal-scope` rule below
+ *                 holds the canonical scope list, lib/usage.ts's
+ *                 SCRIPT_REFUSAL_SCOPES declaration is parsed and checked
+ *                 against it, and a registry that writes refusal keys with no
+ *                 parsable declaration fails. A scope names a GUARD; nothing
+ *                 about the caller, the tenant, or the request's content may
+ *                 become one.
  *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
@@ -171,6 +188,9 @@ const RAW_REFERER_MATERIAL = /referer|referrer|pathname|nexturl|\bhref\b|\bsearc
 // than one more string appended to an array. Every label is a route
 // TEMPLATE: the shape of the page, never which page, never a path segment
 // taken from a request.
+// 'member' and 'today' added 2026-09-27 (the 2026-09-27 audit, SY-49): the
+// member-page template (/reps/<id>) and the daily-brief template (/today,
+// /today/<date>). Both were counted under 'other' until then.
 const ALLOWED_PAGEVIEW_SURFACES = new Set([
   'home',
   'bills-index',
@@ -178,8 +198,10 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
   'questions-index',
   'question',
   'reps',
+  'member',
   'record',
   'nominations',
+  'today',
   'other',
 ]);
 // Matches lib/usage.ts's `export const PAGEVIEW_SURFACES = [ ... ]`. Kept
@@ -188,6 +210,14 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
 // check below turns into a failure rather than a silent pass.
 const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
 const PAGEVIEW_KEY_MARKER = 'usage:pageview:';
+// The script-refusal family's CANONICAL scope vocabulary (2026-09-27, the
+// 2026-09-27 audit, SY-48). Same arrangement as the pageview list above: the
+// gate holds it, lib/usage.ts's SCRIPT_REFUSAL_SCOPES is checked against it.
+// Every scope names one of /api/script's 429 GUARDS — never a caller, a
+// tenant, a bill, or anything else a request carries.
+const ALLOWED_SCRIPT_REFUSAL_SCOPES = new Set(['daily', 'burst', 'tenant']);
+const SCRIPT_REFUSAL_SCOPES_DECL = /SCRIPT_REFUSAL_SCOPES\s*=\s*\[([\s\S]*?)\]/;
+const SCRIPT_REFUSAL_KEY_MARKER = 'usage:script-refusal:';
 
 /** Every ${...} interpolation inside template literals of a source text. */
 function templateInterpolations(text) {
@@ -222,6 +252,34 @@ function templateLiterals(text) {
     out.push({ full: m[0], line });
   }
   return out;
+}
+
+/**
+ * Rules 4f and 4g: a usage-registry key segment drawn from a closed label
+ * list. Reads the DECLARATION rather than an interpolation — the segment is a
+ * fixed label, so the thing worth gating is the set of labels that exists at
+ * all. Two teeth: every declared label must be on the gate's own allowlist,
+ * and a registry that writes the family's keys must carry a parsable
+ * declaration (renaming the constant is a failure, not an escape).
+ */
+function checkClosedVocabulary(text, add, { rule, constName, decl: declRe, allowed, marker, offLabel }) {
+  const decl = declRe.exec(text);
+  const line = decl ? text.slice(0, decl.index).split('\n').length : 0;
+  if (decl) {
+    const labels = [...decl[1].matchAll(/'([^']*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]);
+    if (labels.length === 0) {
+      add(rule, line, `${constName} declares no labels — the closed vocabulary cannot be checked`);
+    }
+    for (const label of labels) {
+      if (!allowed.has(label)) add(rule, line, offLabel(label));
+    }
+  } else if (text.includes(marker)) {
+    add(
+      rule,
+      0,
+      `the usage registry writes ${marker} keys but declares no parsable ${constName} list — the closed vocabulary cannot be checked`
+    );
+  }
 }
 
 /**
@@ -417,29 +475,31 @@ export function scanText(file, text) {
   //     registry that writes pageview keys must have a parsable declaration
   //     to check (renaming the constant is a failure, not an escape).
   if (file === USAGE_REGISTRY) {
-    const decl = PAGEVIEW_SURFACES_DECL.exec(text);
-    const line = decl ? text.slice(0, decl.index).split('\n').length : 0;
-    if (decl) {
-      const labels = [...decl[1].matchAll(/'([^']*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]);
-      if (labels.length === 0) {
-        add('pageview-surface', line, 'PAGEVIEW_SURFACES declares no labels — the closed vocabulary cannot be checked');
-      }
-      for (const label of labels) {
-        if (!ALLOWED_PAGEVIEW_SURFACES.has(label)) {
-          add(
-            'pageview-surface',
-            line,
-            `page-view surface "${label}" is not in the gate's allowlist — a surface label is a route TEMPLATE, never a path, slug, query, or locale`
-          );
-        }
-      }
-    } else if (text.includes(PAGEVIEW_KEY_MARKER)) {
-      add(
-        'pageview-surface',
-        0,
-        `the usage registry writes ${PAGEVIEW_KEY_MARKER} keys but declares no parsable PAGEVIEW_SURFACES list — the closed vocabulary cannot be checked`
-      );
-    }
+    checkClosedVocabulary(text, add, {
+      rule: 'pageview-surface',
+      constName: 'PAGEVIEW_SURFACES',
+      decl: PAGEVIEW_SURFACES_DECL,
+      allowed: ALLOWED_PAGEVIEW_SURFACES,
+      marker: PAGEVIEW_KEY_MARKER,
+      offLabel: (label) =>
+        `page-view surface "${label}" is not in the gate's allowlist — a surface label is a route TEMPLATE, never a path, slug, query, or locale`,
+    });
+  }
+
+  // 4g. the script-refusal family's closed vocabulary (2026-09-27, SY-48).
+  //     Rule 4f's two teeth, applied to the scope list: every declared scope
+  //     is on this gate's allowlist, and refusal keys with no parsable
+  //     declaration behind them fail.
+  if (file === USAGE_REGISTRY) {
+    checkClosedVocabulary(text, add, {
+      rule: 'script-refusal-scope',
+      constName: 'SCRIPT_REFUSAL_SCOPES',
+      decl: SCRIPT_REFUSAL_SCOPES_DECL,
+      allowed: ALLOWED_SCRIPT_REFUSAL_SCOPES,
+      marker: SCRIPT_REFUSAL_KEY_MARKER,
+      offLabel: (label) =>
+        `script-refusal scope "${label}" is not in the gate's allowlist — a scope names one of /api/script's 429 guards, never a caller, tenant, or request content`,
+    });
   }
 
   // 5. request-shape invariant: content identifiers never travel in a
@@ -695,6 +755,34 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:usage:pageview:${surface}:${day}`;',
     rule: 'pageview-surface',
   },
+  {
+    // The member-page label is the TEMPLATE; the member id it replaced in the
+    // path must never become a label of its own (SY-49).
+    name: 'a page-view surface label that is a member id, not the member template (2026-09-27)',
+    file: USAGE_REGISTRY,
+    text: "const PAGEVIEW_SURFACES = ['home', 'member', 'A000370'] as const;",
+    rule: 'pageview-surface',
+  },
+  {
+    name: 'a script-refusal scope outside the gate allowlist (2026-09-27)',
+    file: USAGE_REGISTRY,
+    text: "const SCRIPT_REFUSAL_SCOPES = ['daily', 'burst', 'hr-1234-119'] as const;",
+    rule: 'script-refusal-scope',
+  },
+  {
+    name: 'script-refusal keys written with no parsable scope declaration to check (2026-09-27)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:script-refusal:${scope}:${day}`;',
+    rule: 'script-refusal-scope',
+  },
+  {
+    // The scope names a guard; the caller that guard refused must never ride
+    // along in the same key.
+    name: 'a caller hash interpolated into a script-refusal key (2026-09-27)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${callerHash}:${day}`;',
+    rule: 'usage-caller',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -769,8 +857,16 @@ const SELF_TEST_CLEAN = [
     // rules, including the missing-declaration tooth.
     file: USAGE_REGISTRY,
     text:
-      "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'record', 'nominations', 'other'] as const;\n" +
+      "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'member', 'record', 'nominations', 'today', 'other'] as const;\n" +
       'const k = `${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`;',
+  },
+  {
+    // The real script-refusal shape (2026-09-27), declaration and key builder
+    // together, exactly as lib/usage.ts ships them.
+    file: USAGE_REGISTRY,
+    text:
+      "const SCRIPT_REFUSAL_SCOPES = ['daily', 'burst', 'tenant'] as const;\n" +
+      'const k = `${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${day}`;',
   },
 ];
 

@@ -5,6 +5,7 @@ import {
   __memoryUsageCountForTests,
   __resetUsageFallbackLogForTests,
   asPageviewSurface,
+  asScriptRefusalScope,
   isCountablePageviewRequest,
   MCP_TOOL_NAMES,
   mcpClientUsageKey,
@@ -13,6 +14,7 @@ import {
   noteMcpToolCall,
   notePageview,
   noteScriptGeneration,
+  noteScriptRefusal,
   PAGEVIEW_SURFACES,
   pageviewSurfaceForPath,
   pageviewUsageKey,
@@ -20,6 +22,8 @@ import {
   readPageviewWindow,
   readUsageWindow,
   sanitizeMcpClientName,
+  SCRIPT_REFUSAL_SCOPES,
+  scriptRefusalUsageKey,
   scriptUsageKey,
   UNKNOWN_MCP_CLIENT,
   usageDayKey,
@@ -31,7 +35,8 @@ import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from '.
  * Traffic-watch design (2026-07): pins lib/usage.ts's contract — the write
  * path (noteMcpToolCall, noteScriptGeneration: non-blocking, fails open,
  * content-free and caller-free by construction) and the read path
- * (readUsageWindow: ONE MGET across all 6 series, fails CLOSED on error/
+ * (readUsageWindow: ONE MGET across all 9 series — 5 tools, script
+ * generations, and since 2026-09-27 the 3 script-refusal scopes — fails CLOSED on error/
  * unconfigured — the same deliberate write/read asymmetry
  * tests/impressions.unit.spec.ts already pins for lib/impressions.ts). No
  * live Upstash tokens exist in this environment — the mock IS the test
@@ -271,8 +276,9 @@ test('readUsageWindow: ONE MGET round trip, exact per-tool + script counts mappe
   if (!result.ok) return;
 
   const mgetCommands = counters.commands.filter((c) => c[0] === 'MGET');
-  expect(mgetCommands).toHaveLength(1); // one round trip, not 48 sequential GETs
-  expect(mgetCommands[0]).toHaveLength(1 + MCP_TOOL_NAMES.length * 8 + 8); // 'MGET' + 40 mcp keys + 8 script keys
+  expect(mgetCommands).toHaveLength(1); // one round trip, not 72 sequential GETs
+  // 'MGET' + 40 mcp keys + 8 script keys + 24 script-refusal keys (3 scopes)
+  expect(mgetCommands[0]).toHaveLength(1 + MCP_TOOL_NAMES.length * 8 + 8 + SCRIPT_REFUSAL_SCOPES.length * 8);
 
   expect(result.mcp.get_bill[0]).toBe(41);
   expect(result.mcp.get_bill[7]).toBe(38);
@@ -285,6 +291,91 @@ test('readUsageWindow: ONE MGET round trip, exact per-tool + script counts mappe
     if (tool === 'get_bill') continue;
     expect(result.mcp[tool]).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
   }
+  // No refusal keys were seeded: every scope is an honest all-zero window.
+  for (const scope of SCRIPT_REFUSAL_SCOPES) {
+    expect(result.scriptRefusals[scope], scope).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+  }
+});
+
+// --- script refusals by guard (the 2026-09-27 audit, SY-48) -----------------------
+
+test('SCRIPT_REFUSAL_SCOPES: the exact 3-guard closed set, in a stable order', () => {
+  expect(SCRIPT_REFUSAL_SCOPES).toEqual(['daily', 'burst', 'tenant']);
+});
+
+test('scriptRefusalUsageKey: exact shape, and narrowing is STRUCTURAL — caller, tenant, or content material can never become the scope', () => {
+  expect(scriptRefusalUsageKey('daily', '2026-09-27')).toBe('dev:usage:script-refusal:daily:2026-09-27');
+  expect(scriptRefusalUsageKey('burst', '2026-09-27')).toBe('dev:usage:script-refusal:burst:2026-09-27');
+  expect(scriptRefusalUsageKey('tenant', '2026-09-27')).toBe('dev:usage:script-refusal:tenant:2026-09-27');
+  for (const hostile of ['203.0.113.7', 'cus_TENANT123', 'hr-1234-119', 'support', 'daily:evil', '*', '', undefined, null, 7]) {
+    // An unknown scope is a programming error; it lands on the one scope the
+    // digest flags, so a mistaken call site is seen rather than hidden.
+    expect(asScriptRefusalScope(hostile), String(hostile)).toBe('daily');
+    expect(scriptRefusalUsageKey(hostile as never, '2026-09-27')).toBe('dev:usage:script-refusal:daily:2026-09-27');
+  }
+});
+
+test('noteScriptRefusal: durable SET NX EX (90d) before INCR, per-scope independence, never blended with the generation counter', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  await noteScriptRefusal('daily');
+  const key = scriptRefusalUsageKey('daily', usageDayKey());
+  expect(counters.store.get(key)?.value).toBe('1');
+  const setCommands = counters.commands.filter((c) => c[0] === 'SET' && c[1] === key);
+  expect(setCommands).toHaveLength(1);
+  expect(setCommands[0].slice(3)).toEqual(['NX', 'EX', String(90 * 24 * 60 * 60)]);
+
+  await noteScriptRefusal('daily');
+  await noteScriptRefusal('burst');
+  await noteScriptGeneration();
+  expect(counters.store.get(key)?.value).toBe('2');
+  expect(counters.store.get(scriptRefusalUsageKey('burst', usageDayKey()))?.value).toBe('1');
+  expect(counters.store.get(scriptRefusalUsageKey('tenant', usageDayKey()))).toBeUndefined();
+  // A refusal is not a generation, and a generation is not a refusal.
+  expect(counters.store.get(scriptUsageKey(usageDayKey()))?.value).toBe('1');
+  for (const written of counters.keys()) {
+    expect(written).toMatch(/^dev:usage:(script|script-refusal:(daily|burst|tenant)):\d{4}-\d{2}-\d{2}$/);
+  }
+});
+
+test('noteScriptRefusal: an Upstash failure fails open and never throws — counting a 429 must never cost the 429', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  counters.failWithNetworkError = true;
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    await expect(noteScriptRefusal('daily')).resolves.toBeUndefined();
+  } finally {
+    console.error = realError;
+  }
+});
+
+test('readUsageWindow: script refusals ride the SAME single MGET and map back to the right scope and day', async () => {
+  restoreEnv = setUpstashEnv();
+  const counters = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+
+  counters.exec(['SET', scriptRefusalUsageKey('daily', EIGHT_DAYS[0]), '5']);
+  counters.exec(['SET', scriptRefusalUsageKey('burst', EIGHT_DAYS[2]), '3']);
+  counters.exec(['SET', scriptRefusalUsageKey('tenant', EIGHT_DAYS[7]), '1']);
+  counters.exec(['SET', scriptUsageKey(EIGHT_DAYS[0]), '0']);
+  counters.commands.length = 0;
+
+  const result = await readUsageWindow(EIGHT_DAYS);
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(counters.commands.filter((c) => c[0] === 'MGET')).toHaveLength(1);
+
+  expect(result.scriptRefusals.daily).toEqual([5, 0, 0, 0, 0, 0, 0, 0]);
+  expect(result.scriptRefusals.burst).toEqual([0, 0, 3, 0, 0, 0, 0, 0]);
+  expect(result.scriptRefusals.tenant).toEqual([0, 0, 0, 0, 0, 0, 0, 1]);
+  // The generations series is untouched by the refusals appended after it.
+  expect(result.script).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
 });
 
 // --- readMcpClientDay: the client-handshake read path -----------------------------
@@ -367,7 +458,8 @@ test('readMcpClientDay: a day with no handshakes is an honest empty list (ok: tr
  * the key builder refuses to carry one even when handed it directly.
  */
 
-test('PAGEVIEW_SURFACES: the exact 9-member closed set, stable order, "other" last', () => {
+test('PAGEVIEW_SURFACES: the exact 11-member closed set, stable order, "other" last', () => {
+  // 'member' and 'today' joined 2026-09-27 (the 2026-09-27 audit, SY-49).
   expect(PAGEVIEW_SURFACES).toEqual([
     'home',
     'bills-index',
@@ -375,8 +467,10 @@ test('PAGEVIEW_SURFACES: the exact 9-member closed set, stable order, "other" la
     'questions-index',
     'question',
     'reps',
+    'member',
     'record',
     'nominations',
+    'today',
     'other',
   ]);
 });
@@ -395,6 +489,15 @@ test('pageviewSurfaceForPath: every real route template maps to its own label, l
   expect(pageviewSurfaceForPath('/reps', locales)).toBe('reps');
   expect(pageviewSurfaceForPath('/record', locales)).toBe('record');
   expect(pageviewSurfaceForPath('/nominations/jane-doe', locales)).toBe('nominations');
+  // SY-49: the member-page template and the daily-brief template, in both
+  // languages. /today and its dated twin are ONE template (the same
+  // component renders both), so the date is dropped like any other segment.
+  expect(pageviewSurfaceForPath('/reps/A000370', locales)).toBe('member');
+  expect(pageviewSurfaceForPath('/es/reps/A000370', locales)).toBe('member');
+  expect(pageviewSurfaceForPath('/today', locales)).toBe('today');
+  expect(pageviewSurfaceForPath('/es/today', locales)).toBe('today');
+  expect(pageviewSurfaceForPath('/today/2026-09-26', locales)).toBe('today');
+  expect(pageviewSurfaceForPath('/es/today/2026-09-26/', locales)).toBe('today');
 });
 
 test('pageviewSurfaceForPath: everything unmatched collapses to "other" — no label is ever invented from a path', () => {
@@ -402,14 +505,18 @@ test('pageviewSurfaceForPath: everything unmatched collapses to "other" — no l
   // Pages that exist but have no dedicated counter, a 404 under [...rest],
   // a bare /nominations (no index route exists), and deeper paths under a
   // single-page route all land in the same bucket.
+  // (/reps/<id> left this list 2026-09-27: it is the 'member' template now.
+  // A path one segment DEEPER than either new template is not a route.)
   for (const path of [
     '/about',
     '/privacy',
     '/citations',
     '/glossary',
+    '/follow',
     '/es/why-call',
     '/nominations',
-    '/reps/somebody',
+    '/reps/A000370/votes',
+    '/today/2026-09-26/extra',
     '/record/2026',
     '/definitely-not-a-route',
     '/es/definitely-not-a-route/deeper',
@@ -488,6 +595,12 @@ test('notePageview: durable SET NX EX (90d) before INCR, exact key shape, per-su
   expect(counters.store.get(pageviewUsageKey('home', usageDayKey()))?.value).toBe('1');
   expect(counters.store.get(key)?.value).toBe('2'); // unaffected
 
+  // The two templates added 2026-09-27 are ordinary members of the family.
+  await notePageview('member');
+  await notePageview('today');
+  expect(counters.store.get(pageviewUsageKey('member', usageDayKey()))?.value).toBe('1');
+  expect(counters.store.get(pageviewUsageKey('today', usageDayKey()))?.value).toBe('1');
+
   // Never blended with the other usage families.
   await notePageview('reps');
   await noteMcpToolCall('get_bill');
@@ -556,7 +669,7 @@ test('readPageviewWindow: ONE MGET round trip, counts mapped back to the right d
   if (!result.ok) return;
 
   const mgetCommands = counters.commands.filter((c) => c[0] === 'MGET');
-  expect(mgetCommands).toHaveLength(1); // one round trip, not 72 sequential GETs
+  expect(mgetCommands).toHaveLength(1); // one round trip, not 88 sequential GETs
   expect(mgetCommands[0]).toHaveLength(1 + PAGEVIEW_SURFACES.length * 8);
 
   expect(result.surfaces.bill[0]).toBe(412);
