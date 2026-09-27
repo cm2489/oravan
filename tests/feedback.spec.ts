@@ -17,7 +17,9 @@ import es from '../messages/es.json';
  * so rewording a label or a notice in messages/*.json never fails this file.
  * What stays pinned is behaviour and privacy: the page context is editable
  * text the visitor can delete, the note travels in a POST body and never in a
- * URL, the honeypot stays empty, and a failed send keeps the draft.
+ * URL, the honeypot stays empty, and a failed send keeps the draft. Bilingual
+ * parity stays pinned too: the ES test refuses any key it renders whose
+ * Spanish value is still the English one.
  */
 const t = createTranslator({ locale: 'en', messages: en, namespace: 'feedback' });
 const tEs = createTranslator({ locale: 'es', messages: es, namespace: 'feedback' });
@@ -123,6 +125,12 @@ test('rate limited: a gentle try-again-later message', async ({ page }) => {
 });
 
 test('bilingual parity in the flesh: the ES dialog is fully Spanish', async ({ page }) => {
+  // Reading es.json by key alone would let an untranslated (English) value
+  // pass, so every key this test renders must first differ from its English
+  // twin — the same "was never translated" guard as es-parity.spec.ts.
+  for (const key of ['trigger', 'notice', 'messageLabel', 'pagePrefix', 'send'] as const) {
+    expect(tEs(key), `feedback.${key} was never translated`).not.toBe(t(key));
+  }
   await page.goto('/es');
   const trigger = page.getByRole('button', { name: tEs('trigger') });
   await expect(trigger).toBeVisible({ timeout: 15_000 });
