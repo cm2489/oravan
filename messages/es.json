@@ -369,6 +369,8 @@
       "nowFloorActivityStale": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} ha actuado en el pleno, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowFloorActivityNeutral": "avanza en el pleno — el registro oficial aún no dice qué cámara actúa después.",
       "nowFloorMotionFailed": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} no ha aceptado considerarlo — la última moción para hacerlo fracasó.",
+      "nowFloorPassageRejected": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo sometió a votación y lo rechazó{tally, select, none {} other {, por {yeas} votos a favor y {nays} en contra}}.",
+      "nowFloorClotureInvoked": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} votó{tally, select, none {} other { {yeas} a {nays}}} para cerrar el debate, y la votación final todavía está pendiente.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
       "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",

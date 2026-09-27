@@ -52,6 +52,7 @@ export {
   floorActionChamber,
   floorCalendarChamber,
   floorMakesNoClaim,
+  floorPassageRejectedChamber,
   floorPendingChamber,
   floorSettledChamber,
   statusBasisText,
@@ -63,10 +64,13 @@ export {
 // scripts/check-journey-corpus.mjs still sweeps with it — that is where a
 // chamber-nameable-but-unread sentence gets found now.
 import {
+  CLOTURE_INVOKED_ON_MEASURE,
   floorCalendarChamber,
+  floorPassageRejectedChamber,
   floorPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
+  recordedTally,
   statusBasisText,
 } from './floor-text.mjs';
 
@@ -1028,6 +1032,8 @@ export type JourneyNowKey =
   | 'nowFloorActivityStale'
   | 'nowFloorActivityNeutral'
   | 'nowFloorMotionFailed'
+  | 'nowFloorPassageRejected'
+  | 'nowFloorClotureInvoked'
   | 'nowPassed'
   | 'nowPassedStale'
   | 'nowPassedBack'
@@ -1073,6 +1079,12 @@ export interface JourneyState {
   isVetoed: boolean;
   /** Whether the "changes send it back" trailer is still ahead. */
   showTrailer: boolean;
+  /** The recorded vote the `nowKey` sentence cites, read out of the record's
+   *  own sentence (lib/floor-text.mjs recordedTally) — set ONLY on
+   *  `nowFloorPassageRejected` and `nowFloorClotureInvoked`, and null wherever
+   *  the record carries no tally (a voice vote) or the numbers would mislead
+   *  (see those branches). Never computed, never looked up. */
+  tally: { yeas: number; nays: number } | null;
 }
 
 /**
@@ -1103,6 +1115,7 @@ export function deriveJourney(
     isLaw: false,
     isVetoed: false,
     showTrailer: true,
+    tally: null,
     ending: journeyEnding(bill.bill_type, bill.title),
   };
   switch (bill.status) {
@@ -1154,6 +1167,39 @@ export function deriveJourney(
        */
       const settled = floorSettledChamber(record);
       if (settled) {
+        /*
+         * WHICH KIND OF "NO" (2026-09-27, the 2026-09-27 audit SY-01; owner
+         * card a5). The settled branch used to print one sentence for every
+         * settled text — "the Senate has not agreed to take it up — the last
+         * motion to do so failed" — and on H.Con.Res. 89 that was false: the
+         * Senate DID take it up and voted it down, 49–50 ("Failed of passage
+         * in Senate by Yea-Nay Vote. 49 - 50."). A rejected passage vote now
+         * says so, with the record's own tally. Every failed MOTION (to
+         * proceed, to discharge, cloture not invoked, a suspension vote) keeps
+         * the sentence that was written for it.
+         *
+         * The trailer goes: "if the Senate changes it, it goes back to the
+         * House" is a warning about something still ahead, and nothing is.
+         *
+         * The tally prints only when it reads the way the sentence does —
+         * yeas no more than nays. A measure that needed two-thirds can fail
+         * with a majority voting yes; printing "rejected it, 290–140" would be
+         * true and misleading, so the numbers are left to the "Latest action"
+         * line below the stepper, which quotes the record in full.
+         */
+        const passage = floorPassageRejectedChamber(record);
+        if (passage) {
+          const t = recordedTally(record);
+          return {
+            ...base,
+            step: passage === origin ? 2 : 3,
+            current: passage,
+            nowChamber: passage,
+            nowKey: 'nowFloorPassageRejected',
+            showTrailer: false,
+            tally: t && t.yeas <= t.nays ? t : null,
+          };
+        }
         return {
           ...base,
           step: settled === origin ? 2 : 3,
@@ -1237,6 +1283,26 @@ export function deriveJourney(
        * FloorVotePanel's crown gate uses, so the stepper, the rail and the
        * crown can no longer disagree about whether a vote is ahead.
        */
+      /*
+       * CLOTURE INVOKED ON THE MEASURE (owner card a5, 2026-09-27 — the #304
+       * question). floorPendingChamber reads it as a Senate vote still ahead,
+       * and that is right; its usual sentence is not. "The Senate is deciding
+       * whether to bring it to a vote" is false once the Senate has voted to
+       * end debate on the measure itself. So a fresh one gets its own
+       * sentence — the Senate voted to end debate, with the record's tally,
+       * and the final vote is still ahead — and an aged one takes the same
+       * dated past-tense sentence as every other aged floor action.
+       */
+      if (live && CLOTURE_INVOKED_ON_MEASURE.test(record ?? '')) {
+        return {
+          ...base,
+          step: pending === origin ? 2 : 3,
+          current: pending,
+          nowChamber: pending,
+          nowKey: 'nowFloorClotureInvoked',
+          tally: recordedTally(record),
+        };
+      }
       return {
         ...base,
         step: pending === origin ? 2 : 3,

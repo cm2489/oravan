@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import bills from '../data/bills.json';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import {
   CLOTURE_INVOKED_ON_MEASURE,
   FLOOR_PASSAGE_REJECTED,
@@ -13,7 +16,9 @@ import {
 } from '../lib/floor-text.mjs';
 import { decisionState, entersFloorWatch, isSettledFloor } from '../lib/docket.mjs';
 import { billStatusLine } from '../lib/moment-status.mjs';
-import { liveCallTarget } from '../lib/journey';
+import { billFloorBand, deriveJourney, liveCallTarget } from '../lib/journey';
+import { RECORD_ONLY_MODEL as PAGE_RECORD_ONLY_MODEL, isAiSummary } from '../lib/moment-updates';
+import { RECORD_ONLY_MODEL } from '../scripts/moment-updates.mjs';
 
 /*
  * THE SETTLED-STATE FAMILY (the 2026-09-27 audit, SY-01 / SY-03 / SY-05; owner
@@ -197,5 +202,136 @@ test.describe('SY-05 · cloture invoked on the measure is a Senate vote still ah
 
   test('the ladder already admitted it, so the T1 superset still holds', () => {
     expect(entersFloorWatch(S4668_CLOTURE)).toBe(true);
+    expect(floorPendingChamber(S4668_CLOTURE)).toBe('senate');
+  });
+});
+
+/*
+ * THE STEPPER SENTENCES (owner-scope half: lib/journey.ts + messages/*.json +
+ * components/BillJourney.tsx). Rendered through next-intl's own formatter
+ * with the exact parameters components/BillJourney.tsx hands the catalog, in
+ * both languages, so a template that names the wrong chamber, drops the
+ * record's tally or invents one fails here.
+ */
+const stepperSentence = (catalog: typeof en | typeof es, state: ReturnType<typeof deriveJourney>) => {
+  const t = createTranslator({ locale: catalog === en ? 'en' : 'es', messages: catalog, namespace: 'bill.journey' });
+  const params = {
+    chamber: state.nowChamber === 'house' ? 'House' : 'Senate',
+    other: state.origin === 'house' ? 'Senate' : 'House',
+    ...(state.tally ? { tally: 'yes', yeas: state.tally.yeas, nays: state.tally.nays } : { tally: 'none', yeas: 0, nays: 0 }),
+  };
+  return t(state.nowKey as never, params as never) as string;
+};
+/**
+ * The facts a stepper sentence must carry, asserted without pinning its
+ * wording (a copy edit in messages/* should not need a test edit): the
+ * chamber the record names, and exactly the record's numbers — every digit
+ * run in the rendered sentence, in order, so an invented or dropped number
+ * fails.
+ */
+const CHAMBER_NAME = { en: { house: 'House', senate: 'Senate' }, es: { house: 'Cámara', senate: 'Senado' } } as const;
+const numbersIn = (s: string) => s.match(/\d+/g) ?? [];
+const expectSentenceFacts = (
+  sentence: string,
+  lang: 'en' | 'es',
+  chamber: 'house' | 'senate',
+  tally: { yeas: number; nays: number } | null,
+) => {
+  expect(sentence, sentence).toContain(CHAMBER_NAME[lang][chamber]);
+  expect(sentence, sentence).not.toContain(CHAMBER_NAME[lang][chamber === 'house' ? 'senate' : 'house']);
+  expect(numbersIn(sentence), sentence).toEqual(tally ? [String(tally.yeas), String(tally.nays)] : []);
+};
+
+test.describe('SY-01 · the stepper says a rejected passage vote was a rejected passage vote', () => {
+  const hconres89 = { bill_type: 'hconres', status: 'floor_vote' as const, last_action_text: HCONRES_89, last_action_date: '2026-09-24' };
+
+  test('H.Con.Res. 89, verbatim: its own key, the Senate, the record\'s tally, no trailer', () => {
+    const j = deriveJourney(hconres89);
+    expect(j).toMatchObject({ nowKey: 'nowFloorPassageRejected', nowChamber: 'senate', current: 'senate', step: 3, showTrailer: false });
+    expect(j.tally).toEqual({ yeas: 49, nays: 50 });
+  });
+
+  test('rendered, in both languages: the Senate and the record\'s 49 and 50, nothing else', () => {
+    const j = deriveJourney(hconres89);
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'senate', { yeas: 49, nays: 50 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'senate', { yeas: 49, nays: 50 });
+    // Its own sentence, not the failed-motion one.
+    expect(stepperSentence(en, j)).not.toBe(stepperSentence(en, { ...j, nowKey: 'nowFloorMotionFailed' }));
+  });
+
+  test('the House form names the House and its own numbers', () => {
+    const j = deriveJourney({ bill_type: 'hr', status: 'floor_vote', last_action_text: HOUSE_PASSAGE_FAILED, last_action_date: '2026-09-24' });
+    expect(j).toMatchObject({ nowKey: 'nowFloorPassageRejected', nowChamber: 'house', step: 2 });
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'house', { yeas: 209, nays: 215 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'house', { yeas: 209, nays: 215 });
+  });
+
+  test('no tally in the record, or one that would mislead, prints no numbers', () => {
+    const voice = deriveJourney({ bill_type: 'hconres', status: 'floor_vote', last_action_text: 'Failed of passage in Senate by Voice Vote.', last_action_date: '2026-09-24' });
+    expect(voice.tally).toBeNull();
+    expectSentenceFacts(stepperSentence(en, voice), 'en', 'senate', null);
+    expectSentenceFacts(stepperSentence(es, voice), 'es', 'senate', null);
+    // A two-thirds vote can fail with a majority voting yes: "rejected it,
+    // 290–140" would mislead, so the numbers stay on the "Latest action" line.
+    const supermajority = deriveJourney({
+      bill_type: 'hjres',
+      status: 'floor_vote',
+      last_action_text: 'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: (2/3 required): 290 - 140 (Roll no. 400).',
+      last_action_date: '2026-09-24',
+    });
+    expect(supermajority.nowKey).toBe('nowFloorPassageRejected');
+    expect(supermajority.tally).toBeNull();
+  });
+
+  test('a failed MOTION keeps the failed-motion sentence, and its trailer', () => {
+    const j = deriveJourney({ bill_type: 'sjres', status: 'floor_vote', last_action_text: MOTION_TO_PROCEED_REJECTED, last_action_date: '2026-09-24' });
+    expect(j).toMatchObject({ nowKey: 'nowFloorMotionFailed', nowChamber: 'senate', showTrailer: true, tally: null });
+    expect(deriveJourney({ bill_type: 's', status: 'floor_vote', last_action_text: SUSPENSION_FAILED, last_action_date: '2026-09-24' }).nowKey).toBe(
+      'nowFloorMotionFailed',
+    );
+  });
+});
+
+test.describe('SY-05 · the stepper, the rail, the band and the Big Questions line agree on S. 4668 (card a5)', () => {
+  const s4668 = (date: string) => ({
+    bill_type: 's',
+    status: 'floor_vote' as const,
+    last_action_text: 'The committee substitute tabled by Voice Vote.',
+    status_basis_text: S4668_CLOTURE,
+    last_action_date: date,
+  });
+
+  test('fresh: its own sentence, with the record\'s 74–25, in both languages', () => {
+    const j = deriveJourney(s4668(today()));
+    expect(j).toMatchObject({ nowKey: 'nowFloorClotureInvoked', nowChamber: 'senate', step: 2 });
+    expect(j.tally).toEqual({ yeas: 74, nays: 25 });
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'senate', { yeas: 74, nays: 25 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'senate', { yeas: 74, nays: 25 });
+  });
+
+  test('every reader says the same thing: the pending reader, the rail, the band, the status line', () => {
+    const fresh = s4668(today());
+    expect(floorPendingChamber(S4668_CLOTURE)).toBe('senate');
+    expect(liveCallTarget(fresh)).toEqual({ chamber: 'senate', afterVote: false, soleChamber: false });
+    expect(billFloorBand(fresh, null)).toMatchObject({ kind: 'pending', chamber: 'senate' });
+    expect(billStatusLine(fresh)).toMatchObject({ key: 'onFloor', chamber: 'senate' });
+  });
+
+  test('aged: the dated past-tense floor sentence, no live route, no numbers', () => {
+    const j = deriveJourney(s4668('2026-07-01'));
+    expect(j.nowKey).toBe('nowFloorActivityStale');
+    expect(j.tally).toBeNull();
+    expect(liveCallTarget(s4668('2026-07-01'))).toBeNull();
+  });
+});
+
+test.describe('SY-28 · the record-only sentence is not labeled AI, because no model wrote it', () => {
+  test('one token on both sides, and only the two non-model tokens drop the chip', () => {
+    expect(PAGE_RECORD_ONLY_MODEL).toBe(RECORD_ONLY_MODEL);
+    expect(isAiSummary({ model: RECORD_ONLY_MODEL })).toBe(false);
+    expect(isAiSummary({ model: 'hand-authored' })).toBe(false);
+    expect(isAiSummary({ model: 'claude-sonnet-5' })).toBe(true);
+    // A token nobody taught the page still reads as AI — the safe direction.
+    expect(isAiSummary({ model: 'record-only-v2' })).toBe(true);
   });
 });

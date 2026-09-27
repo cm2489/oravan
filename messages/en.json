@@ -369,6 +369,8 @@
       "nowFloorActivityStale": "the {chamber, select, House {House} Senate {Senate} other {Senate}} has taken floor action on it, and the official record shows nothing new since.",
       "nowFloorActivityNeutral": "it's moving on the floor — the official record hasn't said yet which chamber acts next.",
       "nowFloorMotionFailed": "the {chamber, select, House {House} Senate {Senate} other {Senate}} has not agreed to take it up — the last motion to do so failed.",
+      "nowFloorPassageRejected": "the {chamber, select, House {House} Senate {Senate} other {Senate}} voted on it and rejected it{tally, select, none {} other {, {yeas}–{nays}}}.",
+      "nowFloorClotureInvoked": "the {chamber, select, House {House} Senate {Senate} other {Senate}} voted{tally, select, none {} other { {yeas}–{nays}}} to end debate on it, and the final vote on it is still ahead.",
       "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
       "nowPassedStale": "it passed the {chamber, select, House {House} Senate {Senate} other {House}}, and the official record shows nothing new since.",
       "nowPassedBack": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, so it goes back to the {chamber, select, House {House} Senate {Senate} other {House}}.",

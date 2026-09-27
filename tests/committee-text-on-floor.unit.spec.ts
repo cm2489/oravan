@@ -24,6 +24,7 @@ import {
 } from '../lib/floor-text.mjs';
 import { announcementAnswered, docketRung, entersFloorWatch, floorAnsweredChamber, isSettledFloor } from '../lib/docket.mjs';
 import { billStatusLine } from '../lib/moment-status.mjs';
+import { isSignalFresh } from '../lib/urgency.mjs';
 import { deriveJourney, liveCallTarget, statusKeyFor } from '../lib/journey';
 
 /*
@@ -292,12 +293,15 @@ test.describe('the readers agree on the corrected record', () => {
     expect(deriveJourney(before as never)).toMatchObject({ step: 1, nowKey: 'nowCommittee' });
     const j = deriveJourney(after as never);
     expect(j.step).toBe(2);
-    // Today no pending rule reads "Cloture on the measure … invoked", so the
-    // stepper says the chamber-free "it's moving on the floor". If
-    // floorPendingChamber ever learns the sentence, the Senate-named keys
-    // (live or aged) are the only other answers allowed here.
-    expect(['nowFloorActivityNeutral', 'nowFloorActivity', 'nowFloorActivityStale']).toContain(j.nowKey);
-    expect(floorPendingChamber(CLOTURE) === null).toBe(j.nowKey === 'nowFloorActivityNeutral');
+    // Since 2026-09-27 (owner card a5, the #304 question) floorPendingChamber
+    // reads "Cloture on the measure … invoked" as a Senate vote still ahead,
+    // and the stepper says so in its own sentence while the vote is fresh —
+    // never the chamber-free "it's moving on the floor", and never "deciding
+    // whether to bring it to a vote", which is false after cloture. Aged, it
+    // takes the dated past-tense sentence every aged floor action takes.
+    expect(floorPendingChamber(CLOTURE)).toBe('senate');
+    expect(j.nowChamber).toBe('senate');
+    expect(j.nowKey).toBe(isSignalFresh(after.last_action_date) ? 'nowFloorClotureInvoked' : 'nowFloorActivityStale');
   });
 
   test('the status label: "In committee" becomes "Floor activity" on every surface that reads statusKeyFor', () => {
@@ -321,8 +325,14 @@ test.describe('the readers agree on the corrected record', () => {
     expect(billStatusLine(after as never, NOW).text).toBe(WITHDRAWN); // the record's latest step, verbatim
   });
 
-  test('the rail makes no chamber claim the record does not (quiet path), and the re-decode queue matches the T1 rung', () => {
-    expect(liveCallTarget(after as never)).toBeNull();
+  test('the rail routes to the Senate while the cloture vote is fresh (card a5), and the re-decode queue matches the T1 rung', () => {
+    // The record now says the Senate's vote is ahead, so the rail may say so
+    // — inside the signal window only, like every other pending floor fact.
+    expect(liveCallTarget(after as never)).toEqual(
+      isSignalFresh(after.last_action_date) ? { chamber: 'senate', afterVote: false, soleChamber: false } : null,
+    );
+    // The withdrawal alone (no stored basis) still makes no claim.
+    expect(liveCallTarget({ ...after, status_basis_text: undefined } as never)).toBeNull();
     const queue = redecodeCandidates({ signals: {}, bills: [after], now: NOW });
     expect(queue).toEqual([{ slug: 's-4668-119', tier: 't1', lastActionDate: '2026-09-24' }]);
     expect(redecodeCandidates({ signals: {}, bills: [before], now: NOW })).toEqual([]);

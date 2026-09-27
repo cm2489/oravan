@@ -135,6 +135,11 @@ export interface SummaryRevision {
     update_ids: string[];
     /** data/votes.json roll-call ids the summary was handed (2026-09-25+). */
     roll_calls?: string[];
+    /** EVERY data/votes.json roll call on the question's measures at any date
+     *  when the revision was written (2026-09-27+, the 2026-09-27 audit
+     *  SY-23): the count the roll-call absence exemption reads. Absent when
+     *  the collector could not vouch for it. Never rendered. */
+    roll_calls_on_record?: string[];
     refs?: string[];
   };
   changed_because: string[];
@@ -222,6 +227,16 @@ export function getRevisions(id: string): SummaryRevision[] {
 export const HAND_AUTHORED_MODEL = 'hand-authored';
 
 /**
+ * The token a revision carries when NO model wrote it and no person did
+ * either: scripts/moment-updates.mjs's record-only sentence ("The latest
+ * action in the official record on these measures is dated …"), a fixed
+ * template filled from the record when nothing moved (2026-09-27, the
+ * 2026-09-27 audit SY-28). Same string as that script's RECORD_ONLY_MODEL;
+ * tests/settled-state.unit.spec.ts pins the two together.
+ */
+export const RECORD_ONLY_MODEL = 'record-only';
+
+/**
  * Whether a summary revision is AI text — the provenance the "Where it
  * stands" chip is gated on (pre-launch audit 2026-07-25, constitution-08).
  * `MomentUpdate` carries an explicit `ai` boolean; a `SummaryRevision`
@@ -229,11 +244,13 @@ export const HAND_AUTHORED_MODEL = 'hand-authored';
  *
  * A model string nobody recognizes reads as AI. The failure modes are not
  * symmetric: labeling human text as AI is a small insult, while shipping AI
- * text with no label breaks a CLAUDE.md hard rule — so only the one explicit
- * hand-authored token drops the label.
+ * text with no label breaks a CLAUDE.md hard rule — so only the explicit
+ * non-model tokens drop the label: hand-authored, and the record-only
+ * template sentence.
  */
 export function isAiSummary(revision: Pick<SummaryRevision, 'model'>): boolean {
-  return revision.model.trim().toLowerCase() !== HAND_AUTHORED_MODEL;
+  const model = revision.model.trim().toLowerCase();
+  return model !== HAND_AUTHORED_MODEL && model !== RECORD_ONLY_MODEL;
 }
 
 /** The most recent legislative day with anything on it, or undefined. */

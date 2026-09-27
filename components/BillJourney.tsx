@@ -116,6 +116,13 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const here = journey.step;
   const { isLaw, isVetoed } = journey;
 
+  // The recorded vote the two settled/cloture sentences cite, read from the
+  // record's own sentence in lib/journey.ts (never computed here). Supplied
+  // on every key like the rest: a message that never opens `tally` ignores it.
+  const tally = journey.tally
+    ? { tally: 'yes', yeas: journey.tally.yeas, nays: journey.tally.nays }
+    : { tally: 'none', yeas: 0, nays: 0 };
+
   // Supplied on every key: the tag only exists inside the two placement
   // messages, and next-intl ignores a handler a message never opens.
   const calendarTerm = journey.floorCalendar ? CALENDAR_TERM[journey.floorCalendar] : null;
@@ -170,7 +177,7 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar })}
+          {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally })}
           {journey.showTrailer && <> {t(TRAILER_KEY[ending], { chamber, other })}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
