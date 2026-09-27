@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
+import es from '../messages/es.json';
+import { callableBillSlug, splitZip } from './corpus-samples';
 import { mockScriptApi } from './helpers';
+import { API_PROBES, embedProbes, localeProbes } from './routes';
 
 /*
  * THE ZERO-COOKIE CLAIM, SWEPT (owner directive, 2026-08-04: "no cookies
@@ -25,37 +28,24 @@ import { mockScriptApi } from './helpers';
  * pages, congress.gov links) — those are outside the sentence being made.
  */
 
+/*
+ * Every route under app/[locale] in BOTH locales — pages, the PWA manifest
+ * handler and the 404 catch-all, read off the tree by tests/routes.ts, with
+ * each dynamic route fetched through its corpus probe — then every app/api
+ * and app/embed segment, then the surfaces no route file names.
+ */
 const ROUTES = [
-  // The bilingual front door and its twin.
-  '/',
-  '/es',
-  // Every distinct page surface, EN — plus ES twins for the funnel-critical ones.
-  '/bills',
-  '/es/bills',
-  '/bills/sjres-99-119',
-  '/es/bills/sjres-99-119',
-  '/reps',
-  '/reps?zip=10001', // the split-ZIP lookup, server-rendered with params
-  '/record',
-  '/es/record',
-  '/questions',
-  '/why-call',
-  '/about',
-  '/partners',
-  '/privacy',
-  '/terms',
-  '/citations',
-  '/mcp',
-  '/follow',
-  '/embeds',
-  // The failure surface and the machine surfaces.
-  '/this-page-does-not-exist-404',
+  ...localeProbes().map((p) => p.url),
+  // The split-ZIP lookup, server-rendered with params (the one URL where the
+  // street-address refinement form renders).
+  `/reps?zip=${splitZip()}`,
+  // The machine surfaces.
   '/sitemap.xml',
   '/robots.txt',
-  // Dynamic APIs, success and failure shapes.
-  '/api/reps?zip=78501',
+  // Dynamic APIs, success and failure shapes, and the embeds.
+  ...Object.values(API_PROBES),
   '/api/reps?zip=not-a-zip',
-  '/api/district',
+  ...Object.values(embedProbes()),
 ];
 
 test('no response from any surface class ever sets a cookie', async ({ request }) => {
@@ -75,19 +65,21 @@ test('a full user journey ends with an EMPTY cookie jar', async ({ page }) => {
   // Language toggle — the one interaction that historically DID write a
   // cookie (NEXT_LOCALE, removed 2026-08-04).
   await page.goto('/');
-  await page.getByRole('link', { name: 'En español', exact: true }).click();
+  // The switch link's accessible name is the OTHER locale's `switchLocale`
+  // ("En español" on an English page, "In English" on a Spanish one).
+  await page.getByRole('link', { name: en.common.switchLocale, exact: true }).click();
   await expect(page).toHaveURL(/\/es$/);
-  await page.getByRole('link', { name: 'In English', exact: true }).click();
+  await page.getByRole('link', { name: es.common.switchLocale, exact: true }).click();
   await expect(page).toHaveURL(/\/$/); // settle the client nav before the next goto
 
   // Decode → stance → ZIP → dial links → logged outcome.
-  await page.goto('/bills/sjres-99-119');
-  await page.getByRole('radio', { name: 'I support it' }).click();
-  await expect(page.getByRole('textbox', { name: 'Your script' })).toBeVisible();
+  await page.goto(`/bills/${callableBillSlug()}`);
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Left a voicemail' }).first().click();
+  await page.getByRole('button', { name: en.bill.outcome.voicemail }).first().click();
 
   // The civic record and the erase flow — everything personal stays in
   // localStorage; the cookie jar has nothing to do at any step.

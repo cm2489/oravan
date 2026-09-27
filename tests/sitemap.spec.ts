@@ -3,6 +3,8 @@ import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../li
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
 import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
+import { decodedBillSlug, questionId } from './corpus-samples';
+import { staticLocalePages } from './routes';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -14,7 +16,19 @@ import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
-const STATIC_PATH_COUNT = 17; // '/', '/bills', '/reps', '/about', '/privacy', '/terms', '/why-call', '/record', '/citations', '/embeds', '/embeds/terms', '/partners', '/mcp', '/follow', '/questions', '/glossary', '/today'
+/** Every page under app/[locale] with no dynamic segment, read off the tree
+ *  (tests/routes.ts). app/sitemap.ts keeps its own STATIC_PATHS list; this
+ *  count and the per-path check below are what keep the two in step, so a new
+ *  static page that the sitemap forgets fails here instead of going unlisted. */
+const STATIC_PATHS = staticLocalePages();
+const STATIC_PATH_COUNT = STATIC_PATHS.length;
+
+/** The sitemap's own URL for a locale-relative path — lib/hreflang.ts's
+ *  absoluteUrl rule: the bare English root is the origin, no trailing slash. */
+function sitemapLoc(locale: 'en' | 'es', path: string): string {
+  if (locale === 'en') return path === '/' ? SITE_ORIGIN : `${SITE_ORIGIN}${path}`;
+  return path === '/' ? `${SITE_ORIGIN}/es` : `${SITE_ORIGIN}/es${path}`;
+}
 
 /**
  * The nomination slugs app/sitemap.ts actually lists: ONLY those a moment in a
@@ -62,9 +76,20 @@ test.describe('sitemap.xml', () => {
     // Member pages: every sitting member plus every vacant seat (keyed on the seat).
     const totalRepPages = getAllLegislators().length + getVacancies().length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
+    expect(STATIC_PATH_COUNT, 'the route registry found no static pages').toBeGreaterThan(0);
     expect(locCount).toBe(
       (STATIC_PATH_COUNT + totalBills + totalMoments + cited.size + totalRepPages + BRIEF_WINDOW_DAYS) * 2
     );
+
+    // Every static page, both locales — by identity, not just by count, so a
+    // page swapped for another cannot balance the arithmetic above.
+    for (const path of STATIC_PATHS) {
+      for (const locale of ['en', 'es'] as const) {
+        expect(body, `${path} (${locale}) missing from sitemap.xml`).toContain(
+          `<loc>${sitemapLoc(locale, path)}</loc>`
+        );
+      }
+    }
 
     // One member and one vacant seat, both locales.
     const member = getAllLegislators()[0].bioguide;
@@ -124,8 +149,9 @@ test.describe('sitemap.xml', () => {
     }
 
     // A representative moment page, both locales.
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/questions/iran-war-powers</loc>`);
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/questions/iran-war-powers</loc>`);
+    const question = questionId();
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/questions/${question}</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/questions/${question}</loc>`);
 
     // Homepage, both locales. The en entry has no trailing slash — Next's
     // Metadata URL resolution collapses a bare "/" to the origin, and
@@ -135,8 +161,9 @@ test.describe('sitemap.xml', () => {
     expect(body).toContain(`<loc>${SITE_ORIGIN}/es</loc>`);
 
     // A representative bill page, both locales.
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/bills/hr-5582-119</loc>`);
-    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/bills/hr-5582-119</loc>`);
+    const bill = decodedBillSlug();
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/bills/${bill}</loc>`);
+    expect(body).toContain(`<loc>${SITE_ORIGIN}/es/bills/${bill}</loc>`);
 
     // Reciprocal hreflang alternates ship per entry, both languages present.
     expect(body).toContain('hreflang="en"');
