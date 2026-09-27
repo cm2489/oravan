@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
+import { RADIUS_VALUES } from '../lib/embed-theme';
+import { decodedCommitteeBill } from './corpus-fixtures';
 import { startCrossOriginHost } from './helpers';
 
 /*
@@ -30,7 +32,10 @@ import { startCrossOriginHost } from './helpers';
 
 const SITE_ORIGIN = 'https://oravan.org'; // lib/site.ts's SITE_ORIGIN - see file header comment above
 
-const DECODED_SLUG = 'hr-5582-119';
+/** A decoded bill whose headline no other bill's text contains, so searching
+ *  the configurator for that headline finds exactly this one. */
+const DECODED = decodedCommitteeBill();
+const DECODED_SLUG = DECODED.slug;
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -73,8 +78,8 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
 }) => {
   await page.goto('/embeds');
   await page.locator('input[type="radio"][value="bill-card"]').check();
-  await page.getByRole('searchbox', { name: en.embeds.billSearchLabel }).fill('5582');
-  await page.getByRole('button', { name: /Hospitals and insurers/ }).click();
+  await page.getByRole('searchbox', { name: en.embeds.billSearchLabel }).fill(DECODED.headline!);
+  await page.getByRole('button', { name: DECODED.headline! }).click();
   await page.getByLabel(en.embeds.radiusLabel).selectOption('round');
   await page.getByLabel(en.embeds.fontLabel).selectOption('serif');
 
@@ -90,9 +95,7 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
   try {
     await page.goto(host.url);
     const frame = page.frameLocator('iframe[data-oravan-embed="bill-card"]');
-    await expect(
-      frame.getByText('Hospitals and insurers must publish real prices under HR 5582')
-    ).toBeVisible();
+    await expect(frame.getByText(DECODED.headline!)).toBeVisible();
     await expect(frame.getByText(en.og.aiDecoded, { exact: true })).toBeVisible();
     // The chosen theme actually reached the rendered widget, not just the
     // snippet text - same computed-style assertion tests/embed-bill-card.spec.ts
@@ -100,7 +103,7 @@ test('cold walkthrough (bill-card): a configured snippet (chosen bill + theme) l
     const root = frame.locator('.bc-root');
     await expect
       .poll(() => root.evaluate((el) => getComputedStyle(el).getPropertyValue('--oravan-radius').trim()))
-      .toBe('20px'); // RADIUS_VALUES.round, lib/embed-theme.ts
+      .toBe(RADIUS_VALUES.round);
   } finally {
     await host.close();
   }

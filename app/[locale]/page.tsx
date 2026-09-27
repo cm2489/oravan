@@ -944,7 +944,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               announcement — quoted, dated, re-read hourly, and explicitly NOT a
               vote date — and printing the calendar/pending sentence over it
               would describe a fact the panel is not showing. */}
-          <p className="mt-8 max-w-note text-sm text-ink-2">
+          <p data-week-note={recessWeek ? 'recess' : 'standard'} className="mt-8 max-w-note text-sm text-ink-2">
             {!crowned ? (
               recessWeek ? (
                 /* The one crownless week that can name its own reason. Each

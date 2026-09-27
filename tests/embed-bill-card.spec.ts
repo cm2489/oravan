@@ -2,7 +2,15 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { SITE_ORIGIN } from '../lib/site';
+import { hexToRgb } from '../lib/contrast';
 import { FONT_VALUES, RADIUS_VALUES } from '../lib/embed-theme';
+import { calendarPlacementSlugs } from './corpus';
+import {
+  decodedCommitteeBill,
+  esDecodedFloorActivityBill,
+  undecodedCommitteeBill,
+} from './corpus-fixtures';
+import { colorToken } from './palette';
 
 /*
  * S14 — bill-card embed widget. Drives the widget's own page directly (not
@@ -14,16 +22,19 @@ import { FONT_VALUES, RADIUS_VALUES } from '../lib/embed-theme';
  * property theming and its injection rejection, and the privacy/a11y
  * basics that don't depend on being embedded.
  *
- * Fixtures reused from other suites that already pin these same bills'
- * shape (tests/jsonld.spec.ts, tests/sitemap.spec.ts), so a corpus refresh
- * that breaks one of these breaks all of them together, not silently.
+ * Fixtures are DERIVED from the committed corpus (tests/corpus-fixtures.ts):
+ * a bill that fits each case, never a named one, and every citation, headline
+ * and date asserted below is read off that bill's own record. A nightly
+ * re-sync that moves one bill picks another instead of reddening the suite.
  */
 
-const DECODED_SLUG = 'hr-5582-119'; // has an ai_headline
-const ES_DECODED_SLUG = 'sjres-99-119'; // has an ai_headline (ES decode too)
-const NO_HEADLINE_SLUG = 'hr-8553-119'; // no ai_headline — official title, no label
-const NO_HEADLINE_TITLE =
-  'To direct the Secretary of Veterans Affairs to establish a precision oncology program for cancer of the prostate, and for other purposes.';
+/** A decoded bill whose card label is plain `committee`. */
+const DECODED = decodedCommitteeBill();
+const DECODED_SLUG = DECODED.slug;
+/** A decoded bill with a Spanish decode, on a floor record naming no calendar. */
+const ES_DECODED = esDecodedFloorActivityBill();
+/** A bill with no AI headline — official title, no label. */
+const NO_HEADLINE = undecodedCommitteeBill();
 
 /*
  * N4 (2026-08-11) — THE RECORD DATE ON THE PARTNER CARD.
@@ -35,27 +46,23 @@ const NO_HEADLINE_TITLE =
  * bill's own last-action date with the status line, using the citizen site's
  * `bills.updated` string ("Last action {date}") and no new message key.
  *
- * The helper matches only the STATIC half of the template, because the date
- * itself is a corpus fact these fixtures deliberately do not pin (a re-sync
- * moves it; the suite header says a corpus refresh should break these
- * together, not silently). The full-string assertion with the real date lives
- * in the dedicated test below, built from the same Intl call the widget uses.
+ * The helper matches only the STATIC half of the template, so the locale
+ * tests stay about labels. The full-string assertion with the real date lives
+ * in the dedicated test below, built from the fixture's own last-action date
+ * and the same Intl call the widget uses.
  */
 const recordDatePrefix = (dict: { bills: { updated: string } }) =>
   dict.bills.updated.replace('{date}', '').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** hr-5582-119's own last action. A literal, because the assertions below are
- *  about FORMATTING (zone, year, order) and need a fixed subject. */
-const DECODED_LAST_ACTION = '2025-09-26';
+/** The decoded fixture's own last action, read from its record. */
+const DECODED_LAST_ACTION = DECODED.lastActionDate!;
 
 test('EN: citation, AI-decoded headline + label, status, freshness stamp, and a link-out', async ({
   page,
 }) => {
   await page.goto(`/embed/bill-card?locale=en&slug=${DECODED_SLUG}`);
-  await expect(page.getByText('H.R. 5582')).toBeVisible();
-  await expect(
-    page.getByText('Hospitals and insurers must publish real prices under HR 5582')
-  ).toBeVisible();
+  await expect(page.getByText(DECODED.citation, { exact: true })).toBeVisible();
+  await expect(page.getByText(DECODED.headline!)).toBeVisible();
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toBeVisible();
   await expect(page.getByText(en.bills.status.committee, { exact: true })).toBeVisible();
   await expect(page.getByText(new RegExp(recordDatePrefix(en)))).toBeVisible();
@@ -68,18 +75,22 @@ test('EN: citation, AI-decoded headline + label, status, freshness stamp, and a 
 });
 
 test('ES: Spanish labels, no English leakage, ES-prefixed canonical link-out', async ({ page }) => {
-  await page.goto(`/embed/bill-card?locale=es&slug=${ES_DECODED_SLUG}`);
-  await expect(page.getByText('S.J.Res. 99')).toBeVisible();
+  test.skip(
+    !ES_DECODED,
+    'the corpus holds no decoded, Spanish-decoded floor_vote record whose last action names no calendar'
+  );
+  const bill = ES_DECODED!;
+  await page.goto(`/embed/bill-card?locale=es&slug=${bill.slug}`);
+  await expect(page.getByText(bill.citation, { exact: true })).toBeVisible();
   // The ES corpus carries its own translated headline, not the EN one -
   // localizeBill (lib/core/bills.ts) overlays it for locale='es'.
-  await expect(
-    page.getByText('El Senado busca restablecer extensiones automáticas de permisos de trabajo')
-  ).toBeVisible();
+  await expect(page.getByText(bill.esHeadline!)).toBeVisible();
   await expect(page.getByText(es.og.aiDecoded, { exact: true })).toBeVisible();
-  // floor_activity, not floor_vote (label gate, 2026-08-04): S.J.Res. 99's
-  // record is a REJECTED motion to proceed — printing "En el calendario del
-  // pleno" over it was the overclaim the statusKeyFor gate ended. This
-  // fixture now pins the honest label on the partner-facing card.
+  // floor_activity, not floor_vote (label gate, 2026-08-04): the fixture's
+  // record is floor_vote but its last action names no calendar (the original
+  // case was S.J.Res. 99's REJECTED motion to proceed) — printing "En el
+  // calendario del pleno" over it was the overclaim the statusKeyFor gate
+  // ended. This pins the honest label on the partner-facing card.
   await expect(page.getByText(es.bills.status.floor_activity, { exact: true })).toBeVisible();
   await expect(page.getByText(es.bills.status.floor_vote, { exact: true })).toHaveCount(0);
   // N4: the record date rides in Spanish too, off the same `bills.updated`
@@ -89,7 +100,7 @@ test('ES: Spanish labels, no English leakage, ES-prefixed canonical link-out', a
   await expect(page.getByText(en.embed.poweredBy, { exact: true })).toHaveCount(0);
 
   const link = page.getByRole('link', { name: new RegExp(es.embed.poweredBy) });
-  await expect(link).toHaveAttribute('href', `${SITE_ORIGIN}/es/bills/${ES_DECODED_SLUG}`);
+  await expect(link).toHaveAttribute('href', `${SITE_ORIGIN}/es/bills/${bill.slug}`);
 });
 
 /*
@@ -110,22 +121,28 @@ test('ES: Spanish labels, no English leakage, ES-prefixed canonical link-out', a
 test('N4: the record date renders in UTC with its year, above the sync stamp', async ({ page }) => {
   await page.goto(`/embed/bill-card?locale=en&slug=${DECODED_SLUG}`);
 
-  const expected = en.bills.updated.replace(
-    '{date}',
-    new Intl.DateTimeFormat('en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC',
-    }).format(new Date(DECODED_LAST_ACTION))
-  );
+  const utcDay = (ms: number) =>
+    en.bills.updated.replace(
+      '{date}',
+      new Intl.DateTimeFormat('en', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(ms))
+    );
+  const recordMs = new Date(DECODED_LAST_ACTION).getTime();
+  const expected = utcDay(recordMs);
   await expect(page.getByText(expected, { exact: true })).toBeVisible();
-  // The UTC rule, asserted as the failure it prevents rather than only as the
-  // result: the day before must not appear anywhere on the card.
-  expect(expected).toContain('26');
-  expect(expected).toContain('2025');
+  // The record's own day and year are what is printed.
+  expect(expected).toContain(String(Number(DECODED_LAST_ACTION.slice(8, 10))));
+  expect(expected).toContain(DECODED_LAST_ACTION.slice(0, 4));
 
   const card = (await page.locator('.bc-card').textContent()) ?? '';
+  // The UTC rule, asserted as the failure it prevents rather than only as the
+  // result: the day before — what a viewer-zone format prints west of
+  // Greenwich — must not appear anywhere on the card.
+  expect(card).not.toContain(utcDay(recordMs - 86_400_000));
   const recordAt = card.indexOf(expected);
   const syncAt = card.search(/Data as of/);
   expect(recordAt, 'the record date is on the card').toBeGreaterThan(-1);
@@ -136,16 +153,27 @@ test('N4: the record date renders in UTC with its year, above the sync stamp', a
   expect(card.indexOf(en.bills.status.committee)).toBeLessThan(recordAt);
 });
 
-test('N4: a bill card never renders amber — the aged-placement label is ink, by the colour law', async ({
+/** The widget's note border until 2026-08, retired for the same reason. */
+const RETIRED_NOTE_AMBER = [232, 163, 23];
+
+test('N4: a bill card never paints the live-floor colour — an aged placement is never dressed as live', async ({
   page,
 }) => {
-  // sjres-99-119 is a floor_vote record whose gated label is `floor_activity`;
-  // DECODED_SLUG is a committee bill. Neither may carry the urgent treatment,
-  // and neither may the `floor_vote_stale` key this change introduced —
-  // DESIGN.md spends `urgent` on a floor fact that is still LIVE, which is by
-  // construction what a stale placement is not. The widget has no amber token
-  // at all, and this pins that it stays that way.
-  for (const slug of [DECODED_SLUG, ES_DECODED_SLUG]) {
+  // What this protects: the site's live-floor colour (--color-urgent) marks
+  // one fact — a bill standing on the floor calendar inside the signal window,
+  // its date printed — and a partner card never presents a floor fact as
+  // live. So it paints that colour on nothing: not a committee bill, not a
+  // floor record that names no calendar, and above all not an aged placement
+  // (the `floor_vote_stale` label), which is by construction a floor fact
+  // that is no longer live. The widget has no such colour token at all, and
+  // this pins that it stays that way.
+  const aged = calendarPlacementSlugs(Date.now()).stale[0];
+  const slugs = [DECODED_SLUG, ES_DECODED?.slug, aged].filter((s): s is string => Boolean(s));
+  const urgent = hexToRgb(colorToken('urgent'))!;
+  const forbidden = [[urgent.r, urgent.g, urgent.b], RETIRED_NOTE_AMBER].map(
+    ([r, g, b]) => new RegExp(`rgba?\\(${r},\\s*${g},\\s*${b}\\s*[,)]`)
+  );
+  for (const slug of slugs) {
     await page.goto(`/embed/bill-card?locale=en&slug=${slug}`);
     const colors = await page
       .locator('.bc-card, .bc-card *')
@@ -155,10 +183,10 @@ test('N4: a bill card never renders amber — the aged-placement label is ink, b
           return [s.color, s.backgroundColor, s.borderTopColor];
         })
       );
-    // #ffc845 (--color-urgent) and the note amber it replaced, in rgb form.
     for (const c of colors) {
-      expect(c, `${slug} paints no amber`).not.toMatch(/rgba?\(255,\s*200,\s*69/);
-      expect(c, `${slug} paints no amber`).not.toMatch(/rgba?\(232,\s*163,\s*23/);
+      for (const re of forbidden) {
+        expect(c, `${slug} paints the live-floor colour`).not.toMatch(re);
+      }
     }
   }
 });
@@ -166,8 +194,9 @@ test('N4: a bill card never renders amber — the aged-placement label is ink, b
 test('a bill with no AI headline shows the official title and never the AI-decoded label', async ({
   page,
 }) => {
-  await page.goto(`/embed/bill-card?locale=en&slug=${NO_HEADLINE_SLUG}`);
-  await expect(page.getByText(NO_HEADLINE_TITLE)).toBeVisible();
+  test.skip(!NO_HEADLINE, 'the corpus holds no undecoded bill in committee');
+  await page.goto(`/embed/bill-card?locale=en&slug=${NO_HEADLINE!.slug}`);
+  await expect(page.getByText(NO_HEADLINE!.officialTitle)).toBeVisible();
   await expect(page.getByText(en.og.aiDecoded, { exact: true })).toHaveCount(0);
   await expect(page.getByText(en.bills.status.committee, { exact: true })).toBeVisible();
 });
@@ -246,9 +275,7 @@ test('theming injection: a malformed accent value is rejected outright, never ap
   const html = await page.content();
   expect(html).not.toContain('<script>window.__pwned');
   // The rest of the widget still renders normally - a bad theme param never breaks the page.
-  await expect(
-    page.getByText('Hospitals and insurers must publish real prices under HR 5582')
-  ).toBeVisible();
+  await expect(page.getByText(DECODED.headline!)).toBeVisible();
 });
 
 test('theming injection: non-enum radius/font values fall back to the safe default mapping', async ({
@@ -306,7 +333,7 @@ test('S20: a token param never changes the render — identical content and stat
   page,
 }) => {
   const noToken = await page.goto(`/embed/bill-card?locale=en&slug=${DECODED_SLUG}`);
-  await expect(page.getByText('H.R. 5582')).toBeVisible();
+  await expect(page.getByText(DECODED.citation, { exact: true })).toBeVisible();
   const noTokenStatus = noToken?.status();
   // The <main> markup only - not the raw response text. Next's own RSC
   // payload (a trailing <script> tag) legitimately echoes the requested
@@ -319,7 +346,7 @@ test('S20: a token param never changes the render — identical content and stat
   const garbageToken = await page.goto(
     `/embed/bill-card?locale=en&slug=${DECODED_SLUG}&token=totally-made-up-token`
   );
-  await expect(page.getByText('H.R. 5582')).toBeVisible();
+  await expect(page.getByText(DECODED.citation, { exact: true })).toBeVisible();
   expect(garbageToken?.status()).toBe(noTokenStatus);
   const garbageTokenMain = await garbageToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
 
