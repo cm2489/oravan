@@ -57,12 +57,16 @@ import {
 } from '../scripts/moment-updates-map.mjs';
 import {
   FLOOR_GUARD_MAX_DEFER_HOURS,
+  RECORD_ONLY_MODEL,
   freshCandidates,
   generateStateSummary,
   landedVoteVehicles,
   lintPair,
   planSummaries,
   pruneStore,
+  recordMovedSince,
+  recordOnlyRevision,
+  recordOnlyText,
   statusUnsupported,
   summaryCallsOnDay,
   survivingCandidates,
@@ -286,10 +290,16 @@ test.describe('the vote rows are grounding for "Where it stands"', () => {
     for (const roll of [ROLL_240, ROLL_242, ROLL_243]) expect(client.prompts[0]).toContain(voteGroundingLine(roll));
   });
 
-  test('with an empty record the old instruction stands — nothing about quiet weeks changed', async () => {
+  test('with an empty record the prompt asks only for what is there — the quiet-week invitation is gone (SY-28)', async () => {
     const client = recordingClient(JSON.stringify({ en: 'Nothing has moved.', es: 'Nada se ha movido.' }));
     const revision = await generateStateSummary(client, 'test-moment', { updates: [], summary_revisions: [] }, { 's-4668-119': 'floor_vote' }, [], {}, []);
-    expect(client.prompts[0]).toContain('If nothing has moved recently, say that plainly.');
+    // 2026-09-27 (the 2026-09-27 audit SY-28): "If nothing has moved recently,
+    // say that plainly." was the invitation behind the paid paragraphs of
+    // nothing. Such a question no longer reaches the model on a re-anchor or a
+    // first summary (the record-only path, pinned below); a direct call gets
+    // the same rule as every other: write what is there.
+    expect(client.prompts[0]).not.toContain('If nothing has moved recently, say that plainly.');
+    expect(client.prompts[0]).toContain('Do not write sentences about what did not happen');
     expect(client.prompts[0]).toContain('- no roll call recorded on these measures in this window');
     // An absence claim over an EMPTY record is not a lie, and is not rejected.
     expect(revision).not.toBeNull();
@@ -948,5 +958,259 @@ test.describe('one daily summary budget — both modes, every question', () => {
     expect(body).toContain('const spentToday = summaryCallsOnDay(store, todayET);');
     expect(body).toContain('const budget = Math.max(0, SUMMARY_DAILY_CAP - spentToday);');
     expect(body).toMatch(/await writeSummaries\(\{ plan, store, moments, anthropic, cap: budget \}\)/);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 8 · The 2026-09-27 audit: SY-23 (a TRUE "no roll call" is not rejected)
+ *     and SY-28 (no model call when nothing moved). Owner card a5.
+ * ------------------------------------------------------------------ */
+test.describe('SY-23 · the absence lint lets a TRUE roll-call absence through — and only that', () => {
+  /** The shape the penny question's first summary was rejected over (2026-09-26 nightly). */
+  const VOICE_VOTE = {
+    en: 'The House passed H.R. 10167 by voice vote on September 15, 2026, with no roll call.',
+    es: 'La Cámara aprobó H.R. 10167 por voto oral el 15 de septiembre de 2026, sin votación nominal.',
+  };
+
+  test('grounding with record events and ZERO roll calls: accepted, in both languages', () => {
+    for (const lang of ['en', 'es'] as const) {
+      expect(lintRevisionText(VOICE_VOTE[lang], lang, { groundedEvents: true, rollCalls: 0 })).toEqual([]);
+    }
+    expect(absenceClaims('No roll-call votes were taken on either measure.', 'en', { rollCalls: 0 })).toEqual([]);
+    expect(absenceClaims('It passed by unanimous consent; no recorded vote was taken.', 'en', { rollCalls: 0 })).toEqual([]);
+    expect(absenceClaims('No se registró ninguna votación nominal sobre estas medidas.', 'es', { rollCalls: 0 })).toEqual([]);
+    expect(absenceClaims('No hubo votación nominal.', 'es', { rollCalls: 0 })).toEqual([]);
+  });
+
+  test('the same sentence over a grounding that HOLDS a roll call is still rejected — it would be false', () => {
+    for (const lang of ['en', 'es'] as const) {
+      const failures = lintRevisionText(VOICE_VOTE[lang], lang, { groundedEvents: true, rollCalls: 1 });
+      expect(failures.some((f: string) => f.startsWith('absence claim')), lang).toBe(true);
+    }
+  });
+
+  test('an unknown count exempts nothing (a caller or a stored revision that does not know it)', () => {
+    expect(lintRevisionText(VOICE_VOTE.en, 'en', { groundedEvents: true }).some((f: string) => f.startsWith('absence'))).toBe(true);
+    expect(absenceClaims(VOICE_VOTE.es, 'es')).not.toEqual([]);
+  });
+
+  test('with zero roll calls, every OTHER absence claim is still rejected', () => {
+    for (const s of [
+      'No votes have been recorded.', // a voice vote IS a vote
+      'There was no roll call or other action on the bill.', // the phrase does not end at the roll call
+      'The Senate passed it with no recorded vote, and nothing has moved since.',
+      'Their status remains unchanged.',
+    ]) {
+      expect(absenceClaims(s, 'en', { rollCalls: 0 }), s).not.toEqual([]);
+    }
+    for (const s of ['No hubo votación nominal ni otra acción.', 'Sin cambios desde entonces.']) {
+      expect(absenceClaims(s, 'es', { rollCalls: 0 }), s).not.toEqual([]);
+    }
+  });
+
+  test('the collector stores it when its grounding has no roll call, and still rejects it when it has one', async () => {
+    const today = etDay(Date.now());
+    const action = {
+      ...collegeRow('u_00000001', today, `${today}T15:00:00Z`, 'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by voice vote.'),
+      vehicle: 'hr-10167-119',
+    };
+    const entry = () => ({ updates: [action], summary_revisions: [] });
+    const statuses = { 'hr-10167-119': 'passed_chamber' };
+    const accepted = await generateStateSummary(recordingClient(JSON.stringify(VOICE_VOTE)), 'penny-production-and-cash-rounding', entry(), statuses, [], {}, []);
+    expect(accepted).not.toBeNull();
+    expect(accepted!.grounded_in.roll_calls).toEqual([]);
+    const withRoll = { ...ROLL_244, bill: 'hr-10167-119' };
+    const rejected = await generateStateSummary(recordingClient(JSON.stringify(VOICE_VOTE)), 'penny-production-and-cash-rounding', entry(), statuses, [], {}, [withRoll]);
+    expect(rejected).toBeNull();
+  });
+
+  test('the gate agrees with the collector on stored revisions, reading the stored roll-call count', () => {
+    const c = rollCallToCandidate({ momentId: 'iran-war-powers', vehicle: 'hconres-89-119', roll: ROLL_244, recordedAt: '2026-09-24T20:07:00Z' })!;
+    c.text = fallbackTextFor(c);
+    const revision = (rollCalls: string[]) => ({
+      id: 's_0000abce',
+      generated_at: '2026-09-24T20:08:00Z',
+      as_of_day: '2026-09-24',
+      text: {
+        en: 'The Senate agreed to the motion by voice vote, with no roll call.',
+        es: 'El Senado aprobó la moción por voto oral, sin votación nominal.',
+      },
+      grounded_in: { vehicle_statuses: IRAN_STATUSES, update_ids: [c.id], roll_calls: rollCalls },
+      changed_because: ['updates:+1'],
+      model: 'claude-sonnet-5',
+    });
+    const run = (rev: Record<string, unknown>) =>
+      checkMomentUpdates(
+        { _meta: { schema: 1, generated_at: '2026-09-24T20:08:00Z' }, 'iran-war-powers': { updates: [c], summary_revisions: [rev] } },
+        { 'iran-war-powers': { status: 'live', vehicles: IRAN_VEHICLES.map((slug) => ({ slug })) } },
+        new Set(IRAN_VEHICLES),
+        { now: Date.parse('2026-09-24T21:00:00Z') },
+      );
+    expect(run(revision([])).violations).toEqual([]);
+    expect(run(revision(['s-119-2-244'])).violations.some((v: string) => v.includes('absence claim'))).toBe(true);
+  });
+});
+
+test.describe('SY-28 · no model call when nothing moved — one record-only sentence instead', () => {
+  const MOMENT = 'syria-sanctions-repeal';
+  const MOMENTS = { [MOMENT]: { status: 'live', vehicles: [{ slug: 's-3172-119' }] } };
+  const PLACEMENT = 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 501.';
+  const BILLS = new Map([
+    ['s-3172-119', { full_identifier: 's-3172-119', status: 'floor_vote', last_action_text: PLACEMENT, last_action_date: '2026-07-27' }],
+  ]);
+  const NOW = Date.parse('2026-10-02T15:00:00Z');
+  /** An update inside the 14-day window, already grounded by the last revision. SYNTHETIC content, real id derivation. */
+  const OLD_BASE = { ...collegeRow('pending', '2026-09-22', '2026-09-22T15:00:00Z', 'Motion to proceed to consideration of measure made in Senate.'), vehicle: 's-3172-119' };
+  const OLD_ROW = { ...OLD_BASE, id: computeUpdateId(MOMENT, OLD_BASE) };
+  const aiRevision = (generatedAt: string, updateIds: string[]) => ({
+    id: 's_f3165f0f',
+    generated_at: generatedAt,
+    as_of_day: generatedAt.slice(0, 10),
+    text: { en: 'Prior.', es: 'Previo.' },
+    grounded_in: { vehicle_statuses: { 's-3172-119': 'floor_vote' }, update_ids: updateIds, roll_calls: [] },
+    changed_because: ['reanchor:7d'],
+    model: 'claude-sonnet-5',
+  });
+  const plan = (entry: Record<string, unknown>, rollCalls: unknown[] = []) =>
+    planSummaries({
+      mode: 'nightly',
+      moments: MOMENTS,
+      store: { [MOMENT]: entry },
+      billBySlug: BILLS,
+      rollCalls: rollCalls as Record<string, unknown>[],
+      floorSignals: null,
+      now: NOW,
+      unsupportedStatus: () => false,
+    });
+  const counting = () => {
+    const box = { calls: 0 };
+    return {
+      box,
+      client: {
+        messages: {
+          create: async () => {
+            box.calls++;
+            return { content: [{ type: 'text', text: JSON.stringify(GROUNDED_SUMMARY) }] };
+          },
+        },
+      },
+    };
+  };
+
+  test('the sentence is a dated positive fact, in both languages, and clears every lint layer', () => {
+    expect(recordOnlyText('2026-07-27', 1)).toEqual({
+      en: 'The latest action in the official record on this measure is dated July 27, 2026.',
+      es: 'La última acción del registro oficial sobre esta medida es del 27 de julio de 2026.',
+    });
+    const many = recordOnlyText('2026-09-16', 4);
+    expect(many.en).toBe('The latest action in the official record on these measures is dated September 16, 2026.');
+    expect(many.es).toBe('La última acción del registro oficial sobre estas medidas es del 16 de septiembre de 2026.');
+    for (const lang of ['en', 'es'] as const) {
+      expect(lintRevisionText(many[lang], lang, { groundedEvents: true, rollCalls: 3 })).toEqual([]);
+    }
+  });
+
+  test('a 7-day re-anchor with nothing new in the window plans record-only, not a model call', () => {
+    const entry = { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] };
+    expect(recordMovedSince(entry, [], '2026-09-18')).toBe(false);
+    const [p] = plan(entry);
+    expect(p.generate).toBe(false);
+    expect(p.recordOnly).toBe(true);
+    expect(p.reason).toContain('reanchor');
+  });
+
+  test('anything new — an update or a roll call the last revision was not grounded in — still reaches the model', () => {
+    const fresh = { ...OLD_ROW, id: 'u_0000bbbb', day: '2026-10-01', recorded_at: '2026-10-01T15:00:00Z' };
+    const moved = { updates: [OLD_ROW, fresh], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] };
+    expect(plan(moved)[0].generate).toBe(true);
+    const quiet = { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] };
+    const roll = { ...ROLL_244, id: 's-119-2-250', roll: 250, date: '2026-09-30', bill: 's-3172-119' };
+    const [p] = plan(quiet, [roll]);
+    expect(p.recordOnly).toBeUndefined();
+    expect(p.generate).toBe(true);
+  });
+
+  test('a first summary over an EMPTY window is record-only; over a window with events it is written by the model', () => {
+    expect(plan({ updates: [], summary_revisions: [] })[0].recordOnly).toBe(true);
+    const withEvent = plan({ updates: [OLD_ROW], summary_revisions: [] })[0];
+    expect(withEvent.recordOnly).toBeUndefined();
+    expect(withEvent.generate).toBe(true);
+  });
+
+  test('writeSummaries: ZERO model calls, no attempt spent, one revision the gate accepts — and no duplicate the next night', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entry: Record<string, any> = { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] };
+    const store = { [MOMENT]: entry };
+    const { box, client } = counting();
+    const planned = plan(entry);
+    expect(await writeSummaries({ plan: planned, store, moments: MOMENTS, anthropic: client, cap: 0 })).toBe(1);
+    expect(box.calls).toBe(0);
+    expect(entry.summary_attempts).toBeUndefined();
+    const written = entry.summary_revisions.at(-1);
+    expect(written.model).toBe(RECORD_ONLY_MODEL);
+    expect(written.text).toEqual(recordOnlyText('2026-07-27', 1));
+    // Grounded in the same window, so the next nightly compares correctly.
+    expect(written.grounded_in.update_ids).toEqual([OLD_ROW.id]);
+    expect(written.grounded_in.roll_calls).toEqual([]);
+    expect(written.changed_because[0]).toMatch(/^reanchor:\d+d$/);
+
+    // The gate accepts exactly what this path stores (a fixed clock, so the
+    // check never depends on the day the suite runs).
+    const pinned = recordOnlyRevision({
+      momentId: MOMENT,
+      entry: { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] },
+      statuses: { 's-3172-119': 'floor_vote' },
+      records: { 's-3172-119': { lastActionDate: '2026-07-27' } },
+      votes: [],
+      day: '2026-10-02',
+      generatedAt: '2026-10-02T15:00:00.000Z',
+    })!;
+    expect(pinned.text).toEqual(written.text);
+    const { violations } = checkMomentUpdates(
+      {
+        _meta: { schema: 1, generated_at: '2026-10-02T15:00:00.000Z' },
+        [MOMENT]: { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id]), pinned] },
+      },
+      MOMENTS,
+      new Set(['s-3172-119']),
+      { now: NOW },
+    );
+    expect(violations).toEqual([]);
+
+    // The same record a week later: identical sentence, nothing appended.
+    const later = recordOnlyRevision({
+      momentId: MOMENT,
+      entry,
+      statuses: { 's-3172-119': 'floor_vote' },
+      records: { 's-3172-119': { lastActionDate: '2026-07-27' } },
+      votes: [],
+      day: '2026-10-09',
+    });
+    expect(later!.text).toEqual(written.text);
+    const again = [{ ...planned[0], day: '2026-10-09' }];
+    expect(await writeSummaries({ plan: again, store, moments: MOMENTS, anthropic: client, cap: 0 })).toBe(0);
+    expect(entry.summary_revisions).toHaveLength(2);
+  });
+
+  test('no dated action on any measure → nothing is written at all', () => {
+    expect(
+      recordOnlyRevision({
+        momentId: MOMENT,
+        entry: { updates: [], summary_revisions: [] },
+        statuses: { x: 'committee' },
+        records: { x: { lastActionDate: null } },
+        votes: [],
+        day: '2026-10-02',
+      }),
+    ).toBeNull();
+  });
+
+  test('the prompt no longer asks the model to recite status labels — the page prints them', async () => {
+    const client = recordingClient(JSON.stringify(GROUNDED_SUMMARY));
+    await generateStateSummary(client, 'iran-war-powers', { updates: [], summary_revisions: [] }, IRAN_STATUSES, [], {}, [ROLL_244]);
+    const prompt = client.prompts[0];
+    expect(prompt).not.toContain('Status words: use ONLY the quoted plain-language phrases');
+    expect(prompt).toContain('Write only what MOVED');
+    expect(prompt).toContain('Do NOT recite it');
   });
 });
