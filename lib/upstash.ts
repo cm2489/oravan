@@ -8,7 +8,8 @@
  * surface. If the command surface ever grows past trivial, revisit.
  * (Since grown, one command per caller, each still a single REST POST: MGET
  * and SCAN for the digest/tenant reads, and PFADD / EXPIREAT / PFCOUNT for
- * the one daily distinct-address sketch in lib/ratelimit.ts, 2026-09-25.)
+ * the one daily distinct-address sketch in lib/ratelimit.ts, 2026-09-25,
+ * whose own day salt is written with SET's EXAT option, 2026-09-27.)
  *
  * THREE PHYSICALLY SEPARATE DATABASES — this is the load-bearing design rule
  * (KTD-3, strategy §9.1(c); tenancy added S18), and this file is where all
@@ -284,7 +285,8 @@ function restClient(url: string, token: string): UpstashClient {
  * Client for the COUNTERS database: caller-keyed, short-lived rate-limit
  * counters and the rotating salt, the content-free daily aggregates
  * (impressions, usage, page views), and the one site-wide daily
- * distinct-address sketch (lib/ratelimit.ts). Content identifiers
+ * distinct-address sketch with its own day salt (lib/ratelimit.ts).
+ * Content identifiers
  * (slug/stance/locale/tool) must never reach this database's caller-keyed
  * families.
  * Null when unconfigured — callers degrade to in-memory.

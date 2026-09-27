@@ -1,7 +1,7 @@
 /*
  * In-process mock of the Upstash Redis REST surface, shared by the S11 unit
  * specs. Implements exactly the command subset lib/upstash.ts's callers use
- * (GET / SET [NX] [EX] / INCR / EXPIRE / TTL / DEL / MGET, the last added
+ * (GET / SET [NX] [EX|EXAT] / INCR / EXPIRE / TTL / DEL / MGET, the last added
  * S20 for lib/impressions.ts's readImpressionsWindow; SCAN added S21 for
  * lib/tenancy.ts's listTenantIds/listTenants; PFADD / PFCOUNT / EXPIREAT
  * added 2026-09-25 for lib/ratelimit.ts's daily distinct-address sketch) over a Map, and
@@ -74,10 +74,15 @@ export class MockUpstash {
         const nx = flags.includes('NX');
         const exIdx = flags.indexOf('EX');
         const ttlSec = exIdx >= 0 ? Number(flags[exIdx + 1]) : null;
+        // EXAT (absolute unix seconds), added 2026-09-27 for the distinct-
+        // address sketch's day salt. A deadline already past leaves a key
+        // that is dead on its next read, the way an expired key behaves.
+        const exatIdx = flags.indexOf('EXAT');
+        const exatMs = exatIdx >= 0 ? Number(flags[exatIdx + 1]) * 1000 : null;
         if (nx && this.live(key)) return null;
         this.store.set(key, {
           value,
-          expiresAt: ttlSec !== null ? Date.now() + ttlSec * 1000 : null,
+          expiresAt: exatMs !== null ? exatMs : ttlSec !== null ? Date.now() + ttlSec * 1000 : null,
         });
         return 'OK';
       }

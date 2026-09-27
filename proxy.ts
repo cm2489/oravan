@@ -21,14 +21,16 @@ const handler = createProxy(routing);
  *    key, and nothing per-visitor is stored in it. lib/usage.ts is the
  *    single registry and carries the full argument.
  *
- * 2. (daily distinct-address count, owner ruling 2026-09-25) add the SAME
- *    salted address hash the rate limiter already computes to ONE
- *    site-wide HyperLogLog sketch for the UTC day. It is the only thing here
- *    derived from the caller, and it is deliberately joined to nothing: no
- *    path, no page label, no locale - the sketch has no dimension at all, so
- *    it can never say which page an address read. A sketch keeps register
- *    maxima, never the hash or the address. lib/ratelimit.ts is its registry
- *    and carries the full argument, including its honest limits.
+ * 2. (daily distinct-address count, owner rulings 2026-09-25 and
+ *    2026-09-27) add a salted hash of the caller's address to ONE site-wide
+ *    HyperLogLog sketch for the UTC day. The salt is the sketch's own, used
+ *    for nothing else and deleted when its UTC day ends - not the rate
+ *    limiter's. It is the only thing here derived from the caller, and it is
+ *    deliberately joined to nothing: no path, no page label, no locale - the
+ *    sketch has no dimension at all, so it can never say which page an
+ *    address read. A sketch keeps register maxima, never the hash or the
+ *    address. lib/ratelimit.ts is its registry and carries the full
+ *    argument, including its honest limits.
  *
  * scripts/check-key-namespaces.mjs gates both in CI.
  *

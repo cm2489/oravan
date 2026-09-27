@@ -191,8 +191,9 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * There is deliberately NO unique/visitor count IN THIS FAMILY: that would
  * need an identity this family is built to not have. The owner ruled one in
  * on 2026-09-25 as a SEPARATE structure — a single site-wide daily
- * HyperLogLog sketch of the rate limiter's salted address hash, with no
- * route or page dimension — and it lives in lib/ratelimit.ts, the
+ * HyperLogLog sketch of a salted address hash, with no route or page
+ * dimension, hardened on 2026-09-27 to use its own salt that is deleted
+ * when its UTC day ends — and it lives in lib/ratelimit.ts, the
  * caller-keyed registry, precisely so no caller-derived value ever sits in
  * this file (see noteDistinctAddress there).
  *

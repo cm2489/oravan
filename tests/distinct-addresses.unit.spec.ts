@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -12,8 +13,11 @@ import {
   createRateLimiter,
   DISTINCT_ADDRESS_GRACE_SECONDS,
   distinctAddressDay,
+  distinctAddressElement,
   distinctAddressExpiresAt,
   distinctAddressKey,
+  distinctSaltExpiresAt,
+  distinctSaltKey,
   noteDistinctAddress,
   parseSaltRecord,
   readDistinctAddressCount,
@@ -27,12 +31,15 @@ import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from '.
 
 /*
  * The daily distinct-address count (owner ruling 2026-09-25, card 15 / D4;
- * the 2026-09-27 audit's SY-20). Pins lib/ratelimit.ts's contract for it:
+ * the 2026-09-27 audit's SY-20; hardened before merge on the owner's
+ * 2026-09-27 decision "2. b"). Pins lib/ratelimit.ts's contract for it:
  *
  *   - ONE key per UTC day, `<env>:uniques:<YYYY-MM-DD>`, no other dimension;
- *   - the element added is the rate limiter's own salted caller hash, from
- *     the same salt record — never the raw address;
- *   - the key carries an absolute deadline, 48h after its UTC day ends;
+ *   - the element added is sha256(daySalt ‖ address), where the day salt is
+ *     the sketch's OWN key, `<env>:uniques-salt:<YYYY-MM-DD>`, born with SET
+ *     NX + an absolute EXAT at 00:00:00Z of the next day and never extended
+ *     — never the rate limiter's salt or hash, never the raw address;
+ *   - the sketch key carries an absolute deadline, 48h after its UTC day ends;
  *   - best-effort: an unconfigured database is a true no-op (zero network,
  *     nothing kept in memory), a failure is swallowed and logged status-only;
  *   - the digest read fails closed and never writes;
@@ -66,12 +73,24 @@ function useMock(): MockUpstash {
   return mock;
 }
 
-/** The live salt value the mock holds (the one the rate limiter reads). */
-function storedSalt(mock: MockUpstash): string {
+/** The live RATE-LIMITER salt value the mock holds (only the limiter reads it). */
+function storedLimiterSalt(mock: MockUpstash): string {
   const raw = mock.store.get(saltKey())?.value;
   const record = typeof raw === 'string' ? parseSaltRecord(raw) : null;
-  if (!record) throw new Error('no salt record in the mock store');
+  if (!record) throw new Error('no rate-limiter salt record in the mock store');
   return record.v;
+}
+
+/** The live DAY salt the sketch uses for `day` (a bare hex string). */
+function storedDaySalt(mock: MockUpstash, day: string): string {
+  const raw = mock.store.get(distinctSaltKey(day))?.value;
+  if (typeof raw !== 'string' || !/^[0-9a-f]{32,}$/.test(raw)) throw new Error(`no day salt for ${day} in the mock store`);
+  return raw;
+}
+
+/** Unix seconds of the next 00:00:00Z after `now`. */
+function nextUtcMidnightSec(now: Date): number {
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) / 1000;
 }
 
 function wireText(mock: MockUpstash): string {
@@ -124,9 +143,53 @@ test('distinctAddressExpiresAt: an absolute deadline 48h after the UTC day ends'
   expect(distinctAddressExpiresAt('2026-09-26') - deadline).toBe(24 * 60 * 60);
 });
 
+// --- the sketch's own day salt (hardened 2026-09-27) ---------------------------------
+
+test('distinctSaltKey: exactly <env>:uniques-salt:<YYYY-MM-DD>, one argument, and never the rate limiter\'s salt key', () => {
+  expect(distinctSaltKey('2026-09-25')).toBe('dev:uniques-salt:2026-09-25');
+  expect(distinctSaltKey.length).toBe(1);
+  expect(distinctSaltKey('2026-09-25')).not.toBe(saltKey());
+  // Not inside the sketch family either: a PFCOUNT over `uniques:*` can
+  // never pick the salt up, and the two can never collide.
+  expect(distinctSaltKey('2026-09-25')).not.toContain(':uniques:');
+});
+
+test('distinctSaltExpiresAt: 00:00:00Z of the NEXT day — the end of its UTC day, with no grace', () => {
+  expect(distinctSaltExpiresAt('2026-09-25')).toBe(Date.parse('2026-09-26T00:00:00Z') / 1000);
+  // Month and year boundaries, and a leap day.
+  expect(distinctSaltExpiresAt('2026-09-30')).toBe(Date.parse('2026-10-01T00:00:00Z') / 1000);
+  expect(distinctSaltExpiresAt('2026-12-31')).toBe(Date.parse('2027-01-01T00:00:00Z') / 1000);
+  expect(distinctSaltExpiresAt('2028-02-28')).toBe(Date.parse('2028-02-29T00:00:00Z') / 1000);
+  // Strictly earlier than the sketch's own deadline: the salt is gone for
+  // the sketch's whole 48h tail.
+  expect(distinctAddressExpiresAt('2026-09-25') - distinctSaltExpiresAt('2026-09-25')).toBe(DISTINCT_ADDRESS_GRACE_SECONDS);
+});
+
+test('a request 1 ms before midnight UTC: counted under that day, and its salt is created to die 1 ms later', () => {
+  const now = new Date('2026-09-25T23:59:59.999Z');
+  const day = distinctAddressDay(now);
+  expect(day).toBe('2026-09-25');
+  const deadlineSec = distinctSaltExpiresAt(day);
+  // The deadline is the very next instant: 1 ms after the request.
+  expect(deadlineSec * 1000 - now.getTime()).toBe(1);
+});
+
+test('the element is sha256(daySalt ‖ address) and differs from the rate limiter\'s hash — even for the same salt value', () => {
+  const ip = '203.0.113.7';
+  const salt = 'ab'.repeat(16);
+  const element = distinctAddressElement(ip, salt);
+  expect(element).toMatch(/^[0-9a-f]{64}$/);
+  expect(element).toBe(createHash('sha256').update(salt + ip).digest('hex'));
+  // A different construction from callerHash = sha256(ip + salt), so an
+  // element can never equal a rate-limit key's hash.
+  expect(element).not.toBe(callerHash(ip, salt));
+  // And a different salt gives a different element for the same address.
+  expect(distinctAddressElement(ip, 'cd'.repeat(16))).not.toBe(element);
+});
+
 // --- the write path --------------------------------------------------------------
 
-test('noteDistinctAddress: PFADDs the salted caller hash into today\'s ONE key and attaches the deadline at creation', async () => {
+test('noteDistinctAddress: creates the day salt with SET NX + EXAT at the end of the day, then PFADDs sha256(daySalt ‖ address) into today\'s ONE key', async () => {
   const mock = useMock();
   const ip = '203.0.113.7';
   const now = new Date();
@@ -135,14 +198,28 @@ test('noteDistinctAddress: PFADDs the salted caller hash into today\'s ONE key a
 
   await noteDistinctAddress(ip, now);
 
-  // The element is the rate limiter's own hash of the address, from the
-  // same stored salt — not the address, not an unsalted digest.
-  const salt = storedSalt(mock);
-  expect([...(mock.hll.get(key) ?? [])]).toEqual([callerHash(ip, salt)]);
+  // The day salt: read, found absent, created in ONE command that carries
+  // its absolute end-of-day deadline — never a relative EX.
+  const saltCommands = mock.commands.filter((c) => c[1] === distinctSaltKey(day));
+  expect(saltCommands.map((c) => c[0])).toEqual(['GET', 'SET']);
+  const [, , value, ...flags] = saltCommands[1];
+  expect(value).toMatch(/^[0-9a-f]{32}$/); // 128 bits of CSPRNG output, hex
+  expect(flags).toEqual(['NX', 'EXAT', String(distinctSaltExpiresAt(day))]);
+  expect(Number(flags[2])).toBe(nextUtcMidnightSec(now));
+  // The salt's TTL, as the database reports it, never reaches past midnight.
+  const saltTtl = mock.exec(['TTL', distinctSaltKey(day)]) as number;
+  expect(saltTtl).toBeGreaterThan(0);
+  expect(saltTtl).toBeLessThanOrEqual(nextUtcMidnightSec(now) - Math.floor(now.getTime() / 1000));
 
-  // Only two keys exist afterwards: the salt the limiter already keeps, and
-  // the day's sketch. Nothing else was written.
-  expect(mock.keys().sort()).toEqual([key, saltKey()].sort());
+  // The element is the day salt's hash of the address — not the address,
+  // not an unsalted digest, not the rate limiter's hash.
+  const daySalt = storedDaySalt(mock, day);
+  expect([...(mock.hll.get(key) ?? [])]).toEqual([distinctAddressElement(ip, daySalt)]);
+
+  // Only two keys exist afterwards: the day salt and the day's sketch. The
+  // rate limiter's salt was never read or created by this path.
+  expect(mock.keys().sort()).toEqual([key, distinctSaltKey(day)].sort());
+  expect(mock.commands.some((c) => c[1] === saltKey())).toBe(false);
 
   // The exact commands for the sketch itself: one PFADD, one EXPIREAT.
   const sketchCommands = mock.commands.filter((c) => c[1] === key);
@@ -197,42 +274,146 @@ test('noteDistinctAddress: the raw address never crosses the wire, and neither d
   }
 });
 
-test('noteDistinctAddress shares the rate limiter\'s salt and hash: one salt record, and the element IS the limiter\'s caller hash', async () => {
+test('noteDistinctAddress uses its OWN salt, never the rate limiter\'s: two salt keys, two values, and the element is not the limiter\'s hash', async () => {
   const mock = useMock();
   const ip = '203.0.113.50';
+  const now = new Date();
+  const day = distinctAddressDay(now);
 
   const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
   await limiter.isLimited(ip);
-  await noteDistinctAddress(ip);
+  await noteDistinctAddress(ip, now);
 
-  // No second salt: the limiter created it, the sketch reused it.
-  expect(mock.keys().filter((k) => k.includes(':salt:'))).toEqual([saltKey()]);
+  // Two separate salts: the limiter's record and the sketch's day salt.
+  expect(mock.store.has(saltKey())).toBe(true);
+  expect(mock.store.has(distinctSaltKey(day))).toBe(true);
+  const limiterSalt = storedLimiterSalt(mock);
+  const daySalt = storedDaySalt(mock, day);
+  expect(daySalt).not.toBe(limiterSalt);
 
-  const hash = callerHash(ip, storedSalt(mock));
-  expect(mock.store.has(counterKey('script', hash))).toBe(true);
-  expect(mock.hll.get(distinctAddressKey(distinctAddressDay()))?.has(hash)).toBe(true);
+  // The limiter's counter is keyed by ITS hash; the sketch holds only the
+  // day salt's element, and neither of the limiter-style hashes.
+  const limiterHash = callerHash(ip, limiterSalt);
+  expect(mock.store.has(counterKey('script', limiterHash))).toBe(true);
+  const sketch = mock.hll.get(distinctAddressKey(day));
+  expect([...(sketch ?? [])]).toEqual([distinctAddressElement(ip, daySalt)]);
+  expect(sketch?.has(limiterHash)).toBe(false);
+  expect(sketch?.has(callerHash(ip, daySalt))).toBe(false);
+
+  // And the sketch path never touched the limiter's salt key: every command
+  // on it came from the limiter's own call, before the sketch ran.
+  const firstSketchCommand = mock.commands.findIndex((c) => c[1] === distinctSaltKey(day));
+  expect(mock.commands.slice(firstSketchCommand).some((c) => c[1] === saltKey())).toBe(false);
 });
 
-test('KNOWN OVERCOUNT, pinned as intended: after the salt rotates, the same address counts again', async () => {
+test('one address counts ONCE per UTC day — the rate limiter\'s salt rotating mid-day no longer splits it', async () => {
   const mock = useMock();
   const ip = '203.0.113.7';
-  const key = distinctAddressKey(distinctAddressDay());
+  const now = new Date();
+  const key = distinctAddressKey(distinctAddressDay(now));
 
-  await noteDistinctAddress(ip);
-  const firstSalt = storedSalt(mock);
+  const limiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
+  await limiter.isLimited(ip);
+  await noteDistinctAddress(ip, now);
 
-  // Rotation: the record dies (its 24h TTL) and the next reader mints a new one.
+  // The LIMITER's salt rotates (its 24h TTL, or anything else): that used to
+  // hand the sketch a second element for the same address. Not any more.
   mock.exec(['DEL', saltKey()]);
-  __resetSaltMemoForTests();
-  await noteDistinctAddress(ip);
-  const secondSalt = storedSalt(mock);
+  __resetSaltMemoForTests(); // clears both memos, so the day salt is re-read too
+  await limiter.isLimited(ip);
+  await noteDistinctAddress(ip, now);
 
-  expect(secondSalt).not.toBe(firstSalt);
-  // Two different elements for one address: the overcount the digest caveat
-  // discloses. The alternative (a longer-lived hash) is what rotation forbids.
-  expect(mock.hll.get(key)?.size).toBe(2);
-  expect(mock.hll.get(key)?.has(callerHash(ip, firstSalt))).toBe(true);
-  expect(mock.hll.get(key)?.has(callerHash(ip, secondSalt))).toBe(true);
+  expect(mock.hll.get(key)?.size).toBe(1);
+  expect(mock.exec(['PFCOUNT', key])).toBe(1);
+});
+
+test('a new UTC day gets a new salt: the same address yields an unrelated element the next day', async () => {
+  const mock = useMock();
+  const ip = '203.0.113.7';
+  // Days far in the future so the mock (which expires keys by the real
+  // clock) keeps both salts readable for the assertions below.
+  const dayOne = new Date('2099-03-01T12:00:00.000Z');
+  const dayTwo = new Date('2099-03-02T12:00:00.000Z');
+
+  await noteDistinctAddress(ip, dayOne);
+  await noteDistinctAddress(ip, dayTwo);
+
+  const saltOne = storedDaySalt(mock, '2099-03-01');
+  const saltTwo = storedDaySalt(mock, '2099-03-02');
+  expect(saltOne).not.toBe(saltTwo);
+  expect([...(mock.hll.get(distinctAddressKey('2099-03-01')) ?? [])]).toEqual([distinctAddressElement(ip, saltOne)]);
+  expect([...(mock.hll.get(distinctAddressKey('2099-03-02')) ?? [])]).toEqual([distinctAddressElement(ip, saltTwo)]);
+  expect(distinctAddressElement(ip, saltOne)).not.toBe(distinctAddressElement(ip, saltTwo));
+  // Each salt was born with ITS OWN day's end as its deadline.
+  const sets = mock.commands.filter((c) => c[0] === 'SET');
+  expect(sets.map((c) => [c[1], c[5]])).toEqual([
+    [distinctSaltKey('2099-03-01'), String(Date.parse('2099-03-02T00:00:00Z') / 1000)],
+    [distinctSaltKey('2099-03-02'), String(Date.parse('2099-03-03T00:00:00Z') / 1000)],
+  ]);
+});
+
+test('the day salt is NEVER extended: many requests, one SET, no EXPIRE/EXPIREAT/PERSIST on it, and a memo refresh only reads', async () => {
+  const mock = useMock();
+  const now = new Date();
+  const day = distinctAddressDay(now);
+  for (let i = 0; i < 20; i++) await noteDistinctAddress(`198.51.100.${i}`, now);
+  // A memo refresh (as after 60s, or on a fresh instance) re-reads the salt;
+  // it must never re-write it or touch its deadline.
+  __resetSaltMemoForTests();
+  await noteDistinctAddress('198.51.100.200', now);
+
+  const onSalt = mock.commands.filter((c) => c[1] === distinctSaltKey(day));
+  expect(onSalt.filter((c) => c[0] === 'SET')).toHaveLength(1);
+  expect(onSalt.filter((c) => c[0] !== 'SET' && c[0] !== 'GET')).toEqual([]);
+  // One GET to create it, one after the memo was cleared: the memo serves
+  // everything in between.
+  expect(onSalt.filter((c) => c[0] === 'GET')).toHaveLength(2);
+  // All 21 addresses share that one salt.
+  expect(mock.exec(['PFCOUNT', distinctAddressKey(day)])).toBe(21);
+});
+
+test('1 ms before midnight UTC, then midnight: the old day\'s salt is never reused, and the new day mints its own', async () => {
+  const mock = useMock();
+  const ip = '203.0.113.7';
+  const beforeMidnight = new Date('2026-09-25T23:59:59.999Z');
+  const midnight = new Date('2026-09-26T00:00:00.000Z');
+
+  await noteDistinctAddress(ip, beforeMidnight);
+  // Same instant again: served from the memo, no salt read at all.
+  const commandsAfterFirst = mock.commands.length;
+  await noteDistinctAddress('198.51.100.9', beforeMidnight);
+  expect(mock.commands.slice(commandsAfterFirst).some((c) => c[1]?.startsWith('dev:uniques-salt:'))).toBe(false);
+
+  await noteDistinctAddress(ip, midnight);
+
+  const saltSets = mock.commands.filter((c) => c[0] === 'SET');
+  expect(saltSets.map((c) => c[1])).toEqual([distinctSaltKey('2026-09-25'), distinctSaltKey('2026-09-26')]);
+  // Each born with its own day's end: the first dies 1 ms after the request
+  // that created it.
+  expect(saltSets[0].slice(3)).toEqual(['NX', 'EXAT', String(Date.parse('2026-09-26T00:00:00Z') / 1000)]);
+  expect(saltSets[1].slice(3)).toEqual(['NX', 'EXAT', String(Date.parse('2026-09-27T00:00:00Z') / 1000)]);
+  expect(saltSets[0][2]).not.toBe(saltSets[1][2]);
+  // And each request went to its own day's sketch.
+  const pfadds = mock.commands.filter((c) => c[0] === 'PFADD').map((c) => c[1]);
+  expect(pfadds).toEqual([distinctAddressKey('2026-09-25'), distinctAddressKey('2026-09-25'), distinctAddressKey('2026-09-26')]);
+});
+
+test('an unusable value at the day-salt key is never guessed around or overwritten: that count is dropped', async () => {
+  const mock = useMock();
+  const now = new Date();
+  const day = distinctAddressDay(now);
+  mock.exec(['SET', distinctSaltKey(day), 'not-a-salt', 'EXAT', String(distinctSaltExpiresAt(day))]);
+  const before = mock.commands.length;
+  const out = captureConsole();
+  try {
+    await expect(noteDistinctAddress('203.0.113.7', now)).resolves.toBeUndefined();
+  } finally {
+    out.restore();
+  }
+  const after = mock.commands.slice(before);
+  expect(after.map((c) => c[0])).toEqual(['GET']);
+  expect(mock.store.get(distinctSaltKey(day))?.value).toBe('not-a-salt');
+  expect(mock.hll.size).toBe(0);
 });
 
 test('noteDistinctAddress: an absent address ("unknown", the callerIp default, or blank) is not counted and costs no request', async () => {
@@ -266,6 +447,15 @@ test('noteDistinctAddress: unconfigured counters database is a TRUE no-op — ze
   // Unlike the rate limiter there is no in-memory fallback to announce — a
   // per-instance set of addresses would be an actual list of addresses.
   expect(out.lines).toEqual([]);
+
+  // Nothing was kept, not even a day salt: once the database is configured,
+  // the very first command is the read of the day salt (no memo to skip it).
+  restoreFetch();
+  restoreFetch = null;
+  const mock = useMock();
+  const now = new Date();
+  await noteDistinctAddress('203.0.113.7', now);
+  expect(mock.commands[0]).toEqual(['GET', distinctSaltKey(distinctAddressDay(now))]);
 });
 
 test('noteDistinctAddress: an Upstash failure never throws, is counted, and logs a status code only — no address, no hash', async () => {
@@ -423,8 +613,9 @@ test('proxy.ts wiring (driven): a burst of real requests leaves ONE daily key on
     if (isCountablePageviewRequest(r)) await noteDistinctAddress(callerIp(r.headers));
   }
 
-  const key = distinctAddressKey(distinctAddressDay());
-  expect(mock.keys().sort()).toEqual([key, saltKey()].sort());
+  const day = distinctAddressDay();
+  const key = distinctAddressKey(day);
+  expect(mock.keys().sort()).toEqual([key, distinctSaltKey(day)].sort());
   expect(mock.exec(['PFCOUNT', key])).toBe(4); // .10, .11, .12, the IPv6 address
 
   const wire = wireText(mock);
@@ -432,9 +623,9 @@ test('proxy.ts wiring (driven): a burst of real requests leaves ONE daily key on
     expect(wire, `the wire must not carry "${marker}"`).not.toContain(marker);
   }
   // The uncountable requests' addresses were never even hashed in.
-  const salt = storedSalt(mock);
+  const daySalt = storedDaySalt(mock, day);
   for (const ip of ['192.0.2.1', '192.0.2.2', '192.0.2.3', '192.0.2.4']) {
-    expect(mock.hll.get(key)?.has(callerHash(ip, salt))).toBe(false);
+    expect(mock.hll.get(key)?.has(distinctAddressElement(ip, daySalt))).toBe(false);
   }
 });
 
@@ -458,6 +649,9 @@ test('the distinct-address code logs nothing of its own and keeps no in-memory c
   const safeCalls = code.match(/noteUpstashError\(\s*'counters',\s*err,\s*(?:"[^"]*"|'[^']*')\s*\)/g) ?? [];
   expect(sinkCalls).toBeGreaterThan(0);
   expect(safeCalls).toHaveLength(sinkCalls);
+
+  // The section never reaches for the rate limiter's salt or hash.
+  expect(code).not.toMatch(/\bcurrentSalt\(|\bcallerHash\(|\bsaltKey\(|\bparseSaltRecord\(/);
 });
 
 // --- the public sentence --------------------------------------------------------------
