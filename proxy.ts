@@ -12,8 +12,10 @@ const handler = createProxy(routing);
  * The one thing this file does BEYOND locale negotiation (site-counter,
  * 2026-09): increment a first-party, server-side page-view counter.
  *
- * What travels onward is a route-TEMPLATE label from a closed 9-member
- * union - 'bill', not which bill - and a UTC date. The path is matched and
+ * What travels onward is a route-TEMPLATE label from a closed union
+ * (lib/usage.ts's PAGEVIEW_SURFACES; scripts/check-key-namespaces.mjs holds
+ * the canonical list, so the count lives there and nowhere else) - 'bill',
+ * not which bill - and a UTC date. The path is matched and
  * dropped inside lib/usage.ts's pageviewSurfaceForPath; no path, query,
  * locale, referer, IP, User-Agent, or cookie reaches a key, and nothing
  * per-visitor is stored or derivable (no identity exists here to store).
