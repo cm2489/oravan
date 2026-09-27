@@ -5,6 +5,7 @@ import { ArrowRight, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
+import { isEmptyBillQuery, matchesBillQuery, parseBillQuery, teaserSearchDoc } from '@/lib/bill-search.mjs';
 import { setPrefs, usePrefs } from '@/lib/local';
 import { matchMoments, type MomentSearchTeaser } from '@/lib/moments-ui';
 import { Chip } from './system';
@@ -94,28 +95,28 @@ export function BillsBrowser({
     setPrefs({ interests: next });
   }
 
+  // Each card's searchable form — title, headline, localized topic names (the
+  // placeholder promises topic search) and citation — built once per feed and
+  // locale rather than on every keystroke.
+  const searchDocs = useMemo(
+    () => bills.map((b) => teaserSearchDoc(b, (tag) => t(`categories.${tag}`))),
+    [bills, t]
+  );
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    // Bare bill-number lookup (2026-08) — it is how journalists and
-    // staffers arrive: "HR 6500",
-    // "h.r.6500" and "H.R. 6500" all match the citation by comparing both
-    // sides with dots/spaces stripped. Guarded on the query actually
-    // containing a digit so ordinary word searches never take the
-    // punctuation-stripped path ("care" must not match "S. 2071 · CARE").
-    const qCite = /\d/.test(q) ? q.replace(/[.\s]/g, '') : null;
-    return bills.filter((b) => {
+    // The same matcher as the MCP search_bills tool (lib/bill-search.mjs; the
+    // 2026-09-27 audit, SY-21): every word must appear somewhere on the card,
+    // in any order, accents ignored — no longer the whole phrase as one
+    // substring, which found 1 of the 12 Iran war-powers resolutions. A bill
+    // number in any spelling journalists and staffers type ("HR 6500",
+    // "h.r.6500", "H. Con. Res. 89", "hconres89") names that bill exactly.
+    const q = parseBillQuery(query);
+    const blank = isEmptyBillQuery(q);
+    return bills.filter((b, i) => {
       if (active.length && !b.tags.some((tag) => active.includes(tag))) return false;
-      if (!q) return true;
-      return (
-        b.title.toLowerCase().includes(q) ||
-        (b.headline ?? '').toLowerCase().includes(q) ||
-        b.identifier.toLowerCase().includes(q) ||
-        (qCite !== null && b.identifier.toLowerCase().replace(/[.\s]/g, '').includes(qCite)) ||
-        // The placeholder promises topic search - match localized tag names
-        b.tags.some((tag) => t(`categories.${tag}`).toLowerCase().includes(q))
-      );
+      return blank || matchesBillQuery(q, searchDocs[i]);
     });
-  }, [bills, query, active, t]);
+  }, [bills, searchDocs, query, active]);
 
   /* The pinned moments, computed OUTSIDE `filtered` on purpose: a moment is
      never injected into the bill list and never counted in it. The two answers

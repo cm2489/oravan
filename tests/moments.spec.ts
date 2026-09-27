@@ -4,6 +4,7 @@ import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
 import { getTeasers } from '../lib/core';
+import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
 import { getNomination } from '../lib/core/nominations';
 import { nominationHasCallScript } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
@@ -368,18 +369,18 @@ test.describe('accessibility basics', () => {
  */
 test.describe('bills search pins a live Moment', () => {
   /*
-   * BillsBrowser's own bill-match rule, replicated so "this query returns no
-   * bills" is derived rather than assumed. Saved interests are empty in a
-   * fresh browser context, so the topic filter is not part of it.
+   * BillsBrowser's own bill-match rule — not a replica of it: the same
+   * lib/bill-search.mjs matcher and the same card field list
+   * (teaserSearchDoc) the page runs, so "this query returns no bills" is
+   * derived rather than assumed and cannot drift from the page. Saved
+   * interests are empty in a fresh browser context, so the topic filter is
+   * not part of it.
    */
   const billsMatch = (q: string): boolean => {
     const categories = en.categories as Record<string, string>;
-    return getTeasers('en').some(
-      (b) =>
-        b.title.toLowerCase().includes(q) ||
-        (b.headline ?? '').toLowerCase().includes(q) ||
-        b.identifier.toLowerCase().includes(q) ||
-        b.tags.some((tag) => (categories[tag] ?? '').toLowerCase().includes(q))
+    const query = parseBillQuery(q);
+    return getTeasers('en').some((b) =>
+      matchesBillQuery(query, teaserSearchDoc(b, (tag) => categories[tag] ?? tag))
     );
   };
 
