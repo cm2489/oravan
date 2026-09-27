@@ -115,20 +115,27 @@ test.describe('deriveChangedPaths: what counts as a changed page', () => {
     expect(deriveChangedPaths(fixture(), after)).toEqual([...BILL_HUBS, '/bills/hr-1-119', '/reps/A000001']);
   });
 
-  test('fields no page renders do not count (decode bookkeeping, text versions, search inputs)', () => {
+  test('fields no page renders do not count (decode bookkeeping, text-version count, search inputs)', () => {
     const after = fixture();
     Object.assign(billIn(after, 'hr-1-119'), {
       decoded_at: '2026-09-27',
       decode_text_sha: 'abc',
       decode_text_verified_at: '2026-09-27',
-      text_version_date: '2026-09-26',
-      text_version_type: 'Engrossed',
       text_version_count: 3,
       news_query: 'q',
       press_names: ['x'],
     });
-    expect(PAGE_INVISIBLE_BILL_FIELDS.length).toBe(8);
+    expect(PAGE_INVISIBLE_BILL_FIELDS.length).toBe(6);
     expect(deriveChangedPaths(fixture(), after)).toEqual([]);
+  });
+
+  test('the decoded text version is on the page ("Decoded from"), so a change to it re-pings the bill', () => {
+    for (const change of [{ text_version_date: '2026-09-26' }, { text_version_type: 'Engrossed' }]) {
+      const after = fixture();
+      Object.assign(billIn(after, 'hr-1-119'), change);
+      expect(PAGE_INVISIBLE_BILL_FIELDS).not.toContain(Object.keys(change)[0]);
+      expect(deriveChangedPaths(fixture(), after)).toContain('/bills/hr-1-119');
+    }
   });
 
   test('urgency_score alone re-pings /today, the one page it orders, and nothing else', () => {

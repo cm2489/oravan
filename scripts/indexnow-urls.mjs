@@ -108,18 +108,19 @@ export const DATA_FILES = [
 ];
 
 /**
- * Bill fields no page renders: decode bookkeeping, text-version tracking and
+ * Bill fields no page renders: decode bookkeeping, the text-version count and
  * the coverage search inputs. The nightly rewrites them for bills whose page
  * did not change, so they are left out of the comparison.
  * tests/indexnow.unit.spec.ts fails if page code ever starts reading one;
- * then it comes off this list.
+ * then it comes off this list. text_version_date and text_version_type came
+ * off before they were ever needed: the bill page's "Decoded from" line
+ * (2026-09-27 audit, SY-25) prints them, so a change to either re-pings the
+ * bill's page.
  */
 export const PAGE_INVISIBLE_BILL_FIELDS = [
   'decoded_at',
   'decode_text_sha',
   'decode_text_verified_at',
-  'text_version_date',
-  'text_version_type',
   'text_version_count',
   'news_query',
   'press_names',
