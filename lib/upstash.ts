@@ -3,7 +3,7 @@
  *
  * Why plain fetch instead of @upstash/redis: the command surface here is
  * six commands (GET / SET NX EX / INCR / EXPIRE / TTL / DEL), the repo's
- * test convention already mocks globalThis.fetch (tests/feedback.unit.spec.ts
+ * test convention already mocks globalThis.fetch (tests/embed-portrait.unit.spec.ts
  * pattern), and a privacy-critical path should carry zero extra supply-chain
  * surface. If the command surface ever grows past trivial, revisit.
  * (Since grown, one command per caller, each still a single REST POST: MGET

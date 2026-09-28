@@ -573,7 +573,7 @@
     "fundingSupportBody": "Si Oravan te resulta útil, puedes colaborar para mantenerlo en marcha. Las contribuciones ayudan a cubrir el alojamiento y el mantenimiento y no son deducibles de impuestos.",
     "fundingSupportCta": "Apoya a Oravan",
     "accountabilityTitle": "Independiente y accesible",
-    "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, el enlace de comentarios al final de cualquier página llega a una persona real, o escríbenos a hello@oravan.org.",
+    "accountabilityBody": "Oravan es un proyecto independiente y no partidista — no es una campaña, un partido ni un comité de acción política. Sus promesas están hechas para comprobarse, no para creerse: sin cuenta, sin rastreo y sin guardar nada sobre ti en un servidor. Para una corrección, una pregunta o una consulta de colaboración, escríbenos a hello@oravan.org.",
     "builtBy": "Oravan lo construye y mantiene Colby Maxwell. Todo el código fuente es público:",
     "repoLinkLabel": "github.com/cm2489/oravan"
   },
@@ -599,8 +599,8 @@
     "langSpanish": "Español",
     "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides, mostradas en la sección \"Lectura\" de cada proyecto, se usan bajo una licencia CC BY-NC separada y están excluidas del servidor MCP y de cualquier uso comercial — una función exclusiva del sitio web hasta que eso se resuelva.",
     "correctionTitle": "Reportar un error",
-    "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Usa el botón de comentarios en el pie de esta (o cualquier) página y elige \"Algo no funciona\". Indica el proyecto de ley y describe el error — es la misma vía que usa Oravan para cualquier otro reporte de errores, no un formulario de corrección aparte.",
-    "correctionLinkText": "Reportar un error",
+    "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Escríbenos a hello@oravan.org. Indica el proyecto de ley y describe el error.",
+    "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
     "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos revisados de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. Un widget incrustable que muestre texto de proyectos de ley todavía está en desarrollo, aún no se ha lanzado; cuando exista, leerá estos mismos datos corregidos sin un paso de corrección aparte.",
     "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra para el proceso continuo de revisión en español de Oravan, en lugar de parchearse en silencio y olvidarse."
@@ -639,29 +639,6 @@
     "p3": "Oravan no viene con garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario — verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
     "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
-  },
-  "feedback": {
-    "trigger": "Comentarios de la beta",
-    "title": "Comentarios de la beta",
-    "intro": "Oravan está en beta. Cuéntanos qué está roto, qué confunde o qué falta.",
-    "categoryLegend": "¿Qué tipo de comentario?",
-    "categoryBug": "Algo no funciona",
-    "categoryFeature": "Una idea o sugerencia",
-    "categoryOther": "Otra cosa",
-    "categoryPartnership": "Colaboración o licencia",
-    "messageLabel": "Tu comentario",
-    "pagePrefix": "Página: ",
-    "notice": "No incluyas datos personales. Tu comentario se publica en GitHub como un reporte público que cualquiera puede leer, y no podemos responder.",
-    "noticePartnership": "No incluyas datos personales: esto se publica en GitHub como un reporte público que cualquiera puede leer. Para recibir respuesta, escríbenos a hello@oravan.org.",
-    "send": "Enviar comentario",
-    "sending": "Enviando…",
-    "cancel": "Cancelar",
-    "close": "Cerrar",
-    "success": "Recibido, gracias. Cada nota durante la beta define qué se arregla primero.",
-    "errorIncomplete": "Primero elige una categoría y escribe un mensaje.",
-    "errorRateLimited": "Enviaste varias notas en poco tiempo. Tómate un respiro y vuelve a intentarlo pronto.",
-    "errorGeneric": "No se pudo enviar. Inténtalo de nuevo en un minuto.",
-    "errorLabel": "Revisa esto"
   },
   "og": {
     "aiDecoded": "Traducido por IA",
@@ -854,7 +831,7 @@
     "orgsTitle": "Organizaciones y uso con licencia",
     "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe y está documentada en la página de widgets.",
     "licensingTitle": "Licencias y precios",
-    "licensingBody": "Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos a hello@oravan.org — llega directamente a una persona real. La página de widgets enumera cuatro planes — Gratuito, Pro, Sin fines de lucro y Red —, pero hoy solo está disponible el Gratuito: todavía no se pueden contratar los planes de pago y sus precios no están publicados. También puedes usar el enlace de comentarios al final de cualquier página y elegir «Colaboración o licencia» si prefieres no escribir un correo.",
+    "licensingBody": "Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos a hello@oravan.org — llega directamente a una persona real. La página de widgets enumera cuatro planes — Gratuito, Pro, Sin fines de lucro y Red —, pero hoy solo está disponible el Gratuito: todavía no se pueden contratar los planes de pago y sus precios no están publicados.",
     "licensingCta": "Escríbenos a hello@oravan.org"
   },
   "follow": {

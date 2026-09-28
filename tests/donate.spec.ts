@@ -86,8 +86,8 @@ for (const [locale, prefix, messages] of [
       page,
     }) => {
       await page.goto(`${prefix}/about`);
-      // Scoped to the article, not the whole document: the footer's beta
-      // feedback dialog has its own (unrelated) honeypot text input.
+      // Scoped to the article, not the whole document: the footer is not
+      // part of the About page's own content.
       expect(await page.locator('article input, article iframe, article form').count()).toBe(0);
     });
   });

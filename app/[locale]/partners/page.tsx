@@ -17,9 +17,8 @@ export async function generateMetadata({
  * S5b — the GTM surface for the three launch audiences (Spanish-language
  * newsrooms, libraries, paid orgs). Docs-grade and pricing-free by founder
  * decision (M6, 2026-07-07: terms deferred); the licensing section's
- * primary contact is hello@oravan.org (M12, S8 cutover; confirmed live via
- * PR #64), with the beta feedback channel kept as a fallback for anyone
- * who'd rather not email.
+ * contact is hello@oravan.org (M12, S8 cutover; confirmed live via PR #64).
+ * The beta feedback fallback it used to offer was removed on 2026-09-28.
  */
 export default async function PartnersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -63,10 +62,7 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
         <section className="mt-8 rounded-control border border-ink-2 bg-wash p-6">
           <h2 className="text-h3 font-extrabold">{t('licensingTitle')}</h2>
           <p className="mt-2">{t('licensingBody')}</p>
-          {/* Primary partnership contact (M12). The beta feedback dialog
-              (footer, #feedback anchor — same one the citations
-              correction-path uses) remains a secondary fallback, referenced
-              in licensingBody, for anyone who'd rather not email. */}
+          {/* The partnership contact (M12). */}
           <a
             href="mailto:hello@oravan.org"
             className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"

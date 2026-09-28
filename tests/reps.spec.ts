@@ -205,7 +205,7 @@ test.describe('per-caller rate limit', () => {
     request,
   }) => {
     // The dormant tenancy hook (S18/S19) is recognized by this route as it is
-    // by /api/district and /api/feedback - and must not change a byte.
+    // by /api/district - and must not change a byte.
     const ip = nextIp();
     const without = await request.get('/api/reps?zip=78501', {
       headers: { 'x-forwarded-for': ip },

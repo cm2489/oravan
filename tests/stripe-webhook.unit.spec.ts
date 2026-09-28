@@ -1,12 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 // Relative imports (not '@/'): plain lib modules and this route only touch
-// next/server - same pattern as tests/feedback.unit.spec.ts and
+// next/server - same pattern as tests/embed-portrait.unit.spec.ts and
 // tests/upstash-privacy.spec.ts (which notes app/api/script and the MCP
 // route CANNOT be require()d in a unit spec because they pull ESM-only
 // deps - this route has no such dependency, so it's driven directly).
 import { POST, __resetStripeWebhookLogForTests } from '../app/api/stripe/webhook/route';
-import { POST as feedbackPost } from '../app/api/feedback/route';
 import { extractCheckoutSession, verifyStripeSignature } from '../lib/stripe-webhook';
 import { parseTenantRecord, tenantKey } from '../lib/tenancy';
 import { MockUpstash, TENANCY_URL, installUpstashFetch, setUpstashEnv } from './upstash-mock';
@@ -752,41 +751,8 @@ test('successful processing does NOT release the claim - a genuine duplicate del
 });
 
 // --- S18 changes nothing on existing routes ---------------------------------
-
-test('S18 pin: app/api/feedback is unaffected - X-Oravan-Key stays recognized-but-inert', async () => {
-  // A distinct IP octet to avoid colliding with tests/feedback.unit.spec.ts's
-  // own in-memory rate-limiter state if this worker happens to reuse that
-  // module (module state is per-process, keyed by IP - see that file's own
-  // comment on the same concern).
-  const realFetch = globalThis.fetch;
-  const realToken = process.env.GITHUB_FEEDBACK_TOKEN;
-  process.env.GITHUB_FEEDBACK_TOKEN = 'test-token';
-  const calls: unknown[] = [];
-  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-    calls.push({ url: String(url), init });
-    return new Response(JSON.stringify({ number: 1 }), { status: 201 });
-  }) as typeof fetch;
-
-  try {
-    const body = { category: 'bug', message: 'S18 pin: nothing about this route changed.' };
-    const mkReq = (extraHeaders: Record<string, string> = {}) =>
-      new Request('http://localhost/api/feedback', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.241', ...extraHeaders },
-        body: JSON.stringify(body),
-      }) as unknown as Parameters<typeof feedbackPost>[0];
-
-    const without = await feedbackPost(mkReq());
-    const withKey = await feedbackPost(mkReq({ 'x-oravan-key': 'rk_s18_pin_test' }));
-    expect(without.status).toBe(200);
-    expect(withKey.status).toBe(200);
-    expect(await withKey.json()).toEqual(await without.json());
-    expect(calls).toHaveLength(2);
-    // The header value never reached the outbound GitHub payload either.
-    expect(JSON.stringify(calls[1])).not.toContain('rk_s18_pin_test');
-  } finally {
-    globalThis.fetch = realFetch;
-    if (realToken === undefined) delete process.env.GITHUB_FEEDBACK_TOKEN;
-    else process.env.GITHUB_FEEDBACK_TOKEN = realToken;
-  }
-});
+//
+// The route-level pin that lived here drove app/api/feedback, which was
+// removed on 2026-09-28 with the beta feedback option. The same property
+// (X-Oravan-Key recognized but inert: the same response with or without it)
+// is pinned on a live route in tests/reps.spec.ts.

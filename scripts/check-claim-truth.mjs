@@ -136,8 +136,8 @@ const APPROVED = {
  *
  * TWO FACTORS, not one, because each factor alone is honest copy this repo
  * really ships:
- *   - agent alone — about.accountabilityBody's "reaches a real person" is
- *     about the feedback link, not the publish path;
+ *   - agent alone — partners.licensingBody's "reaches a real person" is
+ *     about the contact email, not the publish path;
  *   - verb alone — citations.aiBody's "the whole corpus is re-checked" /
  *     "todo el corpus se vuelve a revisar" is scripts/verify-sync.mjs, and
  *     `revisar` is simply the Spanish for what that script does.

@@ -11,8 +11,8 @@ const BILL_URL = /^\s*https:\/\/oravan\.org(?:\/es)?\/bills\/([a-z]+-\d+-\d+)\s*
 /*
  * S23 — the citability/correction page (the project records §1.3 S23). Covers the sprint's own done-criteria: the page
  * renders in both locales, the footer link is present on bill pages (not
- * just the homepage), and the correction path resolves to the existing
- * feedback intake rather than a parallel one.
+ * just the homepage), and the correction path is the site's public contact
+ * address (the beta feedback form it used to open was removed 2026-09-28).
  */
 
 for (const [locale, prefix, messages] of [
@@ -56,6 +56,13 @@ for (const [locale, prefix, messages] of [
     );
     expect(overflow, `${prefix}/citations must not scroll horizontally`).toBeLessThanOrEqual(0);
   });
+
+  test(`${locale}: the correction link emails the public contact address`, async ({ page }) => {
+    await page.goto(`${prefix}/citations`);
+    const reportLink = page.getByRole('link', { name: messages.citations.correctionLinkText });
+    await expect(reportLink).toBeVisible();
+    await expect(reportLink).toHaveAttribute('href', 'mailto:hello@oravan.org');
+  });
 }
 
 test('footer Citations link is reachable from a bill page, not just the homepage', async ({ page }) => {
@@ -74,21 +81,6 @@ test('footer Citations link is reachable and clickable on mobile', async ({ page
   await link.scrollIntoViewIfNeeded();
   await link.click();
   await expect(page).toHaveURL(/\/citations$/);
-});
-
-test('the correction-path link resolves to the existing feedback intake, not a parallel form', async ({
-  page,
-}) => {
-  await page.goto('/citations');
-  const reportLink = page.getByRole('link', { name: en.citations.correctionLinkText });
-  await expect(reportLink).toHaveAttribute('href', '#feedback');
-  await reportLink.click();
-  // #feedback lands on the Footer's own FeedbackDialog trigger - one
-  // beta-feedback intake for the whole site, reused here rather than
-  // duplicated (components/Footer.tsx).
-  await expect(page).toHaveURL(/#feedback$/);
-  const feedbackButton = page.locator('footer #feedback').getByRole('button', { name: en.feedback.trigger });
-  await expect(feedbackButton).toBeInViewport();
 });
 
 test("the page quotes the live MCP envelope's localized source/ai_label text verbatim, per locale, on both locale routes", async ({

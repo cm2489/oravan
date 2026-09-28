@@ -11,7 +11,7 @@ The only *runtime* secrets are:
 | Secret | What it is |
 |---|---|
 | `ANTHROPIC_API_KEY` | The Anthropic API key. |
-| `GITHUB_FEEDBACK_TOKEN` | Issues-only fine-grained PAT for beta feedback intake. |
+| `GITHUB_FEEDBACK_TOKEN` | Issues-only fine-grained PAT for the beta feedback intake. **Unused since 2026-09-28:** the feedback option and `app/api/feedback` were removed (owner decision), and no code reads it any more. The change that removed them did not delete the secret anywhere; restoring the feature is a revert of that change, and it needs this secret again. |
 | `STRIPE_WEBHOOK_SECRET` | Webhook signature verification (S18). Unset everywhere until the owner arms billing; the route refuses with 503 without it. |
 | `UPSTASH_COUNTERS_REST_TOKEN` / `UPSTASH_CACHE_REST_TOKEN` / `UPSTASH_TENANCY_REST_TOKEN` | The Upstash REST tokens for three physically separate databases: short-lived rate-limit counters vs. content cache vs. durable tenant config (a reconstructable cache of Stripe's state). Never merged, never called "anonymized". |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob `oravan-blob`, private store — same-origin portrait mirror/proxy only, armed 2026-07-12. Also a nightly-sync Actions secret. |
