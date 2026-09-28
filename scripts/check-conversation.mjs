@@ -33,12 +33,20 @@
  * A MISSING file is not a failure: scripts/newsdesk.mjs is what first writes
  * it, and a gate that reddens CI for a file nobody has generated yet teaches
  * people to ignore the gate.
+ *
+ * AN EDIT TO data/media-bias.json IS NOT DAMAGE TO THIS FILE (2026-09-28). A
+ * newly rated domain sits in `unratedOutlets7d` until the newsdesk's next
+ * write moves it. The file's `_meta.bias_table` stamp says which table it was
+ * written against, so that case — and only that case — warns instead of
+ * failing (lib/conversation.mjs, biasTableFingerprint). An unrated domain
+ * counted toward corroboration fails whatever the stamp says.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import {
   CONVERSATION_PATH,
   CONVERSATION_SCHEMA,
   OUTLET_WINDOW_DAYS,
+  biasTableFingerprint,
   verifyConversation,
 } from '../lib/conversation.mjs';
 
@@ -116,6 +124,25 @@ if (process.argv.includes('--self-test')) {
       { _meta: meta, slugs: { 'hr-1-119': { outlets7d: [], unratedOutlets7d: [], mostViewed: { weeksOnList: 0, lastRank: 3, lastSeen: today } } } },
       bias,
     ],
+    // The bias-table stamp (2026-09-28). It may only ever turn ONE failure into
+    // a warning — a newly rated outlet still filed as unrated, in a file
+    // written against an earlier table — so each of these must still fail.
+    [
+      'a rated outlet filed as unrated under the very table the file was stamped with (a writer bug)',
+      { _meta: { ...meta, bias_table: biasTableFingerprint(bias) }, slugs: { 'hr-1-119': { outlets7d: [], unratedOutlets7d: [{ domain: 'npr.org', firstSeen: today, lastSeen: today, url: link('npr.org') }], mostViewed: null } } },
+      bias,
+    ],
+    [
+      'a rated outlet filed as unrated in a file with no table stamp',
+      { _meta: meta, slugs: { 'hr-1-119': { outlets7d: [], unratedOutlets7d: [{ domain: 'npr.org', firstSeen: today, lastSeen: today, url: link('npr.org') }], mostViewed: null } } },
+      bias,
+    ],
+    [
+      'an unrated domain counted toward corroboration, even though the table has moved since the file was written',
+      { _meta: { ...meta, bias_table: biasTableFingerprint({ 'foxnews.com': 'right' }) }, slugs: { 'hr-1-119': { outlets7d: [rated, { domain: 'example-blog.test', lean: 'right', firstSeen: today, lastSeen: today, url: link('example-blog.test') }], unratedOutlets7d: [], mostViewed: null } } },
+      bias,
+    ],
+    ['a bias-table stamp that is not one', { _meta: { ...meta, bias_table: 'moved' }, slugs: {} }, bias],
   ];
   let ok = true;
   for (const [name, data, biasTable] of cases) {
@@ -180,6 +207,20 @@ if (process.argv.includes('--self-test')) {
   };
   if (verifyConversation({ data: legacy, fileBytes: 100, bias }).failures.length > 0) {
     console.error('::error::check-conversation --self-test: a readable conversation/v1 file was REJECTED by the gate');
+    ok = false;
+  }
+  // The one case the stamp exists for: data/media-bias.json rated npr.org
+  // after this file was written (its stamp is the table without npr.org), so
+  // npr.org is still filed as unrated. The next newsdesk write moves it; until
+  // then it is a warning, or the pull request that adds a rating could never
+  // go green and the nightly would throw its work away over a stale hour.
+  const drifted = {
+    _meta: { ...meta, bias_table: biasTableFingerprint({ 'foxnews.com': 'right' }) },
+    slugs: { 'hr-1-119': { outlets7d: [rated], unratedOutlets7d: [{ domain: 'npr.org', firstSeen: today, lastSeen: today, url: link('npr.org') }], mostViewed: null } },
+  };
+  const driftResult = verifyConversation({ data: drifted, fileBytes: 100, bias });
+  if (driftResult.failures.length > 0 || !driftResult.warnings.some((w) => w.includes('npr.org') && w.includes('since this file was written'))) {
+    console.error('::error::check-conversation --self-test: a rating added after the file was written was failed (or not reported) instead of warned');
     ok = false;
   }
   if (!ok) process.exit(1);
