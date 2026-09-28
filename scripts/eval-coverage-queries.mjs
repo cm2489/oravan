@@ -24,9 +24,10 @@
  *   named    — named bills with no coverage today
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { parseKeptIndexes, queryFor, relevancePrompt } from './coverage-query.mjs';
+import { parseKeptIndexes, queryWithAddedNames, relevancePrompt } from './coverage-query.mjs';
+import { loadPressNames } from './press-names.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) { console.error('NEWS_API_KEY required'); process.exit(1); }
@@ -39,6 +40,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const coverage = JSON.parse(readFileSync('data/coverage.json', 'utf8'));
+// The B arm is production's query, added press names included (scripts/press-names.mjs).
+const pressNames = loadPressNames({ readJSON: (p) => JSON.parse(readFileSync(p, 'utf8')), exists: existsSync });
+for (const p of pressNames.problems) console.warn(`press-names: ${p} — the B arm runs without added names`);
 const slugOf = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 
 /* The query builder this PR replaces, verbatim, for the A arm. */
@@ -145,7 +149,7 @@ for (const b of sample) {
   const row = { slug, stratum: strata.get(slug), status: b.status };
   try {
     row.oldQuery = oldQueryFor(b);
-    row.newQuery = queryFor(b);
+    row.newQuery = queryWithAddedNames(b, pressNames.bySlug.get(slug));
     const oldArts = await fetchArticles(row.oldQuery, after);
     await sleep(1200);
     const newArts = await fetchArticles(row.newQuery, after);
