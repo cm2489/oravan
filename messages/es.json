@@ -141,6 +141,7 @@
     "dcOffice": "Oficina en Washington",
     "localOffices": "Oficinas locales",
     "website": "Sitio web oficial",
+    "seeVotes": "Ver cómo votó",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
     "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Algunos códigos postales válidos — como los de apartados postales o exclusivos de empresas — no corresponden a ningún distrito. Revisa los dígitos, prueba con el código postal de tu casa, o busca a tu representante directamente en house.gov.",
@@ -188,7 +189,13 @@
     "vacantMetaTitle": "{place} · Escaño vacante",
     "vacantMetaDescription": "Nadie ocupa este escaño de la Cámara por ahora. Los dos senadores del estado lo siguen representando.",
     "nextTitle": "Lo que avanza en el Congreso",
-    "nextSeeAll": "Ver todos los proyectos de ley"
+    "nextSeeAll": "Ver todos los proyectos de ley",
+    "votesHeading": "Cómo votó",
+    "votesNote": "Votaciones nominales sobre {count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, desde el {date}, con la más reciente primero.",
+    "votesAiNote": "Titulares y resúmenes traducidos por IA, verificados con el registro",
+    "votesTheirVote": "Su voto:",
+    "votesMoreOnBill": "{count, plural, one {Su otro voto sobre este proyecto} other {Sus otros # votos sobre este proyecto}}",
+    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",

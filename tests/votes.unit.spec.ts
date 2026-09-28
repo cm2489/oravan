@@ -16,8 +16,9 @@ import {
   sessionForYear,
   verifyVotes,
 } from '../lib/votes-core.mjs';
-import { memberPosition, votesForBill, votingMember } from '../lib/votes';
-import type { Legislator, Vacancy, VotesFile } from '../lib/types';
+import { memberPosition, memberVotesByBill, votesForBill, votingMember } from '../lib/votes';
+import { getBill } from '../lib/core';
+import type { Legislator, RollCall, Vacancy, VotesFile } from '../lib/types';
 
 /*
  * Roll-call votes (plan item C1a, the data half). Fixtures in
@@ -276,5 +277,74 @@ test.describe('lib/votes read helpers', () => {
     // Newest first.
     for (let i = 1; i < rolls.length; i++) expect(rolls[i - 1].date >= rolls[i].date).toBe(true);
     expect(votesForBill('hr-0-119')).toEqual([]);
+  });
+});
+
+/*
+ * THE MEMBER PAGE'S "HOW THEY VOTED" SELECTION (owner, UX inventory R04,
+ * 2026-09-28). Recomputed from the committed file at assert time, never a
+ * pinned count, so a nightly that adds roll calls cannot break this block —
+ * only a selection that drops, duplicates, re-words or mis-orders one can.
+ */
+test.describe('lib/votes memberVotesByBill', () => {
+  const file = JSON.parse(readFileSync(join(process.cwd(), 'data/votes.json'), 'utf8')) as VotesFile;
+  const listed = (id: string) => file.rollCalls.filter((r) => memberPosition(r, id) !== null);
+  const everyone = [...new Set(file.rollCalls.flatMap((r) => Object.values(r.votes).flat()))];
+  const house = everyone.find((id) => listed(id).some((r) => r.chamber === 'house'))!;
+  const senate = everyone.find((id) => listed(id).some((r) => r.chamber === 'senate'))!;
+
+  test('every roll call that lists the member appears once, with the position the record gives', () => {
+    for (const id of [house, senate]) {
+      const groups = memberVotesByBill(id);
+      const flat = groups.flatMap((g) => g.votes);
+      expect(flat.map((v) => v.rollCall.id).sort()).toEqual(listed(id).map((r) => r.id).sort());
+      for (const v of flat) expect(v.position).toBe(memberPosition(v.rollCall, id));
+      for (const g of groups) for (const v of g.votes) expect(v.rollCall.bill).toBe(g.bill);
+      expect(new Set(groups.map((g) => g.bill)).size).toBe(groups.length);
+    }
+  });
+
+  test('the whole roster: no member gains or loses a roll call', () => {
+    for (const id of everyone) {
+      expect(memberVotesByBill(id).reduce((n, g) => n + g.votes.length, 0), id).toBe(listed(id).length);
+    }
+  });
+
+  test('newest first — bills by the member’s newest vote, and each bill’s votes newest first', () => {
+    const before = (a: RollCall, b: RollCall) =>
+      a.date > b.date || (a.date === b.date && (a.chamber < b.chamber || (a.chamber === b.chamber && a.roll > b.roll)));
+    for (const id of everyone) {
+      const groups = memberVotesByBill(id);
+      for (const g of groups) {
+        for (let i = 1; i < g.votes.length; i++) expect(before(g.votes[i - 1].rollCall, g.votes[i].rollCall)).toBe(true);
+      }
+      for (let i = 1; i < groups.length; i++) {
+        expect(before(groups[i - 1].votes[0].rollCall, groups[i].votes[0].rollCall)).toBe(true);
+      }
+    }
+  });
+
+  test('"Not voting" is a recorded position and is kept, not dropped', () => {
+    const r = file.rollCalls.find((x) => x.votes.notVoting.length > 0);
+    test.skip(!r, 'no stored roll call lists a member as not voting');
+    const id = r!.votes.notVoting[0];
+    const hit = memberVotesByBill(id)
+      .flatMap((g) => g.votes)
+      .find((v) => v.rollCall.id === r!.id);
+    expect(hit?.position).toBe('notVoting');
+  });
+
+  test('a member no stored roll call lists gets an empty list, not a guess', () => {
+    expect(memberVotesByBill('Z999999')).toEqual([]);
+    const legs = JSON.parse(readFileSync(join(process.cwd(), 'data/legislators.json'), 'utf8')) as Legislator[];
+    for (const l of legs.filter((x) => !everyone.includes(x.bioguide))) {
+      expect(memberVotesByBill(l.bioguide), l.bioguide).toEqual([]);
+    }
+  });
+
+  test('every voted bill is a corpus bill the row can show', () => {
+    for (const id of [house, senate]) {
+      for (const g of memberVotesByBill(id)) expect(getBill(g.bill), g.bill).toBeTruthy();
+    }
   });
 });

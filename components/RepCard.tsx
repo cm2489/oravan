@@ -157,16 +157,30 @@ export function RepCard({ rep }: { rep: Legislator }) {
               {rep.name}
             </Link>
           </h3>
-          {rep.url && (
-            <a
-              href={rep.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative mt-1 inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
+          {/* The website, then the member page's "How they voted" section.
+              A link only: the card carries no vote data, so it is the same
+              link on every card, and the member page always answers it (a
+              member the record lists on no roll call gets a plain sentence
+              there, never an empty anchor). */}
+          <p className="mt-1 flex flex-wrap gap-x-4">
+            {rep.url && (
+              <a
+                href={rep.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
+              >
+                {t('website')}
+              </a>
+            )}
+            <Link
+              href={`/reps/${rep.bioguide}#votes`}
+              className="relative inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
+              data-rep-votes-link=""
             >
-              {t('website')}
-            </a>
-          )}
+              {t('seeVotes')}
+            </Link>
+          </p>
         </div>
       </div>
 

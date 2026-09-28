@@ -13,18 +13,72 @@ import type { RollCall, VotePosition, VotesFile, VotingMember } from './types';
 const VOTES = votesJson as unknown as VotesFile;
 const POSITIONS: VotePosition[] = ['yea', 'nay', 'present', 'notVoting'];
 
+// Newest first. Roll numbers only order votes WITHIN a chamber, so a same-day
+// House and Senate pair is split by chamber before roll number.
+function newestFirst(a: RollCall, b: RollCall): number {
+  return b.date.localeCompare(a.date) || a.chamber.localeCompare(b.chamber) || b.roll - a.roll;
+}
+
 const byBill = new Map<string, RollCall[]>();
 for (const r of VOTES.rollCalls) {
   const list = byBill.get(r.bill);
   if (list) list.push(r);
   else byBill.set(r.bill, [r]);
 }
-// Newest first. Roll numbers only order votes WITHIN a chamber, so a same-day
-// House and Senate pair is split by chamber before roll number.
-for (const list of byBill.values()) {
-  list.sort((a, b) => b.date.localeCompare(a.date) || a.chamber.localeCompare(b.chamber) || b.roll - a.roll);
-}
+for (const list of byBill.values()) list.sort(newestFirst);
 const members = new Map(VOTES.members.map((m) => [m.id, m]));
+
+/** One position one member holds on one roll call, as the record lists it. */
+export interface MemberVote {
+  rollCall: RollCall;
+  position: VotePosition;
+}
+
+/** A member's stored votes on ONE bill, newest first. */
+export interface MemberBillVotes {
+  /** Corpus bill id (`hr-3633-119`), the roll calls' own `bill` field. */
+  bill: string;
+  votes: MemberVote[];
+}
+
+// Built on first use, not at import: the bill page and /today read this module
+// and never ask the member question.
+let byMember: Map<string, MemberVote[]> | null = null;
+function memberIndex(): Map<string, MemberVote[]> {
+  if (byMember) return byMember;
+  const index = new Map<string, MemberVote[]>();
+  for (const rollCall of VOTES.rollCalls) {
+    for (const position of POSITIONS) {
+      for (const id of rollCall.votes[position]) {
+        const list = index.get(id);
+        if (list) list.push({ rollCall, position });
+        else index.set(id, [{ rollCall, position }]);
+      }
+    }
+  }
+  for (const list of index.values()) list.sort((a, b) => newestFirst(a.rollCall, b.rollCall));
+  byMember = index;
+  return index;
+}
+
+/**
+ * Every stored roll call that lists this member — Yea, Nay, Present or Not
+ * voting, exactly the record's four words — grouped by bill. Bills are ordered
+ * by the member's newest vote on each; inside a bill, newest first. Empty when
+ * the record lists the member on no stored roll call (a delegate, a member
+ * sworn in after the last one), which is the true answer, not a gap to fill.
+ */
+export function memberVotesByBill(bioguide: string): MemberBillVotes[] {
+  const groups = new Map<string, MemberVote[]>();
+  // The index is already newest first, so each bill's first insertion is the
+  // member's newest vote on it and Map order is the bill order.
+  for (const vote of memberIndex().get(bioguide) ?? []) {
+    const list = groups.get(vote.rollCall.bill);
+    if (list) list.push(vote);
+    else groups.set(vote.rollCall.bill, [vote]);
+  }
+  return [...groups].map(([bill, votes]) => ({ bill, votes }));
+}
 
 /** Every stored roll call on a bill, newest first. Empty when there are none,
  *  which for a bill that never reached a recorded vote is the true answer. */
