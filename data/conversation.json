@@ -1,23 +1,23 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-28T18:44:57.363Z",
+    "fetched_at": "2026-09-28T20:23:09.490Z",
     "window_days": 7,
     "links_since": "2026-09-26",
-    "bias_table": "77:9c49f821",
+    "bias_table": "97:91cd1536",
     "source_status": {
       "press": {
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-28T18:44:57.363Z"
+        "checked_at": "2026-09-28T20:23:09.490Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-28T18:44:57.363Z"
+        "checked_at": "2026-09-28T20:23:09.490Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,18 @@
     }
   },
   "slugs": {
+    "hjres-1-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kolotv.com",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-28",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOOWduaWRkQXUwUnBDdFNSRWVRLV81ZFJzOHkwTDBxcFdlRGtvcEZ2Q0VXY0s5eHJmUVdZU1VfcnZkSGF2Mk5UbzBJTXQzREZ1My1udUpsRWg4clQtM3MyUGZGZW5BM1F5dmEtQnhCYmpQdkZFaDMtdWFMRXRVZWQ2QUlSNVVVUkg0NjZKQ2JVNTYzMkdXQ1NrbGFkcXlnaDFSVVdiZ3BhcFp1ZEkzX1lKemJidzY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -402,17 +414,19 @@
       "mostViewed": null
     },
     "hr-4405-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "deseret.com",
+          "lean": "center",
+          "firstSeen": "2026-09-22",
+          "lastSeen": "2026-09-22"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "desmoinesregister.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
-        },
-        {
-          "domain": "deseret.com",
-          "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-22"
         },
         {
           "domain": "wonderwall.com",
@@ -1052,6 +1066,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "azat.tv",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-28",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE15aWgzQmR0aGk3cmxlcm52Y0hiTjNyU2wzeDdYQ1RHUDFaTnFBNXNZa3NSbkNRMlpReVh6b0NLZ0N1aWtJVHJfZUFfRDJjS2N1LVZBZVVhZnBzRmdXdE5qR2ZWRHY4WG9zZTZCYzRlUks0aHJlWlpPWg?oc=5"
+        },
+        {
           "domain": "ndtv.com",
           "firstSeen": "2026-09-28",
           "lastSeen": "2026-09-28",
@@ -1343,14 +1363,15 @@
       "mostViewed": null
     },
     "s-2667-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+      "outlets7d": [
         {
           "domain": "jpost.com",
+          "lean": "center",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
         }
       ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-2745-119": {
@@ -1517,13 +1538,15 @@
       "mostViewed": null
     },
     "s-4271-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+      "outlets7d": [
         {
           "domain": "ksl.com",
+          "lean": "center",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
-        },
+        }
+      ],
+      "unratedOutlets7d": [
         {
           "domain": "goiam.org",
           "firstSeen": "2026-09-21",
@@ -1711,6 +1734,13 @@
           "url": "https://www.npr.org/2026/09/27/nx-s1-5978973/as-former-athletes-some-senators-have-extra-say-on-the-college-sports-reform-bill"
         },
         {
+          "domain": "deseret.com",
+          "lean": "center",
+          "firstSeen": "2026-09-26",
+          "lastSeen": "2026-09-26",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQXzhKOG04aklPamo0Uks4czJTTWNuX2dRS0hQWEx0SnpFYm5rT09DLWluekw1ZWowVThMSDM0eFJVSDMwMUZBNmRPQVQxNVVBdGJPSFl5N1h2X3JLRjctRGh0NkVqTjlXOUE3UXR5WkpQNXBjSUc1U0Jka2dadHh6d0w1Nktvc2FYVnJVTTI1b08xbnl4Y2tCVFoxMGQ2a0xSZXBoUkNvWkxyLUszTW9JaWlVdGpCZEIwV3FJdA?oc=5"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-09-24",
@@ -1790,12 +1820,6 @@
           "firstSeen": "2026-09-26",
           "lastSeen": "2026-09-26",
           "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxNUTZ1ZUpMLUZVY3hMQzNiR1pZaEMxamZWcGdSXzFYeFFWeEtMU3kwcjBVODVIYTl4TFN5V3JndGkyZ3M5UTJMSUljWUZLdjU1cElPUWFFSGxOMFAzX19xVzhTTGgyODdWYzVONzBQMmwxWVhzeWJpdDByTWxZWE5qVnE1eG5LZUFuOGgxcGRYN3JsQzJhaFJyNEVfNHJ3TUVHY3ZWTkc5NU5qNUVXb1Q1N2dOOGhYeU5aVXVlbjR5b2wzQdIBxwFBVV95cUxObFZqWDlheDdoTmgxd1dvNVFmMTc4X1VETEctQ1NGYnV0Vl9PbGo4RTB0eEU4OU9NdmcxQXpkV0dhbU1FTHh5Qms2Uzg5QnY2LXFjYUtqcW9RMU5teUZGZEN5TEZFRUNxSjI4VEwta1RhV2diWFItQTZRbnBRSXBQRDR3UTVvSkhOSWhXbU9Ja2N5WnZ2bXVGQmdGcGFweWNzZ1ZMM3ZaSTdvc0tieUNYR1BrcjZDZ3RMRHZ5cGp0QjlFekt3UUgw?oc=5"
-        },
-        {
-          "domain": "deseret.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQXzhKOG04aklPamo0Uks4czJTTWNuX2dRS0hQWEx0SnpFYm5rT09DLWluekw1ZWowVThMSDM0eFJVSDMwMUZBNmRPQVQxNVVBdGJPSFl5N1h2X3JLRjctRGh0NkVqTjlXOUE3UXR5WkpQNXBjSUc1U0Jka2dadHh6d0w1Nktvc2FYVnJVTTI1b08xbnl4Y2tCVFoxMGQ2a0xSZXBoUkNvWkxyLUszTW9JaWlVdGpCZEIwV3FJdA?oc=5"
         },
         {
           "domain": "news10.com",
