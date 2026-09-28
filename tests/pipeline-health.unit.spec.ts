@@ -61,6 +61,11 @@ const CREDIT = fixture('pipeline-health-credit-outage.log');
 const NEWSDESK = fixture('pipeline-health-newsdesk.log');
 const CI_FAILURE = fixture('pipeline-health-ci-failure.log');
 const PREGEN_ABORT = fixture('pipeline-health-pregen-abort.log');
+// Pregen after #288, cut from the 2026-09-26 scheduled nightly (run
+// 36260101319): the run collected a batch an earlier night parked and then
+// ran its own, so it prints the `collected parked batch` line and the `done`
+// line with the same numbers in the same shape.
+const PREGEN_PARKED = fixture('pipeline-health-pregen-parked.log');
 // The re-decode pass, cut from the 2026-09-26 scheduled nightly (run
 // 36260101319) — both of the lines it prints with the same prefix, so the
 // parser has to tell the outcome from the plan.
@@ -248,17 +253,63 @@ test.describe('parsePregen', () => {
     // The cost range is the one number in the spend estimate that is not a
     // guess — the script computed it from its real generation count. Losing
     // this match would silently downgrade the estimate to guesswork.
+    //
+    // This fixture is the 2026-09-17 nightly, which predates #288 and so
+    // carries the OLD done line (`60 cached, 0 failed`). Logs that old are
+    // still fed to this parser, so it keeps reading them — with no generated
+    // or not-stored number, because that night's line did not print one.
     expect(parsePregen(NIGHTLY)).toEqual({
       topBills: 10,
       combos: 60,
       alreadyCached: 0,
       toGenerate: 60,
+      generated: null,
       cached: 60,
+      notStored: null,
       failed: 0,
       costLow: 0.084,
       costHigh: 0.126,
       abortReason: null,
     });
+  });
+
+  test('reads the done line #288 rewrote, and takes it over the parked-batch line', () => {
+    // THE REGRESSION THIS EXISTS FOR. #288 (2026-09-24) split pregen's single
+    // "cached" number into what was generated and what was then stored
+    // durably. The parser kept the old anchor and this file kept only the old
+    // fixture, so from that night on a PRESENT done line read as an ABSENT
+    // one: the report printed "not found written · not found failed" on four
+    // consecutive healthy nights, which is the one thing this file forbids.
+    //
+    // The fixture is the 2026-09-26 nightly, the first night that printed both
+    // shapes: a `collected parked batch` line (18 generated) BEFORE the `done`
+    // line (42 generated). The night's outcome is the done line; a parser
+    // anchored on `^pregen:` alone would read the wrong one.
+    expect(parsePregen(PREGEN_PARKED)).toEqual({
+      topBills: 10,
+      combos: 60,
+      alreadyCached: 18,
+      toGenerate: 42,
+      generated: 42,
+      cached: 42,
+      notStored: 0,
+      failed: 0,
+      costLow: 0.0588,
+      costHigh: 0.0882,
+      abortReason: null,
+    });
+  });
+
+  test('a night that stored less than it generated does not read as healthy', () => {
+    // `cached` is what the report prints as "written", so it must read STORED
+    // DURABLY and never GENERATED: a script paid for and then lost on its
+    // cache write was not written, and a row that said 60 here would hide it.
+    const pregen = parsePregen(
+      'pregen: done — 60 generated, 58 stored durably, 2 not stored, 0 failed, batch msgbatch_X'
+    );
+    expect(pregen.generated).toBe(60);
+    expect(pregen.cached).toBe(58);
+    expect(pregen.notStored).toBe(2);
   });
 
   test('every field independently null when pregen did not run', () => {
@@ -267,7 +318,9 @@ test.describe('parsePregen', () => {
       combos: null,
       alreadyCached: null,
       toGenerate: null,
+      generated: null,
       cached: null,
+      notStored: null,
       failed: null,
       costLow: null,
       costHigh: null,
