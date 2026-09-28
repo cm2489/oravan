@@ -46,9 +46,11 @@ import {
 import { decisionState } from '../docket.mjs';
 /* The conversation lamp, for `whats_moving`'s optional evidence facet only. It
  * never touches the POOL or its order — that is the docket ladder's, and this
- * tool's whole contract is that Congress's own record decides what is moving. */
+ * tool's whole contract is that Congress's own record decides what is moving.
+ * The facet carries congress.gov's most-viewed listing and nothing read from
+ * the AllSides table (see lib/core/mcp-conversation.ts). */
 import { conversationBandPool } from '../conversation';
-import type { Lean } from '../types';
+import { conversationFacet, type BillConversationOut } from './mcp-conversation';
 import type { Bill, BillStatus, Legislator } from '../types';
 import {
   billSlug,
@@ -366,47 +368,6 @@ export interface BillSignalOut {
 }
 
 /**
- * THE CONVERSATION FACET — evidence, not a ranking, and the agent decides what
- * to do with it.
- *
- * Set by `whats_moving` only, and ONLY for a bill whose stored evidence reaches
- * C1 or C2 (lib/conversation.mjs): two or more RATED outlets inside the 7-day
- * window, or congress.gov's own most-viewed list with a second fact beside it.
- * A LONE OUTLET NEVER PRODUCES A FACET: a bill one newsroom wrote about is c0,
- * so it carries no field at all rather than a field saying `outlets_7d: 1` —
- * the single-outlet path does not exist on any surface, including this one
- * (critic B-1). Where the government's own most-viewed list is what admitted
- * the bill, the one rated article beside it IS printed here as `outlets_7d: 1`
- * — precisely stated 2026-08-12, because the previous wording of this
- * paragraph read as though the number 1 could never appear. It can, in this
- * one case, and it is evidence rather than a claim: the news band's caption
- * refuses to say it (a sentence of ours counting one outlet is a claim about
- * the press), while the facet characterizes nothing and cannot promote
- * anything — 1 is the floor, and the list's order is the ladder's.
- *
- * ONE DELIBERATE DIFFERENCE FROM THE NEWS BAND: coverage that is corroborated
- * but ONE-SIDED (two rated outlets leaning the same way) is dropped from the
- * band and reported here. The band drops it because a caption would have to
- * characterize it in our own words, and "across the spectrum" would be false;
- * the facet characterizes nothing — it prints `lean_spread` itself, so an agent
- * reading `["right"]` has the same fact the band refused to summarize.
- *
- * Nothing here reorders `bills`. The list is the docket ladder's act-now pool
- * in ladder order, exactly as it was before this field existed.
- */
-export interface BillConversationOut {
-  /** Distinct outlets carrying an AllSides rating that published inside the
-   *  7-day window. Unrated domains are counted by nothing (critic B-3). */
-  outlets_7d: number;
-  /** Those outlets' leans, deduped and sorted. */
-  lean_spread: Lean[];
-  /** Rank on congress.gov's most recent weekly most-viewed list, or null. */
-  most_viewed_rank: number | null;
-  /** Consecutive weeks on that list; 0 when the bill is not on it. */
-  most_viewed_weeks: number;
-}
-
-/**
  * IS A DECISION STILL AHEAD (2026-09-27, the 2026-09-27 audit SY-03) — see
  * lib/docket.mjs `decisionState` for the three values and what each is read
  * from. ADDITIVE: `status` and `status_label` are unchanged for every existing
@@ -438,8 +399,12 @@ export interface BillTeaserOut {
    *  moving and why". `search_bills` and `get_representative` return teasers
    *  that answer a different question and do not carry it. */
   signal?: BillSignalOut;
-  /** Set by `whats_moving` only, and only when the bill has corroborated
-   *  conversation evidence. Absent is the normal case. */
+  /** Set by `whats_moving` only, and only for a bill on congress.gov's current
+   *  most-viewed list at least two weeks running (lib/core/mcp-conversation.ts).
+   *  Absent is the normal case. It is evidence, never a ranking: nothing here
+   *  reorders `bills`. Until 2026-09-28 it also carried `outlets_7d` and
+   *  `lean_spread`, both read from the AllSides table; the owner removed them
+   *  that day ("Remove allsides leans from MCP"). */
   conversation?: BillConversationOut;
 }
 
@@ -774,26 +739,16 @@ export function whatsMoving(params: WhatsMovingParams, locale: Locale) {
    * that sentence, its date and its URL.
    *
    * `conversation` is a SECOND, independent fact about the same bill and it
-   * arrives as evidence only: how many rated outlets covered it this week and
-   * whether congress.gov's readers are on it. It is computed once per call (the
-   * pool is a few dozen entries at most) and joined by slug; a bill with no
-   * corroborated evidence simply has no field.
+   * arrives as evidence only: whether congress.gov's own readers have kept it
+   * on their most-viewed list. It is computed once per call (the pool is a few
+   * dozen entries at most) and joined by slug; a bill the list does not carry
+   * simply has no field. Nothing in it is read from the AllSides table.
    */
-  const conversationBySlug = new Map(conversationBandPool().map((item) => [item.slug, item]));
+  const conversationBySlug = new Map(conversationBandPool().map((item) => [item.slug, item.evidence]));
   const limited = filtered.slice(0, limit).map((b) => {
     const teaser = shapeBillTeaser(b, locale);
-    const conversation = conversationBySlug.get(teaser.slug);
-    const withEvidence: BillTeaserOut = conversation
-      ? {
-          ...teaser,
-          conversation: {
-            outlets_7d: conversation.evidence.ratedOutlets,
-            lean_spread: conversation.evidence.leanSpread,
-            most_viewed_rank: conversation.evidence.mostViewed?.lastRank ?? null,
-            most_viewed_weeks: conversation.evidence.weeksOnList,
-          },
-        }
-      : teaser;
+    const conversation = conversationFacet(conversationBySlug.get(teaser.slug));
+    const withEvidence: BillTeaserOut = conversation ? { ...teaser, conversation } : teaser;
     const signal = docketSignalFor(teaser.slug);
     if (!signal) return withEvidence;
     return {

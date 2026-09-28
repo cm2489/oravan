@@ -5,6 +5,8 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { compareLastActionDesc, foldSearchText } from '../lib/bill-search.mjs';
 import { billSlug, getAllBills, localizeBill } from '../lib/core/bills';
+import { conversationBandPool } from '../lib/conversation';
+import { conversationFacet } from '../lib/core/mcp-conversation';
 import { formatCitation } from '../lib/format';
 import { SITE_ORIGIN } from '../lib/site';
 import type { Bill } from '../lib/types';
@@ -31,7 +33,8 @@ import type { Bill } from '../lib/types';
  * a secret-bearing environment by accident.
  *
  * Runtime stays modest: a handful of focused tests (the handshake, the tool
- * list, one get_bill, and the search_bills rule since SY-21) on one shared connection
+ * list, one get_bill, the search_bills rule since SY-21, and one sweep of
+ * every tool for AllSides fields since 2026-09-28) on one shared connection
  * (`test.describe.serial` + a single spawned child, closed in
  * `afterAll`) rather than one spawn per test - startup (npx resolving tsx,
  * tsx transpiling the whole lib/core import graph) is the expensive part,
@@ -95,6 +98,43 @@ test.describe.serial('MCP stdio entry (scripts/mcp-stdio.mjs)', () => {
     expect(meta.canonical_url).toBe(`${SITE_ORIGIN}/bills/hr-2701-119`);
     expect(meta.ai_label).toBeTruthy();
     expect(meta.license).toMatch(/CC BY/);
+  });
+
+  /*
+   * NOTHING FROM ALLSIDES REACHES AN AGENT (owner decision 2026-09-28: "Remove
+   * allsides leans from MCP"). /citations says AllSides' outlet-lean ratings
+   * "are excluded from the MCP server" (citations.licenseCoverage). This walks
+   * every key of every tool's answer, through the real entry, and fails on any
+   * lean or outlet field; then it checks that whats_moving's `conversation`
+   * facet is exactly the most-viewed listing lib/core/mcp-conversation.ts
+   * computes. That rule itself is pinned on fixtures in
+   * tests/mcp-conversation.unit.spec.ts.
+   */
+  test('no tool returns an AllSides lean or an outlet count, and the conversation facet is the listing only', async () => {
+    const keyPaths = (value: unknown, path = ''): string[] =>
+      Array.isArray(value)
+        ? value.flatMap((v, i) => keyPaths(v, `${path}[${i}]`))
+        : value && typeof value === 'object'
+          ? Object.entries(value).flatMap(([k, v]) => [`${path}.${k}`, ...keyPaths(v, `${path}.${k}`)])
+          : [];
+    const calls: Array<[string, Record<string, unknown>]> = [
+      ['whats_moving', { days: 90, limit: 50, locale: 'en' }],
+      ['whats_moving', { days: 90, limit: 50, locale: 'es' }],
+      ['search_bills', { limit: 50 }],
+      ['get_bill', { slug: 'hr-2701-119' }],
+      ['get_representative', { bioguide: 'W000797' }],
+      ['lookup_representatives', { zip: '10001' }],
+    ];
+    const pool = new Map(conversationBandPool().map((item) => [item.slug, item.evidence]));
+    for (const [name, args] of calls) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError, name).toBeFalsy();
+      const leaked = keyPaths(result.structuredContent).filter((p) => /lean|outlet|allsides|bias/i.test(p));
+      expect(leaked, `${name} ${JSON.stringify(args)}`).toEqual([]);
+      if (name !== 'whats_moving') continue;
+      const bills = (result.structuredContent as { bills: Array<{ slug: string; conversation?: unknown }> }).bills;
+      for (const b of bills) expect(b.conversation, b.slug).toEqual(conversationFacet(pool.get(b.slug)));
+    }
   });
 
   /*
