@@ -890,6 +890,31 @@ export const OUTLET_DISPLAY_NAMES = {
   'washingtonexaminer.com': 'Washington Examiner',
   'washingtontimes.com': 'The Washington Times',
   'wnd.com': 'WND',
+  // Outlets AllSides rates that data/media-bias.json did not carry yet
+  // (checked on allsides.com, 2026-09-28). Named here first so the table can
+  // gain their rows without this pin going red; until a row lands, an entry
+  // here names nothing, because the outlet floor admits rated outlets only.
+  // Each name is the one AllSides' own rating page gives the outlet.
+  'c-span.org': 'C-SPAN',
+  'defenseone.com': 'Defense One',
+  'defensenews.com': 'Defense News',
+  'deseret.com': 'Deseret News',
+  'insidehighered.com': 'Inside Higher Ed',
+  'joemygod.com': 'JoeMyGod',
+  'jpost.com': 'The Jerusalem Post',
+  'justsecurity.org': 'Just Security',
+  'ksl.com': 'KSL',
+  'manilatimes.net': 'The Manila Times',
+  'military.com': 'Military.com',
+  'militarytimes.com': 'Military Times',
+  'redstate.com': 'RedState',
+  'semafor.com': 'Semafor',
+  'stripes.com': 'Stars and Stripes',
+  'thegatewaypundit.com': 'The Gateway Pundit',
+  'theverge.com': 'The Verge',
+  'upi.com': 'United Press International',
+  'westernjournal.com': 'The Western Journal',
+  'zerohedge.com': 'ZeroHedge',
 };
 
 /** Rated domains deliberately left on the fallback name — see the table's

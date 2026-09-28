@@ -34,12 +34,31 @@ test.describe('rated-only by default', () => {
   });
 
   test('the live unrated examples from Big Question vehicle pages are refused', () => {
-    // 2026-09-25 corpus: s-4784, sjres-172 and s-3172 respectively.
-    for (const d of ['thegatewaypundit.com', 'naturalnews.com', 'sana.sy']) {
+    // 2026-09-25 corpus: sjres-172 and s-3172. Neither has an AllSides rating
+    // page (checked 2026-09-28).
+    for (const d of ['naturalnews.com', 'sana.sy']) {
       expect(policy.admits(d), d).toBe(false);
       expect(policy.isRated(d), d).toBe(false);
       expect(policy.leanOf(d), d).toBeNull();
     }
+  });
+
+  test('the floor is the table: an outlet AllSides rates is admitted exactly when data/media-bias.json carries its row', () => {
+    // thegatewaypundit.com (s-4784) was the third live example above until
+    // its AllSides rating — Right, on allsides.com 2026-09-28 — turned out to
+    // be missing from the table. The floor's rule is "AllSides-rated", one
+    // criterion for every outlet, so the row decides; nothing here keeps a
+    // rated outlet out by name. Driven with explicit tables so this holds
+    // whether or not the row has landed.
+    const d = 'thegatewaypundit.com';
+    const withoutRow = Object.fromEntries(Object.entries(RATINGS).filter(([k]) => k !== d));
+    const without = pressOutletPolicy({ ratings: withoutRow });
+    expect(without.admits(d)).toBe(false);
+    expect(without.leanOf(d)).toBeNull();
+    const withRow = pressOutletPolicy({ ratings: { ...withoutRow, [d]: 'right' } });
+    expect(withRow.admits(d)).toBe(true);
+    expect(withRow.isRated(d)).toBe(true);
+    expect(withRow.leanOf(`https://www.${d}/2026/09/x`)).toBe('right');
   });
 
   test('empty, missing and junk sources are refused, never admitted by accident', () => {
@@ -86,7 +105,7 @@ test.describe('the allowlist hook: dated entries, judged by the day', () => {
     expect(policy.leanOf('rollcall.com')).toBeNull();
     expect(policy.allowlistSize).toBe(1);
     // It does not widen anything else.
-    expect(policy.admits('thegatewaypundit.com')).toBe(false);
+    expect(policy.admits('naturalnews.com')).toBe(false);
   });
 
   test('an entry admits from approved_on through trial_ends — both edges in, the day either side out', () => {

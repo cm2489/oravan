@@ -134,11 +134,11 @@ const baseScenario = {
       sort: 'published_at',
       articles: [
         art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)),
-        art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2)),
+        art('Fringe take KEEP', 'fringe-blog.example', daysAgo(2)),
         art('Unrelated war story', 'nbcnews.com', daysAgo(3)),
       ],
     },
-    { match: 'Iran Powers Resolution', sort: null, articles: [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2))] },
+    { match: 'Iran Powers Resolution', sort: null, articles: [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'fringe-blog.example', daysAgo(2))] },
     { match: 'Iran Powers Resolution', sort: 'relevance_score', articles: [art('Spring hearing KEEP', 'reuters.com', daysAgo(150))] },
     { match: 'Stopgap Funding Act', sort: 'published_at', articles: [art('Shutdown deadline KEEP', 'apnews.com', daysAgo(2))] },
     { match: 'Protect College Sports Act', sort: 'published_at', articles: [art('Cloture KEEP', 'nytimes.com', daysAgo(1)), art('Floor fight KEEP', 'foxnews.com', daysAgo(2))] },
@@ -455,7 +455,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(all.length).toBeGreaterThan(5);
     for (const a of all) expect(typeof a.rated, String(a.url)).toBe('boolean');
     const bySource = (s: string) => all.find((a) => a.source === s)!;
-    expect(bySource('thegatewaypundit.com').rated).toBe(false); // stored, flagged — the page decides
+    expect(bySource('fringe-blog.example').rated).toBe(false); // stored, flagged — the page decides
     expect(bySource('cbsnews.com').rated).toBe(true);
     expect(bySource('politico.com').rated).toBe(true); // carried-forward rows are stamped too
   });

@@ -836,16 +836,21 @@ test.describe('press clusters', () => {
   });
 
   test('unrated outlets on a mixed day are neither counted, named nor linked', () => {
+    // naturalnews.com and sana.sy: no AllSides rating page (checked
+    // 2026-09-28). This used thegatewaypundit.com until AllSides' own rating
+    // of it (Right) was found missing from data/media-bias.json; an outlet
+    // AllSides rates is not an unrated example.
+    for (const d of ['naturalnews.com', 'sana.sy']) expect(LEANS[d], d).toBeUndefined();
     const c = build('2026-07-24', [
       { source: 'foxnews.com', url: 'https://www.foxnews.com/a', publishedAt: '2026-07-24' },
-      { source: 'thegatewaypundit.com', url: 'https://www.thegatewaypundit.com/b', publishedAt: '2026-07-24' },
+      { source: 'naturalnews.com', url: 'https://www.naturalnews.com/b', publishedAt: '2026-07-24' },
       { source: 'cnn.com', url: 'https://www.cnn.com/c', publishedAt: '2026-07-24' },
       { source: 'sana.sy', url: 'https://sana.sy/d', publishedAt: '2026-07-24' },
     ])!;
     expect(c.source.outlets).toEqual(['cnn.com', 'foxnews.com']);
     expect(c.source.outlet_names).toEqual(['CNN', 'Fox News']);
     expect(c.source.refs).toEqual(['https://www.cnn.com/c', 'https://www.foxnews.com/a']);
-    expect(JSON.stringify(c)).not.toMatch(/gatewaypundit|sana\.sy/);
+    expect(JSON.stringify(c)).not.toMatch(/naturalnews|sana\.sy/);
   });
 
   test('one rated outlet plus unrated ones is ONE admissible outlet — refused', () => {
