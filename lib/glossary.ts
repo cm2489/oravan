@@ -1,103 +1,96 @@
 /*
- * THE PROCEDURAL GLOSSARY — the registry, and nothing else (issue #181).
+ * THE GLOSSARY REGISTRY — ids, sections, sources, and the URL math. No JSX,
+ * no messages (issue #181; expanded 2026-09-28, UX inventory C05/G13).
  *
  * Congress runs on a vocabulary that nothing on the page explains: a bill is
  * "placed on the Senate Legislative Calendar under General Orders", a
  * nomination is "reported by committee", a floor fight is a cloture motion on
- * a motion to proceed. Until this file existed, every occurrence of one of
- * those needed an ad-hoc inline gloss written into the surrounding sentence,
- * or it shipped as jargon (the `annual-defense-policy` summary carries such a
- * gloss today, which is what opened the issue).
+ * a motion to proceed. This module is what a server page, the in-place
+ * popover, the /glossary page and the tests all agree on.
  *
- * WHAT LIVES HERE AND WHAT DOES NOT. This module holds the ID list and the URL
- * math — pure data, no JSX, no messages — so a server page, a client popover
- * and a test can all agree on the same twelve ids without any of them
- * importing the others' concerns. The PROSE lives in messages/en.json +
- * messages/es.json under `glossary.terms.<id>`, exactly like every other
- * user-facing string (CLAUDE.md's bilingual hard rule), and is pinned in both
- * languages by tests/glossary.unit.spec.ts.
+ * THE DATA lives in lib/glossary-terms.ts (one row per term: id, section,
+ * official source, auto-marking phrases). THE PROSE lives in messages/en.json
+ * + messages/es.json under `glossary.terms.<id>`, like every other
+ * user-facing string (CLAUDE.md rule 5).
  *
  * THE ID IS THE ANCHOR. `#cloture` is a URL someone can paste into a message,
- * and the issue names that form specifically, so the id doubles as the page's
- * `<section id>` and as the fragment `glossaryHref` builds. That makes an id a
- * PUBLIC, PERMANENT string: renaming one breaks every link anybody ever sent.
+ * so the id doubles as the page's `<section id>`. That makes an id a PUBLIC,
+ * PERMANENT string: renaming one breaks every link anybody ever sent.
  * tests/glossary.unit.spec.ts pins the exact list for that reason — a rename
- * is a decision, not a refactor.
+ * is a decision, not a refactor, and new terms are appended.
  *
- * WHAT AN ENTRY MAY SAY (issue #181's constraints, verbatim): 2–4 sentences of
- * plain-words MECHANICS, never stakes, never who-wins framing, no dates, no
- * predictions, and no example that implies a vote date. The calendar entries
- * carry that last one explicitly — being on a calendar schedules nothing, and
- * DESIGN.md's open printed-date ruling is the reason a glossary entry is the
- * wrong place to imply otherwise.
+ * WHAT AN ENTRY MAY SAY (issue #181's constraints, kept for the expansion):
+ * 2–4 sentences of plain-words MECHANICS, never stakes, never who-wins
+ * framing, no dates, no predictions, and no example that implies a vote date.
+ * The calendar entries carry that last one explicitly — being on a calendar
+ * schedules nothing. One entry names months, and only because its mechanic IS
+ * a fixed calendar span: `fiscal-year` (October 1 to September 30). That is
+ * the one exemption the copy test allows.
  */
+import { GLOSSARY_ENTRIES, type GlossaryCategory } from './glossary-terms';
+
+export { GLOSSARY_ENTRIES, type GlossaryCategory };
+
+export type GlossaryTermId = (typeof GLOSSARY_ENTRIES)[number]['id'];
+export type GlossaryEntry = (typeof GLOSSARY_ENTRIES)[number];
 
 /**
- * The first batch, in the order the page prints them: the Senate's debate
- * machinery, then the calendars, then the committee and drafting terms, then
- * the two special procedures. Ordered by how a reader meets them, not
- * alphabetically — alphabetical would open on "amendment in the nature of a
- * substitute", which is the least likely thing anyone arrived asking about.
- *
- * `germaneness` is in the issue's list under "as they come up" and is NOT in
- * this batch — see the PR body for why it was left for the next one.
- *
- * `pro-forma-session` was added 2026-08-15 (owner ruling D1) and APPENDED
- * rather than slotted in beside the calendars, for the reason this list is
- * pinned at all: the entries above are anchors people can already have sent
- * each other, and reordering them is a decision with no upside. It is also
- * genuinely the last one a reader meets — the term appears on a bill page only
- * when the loud floor band has stood down, and on the homepage only on a week
- * when both chambers are gavelling in and straight back out.
+ * Every id, in registry order: the first twelve exactly as they shipped
+ * (anchors people may already have sent), then the 2026-09-28 expansion.
  */
-export const GLOSSARY_TERM_IDS = [
-  'cloture',
-  'unanimous-consent',
-  'motion-to-proceed',
-  'cloture-on-the-motion-to-proceed',
-  'legislative-calendar',
-  'union-calendar',
-  'executive-calendar',
-  'reported-by-committee',
-  'amendment-in-the-nature-of-a-substitute',
-  'budget-reconciliation',
-  'cra-disapproval',
-  'pro-forma-session',
-] as const;
+export const GLOSSARY_TERM_IDS: readonly GlossaryTermId[] = GLOSSARY_ENTRIES.map((e) => e.id);
 
-export type GlossaryTermId = (typeof GLOSSARY_TERM_IDS)[number];
+/**
+ * The /glossary page's sections, in the order it prints them: what happens on
+ * the floor first, because that is where the record's vocabulary is densest,
+ * and the people and seats last.
+ */
+export const GLOSSARY_CATEGORIES: readonly GlossaryCategory[] = [
+  'floor',
+  'committees',
+  'lawmaking',
+  'votes',
+  'budget',
+  'nominations',
+  'people',
+];
 
-/** The page's own path. One constant, so the footer, the sitemap, the popover
- *  link and the tests cannot drift apart. */
+const BY_ID = new Map<string, GlossaryEntry>(GLOSSARY_ENTRIES.map((e) => [e.id, e]));
+
+/** One term's row. Typed ids only, so a lookup can never miss. */
+export function glossaryEntry(id: GlossaryTermId): GlossaryEntry {
+  return BY_ID.get(id)!;
+}
+
+/** The page's own path. One constant, so the footer, the sitemap and the
+ *  tests cannot drift apart. */
 export const GLOSSARY_PATH = '/glossary';
 
-/** The locale-relative href for one term's section. Passed to the `Link` from
- *  `@/i18n/navigation`, which is what adds the `/es` prefix — never hand-built
- *  here, or the Spanish popover would link out of its own locale. */
+/** The locale-relative href for one term's section, for anything that links
+ *  INTO the page (an inline term no longer does — it opens in place). Passed
+ *  to the `Link` from `@/i18n/navigation`, which adds the `/es` prefix. */
 export function glossaryHref(id: GlossaryTermId): string {
   return `${GLOSSARY_PATH}#${id}`;
 }
 
 /** Narrowing guard for code reading an id out of untyped data (a message key
- *  scan in a test, a status→term map). Cheap, and it keeps the cast out of the
- *  call sites. */
+ *  scan in a test, a status→term map). */
 export function isGlossaryTermId(value: string): value is GlossaryTermId {
-  return (GLOSSARY_TERM_IDS as readonly string[]).includes(value);
+  return BY_ID.has(value);
 }
 
 /*
  * A NOMINATION STATUS LABEL THAT IS ITSELF A TERM.
  *
- * Two of `nominations.status.*` are not a description OF a procedural term —
+ * Some of `nominations.status.*` are not a description OF a procedural term —
  * they ARE one, word for word ("Reported by committee", "On the Executive
- * Calendar"). Those get wrapped whole rather than tagged mid-sentence, which
- * is why the message strings stay untouched: no rich-text tag, no change to
- * what the Spanish reviewer sees, and no third caller of these keys can be
- * broken by a tag it does not handle.
+ * Calendar", "Confirmed by the Senate", "Returned to the President" — the last
+ * is the Senate's own wording under Rule XXXI). Those get wrapped whole rather
+ * than tagged mid-sentence, which is why the message strings stay untouched.
  *
  * Every other status stays plain text — including `floor` ("Senate floor
- * activity") and `scheduled`, which are Oravan's own summaries of a stage
- * rather than the Senate's name for a thing.
+ * activity"), `scheduled` and `hearing` ("Committee hearing held"), which are
+ * Oravan's own summaries of a stage rather than the Senate's name for a thing.
  *
  * Shared by app/[locale]/nominations/[slug]/page.tsx (the provenance line) and
  * components/MomentNominationCard.tsx (the card's meta line), so the same
@@ -106,6 +99,8 @@ export function isGlossaryTermId(value: string): value is GlossaryTermId {
 export const NOMINATION_STATUS_TERMS: Readonly<Record<string, GlossaryTermId>> = {
   reported: 'reported-by-committee',
   exec_calendar: 'executive-calendar',
+  confirmed: 'confirmation',
+  returned: 'returned-nomination',
 };
 
 /*
@@ -117,11 +112,14 @@ export const NOMINATION_STATUS_TERMS: Readonly<Record<string, GlossaryTermId>> =
  * differences between two texts of one bill. Budget reconciliation is a
  * special procedure begun by a budget resolution that caps Senate debate.
  * Linking one to the other would hand a reader a confident explanation of
- * something that is not happening, which is worse than no link at all.
+ * something that is not happening, which is worse than no link at all. The
+ * automatic marking never matches it either: `budget-reconciliation` only
+ * matches "budget reconciliation", "reconciliation bill" and "reconciliation
+ * process" (tests/glossary.unit.spec.ts pins that the sentence stays bare).
  *
  * Same rule caught two more on the 2026-08-12 sweep of the strings #220 and
  * #222 added: `nowPassedStale` / `nowPassedBackStale` name no procedural term,
  * and `backTrailerStates` describes Article V ratification — a real procedure,
- * and one this batch has no entry for. Absence is a finding; an approximate
- * link is a claim.
+ * and one the glossary covers only inside `joint-resolution`, so it stays
+ * unwired. Absence is a finding; an approximate link is a claim.
  */

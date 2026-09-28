@@ -1,42 +1,41 @@
 import type { Metadata } from 'next';
+import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { GLOSSARY_TERM_IDS } from '@/lib/glossary';
+import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from '@/lib/glossary';
 
 /*
- * THE PROCEDURAL GLOSSARY PAGE (issue #181).
+ * THE GLOSSARY PAGE (issue #181; expanded 2026-09-28, UX inventory C05).
  *
- * The owner's ruling on the issue was "do both" — this page AND an in-place
- * popover on the term. This is the half that has none of the popover's risks:
- * a plain, statically generated, keyboard-and-screen-reader-trivial document
- * with one stable anchor per term, so `/glossary#cloture` is a link anyone can
- * send and every popover has somewhere to point.
+ * The owner kept it and asked for more entries ("I'd rather have too many
+ * than too little"), and on the same day took it out of the reading path: a
+ * glossed term anywhere on the site now opens its definition in place and no
+ * longer links here. So this page is the reference — every entry, in one
+ * statically generated document, with one stable anchor per term
+ * (`/glossary#cloture` still resolves for anything anyone ever sent).
  *
- * BUILT LIKE /citations, on purpose. Same `article` + `max-w-read` column,
- * same one-cap-on-the-column rule (DESIGN.md's measure section: per-block caps
- * produce a staggered right edge), same hairline-ruled `section` + `h2` + `p`
- * rhythm. A reader who has read the citability page should recognise this as
- * the same kind of document, because it is one.
+ * BUILT LIKE /citations: the same `article` + `max-w-read` column and the
+ * same hairline-ruled `section` + heading + `p` rhythm.
  *
- * WHY `section` + `h2` AND NOT `dl`. A definition list is the tempting
- * markup, and it is the wrong one here: `<dt>`'s content model forbids heading
- * content, so every term would stop being a heading — no `h2` in the document
- * outline, nothing for a screen reader's heading list, and no landing target
- * with a name when someone follows `#cloture` from a popover. The section/
- * heading pair keeps all three, and it is what /citations already does.
+ * SECTIONS, NOT ONE LIST. With well over a hundred entries, a flat index of
+ * every term would be several screens of links before the first definition
+ * on a phone. So the index jumps to seven sections, and each section lists
+ * its terms alphabetically in the reader's own language (a Spanish reader
+ * looks for "Veto de bolsillo" under V). Headings: h2 per section, h3 per
+ * term — `section` + heading rather than `dl`, because `<dt>` cannot hold a
+ * heading and every term needs to be one (outline, screen-reader heading
+ * list, and a landing target with a name).
  *
- * WHAT THE COPY MAY SAY is fixed by the issue and enforced by
- * tests/glossary.unit.spec.ts: 2–4 sentences of mechanics, no stakes, no
- * dates, no predictions. The two calendar entries state the no-schedule fact
- * outright, because "on the calendar" is exactly the phrase a reader is most
- * likely to have mistaken for a scheduled vote (see DESIGN.md's still-open
- * printed-date ruling for why this product is careful there).
+ * THE SOURCE LINE. Each entry is based on an official, public-domain page,
+ * read when the entry was written (lib/glossary-terms.ts), and prints that
+ * page's site under it. The link text is the site's own name, which is the
+ * same in both languages; the pages it opens are in English, so the link
+ * says so with `hrefLang`.
  *
  * NO AI LABEL, and that is not an oversight: this is hand-authored UI copy in
- * messages/*.json, the same class of string as every other page's prose, and
- * it goes through the owner's own review on this PR. The AI label belongs on
- * generated content (decodes, scripts, Big Question summaries), and putting
- * one here would make the label mean less everywhere it is true.
+ * messages/*.json, the same class of string as every other page's prose. The
+ * AI label belongs on generated content (decodes, scripts, Big Question
+ * summaries).
  */
 
 export async function generateMetadata({
@@ -53,10 +52,23 @@ export async function generateMetadata({
   };
 }
 
+/** "www.senate.gov" → "senate.gov": the name a reader recognises. */
+function siteOf(url: string): string {
+  return new URL(url).hostname.replace(/^www\./, '');
+}
+
 export default async function GlossaryPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('glossary');
+  const collator = new Intl.Collator(locale, { sensitivity: 'base' });
+
+  const sections = GLOSSARY_CATEGORIES.map((category) => ({
+    category,
+    entries: GLOSSARY_ENTRIES.filter((e) => e.category === category)
+      .map((e) => ({ ...e, term: t(`terms.${e.id}.term`), body: t(`terms.${e.id}.body`) }))
+      .sort((a, b) => collator.compare(a.term, b.term)),
+  }));
 
   return (
     <article className="mx-auto max-w-read px-4 py-12">
@@ -66,15 +78,8 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
         <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
         <p className="mt-3 text-sm text-ink-2">{t('scopeNote')}</p>
 
-        {/* THE INDEX. Eleven entries is past the point where a reader should
-            have to scroll to find out what is here. Ink links, not green:
-            these move you around inside a document you are already reading —
-            they do not go anywhere, and `go` is spent on actions and content
-            links. Two columns from 40rem so the list is one glance rather
-            than a third of a screen. */}
-        {/* `mt-12`, not `mt-10`: 40px is off the space scale — DESIGN.md's
-            machine-readable block (#226) names p-10/40px explicitly as one of
-            the four rungs that are not part of it. */}
+        {/* THE INDEX: the seven sections. Ink links, not green — they move
+            you around inside a document you are already reading. */}
         <nav aria-labelledby="glossary-index" className="mt-12 border-t-[3px] border-ink pt-4">
           <h2
             id="glossary-index"
@@ -83,26 +88,49 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
             {t('indexLabel')}
           </h2>
           <ul className="mt-1 grid list-none sm:grid-cols-2 sm:gap-x-6">
-            {GLOSSARY_TERM_IDS.map((id) => (
-              <li key={id}>
+            {sections.map(({ category }) => (
+              <li key={category}>
                 <a
-                  href={`#${id}`}
+                  href={`#section-${category}`}
                   className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
                 >
-                  {t(`terms.${id}.term`)}
+                  {t(`categories.${category}`)}
                 </a>
               </li>
             ))}
           </ul>
         </nav>
 
-        {GLOSSARY_TERM_IDS.map((id) => (
-          /* The id IS the term id, and it is a permanent public string: every
-             popover's "Full glossary →" and anything anyone has ever pasted
-             resolves here. See lib/glossary.ts. */
-          <section key={id} id={id} className="mt-8 scroll-mt-8 border-t border-line pt-6">
-            <h2 className="text-h3 font-extrabold">{t(`terms.${id}.term`)}</h2>
-            <p className="mt-2">{t(`terms.${id}.body`)}</p>
+        {sections.map(({ category, entries }) => (
+          <section
+            key={category}
+            id={`section-${category}`}
+            aria-labelledby={`section-${category}-h`}
+            className="mt-12 scroll-mt-8 border-t-[3px] border-ink pt-4"
+          >
+            <h2 id={`section-${category}-h`} className="text-h3 font-extrabold">
+              {t(`categories.${category}`)}
+            </h2>
+            {entries.map((e) => (
+              /* The id IS the term id, and it is a permanent public string:
+                 anything anyone has ever pasted resolves here. */
+              <section key={e.id} id={e.id} className="mt-6 scroll-mt-8 border-t border-line pt-6">
+                <h3 className="text-lg font-extrabold">{e.term}</h3>
+                <p className="mt-2">{e.body}</p>
+                <p className="text-sm text-ink-2">
+                  <a
+                    href={e.source}
+                    hrefLang="en"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="inline-flex min-h-11 items-center gap-1.5 underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                  >
+                    {t('sourceLabel', { site: siteOf(e.source) })}
+                    <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+                  </a>
+                </p>
+              </section>
+            ))}
           </section>
         ))}
       </div>
