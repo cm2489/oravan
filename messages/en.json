@@ -1052,6 +1052,9 @@
     "scopeNote": "Every entry describes the mechanics only, and is based on the official source linked under it. None of them says who benefits, who wins, or when anything will be voted on.",
     "indexLabel": "Jump to a section",
     "sourceLabel": "Source: {site}",
+    "aiNote": "Definition drafted by AI from official sources",
+    "pageAiNote": "Every definition on this page is drafted by AI from official sources",
+    "aiPolicyLink": "Oravan's AI-content policy",
     "categories": {
       "floor": "On the floor",
       "committees": "Committees",

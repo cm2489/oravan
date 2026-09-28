@@ -133,6 +133,34 @@ for (const [locale, prefix, messages] of LOCALES) {
     }
   });
 
+  test(`${locale}: the page carries the AI label above the first entry, linked to the AI-content policy`, async ({
+    page,
+  }) => {
+    await page.goto(`${prefix}/glossary`);
+    const label = page.locator('[data-glossary-page-ai-note]');
+    await expect(label).toHaveCount(1);
+    await expect(label).toContainText(messages.glossary.pageAiNote);
+    await expect(label).toContainText(messages.common.aiMarker);
+    // Rule 4: where the definitions first appear — above the index, and so
+    // above every entry.
+    const index = page.getByRole('navigation', { name: messages.glossary.indexLabel });
+    const above = await label.evaluate(
+      (el, nav) => !!(el.compareDocumentPosition(nav!) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await index.elementHandle()
+    );
+    expect(above, 'the label sits above the index and every entry').toBe(true);
+
+    const link = label.getByRole('link', { name: messages.glossary.aiPolicyLink, exact: true });
+    await expect(link).toHaveAttribute('href', `${prefix}/citations#ai-policy`);
+    const target = (await link.boundingBox())!;
+    expect(target.height, 'a 44px target').toBeGreaterThanOrEqual(44);
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${prefix}/citations#ai-policy$`));
+    const policy = page.locator('#ai-policy');
+    await expect(policy.getByRole('heading', { level: 2 })).toHaveText(messages.citations.aiTitle);
+    await expect(policy).toBeInViewport();
+  });
+
   test(`${locale}: no horizontal overflow on the glossary page @reflow`, async ({ page }) => {
     await page.goto(`${prefix}/glossary`);
     const overflow = await page.evaluate(
@@ -290,7 +318,8 @@ test.describe('the in-place definition', () => {
     await expect(term).toBeFocused();
     await page.keyboard.press('Enter'); // pins it
     const box = await boxOf(page, term);
-    const bodyId = await term.getAttribute('aria-describedby');
+    // The first id is the definition's body; the second is its AI label.
+    const [bodyId] = (await term.getAttribute('aria-describedby'))!.split(' ');
     await page.locator(`[id="${bodyId}"]`).click();
     await expect(term, 'the click must take focus off the term, or this test proves nothing').not.toBeFocused();
     await page.waitForTimeout(300);
@@ -301,20 +330,24 @@ test.describe('the in-place definition', () => {
     await expectClosed(page, term);
   });
 
-  test('screen readers get the definition: expanded, controls, described-by the body', async ({
+  test('screen readers get the definition, then its AI label: expanded, controls, described-by both', async ({
     page,
   }) => {
     await page.goto('/questions#how');
     const term = cloture(page);
     await focusTerm(term);
     const box = await boxOf(page, term);
-    const described = await term.getAttribute('aria-describedby');
-    expect(described).toBeTruthy();
-    const body = page.locator(`[id="${described}"]`);
+    const described = (await term.getAttribute('aria-describedby'))?.split(' ') ?? [];
+    expect(described, 'the body, then the AI label').toHaveLength(2);
+    const [bodyId, noteId] = described;
+    const body = page.locator(`[id="${bodyId}"]`);
     await expect(body).toHaveText(en.glossary.terms.cloture.body);
+    // Rule 4: whoever hears the definition hears who drafted it.
+    await expect(page.locator(`[id="${noteId}"]`)).toContainText(en.glossary.aiNote);
     // The description is inside the panel it controls, and the panel follows
     // the term in the DOM, so reading on after expanding reaches it.
-    await expect(box.locator(`[id="${described}"]`)).toHaveCount(1);
+    await expect(box.locator(`[id="${bodyId}"]`)).toHaveCount(1);
+    await expect(box.locator(`[id="${noteId}"]`)).toHaveCount(1);
     // The accessible name stays the visible word (WCAG 2.5.3).
     await expect(term).not.toHaveAttribute('aria-label', /./);
     // Nothing to operate inside: it is a description, not a dialog.
@@ -432,6 +465,40 @@ test.describe('the in-place definition', () => {
     expect(seconds.every((s) => s <= 0.001), motion.transition).toBe(true);
   });
 
+  for (const [locale, prefix, messages] of LOCALES) {
+    test(`${locale}: every open box carries the AI label, quietly, above the definition (rule 4)`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.click();
+      const box = await boxOf(page, term);
+      const note = box.locator('[data-glossary-ai-note]');
+      await expect(note).toHaveCount(1);
+      await expect(note).toContainText(messages.glossary.aiNote);
+      await expect(note).toContainText(messages.common.aiMarker);
+      const [bodyId] = (await term.getAttribute('aria-describedby'))!.split(' ');
+      const layout = await note.evaluate((el, id) => {
+        const body = document.getElementById(id)!;
+        // The Chip itself: the caption's size is set there.
+        const caption = el.firstElementChild ?? el;
+        return {
+          before:
+            !!(el.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+            el.getBoundingClientRect().bottom <= body.getBoundingClientRect().top,
+          noteSize: parseFloat(getComputedStyle(caption).fontSize),
+          bodySize: parseFloat(getComputedStyle(body).fontSize),
+        };
+      }, bodyId);
+      // Above the words, so a thumb bar over the box's last lines never hides it.
+      expect(layout.before, 'the label heads the words it labels').toBe(true);
+      expect(layout.noteSize, 'small print, below the definition size').toBeLessThan(layout.bodySize);
+      // A label, not a way out: still nothing to operate inside the box.
+      await expect(box.getByRole('link')).toHaveCount(0);
+    });
+  }
+
   test('the Spanish definition stays in Spanish, marked as Spanish', async ({ page }) => {
     await page.goto('/es/questions#how');
     const esText = /<cloture>(.*?)<\/cloture>/.exec(es.moments.howMadeRule2)![1];
@@ -452,19 +519,51 @@ test.describe('the in-place definition', () => {
     await expect(page.getByText(plain)).toBeVisible();
   });
 
-  test('the open box lands inside the viewport on both axes @reflow', async ({ page }) => {
-    await page.goto('/questions#how');
-    const term = cloture(page);
-    await settle(page, term);
-    await term.click();
-    const box = await boxOf(page, term);
-    const rect = (await box.boundingBox())!;
-    const view = page.viewportSize()!;
-    expect(rect.x, 'box crosses the left edge').toBeGreaterThanOrEqual(0);
-    expect(rect.x + rect.width, 'box crosses the right edge').toBeLessThanOrEqual(view.width);
-    expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
-    expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
-  });
+  // Both languages since the AI label (rule 4) made every box taller: the
+  // Spanish cloture entry, opened from mid-screen on a phone, then fitted
+  // neither above nor below its term and ran off the bottom edge.
+  for (const [locale, prefix] of LOCALES) {
+    test(`${locale}: the open box lands inside the viewport on both axes @reflow`, async ({ page }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.click();
+      const box = await boxOf(page, term);
+      const rect = (await box.boundingBox())!;
+      const view = page.viewportSize()!;
+      expect(rect.x, 'box crosses the left edge').toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width, 'box crosses the right edge').toBeLessThanOrEqual(view.width);
+      expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
+    });
+  }
+
+  // The case the placement's clamp exists for: the term at mid-screen, where
+  // on a phone a long box fits neither above nor below it. It stays on screen.
+  for (const [locale, prefix] of LOCALES) {
+    test(`${locale}: a box opened from mid-screen stays on screen, even when neither side holds it @reflow`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const mid = document.documentElement.clientHeight / 2;
+        window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - mid, behavior: 'instant' });
+      });
+      await page.waitForTimeout(300);
+      await term.click();
+      const box = await boxOf(page, term);
+      await page.waitForTimeout(100);
+      const rect = (await box.boundingBox())!;
+      const view = page.viewportSize()!;
+      expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
+      // Its AI label is on screen with it.
+      await expect(box.locator('[data-glossary-ai-note]')).toBeInViewport();
+    });
+  }
 
   test('an open box does not push the page sideways at 320px @reflow', async ({ page }) => {
     await page.goto('/questions#how');

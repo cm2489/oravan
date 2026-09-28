@@ -35,13 +35,34 @@ import type { GlossaryTermId } from '@/lib/glossary';
  * `lang` is the PAGE's language, stamped on the definition box: a term can sit
  * inside the record's English (`lang="en"` on /es), and a Spanish definition
  * opening in there would otherwise be read aloud in an English voice.
+ *
+ * ── THE AI LABEL IN EVERY BOX (CLAUDE.md rule 4) ─────────────────────────
+ *
+ * "Every AI-written word is labeled where it first appears." The definitions
+ * were drafted by AI from the official page cited under each on /glossary, and
+ * for most readers this box is where one first appears. So every box carries
+ * the site's own AI mark (the unboxed `Chip tone="ai"` caption the bill page
+ * uses at first contact). Its caption and mark are read here and handed down
+ * as two more strings. It is plain text, not a link: the box is a
+ * description, not a dialog, and a link inside it would put a second tab stop
+ * behind every glossed word (tests/glossary.spec.ts pins that the box holds
+ * nothing to operate). The link to the AI-content policy lives at the top of
+ * /glossary instead.
  */
 export function GlossaryTerm({ id, children }: { id: GlossaryTermId; children?: ReactNode }) {
   const t = useTranslations('glossary');
+  const tc = useTranslations('common');
   const locale = useLocale();
   const label = t(`terms.${id}.term`);
   return (
-    <GlossaryPopover termId={id} label={label} body={t(`terms.${id}.body`)} lang={locale}>
+    <GlossaryPopover
+      termId={id}
+      label={label}
+      body={t(`terms.${id}.body`)}
+      aiNote={t('aiNote')}
+      aiMarker={tc('aiMarker')}
+      lang={locale}
+    >
       {children ?? label}
     </GlossaryPopover>
   );

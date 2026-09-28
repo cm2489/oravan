@@ -1052,6 +1052,9 @@
     "scopeNote": "Cada entrada describe solo el mecanismo y se basa en la fuente oficial enlazada debajo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
     "indexLabel": "Ir a una sección",
     "sourceLabel": "Fuente: {site}",
+    "aiNote": "Definición redactada por IA a partir de fuentes oficiales",
+    "pageAiNote": "Cada definición de esta página está redactada por IA a partir de fuentes oficiales",
+    "aiPolicyLink": "La política de contenido con IA de Oravan",
     "categories": {
       "floor": "En el pleno",
       "committees": "Comités",

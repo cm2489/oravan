@@ -132,7 +132,8 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
           />
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        {/* `ai-policy` is a public anchor: /glossary's AI label links here. */}
+        <section id="ai-policy" className="mt-8 scroll-mt-8 border-t border-line pt-6">
           <h2 className="text-h3 font-extrabold">{t('aiTitle')}</h2>
           <p className="mt-2">{t('aiBody')}</p>
           <BilingualQuote

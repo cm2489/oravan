@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import { Chip } from '@/components/system/Chip';
 
 /*
  * THE IN-PLACE DEFINITION — a term you can hover, tap, click or tab to, and
@@ -37,9 +38,10 @@ import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent, 
  * `aria-expanded` is honest now, because activating the term toggles a panel
  * in place (it used to navigate, which is why it was once forbidden here).
  * `aria-controls` names the panel while it exists. `aria-describedby` points
- * at the definition's body while open, so a screen reader reads the
- * definition when focus lands on the term, without a second step. The panel
- * follows the term in the DOM, so a reader browsing by line meets it next.
+ * at the definition's body, then its AI label, while open, so a screen reader
+ * reads the definition and says who drafted it when focus lands on the term,
+ * without a second step. The panel follows the term in the DOM, so a reader
+ * browsing by line meets it next.
  * The accessible name stays the visible word (WCAG 2.5.3): no aria-label, and
  * no hidden "— definition" suffix read into the middle of every sentence.
  *
@@ -68,11 +70,21 @@ import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent, 
  *
  * ── WHAT THIS FILE IS HANDED ─────────────────────────────────────────────
  *
- * Two strings and the visible words, resolved on the server by
- * components/GlossaryTerm.tsx. This file imports no glossary data and no
- * messages: a page ships the definitions it prints and nothing else, and the
- * client provider no longer carries `glossary.terms` at all
- * (i18n/client-messages.ts).
+ * Four strings and the visible words, all resolved on the server by
+ * components/GlossaryTerm.tsx: the term, its definition, and the AI label's
+ * caption and mark. This file imports no glossary data and no messages (only
+ * the presentational Chip): a page ships the definitions it prints and
+ * nothing else, and the client provider no longer carries `glossary.terms`
+ * at all (i18n/client-messages.ts).
+ *
+ * The AI label heads every box, under the term's name (the site's own
+ * unboxed `Chip tone="ai"` caption, the one the bill page prints at first
+ * contact), and `aria-describedby` names it after the definition, so a
+ * screen reader hears the label wherever it hears the words it labels
+ * (CLAUDE.md rule 4: "Every AI-written word is labeled where it first
+ * appears"). It is plain text, not a link: the box is a description, not a
+ * dialog, and a link in it would put a second tab stop behind every glossed
+ * word. The link to the AI-content policy lives at the top of /glossary.
  */
 
 /** Kept clear of either viewport edge when the box is nudged back on screen. */
@@ -107,12 +119,19 @@ export function GlossaryPopover({
   termId,
   label,
   body,
+  aiNote,
+  aiMarker,
   lang,
   children,
 }: {
   termId: string;
   label: string;
   body: string;
+  /** The AI label's caption and its mark ("AI" / "IA"), localized on the
+   *  server. Two short strings rather than a finished node: a page can mark
+   *  dozens of terms, and every instance's props ride in the page payload. */
+  aiNote: string;
+  aiMarker: string;
   /** The page's language, for the box: the term may sit inside `lang="en"`. */
   lang: string;
   children: ReactNode;
@@ -129,6 +148,7 @@ export function GlossaryPopover({
   const reactId = useId();
   const panelId = `glossary-${termId}-${reactId}`;
   const bodyId = `${panelId}-body`;
+  const noteId = `${panelId}-note`;
   const wrapRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLSpanElement>(null);
@@ -228,11 +248,21 @@ export function GlossaryPopover({
       /* FLIPS ABOVE THE TERM when there is no room under it: on a phone the
          thumb bar owns the bottom of the screen and sits above this box (z-40
          vs z-30, deliberately — a permanent navigation bar must not be
-         covered). It flips only when the space above genuinely fits it. */
+         covered). It flips only when the space above genuinely fits it.
+         WHEN NEITHER SIDE FITS — a long entry opened from mid-screen on a
+         phone, more common since every box carries its AI label — it is
+         pulled up until its bottom edge is back on screen, over the term
+         rather than off the bottom of the viewport. */
       const below = rect.bottom + PANEL_GAP;
       const above = rect.top - PANEL_GAP - height;
       const fitsBelow = below + height + EDGE_GUTTER <= doc.clientHeight;
-      setPos({ top: !fitsBelow && above >= EDGE_GUTTER ? above : below, left });
+      const fitsAbove = above >= EDGE_GUTTER;
+      const top = fitsBelow
+        ? below
+        : fitsAbove
+          ? above
+          : Math.max(EDGE_GUTTER, Math.min(below, doc.clientHeight - height - EDGE_GUTTER));
+      setPos({ top, left });
     };
     place();
     window.addEventListener('scroll', place, { capture: true, passive: true });
@@ -323,7 +353,7 @@ export function GlossaryPopover({
         type="button"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-describedby={open ? bodyId : undefined}
+        aria-describedby={open ? `${bodyId} ${noteId}` : undefined}
         data-glossary-term={termId}
         onClick={onClick}
         /* Drawn exactly as the linked term was — ink, dotted underline, no
@@ -356,6 +386,15 @@ export function GlossaryPopover({
         >
           <span className="block text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
             {label}
+          </span>
+          {/* The AI label, quiet: the same unboxed caption the bill page
+              prints at first contact, under the term's name and ABOVE the
+              words it labels — so it is on screen whenever the box is, even
+              where a phone's thumb bar covers the box's last lines. */}
+          <span id={noteId} data-glossary-ai-note className="mt-1.5 block">
+            <Chip tone="ai" marker={aiMarker}>
+              {aiNote}
+            </Chip>
           </span>
           <span id={bodyId} className="mt-2 block">
             {body}

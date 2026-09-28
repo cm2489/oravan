@@ -42,6 +42,9 @@ import { lintForbidden } from '../lib/moments-gate.mjs';
  *  6. WHAT SHIPS TO THE BROWSER: the definitions stay on the server.
  *  7. A RICH-TEXT TAG THAT EXISTS IN ONE LANGUAGE ONLY (the parity hole the ICU
  *     gate cannot see).
+ *  8. THE AI LABEL (CLAUDE.md rule 4): the definitions were drafted by AI, so
+ *     every in-place box and the top of /glossary say so, in both languages,
+ *     and never claim a person reviewed them.
  *
  * The popover's interaction contract is a live render, so it is in
  * tests/glossary.spec.ts, not here.
@@ -330,7 +333,17 @@ test.describe('bilingual parity', () => {
   });
 
   test('the page chrome exists in both languages', () => {
-    for (const key of ['title', 'metaDescription', 'intro', 'scopeNote', 'indexLabel', 'sourceLabel'] as const) {
+    for (const key of [
+      'title',
+      'metaDescription',
+      'intro',
+      'scopeNote',
+      'indexLabel',
+      'sourceLabel',
+      'aiNote',
+      'pageAiNote',
+      'aiPolicyLink',
+    ] as const) {
       expect(en.glossary[key].trim().length, `en ${key}`).toBeGreaterThan(0);
       expect(es.glossary[key].trim().length, `es ${key}`).toBeGreaterThan(0);
       expect(es.glossary[key], `${key} was never translated`).not.toBe(en.glossary[key]);
@@ -640,6 +653,64 @@ test.describe('automatic marking', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * The AI label (CLAUDE.md rule 4)
+ *
+ * "Every AI-written word is labeled where it first appears." The live render
+ * (the label in every box, and above the first entry on /glossary) is held in
+ * tests/glossary.spec.ts; this holds the words and the wiring.
+ * ------------------------------------------------------------------ */
+test.describe('the AI label', () => {
+  const NOTES = ['aiNote', 'pageAiNote'] as const;
+
+  test('both labels name AI in their own language', () => {
+    for (const key of NOTES) {
+      expect(en.glossary[key], `en ${key}`).toMatch(/\bAI\b/);
+      expect(es.glossary[key], `es ${key}`).toMatch(/\bIA\b/);
+    }
+  });
+
+  test('no label puts a person in the path — nobody reviewed these, so nothing says so', () => {
+    // The shape scripts/check-claim-truth.mjs's R1b forbids on its enumerated
+    // surfaces, applied here because these two are not a publication claim
+    // and so are not enumerated there.
+    for (const msgs of [en, es]) {
+      for (const key of [...NOTES, 'aiPolicyLink'] as const) {
+        expect(msgs.glossary[key]).not.toMatch(/review|revis|verif|check|person|human|humano|editor|staff/i);
+      }
+    }
+  });
+
+  test('the labels pass the advocacy lint like every definition', () => {
+    for (const [lang, msgs] of [
+      ['en', en],
+      ['es', es],
+    ] as const) {
+      for (const key of [...NOTES, 'aiPolicyLink'] as const) {
+        expect(lintForbidden(msgs.glossary[key], lang), `${lang} ${key}`).toEqual([]);
+      }
+    }
+  });
+
+  test('every box is handed the label, and the screen reader hears it after the definition', () => {
+    const term = readText('components/GlossaryTerm.tsx');
+    expect(term).toContain("aiNote={t('aiNote')}");
+    expect(term).toContain("aiMarker={tc('aiMarker')}");
+    const popover = readText('components/GlossaryPopover.tsx');
+    expect(popover).toContain('<Chip tone="ai" marker={aiMarker}>');
+    expect(popover).toContain('aria-describedby={open ? `${bodyId} ${noteId}` : undefined}');
+    expect(popover).toContain('data-glossary-ai-note');
+  });
+
+  test('the /glossary label links the AI-content policy, and that anchor exists', () => {
+    const page = readText('app/[locale]/glossary/page.tsx');
+    expect(page).toContain("t('pageAiNote')");
+    expect(page).toContain('href="/citations#ai-policy"');
+    // The other end: renaming the anchor on /citations breaks this, not the link.
+    expect(readText('app/[locale]/citations/page.tsx')).toContain('id="ai-policy"');
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 5 · What ships to the browser
  * ------------------------------------------------------------------ */
 test.describe('the client payload', () => {
@@ -700,10 +771,20 @@ test.describe('the client payload', () => {
         expect(src, `${p} imports ${imp}`).not.toContain(imp);
       }
     }
-    // And the popover imports nothing but React.
+    // And the popover imports nothing but React and the presentational Chip
+    // it draws the AI label with (rule 4) — which itself imports nothing but
+    // a React type, so the chain ends there.
     const popover = readText('components/GlossaryPopover.tsx');
     expect(popover.trimStart().startsWith("'use client'")).toBe(true);
-    expect([...popover.matchAll(/from '([^']+)'/g)].map((m) => m[1])).toEqual(['react', 'react']);
+    expect([...popover.matchAll(/from '([^']+)'/g)].map((m) => m[1])).toEqual([
+      'react',
+      'react',
+      '@/components/system/Chip',
+    ]);
+    const chip = readText('components/system/Chip.tsx');
+    expect([...chip.matchAll(/import[^;]*from '([^']+)'/g)].map((m) => m[0])).toEqual([
+      "import type { ReactNode } from 'react'",
+    ]);
   });
 });
 
