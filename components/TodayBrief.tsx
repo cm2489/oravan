@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { glossaryTag, glossify } from '@/components/glossary-tags';
+import { glossaryTag, glossaryTagOnce, glossify } from '@/components/glossary-tags';
 import type { GlossaryTermId } from '@/lib/glossary';
-import { glossaryLocale } from '@/lib/glossary-match';
 import { Link } from '@/i18n/navigation';
 import type { Brief, BriefChamber, BriefScheduleItem } from '@/lib/today';
 
@@ -205,7 +204,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                 {d.rollCalls.map((r) => {
                   // One roll call is one section for the glossary: the
                   // record's English lines are matched as English on /es
-                  // too, the tally in the page's language.
+                  // too, and the tally's labels are wired by name.
                   const seen = new Set<GlossaryTermId>();
                   return (
                   <li key={r.id} className="max-w-read border-t border-line pt-3">
@@ -217,8 +216,16 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                       {' — '}
                       <Verbatim className="font-bold">{glossify(r.result, 'en', seen)}</Verbatim>
                     </p>
-                    <p className="mt-1 text-sm text-ink-2 tabular-nums">
-                      {glossify(t('tally', { ...r.totals }), glossaryLocale(locale), seen)}
+                    {/* The tally's labels are wired by name in both
+                        languages ("A favor" is no phrase a matcher could
+                        safely find), and share the card's section. */}
+                    <p className="mt-1 text-sm text-ink-2 tabular-nums" data-brief-tally="">
+                      {t.rich('tally', {
+                        ...r.totals,
+                        yeaTerm: glossaryTagOnce('yea-and-nay', seen),
+                        presentTerm: glossaryTagOnce('present-vote', seen),
+                        notVotingTerm: glossaryTagOnce('not-voting', seen),
+                      })}
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-4">
                       <Link href={`/bills/${r.bill.slug}`} className={`inline-flex min-h-11 items-center text-sm ${LINK}`}>

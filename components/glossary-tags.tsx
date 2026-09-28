@@ -38,6 +38,20 @@ export function glossaryTag(id: GlossaryTermId) {
 }
 
 /**
+ * `glossaryTag`, bound to one section's `seen`: the chunk is marked only when
+ * the term is not already marked in that section, and marking it records it.
+ * For hand-wired labels that share a section with automatically marked text
+ * (the tally line under a roll call on /today).
+ */
+export function glossaryTagOnce(id: GlossaryTermId, seen: Set<GlossaryTermId>) {
+  return function GlossaryTagOnceChunk(chunks: ReactNode) {
+    if (seen.has(id)) return <>{chunks}</>;
+    seen.add(id);
+    return <GlossaryTerm id={id}>{chunks}</GlossaryTerm>;
+  };
+}
+
+/**
  * Mark the glossary terms already present in `text` (lib/glossary-match.ts
  * has the rules). `seen` is the caller's, one Set per section: a term marked
  * once in a section stays plain the next time. `locale` is the language the

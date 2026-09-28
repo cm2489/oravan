@@ -34,6 +34,17 @@
  *             hospital payment rule, "subcommittee" was an agency panel. A
  *             term with no phrases still gets its entry, and still gets
  *             wired by hand where the copy means it.
+ *             A NARROW list is the same decision made for one word: bare
+ *             "shutdown" was an engine's emissions shutdown, an oil well's,
+ *             a reactor's and a farm's before it was ever a lapse in funding,
+ *             so the shutdown entry lists only the phrases that mean the
+ *             government one; bare "federal debt" was federal debt
+ *             COLLECTION and the federal debt CEILING (reviewed 2026-09-28).
+ *
+ * NEAR MISSES (GLOSSARY_NEAR_MISSES, at the end) are longer phrases that
+ * contain a listed phrase and mean something else — "a government shutdown
+ * of their mine" is a regulator closing a mine. The matcher reads them as
+ * plain text, so the shorter phrase inside them stays unmarked.
  *
  * THE PROSE lives in messages/en.json + messages/es.json under
  * `glossary.terms.<id>` (CLAUDE.md rule 5), and is pinned in both languages
@@ -642,7 +653,7 @@ export const GLOSSARY_ENTRIES = [
     id: 'national-debt',
     category: 'budget',
     source: 'https://fiscaldata.treasury.gov/americas-finance-guide/national-debt/',
-    match: { en: ['national debt', 'federal debt'], es: ['deuda nacional', 'deuda federal'] },
+    match: { en: ['national debt', 'federal debt reduction'], es: ['deuda nacional', 'deuda federal'] },
   },
   {
     id: 'debt-limit',
@@ -654,7 +665,7 @@ export const GLOSSARY_ENTRIES = [
     id: 'government-shutdown',
     category: 'budget',
     source: 'https://www.opm.gov/policy-data-oversight/pay-leave/furlough-guidance/',
-    match: { en: ['government shutdown', 'lapse in appropriations', 'shutdown'], es: ['cierre del gobierno', 'cierre de gobierno'] },
+    match: { en: ['government shutdown', 'government shutdowns', 'lapse in appropriations', 'during a shutdown', 'averting a shutdown', 'avoid a shutdown'], es: ['cierre del gobierno', 'cierre de gobierno'] },
   },
   {
     id: 'cbo-cost-estimate',
@@ -867,3 +878,23 @@ export const GLOSSARY_ENTRIES = [
     match: { en: ['Government Accountability Office', 'GAO', 'Comptroller General'], es: ['Oficina de Rendición de Cuentas del Gobierno', 'Oficina de Rendición de Cuentas', 'GAO', 'Contralor General'] },
   },
 ] as const satisfies readonly GlossaryEntryShape[];
+
+/**
+ * Phrases the matcher reads and leaves PLAIN, per language: each contains a
+ * listed phrase but means something else, so it must win over the shorter
+ * phrase inside it (longest first) and then mark nothing. Each one comes from
+ * a sentence in the committed corpus or the shape next to it, and is pinned in
+ * tests/glossary.unit.spec.ts. A possessive after "shutdown of" is the tell:
+ * it is someone's operation being closed, not the government's funding
+ * running out.
+ */
+export const GLOSSARY_NEAR_MISSES: { readonly en: readonly string[]; readonly es: readonly string[] } = {
+  en: [
+    'government shutdown of their',
+    'government shutdown of its',
+    'government shutdown of his',
+    'government shutdown of her',
+    'during a shutdown of',
+  ],
+  es: [],
+};

@@ -1,4 +1,5 @@
 import { GLOSSARY_ENTRIES, type GlossaryTermId } from './glossary';
+import { GLOSSARY_NEAR_MISSES } from './glossary-terms';
 
 /*
  * AUTOMATIC GLOSSARY MARKING — finding the terms that are already there.
@@ -15,7 +16,9 @@ import { GLOSSARY_ENTRIES, type GlossaryTermId } from './glossary';
  *   PHRASES, NOT GUESSES. Only the phrases listed per term in
  *   lib/glossary-terms.ts match, per language. Every list was run over the
  *   committed decode corpus before it shipped, and phrases that marked the
- *   wrong thing were cut (the table's header names them).
+ *   wrong thing were cut (the table's header names them). A NEAR MISS
+ *   (GLOSSARY_NEAR_MISSES) is matched like a phrase and then left plain, so
+ *   "a government shutdown of their mine" marks nothing.
  *   WHOLE WORDS. A phrase never matches inside a longer word, in either
  *   language — the boundaries are Unicode letters and digits, so "vetoed"
  *   is not "veto" + "ed" unless "vetoed" is itself listed, and "año fiscal"
@@ -35,7 +38,8 @@ export type GlossarySegment = string | { id: GlossaryTermId; text: string };
 
 interface Matcher {
   re: RegExp;
-  lookup: Map<string, GlossaryTermId>;
+  /** A phrase's term, or null for a near miss: read, then left plain. */
+  lookup: Map<string, GlossaryTermId | null>;
 }
 
 const cache = new Map<GlossaryLocale, Matcher | null>();
@@ -45,10 +49,13 @@ const fold = (s: string) => s.toLowerCase();
 
 function matcher(locale: GlossaryLocale): Matcher | null {
   if (cache.has(locale)) return cache.get(locale)!;
-  const lookup = new Map<string, GlossaryTermId>();
+  const lookup = new Map<string, GlossaryTermId | null>();
   for (const entry of GLOSSARY_ENTRIES) {
     for (const phrase of entry.match[locale]) lookup.set(fold(phrase), entry.id);
   }
+  // Near misses join the same alternation, so longest-first lets them claim
+  // their words before the shorter listed phrase inside them can.
+  for (const phrase of GLOSSARY_NEAR_MISSES[locale]) lookup.set(fold(phrase), null);
   const phrases = [...lookup.keys()].sort((a, b) => b.length - a.length);
   const built =
     phrases.length === 0

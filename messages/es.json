@@ -1048,7 +1048,7 @@
   "glossary": {
     "title": "El Congreso, en palabras claras",
     "metaDescription": "Explicaciones en palabras claras de los términos que aparecen en el registro oficial del Congreso y en este sitio: cierre del debate, consentimiento unánime, asignaciones, votaciones nominales, distritos congresionales y más.",
-    "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos que aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice. Dondequiera que aparezca uno de ellos en el sitio, pasa el cursor sobre él o tócalo para leer su definición sin salir de la página.",
+    "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos que aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice. Donde un término del sitio aparece subrayado con puntos, pasa el cursor sobre él o tócalo para leer su definición sin salir de la página.",
     "scopeNote": "Cada entrada describe solo el mecanismo y se basa en la fuente oficial enlazada debajo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
     "indexLabel": "Ir a una sección",
     "sourceLabel": "Fuente: {site}",
@@ -1132,11 +1132,11 @@
       },
       "adjournment-sine-die": {
         "term": "Clausura sine die",
-        "body": "La clausura sine die es el levantamiento final que pone fin a un periodo de sesiones del Congreso. Sine die es una expresión latina que significa “sin día”: no se fija otro día de reunión en ese periodo."
+        "body": "La clausura sine die es el levantamiento final que pone fin a un periodo de sesiones del Congreso. Sine die es una expresión latina que significa «sin día»: no se fija otro día de reunión en ese periodo."
       },
       "session": {
         "term": "Periodo de sesiones",
-        "body": "Un periodo de sesiones es el tiempo durante el cual el Congreso se reúne y trabaja. Cada Congreso de dos años suele tener dos periodos de sesiones, de un año aproximadamente cada uno. La palabra “sesión” también se usa para la reunión de un solo día de la Cámara o el Senado."
+        "body": "Un periodo de sesiones es el tiempo durante el cual el Congreso se reúne y trabaja. Cada Congreso de dos años suele tener dos periodos de sesiones, de un año aproximadamente cada uno. La palabra «sesión» también se usa para la reunión de un solo día de la Cámara o el Senado."
       },
       "lame-duck-session": {
         "term": "Sesión de «pato cojo» (lame duck)",
@@ -1148,7 +1148,7 @@
       },
       "floor": {
         "term": "El pleno (the floor)",
-        "body": "El pleno es la sala donde se reúne toda la Cámara o todo el Senado. Una acción “en el pleno” es una acción de toda la cámara, y no de un comité. Quien está hablando allí “tiene la palabra”."
+        "body": "El pleno es la sala donde se reúne toda la Cámara o todo el Senado. Una acción «en el pleno» es una acción de toda la cámara, y no de un comité. Quien está hablando allí «tiene la palabra»."
       },
       "point-of-order": {
         "term": "Cuestión de orden",
@@ -1160,7 +1160,7 @@
       },
       "amendment-tree": {
         "term": "Árbol de enmiendas",
-        "body": "El árbol de enmiendas es una forma de representar cuántas enmiendas puede tener pendientes el Senado sobre un proyecto al mismo tiempo, y en qué orden. “Llenar el árbol” significa presentar todas las enmiendas que el árbol permite, de modo que ningún otro senador pueda presentar una hasta que se resuelvan esas."
+        "body": "El árbol de enmiendas es una forma de representar cuántas enmiendas puede tener pendientes el Senado sobre un proyecto al mismo tiempo, y en qué orden. «Llenar el árbol» significa presentar todas las enmiendas que el árbol permite, de modo que ningún otro senador pueda presentar una hasta que se resuelvan esas."
       },
       "motion-to-table": {
         "term": "Moción para dejar sobre la mesa (motion to table)",
@@ -1192,7 +1192,7 @@
       },
       "previous-question": {
         "term": "Cuestión previa (previous question)",
-        "body": "En la Cámara, “ordenar la cuestión previa” termina el debate y lleva a la Cámara directamente a votar el asunto que tiene delante. La moción para ordenarla se decide a su vez sin debate."
+        "body": "En la Cámara, «ordenar la cuestión previa» termina el debate y lleva a la Cámara directamente a votar el asunto que tiene delante. La moción para ordenarla se decide a su vez sin debate."
       },
       "committee-of-the-whole": {
         "term": "Comité Plenario (Committee of the Whole)",
@@ -1276,7 +1276,7 @@
       },
       "measure": {
         "term": "Medida (measure)",
-        "body": "“Medida” es la palabra general para cualquier proyecto o resolución sobre la que actúa la Cámara o el Senado. Cuando un registro dice “la medida”, puede referirse a cualquiera de los dos."
+        "body": "«Medida» es la palabra general para cualquier proyecto o resolución sobre la que actúa la Cámara o el Senado. Cuando un registro dice «la medida», puede referirse a cualquiera de los dos."
       },
       "act": {
         "term": "Ley (Act)",
@@ -1296,7 +1296,7 @@
       },
       "sense-of-congress": {
         "term": "Opinión del Congreso («sense of Congress»)",
-        "body": "Una disposición de “opinión del Congreso” (o del Senado, o de la Cámara) expresa un parecer. No cambia la ley ni obliga a nadie a hacer nada."
+        "body": "Una disposición de «opinión del Congreso» (o del Senado, o de la Cámara) expresa un parecer. No cambia la ley ni obliga a nadie a hacer nada."
       },
       "amendment": {
         "term": "Enmienda",
@@ -1344,7 +1344,7 @@
       },
       "public-law": {
         "term": "Ley pública",
-        "body": "Una ley pública es un proyecto o una resolución conjunta ya promulgados que se aplican a todo el país. Cada una recibe un número formado por el Congreso que la aprobó y su orden, como “Public Law 118-5”."
+        "body": "Una ley pública es un proyecto o una resolución conjunta ya promulgados que se aplican a todo el país. Cada una recibe un número formado por el Congreso que la aprobó y su orden, como «Public Law 118-5»."
       },
       "private-law": {
         "term": "Ley privada",
@@ -1352,7 +1352,7 @@
       },
       "us-code": {
         "term": "Código de los Estados Unidos (U.S. Code)",
-        "body": "El Código de los Estados Unidos es la colección de las leyes federales generales y permanentes que están en vigor, ordenadas por tema en títulos numerados. Cuando un proyecto “enmienda la sección 101 del título 5”, está cambiando el texto del Código."
+        "body": "El Código de los Estados Unidos es la colección de las leyes federales generales y permanentes que están en vigor, ordenadas por tema en títulos numerados. Cuando un proyecto «enmienda la sección 101 del título 5», está cambiando el texto del Código."
       },
       "codify": {
         "term": "Codificar",
@@ -1376,15 +1376,15 @@
       },
       "yea-and-nay": {
         "term": "Yea y Nay (sí y no)",
-        "body": "“Yea” significa sí y “nay” significa no. Son las respuestas que dan los miembros en una votación, y “the yeas and nays” es otro nombre para una votación nominal."
+        "body": "«Yea» significa sí y «nay» significa no. Son las respuestas que dan los miembros en una votación, y «the yeas and nays» es otro nombre para una votación nominal."
       },
       "present-vote": {
-        "term": "Votar “presente”",
-        "body": "Un miembro que responde “presente” en una votación cuenta como presente pero no toma partido por ningún lado. El voto se registra como presente, no como sí ni como no."
+        "term": "Votar «presente»",
+        "body": "Un miembro que responde «presente» en una votación cuenta como presente pero no toma partido por ningún lado. El voto se registra como presente, no como sí ni como no."
       },
       "not-voting": {
         "term": "No votó (not voting)",
-        "body": "“No votó” significa que el registro no muestra ningún voto de ese miembro en esa cuestión. Puede que estuviera ausente o que decidiera no votar; el registro por sí solo no dice cuál de las dos."
+        "body": "«No votó» significa que el registro no muestra ningún voto de ese miembro en esa cuestión. Puede que estuviera ausente o que decidiera no votar; el registro por sí solo no dice cuál de las dos."
       },
       "tie-vote": {
         "term": "Empate",
@@ -1460,7 +1460,7 @@
       },
       "cbo-cost-estimate": {
         "term": "Estimación de costos de la CBO",
-        "body": "La Oficina de Presupuesto del Congreso (CBO) es la oficina presupuestaria del Congreso. Para la mayoría de los proyectos que un comité envía al pleno, estima cuánto cambiarían el gasto y los ingresos federales en los próximos años. A menudo se llama a esa estimación la “puntuación” del proyecto."
+        "body": "La Oficina de Presupuesto del Congreso (CBO) es la oficina presupuestaria del Congreso. Para la mayoría de los proyectos que un comité envía al pleno, estima cuánto cambiarían el gasto y los ingresos federales en los próximos años. A menudo se llama a esa estimación la «puntuación» del proyecto."
       },
       "sequestration": {
         "term": "Secuestro presupuestario (sequestration)",
@@ -1472,7 +1472,7 @@
       },
       "rescission": {
         "term": "Rescisión",
-        "body": "Una rescisión es una ley que cancela dinero que el Congreso ya había aprobado, antes de que se gaste. El Presidente puede proponer rescisiones, pero solo el Congreso puede aprobarlas; si no actúa en 45 días, el dinero debe quedar disponible para gastarse."
+        "body": "Una rescisión es una ley que cancela dinero que el Congreso ya había aprobado, antes de que se gaste. El Presidente puede proponer rescisiones, pero solo el Congreso puede aprobarlas; si no actúa dentro de 45 días de sesión continua, el dinero debe quedar disponible para gastarse."
       },
       "tax-credit": {
         "term": "Crédito fiscal",
@@ -1556,7 +1556,7 @@
       },
       "at-large": {
         "term": "Distrito único («at-large»)",
-        "body": "Un estado con un solo escaño en la Cámara elige a su representante “at large”, es decir, con los votos de todo el estado y no de un distrito. Cada estado tiene al menos un representante, por pequeña que sea su población."
+        "body": "Un estado con un solo escaño en la Cámara elige a su representante «at large», es decir, con los votos de todo el estado y no de un distrito. Cada estado tiene al menos un representante, por pequeña que sea su población."
       },
       "delegate": {
         "term": "Delegado o delegada",
@@ -1616,7 +1616,7 @@
     "dayEmpty": "Nada en el registro que tenemos para este día: ninguna votación nominal sobre un proyecto que seguimos, y ningún proyecto cuya última acción tenga esta fecha.",
     "votesHeading": "Votaciones nominales",
     "voteRoll": "{chamber}, votación nominal {roll}",
-    "tally": "A favor {yea} · En contra {nay} · Presente {present} · No votaron {notVoting}",
+    "tally": "<yeaTerm>A favor</yeaTerm> {yea} · En contra {nay} · <presentTerm>Presente</presentTerm> {present} · <notVotingTerm>No votaron</notVotingTerm> {notVoting}",
     "voteSource": "Recuento oficial",
     "movedHeading": "Proyectos cuya última acción tiene esta fecha",
     "movedMore": "{count, plural, one {# proyecto más tiene} other {# proyectos más tienen}} una última acción con esta fecha.",

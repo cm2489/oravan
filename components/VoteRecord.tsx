@@ -128,20 +128,27 @@ export async function VoteRecord({ billId, className = '' }: { billId: string; c
           aria-label={t('tally')}
           className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-line pt-3 text-sm min-[30rem]:grid-cols-4"
         >
-          {POSITIONS.map((p) => (
-            <div key={p} className="flex items-baseline justify-between gap-2 min-[30rem]:block">
-              <dt className="text-ink-2">
-                {POSITION_TERM[p] ? (
-                  <GlossaryTerm id={POSITION_TERM[p]}>{t(`position.${p}`)}</GlossaryTerm>
-                ) : (
-                  t(`position.${p}`)
-                )}
-              </dt>
-              <dd className="font-extrabold text-ink tabular-nums" data-vote-total={p}>
-                {r.totals[p]}
-              </dd>
-            </div>
-          ))}
+          {POSITIONS.map((p) => {
+            // A label joins the card's section like any other term: marked
+            // once, so the tie-breaker line below does not mark "Yea" again.
+            const term = POSITION_TERM[p];
+            const mark = term && !seen.has(term) ? term : null;
+            if (mark) seen.add(mark);
+            return (
+              <div key={p} className="flex items-baseline justify-between gap-2 min-[30rem]:block">
+                <dt className="text-ink-2">
+                  {mark ? (
+                    <GlossaryTerm id={mark}>{t(`position.${p}`)}</GlossaryTerm>
+                  ) : (
+                    t(`position.${p}`)
+                  )}
+                </dt>
+                <dd className="font-extrabold text-ink tabular-nums" data-vote-total={p}>
+                  {r.totals[p]}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
 
         {r.tieBreaker && (

@@ -3,6 +3,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { billSlug, getAllBills, localizeBill } from '../lib/core';
 import { votesForBill } from '../lib/votes';
+import { briefWindow, buildBrief } from '../lib/today';
 import type { GlossaryTermId } from '../lib/glossary';
 import { splitGlossaryTerms, type GlossaryLocale } from '../lib/glossary-match';
 
@@ -191,3 +192,37 @@ test('the vote tally labels open their entries', async ({ page }) => {
   const box = await openByClick(page, yea);
   await expect(box).toContainText(en.glossary.terms['yea-and-nay'].body);
 });
+
+/*
+ * /today's TALLY LABELS, in both languages. The tally line under each roll
+ * call names its labels by tag ("A favor" is no phrase a matcher could safely
+ * look for), so Yea, Present and Not voting open their entries on /es too.
+ */
+const briefWithVotes = briefWindow().find((date) =>
+  buildBrief(date).days.some((day) => day.rollCalls.length > 0)
+);
+const tallyLabel = (tally: string, tag: string) =>
+  new RegExp(`<${tag}>(.*?)</${tag}>`).exec(tally)![1];
+
+for (const [locale, prefix, messages] of [
+  ['en', '', en],
+  ['es', '/es', es],
+] as const) {
+  test(`${locale}: the /today tally labels open their entries`, async ({ page }) => {
+    test.skip(!briefWithVotes, 'no roll call inside the brief window');
+    await page.goto(`${prefix}/today/${briefWithVotes}`);
+    const tally = page.locator('[data-brief-tally]').first();
+    for (const [tag, id] of [
+      ['yeaTerm', 'yea-and-nay'],
+      ['presentTerm', 'present-vote'],
+      ['notVotingTerm', 'not-voting'],
+    ] as const) {
+      await expect(tally.locator(`[data-glossary-term="${id}"]`)).toHaveText(
+        tallyLabel(messages.today.tally, tag)
+      );
+    }
+    const box = await openByClick(page, tally.locator('[data-glossary-term="present-vote"]'));
+    const terms = messages.glossary.terms as Record<string, { body: string }>;
+    await expect(box).toContainText(terms['present-vote'].body);
+  });
+}

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { after } from 'next/server';
 import { noteEmbedReferralDomain } from '@/lib/embed-referrer';
+import { embedDicts } from '@/components/embed/embed-dicts';
+import { EmbedDictsProvider } from '@/components/embed/EmbedDictsProvider';
 import './embed.css';
 
 /*
@@ -52,9 +54,13 @@ export default async function EmbedLayout({ children }: { children: React.ReactN
   const referer = requestHeaders.get('referer');
   after(() => noteEmbedReferralDomain(referer));
 
+  // The widgets' copy, picked here on the server so the catalogs never ship
+  // as client JavaScript (components/embed/embed-dicts.ts).
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <EmbedDictsProvider dicts={embedDicts()}>{children}</EmbedDictsProvider>
+      </body>
     </html>
   );
 }

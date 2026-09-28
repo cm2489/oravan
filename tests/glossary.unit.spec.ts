@@ -14,6 +14,7 @@ import {
   isGlossaryTermId,
   type GlossaryTermId,
 } from '../lib/glossary';
+import { GLOSSARY_NEAR_MISSES } from '../lib/glossary-terms';
 import { glossaryLocale, splitGlossaryTerms, type GlossaryLocale } from '../lib/glossary-match';
 import { clientMessages } from '../i18n/client-messages';
 import { lintForbidden } from '../lib/moments-gate.mjs';
@@ -532,6 +533,22 @@ test.describe('automatic marking', () => {
       'the Supplemental Nutrition Assistance Program', // SNAP
       'coverage for hearing aids', // not a committee hearing
       'both chambers are reconciling their versions.', // a conference, not reconciliation
+      // Bare "shutdown" is not a lapse in funding (independent review,
+      // 2026-09-28: seven wrong marks on five bill pages).
+      'S 3135 lets diesel vehicles bypass emissions shutdown features below 20°F, permanently for farm gear and Alaska-area vehicles.', // s-3135
+      'Below 20°F, manufacturers could temporarily disable automatic shutdown or power-reduction features', // s-3135
+      'only the shutdown/derate enforcement tool in these specific cases.', // s-3135
+      'publish a yearly public report on the cleanup and shutdown of old offshore oil and gas wells', // hr-8099
+      'the Nuclear Regulatory Commission would have to officially approve shutdown plans rather than simply review them.', // hr-6613
+      'This bill creates a federal payment process to address income lost during that forced shutdown.', // hr-1376
+      'inspecting drilling, well plugging, and facility construction or shutdown.', // hr-398
+      'led to American casualties, a shutdown of the Strait of Hormuz by Iranian forces', // sjres-172
+      'Facilities could briefly restrict in-person visits for the first seven days of a shutdown', // hr-9641
+      // …and not even "government shutdown" when it is a regulator closing
+      // someone's operation (a near miss, lib/glossary-terms.ts).
+      'mine operators who ignore a final penalty order for more than 180 days risk a government shutdown of their mine.', // hr-6597
+      // "Federal debt" was collection law, not the national debt.
+      'treats defaulted student loan debt differently from other government debts under federal debt collection law.', // hr-9609
     ];
     for (const text of en) expect(marked(text, 'en'), text).toEqual([]);
     const es = [
@@ -541,6 +558,44 @@ test.describe('automatic marking', () => {
       'HR 7735 ordena a un comité conjunto del VA y el DoD', // agencies
     ];
     for (const text of es) expect(marked(text, 'es'), text).toEqual([]);
+  });
+
+  test('the narrowed lists still mark what they mean', () => {
+    // The government shutdown, however the decode said it.
+    for (const text of [
+      'During a government shutdown, this bill would keep federal workers paid.', // s-3168
+      'keep paying air traffic controllers during government shutdowns.', // hr-6086
+      'funded at 2025 levels through October 31, 2025, averting a shutdown.', // s-2882
+      'through December 4, 2026, to avoid a shutdown.', // hr-9770
+      'required to keep working during a shutdown.', // hr-6018
+      'caused by a lapse in appropriations', // hr-7941
+    ]) {
+      expect(marked(text, 'en'), text).toEqual(['government-shutdown']);
+    }
+    // The debt ceiling is the debt limit, not the national debt.
+    expect(marked('and raises the federal debt ceiling.', 'en')).toEqual(['debt-limit']); // hr-1
+    expect(marked('directs recovered funds toward federal debt reduction.', 'en')).toEqual([
+      'national-debt',
+    ]); // s-68
+    // A near miss claims only its own words: the next sentence still marks.
+    expect(
+      marked('Mines risk a government shutdown of their mine. During a government shutdown, pay stops.', 'en')
+    ).toEqual(['government-shutdown']);
+  });
+
+  test('every near miss contains a listed phrase, is not one, and marks nothing', () => {
+    for (const locale of ['en', 'es'] as const) {
+      const listed = new Set(GLOSSARY_ENTRIES.flatMap((e) => e.match[locale].map((p) => p.toLowerCase())));
+      for (const phrase of GLOSSARY_NEAR_MISSES[locale]) {
+        expect(listed.has(phrase.toLowerCase()), `${locale}: "${phrase}" is also a listed phrase`).toBe(false);
+        // It must shadow something, or it is dead weight.
+        const inner = [...listed].some((p) =>
+          new RegExp(`(?<![\\p{L}\\p{N}])${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'iu').test(phrase)
+        );
+        expect(inner, `${locale}: "${phrase}" contains no listed phrase`).toBe(true);
+        expect(marked(phrase, locale), `${locale}: "${phrase}"`).toEqual([]);
+      }
+    }
   });
 
   test('the journey sentences that only LOOK like terms are never marked', () => {
@@ -612,12 +667,19 @@ test.describe('the client payload', () => {
     // components/GlossaryTerm.tsx reads `glossary.terms`, which the client
     // provider no longer carries; a 'use client' module importing it would
     // throw in the browser. The data table must stay out of client chunks.
+    // So must the message catalogs themselves: a client module importing
+    // messages/*.json ships every definition in both languages (the embed
+    // widgets did, 2026-09-28: +70 KB in their chunk; their copy now comes
+    // from the server, components/embed/embed-dicts.ts).
     const FORBIDDEN_IMPORTS = [
       '@/components/GlossaryTerm',
       '@/components/glossary-tags',
       '@/lib/glossary-terms',
       '@/lib/glossary-match',
       "@/lib/glossary'",
+      "@/messages/en.json'",
+      "@/messages/es.json'",
+      "embed-dicts'",
     ];
     const files: string[] = [];
     const walk = (dir: string) => {
@@ -630,8 +692,10 @@ test.describe('the client payload', () => {
     walk('components');
     walk('app');
     for (const p of files) {
-      const src = readText(p);
-      if (!src.trimStart().startsWith("'use client'")) continue;
+      const raw = readText(p);
+      if (!raw.trimStart().startsWith("'use client'")) continue;
+      // A type-only import is erased by the compiler and ships nothing.
+      const src = raw.replace(/import\s+type\s[^;]*;/g, '');
       for (const imp of FORBIDDEN_IMPORTS) {
         expect(src, `${p} imports ${imp}`).not.toContain(imp);
       }
@@ -685,6 +749,9 @@ test.describe('in-place wiring', () => {
         'senateWhen',
         'term',
       ]);
+      // /today's tally labels, wired by name in both languages
+      // (components/TodayBrief.tsx).
+      expect(richTags(msgs.today.tally).sort()).toEqual(['notVotingTerm', 'presentTerm', 'yeaTerm']);
     }
   });
 

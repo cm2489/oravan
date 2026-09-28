@@ -277,6 +277,30 @@ test.describe('the in-place definition', () => {
     await expectClosed(page, term);
   });
 
+  test('a click inside a pinned box never closes it, even when focus sits on the term', async ({
+    page,
+  }) => {
+    // A keyboard pin leaves focus on the term (and Chrome focuses a button
+    // on every click). A click on the box's plain text then moves focus off
+    // the term, to <body>; that once closed the box under the reader's
+    // cursor (independent review, 2026-09-28). Reading it is not leaving it.
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await focusTerm(term);
+    await expect(term).toBeFocused();
+    await page.keyboard.press('Enter'); // pins it
+    const box = await boxOf(page, term);
+    const bodyId = await term.getAttribute('aria-describedby');
+    await page.locator(`[id="${bodyId}"]`).click();
+    await expect(term, 'the click must take focus off the term, or this test proves nothing').not.toBeFocused();
+    await page.waitForTimeout(300);
+    await expect(box).toBeVisible();
+    await expect(term).toHaveAttribute('aria-expanded', 'true');
+    // Moving on still closes it: the next Tab lands outside the term and its box.
+    await page.keyboard.press('Tab');
+    await expectClosed(page, term);
+  });
+
   test('screen readers get the definition: expanded, controls, described-by the body', async ({
     page,
   }) => {

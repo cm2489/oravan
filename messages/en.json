@@ -1048,7 +1048,7 @@
   "glossary": {
     "title": "Congress, in plain words",
     "metaDescription": "Plain-words explainers for the terms that turn up in the official congressional record and on this site — cloture, unanimous consent, appropriations, roll call votes, congressional districts, and more.",
-    "intro": "Congress runs on a vocabulary that nothing explains while you read it. These are the terms that show up in the official record and on this site — what each one actually does, and what it does not tell you. Wherever one of them appears on the site, hover over it or tap it to read its entry without leaving the page.",
+    "intro": "Congress runs on a vocabulary that nothing explains while you read it. These are the terms that show up in the official record and on this site — what each one actually does, and what it does not tell you. Where a term on the site is underlined with dots, hover over it or tap it to read its entry without leaving the page.",
     "scopeNote": "Every entry describes the mechanics only, and is based on the official source linked under it. None of them says who benefits, who wins, or when anything will be voted on.",
     "indexLabel": "Jump to a section",
     "sourceLabel": "Source: {site}",
@@ -1472,7 +1472,7 @@
       },
       "rescission": {
         "term": "Rescission",
-        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The President can propose rescissions, but only Congress can enact them; if it does not act within 45 days, the money must be made available for spending."
+        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The President can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
       },
       "tax-credit": {
         "term": "Tax credit",
@@ -1616,7 +1616,7 @@
     "dayEmpty": "Nothing in the record we hold for this day: no roll-call vote on a bill we track, and no bill whose latest action is dated this day.",
     "votesHeading": "Roll-call votes",
     "voteRoll": "{chamber} roll call {roll}",
-    "tally": "Yea {yea} · Nay {nay} · Present {present} · Not voting {notVoting}",
+    "tally": "<yeaTerm>Yea</yeaTerm> {yea} · Nay {nay} · <presentTerm>Present</presentTerm> {present} · <notVotingTerm>Not voting</notVotingTerm> {notVoting}",
     "voteSource": "Official tally",
     "movedHeading": "Bills whose latest action is dated this day",
     "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",

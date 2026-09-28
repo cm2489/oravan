@@ -22,8 +22,9 @@ import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent, 
  *     leaves, and closes on a second click or tap of the term, a click or tap
  *     anywhere else, Escape, or focus moving on. A click on a box that hover
  *     already opened just pins it, so a click never makes the box vanish
- *     under the reader's eyes. A tap on a phone is a click; there is no
- *     hover step to get past.
+ *     under the reader's eyes, and a click or tap INSIDE the box never
+ *     closes it (even where the browser moves focus off the term to do it).
+ *     A tap on a phone is a click; there is no hover step to get past.
  *   KEYBOARD — focus opens it at once (focus is deliberate, so no delay);
  *     Enter or Space pins it; Escape closes it and leaves focus on the term;
  *     Tab moves on and closes it.
@@ -137,6 +138,8 @@ export function GlossaryPopover({
   const pinnedRef = useRef(false);
   /** Set by Escape. Keeps it shut while pointer and focus stay put. */
   const suppressedRef = useRef(false);
+  /** A press (mouse, pen or touch) is down inside the term or its box. */
+  const pressingRef = useRef(false);
 
   const clearTimers = useCallback(() => {
     if (openTimer.current) clearTimeout(openTimer.current);
@@ -190,11 +193,20 @@ export function GlossaryPopover({
       if (wrapRef.current?.contains(e.target as Node)) return;
       close();
     };
+    // Focus landing anywhere else closes it too. This covers the Tab that
+    // follows a click on the box's text: that click already moved focus off
+    // the term (see onBlur), so no blur is left to fire when the reader moves on.
+    const onFocusIn = (e: FocusEvent) => {
+      if (wrapRef.current?.contains(e.target as Node)) return;
+      close();
+    };
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('focusin', onFocusIn);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('focusin', onFocusIn);
     };
   }, [open, close]);
 
@@ -270,10 +282,27 @@ export function GlossaryPopover({
     show(false);
   };
 
+  /* A press inside the term or its box is reading, not leaving. Chrome
+     focuses a button on click, so a keyboard-pinned or clicked term holds
+     focus, and a click on the box's plain text then blurs it to <body>
+     (relatedTarget null). Without this, that click would close the box it
+     landed in. Cleared when the press ends, wherever that is. */
+  const onPointerDown = () => {
+    pressingRef.current = true;
+    const release = () => {
+      pressingRef.current = false;
+      document.removeEventListener('pointerup', release, true);
+      document.removeEventListener('pointercancel', release, true);
+    };
+    document.addEventListener('pointerup', release, true);
+    document.addEventListener('pointercancel', release, true);
+  };
+
   const onBlur = (e: ReactFocusEvent) => {
     const next = e.relatedTarget as Node | null;
     if (next && wrapRef.current?.contains(next)) return;
     suppressedRef.current = false;
+    if (pressingRef.current) return;
     close();
   };
 
@@ -285,6 +314,7 @@ export function GlossaryPopover({
       ref={wrapRef}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      onPointerDown={onPointerDown}
       onFocus={onFocus}
       onBlur={onBlur}
     >
