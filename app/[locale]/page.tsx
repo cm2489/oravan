@@ -5,7 +5,6 @@ import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/serve
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
-import { HomeScreencast } from '@/components/HomeScreencast';
 import { NewsLens } from '@/components/NewsLens';
 import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -1015,12 +1014,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           One titled zone under the page's third and last 3px ink rule, and
           the rule now opens BOTH columns at once: left holds the heading,
           the sub, and the five minutes as a numbered list; right holds the
-          SCREENCAST WALKTHROUGH (HomeScreencast — real frames of the real
-          flow, owner pick 2A, raised level with the heading) with the
-          why-call teaser beneath it (owner item 4). The two demo disclosures
-          this replaced are gone (owner item 3); the transcript's reassurance
-          survives as the note under the player. Ruled paper, no third
-          ground. */}
+          why-call teaser (owner item 4). Ruled paper, no third ground.
+
+          THE SCREENCAST IS OFF (owner, UX inventory H18 "cut", 2026-09-28:
+          "Let's keep it off for now until UI/UX is finalized and then we can
+          talk about adding back in and where"). components/HomeScreencast.tsx,
+          its home.screencast* and home.demoNote* strings and its frames in
+          public/walkthrough/ are all kept, unmounted, so putting it back is
+          one import and <HomeScreencast /> wherever it lands. */}
       {/* THE FIVE MINUTES, AS NUMBERS ONLY (owner decision 2026-08-01,
           round 3): the route gauge is gone. It was redrawn twice — four
           per-leg bars, then one stacked track — and neither read as a
@@ -1062,27 +1063,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <span>{t('routeTotalNote')}</span>
             </p>
           </div>
-          {/* The walkthrough beside the steps it plays out, top-aligned
-              with the zone heading (owner pick 2A), and the why-call teaser
-              directly under it (owner item 4) — the column that used to be
-              half dead space now answers "show me" and then "does it
-              work?". why-title stays an h3: it is a subsection of this
-              zone's h2. */}
-          <div>
-            <HomeScreencast />
-            <div className="mt-8 border-t-[1.5px] border-line-strong pt-6">
-              <h3 id="why-title" className="text-h3 font-extrabold">
-                {t('whyTitle')}
-              </h3>
-              <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
-              <Link
-                href="/why-call"
-                className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-              >
-                {t('whyCta')}
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+          {/* The why-call teaser (owner item 4), top-aligned with the zone
+              heading beside the steps. On a phone it follows the steps under
+              its own hairline; on the two-column layout the zone's 3px rule
+              already opens it. why-title stays an h3: it is a subsection of
+              this zone's h2. */}
+          <div className="border-t-[1.5px] border-line-strong pt-6 md:border-t-0 md:pt-0">
+            <h3 id="why-title" className="text-h3 font-extrabold">
+              {t('whyTitle')}
+            </h3>
+            <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
+            <Link
+              href="/why-call"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('whyCta')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
           </div>
         </div>
       </section>
