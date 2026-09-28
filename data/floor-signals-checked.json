@@ -1,6 +1,6 @@
 {
   "schema": "floor-signals-checked/v1",
-  "checked_at": "2026-09-28T06:46:57.446Z",
+  "checked_at": "2026-09-28T15:21:48.805Z",
   "in_session": {
     "senate": "in_session",
     "house": "out_of_session",
