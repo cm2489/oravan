@@ -23,6 +23,20 @@ name: Daily metrics digest
 # data workflows already print, the committed data files and the open-issue
 # list. No new secret, no paid call — which is why this job now also needs
 # `actions: read` below.
+#
+# WHERE IT POSTS (2026-09-28): the PRIVATE ops tracker, cm2489/oravan-ops,
+# not this public repo. The digest carries every traffic number and the
+# health report carries the day's spend estimate; on the owner's 2026-09-27
+# "keep going" on the recommendation to keep the code public and move
+# feedback and the traffic digest to a private ops repo, every issue this job
+# writes goes there. The token that can write there is the Actions secret
+# OPS_ISSUES_TOKEN (fine-grained PAT, Issues read/write on cm2489/oravan-ops).
+# WITHOUT IT THIS JOB POSTS NOWHERE — no fallback to this repo: the setup step
+# skips, the script writes a number-free notice to the job summary (a job
+# summary on a public repo is public too) and a ::warning::, and the run
+# stays green. The job's own GITHUB_TOKEN is `issues: read` below, so even a
+# bug that aimed a write at this repo would be refused. Which issue writers
+# stay in this repo, and why: lib/ops-repo.mjs.
 
 on:
   schedule:
@@ -50,7 +64,13 @@ permissions:
   # repo's own workflow runs — the whole input to the pipeline-health report.
   # Read-only: this job cannot start, cancel or re-run anything.
   actions: read
-  issues: write
+  # READ, not write (2026-09-28): every issue this job writes goes to the
+  # private ops tracker under OPS_ISSUES_TOKEN. The runner's own token only
+  # READS this repo's issues — the moment candidates and corpus tripwires the
+  # digest lists under "Awaiting your word", and the candidates the health
+  # report counts. Read-only is also the structural guarantee that nothing
+  # here can fall back to posting traffic or spend numbers in public.
+  issues: read
 
 concurrency:
   group: daily-metrics
@@ -82,22 +102,47 @@ jobs:
         # rather than a second, independently-maintained copy of the key
         # format (see that script's own header comment for why plain node
         # can't resolve lib/usage.ts's extensionless imports).
-      - name: Ensure labels + pinned digest issue exist (idempotent)
+      - name: Ensure labels + pinned digest issue exist in the ops tracker (idempotent)
         id: setup
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The ops PAT, as GH_TOKEN, on THIS step only: every command below
+          # names --repo "$OPS_REPO" and none touches this public repo. Empty
+          # when the secret is unset — then the step skips and the script
+          # below writes the job-summary notice and the warning.
+          GH_TOKEN: ${{ secrets.OPS_ISSUES_TOKEN }}
+          OPS_REPO: cm2489/oravan-ops
         run: |
-          gh label create metrics --color 1D76DB --description "Daily metrics digest" --force
-          gh label create traffic-spike --color D93F0B --description "Automated traffic-spike alert" --force
-          gh label create traffic-decline --color FBCA04 --description "Automated traffic-decline alert (standing issue)" --force
-          gh label create pipeline-health --color 0E8A16 --description "Daily pipeline-health report (standing issue)" --force
-          NUM=$(gh issue list --repo cm2489/oravan --state open --search 'in:title "Daily metrics"' \
+          if [ -z "$GH_TOKEN" ]; then
+            echo "OPS_ISSUES_TOKEN is not set: skipping the ops-tracker setup (the digest step says why, without numbers)."
+            echo "issue_num=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh label create metrics --repo "$OPS_REPO" --color 1D76DB --description "Daily metrics digest" --force
+          gh label create traffic-spike --repo "$OPS_REPO" --color D93F0B --description "Automated traffic-spike alert" --force
+          gh label create traffic-decline --repo "$OPS_REPO" --color FBCA04 --description "Automated traffic-decline alert (standing issue)" --force
+          gh label create pipeline-health --repo "$OPS_REPO" --color 0E8A16 --description "Daily pipeline-health report (standing issue)" --force
+          # The beta-feedback labels app/api/feedback applies. That route files
+          # into the ops tracker too, and a workflow-referenced label must be
+          # created by committed code (the house lesson below). `bug` is one
+          # of GitHub's default labels and already exists there. A missing
+          # label never loses a note: the route retries without labels on a
+          # 422 and its [beta:<category>] title prefix carries the taxonomy —
+          # which is also why these four only warn, never fail the digest.
+          gh label create beta-feedback --repo "$OPS_REPO" --color 5319E7 --description "Beta feedback from the site's feedback dialog" --force \
+            || echo "::warning::could not upsert the beta-feedback label in the ops tracker"
+          gh label create feature --repo "$OPS_REPO" --color A2EEEF --description "Beta feedback: an idea or request" --force \
+            || echo "::warning::could not upsert the feature label in the ops tracker"
+          gh label create partnership --repo "$OPS_REPO" --color C5DEF5 --description "Beta feedback: partnership or licensing" --force \
+            || echo "::warning::could not upsert the partnership label in the ops tracker"
+          gh label create other --repo "$OPS_REPO" --color EDEDED --description "Beta feedback: something else" --force \
+            || echo "::warning::could not upsert the other label in the ops tracker"
+          NUM=$(gh issue list --repo "$OPS_REPO" --state open --search 'in:title "Daily metrics"' \
                 --json number,title --jq '.[] | select(.title=="📊 Daily metrics") | .number' | head -1)
           if [ -z "$NUM" ]; then
-            NUM=$(gh issue create --repo cm2489/oravan --title "📊 Daily metrics" --label metrics \
+            NUM=$(gh issue create --repo "$OPS_REPO" --title "📊 Daily metrics" --label metrics \
                   --body "Automated daily digest — one comment per day. Covers MCP tool calls, /api/script generations, and site page views from the counters database's usage family (lib/usage.ts), with a spike check against a trailing 7-day median on the two MCP/script aggregates, plus a Pipeline health section built by scripts/pipeline-health.mjs. Site page views are first-party and server-side (one counter per route template per UTC day, incremented in proxy.ts — no client script, no path, no query, no caller material): they are requests, bots included, not people. Beside them, one site-wide daily estimate of distinct network addresses (bots included, not people: a HyperLogLog sketch of a salted address hash whose salt is used for nothing else and deleted when its UTC day ends, lib/ratelimit.ts, one key per UTC day with no page dimension, owner rulings 2026-09-25 and 2026-09-27). Not Vercel Web Analytics — that API needs the @vercel/analytics client script, which CLAUDE.md permanently bans. A vendor server-side source also exists — \`vercel metrics --format json\` (CLI, public beta 2026, requires Observability Plus) — and this digest does not read it. See scripts/daily-metrics.mjs for the full reasoning." \
                   | grep -oE '[0-9]+$')
-            gh issue pin --repo cm2489/oravan "$NUM" || true
+            gh issue pin --repo "$OPS_REPO" "$NUM" || true
           fi
           echo "issue_num=$NUM" >> "$GITHUB_OUTPUT"
         # Labels + the pinned issue are created BY THIS WORKFLOW every run,
@@ -115,7 +160,15 @@ jobs:
         env:
           UPSTASH_COUNTERS_REST_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
           UPSTASH_COUNTERS_REST_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
+          # Two tokens, two jobs. GITHUB_TOKEN: this public repo, READS only
+          # (the Actions runs and open issues). OPS_ISSUES_TOKEN: every WRITE,
+          # to the private ops tracker — the script hands it to `gh` as
+          # GH_TOKEN on those calls alone. Do NOT set GH_TOKEN on this step:
+          # `gh` prefers it over GITHUB_TOKEN, and the ops PAT cannot read this
+          # repo's Actions, so every health row would read "not found".
+          # Pinned by tests/ops-repo.unit.spec.ts.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPS_ISSUES_TOKEN: ${{ secrets.OPS_ISSUES_TOKEN }}
           DIGEST_ISSUE_NUMBER: ${{ steps.setup.outputs.issue_num }}
           # Flagged (not fixed) in PR #87: this workflow never set VERCEL_ENV,
           # so lib/upstash.ts's keyPrefix() resolved to 'dev' here while the

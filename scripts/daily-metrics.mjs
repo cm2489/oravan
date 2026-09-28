@@ -56,13 +56,30 @@
  * those modules' extensionless relative imports (verified directly, same
  * failure pregen-scripts.mjs's own header comment documents).
  *
+ * WHERE IT POSTS (2026-09-28): the private ops tracker, cm2489/oravan-ops —
+ * the digest comment, the spike and decline issues, and the standing
+ * pipeline-health issue, because between them they carry every traffic
+ * number and the day's spend estimate. It READS the public repo (the Actions
+ * runs the health report is built from, and its open issues for the
+ * "Awaiting your word" section) and WRITES only to the ops repo. With no ops
+ * token it posts nowhere — never the public repo — and says so in the job
+ * summary without a number. The run log's closing line names no figure
+ * either. The why, and the list of issue writers that stay public, is in
+ * lib/ops-repo.mjs.
+ *
  * Env:
  *   UPSTASH_COUNTERS_REST_URL/TOKEN  absent -> ::notice, exit 0 (dark-ship,
  *                                     same posture as scripts/verify-salt.mjs)
- *   DIGEST_ISSUE_NUMBER              the pinned issue's number — the
- *                                     workflow's "Ensure labels + pinned
- *                                     digest issue exist" step's output
- *   GITHUB_TOKEN                     inherited by the `gh` CLI automatically
+ *   OPS_ISSUES_TOKEN                 fine-grained PAT, Issues read/write on
+ *                                     cm2489/oravan-ops. Absent -> ::warning::,
+ *                                     a number-free job-summary notice, exit 0
+ *   DIGEST_ISSUE_NUMBER              the pinned issue's number IN THE OPS
+ *                                     REPO — the workflow's "Ensure labels +
+ *                                     pinned digest issue exist" step's output
+ *   GITHUB_TOKEN                     the runner's token, used by `gh` for the
+ *                                     public-repo READS only. GH_TOKEN must not
+ *                                     be set at step level: `gh` prefers it,
+ *                                     and this script sets it per ops call
  *
  * GitHub interaction goes through the `gh` CLI via child_process (same tool
  * refresh-legislators.yml already shells out to directly from bash) rather
@@ -141,8 +158,6 @@ import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
   SPIKE_WINDOW_DAYS,
-  awaitingYourWordSection,
-  closableIssues,
   darkTools,
   declineClearedComment,
   declineClearedReason,
@@ -152,6 +167,7 @@ import {
   declineStillDecliningComment,
   declineWindowDays,
   formatDigestBody,
+  issueHygiene,
   seriesStats,
   spikeClosedComment,
   spikeIssueContent,
@@ -165,8 +181,16 @@ import {
   formatHealthSection,
 } from '../lib/pipeline-health.mjs';
 import { buildReport } from './pipeline-health.mjs';
-
-const REPO = 'cm2489/oravan';
+import {
+  OPS_REPO,
+  PUBLIC_REPO,
+  issueRefFromOps,
+  opsDestination,
+  opsGhEnv,
+  publicGhEnv,
+  withheldSummary,
+  writeJobSummary,
+} from '../lib/ops-repo.mjs';
 
 let tmpCounter = 0;
 /** gh's --body-file avoids every shell-quoting hazard a --body string would carry. */
@@ -176,8 +200,23 @@ function writeTempFile(content) {
   return file;
 }
 
-function gh(args) {
-  return execFileSync('gh', args, { encoding: 'utf8' });
+/**
+ * The ops PAT, set once in main() from opsDestination(). Every WRITE this
+ * script makes goes through ghOps, to OPS_REPO, under this token — see
+ * lib/ops-repo.mjs for why nothing here ever writes to the public repo.
+ * @type {string | null}
+ */
+let opsToken = null;
+
+/** A `gh` call against the private ops tracker, under the ops PAT. */
+function ghOps(args) {
+  if (!opsToken) throw new Error('ghOps called before the ops destination was resolved');
+  return execFileSync('gh', args, { encoding: 'utf8', env: opsGhEnv(process.env, opsToken) });
+}
+
+/** A read-only `gh` call against the public repo, under the runner's GITHUB_TOKEN. */
+function ghPublic(args) {
+  return execFileSync('gh', args, { encoding: 'utf8', env: publicGhEnv(process.env) });
 }
 
 /**
@@ -188,11 +227,11 @@ function gh(args) {
  */
 function ensureSpikeIssue({ series, date, stats, floor }) {
   const { title, body } = spikeIssueContent({ series, date, stats, floor });
-  const existingRaw = gh([
+  const existingRaw = ghOps([
     'issue',
     'list',
     '--repo',
-    REPO,
+    OPS_REPO,
     '--state',
     'open',
     '--search',
@@ -203,15 +242,15 @@ function ensureSpikeIssue({ series, date, stats, floor }) {
   const matches = existingRaw ? JSON.parse(existingRaw) : [];
   const match = matches.find((m) => m.title === title);
   if (match) {
-    console.log(`spike issue already open for ${series} on ${date}: ${match.url}`);
+    console.log(`spike issue already open for ${date} in the ops tracker: ${match.url}`);
     return match.url;
   }
   const bodyFile = writeTempFile(body);
-  const url = gh([
+  const url = ghOps([
     'issue',
     'create',
     '--repo',
-    REPO,
+    OPS_REPO,
     '--title',
     title,
     '--label',
@@ -219,7 +258,7 @@ function ensureSpikeIssue({ series, date, stats, floor }) {
     '--body-file',
     bodyFile,
   ]).trim();
-  console.log(`opened spike issue for ${series} on ${date}: ${url}`);
+  console.log(`opened a spike issue for ${date} in the ops tracker: ${url}`);
   return url;
 }
 
@@ -232,11 +271,11 @@ function ensureSpikeIssue({ series, date, stats, floor }) {
  */
 function findOpenDeclineIssue(series) {
   const title = declineIssueTitle(series);
-  const raw = gh([
+  const raw = ghOps([
     'issue',
     'list',
     '--repo',
-    REPO,
+    OPS_REPO,
     '--state',
     'open',
     '--search',
@@ -252,7 +291,7 @@ function findOpenDeclineIssue(series) {
  *  re-run guard postOrEditTodaysComment uses on the pinned digest issue, so
  *  an accidental workflow_dispatch never doubles a day's comment. */
 function hasCommentWithMarker(issueNumber, marker) {
-  const raw = gh(['issue', 'view', String(issueNumber), '--repo', REPO, '--json', 'comments']).trim();
+  const raw = ghOps(['issue', 'view', String(issueNumber), '--repo', OPS_REPO, '--json', 'comments']).trim();
   const comments = JSON.parse(raw).comments ?? [];
   return comments.some((c) => typeof c.body === 'string' && c.body.includes(marker));
 }
@@ -269,11 +308,11 @@ function ensureDeclineIssue({ series, date, stats, darkTools: dark }) {
   const bodyFile = writeTempFile(body);
   const existing = findOpenDeclineIssue(series);
   if (!existing) {
-    const url = gh([
+    const url = ghOps([
       'issue',
       'create',
       '--repo',
-      REPO,
+      OPS_REPO,
       '--title',
       title,
       '--label',
@@ -281,17 +320,17 @@ function ensureDeclineIssue({ series, date, stats, darkTools: dark }) {
       '--body-file',
       bodyFile,
     ]).trim();
-    console.log(`opened the standing decline issue for ${series}: ${url}`);
+    console.log(`opened the standing decline issue in the ops tracker: ${url}`);
     return url;
   }
-  gh(['issue', 'edit', String(existing.number), '--repo', REPO, '--body-file', bodyFile]);
+  ghOps(['issue', 'edit', String(existing.number), '--repo', OPS_REPO, '--body-file', bodyFile]);
   const marker = `<!-- traffic-decline:${date} -->`;
   if (hasCommentWithMarker(existing.number, marker)) {
-    console.log(`decline issue for ${series} already has today's (${date}) comment — body refreshed only`);
+    console.log(`the decline issue already has today's (${date}) comment — body refreshed only`);
   } else {
     const commentFile = writeTempFile(declineStillDecliningComment({ series, date, stats }));
-    gh(['issue', 'comment', String(existing.number), '--repo', REPO, '--body-file', commentFile]);
-    console.log(`decline for ${series} persists — body rewritten and ${date} comment appended: ${existing.url}`);
+    ghOps(['issue', 'comment', String(existing.number), '--repo', OPS_REPO, '--body-file', commentFile]);
+    console.log(`decline persists — body rewritten and ${date} comment appended: ${existing.url}`);
   }
   return existing.url;
 }
@@ -306,9 +345,9 @@ function resolveDeclineIssue({ series, date, stats, reason }) {
   const existing = findOpenDeclineIssue(series);
   if (!existing) return;
   const commentFile = writeTempFile(declineClearedComment({ reason, series, date, stats }));
-  gh(['issue', 'comment', String(existing.number), '--repo', REPO, '--body-file', commentFile]);
-  gh(['issue', 'close', String(existing.number), '--repo', REPO]);
-  console.log(`closed the standing decline issue for ${series} (${reason}): ${existing.url}`);
+  ghOps(['issue', 'comment', String(existing.number), '--repo', OPS_REPO, '--body-file', commentFile]);
+  ghOps(['issue', 'close', String(existing.number), '--repo', OPS_REPO]);
+  console.log(`closed the standing decline issue: ${existing.url}`);
 }
 
 /**
@@ -327,43 +366,53 @@ function resolveDeclineIssue({ series, date, stats, reason }) {
  * lie about the product, while a missing hygiene section is a missing
  * convenience.
  *
+ * TWO LISTS since the digest moved to the private ops tracker (2026-09-28).
+ * The owner's open items now live in two repos: beta feedback and this job's
+ * own alerts in OPS_REPO, and the Big Question candidates, the corpus
+ * tripwires and the redistricting board in the public repo (lib/ops-repo.mjs
+ * says why those stay). Both are read; if EITHER read fails the whole section
+ * is omitted, never rendered from half the picture. Only OPS_REPO issues can
+ * be closed here — that is where this job files its spike alerts, and the
+ * job's own GITHUB_TOKEN holds `issues: read` on the public repo.
+ *
  * @param {Date} now
  * @returns {{ section: string, closable: import('../lib/traffic-metrics.mjs').ClosableSpikeIssue[] } | null}
  */
 function collectIssueHygiene(now) {
+  // --limit 100: gh's default page is 30, and neither repo has been near
+  // 30, let alone 100. If one ever passes 100 the section under-reports
+  // rather than mis-reports, and nothing extra gets closed.
+  const listArgs = (repo) => [
+    'issue',
+    'list',
+    '--repo',
+    repo,
+    '--state',
+    'open',
+    '--limit',
+    '100',
+    '--json',
+    'number,title,labels,createdAt',
+  ];
   try {
-    // --limit 100: gh's default page is 30, and this repo has never been
-    // near 30, let alone 100. If it ever passes 100 the section
-    // under-reports rather than mis-reports, and nothing extra gets closed.
-    const raw = gh([
-      'issue',
-      'list',
-      '--repo',
-      REPO,
-      '--state',
-      'open',
-      '--limit',
-      '100',
-      '--json',
-      'number,title,labels,createdAt',
-    ]).trim();
-    const issues = raw ? JSON.parse(raw) : [];
-    const closable = closableIssues(issues, { now });
-    // The section is rendered from the issues this run is NOT closing: a
-    // comment that lists an issue as "awaiting your word" three lines above
-    // closing it would be telling the owner two different things at once.
-    const closing = new Set(closable.map((c) => c.number));
-    const section = awaitingYourWordSection(
-      issues.filter((i) => !closing.has(i.number)),
-      { now }
-    );
-    return { section, closable };
+    const opsRaw = ghOps(listArgs(OPS_REPO)).trim();
+    const publicRaw = ghPublic(listArgs(PUBLIC_REPO)).trim();
+    return issueHygiene({
+      opsIssues: withRefs(opsRaw ? JSON.parse(opsRaw) : [], OPS_REPO),
+      publicIssues: withRefs(publicRaw ? JSON.parse(publicRaw) : [], PUBLIC_REPO),
+      now,
+    });
   } catch (e) {
     console.log(
-      `::warning::issue hygiene skipped — could not read the open-issue list (${e.message}). The digest itself is unaffected: no section appended, nothing closed.`
+      `::warning::issue hygiene skipped — could not read an open-issue list (${e.message}). The digest itself is unaffected: no section appended, nothing closed.`
     );
     return null;
   }
+}
+
+/** Tag each issue with the reference that reads correctly from inside OPS_REPO. */
+function withRefs(issues, repo) {
+  return (Array.isArray(issues) ? issues : []).map((i) => ({ ...i, ref: issueRefFromOps(repo, i.number) }));
 }
 
 /**
@@ -382,12 +431,10 @@ function closeStaleSpikeIssues(closable, { digestIssue }) {
       const commentFile = writeTempFile(
         spikeClosedComment({ date: issue.reportedDate, ageDays: issue.ageDays, digestIssue })
       );
-      gh(['issue', 'comment', String(issue.number), '--repo', REPO, '--body-file', commentFile]);
-      gh(['issue', 'close', String(issue.number), '--repo', REPO]);
+      ghOps(['issue', 'comment', String(issue.number), '--repo', OPS_REPO, '--body-file', commentFile]);
+      ghOps(['issue', 'close', String(issue.number), '--repo', OPS_REPO]);
       closed += 1;
-      console.log(
-        `closed stale spike issue #${issue.number} (${issue.series}, reported ${issue.reportedDate}, ${issue.ageDays}d old)`
-      );
+      console.log(`closed stale spike issue #${issue.number} in the ops tracker (${issue.ageDays}d old)`);
     } catch (e) {
       console.log(`::warning::could not close stale spike issue #${issue.number} (${e.message}) — left open, will retry tomorrow.`);
     }
@@ -438,11 +485,11 @@ function collectPipelineHealth() {
  */
 function maintainHealthIssue(report) {
   try {
-    const raw = gh([
+    const raw = ghOps([
       'issue',
       'list',
       '--repo',
-      REPO,
+      OPS_REPO,
       '--state',
       'open',
       '--search',
@@ -457,16 +504,16 @@ function maintainHealthIssue(report) {
     let issueNumber;
     let issueUrl;
     if (existing) {
-      gh(['issue', 'edit', String(existing.number), '--repo', REPO, '--body-file', bodyFile]);
+      ghOps(['issue', 'edit', String(existing.number), '--repo', OPS_REPO, '--body-file', bodyFile]);
       issueNumber = existing.number;
       issueUrl = existing.url;
       console.log(`pipeline health: standing issue #${issueNumber} body rewritten`);
     } else {
-      issueUrl = gh([
+      issueUrl = ghOps([
         'issue',
         'create',
         '--repo',
-        REPO,
+        OPS_REPO,
         '--title',
         HEALTH_ISSUE_TITLE,
         '--label',
@@ -479,7 +526,7 @@ function maintainHealthIssue(report) {
       // Pinning is best-effort: GitHub allows at most three pinned issues per
       // repo, so a full board must not turn a healthy run red.
       try {
-        gh(['issue', 'pin', '--repo', REPO, String(issueNumber)]);
+        ghOps(['issue', 'pin', '--repo', OPS_REPO, String(issueNumber)]);
       } catch (e) {
         console.log(`::warning::pipeline health: could not pin the standing issue (${e.message}) — body is still current.`);
       }
@@ -499,7 +546,7 @@ function maintainHealthIssue(report) {
     const commentFile = writeTempFile(
       formatHealthAlarmComment({ date, alarms: list, runUrl: process.env.HEALTH_RUN_URL })
     );
-    gh(['issue', 'comment', String(issueNumber), '--repo', REPO, '--body-file', commentFile]);
+    ghOps(['issue', 'comment', String(issueNumber), '--repo', OPS_REPO, '--body-file', commentFile]);
     console.log(`pipeline health: ${list.length} ⛔ condition(s) — dated comment appended to ${issueUrl}`);
     return issueUrl;
   } catch (e) {
@@ -522,15 +569,15 @@ function maintainHealthIssue(report) {
  */
 function postOrEditTodaysComment(issueNumber, date, body) {
   const marker = `<!-- daily-metrics:${date} -->`;
-  const commentsRaw = gh(['issue', 'view', issueNumber, '--repo', REPO, '--json', 'comments']).trim();
+  const commentsRaw = ghOps(['issue', 'view', issueNumber, '--repo', OPS_REPO, '--json', 'comments']).trim();
   const comments = JSON.parse(commentsRaw).comments ?? [];
   const last = comments[comments.length - 1];
   const bodyFile = writeTempFile(body);
   if (last && typeof last.body === 'string' && last.body.includes(marker)) {
-    gh(['issue', 'comment', issueNumber, '--repo', REPO, '--edit-last', '--body-file', bodyFile]);
+    ghOps(['issue', 'comment', issueNumber, '--repo', OPS_REPO, '--edit-last', '--body-file', bodyFile]);
     console.log(`edited today's existing digest comment (idempotent re-run for ${date})`);
   } else {
-    gh(['issue', 'comment', issueNumber, '--repo', REPO, '--body-file', bodyFile]);
+    ghOps(['issue', 'comment', issueNumber, '--repo', OPS_REPO, '--body-file', bodyFile]);
     console.log(`posted a new digest comment for ${date}`);
   }
 }
@@ -544,6 +591,21 @@ async function main() {
     );
     return;
   }
+
+  // WHERE IT GOES, decided before a single counter is read. The digest and
+  // everything it files carry traffic and spend numbers, so they post only to
+  // the private ops tracker — and with no token for it, they post nowhere:
+  // a number-free notice in the job summary, a warning in the log, exit 0.
+  // Never the public repo (lib/ops-repo.mjs).
+  const destination = opsDestination(process.env);
+  if (!destination.ok) {
+    console.log(`::warning::daily metrics digest NOT POSTED — ${destination.reason}`);
+    writeJobSummary(
+      withheldSummary({ what: 'Daily metrics digest and pipeline health', reason: destination.reason })
+    );
+    return;
+  }
+  opsToken = destination.token;
 
   const issueNumber = process.env.DIGEST_ISSUE_NUMBER;
   if (!issueNumber) {
@@ -634,7 +696,6 @@ async function main() {
   // The refusals behind that generations number, by guard, full 28-day window
   // (the line reads day-1 and the day-1..day-7 sum). Never alarmed on.
   const scriptRefusals = SCRIPT_REFUSAL_SCOPES.map((scope) => ({ scope, window: window.scriptRefusals[scope] }));
-  const refusedYesterday = scriptRefusals.reduce((n, r) => n + (r.window[0] ?? 0), 0);
 
   // Page views reuse the same 8-day prefix and the same seriesStats, with
   // floor Infinity — the per-tool lines' own trick, and here it is the
@@ -722,8 +783,17 @@ async function main() {
   // cost the job.
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
+  // This line lands in a PUBLIC run log, so it names no figure: every number
+  // above is in the digest comment on the private ops tracker. (Until
+  // 2026-09-28 it printed the day's MCP, script, page-view and distinct-address
+  // counts here, readable on the public repo's Actions tab.) What it keeps is
+  // bookkeeping: whether the post landed, the hygiene closes, the ⛔ count.
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} to the private ops tracker (${OPS_REPO}); its figures are there, not in this log` +
+      (hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED') +
+      (health
+        ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}`
+        : '; health: SKIPPED')
   );
 }
 

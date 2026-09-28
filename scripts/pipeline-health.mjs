@@ -39,7 +39,12 @@
  * Env:
  *   GITHUB_TOKEN   picked up by `gh` automatically on a runner; locally the
  *                  script uses whatever `gh auth` already has.
- *   HEALTH_REPO    override the repo (defaults to cm2489/oravan).
+ *   HEALTH_REPO    override the repo READ (defaults to cm2489/oravan).
+ *
+ * Where the report is POSTED is not this file's business: it builds the
+ * report and prints it. scripts/daily-metrics.mjs posts it — to the private
+ * ops tracker since 2026-09-28, because it carries the day's spend estimate
+ * (lib/ops-repo.mjs).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -521,6 +526,9 @@ function readMomentCandidates(now) {
   if (issues === null) return null;
   return issues.map((i) => ({
     number: i.number,
+    // Repo-qualified: the report is posted in the private ops repo, where a
+    // bare `#N` would point at the wrong issue (lib/ops-repo.mjs).
+    ref: `${REPO}#${i.number}`,
     ageDays: Math.floor((now - Date.parse(i.createdAt)) / 86_400_000),
   }));
 }

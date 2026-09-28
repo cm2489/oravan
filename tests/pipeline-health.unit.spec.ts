@@ -886,6 +886,17 @@ test.describe('formatHealthSection', () => {
     expect(formatHealthSection({ alarms: [] })).toContain('✅ No ⛔ conditions.');
   });
 
+  test('moment candidates link to the public repo from inside the ops tracker (2026-09-28)', () => {
+    // The report is posted in cm2489/oravan-ops; the candidates are
+    // cm2489/oravan issues. A bare #328 there would link to ops issue 328.
+    const qualified = formatHealthSection({
+      momentCandidates: [{ number: 328, ref: 'cm2489/oravan#328', ageDays: 3 }],
+    });
+    expect(qualified).toContain('cm2489/oravan#328 (3d)');
+    // A collector that sets no ref still renders the bare number it always did.
+    expect(formatHealthSection({ momentCandidates: [{ number: 328, ageDays: 3 }] })).toContain('#328 (3d)');
+  });
+
   test('every alarm reaches the reader', () => {
     const rendered = formatHealthSection({ alarms: [{ code: 'x', text: 'the roof is on fire' }] });
     expect(rendered).toContain('⛔ the roof is on fire');

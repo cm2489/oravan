@@ -31,6 +31,8 @@ import {
   formatPercent,
   formatScriptRefusalLine,
   isoDateDaysAgo,
+  issueHygiene,
+  issueRef,
   MCP_CLIENTS_LINE_MAX,
   MCP_SPIKE_FLOOR,
   median,
@@ -1190,5 +1192,94 @@ test.describe('issue hygiene: awaitingYourWordSection', () => {
     expect(awaitingYourWordSection([fresh], { now: NOW })).toContain(
       '- #950 · Traffic spike: total MCP calls — 2026-08-14 · traffic-spike · 1d open'
     );
+  });
+});
+
+/*
+ * THE TWO-REPO HYGIENE PASS (2026-09-28). The digest now posts in the
+ * private ops tracker (lib/ops-repo.mjs), so the owner's open items live in
+ * two repos: beta feedback and the job's own alerts in cm2489/oravan-ops, the
+ * Big Question candidates and corpus tripwires in the public repo. Issue
+ * numbers repeat across the two, which is exactly what the fixtures below
+ * lean on.
+ */
+test.describe('issue hygiene: issueHygiene over the ops and public lists', () => {
+  const NOW = new Date('2026-08-15T13:00:00Z');
+  const staleSpike = (number: number) => ({
+    number,
+    title: 'Traffic spike: total MCP calls — 2026-08-01',
+    labels: [{ name: 'traffic-spike' }],
+    createdAt: '2026-08-01T13:00:00Z',
+  });
+
+  test('issueRef: a caller-set ref wins; otherwise a bare #N', () => {
+    expect(issueRef({ number: 5 })).toBe('#5');
+    expect(issueRef({ number: 5, ref: 'cm2489/oravan#5' })).toBe('cm2489/oravan#5');
+    expect(issueRef({ number: 5, ref: '' })).toBe('#5');
+  });
+
+  test('public-repo issues render repo-qualified, ops issues bare', () => {
+    const { section } = issueHygiene({
+      opsIssues: [
+        {
+          number: 3,
+          ref: '#3',
+          title: '[beta:bug] the form',
+          labels: [{ name: 'beta-feedback' }],
+          createdAt: '2026-08-15T01:00:00Z',
+        },
+      ],
+      publicIssues: [
+        {
+          number: 328,
+          ref: 'cm2489/oravan#328',
+          title: 'Big Question candidate: hr-9340-119',
+          labels: [{ name: 'moment-candidate' }],
+          createdAt: '2026-08-14T01:00:00Z',
+        },
+      ],
+      now: NOW,
+    });
+    expect(section).toContain('- #3 · [beta:bug] the form · beta-feedback · 0d open');
+    expect(section).toContain('- cm2489/oravan#328 · Big Question candidate: hr-9340-119 · moment-candidate · 1d open');
+    expect(section).toContain('**Awaiting your word (2)**');
+  });
+
+  test('stale spike alerts are closed from the OPS list only', () => {
+    // A public-repo issue that matches every close rule is left alone: the
+    // job's token cannot write there, and those issues are not its alerts.
+    const { closable, section } = issueHygiene({
+      opsIssues: [{ ...staleSpike(40), ref: '#40' }],
+      publicIssues: [{ ...staleSpike(41), ref: 'cm2489/oravan#41' }],
+      now: NOW,
+    });
+    expect(closable.map((c: { number: number }) => c.number)).toEqual([40]);
+    expect(section).not.toContain('- #40 ');
+    expect(section).toContain('- cm2489/oravan#41 ');
+  });
+
+  test('closing ops #N never hides public #N — the numbers repeat across repos', () => {
+    const { closable, section } = issueHygiene({
+      opsIssues: [{ ...staleSpike(81), ref: '#81' }],
+      publicIssues: [
+        {
+          number: 81,
+          ref: 'cm2489/oravan#81',
+          title: '📊 Daily metrics',
+          labels: [{ name: 'metrics' }],
+          createdAt: '2026-07-01T00:00:00Z',
+        },
+      ],
+      now: NOW,
+    });
+    expect(closable.map((c: { number: number }) => c.number)).toEqual([81]);
+    expect(section).toContain('Standing by design (1): cm2489/oravan#81 metrics');
+  });
+
+  test('two empty lists still render the line', () => {
+    expect(issueHygiene({ opsIssues: [], publicIssues: [], now: NOW })).toEqual({
+      section: ['---', '', '**Awaiting your word (0) — nothing is waiting on you.**'].join('\n'),
+      closable: [],
+    });
   });
 });
