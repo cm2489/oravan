@@ -72,7 +72,9 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
   // Compact rows (2026-07 critique, majority): on /bills the full card grid
   // duplicated the homepage verbatim and pushed the page's stated purpose -
   // search and browse - screens below the fold. Rows keep the discovery lens
-  // without competing with the browser above it.
+  // without competing with the browser above it. No page renders them since
+  // 2026-09-28, when the owner cut the band from /bills (UX inventory B05);
+  // they stay so it can come back without rebuilding them.
   if (compact) {
     return (
       <section aria-labelledby="news" data-news-band="">
