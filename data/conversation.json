@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-28T00:41:36.526Z",
+    "fetched_at": "2026-09-28T01:14:35.597Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "source_status": {
@@ -9,14 +9,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-28T00:41:36.526Z"
+        "checked_at": "2026-09-28T01:14:35.597Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-20",
         "week_label": "Most-Viewed Bills - Week of September 20, 2026",
         "entries": 9,
-        "checked_at": "2026-09-28T00:41:36.526Z"
+        "checked_at": "2026-09-28T01:14:35.597Z"
       },
       "leans": {
         "center": {
@@ -1686,6 +1686,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "1819news.com",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-28",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQaEFhYnM5eDVSRWNxalN1TVk2Z2RuWFRZWEVEWFA1OWlsVVc0VThBbTRoS1I1S3lSVVdGOC1adGI0Zk8xT3NGWUM1bEJqQkpVVWdRYkpQaURSNG96ejdYS2ZabUNiWXMybF81YTZCUDdVeUx3ZUI0d2lyNFZ1UW1nVTAxdzhoTWs2ZEwxRGRhdXVaZmRFblFINkdxczVoVlVYLW5qR2o0RFNjcEtjRGEzc1ZVcDhkSDFtR0JtQ2lwc2JvM3llcTBXYkVEcHlSZklINjVyaEJ0ZHJoLWVfNWtiOUdKQQ?oc=5"
+        },
         {
           "domain": "tennessean.com",
           "firstSeen": "2026-09-27",
