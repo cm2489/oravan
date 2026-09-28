@@ -30,6 +30,14 @@ import { SITE_ORIGIN } from '@/lib/site';
  * scripts/check-claim-truth.mjs so the claim cannot drift back unnoticed —
  * this file is read by machines that redistribute what it says.
  *
+ * Corrected 2026-09-27 (owner decision "2. b" on PR #321): the notes said
+ * "No user data is collected server-side". With the daily distinct-address
+ * count in place (one site-wide HyperLogLog sketch per UTC day,
+ * lib/ratelimit.ts) that line was true only on the reading that one
+ * site-wide number is not data about a visitor, so it now says what is
+ * plainly true: nothing that identifies a visitor is stored, and visitors
+ * are counted only as that one number a day.
+ *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
  * messages/en.json + es.json — the bilingual-parity rule this file is not
@@ -64,7 +72,7 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 ## Notes for automated and AI systems
 
 - Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
-- No user data is collected server-side. Nothing on this site reflects a visitor's identity, location, or behavior — see /privacy.
+- Nothing that identifies a visitor is stored server-side; visitors are counted only as one site-wide number a day (distinct network addresses, bots included, never split by page). Nothing on this site reflects a visitor's identity, location, or behavior — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;
   return new Response(body, {

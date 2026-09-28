@@ -1,9 +1,10 @@
 /*
  * In-process mock of the Upstash Redis REST surface, shared by the S11 unit
  * specs. Implements exactly the command subset lib/upstash.ts's callers use
- * (GET / SET [NX] [EX] / INCR / EXPIRE / TTL / DEL / MGET, the last added
+ * (GET / SET [NX] [EX|EXAT] / INCR / EXPIRE / TTL / DEL / MGET, the last added
  * S20 for lib/impressions.ts's readImpressionsWindow; SCAN added S21 for
- * lib/tenancy.ts's listTenantIds/listTenants) over a Map, and
+ * lib/tenancy.ts's listTenantIds/listTenants; PFADD / PFCOUNT / EXPIREAT
+ * added 2026-09-25 for lib/ratelimit.ts's daily distinct-address sketch) over a Map, and
  * installs itself by swapping globalThis.fetch — the repo's established
  * mocking pattern (tests/feedback.unit.spec.ts). No live tokens exist
  * anywhere in the test environment, by design.
@@ -22,6 +23,15 @@ type Entry = { value: string; expiresAt: number | null };
 
 export class MockUpstash {
   store = new Map<string, Entry>();
+  /**
+   * HyperLogLog stand-in (PFADD/PFCOUNT, added 2026-09-25 for the daily
+   * distinct-address sketch in lib/ratelimit.ts). A real sketch keeps only
+   * register maxima; this mock keeps the exact element set, in a side table
+   * the store entry points at, so specs can assert WHAT was added. Its store
+   * entry's value is the fixed marker HLL_MARKER — never an element — and
+   * its TTL lives on that entry, so expiry behaves like every other key.
+   */
+  hll = new Map<string, Set<string>>();
   commands: string[][] = [];
   /** When set, every request answers with this HTTP status (error path). */
   failWithStatus: number | null = null;
@@ -45,6 +55,7 @@ export class MockUpstash {
     if (!entry) return undefined;
     if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) {
       this.store.delete(key);
+      this.hll.delete(key);
       return undefined;
     }
     return entry;
@@ -63,10 +74,15 @@ export class MockUpstash {
         const nx = flags.includes('NX');
         const exIdx = flags.indexOf('EX');
         const ttlSec = exIdx >= 0 ? Number(flags[exIdx + 1]) : null;
+        // EXAT (absolute unix seconds), added 2026-09-27 for the distinct-
+        // address sketch's day salt. A deadline already past leaves a key
+        // that is dead on its next read, the way an expired key behaves.
+        const exatIdx = flags.indexOf('EXAT');
+        const exatMs = exatIdx >= 0 ? Number(flags[exatIdx + 1]) * 1000 : null;
         if (nx && this.live(key)) return null;
         this.store.set(key, {
           value,
-          expiresAt: ttlSec !== null ? Date.now() + ttlSec * 1000 : null,
+          expiresAt: exatMs !== null ? exatMs : ttlSec !== null ? Date.now() + ttlSec * 1000 : null,
         });
         return 'OK';
       }
@@ -87,6 +103,48 @@ export class MockUpstash {
         entry.expiresAt = Date.now() + Number(args[1]) * 1000;
         return 1;
       }
+      case 'EXPIREAT': {
+        // Absolute unix seconds. Redis semantics: a deadline already in the
+        // past deletes the key.
+        const entry = this.live(args[0]);
+        if (!entry) return 0;
+        entry.expiresAt = Number(args[1]) * 1000;
+        this.live(args[0]); // drops the key now if the deadline has passed
+        return 1;
+      }
+      case 'PFADD': {
+        // Redis semantics: creates the key WITHOUT a TTL; answers 1 when the
+        // sketch changed (always on creation), else 0. The mock's exact set
+        // makes "changed" mean "a new element", which is the upper bound of
+        // what a real sketch reports.
+        const [key, ...elements] = args;
+        const existing = this.live(key);
+        if (existing && existing.value !== MockUpstash.HLL_MARKER) {
+          throw new Error('MockUpstash: WRONGTYPE Key is not a valid HyperLogLog string value');
+        }
+        let changed = 0;
+        if (!existing) {
+          this.store.set(key, { value: MockUpstash.HLL_MARKER, expiresAt: null });
+          this.hll.set(key, new Set());
+          changed = 1;
+        }
+        const set = this.hll.get(key)!;
+        for (const element of elements) {
+          if (!set.has(element)) {
+            set.add(element);
+            changed = 1;
+          }
+        }
+        return changed;
+      }
+      case 'PFCOUNT': {
+        const union = new Set<string>();
+        for (const key of args) {
+          if (!this.live(key)) continue;
+          for (const element of this.hll.get(key) ?? []) union.add(element);
+        }
+        return union.size;
+      }
       case 'TTL': {
         const entry = this.live(args[0]);
         if (!entry) return -2;
@@ -94,7 +152,7 @@ export class MockUpstash {
         return Math.ceil((entry.expiresAt - Date.now()) / 1000);
       }
       case 'DEL':
-        return this.live(args[0]) ? (this.store.delete(args[0]), 1) : 0;
+        return this.live(args[0]) ? (this.store.delete(args[0]), this.hll.delete(args[0]), 1) : 0;
       case 'SCAN': {
         // Single-page mock: real Upstash paginates via a numeric cursor and
         // a COUNT hint; this mock ignores COUNT and always exhausts in one
@@ -117,6 +175,9 @@ export class MockUpstash {
   keys(): string[] {
     return [...this.store.keys()];
   }
+
+  /** The store value every HyperLogLog key carries in this mock. */
+  static readonly HLL_MARKER = '<hll>';
 }
 
 export const COUNTERS_URL = 'https://counters.mock.test';

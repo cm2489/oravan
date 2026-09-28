@@ -139,6 +139,61 @@ Rule touched: page 1, rule 3 (nonpartisan by construction).
 
 ---
 
+<a id="user-data-2026-09-25"></a>
+
+## 2026-09-25 — No server-side user data, ever: the daily distinct-address count
+
+Rule touched: page 1, rule 1 (no server-side user data, ever). The ruling that let one site-wide daily count of distinct network addresses exist, and the hardening the owner chose before it merged. The rule's text is not amended by this change; this entry records why this structure was judged to sit inside it, exactly what it can and cannot do, and the two places where page 1's wording (Constitution v2, adopted the same day) now needs the owner's eye.
+
+The ruling, verbatim. Card 15 (D4), "Counting daily users", answered **a** by the owner on 2026-09-25T02:50Z (evidence: artifact https://claude.ai/artifact/7BoxWU8F4TLDRjUAEKTQgc, db `decisions`, doc `q15-d4`, choice `a`):
+
+> *"Yes, one number a day — Count each day's unique visitors with HyperLogLog, built from the salted hash the rate limiter already makes. It can't identify anyone. Needs a constitution-log entry and one privacy sentence in both languages."*
+
+The 2026-09-27 audit (SY-20) found it ruled and unbuilt, and card a5 of that audit put it in the measurement work.
+
+<a id="user-data-2026-09-27"></a>
+
+**Hardened before merge, 2026-09-27.** The first build of PR #321 did what the card said and reused the rate limiter's salt. Its report showed that this left a window after each day ended in which the sketch could still be tested, and offered options. The owner answered **"2. b"**, which was this option, verbatim:
+
+> *"I harden it first: the sketch gets its own salt, deleted when its UTC day ends, which closes the after-the-day window. I also soften the two strongest lines to say one site-wide daily number is kept."*
+
+So the sketch no longer uses the rate limiter's salt or hash at all. The card's phrase "built from the salted hash the rate limiter already makes" describes the first build, not the one that merges.
+
+What was built:
+
+- One key per UTC day in the counters database, `<env>:uniques:<YYYY-MM-DD>`, holding one HyperLogLog sketch for the whole site. No route, page, surface, bill or locale dimension exists, and `scripts/check-key-namespaces.mjs` makes one a CI failure: `distinct-shape` pins the exact key literal and bans PFMERGE, `distinct-confinement` keeps the key family and every HyperLogLog command inside `lib/ratelimit.ts`, and `distinct-raw-address` forbids a raw address as the added element.
+- The sketch's own salt: one key per UTC day, `<env>:uniques-salt:<YYYY-MM-DD>`, holding ≥128 bits of CSPRNG output. It is created with `SET … NX EXAT <00:00:00Z of the next day>`, so it exists with its deadline from the first instant, and nothing ever re-sets, re-expires or extends it. When its UTC day ends the database deletes it. Each server instance may keep a copy in memory for at most 60 seconds and never past that same instant. The rate limiter never reads it, and the sketch never reads the rate limiter's salt. Four more gate rules hold this: `distinct-salt-shape` (the exact key literal), `distinct-salt-confinement` (no other file may reach the salt), `distinct-salt-expiry` (every command on the salt key is a read, a delete, SET NX with EXAT at the end-of-day deadline, or EXPIREAT at that same deadline, and the deadline function's own arithmetic may add at most one day to the day's 00:00:00Z), and `distinct-salt-separation` (the limiter's salt and hash never appear in the functions that feed the sketch or make its salt or element).
+- The element added is sha256(day salt ‖ address), a different salt and a different construction from the rate limiter's sha256(address + salt), so an element can never equal a rate-limit key's hash.
+- It is added from `proxy.ts` inside `waitUntil`, so the response never waits on it and a counter failure never fails a page, only for requests the page-view counter already counts (a GET asking for HTML; `/api`, `/_next` and `/embed` never reach the proxy). Embeds are never counted, so `embeds.docsPrivacyNoData` stays true.
+- The sketch key dies 48 hours after its UTC day ends (an absolute EXPIREAT, never extended). The daily digest reads yesterday's sketch once with PFCOUNT, which needs no salt, and prints it as "Distinct network addresses (bots included)".
+- With the counters database unconfigured it does nothing — no in-memory fallback, because a per-instance set of addresses would be an actual list of addresses.
+- Cost: one PFADD per counted page view; one EXPIREAT whenever the sketch changes (at most once per new address); one SET per UTC day for the salt; and about one salt GET per server instance per minute, because of the 60-second memo (two when instances race to create the salt). One sketch key of at most about 12 KB per day, plus one 32-character salt that lives until the day ends.
+
+Why it is inside the rule, and where the edge is:
+
+- It is the first stored structure whose value, not just its key, comes from caller material. A HyperLogLog does not store its elements; it stores 2^14 six-bit register maxima. No address and no element is stored by this path (the element crosses the wire inside the PFADD command), and the sketch cannot be listed or reversed.
+- The rule's operative clause is "no logs linking network addresses to political positions". One global number per day records no page, bill or stance, so there is nothing to link to. A per-page or per-bill sketch would be exactly that link, which is why the gate forbids one.
+- The honest limit. **During the UTC day itself**, someone holding the counters database and a candidate address can still read that day's salt, compute the address's element, and test whether adding it would change the sketch. At low daily counts that test is fairly reliable. **Once the day ends, the salt is gone**, and with it the only way to compute an element, so the sketch cannot be tested for anyone, including for its 48-hour tail before it expires. The first build left that test open for up to about 24 hours after each day ended, because the shared salt lives 24 hours from creation rather than to midnight. That window is what the hardening closed. (The rate limiter's own keys keep their own, separate exposure while its salt lives, for callers of rate-limited routes. That is unchanged and out of this decision's scope.)
+- **The Sep 25 card's "It can't identify anyone" was too strong.** What is true now: nothing can be listed or recovered from the sketch, at any time. During its UTC day, someone who already holds the counters database and already has a candidate address can confirm whether that address loaded a page that day. After the day ends, not even that.
+
+Accuracy, stated wherever the number is shown (the digest caveat):
+
+- Redis HyperLogLog standard error is about 0.81%.
+- Bots are included. A household, office or carrier NAT shares one address (undercount); a phone changing networks shows several (overcount).
+- An address counts once per UTC day, because the salt lives exactly that day. The first build's salt-rotation overcount (an address seen on both sides of the shared salt's rotation counted twice) is gone. One residual edge: if a day's salt were lost mid-day, a new one would be minted and an address seen on both sides of the loss would count twice.
+
+Strings and claims changed in the same change:
+
+- `privacy.p9`, new, in both languages: one number a day for the whole site, never split by page, of distinct network addresses that opened a page, bots included, counted from each address scrambled one way with a key that lasts only that day and is then deleted, with no address stored or recoverable. `privacy.p8` (the per-page-kind count) is not changed here, and it already carries a separate false claim ("one plain count", while other daily counts exist), recorded in card l16 ([#privacy-lines-2026-09-27](#privacy-lines-2026-09-27)) and left live by the owner until launch. This change does not touch that decision.
+- The two strongest categorical lines were rewritten, per the owner's option: **`common.footer.mission`** (every page's footer, and also the site's meta description and JSON-LD description) now says nothing that identifies you is stored on our servers and that visitors are counted only as one site-wide number a day, in both languages. **`/llms.txt`**'s notes line ("No user data is collected server-side", read by machines that redistribute it, English-only by design) now says nothing that identifies a visitor is stored server-side and that visitors are counted only as one site-wide number a day.
+- The digest's page-view caveat said "no unique/visitor count exists"; it now says the page-view counters carry no identity and the distinct-address line is separate. `lib/usage.ts`'s comment that a unique count was "a pending owner ruling", `proxy.ts`'s header, and the pinned digest issue's creation text in `.github/workflows/daily-metrics.yml` were corrected the same way, and name the sketch's own day salt.
+- Checked for this count and left unchanged: `privacy.p1`–`p5`, `p7`, `p8` (none of them is made false by the count; `p1` and `p8` carry the separate card-l16 falsehoods above); `embeds.docsPrivacyNoData` (embeds are never counted); `mcp.privacyRateLimit` (MCP is `/api`, never counted); the MCP envelope (it makes no visitor claim). These lines stay true on the ruling's reading that one site-wide daily number is not data "about you", and none was rewritten because the owner asked for two: `about.accountabilityBody` ("nothing about you kept on a server"), `terms.p5` ("store nothing about you on our servers"), `errorBoundary.eraseHelp` ("Nothing about you is stored anywhere else", said about what the Erase button can clear), and `/llms.txt`'s Pages entry for /privacy ("no server-side user data, ever", which is the constitution rule's own name, and the entry above records why the sketch sits inside that rule). The "no tracking" lines rest on the same reading, plus the fact that the sketch has no page dimension and nothing in it outlives its day's salt: `privacy.p4` ("No analytics trackers"), `common.trustLine2` ("no trackers"), `common.footer.funding` and `about.accountabilityBody` ("no tracking"), and `moments.updates.privacyNote` ("Nobody is watching you read this — no account, no tracking"). Rewording any of them is the owner's call.
+- Not changed here: `CLAUDE.md`. Constitution v2 (#315) was adopted on 2026-09-27 and merged into this branch before this change merged, and two of its sentences now need the owner's eye. Both are page-1 text, owner scope, raised in PR #321 rather than edited here:
+  - The Architecture paragraph says per-request code includes `proxy.ts` "(locale negotiation, then the page-shape count of rule 1)". With this change `proxy.ts` also adds to the distinct-address sketch, so that parenthesis becomes incomplete.
+  - Rule 1 says the server may count, as fixed by `scripts/check-key-namespaces.mjs`, "short-lived rate-limit counters … and aggregate daily counts that carry nothing about a visitor". The sketch is registered and gated there, and the daily number it yields carries nothing about a visitor. During its UTC day, though, the sketch and its salt can confirm a candidate address for someone who already holds the counters database (the honest limit above). Whether rule 1 should name that edge is the owner's call.
+
+---
+
 <a id="ai-content-2026-09-25"></a>
 
 ## 2026-09-25 — AI content is always labeled, and never publishes unless the automated gates pass

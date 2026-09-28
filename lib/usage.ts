@@ -196,9 +196,14 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * NOTHING per-visitor is stored or derivable: no cookie is set or read, no
  * session, no ordering, no cross-request correlation, no client script at
  * all (the write happens in proxy.ts, server-side, inside waitUntil).
- * There is deliberately NO unique/visitor count — that is a pending owner
- * ruling, not an oversight, and implementing one would need an identity
- * this family is built to not have.
+ * There is deliberately NO unique/visitor count IN THIS FAMILY: that would
+ * need an identity this family is built to not have. The owner ruled one in
+ * on 2026-09-25 as a SEPARATE structure — a single site-wide daily
+ * HyperLogLog sketch of a salted address hash, with no route or page
+ * dimension, hardened on 2026-09-27 to use its own salt that is deleted
+ * when its UTC day ends — and it lives in lib/ratelimit.ts, the
+ * caller-keyed registry, precisely so no caller-derived value ever sits in
+ * this file (see noteDistinctAddress there).
  *
  * WHY THE COUNTERS DATABASE IS THE RIGHT HOME (lib/upstash.ts's split is
  * the rule being reasoned against): a pageview write adds a "what SHAPE of

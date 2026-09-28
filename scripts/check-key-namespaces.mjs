@@ -97,6 +97,57 @@
  *                 about the caller, the tenant, or the request's content may
  *                 become one.
  *
+ * counters DB gains a FIFTH family (daily distinct-address count, owner
+ *                 ruling 2026-09-25): ONE HyperLogLog sketch per UTC day for
+ *                 the whole site, fed the rate limiter's own salted caller
+ *                 hash. It is the first structure whose VALUE (not just its
+ *                 key) is derived from caller material, so it lives in the
+ *                 caller-keyed registry (lib/ratelimit.ts) and never in the
+ *                 content-free usage registry, and it gets three teeth of
+ *                 its own:
+ *                   - distinct-shape: inside lib/ratelimit.ts the family's
+ *                     key is exactly the literal DISTINCT_KEY_LITERAL below
+ *                     (env prefix + day, nothing else) — a route, page,
+ *                     surface, bill, or locale folded into it is a failure,
+ *                     because a per-page sketch would pair an address-derived
+ *                     token with a political interest. PFMERGE (a multi-day
+ *                     sketch) is banned outright.
+ *                   - distinct-confinement: the family's key marker and the
+ *                     HyperLogLog commands appear in NO other scanned file,
+ *                     so a second sketch cannot be built somewhere else.
+ *                   - distinct-raw-address: a PFADD element is never the raw
+ *                     address — the database would hash it with its own
+ *                     UNSALTED function and it would stay testable forever.
+ *                 Comments are ignored by these three (they describe the
+ *                 shape in prose); code is not.
+ *
+ * The distinct-address family gains its OWN SALT (hardened 2026-09-27, owner
+ *                 decision "2. b": "the sketch gets its own salt, deleted
+ *                 when its UTC day ends, which closes the after-the-day
+ *                 window"). One key per UTC day, `<env>:uniques-salt:<day>`,
+ *                 read and written only by lib/ratelimit.ts's
+ *                 distinctDaySalt. Four more teeth, code-only like the three
+ *                 above:
+ *                   - distinct-salt-shape: inside the registry the salt key
+ *                     is exactly DISTINCT_SALT_KEY_LITERAL — env prefix and
+ *                     day, nothing else.
+ *                   - distinct-salt-confinement: the salt family and its two
+ *                     accessors appear in NO other scanned file, so nothing
+ *                     else can read the salt while it lives.
+ *                   - distinct-salt-expiry: the salt dies at or before the
+ *                     end of its UTC day and is never extended. Every command
+ *                     on the salt key is a read, a delete, SET NX with EXAT
+ *                     at distinctSaltExpiresAt(...), or EXPIREAT at that same
+ *                     deadline; any relative expiry (EX/PX/EXPIRE), KEEPTTL,
+ *                     PERSIST, or other writer fails. distinctSaltExpiresAt's
+ *                     own body is parsed and its offset past the day's
+ *                     00:00:00Z must be at most one day (86,400s).
+ *                   - distinct-salt-separation: the rate limiter's salt and
+ *                     hash (currentSalt, saltKey, parseSaltRecord, callerHash)
+ *                     never appear in a function that feeds the sketch or
+ *                     makes its salt or element — the limiter's salt lives
+ *                     24h from creation, not to the end of a UTC day.
+ *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
  *     database's env vars or client constructor, so key construction can't
@@ -210,6 +261,138 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
 // check below turns into a failure rather than a silent pass.
 const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
 const PAGEVIEW_KEY_MARKER = 'usage:pageview:';
+// The daily distinct-address family (owner ruling 2026-09-25). The ONE key
+// shape it may ever have, as the exact source literal lib/ratelimit.ts's
+// distinctAddressKey returns: the env prefix and the UTC day, nothing else.
+// Deliberately literal, like PAGEVIEW_SURFACES_DECL — a rename of `day` or
+// any extra segment stops matching, which is a failure rather than a pass.
+const DISTINCT_KEY_LITERAL = '`${keyPrefix()}:uniques:${day}`';
+const DISTINCT_KEY_MARKER = 'uniques:';
+// HyperLogLog commands, as quoted command names in a command array.
+const HLL_COMMAND = /['"`]PF(ADD|COUNT|MERGE)['"`]/i;
+const HLL_MERGE = /['"`]PFMERGE['"`]/i;
+// A PFADD command array, capturing everything after the command name.
+const PFADD_ARRAY = /\[\s*['"`]PFADD['"`]\s*,([^\]]*)\]/gi;
+// Raw-address material that must never be a PFADD element: the address
+// variable itself (as a standalone identifier — `ip`, `address`, `addr`),
+// callerIp(...), or anything read straight off the forwarding headers.
+// Narrower than CALLER_MATERIAL on purpose — `callerHash(...)` and `salt`
+// ARE the intended element, and `distinctAddressKey(day)` names the key
+// (the standalone-identifier form is what keeps that call from matching).
+const RAW_ADDRESS_ELEMENT = /(^|[^a-z])(ip|address|addr)([^a-z]|$)|callerip|forwarded|headers/i;
+// The sketch's OWN day salt (hardened 2026-09-27). Same literal discipline as
+// DISTINCT_KEY_LITERAL. The marker omits the trailing colon on purpose, so a
+// concatenated `'uniques-salt' + ':'` is still seen.
+const DISTINCT_SALT_KEY_LITERAL = '`${keyPrefix()}:uniques-salt:${day}`';
+const DISTINCT_SALT_MARKER = 'uniques-salt';
+// The only two names through which the day salt is reached.
+const DISTINCT_SALT_ACCESSOR = /\bdistinctSaltKey\s*\(|\bdistinctDaySalt\s*\(/;
+// The rate limiter's own salt and hash machinery. None of it may appear in a
+// function that feeds the sketch or makes its salt or element.
+const LIMITER_SALT_MATERIAL = /\bcallerHash\s*\(|\bcurrentSalt\s*\(|\bsaltKey\s*\(|\bparseSaltRecord\s*\(/;
+// Commands allowed on the salt key: reads, a delete, and the two absolute
+// writers (SET with NX + EXAT, EXPIREAT), both checked for their deadline.
+const SALT_KEY_OPS_ALLOWED = new Set(['GET', 'TTL', 'PTTL', 'EXISTS', 'DEL', 'SET', 'EXPIREAT']);
+// SET flags that would give the salt a relative or inherited lifetime.
+const SALT_SET_FORBIDDEN_FLAGS = new Set(['EX', 'PX', 'PXAT', 'KEEPTTL']);
+// distinctSaltExpiresAt's whole body, whitespace removed: the day's
+// 00:00:00Z in unix seconds plus a product of integer literals. Anything
+// else (a named constant, a second statement) is unverifiable and fails.
+const SALT_DEADLINE_BODY = /^returnMath\.floor\(Date\.parse\(`\$\{day\}T00:00:00Z`\)\/1000\)\+(\d+(?:\*\d+)*);$/;
+const ONE_DAY_SECONDS = 24 * 60 * 60;
+
+/**
+ * Top-level function declarations of a (comment-blanked) source text, each
+ * with its full text up to the next line that starts with `}`. Not a parser:
+ * it leans on this codebase's formatting, where only a top-level block
+ * closes at column zero.
+ */
+function topLevelFunctions(code) {
+  const out = [];
+  const re = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/gm;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const close = code.indexOf('\n}', m.index);
+    const end = close === -1 ? code.length : close + 2;
+    const text = code.slice(m.index, end);
+    const firstBreak = text.indexOf('\n');
+    out.push({
+      name: m[1],
+      index: m.index,
+      text,
+      // Everything after the declaration line: the body, for "does this
+      // function CALL x" questions that the signature itself must not answer.
+      body: firstBreak === -1 ? '' : text.slice(firstBreak + 1),
+    });
+  }
+  return out;
+}
+
+/** Split a comma-separated argument list at depth zero (parens, brackets, braces). */
+function splitArgs(list) {
+  const out = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of list) {
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    if (ch === ')' || ch === ']' || ch === '}') depth -= 1;
+    if (ch === ',' && depth === 0) {
+      out.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim() !== '') out.push(current.trim());
+  return out;
+}
+
+/** Every Redis command array (`['OP', arg, ...]`, OP upper-case) in a text. */
+function commandArrays(text) {
+  const out = [];
+  const re = /\[\s*['"`]([A-Z][A-Z]+)['"`]\s*((?:,[^\]]*)?)\]/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out.push({ op: m[1], args: splitArgs(m[2].replace(/^\s*,/, '')), index: m.index });
+  }
+  return out;
+}
+
+/** A command-array argument as a bare token: quotes stripped, upper-cased. */
+function flagToken(arg) {
+  return arg.replace(/^['"`]|['"`]$/g, '').toUpperCase();
+}
+
+/**
+ * The source text with comments blanked out, line structure preserved, for
+ * the distinct-address rules only (every older rule reads comments too, and
+ * keeps doing so). Handles the two comment shapes this codebase writes —
+ * whole-line `//` comments, block comments that open at the start of a line
+ * (JSDoc and the section banners), and a trailing ` // note` after code —
+ * without trying to be a tokenizer: a `/*` inside a string (an Accept
+ * header's `image/*`, say) is never mistaken for a comment opener, because
+ * only a line-leading one is honoured.
+ */
+function codeOnly(text) {
+  let inBlock = false;
+  return text
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.trimStart();
+      if (inBlock) {
+        if (trimmed.includes('*/')) inBlock = false;
+        return '';
+      }
+      if (trimmed.startsWith('/*')) {
+        if (!trimmed.includes('*/', 2)) inBlock = true;
+        return '';
+      }
+      if (trimmed.startsWith('//') || trimmed.startsWith('*')) return '';
+      return line.replace(/\s\/\/\s.*$/, '');
+    })
+    .join('\n');
+}
+
 // The script-refusal family's CANONICAL scope vocabulary (2026-09-27, the
 // 2026-09-27 audit, SY-48). Same arrangement as the pageview list above: the
 // gate holds it, lib/usage.ts's SCRIPT_REFUSAL_SCOPES is checked against it.
@@ -502,6 +685,195 @@ export function scanText(file, text) {
     });
   }
 
+  // 4g. the daily distinct-address sketch (owner ruling 2026-09-25): one
+  //     key per UTC day, no dimension, built in one file, never fed a raw
+  //     address. Read against codeOnly(text) — these rules police CODE, and
+  //     the registry's own comments spell the shape out in prose.
+  {
+    const code = codeOnly(text);
+    const lineOf = (index) => code.slice(0, index).split('\n').length;
+    if (file === COUNTERS_REGISTRY) {
+      // Every appearance of the family marker must sit inside the canonical
+      // literal — anything else (an extra segment, a concatenated string, a
+      // second builder) is a stray.
+      const markerOffset = DISTINCT_KEY_LITERAL.indexOf(DISTINCT_KEY_MARKER);
+      for (let at = code.indexOf(DISTINCT_KEY_MARKER); at !== -1; at = code.indexOf(DISTINCT_KEY_MARKER, at + 1)) {
+        if (code.startsWith(DISTINCT_KEY_LITERAL, at - markerOffset)) continue;
+        add(
+          'distinct-shape',
+          lineOf(at),
+          `the daily distinct-address key is built as something other than ${DISTINCT_KEY_LITERAL} — one key per UTC day, never a route, page, surface, bill, or locale dimension`
+        );
+      }
+      const merge = HLL_MERGE.exec(code);
+      if (merge) {
+        add('distinct-shape', lineOf(merge.index), 'PFMERGE would build a multi-day distinct-address sketch — one sketch per UTC day, never combined');
+      }
+      for (const m of code.matchAll(PFADD_ARRAY)) {
+        // distinctAddressElement(address, daySalt) inline IS the salted
+        // element — its own arguments are the one place the address may
+        // appear. (callerHash is no longer exempted, 2026-09-27: the sketch
+        // does not use the limiter's hash, and distinct-salt-separation says
+        // so; an inline callerHash(ip, ...) is caught here too.)
+        const elements = m[1].replace(/distinctAddressElement\([^)]*\)/g, 'HASHED');
+        if (RAW_ADDRESS_ELEMENT.test(elements)) {
+          add(
+            'distinct-raw-address',
+            lineOf(m.index),
+            `a PFADD element carries raw-address material ("${m[1].trim()}") — only the salted caller hash may be added`
+          );
+        }
+      }
+    } else {
+      const marker = code.indexOf(DISTINCT_KEY_MARKER);
+      if (marker !== -1) {
+        add(
+          'distinct-confinement',
+          lineOf(marker),
+          `the daily distinct-address key family is referenced outside ${COUNTERS_REGISTRY}`
+        );
+      }
+      const hll = HLL_COMMAND.exec(code);
+      if (hll) {
+        add(
+          'distinct-confinement',
+          lineOf(hll.index),
+          `a HyperLogLog command is used outside ${COUNTERS_REGISTRY} — the site has exactly one sketch family, and it lives there`
+        );
+      }
+    }
+  }
+
+  // 4h. the sketch's OWN day salt (hardened 2026-09-27, owner decision
+  //     "2. b"): one key per UTC day, reachable only from the registry, dead
+  //     at or before the end of its UTC day and never extended, and never
+  //     mixed with the rate limiter's salt or hash. Code-only, like 4g.
+  {
+    const code = codeOnly(text);
+    const lineOf = (index) => code.slice(0, index).split('\n').length;
+    if (file === COUNTERS_REGISTRY) {
+      // distinct-salt-shape: every appearance of the salt marker sits inside
+      // the canonical literal.
+      const markerOffset = DISTINCT_SALT_KEY_LITERAL.indexOf(DISTINCT_SALT_MARKER);
+      let saltFamilyUsed = false;
+      for (let at = code.indexOf(DISTINCT_SALT_MARKER); at !== -1; at = code.indexOf(DISTINCT_SALT_MARKER, at + 1)) {
+        saltFamilyUsed = true;
+        if (code.startsWith(DISTINCT_SALT_KEY_LITERAL, at - markerOffset)) continue;
+        add(
+          'distinct-salt-shape',
+          lineOf(at),
+          `the distinct-address salt key is built as something other than ${DISTINCT_SALT_KEY_LITERAL} — one salt per UTC day, no other segment`
+        );
+      }
+
+      const fns = topLevelFunctions(code);
+
+      // distinct-salt-expiry (a): the deadline function's own arithmetic.
+      if (saltFamilyUsed) {
+        const deadlineFn = fns.find((f) => f.name === 'distinctSaltExpiresAt');
+        const body = deadlineFn ? deadlineFn.body.replace(/\n\}$/, '').replace(/\s+/g, '') : '';
+        const parsed = SALT_DEADLINE_BODY.exec(body);
+        if (!deadlineFn) {
+          add(
+            'distinct-salt-expiry',
+            0,
+            'the distinct-address salt family is used but distinctSaltExpiresAt is not defined — its end-of-day deadline cannot be checked'
+          );
+        } else if (!parsed) {
+          add(
+            'distinct-salt-expiry',
+            lineOf(deadlineFn.index),
+            'distinctSaltExpiresAt is not `return Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000) + <integer literals>;` — the salt\'s deadline cannot be verified to fall at or before the end of its UTC day'
+          );
+        } else {
+          const offset = parsed[1].split('*').reduce((acc, n) => acc * Number(n), 1);
+          if (offset > ONE_DAY_SECONDS) {
+            add(
+              'distinct-salt-expiry',
+              lineOf(deadlineFn.index),
+              `distinctSaltExpiresAt adds ${offset}s to the day's 00:00:00Z — the salt must die at or before the end of its UTC day (${ONE_DAY_SECONDS}s)`
+            );
+          }
+        }
+      }
+
+      for (const fn of fns) {
+        // distinct-salt-expiry (b): every command on the salt key, inside
+        // every function that reaches it.
+        if (/\bdistinctSaltKey\s*\(/.test(fn.body)) {
+          const aliases = new Set([...fn.body.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*distinctSaltKey\s*\(/g)].map((a) => a[1]));
+          for (const cmd of commandArrays(fn.text)) {
+            const keyArg = cmd.args[0] ?? '';
+            if (!aliases.has(keyArg) && !/^distinctSaltKey\s*\(/.test(keyArg)) continue;
+            const line = lineOf(fn.index + cmd.index);
+            if (!SALT_KEY_OPS_ALLOWED.has(cmd.op)) {
+              add(
+                'distinct-salt-expiry',
+                line,
+                `${cmd.op} on the distinct-address salt key — only reads, DEL, SET NX with EXAT, or EXPIREAT at distinctSaltExpiresAt(...) may touch it (never a relative expiry, PERSIST, or another writer)`
+              );
+              continue;
+            }
+            if (cmd.op === 'SET') {
+              const flags = cmd.args.slice(2).map(flagToken);
+              const exatAt = flags.indexOf('EXAT');
+              const deadlineArg = exatAt === -1 ? '' : (cmd.args[2 + exatAt + 1] ?? '');
+              const forbidden = flags.filter((f) => SALT_SET_FORBIDDEN_FLAGS.has(f));
+              if (!flags.includes('NX') || exatAt === -1 || !/\bdistinctSaltExpiresAt\s*\(/.test(deadlineArg) || forbidden.length > 0) {
+                add(
+                  'distinct-salt-expiry',
+                  line,
+                  `the distinct-address salt is SET without NX + EXAT at distinctSaltExpiresAt(...)${forbidden.length ? ` (found ${forbidden.join(', ')})` : ''} — it must be born with its end-of-day deadline and never replaced`
+                );
+              }
+            }
+            if (cmd.op === 'EXPIREAT' && !/\bdistinctSaltExpiresAt\s*\(/.test(cmd.args[1] ?? '')) {
+              add(
+                'distinct-salt-expiry',
+                line,
+                `EXPIREAT on the distinct-address salt key with a deadline other than distinctSaltExpiresAt(...) ("${(cmd.args[1] ?? '').trim()}") — that could carry it past the end of its UTC day`
+              );
+            }
+          }
+        }
+
+        // distinct-salt-separation: a function that feeds the sketch, makes
+        // its day salt, or makes its element never touches the limiter's
+        // salt or hash.
+        const feedsSketch = commandArrays(fn.text).some((c) => c.op === 'PFADD');
+        const makesSalt = /\bdistinctSaltKey\s*\(/.test(fn.body) || fn.name === 'distinctDaySalt';
+        const makesElement = fn.name === 'distinctAddressElement';
+        if (feedsSketch || makesSalt || makesElement) {
+          const hit = LIMITER_SALT_MATERIAL.exec(fn.body);
+          if (hit) {
+            add(
+              'distinct-salt-separation',
+              lineOf(fn.index + fn.text.indexOf('\n') + 1 + hit.index),
+              `${fn.name} uses the rate limiter's salt or hash ("${hit[0].replace(/\s*\($/, '')}") — the distinct-address sketch has its own day salt, and the limiter's lives 24h from creation, past the end of the UTC day`
+            );
+          }
+        }
+      }
+    } else {
+      const marker = code.indexOf(DISTINCT_SALT_MARKER);
+      if (marker !== -1) {
+        add(
+          'distinct-salt-confinement',
+          lineOf(marker),
+          `the distinct-address salt key family is referenced outside ${COUNTERS_REGISTRY}`
+        );
+      }
+      const accessor = DISTINCT_SALT_ACCESSOR.exec(code);
+      if (accessor) {
+        add(
+          'distinct-salt-confinement',
+          lineOf(accessor.index),
+          `the distinct-address day salt is reached outside ${COUNTERS_REGISTRY} ("${accessor[0].replace(/\s*\($/, '')}") — nothing else may read it while it lives`
+        );
+      }
+    }
+  }
+
   // 5. request-shape invariant: content identifiers never travel in a
   //    caller-originating URL query string to /api/script or /api/mcp
   //    (POST bodies only — the district route's house rule). Two teeth:
@@ -561,6 +933,14 @@ function scanRepo() {
   }
   return violations;
 }
+
+// The real, compliant salt-deadline function, prefixed onto fixtures whose
+// seeded violation is somewhere else — so each one fails for its OWN reason,
+// not merely because the deadline function is missing.
+const SALT_DEADLINE_FN =
+  'export function distinctSaltExpiresAt(day: string): number {\n' +
+  '  return Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000) + 24 * 60 * 60;\n' +
+  '}\n';
 
 // Seeded violations: every rule must catch its fixture or the gate is broken.
 const SELF_TEST_FIXTURES = [
@@ -756,6 +1136,216 @@ const SELF_TEST_FIXTURES = [
     rule: 'pageview-surface',
   },
   {
+    // The hazard the whole family is built around: a route dimension. Rule 3
+    // (counters-content) cannot see this one — `route` is not a content
+    // identifier anywhere else in this registry — which is why distinct-shape
+    // exists.
+    name: 'a route label folded into the daily distinct-address key (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${route}:${day}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a per-page-surface distinct-address sketch (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${day}:${surface}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'the distinct-address key assembled by string concatenation, dodging the literal (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "const k = keyPrefix() + ':uniques:' + day + ':' + page;",
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a multi-day sketch via PFMERGE (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFMERGE', weekKey, distinctAddressKey(a), distinctAddressKey(b)]);",
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'the raw address added to the sketch instead of its salted hash (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', distinctAddressKey(day), ip]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'the trimmed address variable added to the sketch raw (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', distinctAddressKey(day), address]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'a forwarding header added to the sketch raw (2026-09-25)',
+    file: COUNTERS_REGISTRY,
+    text: "await client.cmd(['PFADD', key, req.headers.get('x-forwarded-for')]);",
+    rule: 'distinct-raw-address',
+  },
+  {
+    name: 'a per-page distinct-address sketch built in the usage registry (2026-09-25)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques:${asPageviewSurface(surface)}:${day}`;',
+    rule: 'distinct-confinement',
+  },
+  {
+    name: 'a HyperLogLog command outside the counters registry (2026-09-25)',
+    file: 'lib/usage.ts',
+    text: "await client.cmd(['PFADD', pageviewUsageKey(surface, day), hash]);",
+    rule: 'distinct-confinement',
+  },
+  {
+    name: 'a per-bill sketch in a page component (2026-09-25)',
+    file: 'app/[locale]/bills/[slug]/page.tsx',
+    text: "await counters.cmd(['PFADD', `uniques:bills/${slug}`, hash]);",
+    rule: 'distinct-confinement',
+  },
+  // --- the sketch's own day salt (hardened 2026-09-27) ---
+  {
+    name: 'a route folded into the day-salt key (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text: SALT_DEADLINE_FN + 'const k = `${keyPrefix()}:uniques-salt:${day}:${route}`;',
+    rule: 'distinct-salt-shape',
+  },
+  {
+    name: 'the day-salt key assembled by concatenation, dodging the literal (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text: SALT_DEADLINE_FN + "const k = keyPrefix() + ':uniques-salt' + ':' + day;",
+    rule: 'distinct-salt-shape',
+  },
+  {
+    name: 'the day salt read from the usage registry (2026-09-27)',
+    file: USAGE_REGISTRY,
+    text: "const s = await client.cmd(['GET', `${keyPrefix()}:uniques-salt:${day}`]);",
+    rule: 'distinct-salt-confinement',
+  },
+  {
+    name: 'a route handler reaching the day salt through its accessor (2026-09-27)',
+    file: 'app/api/reps/route.ts',
+    text: 'const k = distinctSaltKey(day);',
+    rule: 'distinct-salt-confinement',
+  },
+  {
+    name: 'the day salt created with a relative 24h EX — it would outlive its UTC day (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      '  const key = distinctSaltKey(day);\n' +
+      "  await client.cmd(['SET', key, fresh, 'NX', 'EX', String(86400)]);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the day salt created with no expiry at all (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      "  await client.cmd(['SET', distinctSaltKey(day), fresh, 'NX']);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the day salt re-set without NX (a mid-day overwrite with KEEPTTL) (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      '  const key = distinctSaltKey(day);\n' +
+      "  await client.cmd(['SET', key, fresh, 'KEEPTTL']);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the day salt extended with a relative EXPIRE (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      '  const key = distinctSaltKey(day);\n' +
+      "  await client.cmd(['SET', key, fresh, 'NX', 'EXAT', String(distinctSaltExpiresAt(day))]);\n" +
+      "  await client.cmd(['EXPIRE', key, '172800']);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: "the day salt given the SKETCH's 48h-grace deadline via EXPIREAT (2026-09-27)",
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      '  const saltAt = distinctSaltKey(day);\n' +
+      "  await client.cmd(['EXPIREAT', saltAt, String(distinctAddressExpiresAt(day))]);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the day salt made permanent with PERSIST (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      "  await client.cmd(['PERSIST', distinctSaltKey(day)]);\n" +
+      '}',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the salt deadline given a grace period past the end of its UTC day (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      'export function distinctSaltExpiresAt(day: string): number {\n' +
+      '  return Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000) + 48 * 60 * 60;\n' +
+      '}\n' +
+      'const k = `${keyPrefix()}:uniques-salt:${day}`;',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the salt deadline built from a named constant the gate cannot check (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text:
+      'export function distinctSaltExpiresAt(day: string): number {\n' +
+      '  return Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000) + 24 * 60 * 60 + DISTINCT_ADDRESS_GRACE_SECONDS;\n' +
+      '}\n' +
+      'const k = `${keyPrefix()}:uniques-salt:${day}`;',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: 'the salt family used with no deadline function at all (2026-09-27)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques-salt:${day}`;',
+    rule: 'distinct-salt-expiry',
+  },
+  {
+    name: "the sketch fed the rate limiter's hash and salt again (2026-09-27)",
+    file: COUNTERS_REGISTRY,
+    text:
+      'export async function noteDistinctAddress(ip, now) {\n' +
+      '  const element = callerHash(address, await currentSalt(client));\n' +
+      "  await client.cmd(['PFADD', key, element]);\n" +
+      '}',
+    rule: 'distinct-salt-separation',
+  },
+  {
+    name: "the day salt derived from the rate limiter's salt record (2026-09-27)",
+    file: COUNTERS_REGISTRY,
+    text:
+      SALT_DEADLINE_FN +
+      'async function distinctDaySalt(client, day) {\n' +
+      '  const key = distinctSaltKey(day);\n' +
+      "  const base = await client.cmd(['GET', saltKey()]);\n" +
+      '}',
+    rule: 'distinct-salt-separation',
+  },
+  {
+    name: "the sketch element delegating to the rate limiter's hash (2026-09-27)",
+    file: COUNTERS_REGISTRY,
+    text:
+      'export function distinctAddressElement(address: string, daySalt: string): string {\n' +
+      '  return callerHash(address, daySalt);\n' +
+      '}',
+    rule: 'distinct-salt-separation',
+  },
+  {
     // The member-page label is the TEMPLATE; the member id it replaced in the
     // path must never become a label of its own (SY-49).
     name: 'a page-view surface label that is a member id, not the member template (2026-09-27)',
@@ -861,6 +1451,64 @@ const SELF_TEST_CLEAN = [
       'const k = `${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`;',
   },
   {
+    // The real daily distinct-address shape (2026-09-25, hardened
+    // 2026-09-27), as lib/ratelimit.ts ships it: both canonical key
+    // literals, the compliant salt deadline, the day salt born with SET NX +
+    // EXAT and otherwise only read, the element built from that salt, the
+    // sketch's own absolute deadline, the digest's PFCOUNT, and doc comments
+    // that spell the shapes out in prose (including the limiter's names,
+    // which comments may mention). Must produce zero violations across every
+    // rule, including rule 3.
+    file: COUNTERS_REGISTRY,
+    text:
+      '/**\n * Key: <env>:uniques:<YYYY-MM-DD>, one per UTC day, with a :uniques:route shape never allowed.\n */\n' +
+      'export function distinctAddressKey(day: string): string {\n' +
+      '  return `${keyPrefix()}:uniques:${day}`;\n' +
+      '}\n' +
+      '/** Salt: <env>:uniques-salt:<day>, never callerHash() or currentSalt(). */\n' +
+      'export function distinctSaltKey(day: string): string {\n' +
+      '  return `${keyPrefix()}:uniques-salt:${day}`;\n' +
+      '}\n' +
+      SALT_DEADLINE_FN +
+      'export function distinctAddressElement(address: string, daySalt: string): string {\n' +
+      "  return createHash('sha256').update(daySalt + address).digest('hex');\n" +
+      '}\n' +
+      'async function distinctDaySalt(client: UpstashClient, day: string, nowMs: number): Promise<string> {\n' +
+      '  const key = distinctSaltKey(day);\n' +
+      "  const existing = await client.cmd(['GET', key]);\n" +
+      "  const created = await client.cmd(['SET', key, fresh, 'NX', 'EXAT', String(distinctSaltExpiresAt(day))]);\n" +
+      "  const raced = await client.cmd(['GET', key]);\n" +
+      '}\n' +
+      'export async function noteDistinctAddress(ip: string, now: Date = new Date()): Promise<void> {\n' +
+      '  const key = distinctAddressKey(day);\n' +
+      '  const element = distinctAddressElement(address, await distinctDaySalt(client, day, now.getTime()));\n' +
+      "  const altered = await client.cmd(['PFADD', key, element]);\n" +
+      "  await client.cmd(['EXPIREAT', key, String(distinctAddressExpiresAt(day))]); // re-asserts the same uniques: deadline\n" +
+      '}\n' +
+      'export async function readDistinctAddressCount(day: string): Promise<DistinctAddressCountResult> {\n' +
+      "  const count = await client.cmd(['PFCOUNT', key]);\n" +
+      '}',
+  },
+  {
+    // The rate limiter itself keeps using its own salt and hash freely:
+    // separation binds only the sketch's functions, never createRateLimiter.
+    file: COUNTERS_REGISTRY,
+    text:
+      'export function createRateLimiter(opts: { route: RouteName }): RateLimiter {\n' +
+      '  const salt = await currentSalt(client);\n' +
+      '  const k = counterKey(opts.route, callerHash(ip, salt));\n' +
+      "  await client.cmd(['SET', k, '0', 'NX', 'EX', String(opts.windowSec)]);\n" +
+      '}',
+  },
+  {
+    // proxy.ts and lib/usage.ts DESCRIBE the family in comments; only code
+    // is confined, so prose about it elsewhere must not false-positive.
+    file: 'proxy.ts',
+    text:
+      '// adds the salted hash to <env>:uniques:<day> (PFADD) in lib/ratelimit.ts\n' +
+      'event.waitUntil(noteDistinctAddress(callerIp(req.headers)).catch(() => {}));',
+  },
+  {
     // The real script-refusal shape (2026-09-27), declaration and key builder
     // together, exactly as lib/usage.ts ships them.
     file: USAGE_REGISTRY,
@@ -905,7 +1553,13 @@ function main() {
   console.log('key namespaces clean: counters DB sees only hashed callers, cache DB sees only content keys, no content identifiers in caller-originating query strings');
 }
 
-// Run when invoked as a script; stay importable for tests.
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+// Run when invoked as a script; stay importable for tests. The argv[1]
+// test is the same guard scripts/check-run-honesty.mjs and
+// scripts/check-cursor-age.mjs use. It replaced a module-URL comparison
+// (2026-09-27) because the Playwright unit runner failed to load this file
+// with one ("exports is not defined in ES module scope"), and
+// tests/key-namespaces.spec.ts now imports scanText to run the
+// distinct-address rules against the real shipped files.
+if (/(^|[\\/])check-key-namespaces\.mjs$/.test(process.argv[1] ?? '')) {
   main();
 }

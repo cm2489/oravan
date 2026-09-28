@@ -21,9 +21,12 @@ import {
   declineStats,
   declineStillDecliningComment,
   declineWindowDays,
+  DISTINCT_ADDRESS_CAVEAT,
+  DISTINCT_ADDRESS_LABEL,
   formatDarkToolsLine,
   formatDeclineLine,
   formatDigestBody,
+  formatDistinctLine,
   formatMcpClientsLine,
   formatPercent,
   formatScriptRefusalLine,
@@ -748,6 +751,63 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     // Omitted entirely: the line still prints, honestly empty.
     const without = formatDigestBody({ date: '2026-09-26', mcpTools, mcpTotal, script });
     expect(without).toContain('  refusals: not computed (no refusal window supplied)');
+  });
+
+  test('the distinct-address row (owner ruling 2026-09-25): labelled honestly, printed beside page views, with its caveat every day', () => {
+    // The label is the whole claim: addresses, bots included — never
+    // "users", "visitors", or "people".
+    expect(DISTINCT_ADDRESS_LABEL).toBe('Distinct network addresses (bots included)');
+    expect(DISTINCT_ADDRESS_LABEL).not.toMatch(/user|visitor|people|person/i);
+
+    const body = formatDigestBody({
+      date: '2026-09-26',
+      mcpTools,
+      mcpTotal,
+      script,
+      siteDistinct: { ok: true, count: 1234, noExpiry: false },
+    });
+    expect(body).toContain(`${DISTINCT_ADDRESS_LABEL}: 1234`);
+    // Beside page views: after the site block's header, and the caveat
+    // rides under it every day.
+    expect(body.indexOf(`${DISTINCT_ADDRESS_LABEL}: 1234`)).toBeGreaterThan(
+      body.indexOf('Site page views (production, by route template)')
+    );
+    expect(body).toContain(DISTINCT_ADDRESS_CAVEAT);
+    // The caveat names every direction the number is wrong in.
+    for (const phrase of ['Bots included', 'NOT people', 'undercount', 'overcount', 'No page dimension', 'expires 48h']) {
+      expect(DISTINCT_ADDRESS_CAVEAT).toContain(phrase);
+    }
+    // The page-view caveat no longer claims no unique count exists, and still
+    // says page views are not unique visitors.
+    expect(body).not.toContain('no unique/visitor count exists');
+    expect(body).toContain('not unique visitors');
+
+    // Omitted: the row still appears, honestly empty.
+    const without = formatDigestBody({ date: '2026-09-26', mcpTools, mcpTotal, script });
+    expect(without).toContain(`${DISTINCT_ADDRESS_LABEL}: not computed`);
+  });
+
+  test('formatDistinctLine: every state is honest and none invents a number', () => {
+    expect(formatDistinctLine(undefined)).toBe(`${DISTINCT_ADDRESS_LABEL}: not computed (no reading supplied)`);
+
+    const failed = formatDistinctLine({ ok: false });
+    expect(failed).toContain('not read');
+    expect(failed).not.toMatch(/\d/);
+
+    const absent = formatDistinctLine({ ok: true, count: null, noExpiry: false });
+    expect(absent).toContain('not recorded');
+    expect(absent).not.toMatch(/\d/);
+
+    // A real, read zero prints as 0 — it is not the absent case.
+    expect(formatDistinctLine({ ok: true, count: 0, noExpiry: false })).toContain(`${DISTINCT_ADDRESS_LABEL}: 0 `);
+
+    const counted = formatDistinctLine({ ok: true, count: 412, noExpiry: false });
+    expect(counted).toContain(`${DISTINCT_ADDRESS_LABEL}: 412`);
+    expect(counted).not.toContain('NO expiry');
+
+    const stuck = formatDistinctLine({ ok: true, count: 412, noExpiry: true });
+    expect(stuck).toContain(`${DISTINCT_ADDRESS_LABEL}: 412`);
+    expect(stuck).toContain('NO expiry');
   });
 
   test('includes the MCP client-handshake line, with the honest fallback when none were recorded', () => {

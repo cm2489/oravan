@@ -18,6 +18,20 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                      createTenantRateLimiter's own doc
  *                                      comment for why that's the right call
  *                                      here and not a caller-privacy gap)
+ *   <env>:uniques:<YYYY-MM-DD>        ONE HyperLogLog sketch per UTC day for
+ *                                      the whole site — the daily distinct-
+ *                                      address count (owner ruling
+ *                                      2026-09-25). No route, page, or any
+ *                                      other dimension, ever. See the
+ *                                      DAILY DISTINCT-ADDRESS COUNT section
+ *                                      below for the full argument.
+ *   <env>:uniques-salt:<YYYY-MM-DD>   that sketch's OWN salt, one per UTC
+ *                                      day, used by nothing else (hardened
+ *                                      2026-09-27, owner decision "2. b").
+ *                                      Created SET NX with an absolute
+ *                                      EXAT at 00:00:00Z of the next day,
+ *                                      never extended — so it is gone the
+ *                                      moment its day ends.
  *
  * The caller hash is sha256(ip + salt). These are short-lived rate-limit
  * counters — pseudonymous, NOT anonymous: a 32-bit IPv4 space brute-forces
@@ -213,6 +227,29 @@ export function counterKey(route: RouteName, callerHash: string): string {
   return `${keyPrefix()}:rl:${route}:${callerHash}`;
 }
 
+/**
+ * The daily distinct-address sketch's key. ONE argument, the UTC day, on
+ * purpose: there is no second parameter through which a route, a page, or a
+ * bill could ever reach it. scripts/check-key-namespaces.mjs pins this exact
+ * literal (rule distinct-shape) and confines the family to this file.
+ */
+export function distinctAddressKey(day: string): string {
+  return `${keyPrefix()}:uniques:${day}`;
+}
+
+/**
+ * The daily distinct-address sketch's OWN salt key (2026-09-27): one per UTC
+ * day, read and written only by distinctDaySalt below. Never the rate
+ * limiter's salt, and never read by the rate limiter. The same one-argument
+ * discipline as distinctAddressKey; scripts/check-key-namespaces.mjs pins the
+ * literal (distinct-salt-shape), confines it to this file
+ * (distinct-salt-confinement), and holds its expiry to the end of its UTC
+ * day (distinct-salt-expiry).
+ */
+export function distinctSaltKey(day: string): string {
+  return `${keyPrefix()}:uniques-salt:${day}`;
+}
+
 // --- caller identity ---------------------------------------------------------
 
 /** First hop of x-forwarded-for, the same derivation the routes always used. */
@@ -260,9 +297,22 @@ export function parseSaltRecord(raw: string): SaltRecord | null {
  */
 let saltMemo: { key: string; value: string; expiresAtMs: number } | null = null;
 
-/** Test seam only — module scope outlives a spec file's mocks otherwise. */
+/**
+ * The distinct-address sketch's per-instance memo of ITS day salt — a
+ * separate slot, so the two salts can never be served for each other. Same
+ * 60s wall-clock bound as saltMemo, and additionally never past the end of
+ * the salt's own UTC day (see distinctDaySalt).
+ */
+let distinctSaltMemo: { key: string; value: string; expiresAtMs: number } | null = null;
+
+/**
+ * Test seam only — module scope outlives a spec file's mocks otherwise.
+ * Clears BOTH memos: the rate limiter's and the distinct-address sketch's
+ * own day salt (declared with the rest of that section, below).
+ */
 export function __resetSaltMemoForTests(): void {
   saltMemo = null;
+  distinctSaltMemo = null;
 }
 
 /**
@@ -542,4 +592,243 @@ export function createTenantRateLimiter(opts: {
       }
     },
   };
+}
+
+// --- daily distinct-address count (owner ruling 2026-09-25; hardened 2026-09-27)
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: one number a day for the whole site — how
+ * many different network addresses requested at least one HTML page during a
+ * UTC day, bots included. It answers "how many daily users" more honestly
+ * than page views can, and it is NOT a count of people: a household, office,
+ * or carrier NAT shares one address (undercount), a phone that changes
+ * networks shows several (overcount).
+ *
+ * THE RULINGS. Card 15 (D4), answered "a" by the owner on 2026-09-25T02:50Z:
+ * "Count each day's unique visitors with HyperLogLog, built from the salted
+ * hash the rate limiter already makes." Then, before merge, on 2026-09-27 he
+ * answered "2. b" to: "I harden it first: the sketch gets its own salt,
+ * deleted when its UTC day ends, which closes the after-the-day window." So
+ * this section no longer uses the rate limiter's salt or hash at all.
+ * docs/constitution-log.md carries both; privacy.p9 is the public sentence,
+ * in both languages.
+ *
+ * WHAT IS STORED — AND WHAT IS NOT. Each counted request PFADDs ONE element
+ * into the day's ONE sketch key: distinctAddressElement = sha256(daySalt ‖
+ * address), where daySalt is the value at `<env>:uniques-salt:<day>` —
+ * ≥128 bits of CSPRNG output, used by this section and nothing else. A
+ * HyperLogLog does not store its elements: it keeps 2^14 six-bit registers
+ * (per bucket, the longest run of zero bits any element's own hash
+ * produced), so neither an address nor an element is stored by this path,
+ * and the sketch cannot be enumerated or reversed. The address itself never
+ * leaves this process — only the element crosses the wire, inside the PFADD
+ * command.
+ *
+ * THE DAY SALT'S LIFETIME — the whole point of the 2026-09-27 hardening.
+ * The salt key is created with SET NX and an absolute EXAT at 00:00:00Z of
+ * the NEXT day (distinctSaltExpiresAt), in the same command, so there is no
+ * instant at which it exists without its deadline. Nothing ever re-sets,
+ * re-expires, or extends it: a request that finds it just reads it. When its
+ * UTC day ends the database deletes it. Each instance may hold a copy in
+ * memory for at most 60s and never past that same instant (distinctDaySalt),
+ * and an instance drops a stale copy the next time it counts anything.
+ * scripts/check-key-namespaces.mjs holds all of this in CI
+ * (distinct-salt-shape, distinct-salt-confinement, distinct-salt-expiry,
+ * distinct-salt-separation).
+ *
+ * THE HONEST LIMIT (stated, not waved away): DURING the UTC day itself,
+ * anyone holding BOTH the counters database and a candidate address can read
+ * that day's salt, compute the address's element, and ask whether adding it
+ * would change the sketch. At low daily counts that test is fairly reliable.
+ * Once the day ends the salt is gone, and with it the only way to compute
+ * an element: the sketch can no longer be tested for anyone. (The rate
+ * limiter's own keys carry the same during-their-life exposure in a stronger
+ * form, discrete per-caller keys, but only for callers of a limited route.)
+ *
+ * NO DIMENSION, EVER. One key per UTC day, no route, no page, no locale, no
+ * bill. A per-page or per-bill sketch would pair an address-derived token
+ * with a political interest — precisely what CLAUDE.md's "no logs linking
+ * network addresses to political positions" forbids — so the key builder
+ * takes the day and nothing else, and scripts/check-key-namespaces.mjs pins
+ * the literal (distinct-shape), confines the family and the HLL commands to
+ * this file (distinct-confinement), and forbids the raw address as a PFADD
+ * element (distinct-raw-address; a raw element would be hashed by the
+ * database's own UNSALTED function and stay testable forever).
+ *
+ * LIFETIME OF THE SKETCH. The key dies at a fixed instant: 48 hours after its
+ * UTC day ends (EXPIREAT, an absolute deadline, so every re-assertion sets
+ * the same time and never extends it). The digest (scripts/daily-metrics.mjs)
+ * reads yesterday's sketch once each morning with PFCOUNT, which needs no
+ * salt; the extra day lets a late or re-run digest still read it. For that
+ * whole tail the day's salt is already gone, so the sketch holds nothing
+ * anyone can test.
+ *
+ * ONE ADDRESS, ONE COUNT PER UTC DAY. Because the salt lives exactly one UTC
+ * day, an address seen twice in that day produces the same element both
+ * times. (The earlier design shared the limiter's salt, which rotates 24h
+ * after creation rather than at midnight, and counted an address seen on
+ * both sides of that rotation twice. That overcount is gone.) The residual
+ * edge: if a day's salt were lost mid-day, a new one would be minted and an
+ * address seen on both sides of the loss would count twice.
+ *
+ * BEST-EFFORT, NEVER IN THE WAY: called from proxy.ts inside
+ * event.waitUntil, after the response is dispatched. It never throws. With
+ * the counters database unconfigured it does NOTHING — deliberately no
+ * in-memory fallback, because a per-instance set of addresses would be the
+ * one thing here that really is a list of addresses. On an error the count
+ * for that request is dropped and the error counted, status code only.
+ */
+
+/** How long a day's sketch outlives the end of its UTC day. */
+export const DISTINCT_ADDRESS_GRACE_SECONDS = 48 * 60 * 60;
+
+/** UTC calendar date, YYYY-MM-DD — the day a request's address is counted under. */
+export function distinctAddressDay(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/**
+ * Unix seconds at which `day`'s sketch dies: the end of that UTC day plus
+ * DISTINCT_ADDRESS_GRACE_SECONDS. Absolute, so re-asserting it is idempotent.
+ */
+export function distinctAddressExpiresAt(day: string): number {
+  const dayStartSec = Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000);
+  return dayStartSec + 24 * 60 * 60 + DISTINCT_ADDRESS_GRACE_SECONDS;
+}
+
+/**
+ * Unix seconds at which `day`'s SALT dies: 00:00:00Z of the next day — the
+ * instant its UTC day ends, and not one second later. No grace, on purpose.
+ * scripts/check-key-namespaces.mjs (distinct-salt-expiry) parses this body
+ * and fails CI if the offset it adds ever exceeds one day.
+ */
+export function distinctSaltExpiresAt(day: string): number {
+  return Math.floor(Date.parse(`${day}T00:00:00Z`) / 1000) + 24 * 60 * 60;
+}
+
+/**
+ * The element added to the sketch: sha256(daySalt ‖ address). Deliberately
+ * NOT callerHash — a different salt AND a different construction, so an
+ * element can never equal a rate-limit key's hash even if the two salts
+ * somehow matched. The salt is a fixed-width hex string, so the
+ * concatenation is unambiguous.
+ */
+export function distinctAddressElement(address: string, daySalt: string): string {
+  return createHash('sha256').update(daySalt + address).digest('hex');
+}
+
+/** Drop the day-salt memo: the salt may be gone, and a guess is never better than a read. */
+function forgetDistinctSalt(): void {
+  distinctSaltMemo = null;
+}
+
+/**
+ * Read (or atomically create) `day`'s salt. Its own key, its own memo slot,
+ * and never the rate limiter's salt. The ONE write is SET NX with an
+ * absolute EXAT at the end of the day, so the salt is born with its
+ * deadline and nothing here can move that deadline later.
+ */
+async function distinctDaySalt(client: UpstashClient, day: string, nowMs: number): Promise<string> {
+  const key = distinctSaltKey(day);
+  const deadlineMs = distinctSaltExpiresAt(day) * 1000;
+  const memo = distinctSaltMemo;
+  if (memo && memo.key === key && memo.expiresAtMs > nowMs) return memo.value;
+  // A stale or other-day memo leaves process memory now, before any read.
+  forgetDistinctSalt();
+
+  const remember = (value: string): string => {
+    distinctSaltMemo = { key, value, expiresAtMs: Math.min(nowMs + SALT_MEMO_MAX_AGE_MS, deadlineMs) };
+    return value;
+  };
+  const usable = (raw: unknown): raw is string => typeof raw === 'string' && /^[0-9a-f]{32,}$/.test(raw);
+
+  const existing = await client.cmd(['GET', key]);
+  if (usable(existing)) return remember(existing);
+  if (existing !== null && existing !== undefined) {
+    // Something unusable sits at the key: don't guess, don't overwrite.
+    throw new Error('unusable distinct-address salt');
+  }
+  const fresh = randomBytes(SALT_BYTES).toString('hex');
+  const created = await client.cmd(['SET', key, fresh, 'NX', 'EXAT', String(distinctSaltExpiresAt(day))]);
+  if (created === 'OK') return remember(fresh);
+  // Lost a creation race: read the winner's salt.
+  const raced = await client.cmd(['GET', key]);
+  if (usable(raced)) return remember(raced);
+  throw new Error('distinct-address salt create raced and re-read failed');
+}
+
+/**
+ * Count one request's network address toward today's distinct-address
+ * sketch. `ip` is callerIp(headers) — the same header derivation the rate
+ * limiter uses, and nothing else of the limiter's. An absent address
+ * ('unknown', the callerIp default) is not an address and is not counted.
+ * Never throws; see the section comment above for everything else.
+ */
+export async function noteDistinctAddress(ip: string, now: Date = new Date()): Promise<void> {
+  const address = ip.trim();
+  if (address === '' || address === 'unknown') return;
+  const client = countersClient();
+  if (!client) return; // unconfigured: nothing at all, not even in memory
+  const day = distinctAddressDay(now);
+  const key = distinctAddressKey(day);
+  try {
+    const element = distinctAddressElement(address, await distinctDaySalt(client, day, now.getTime()));
+    const altered = await client.cmd(['PFADD', key, element]);
+    // PFADD answers 1 whenever the sketch changed, which always includes the
+    // call that CREATED the key — so the deadline is attached at creation and
+    // re-asserted (same instant) whenever the sketch grows, which also heals a
+    // key whose first EXPIREAT was lost. A repeat address changes nothing and
+    // costs one command, not two.
+    if (altered === 1) {
+      await client.cmd(['EXPIREAT', key, String(distinctAddressExpiresAt(day))]);
+    }
+  } catch (err) {
+    // Whatever failed might BE the salt's disappearance, so never hold a
+    // memoized day salt across it.
+    forgetDistinctSalt();
+    noteUpstashError('counters', err, "dropping this request's distinct-address count (best-effort; the page is unaffected)");
+  }
+}
+
+export type DistinctAddressCountResult =
+  | {
+      ok: true;
+      /** The sketch's estimate, or null when no sketch exists for that day. */
+      count: number | null;
+      /** True when the key exists but carries no expiry — it would never age out. */
+      noExpiry: boolean;
+    }
+  | { ok: false };
+
+/**
+ * Read ONE day's distinct-address estimate for the digest: TTL (to tell an
+ * absent sketch from a real zero, and to catch a key that lost its
+ * deadline), then PFCOUNT. Read-only — it never writes, never repairs.
+ *
+ * Fails CLOSED like every digest read in this repo (`{ ok: false }` on an
+ * unconfigured database, a request error, or a malformed reply), so the
+ * caller can say "not read" instead of printing an invented number.
+ */
+export async function readDistinctAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  const client = countersClient();
+  if (!client) return { ok: false };
+  const key = distinctAddressKey(day);
+  let ttl: unknown;
+  let count: unknown;
+  try {
+    ttl = await client.cmd(['TTL', key]);
+    if (ttl === -2) return { ok: true, count: null, noExpiry: false };
+    count = await client.cmd(['PFCOUNT', key]);
+  } catch (err) {
+    noteUpstashError(
+      'counters',
+      err,
+      'failing closed to a digest read error (distinct addresses, never a degraded number)'
+    );
+    return { ok: false };
+  }
+  if (typeof ttl !== 'number' || typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
+    return { ok: false };
+  }
+  return { ok: true, count, noExpiry: ttl === -1 };
 }
