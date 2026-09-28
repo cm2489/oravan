@@ -57,13 +57,14 @@ import {
   mergeArticles,
   parseKeptIndexes,
   planCoverageRun,
-  queryFor,
+  queryWithAddedNames,
   readRateLimitRemaining,
   recentWindowStart,
   relevancePrompt,
   wholeLifeStart,
   withoutRejected,
 } from './coverage-query.mjs';
+import { PRESS_NAMES_PATH, formatPressNames, loadPressNames, unknownPressNameSlugs } from './press-names.mjs';
 import { coverageDurability, createVoteRouter, markRouted, refileStoredCoverage } from './coverage-route.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
@@ -157,6 +158,18 @@ const readOptional = (p) => {
    out of this file: what the Read section shows is the page's decision. */
 const outletPolicy = loadPressOutletPolicy({ readJSON, exists: existsSync });
 const withRatedFlag = (a) => ({ ...a, rated: outletPolicy.isRated(a?.source) });
+
+/* Added press names (scripts/press-names.mjs): names the press prints that a
+   bill's generated handles lack, OR-ed onto its query (queryWithAddedNames).
+   They only ever widen a query. A malformed file adds nothing tonight and says
+   why; a slug the corpus does not hold is named and skipped. */
+const pressNames = loadPressNames({ readJSON, exists: existsSync });
+for (const p of pressNames.problems) console.warn(`::warning::press-names: ${p} — no added names are used tonight`);
+const pressNamesUnknown = unknownPressNameSlugs(pressNames.bySlug, bills.map(coverageSlug));
+if (pressNamesUnknown.length) {
+  console.warn(`::warning::press-names: ${PRESS_NAMES_PATH} names bill(s) not in data/bills.json, skipped: ${pressNamesUnknown.join(', ')}`);
+}
+console.log(`PRESS NAMES: ${formatPressNames(pressNames.bySlug)}`);
 
 // Last committed coverage. Eligible bills this run doesn't reach (quota stop,
 // per-bill failure, or a COVERAGE_TOP_N test run) carry their previous entry
@@ -616,7 +629,7 @@ async function fetchRecent(b, query) {
    well-formed answer (gateAnswered). */
 async function processBill(b) {
   const slug = slugOf(b);
-  const query = queryFor(b);
+  const query = queryWithAddedNames(b, pressNames.bySlug.get(slug));
   const isPriority = prioritySet.has(slug);
   try {
     let recent = [];
