@@ -55,9 +55,12 @@ const fileBytes = statSync(url(UPDATES_PATH)).size;
 const billSlugs = new Set(bills.map((b) => b.full_identifier));
 
 // The outlet floor (owner ruling 2026-09-26): a stored press cluster may name
-// only AllSides-rated outlets, plus an owner-approved allowlist if one exists.
-// A malformed allowlist is a violation HERE, so it is red on the pull request
-// that adds it — the collector itself fails closed to rated-only either way.
+// only AllSides-rated outlets, plus an outlet on the owner's allowlist ON THE
+// DAY THE CLUSTER WAS RECORDED — the gate hands `admits` each update's
+// recorded_at day, so an allowlist trial that has since ended never reddens
+// the press updates written while it ran. A malformed allowlist is a
+// violation HERE, so it is red on the pull request that adds it — the
+// collector itself fails closed to rated-only either way.
 const pressPolicy = loadPressOutletPolicy({ readJSON: read, exists: (p) => existsSync(url(p)) });
 
 const { violations, warnings } = checkMomentUpdates(updates, moments, billSlugs, {
