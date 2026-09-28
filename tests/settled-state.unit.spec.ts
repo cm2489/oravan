@@ -331,6 +331,8 @@ test.describe('SY-28 · the record-only sentence is not labeled AI, because no m
     expect(isAiSummary({ model: RECORD_ONLY_MODEL })).toBe(false);
     expect(isAiSummary({ model: 'hand-authored' })).toBe(false);
     expect(isAiSummary({ model: 'claude-sonnet-5' })).toBe(true);
+    // The collector's model since 2026-09-28: its revisions keep the AI chip.
+    expect(isAiSummary({ model: 'claude-sonnet-5-5' })).toBe(true);
     // A token nobody taught the page still reads as AI — the safe direction.
     expect(isAiSummary({ model: 'record-only-v2' })).toBe(true);
   });

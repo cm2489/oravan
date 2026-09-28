@@ -32,14 +32,17 @@ name: Moment watch
 # COST: NOT $0 any more, as of 2026-08-07. This header advertised "$0. Zero
 # network, zero AI, zero paid API" and that stopped being true the moment
 # scripts/moment-draft.mjs started writing the first draft of each scaffold's
-# prose with claude-sonnet-5. The real number, so nobody has to guess:
+# prose with Claude Sonnet (claude-sonnet-5-5 since 2026-09-28). The real
+# number, so nobody has to guess:
 #
 #   ONE call per candidate whose scaffold a run actually RENDERS, plus at most
 #   one retry when a field fails the lint. Measured on the s-3172-119
 #   candidate: ~1,230 input + ~480 output tokens per call (chars / 3.6, which
-#   allows for Sonnet 5's heavier tokenizer — an estimate, NOT a count_tokens
-#   measurement) = ~$0.011 at list ($3 / $15 per MTok), ~$0.007 at the
-#   introductory rate that runs to 2026-08-31.
+#   allows for the heavier tokenizer Sonnet 5.5 shares with Sonnet 5 — an
+#   estimate, NOT a count_tokens measurement) = ~$0.007 at list ($2 / $10 per
+#   MTok, Anthropic's pricing page read 2026-09-28). The figures below were
+#   worked at the $3 / $15 rate once announced for 2026-09-01, which that page
+#   now says will not occur, so they run about 1.5x the list price.
 #
 #     quiet night, nothing crossed the floor .... $0.00  (no call is made)
 #     3-candidate night (today's backlog) ....... ~$0.03, ~$0.07 if all retried

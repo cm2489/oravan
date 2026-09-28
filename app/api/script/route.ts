@@ -416,7 +416,12 @@ async function serveScript(
       {
         model: SCRIPT_MODEL,
         max_tokens: SCRIPT_MAX_TOKENS,
-        thinking: { type: 'disabled' },
+        // Sonnet 5.5's no-up-front-thinking setting (`disabled` is a 400
+        // there); with no tools the reply is text only, so content[0] below
+        // is still the script. The installed SDK's types predate
+        // `between_tools`; the SDK posts the body unchanged, so the cast
+        // changes nothing on the wire.
+        thinking: { type: 'between_tools' } as unknown as Anthropic.ThinkingConfigParam,
         messages: [{ role: 'user', content: buildPrompt() }],
       },
       // Without this the SDK waits out its 10-minute default and the platform

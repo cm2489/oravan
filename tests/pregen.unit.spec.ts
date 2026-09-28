@@ -132,9 +132,9 @@ test.describe('buildBatchRequest', () => {
   test('carries the same model/max_tokens the live route uses', () => {
     const [combo] = planCombos([makeBill()], ['oppose'], ['es']);
     const request = buildBatchRequest(combo);
-    expect(request.params.model).toBe('claude-sonnet-5');
+    expect(request.params.model).toBe('claude-sonnet-5-5');
     expect(request.params.max_tokens).toBe(520);
-    expect(request.params.thinking).toEqual({ type: 'disabled' });
+    expect(request.params.thinking).toEqual({ type: 'between_tools' });
   });
 });
 

@@ -349,7 +349,7 @@
  * is skipped entirely (resolveWithHaiku) at $0; on an active-news hour a
  * ~20-40-headline batch at small prompts runs roughly $0.002-0.005/call.
  * Expected ~$0.12/day summed across 24 runs on a newsy day — an upper
- * estimate; many real days are lower. Trigger decodes (Sonnet 5,
+ * estimate; many real days are lower. Trigger decodes (Sonnet 5.5,
  * ~$0.07-0.15/bill, same model/cost as sync-bills.mjs): a typical day
  * triggers 0 brand-new-bill decodes ($0, since a fired bill is almost
  * always already in the corpus and only needs a free refresh); a busy day

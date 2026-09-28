@@ -122,16 +122,21 @@ test.describe('batch requests carry the synchronous decode, unaltered', () => {
     expect(rows[0].params.messages[0].content).toBe(buildStructurePrompt(bill, 'A plain summary.'));
   });
 
-  test('thinking is disabled explicitly on every row', () => {
-    // Sonnet 5 turns thinking ON when the field is omitted; a batch of rows
+  test('up-front thinking is turned off explicitly on every row, in the spelling Sonnet 5.5 accepts', () => {
+    // Sonnet 5.5 turns thinking ON when the field is omitted; a batch of rows
     // that forgot it would add unbounded thinking spend to the cheapest path
-    // in the pipeline, which is the opposite of the point.
+    // in the pipeline, which is the opposite of the point. And `disabled`,
+    // the Sonnet 5 spelling, is a 400 on Sonnet 5.5 — every row of a night's
+    // batch would error.
+    expect(DECODE_MODEL).toBe('claude-sonnet-5-5');
     const jobs = [{ slug: 'hr-1-119', bill: makeBill(), text: 't' }];
     for (const row of buildSummaryRequests(jobs)) {
-      expect(row.params.thinking).toEqual({ type: 'disabled' });
+      expect(row.params.model).toBe(DECODE_MODEL);
+      expect(row.params.thinking).toEqual({ type: 'between_tools' });
     }
     for (const row of buildStructureRequests(jobs, new Map([['hr-1-119', 's']]))) {
-      expect(row.params.thinking).toEqual({ type: 'disabled' });
+      expect(row.params.model).toBe(DECODE_MODEL);
+      expect(row.params.thinking).toEqual({ type: 'between_tools' });
     }
   });
 

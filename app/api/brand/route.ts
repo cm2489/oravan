@@ -39,7 +39,7 @@ import { noteBrandPreview } from '@/lib/usage';
  *   - a GLOBAL daily breaker 250/day ('brand-day' via the tenant limiter
  *     keyed by the constant 'brand-global') — unauthenticated spending
  *     endpoint, no cross-user cache to blunt a distributed farm. Worst-case
- *     day ≈ 250 × ~$0.008 ≈ $2 on claude-sonnet-5. It FAILS CLOSED: an
+ *     day ≈ 250 × ~$0.008 ≈ $2 on claude-sonnet-5-5. It FAILS CLOSED: an
  *     unreachable counters database refuses the paid call rather than
  *     falling back to a per-instance count, which is what makes that $2 a
  *     real ceiling instead of a per-instance one during an outage.
@@ -163,7 +163,11 @@ export async function POST(req: NextRequest) {
     const msg = await anthropic.messages.create({
       model: BRAND_MODEL,
       max_tokens: BRAND_MAX_TOKENS,
-      thinking: { type: 'disabled' },
+      // Sonnet 5.5's no-up-front-thinking setting (`disabled` is a 400
+      // there); with no tools the reply is text only, so content[0] below is
+      // still the answer. The installed SDK's types predate `between_tools`;
+      // the SDK posts the body unchanged, so the cast changes nothing on the wire.
+      thinking: { type: 'between_tools' } as unknown as Anthropic.ThinkingConfigParam,
       messages: [{ role: 'user', content: buildBrandPrompt(candidates) }],
     });
     const text = msg.content[0].type === 'text' ? msg.content[0].text : '';
