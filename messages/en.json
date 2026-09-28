@@ -957,7 +957,7 @@
     "howMadeBody": "A Big Question opens only when something real before Congress meets every rule below — checked by automated gates before it publishes.",
     "howMadeRule1": "Something still moving: at least one tracked bill or Senate nomination that has not reached its end. The question has to still be one a call can affect.",
     "howMadeRule2": "A recent signal: in the last 45 days it appeared on a government schedule or in a chamber's own floor proceedings (a floor vote, a motion or <cloture>cloture</cloture> filing on the floor, the week's bill list, Congress.gov's most-viewed, the <execCalendar>Senate Executive Calendar</execCalendar>), or in press coverage from at least two outlets of differing leanings.",
-    "howMadeRule3": "A callable action: the page and the call script already work — every corpus bill qualifies by construction, and a nomination qualifies only when the Senate's record carries the description sentence its script is written from. The gate rejects one that doesn't.",
+    "howMadeRule3": "A callable action: the page and the call script already work — a bill qualifies while a decision on it is still open, and a nomination qualifies only when the Senate's record carries the description sentence its script is written from. The gate rejects one that doesn't.",
     "howMadeRule4": "A neutral name: a description of the disagreement either side would recognize as fair, never one side's own label for it.",
     "lifecycleLive": "This Big Question retires when the question is settled — every bill signed, vetoed, or dead, and every nomination confirmed, returned, or withdrawn. Settled Big Questions stay readable, marked resolved; they never reopen.",
     "browseAll": "Browse all Big Questions",

@@ -17,6 +17,9 @@ import {
   vehicleKind as gateVehicleKind,
 } from '../lib/moments-gate.mjs';
 import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
+import { decisionState } from '../lib/docket.mjs';
+import { settledDecision } from '../lib/journey';
+import type { Bill } from '../lib/types';
 import {
   STORED_NOMINATION_STATUSES,
   getNomination,
@@ -41,7 +44,8 @@ import {
 function checkRepoData() {
   const read = (p: string) => JSON.parse(readFileSync(join(__dirname, '..', p), 'utf8'));
   const moments = read('data/moments.json');
-  const bills: { full_identifier: string; status: string }[] = read('data/bills.json');
+  const bills: { full_identifier: string; status: string; last_action_text?: string | null }[] =
+    read('data/bills.json');
   const nominations: Nomination[] = read('data/nominations.json');
   const slugsByKind = {
     bill: new Set(bills.map((b) => b.full_identifier)),
@@ -55,11 +59,15 @@ function checkRepoData() {
   const describedNominationSlugs = new Set(
     nominations.filter((n) => n.nominee_description?.trim()).map(nominationSlug),
   );
+  // The settled-record set, wired exactly as the CI script wires it.
+  const settledBillSlugs = new Set(
+    bills.filter((b) => decisionState(b).state !== 'pending').map((b) => b.full_identifier),
+  );
   return checkMoments(
     moments,
     slugsByKind,
     (v: { slug: string; kind?: string }) => statusByKind[gateVehicleKind(v)]?.get(v.slug),
-    { describedNominationSlugs },
+    { describedNominationSlugs, settledBillSlugs },
   );
 }
 
@@ -490,8 +498,17 @@ test.describe('checkMoments (fixtures)', () => {
     nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-932-119', kind: 'nomination' }];
     return nom;
   };
-  const runWithBaseline = (moments: Record<string, unknown>, baselineVehicles: Set<string>) =>
-    checkMoments(moments, SLUGS_BY_KIND, statusFor, { now: NOW, describedNominationSlugs: DESCRIBED, baselineVehicles });
+  const runWithBaseline = (
+    moments: Record<string, unknown>,
+    baselineVehicles: Set<string>,
+    settledBillSlugs: Set<string> = new Set(),
+  ) =>
+    checkMoments(moments, SLUGS_BY_KIND, statusFor, {
+      now: NOW,
+      describedNominationSlugs: DESCRIBED,
+      baselineVehicles,
+      settledBillSlugs,
+    });
 
   test('a newly added terminal vehicle fails when a baseline is provided', () => {
     const fresh = runWithBaseline({ m: terminalNom() }, new Set());
@@ -521,6 +538,68 @@ test.describe('checkMoments (fixtures)', () => {
     const { violations, warnings } = run({ m: terminalNom() });
     expect(violations).toEqual([]);
     expect(warnings.some((w: string) => w.includes('confirmed'))).toBe(true);
+  });
+
+  /* ---- the settled-record rule, bills (2026-09-28) ----------------------
+   * Since the owner's Q9 ruling a settled bill's page shows the record, not a
+   * call, and that includes a failed floor vote whose STATUS is still
+   * `floor_vote`. `moments.howMadeRule3` says a bill qualifies "while a
+   * decision on it is still open" and that the gate rejects one that doesn't;
+   * these keep that true. Same treatment as a terminal status. */
+  test('a newly added bill whose record is settled fails; on the baseline it warns', () => {
+    const settledSet = new Set(['test-bill-1']);
+    const fresh = runWithBaseline({ m: validMoment() }, new Set(), settledSet);
+    expect(
+      fresh.violations.some(
+        (x: string) => x.includes('test-bill-1') && x.includes('no decision left') && x.includes('newly added'),
+      ),
+    ).toBe(true);
+
+    const onBaseline = runWithBaseline({ m: validMoment() }, new Set(['m|test-bill-1']), settledSet);
+    expect(onBaseline.violations).toEqual([]);
+    expect(onBaseline.warnings.some((w: string) => w.includes('test-bill-1') && w.includes('no decision left'))).toBe(true);
+
+    const ok = validMoment();
+    (ok.vehicles[0] as Record<string, unknown>)._terminal_ok = 'retrospective: the vote had failed before it opened';
+    const accepted = runWithBaseline({ m: ok }, new Set(), settledSet);
+    expect(accepted.violations).toEqual([]);
+    expect(accepted.warnings.some((w: string) => w.includes('accepted by _terminal_ok'))).toBe(true);
+  });
+
+  test('a bill with a decision still open passes as a new vehicle', () => {
+    expect(runWithBaseline({ m: validMoment() }, new Set(), new Set(['test-bill-2'])).violations).toEqual([]);
+  });
+
+  test('the settled-record rule FAILS CLOSED when a baseline is wired without the set', () => {
+    const v = checkMoments({ m: validMoment() }, SLUGS_BY_KIND, statusFor, {
+      now: NOW,
+      describedNominationSlugs: DESCRIBED,
+      baselineVehicles: new Set(),
+    }).violations;
+    expect(v.some((x: string) => x.includes('settledBillSlugs'))).toBe(true);
+  });
+
+  /* Against the REAL corpus: every bill whose page drops the call is in the
+     set the CI script builds, and one of them, added as a new vehicle, is
+     refused by that wiring. */
+  test('the real corpus: every bill whose page shows the record is refused as a new vehicle', () => {
+    const real = JSON.parse(readFileSync(join(__dirname, '..', 'data/bills.json'), 'utf8')) as Bill[];
+    const gateSet = new Set(real.filter((b) => decisionState(b).state !== 'pending').map((b) => b.full_identifier));
+    const pageSettled = real.filter((b) => settledDecision(b) !== null);
+    for (const b of pageSettled) expect(gateSet.has(b.full_identifier), b.full_identifier).toBe(true);
+
+    // A settled floor vote, not a law: the case the terminal set alone missed.
+    const floor = pageSettled.find((b) => !TERMINAL_VEHICLE_STATUSES.has(b.status));
+    test.skip(!floor, 'no settled floor vote in the current corpus');
+    const m = validMoment();
+    m.vehicles = [{ ...m.vehicles[0], slug: floor!.full_identifier }];
+    const v = checkMoments(
+      { m },
+      { ...SLUGS_BY_KIND, bill: new Set(real.map((b) => b.full_identifier)) },
+      () => floor!.status,
+      { now: NOW, describedNominationSlugs: DESCRIBED, baselineVehicles: new Set(), settledBillSlugs: gateSet },
+    ).violations;
+    expect(v.some((x: string) => x.includes(floor!.full_identifier) && x.includes('newly added'))).toBe(true);
   });
 
   /* ---- the callable-record rule (2026-08-06) ----------------------------
@@ -555,9 +634,9 @@ test.describe('checkMoments (fixtures)', () => {
     const nom = validMoment() as Record<string, unknown>;
     nom.vehicles = [{ ...validMoment().vehicles[0], slug: 'pn-730-18-119', kind: 'nomination' }];
     expect(run({ m: nom }).violations).toEqual([]);
-    // The rule is nominations-only. A bill's callability is structural (every
-    // corpus bill has a page and a script), so an empty nomination set must
-    // not touch it.
+    // The rule is nominations-only. A bill's callability is whether a decision
+    // on it is still open — the settled-record rule above — never the
+    // description set, so an empty nomination set must not touch it.
     expect(run({ m: validMoment() }, new Set()).violations).toEqual([]);
   });
 
