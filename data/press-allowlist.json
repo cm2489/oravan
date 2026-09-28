@@ -10,7 +10,12 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Capitol Hill newsroom covering floor procedure and appropriations (FiscalNote). AllSides showed Center in May 2025, Not Rated in December 2025, and no page in February 2026. Senate Daily and House Periodical press galleries.",
-      "topics": ["congress-process", "government-funding", "college-sports", "defense"]
+      "topics": [
+        "congress-process",
+        "government-funding",
+        "college-sports",
+        "defense"
+      ]
     },
     {
       "domain": "federalnewsnetwork.com",
@@ -20,17 +25,9 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Federal workforce and agency-budget newsroom (Hubbard Radio Washington DC). No AllSides page found.",
-      "topics": ["government-funding"]
-    },
-    {
-      "domain": "defenseone.com",
-      "name": "Defense One",
-      "approved_on": "2026-09-28",
-      "trial_ends": "2026-10-11",
-      "status": "active",
-      "approved_by": "Colby",
-      "reason": "Defense policy and Pentagon budget newsroom (GovExec). Its March 2026 AllSides capture shows a Not Rated badge beside text calling it Center, so its status needs a browser check. House Periodical press gallery.",
-      "topics": ["defense", "government-funding", "iran"]
+      "topics": [
+        "government-funding"
+      ]
     },
     {
       "domain": "breakingdefense.com",
@@ -40,7 +37,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Defense industry, budget and Pentagon newsroom (Breaking Media). No AllSides page found. Senate Daily press gallery.",
-      "topics": ["defense", "iran"]
+      "topics": [
+        "defense",
+        "iran"
+      ]
     },
     {
       "domain": "lawfaremedia.org",
@@ -50,7 +50,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "National-security law and war-powers analysis. No AllSides page found. Owner not verified.",
-      "topics": ["war-powers", "national-security-law"]
+      "topics": [
+        "war-powers",
+        "national-security-law"
+      ]
     },
     {
       "domain": "warontherocks.com",
@@ -60,7 +63,11 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Foreign-policy and national-security analysis (Metamorphic Media LLC). No AllSides page found.",
-      "topics": ["defense", "iran", "syria"]
+      "topics": [
+        "defense",
+        "iran",
+        "syria"
+      ]
     },
     {
       "domain": "al-monitor.com",
@@ -70,7 +77,11 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Middle East news, including U.S. policy on Iran and Syria (AL-MONITOR, LLC; current owner not verified). No AllSides page found.",
-      "topics": ["iran", "syria", "middle-east"]
+      "topics": [
+        "iran",
+        "syria",
+        "middle-east"
+      ]
     },
     {
       "domain": "sportico.com",
@@ -80,7 +91,9 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Sports business and law, including college athletics and NIL (Penske Media). No AllSides page found.",
-      "topics": ["college-sports"]
+      "topics": [
+        "college-sports"
+      ]
     },
     {
       "domain": "frontofficesports.com",
@@ -90,7 +103,9 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Sports business newsroom covering the college-sports bill. No AllSides page found. Owner not verified.",
-      "topics": ["college-sports"]
+      "topics": [
+        "college-sports"
+      ]
     },
     {
       "domain": "coindesk.com",
@@ -100,7 +115,9 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Crypto markets and policy, including H.R. 3633. Owned by Bullish, a digital-asset platform, as its about page discloses. AllSides showed Not Rated in February 2026.",
-      "topics": ["crypto-regulation"]
+      "topics": [
+        "crypto-regulation"
+      ]
     },
     {
       "domain": "americanbanker.com",
@@ -110,7 +127,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Banking and financial-regulation newsroom (Arizent). No AllSides page found. Senate Daily press gallery.",
-      "topics": ["financial-regulation", "crypto-regulation"]
+      "topics": [
+        "financial-regulation",
+        "crypto-regulation"
+      ]
     },
     {
       "domain": "bankingdive.com",
@@ -120,7 +140,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Banking trade news (Informa TechTarget, whose name is on the House Periodical press gallery list). No AllSides page found.",
-      "topics": ["financial-regulation", "crypto-regulation"]
+      "topics": [
+        "financial-regulation",
+        "crypto-regulation"
+      ]
     },
     {
       "domain": "coinworld.com",
@@ -130,7 +153,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "U.S. Mint and coinage trade press (Amos Media, listed as Amos Press on the House Periodical press gallery list). No AllSides page found.",
-      "topics": ["currency", "mint"]
+      "topics": [
+        "currency",
+        "mint"
+      ]
     },
     {
       "domain": "pymnts.com",
@@ -140,7 +166,11 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Payments and fintech trade news, including House votes on the penny and on crypto rules. No AllSides page found. Owner not verified.",
-      "topics": ["currency", "payments", "crypto-regulation"]
+      "topics": [
+        "currency",
+        "payments",
+        "crypto-regulation"
+      ]
     },
     {
       "domain": "theshelbyreport.com",
@@ -150,7 +180,10 @@
       "status": "active",
       "approved_by": "Colby",
       "reason": "Grocery-industry trade news, including penny rounding for retailers (Shelby Publishing Co.). No AllSides page found. Several of its penny headlines relay grocer trade-group positions.",
-      "topics": ["currency", "retail"]
+      "topics": [
+        "currency",
+        "retail"
+      ]
     }
   ]
 }
