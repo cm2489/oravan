@@ -393,6 +393,19 @@ test.describe('etDayOf is the pipeline’s legislative day', () => {
     expect(etDayOf('not a date')).toBe('');
   });
 
+  test('a bare day is already a day: returned unchanged, as etDay does', () => {
+    // Read as an instant, '2026-09-27' is UTC midnight — the evening of the
+    // 26th in Washington. Both clocks must pass it through, or a caller that
+    // hands over a publishedAt day is judged one day early.
+    for (const day of ['2026-09-27', '2026-03-08', '2026-11-01', '2026-10-11', '2027-01-01']) {
+      expect(etDayOf(day), day).toBe(day);
+      expect(etDayOf(day), day).toBe(etDay(day));
+    }
+    // A timestamped string is still an instant, not a day.
+    expect(etDayOf('2026-09-27T00:00:00Z')).toBe('2026-09-26');
+    expect(etDayOf('2026-09-27T00:00:00Z')).toBe(etDay('2026-09-27T00:00:00Z'));
+  });
+
   test('isCalendarDay refuses impossible days rather than rolling them over', () => {
     for (const ok of ['2026-02-28', '2028-02-29', '2026-12-31']) expect(isCalendarDay(ok), ok).toBe(true);
     for (const bad of ['2026-02-29', '2026-02-30', '2026-13-01', '2026-1-01', '', null, 20261001]) {
