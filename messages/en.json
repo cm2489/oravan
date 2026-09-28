@@ -602,7 +602,7 @@
     "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Email hello@oravan.org. Name the bill and describe the error.",
     "correctionLinkText": "Email hello@oravan.org",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
-    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. An embeddable widget that carries bill text is still in development, not yet shipped; once it exists, it will read this same corrected data with no separate correction step of its own.",
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
     "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Oravan's ongoing Spanish-language review process rather than patched quietly and forgotten."
   },
   "notFound": {
@@ -822,16 +822,16 @@
   },
   "partners": {
     "title": "Partners",
-    "intro": "Oravan's widgets are built to live inside other people's pages — newsroom articles, library guides, an organization's action center. Everything on this page is free to use today; here's what each kind of partner gets, and where the licensed tier begins.",
+    "intro": "Oravan's widgets are built to live inside other people's pages — newsroom articles, library guides, an organization's action center. They aren't open to new sites right now: they'll come back with their own page and terms. Here's what they do for each kind of partner, and where the licensed tier begins.",
     "newsroomsTitle": "Spanish-language and local newsrooms",
     "newsroomsBody": "Drop a representative lookup or a plain-language bill card into any article — two script tags, no account, no tracking of your readers, ever. Spanish ships as a peer surface, not an afterthought: every interface string is written in both languages, a bill's plain-language layer is AI-translated from the English decode, and neither language publishes without the other — so an es-first outlet embeds an es-first widget, complete on the day it goes live. Theme it to your section colors, or use brandless chrome so the widget reads as part of your page.",
     "newsroomsCta": "Build your embed",
     "librariesTitle": "Libraries and civic programs",
     "librariesBody": "Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, and plain language that never publishes without passing automated checks against the official record. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone.",
     "orgsTitle": "Organizations and licensed use",
-    "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
+    "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today.",
     "licensingTitle": "Licensing and pricing",
-    "licensingBody": "If your organization wants white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. The embeds page lists four plans — Free, Pro, Nonprofit, and Network — but only Free is open today: checkout for the paid plans isn’t open yet, and their prices aren’t published.",
+    "licensingBody": "If your organization wants embeds on its site, white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. The embeds have four plans — Free, Pro, Nonprofit, and Network — and none is open to new sites right now: checkout for the paid plans isn’t open yet, and their prices aren’t published.",
     "licensingCta": "Email hello@oravan.org"
   },
   "follow": {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { SITE_ORIGIN, feedPaths } from '@/lib/site';
+import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN, feedPaths } from '@/lib/site';
 import { MCP_ENDPOINT_URL, TOOL_NAMES } from '@/lib/core/mcp';
 
 /*
@@ -116,18 +116,23 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
           </Link>
         </section>
 
-        <section aria-labelledby="follow-embeds" className="mt-8 border-t border-line pt-6">
-          <h2 id="follow-embeds" className="text-h3 font-extrabold">
-            {t('embedsTitle')}
-          </h2>
-          <p className="mt-2">{t('embedsBody')}</p>
-          <Link
-            href="/embeds"
-            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-          >
-            {t('embedsLink')} <span aria-hidden>→</span>
-          </Link>
-        </section>
+        {/* Only while the /embeds page is public (lib/site.ts EMBEDS_PAGES_PUBLIC;
+            hidden since 2026-09-28): this page lists what exists today, and a
+            link to a 404 is worse than none. */}
+        {EMBEDS_PAGES_PUBLIC && (
+          <section aria-labelledby="follow-embeds" className="mt-8 border-t border-line pt-6">
+            <h2 id="follow-embeds" className="text-h3 font-extrabold">
+              {t('embedsTitle')}
+            </h2>
+            <p className="mt-2">{t('embedsBody')}</p>
+            <Link
+              href="/embeds"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            >
+              {t('embedsLink')} <span aria-hidden>→</span>
+            </Link>
+          </section>
+        )}
 
         {/* Empty by design — see the header comment. A recessed `wash` panel
             with an ink-2 edge (line-strong on wash is 2.97:1), the same

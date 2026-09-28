@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { decodedBillSlug, undecodedBillSlug } from './corpus-samples';
-import { localeRoutes, probePathFor } from './routes';
+import { hiddenLocalePages, localeRoutes, probePathFor } from './routes';
 
 /*
  * S22 — hreflang correctness pass. Industry data says ~75% of hreflang
@@ -22,8 +22,10 @@ import { localeRoutes, probePathFor } from './routes';
  * own canonical, and vice versa), and x-default is present and consistent
  * everywhere.
  *
- * The locale catch-all is the one page route left out: it is a 404, and a 404
- * declares no canonical.
+ * The locale catch-all is left out: it is a 404, and a 404 declares no
+ * canonical. So are the hidden pages (tests/routes.ts hiddenLocalePages —
+ * /embeds and /embeds/terms since 2026-09-28), for the same reason;
+ * tests/embeds-hidden.spec.ts asserts their 404.
  */
 
 const SITE_ORIGIN = 'https://oravan.org';
@@ -33,7 +35,7 @@ const SITE_ORIGIN = 'https://oravan.org';
  *  corpus turns over. */
 const PATHS: Array<[string, string]> = [
   ...localeRoutes()
-    .filter((r) => r.kind === 'page' && !r.catchAll)
+    .filter((r) => r.kind === 'page' && !r.catchAll && !hiddenLocalePages().includes(r.pattern))
     .map((r): [string, string] => [r.pattern, probePathFor(r)]),
   // The bill page across the decode-status range (the route's own probe above
   // is decoded bill #1).
