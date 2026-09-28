@@ -86,3 +86,15 @@ The "In the news" band is selected from `data/conversation.json` — committed, 
 - On constraint 6: *"those two slots go to the list's own top ranks, newest list first — before this they fell to alphabetical slug order, which kept H.R. 1 in the band 25 of 32 days while the rank-1 bill never appeared — and a bill that is already law takes no most-viewed slot; it renders only when the press corroborates it, as any two-outlet card does."*
 
 Gates: `scripts/check-conversation.mjs` (only rated outlets may corroborate; every entry after `_meta.links_since` carries its link), `tests/conversation.unit.spec.ts`, `tests/news-band.unit.spec.ts`. Per-question press counts have their own gate, `scripts/check-question-press.mjs` (rated outlets only; every count a stored link; never tone or text).
+
+## 7. A settled decision shows the record, not the call
+
+*Owner, 2026-09-28 (UX question Q9, answered "a" at 18:20:11 UTC).* The option he picked, verbatim: *"A record-only block with no numbers: 'This is law' or 'This was rejected, 49–50', and how your members voted. No stance, no script."*
+
+- **Which bills.** `settledDecision` (`lib/journey.ts`), read off the stepper's own derivation so the panel and "Where does it stand?" say the same thing: a signed law, a veto, a rejected passage vote (with the record's own tally, printed only when yeas are no more than nays), or a failed motion to take the measure up. A failed Senate vote with a motion to reconsider *entered* keeps the call, because the same question can come back — the one exception `decisionState` (`lib/docket.mjs`) also makes.
+- **What stands in the call panel's place.** The outcome sentence, then each of the reader's members beside their position on the newest roll call in their own chamber, once a ZIP is saved (the vote record's own strip, moved into the panel so it is not printed twice). No stance control, no script, no phone number; a member's name links to their page, which carries the numbers. With no ZIP, the panel asks for one.
+- **What else goes.** The floating call button and the "see how a call works" demo, both of which only ever pointed at a call.
+- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted (and `get_bill` withholds `act_url`). The converse has one stated gap: a settled floor text whose chamber the record does not name makes the stepper print its chamber-free sentence, and the panel keeps the call with it (no record had that shape on 2026-09-28).
+- **Not yet covered:** the paid action-panel embed (`app/embed/action-panel`) does not read the settled state; rule 6 says so.
+
+Gates: `tests/settled-panel.unit.spec.ts` (the reader, both directions over the committed corpus, and the words in both languages), `tests/settled-panel.spec.ts` (the page), and funnel invariant I2 scoped to a decision still open (`tests/funnel.spec.ts`).

@@ -8,6 +8,20 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="settled-panel-2026-09-28"></a>
+
+## 2026-09-28 — Rules 6 and 8: a settled decision shows the record, and the call budget counts open decisions
+
+Rules touched: page 1, rule 6 (the record, quoted, never narrated) and rule 8 (truth first; the call is never buried). README design principle 4 is the public copy that states rule 8, and it changed with it.
+
+- The owner's ruling, on the 2026-09-28 UX inventory page (kept out of this repo): question Q9, "What does the call panel show when there's no decision left?", answered **a** at 2026-09-28T18:20:11Z. Option a, verbatim: *"A record-only block with no numbers: 'This is law' or 'This was rejected, 49–50', and how your members voted. No stance, no script."*
+- Rule 6 said "a settled decision shows no call apparatus (not yet true on bill pages — the 2026-09-27 audit, SY-02)". The bill page now makes it true: `settledDecision` (`lib/journey.ts`) picks the record-only panel for a law, a veto, a rejected passage vote or a failed motion to take the measure up, and the page drops the stance control, the script, the dials, the floating call button and the call demo. The parenthetical is replaced by a narrower one, because one surface still does not read the settled state: the paid action-panel embed (`app/embed/action-panel`). Removing the caveat outright would have made rule 6 claim something that surface does not do. The detail is `docs/record-truth.md` §7.
+- Rule 8 said "from any decoded answer a completed call script is within two interactions, and on a bill page a way to call is on screen at every scroll depth". Read literally, that asks for a call script on a law's page, which is exactly what Q9 "a" removes. The clause now reads "from any decoded answer, for a decision still open, a completed call script is within two interactions, and on that bill page a way to call is on screen at every scroll depth". Nothing about an open decision's page changed, and no budget moved (`BUDGET` in `tests/funnel.spec.ts`: 1, 2, 3).
+- What the tests measure now: I2 from the week and from the /reps continuation still takes the FIRST link, because both read the act-now pool, which never holds a settled bill; the member-page I2 path picks a member whose newest sponsored bill is still open (the Q9 card's own test note asked for this); the quiet-week escape hatch picks the first open bill on /bills; `tests/bill-call-rail.spec.ts` walks an open bill. `tests/settled-panel.spec.ts` pins the settled side in both languages, and `tests/settled-panel.unit.spec.ts` pins that the reader is never wider than the MCP envelope's `decisionState`.
+- Same change, rule 4 (shipped claims kept true): `moments.bothNote` ("Every link above opens the same call flow…") and `moments.vehiclesLede` ("Each opens … the call flow") were true of every bill card only because every bill page mounted the call panel. A Big Question holding a settled bill now prints `moments.bothNoteSomeNoCall` and the new `moments.vehiclesLedeSomeSettled`, and a settled bill's card button reads "Read the bill" even where its status line has not caught up.
+
+---
+
 <a id="call-reach-2026-09-27"></a>
 
 ## 2026-09-27 — Rule 8: the floating call button stands down over the decoded answer on phones
