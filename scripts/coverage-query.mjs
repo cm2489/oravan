@@ -484,10 +484,33 @@ const articleDay = (a) => {
 };
 
 /**
+ * Is this a ROUTED row — an article found while searching one bill and filed
+ * under the measure the roll-call record says was voted on
+ * (scripts/coverage-route.mjs, `routed: {from, rollCall}`)?
+ * @param {any} a
+ */
+export function isRouted(a) {
+  return Boolean(a && typeof a === 'object' && a.routed && typeof a.routed === 'object' && typeof a.routed.from === 'string');
+}
+
+/**
  * Merge tonight's kept articles into what is stored — by URL, then by
  * syndicated title — newest first, capped. Tonight's copy of an article wins
  * over the stored one. Undated articles sort after every dated one (never read
  * "no date" as new). Stable, pure, never mutates its inputs.
+ *
+ * TWO CAPS, NOT ONE (2026-09-27). A bill's OWN rows and its ROUTED rows
+ * (isRouted: vote reports filed here from a sibling's search) are each capped
+ * at `cap`, newest first, and the result is one newest-first list. The two
+ * other ways to do it were considered and rejected:
+ *   - One shared cap lets a routed row push the bill's own article out — the
+ *     displacement this rule exists to prevent.
+ *   - Routed rows only filling FREE slots keeps own rows safe but makes a move
+ *     a delayed delete: the first night the destination's own search fills
+ *     its slots, every routed row goes. H.Con.Res. 89 is a Big Question
+ *     vehicle searched every night, so that is the likely case, not an edge.
+ * With two caps neither kind can remove the other, so a bill can show up to
+ * 2 x cap rows. A pool with no routed rows merges exactly as before.
  *
  * @template {{url?: string, title?: string, publishedAt?: string|null}} A
  * @param {A[]} fresh tonight's kept articles
@@ -508,11 +531,24 @@ export function mergeArticles(fresh, stored, cap) {
     if (t) seenTitle.add(t);
     pool.push(a);
   }
-  return pool
+  const n = Math.max(0, cap);
+  let own = 0;
+  let routed = 0;
+  const out = [];
+  for (const { a } of pool
     .map((a, i) => ({ a, i }))
-    .sort((x, y) => articleDay(y.a).localeCompare(articleDay(x.a)) || x.i - y.i)
-    .slice(0, Math.max(0, cap))
-    .map((x) => x.a);
+    .sort((x, y) => articleDay(y.a).localeCompare(articleDay(x.a)) || x.i - y.i)) {
+    if (isRouted(a)) {
+      if (routed < n) {
+        routed++;
+        out.push(a);
+      }
+    } else if (own < n) {
+      own++;
+      out.push(a);
+    }
+  }
+  return out;
 }
 
 /**
