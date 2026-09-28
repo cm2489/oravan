@@ -597,7 +597,7 @@
     "licenseAiLabel": "Oravan's own AI-drafted plain-language content, in both languages:",
     "langEnglish": "English",
     "langSpanish": "Español",
-    "licenseCoverage": "AllSides' outlet-lean ratings, shown in each bill's \"Read\" section, are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial — a website-only feature until that's resolved.",
+    "licenseCoverage": "AllSides' outlet-lean ratings, shown in each bill's \"Read\" section, are used under a separate CC BY-NC license and are excluded from anything commercial. The free MCP server's whats_moving tool also returns them, as the leans of the rated outlets covering a bill.",
     "correctionTitle": "Report an error",
     "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Use the feedback button in the footer of this (or any) page and choose \"Something's not working.\" Name the bill and describe the error — that's the same intake Oravan uses for every other bug report, not a separate correction form.",
     "correctionLinkText": "Report an error",

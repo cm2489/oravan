@@ -597,7 +597,7 @@
     "licenseAiLabel": "El contenido en lenguaje sencillo redactado por IA de Oravan, en ambos idiomas:",
     "langEnglish": "English",
     "langSpanish": "Español",
-    "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides, mostradas en la sección \"Lectura\" de cada proyecto, se usan bajo una licencia CC BY-NC separada y están excluidas del servidor MCP y de cualquier uso comercial — una función exclusiva del sitio web hasta que eso se resuelva.",
+    "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides, mostradas en la sección \"Lectura\" de cada proyecto, se usan bajo una licencia CC BY-NC separada y están excluidas de cualquier uso comercial. La herramienta whats_moving del servidor MCP gratuito también las devuelve, como la tendencia de los medios con calificación que cubren un proyecto.",
     "correctionTitle": "Reportar un error",
     "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Usa el botón de comentarios en el pie de esta (o cualquier) página y elige \"Algo no funciona\". Indica el proyecto de ley y describe el error — es la misma vía que usa Oravan para cualquier otro reporte de errores, no un formulario de corrección aparte.",
     "correctionLinkText": "Reportar un error",
