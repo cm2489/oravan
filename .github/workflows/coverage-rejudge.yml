@@ -1,0 +1,71 @@
+name: Coverage re-judge (dry run)
+
+# Big Questions coverage cleanup, step 1 of 2: a DRY RUN that lists and never
+# deletes. For each bill vehicle of a live Big Question it asks the coverage
+# relevance model (the nightly gate's Haiku) one question about every article
+# stored for that bill: about this bill or its subject, about a different
+# measure, or unrelated. See scripts/coverage-rejudge.mjs.
+#
+# Started by hand only (no schedule, no push trigger). It never commits: the
+# token below is read-only, no step runs git commit or git push, and the last
+# step fails the run if anything under data/ changed. The report is the
+# artifact and the job summary.
+#
+# Spend: one Haiku request per vehicle bill that has stored articles, capped
+# in code at one per vehicle bill. The log prints the estimate before
+# anything is sent and the real cost after (on the 2026-09-28 corpus: 16
+# requests, estimated at $0.024 before sending). The script refuses to start
+# above $3.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-rejudge
+  cancel-in-progress: false
+
+jobs:
+  rejudge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      # --omit=dev: the script needs @anthropic-ai/sdk and node builtins only.
+      - run: npm ci --omit=dev
+
+      - name: Re-judge the stored coverage of live Big Question bills (lists only)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/coverage-rejudge.mjs --out coverage-rejudge-report
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f coverage-rejudge-report/report.md ]; then
+            cat coverage-rejudge-report/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No report was written. See the re-judge step's log." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-rejudge-${{ github.run_id }}
+          path: coverage-rejudge-report/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Nothing under data/ changed
+        if: always()
+        run: |
+          git diff --exit-code -- data/
+          test -z "$(git status --porcelain -- data/)"
