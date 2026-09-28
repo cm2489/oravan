@@ -30,14 +30,25 @@ export interface DelegationVote {
   positions: Record<string, VotePosition>;
 }
 
+/*
+ * TWO PLACES, NEVER BOTH ON ONE PAGE. Under the vote record by default; inside
+ * the settled bill's record-only panel (components/SettledPanel.tsx) as
+ * `variant="panel"`, where the bill page leaves the vote record's own copy out
+ * (owner, 2026-09-28, Q9 "a": "…and how your members voted"). The panel
+ * variant drops the box, because it already sits in one, and the note,
+ * because the note names "the call panel" and that page has none — the panel
+ * made the same /api/reps request itself.
+ */
 export function VoteDelegation({
   house,
   senate,
   floorLabel,
+  variant = 'record',
 }: {
   house: DelegationVote | null;
   senate: DelegationVote | null;
   floorLabel: string;
+  variant?: 'record' | 'panel';
 }) {
   const t = useTranslations('votes');
   const zip = usePrefs().zip ?? null;
@@ -71,8 +82,8 @@ export function VoteDelegation({
   return (
     <section
       aria-labelledby="votes-yours-h"
-      className="mt-4 rounded-control border border-line-strong px-4 py-3"
-      data-vote-delegation=""
+      className={variant === 'panel' ? '' : 'mt-4 rounded-control border border-line-strong px-4 py-3'}
+      data-vote-delegation={variant}
     >
       <h3 id="votes-yours-h" className="text-sm font-extrabold text-ink">
         {t('delegation.heading')}
@@ -103,7 +114,7 @@ export function VoteDelegation({
       {lookup.multiDistrict && (
         <p className="mt-2 text-sm text-ink-2">{t('delegation.multiDistrict')}</p>
       )}
-      <p className="mt-2 text-xs text-ink-2">{t('delegation.note')}</p>
+      {variant === 'record' && <p className="mt-2 text-xs text-ink-2">{t('delegation.note')}</p>}
     </section>
   );
 }

@@ -13,10 +13,11 @@ import { JsonLd } from '@/components/JsonLd';
 import { ReadReceipt } from '@/components/ReadReceipt';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
-import { VoteRecord } from '@/components/VoteRecord';
+import { VoteRecord, delegationVotesFor } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
+import { SettledPanel } from '@/components/SettledPanel';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -36,7 +37,9 @@ import {
   billFloorBand,
   deriveJourney,
   liveCallTarget,
+  settledDecision,
   statusKeyFor,
+  type SettledDecision,
 } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
@@ -435,6 +438,18 @@ export default async function BillPage({
   );
 
   /*
+   * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"): a law,
+   * a veto, a rejected passage vote or a failed motion to take the bill up
+   * gets the record-only panel instead of the call panel — the outcome in the
+   * stepper's own terms and how the reader's members voted, with no stance,
+   * no script and no number (page 1, rule 6: a settled decision shows no call
+   * apparatus). The same reading drops the floating call button and the
+   * "see how a call works" demo below, which only ever pointed at a call.
+   */
+  const settled = settledDecision(bill);
+  const settledOutcome = settled ? settledOutcomeText(t, settled) : null;
+
+  /*
    * THE STATUS LABEL — this page's refinement on top of the shared gate.
    *
    * WHAT MOVED (N3, owner ruling 2026-08-11). Half of what this comment used
@@ -804,16 +819,27 @@ export default async function BillPage({
           </section>
 
           {/* THE CALL RAIL. Sticky across every row on the desk; in flow, in
-              the read → pick → edit → call order, below it. */}
-          <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
-            <ActionPanel
-              slug={id}
-              identifier={citation}
-              title={bill.ai_headline ?? bill.short_title ?? bill.title}
-              recordLabels={recordLabels}
-              liveTarget={liveTarget}
-            />
-          </div>
+              the read → pick → edit → call order, below it. On a settled
+              bill the record-only panel stands in the same place. */}
+          {settled && settledOutcome ? (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
+              <SettledPanel
+                outcome={settledOutcome}
+                kind={settled.kind}
+                {...delegationVotesFor(id, fmtDate)}
+              />
+            </div>
+          ) : (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
+              <ActionPanel
+                slug={id}
+                identifier={citation}
+                title={bill.ai_headline ?? bill.short_title ?? bill.title}
+                recordLabels={recordLabels}
+                liveTarget={liveTarget}
+              />
+            </div>
+          )}
 
           {/* THE STATUS TRACKER, below the reading column: it describes the
               bill's history, and the decode and the call are the job. The
@@ -855,13 +881,17 @@ export default async function BillPage({
             />
           </section>
 
-          <VoteRecord billId={id} className="min-[62rem]:col-start-1" />
+          {/* On a settled bill the "your members" strip is in the panel. */}
+          <VoteRecord billId={id} className="min-[62rem]:col-start-1" delegation={!settled} />
 
           {/* For the hesitant: what a call actually looks like, on demand,
-              collapsed so it never displaces the rail. */}
-          <div className="min-[62rem]:col-start-1">
-            <WalkthroughDisclosure />
-          </div>
+              collapsed so it never displaces the rail. Not on a settled bill,
+              which has no call to show. */}
+          {!settled && (
+            <div className="min-[62rem]:col-start-1">
+              <WalkthroughDisclosure />
+            </div>
+          )}
 
           {/* Pass the page along — a quiet utility after the whole task. */}
           <div className="min-[62rem]:col-start-1">
@@ -889,7 +919,33 @@ export default async function BillPage({
           it, so the rail scrolls away at the page foot and this is what
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
-      <FloatingCallButton />
+      {!settled && <FloatingCallButton />}
     </>
   );
+}
+
+/** The record-only panel's outcome sentence, in the stepper's own terms
+ *  (lib/journey.ts `settledDecision`). The tally prints only when the stepper
+ *  kept it — see deriveJourney's rejected-passage branch. */
+function settledOutcomeText(
+  t: Awaited<ReturnType<typeof getTranslations>>,
+  settled: SettledDecision
+): string {
+  switch (settled.kind) {
+    case 'law':
+      return t('bill.settled.law');
+    case 'vetoed':
+      return t('bill.settled.vetoed');
+    case 'rejected':
+      return t('bill.settled.rejected', {
+        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
+        tally: settled.tally ? 'yes' : 'none',
+        yeas: settled.tally?.yeas ?? 0,
+        nays: settled.tally?.nays ?? 0,
+      });
+    case 'motionFailed':
+      return t('bill.settled.motionFailed', {
+        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
+      });
+  }
 }

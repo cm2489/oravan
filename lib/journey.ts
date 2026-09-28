@@ -68,6 +68,7 @@ import {
   floorCalendarChamber,
   floorPassageRejectedChamber,
   floorPendingChamber,
+  floorReconsiderPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
   recordedTally,
@@ -1431,4 +1432,56 @@ export function deriveJourney(
     default:
       return { ...base, step: 1, nowKey: 'nowCommittee', showTrailer: false };
   }
+}
+
+/** What the record says ended the decision, in the shape the call panel's
+ *  record-only block prints it. */
+export type SettledDecision =
+  | { kind: 'law' }
+  | { kind: 'vetoed' }
+  | { kind: 'rejected'; chamber: Chamber; tally: { yeas: number; nays: number } | null }
+  | { kind: 'motionFailed'; chamber: Chamber };
+
+/**
+ * NO DECISION LEFT — what the bill page shows where the call panel stands
+ * (owner, 2026-09-28, UX question Q9 answered "a": "A record-only block with
+ * no numbers: 'This is law' or 'This was rejected, 49–50', and how your
+ * members voted. No stance, no script.").
+ *
+ * Read off the STEPPER's own derivation, so the panel and "Where does it
+ * stand?" say the same thing about the same record: a signed law, a veto, a
+ * rejected passage vote (with the record's tally, when deriveJourney kept
+ * one), or a failed motion to take the measure up.
+ *
+ * One exception, and it is the one lib/docket.mjs `decisionState` makes: a
+ * failed Senate vote with a motion to reconsider ENTERED ("Motion by Senator
+ * Tillis to reconsider the vote by which cloture … was not invoked … entered
+ * in Senate." — H.R. 3633) can come back to the floor, so the decision is not
+ * over and the call panel stays. Same reader, `floorReconsiderPendingChamber`.
+ *
+ * So this is never wider than `decisionState`: everything it calls settled,
+ * the MCP envelope also calls settled or enacted (and withholds `act_url`).
+ * The converse has one gap, stated rather than hidden: a settled floor text
+ * whose chamber the record does not name makes the stepper print its
+ * chamber-free "moving on the floor" sentence, and the panel follows the
+ * stepper there and keeps the call. No record in the corpus has that shape on
+ * 2026-09-28. tests/settled-panel.unit.spec.ts pins both directions over the
+ * committed corpus.
+ *
+ * Returns null whenever a decision is still open — every committee, floor,
+ * passage and conference stage.
+ */
+export function settledDecision(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis
+): SettledDecision | null {
+  const journey = deriveJourney(bill);
+  if (journey.isLaw) return { kind: 'law' };
+  if (journey.isVetoed) return { kind: 'vetoed' };
+  if (journey.nowKey !== 'nowFloorPassageRejected' && journey.nowKey !== 'nowFloorMotionFailed') {
+    return null;
+  }
+  if (floorReconsiderPendingChamber(statusBasisText(bill))) return null;
+  return journey.nowKey === 'nowFloorPassageRejected'
+    ? { kind: 'rejected', chamber: journey.nowChamber, tally: journey.tally }
+    : { kind: 'motionFailed', chamber: journey.nowChamber };
 }

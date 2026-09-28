@@ -2,8 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import coverageData from '../data/coverage.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { getBill } from '../lib/core';
+import { settledDecision } from '../lib/journey';
 import { mockScriptApi, seedZip } from './helpers';
 import { announcedRoutingSlugs, senateLiveBillSlugs, stableAcross } from './corpus';
+import { callableBillSlug } from './corpus-samples';
 
 /*
  * The "surface the call" behavior: a floating Make-the-call button keeps the
@@ -12,7 +15,13 @@ import { announcedRoutingSlugs, senateLiveBillSlugs, stableAcross } from './corp
  * once. Data-driven: any real bill page carries the surfaces; use a covered bill
  * (guaranteed valid + long enough that the inline prompt sits below the fold).
  */
-const slug = Object.keys(coverageData).find((k) => !k.startsWith('_'));
+const slug = Object.keys(coverageData).find((k) => {
+  if (k.startsWith('_')) return false;
+  // A settled bill has no call panel and no floating button (Q9, 2026-09-28),
+  // so this needs a bill whose decision is still open.
+  const b = getBill(k);
+  return !!b && settledDecision(b) === null;
+});
 
 /**
  * THE ONE-SURFACE INVARIANT, sampled atomically.
@@ -169,16 +178,24 @@ test('the floating call button surfaces the action and yields to on-screen CTAs'
  * office-hours line (Eastern only — see lib/office-hours.ts), and a polished
  * clipboard copy with a screen-reader announcement. Zero Anthropic calls:
  * /api/script is mocked throughout.
+ *
+ * ONE CALL ROUTE, INLINE (owner, 2026-09-28, UX question Q5 answered "a").
+ * These used to open a "Start the call" <dialog>; the modal is gone and its
+ * good parts — the first-call reassurance, office hours, the Capitol
+ * switchboard — live in the panel's own step 3, which is where every
+ * assertion below now looks.
+ *
+ * The bill is a decoded one in the panel's plain state (tests/corpus-samples.ts
+ * `callableBillSlug`). It was S.J.Res. 99 until 2026-09-28, whose record is a
+ * rejected motion to proceed — a settled decision, whose page now shows the
+ * record-only panel instead of the call (tests/settled-panel.spec.ts).
  */
-const BILL = '/bills/sjres-99-119'; // same stable slug flow.spec.ts / es-parity.spec.ts drive
+const BILL = `/bills/${callableBillSlug()}`;
 
 /*
- * The two ROUTING tests below drive a different bill, derived from the corpus.
- * S.J.Res. 99's last action is a rejected motion to proceed, and since the
- * 2026-08-09 floor-truth fix a settled motion correctly prints no live-call
- * sentence at all — see senateLiveBillSlugs' own comment in tests/corpus.ts.
- * Every other test in this file is about the call MOMENT, not the routing,
- * and keeps the stable slug it shares with flow/es-parity/rail-zip.
+ * The ROUTING tests below drive a different bill, derived from the corpus: one
+ * genuinely in the Senate's hands (senateLiveBillSlugs in tests/corpus.ts).
+ * Every other test in this file is about the call MOMENT, not the routing.
  */
 const SENATE_LIVE = senateLiveBillSlugs();
 const STANCES = ['support', 'oppose', 'undecided'] as const;
@@ -188,17 +205,19 @@ const STANCES = ['support', 'oppose', 'undecided'] as const;
 const WEEKDAY_MORNING = new Date('2026-07-08T14:00:00Z').getTime(); // Wed 10:00 ET -> open
 const WEEKEND_MIDDAY = new Date('2026-07-12T15:00:00Z').getTime(); // Sun 11:00 ET -> closed
 
-async function openCallMode(page: Page, locale: 'en' | 'es', stance: (typeof STANCES)[number]) {
+/** The call panel — the one place the call lives since the modal went. */
+const PANEL = 'section[aria-labelledby="act"]';
+
+async function chooseStance(page: Page, locale: 'en' | 'es', stance: (typeof STANCES)[number]) {
   const messages = locale === 'en' ? en : es;
   await page.getByRole('radio', { name: messages.bill.stance[stance] }).click();
   await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
-  await page.getByRole('button', { name: messages.bill.startCall }).click();
-  return page.getByRole('dialog', { name: messages.bill.callTitle });
+  return page.locator(PANEL);
 }
 
-test.describe('S7 pre-dial beat: renders for a fresh caller across all three stance lanes', () => {
+test.describe('S7 pre-dial beat: renders inline for a fresh caller across all three stance lanes', () => {
   for (const locale of ['en', 'es'] as const) {
-    test(`${locale}: every stance opens call mode with the first-call beat, office hours, and tel: links`, async ({
+    test(`${locale}: every stance shows the first-call beat, office hours and tel: links in the panel — and there is no second route`, async ({
       page,
     }) => {
       const messages = locale === 'en' ? en : es;
@@ -211,21 +230,21 @@ test.describe('S7 pre-dial beat: renders for a fresh caller across all three sta
       await page.clock.setFixedTime(WEEKDAY_MORNING);
 
       for (const stance of STANCES) {
-        const dialog = await openCallMode(page, locale, stance);
-        await expect(dialog).toBeVisible();
+        const panel = await chooseStance(page, locale, stance);
         // Fresh profile (no calls logged yet): the first-call flavor of the
         // pre-dial beat shows, never the repeat-caller one, for every stance.
-        // exact: the dialog's why-call link (2026-07 critique round 2) starts
-        // with this same phrase in Spanish, so substring matching is ambiguous.
-        await expect(dialog.getByText(messages.bill.firstCallTitle, { exact: true })).toBeVisible();
+        // exact: the panel's why-call link starts with this same phrase in
+        // Spanish, so substring matching is ambiguous.
+        await expect(panel.getByText(messages.bill.firstCallTitle, { exact: true })).toBeVisible();
+        await expect(panel.getByText(messages.bill.preDialTitle)).toHaveCount(0);
         // The honest, time-aware office-hours line sits beside it.
-        await expect(dialog.getByText(messages.bill.officeHoursTitle)).toBeVisible();
-        await expect(dialog.getByText(messages.bill.officeHoursOpenBody)).toBeVisible();
+        await expect(panel.getByText(messages.bill.officeHoursTitle)).toBeVisible();
+        await expect(panel.getByText(messages.bill.officeHoursOpenBody)).toBeVisible();
         // The pre-dial beat never gates the dial affordance underneath it.
-        await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
-        await page.keyboard.press('Escape');
-        await expect(dialog).toBeHidden();
+        await expect(panel.locator('a[href^="tel:"]').first()).toBeVisible();
       }
+      // One call route: no dialog anywhere on the page.
+      await expect(page.getByRole('dialog')).toHaveCount(0);
     });
   }
 });
@@ -237,22 +256,15 @@ test('S7 pre-dial beat: a repeat caller sees the general beat, not the first-cal
   await page.reload();
   await page.clock.setFixedTime(WEEKDAY_MORNING);
 
-  // Log one outcome so callCount becomes 1.
-  await page.getByRole('radio', { name: en.bill.stance.support }).click();
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  let dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog.getByText(en.bill.firstCallTitle, { exact: true })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: en.bill.outcome.voicemail }).first().click();
+  const panel = await chooseStance(page, 'en', 'support');
+  await expect(panel.getByText(en.bill.firstCallTitle, { exact: true })).toBeVisible();
 
-  // A different stance, opened after that first logged call, gets the
-  // general "before you dial" beat instead of the first-call framing.
-  await page.getByRole('radio', { name: en.bill.stance.oppose }).click();
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog.getByText(en.bill.preDialTitle)).toBeVisible();
-  await expect(dialog.getByText(en.bill.preDialBody)).toBeVisible();
-  await expect(dialog.getByText(en.bill.firstCallTitle, { exact: true })).toHaveCount(0);
+  // Log one outcome: the device now holds a call, and the beat turns into
+  // the general "before you dial" one in place.
+  await page.getByRole('button', { name: en.bill.outcome.voicemail }).first().click();
+  await expect(panel.getByText(en.bill.preDialTitle)).toBeVisible();
+  await expect(panel.getByText(en.bill.preDialBody)).toBeVisible();
+  await expect(panel.getByText(en.bill.firstCallTitle, { exact: true })).toHaveCount(0);
 });
 
 test.describe('S7 office-hours note: honest, time-aware, Eastern-only', () => {
@@ -327,24 +339,6 @@ test.describe('S7 clipboard copy: one tap, visible confirmation, aria-live annou
     expect(copied).toContain('MOCKED SCRIPT BODY');
   });
 
-  test('the copy button inside call mode uses the same confirmation idiom', async ({ page }) => {
-    await mockScriptApi(page);
-    await stubClipboard(page);
-    await page.goto(BILL);
-    await seedZip(page, '78501');
-    await page.reload();
-    await page.getByRole('radio', { name: en.bill.stance.support }).click();
-    await page.getByRole('button', { name: en.bill.startCall }).click();
-
-    const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-    await dialog.getByRole('button', { name: en.bill.copyScript, exact: true }).click();
-    await expect(dialog.getByRole('button', { name: en.bill.scriptCopied })).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: en.bill.scriptCopied })).toHaveCount(1);
-
-    const copied = await page.evaluate(() => (window as unknown as { __copied: string | null }).__copied);
-    expect(copied).toContain('MOCKED SCRIPT BODY');
-  });
-
   test('spanish confirmation and announcement are localized', async ({ page }) => {
     await mockScriptApi(page);
     await stubClipboard(page);
@@ -358,17 +352,15 @@ test.describe('S7 clipboard copy: one tap, visible confirmation, aria-live annou
   });
 });
 
-test('S7: call mode survives a visibilitychange/blur-return with its content intact', async ({ page }) => {
+test('S7: the call panel survives a visibilitychange/blur-return with its content intact', async ({ page }) => {
   await mockScriptApi(page);
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
-  await page.getByRole('radio', { name: en.bill.stance.support }).click();
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-
-  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
+  const panel = await chooseStance(page, 'en', 'support');
+  const script = page.getByRole('textbox', { name: en.bill.scriptTitle });
+  await expect(script).toHaveValue(/MOCKED SCRIPT BODY/);
+  await expect(panel.locator('a[href^="tel:"]').first()).toBeVisible();
 
   // Simulate the app-switch to the Phone app and back: the tab is hidden,
   // then visible again, with no navigation and no explicit re-render trigger.
@@ -383,10 +375,9 @@ test('S7: call mode survives a visibilitychange/blur-return with its content int
     window.dispatchEvent(new Event('focus'));
   });
 
-  // Nothing reset: same dialog, same script, dial links still present.
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
-  await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
+  // Nothing reset: same script, dial links still present.
+  await expect(script).toHaveValue(/MOCKED SCRIPT BODY/);
+  await expect(panel.locator('a[href^="tel:"]').first()).toBeVisible();
 });
 
 /*
@@ -446,14 +437,8 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
         page.getByRole('alert').filter({ hasText: retryInPattern(messages.bill.rateRetryIn) })
       ).toHaveCount(0);
 
-      // The call apparatus never left: the foot's start-call button is up,
-      // and call mode still holds the dial links.
-      await page.getByRole('button', { name: messages.bill.startCall }).click();
-      const dialog = page.getByRole('dialog', { name: messages.bill.callTitle });
-      await expect(dialog).toBeVisible();
-      await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
-      await page.keyboard.press('Escape');
-      await expect(dialog).toBeHidden();
+      // The call apparatus never left: the dial links are still in the panel.
+      await expect(page.locator(`${PANEL} a[href^="tel:"]`).first()).toBeVisible();
 
       // When the disclosed window elapses, the countdown yields to a real
       // retry affordance.
@@ -546,7 +531,7 @@ test.describe('rate-limit degradation: phones never leave, script slot degrades'
  * tests/nominations.spec.ts, which now that the page exists asserts the rail
  * never calls a nomination a bill, in both languages.
  */
-test('Senate routing demotes the House member without burying him — rail and call mode', async ({
+test('Senate routing demotes the House member without burying him, and labels him "also yours"', async ({
   page,
 }) => {
   // NOT the module-level BILL — see SENATE_LIVE's comment above.
@@ -581,16 +566,28 @@ test('Senate routing demotes the House member without burying him — rail and c
   // …and the outcome buttons, so a call to that office is still loggable.
   await expect(houseRow.getByRole('button', { name: en.bill.outcome.voicemail })).toBeVisible();
 
-  // THE CALL MODE — the dial moment itself, where an ordering regression
-  // would do the most damage. Same order, same three dials.
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog.getByText(en.bill.liveSenateFloor)).toBeVisible();
-  const dials = dialog.locator('a[href^="tel:"]');
-  await expect(dials).toHaveCount(3);
-  await expect(dials.nth(0)).toContainText('John Cornyn');
-  await expect(dials.nth(1)).toContainText('Ted Cruz');
-  await expect(dials.nth(2)).toContainText('Monica De La Cruz');
+  // "ALSO YOURS" (owner, 2026-09-28, Q10 answered "b"): the rows the routing
+  // line puts second say so; the voting chamber's rows carry no label.
+  await expect(houseRow.locator('[data-also-yours]')).toHaveText(en.bill.alsoYours);
+  await expect(page.locator(`${PANEL} [data-also-yours]`)).toHaveCount(1);
+});
+
+/*
+ * NO "ALSO YOURS" IN A SPLIT ZIP. 10001 spans two House districts, so the
+ * House rows are listed after the senators because we cannot say which one is
+ * the reader's — labelling either "also yours" would claim exactly what is not
+ * known. The routing line still prints; only the label stands down.
+ */
+test('a split ZIP gets the routing line but no "also yours" label', async ({ page }) => {
+  test.skip(SENATE_LIVE.length === 0, 'no Senate-live bill in the corpus today');
+  await mockScriptApi(page);
+  await page.goto(`/bills/${SENATE_LIVE[0]}`);
+  await seedZip(page, '10001');
+  await page.reload();
+  await chooseStance(page, 'en', 'support');
+  await expect(page.getByText(en.bill.callWhoMulti)).toBeVisible();
+  await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();
+  await expect(page.locator(`${PANEL} [data-also-yours]`)).toHaveCount(0);
 });
 
 /*
@@ -652,6 +649,10 @@ test('a bill on a meeting chamber\'s own floor schedule routes that chamber firs
     }
     // Never the nomination framing on a bill.
     await expect(page.getByText(messages.bill.liveSenateNomination)).toHaveCount(0);
+    // The chamber that is not acting is labelled "also yours" (Q10, 2026-09-28).
+    const labelled = page.locator(`${PANEL} [data-also-yours]`);
+    await expect(labelled).toHaveCount(chamber === 'senate' ? 1 : 2);
+    await expect(labelled.first()).toHaveText(messages.bill.alsoYours);
   }
 });
 
@@ -741,33 +742,37 @@ test('a reader with no senator sees no routing sentence claiming senators are th
     await expect(page.getByText(en.bill[key])).toHaveCount(0);
   }
 
-  // Including at the dial moment, where the same line is repeated.
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(en.bill.liveSenateFloor)).toHaveCount(0);
+  // No routing line, so nothing is labelled "also yours" either.
+  await expect(page.locator(`${PANEL} [data-also-yours]`)).toHaveCount(0);
 });
 
 /*
- * 2026-07 critique, top consensus P0: with no saved ZIP the call mode used to
- * be a dead end — the script and reassurance rendered, but zero phone
- * numbers, no ZIP form, and no explanation. The fix lives IN the mode: a ZIP
- * mini-form inside the dialog, plus the Capitol switchboard as the universal
- * fallback that needs no ZIP at all.
+ * 2026-07 critique, top consensus P0: with no saved ZIP the call used to be a
+ * dead end — the script and reassurance rendered, but zero phone numbers, no
+ * ZIP form, and no explanation. The fix lived inside the call modal: a ZIP
+ * mini-form plus the Capitol switchboard as the universal fallback that needs
+ * no ZIP at all. The modal is gone (Q5, 2026-09-28), so both live in the panel
+ * itself now — which is also the first time a reader who never opened the
+ * modal could see the switchboard (the 2026-09-27 audit, SY-12).
  */
-test('call mode without a saved ZIP is never a dead end: in-dialog ZIP form + switchboard', async ({
+test('the panel without a saved ZIP is never a dead end: ZIP form + Capitol switchboard, inline', async ({
   page,
 }) => {
   await mockScriptApi(page);
   await page.goto(BILL); // deliberately NO seedZip
-  const dialog = await openCallMode(page, 'en', 'support');
-  await expect(dialog).toBeVisible();
+  const panel = await chooseStance(page, 'en', 'support');
 
   // The universal fallback: the Capitol switchboard, dialable with no ZIP.
-  await expect(dialog.getByText(en.bill.switchboardNote)).toBeVisible();
-  await expect(dialog.locator('a[href="tel:+12022243121"]')).toBeVisible();
+  await expect(panel.getByText(en.bill.switchboardNote)).toBeVisible();
+  await expect(panel.locator('a[href="tel:+12022243121"]')).toBeVisible();
 
-  // And the way to fix it without leaving the mode: the ZIP form, in-dialog.
-  await expect(dialog.getByText(en.bill.needZip)).toBeVisible();
-  await expect(dialog.getByLabel(en.home.zipLabel)).toBeVisible();
+  // And the way to fix it without leaving the panel: the ZIP form.
+  await expect(panel.getByText(en.bill.needZip)).toBeVisible();
+  await expect(panel.getByLabel(en.home.zipLabel)).toBeVisible();
+
+  // Once the members' own numbers are here, the switchboard steps aside.
+  await panel.getByLabel(en.home.zipLabel).fill('78501');
+  await panel.getByRole('button', { name: en.home.zipCta }).click();
+  await expect(panel.getByText('Monica De La Cruz')).toBeVisible();
+  await expect(panel.locator('a[href="tel:+12022243121"]')).toHaveCount(0);
 });

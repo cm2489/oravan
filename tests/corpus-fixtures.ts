@@ -42,9 +42,11 @@ import { formatCitation } from '../lib/format';
 import {
   billFloorBand,
   deriveJourney,
+  settledDecision,
   statusKeyFor,
   type JourneyEnding,
   type JourneyState,
+  type SettledDecision,
 } from '../lib/journey';
 import type { Bill, RollCall } from '../lib/types';
 import { CLOCK_SKEW_MS } from './corpus';
@@ -186,6 +188,11 @@ const ROLL_CALLS = (votesJson as unknown as { rollCalls: RollCall[] }).rollCalls
  * record's newest entry is that chamber's, and the members strip can say the
  * other chamber has recorded nothing. Sorted by slug so the pick is stable
  * while the file only grows.
+ *
+ * Its decision is still OPEN (lib/journey.ts `settledDecision`): a settled
+ * bill's page moves the members strip out of the vote record into its
+ * record-only panel (2026-09-28), and these fixtures are for the strip in the
+ * vote record. tests/settled-panel.spec.ts drives the other place.
  */
 export function billWithRollCallsOnlyIn(chamber: RollCall['chamber']): string | null {
   const chambers = new Map<string, Set<RollCall['chamber']>>();
@@ -195,10 +202,38 @@ export function billWithRollCallsOnlyIn(chamber: RollCall['chamber']): string | 
     chambers.set(r.bill, set);
   }
   const slug = [...chambers.entries()]
-    .filter(([bill, set]) => set.size === 1 && set.has(chamber) && getBill(bill))
+    .filter(([bill, set]) => {
+      const b = getBill(bill);
+      return set.size === 1 && set.has(chamber) && b && settledDecision(b) === null;
+    })
     .map(([bill]) => bill)
     .sort()[0];
   return slug ?? null;
+}
+
+/**
+ * A decoded bill whose decision the record shows is over, of one kind
+ * (lib/journey.ts `settledDecision`: a law, a veto, a rejected passage vote, a
+ * failed motion to take it up) — the page that shows the record-only panel
+ * instead of the call. `withVotes` asks for one with a stored roll call, so
+ * the panel's members strip has positions to print. Slug order; null when the
+ * corpus holds none (no bill has been vetoed this Congress, for one).
+ */
+export function settledBill(
+  kind: SettledDecision['kind'],
+  { withVotes = false }: { withVotes?: boolean } = {}
+): (BillFixture & { decision: SettledDecision }) | null {
+  const voted = new Set(ROLL_CALLS.map((r) => r.bill));
+  // BILLS_BY_SLUG is declared further down; it is initialised by the time any
+  // spec calls this.
+  for (const b of BILLS_BY_SLUG) {
+    if (!b.ai_sections) continue;
+    const decision = settledDecision(b);
+    if (decision?.kind !== kind) continue;
+    if (withVotes && !voted.has(billSlug(b))) continue;
+    return { ...fixture(b), decision };
+  }
+  return null;
 }
 
 /*

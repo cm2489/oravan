@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { statusKeyFor } from '@/lib/journey';
+import { settledDecision, statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
@@ -229,8 +229,12 @@ export default async function MomentPage({
    * own 422 refusal conjunction (lib/journey.ts), is the predicate for it, and
    * `nominationCtaKey` below asks the same one per card.
    *
-   *   - `vehiclesLede` (bill-only) promises the call flow flat, and may: a
-   *     bill's page always mounts ActionPanel, settled or not.
+   *   - `vehiclesLede` (bill-only) promises the call flow flat, and may only
+   *     while every bill in the set still has a decision open. Since
+   *     2026-09-28 (owner, Q9 "a") a settled bill's page shows a record-only
+   *     panel with no call, so a set holding one prints
+   *     `vehiclesLedeSomeSettled`, which carries the condition — the same
+   *     one-"no" question `bothNoteKey` asks for the note under the grid.
    *   - `vehiclesLedeNominations` and `vehiclesLedeMixed` carry the condition.
    *     The mixed one said "Each opens the record and the call flow" until
    *     this change, which is the same false universal the nominations lede
@@ -249,7 +253,13 @@ export default async function MomentPage({
       ? { heading: 'vehiclesHeadingMixed', lede: 'vehiclesLedeMixed' }
       : kinds.has('nomination')
         ? { heading: 'vehiclesHeadingNominations', lede: 'vehiclesLedeNominations' }
-        : { heading: 'vehiclesHeading', lede: 'vehiclesLede' };
+        : {
+            heading: 'vehiclesHeading',
+            lede:
+              bothNoteKey(moment.vehicles) === 'moments.bothNoteSomeNoCall'
+                ? 'vehiclesLedeSomeSettled'
+                : 'vehiclesLede',
+          };
 
   // Citation + Congress.gov actions page per vehicle, resolved here so the
   // timeline stays a pure renderer and never reaches into the bill corpus.
@@ -635,7 +645,9 @@ export default async function MomentPage({
                     if (!raw) return null;
                     const bill = localizeBill(raw, locale);
                     const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
-                    const ctaKey = billCtaKey(isSettled || line.terminal);
+                    // The bill page's own reading joins the status line's: a
+                    // settled decision's page has no call panel (Q9, 2026-09-28).
+                    const ctaKey = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
                     return (
                       <MomentVehicleCard
                         key={v.slug}
@@ -652,9 +664,9 @@ export default async function MomentPage({
                         /* A finished vehicle — signed, vetoed, a failed vote nobody
                            moved to reconsider — is a record, not a call to make:
                            the same rule a settled question already applied to all
-                           its cards, now asked per vehicle of its own line. The
-                           bill page behind it still mounts the call flow, which is
-                           why bothNote below stays true either way. */
+                           its cards, now asked per vehicle of its own line. Since
+                           2026-09-28 the bill page behind a settled decision shows
+                           no call either, so bothNote below asks the same. */
                         ctaLabel={t(ctaKey)}
                         /* "Read + call" opens the bill page AT the call panel
                            (#act) instead of its top (SY-10); "Read the bill"
@@ -670,12 +682,14 @@ export default async function MomentPage({
             ))}
 
             {/* "Every link above opens the same call flow" was printed here
-                unconditionally — true of every bill card (the bill page always
-                mounts ActionPanel) and false of a nomination card whose page has
-                no call script waiting on it. Asked of the SET, because that is
+                unconditionally — true of a bill card whose decision is still
+                open, and false of a settled bill (record-only panel since
+                2026-09-28) and of a nomination card whose page has no call
+                script waiting on it. Asked of the SET, because that is
                 what the sentence quantifies over; the per-card version of the
-                same question is `nominationCtaKey` on the grid above. A bill-only
-                moment keeps `moments.bothNote` byte for byte — see bothNoteKey. */}
+                same question is `nominationCtaKey` / `billCtaKey` on the grid
+                above. A set whose every card can be called keeps
+                `moments.bothNote` byte for byte — see bothNoteKey. */}
             <p className="mt-6 max-w-note text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
           </section>
 

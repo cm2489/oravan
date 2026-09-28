@@ -51,18 +51,18 @@ function byLastName(a: Named, b: Named) {
   return a.last.localeCompare(b.last, 'en') || a.name.localeCompare(b.name, 'en');
 }
 
-export async function VoteRecord({ billId, className = '' }: { billId: string; className?: string }) {
+/**
+ * What the "your members on this bill" strip needs: the newest roll call per
+ * chamber, reduced to the positions it prints — never the whole file — plus
+ * the file's floor date for the "no recorded vote since" line. Shared with
+ * the settled bill's record-only panel (components/SettledPanel.tsx), which
+ * shows the same strip.
+ */
+export function delegationVotesFor(
+  billId: string,
+  fmtDate: (d: string) => string
+): { house: DelegationVote | null; senate: DelegationVote | null; floorLabel: string } {
   const rollCalls = votesForBill(billId);
-  if (rollCalls.length === 0) return null;
-
-  const t = await getTranslations('votes');
-  const format = await getFormatter();
-  const fmtDate = (d: string) =>
-    format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-  const floorLabel = fmtDate(votesCoverage().floor);
-
-  // The delegation strip gets the newest roll call per chamber, reduced to the
-  // positions it needs — never the whole file.
   const newestIn = (chamber: RollCall['chamber']): DelegationVote | null => {
     const r = rollCalls.find((x) => x.chamber === chamber);
     if (!r) return null;
@@ -70,6 +70,31 @@ export async function VoteRecord({ billId, className = '' }: { billId: string; c
     for (const p of POSITIONS) for (const id of r.votes[p]) positions[id] = p;
     return { date: fmtDate(r.date), positions };
   };
+  return {
+    house: newestIn('house'),
+    senate: newestIn('senate'),
+    floorLabel: fmtDate(votesCoverage().floor),
+  };
+}
+
+export async function VoteRecord({
+  billId,
+  className = '',
+  delegation = true,
+}: {
+  billId: string;
+  className?: string;
+  /** False on a settled bill, whose record-only panel carries the strip. */
+  delegation?: boolean;
+}) {
+  const rollCalls = votesForBill(billId);
+  if (rollCalls.length === 0) return null;
+
+  const t = await getTranslations('votes');
+  const format = await getFormatter();
+  const fmtDate = (d: string) =>
+    format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const { house, senate, floorLabel } = delegationVotesFor(billId, fmtDate);
 
   const entry = (r: RollCall) => {
     const hId = `vote-${r.id}`;
@@ -183,7 +208,7 @@ export async function VoteRecord({ billId, className = '' }: { billId: string; c
       </h2>
       <p className="mt-1 text-sm text-ink-2 tabular-nums">{t('coverage', { date: floorLabel })}</p>
 
-      <VoteDelegation house={newestIn('house')} senate={newestIn('senate')} floorLabel={floorLabel} />
+      {delegation && <VoteDelegation house={house} senate={senate} floorLabel={floorLabel} />}
 
       <ol className="mt-4 grid gap-3">{shown.map(entry)}</ol>
 

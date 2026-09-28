@@ -3,10 +3,10 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
 import { momentDek } from '../lib/moments-ui';
-import { getTeasers } from '../lib/core';
+import { getBill, getTeasers } from '../lib/core';
 import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
 import { getNomination } from '../lib/core/nominations';
-import { nominationHasCallScript } from '../lib/journey';
+import { nominationHasCallScript, settledDecision } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -201,6 +201,10 @@ test.describe('/questions/[id] detail page', () => {
   /*
    * THE NOTE UNDER THE GRID PROMISES ONLY WHAT ITS CARDS DELIVER.
    *
+   * Since 2026-09-28 a SETTLED BILL is a card with no call too: its page shows
+   * a record-only panel (owner, Q9 "a"), read off the record through
+   * lib/journey.ts `settledDecision`.
+   *
    * `moments.bothNote` ("…Every link above opens the same call flow…") was
    * rendered unconditionally. True of every bill card — the bill page always
    * mounts ActionPanel — and false of a nomination card whose page has no call
@@ -219,7 +223,10 @@ test.describe('/questions/[id] detail page', () => {
         page,
       }) => {
         const someNoCall = m.vehicles.some((v) => {
-          if (vehicleKind(v) !== 'nomination') return false;
+          if (vehicleKind(v) !== 'nomination') {
+            const b = getBill(v.slug);
+            return b ? settledDecision(b) !== null : false;
+          }
           const n = getNomination(v.slug);
           // An unresolved slug renders no card, so it puts no link above the
           // note to make a claim about.
@@ -382,6 +389,11 @@ test.describe('Big Question vehicle links (SY-10)', () => {
       test.skip((await calls.count()) === 0, 'no vehicle on this question can take a call today');
       for (const href of await calls.evaluateAll((els) => els.map((e) => e.getAttribute('href')))) {
         expect(href, 'every "Read + call" carries the call anchor').toMatch(/#act$/);
+        // …and opens a page that has a call: never a settled bill, whose page
+        // shows the record-only panel (Q9, 2026-09-28).
+        const slug = href!.split('/bills/')[1]?.replace(/#act$/, '');
+        const b = slug ? getBill(slug) : undefined;
+        if (b) expect(settledDecision(b), `${slug} is settled`).toBeNull();
       }
       // A record link never jumps to a call.
       for (const href of await page

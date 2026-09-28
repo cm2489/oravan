@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles, X } from 'lucide-react';
+import { BookOpen, Check, Copy, Ear, Moon, Phone, RotateCcw, Sparkles } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { liveCallKey, type LiveCallTarget } from '@/lib/journey';
@@ -29,10 +29,19 @@ import { ZipForm } from './ZipForm';
  * THE CALL RAIL — a control panel, not a card.
  *
  * On the desk it is a sticky panel that holds the height of the window: an
- * ink title bar, a body that scrolls on its own, and a FOOT that sits
- * OUTSIDE that scroll area. The foot is where the call lives, so the call
- * can never be scrolled away from. Below the desk breakpoint the same
- * markup is simply in flow, in the read -> pick -> edit -> call order.
+ * ink title bar and a body that scrolls on its own. Below the desk breakpoint
+ * the same markup is simply in flow, in the read -> pick -> edit -> call
+ * order.
+ *
+ * ONE CALL ROUTE, INLINE (owner, 2026-09-28, UX question Q5 answered "a":
+ * "Inline only. Move the modal's good parts (first-call reassurance, office
+ * hours, the Capitol switchboard) into the panel."). There used to be a foot
+ * with a "Start the call" button that opened a second copy of the call in a
+ * <dialog>. It is gone; the dials, the reassurance, the office-hours note and
+ * the switchboard all live in step 3 below.
+ *
+ * A settled bill never mounts this panel: the page renders
+ * components/SettledPanel.tsx in its place (owner, 2026-09-28, Q9 "a").
  *
  * COLOR LAW inside this panel:
  *   go     the dial, and only the dial (plus the stance card's chosen edge,
@@ -404,12 +413,6 @@ export function ActionPanel({
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
-  // Call modal: native <dialog> (focus trap, background inert, and Escape
-  // come from the platform - same idiom as FeedbackDialog). startCallRef is
-  // the trigger focus returns to when the dialog closes.
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const startCallRef = useRef<HTMLButtonElement>(null);
-  const callTitleRef = useRef<HTMLHeadingElement>(null);
   const stanceRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const repsHeadingRef = useRef<HTMLParagraphElement>(null);
   // Set by the in-panel ZipForms' onSaved: the submit that just happened
@@ -423,13 +426,8 @@ export function ActionPanel({
   const scrollBodyRef = useRef<HTMLDivElement>(null);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const scrolledOnce = useRef(false);
-  // The dialog is mounted ONLY while open (see render below). Mounting it
-  // whenever a script exists would put a second copy of the script, the
-  // office-hours note, and the rep dial buttons in the (hidden) DOM, so a
-  // getByText for any of those matches twice — the call-action/flow e2e specs
-  // caught exactly that. openCallModal flips this; an effect drives showModal()
-  // once the element is in the tree, and onClose unmounts it again.
-  const [callOpen, setCallOpen] = useState(false);
+  // Calls logged on this device: 0 picks the first-call reassurance in step
+  // 3, anything more the lighter "before you dial" one.
   const callCount = useCalls().length;
 
   // The drafting wait gets product-specific rotating lines, not a frozen spinner.
@@ -441,16 +439,17 @@ export function ActionPanel({
   }, [loading]);
 
   // The AI draft wins whenever it exists; the fallback template fills the
-  // slot on rate limit so every `script &&` gate below — the review step,
-  // the call section with the rep tel: links, the foot, the modal — stays
-  // mounted. The phones never leave the DOM over a script-slot FAILURE.
+  // slot on rate limit so every `script &&` gate below — the review step and
+  // the call section with the rep tel: links — stays mounted. The phones
+  // never leave the DOM over a script-slot FAILURE.
   //
   // They do leave on a `refused` (422), and that is the intended difference:
   // no fallback is seeded there, so `script` stays empty and the dial does not
-  // render. The foot's own comment states the rule this follows — "offering a
-  // dial with nothing to say is the thing that makes a first-time caller hang
-  // up" — and on a refusal there is, by the route's own decision, nothing to
-  // say. An outage is the opposite case and keeps its phones.
+  // render. The rule it follows — "offering a dial with nothing to say is the
+  // thing that makes a first-time caller hang up" — is the same one that keeps
+  // step 3 behind `script &&`, and on a refusal there is, by the route's own
+  // decision, nothing to say. An outage is the opposite case and keeps its
+  // phones.
   const aiDraft = stance ? drafts[stance] : undefined;
   const isFallback = !aiDraft && !!stance && !!fallbacks[stance];
   const script = aiDraft ?? (stance ? (fallbacks[stance] ?? '') : '');
@@ -465,8 +464,8 @@ export function ActionPanel({
   const fallbackPristine =
     !!stance && !!fallbacks[stance] && fallbacks[stance] === fallbackFor(t, stance, identifier, kind);
   // The same three derivations for the House slot. Its script never feeds the
-  // `script &&` gates below — the rail, the foot and the modal all belong to
-  // the Senate default, and an addition must not be able to unlock them.
+  // `script &&` gates below — the call section belongs to the Senate
+  // default, and an addition must not be able to unlock it.
   const houseAiDraft = stance ? houseDrafts[stance] : undefined;
   const houseIsFallback = !houseAiDraft && !!stance && !!houseFallbacks[stance];
   const houseScript = houseAiDraft ?? (stance ? (houseFallbacks[stance] ?? '') : '');
@@ -523,6 +522,15 @@ export function ActionPanel({
   // its own half, because it is the only copy that speaks TO the House row.
   const hasSenator = reps.some((r) => r.type === 'sen');
   const liveTargetKey = liveCallKey(liveTarget, { hasSenator });
+  /*
+   * "ALSO YOURS" (owner, 2026-09-28, UX question Q10 answered "b": "All three,
+   * the voting chamber first under the routing line, the others labeled 'also
+   * yours'"). Only where a routing line is actually printed above the list,
+   * and never in a split ZIP: there the House rows are listed after the
+   * senators because we cannot say which one is the reader's, so "also yours"
+   * would be the one thing about them we do not know.
+   */
+  const labelAlsoYours = (r: Legislator) => !!liveTargetKey && !multiDistrict && rank(r) === 1;
   /*
    * The nomination annex: the extra sentences a nomination needs and a bill
    * does not — how confirmation works at all, and what the offices this
@@ -638,22 +646,18 @@ export function ActionPanel({
 
   // Focus continuity after an in-panel ZIP submit: the submit unmounts its
   // own form, so once the lookup settles, move focus to the outcome — the
-  // first dial link (in the dialog) / the call-who line (in the rail) on
-  // success, or the failure block otherwise. focus() in an effect is fine —
-  // it is not a state write. On ordinary loads nothing moves.
+  // call-who line on success, or the failure block otherwise. focus() in an
+  // effect is fine — it is not a state write. On ordinary loads nothing moves.
   useEffect(() => {
     if (!zipJustSaved.current) return;
     if (lookup.status === 'idle' || lookup.status === 'loading') return;
     zipJustSaved.current = false;
-    const scope = callOpen ? dialogRef.current : null;
-    let el: HTMLElement | null = null;
-    if (lookup.status === 'ready' && lookup.reps.length > 0) {
-      el = scope ? scope.querySelector<HTMLElement>('a[href^="tel:"]') : repsHeadingRef.current;
-    } else {
-      el = (scope ?? document).querySelector<HTMLElement>('[data-reps-alert]');
-    }
+    const el =
+      lookup.status === 'ready' && lookup.reps.length > 0
+        ? repsHeadingRef.current
+        : document.querySelector<HTMLElement>('[data-reps-alert]');
     el?.focus();
-  }, [lookup, callOpen]);
+  }, [lookup]);
 
   // Re-measure the hint whenever the panel's content changes shape (a
   // script arriving, reps loading). Deferred a frame so the measurement
@@ -966,29 +970,6 @@ export function ActionPanel({
     setLoggedOutcomes((prev) => ({ ...prev, [rep.bioguide]: outcome }));
   }
 
-  function openCallModal() {
-    setCallOpen(true);
-  }
-
-  function closeCallModal() {
-    dialogRef.current?.close();
-  }
-
-  // Once callOpen mounts the <dialog>, open it modally (focus trap + inert come
-  // from showModal). Every close path — the ✕/edit/backdrop handlers call
-  // .close(), Escape closes it natively — fires onClose, which unmounts it.
-  useEffect(() => {
-    const dlg = dialogRef.current;
-    if (callOpen && dlg && !dlg.open) {
-      dlg.showModal();
-      // First focus lands on the dialog's title, not the Close button: a
-      // screen reader at the highest-anxiety moment should hear "Make the
-      // call" and then the reassurance, never "Close" first (2026-07 a11y
-      // critique).
-      callTitleRef.current?.focus();
-    }
-  }, [callOpen]);
-
   return (
     <section
       aria-labelledby="act"
@@ -1007,7 +988,7 @@ export function ActionPanel({
         {t('actTitle')}
       </h2>
 
-      {/* The body scrolls; the foot below does not. The alpha ramp on the
+      {/* The body scrolls on the desk. The alpha ramp on the
           last 28px says "this continues" — it is a mask on real content, not
           a painted band — and it lifts while anything inside is focused so a
           focus ring is never dimmed. The relative wrapper exists for the E1
@@ -1199,8 +1180,7 @@ export function ActionPanel({
               </button>
             </div>
             {/* Announce the copy confirmation without moving focus - same idiom
-                as SharePanel's copy-link status region. Covers the modal's own
-                copy button too, since both share this scriptCopied state. */}
+                as SharePanel's copy-link status region. */}
             <span role="status" aria-live="polite" className="sr-only">
               {scriptCopied ? t('scriptCopied') : ''}
             </span>
@@ -1245,15 +1225,23 @@ export function ActionPanel({
                   <p className="mt-0.5 text-ink-2">{t('hearFirstBody')}</p>
                 </div>
               </div>
-              {/* Voicemail is a black enamel sign, never green: saturated
-                  green is reserved for going somewhere, and a panel that only
-                  reassures is not going anywhere. */}
-              <div className="on-dark flex gap-2 rounded-control bg-ink-deep p-4 text-sm">
+              {/* THE PRE-DIAL BEAT, moved in from the retired call modal (Q5,
+                  2026-09-28): the first-call reassurance for someone who has
+                  logged no call on this device, the lighter "before you dial"
+                  for everyone after that. It took the slot of the old "Nervous?
+                  Call after hours." note, which said the same thing a second
+                  time. Never a gate in front of the dials below. Voicemail is
+                  a black enamel sign, never green: saturated green is reserved
+                  for going somewhere, and a panel that only reassures is not
+                  going anywhere. */}
+              <div className="on-dark flex gap-2 rounded-control bg-ink-deep p-4 text-sm" data-pre-dial="">
                 <Moon className="h-5 w-5 shrink-0 text-ink-pale" aria-hidden />
                 <div className="max-w-note">
-                  <p className="font-bold text-paper">{t('afterHoursTitle')}</p>
+                  <p className="font-bold text-paper">
+                    {callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}
+                  </p>
                   <p className="mt-0.5 leading-dark tracking-dark text-ink-pale">
-                    {t('afterHoursBody')}
+                    {callCount === 0 ? t('firstCallBody') : t('preDialBody')}
                   </p>
                 </div>
               </div>
@@ -1314,6 +1302,32 @@ export function ActionPanel({
                 <div className="mt-3">
                   <ZipForm onSaved={onZipSaved} />
                 </div>
+              </div>
+            )}
+
+            {/* THE CAPITOL SWITCHBOARD, inline (Q5, 2026-09-28; the 2026-09-27
+                audit, SY-12). It used to live only inside the retired call
+                modal, so a reader whose ZIP matched no district — every ZIP in
+                Guam, the Virgin Islands, American Samoa and the Northern
+                Mariana Islands (none mapped in data/zip-districts.json on
+                2026-09-28) — met "we couldn't match that ZIP" here
+                with no number at all. It shows whenever no member is listed
+                (no ZIP yet, a ZIP that matched nothing, a lookup that failed)
+                and steps aside once the members' own numbers are here. */}
+            {reps.length === 0 && lookup.status !== 'loading' && (
+              <div className="mt-4 rounded-control border-[1.5px] border-line-strong p-4" data-switchboard="">
+                <p className="max-w-note text-sm text-ink-2">{t('switchboardNote')}</p>
+                <a
+                  href="tel:+12022243121"
+                  className="ring-gap mt-2 inline-flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                >
+                  <Phone className="h-5 w-5 flex-none" aria-hidden />
+                  {t('switchboard')}
+                  {/* B1: the number at display scale — see the rep row note. */}
+                  <span className="text-h3 leading-none font-extrabold tabular-nums">
+                    (202) 224-3121
+                  </span>
+                </a>
               </div>
             )}
 
@@ -1389,6 +1403,14 @@ export function ActionPanel({
                     key={rep.bioguide}
                     className="rounded-control border-[1.5px] border-line-strong p-4"
                   >
+                    {labelAlsoYours(rep) && (
+                      <p
+                        className="text-2xs font-extrabold tracking-[0.08em] text-ink-2 uppercase"
+                        data-also-yours=""
+                      >
+                        {t('alsoYours')}
+                      </p>
+                    )}
                     <p className="font-bold text-ink" data-rep-name="">{rep.name}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {rep.phone && (
@@ -1548,256 +1570,6 @@ export function ActionPanel({
           </p>
         )}
       </div>
-
-      {/* THE FOOT — outside the scrolling body, so the call can never be
-          scrolled away from. It appears the moment there is a script to read
-          from, and never before: offering a dial with nothing to say is the
-          thing that makes a first-time caller hang up. */}
-      {script && (
-        <div
-          className="flex-none border-t-2 border-ink bg-paper p-3"
-          style={{ borderRadius: `0 0 ${INNER_RADIUS} ${INNER_RADIUS}` }}
-        >
-          <p className="mb-2 hidden text-2xs font-bold tracking-[0.08em] text-ink-2 uppercase min-[62rem]:block">
-            {t('footNote')}
-          </p>
-          <button
-            ref={startCallRef}
-            type="button"
-            onClick={openCallModal}
-            className="ring-gap flex min-h-12 w-full items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep"
-          >
-            <Phone className="h-4 w-4 flex-none" aria-hidden />
-            {t('startCall')}
-          </button>
-        </div>
-      )}
-
-      {/* Call mode: the V2 composition in a focused overlay. A deliberate
-          modal - the call is a mode in real life too; nothing else matters
-          while the phone is ringing. */}
-      {script && callOpen && (
-        <dialog
-          ref={dialogRef}
-          aria-label={t('callTitle')}
-          onClose={() => {
-            setCallOpen(false);
-            startCallRef.current?.focus();
-          }}
-          onClick={(e) => e.target === dialogRef.current && closeCallModal()}
-          className="m-auto max-h-[85dvh] w-[min(92vw,42rem)] overflow-y-auto rounded-control border-2 border-ink bg-paper p-5 backdrop:bg-ink/70 md:p-6"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h3 ref={callTitleRef} tabIndex={-1} className="text-h3 font-extrabold text-ink outline-none">
-              {t('callTitle')}
-            </h3>
-            <button type="button" onClick={closeCallModal} className={GHOST}>
-              <X className="h-4 w-4 flex-none" aria-hidden />
-              {t('closeBig')}
-            </button>
-          </div>
-
-          {/* Pre-dial beat: a calm moment between "script ready" and
-              dialing - never a gate in front of the tel: links below, just
-              what a first-time caller most needs to hear, or a lighter
-              reminder for everyone after that. Voicemail is framed as a
-              fully legitimate first choice, not an apologetic fallback -
-              offices tally it exactly like a live call (S7 / docs/ideation
-              §5). */}
-          <div className="on-dark mt-4 flex gap-2 rounded-control bg-ink-deep p-4 text-sm">
-            <Moon className="h-5 w-5 shrink-0 text-ink-pale" aria-hidden />
-            <div className="max-w-note">
-              <p className="font-bold text-paper">
-                {callCount === 0 ? t('firstCallTitle') : t('preDialTitle')}
-              </p>
-              <p className="mt-0.5 leading-dark tracking-dark text-ink-pale">
-                {callCount === 0 ? t('firstCallBody') : t('preDialBody')}
-              </p>
-              {/* The core persuasion, one tap from the highest-anxiety moment
-                  (2026-07 critique round 2): every pre-call surface links
-                  /why-call in-flow. Navigating away closes the mode - that is
-                  the reader's own call to make. */}
-              <Link
-                href="/why-call"
-                className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go-bright underline"
-              >
-                <BookOpen className="h-4 w-4 flex-none" aria-hidden />
-                {t('whyLink')}
-              </Link>
-            </div>
-          </div>
-          <div className="mt-3">
-            <OfficeHoursNote />
-          </div>
-
-          {/* The words said aloud: reading voice, on `tint`, because this is
-              yours to read from. */}
-          <p className="mt-5 rounded-control bg-tint p-4 font-reading text-lg whitespace-pre-wrap text-ink">
-            {script}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={closeCallModal}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline"
-            >
-              {t('editScript')}
-            </button>
-            <button type="button" onClick={copyScript} className={GHOST}>
-              {scriptCopied ? (
-                <Check className="h-4 w-4 flex-none" aria-hidden />
-              ) : (
-                <Copy className="h-4 w-4 flex-none" aria-hidden />
-              )}
-              {scriptCopied ? t('scriptCopied') : t('copyScript')}
-            </button>
-          </div>
-
-          {/* The routing fact at the dial moment: same line the rail carries.
-              The nomination's House-pressure note rides along, because THIS is
-              where the second dial is about to be pressed and "what do I even
-              say to a House office about a nomination?" is a question the
-              rail's copy may already have scrolled past. The how-it-works
-              explainer does NOT ride along: the mode is for dialing, and the
-              procedure is context the reader has by now. */}
-          {liveTargetKey && reps.length > 0 && (
-            <p className="mt-5 max-w-note text-sm font-semibold text-ink">{t(liveTargetKey)}</p>
-          )}
-          {showHousePressNote && (
-            <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationHousePress')}</p>
-          )}
-          {/* Rides along at the dial moment for the same reason the
-              House-pressure note does: this is where the number is about to
-              be pressed, and "what do I even say?" is the question the rail's
-              copy may already have scrolled past. */}
-          {showNoSenatorNote && (
-            <p className="mt-2 max-w-note text-sm text-ink-2">{t('nominationNoSenator')}</p>
-          )}
-          {/* The same split-ZIP disambiguation the rail carries, at the dial
-              moment itself: senators already lead the list (sorted above);
-              this line answers "which House member is mine?" before a wrong
-              office can be dialed. */}
-          {multiDistrict && reps.length > 0 && zip && (
-            <p className="mt-5 max-w-note text-sm text-ink-2">
-              {t('callWhoMulti')}{' '}
-              <Link
-                href={`/reps?zip=${zip}`}
-                className="font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
-              >
-                {t('refineDistrictCta')}
-              </Link>
-            </p>
-          )}
-          {reps.length > 0 && (
-            <div className="mt-5 grid gap-2">
-              {reps.map(
-                (rep) =>
-                  rep.phone && (
-                    <div key={rep.bioguide}>
-                      <a
-                        href={telHref(rep.phone)}
-                        className="ring-gap flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Phone className="h-4 w-4 flex-none" aria-hidden />
-                          {rep.name}
-                        </span>
-                        {/* B1: the number at display scale — see the rail note. */}
-                        <span className="text-h3 leading-none font-extrabold tabular-nums">
-                          {rep.phone}
-                        </span>
-                      </a>
-                      {/* The House words ride HERE too, for the reason the
-                          House-pressure note above rides into this mode: this
-                          is where the second dial is about to be pressed, and
-                          the script in the tint block above it is the SENATOR's
-                          — read to a House office it asks for a vote that
-                          office does not have. Same state as the rail's copy,
-                          so a draft made in one place is already made in the
-                          other. */}
-                      {showHouseScript && rep.type === 'rep' && stance && (
-                        <HouseScriptSlot
-                          t={t}
-                          script={houseScript}
-                          isFallback={houseIsFallback}
-                          loading={houseLoading}
-                          error={houseError}
-                          copied={houseCopied}
-                          onGenerate={() => generateHouseScript(stance)}
-                          onChange={setHouseScript}
-                          onCopy={copyHouseScript}
-                        />
-                      )}
-                    </div>
-                  )
-              )}
-            </div>
-          )}
-
-          {/* Never a dead end (2026-07 critique, top consensus P0): with no
-              saved ZIP the modal used to show a script and zero numbers. The
-              ZIP mini-form lives IN the mode now, and the Capitol switchboard
-              is the universal fallback that needs no ZIP at all. */}
-          {reps.length === 0 && (
-            <div className="mt-5 grid gap-3">
-              {lookup.status === 'error' && (
-                <div data-reps-alert tabIndex={-1}>
-                  <Failure>
-                    <span className="font-bold text-alert">{t('repsError')}</span>
-                    <button type="button" onClick={fetchReps} className={GHOST}>
-                      <RotateCcw className="h-4 w-4 flex-none" aria-hidden />
-                      {t('retry')}
-                    </button>
-                  </Failure>
-                </div>
-              )}
-              {lookup.status === 'loading' && (
-                <p role="status" className="text-sm text-ink-2">
-                  {t('repsLoading')}
-                </p>
-              )}
-              {!zip && (
-                <div className="rounded-control border-[1.5px] border-line-strong bg-paper p-4">
-                  <p className="mb-3 text-sm font-semibold text-ink">{t('needZip')}</p>
-                  <ZipForm onSaved={onZipSaved} />
-                </div>
-              )}
-              {/* Same not-found register as the rail: correct the ZIP
-                  without leaving the mode. */}
-              {notFound && (
-                <div
-                  data-reps-alert
-                  tabIndex={-1}
-                  role="alert"
-                  className="border-t-[3px] border-ink bg-wash p-4"
-                >
-                  <p className="text-2xs font-extrabold tracking-[0.1em] text-alert uppercase">
-                    {tReps('errorLabel')}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-ink">{tReps('zipNotFound')}</p>
-                  <div className="mt-3">
-                    <ZipForm onSaved={onZipSaved} />
-                  </div>
-                </div>
-              )}
-              <div className="rounded-control border-[1.5px] border-line-strong p-4">
-                <p className="max-w-note text-sm text-ink-2">{t('switchboardNote')}</p>
-                <a
-                  href="tel:+12022243121"
-                  className="ring-gap mt-2 inline-flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
-                >
-                  <Phone className="h-5 w-5 flex-none" aria-hidden />
-                  {t('switchboard')}
-                  {/* B1: the number at display scale — see the rail note. */}
-                  <span className="text-h3 leading-none font-extrabold tabular-nums">
-                    (202) 224-3121
-                  </span>
-                </a>
-              </div>
-            </div>
-          )}
-        </dialog>
-      )}
     </section>
   );
 }
