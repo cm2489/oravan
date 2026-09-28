@@ -143,6 +143,8 @@
     "website": "Sitio web oficial",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
+    "zipLine": "Código postal {zip}",
+    "savedZipLoading": "Buscando {zip}, el código postal guardado en este dispositivo…",
     "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Algunos códigos postales válidos — como los de apartados postales o exclusivos de empresas — no corresponden a ningún distrito. Revisa los dígitos, prueba con el código postal de tu casa, o busca a tu representante directamente en house.gov.",
     "party": {
       "Democrat": "Demócrata",

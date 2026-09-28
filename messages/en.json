@@ -143,6 +143,8 @@
     "website": "Official website",
     "call": "Call",
     "changeZip": "Change ZIP code",
+    "zipLine": "ZIP code {zip}",
+    "savedZipLoading": "Looking up {zip}, the ZIP code saved on this device…",
     "zipNotFound": "We couldn't match that ZIP code to a congressional district. Some valid ZIPs — like PO-box or business-only ZIP codes — don't map to any district. Double-check the digits, try your home ZIP, or look up your member directly at house.gov.",
     "party": {
       "Democrat": "Democrat",
