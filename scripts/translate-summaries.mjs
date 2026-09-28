@@ -8,7 +8,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
-const MODEL = 'claude-sonnet-5';
+const MODEL = 'claude-sonnet-5-5';
 const OUT = 'data/bills-es.json';
 const CONCURRENCY = 6;
 
@@ -40,7 +40,7 @@ Return STRICT JSON only, no markdown fences: {"headline": "...", "summary": "...
   const msg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1950,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' },
     messages: [{ role: 'user', content: prompt }],
   });
   const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';

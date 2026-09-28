@@ -75,7 +75,7 @@
  * is the common case (the resolveWithHaiku discipline from
  * scripts/newsdesk.mjs). At $1/$5 per MTok a full 15-event batch is roughly 3K
  * in / 1.5K out ≈ $0.011; ~11 runs on a busy day ≈ $0.12/day. Summaries:
- * claude-sonnet-5, EN+ES in ONE call, at most MOMENT_SUMMARY_DAILY_CAP per
+ * claude-sonnet-5-5, EN+ES in ONE call, at most MOMENT_SUMMARY_DAILY_CAP per
  * ET day (nightly and intraday together, since 2026-09-25) and only when
  * summaryNeedsRefresh says the issue actually moved or a vote landed —
  * ~$0.018/moment, so ≤ ~$0.15 on a day that hits the ceiling.
@@ -95,17 +95,19 @@
  * one the once-a-night run already had — 8 calls a day, 240 in 30 days — and
  * intraday rewrites spend what the nightly left rather than adding a second
  * allowance on top: the ADDED ceiling is zero calls. In dollars that is
- * ≈ $1.70 per 30 days at ≈ $0.0071 a call ($2/$10 per MTok — Sonnet 5's list
- * price in the claude-api reference table cached 2026-06-24, not re-read live
- * — times the brief's ~1,450 in / 420 out; the vote lines add ~50–150 input
- * tokens), or ≈ $4.32 at the ~$0.018/moment this header has carried since
+ * ≈ $1.70 per 30 days at ≈ $0.0071 a call ($2/$10 per MTok — Sonnet 5.5's
+ * list price, read from Anthropic's pricing page on 2026-09-28, the same as
+ * Sonnet 5's — times the brief's ~1,450 in / 420 out; the vote lines add
+ * ~50–150 input tokens), or ≈ $4.32 at the ~$0.018/moment this header has carried since
  * 2026-07-25; the token counts behind both are estimates, not measurements.
  * Roll calls on moment vehicles are rare — 11 in data/votes.json from
  * 2026-05-27 to 2026-09-24 — so the expected added cost is cents per month.
  * Reading data/votes.json costs nothing: it is a local file.
  *
  * NO PROMPT CACHING, deliberately: both prompts sit under the models' minimum
- * cacheable prefix (1024 tokens on Haiku 4.5, 512 on Sonnet 5), so a
+ * cacheable prefix (1024 tokens on Haiku 4.5; 512 on Sonnet 5.5 per Anthropic's
+ * docs read 2026-09-28, which put Sonnet 5 at 1,024 — whether the summary
+ * prompt's fixed prefix clears 512 has not been measured), so a
  * cache_control breakpoint would silently cache nothing while still billing
  * the 1.25x write premium. Do not "optimize" this later without measuring the
  * rendered prompt first. NO BATCH API either: this step must finish before
@@ -214,7 +216,7 @@ const PRESS_WINDOW_DAYS = Number(process.env.MOMENT_PRESS_WINDOW_DAYS ?? 1);
 export const SUMMARY_WINDOW_DAYS = 14;
 
 const DECODE_MODEL = 'claude-haiku-4-5-20251001';
-const SUMMARY_MODEL = 'claude-sonnet-5';
+const SUMMARY_MODEL = 'claude-sonnet-5-5';
 
 const UPDATES_PATH = 'data/moment-updates.json';
 // Congress.gov sits behind Cloudflare; this is the browser-shaped UA
@@ -951,11 +953,12 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
     const msg = await anthropic.messages.create({
       model: SUMMARY_MODEL,
       max_tokens: 1400,
-      // Sonnet 5 runs adaptive thinking when the field is OMITTED; this is a
+      // Sonnet 5.5 runs adaptive thinking when the field is OMITTED; this is a
       // short, fully-grounded rewrite, so unbounded thinking spend would blow
-      // the nightly budget for no quality gain. Disabled is accepted on
-      // Sonnet 5 (unlike an effort of xhigh/max on the Opus line).
-      thinking: { type: 'disabled' },
+      // the nightly budget for no quality gain. `between_tools` is Sonnet
+      // 5.5's no-up-front-thinking setting (`disabled` is a 400 there); with
+      // no tools in the request the reply is text only.
+      thinking: { type: 'between_tools' },
       messages: [
         {
           role: 'user',

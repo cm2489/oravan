@@ -82,12 +82,12 @@ import { lintRevisionText } from '../lib/moment-updates-gate.mjs';
 import { statusKeyFor } from './moment-candidates.mjs';
 
 /**
- * Sonnet 5, matching scripts/moment-updates.mjs's summary model: this is the
+ * Sonnet 5.5, matching scripts/moment-updates.mjs's summary model: this is the
  * same job — a short, fully-grounded, bilingual rewrite of a record — and the
  * ES half is the expensive half. Version-constant, not an inline literal, so a
  * model change is one edit and shows up in the issue footer the owner reads.
  */
-export const DRAFT_MODEL = 'claude-sonnet-5';
+export const DRAFT_MODEL = 'claude-sonnet-5-5';
 
 /** Bumped whenever the prompt below changes in a way that changes output.
  *  Printed in the issue so a bad batch of drafts is attributable.
@@ -482,11 +482,12 @@ async function attemptDraft(anthropic, g) {
     const msg = await anthropic.messages.create({
       model: DRAFT_MODEL,
       max_tokens: 1500,
-      // Sonnet 5 runs adaptive thinking when the field is OMITTED. This is a
+      // Sonnet 5.5 runs adaptive thinking when the field is OMITTED. This is a
       // short, fully-grounded write with a closed record; unbounded thinking
       // would add spend a nightly issue-opener has no business paying for.
-      // `disabled` is accepted on Sonnet 5 (unlike xhigh/max on the Opus line).
-      thinking: { type: 'disabled' },
+      // `between_tools` is Sonnet 5.5's no-up-front-thinking setting
+      // (`disabled` is a 400 there); with no tools the reply is text only.
+      thinking: { type: 'between_tools' },
       messages: [{ role: 'user', content: draftPrompt(g) }],
     });
     text = msg?.content?.[0]?.type === 'text' ? msg.content[0].text : '';

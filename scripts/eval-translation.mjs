@@ -1,5 +1,5 @@
 /**
- * Does the Spanish half of a decode need Sonnet 5?
+ * Does the Spanish half of a decode need Sonnet 5.5?
  *
  * WHY THIS EXISTS. Measured 2026-09-18 over the committed corpus, the Spanish
  * output is the single biggest line in a decode's bill: call 2 emits the full
@@ -11,7 +11,7 @@
  * would notice a thinner translation.
  *
  * So this script does NOT flip anything. It produces the evidence a human
- * needs to decide: for N recently-decoded bills it asks Haiku 4.5 and Sonnet 5
+ * needs to decide: for N recently-decoded bills it asks Haiku 4.5 and Sonnet 5.5
  * for the SAME Spanish translation of the SAME already-written English decode,
  * and writes them side by side for a reader who can judge Spanish. Nothing it
  * writes touches data/; the output is a scratch markdown file.
@@ -28,7 +28,7 @@
  * COST. Two calls per bill. Per bill the input is one English decode
  * (~2,900 characters, ~950 tokens) and the output is its Spanish twin
  * (~2,700 characters, ~950 tokens). At list prices that is
- *   Sonnet 5:  950/1e6*$2  + 950/1e6*$10 = $0.0114
+ *   Sonnet 5.5: 950/1e6*$2  + 950/1e6*$10 = $0.0114
  *   Haiku 4.5: 950/1e6*$1  + 950/1e6*$5  = $0.0057
  * = $0.0171 a bill, so the default N=10 run costs about $0.17, and $0.30
  * covers N=17. It refuses to start without ANTHROPIC_API_KEY and prints the
@@ -73,13 +73,13 @@ export function spendAllowed(estimate, confirmed = false, ceiling = COST_CEILING
 }
 
 export const CANDIDATE_MODEL = 'claude-haiku-4-5-20251001';
-export const INCUMBENT_MODEL = 'claude-sonnet-5';
+export const INCUMBENT_MODEL = 'claude-sonnet-5-5';
 const MAX_TOKENS = 2000;
 
 /** Per-million list prices, input/output, for the run's cost estimate only. */
 const PRICES = {
   'claude-haiku-4-5-20251001': { in: 1, out: 5 },
-  'claude-sonnet-5': { in: 2, out: 10 },
+  'claude-sonnet-5-5': { in: 2, out: 10 },
 };
 
 function arg(name, fallback) {
@@ -154,7 +154,7 @@ export function estimateCost(n, { inputTokens = 950, outputTokens = 950 } = {}) 
 
 export function renderMarkdown(rows, { n }) {
   const lines = [
-    '# Spanish translation: Haiku 4.5 vs Sonnet 5',
+    '# Spanish translation: Haiku 4.5 vs Sonnet 5.5',
     '',
     `${n} recently decoded bills. Both columns translate the SAME English decode with the SAME prompt; the only variable is the model.`,
     '',
@@ -173,11 +173,20 @@ export function renderMarkdown(rows, { n }) {
   return lines.join('\n');
 }
 
+/**
+ * No up-front thinking on either model, spelled the way each accepts it:
+ * Haiku 4.5 takes `disabled`; Sonnet 5.5 rejects `disabled` with a 400 and
+ * takes `between_tools` instead (Anthropic's Sonnet 5.5 docs, 2026-09-28).
+ */
+export function thinkingOffFor(model) {
+  return model === INCUMBENT_MODEL ? { type: 'between_tools' } : { type: 'disabled' };
+}
+
 async function translate(anthropic, model, bill) {
   const msg = await anthropic.messages.create({
     model,
     max_tokens: MAX_TOKENS,
-    thinking: { type: 'disabled' },
+    thinking: thinkingOffFor(model),
     messages: [{ role: 'user', content: buildTranslationPrompt(bill) }],
   });
   return msg.content[0]?.type === 'text' ? msg.content[0].text.trim() : '';

@@ -44,11 +44,14 @@ import { bumpCounter, recordApiError } from './run-counters.mjs';
  *  (tests/bill-text-source.unit.spec.ts) are unchanged. */
 export { pickTextVersion };
 
-// Sonnet 5's tokenizer runs ~30% more tokens than 4.6 for the same text, so
-// max_tokens caps on its calls are sized up accordingly; thinking is disabled
-// explicitly because Sonnet 5 defaults it ON when the field is omitted, which
-// would add unbounded thinking spend to batch calls.
-export const DECODE_MODEL = 'claude-sonnet-5';
+// Sonnet 5.5 (owner, 2026-09-28) uses Sonnet 5's tokenizer, which runs ~30%
+// more tokens than 4.6 for the same text, so max_tokens caps on its calls are
+// sized up accordingly. Up-front thinking is turned off explicitly with
+// `between_tools` because Sonnet 5.5 thinks when the field is omitted, which
+// would add unbounded thinking spend to batch calls; `disabled`, the Sonnet 5
+// spelling, is a 400 on Sonnet 5.5. With no tools in the request the reply is
+// text only, so `content[0].text` below still reads the answer.
+export const DECODE_MODEL = 'claude-sonnet-5-5';
 
 /*
  * The two calls' output ceilings, exported because lib/decode-batch.mjs has
@@ -353,7 +356,7 @@ export async function decodeBill(anthropic, bill, text) {
   const sum = await anthropic.messages.create({
     model: DECODE_MODEL,
     max_tokens: DECODE_SUMMARY_MAX_TOKENS,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' },
     messages: [{ role: 'user', content: buildSummaryPrompt(bill, text) }],
   });
   return decodeStructureFrom(anthropic, bill, sum.content[0].text.trim());
@@ -372,7 +375,7 @@ export async function decodeStructureFrom(anthropic, bill, ai_summary) {
   const rest = await anthropic.messages.create({
     model: DECODE_MODEL,
     max_tokens: DECODE_STRUCTURE_MAX_TOKENS,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' },
     messages: [{ role: 'user', content: buildStructurePrompt(bill, ai_summary) }],
   });
   return assembleDecode(ai_summary, rest.content[0].text.trim());

@@ -742,7 +742,7 @@ test.describe('estimateDaySpend', () => {
     // The only defensible way to publish a guess is to publish how it was made.
     const s = estimateDaySpend({ decodes: 10, t3Batched: 20, t3Runs: 2 });
     expect(s.labelled).toBe('estimate');
-    expect(s.assumptions.decodeModel).toBe('claude-sonnet-5');
+    expect(s.assumptions.decodeModel).toBe('claude-sonnet-5-5');
     expect(s.assumptions.t3Model).toBe('claude-haiku-4-5');
     expect(s.assumptions.decodeInputTokens).toBeGreaterThan(0);
     expect(s.assumptions.decodeOutputTokens).toBeGreaterThan(0);

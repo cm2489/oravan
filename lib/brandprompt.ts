@@ -29,7 +29,8 @@ import type { BrandCandidates } from './brand-extract';
 // Owner decision 2026-07-16 (plan: we-need-planning-mode): Sonnet 5 —
 // palette-picking from polluted candidate lists is a judgment task where
 // Haiku missteps read as "off-brand" at the sales moment; one-line swap.
-export const BRAND_MODEL = 'claude-sonnet-5';
+// Moved to Sonnet 5.5 on the owner's instruction of 2026-09-28.
+export const BRAND_MODEL = 'claude-sonnet-5-5';
 export const BRAND_MAX_TOKENS = 300;
 
 export interface BrandTheme {

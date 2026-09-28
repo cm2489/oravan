@@ -37,7 +37,7 @@ test.describe('buildBrandPrompt', () => {
   });
 
   test('sanity: the config constants hold their contract', () => {
-    expect(BRAND_MODEL).toBe('claude-sonnet-5');
+    expect(BRAND_MODEL).toBe('claude-sonnet-5-5');
     expect(BRAND_MAX_TOKENS).toBeLessThanOrEqual(1024);
   });
 });
