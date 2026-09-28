@@ -16,7 +16,7 @@ import {
   sessionForYear,
   verifyVotes,
 } from '../lib/votes-core.mjs';
-import { memberPosition, memberVotesByBill, votesForBill, votingMember } from '../lib/votes';
+import { MEMBER_VOTES_MAX_BILLS, memberPosition, memberVotesByBill, votesForBill, votingMember } from '../lib/votes';
 import { getBill } from '../lib/core';
 import type { Legislator, RollCall, Vacancy, VotesFile } from '../lib/types';
 
@@ -339,6 +339,20 @@ test.describe('lib/votes memberVotesByBill', () => {
     const legs = JSON.parse(readFileSync(join(process.cwd(), 'data/legislators.json'), 'utf8')) as Legislator[];
     for (const l of legs.filter((x) => !everyone.includes(x.bioguide))) {
       expect(memberVotesByBill(l.bioguide), l.bioguide).toEqual([]);
+    }
+  });
+
+  // The member page lists the newest MEMBER_VOTES_MAX_BILLS bills and says
+  // of the rest that "each bill's page lists its recorded votes". That page
+  // renders votesForBill (components/VoteRecord.tsx), so the line is true only
+  // while every left-out vote is among its bill's stored roll calls.
+  test('past the member-page cap, every left-out vote is on its bill page\'s record', () => {
+    expect(Number.isInteger(MEMBER_VOTES_MAX_BILLS) && MEMBER_VOTES_MAX_BILLS > 0).toBe(true);
+    for (const id of everyone) {
+      for (const g of memberVotesByBill(id).slice(MEMBER_VOTES_MAX_BILLS)) {
+        const onBill = new Set(votesForBill(g.bill).map((r) => r.id));
+        for (const v of g.votes) expect(onBill.has(v.rollCall.id), `${id} ${v.rollCall.id}`).toBe(true);
+      }
     }
   });
 

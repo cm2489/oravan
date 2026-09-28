@@ -195,6 +195,7 @@
     "votesAiNote": "Headlines and summaries decoded by AI, checked against the record",
     "votesTheirVote": "Their vote:",
     "votesMoreOnBill": "{count, plural, one {Their other vote on this bill} other {Their # other votes on this bill}}",
+    "votesOlder": "{count, plural, one {Their earlier votes on # more bill are not shown here. Each bill's page lists its recorded votes.} other {Their earlier votes on # more bills are not shown here. Each bill's page lists its recorded votes.}}",
     "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}."
   },
   "bills": {

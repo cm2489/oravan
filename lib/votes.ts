@@ -80,6 +80,16 @@ export function memberVotesByBill(bioguide: string): MemberBillVotes[] {
   return [...groups].map(([bill, votes]) => ({ bill, votes }));
 }
 
+/**
+ * The most bills the member page's "How they voted" lists: the newest this
+ * many from memberVotesByBill, then one line counting the bills left out and
+ * pointing to each bill's own page, whose vote record lists every stored roll
+ * call and every member on it. A page-weight cap, decided 2026-09-28 on PR
+ * #348: every row ships as HTML and again as server-component payload, and a
+ * House member's list grows with every roll call the Congress takes.
+ */
+export const MEMBER_VOTES_MAX_BILLS = 50;
+
 /** Every stored roll call on a bill, newest first. Empty when there are none,
  *  which for a bill that never reached a recorded vote is the true answer. */
 export function votesForBill(billId: string): RollCall[] {

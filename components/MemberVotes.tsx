@@ -7,7 +7,7 @@ import { billSlug, getAllBills, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { deriveJourney } from '@/lib/journey';
 import type { Bill } from '@/lib/types';
-import { memberVotesByBill, votesCoverage, type MemberVote } from '@/lib/votes';
+import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVote } from '@/lib/votes';
 
 /*
  * HOW THEY VOTED — the member page's vote record (owner, UX inventory R04,
@@ -34,6 +34,12 @@ import { memberVotesByBill, votesCoverage, type MemberVote } from '@/lib/votes';
  * WHAT IT WILL NOT SAY - the rules components/VoteRecord.tsx already keeps:
  * no party, no party colour, no colour for Yea or Nay, no score, no tally of
  * how often they "side" with anyone, no "agrees with you". Every mark is ink.
+ *
+ * CAPPED. At most the newest MEMBER_VOTES_MAX_BILLS bills (lib/votes.ts): the
+ * first SHOWN open, the rest of those under "Show all". Past the cap, one
+ * plain line counts the bills left out and says each bill's page lists its
+ * recorded votes, which is true: components/VoteRecord.tsx shows every stored
+ * roll call on the bill and every member's position on it.
  *
  * STATIC. A server component; the rows past the first batch sit in a closed
  * <details>, so nothing here ships to the browser as JavaScript and no corpus
@@ -197,8 +203,10 @@ export async function MemberVotes({
     );
   };
 
-  const shown = groups.slice(0, SHOWN);
-  const rest = groups.slice(SHOWN);
+  const listed = groups.slice(0, MEMBER_VOTES_MAX_BILLS);
+  const olderBills = groups.length - listed.length;
+  const shown = listed.slice(0, SHOWN);
+  const rest = listed.slice(SHOWN);
 
   return (
     <section id="votes" aria-labelledby="rep-votes" className="mt-12" data-member-votes="">
@@ -219,12 +227,17 @@ export async function MemberVotes({
           </p>
           <ol className="mt-4 grid gap-4">{shown.map(row)}</ol>
           {rest.length > 0 && (
-            <details className="mt-4 border-t border-line pt-2">
+            <details className="mt-4 border-t border-line pt-2" data-member-votes-all="">
               <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
-                {t('showAll', { count: groups.length })}
+                {t('showAll', { count: listed.length })}
               </summary>
               <ol className="mt-2 grid gap-4">{rest.map(row)}</ol>
             </details>
+          )}
+          {olderBills > 0 && (
+            <p className="mt-4 max-w-read text-sm text-ink-2 tabular-nums" data-member-votes-older={olderBills}>
+              {t('votesOlder', { count: olderBills })}
+            </p>
           )}
         </>
       ) : (

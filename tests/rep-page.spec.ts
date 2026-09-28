@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import {
@@ -9,7 +10,7 @@ import {
   senatorsForState,
   vacancySlug,
 } from '../lib/core';
-import { memberVotesByBill } from '../lib/votes';
+import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage } from '../lib/votes';
 import { mockScriptApi } from './helpers';
 import { referenceBill } from './corpus-fixtures';
 
@@ -28,8 +29,8 @@ const HOUSE = 'D000594'; // Monica De La Cruz, TX-15 (also reps.spec.ts's ZIP 78
 const SENATOR = 'C000127'; // Maria Cantwell, WA
 
 const LOCALES = [
-  { prefix: '', messages: en },
-  { prefix: '/es', messages: es },
+  { prefix: '', locale: 'en', messages: en },
+  { prefix: '/es', locale: 'es', messages: es },
 ] as const;
 
 /**
@@ -224,28 +225,60 @@ for (const { prefix, messages } of LOCALES) {
 
 /*
  * HOW THEY VOTED (owner, UX inventory R04, 2026-09-28). The member page lists
- * every bill the record names this member on, newest first, each with the
+ * the bills the record names this member on, newest first, up to
+ * MEMBER_VOTES_MAX_BILLS (a page-weight cap decided on PR #348), each with the
  * AI-labeled headline, their vote in the record's own word, and the bill
- * page's own "Right now:" sentence. Recomputed from lib/votes at assert time,
- * so a nightly that adds roll calls cannot break this block. Asserted by
- * message key and data-* hook only.
+ * page's own "Right now:" sentence; past the cap, one line counts the bills
+ * left out. Recomputed from lib/votes at assert time, so a nightly that adds
+ * roll calls cannot break this block. Asserted by message key and data-* hook
+ * only.
  */
-for (const { prefix, messages } of LOCALES) {
+for (const { prefix, locale, messages } of LOCALES) {
+  const tRep = createTranslator({ locale, messages, namespace: 'rep' });
   test.describe(`member page vote record ${prefix || '/'}`, () => {
     for (const id of [HOUSE, SENATOR]) {
-      test(`${id}: every voted bill, newest first, the vote as recorded`, async ({ page }) => {
+      test(`${id}: the newest voted bills, newest first, the vote as recorded`, async ({ page }) => {
         const groups = memberVotesByBill(id);
         test.skip(groups.length === 0, 'the record lists this member on no stored roll call');
+        const listed = groups.slice(0, MEMBER_VOTES_MAX_BILLS);
+        const olderBills = groups.length - listed.length;
         await page.goto(`${prefix}/reps/${id}`);
         const section = page.locator('[data-member-votes]');
         await expect(section.getByRole('heading', { level: 2, name: messages.rep.votesHeading })).toBeVisible();
         await expect(section.getByText(messages.rep.votesAiNote, { exact: true })).toBeVisible();
+        // The count line still counts every voted bill, capped or not.
+        const since = new Intl.DateTimeFormat(locale, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }).format(new Date(votesCoverage().floor));
+        await expect(
+          section.getByText(tRep('votesNote', { count: groups.length, date: since }), { exact: true })
+        ).toBeVisible();
 
         const rows = section.locator('[data-member-vote-bill]');
-        await expect(rows).toHaveCount(groups.length);
+        await expect(rows).toHaveCount(listed.length);
         expect(await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-member-vote-bill')))).toEqual(
-          groups.map((g) => g.bill)
+          listed.map((g) => g.bill)
         );
+
+        // "Show all N" counts the listed bills, never the ones left out.
+        const folded = await section.locator('[data-member-votes-all] [data-member-vote-bill]').count();
+        const all = section.locator('[data-member-votes-all] > summary');
+        await expect(all).toHaveCount(folded > 0 ? 1 : 0);
+        if (folded > 0) await expect(all).toHaveText(tRep('showAll', { count: listed.length }));
+
+        // Past the cap: one visible line, outside the disclosure, counting the
+        // bills left out. Under it: no line at all.
+        const older = section.locator('[data-member-votes-older]');
+        if (olderBills > 0) {
+          await expect(older).toBeVisible();
+          await expect(older).toHaveAttribute('data-member-votes-older', String(olderBills));
+          await expect(older).toHaveText(tRep('votesOlder', { count: olderBills }));
+        } else {
+          await expect(older).toHaveCount(0);
+        }
 
         const first = rows.first();
         const newest = groups[0].votes[0];
