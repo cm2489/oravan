@@ -124,6 +124,7 @@ Rules touched: page 1, rules 1 and 4 (a shipped claim that has stopped being tru
 - The owner's card l16, "Correct the two false privacy lines", answered **b** at 2026-09-27T00:59:39Z, with the note, verbatim: *"Bring this back up prior to launch."* The option text behind **b** was not exported with the answer; with the note, it leaves both lines as they are for now.
 - The two lines, as shipped on 2026-09-27, in both languages: `privacy.p1` says Oravan never asks for your name, email or address — and the optional street-address refinement for split ZIPs asks for an address (sent once by POST, never stored or logged), and the partnership feedback form asks for contact details. `privacy.p8` says Oravan keeps "one plain count" — the page-shape count — while `lib/usage.ts` also keeps daily script-generation, MCP-tool, MCP-client and brand-preview counts, and `lib/impressions.ts` keeps per-partner embed impression counts.
 - Not changed by the change that wrote this entry. **Tripwire: before the press hold lifts; date not yet set by the owner.** Whoever lifts the hold brings this card back to the owner first.
+- 2026-09-28: the beta feedback form was removed (owner decision), so the feedback-form half of the `privacy.p1` problem is gone. The street-address half and `privacy.p8` are unchanged, and so is the card.
 
 ---
 

@@ -53,8 +53,7 @@ import censusNoMatch from './fixtures/census-no-match.json';
  * and a closed route label (a tool name or slug CANNOT reach it - the type
  * system has no door for one), and the script cache with the production
  * corpus's own slug/stance/lang/version values. Route-level glue is covered
- * end-to-end by tests/mcp.spec.ts's 429 burst and the script-flow e2e specs;
- * the feedback route's privacy surface is pinned in feedback.unit.spec.ts.
+ * end-to-end by tests/mcp.spec.ts's 429 burst and the script-flow e2e specs.
  */
 
 test.describe.configure({ mode: 'serial' });

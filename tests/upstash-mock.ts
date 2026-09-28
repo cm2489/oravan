@@ -6,7 +6,7 @@
  * lib/tenancy.ts's listTenantIds/listTenants; PFADD / PFCOUNT / EXPIREAT
  * added 2026-09-25 for lib/ratelimit.ts's daily distinct-address sketch) over a Map, and
  * installs itself by swapping globalThis.fetch — the repo's established
- * mocking pattern (tests/feedback.unit.spec.ts). No live tokens exist
+ * mocking pattern (tests/embed-portrait.unit.spec.ts). No live tokens exist
  * anywhere in the test environment, by design.
  *
  * Every command is recorded (`commands`) so privacy specs can assert over

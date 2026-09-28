@@ -38,6 +38,6 @@ Claude opens PRs; Colby merges. One standing carve-out, ruled 2026-09-24 in his 
 
 ## Architecture
 
-Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database, refreshed by the `scripts/` that `.github/workflows/` run; pages prerender in both locales (rule 2). Beyond the few pages rule 2 points to, per-request code is `proxy.ts` (locale negotiation, then the two counts of rule 1), the route handlers under `app/api/` (call-script generation, rep lookup, split-ZIP district refinement, beta feedback, the MCP server, the partner brand preview, the Stripe webhook, partner impression reads), and the embed portrait proxy.
+Next.js 16 App Router + Tailwind v4 + next-intl. Static JSON in `data/` is the database, refreshed by the `scripts/` that `.github/workflows/` run; pages prerender in both locales (rule 2). Beyond the few pages rule 2 points to, per-request code is `proxy.ts` (locale negotiation, then the two counts of rule 1), the route handlers under `app/api/` (call-script generation, rep lookup, split-ZIP district refinement, the MCP server, the partner brand preview, the Stripe webhook, partner impression reads), and the embed portrait proxy.
 
 This is build #3 of 3, firewalled from the old Oravan app and the Civic Action MCP build (where the old app lives: `docs/migration/oravan-grounding.md`; the migration record: `docs/migration/decisions.md`): never import code or guardrail docs from either, and `scripts/check-naming.mjs` keeps the retired names out.

@@ -182,7 +182,6 @@ export function appTopLevelDirs(rel: string): string[] {
 export const API_PROBES: Record<string, string> = {
   brand: '/api/brand',
   district: '/api/district',
-  feedback: '/api/feedback',
   mcp: '/api/mcp/mcp',
   reps: '/api/reps?zip=78501',
   script: '/api/script',

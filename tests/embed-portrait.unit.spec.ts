@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 // Relative imports (not '@/'): the route only touches next/server, which
-// resolves under the test runner - same pattern as tests/feedback.unit.spec.ts.
+// resolves under the test runner - same pattern as tests/tenant-impressions.unit.spec.ts.
 import { GET, buildPortraitResponse } from '../app/embed/portrait/[bioguide]/route';
 import { BIOGUIDE_RE, hasMirroredPortrait, mirroredPortraitBioguides } from '../lib/core/portraits';
 import manifestJson from '../data/portrait-manifest.json';
