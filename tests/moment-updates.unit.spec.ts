@@ -1334,16 +1334,21 @@ test.describe('checkMomentUpdates (fixtures)', () => {
           lean_set: [],
         },
       });
-    const unrated = cluster(['thegatewaypundit.com', 'naturalnews.com'], ['Thegatewaypundit', 'Naturalnews']);
+    // Two outlets with no AllSides rating page (checked 2026-09-28). The pair
+    // was thegatewaypundit.com + naturalnews.com until AllSides' own rating of
+    // The Gateway Pundit (Right) was found missing from data/media-bias.json.
+    expect(policy.admits('naturalnews.com')).toBe(false);
+    expect(policy.admits('sana.sy')).toBe(false);
+    const unrated = cluster(['naturalnews.com', 'sana.sy'], ['Naturalnews', 'Sana']);
     const refused = runGate(wrap([unrated]), { pressOutletAdmits: policy.admits }).violations;
-    expect(refused.some((v) => v.includes('names thegatewaypundit.com, naturalnews.com'))).toBe(true);
+    expect(refused.some((v) => v.includes('names naturalnews.com, sana.sy'))).toBe(true);
 
     const rated = cluster(['reuters.com', 'apnews.com'], ['Reuters', 'The Associated Press']);
     expect(runGate(wrap([rated]), { pressOutletAdmits: policy.admits }).violations).toEqual([]);
 
     // Without the option the gate keeps its pre-floor call shape (fixture
     // suites); the CLI never runs it that way — pinned below.
-    expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names thegatewaypundit.com'))).toBe(false);
+    expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names naturalnews.com'))).toBe(false);
   });
 
   test('THE OUTLET FLOOR: a stored cluster of allowlisted outlets alone fails — it needs one rated outlet', () => {
