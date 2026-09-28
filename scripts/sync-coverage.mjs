@@ -19,6 +19,14 @@
  * rejected is dropped; and the date pass's outlet mix is judged against the
  * whole-life pass every night (LEAN DRIFT), loudly when it shifts.
  *
+ * Since 2026-09-27 (see scripts/coverage-route.mjs): a vote report is filed
+ * under the measure the roll-call record (data/votes.json) says was voted on,
+ * not whichever near-identical sibling's search found it — for what is
+ * already stored (once, before anything else) and for what tonight's gate
+ * keeps (at every write). A move, never a delete, and never one that stops a
+ * shown article being shown. Routed rows are capped apart from a bill's own
+ * rows (mergeArticles), so they never push an own article out.
+ *
  *   node --env-file=.env.local scripts/sync-coverage.mjs
  *
  * Gated on NEWS_API_KEY: with no key this is a no-op that leaves the committed
@@ -56,6 +64,7 @@ import {
   wholeLifeStart,
   withoutRejected,
 } from './coverage-query.mjs';
+import { coverageDurability, createVoteRouter, markRouted, refileStoredCoverage } from './coverage-route.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -154,8 +163,10 @@ const withRatedFlag = (a) => ({ ...a, rated: outletPolicy.isRated(a?.source) });
 // forward, re-stamped with `rated` and otherwise unchanged. Bills the run DOES
 // process merge tonight's kept articles into their stored ones (processBill):
 // an empty night keeps what was stored, and the only stored articles a
-// processed bill loses are ones pushed out by newer articles past PER_BILL, or
-// ones tonight's gate was shown and rejected in a complete, well-formed reply.
+// processed bill loses are ones pushed out by newer articles past PER_BILL,
+// ones tonight's gate was shown and rejected in a complete, well-formed reply,
+// or vote reports the re-file pass MOVES to the measure the roll-call record
+// says was voted on (scripts/coverage-route.mjs) — moved, never deleted.
 let prevCoverage = {};
 try {
   prevCoverage = JSON.parse(readFileSync('data/coverage.json', 'utf8'));
@@ -479,6 +490,56 @@ const fmtMix = (m) => `L${m.left}/C${m.center}/R${m.right}/unrated ${m.unrated}`
    at write time — including carried-forward ones, so the whole file speaks
    the same shape after one night. */
 const eligibleSlugs = new Set(bills.filter(inSweep).map(slugOf));
+
+/* VOTE REPORTS GO TO THE MEASURE THAT WAS VOTED ON (scripts/coverage-route.mjs).
+   The record is data/votes.json, which the nightly's "Sync roll-call votes"
+   step refreshes BEFORE this one, so tonight's roll calls are in it. Read
+   tolerantly: with no file, or no roll calls, nothing routes and the night
+   runs exactly as before.
+
+   canReceive: a row moves only to a bill whose coverage this file keeps at
+   least as long as the bill it came from (coverageDurability), so a move can
+   never make an article leave the file sooner. */
+const billBySlug = new Map(bills.map((b) => [slugOf(b), b]));
+const durability = (slug) => coverageDurability(billBySlug.get(slug), eligibleSlugs.has(slug));
+const canReceive = (to, from) => {
+  const d = durability(to);
+  return d >= 1 && d >= durability(from);
+};
+const voteRouter = createVoteRouter({ bills, votes: readOptional('data/votes.json') });
+
+/* THE RE-FILE PASS (refileStoredCoverage), run twice a night:
+     1. here, over what is already stored, so every bill processed tonight
+        starts from the corrected file; and
+     2. at every write (withCarryForward), over the night's result, which is
+        how tonight's routed articles reach the measure that was voted on.
+   Both times it is idempotent (a moved row's new bill voted in the window, so
+   it stays there), it moves a row only when that row will be stored where it
+   goes without pushing anything out, it never makes a shown row stop being
+   shown, and it never deletes. Pass 1 changes prevCoverage in memory only:
+   the file is written by the checkpoint below, which waits for TheNewsAPI to
+   answer once, so an outage night still leaves data/coverage.json
+   byte-for-byte as it was (the next night re-files it). */
+const logMoves = (label, result) => {
+  for (const m of result.moves) {
+    console.log(`${label}: ${m.from} -> ${m.to} (${m.rollCall})${m.duplicate ? ' [already there]' : ''}: "${m.title.slice(0, 120)}"`);
+  }
+  for (const h of result.held) {
+    const why = h.reason === 'room' ? `no room on ${h.to}` : `${h.to} would not show it`;
+    console.log(`${label} held (${why}; stays on ${h.from}): "${h.title.slice(0, 120)}"`);
+  }
+};
+const refile = refileStoredCoverage(prevCoverage, voteRouter, { cap: PER_BILL, canReceive });
+prevCoverage = refile.coverage;
+logMoves('re-filed', refile);
+
+/* Tonight's kept articles that the record ties to a sibling's roll call are
+   stored on the bill searched, in its ROUTED bucket (so they cannot push one
+   of its own articles out), and pass 2 moves them at the next write. */
+let routedKept = 0;
+/** The last write's pass-2 result, for the ROUTE line. */
+let lastWriteRoute = { moves: [], held: [] };
+
 function withCarryForward() {
   const merged = {};
   for (const [slug, arts] of Object.entries(out)) merged[slug] = arts.map(withRatedFlag);
@@ -488,14 +549,17 @@ function withCarryForward() {
       merged[slug] = arts.map(withRatedFlag);
     }
   }
+  /* Pass 2: tonight's routed rows move to the measure that was voted on. */
+  lastWriteRoute = refileStoredCoverage(merged, voteRouter, { cap: PER_BILL, canReceive });
+  const result = lastWriteRoute.coverage;
   /* Ages out with the corpus: a bill that went terminal or left entirely
      shouldn't keep a check date, or the tail would sort stale ghosts to the
      front forever. Included in every checkpoint write so a crashed run keeps
      its rotation position. */
-  merged._checkedAt = Object.fromEntries(
+  result._checkedAt = Object.fromEntries(
     Object.entries(checkedAt).filter(([slug]) => eligibleSlugs.has(slug))
   );
-  return merged;
+  return result;
 }
 
 /* The 30-day pass for one priority bill. Returns the candidates, null on a
@@ -585,7 +649,21 @@ async function processBill(b) {
     const stored = withoutRejected(storedBefore, rejected);
     const dropped = storedBefore.length - stored.length;
     droppedOnVerdict += dropped;
-    const merged = mergeArticles(kept, stored, PER_BILL);
+    /* A kept article that reports a roll call the record says was held on a
+       near-identical sibling (scripts/coverage-route.mjs) is marked ROUTED:
+       it is capped apart from this bill's own articles, so it can never push
+       one out, and the next write's re-file pass moves it to the measure that
+       was voted on. Everything else merges exactly as before. */
+    let routedHere = 0;
+    const fresh = kept.map((a) => {
+      const r = voteRouter.route(a, slug);
+      if (!r || !canReceive(r.to, slug)) return a;
+      routedKept++;
+      routedHere++;
+      console.log(`routed: ${slug} -> ${r.to} (${r.rollCall}): "${String(a.title ?? '').slice(0, 120)}"`);
+      return markRouted(a, slug, r);
+    });
+    const merged = mergeArticles(fresh, stored, PER_BILL);
     if (merged.length) {
       out[slug] = merged;
       withCoverage++;
@@ -595,6 +673,7 @@ async function processBill(b) {
       `${slug}: ${candidates.length} candidates` +
         `${isPriority ? ` (${recent.length} from the ${RECENT_WINDOW_DAYS}-day pass)` : ''}` +
         ` -> ${kept.length} kept` +
+        `${routedHere ? ` (${routedHere} of them reporting a roll call on another measure, routed there)` : ''}` +
         `${dropped ? `, ${dropped} stored article(s) dropped on tonight's gate verdict` : ''}` +
         `${noAnswer ? " (the gate's reply was not complete and well-formed: no stored article dropped)" : ''}` +
         ` -> ${merged.length} stored`
@@ -658,6 +737,12 @@ if (!anyFetchOk) {
 }
 
 const finalOut = withCarryForward();
+/* Pass 2 sees pass 1's held rows again (they are still where they were); only
+   what is NEW at the final write is tonight's routing. */
+const routeKey = (x) => `${x.from}|${x.to}|${x.title}`;
+const heldAtStart = new Set(refile.held.map(routeKey));
+const atFinalWrite = { moves: lastWriteRoute.moves, held: lastWriteRoute.held.filter((h) => !heldAtStart.has(routeKey(h))) };
+logMoves('routed to the voted measure', atFinalWrite);
 // Count bills only — withCarryForward() also sets the "_checkedAt" metadata key,
 // which would otherwise show up as one phantom carried-forward bill.
 const carried =
@@ -699,6 +784,18 @@ console.log(
     `; kept tonight: ${keptTonight} article(s) on ${billsKeptTonight} bill(s)` +
     `; ${droppedOnVerdict} of ${rejudgedStored} re-judged stored article(s) dropped on tonight's gate verdict` +
     `; ${unansweredGates} gate reply(ies) not complete and well-formed (no stored article dropped on them)`
+);
+/* The ROUTE line: what the record moved tonight. Its own line, so the DONE
+   line's contract with parseCoverageDone is untouched. */
+console.log(
+  voteRouter.rollCalls === 0
+    ? 'ROUTE: no roll-call record (data/votes.json missing or empty) — nothing re-filed or routed'
+    : `ROUTE: ${refile.moves.length} stored article(s) re-filed to the measure the roll-call record says was voted on ` +
+        `(${refile.moves.filter((m) => m.duplicate).length} already there), ${refile.held.length} held ` +
+        `(${refile.held.filter((h) => h.reason === 'room').length} for lack of room, ` +
+        `${refile.held.filter((h) => h.reason === 'visibility').length} so a shown article stays shown); ` +
+        `${routedKept} kept tonight reported a roll call on another measure; at the final write ${atFinalWrite.moves.length} moved there, ` +
+        `${atFinalWrite.held.length} more held`
 );
 console.log(
   `FRESHNESS: ${ages.length - neverChecked - over30} checked within 30d, ` +
