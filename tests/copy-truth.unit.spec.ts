@@ -29,14 +29,29 @@ const LOCALES = [
 
 // ---- SY-43: the feedback notice --------------------------------------------
 
+/*
+ * Amended 2026-09-28. SY-43 first pinned "public GitHub issue, never private",
+ * which was true while app/api/feedback filed into the public code repo. On
+ * the owner's 2026-09-27 "keep going" on the recommendation to move feedback
+ * to a private ops repo, the route now files into cm2489/oravan-ops (only the
+ * owner is a collaborator, checked 2026-09-28), so the pin flips with it:
+ * private, and only the Oravan team can read it. tests/feedback.unit.spec.ts
+ * pins the route's destination, so the copy and the code move together.
+ */
 test.describe('SY-43 feedback notice says where a note goes', () => {
   for (const [locale, m] of LOCALES) {
     for (const key of ['notice', 'noticePartnership'] as const) {
-      test(`${locale} feedback.${key}: public GitHub issue, never "private", no contact ask`, () => {
+      test(`${locale} feedback.${key}: a private tracker only the team can read, never "public", no contact ask`, () => {
         const s = m.feedback[key];
-        // app/api/feedback files an issue in a PUBLIC repository.
+        // app/api/feedback files an issue in a PRIVATE GitHub repository.
         expect(s).toContain('GitHub');
-        expect(s).not.toMatch(/private|privad[oa]/i);
+        expect(s).toMatch(locale === 'en' ? /\bprivate\b/ : /\bprivad[oa]\b/);
+        expect(s).toMatch(locale === 'en' ? /only the Oravan team can read/ : /solo el equipo de Oravan puede leer/);
+        // The retired claim: a public issue anyone can read.
+        expect(s).not.toMatch(/\bpublic\b|p[uú]blic[oa]|anyone can read|cualquiera puede leer/i);
+        // The site promises "no trackers" in Spanish as "sin rastreadores":
+        // the feedback notice must not borrow that word for a GitHub tracker.
+        if (locale === 'es') expect(s).not.toMatch(/rastread|rastreo|seguimiento/i);
         // The retired ask: "include a way to reach you (email or phone)".
         expect(s).not.toMatch(/email or phone|correo o tel[eé]fono|way to reach you|forma de contactarte/i);
         // Both notices keep the "no personal details" instruction.

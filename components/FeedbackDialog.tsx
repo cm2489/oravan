@@ -237,13 +237,16 @@ export function FeedbackDialog() {
               }`}
             />
             <p id="feedback-notice" className="mt-2 max-w-note text-sm text-ink-2">
-              {/* Every note becomes a PUBLIC GitHub issue (app/api/feedback),
-                  so neither notice asks for contact details. Partnership is a
+              {/* Every note becomes an issue in the PRIVATE ops tracker,
+                  cm2489/oravan-ops (app/api/feedback, moved 2026-09-28), and
+                  neither notice asks for contact details. Partnership is a
                   business inquiry that usually wants a reply, so its notice
                   points to the published email address instead of the
-                  default "we can't reply" (audit 2026-09-27, SY-43: both
-                  notices used to promise a private tracker, and this one
-                  asked for an email or phone number). */}
+                  default "we can't reply". History: the 2026-09-27 audit
+                  (SY-43) corrected both notices to "public GitHub issue"
+                  while notes still landed in the public code repo, and
+                  removed this one's ask for an email or phone number; since
+                  the move, "private" is true again. */}
               {category === 'partnership' ? t('noticePartnership') : t('notice')}
             </p>
 

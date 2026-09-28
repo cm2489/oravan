@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 // Relative import (not '@/'): the route only touches next/server, which
 // resolves under the test runner - same pattern as the other unit specs.
 import { POST } from '../app/api/feedback/route';
@@ -10,7 +12,11 @@ import { POST } from '../app/api/feedback/route';
  * assertions below pin the exact outbound payload.
  */
 
-const ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan/issues';
+// The PRIVATE ops tracker (2026-09-28). The notice promises a private
+// tracker only the Oravan team can read (tests/copy-truth.unit.spec.ts), so
+// this URL is the other half of that promise.
+const ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan-ops/issues';
+const PUBLIC_CODE_REPO_ISSUES = 'https://api.github.com/repos/cm2489/oravan/issues';
 
 // Distinct marker values: if any of these ever shows up in the outbound
 // GitHub payload, an identifier leaked.
@@ -74,6 +80,46 @@ test('happy path: creates one labeled issue and returns ok', async () => {
   expect(payload.body).toContain('The ZIP form eats my input.');
   const headers = calls[0].init.headers as Record<string, string>;
   expect(headers.Authorization).toBe('Bearer test-token');
+});
+
+test('destination: the repo is a literal constant, and the token is the only env the route reads', () => {
+  // The runtime test below cannot see a MODULE-LEVEL env override (the route
+  // is imported before any test body runs), so the source pins it: the
+  // destination is written out, and nothing in the environment can re-point
+  // notes the visitor was promised are private at a public repo.
+  const src = readFileSync(join(process.cwd(), 'app/api/feedback/route.ts'), 'utf8');
+  expect(src).toMatch(/^const FEEDBACK_REPO = 'cm2489\/oravan-ops';$/m);
+  expect(src).toMatch(/^const GITHUB_ISSUES_URL = `https:\/\/api\.github\.com\/repos\/\$\{FEEDBACK_REPO\}\/issues`;$/m);
+  const envReads = [...src.matchAll(/process\.env\.([A-Za-z_]+)/g)].map((m) => m[1]);
+  expect([...new Set(envReads)]).toEqual(['GITHUB_FEEDBACK_TOKEN']);
+  expect(src).not.toMatch(/process\.env\s*\[/);
+});
+
+test('destination: every issue goes to the private ops tracker, never the public code repo', async () => {
+  // Both calls of the 422 retry path included: the retry must not drift.
+  const calls = mockGithub({ status: 422 }, { status: 201 });
+  const env = process.env as Record<string, string | undefined>;
+  // Variables that name a repo elsewhere in this codebase, pointed at the
+  // public one, for the length of one request: a per-request read of any of
+  // them would show here. (A module-level read is the source test's job.)
+  const hostile = { GITHUB_REPOSITORY: 'cm2489/oravan', FEEDBACK_REPO: 'cm2489/oravan', OPS_REPO: 'cm2489/oravan' };
+  const saved = Object.fromEntries(Object.keys(hostile).map((k) => [k, env[k]]));
+  Object.assign(env, hostile);
+  try {
+    const res = await POST(request({ category: 'partnership', message: 'We would like to embed.' }));
+    expect(res.status).toBe(200);
+  } finally {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete env[k];
+      else env[k] = v;
+    }
+  }
+  expect(calls).toHaveLength(2);
+  for (const call of calls) {
+    expect(call.url).toBe(ISSUES_URL);
+    expect(call.url).not.toBe(PUBLIC_CODE_REPO_ISSUES);
+    expect(call.url).not.toMatch(/\/repos\/cm2489\/oravan\//);
+  }
 });
 
 test('the outbound payload contains no identifiers - only volunteered content', async () => {

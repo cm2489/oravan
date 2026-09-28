@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
 
 /*
- * Beta feedback intake -> one GitHub issue in this repo. The repository is
- * PUBLIC, so every issue this creates is readable by anyone; the dialog's
- * notice says exactly that, in both languages, and asks for no contact
- * details (feedback.notice / feedback.noticePartnership — corrected in the
- * 2026-09-27 audit, SY-43, after both called it a private tracker).
+ * Beta feedback intake -> one GitHub issue in the PRIVATE ops tracker,
+ * cm2489/oravan-ops (moved 2026-09-28, on the owner's 2026-09-27 "keep going"
+ * on the recommendation to keep the code public and move feedback and the
+ * traffic digest to a private ops repo). Only the Oravan team can read it —
+ * its one collaborator is the owner — and the dialog's notice says so, in
+ * both languages, and still asks for no personal details
+ * (feedback.notice / feedback.noticePartnership). History: the 2026-09-27
+ * audit (SY-43) had corrected those notices from "private tracker" to
+ * "public GitHub issue", because until this move the issues landed in the
+ * public code repo. Now "private" is true, and tests/copy-truth.unit.spec.ts
+ * pins the wording to this destination.
+ *
+ * The destination is a constant, not an env var, on purpose: an override is
+ * exactly how a misconfiguration would put notes the visitor was promised are
+ * private back in a public repo. tests/feedback.unit.spec.ts pins the URL.
+ * GITHUB_FEEDBACK_TOKEN must be a fine-grained PAT with Issues read/write on
+ * cm2489/oravan-ops; with the old token (scoped to the public repo) every
+ * submission returns 502 until it is replaced.
+ *
  * Stateless by design, like every dynamic route here: nothing about the
  * caller is stored or forwarded. The issue contains ONLY what the visitor
  * volunteered - the message, a category, and (if they kept it) a page path.
@@ -24,7 +38,10 @@ import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
  * submission - and nothing is created - so bots learn nothing.
  */
 
-const GITHUB_ISSUES_URL = 'https://api.github.com/repos/cm2489/oravan/issues';
+// The private ops tracker. Never the public code repo (cm2489/oravan): see
+// the header for why this is not configurable.
+const FEEDBACK_REPO = 'cm2489/oravan-ops';
+const GITHUB_ISSUES_URL = `https://api.github.com/repos/${FEEDBACK_REPO}/issues`;
 
 const CATEGORIES = ['bug', 'feature', 'partnership', 'other'] as const;
 type Category = (typeof CATEGORIES)[number];
