@@ -45,6 +45,18 @@
  * report and prints it. scripts/daily-metrics.mjs posts it — to the private
  * ops tracker since 2026-09-28, because it carries the day's spend estimate
  * (lib/ops-repo.mjs).
+ *
+ * FOR THE DAILY DOCTOR (the scheduled routine whose prompt says to read this
+ * header). Since PR #330 the live "🩺 Pipeline health" standing issue and the
+ * live "📊 Daily metrics" digest are in the PRIVATE repo cm2489/oravan-ops.
+ * The public cm2489/oravan#242 and cm2489/oravan#81 no longer update; they are
+ * history. The report's traffic figures and spend figures (the day's spend
+ * estimate, the month-to-date estimate, the per-line breakdown) go in
+ * cm2489/oravan-ops or in the owner's email, never in an issue body or issue
+ * comment in the public cm2489/oravan. If your GitHub access cannot reach
+ * cm2489/oravan-ops, deliver the report by email only and say so in it; do
+ * not fall back to #242. PR #330 asks the owner to update your prompt to
+ * match; until then, this note is where the change is written down.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';

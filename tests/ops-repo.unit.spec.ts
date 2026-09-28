@@ -397,3 +397,45 @@ test.describe('daily-metrics.yml', () => {
     expect(live).not.toMatch(/cm2489\/oravan(?!-ops)/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 4 · the writer this repo cannot move: the daily pipeline doctor
+// ---------------------------------------------------------------------------
+
+/*
+ * The daily pipeline doctor is a scheduled Claude routine configured on
+ * claude.ai, not code here. As configured on 2026-09-28 its prompt rewrites
+ * the body of the public standing issue cm2489/oravan#242 with the
+ * month-to-date spend, comments its dated report there, and reads the last
+ * comment on the public digest #81. Only the owner can change that prompt
+ * (PR #330, owner step). What this repo CAN do is keep the fact written down
+ * where both a reader and the doctor will find it: the prompt tells the
+ * doctor to read the header of scripts/pipeline-health.mjs. These pins keep
+ * that note, and the module's account of it, from being edited away quietly.
+ */
+test.describe('the daily doctor (outside this repo)', () => {
+  const header = (file: string) => {
+    const src = readFileSync(join(ROOT, file), 'utf8');
+    const end = src.indexOf('*/');
+    expect(end).toBeGreaterThan(0);
+    return src.slice(0, end).replace(/\n\s*\*\s?/g, ' ').replace(/\s+/g, ' ');
+  };
+
+  test("the header the doctor is told to read names the private tracker and forbids public figures", () => {
+    const h = header('scripts/pipeline-health.mjs');
+    expect(h).toContain('FOR THE DAILY DOCTOR');
+    expect(h).toContain(OPS_REPO);
+    expect(h).toContain('cm2489/oravan#242');
+    expect(h).toContain('cm2489/oravan#81');
+    expect(h).toMatch(/never in an issue body or issue comment in the public cm2489\/oravan/);
+    expect(h).toMatch(/email only/);
+    expect(h).toMatch(/do not fall back to #242/);
+  });
+
+  test('lib/ops-repo.mjs names the doctor as the writer it cannot move, and the PAT as ops-only', () => {
+    const h = header('lib/ops-repo.mjs');
+    expect(h).toContain('THE WRITER THIS REPO CANNOT MOVE: the daily pipeline doctor');
+    expect(h).toContain('cm2489/oravan#242');
+    expect(h).toMatch(/Issues read\/write on OPS_REPO ALONE/);
+  });
+});
