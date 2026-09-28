@@ -784,7 +784,9 @@ Output STRICT JSON only, an array like [{"i":0,"slug":"hr-1234-119"},{"i":1,"slu
 //     not be neutral.
 const LEGISLATIVE_SIGNAL_RE = /\b(bill|act|legislation|resolution|congress|senate|house|vote|voted|passed|introduced|amendment|committee|markup|filibuster|cloture|veto|vetoed|lawmakers?|representatives?|senators?|megabill|package|stopgap|continuing resolution|budget blueprint|reconciliation|ndaa|shutdowns?)\b/i;
 const LEGISLATIVE_ACRONYM_RE = /\bCR\b/;
-const NOT_A_CHAMBER_RE = /\bwhite\s+house\b/gi;
+/** "White House" is not the House. Exported for scripts/coverage-route.mjs,
+ *  which reads a headline's chamber the same way this module does. */
+export const NOT_A_CHAMBER_RE = /\bwhite\s+house\b/gi;
 
 /** Cheap pre-filter: does this headline look like it MIGHT be about a
  *  specific bill, before spending an LLM call disambiguating it? */
