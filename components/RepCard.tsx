@@ -92,7 +92,7 @@ export function RepContact({ rep }: { rep: Legislator }) {
       {rep.phone && (
         <a
           href={telHref(rep.phone)}
-          className="ring-gap flex min-h-12 items-center justify-between gap-3 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+          className="ring-gap flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
         >
           <span className="inline-flex items-center gap-2">
             <Phone className="h-4 w-4 shrink-0" aria-hidden />
@@ -101,7 +101,11 @@ export function RepContact({ rep }: { rep: Legislator }) {
           {/* whitespace-nowrap: the number must never break mid-number.
               Under the longer ES label ("Oficina en Washington") at narrow
               widths it is the LABEL that wraps to a second line, never
-              "202-225-" / "8050". */}
+              "202-225-" / "8050". And when even the wrapped label and the
+              whole number cannot share one row (a 320px screen in Spanish:
+              measured 6px of sideways scroll on the member page, 8px on
+              /es/reps, 2026-09-28), `flex-wrap` drops the number to its own
+              line rather than push the page wider (WCAG 1.4.10, rule 7). */}
           <span className="text-sm whitespace-nowrap tabular-nums">{rep.phone}</span>
         </a>
       )}

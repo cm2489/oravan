@@ -182,6 +182,16 @@ for (const { prefix } of LOCALES) {
       await expectTouchTargets(page);
     });
   }
+
+  // The DC dial's label and number share one row until they cannot; at 320px
+  // in Spanish they could not, and the page scrolled sideways (2026-09-28).
+  test(`no horizontal overflow on ${prefix}/reps?zip=78501 @reflow`, async ({ page }) => {
+    await page.goto(`${prefix}/reps?zip=78501`);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow, `${prefix}/reps?zip=78501 must not scroll horizontally`).toBeLessThanOrEqual(0);
+  });
 }
 
 /*
