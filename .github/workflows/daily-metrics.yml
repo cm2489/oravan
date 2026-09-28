@@ -62,15 +62,36 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The pipeline-health report's corpus/coverage DELTAS compare
-          # data/bills.json and data/coverage.json against the commit before
-          # the one that last touched them, so the default depth-1 checkout
-          # would leave both deltas permanently "not found". 25 is generous
-          # against how often the data workflows commit (several times a day,
-          # so both files are touched well inside it) and still cheap. A
-          # shallow history the walk cannot resolve yields a NULL delta with a
-          # warning, never a wrong number.
-          fetch-depth: 25
+          # The pipeline-health report's corpus, coverage and CURSOR deltas
+          # each compare a data file against the commit before the one that
+          # last touched it, so the default depth-1 checkout would leave all
+          # three permanently "not found". A shallow history the walk cannot
+          # resolve yields a NULL delta with a warning, never a wrong number.
+          #
+          # 25 WAS NOT ENOUGH AND STOPPED BEING ENOUGH QUIETLY. It was chosen
+          # on the reasoning that "the data workflows commit several times a
+          # day, so both files are touched well inside it" — true of the
+          # commit rate, false of the gap between two touches of the SAME
+          # file. data/sync-state.json and data/coverage.json are written once
+          # a night by sync-bills.yml, and the hourly newsdesk trigger plus
+          # merged PRs now put 10–28 commits between consecutive nightlies;
+          # add the commits landing between the last nightly and this job's
+          # 13:00 slot and the second touch sits deeper than 25. Measured over
+          # the 120 commits to 2026-09-28, the depth actually needed reached
+          # 50 for sync-state.json and coverage.json and 31 for bills.json.
+          #
+          # It failed exactly that way on 2026-09-27, when the run printed
+          #   no second commit touching data/coverage.json is reachable
+          #   no second commit touching data/sync-state.json is reachable
+          # and the missing cursor baseline turned into a ⛔ on the standing
+          # issue — "whether it moved could not be checked" — about a cursor
+          # that was in fact behaving exactly as its log said it was.
+          #
+          # 200 is ~4x the worst depth measured and roughly a fortnight of
+          # history at the current commit rate, which is the margin this
+          # wants: the number that is too small gives a false alarm, and the
+          # number that is too big costs a few seconds of clone.
+          fetch-depth: 200
       - uses: actions/setup-node@v6
         with:
           node-version: 24

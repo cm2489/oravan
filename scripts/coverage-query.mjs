@@ -24,6 +24,9 @@
  *   context term and rejected — too common, it re-admitted junk.)
  * - Bills the press covers by name need the names the press actually prints
  *   (b.press_names, generated at decode time), not the official long title.
+ *   A name the generator cannot derive from the title ("CLARITY Act", "Iran
+ *   War Powers Resolution") comes from data/press-names.json, with the stored
+ *   headlines that print it, and is only ever OR-ed on (queryWithAddedNames).
  * - Unnamed bills (CRA joint resolutions especially) are covered by SUBJECT,
  *   never by citation: "SJRES 188" matched nothing in any punctuation
  *   variant while EPA "power plant" found 50 articles. b.news_query holds a
@@ -81,13 +84,28 @@ const apostropheVariants = (n) => (/['’]/.test(n)
   ? [n.replace(/['’]/g, '’'), n.replace(/['’]/g, "'")]
   : [n]);
 
+/**
+ * Can this string stand as a press-name clause? Non-empty after trimming, at
+ * most 60 characters, and not a bare bill citation. The one test queryFor
+ * applies to generated names and scripts/press-names.mjs applies to added ones.
+ * @param {unknown} n
+ */
+export function isUsablePressName(n) {
+  const s = typeof n === 'string' ? n.trim() : '';
+  return s !== '' && s.length <= 60 && !CITATION_SHAPED.test(s);
+}
+
+/* The phrases a name list contributes: usable names, both apostrophe forms,
+   each once, at most `cap` of them. */
+const nameVariants = (list, cap) => (list ?? [])
+  .filter(isUsablePressName)
+  .map((n) => n.trim())
+  .flatMap(apostropheVariants)
+  .filter((n, i, arr) => arr.indexOf(n) === i)
+  .slice(0, cap);
+
 export function queryFor(b) {
-  const names = (b.press_names ?? [])
-    .map((n) => (n ?? '').trim())
-    .filter((n) => n && n.length <= 60 && !CITATION_SHAPED.test(n))
-    .flatMap(apostropheVariants)
-    .filter((n, i, arr) => arr.indexOf(n) === i)
-    .slice(0, 4);
+  const names = nameVariants(b.press_names, 4);
   const clauses = names.map((n) => `"${n}"`);
 
   if (clauses.length === 0 && b.news_query) {
@@ -107,6 +125,37 @@ export function queryFor(b) {
 
   clauses.push(citationClause(b));
   return clauses.join(' | ');
+}
+
+/**
+ * The nightly query for a bill with the owner's ADDED press names
+ * (data/press-names.json, read by scripts/press-names.mjs) OR-ed on.
+ *
+ * ADDITIVE BY CONSTRUCTION (owner, 2026-09-27: coverage must not get thinner).
+ * The query is queryFor(b), untouched, followed by one `| "name"` clause per
+ * added name. It never replaces an arm: a bill covered by its subject query
+ * (H.Con.Res. 89's `President "Iran hostilities"`) keeps it, although queryFor
+ * itself drops the subject arm whenever a bill has generated press names. An
+ * OR can only widen what matches, never narrow it.
+ *
+ * What it cannot promise, stated plainly: TheNewsAPI returns at most 25
+ * candidates per request, in relevance or date order, so on a bill whose
+ * window is already full a newly matched article can take a slot an old match
+ * held. What the gate KEEPS still merges into what is stored (mergeArticles),
+ * so a stored article only leaves the file the way it always could.
+ *
+ * An added name the bill's own press_names already carry (same text, any case)
+ * is skipped, and apostrophe forms are emitted as queryFor emits them.
+ *
+ * @param {any} b the bill
+ * @param {string[] | null | undefined} added the names data/press-names.json adds for it
+ * @returns {string}
+ */
+export function queryWithAddedNames(b, added) {
+  const base = queryFor(b);
+  const own = new Set(nameVariants(b.press_names, 4).map((n) => n.toLowerCase()));
+  const extra = nameVariants(added, Infinity).filter((n) => !own.has(n.toLowerCase()));
+  return extra.length ? `${base} | ${extra.map((n) => `"${n}"`).join(' | ')}` : base;
 }
 
 // ---- TheNewsAPI rate-limit header ---------------------------------------
@@ -435,10 +484,33 @@ const articleDay = (a) => {
 };
 
 /**
+ * Is this a ROUTED row — an article found while searching one bill and filed
+ * under the measure the roll-call record says was voted on
+ * (scripts/coverage-route.mjs, `routed: {from, rollCall}`)?
+ * @param {any} a
+ */
+export function isRouted(a) {
+  return Boolean(a && typeof a === 'object' && a.routed && typeof a.routed === 'object' && typeof a.routed.from === 'string');
+}
+
+/**
  * Merge tonight's kept articles into what is stored — by URL, then by
  * syndicated title — newest first, capped. Tonight's copy of an article wins
  * over the stored one. Undated articles sort after every dated one (never read
  * "no date" as new). Stable, pure, never mutates its inputs.
+ *
+ * TWO CAPS, NOT ONE (2026-09-27). A bill's OWN rows and its ROUTED rows
+ * (isRouted: vote reports filed here from a sibling's search) are each capped
+ * at `cap`, newest first, and the result is one newest-first list. The two
+ * other ways to do it were considered and rejected:
+ *   - One shared cap lets a routed row push the bill's own article out — the
+ *     displacement this rule exists to prevent.
+ *   - Routed rows only filling FREE slots keeps own rows safe but makes a move
+ *     a delayed delete: the first night the destination's own search fills
+ *     its slots, every routed row goes. H.Con.Res. 89 is a Big Question
+ *     vehicle searched every night, so that is the likely case, not an edge.
+ * With two caps neither kind can remove the other, so a bill can show up to
+ * 2 x cap rows. A pool with no routed rows merges exactly as before.
  *
  * @template {{url?: string, title?: string, publishedAt?: string|null}} A
  * @param {A[]} fresh tonight's kept articles
@@ -459,11 +531,24 @@ export function mergeArticles(fresh, stored, cap) {
     if (t) seenTitle.add(t);
     pool.push(a);
   }
-  return pool
+  const n = Math.max(0, cap);
+  let own = 0;
+  let routed = 0;
+  const out = [];
+  for (const { a } of pool
     .map((a, i) => ({ a, i }))
-    .sort((x, y) => articleDay(y.a).localeCompare(articleDay(x.a)) || x.i - y.i)
-    .slice(0, Math.max(0, cap))
-    .map((x) => x.a);
+    .sort((x, y) => articleDay(y.a).localeCompare(articleDay(x.a)) || x.i - y.i)) {
+    if (isRouted(a)) {
+      if (routed < n) {
+        routed++;
+        out.push(a);
+      }
+    } else if (own < n) {
+      own++;
+      out.push(a);
+    }
+  }
+  return out;
 }
 
 /**

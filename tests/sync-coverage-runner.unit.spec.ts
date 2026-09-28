@@ -134,11 +134,11 @@ const baseScenario = {
       sort: 'published_at',
       articles: [
         art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)),
-        art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2)),
+        art('Fringe take KEEP', 'fringe-blog.example', daysAgo(2)),
         art('Unrelated war story', 'nbcnews.com', daysAgo(3)),
       ],
     },
-    { match: 'Iran Powers Resolution', sort: null, articles: [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'thegatewaypundit.com', daysAgo(2))] },
+    { match: 'Iran Powers Resolution', sort: null, articles: [art('Senate vote KEEP', 'cbsnews.com', daysAgo(1)), art('Fringe take KEEP', 'fringe-blog.example', daysAgo(2))] },
     { match: 'Iran Powers Resolution', sort: 'relevance_score', articles: [art('Spring hearing KEEP', 'reuters.com', daysAgo(150))] },
     { match: 'Stopgap Funding Act', sort: 'published_at', articles: [art('Shutdown deadline KEEP', 'apnews.com', daysAgo(2))] },
     { match: 'Protect College Sports Act', sort: 'published_at', articles: [art('Cloture KEEP', 'nytimes.com', daysAgo(1)), art('Floor fight KEEP', 'foxnews.com', daysAgo(2))] },
@@ -155,12 +155,28 @@ const baseScenario = {
   ],
 };
 
-function runSync(scenario: Json, env: Record<string, string> = {}, { stored = STORED as Json } = {}) {
+function runSync(
+  scenario: Json,
+  env: Record<string, string> = {},
+  {
+    stored = STORED as Json,
+    bills = BILLS as unknown[],
+    votes = null as unknown,
+    files = {} as Record<string, unknown>,
+  }: { stored?: Json; bills?: unknown[]; votes?: unknown; files?: Record<string, unknown> } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), 'sync-coverage-runner-'));
   mkdirSync(join(dir, 'data'));
   const put = (name: string, value: unknown) => writeFileSync(join(dir, 'data', name), JSON.stringify(value));
-  put('bills.json', BILLS);
+  put('bills.json', bills);
   put('coverage.json', stored);
+  // The roll-call record (data/votes.json). Absent unless a test passes one,
+  // which is the night every earlier test in this file describes.
+  if (votes) put('votes.json', votes);
+  // Extra data files for one test (e.g. press-names.json). A string is written as-is.
+  for (const [name, value] of Object.entries(files)) {
+    writeFileSync(join(dir, 'data', name), typeof value === 'string' ? value : JSON.stringify(value));
+  }
   copyFileSync(join(REPO, 'data/media-bias.json'), join(dir, 'data/media-bias.json'));
   put('moments.json', {
     'iran-war-powers': { status: 'live', vehicles: [{ slug: 'hconres-89-119' }, { slug: 'hr-6500-119' }] },
@@ -439,7 +455,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(all.length).toBeGreaterThan(5);
     for (const a of all) expect(typeof a.rated, String(a.url)).toBe('boolean');
     const bySource = (s: string) => all.find((a) => a.source === s)!;
-    expect(bySource('thegatewaypundit.com').rated).toBe(false); // stored, flagged — the page decides
+    expect(bySource('fringe-blog.example').rated).toBe(false); // stored, flagged — the page decides
     expect(bySource('cbsnews.com').rated).toBe(true);
     expect(bySource('politico.com').rated).toBe(true); // carried-forward rows are stamped too
   });
@@ -561,5 +577,150 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
       const { output } = runSync(scenario);
       expect(output).not.toContain(TOKEN);
     }
+  });
+
+  /* Added press names (scripts/press-names.mjs, data/press-names.json): OR-ed
+     onto the bill's query, never replacing an arm; a bad file adds nothing. */
+  const pressNamesFile = (bills: Json) => ({ 'press-names.json': { bills } });
+  const wireName = { add: ['Added Wire Name'], evidence: [{ title: 'Added Wire Name clears the House', url: 'https://www.apnews.com/wire' }] };
+  const wireScenario = {
+    ...baseScenario,
+    news: [
+      { match: '"Added Wire Name"', sort: 'relevance_score', articles: [art('Wire name story KEEP', 'apnews.com', daysAgo(5))] },
+      ...baseScenario.news,
+    ],
+  };
+
+  test('an ADDED press name is OR-ed onto the query, and what only it finds is stored', () => {
+    const { run, output, requests, coverage } = runSync(wireScenario, {}, { files: pressNamesFile({ 'hr-104-119': wireName }) });
+    expect(run.status, output).toBe(0);
+    const reqs = newsFor(requests, 'Added Wire Name');
+    expect(reqs.map((r) => r.search)).toEqual(['"Ordinary 104 Act" | "H.R. 104" | "Added Wire Name"']);
+    expect(coverage['hr-104-119'].map((a: Json) => a.title)).toEqual(['Wire name story KEEP']);
+    expect(output).toContain('PRESS NAMES: 1 added name(s) on 1 bill(s) — hr-104-119: "Added Wire Name"');
+    expect(output).not.toContain('::warning::press-names');
+    // Every other bill's query is exactly what it was.
+    expect(newsFor(requests, 'Ordinary 105 Act').map((r) => r.search)).toEqual(['"Ordinary 105 Act" | "H.R. 105"']);
+  });
+
+  test('no file: every query is unchanged, and the log says so', () => {
+    const { output, requests } = runSync(baseScenario);
+    expect(output).toContain('PRESS NAMES: no added names (data/press-names.json absent or empty)');
+    expect(newsFor(requests, 'Ordinary 104 Act').map((r) => r.search)).toEqual(['"Ordinary 104 Act" | "H.R. 104"']);
+  });
+
+  test('a MALFORMED file adds nothing, says why, and the night runs as before', () => {
+    const unproven = { add: ['Added Wire Name'], evidence: [{ title: 'Some other headline', url: 'https://www.apnews.com/other' }] };
+    for (const files of [pressNamesFile({ 'hr-104-119': unproven }), { 'press-names.json': '{"bills": {' }]) {
+      const { run, output, requests } = runSync(wireScenario, {}, { files });
+      expect(run.status, output).toBe(0);
+      expect(output).toMatch(/::warning::press-names: .+ — no added names are used tonight/);
+      expect(newsFor(requests, 'Added Wire Name')).toEqual([]);
+      expect(newsFor(requests, 'Ordinary 104 Act').map((r) => r.search)).toEqual(['"Ordinary 104 Act" | "H.R. 104"']);
+    }
+  });
+
+  test('a slug the corpus lacks is named and skipped; the rest still apply', () => {
+    const { run, output, requests } = runSync(wireScenario, {}, { files: pressNamesFile({ 'hr-104-119': wireName, 'hr-999-119': wireName }) });
+    expect(run.status, output).toBe(0);
+    expect(output).toContain('::warning::press-names: data/press-names.json names bill(s) not in data/bills.json, skipped: hr-999-119');
+    expect(newsFor(requests, 'Added Wire Name')).toHaveLength(1);
+  });
+});
+
+/*
+ * VOTE REPORTS GO TO THE MEASURE THAT WAS VOTED ON (scripts/coverage-route.mjs,
+ * 2026-09-27). The same end-to-end run, with a roll-call record in
+ * data/votes.json and a near-identical sibling in the corpus: the Senate voted
+ * on H.Con.Res. 89 three days ago, and S.J.Res. 185 (the same resolution in
+ * the other wording, last acted on in June) is where the vote's coverage was
+ * filed. Real titles, so #303's family test sees what it sees in the corpus.
+ */
+test.describe('sync-coverage.mjs routes vote reports to the measure the record says was voted on (mocked network)', () => {
+  const HCONRES = 'Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.';
+  const SJRES = 'A joint resolution to direct the removal of United States Armed Forces from hostilities within or against the Islamic Republic of Iran that have not been authorized by Congress.';
+  const ROUTE_BILLS = [
+    ...BILLS.map((b) => (b.bill_type === 'hconres' && b.bill_number === 89 ? { ...b, title: HCONRES } : b)),
+    bill('sjres', 185, { title: SJRES, status: 'floor_vote', last_action_date: daysAgo(90), press_names: ['Iran War Powers Joint Resolution'] }),
+  ];
+  const VOTES = {
+    _meta: { schema: 1 },
+    rollCalls: [{ id: 's-119-2-244', chamber: 'senate', congress: 119, session: 2, roll: 244, date: daysAgo(3), question: 'On the Concurrent Resolution H.Con.Res. 89', result: 'Concurrent Resolution Rejected', bill: 'hconres-89-119' }],
+  };
+  const REPORT_A = stored(art('Senate shoots down resolution curbing Iran war powers', 'jpost.com', daysAgo(2)));
+  const REPORT_B = stored(art('Fetterman joins GOP to block Iran war powers resolution', 'truthout.org', daysAgo(2)));
+  const MISFILED = { ...STORED, 'sjres-185-119': [REPORT_A, REPORT_B] };
+  const titles = (rows: Json[] | undefined) => (rows ?? []).map((a) => a.title);
+
+  test('stored reports MOVE to the voted measure, marked, and push none of its own articles out', () => {
+    const { run, output, coverage } = runSync(baseScenario, {}, { stored: MISFILED, bills: ROUTE_BILLS, votes: VOTES });
+    expect(run.status, output).toBe(0);
+    expect(coverage['sjres-185-119']).toBeUndefined();
+    const iran = coverage['hconres-89-119'] as Json[];
+    // Four of its own (tonight's three and the one stored) plus the two moved
+    // in: six rows, over PER_BILL, and the OLDEST own row is still there — a
+    // single cap would have pushed it out.
+    expect(titles(iran)).toEqual([
+      'Senate vote KEEP',
+      'Fringe take KEEP',
+      REPORT_A.title,
+      REPORT_B.title,
+      'Old Iran story',
+      'Spring hearing KEEP',
+    ]);
+    const moved = iran.filter((a) => a.routed);
+    expect(moved.map((a) => a.routed)).toEqual([
+      { from: 'sjres-185-119', rollCall: 's-119-2-244' },
+      { from: 'sjres-185-119', rollCall: 's-119-2-244' },
+    ]);
+    // Every row still records `rated`, moved rows included.
+    expect(iran.every((a) => typeof a.rated === 'boolean')).toBe(true);
+    expect(output).toContain(`re-filed: sjres-185-119 -> hconres-89-119 (s-119-2-244): "${REPORT_A.title}"`);
+    expect(output).toContain(
+      'ROUTE: 2 stored article(s) re-filed to the measure the roll-call record says was voted on (0 already there), 0 held (0 for lack of room, 0 so a shown article stays shown); 0 kept tonight',
+    );
+  });
+
+  test('a report KEPT TONIGHT for the sibling is routed to the voted measure at the write', () => {
+    const tonight = art('Senate narrowly defeats Iran war powers resolution KEEP', 'cnn.com', daysAgo(1));
+    const scenario = { ...baseScenario, news: [...baseScenario.news, { match: 'Iran War Powers Joint Resolution', sort: 'relevance_score', articles: [tonight] }] };
+    const { run, output, coverage } = runSync(scenario, {}, { bills: ROUTE_BILLS, votes: VOTES });
+    expect(run.status, output).toBe(0);
+    expect(coverage['sjres-185-119']).toBeUndefined();
+    const row = (coverage['hconres-89-119'] as Json[]).find((a) => a.title === tonight.title)!;
+    expect(row.routed).toEqual({ from: 'sjres-185-119', rollCall: 's-119-2-244' });
+    expect(output).toContain('sjres-185-119: 1 candidates -> 1 kept (1 of them reporting a roll call on another measure, routed there) -> 1 stored');
+    expect(output).toContain(`routed to the voted measure: sjres-185-119 -> hconres-89-119 (s-119-2-244): "${tonight.title}"`);
+    expect(output).toMatch(/ROUTE: 0 stored article\(s\) re-filed .*; 1 kept tonight reported a roll call on another measure; at the final write 1 moved there, 0 more held$/m);
+  });
+
+  test("the voted measure's own report of its own vote stays its own", () => {
+    const { coverage } = runSync(baseScenario, {}, { bills: ROUTE_BILLS, votes: VOTES });
+    for (const a of coverage['hconres-89-119'] as Json[]) expect(a.routed).toBeUndefined();
+  });
+
+  test('the night reads the same to pipeline-health: the DONE line parses and no alarm is added', () => {
+    const plain = runSync(baseScenario);
+    const routed = runSync(baseScenario, {}, { stored: MISFILED, bills: ROUTE_BILLS, votes: VOTES });
+    const done = parseCoverageDone(routed.output)!;
+    expect(done).not.toBeNull();
+    expect(done.droppedOnVerdict).toBe(parseCoverageDone(plain.output)!.droppedOnVerdict); // a move is not a drop
+    expect(alarms({ ...NIGHTLY_OK, coverageRun: done }).map((a) => a.code)).toEqual(
+      alarms({ ...NIGHTLY_OK, coverageRun: parseCoverageDone(plain.output) }).map((a) => a.code),
+    );
+  });
+
+  test('an OUTAGE night leaves the file byte-for-byte, re-file and all — the next night re-files it', () => {
+    const { run, output, coverageRaw } = runSync({ ...baseScenario, brokenQueries: [''] }, {}, { stored: MISFILED, bills: ROUTE_BILLS, votes: VOTES });
+    expect(run.status, output).toBe(0);
+    expect(coverageRaw).toBe(JSON.stringify(MISFILED));
+    expect(parseCoverageOutage(output)).not.toBeNull();
+  });
+
+  test('with no roll-call record the night runs exactly as before, and says so', () => {
+    const plain = runSync(baseScenario);
+    const withBills = runSync(baseScenario, {}, { stored: MISFILED, bills: ROUTE_BILLS });
+    expect(plain.output).toContain('ROUTE: no roll-call record (data/votes.json missing or empty) — nothing re-filed or routed');
+    expect(withBills.coverage['sjres-185-119'].map((a: Json) => a.title)).toEqual([REPORT_A.title, REPORT_B.title]);
   });
 });

@@ -1,0 +1,156 @@
+{
+  "_note": "Owner-approved outlets beyond the AllSides-rated set, for a two-week trial. Each entry admits its outlet only from approved_on through trial_ends, ET days (lib/press-outlets.mjs). An outlet on this list carries no lean, never counts toward 'across the spectrum', and a Big Question press update still needs at least one AllSides-rated outlet. To end an outlet early, set status to \"ended\" and ended_on to its last day, and keep the entry: the press updates written while it ran are checked against the days it was on this list. To renew, add a new entry that starts after the old one's last day.",
+  "_criterion": "One eligibility test, applied to every candidate without regard to lean: (1) AllSides shows no current rating for the outlet in its latest archived capture (an outlet AllSides rates belongs in data/media-bias.json with its lean instead), and (2) the outlet published at least one dated item on a live Big Question's subject in the 90 days before 2026-09-26, read from the outlet's own page.",
+  "outlets": [
+    {
+      "domain": "rollcall.com",
+      "name": "Roll Call",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Capitol Hill newsroom covering floor procedure and appropriations (FiscalNote). AllSides showed Center in May 2025, Not Rated in December 2025, and no page in February 2026. Senate Daily and House Periodical press galleries.",
+      "topics": ["congress-process", "government-funding", "college-sports", "defense"]
+    },
+    {
+      "domain": "federalnewsnetwork.com",
+      "name": "Federal News Network",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Federal workforce and agency-budget newsroom (Hubbard Radio Washington DC). No AllSides page found.",
+      "topics": ["government-funding"]
+    },
+    {
+      "domain": "defenseone.com",
+      "name": "Defense One",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Defense policy and Pentagon budget newsroom (GovExec). Its March 2026 AllSides capture shows a Not Rated badge beside text calling it Center, so its status needs a browser check. House Periodical press gallery.",
+      "topics": ["defense", "government-funding", "iran"]
+    },
+    {
+      "domain": "breakingdefense.com",
+      "name": "Breaking Defense",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Defense industry, budget and Pentagon newsroom (Breaking Media). No AllSides page found. Senate Daily press gallery.",
+      "topics": ["defense", "iran"]
+    },
+    {
+      "domain": "lawfaremedia.org",
+      "name": "Lawfare",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "National-security law and war-powers analysis. No AllSides page found. Owner not verified.",
+      "topics": ["war-powers", "national-security-law"]
+    },
+    {
+      "domain": "warontherocks.com",
+      "name": "War on the Rocks",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Foreign-policy and national-security analysis (Metamorphic Media LLC). No AllSides page found.",
+      "topics": ["defense", "iran", "syria"]
+    },
+    {
+      "domain": "al-monitor.com",
+      "name": "Al-Monitor",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Middle East news, including U.S. policy on Iran and Syria (AL-MONITOR, LLC; current owner not verified). No AllSides page found.",
+      "topics": ["iran", "syria", "middle-east"]
+    },
+    {
+      "domain": "sportico.com",
+      "name": "Sportico",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Sports business and law, including college athletics and NIL (Penske Media). No AllSides page found.",
+      "topics": ["college-sports"]
+    },
+    {
+      "domain": "frontofficesports.com",
+      "name": "Front Office Sports",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Sports business newsroom covering the college-sports bill. No AllSides page found. Owner not verified.",
+      "topics": ["college-sports"]
+    },
+    {
+      "domain": "coindesk.com",
+      "name": "CoinDesk",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Crypto markets and policy, including H.R. 3633. Owned by Bullish, a digital-asset platform, as its about page discloses. AllSides showed Not Rated in February 2026.",
+      "topics": ["crypto-regulation"]
+    },
+    {
+      "domain": "americanbanker.com",
+      "name": "American Banker",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Banking and financial-regulation newsroom (Arizent). No AllSides page found. Senate Daily press gallery.",
+      "topics": ["financial-regulation", "crypto-regulation"]
+    },
+    {
+      "domain": "bankingdive.com",
+      "name": "Banking Dive",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Banking trade news (Informa TechTarget, whose name is on the House Periodical press gallery list). No AllSides page found.",
+      "topics": ["financial-regulation", "crypto-regulation"]
+    },
+    {
+      "domain": "coinworld.com",
+      "name": "Coin World",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "U.S. Mint and coinage trade press (Amos Media, listed as Amos Press on the House Periodical press gallery list). No AllSides page found.",
+      "topics": ["currency", "mint"]
+    },
+    {
+      "domain": "pymnts.com",
+      "name": "PYMNTS",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Payments and fintech trade news, including House votes on the penny and on crypto rules. No AllSides page found. Owner not verified.",
+      "topics": ["currency", "payments", "crypto-regulation"]
+    },
+    {
+      "domain": "theshelbyreport.com",
+      "name": "The Shelby Report",
+      "approved_on": "2026-09-28",
+      "trial_ends": "2026-10-11",
+      "status": "active",
+      "approved_by": "Colby",
+      "reason": "Grocery-industry trade news, including penny rounding for retailers (Shelby Publishing Co.). No AllSides page found. Several of its penny headlines relay grocer trade-group positions.",
+      "topics": ["currency", "retail"]
+    }
+  ]
+}

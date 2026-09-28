@@ -1,0 +1,87 @@
+{
+  "_note": "Names the press prints for a bill that its generated press_names lack. Each name is OR-ed onto that bill's nightly coverage search (scripts/press-names.mjs, scripts/coverage-query.mjs queryWithAddedNames): nothing generated is removed, and nothing in this file is shown on a page. Every name must be printed in at least one cited stored headline, or the whole file is rejected for the night. Evidence rule, the same for every outlet, rated or not: every headline stored in data/coverage.json that prints the name and was published on or after the recorded vote the note names. Hand-maintained; changes go through a pull request the owner merges.",
+  "bills": {
+    "hr-3633-119": {
+      "add": ["CLARITY Act"],
+      "note": "The Senate vote on this bill (2026-09-15, Record Vote 234: cloture on the motion to proceed not invoked, 49-50) is printed as the CLARITY Act. Of the headlines stored in data/coverage.json from 2026-09-05 to 2026-09-27, 13 print CLARITY Act and none prints the short title, Digital Asset Market Clarity Act.",
+      "evidence": [
+        {
+          "title": "How months of work on the crypto Clarity Act all fell apart",
+          "url": "https://www.coindesk.com/news-analysis/2026/09/27/how-months-of-work-on-the-clarity-act-all-fell-apart",
+          "source": "coindesk.com",
+          "published": "2026-09-27",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "Blockchain Association CEO Exits as CLARITY Act Stalls",
+          "url": "https://financefeeds.com/blockchain-association-resets-leadership-as-clarity-act-stalls-in-senate/",
+          "source": "financefeeds.com",
+          "published": "2026-09-26",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "Blockchain Association sees leadership shift shortly after crypto Clarity Act fizzles",
+          "url": "https://www.coindesk.com/policy/2026/09/25/blockchain-association-sees-leadership-shift-shortly-after-crypto-clarity-act-fizzles",
+          "source": "coindesk.com",
+          "published": "2026-09-25",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "CLARITY Act Fails 49-50: SEC, CFTC Write Rules Anyway",
+          "url": "https://financefeeds.com/the-clarity-act-is-dead-the-sec-and-cftc-are-writing-the-rules-anyway/",
+          "source": "financefeeds.com",
+          "published": "2026-09-24",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "White House adviser defends President Trump's crypto ties in wake of Clarity Act defeat",
+          "url": "https://www.coindesk.com/policy/2026/09/23/white-house-adviser-defends-president-trump-s-crypto-ties-in-wake-of-clarity-act-defeat",
+          "source": "coindesk.com",
+          "published": "2026-09-23",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "Crypto market structure can't wait for shot at post-election Clarity Act surge: White House",
+          "url": "https://www.coindesk.com/policy/2026/09/22/crypto-market-structure-can-t-wait-for-shot-at-post-election-clarity-act-surge-white-house",
+          "source": "coindesk.com",
+          "published": "2026-09-22",
+          "stored_under": "hr-3633-119"
+        },
+        {
+          "title": "Crypto Tax Bill Clears House Committee After Clarity Act Setback",
+          "url": "https://decrypt.co/378449/crypto-tax-bill-clears-house-committee",
+          "source": "decrypt.co",
+          "published": "2026-09-16",
+          "stored_under": "hr-10357-119"
+        }
+      ]
+    },
+    "hconres-89-119": {
+      "add": ["Iran War Powers Resolution"],
+      "note": "The Senate vote on this resolution (2026-09-24, Record Vote 244: failed of passage, 49-50) is printed as the Iran War Powers Resolution; those headlines were stored under other Iran resolutions. The same name is printed for other Iran war-powers measures, so it is added only where the record ties it to a vote.",
+      "evidence": [
+        {
+          "title": "Fetterman Joins GOP to Block Iran War Powers Resolution — Again",
+          "url": "https://truthout.org/articles/fetterman-joins-gop-to-block-iran-war-powers-resolution-again/",
+          "source": "truthout.org",
+          "published": "2026-09-25",
+          "stored_under": "sjres-185-119"
+        },
+        {
+          "title": "Senate Narrowly Defeats Iran War Powers Resolution",
+          "url": "https://www.zerohedge.com/political/senate-narrowly-defeats-iran-war-powers-resolution",
+          "source": "zerohedge.com",
+          "published": "2026-09-25",
+          "stored_under": "hconres-86-119"
+        },
+        {
+          "title": "Senate again fails to adopt Iran War Powers Resolution despite growing criticism",
+          "url": "https://abcnews.com/Politics/senate-fails-adopt-iran-war-powers-resolution-despite/story?id=136722629",
+          "source": "abcnews.go.com",
+          "published": "2026-09-24",
+          "stored_under": "sjres-185-119"
+        }
+      ]
+    }
+  }
+}

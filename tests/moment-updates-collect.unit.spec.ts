@@ -42,6 +42,8 @@ import {
   MAX_UPDATES_PER_MOMENT,
   RECORD_EVENT_CLASSES,
   RENDER_DAY_CAP,
+  SCHEMA_VERSION,
+  checkMomentUpdates,
   computeUpdateId,
   dedupeUpdates,
   lintUpdateText,
@@ -834,16 +836,21 @@ test.describe('press clusters', () => {
   });
 
   test('unrated outlets on a mixed day are neither counted, named nor linked', () => {
+    // naturalnews.com and sana.sy: no AllSides rating page (checked
+    // 2026-09-28). This used thegatewaypundit.com until AllSides' own rating
+    // of it (Right) was found missing from data/media-bias.json; an outlet
+    // AllSides rates is not an unrated example.
+    for (const d of ['naturalnews.com', 'sana.sy']) expect(LEANS[d], d).toBeUndefined();
     const c = build('2026-07-24', [
       { source: 'foxnews.com', url: 'https://www.foxnews.com/a', publishedAt: '2026-07-24' },
-      { source: 'thegatewaypundit.com', url: 'https://www.thegatewaypundit.com/b', publishedAt: '2026-07-24' },
+      { source: 'naturalnews.com', url: 'https://www.naturalnews.com/b', publishedAt: '2026-07-24' },
       { source: 'cnn.com', url: 'https://www.cnn.com/c', publishedAt: '2026-07-24' },
       { source: 'sana.sy', url: 'https://sana.sy/d', publishedAt: '2026-07-24' },
     ])!;
     expect(c.source.outlets).toEqual(['cnn.com', 'foxnews.com']);
     expect(c.source.outlet_names).toEqual(['CNN', 'Fox News']);
     expect(c.source.refs).toEqual(['https://www.cnn.com/c', 'https://www.foxnews.com/a']);
-    expect(JSON.stringify(c)).not.toMatch(/gatewaypundit|sana\.sy/);
+    expect(JSON.stringify(c)).not.toMatch(/naturalnews|sana\.sy/);
   });
 
   test('one rated outlet plus unrated ones is ONE admissible outlet — refused', () => {
@@ -875,17 +882,18 @@ test.describe('press clusters', () => {
     ).toBeNull();
   });
 
+  // A dated allowlist (lib/press-outlets.mjs). The fixtures below record on
+  // 2026-07-25 (06:20Z = 02:20 in Washington), inside this window.
+  const TRIAL = {
+    outlets: [
+      { domain: 'rollcall.com', name: 'Roll Call', approved_on: '2026-07-20', trial_ends: '2026-08-02', status: 'active' },
+      { domain: 'enr.com', name: 'ENR', approved_on: '2026-07-20', trial_ends: '2026-08-02', status: 'active' },
+      { domain: 'pymnts.com', name: 'PYMNTS', approved_on: '2026-07-20', trial_ends: '2026-08-02', status: 'active' },
+    ],
+  };
+
   test('an owner allowlist (none ships) would admit an unrated outlet WITHOUT a lean', () => {
-    const policy = pressOutletPolicy({
-      ratings: LEANS,
-      allowlist: {
-        outlets: {
-          'rollcall.com': { name: 'Roll Call', approved_on: '2026-10-01' },
-          'enr.com': { name: 'ENR', approved_on: '2026-10-01' },
-          'pymnts.com': { name: 'PYMNTS', approved_on: '2026-10-01' },
-        },
-      },
-    });
+    const policy = pressOutletPolicy({ ratings: LEANS, allowlist: TRIAL });
     const withPolicy = (articles: Article[]) =>
       pressClusterToCandidate({
         momentId: 'iran-war-powers',
@@ -933,6 +941,67 @@ test.describe('press clusters', () => {
       { source: 'reuters.com', url: 'https://www.reuters.com/b', publishedAt: '2026-07-24' },
     ])!;
     expect(named.source.outlet_names).toEqual(['ENR', 'Reuters']);
+  });
+
+  test('an allowlisted outlet counts only on the days its trial is in force — judged by the day the record is written', () => {
+    const policy = pressOutletPolicy({ ratings: LEANS, allowlist: TRIAL });
+    const day = [
+      { source: 'rollcall.com', url: 'https://rollcall.com/a', publishedAt: '2026-07-24' },
+      { source: 'npr.org', url: 'https://www.npr.org/b', publishedAt: '2026-07-24' },
+    ];
+    const at = (recordedAt: string) =>
+      pressClusterToCandidate({ momentId: 'iran-war-powers', vehicle: 'sjres-185-119', day: '2026-07-24', articles: day, policy, recordedAt });
+    // Written on the trial's last day, late in Washington (03:30Z on the 3rd
+    // is 23:30 on the 2nd in ET): Roll Call still counts.
+    expect(at('2026-08-03T03:30:00Z')?.source.outlets).toEqual(['npr.org', 'rollcall.com']);
+    // Written the next ET day, about the SAME article day: the trial is over,
+    // Roll Call is not admitted, and one outlet is no cluster.
+    expect(at('2026-08-03T12:00:00Z')).toBeNull();
+    // Written the day before the trial began: not admitted either.
+    expect(at('2026-07-19T15:00:00Z')).toBeNull();
+    // An ended entry stops at ended_on, whatever its trial_ends says.
+    const ended = pressOutletPolicy({
+      ratings: LEANS,
+      allowlist: {
+        outlets: [{ domain: 'rollcall.com', name: 'Roll Call', approved_on: '2026-07-20', trial_ends: '2026-08-02', status: 'ended', ended_on: '2026-07-24' }],
+      },
+    });
+    const endedAt = (recordedAt: string) =>
+      pressClusterToCandidate({ momentId: 'iran-war-powers', vehicle: 'sjres-185-119', day: '2026-07-24', articles: day, policy: ended, recordedAt });
+    expect(endedAt('2026-07-24T20:00:00Z')).not.toBeNull();
+    expect(endedAt('2026-07-25T20:00:00Z')).toBeNull();
+  });
+
+  test('the collector and the stored-file gate agree: what the collector admitted on its day, the gate passes long after the trial ends', () => {
+    // The P1 promise end to end: build a cluster with the floor the collector
+    // uses, then judge the STORED cluster fifty days later, with the trial
+    // over, exactly as scripts/check-moment-updates.mjs does.
+    const policy = pressOutletPolicy({ ratings: LEANS, allowlist: TRIAL, today: '2026-07-25' });
+    const c = pressClusterToCandidate({
+      momentId: 'iran-war-powers',
+      vehicle: 'sjres-185-119',
+      day: '2026-07-24',
+      articles: [
+        { source: 'enr.com', url: 'https://www.enr.com/a' },
+        { source: 'reuters.com', url: 'https://www.reuters.com/b' },
+      ],
+      policy,
+      recordedAt: '2026-07-25T06:20:00Z',
+    })!;
+    expect(c.source.outlets).toEqual(['enr.com', 'reuters.com']);
+    const stored = {
+      ...c,
+      text: { en: 'ENR and Reuters published coverage of the resolution.', es: 'ENR y Reuters publicaron cobertura de la resolución.' },
+    };
+    const later = pressOutletPolicy({ ratings: LEANS, allowlist: TRIAL, today: '2026-09-13' });
+    expect(later.admits('enr.com'), 'the trial is over').toBe(false);
+    const { violations } = checkMomentUpdates(
+      { _meta: { schema: SCHEMA_VERSION, generated_at: '2026-07-25T06:20:00Z' }, 'iran-war-powers': { updates: [stored], summary_revisions: [] } },
+      { 'iran-war-powers': { status: 'live', vehicles: [{ slug: 'sjres-185-119' }] } },
+      new Set(['sjres-185-119']),
+      { now: Date.parse('2026-09-13T18:00:00Z'), pressOutletAdmits: later.admits, pressOutletRated: later.isRated },
+    );
+    expect(violations.filter((v) => v.includes('.source.outlets'))).toEqual([]);
   });
 
   test('pressClusterDaysHeld: one cluster per vehicle-day, the first one stands', () => {
@@ -1037,7 +1106,9 @@ test.describe('press clusters', () => {
   test('the collector loads the floor through the shared loader and hands it to every cluster', () => {
     const src = readText('scripts/moment-updates.mjs');
     const fn = src.slice(src.indexOf('function collectPressClusters()'), src.indexOf('* 5 · decode'));
-    expect(fn).toMatch(/loadPressOutletPolicy\(\{ readJSON, exists: existsSync \}\)/);
+    // The run's own clock is the policy's `today`, so its "N allowlisted"
+    // line and every cluster's recorded day are the same day.
+    expect(fn).toMatch(/loadPressOutletPolicy\(\{ readJSON, exists: existsSync, today: todayET \}\)/);
     expect(fn).toMatch(/pressClusterToCandidate\(\{[\s\S]*?policy,[\s\S]*?\}\)/);
     expect(fn).not.toMatch(/leanByDomain/);
     expect(fn).toMatch(/pressClusterDaysHeld\(store\?\.\[momentId\]\)/);

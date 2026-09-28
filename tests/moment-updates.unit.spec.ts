@@ -1334,25 +1334,40 @@ test.describe('checkMomentUpdates (fixtures)', () => {
           lean_set: [],
         },
       });
-    const unrated = cluster(['thegatewaypundit.com', 'naturalnews.com'], ['Thegatewaypundit', 'Naturalnews']);
+    // Two outlets with no AllSides rating page (checked 2026-09-28). The pair
+    // was thegatewaypundit.com + naturalnews.com until AllSides' own rating of
+    // The Gateway Pundit (Right) was found missing from data/media-bias.json.
+    expect(policy.admits('naturalnews.com')).toBe(false);
+    expect(policy.admits('sana.sy')).toBe(false);
+    const unrated = cluster(['naturalnews.com', 'sana.sy'], ['Naturalnews', 'Sana']);
     const refused = runGate(wrap([unrated]), { pressOutletAdmits: policy.admits }).violations;
-    expect(refused.some((v) => v.includes('names thegatewaypundit.com, naturalnews.com'))).toBe(true);
+    expect(refused.some((v) => v.includes('names naturalnews.com, sana.sy'))).toBe(true);
 
     const rated = cluster(['reuters.com', 'apnews.com'], ['Reuters', 'The Associated Press']);
     expect(runGate(wrap([rated]), { pressOutletAdmits: policy.admits }).violations).toEqual([]);
 
     // Without the option the gate keeps its pre-floor call shape (fixture
     // suites); the CLI never runs it that way — pinned below.
-    expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names thegatewaypundit.com'))).toBe(false);
+    expect(runGate(wrap([unrated])).violations.some((v) => v.includes('names naturalnews.com'))).toBe(false);
+  });
+
+  // A dated allowlist entry (lib/press-outlets.mjs): admitted on the ET days
+  // approved_on…trial_ends, or …ended_on once ended.
+  const trialEntry = (domain: string, name: string, over: Record<string, unknown> = {}) => ({
+    domain,
+    name,
+    approved_on: '2026-07-20',
+    trial_ends: '2026-07-31',
+    status: 'active',
+    ...over,
   });
 
   test('THE OUTLET FLOOR: a stored cluster of allowlisted outlets alone fails — it needs one rated outlet', () => {
-    // No allowlist ships; this pins the rule for the day one does. An
-    // allowlisted outlet carries no lean, so two of them are a set with no
+    // An allowlisted outlet carries no lean, so two of them are a set with no
     // balance evidence at all.
     const policy = pressOutletPolicy({
       ratings: read('data/media-bias.json').outlets,
-      allowlist: { outlets: { 'enr.com': { name: 'ENR' }, 'pymnts.com': { name: 'PYMNTS' } } },
+      allowlist: { outlets: [trialEntry('enr.com', 'ENR'), trialEntry('pymnts.com', 'PYMNTS')] },
     });
     const cluster = (outlets: string[], names: string[]) =>
       makeUpdate({
@@ -1369,6 +1384,104 @@ test.describe('checkMomentUpdates (fixtures)', () => {
     expect(allowlistedOnly.some((v) => v.includes('needs at least one rated outlet'))).toBe(true);
     // One rated outlet beside an allowlisted one passes the floor.
     expect(runGate(wrap([cluster(['enr.com', 'reuters.com'], ['ENR', 'Reuters'])]), opts).violations).toEqual([]);
+  });
+
+  test('THE OUTLET FLOOR BY DAY: a trial that has ended never reddens the press updates recorded while it ran', () => {
+    // The owner's trial proposal (2026-09-26), finding 4: re-checking every
+    // stored press update against TODAY's list would turn CI red the day a
+    // trial ends, for up to RETENTION_DAYS, and the only "fix" would be
+    // rewriting published timeline history. The gate asks about the day each
+    // update was recorded instead.
+    const ratings = read('data/media-bias.json').outlets;
+    const cluster = (recordedAt: string) =>
+      makeUpdate({
+        class: 'press_cluster',
+        record: null,
+        recorded_at: recordedAt,
+        text: {
+          en: 'ENR and Reuters published coverage of the bill.',
+          es: 'ENR y Reuters publicaron cobertura del proyecto.',
+        },
+        source: {
+          kind: 'press',
+          refs: ['https://www.enr.com/story', 'https://www.reuters.com/story'],
+          outlets: ['enr.com', 'reuters.com'],
+          outlet_names: ['ENR', 'Reuters'],
+          lean_set: ['center'],
+        },
+      });
+    // Recorded 2026-07-25T02:00Z = 2026-07-24 in Washington, inside the trial.
+    const during = cluster('2026-07-25T02:00:00Z');
+    const fiftyDaysOn = Date.parse('2026-09-12T18:00:00Z');
+    const floorOnly = (v: string[]) => v.filter((x) => x.includes('.source.outlets'));
+    for (const allowlist of [
+      // The trial simply lapsed: nobody edited anything.
+      { outlets: [trialEntry('enr.com', 'ENR')] },
+      // The owner ended it at review; the entry stays in the file.
+      { outlets: [trialEntry('enr.com', 'ENR', { status: 'ended', ended_on: '2026-07-26' })] },
+    ]) {
+      const policy = pressOutletPolicy({ ratings, allowlist, today: '2026-09-12' });
+      expect(policy.admits('enr.com'), 'nothing new is admitted today').toBe(false);
+      const opts = { now: fiftyDaysOn, pressOutletAdmits: policy.admits, pressOutletRated: policy.isRated };
+      expect(floorOnly(runGate(wrap([during]), opts).violations), JSON.stringify(allowlist)).toEqual([]);
+    }
+
+    // A cluster RECORDED after the trial's last day names an outlet that was
+    // not on the list that day: refused, and the message names the day.
+    const policy = pressOutletPolicy({
+      ratings,
+      allowlist: { outlets: [trialEntry('enr.com', 'ENR', { status: 'ended', ended_on: '2026-07-26' })] },
+    });
+    const opts = { now: fiftyDaysOn, pressOutletAdmits: policy.admits, pressOutletRated: policy.isRated };
+    const after = cluster('2026-07-27T16:00:00Z');
+    const refused = floorOnly(runGate(wrap([after]), opts).violations);
+    expect(refused).toHaveLength(1);
+    expect(refused[0]).toContain('names enr.com');
+    expect(refused[0]).toContain('on the day it was recorded, 2026-07-27');
+
+    // The day is Washington's, not UTC's: 03:30Z on the 27th is still the
+    // 26th in ET — the entry's last day — so it stands.
+    expect(floorOnly(runGate(wrap([cluster('2026-07-27T03:30:00Z')]), opts).violations)).toEqual([]);
+    // And the day before a trial begins is not in it.
+    const early = pressOutletPolicy({
+      ratings,
+      allowlist: { outlets: [trialEntry('enr.com', 'ENR', { approved_on: '2026-07-25' })] },
+    });
+    const earlyOpts = { now: fiftyDaysOn, pressOutletAdmits: early.admits, pressOutletRated: early.isRated };
+    expect(floorOnly(runGate(wrap([during]), earlyOpts).violations)).toHaveLength(1);
+  });
+
+  test('THE OUTLET FLOOR BY DAY: the gate hands `admits` each update\'s recorded ET day, and no day at all for an unparseable stamp', () => {
+    const asked: unknown[] = [];
+    const spy = (o: string, at: unknown) => {
+      asked.push([o, at]);
+      return true;
+    };
+    const press = (recordedAt: string) =>
+      makeUpdate({
+        class: 'press_cluster',
+        record: null,
+        recorded_at: recordedAt,
+        text: { en: 'Reuters and NPR published coverage of the bill.', es: 'Reuters y NPR publicaron cobertura del proyecto.' },
+        source: {
+          kind: 'press',
+          refs: ['https://www.reuters.com/a', 'https://www.npr.org/b'],
+          outlets: ['npr.org', 'reuters.com'],
+          outlet_names: ['NPR', 'Reuters'],
+          lean_set: ['center'],
+        },
+      });
+    runGate(wrap([press('2026-07-25T02:00:00Z')]), { pressOutletAdmits: spy });
+    expect(asked).toEqual([
+      ['npr.org', { on: '2026-07-24' }],
+      ['reuters.com', { on: '2026-07-24' }],
+    ]);
+    asked.length = 0;
+    runGate(wrap([press('not a timestamp')]), { pressOutletAdmits: spy });
+    expect(asked).toEqual([
+      ['npr.org', { on: '' }],
+      ['reuters.com', { on: '' }],
+    ]);
   });
 
   test('check-moment-updates.mjs always hands the gate the outlet floor, and reddens on a bad allowlist', () => {

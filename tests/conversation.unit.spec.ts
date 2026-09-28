@@ -5,6 +5,7 @@ import { join } from 'node:path';
 // header for the whole design these pin, and which critic patch each rule is.
 import {
   ARTICLE_URL_MAX_LENGTH,
+  biasTableFingerprint,
   buildConversation,
   CONVERSATION_MAX_BYTES,
   CONVERSATION_READABLE_SCHEMAS,
@@ -1201,5 +1202,111 @@ test.describe('verifyConversation', () => {
     expect(notes.join(' ')).toContain('1 corroborated');
     expect(notes.join(' ')).toContain('counted by nothing');
     expect(notes.join(' ')).toContain('2 of 2 rated observation(s) carry an article link');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The bias-table stamp (2026-09-28): an edit to data/media-bias.json that
+ * lands between two newsdesk writes is drift, not damage.
+ * ------------------------------------------------------------------ */
+test.describe('the bias-table stamp', () => {
+  // A table without the new row, and the same table once the row lands.
+  const BEFORE: Record<string, string> = { 'foxnews.com': 'right', 'npr.org': 'center', 'cnn.com': 'left' };
+  const AFTER: Record<string, string> = { ...BEFORE, 'example-wire.test': 'center' };
+  const writeUnder = (bias: Record<string, string>, previous: unknown = null, observed: Record<string, string[]> = {}) =>
+    buildConversation({
+      previous,
+      outletsBySlug: new Map(Object.entries(observed).map(([slug, domains]) => [slug, domains.map((d) => seen(d))])),
+      mostViewed: null,
+      bias,
+      sourceStatus: { press: { status: 'ok', feeds_silent: 0, checked_at: 'x' } },
+      now: NOW,
+      today: T,
+    });
+  const judge = (data: unknown, bias: Record<string, string>) => verifyConversation({ data, fileBytes: 500, now: NOW, bias });
+
+  test('the stamp is the rated count plus a hash, independent of key order, blind to non-leans', () => {
+    const stamp = biasTableFingerprint(BEFORE);
+    expect(stamp).toMatch(/^3:[0-9a-f]{8}$/);
+    const reordered = Object.fromEntries(Object.entries(BEFORE).reverse());
+    expect(biasTableFingerprint(reordered)).toBe(stamp);
+    expect(biasTableFingerprint({ ...BEFORE, 'weird.example': 'mixed' })).toBe(stamp);
+    expect(biasTableFingerprint(AFTER)).not.toBe(stamp);
+    expect(biasTableFingerprint(AFTER)).toMatch(/^4:/);
+    // A re-rating moves the stamp too, with the count unchanged.
+    const reRated = biasTableFingerprint({ ...BEFORE, 'npr.org': 'left' });
+    expect(reRated).toMatch(/^3:/);
+    expect(reRated).not.toBe(stamp);
+    expect(biasTableFingerprint(BIAS)).toMatch(new RegExp(`^${Object.keys(BIAS).length}:`));
+  });
+
+  test('the writer stamps the table it judged every entry against — and only when it was handed one', () => {
+    expect(writeUnder(BEFORE)._meta.bias_table).toBe(biasTableFingerprint(BEFORE));
+    const unstamped = buildConversation({ previous: null, outletsBySlug: new Map(), mostViewed: null, now: NOW, today: T });
+    expect('bias_table' in unstamped._meta).toBe(false);
+  });
+
+  test('a table edit alone makes the next write happen, so the stamp can never go stale', () => {
+    const first = writeUnder(BEFORE, null, { 'hr-1-119': ['foxnews.com'] });
+    expect(shouldWrite({ previous: first, next: writeUnder(BEFORE, first) })).toBe(false);
+    const afterEdit = writeUnder(AFTER, first);
+    expect(afterEdit.slugs).toEqual(first.slugs); // no entry moved...
+    expect(shouldWrite({ previous: first, next: afterEdit })).toBe(true); // ...and it still writes
+    expect(materialFingerprint(afterEdit)).toContain(biasTableFingerprint(AFTER));
+  });
+
+  test('a row added after the file was written WARNS until the next write moves the entry, which then passes clean', () => {
+    const written = writeUnder(BEFORE, null, { 'hr-1-119': ['foxnews.com', 'npr.org', 'example-wire.test'] });
+    expect(written.slugs['hr-1-119'].unratedOutlets7d.map((o: { domain: string }) => o.domain)).toEqual(['example-wire.test']);
+    // The table gains the row; the committed file has not been rewritten yet.
+    const between = judge(written, AFTER);
+    expect(between.failures).toEqual([]);
+    expect(between.warnings.join(' ')).toContain('files example-wire.test as unrated; data/media-bias.json has rated it since this file was written');
+    expect(between.notes.join(' ')).toContain(`written against bias table ${biasTableFingerprint(BEFORE)}`);
+    // The newsdesk's next write, with nothing new observed, repairs it.
+    const repaired = writeUnder(AFTER, written);
+    expect(repaired._meta.bias_table).toBe(biasTableFingerprint(AFTER));
+    expect(repaired.slugs['hr-1-119'].unratedOutlets7d).toEqual([]);
+    expect(repaired.slugs['hr-1-119'].outlets7d.find((o: { domain: string }) => o.domain === 'example-wire.test')).toEqual({
+      domain: 'example-wire.test',
+      lean: 'center',
+      firstSeen: T,
+      lastSeen: T,
+      url: link('example-wire.test'),
+    });
+    const after = judge(repaired, AFTER);
+    expect(after.failures).toEqual([]);
+    expect(after.warnings).toEqual([]);
+  });
+
+  test('the same mismatch under a stamp that MATCHES the table is a writer bug, and fails', () => {
+    const written = writeUnder(BEFORE, null, { 'hr-1-119': ['foxnews.com', 'npr.org', 'example-wire.test'] });
+    const buggy = { ...written, _meta: { ...written._meta, bias_table: biasTableFingerprint(AFTER) } };
+    expect(judge(buggy, AFTER).failures.join(' | ')).toContain('files example-wire.test as unrated, but data/media-bias.json rates it');
+  });
+
+  test('a file with no stamp is judged exactly as before: strictly', () => {
+    const written = writeUnder(BEFORE, null, { 'hr-1-119': ['foxnews.com', 'npr.org', 'example-wire.test'] });
+    const { bias_table: _stamp, ...legacyMeta } = written._meta;
+    expect(_stamp).toBe(biasTableFingerprint(BEFORE));
+    const legacy = { ...written, _meta: legacyMeta };
+    expect(judge(legacy, AFTER).failures.join(' | ')).toContain('files example-wire.test as unrated, but data/media-bias.json rates it');
+  });
+
+  test('a malformed stamp is damage, never a way to pass for "the table moved"', () => {
+    const written = writeUnder(BEFORE, null, { 'hr-1-119': ['foxnews.com', 'npr.org', 'example-wire.test'] });
+    for (const bad of ['moved', 42, '4:xyz', '', null]) {
+      const res = judge({ ...written, _meta: { ...written._meta, bias_table: bad } }, AFTER);
+      expect(res.failures.join(' | '), String(bad)).toContain('not a bias-table stamp');
+      expect(res.failures.join(' | '), String(bad)).toContain('files example-wire.test as unrated, but data/media-bias.json rates it');
+    }
+  });
+
+  test('a moved table never excuses the dangerous direction: counting an outlet the table does not rate, or rates otherwise', () => {
+    const moved = { ...writeUnder(BEFORE)._meta, bias_table: biasTableFingerprint({ 'foxnews.com': 'right' }) };
+    const counted = { _meta: moved, slugs: { 'hr-1-119': { outlets7d: [outlet('foxnews.com', 'right'), outlet('example-blog.test', 'right')], unratedOutlets7d: [], mostViewed: null } } };
+    expect(judge(counted, AFTER).failures.join(' | ')).toContain('example-blog.test');
+    const reRated = { _meta: moved, slugs: { 'hr-1-119': { outlets7d: [outlet('foxnews.com', 'left'), outlet('npr.org', 'center')], unratedOutlets7d: [], mostViewed: null } } };
+    expect(judge(reRated, AFTER).failures.join(' | ')).toContain('media-bias.json says right');
   });
 });

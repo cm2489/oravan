@@ -1,0 +1,6 @@
+sync	UNKNOWN STEP	2026-09-26T18:18:16.4626316Z pregen: collected parked batch msgbatch_REDACTED — 18 generated, 18 stored durably, 0 not stored, 0 failed
+sync	UNKNOWN STEP	2026-09-26T18:18:21.1363991Z pregen: 10 top bill(s), 60 combo(s) total, 18 already cached, 42 to generate
+sync	UNKNOWN STEP	2026-09-26T18:18:21.1365012Z pregen: estimated cost — batch ~$0.0588-$0.0882/night (~$1.764-$2.646/month); sync-fallback (if batch is ever unavailable) ~$0.1176-$0.1764/night (~$3.528-$5.292/month)
+sync	UNKNOWN STEP	2026-09-26T18:18:21.5497391Z pregen: submitted batch msgbatch_REDACTED (42 requests)
+sync	UNKNOWN STEP	2026-09-26T18:21:28.7759343Z pregen: done — 42 generated, 42 stored durably, 0 not stored, 0 failed, batch msgbatch_REDACTED
+sync	UNKNOWN STEP	2026-09-26T18:21:28.7759844Z pregen: metrics already_cached=18 generated=60 cache_writes_ok=60 cache_writes_failed=0
