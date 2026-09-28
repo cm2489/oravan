@@ -725,9 +725,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             headline with its own date and URL), OR a floor vote still ahead of
             it in the record (cloture filed, motion to proceed made, proceedings
             postponed, a rule reported), OR the record's own "Placed on …
-            Calendar" sentence. home.weekNote / home.weekNoteAnnounced promise
-            exactly the fact that was found and nothing else, so a REJECTED
-            motion to proceed or a cloture motion that was not invoked can never
+            Calendar" sentence. The panel claims exactly the fact that was
+            found and nothing else, so a REJECTED motion to proceed or a
+            cloture motion that was not invoked can never
             wear the crown (lib/journey.ts's settled guard, which is also rule 0
             of the ladder's T1 rung). The date printed is the date of that fact
             — an action date, or the announcing document's own publication date.
@@ -932,57 +932,52 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           )}
 
-          {/* The note says what the loudness means. It no longer carries the
-              staleness beacon (2026-08-12): the caveat moved UP to the
-              masthead's topSub line, where the "this week" / "right now"
-              claims it qualifies actually are, and it is not duplicated here
-              because one note per page is a standing ruling (see the
-              masthead comment above and StalenessNote's own header). Gated on the SAME
-              condition as the panel itself: a note that says "the green
-              panel marks one fact" on a week with no green panel is a false
-              claim (owner finding 2026-08-01), so the panel-less week gets
-              the sentence without the panel in it. THREE variants now, for the
-              same reason there are three: the announced note describes an
-              announcement — quoted, dated, re-read hourly, and explicitly NOT a
-              vote date — and printing the calendar/pending sentence over it
-              would describe a fact the panel is not showing. */}
-          <p data-week-note={recessWeek ? 'recess' : 'standard'} className="mt-8 max-w-note text-sm text-ink-2">
-            {!crowned ? (
-              recessWeek ? (
-                /* The one crownless week that can name its own reason. Each
-                   chamber's next meeting is the digest's OWN printed line —
-                   English, unformatted, `lang="en"` (ruling V4), exactly as
-                   the announced band prints a schedule's coverage sentence —
-                   with our derived date as the fallback, formatted in the
-                   reader's locale. The document's publication date is ours to
-                   format either way. */
-                t.rich('weekNoteRecess', {
-                  published: billDate(recessWeek.published),
-                  senate: meetingText(recessWeek.senate),
-                  house: meetingText(recessWeek.house),
-                  /* The VALUES above are strings because next-intl's ICU
-                     arguments take strings, numbers and dates only; the SPAN
-                     that marks a verbatim English line arrives as a tag
-                     handler, one per chamber, each deciding from its own
-                     meeting whether it is wrapping the digest's words or our
-                     derived date. */
-                  senateWhen: meetingTag(recessWeek.senate),
-                  houseWhen: meetingTag(recessWeek.house),
-                  term: glossaryTag('pro-forma-session'),
-                })
-              ) : (
-                t('weekNoteQuiet')
-              )
-            ) : feature?.kind === 'announced' ? (
-              t('weekNoteAnnounced')
-            ) : (
-              t('weekNote')
-            )}
-          </p>
+          {/* THE QUIET-WEEK NOTE, on crownless weeks only since 2026-09-28:
+              the owner cut the green-panel explainer (UX inventory H13), which
+              was this line's crowned-week wording (home.weekNote and
+              home.weekNoteAnnounced, removed from both languages in the same
+              commit, so undoing that one commit brings them back). A crownless
+              week still admits it is quiet, and in the one recess the record
+              can explain, says why. It no longer carries the staleness beacon
+              (2026-08-12): the caveat moved UP to the masthead's topSub line,
+              where the "this week" / "right now" claims it qualifies actually
+              are, and it is not duplicated here because one note per page is
+              a standing ruling (see the masthead comment above and
+              StalenessNote's own header). */}
+          {!crowned && (
+            <p
+              data-week-note={recessWeek ? 'recess' : 'standard'}
+              className="mt-8 max-w-note text-sm text-ink-2"
+            >
+              {recessWeek
+                ? /* The one crownless week that can name its own reason. Each
+                     chamber's next meeting is the digest's OWN printed line —
+                     English, unformatted, `lang="en"` (ruling V4), exactly as
+                     the announced band prints a schedule's coverage sentence —
+                     with our derived date as the fallback, formatted in the
+                     reader's locale. The document's publication date is ours
+                     to format either way. */
+                  t.rich('weekNoteRecess', {
+                    published: billDate(recessWeek.published),
+                    senate: meetingText(recessWeek.senate),
+                    house: meetingText(recessWeek.house),
+                    /* The VALUES above are strings because next-intl's ICU
+                       arguments take strings, numbers and dates only; the
+                       SPAN that marks a verbatim English line arrives as a tag
+                       handler, one per chamber, each deciding from its own
+                       meeting whether it is wrapping the digest's words or our
+                       derived date. */
+                    senateWhen: meetingTag(recessWeek.senate),
+                    houseWhen: meetingTag(recessWeek.house),
+                    term: glossaryTag('pro-forma-session'),
+                  })
+                : t('weekNoteQuiet')}
+            </p>
+          )}
           {/* One line to the daily brief (plan item C3). Footer/nav placement
               is left to the owner's review: the footer's Follow column is
               claimed by a sibling PR. */}
-          <p className="mt-2 max-w-note text-sm">
+          <p className={`${crowned ? 'mt-8' : 'mt-2'} max-w-note text-sm`}>
             <Link
               href="/today"
               className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
