@@ -603,9 +603,11 @@ function collectPressClusters() {
   }
   const coverage = readJSON('data/coverage.json');
   // THE OUTLET FLOOR (owner ruling 2026-09-26): only AllSides-rated outlets —
-  // plus an owner-approved allowlist, if one is ever added — are counted or
-  // named. A malformed allowlist fails closed to rated-only, loudly.
-  const policy = loadPressOutletPolicy({ readJSON, exists: existsSync });
+  // plus the owner's allowlist, on the days each entry is in force — are
+  // counted or named. A malformed allowlist fails closed to rated-only,
+  // loudly. `today` is this run's clock, so the "N allowlisted" count below
+  // and the day every cluster is judged by (its recorded_at) are one day.
+  const policy = loadPressOutletPolicy({ readJSON, exists: existsSync, today: todayET });
   for (const p of policy.problems) {
     console.warn(`::warning::press clusters: ${PRESS_ALLOWLIST_PATH} ignored (rated outlets only tonight) — ${p}`);
   }

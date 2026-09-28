@@ -927,11 +927,19 @@ export function outletDisplayName(domain) {
  * floor built from that table with no allowlist — i.e. rated-only — so there
  * is no call shape that skips it.
  *
- * @param {{momentId: string, vehicle: string, day: string, articles: {url?: string, source?: string}[], leanByDomain?: Record<string,string>, policy?: {admits: (s: string) => boolean, leanOf: (s: string) => string|null}, recordedAt?: string}} args
+ * The floor is asked about the ET day this record is WRITTEN (its
+ * `recorded_at`), not the article's day: an allowlisted outlet counts only
+ * while its trial is in force, and that is the very day
+ * scripts/check-moment-updates.mjs later judges the stored record by — so the
+ * collector and the stored-file gate cannot disagree about a trial's edges.
+ *
+ * @param {{momentId: string, vehicle: string, day: string, articles: {url?: string, source?: string}[], leanByDomain?: Record<string,string>, policy?: {admits: (s: string, at?: { on?: string }) => boolean, leanOf: (s: string) => string|null, allowlistName?: (s: string) => string|null}, recordedAt?: string}} args
  */
 export function pressClusterToCandidate({ momentId, vehicle, day, articles, leanByDomain, policy, recordedAt }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day ?? ''))) return null;
   const floor = policy ?? pressOutletPolicy({ ratings: leanByDomain });
+  const recorded_at = isoNow(recordedAt);
+  const on = etDay(recorded_at);
 
   /** @type {Map<string, string>} domain -> first https url */
   const byDomain = new Map();
@@ -939,7 +947,7 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
     const domain = normalizeSource(a?.source);
     const url = typeof a?.url === 'string' && /^https:\/\//.test(a.url) ? a.url : null;
     if (!domain || !url) continue;
-    if (!floor.admits(domain)) continue;
+    if (!floor.admits(domain, { on })) continue;
     if (!byDomain.has(domain)) byDomain.set(domain, url);
   }
   if (byDomain.size < 2) return null;
@@ -958,7 +966,7 @@ export function pressClusterToCandidate({ momentId, vehicle, day, articles, lean
     day,
     occurred_at: day,
     occurred_precision: 'day',
-    recorded_at: isoNow(recordedAt),
+    recorded_at,
     text: null,
     source: {
       kind: 'press',
