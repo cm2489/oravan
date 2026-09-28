@@ -37,9 +37,10 @@ import { mockScriptApi } from './helpers';
  *        ZIP-first route stays within BUDGET.zipFirstClicks end to end through
  *        the /reps continuation. Demote the call apparatus, never bury it.
  *        SCOPED 2026-09-28 (rule 8; docs/constitution-log.md
- *        #settled-panel-2026-09-28): a settled decision — a law, a veto, a
- *        rejected vote, a failed motion to take it up (lib/journey.ts
- *        `settledDecision`) — shows the record and no call at all (owner, Q9
+ *        #settled-panel-2026-09-28): a settled decision — a law, a rejected
+ *        vote, a failed two-thirds vote to pass it, a failed motion to take it
+ *        up (lib/journey.ts `settledDecision`; a veto is NOT one, Congress can
+ *        still override it) — shows the record and no call at all (owner, Q9
  *        answered "a"; rule 6), so there is no script to reach and I2 does not
  *        measure from it. The week and the /reps continuation are the act-now
  *        pool, which never holds one, so those paths still take the FIRST

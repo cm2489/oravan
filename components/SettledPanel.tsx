@@ -12,9 +12,11 @@ import { ZipForm } from './ZipForm';
 
 /*
  * THE PANEL WHEN NO DECISION IS LEFT — what stands where the call panel
- * stands on a bill whose decision the record shows is over: a law, a veto, a
- * rejected passage vote, a failed motion to take it up (lib/journey.ts
- * `settledDecision`, the stepper's own reading).
+ * stands on a bill whose decision the record shows is over: a law, a
+ * rejected passage vote, a failed two-thirds vote to pass it, a failed motion
+ * to take it up (lib/journey.ts `settledDecision`, read off the stepper's own
+ * derivation). A veto is not one of them: Congress can still override it, so
+ * a vetoed bill keeps the call panel.
  *
  * The owner's ruling, 2026-09-28, UX question Q9 answered "a": "A record-only
  * block with no numbers: 'This is law' or 'This was rejected, 49–50', and how

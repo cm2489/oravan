@@ -308,8 +308,8 @@
     "settled": {
       "title": "No hay llamada que hacer",
       "law": "Esto ya es ley.",
-      "vetoed": "El Presidente lo vetó.",
       "rejected": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} lo rechazó{tally, select, none {} other {, por {yeas} votos a favor y {nays} en contra}}.",
+      "suspensionFailed": "{chamber, select, House {La votación de la Cámara} Senate {La votación del Senado} other {La votación de la Cámara}} para aprobarlo necesitaba dos tercios y no los alcanzó{tally, select, none {} other {, con {yeas} votos a favor y {nays} en contra}}.",
       "motionFailed": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} no ha aceptado considerarlo — la última moción para hacerlo fracasó.",
       "needZip": "Escribe tu código postal para ver cómo votaron tus miembros del Congreso."
     },

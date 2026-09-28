@@ -311,8 +311,9 @@ export function vehicleCtaHref(path: string, ctaKey: VehicleCtaKey): string {
  * A SETTLED BILL IS A CARD WITH NO CALL TOO, since 2026-09-28 (owner, UX
  * question Q9 answered "a"): the bill page now shows a record-only panel —
  * no stance, no script — wherever lib/journey.ts `settledDecision` reads the
- * decision as over (a law, a veto, a rejected passage vote, a failed motion
- * to take it up). Until then "the bill page always mounts ActionPanel" made
+ * decision as over (a law, a rejected passage vote, a failed two-thirds vote
+ * to pass it, a failed motion to take it up; not a veto, which Congress can
+ * still override, so its page keeps the call). Until then "the bill page always mounts ActionPanel" made
  * the promise true of every bill card; it no longer is, so the same one-"no"
  * rule asks the bill cards the page's own question.
  *

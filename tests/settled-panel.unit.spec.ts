@@ -28,9 +28,32 @@ const HCONRES_89 = 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record
 /** S.J.Res. 99. */
 const MOTION_TO_PROCEED_REJECTED =
   'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)';
-/** H.J.Res. 1: a two-thirds vote that failed with a majority voting yes. */
-const SUSPENSION_FAILED =
-  'On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).';
+/**
+ * The three failed two-thirds votes in the corpus on 2026-09-28, each a vote
+ * to PASS the measure under suspension of the rules, and each with a majority
+ * voting yes. Verbatim, with the bill each belongs to.
+ */
+const SUSPENSION_FAILED = [
+  {
+    bill: 'H.J.Res. 1',
+    bill_type: 'hjres',
+    text: 'On motion to suspend the rules and pass Failed by the Yeas and Nays: (2/3 required): 212 - 206 (Roll no. 293).',
+    tally: { yeas: 212, nays: 206 },
+  },
+  {
+    bill: 'H.J.Res. 139',
+    bill_type: 'hjres',
+    text: 'On motion to suspend the rules and pass the resolution Failed by the Yeas and Nays: (2/3 required): 211 - 207 (Roll no. 95).',
+    tally: { yeas: 211, nays: 207 },
+  },
+  {
+    // A Senate bill, voted on in the House: the procedure names the chamber.
+    bill: 'S. 2503',
+    bill_type: 's',
+    text: 'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).',
+    tally: { yeas: 264, nays: 133 },
+  },
+] as const;
 /** H.R. 3633: the failed vote, with a motion to reconsider it entered. */
 const RECONSIDER_ENTERED =
   'Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate.';
@@ -40,8 +63,20 @@ test.describe('settledDecision — which pages show the record, not the call', (
     expect(settledDecision(rec('hr', 'signed', 'Became Public Law No: 119-105.'))).toEqual({ kind: 'law' });
   });
 
-  test('a veto', () => {
-    expect(settledDecision(rec('hr', 'vetoed', 'Vetoed by President.'))).toEqual({ kind: 'vetoed' });
+  test('a veto keeps the call — Congress can still vote to override it', () => {
+    // A decision is left (the Q9 question's own condition: "when there's no
+    // decision left"), so there is no record-only panel for a veto.
+    const vetoed = rec('hr', 'vetoed', 'Vetoed by President.');
+    expect(settledDecision(vetoed)).toBeNull();
+    // The stepper's sentence is the one that says the override is possible.
+    expect(deriveJourney(vetoed).nowKey).toBe('nowVetoed');
+    expect(en.bill.journey.nowVetoed).toMatch(/override/);
+    expect(es.bill.journey.nowVetoed).toMatch(/anular el veto/);
+    // The stated gap: the MCP envelope still calls a veto settled.
+    expect(decisionState(vetoed).state).toBe('settled');
+    // And the panel keeps no veto sentence of its own to print.
+    expect(Object.keys(en.bill.settled)).not.toContain('vetoed');
+    expect(Object.keys(es.bill.settled)).not.toContain('vetoed');
   });
 
   test('a rejected passage vote carries the chamber and the record\'s tally', () => {
@@ -57,12 +92,19 @@ test.describe('settledDecision — which pages show the record, not the call', (
       kind: 'motionFailed',
       chamber: 'senate',
     });
-    // A majority voted yes here; "rejected, 212–206" would mislead, and the
-    // motion kind prints no tally at all.
-    expect(settledDecision(rec('hjres', 'floor_vote', SUSPENSION_FAILED))).toEqual({
-      kind: 'motionFailed',
-      chamber: 'house',
-    });
+  });
+
+  test('a failed two-thirds vote is a failed vote to pass, not a failed motion to take it up', () => {
+    for (const s of SUSPENSION_FAILED) {
+      const r = rec(s.bill_type, 'floor_vote', s.text);
+      // The House took the measure up and voted on passing it; the panel says
+      // so, with the record's own tally, even though a majority voted yes.
+      expect(settledDecision(r), s.bill).toEqual({ kind: 'suspensionFailed', chamber: 'house', tally: s.tally });
+      // The stepper still files it with the failed motions (lib/floor-text.mjs
+      // FLOOR_PASSAGE_REJECTED's header); only the panel's outcome differs.
+      expect(deriveJourney(r).nowKey, s.bill).toBe('nowFloorMotionFailed');
+      expect(decisionState(r).state, s.bill).toBe('settled');
+    }
   });
 
   test('a failed vote with a motion to reconsider entered keeps the call — the question can come back', () => {
@@ -96,10 +138,26 @@ test.describe('settledDecision against the committed corpus', () => {
     }
   });
 
-  test('the one stated gap: MCP settled but the page keeps the call only where the stepper names no chamber', () => {
+  test('the two stated gaps: MCP settled but the page keeps the call only on a veto or where the stepper names no chamber', () => {
     for (const b of corpus) {
       if (decisionState(b).state === 'pending' || settledDecision(b) !== null) continue;
+      if (b.status === 'vetoed') continue; // the override is still ahead
       expect(deriveJourney(b).nowKey, `${b.bill_type} ${b.last_action_text}`).toBe('nowFloorActivityNeutral');
+    }
+  });
+
+  test('every failed two-thirds vote to pass reads as one, and no failed motion is one', () => {
+    const SUSPENSION = /\bmotion to suspend the rules and (?:pass|agree to)\b[\s\S]*?\bfailed\b/i;
+    for (const b of corpus) {
+      const decision = settledDecision(b);
+      if (decision === null) continue;
+      const record = (b as Rec & { status_basis_text?: string | null }).status_basis_text || b.last_action_text || '';
+      const label = `${b.bill_type} ${record}`;
+      if (SUSPENSION.test(record)) {
+        expect(decision.kind, label).toBe('suspensionFailed');
+      } else {
+        expect(decision.kind, label).not.toBe('suspensionFailed');
+      }
     }
   });
 
@@ -125,6 +183,26 @@ test.describe('the panel\'s words, in both languages', () => {
     expect(tEs('bill.settled.rejected', noTally)).toBe('La Cámara lo rechazó.');
   });
 
+  test('a failed two-thirds vote says it needed two-thirds, with the record\'s tally — never "take this up"', () => {
+    const withTally = { chamber: 'House', tally: 'yes', yeas: 264, nays: 133 };
+    const noTally = { chamber: 'House', tally: 'none', yeas: 0, nays: 0 };
+    expect(tEn('bill.settled.suspensionFailed', withTally)).toBe(
+      'The House vote to pass this needed two-thirds and fell short, 264–133.'
+    );
+    expect(tEs('bill.settled.suspensionFailed', withTally)).toBe(
+      'La votación de la Cámara para aprobarlo necesitaba dos tercios y no los alcanzó, con 264 votos a favor y 133 en contra.'
+    );
+    expect(tEn('bill.settled.suspensionFailed', noTally)).toBe(
+      'The House vote to pass this needed two-thirds and fell short.'
+    );
+    expect(tEs('bill.settled.suspensionFailed', noTally)).toBe(
+      'La votación de la Cámara para aprobarlo necesitaba dos tercios y no los alcanzó.'
+    );
+    // The sentence it replaces on these three bills, in both languages.
+    expect(tEn('bill.settled.suspensionFailed', withTally)).not.toMatch(/take this up|motion/i);
+    expect(tEs('bill.settled.suspensionFailed', withTally)).not.toMatch(/considerarlo|moción/i);
+  });
+
   test('a failed motion names the chamber and no tally', () => {
     expect(tEn('bill.settled.motionFailed', { chamber: 'House' })).toBe(
       'The House has not agreed to take this up — the last motion to do so failed.'
@@ -133,7 +211,7 @@ test.describe('the panel\'s words, in both languages', () => {
   });
 
   test('every new string exists in both languages and the Spanish is not an English copy', () => {
-    for (const key of ['title', 'law', 'vetoed', 'rejected', 'motionFailed', 'needZip'] as const) {
+    for (const key of ['title', 'law', 'rejected', 'suspensionFailed', 'motionFailed', 'needZip'] as const) {
       expect(typeof en.bill.settled[key], `en.bill.settled.${key}`).toBe('string');
       expect(es.bill.settled[key], `es.bill.settled.${key}`).not.toBe(en.bill.settled[key]);
     }

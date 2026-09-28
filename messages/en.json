@@ -308,8 +308,8 @@
     "settled": {
       "title": "No call to make",
       "law": "This is law.",
-      "vetoed": "The President vetoed this.",
       "rejected": "This was rejected in the {chamber, select, House {House} Senate {Senate} other {Senate}}{tally, select, none {} other {, {yeas}–{nays}}}.",
+      "suspensionFailed": "The {chamber, select, House {House} Senate {Senate} other {House}} vote to pass this needed two-thirds and fell short{tally, select, none {} other {, {yeas}–{nays}}}.",
       "motionFailed": "The {chamber, select, House {House} Senate {Senate} other {Senate}} has not agreed to take this up — the last motion to do so failed.",
       "needZip": "Add your ZIP code to see how your members voted."
     },

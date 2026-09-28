@@ -213,11 +213,11 @@ export function billWithRollCallsOnlyIn(chamber: RollCall['chamber']): string | 
 
 /**
  * A decoded bill whose decision the record shows is over, of one kind
- * (lib/journey.ts `settledDecision`: a law, a veto, a rejected passage vote, a
- * failed motion to take it up) — the page that shows the record-only panel
- * instead of the call. `withVotes` asks for one with a stored roll call, so
- * the panel's members strip has positions to print. Slug order; null when the
- * corpus holds none (no bill has been vetoed this Congress, for one).
+ * (lib/journey.ts `settledDecision`: a law, a rejected passage vote, a failed
+ * two-thirds vote to pass it, a failed motion to take it up) — the page that
+ * shows the record-only panel instead of the call. `withVotes` asks for one
+ * with a stored roll call, so the panel's members strip has positions to
+ * print. Slug order; null when the corpus holds none of that kind.
  */
 export function settledBill(
   kind: SettledDecision['kind'],

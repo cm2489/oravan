@@ -623,8 +623,9 @@ export interface LiveCallTarget {
  * Everything else is null and the rep list renders exactly as before:
  * committee/markup/introduced (a committee holds it, not a floor — demoting
  * senators on every committee-stage House bill would re-shape most of the
- * corpus on a weaker claim), conference (both chambers again), signed/
- * vetoed (Congress is done), and the unclassifiable floor texts (NEVER
+ * corpus on a weaker claim), conference (both chambers again), signed
+ * (Congress is done), vetoed (an override needs two-thirds of BOTH chambers,
+ * so neither one is the live call), and the unclassifiable floor texts (NEVER
  * guess a chamber — owner ruling 2026-08-04). Demote, never bury: consumers
  * reorder and annotate; no office ever loses its dial.
  */
@@ -1438,9 +1439,27 @@ export function deriveJourney(
  *  record-only block prints it. */
 export type SettledDecision =
   | { kind: 'law' }
-  | { kind: 'vetoed' }
   | { kind: 'rejected'; chamber: Chamber; tally: { yeas: number; nays: number } | null }
+  | { kind: 'suspensionFailed'; chamber: Chamber; tally: { yeas: number; nays: number } | null }
   | { kind: 'motionFailed'; chamber: Chamber };
+
+/**
+ * A FAILED TWO-THIRDS VOTE TO PASS THE MEASURE — the House's suspension track,
+ * whose vote is on passing the measure itself ("On motion to suspend the rules
+ * and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133
+ * (Roll no. 72)." — S. 2503). The stepper keeps it on the failed-motion side
+ * (lib/floor-text.mjs FLOOR_PASSAGE_REJECTED's header says why), so its
+ * sentence there is "has not agreed to take it up — the last motion to do so
+ * failed". The record-only panel prints an OUTCOME, and that one would be
+ * false: the House did take the measure up, and a majority can have voted
+ * yes. So the panel reads the procedure and says what the vote was.
+ *
+ * Only the vote to pass (or, for a resolution, to agree to it). A failed
+ * suspension motion to concur in the other chamber's amendment is a different
+ * question and stays on the failed-motion side; no record in the corpus has
+ * that shape on 2026-09-28.
+ */
+const SUSPENSION_PASSAGE_FAILED = /\bmotion to suspend the rules and (?:pass|agree to)\b[\s\S]*?\bfailed\b/i;
 
 /**
  * NO DECISION LEFT — what the bill page shows where the call panel stands
@@ -1449,38 +1468,53 @@ export type SettledDecision =
  * members voted. No stance, no script.").
  *
  * Read off the STEPPER's own derivation, so the panel and "Where does it
- * stand?" say the same thing about the same record: a signed law, a veto, a
- * rejected passage vote (with the record's tally, when deriveJourney kept
- * one), or a failed motion to take the measure up.
+ * stand?" agree about the same record: a signed law, a rejected passage vote
+ * (with the record's tally, when deriveJourney kept one), a failed two-thirds
+ * vote to pass it under suspension of the rules (see SUSPENSION_PASSAGE_FAILED
+ * above: the one place the panel's words are more exact than the stepper's),
+ * or a failed motion to take the measure up.
  *
- * One exception, and it is the one lib/docket.mjs `decisionState` makes: a
- * failed Senate vote with a motion to reconsider ENTERED ("Motion by Senator
- * Tillis to reconsider the vote by which cloture … was not invoked … entered
- * in Senate." — H.R. 3633) can come back to the floor, so the decision is not
- * over and the call panel stays. Same reader, `floorReconsiderPendingChamber`.
+ * A VETO IS NOT SETTLED. Congress can still vote to override it, with
+ * two-thirds of both chambers, and the stepper's own veto sentence says so
+ * (`nowVetoed`), so a decision is left and the call panel stays. That is the
+ * Q9 question's own condition ("when there's no decision left"), applied in
+ * review of this change on 2026-09-28.
+ *
+ * One more exception, where a failed vote is not the end, and it is the one
+ * lib/docket.mjs `decisionState` makes: a failed Senate vote with a motion
+ * to reconsider ENTERED ("Motion by Senator Tillis to reconsider the vote by
+ * which cloture … was not invoked … entered in Senate." — H.R. 3633) can come
+ * back to the floor, so the decision is not over and the call panel stays.
+ * Same reader, `floorReconsiderPendingChamber`.
  *
  * So this is never wider than `decisionState`: everything it calls settled,
  * the MCP envelope also calls settled or enacted (and withholds `act_url`).
- * The converse has one gap, stated rather than hidden: a settled floor text
- * whose chamber the record does not name makes the stepper print its
- * chamber-free "moving on the floor" sentence, and the panel follows the
- * stepper there and keeps the call. No record in the corpus has that shape on
- * 2026-09-28. tests/settled-panel.unit.spec.ts pins both directions over the
- * committed corpus.
+ * The converse has two gaps, stated rather than hidden. A veto: the envelope
+ * calls it settled, and the page keeps the call for the override. And a
+ * settled floor text whose chamber the record does not name makes the stepper
+ * print its chamber-free "moving on the floor" sentence, and the panel follows
+ * the stepper there and keeps the call. On 2026-09-28 the corpus holds no
+ * record of either shape. tests/settled-panel.unit.spec.ts pins both
+ * directions over the committed corpus.
  *
  * Returns null whenever a decision is still open — every committee, floor,
- * passage and conference stage.
+ * passage and conference stage, and a veto.
  */
 export function settledDecision(
   bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis
 ): SettledDecision | null {
   const journey = deriveJourney(bill);
   if (journey.isLaw) return { kind: 'law' };
-  if (journey.isVetoed) return { kind: 'vetoed' };
   if (journey.nowKey !== 'nowFloorPassageRejected' && journey.nowKey !== 'nowFloorMotionFailed') {
     return null;
   }
-  if (floorReconsiderPendingChamber(statusBasisText(bill))) return null;
+  const record = statusBasisText(bill);
+  if (floorReconsiderPendingChamber(record)) return null;
+  if (SUSPENSION_PASSAGE_FAILED.test(record ?? '')) {
+    // The record's own numbers, whichever way they fall: the sentence says
+    // two-thirds were needed, so a majority voting yes cannot mislead here.
+    return { kind: 'suspensionFailed', chamber: journey.nowChamber, tally: recordedTally(record) };
+  }
   return journey.nowKey === 'nowFloorPassageRejected'
     ? { kind: 'rejected', chamber: journey.nowChamber, tally: journey.tally }
     : { kind: 'motionFailed', chamber: journey.nowChamber };

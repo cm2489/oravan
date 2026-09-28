@@ -439,11 +439,12 @@ export default async function BillPage({
 
   /*
    * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"): a law,
-   * a veto, a rejected passage vote or a failed motion to take the bill up
-   * gets the record-only panel instead of the call panel — the outcome in the
-   * stepper's own terms and how the reader's members voted, with no stance,
-   * no script and no number (page 1, rule 6: a settled decision shows no call
-   * apparatus). The same reading drops the floating call button and the
+   * a rejected passage vote, a failed two-thirds vote to pass it or a failed
+   * motion to take the bill up gets the record-only panel instead of the call
+   * panel — the record's outcome and how the reader's members voted, with no
+   * stance, no script and no number (page 1, rule 6: a settled decision shows
+   * no call apparatus). A veto keeps the call panel: Congress can still vote
+   * to override it. The same reading drops the floating call button and the
    * "see how a call works" demo below, which only ever pointed at a call.
    */
   const settled = settledDecision(bill);
@@ -924,9 +925,11 @@ export default async function BillPage({
   );
 }
 
-/** The record-only panel's outcome sentence, in the stepper's own terms
- *  (lib/journey.ts `settledDecision`). The tally prints only when the stepper
- *  kept it — see deriveJourney's rejected-passage branch. */
+/** The record-only panel's outcome sentence (lib/journey.ts `settledDecision`).
+ *  On a rejection the tally prints only when the stepper kept it — see
+ *  deriveJourney's rejected-passage branch. A failed two-thirds vote prints
+ *  the record's tally whichever way it falls, because its sentence says
+ *  two-thirds were needed. */
 function settledOutcomeText(
   t: Awaited<ReturnType<typeof getTranslations>>,
   settled: SettledDecision
@@ -934,8 +937,13 @@ function settledOutcomeText(
   switch (settled.kind) {
     case 'law':
       return t('bill.settled.law');
-    case 'vetoed':
-      return t('bill.settled.vetoed');
+    case 'suspensionFailed':
+      return t('bill.settled.suspensionFailed', {
+        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
+        tally: settled.tally ? 'yes' : 'none',
+        yeas: settled.tally?.yeas ?? 0,
+        nays: settled.tally?.nays ?? 0,
+      });
     case 'rejected':
       return t('bill.settled.rejected', {
         chamber: settled.chamber === 'house' ? 'House' : 'Senate',

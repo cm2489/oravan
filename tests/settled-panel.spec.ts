@@ -21,9 +21,11 @@ import { seedZip } from './helpers';
 const LAW = settledBill('law', { withVotes: true }) ?? settledBill('law');
 const REJECTED = settledBill('rejected', { withVotes: true }) ?? settledBill('rejected');
 const MOTION = settledBill('motionFailed');
+const SUSPENSION = settledBill('suspensionFailed');
 
 const PANEL = '[data-settled-panel]';
 
+const tEn = createTranslator({ locale: 'en', messages: en });
 const tEs = createTranslator({ locale: 'es', messages: es });
 
 for (const { locale, prefix, m } of [
@@ -105,6 +107,37 @@ test('a failed motion says so in the stepper\'s words; a ZIP saved in the panel 
   const strip = panel.locator('[data-vote-delegation="panel"]');
   await expect(strip.locator('[data-vote-delegate]')).toHaveCount(3);
 });
+
+for (const { locale, prefix, t } of [
+  { locale: 'en', prefix: '', t: tEn },
+  { locale: 'es', prefix: '/es', t: tEs },
+] as const) {
+  test(`${locale}: a failed two-thirds vote says it was a vote to pass that fell short, not a failed motion`, async ({
+    page,
+  }) => {
+    test.skip(!SUSPENSION, 'no decoded failed two-thirds vote in the corpus');
+    const decision = SUSPENSION!.decision;
+    test.skip(decision.kind !== 'suspensionFailed', 'fixture is not a failed two-thirds vote');
+    if (decision.kind !== 'suspensionFailed') return;
+    await page.goto(`${prefix}/bills/${SUSPENSION!.slug}`);
+    const panel = page.locator(PANEL);
+    await expect(panel).toHaveAttribute('data-settled-panel', 'suspensionFailed');
+    const chamber = decision.chamber === 'house' ? 'House' : 'Senate';
+    const outcome = panel.locator('[data-settled-outcome]');
+    await expect(outcome).toHaveText(
+      t('bill.settled.suspensionFailed', {
+        chamber,
+        tally: decision.tally ? 'yes' : 'none',
+        yeas: decision.tally?.yeas ?? 0,
+        nays: decision.tally?.nays ?? 0,
+      })
+    );
+    await expect(outcome).not.toHaveText(t('bill.settled.motionFailed', { chamber }));
+    // Still a settled page: nothing to call with.
+    await expect(page.locator('[data-call-cta]')).toHaveCount(0);
+    await expect(page.locator('[data-floating-call]')).toHaveCount(0);
+  });
+}
 
 test('the record-only panel reflows at 320px with the members shown @reflow', async ({ page }) => {
   const fx = REJECTED ?? LAW;
