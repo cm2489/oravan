@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-28T21:16:25.388Z",
+    "fetched_at": "2026-09-28T21:55:19.346Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-28T21:16:25.388Z"
+        "checked_at": "2026-09-28T21:55:19.346Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-28T21:16:25.388Z"
+        "checked_at": "2026-09-28T21:55:19.346Z"
       },
       "leans": {
         "center": {
@@ -1076,7 +1076,15 @@
       "mostViewed": null
     },
     "hr-8770-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-28",
+          "url": "https://www.cnbc.com/2026/09/28/khanna-ai-safety-bill.html"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "azat.tv",
