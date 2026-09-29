@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import { PhoneCall } from 'lucide-react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { CALL_BUTTON } from '@/components/call-button';
 import { Chip } from '@/components/system';
-import type { BillStatus } from '@/lib/types';
+import type { BillStatus, StatusLabelKey } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
 import type { StatusLine } from '@/lib/moment-status.mjs';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
@@ -61,6 +62,7 @@ export function MomentVehicleCard({
   ctaHref,
   calendarLabel,
   statusLine,
+  explainer,
 }: {
   slug: string;
   identifier: string;
@@ -73,7 +75,7 @@ export function MomentVehicleCard({
       the same gate the homepage crown enforces (Wave B #1) — and neither
       may an AGED placement, which arrives as `floor_vote_stale` since N3
       (2026-08-11) and prints "Placed on the calendar" in ink. */
-  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+  statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
   coverageCount?: number;
@@ -95,6 +97,10 @@ export function MomentVehicleCard({
    *  prints the same record date itself, so keeping both would state one fact
    *  twice. Optional so any other caller renders exactly as before. */
   statusLine?: StatusLine;
+  /** What an adopted concurrent resolution can and cannot do
+   *  (components/ConcurrentExplainer.tsx), printed right under its status
+   *  line. The question page passes it for such a vehicle only. */
+  explainer?: ReactNode;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -157,6 +163,7 @@ export function MomentVehicleCard({
         </Link>
       </h3>
       {statusLine && <MomentStatusLine line={statusLine} className="mt-3" />}
+      {explainer && <div className="mt-2">{explainer}</div>}
       <p className="mt-3 max-w-read border-t border-line pt-3 text-sm text-ink-2">{role}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {tags.slice(0, 2).map((tag) => (
@@ -182,7 +189,7 @@ export function MomentVehicleCard({
       <p className="mt-auto pt-5">
         <Link
           href={ctaHref ?? `/bills/${slug}`}
-          className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper transition-colors hover:border-go-deep hover:bg-go-deep"
+          className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}
         >
           <PhoneCall className="h-4 w-4" aria-hidden />
           {ctaLabel}

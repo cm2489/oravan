@@ -305,8 +305,8 @@ test.describe('the readers agree on the corrected record', () => {
   });
 
   test('the status label: "In committee" becomes "Floor activity" on every surface that reads statusKeyFor', () => {
-    expect(statusKeyFor(before.status as never, before.last_action_text, before.last_action_date, NOW)).toBe('committee');
-    expect(statusKeyFor(after.status as never, after.last_action_text, after.last_action_date, NOW)).toBe('floor_activity');
+    expect(statusKeyFor(before as never, NOW)).toBe('committee');
+    expect(statusKeyFor(after as never, NOW)).toBe('floor_activity');
   });
 
   test('the ladder: the live Senate announcement still holds T0; without it the record alone is T1, not the radar', () => {

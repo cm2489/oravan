@@ -5,11 +5,14 @@ import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/serve
 import { Link } from '@/i18n/navigation';
 import { settledDecision, statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
+import { CallTabTarget } from '@/components/CallTabTarget';
+import { questionCallTarget } from '@/lib/call-tab';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
+import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
@@ -19,6 +22,7 @@ import { getBill, localizeBill } from '@/lib/core';
 import { getNomination } from '@/lib/core/nominations';
 import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
+import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import {
@@ -285,8 +289,28 @@ export default async function MomentPage({
     };
   }
 
+  // WHERE THE HEADER'S CALL TAB GOES ON THIS PAGE (owner, "nav 1";
+  // lib/call-tab.ts questionCallTarget). The callable vehicles are exactly
+  // the cards below whose button reads "Read + call": the same keys
+  // (nominationCtaKey / billCtaKey) over the same inputs the grid passes, so
+  // the tab and the cards cannot disagree about what is open.
+  const callableHrefs = statuses.flatMap(({ vehicle: v, line }) => {
+    if (vehicleKind(v) === 'nomination') {
+      const nomination = getNomination(v.slug);
+      if (!nomination) return [];
+      const key = nominationCtaKey(nomination, isSettled || line.terminal);
+      return key === 'moments.readCall' ? [vehicleCtaHref(`/nominations/${v.slug}`, key)] : [];
+    }
+    const raw = getBill(v.slug);
+    if (!raw) return [];
+    const key = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
+    return key === 'moments.readCall' ? [vehicleCtaHref(`/bills/${v.slug}`, key)] : [];
+  });
+  const callTabHref = questionCallTarget(callableHrefs, '#vehicles-h');
+
   return (
     <article className={`${WRAP} pt-12 pb-16`}>
+      {callTabHref && <CallTabTarget href={callTabHref} />}
       {/* 1 · Moment header — full width, above the desk. It names the question
              and dates the record; both columns below answer to it. */}
       <p className="flex flex-wrap items-center gap-3 text-sm">
@@ -648,6 +672,9 @@ export default async function MomentPage({
                     // The bill page's own reading joins the status line's: a
                     // settled decision's page has no call panel (Q9, 2026-09-28).
                     const ctaKey = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
+                    // An adopted concurrent resolution's card says what that
+                    // means, as its bill page does (lib/concurrent-explainer.ts).
+                    const concurrentReading = adoptedConcurrentReading(raw);
                     return (
                       <MomentVehicleCard
                         key={v.slug}
@@ -656,7 +683,7 @@ export default async function MomentPage({
                         headline={bill.ai_headline}
                         title={bill.short_title ?? bill.title}
                         status={bill.status}
-                        statusKey={statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}
+                        statusKey={statusKeyFor(bill)}
                         tags={bill.issue_tags ?? []}
                         lastActionDate={bill.last_action_date}
                         coverageCount={coverageCount}
@@ -674,6 +701,9 @@ export default async function MomentPage({
                         ctaHref={vehicleCtaHref(`/bills/${v.slug}`, ctaKey)}
                         statusLine={line}
                         calendarLabel={t('bills.onCalendar')}
+                        explainer={
+                          concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
+                        }
                       />
                     );
                   })}

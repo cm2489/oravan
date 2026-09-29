@@ -120,7 +120,7 @@ const HOW_MADE_HREF = '/citations#ai-policy';
 
 /** The status-label key for a bill — one call site, so a change to
  *  statusKeyFor's signature lands on one line of this file. */
-const statusLabelKey = (b: Bill) => statusKeyFor(b.status, b.last_action_text, b.last_action_date);
+const statusLabelKey = (b: Bill) => statusKeyFor(b);
 
 // Returning only `alternates` lets the layout's title/description keep
 // flowing through unchanged. The RSS discovery link lives here because the

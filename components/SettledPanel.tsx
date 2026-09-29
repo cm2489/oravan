@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
@@ -11,6 +11,7 @@ import type { District, Legislator } from '@/lib/types';
 import { HouseFinder } from './HouseFinder';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
+import { PartyTotals } from './PartyTotals';
 
 /*
  * THE PANEL WHEN NO DECISION IS LEFT — what stands where the call panel
@@ -95,10 +96,15 @@ export function SettledPanel({
   kind,
   groups,
   floorLabel,
+  explainer,
 }: {
   /** The outcome sentence, already translated by the page. */
   outcome: string;
-  /** `SettledDecision['kind']` (`law` or `rejected`) — a test hook only. */
+  /** What an adopted concurrent resolution can and cannot do
+   *  (components/ConcurrentExplainer.tsx), rendered by the page on the server
+   *  and printed right under the outcome. Absent on every other record. */
+  explainer?: ReactNode;
+  /** `SettledDecision['kind']` (`law`, `rejected` or `adopted`) — a test hook only. */
   kind: string;
   /** lib/settled-votes.ts `settledVoteGroups`, in print order. */
   groups: SettledVoteGroupView[];
@@ -176,10 +182,16 @@ export function SettledPanel({
         {t('settled.title')}
       </h2>
       <div className="grid gap-5 p-4 md:p-6">
-        {/* (1) The outcome: the deciding chamber, the record's tally and date. */}
-        <p className="max-w-note text-lg font-bold text-ink" data-settled-outcome="">
-          {outcome}
-        </p>
+        {/* (1) The outcome: the deciding chamber, the record's tally and date.
+            On an adopted concurrent resolution, what that means follows it
+            directly (the owner, 2026-09-29: "This needs more explaination
+            because it's confusing"). */}
+        <div className="grid gap-2">
+          <p className="max-w-note text-lg font-bold text-ink" data-settled-outcome="">
+            {outcome}
+          </p>
+          {explainer}
+        </div>
 
         {hydrated && !zip && (
           <div className="rounded-control border-[1.5px] border-line-strong bg-paper p-4">
@@ -277,6 +289,11 @@ export function SettledPanel({
                         )}
                         {g.tally && ` · ${g.tally.yeas}–${g.tally.nays}`}
                       </h4>
+                      {/* The roll call's count by party, as one line of text
+                          (owner's card l12, 2026-09-29). Only for a roll call
+                          the file holds; a voice vote or a vote the file does
+                          not hold has none, and prints nothing here. */}
+                      <PartyTotals totals={g.totalsByParty} muted className="mt-1" />
                       {g.chamber === 'house' && lookup.multiDistrict ? (
                         <>
                           <p className="mt-1 text-sm text-ink-2">{t('settled.multiDistrict')}</p>

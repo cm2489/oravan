@@ -19,6 +19,24 @@ export const BILL_STATUSES = [
 
 export type BillStatus = (typeof BILL_STATUSES)[number];
 
+/**
+ * The key a status LABEL is printed under (lib/journey.ts `statusKeyFor`),
+ * which is a stored status or one of four readings of it:
+ *
+ *   `floor_activity`    a `floor_vote` record whose sentence is no placement
+ *                       (Wave B #1, 2026-08-04);
+ *   `floor_vote_stale`  a placement the record has shown nothing since (N3,
+ *                       2026-08-11);
+ *   `passed_both`       a `passed_chamber` record the SECOND chamber passed
+ *                       without amendment, so it goes to the president next
+ *                       (2026-09-29);
+ *   `adopted`           a concurrent resolution both chambers agreed to in
+ *                       one form, the end of its path (2026-09-29).
+ *
+ * Every one has a `bills.status.*` label in both languages.
+ */
+export type StatusLabelKey = BillStatus | 'floor_activity' | 'floor_vote_stale' | 'passed_both' | 'adopted';
+
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {
   tldr: string;
@@ -116,10 +134,11 @@ export interface BillTeaser {
   title: string;
   status: BillStatus;
   /** The label-gated key (lib/journey statusKeyFor): `floor_activity` for
-   *  floor_vote bills whose record shows activity, not a placement, and
+   *  floor_vote bills whose record shows activity, not a placement,
    *  `floor_vote_stale` for a placement the record has shown nothing since
-   *  (N3, 2026-08-11 — the same fact, in the past tense). */
-  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+   *  (N3, 2026-08-11 — the same fact, in the past tense), and the two
+   *  passage readings `passed_both` / `adopted` (see StatusLabelKey). */
+  statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
 }
@@ -276,8 +295,9 @@ export interface NewsBill extends BillTeaser {
 /**
  * Roll-call votes (data/votes.json, written by scripts/sync-votes.mjs and
  * gated by scripts/check-votes.mjs). Record data only — the record's own
- * question and result text, its tally, and every member's position. No party
- * is stored; data/legislators.json carries it.
+ * question and result text, its tally, its count by party, and every
+ * member's position. No member's party is stored beside the member;
+ * data/legislators.json carries it.
  *
  * The four positions are the record's own vocabulary. The House's "Aye"/"No"
  * on a recorded vote are counted by the Clerk under the same yea/nay totals
@@ -309,6 +329,20 @@ export interface RollCall {
   bill: string;
   /** The record's own tally; the gate pins it equal to the per-member lists. */
   totals: RollCallTotals;
+  /**
+   * The record's own count by party (2026-09-29), keyed by the party letter
+   * the record writes ("R", "D", "I"; any other letter is kept as written).
+   * Only parties with a member on the roll call. The gate pins the counts to
+   * add up to `totals`. House: the Clerk's party table; Senate: each member's
+   * own party letter, counted (lib/votes-core.mjs). Text only on any page —
+   * never a colour (CLAUDE.md rule 3).
+   *
+   * Optional in this TYPE only, so a hand-built roll call in a test fixture
+   * keeps compiling; every roll call in data/votes.json carries it, because
+   * scripts/check-votes.mjs fails the file otherwise. A reader of this field
+   * treats a missing one as "nothing to print".
+   */
+  totalsByParty?: Record<string, RollCallTotals>;
   /** The official record this roll call was read from (clerk.house.gov / senate.gov). */
   source: string;
   /** Bioguide ids by position. */

@@ -6,8 +6,8 @@
     "nav": {
       "home": "Home",
       "bills": "Bills",
+      "call": "Call",
       "reps": "My reps",
-      "impact": "My record",
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
       "moments": "Big Questions"
@@ -41,8 +41,8 @@
     "navShort": {
       "home": "Home",
       "bills": "Bills",
+      "call": "Call",
       "reps": "Reps",
-      "impact": "Record",
       "moments": "Questions"
     },
     "aiMarker": "AI",
@@ -168,7 +168,7 @@
     "sub": "Your members of Congress, with every number that reaches them.",
     "noZip": "Enter your ZIP code to find your members of Congress.",
     "previewNote": "Your members of Congress will appear here, with their DC and local numbers: in a state, one House representative and two senators; in DC or a territory, one House delegate.",
-    "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same either way.",
+    "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same for every district in your state.",
     "districtHeading": "{state} district {district}",
     "atLargeHeading": "{state} at-large",
     "senator": "Senator",
@@ -235,7 +235,7 @@
     "votesNote": "Roll-call votes on {count, plural, one {# bill} other {# bills}} Oravan tracks, since {date}, latest first.",
     "votesAiNote": "Headlines and summaries decoded by AI, checked against the record",
     "votesTheirVote": "Their vote:",
-    "votesMoreOnBill": "{count, plural, one {Their other vote on this bill} other {Their # other votes on this bill}}",
+    "votesMoreOnBillLink": "{count, plural, one {# more vote on this bill} other {# more votes on this bill}}",
     "votesOlder": "{count, plural, one {Their earlier votes on # more bill are not shown here. Each bill's page lists its recorded votes.} other {Their earlier votes on # more bills are not shown here. Each bill's page lists its recorded votes.}}",
     "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}."
   },
@@ -266,6 +266,8 @@
       "floor_vote_stale": "Placed on the calendar",
       "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
+      "passed_both": "Passed both chambers",
+      "adopted": "Adopted by both chambers",
       "conference": "In conference",
       "signed": "Signed into law",
       "vetoed": "Vetoed"
@@ -352,7 +354,7 @@
     "switchboard": "Capitol switchboard",
     "switchboardNote": "No ZIP handy? The Capitol switchboard can connect you to any congressional office.",
     "callWho": "Call any of your members, or all of them. One call per office is plenty.",
-    "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are always yours.",
+    "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are the same for every district in your state.",
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
     "settled": {
@@ -364,6 +366,7 @@
       "title": "No call to make",
       "law": "This is law.",
       "rejected": "The {chamber, select, House {House} Senate {Senate} other {Senate}} rejected it{tally, select, none {{hasDate, select, yes { on {date}} other {}}} other {, {yeas}–{nays}{hasDate, select, yes {, on {date}} other {}}}}.",
+      "adopted": "Both chambers agreed to it in the same form{hasDate, select, yes {, the second on {date}} other {}}.",
       "needZip": "Add your ZIP code to see how your members voted.",
       "membersHeading": "How your members voted",
       "voteIn": "{chamber, select, house {House vote} other {Senate vote}}",
@@ -375,6 +378,13 @@
       "noMember": "{chamber, select, house {No House member is listed for your ZIP.} other {No senators are listed for your ZIP.}}",
       "multiDistrict": "Your ZIP spans more than one House district, so this can't say which House member is yours.",
       "noRollCalls": "Oravan's roll-call record, which begins {floor}, holds no recorded vote on this bill."
+    },
+    "concurrent": {
+      "general": "A <term>concurrent resolution</term> states where both chambers stand. It isn't a law and doesn't go to the president, so it doesn't bind the president the way a law does.",
+      "bindsQuestion": "Does this bind the president?",
+      "warPowers": "This one invokes section 5(c) of the War Powers Resolution, a law that says the president shall remove U.S. forces from hostilities Congress has not authorized if Congress so directs by concurrent resolution. In 1983, in INS v. Chadha, the Supreme Court held that Congress acts with the force of law only through a measure passed by both chambers and presented to the president. A concurrent resolution is never presented to the president, so the Congressional Research Service calls section 5(c) <quote>constitutionally suspect</quote>.",
+      "crsSource": "Source: Congressional Research Service, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, March 2019)",
+      "aiNote": "Explanation drafted by AI from official sources"
     },
     "liveSenateFloor": "This bill is in the Senate's hands right now — your senators are the live call.",
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
@@ -441,12 +451,14 @@
       "nowFloorSuspensionFailed": "a {chamber, select, House {House} Senate {Senate} other {House}} vote to pass it fell short of the two-thirds this fast-track vote needs{tally, select, none {} other {, {yeas}–{nays}}}.",
       "nowFloorPassageRejected": "the {chamber, select, House {House} Senate {Senate} other {Senate}} voted on it and rejected it{tally, select, none {} other {, {yeas}–{nays}}}.",
       "nowFloorClotureInvoked": "the {chamber, select, House {House} Senate {Senate} other {Senate}} voted{tally, select, none {} other { {yeas}–{nays}}} to end debate on it, and the final vote on it is still ahead.",
+      "nowPointOfOrderUpheld": "the {chamber, select, House {House} Senate {Senate} other {Senate}} upheld a point of order against it{tally, select, none {} other {, {yeas}–{nays}}}{hasDate, select, yes {, on {date}} other {}}. The official record shows nothing new on it since.",
       "nowPassed": "it passed the {chamber, select, House {House} Senate {Senate} other {House}} and now goes to the {other, select, House {House} Senate {Senate} other {Senate}}.",
       "nowPassedStale": "it passed the {chamber, select, House {House} Senate {Senate} other {House}}, and the official record shows nothing new since.",
       "nowPassedBack": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, so it goes back to the {chamber, select, House {House} Senate {Senate} other {House}}.",
       "nowPassedBackStale": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, and the official record shows nothing new since.",
       "nowPassedBoth": "both chambers have passed it. It goes to the president next.",
       "nowPassedSecond": "both chambers have passed it — the official record doesn't say yet whether the two versions match.",
+      "nowAdoptedBoth": "both chambers have agreed to it in the same form. This kind of resolution does not go to the president, so its path ends here.",
       "nowConference": "both chambers are reconciling their versions.",
       "nowSigned": "the president signed it. It's law.",
       "nowVetoed": "the president vetoed it. Congress can override with two-thirds of both chambers.",
@@ -580,6 +592,19 @@
       "center": "center",
       "right": "right"
     }
+  },
+  "call": {
+    "title": "Make a call",
+    "lede": "Pick a bill. You get a script you can edit, and the numbers.",
+    "metaDescription": "The bills in Congress worth a call this week, each with a script you can edit and your members' numbers.",
+    "weekTitle": "This week",
+    "aiNote": "Headlines decoded by AI",
+    "aiHowMade": "How this is made",
+    "routingSenate": "Your senators are the live call: {names}",
+    "routingHouse": "Your House member is the live call: {names}",
+    "reachTitle": "Who you'll reach",
+    "reachNote": "Their numbers are in each bill's call panel, under your script.",
+    "reachFailed": "Your members couldn't be looked up just now. Each bill's call panel will try again."
   },
   "why": {
     "title": "Why calling works",
@@ -727,8 +752,8 @@
     "frameTitle": "Your representatives",
     "languageLabel": "Language",
     "multiDistrictTitle": "This ZIP spans more than one district",
-    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Both candidate districts are shown below; your senators are the same either way.",
-    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Both candidate districts are shown below; your senators are the same either way.",
+    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Every candidate district is shown below; your senators are the same for every district in your state.",
+    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Every candidate district is shown below; your senators are the same for every district in your state.",
     "openFullLookup": "Refine with your address on Oravan",
     "openFullLookupBrandless": "Refine with your address",
     "poweredBy": "Powered by Oravan",
@@ -1360,7 +1385,7 @@
       },
       "concurrent-resolution": {
         "term": "Concurrent resolution",
-        "body": "A concurrent resolution is passed by both chambers but is not sent to the president and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+        "body": "A concurrent resolution is a measure both chambers pass in the same form to state a position they share or to handle their own business, such as setting Congress’s budget goals or the time it adjourns. It is not sent to the president and does not have the force of law."
       },
       "simple-resolution": {
         "term": "Simple resolution",
@@ -1729,6 +1754,10 @@
     "tieBreaker": "The vice president's tie-breaking vote: {position}",
     "source": "Official record",
     "membersToggle": "How members voted",
+    "membersOnRecord": "The official record lists how each member voted.",
+    "membersLoading": "Loading the list…",
+    "membersError": "The list didn't load.",
+    "membersRetry": "Try again",
     "group": "{position} ({count})",
     "earlier": "{count, plural, one {# earlier vote} other {# earlier votes}}",
     "delegation": {
@@ -1739,7 +1768,17 @@
       "noHouseVote": "No recorded House vote on this bill since {date}",
       "noSenateVote": "No recorded Senate vote on this bill since {date}",
       "notListed": "Not listed in this roll call",
-      "multiDistrict": "Your ZIP spans more than one House district, so only your senators are shown here."
+      "multiDistrict": "Your ZIP spans more than one House district, so only senators are shown here. Your senators are the same for every district in your state."
     }
+  },
+  "partyTotals": {
+    "D": "{count, plural, one {Democrat} other {Democrats}}",
+    "R": "{count, plural, one {Republican} other {Republicans}}",
+    "I": "{count, plural, one {Independent} other {Independents}}",
+    "group": "{party} {counts}",
+    "yea": "{count} yes",
+    "nay": "{count} no",
+    "present": "{count} present",
+    "notVoting": "{count} not voting"
   }
 }

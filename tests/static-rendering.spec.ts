@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
 import { briefWindow } from '../lib/today';
+import { voteMembersPath } from '../lib/vote-members-path';
+import { allRollCalls } from '../lib/votes';
 import { localeRoutes, staticLocalePages } from './routes';
 
 /*
@@ -164,6 +166,19 @@ test('every member-of-Congress page is prerendered, in both languages', () => {
     ids.map((id) => `/${locale}/reps/${id}`).filter((route) => !(route in prerendered)),
   );
   expect(missing, 'member pages rendered on demand instead of prerendered').toEqual([]);
+});
+
+test('every roll call\'s member list is a prerendered static file, not a per-request render', () => {
+  // app/votes/[file]/route.ts (2026-09-29): the bill page's "How members
+  // voted" list, one JSON file per stored roll call, fetched when a reader
+  // opens it. It sits outside app/[locale] (no language: names and the
+  // record's positions only), so the registry test above does not see it;
+  // this one pins that the build wrote every file ahead of time.
+  const prerendered = routes();
+  const ids = allRollCalls().map((r) => r.id);
+  expect(ids.length).toBeGreaterThan(0);
+  const missing = ids.map(voteMembersPath).filter((route) => !(route in prerendered));
+  expect(missing, 'roll-call member files rendered on demand instead of prerendered').toEqual([]);
 });
 
 test('the daily brief prerenders every dated permalink in its window, in both languages', () => {

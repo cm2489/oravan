@@ -132,6 +132,7 @@ import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
 import { statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
+import { partyCountsPassLint, partyRule, partyTotalsPromptText } from '../lib/party-count-rule.mjs';
 // The status-label clock, imported rather than copied a fourth time. The
 // canonical definition is lib/journey.ts `statusKeyFor`; that file is
 // TypeScript and this one is .mjs, and scripts/moment-candidates.mjs already
@@ -669,10 +670,19 @@ function collectPressClusters() {
 const LAW_BRIEF = `Oravan's editorial law, which your output must obey:
 "Truth about the record, attribution about the spin. When the record speaks, we say it plainly — numbers, dates, tallies, text — even when plainness lands harder on one side. Balance is not achieved by blunting facts. When the record is silent — motive, likelihood, what it really means — Oravan's voice stops, and named sources speak or nobody does. Speculation never wears our voice."`;
 
+/**
+ * Party counts on recorded votes (2026-09-29, the owner's card l12;
+ * lib/party-count-rule.mjs). True only when the rule-3 lint on this tree lets
+ * a party count through (PR #363); until then no writer is offered one, and
+ * no party figure is put in front of a model.
+ */
+const PARTY_COUNTS = partyCountsPassLint();
+
 const FRAMING_RULES = `RULES (a line that breaks any of these is discarded and replaced by the raw record):
 - State ONLY what the supplied record says. Never add motive, consequence, likelihood, or what it "means".
 - NO hedging or forecasting of any kind: no "expected to", "likely to", "could", "might", "set to", "poised to", "on track to"; no "se espera", "probablemente", "podria", "podrian", "estaria", "previsto que", "a punto de". A record claim is stated flatly or not stated.
-- Never name a political party, and never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
+${partyRule({ figures: 'the "tally_by_party" of that same item', allowed: PARTY_COUNTS })}
+- Never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally, roll-call number, vote count and date exactly as the record gives it.
 - Each line is ONE sentence, at most 160 characters, plain text, no markdown, sentence case.
 - Spanish is natural Latin American Spanish at an 8th-grade reading level, carrying the same facts and the same numbers. Bill numbers stay in their English citation form (H.R. 9770, S.J.Res. 185).
@@ -694,7 +704,28 @@ function decodePayload(candidate) {
     ...(candidate.record.totals
       ? { question: candidate.record.question, result: candidate.record.result, tally: candidate.record.totals }
       : {}),
+    // The record's own count by party for this roll call, when the vote file
+    // holds it and the lint accepts a party count (PARTY_COUNTS). Looked up,
+    // never stored on the update: the update's `record` shape is unchanged.
+    ...(PARTY_COUNTS && candidate.record.roll_call ? partyTallyFor(candidate) : {}),
   };
+}
+
+/**
+ * `{ tally_by_party }` for a vote update whose roll call data/votes.json
+ * holds — matched on chamber, roll number, measure AND day, because roll
+ * numbers restart every session — or `{}`. Exported for
+ * tests/party-count-rule.unit.spec.ts, which passes `rolls`.
+ * @param {Record<string, any>} candidate
+ * @param {Record<string, any>[]} [rolls] data/votes.json rollCalls
+ */
+export function partyTallyFor(candidate, rolls = rollCalls) {
+  const rc = candidate.record.roll_call;
+  const r = (rolls ?? []).find(
+    (x) => x?.chamber === rc.chamber && x.roll === rc.number && x.bill === candidate.vehicle && x.date === candidate.day,
+  );
+  const text = partyTotalsPromptText(r?.totalsByParty);
+  return text ? { tally_by_party: text } : {};
 }
 
 /**
@@ -906,7 +937,7 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
         : `- ${u.day} [${u.class}] ${billLabel(u.vehicle)}: ${u.record?.action_text ?? ''}`,
     )
     .join('\n');
-  const voteLines = (votes ?? []).map(voteGroundingLine).join('\n');
+  const voteLines = (votes ?? []).map((r) => voteGroundingLine(r)).join('\n');
 
   // Is the record in this window EMPTY? Any record-bearing update (everything
   // but a press cluster) or any roll call says it is not — and then "nothing
@@ -973,7 +1004,8 @@ ${LAW_BRIEF}
 RULES:
 - Use ONLY the statuses and records below. Never add motive, likelihood, consequence, or what any of it "means".
 - NO hedging or forecasting: no "expected to", "likely to", "could", "might", "set to", "poised to", "on track to"; no "se espera", "probablemente", "podria", "podrian", "estaria", "previsto que", "a punto de".
-- Never name a political party; never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
+${partyRule({ figures: 'the "by party" figures printed with that roll call under RECORDED VOTES below', allowed: PARTY_COUNTS })}
+- Never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally and roll-call number exactly as given.
 - 90 to 140 words per language. Plain text, no markdown, no headings.
 ${PRESIDENT_STYLE_RULE}
@@ -1113,16 +1145,21 @@ export function rollCallsOnRecord(slugs, rolls, actionTexts) {
 
 /**
  * One roll call as a prompt line: every field verbatim from data/votes.json.
- * The tally is printed the way the record counts it, never pre-phrased.
+ * The tally is printed the way the record counts it, never pre-phrased. When
+ * the lint accepts a party count (PARTY_COUNTS), the record's own count by
+ * party follows it, in the same words (lib/party-count-rule.mjs); otherwise
+ * the line is exactly what it was before 2026-09-29.
  * @param {Record<string, any>} r
+ * @param {{ partyCounts?: boolean }} [opts] tests pass it; the run uses PARTY_COUNTS
  * @returns {string}
  */
-export function voteGroundingLine(r) {
+export function voteGroundingLine(r, { partyCounts = PARTY_COUNTS } = {}) {
   const t = r?.totals ?? {};
   const chamber = r?.chamber === 'house' ? 'House' : 'Senate';
   const counts = [`Yeas ${t.yea ?? 0}`, `Nays ${t.nay ?? 0}`, `Present ${t.present ?? 0}`, `Not Voting ${t.notVoting ?? 0}`];
   const tie = r?.tieBreaker?.position ? `; tie-breaking vote ${r.tieBreaker.position}` : '';
-  return `- ${r?.date} · ${chamber} roll call no. ${r?.roll} · ${billLabel(r?.bill)} · question: "${r?.question ?? ''}" · result: "${r?.result ?? ''}" · ${counts.join(', ')}${tie}`;
+  const byParty = partyCounts ? partyTotalsPromptText(r?.totalsByParty) : '';
+  return `- ${r?.date} · ${chamber} roll call no. ${r?.roll} · ${billLabel(r?.bill)} · question: "${r?.question ?? ''}" · result: "${r?.result ?? ''}" · ${counts.join(', ')}${tie}${byParty ? ` · ${byParty}` : ''}`;
 }
 
 /* ------------------------------------------------------------------ *

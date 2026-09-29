@@ -44,8 +44,10 @@ export function VoteDelegation({
   const lookup = useSharedRepLookup();
   if (!zip || !lookup || lookup.zip !== zip) return null;
 
-  // A split ZIP cannot say which House member is this visitor's; the
-  // senators are certain either way.
+  // A split ZIP cannot say which House member is this visitor's, so only
+  // senators are listed. Senators are certain only inside one state: 109 ZIPs
+  // cross a state line (19973 is DE and MD), and there every state's two are
+  // listed, so `delegation.multiDistrict` never calls them all "yours".
   const members: SharedRep[] = lookup.reps
     .filter((r) => !lookup.multiDistrict || r.type === 'sen')
     .sort((a, b) => (a.type === b.type ? 0 : a.type === 'rep' ? -1 : 1));

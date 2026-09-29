@@ -6,8 +6,8 @@
     "nav": {
       "home": "Inicio",
       "bills": "Proyectos de ley",
+      "call": "Llamar",
       "reps": "Mis representantes",
-      "impact": "Mi historial",
       "whyCall": "¿Por qué llamar?",
       "primaryLabel": "Principal",
       "moments": "Grandes preguntas"
@@ -41,8 +41,8 @@
     "navShort": {
       "home": "Inicio",
       "bills": "Proyectos",
+      "call": "Llamar",
       "reps": "Mis reps",
-      "impact": "Historial",
       "moments": "Preguntas"
     },
     "aiMarker": "IA",
@@ -168,7 +168,7 @@
     "sub": "Tus miembros del Congreso, con todos sus números de contacto.",
     "noZip": "Escribe tu código postal para encontrar a tus miembros del Congreso.",
     "previewNote": "Aquí aparecerán tus miembros del Congreso, con sus números en Washington y en tu zona: en un estado, tu representante en la Cámara y tus dos senadores; en el Distrito de Columbia o un territorio, tu delegado/a en la Cámara.",
-    "multiDistrict": "Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
+    "multiDistrict": "Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en todos los distritos de tu estado.",
     "districtHeading": "{state}, distrito {district}",
     "atLargeHeading": "{state}, distrito único",
     "senator": "Senador/a",
@@ -235,7 +235,7 @@
     "votesNote": "Votaciones nominales sobre {count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, desde el {date}, con la más reciente primero.",
     "votesAiNote": "Titulares y resúmenes traducidos por IA, verificados con el registro",
     "votesTheirVote": "Su voto:",
-    "votesMoreOnBill": "{count, plural, one {Su otro voto sobre este proyecto} other {Sus otros # votos sobre este proyecto}}",
+    "votesMoreOnBillLink": "{count, plural, one {# voto más sobre este proyecto} other {# votos más sobre este proyecto}}",
     "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
     "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
   },
@@ -266,6 +266,8 @@
       "floor_vote_stale": "Incluido en el calendario",
       "floor_activity": "Actividad en el pleno",
       "passed_chamber": "Aprobado por una cámara",
+      "passed_both": "Aprobado por ambas cámaras",
+      "adopted": "Adoptado por ambas cámaras",
       "conference": "En comisión mixta",
       "signed": "Promulgado como ley",
       "vetoed": "Vetado"
@@ -352,7 +354,7 @@
     "switchboard": "Centralita del Capitolio",
     "switchboardNote": "¿Sin código postal a mano? La centralita del Capitolio te conecta con cualquier oficina del Congreso.",
     "callWho": "Llama a cualquiera de tus miembros del Congreso — o a todos. Una llamada por oficina es suficiente.",
-    "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores siempre son los tuyos.",
+    "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores son los mismos en todos los distritos de tu estado.",
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "alsoYours": "También te representa",
     "settled": {
@@ -364,6 +366,7 @@
       "title": "No hay llamada que hacer",
       "law": "Esto ya es ley.",
       "rejected": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} lo rechazó{tally, select, none {{hasDate, select, yes { el {date}} other {}}} other {, por {yeas} votos a favor y {nays} en contra{hasDate, select, yes {, el {date}} other {}}}}.",
+      "adopted": "Ambas cámaras lo aprobaron con el mismo texto{hasDate, select, yes {, la segunda el {date}} other {}}.",
       "needZip": "Escribe tu código postal para ver cómo votaron tus miembros del Congreso.",
       "membersHeading": "Cómo votaron tus miembros del Congreso",
       "voteIn": "{chamber, select, house {Votación de la Cámara} other {Votación del Senado}}",
@@ -375,6 +378,13 @@
       "noMember": "{chamber, select, house {No figura ningún representante de la Cámara para tu código postal.} other {No figuran senadores para tu código postal.}}",
       "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que no se puede saber qué representante es el tuyo.",
       "noRollCalls": "El registro de votaciones nominales de Oravan, que empieza el {floor}, no tiene ninguna votación registrada sobre este proyecto."
+    },
+    "concurrent": {
+      "general": "Una <term>resolución concurrente</term> expresa la posición de ambas cámaras. No es una ley y no pasa al presidente, así que no obliga al presidente como lo haría una ley.",
+      "bindsQuestion": "¿Obliga esto al presidente?",
+      "warPowers": "Esta invoca la sección 5(c) de la Resolución de Poderes de Guerra, una ley que dice que el presidente retirará a las fuerzas de EE. UU. de hostilidades que el Congreso no ha autorizado si el Congreso así lo ordena mediante una resolución concurrente. En 1983, en INS v. Chadha, la Corte Suprema resolvió que el Congreso solo actúa con fuerza de ley mediante una medida aprobada por ambas cámaras y presentada al presidente. Una resolución concurrente nunca se presenta al presidente, por eso el Servicio de Investigación del Congreso califica la sección 5(c) de <quote>constitutionally suspect</quote> (de dudosa constitucionalidad).",
+      "crsSource": "Fuente: Servicio de Investigación del Congreso, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, marzo de 2019; en inglés)",
+      "aiNote": "Explicación redactada por IA a partir de fuentes oficiales"
     },
     "liveSenateFloor": "Este proyecto está ahora en manos del Senado — tus senadores son la llamada que cuenta ahora.",
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
@@ -441,12 +451,14 @@
       "nowFloorSuspensionFailed": "una votación {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}} para aprobarlo por la vía rápida no alcanzó los dos tercios que ese procedimiento exige{tally, select, none {} other {, con {yeas} votos a favor y {nays} en contra}}.",
       "nowFloorPassageRejected": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo sometió a votación y lo rechazó{tally, select, none {} other {, por {yeas} votos a favor y {nays} en contra}}.",
       "nowFloorClotureInvoked": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} votó{tally, select, none {} other { {yeas} a {nays}}} para cerrar el debate, y la votación final todavía está pendiente.",
+      "nowPointOfOrderUpheld": "{chamber, select, House {la Cámara} Senate {el Senado} other {el Senado}} aceptó una cuestión de orden en su contra{tally, select, none {} other {, por {yeas} votos a favor y {nays} en contra}}{hasDate, select, yes {, el {date}} other {}}. El registro oficial no muestra nada nuevo desde entonces.",
       "nowPassed": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}} y ahora pasa {other, select, House {a la Cámara} Senate {al Senado} other {al Senado}}.",
       "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
       "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
+      "nowAdoptedBoth": "ambas cámaras lo han aprobado con el mismo texto. Este tipo de resolución no pasa al presidente, así que su trámite termina aquí.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
       "nowSigned": "el presidente lo firmó. Ya es ley.",
       "nowVetoed": "el presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
@@ -580,6 +592,19 @@
       "center": "centro",
       "right": "derecha"
     }
+  },
+  "call": {
+    "title": "Haz una llamada",
+    "lede": "Elige un proyecto de ley. Te damos un guion que puedes editar y los números.",
+    "metaDescription": "Los proyectos de ley del Congreso que esta semana ameritan una llamada, cada uno con un guion que puedes editar y los números de tus representantes.",
+    "weekTitle": "Esta semana",
+    "aiNote": "Titulares traducidos por IA",
+    "aiHowMade": "Cómo se hace esto",
+    "routingSenate": "Tus senadores son la llamada que cuenta ahora: {names}",
+    "routingHouse": "Tu representante en la Cámara es la llamada que cuenta ahora: {names}",
+    "reachTitle": "A quién vas a llamar",
+    "reachNote": "Sus números están en el panel de llamada de cada proyecto, debajo de tu guion.",
+    "reachFailed": "No pudimos buscar a tus representantes en este momento. El panel de llamada de cada proyecto lo volverá a intentar."
   },
   "why": {
     "title": "Por qué llamar funciona",
@@ -727,8 +752,8 @@
     "frameTitle": "Tus representantes",
     "languageLabel": "Idioma",
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
-    "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
-    "multiDistrictBodyBrandless": "Este widget incrustado no acepta una dirección — ese paso se hace en el sitio completo. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
+    "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran todos los distritos posibles; tus senadores son los mismos en todos los distritos de tu estado.",
+    "multiDistrictBodyBrandless": "Este widget incrustado no acepta una dirección — ese paso se hace en el sitio completo. Abajo se muestran todos los distritos posibles; tus senadores son los mismos en todos los distritos de tu estado.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Oravan",
     "openFullLookupBrandless": "Precisa tu distrito con tu dirección",
     "poweredBy": "Desarrollado por Oravan",
@@ -1360,7 +1385,7 @@
       },
       "concurrent-resolution": {
         "term": "Resolución concurrente",
-        "body": "Una resolución concurrente la aprueban las dos cámaras, pero no se envía al presidente y no tiene fuerza de ley. El Congreso la usa para asuntos que afectan a las dos cámaras, como la resolución presupuestaria del Congreso."
+        "body": "Una resolución concurrente es una medida que ambas cámaras aprueban con el mismo texto para expresar una posición común o para ocuparse de sus propios asuntos, como fijar las metas presupuestarias del Congreso o el momento en que levanta sus sesiones. No se envía al presidente y no tiene fuerza de ley."
       },
       "simple-resolution": {
         "term": "Resolución simple",
@@ -1729,6 +1754,10 @@
     "tieBreaker": "Voto de desempate del vicepresidente: {position}",
     "source": "Registro oficial",
     "membersToggle": "Cómo votó cada miembro",
+    "membersOnRecord": "El registro oficial muestra cómo votó cada miembro.",
+    "membersLoading": "Cargando la lista…",
+    "membersError": "No se pudo cargar la lista.",
+    "membersRetry": "Intentar de nuevo",
     "group": "{position} ({count})",
     "earlier": "{count, plural, one {# votación anterior} other {# votaciones anteriores}}",
     "delegation": {
@@ -1739,7 +1768,17 @@
       "noHouseVote": "Sin votación nominal de la Cámara sobre este proyecto desde el {date}",
       "noSenateVote": "Sin votación nominal del Senado sobre este proyecto desde el {date}",
       "notListed": "No figura en esta votación nominal",
-      "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen tus senadores."
+      "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen senadores. Tus senadores son los mismos en todos los distritos de tu estado."
     }
+  },
+  "partyTotals": {
+    "D": "{count, plural, one {Demócrata} other {Demócratas}}",
+    "R": "{count, plural, one {Republicano/a} other {Republicanos}}",
+    "I": "{count, plural, one {Independiente} other {Independientes}}",
+    "group": "{party}: {counts}",
+    "yea": "{count} sí",
+    "nay": "{count} no",
+    "present": "{count, plural, one {# presente} other {# presentes}}",
+    "notVoting": "{count, plural, one {# no votó} other {# no votaron}}"
   }
 }

@@ -1,6 +1,6 @@
 import { recordedTally, statusBasisText } from './floor-text.mjs';
 import type { SettledDecision } from './journey';
-import type { Bill, RollCall, VotePosition } from './types';
+import type { Bill, RollCall, RollCallTotals, VotePosition } from './types';
 
 /*
  * "HOW YOUR MEMBERS VOTED", ONE VOTE AT A TIME — the groups the record-only
@@ -23,6 +23,13 @@ import type { Bill, RollCall, VotePosition } from './types';
  * the other chamber's newest roll call on the bill, when the vote file holds
  * one. On a law there is no single deciding vote, so each chamber's newest
  * roll call prints, newest first.
+ *
+ * On an ADOPTED concurrent resolution (2026-09-29, lib/journey.ts
+ * `settledDecision` 'adopted') the groups are built exactly as on a
+ * rejection: the second chamber's agreement first, the vote that completed
+ * it (H.Con.Res. 86: the Senate's record vote 184, 50–48, 2026-06-23), then
+ * the other chamber's newest roll call on the measure (its House roll 199,
+ * 215–208, 2026-06-03, the only House roll call the file holds on it).
  *
  * THE DECIDING VOTE is found by the roll number the record's own sentence
  * carries ("… Record Vote Number: 244." in the Senate, "… (Roll no. 19)." in
@@ -55,6 +62,11 @@ export interface SettledVoteGroup {
   source: 'rollCall' | 'beforeFile' | 'notInFile' | 'voice';
   /** bioguide → position; only when `source` is `rollCall`. */
   positions: Record<string, VotePosition> | null;
+  /** The roll call's own count by party (data/votes.json `totalsByParty`,
+   *  printed as one line of text by components/PartyTotals.tsx); only when
+   *  `source` is `rollCall`. A vote the file does not hold has none to show,
+   *  and the field is left off. */
+  totalsByParty?: Record<string, RollCallTotals>;
   /** The vote the outcome sentence is about. */
   deciding: boolean;
 }
@@ -97,6 +109,7 @@ function fromRollCall(r: RollCall, deciding: boolean): SettledVoteGroup {
     tally: { yeas: r.totals.yea, nays: r.totals.nay },
     source: 'rollCall',
     positions,
+    totalsByParty: r.totalsByParty,
     deciding,
   };
 }
@@ -124,6 +137,7 @@ export function settledVoteGroups(
     return groups;
   }
 
+  // A rejection or an adoption: the vote the outcome sentence is about first.
   const chamber = settled.chamber;
   const record = statusBasisText(bill) ?? '';
   const date = settledDecisionDate(bill);

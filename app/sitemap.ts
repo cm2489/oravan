@@ -33,6 +33,7 @@ import { briefWindow } from '@/lib/today';
 const STATIC_PATHS = [
   '/',
   '/bills',
+  '/call',
   '/reps',
   '/about',
   '/privacy',

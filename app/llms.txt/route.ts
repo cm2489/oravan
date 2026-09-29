@@ -64,6 +64,7 @@ Oravan publishes a plain-language, AI-drafted and automatically checked decoded 
 ## Pages
 
 - [Bills](${SITE_ORIGIN}/bills): browse and search the decoded bill corpus
+- [Call](${SITE_ORIGIN}/call): this week's bills worth a call, each opening its call panel with a script you can edit and your representatives' numbers
 - [My representatives](${SITE_ORIGIN}/reps): find federal representatives by ZIP code
 - [Why call](${SITE_ORIGIN}/why-call): why calling Congress works, and how a call is counted
 - [About](${SITE_ORIGIN}/about): what Oravan is and isn't

@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CURSOR_RE,
+  PARTY_RE,
   VOTES_SCHEMA,
   VoteParseError,
+  VotePartyDisagreement,
+  finishPartyTotals,
+  hasPartyTotals,
   houseClerkDate,
   parseHouseApi,
   parseHouseClerkXml,
@@ -25,7 +29,10 @@ import type { Legislator, RollCall, Vacancy, VotesFile } from '../lib/types';
  * tests/fixtures/votes are the REAL records, fetched 2026-09-24, redacted to a
  * few members each. The redaction also rewrote each fixture's TOTALS to match
  * the members it kept (the record's own totals are for the full chamber), so
- * the totals-vs-positions check still has something true to compare:
+ * the totals-vs-positions check still has something true to compare. The
+ * Clerk fixtures' <totals-by-party> rows and the Congress.gov detail's
+ * `votePartyTotal` were rewritten the same way on 2026-09-29, in the record's
+ * own shape (the Clerk lists "Independent" at zero when no member is one):
  *   house-api-*-119-2-308     Congress.gov API, H.R. 5334 motion to concur
  *   clerk-roll300-rule.xml    clerk.house.gov, the H.Res. 1530 RULE vote
  *   senate-vote-119-2-00234   senate.gov, cloture on the motion to proceed to H.R. 3633
@@ -52,6 +59,11 @@ test.describe('House parse', () => {
     expect(roll.question).toBe('On Motion to Concur in the Senate Amendments');
     expect(roll.result).toBe('Passed');
     expect(roll.totals).toEqual({ yea: 2, nay: 1, present: 0, notVoting: 1 });
+    // The detail reply's own party table, keyed by its `voteParty` letter.
+    expect(roll.totalsByParty).toEqual({
+      D: { yea: 1, nay: 1, present: 0, notVoting: 1 },
+      R: { yea: 1, nay: 0, present: 0, notVoting: 0 },
+    });
     expect(roll.votes.yea).toHaveLength(2);
     expect(roll.votes.nay).toHaveLength(1);
     expect(roll.votes.notVoting).toHaveLength(1);
@@ -67,6 +79,80 @@ test.describe('House parse', () => {
     expect(roll.bill).toBe('hr-3633-119');
     expect(roll.votes).toEqual({ yea: ['A000055'], nay: ['A000370'], present: [], notVoting: ['D000032'] });
     expect(roll.totals).toEqual({ yea: 1, nay: 1, present: 0, notVoting: 1 });
+    // <totals-by-party>, lettered as the member rows are; the Clerk's
+    // "Independent" row at zero counts nobody and is left out.
+    expect(roll.totalsByParty).toEqual({
+      D: { yea: 0, nay: 1, present: 0, notVoting: 0 },
+      R: { yea: 1, nay: 0, present: 0, notVoting: 1 },
+    });
+  });
+
+  test('Clerk XML: the party table must agree with the member rows, or nothing is stored', () => {
+    const xml = fx('clerk-roll300-rule.xml').replace('<legis-num>H RES 1530</legis-num>', '<legis-num>H R 3633</legis-num>');
+    // One Republican yea moved to the Democratic row: the totals still add up,
+    // but the record now disagrees with itself about who cast them.
+    const swapped = xml
+      .replace(/(<party>Republican<\/party>\s*<yea-total>)1</, '$10<')
+      .replace(/(<party>Democratic<\/party>\s*<yea-total>)0</, '$11<');
+    expect(swapped).not.toBe(xml);
+    expect(() => parseHouseClerkXml(swapped, { corpus })).toThrow(/disagrees with the member rows/);
+    // A party name the table cannot place is not given a guessed letter.
+    expect(() => parseHouseClerkXml(xml.replace('<party>Independent</party>', '<party>Libertarian</party>'), { corpus })).toThrow(
+      /cannot place/
+    );
+    // No party table at all: not stored.
+    expect(() => parseHouseClerkXml(xml.replace(/<totals-by-party>[\s\S]*?<\/totals-by-party>/g, ''), { corpus })).toThrow(
+      /no <totals-by-party>/
+    );
+    // A member row with no party letter: not stored.
+    expect(() => parseHouseClerkXml(xml.replace(' party="D"', ''), { corpus })).toThrow(/without a party letter/);
+  });
+
+  test('a Congress.gov party total without a letter is refused', () => {
+    const detail = fxJson('house-api-detail-119-2-308.json');
+    delete detail.houseRollCallVote.votePartyTotal[0].voteParty;
+    delete detail.houseRollCallVote.votePartyTotal[0].party;
+    expect(() => parseHouseApi(detail, fxJson('house-api-members-119-2-308.json'), { corpus })).toThrow(VotePartyDisagreement);
+    expect(() => parseHouseApi(detail, fxJson('house-api-members-119-2-308.json'), { corpus })).toThrow(/without a party letter/);
+  });
+
+  test('Congress.gov: the party table must agree with the members reply, or the Clerk is read instead', () => {
+    // One Democratic yea moved to the Republican row: the totals still add up,
+    // but the API now disagrees with its own member rows about who cast them.
+    const detail = fxJson('house-api-detail-119-2-308.json');
+    const rows = detail.houseRollCallVote.votePartyTotal;
+    const r = rows.find((p: { voteParty: string }) => p.voteParty === 'R');
+    const d = rows.find((p: { voteParty: string }) => p.voteParty === 'D');
+    r.yeaTotal += 1;
+    d.yeaTotal -= 1;
+    const members = fxJson('house-api-members-119-2-308.json');
+    const swapped = (() => {
+      try {
+        parseHouseApi(detail, members, { corpus });
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+    expect(swapped).toBeInstanceOf(VotePartyDisagreement);
+    expect(String((swapped as Error).message)).toMatch(/disagrees with the member rows/);
+    // NOT a VoteParseError: scripts/sync-votes.mjs rethrows those and falls
+    // back to the Clerk's XML (the roll call's cited source) on anything else.
+    expect(swapped).not.toBeInstanceOf(VoteParseError);
+
+    // A member row with no party letter: the table cannot be checked, same path.
+    const unlettered = fxJson('house-api-members-119-2-308.json');
+    delete unlettered.houseRollCallVoteMemberVotes.results[0].voteParty;
+    expect(() => parseHouseApi(fxJson('house-api-detail-119-2-308.json'), unlettered, { corpus })).toThrow(VotePartyDisagreement);
+  });
+
+  test('scripts/sync-votes.mjs falls back to the Clerk on a party disagreement, and rethrows only a VoteParseError', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
+    const call = src.indexOf('parsed = parseHouseApi(');
+    const handler = src.slice(call, src.indexOf('stats.house.viaClerk++', call));
+    expect(handler).toMatch(/if \(e instanceof VoteParseError\) throw e;/);
+    expect(handler).not.toMatch(/VotePartyDisagreement\) throw/);
+    expect(handler).toMatch(/parseHouseClerkXml\(/);
   });
 
   test('a RULE vote never attaches to the bills it schedules', () => {
@@ -92,6 +178,16 @@ test.describe('Senate parse', () => {
     expect(roll.totals).toEqual({ yea: 1, nay: 1, present: 0, notVoting: 1 });
     expect(roll.votes).toEqual({ yea: ['A000382'], nay: ['A000383'], present: [], notVoting: ['C001088'] });
     expect(members.map((m) => m.state).sort()).toEqual(['DE', 'MD', 'OK']);
+    // No party table in the Senate's XML: each member's own <party>, counted.
+    expect(roll.totalsByParty).toEqual({
+      D: { yea: 0, nay: 1, present: 0, notVoting: 1 },
+      R: { yea: 1, nay: 0, present: 0, notVoting: 0 },
+    });
+  });
+
+  test('a senator with no party letter in the record is refused, not guessed', () => {
+    const xml = fx('senate-vote-119-2-00234.xml').replace('<party>R</party>', '<party></party>');
+    expect(() => parseSenateXml(xml, { corpus, lisToBioguide })).toThrow(/no party letter/);
   });
 
   test('an amendment vote resolves through amendment_to_document_number', () => {
@@ -118,6 +214,28 @@ test.describe('Senate parse', () => {
     expect(senateDate('September 15, 2026,  02:19 PM')).toBe('2026-09-15');
     expect(houseClerkDate('15-Sep-2026')).toBe('2026-09-15');
     expect(() => senateDate('yesterday')).toThrow(VoteParseError);
+  });
+});
+
+test.describe('the stored count by party', () => {
+  test('finishPartyTotals: letter order, record position order, parties at zero left out', () => {
+    expect(
+      finishPartyTotals({
+        R: { notVoting: 9, present: 0, nay: 132, yea: 77 },
+        I: { yea: 0, nay: 0, present: 0, notVoting: 0 },
+        D: { yea: 187, nay: 1, present: 0, notVoting: 26 },
+      })
+    ).toEqual({ D: { yea: 187, nay: 1, present: 0, notVoting: 26 }, R: { yea: 77, nay: 132, present: 0, notVoting: 9 } });
+    expect(JSON.stringify(finishPartyTotals({ R: { notVoting: 1, present: 0, nay: 0, yea: 2 } }))).toBe(
+      '{"R":{"yea":2,"nay":0,"present":0,"notVoting":1}}'
+    );
+  });
+
+  test('hasPartyTotals: a roll call written before 2026-09-29 is not held', () => {
+    expect(hasPartyTotals({ totalsByParty: { R: { yea: 1, nay: 0, present: 0, notVoting: 0 } } })).toBe(true);
+    expect(hasPartyTotals({})).toBe(false);
+    expect(hasPartyTotals({ totalsByParty: {} })).toBe(false);
+    expect(hasPartyTotals(undefined)).toBe(false);
   });
 });
 
@@ -193,6 +311,7 @@ test.describe('check-votes gate', () => {
     d.rollCalls.push({
       id: 'h-119-2-200', chamber: 'house', congress: 119, session: 2, roll: 200, date: '2026-06-10',
       question: 'On Passage', result: 'Passed', bill: 'hr-3633-119', totals: { yea: 1, nay: 0, present: 0, notVoting: 0 },
+      totalsByParty: { R: { yea: 1, nay: 0, present: 0, notVoting: 0 } },
       source: 'https://clerk.house.gov/evs/2026/roll200.xml', votes: { yea: ['G000594'], nay: [], present: [], notVoting: [] },
     } as never);
     d.members.push({ id: 'G000594', name: 'Former Member', state: 'TX', chamber: 'house' });
@@ -211,6 +330,10 @@ test.describe('check-votes gate', () => {
       ['fractional-seconds updatedAt', (d) => { d._meta.updatedAt = '2026-09-24T04:00:00.862Z'; }, /seconds-precision/],
       ['future-dated roll call', (d) => { d.rollCalls[0].date = '2026-12-01'; }, /future/],
       ['duplicate member', (d) => { d.rollCalls[0].votes.nay.push(d.rollCalls[0].votes.yea[0]); d.rollCalls[0].totals.nay++; }, /recorded twice/],
+      ['no count by party', (d) => { delete (d.rollCalls[0] as Partial<RollCall>).totalsByParty; }, /no totalsByParty/],
+      ['count by party off the tally', (d) => { d.rollCalls[0].totalsByParty!.D.nay = 2; }, /totalsByParty adds up to 2 nay, but totals\.nay is 1/],
+      ['a party name where the letter goes', (d) => { const t = d.rollCalls[0].totalsByParty!; d.rollCalls[0].totalsByParty = { Democratic: t.D, R: t.R }; }, /not a party letter/],
+      ['a party counting no member', (d) => { d.rollCalls[0].totalsByParty!.I = { yea: 0, nay: 0, present: 0, notVoting: 0 }; }, /counts no member/],
     ];
     for (const [name, mutate, re] of cases) {
       const d = docFromSenate234();
@@ -235,13 +358,26 @@ test.describe('data/votes.json', () => {
     expect(CURSOR_RE.test(data._meta.cursor.house) && CURSOR_RE.test(data._meta.cursor.senate)).toBe(true);
     for (const r of data.rollCalls) {
       const keys = Object.keys(r).filter((k) => k !== 'tieBreaker');
-      expect(keys).toEqual(['id', 'chamber', 'congress', 'session', 'roll', 'date', 'question', 'result', 'bill', 'totals', 'source', 'votes']);
+      expect(keys).toEqual(['id', 'chamber', 'congress', 'session', 'roll', 'date', 'question', 'result', 'bill', 'totals', 'totalsByParty', 'source', 'votes']);
       expect(Object.keys(r.totals)).toEqual(['yea', 'nay', 'present', 'notVoting']);
       expect(Object.keys(r.votes)).toEqual(['yea', 'nay', 'present', 'notVoting']);
+      // The count by party: the record's letters, in letter order.
+      const byParty = r.totalsByParty ?? {};
+      const parties = Object.keys(byParty);
+      expect(parties.every((p) => PARTY_RE.test(p)), `${r.id}: ${parties.join(',')}`).toBe(true);
+      expect(parties).toEqual([...parties].sort());
+      for (const p of parties) expect(Object.keys(byParty[p])).toEqual(['yea', 'nay', 'present', 'notVoting']);
     }
     for (const m of data.members) expect(Object.keys(m)).toEqual(['id', 'name', 'state', 'chamber']);
-    // Nonpartisan by construction: the vote record carries no party at all.
+    // Nonpartisan by construction: no MEMBER carries a party in this file.
+    // The one party data here is each roll call's count by party, keyed by
+    // the record's own letter.
     expect(raw).not.toMatch(/"party"/);
+  });
+
+  test('every roll call carries its count by party (2026-09-29)', () => {
+    const missing = data.rollCalls.filter((r) => !hasPartyTotals(r)).map((r) => r.id);
+    expect(missing).toEqual([]);
   });
 
   test('the committed file passes the gate against the committed corpus', () => {

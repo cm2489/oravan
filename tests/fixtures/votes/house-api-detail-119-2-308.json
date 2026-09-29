@@ -13,8 +13,8 @@
     "updateDate": "2026-09-17T17:38:38-04:00",
     "votePartyTotal": [
       {
-        "nayTotal": 1,
-        "notVotingTotal": 1,
+        "nayTotal": 0,
+        "notVotingTotal": 0,
         "party": {
           "name": "Republican",
           "type": "R"
@@ -24,8 +24,8 @@
         "yeaTotal": 1
       },
       {
-        "nayTotal": 0,
-        "notVotingTotal": 0,
+        "nayTotal": 1,
+        "notVotingTotal": 1,
         "party": {
           "name": "Democrat",
           "type": "D"

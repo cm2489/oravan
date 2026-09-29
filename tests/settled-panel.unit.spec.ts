@@ -28,7 +28,10 @@ import { votesCoverage, votesForBill } from '../lib/votes';
  * possible"). So `settledDecision` returns a law or a rejected passage vote
  * and nothing else; a failed motion, a failed two-thirds suspension vote and
  * a veto keep the call, `lastFailedVote` supplies the line, and
- * `decisionState` answers the same way for the MCP envelope.
+ * `decisionState` answers the same way for the MCP envelope. Since
+ * 2026-09-29 it also returns `adopted` for a concurrent resolution both
+ * chambers agreed to in one form (H.Con.Res. 86), which goes to no president
+ * and is that vehicle's own ending — never printed as law.
  */
 
 type Rec = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>;
@@ -174,6 +177,60 @@ test.describe('settledDecision — which pages show the record, not the call', (
     }
   });
 
+  /*
+   * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM (2026-09-29):
+   * H.Con.Res. 86, as committed. The House agreed 215–208 on 2026-06-03; the
+   * Senate agreed "without amendment" 50–48 on 2026-06-23; "Message on Senate
+   * action sent to the House." was written over that the next day. It goes to
+   * no president, so it is finished — and it is not a law.
+   */
+  const HCONRES_86_SENATE =
+    'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)';
+  const hconres86 = {
+    ...rec('hconres', 'passed_chamber', 'Message on Senate action sent to the House.', '2026-06-24'),
+    status_basis_text: HCONRES_86_SENATE,
+    status_basis_date: '2026-06-23',
+  };
+
+  test('an adopted concurrent resolution is finished: the record-only panel, never as law, settled in the MCP envelope too', () => {
+    expect(settledDecision(hconres86)).toEqual({ kind: 'adopted', chamber: 'senate' });
+    expect(decisionState(hconres86)).toEqual({ state: 'settled', reason: HCONRES_86_SENATE });
+    // The stepper says its path ends here, at the ending this vehicle has.
+    expect(deriveJourney(hconres86)).toMatchObject({
+      step: 4,
+      ending: 'bothChambers',
+      nowKey: 'nowAdoptedBoth',
+      nowChamber: 'senate',
+      isLaw: false,
+      showTrailer: false,
+    });
+    // No call panel, so no "last attempt" line either.
+    expect(lastFailedVote(hconres86)).toBeNull();
+    // The outcome's date is the Senate's agreement, not the message's.
+    expect(settledDecisionDate(hconres86)).toBe('2026-06-23');
+  });
+
+  test('a bill both chambers passed still goes to the president: the call stays, and the stepper keeps the president\'s step', () => {
+    // H.R. 4467 as committed: the Senate passed it without amendment.
+    const hr4467 = {
+      ...rec('hr', 'passed_chamber', 'Message on Senate action sent to the House.', '2026-09-24'),
+      status_basis_text: 'Passed Senate without amendment by Unanimous Consent. (consideration: CR S4882)',
+      status_basis_date: '2026-09-22',
+    };
+    expect(settledDecision(hr4467)).toBeNull();
+    expect(decisionState(hr4467)).toEqual({ state: 'pending', reason: null });
+    expect(deriveJourney(hr4467)).toMatchObject({ step: 4, ending: 'president', nowKey: 'nowPassedBoth', isLaw: false });
+  });
+
+  test('a concurrent resolution only ONE chamber agreed to keeps the call', () => {
+    const firstOnly = rec('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.');
+    expect(settledDecision(firstOnly)).toBeNull();
+    // Agreed WITH an amendment: back to the House, not finished.
+    const amended = rec('hconres', 'passed_chamber', 'Resolution agreed to in Senate with an amendment by Unanimous Consent.');
+    expect(settledDecision(amended)).toBeNull();
+    expect(deriveJourney(amended).nowKey).toBe('nowPassedBack');
+  });
+
   test('every open stage keeps the call', () => {
     expect(settledDecision(rec('hr', 'committee', 'Referred to the House Committee on Ways and Means.'))).toBeNull();
     expect(settledDecision(rec('hr', 'introduced', 'Introduced in House'))).toBeNull();
@@ -198,15 +255,27 @@ test.describe('settledDecision against the committed corpus', () => {
     }
   });
 
-  test('the two stated gaps: MCP settled but the page keeps the call only where the stepper names no chamber, or on an adopted concurrent resolution', () => {
+  test('the one stated gap: MCP settled but the page keeps the call only where the stepper names no chamber', () => {
     for (const b of corpus) {
       if (decisionState(b).state === 'pending' || settledDecision(b) !== null) continue;
-      // #360 (merged 2026-09-29): a concurrent resolution both chambers agreed
-      // to in one form is settled in the envelope. Its bill-page reading (a
-      // `settledDecision` kind, the stepper sentence and owner strings) is the
-      // follow-up #360 lists; until it lands the page keeps the call.
-      if (concurrentAdoptedBy(b)) continue;
+      // The second gap, an adopted concurrent resolution (#360), closed on
+      // 2026-09-29: the page reads it as 'adopted' (below), so it never
+      // reaches this line.
+      expect(concurrentAdoptedBy(b), `${b.bill_type} ${b.last_action_text}`).toBeNull();
       expect(deriveJourney(b).nowKey, `${b.bill_type} ${b.last_action_text}`).toBe('nowFloorActivityNeutral');
+    }
+  });
+
+  test('an adopted concurrent resolution is finished on the page exactly where the MCP envelope says so', () => {
+    for (const b of corpus) {
+      const by = concurrentAdoptedBy(b);
+      const decision = settledDecision(b);
+      if (by) {
+        expect(decision, `${b.bill_type} ${statusBasisText(b)}`).toEqual({ kind: 'adopted', chamber: by });
+        expect(decisionState(b).state).toBe('settled');
+      } else {
+        expect(decision?.kind, `${b.bill_type} ${statusBasisText(b)}`).not.toBe('adopted');
+      }
     }
   });
 
@@ -218,6 +287,11 @@ test.describe('settledDecision against the committed corpus', () => {
       // The page: a law, or a rejected passage vote read off its own sentence.
       if (decision?.kind === 'law') expect(b.status, label).toBe('signed');
       if (decision?.kind === 'rejected') expect(FLOOR_PASSAGE_REJECTED.test(statusBasisText(b) ?? ''), label).toBe(true);
+      // …or a concurrent resolution's own ending, never a bill's.
+      if (decision?.kind === 'adopted') {
+        expect(['hconres', 'sconres'], label).toContain(b.bill_type);
+        expect(concurrentAdoptedBy(b), label).toBe(decision.chamber);
+      }
       // The MCP envelope, the same rule: nothing but a law is enacted, and
       // nothing but a failed passage vote is settled — plus a concurrent
       // resolution both chambers adopted (#360), that vehicle's own ending.
@@ -379,6 +453,46 @@ test.describe('settledVoteGroups — the deciding vote first, one chamber per gr
     expect(settledDecisionDate(hconres89)).toBe('2026-09-24');
   });
 
+  test('H.Con.Res. 86 (adopted): the Senate agreement that completed it, then the House vote, each with its own date and tally', () => {
+    const HCONRES_86_HOUSE: RollCall = {
+      ...HCONRES_89_HOUSE,
+      id: 'h-119-2-199',
+      roll: 199,
+      date: '2026-06-03',
+      bill: 'hconres-86-119',
+      totals: { yea: 215, nay: 208, present: 0, notVoting: 7 },
+      source: 'https://clerk.house.gov/evs/2026/roll199.xml',
+    };
+    const HCONRES_86_SENATE: RollCall = {
+      ...HCONRES_89_SENATE,
+      id: 's-119-2-184',
+      roll: 184,
+      date: '2026-06-23',
+      question: 'On the Concurrent Resolution H.Con.Res. 86',
+      result: 'Concurrent Resolution Agreed to',
+      bill: 'hconres-86-119',
+      totals: { yea: 50, nay: 48, present: 0, notVoting: 2 },
+    };
+    const hconres86 = {
+      ...rec('hconres', 'passed_chamber', 'Message on Senate action sent to the House.', '2026-06-24'),
+      status_basis_text:
+        'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)',
+      status_basis_date: '2026-06-23',
+    };
+    const settled = settledDecision(hconres86)!;
+    expect(settled).toEqual({ kind: 'adopted', chamber: 'senate' });
+    const groups = settledVoteGroups(hconres86, settled, [HCONRES_86_SENATE, HCONRES_86_HOUSE], FLOOR);
+    expect(groups.map((g) => [g.chamber, g.date, g.tally, g.source, g.deciding])).toEqual([
+      ['senate', '2026-06-23', { yeas: 50, nays: 48 }, 'rollCall', true],
+      ['house', '2026-06-03', { yeas: 215, nays: 208 }, 'rollCall', false],
+    ]);
+    // Matched by the roll number the Senate's sentence carries.
+    expect(recordedRollNumber(hconres86.status_basis_text, 'senate')).toBe(184);
+    // Never two chambers in one group.
+    expect(Object.keys(groups[0].positions!)).not.toContain('REP_A');
+    expect(Object.keys(groups[1].positions!)).not.toContain('SEN_A');
+  });
+
   test('a law: each chamber\'s newest roll call, newest first, none marked deciding', () => {
     const law = rec('hconres', 'signed', 'Became Public Law No: 119-105.');
     const olderSenate: RollCall = { ...HCONRES_89_SENATE, id: 's-119-2-200', roll: 200, date: '2026-07-01' };
@@ -446,6 +560,32 @@ test.describe('settledVoteGroups — the deciding vote first, one chamber per gr
     expect(decisionState(s!)).toEqual({ state: 'pending', reason: null });
     expect(lastFailedVote(s!)).toEqual({ procedure: 'suspension', chamber: 'house', tally: { yeas: 264, nays: 133 } });
     expect(settledDecisionDate(s!)).toBe('2026-02-24');
+  });
+
+  test('H.Con.Res. 86 as committed: adopted by both chambers, the Senate agreement first, settled in the MCP envelope', () => {
+    const b = (bills as unknown as (Rec & { full_identifier: string; status_basis_text?: string })[]).find(
+      (x) => x.full_identifier === 'hconres-86-119'
+    );
+    test.skip(
+      !b || !b.status_basis_text?.startsWith('Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48.'),
+      'H.Con.Res. 86 has a newer basis than 2026-06-23'
+    );
+    expect(settledDecision(b!)).toEqual({ kind: 'adopted', chamber: 'senate' });
+    expect(decisionState(b!).state).toBe('settled');
+    expect(settledDecisionDate(b!)).toBe('2026-06-23');
+    const groups = settledVoteGroups(b!, settledDecision(b!)!, votesForBill('hconres-86-119'), votesCoverage().floor);
+    expect(groups.map((g) => [g.chamber, g.date, g.tally, g.deciding])).toEqual([
+      ['senate', '2026-06-23', { yeas: 50, nays: 48 }, true],
+      ['house', '2026-06-03', { yeas: 215, nays: 208 }, false],
+    ]);
+  });
+
+  test('H.Con.Res. 89 as committed stays a rejection, not an adoption', () => {
+    const h = (bills as unknown as (Rec & { full_identifier: string })[]).find((x) => x.full_identifier === 'hconres-89-119');
+    test.skip(!h || h.last_action_text !== HCONRES_89, 'H.Con.Res. 89 has a newer action than 2026-09-24');
+    expect(settledDecision(h!)).toEqual({ kind: 'rejected', chamber: 'senate', tally: { yeas: 49, nays: 50 } });
+    expect(concurrentAdoptedBy(h!)).toBeNull();
+    expect(deriveJourney(h!).nowKey).toBe('nowFloorPassageRejected');
   });
 
   test('S.J.Res. 185 as committed: a failed motion to proceed, not settled, the call and the line (pick (a))', () => {
@@ -562,6 +702,53 @@ test.describe('the panel\'s words, in both languages', () => {
     expect(tEs('bill.journey.nowFloorSuspensionFailed', house)).not.toMatch(/considerarlo|moción/i);
   });
 
+  test('an adopted concurrent resolution is one sentence: both chambers and the second one\'s date — never law', () => {
+    // "A concurrent resolution does not go to the president" moved out of
+    // this sentence on 2026-09-29, into the explainer printed right under it
+    // (bill.concurrent.general, components/ConcurrentExplainer.tsx), which
+    // says it with the term glossed; tests/concurrent-explainer.unit.spec.ts
+    // pins that sentence.
+    const jun23 = { hasDate: 'yes', date: 'June 23, 2026' };
+    const jun23Es = { hasDate: 'yes', date: '23 de junio de 2026' };
+    expect(tEn('bill.settled.adopted', jun23)).toBe('Both chambers agreed to it in the same form, the second on June 23, 2026.');
+    expect(tEs('bill.settled.adopted', jun23Es)).toBe(
+      'Ambas cámaras lo aprobaron con el mismo texto, la segunda el 23 de junio de 2026.'
+    );
+    // No date held: none printed, and no stray comma.
+    expect(tEn('bill.settled.adopted', noDate)).toBe('Both chambers agreed to it in the same form.');
+    expect(tEs('bill.settled.adopted', noDate)).toBe('Ambas cámaras lo aprobaron con el mismo texto.');
+    // Never the law sentence, in either language.
+    for (const [m, t, when] of [
+      [en, tEn, jun23],
+      [es, tEs, jun23Es],
+    ] as const) {
+      expect(t('bill.settled.adopted', when)).not.toContain(m.bill.settled.law.replace(/\.$/, ''));
+      expect(t('bill.settled.adopted', when)).not.toMatch(/\blaw\b|\bley\b/i);
+    }
+  });
+
+  test('the stepper\'s adopted sentence says the path ends, with "the president" lowercase', () => {
+    expect(tEn('bill.journey.nowAdoptedBoth')).toBe(
+      'both chambers have agreed to it in the same form. This kind of resolution does not go to the president, so its path ends here.'
+    );
+    expect(tEs('bill.journey.nowAdoptedBoth')).toBe(
+      'ambas cámaras lo han aprobado con el mismo texto. Este tipo de resolución no pasa al presidente, así que su trámite termina aquí.'
+    );
+    // The owner's style rule, 2026-09-29: "It's 'the president'".
+    for (const text of [
+      en.bill.journey.nowAdoptedBoth,
+      es.bill.journey.nowAdoptedBoth,
+      en.bill.settled.adopted,
+      es.bill.settled.adopted,
+      en.bills.status.adopted,
+      es.bills.status.adopted,
+      en.bills.status.passed_both,
+      es.bills.status.passed_both,
+    ]) {
+      expect(text).not.toMatch(/President|Presidente/);
+    }
+  });
+
   test('the retired settled sentences are gone from both languages', () => {
     for (const key of ['motionFailed', 'suspensionFailed', 'vetoed']) {
       expect(Object.keys(en.bill.settled)).not.toContain(key);
@@ -582,6 +769,7 @@ test.describe('the panel\'s words, in both languages', () => {
       'title',
       'law',
       'rejected',
+      'adopted',
       'needZip',
       'membersHeading',
       'voteIn',
@@ -600,6 +788,9 @@ test.describe('the panel\'s words, in both languages', () => {
     expect(es.bill.alsoYours).not.toBe(en.bill.alsoYours);
     expect(es.bill.lastAttempt).not.toBe(en.bill.lastAttempt);
     expect(es.bill.journey.nowFloorSuspensionFailed).not.toBe(en.bill.journey.nowFloorSuspensionFailed);
+    expect(es.bill.journey.nowAdoptedBoth).not.toBe(en.bill.journey.nowAdoptedBoth);
+    expect(es.bills.status.adopted).not.toBe(en.bills.status.adopted);
+    expect(es.bills.status.passed_both).not.toBe(en.bills.status.passed_both);
     expect(es.moments.vehiclesLedeSomeSettled).not.toBe(en.moments.vehiclesLedeSomeSettled);
   });
 

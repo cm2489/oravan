@@ -28,7 +28,7 @@
  * collide with a tool's own data fields.
  */
 import enMessages from '@/messages/en.json';
-import { statusKeyFor } from '../journey';
+import { statusKeyFor, type StatusKeyBill } from '../journey';
 import esMessages from '@/messages/es.json';
 import { getFreshness } from '../freshness';
 import { emptyStateVerdict } from '../freshness-state';
@@ -270,29 +270,22 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
 type Messages = typeof enMessages;
 const MESSAGES: Record<Locale, Messages> = { en: enMessages, es: esMessages as Messages };
 
-export function statusLabel(
-  status: BillStatus,
-  locale: Locale,
-  lastActionText: string | null = null,
-  lastActionDate: string | null = null
-): string {
-  // Label gate (Wave B #1): with the action text supplied, an activity-only
-  // floor_vote bill answers "Floor activity", never the placement claim —
-  // the same statusKeyFor gate every citizen surface uses. Callers without
-  // the text keep the raw status label (a documented approximation).
-  //
-  // The date joined it with N3 (2026-08-11): a placement the record has shown
-  // nothing about for over 14 days answers "Placed on the calendar" rather
-  // than the present-tense "On the floor calendar". Both call sites below have
-  // the date in scope and pass it. It is DEFAULTED like `lastActionText` for
-  // the same documented reason and with the same shape of approximation — but
-  // note the two default in opposite directions: a missing text weakens
-  // floor_vote to `floor_activity`, and a missing date weakens it to
-  // `floor_vote_stale`. Both are the safe direction; neither ever invents the
-  // stronger claim.
-  const key = statusKeyFor(status, lastActionText, lastActionDate);
+export function statusLabel(bill: StatusKeyBill, locale: Locale): string {
+  // Label gate (Wave B #1): an activity-only floor_vote bill answers "Floor
+  // activity", never the placement claim — the same statusKeyFor gate every
+  // citizen surface uses. The date joined it with N3 (2026-08-11): a
+  // placement the record has shown nothing about for over 14 days answers
+  // "Placed on the calendar" rather than the present-tense "On the floor
+  // calendar". And since 2026-09-29 the gate takes the whole record, so a
+  // measure the second chamber passed without amendment answers "Passed both
+  // chambers" and an adopted concurrent resolution "Adopted by both chambers",
+  // never "Passed one chamber" (the passage readings need the bill type and
+  // the status basis). Both call sites below hand over the bill itself, so
+  // the approximation this function used to document for callers without the
+  // text or the date no longer exists.
+  const key = statusKeyFor(bill);
   const labels = MESSAGES[locale].bills.status as Record<string, string>;
-  return labels[key] ?? labels[status] ?? status;
+  return labels[key] ?? labels[bill.status] ?? bill.status;
 }
 
 export function categoryLabel(category: string, locale: Locale): string {
@@ -424,7 +417,7 @@ function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
     ai_generated: Boolean(bill.ai_headline),
     title: bill.short_title ?? bill.title,
     status: bill.status,
-    status_label: statusLabel(bill.status, locale, bill.last_action_text, bill.last_action_date),
+    status_label: statusLabel(bill, locale),
     decision_state: decision.state,
     settled_reason: decision.reason,
     topics: (bill.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
@@ -578,12 +571,7 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
         : null,
       summary: localized.ai_summary,
       status: localized.status,
-      status_label: statusLabel(
-        localized.status,
-        locale,
-        localized.last_action_text,
-        localized.last_action_date
-      ),
+      status_label: statusLabel(localized, locale),
       decision_state: decision.state,
       settled_reason: decision.reason,
       urgency_score: effectiveUrgency(localized.status, localized.last_action_date),
