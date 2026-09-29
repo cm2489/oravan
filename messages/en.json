@@ -160,7 +160,7 @@
     "seatElectionNone": "The Federal Election Commission lists no special election date for this seat yet (checked {date}).",
     "seatElectionLink": "See the FEC's election dates",
     "refineTitle": "Optional: narrow it to your exact district",
-    "refinePrivacy": "Your street address is used once to find your district, sent nowhere else, and never stored.",
+    "refinePrivacy": "Your street address is used once, to look up your district with the U.S. Census Bureau's public geocoder. We never store it.",
     "addressLabel": "Street address",
     "addressPlaceholder": "e.g. 421 8th Ave",
     "refineCta": "Find my district",
@@ -240,7 +240,7 @@
     "clearSearch": "Clear search",
     "clearFilters": "Clear all filters",
     "interestsNote": "Topic picks are saved only on this device, never on a server.",
-    "aiNote": "Plain-language headlines on this page are AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
+    "aiNote": "Plain-language headlines on this page are AI-drafted and labeled. Nothing publishes until it passes automated checks. To report an error, email hello@oravan.org.",
     "onCalendar": "On the floor calendar",
     "annotation": {
       "justPassed": "Just passed a chamber",
@@ -314,7 +314,7 @@
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
     "switchboard": "Capitol switchboard",
     "switchboardNote": "No ZIP handy? The Capitol switchboard can connect you to any congressional office.",
-    "callWho": "Call any of your three, or all of them. One call per office is plenty.",
+    "callWho": "Call any of your members, or all of them. One call per office is plenty.",
     "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are always yours.",
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
@@ -338,7 +338,7 @@
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
     "liveSenateAfterHouse": "The House has already voted on this bill — the Senate decides next. Your senators are the live call.",
     "liveHouseAfterSenate": "The Senate has already voted on this bill — the House decides next. Your House member is the live call.",
-    "nominationHow": "A nomination starts with the President, who picks someone for a government job. From there it belongs to the Senate: a committee reviews the nominee, then the full Senate votes on whether to confirm. The House has no vote on nominations at all.",
+    "nominationHow": "A nomination starts with the president, who picks someone for a government job. From there it belongs to the Senate: a committee reviews the nominee, then the full Senate votes on whether to confirm. The House has no vote on nominations at all.",
     "liveSenateNomination": "Only the Senate votes on a nomination — your senators are the live call.",
     "nominationHousePress": "Your House member gets no vote here and no formal role — the Senate decides this one alone. What a representative can do is speak up: they share a state with your two senators, and they can press them on a nomination, publicly or privately. So if you call their office, say it plainly — that you know the House has no vote on this, and you're asking your representative to press your state's senators on it. The office logs your call like any other; it just doesn't count toward the Senate's tally.",
     "nominationNoSenator": "Only senators vote on a nomination, and your area does not elect any — so there is no senator here for you to call about this one. Your House member has no vote on nominations either; no member of the House does. What their office can still do is speak up, and it logs every call it takes — so if you call, say plainly that you know the House has no vote on this and you want the nomination raised. It just will not count toward the Senate's tally.",
@@ -385,7 +385,7 @@
       "stepCommittee": "{chamber, select, House {House} Senate {Senate} other {House}} committee",
       "stepVote": "{chamber, select, House {House} Senate {Senate} other {House}} vote",
       "stepOther": "{chamber, select, House {House} Senate {Senate} other {Senate}}",
-      "stepPresident": "President's desk",
+      "stepPresident": "The president's desk",
       "stepBothChambers": "Adopted by both chambers",
       "stepStates": "Sent to the states",
       "now": "Right now:",
@@ -403,14 +403,14 @@
       "nowPassedStale": "it passed the {chamber, select, House {House} Senate {Senate} other {House}}, and the official record shows nothing new since.",
       "nowPassedBack": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, so it goes back to the {chamber, select, House {House} Senate {Senate} other {House}}.",
       "nowPassedBackStale": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, and the official record shows nothing new since.",
-      "nowPassedBoth": "both chambers have passed it. It goes to the President next.",
+      "nowPassedBoth": "both chambers have passed it. It goes to the president next.",
       "nowPassedSecond": "both chambers have passed it — the official record doesn't say yet whether the two versions match.",
       "nowConference": "both chambers are reconciling their versions.",
-      "nowSigned": "the President signed it. It's law.",
-      "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
-      "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
-      "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the President and does not become law.",
-      "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the President: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
+      "nowSigned": "the president signed it. It's law.",
+      "nowVetoed": "the president vetoed it. Congress can override with two-thirds of both chambers.",
+      "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the president.",
+      "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the president and does not become law.",
+      "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the president: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
       "youAreHere": "You are here",
       "law": "Now law",
       "nowIntroduced": "it was just introduced and is headed to committee."
@@ -484,7 +484,7 @@
       },
       "call": {
         "title": "Make the call",
-        "body": "Dial any of your three members' offices — day or night. A staffer picks up, or you leave a voicemail; either way your position is tallied the same, in about 30 seconds."
+        "body": "Dial the office of anyone who represents you in Congress — day or night. A staffer picks up, or you leave a voicemail; either way your position is tallied the same, in about 30 seconds."
       },
       "logged": {
         "title": "Logged — on this device only",
@@ -627,8 +627,8 @@
     "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Email hello@oravan.org. Name the bill and describe the error.",
     "correctionLinkText": "Email hello@oravan.org",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
-    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
-    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Oravan's ongoing Spanish-language review process rather than patched quietly and forgotten."
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
+    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked as a pattern rather than patched quietly and forgotten."
   },
   "notFound": {
     "title": "Page not found",
@@ -663,7 +663,7 @@
     "p2": "Bill summaries, headlines, and call scripts are drafted by AI and are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
     "p3": "Oravan comes with no guarantees. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily — verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
-    "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
+    "p5": "We have no accounts and store nothing about you on our servers; everything personal is kept in your browser. The privacy page explains this in full."
   },
   "og": {
     "aiDecoded": "AI-decoded",
@@ -705,7 +705,7 @@
     "configuratorHeading": "Build your embed",
     "widgetLegend": "Widget",
     "widgetRepLookup": "Representative lookup",
-    "widgetRepLookupHint": "Visitors enter a ZIP code and get their three federal representatives.",
+    "widgetRepLookupHint": "Visitors enter a ZIP code and get their members of Congress.",
     "widgetBillCard": "Bill card",
     "widgetBillCardHint": "One bill's plain-language headline, status, and freshness date.",
     "localeLegend": "Default language",
@@ -785,7 +785,7 @@
     "docsPrivacyCookies": "Zero cookies. No response from the embed ever sets one.",
     "docsPrivacyThirdParty": "Zero third-party requests. Every asset the widget loads — fonts, styles, data — comes from Oravan's own origin. Nothing calls out to an ad network, an analytics vendor, or any other third party.",
     "docsPrivacyZip": "ZIP code only. The representative-lookup widget never asks for a street address inside the iframe; a visitor who needs the more precise, split-district lookup is linked out to the main Oravan site for that step.",
-    "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup, and is never logged or stored.",
+    "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup. Oravan never stores it.",
     "docsPrivacyTested": "These aren't claims made only in this copy — they're enforced by automated tests in Oravan's own public repository, on every change, before it ships.",
     "docsThemingTitle": "Theming reference",
     "docsThemingBody": "Theming works the same on all widgets and is limited to a closed set of CSS custom properties, each validated on Oravan's server before it can reach a style: an accent color, an optional background/text color pair (accepted only when it meets the WCAG AA contrast bar of 4.5:1), a color mode (light, dark, or match the visitor's system), a corner-radius style (sharp, soft, or round), and a font (system, serif, humanist, or geometric — all system font stacks; the widget never loads webfonts). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
@@ -933,7 +933,7 @@
     "vehiclesHeadingMixed": "The bills and nominations",
     "vehiclesLedeNominations": "The Senate nominations this question actually runs through. Each opens the Senate's own record — and, where that record shows a decision the Senate can still make, the call flow, with support and oppose scripts equally one tap away.",
     "vehiclesLedeMixed": "The bills and Senate nominations this question actually runs through. Each opens the record — and, where that record still has a call to make, the call flow, with support and oppose scripts equally one tap away.",
-    "vehiclesAiNote": "Plain-language text on these cards — the decoded headline, where there is one, and the summary of what a yes and a no vote do — is AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
+    "vehiclesAiNote": "Plain-language text on these cards — the decoded headline, where there is one, and the summary of what a yes and a no vote do — is AI-drafted and labeled. Nothing publishes until it passes automated checks. To report an error, email hello@oravan.org.",
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
     "bothNoteSomeNoCall": "No side is pre-selected. Where a record still has a call to make, the same call flow opens, with support and oppose scripts equally available.",
     "readCall": "Read + call",
@@ -1017,8 +1017,8 @@
       },
       "line": {
         "signed": "Signed into law{law, select, none {} other { as Public Law {law}}}.",
-        "vetoed": "Vetoed by the President.",
-        "presented": "Both chambers passed it, and it has been sent to the President.",
+        "vetoed": "Vetoed by the president.",
+        "presented": "Both chambers passed it, and it has been sent to the president.",
         "bothAgreed": "Both chambers have passed it in the same form.",
         "passedBack": "{chamber, select, house {Both chambers passed it in different versions; it is back with the House to settle the changes.} other {Both chambers passed it in different versions; it is back with the Senate to settle the changes.}}",
         "passedOnCalendar": "{chamber, select, house {Passed the Senate; placed on the House calendar, where it can be called up any day the House is in session.} other {Passed the House; placed on the Senate calendar, where it can be called up any day the Senate is in session.}}",
@@ -1046,8 +1046,8 @@
     "closedTitle": "No call to make",
     "closed": {
       "confirmed": "The Senate voted to confirm this nomination. A confirmed nomination is finished — there is no call left to make on it.",
-      "returned": "The Senate returned this nomination to the President without confirming it. There is no call left to make on it.",
-      "withdrawn": "The President withdrew this nomination. There is no call left to make on it."
+      "returned": "The Senate returned this nomination to the president without confirming it. There is no call left to make on it.",
+      "withdrawn": "The president withdrew this nomination. There is no call left to make on it."
     },
     "noScriptTitle": "No description on the record",
     "noScriptBody": "The Senate's entry for this nomination carries no description — nothing that says who it is for or what post it fills. That sentence is the only thing a call script here is ever built from, so Oravan offers none rather than inventing words about a record that says nothing. The nomination is still before the Senate, and everything the Senate has published about it is on this page, in full.",
@@ -1062,7 +1062,7 @@
       "floor": "Senate floor activity",
       "scheduled": "Scheduled for a Senate vote",
       "confirmed": "Confirmed by the Senate",
-      "returned": "Returned to the President",
+      "returned": "Returned to the president",
       "withdrawn": "Withdrawn",
       "unclassified": "Stage not stated in the record"
     }
@@ -1133,7 +1133,7 @@
       },
       "cra-disapproval": {
         "term": "CRA disapproval",
-        "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the President, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
+        "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the president, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
       },
       "pro-forma-session": {
         "term": "Pro forma session",
@@ -1233,7 +1233,7 @@
       },
       "executive-session": {
         "term": "Executive session (Senate)",
-        "body": "The Senate is in executive session when it works on nominations and treaties, which come from the President. Work on bills and resolutions happens in legislative session. The Senate can switch between the two in a single day."
+        "body": "The Senate is in executive session when it works on nominations and treaties, which come from the president. Work on bills and resolutions happens in legislative session. The Senate can switch between the two in a single day."
       },
       "vote-a-rama": {
         "term": "Vote-a-rama",
@@ -1301,7 +1301,7 @@
       },
       "bill": {
         "term": "Bill",
-        "body": "A bill is a proposal for a new law, or for changing or repealing an existing one. House bills are numbered H.R. and Senate bills S. A bill has to pass both chambers in the same form and be signed by the President, or passed over a veto, to become law."
+        "body": "A bill is a proposal for a new law, or for changing or repealing an existing one. House bills are numbered H.R. and Senate bills S. A bill has to pass both chambers in the same form and be signed by the president, or passed over a veto, to become law."
       },
       "measure": {
         "term": "Measure",
@@ -1309,15 +1309,15 @@
       },
       "act": {
         "term": "Act",
-        "body": "An act is a bill that has passed one or both chambers. The word usually means a bill that passed both in the same form and became law, either signed by the President or passed over a veto. Many bills are titled “Act” from the day they are introduced."
+        "body": "An act is a bill that has passed one or both chambers. The word usually means a bill that passed both in the same form and became law, either signed by the president or passed over a veto. Many bills are titled “Act” from the day they are introduced."
       },
       "joint-resolution": {
         "term": "Joint resolution",
-        "body": "A joint resolution works like a bill: it has to pass both chambers and be signed by the President to become law. Congress uses it for things like continuing funding, approving or disapproving actions, and proposing constitutional amendments. A proposed amendment skips the President: it needs two-thirds of each chamber and ratification by three-quarters of the states."
+        "body": "A joint resolution works like a bill: it has to pass both chambers and be signed by the president to become law. Congress uses it for things like continuing funding, approving or disapproving actions, and proposing constitutional amendments. A proposed amendment skips the president: it needs two-thirds of each chamber and ratification by three-quarters of the states."
       },
       "concurrent-resolution": {
         "term": "Concurrent resolution",
-        "body": "A concurrent resolution is passed by both chambers but is not sent to the President and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+        "body": "A concurrent resolution is passed by both chambers but is not sent to the president and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
       },
       "simple-resolution": {
         "term": "Simple resolution",
@@ -1353,23 +1353,23 @@
       },
       "enrolled-bill": {
         "term": "Enrolled bill",
-        "body": "An enrolled bill is the final copy of a bill that both chambers passed in identical form. It is signed by officers of both chambers and sent to the President to sign or veto."
+        "body": "An enrolled bill is the final copy of a bill that both chambers passed in identical form. It is signed by officers of both chambers and sent to the president to sign or veto."
       },
       "veto": {
         "term": "Veto",
-        "body": "A veto is the President’s refusal to sign a bill, returning it to the chamber it started in, usually with a message explaining why. The bill does not become law unless both chambers override the veto by a two-thirds vote."
+        "body": "A veto is the president’s refusal to sign a bill, returning it to the chamber it started in, usually with a message explaining why. The bill does not become law unless both chambers override the veto by a two-thirds vote."
       },
       "pocket-veto": {
         "term": "Pocket veto",
-        "body": "A pocket veto happens when the President does not sign a bill within 10 days of receiving it (not counting Sundays) and Congress has adjourned in the meantime, so the bill cannot be returned. The bill does not become law, and Congress cannot override it."
+        "body": "A pocket veto happens when the president does not sign a bill within 10 days of receiving it (not counting Sundays) and Congress has adjourned in the meantime, so the bill cannot be returned. The bill does not become law, and Congress cannot override it."
       },
       "veto-override": {
         "term": "Veto override",
-        "body": "A veto override is Congress passing a bill into law after the President vetoed it. It takes a two-thirds vote in both the House and the Senate."
+        "body": "A veto override is Congress passing a bill into law after the president vetoed it. It takes a two-thirds vote in both the House and the Senate."
       },
       "enacted": {
         "term": "Enacted (became law)",
-        "body": "A bill is enacted when it becomes law. That happens when both chambers pass it in identical form and the President signs it, when the President lets 10 days pass (not counting Sundays) without acting while Congress is in session, or when Congress overrides a veto."
+        "body": "A bill is enacted when it becomes law. That happens when both chambers pass it in identical form and the president signs it, when the president lets 10 days pass (not counting Sundays) without acting while Congress is in session, or when Congress overrides a veto."
       },
       "public-law": {
         "term": "Public law",
@@ -1389,7 +1389,7 @@
       },
       "executive-order": {
         "term": "Executive order",
-        "body": "An executive order is a written directive the President uses to manage how the executive branch operates. It is published in the Federal Register. It is not a law passed by Congress, and a later President can change or revoke it."
+        "body": "An executive order is a written directive the president uses to manage how the executive branch operates. It is published in the Federal Register. It is not a law passed by Congress, and a later president can change or revoke it."
       },
       "roll-call-vote": {
         "term": "Roll call vote",
@@ -1417,7 +1417,7 @@
       },
       "tie-vote": {
         "term": "Tie vote",
-        "body": "A tie vote is an equal number of yes and no votes. In the House, a question that ties fails. In the Senate, the Vice President, as President of the Senate, may cast a vote to break the tie."
+        "body": "A tie vote is an equal number of yes and no votes. In the House, a question that ties fails. In the Senate, the vice president, as president of the Senate, may cast a vote to break the tie."
       },
       "simple-majority": {
         "term": "Simple majority",
@@ -1437,7 +1437,7 @@
       },
       "budget-resolution": {
         "term": "Budget resolution",
-        "body": "The budget resolution is Congress’s own budget plan, setting totals for spending and revenue. It is a concurrent resolution, so the President does not sign it and it does not become law. It can include instructions that start the reconciliation process."
+        "body": "The budget resolution is Congress’s own budget plan, setting totals for spending and revenue. It is a concurrent resolution, so the president does not sign it and it does not become law. It can include instructions that start the reconciliation process."
       },
       "continuing-resolution": {
         "term": "Continuing resolution (CR)",
@@ -1501,7 +1501,7 @@
       },
       "rescission": {
         "term": "Rescission",
-        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The President can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
+        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The president can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
       },
       "tax-credit": {
         "term": "Tax credit",
@@ -1513,31 +1513,31 @@
       },
       "nomination": {
         "term": "Nomination",
-        "body": "A nomination is the President’s choice of a person for a federal job that needs Senate approval, such as a cabinet secretary, an ambassador, or a federal judge. The Senate confirms or rejects it; the House has no vote."
+        "body": "A nomination is the president’s choice of a person for a federal job that needs Senate approval, such as a cabinet secretary, an ambassador, or a federal judge. The Senate confirms or rejects it; the House has no vote."
       },
       "advice-and-consent": {
         "term": "Advice and consent",
-        "body": "Advice and consent is the Senate’s power under the Constitution to approve or reject the President’s nominations and treaties. Nominations need a simple majority; treaties need two-thirds of the senators present."
+        "body": "Advice and consent is the Senate’s power under the Constitution to approve or reject the president’s nominations and treaties. Nominations need a simple majority; treaties need two-thirds of the senators present."
       },
       "confirmation": {
         "term": "Confirmation",
         "body": "Confirmation is the Senate’s approval of a nomination, usually after a committee review and a vote of the full Senate. Once confirmed, the nominee can be appointed to the job."
       },
       "returned-nomination": {
-        "term": "Returned to the President",
-        "body": "Under Senate rules, a nomination that has not been confirmed or rejected is sent back to the President when the Senate adjourns or recesses for more than 30 days, or when a session ends. The Senate cannot act on it again unless the President sends the nomination again."
+        "term": "Returned to the president",
+        "body": "Under Senate rules, a nomination that has not been confirmed or rejected is sent back to the president when the Senate adjourns or recesses for more than 30 days, or when a session ends. The Senate cannot act on it again unless the president sends the nomination again."
       },
       "treaty": {
         "term": "Treaty",
-        "body": "A treaty is a formal, binding agreement between the United States and one or more other nations. The President negotiates it, and it needs the approval of two-thirds of the senators present. Once in force, it has the weight of federal law."
+        "body": "A treaty is a formal, binding agreement between the United States and one or more other nations. The president negotiates it, and it needs the approval of two-thirds of the senators present. Once in force, it has the weight of federal law."
       },
       "resolution-of-ratification": {
         "term": "Resolution of ratification",
-        "body": "The Senate does not ratify treaties itself. It votes on a resolution of ratification, which gives its consent; if two-thirds of the senators present agree, the President can then ratify the treaty with the other nations."
+        "body": "The Senate does not ratify treaties itself. It votes on a resolution of ratification, which gives its consent; if two-thirds of the senators present agree, the president can then ratify the treaty with the other nations."
       },
       "impeachment": {
         "term": "Impeachment",
-        "body": "Impeachment is how Congress can charge and try a federal official, including the President and federal judges. The House impeaches, or brings charges, by a simple majority vote; the Senate then holds a trial, and removing the official from office takes a two-thirds vote to convict."
+        "body": "Impeachment is how Congress can charge and try a federal official, including the president and federal judges. The House impeaches, or brings charges, by a simple majority vote; the Senate then holds a trial, and removing the official from office takes a two-thirds vote to convict."
       },
       "congress": {
         "term": "A Congress",
@@ -1561,15 +1561,15 @@
       },
       "president-pro-tempore": {
         "term": "President pro tempore",
-        "body": "The president pro tempore is the senator elected to preside over the Senate when the Vice President is absent. By custom it is the majority-party senator with the longest continuous service. In practice, other senators often take turns presiding."
+        "body": "The president pro tempore is the senator elected to preside over the Senate when the vice president is absent. By custom it is the majority-party senator with the longest continuous service. In practice, other senators often take turns presiding."
       },
       "presiding-officer": {
         "term": "Presiding officer",
-        "body": "The presiding officer runs a chamber’s meeting: recognizing members to speak, keeping order, and ruling on points of order. In the Senate, a senator of the majority party often fills the chair in place of the Vice President or president pro tempore."
+        "body": "The presiding officer runs a chamber’s meeting: recognizing members to speak, keeping order, and ruling on points of order. In the Senate, a senator of the majority party often fills the chair in place of the vice president or president pro tempore."
       },
       "president-of-the-senate": {
         "term": "President of the Senate",
-        "body": "The Vice President of the United States is also the President of the Senate. The Vice President may preside over the Senate and may vote only to break a tie."
+        "body": "The vice president of the United States is also the president of the Senate. The vice president may preside over the Senate and may vote only to break a tie."
       },
       "parliamentarian": {
         "term": "Parliamentarian",
@@ -1683,7 +1683,7 @@
       "present": "Present",
       "notVoting": "Not voting"
     },
-    "tieBreaker": "Vice President's tie-breaking vote: {position}",
+    "tieBreaker": "The vice president's tie-breaking vote: {position}",
     "source": "Official record",
     "membersToggle": "How members voted",
     "group": "{position} ({count})",
