@@ -8,6 +8,21 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="party-counts-2026-09-29"></a>
+
+## 2026-09-29 — Rule 3: a party count on a recorded vote passes the nonpartisan lint (card l12)
+
+Rule touched: page 1, rule 3 (nonpartisan by construction). This is the change the 2026-09-26 entry below records as delegated and "not made yet".
+
+- The owner's words, on card l12 ("Party breakdowns: how they appear", answered **b** at 2026-09-26T21:16:56Z), verbatim: *"You handle the rule change. This is not that big of a deal to me, I just need it to work."*
+- The conflict: `lintForbidden` (`lib/moments-gate.mjs`) rejected every party name in Big Question text, and so it also rejected how a roll call divided ("every Democrat and 3 Republicans voted yes"). That count is the record. Rule 3's text ("party is text, never a hue") already allowed it; the lint did not.
+- The change is in the gate only. `maskPartyVoteCounts` blanks a party COUNT tied to a recorded vote before the word table runs. A count is a quantifier in front of a party noun ("every", "all 47", "all but two", "no", "3"; ES "todos los", "cada", "ningún", "los 47"). Tied to a recorded vote means the count is followed directly by a vote position ("voted yes", "voted against", "did not vote", "voted 45–2"; ES "votaron a favor", "no votaron"), or it is a party tally ("Republicans: 4 yea, 49 nay").
+- What still fails: a party with no count ("Republicans voted no"); a count with no recorded position ("every Republican voted to gut it", "call the 3 Republicans who voted yes"); "GOP" and "Democratic Party"; and every other listed word in the same sentence, because the mask removes the count phrase and nothing else ("every Democrat voted yes to stop the war" still fails on "stop"). Pinned both ways, in both languages, by `tests/party-count-lint.unit.spec.ts`.
+- Page 1's text is unchanged, so `CLAUDE.md` is not edited. Rule 3 names `lintForbidden` as its gate on Big Questions, and it still is; the 2026-08-06 instruction that the lint is not widened to bill decodes stands. No public string describes the lint's treatment of party names, so no copy changed.
+- Not done here: the 2026-09-26 entry also named "the vote-record wording to match", because `components/VoteRecord.tsx` documents the vote record as naming no party. That file is UI, and it is in open PR #350, so it is left for that work or for the owner.
+
+---
+
 <a id="call-reach-2026-09-27"></a>
 
 ## 2026-09-27 — Rule 8: the floating call button stands down over the decoded answer on phones
