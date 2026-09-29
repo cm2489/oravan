@@ -12,6 +12,11 @@
  * DECISION_EVAL_SET) for every other mode. With neither, the script says which
  * flag to pass and exits 2. A folder inside the repo is refused.
  *
+ * Run it as a file (node scripts/eval-decision-model.mjs ...): it finds the
+ * repo root from its own location. Imported, or started through node -e, it has
+ * no location and refuses to do anything unless the caller passes the root.
+ * The inside-the-repo test follows symlinks (real paths on both sides).
+ *
  * Exit codes: 0 done; 1 no key or an unexpected error; 2 refused (a guard, a
  * bad argument, a missing --set or --out); 3 --run finished but at least one
  * arm had no successful request.
@@ -59,8 +64,8 @@
  * imports this file through Playwright's transform.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync, writeFileSync, appendFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync, writeFileSync, appendFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { leanOf } from '../lib/conversation.mjs';
 import { MODEL_PRICE_PER_MTOK } from '../lib/pipeline-health.mjs';
@@ -182,9 +187,46 @@ export function redact(text, key) {
   return s.replace(/(Bearer\s+)[^\s"'\\,}]+/gi, '$1[REDACTED]').replace(/sk-or-[A-Za-z0-9_-]+/g, '[REDACTED]');
 }
 
-/** True when `dir` resolves to the repo root or anywhere under it. */
+/**
+ * The real location of a path, symlinks resolved, even when the tail does not
+ * exist yet: resolve the deepest ancestor that exists, then put the missing
+ * part back. Returns null for a dangling symlink (its target is unknown).
+ */
+export function realPathOf(p) {
+  let cur = resolve(p);
+  const rest = [];
+  for (;;) {
+    if (existsSync(cur)) break;
+    try {
+      lstatSync(cur);
+      return null; // the name exists but points nowhere
+    } catch {
+      // the name does not exist; go up
+    }
+    const parent = dirname(cur);
+    if (parent === cur) break;
+    rest.unshift(basename(cur));
+    cur = parent;
+  }
+  let real = cur;
+  try {
+    real = realpathSync(cur);
+  } catch {
+    return null;
+  }
+  return join(real, ...rest);
+}
+
+/**
+ * True when `dir` is the repo root or anywhere under it, by real location
+ * (symlinks followed on both sides). Fails closed: a path that cannot be
+ * resolved counts as inside.
+ */
 export function isInsideRepo(dir, root) {
-  const rel = relative(resolve(root), resolve(root, dir));
+  const realRoot = realPathOf(root);
+  const realDir = realPathOf(resolve(root, dir));
+  if (!realRoot || !realDir) return true;
+  const rel = relative(realRoot, realDir);
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }
 
@@ -1094,15 +1136,19 @@ function hashDataFiles(root, names) {
 
 /**
  * @param {string[]} [argv]
- * @param {{ env?: Record<string, string|undefined>, root?: string, cwd?: string, fetchImpl?: typeof fetch, log?: (s: string) => void, now?: Date, stdin?: AsyncIterable<string>|null }} [opts]
+ * @param {{ env?: Record<string, string|undefined>, root?: string|null, cwd?: string, fetchImpl?: typeof fetch, log?: (s: string) => void, now?: Date, stdin?: AsyncIterable<string>|null }} [opts]
  * @returns {Promise<number>}
  */
-export async function main(argv = process.argv.slice(2), { env = process.env, root = process.cwd(), cwd = process.cwd(), fetchImpl = globalThis.fetch, log = console.log, now = new Date(), stdin = null } = {}) {
+export async function main(argv = process.argv.slice(2), { env = process.env, root = null, cwd = process.cwd(), fetchImpl = globalThis.fetch, log = console.log, now = new Date(), stdin = null } = {}) {
   const key = env.OPENROUTER_API_KEY || '';
   const say = (s) => log(redact(s, key));
   const mode = MODES.find((m) => argv.includes(m));
   if (!mode) {
     say(`eval-decision-model: name one mode: ${MODES.join(', ')}`);
+    return 2;
+  }
+  if (!root) {
+    say('eval-decision-model: cannot find the repo root, so nothing is read or written. Run this as a file: node scripts/eval-decision-model.mjs <mode> ...');
     return 2;
   }
   const building = mode === '--build-set';

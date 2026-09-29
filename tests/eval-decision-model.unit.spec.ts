@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -403,6 +403,65 @@ test.describe('where the set goes is always given, and never inside the repo', (
     expect(ok.status).toBe(0);
     expect(existsSync(join(out, 'set.json'))).toBe(true);
     rmSync(out, { recursive: true, force: true });
+  });
+});
+
+test.describe('the inside-the-repo guard follows symlinks', () => {
+  const refused = async (argv: string[], opts: { root?: string | null; env?: Record<string, string> } = {}) => {
+    const logs: string[] = [];
+    const code = await main(argv, { root: ROOT, env: {}, log: (s) => logs.push(s), ...opts });
+    return { code, out: logs.join('\n') };
+  };
+
+  test('--out through a symlink to the repo root, or to a folder inside it: refused, nothing written', async () => {
+    const t = tmp();
+    symlinkSync(ROOT, join(t, 'to-root'));
+    symlinkSync(join(ROOT, 'docs'), join(t, 'to-docs'));
+    for (const [link, tail] of [['to-root', 'zz-test'], ['to-docs', 'zz-test']]) {
+      const r = await refused(['--build-set', '--out', join(t, link, tail)]);
+      expect(r.code).toBe(2);
+      expect(r.out).toContain('REFUSING');
+    }
+    // a tail whose last two segments do not exist yet
+    const deep = await refused(['--build-set', '--out', join(t, 'to-docs', 'zz-a', 'zz-b')]);
+    expect(deep.code).toBe(2);
+    expect(existsSync(join(ROOT, 'zz-test'))).toBe(false);
+    expect(existsSync(join(ROOT, 'docs', 'zz-test'))).toBe(false);
+    expect(existsSync(join(ROOT, 'docs', 'zz-a'))).toBe(false);
+    // --set and the environment variables take the same road
+    expect((await refused(['--plan', '--set', join(t, 'to-root')])).code).toBe(2);
+    expect((await refused(['--build-set'], { env: { DECISION_EVAL_OUT: join(t, 'to-root', 'zz-test') } })).code).toBe(2);
+    expect(existsSync(join(ROOT, 'zz-test'))).toBe(false);
+    rmSync(t, { recursive: true, force: true });
+  });
+
+  test('a symlink that points outside the repo is accepted, as is a real folder whose name contains the repo name', async () => {
+    const t = tmp();
+    const outside = join(t, 'real-out');
+    mkdirSync(outside);
+    symlinkSync(outside, join(t, 'to-out'));
+    const viaLink = await refused(['--build-set', '--seed', '7', '--out', join(t, 'to-out', 'set')]);
+    expect(viaLink.code).toBe(0);
+    expect(existsSync(join(outside, 'set', 'set.json'))).toBe(true);
+    const lookalike = join(t, `${ROOT.split('/').pop()}-results`);
+    const named = await refused(['--build-set', '--seed', '7', '--out', lookalike]);
+    expect(named.code).toBe(0);
+    expect(existsSync(join(lookalike, 'set.json'))).toBe(true);
+    // the temp folder sits behind /var -> /private/var on macOS; it must still count as outside
+    expect(isInsideRepo(t, ROOT)).toBe(false);
+    expect(isInsideRepo(join(t, 'not', 'made', 'yet'), ROOT)).toBe(false);
+    rmSync(t, { recursive: true, force: true });
+  });
+
+  test('a dangling symlink is refused, and with no root nothing runs', async () => {
+    const t = tmp();
+    symlinkSync(join(t, 'nowhere'), join(t, 'dangling'));
+    expect((await refused(['--build-set', '--out', join(t, 'dangling')])).code).toBe(2);
+    const none = await refused(['--build-set', '--out', join(t, 'x')], { root: null });
+    expect(none.code).toBe(2);
+    expect(none.out).toContain('Run this as a file');
+    expect(existsSync(join(t, 'x'))).toBe(false);
+    rmSync(t, { recursive: true, force: true });
   });
 });
 
