@@ -6,6 +6,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-sonnet-5-5';
@@ -28,6 +29,7 @@ async function translate(b) {
 
 Audience: Spanish-dominant US residents. Natural Latin American Spanish at an 8th-grade reading level, warm and plain, never bureaucratic.
 Keep bill citations, numbers, and dates exactly as written. Keep US agency names in English, adding a short Spanish gloss in parentheses on first mention when it aids understanding.
+${PRESIDENT_STYLE_RULE}
 
 HEADLINE (translate, keep the "Topic — Action" structure, max 90 characters):
 ${b.ai_headline ?? ''}
@@ -47,7 +49,8 @@ Return STRICT JSON only, no markdown fences: {"headline": "...", "summary": "...
   const cleaned = text.replace(/^```json?\s*/i, '').replace(/```\s*$/, '');
   const parsed = JSON.parse(cleaned);
   if (!parsed.summary) throw new Error('empty summary');
-  return { headline: parsed.headline ?? null, summary: parsed.summary };
+  // "El presidente", lowercase (RAE; docs/copy-style.md).
+  return { headline: presidentStyle(parsed.headline ?? null, 'es'), summary: presidentStyle(parsed.summary, 'es') };
 }
 
 async function worker(queue) {

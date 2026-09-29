@@ -26,7 +26,7 @@ Default from 2026-07-24: Libre Franklin for UI, Besley for decoded prose and the
 
 ## Loudness
 
-Default from 2026-07-24, re-aimed 2026-09-25 (plan card q18): one earned loud thing per page. The homepage leads with a Big Question — the one on the floor today if there is one, otherwise one from the last 30 days. Quiet weeks look quiet.
+Default from 2026-07-24, re-aimed 2026-09-25 (plan card q18): one earned loud thing per page. ~~The homepage leads with a Big Question — the one on the floor today if there is one, otherwise one from the last 30 days.~~ (Struck 2026-09-29: the owner ruled, typed, "Home Page - Option B, This week first, then Big Questions.") The homepage leads with This week, then Big Questions (owner, 2026-09-29). Quiet weeks look quiet.
 
 ## Layout
 
@@ -58,6 +58,7 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-09-29 · owner · "Home Page - Option B, This week first, then Big Questions." (typed) → loudness: the homepage leads with This week, then Big Questions; the Big-Question-first line struck`
 - `2026-09-28 · owner · UX inventory H13 marked "cut" (the homepage's green-panel explainer) → colour: "a hue change is a copy change" struck; no shipped string names the panel's colour`
 - `2026-09-27 · owner · audit card a8 answered "a" (10:17:35Z) → tooling: impeccable is lint and rubric only, never during exploration`
 - `2026-09-27 · owner · audit cards a1 + a2 answered "a" (10:15:55Z, 10:16:07Z) → Constitution v2 adopted; this page created from the audit draft; DESIGN.md moved to docs/history/`

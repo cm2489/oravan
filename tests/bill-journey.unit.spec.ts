@@ -279,15 +279,18 @@ test.describe('the both-chambers ending, in both languages', () => {
    * President (it is a destination, and this vehicle's destination is not
    * his desk), and the TRAILER carries the denial while carrying none of the
    * presented path's affirmative claim.
+   *
+   * The copy writes "the president" / "el presidente", lowercase, since
+   * 2026-09-29 (owner; docs/copy-style.md), and the patterns below match it.
    */
   const locales = [
     {
       locale: 'en',
       messages: en,
       president: /president/i,
-      affirmative: /before reaching the President/,
-      denial: /never goes to the President and does not become law/,
-      statesDenial: /never goes to the President/,
+      affirmative: /before reaching the president/,
+      denial: /never goes to the president and does not become law/,
+      statesDenial: /never goes to the president/,
       states: /to the states/,
       ratify: /ratify/i,
       chambers: [/House/, /Senate/],
@@ -296,9 +299,9 @@ test.describe('the both-chambers ending, in both languages', () => {
       locale: 'es',
       messages: es,
       president: /presidente/i,
-      affirmative: /antes de llegar al Presidente/,
-      denial: /nunca llega al Presidente y no se convierte en ley/,
-      statesDenial: /nunca llega al Presidente/,
+      affirmative: /antes de llegar al presidente/,
+      denial: /nunca llega al presidente y no se convierte en ley/,
+      statesDenial: /nunca llega al presidente/,
       states: /a los estados/,
       ratify: /ratificar/i,
       chambers: [/Cámara/, /Senado/],
@@ -361,7 +364,7 @@ test.describe('the both-chambers ending, in both languages', () => {
       expect(t('backTrailerStates', { chamber: 'House', other: 'Senate' })).not.toMatch(denial);
     });
 
-    test(`${locale}: the presented-path strings are untouched and still name the President`, () => {
+    test(`${locale}: the presented-path strings still name the president`, () => {
       const t = createTranslator({ locale, messages, namespace: 'bill.journey' });
       expect(t('stepPresident')).toMatch(president);
       expect(t('backTrailer', { chamber: 'House', other: 'Senate' })).toMatch(affirmative);
