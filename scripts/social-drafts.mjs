@@ -41,6 +41,13 @@
  *   rule6      a quote is the record's own words; a floor notice is drafted
  *              only while announcementFor says it is live; no date or time the
  *              record does not hold; every fact prints its date.
+ *   record-only a Big Question draft quotes an update that states the official
+ *              record (the update's class is vote, status_change or
+ *              floor_action), never a line about press coverage
+ *              (press_cluster) or a scheduled item. The class field decides,
+ *              not the text. Where the newest day's top update is not of a
+ *              record class the draft falls back to the newest update that is,
+ *              in the site's own order; a question with none is dropped.
  *   record-lag a Big Question update that says where a measure stands must not
  *              be behind the record: if the bill's own status word (lib/status-word)
  *              is settled (law, agreed, rejected, vetoed) and the update's own
@@ -51,8 +58,11 @@
  *              fragment, no stance, never the call flow or a phone dialer);
  *              the only other links are a floor notice's government source.
  *   rule9      Oravan's own words are messages, citations, numbers, dates and
- *              separators, nothing else; no platform, outlet or other domain
- *              is named outside a record quote.
+ *              separators, nothing else; no web address (domain) appears
+ *              outside a record quote. NOT CHECKED: names of outlets, products
+ *              or organizations inside AI-written text (headlines and Big
+ *              Question lines), and the vocabulary of AI-written headlines;
+ *              the site does not check them either.
  *   president  lib/president-style.mjs leaves the text unchanged.
  *   tone       nothing composed expresses urgency, instruction or opinion;
  *              site messages are reused verbatim only.
@@ -72,7 +82,7 @@ import { SITE_ORIGIN } from '../lib/site';
 import { localizedUrl } from './indexnow-urls.mjs';
 import { getLiveMoments } from '../lib/moments';
 import { getUpdates } from '../lib/moment-updates';
-import { CLASS_PRIORITY, selectDayUpdates } from '../lib/moment-updates-gate.mjs';
+import { CLASS_PRIORITY, RECORD_EVENT_CLASSES, selectDayUpdates } from '../lib/moment-updates-gate.mjs';
 import { lintForbidden } from '../lib/moments-gate.mjs';
 import { normalizePresidentStyle } from '../lib/president-style.mjs';
 import { statusWord } from '../lib/status-word';
@@ -104,7 +114,7 @@ export const PLATFORM_LIMITS = Object.freeze({
 });
 
 export const KINDS = ['floor-notice', 'roll-call', 'bill-card', 'big-question-update', 'today', 'reply-card'];
-export const GATES = ['rule3', 'rule4', 'rule6', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length'];
+export const GATES = ['rule3', 'rule4', 'rule6', 'record-only', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length'];
 export const LANGS = ['en', 'es'];
 
 /** The AI labels the site already prints, by message key. Bill headlines take
@@ -370,8 +380,8 @@ export function composeBillCard({ slug, citation, headline, status, lastActionDa
 
 /** The latest published update line for a Big Question: its AI-drafted name,
  *  the line (AI-written, or the record quoted), its day, the page link. */
-/** @param {{ id: string, name: any, update: any, tied?: any[] }} args */
-export function composeQuestionUpdate({ id, name, update, tied = [] }) {
+/** @param {{ id: string, name: any, update: any, tied?: any[], trails?: any }} args */
+export function composeQuestionUpdate({ id, name, update, tied = [], trails = null }) {
   const line = (lang) => (update.ai ? ai(update.text[lang], lang) : published(update.text[lang], lang));
   const segs = (lang) => [
     ai(name[lang], lang),
@@ -392,6 +402,7 @@ export function composeQuestionUpdate({ id, name, update, tied = [] }) {
     recordQuotes: [],
     href: `/questions/${id}`,
     ...(tied.length ? { sameDayTie: true, sameDayOthers: tied.map((u) => ({ id: u.id, text: u.text })) } : {}),
+    ...(trails ? { trailsRecord: true, laterSameDay: { id: trails.id, text: trails.text } } : {}),
     segments: { en: segs('en'), es: segs('es') },
   };
 }
@@ -570,6 +581,10 @@ const GATE_CHECKS = {
     return null;
   },
 
+  'record-only'(draft, lang, segments, ctx) {
+    return ctx.recordOnly?.(draft) ?? null;
+  },
+
   'record-lag'(draft, lang, segments, ctx) {
     return ctx.recordLag?.(draft) ?? null;
   },
@@ -669,13 +684,52 @@ function billCardInput(bill) {
 export function latestUpdate(id) {
   const all = getUpdates(id).filter((u) => u && DATE_RE.test(u.day ?? ''));
   if (!all.length) return null;
-  const day = all.reduce((best, u) => (u.day > best ? u.day : best), all[0].day);
-  const ordered = selectDayUpdates(all.filter((u) => u.day === day), Number.POSITIVE_INFINITY);
-  const update = ordered[0];
+  const days = [...new Set(all.map((u) => u.day))].sort().reverse();
+  // The whole timeline in the site's own order: newest day first, then
+  // selectDayUpdates within the day.
+  const ordered = days.flatMap((d) => selectDayUpdates(all.filter((u) => u.day === d), Number.POSITIVE_INFINITY));
+  // The top of the page, unless it is not a record line; then the newest
+  // record line. A question with no record line keeps its top update and the
+  // record-only gate drops it.
+  const update = ordered[0] && isRecordClass(ordered[0]) ? ordered[0] : (ordered.find(isRecordClass) ?? ordered[0]);
   if (!update?.text?.en || !update?.text?.es) return null;
   const rank = (u) => CLASS_PRIORITY[u?.class] ?? 0;
-  const tied = ordered.slice(1).filter((u) => rank(u) === rank(update));
-  return { update, tied };
+  const sameDay = ordered.filter((u) => u.day === update.day && u.id !== update.id);
+  const tied = sameDay.filter((u) => rank(u) === rank(update));
+  const bill = update.vehicle ? getBill(update.vehicle) : undefined;
+  const trails = bill ? trailsRecord(update, sameDay, bill) : null;
+  return { update, tied, trails };
+}
+
+/** Record classes: an action or a vote in the official record. */
+const RECORD_CLASSES = RECORD_EVENT_CLASSES.filter((c) => c !== 'correction');
+const isRecordClass = (u) => RECORD_CLASSES.includes(u?.class);
+
+/** Compare two action sentences: whitespace, a trailing "(text: CR …)" or
+ *  "(CR …)" reference, and "No:" against "No." do not make a difference. */
+export function normalizeAction(x) {
+  return String(x ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\s*\((?:text:|CR\b)[^)]*\)\s*$/, '')
+    .replace(/\bNo:/g, 'No.')
+    .trim();
+}
+
+/**
+ * Another update of the same day on the same bill (any class) that IS the
+ * bill's latest action, while the drafted update is not: the draft trails the
+ * record. Returns that later update's id and text, or null. The draft still
+ * quotes what the site's page shows first; this only marks it.
+ */
+export function trailsRecord(update, sameDayUpdates, bill) {
+  const latest = [bill?.last_action_text, bill?.status_basis_text].filter(Boolean).map(normalizeAction);
+  const own = normalizeAction(update?.record?.action_text);
+  if (!latest.length || (own && latest.includes(own))) return null;
+  const later = sameDayUpdates.find(
+    (u) => u.id !== update.id && u.day === update.day && u.vehicle === update.vehicle && latest.includes(normalizeAction(u.record?.action_text)),
+  );
+  return later ? { id: later.id, text: later.text } : null;
 }
 
 /**
@@ -690,7 +744,7 @@ export function latestUpdate(id) {
  */
 export function lagReason({ billWord, settledOn = [], updateText }) {
   if (!billWord || billWord === 'open' || !updateText) return null;
-  const norm = (x) => String(x ?? '').replace(/\s+/g, ' ').trim();
+  const norm = normalizeAction;
   if (settledOn.some((t) => t && norm(t) === norm(updateText))) return null;
   return `the update's action "${norm(updateText)}" is behind the record, which now reads "${billWord}"`;
 }
@@ -744,6 +798,12 @@ export function recordContext(now) {
     }
     return set;
   };
+  const recordOnly = (draft) => {
+    if (draft.kind !== 'big-question-update') return null;
+    const u = getUpdates(draft.ref.id).find((x) => x.id === draft.ref.update);
+    if (!u || isRecordClass(u)) return null;
+    return `the update's class is "${u.class}", not an action or vote in the official record`;
+  };
   const recordLag = (draft) => {
     if (draft.kind !== 'big-question-update') return null;
     const u = getUpdates(draft.ref.id).find((x) => x.id === draft.ref.update);
@@ -755,7 +815,7 @@ export function recordContext(now) {
       updateText: u.record?.action_text,
     });
   };
-  return { liveAnnouncement, recordDates, recordLag };
+  return { liveAnnouncement, recordDates, recordLag, recordOnly };
 }
 
 /** Every candidate draft the committed record supports, before the gates. */
@@ -806,7 +866,7 @@ export function collectCandidates({ now, replySlugs = null }) {
       notes.push(`big-question-update ${q.id}: no update on file`);
       continue;
     }
-    candidates.push(composeQuestionUpdate({ id: q.id, name: q.name, update: latest.update, tied: latest.tied }));
+    candidates.push(composeQuestionUpdate({ id: q.id, name: q.name, update: latest.update, tied: latest.tied, trails: latest.trails }));
   }
 
   // today: one line per dated page in the window, from its own counts.
@@ -847,6 +907,7 @@ export function buildQueue({ now, replySlugs = null }) {
       aiLabel: d.segments.en.some((s) => s.k === 'label'),
       ...(d.note ? { note: d.note } : {}),
       ...(d.sameDayTie ? { sameDayTie: true, sameDayOthers: d.sameDayOthers } : {}),
+      ...(d.trailsRecord ? { trailsRecord: true, laterSameDay: d.laterSameDay } : {}),
       variants: Object.fromEntries(
         LANGS.map((lang) => [
           lang,
@@ -954,6 +1015,14 @@ export function queueMarkdown(queue) {
           const v = item.variants[lang][size];
           lines.push(`**${lang} · ${size}** (${v.chars ?? '—'} characters)`, '');
           lines.push(v.text ? '```text\n' + v.text + '\n```' : `_No ${size} form: ${v.reason}_`, '');
+        }
+        if (item.sameDayTie) {
+          lines.push(`Same day, also on the record (${lang}):`, '');
+          for (const o of item.sameDayOthers) lines.push(`- ${o.text[lang]}`);
+          lines.push('');
+        }
+        if (item.trailsRecord) {
+          lines.push(`Later the same day, on the record (${lang}):`, '', `- ${item.laterSameDay.text[lang]}`, '');
         }
       }
     }

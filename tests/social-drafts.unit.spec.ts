@@ -30,7 +30,10 @@ import {
   lagReason,
   latestUpdate,
   msg,
+  normalizeAction,
+  queueMarkdown,
   recordContext,
+  trailsRecord,
 } from '../scripts/social-drafts.mjs';
 
 type Seg = { k: string; text: string; key?: string; values?: Record<string, unknown>; raw?: string; iso?: string; dates?: string[] };
@@ -371,6 +374,87 @@ test('record-lag on the committed record: the funding question never queues a st
   expect(recordContext(NOW).recordLag(composeQuestionUpdate({ id: 'iran-war-powers', name: { en: 'x', es: 'x' }, update: failed }))).toBeNull();
 });
 
+/* ---- record-only, the tie and the trail, in the file a person reads ------- */
+
+const PENNY = 'penny-production-and-cash-rounding';
+const CRYPTO = 'crypto-oversight-split-between-sec-and-cftc';
+const ATHLETES = 'paying-college-athletes';
+const classOf = (id: string, uid: string) => (getUpdates(id).find((u) => u.id === uid) as { class: string }).class;
+
+test('record-only: a press line is never quoted; the newest record line stands in, by the site\'s order', () => {
+  const l = latestUpdate(ATHLETES)!;
+  expect(classOf(ATHLETES, l.update.id)).not.toBe('press_cluster');
+  expect(['vote', 'status_change', 'floor_action']).toContain(classOf(ATHLETES, l.update.id));
+  // The press update itself is dropped, under the gate, by the class field.
+  const press = getUpdates(ATHLETES).find((u) => (u as { class: string }).class === 'press_cluster')!;
+  const draft = composeQuestionUpdate({ id: ATHLETES, name: { en: 'x', es: 'x' }, update: press });
+  expect(recordContext(NOW).recordOnly(draft)).toMatch(/press_cluster/);
+  const stub = { ...ctx, recordOnly: (d: Draft) => (d.kind === 'big-question-update' ? 'press' : null) };
+  expectDroppedWith(seeds().question, 'record-only', stub);
+  const q = buildQueue({ now: NOW });
+  expect(q.dropped.filter((d: { gate: string }) => d.gate === 'record-only')).toHaveLength(0);
+  const item = q.items.find((i: { ref: { id?: string } }) => i.ref.id === ATHLETES)!;
+  expect(item.ref.update).toBe(l.update.id);
+});
+
+function expectDroppedWith(draft: Draft, gate: string, c: typeof ctx) {
+  const fail = gateDraft(draft, c);
+  expect(fail?.gate).toBe(gate);
+}
+
+test('queue.md shows a same-day tie and a later same-day record action, in the draft\'s language', () => {
+  const q = buildQueue({ now: NOW });
+  const md = queueMarkdown(q);
+  const penny = q.items.find((i: { ref: { id?: string } }) => i.ref.id === PENNY)!;
+  expect(penny.sameDayTie).toBe(true);
+  expect(penny.trailsRecord).toBe(true);
+  expect(penny.laterSameDay.text.en).toMatch(/passed the Senate without amendment/);
+  const section = md.slice(md.indexOf(`### ${penny.id}`), md.indexOf('### ', md.indexOf(`### ${penny.id}`) + 5));
+  expect(section).toContain('Same day, also on the record (en):');
+  expect(section).toContain('Later the same day, on the record (en):');
+  expect(section).toContain('Later the same day, on the record (es):');
+  expect(section).toContain(penny.laterSameDay.text.es);
+  // The draft still quotes what the site's page shows first.
+  expect(penny.ref.update).toBe(latestUpdate(PENNY)!.update.id);
+});
+
+test('trailsRecord: the crypto shape (a vote quoted; the motion to reconsider is the last action), any class', () => {
+  const crypto = q(CRYPTO);
+  expect(crypto.trailsRecord).toBe(true);
+  expect(crypto.laterSameDay.text.en).toMatch(/motion to reconsider/);
+  expect(classOf(CRYPTO, crypto.ref.update)).toBe('vote');
+  expect(crypto.ref.update).toBe(latestUpdate(CRYPTO)!.update.id);
+  expect(queueMarkdown(buildQueue({ now: NOW }))).toContain('Later the same day, on the record (en):');
+});
+
+function q(id: string) {
+  return buildQueue({ now: NOW }).items.find((i: { ref: { id?: string } }) => i.ref.id === id)!;
+}
+
+test('trailsRecord and lagReason: punctuation is not a difference (both wordings the check found)', () => {
+  expect(normalizeAction('Passed  Senate. (text: CR S4000-1)')).toBe('Passed Senate.');
+  expect(normalizeAction('Became Public Law No: 119-103.')).toBe(normalizeAction('Became Public Law No. 119-103.'));
+  const bill = { last_action_text: 'Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. (text: CR S5044-5063)', status_basis_text: null };
+  const own = { id: 'a', day: 'd', vehicle: 'v', record: { action_text: 'Committee discharged.' }, text: { en: 'a', es: 'a' } };
+  const later = { id: 'b', day: 'd', vehicle: 'v', record: { action_text: 'Passed Senate with an amendment by Yea-Nay Vote. 77 - 22.' }, text: { en: 'b', es: 'b' } };
+  expect(trailsRecord(own, [later], bill)).toEqual({ id: 'b', text: { en: 'b', es: 'b' } });
+  expect(trailsRecord(later, [own], bill)).toBeNull();
+  const bill2 = { last_action_text: 'Became Public Law No: 119-103.', status_basis_text: null };
+  const later2 = { ...later, record: { action_text: 'Became Public Law No. 119-103.' } };
+  expect(trailsRecord(own, [later2], bill2)).not.toBeNull();
+  // The record-lag gate no longer drops a correct draft over these.
+  expect(lagReason({ billWord: 'law', settledOn: ['Became Public Law No: 119-103.'], updateText: 'Became Public Law No. 119-103.' })).toBeNull();
+  expect(lagReason({ billWord: 'law', settledOn: ['Passed. (text: CR S4000)'], updateText: 'Passed.' })).toBeNull();
+  expect(lagReason({ billWord: 'law', settledOn: ['Became Public Law No: 119-103.'], updateText: 'Signed by President.' })).not.toBeNull();
+});
+
+test('the queue and queue.md are reproducible: two runs, same clock, identical output', () => {
+  const a = buildQueue({ now: NOW });
+  const b = buildQueue({ now: NOW });
+  expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  expect(queueMarkdown(a)).toBe(queueMarkdown(b));
+});
+
 /* ---- length ---------------------------------------------------------------- */
 
 test('length: a long form over the limit is dropped; a short form is never a cut quote', () => {
@@ -384,7 +468,7 @@ test('length: a long form over the limit is dropped; a short form is never a cut
 });
 
 test('every gate named in GATES has a seeded drop above', () => {
-  expect(GATES).toEqual(['rule3', 'rule4', 'rule6', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length']);
+  expect(GATES).toEqual(['rule3', 'rule4', 'rule6', 'record-only', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length']);
 });
 
 /* ---- the output path ------------------------------------------------------- */
