@@ -1,11 +1,11 @@
 {
   "_meta": {
     "schema": 1,
-    "updated": "2026-09-27T19:51:00.522Z",
+    "updated": "2026-09-28T22:15:06.296Z",
     "note": "Slugs already surfaced by scripts/moment-watch.mjs. Removing a slug re-notifies it."
   },
   "slugs": [
-    "hr-9340-119",
-    "hr-979-119"
+    "hr-979-119",
+    "s-3257-119"
   ]
 }

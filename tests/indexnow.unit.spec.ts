@@ -240,10 +240,11 @@ test.describe('deriveChangedPaths: what counts as a changed page', () => {
     expect(deriveChangedPaths(before, after)).toEqual(['/', '/questions', '/questions/q-two', '/nominations/pn-11-119']);
   });
 
-  test('the conversation lamp changes the news band on / and /bills, nothing else', () => {
+  // /bills stopped rendering the band on 2026-09-28 (owner, UX inventory B05).
+  test('the conversation lamp changes the news band on /, nothing else', () => {
     const after = fixture();
     (after['conversation.json'] as { slugs: Record<string, unknown> }).slugs['hr-1-119'] = { outlets7d: ['a'] };
-    expect(deriveChangedPaths(fixture(), after)).toEqual(['/', '/bills']);
+    expect(deriveChangedPaths(fixture(), after)).toEqual(['/']);
   });
 
   test('absent files never throw; a file new in this commit counts every entry as added', () => {

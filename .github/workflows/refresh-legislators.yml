@@ -41,7 +41,8 @@ concurrency:
   #
   # WHAT ACTUALLY MAKES THE PUSH SAFE, and it is already in this file: this
   # workflow's file set (legislators.json, zip-districts.json, vacancies.json,
-  # redistricting-watch.json) is disjoint from every other data-sync member's,
+  # special-elections.json, redistricting-watch.json) is disjoint from every
+  # other data-sync member's,
   # and its commit step carries the 5-attempt rebase-and-retry loop below.
   # Disjoint files plus rebase-retry, not serialization.
   group: data-sync-legislators
@@ -102,6 +103,15 @@ jobs:
               --label data-vacancy \
               --body "The weekly legislators refresh found no current representative for ${state} district ${district} in this week's pull. This is never silently backfilled from the departed member's stale record - rep-lookup surfaces (reps page, /api/reps, MCP lookup_representatives) now show an explicit vacant-seat state for this district instead. Close this once a successor is sworn in and data/vacancies.json no longer lists the seat (it heals automatically on the next refresh once the new member appears in the upstream feed)."
           done
+      - name: Record FEC special-election dates for vacant seats
+        # Reads the data/vacancies.json the refresh step just wrote and records
+        # each seat's special-election dates from the FEC's election-dates API
+        # in data/special-elections.json - dates only, as the FEC states them,
+        # with the day they were checked (lib/special-elections.mjs has the
+        # source and what is left out). $0 and no secret: api.data.gov's public
+        # DEMO_KEY. A failed request never fails the run - the seat keeps its
+        # last entry with its old checked date and the step prints a ::warning.
+        run: node scripts/sync-special-elections.mjs
       - name: Poll Redistricting Data Hub for tracked-state map changes
         id: redistricting_watch
         # S24, §9.1(f) item 3 - see lib/redistricting-watch.mjs and
@@ -208,8 +218,8 @@ jobs:
           fi
       - name: 119th -> 120th Congress rollover tripwire
         # S24, two-clock model (docs/solutions/two-clock-district-
-        # boundaries.md). Non-blocking by design: the mandatory literal +
-        # dataset bump isn't due until Jan 3, 2027, so this only starts a
+        # boundaries.md). Non-blocking by design: the mandatory session-
+        # constant + dataset swap isn't due until Jan 3, 2027, so this only starts a
         # loud ::warning once real lead time is needed (~2026-12-01) rather
         # than failing the pipeline for a month first. See
         # lib/rollover-tripwire.mjs.
@@ -265,7 +275,8 @@ jobs:
           # land DURING this run rather than only before it. THIS LOOP IS WHAT
           # MAKES THAT SAFE, together with the disjoint file set: this workflow
           # only ever touches legislators.json / zip-districts.json /
-          # vacancies.json / redistricting-watch.json, none of which any other
+          # vacancies.json / special-elections.json / redistricting-watch.json,
+          # none of which any other
           # workflow writes, so a concurrent push is a fast-forward problem and
           # never a content conflict. (The 2026-06-22 failure is the reason the
           # loop exists; leaving the shared group is the reason it is now the

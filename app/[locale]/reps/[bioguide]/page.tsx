@@ -6,6 +6,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { BillCard } from '@/components/BillCard';
+import { MemberVotes } from '@/components/MemberVotes';
 import { RepCard, RepContact, RepPortrait, repRoleKey, usePartyLabel } from '@/components/RepCard';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
@@ -39,9 +40,12 @@ import type { Bill, BillTeaser, Legislator, Vacancy } from '@/lib/types';
  * a party-keyed color either).
  *
  * THE FUNNEL ON THIS SURFACE (tests/funnel.spec.ts, "member page"):
- *   I1 - every bill link here is a DECODED corpus bill (getBillsSponsoredBy
- *        filters to decoded ones), so each is one click from a decoded,
- *        AI-labeled answer.
+ *   I1 - every sponsored-bill link here is a DECODED corpus bill
+ *        (getBillsSponsoredBy filters to decoded ones), so each is one click
+ *        from a decoded, AI-labeled answer. The "How they voted" rows
+ *        (components/MemberVotes.tsx) link to the bill each roll call names;
+ *        the vote gate keeps those in the corpus, and on 2026-09-28 all 72
+ *        voted bills were decoded in both languages.
  *   I2 - that bill page's rail is one stance away from a completed script:
  *        two interactions from here. A member who sponsors nothing Oravan
  *        tracks gets the /reps continuation instead (the same callable bills,
@@ -282,14 +286,10 @@ function MemberBody({
             )}
           </section>
 
-          {/*
-           * ── VOTE RECORD SLOT: EMPTY BY DESIGN ──
-           * A sibling workstream is building data/votes.json + lib/votes.ts.
-           * Until that lands, this slot renders NOTHING - no heading, no
-           * "coming soon", no placeholder rows: an empty promise is a claim
-           * about data we do not hold. When it lands, the vote section goes
-           * here, between what they sponsor and the continuation.
-           */}
+          {/* How they voted (owner, UX inventory R04, 2026-09-28): between
+              what they sponsor and the continuation. The rep cards on /reps
+              and the bill call panel link here by its `#votes` anchor. */}
+          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} />
 
           {sponsored.length === 0 && <Continuation locale={locale} t={t} />}
         </div>

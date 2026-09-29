@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import {
@@ -9,6 +10,9 @@ import {
   senatorsForState,
   vacancySlug,
 } from '../lib/core';
+import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage } from '../lib/votes';
+import { mockScriptApi } from './helpers';
+import { referenceBill } from './corpus-fixtures';
 
 /*
  * The per-member page, /reps/[bioguide] (plan item C2). Three shapes: a House
@@ -25,8 +29,8 @@ const HOUSE = 'D000594'; // Monica De La Cruz, TX-15 (also reps.spec.ts's ZIP 78
 const SENATOR = 'C000127'; // Maria Cantwell, WA
 
 const LOCALES = [
-  { prefix: '', messages: en },
-  { prefix: '/es', messages: es },
+  { prefix: '', locale: 'en', messages: en },
+  { prefix: '/es', locale: 'es', messages: es },
 ] as const;
 
 /**
@@ -104,7 +108,11 @@ for (const { prefix, messages } of LOCALES) {
       await expect(page.getByRole('heading', { name: messages.rep.sponsoredHeading })).toBeVisible();
       if (sponsored.length > 0) {
         await expect(page.getByText(messages.rep.aiNote, { exact: true })).toBeVisible();
-        await expect(page.locator(`main a[href$="/bills/${billSlug(sponsored[0])}"]`)).toBeVisible();
+        // Scoped to the section: the member may also have voted on a bill
+        // they sponsor, and "How they voted" links to it too.
+        await expect(
+          page.locator(`main section[aria-labelledby="rep-sponsored"] a[href$="/bills/${billSlug(sponsored[0])}"]`)
+        ).toBeVisible();
       }
 
       await expectTouchTargets(page);
@@ -175,6 +183,16 @@ for (const { prefix } of LOCALES) {
       await expectTouchTargets(page);
     });
   }
+
+  // The DC dial's label and number share one row until they cannot; at 320px
+  // in Spanish they could not, and the page scrolled sideways (2026-09-28).
+  test(`no horizontal overflow on ${prefix}/reps?zip=78501 @reflow`, async ({ page }) => {
+    await page.goto(`${prefix}/reps?zip=78501`);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow, `${prefix}/reps?zip=78501 must not scroll horizontally`).toBeLessThanOrEqual(0);
+  });
 }
 
 /*
@@ -202,5 +220,139 @@ for (const { prefix, messages } of LOCALES) {
     await seatLink.click();
     await expect(page).toHaveURL(new RegExp(`${prefix}/reps/${vacancySlug(seat!)}$`));
     await expect(page.getByText(messages.reps.vacantSeatBody)).toBeVisible();
+  });
+}
+
+/*
+ * HOW THEY VOTED (owner, UX inventory R04, 2026-09-28). The member page lists
+ * the bills the record names this member on, newest first, up to
+ * MEMBER_VOTES_MAX_BILLS (a page-weight cap decided on PR #348), each with the
+ * AI-labeled headline, their vote in the record's own word, and the bill
+ * page's own "Right now:" sentence; past the cap, one line counts the bills
+ * left out. Recomputed from lib/votes at assert time, so a nightly that adds
+ * roll calls cannot break this block. Asserted by message key and data-* hook
+ * only.
+ */
+for (const { prefix, locale, messages } of LOCALES) {
+  const tRep = createTranslator({ locale, messages, namespace: 'rep' });
+  test.describe(`member page vote record ${prefix || '/'}`, () => {
+    for (const id of [HOUSE, SENATOR]) {
+      test(`${id}: the newest voted bills, newest first, the vote as recorded`, async ({ page }) => {
+        const groups = memberVotesByBill(id);
+        test.skip(groups.length === 0, 'the record lists this member on no stored roll call');
+        const listed = groups.slice(0, MEMBER_VOTES_MAX_BILLS);
+        const olderBills = groups.length - listed.length;
+        await page.goto(`${prefix}/reps/${id}`);
+        const section = page.locator('[data-member-votes]');
+        await expect(section.getByRole('heading', { level: 2, name: messages.rep.votesHeading })).toBeVisible();
+        await expect(section.getByText(messages.rep.votesAiNote, { exact: true })).toBeVisible();
+        // The count line still counts every voted bill, capped or not.
+        const since = new Intl.DateTimeFormat(locale, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }).format(new Date(votesCoverage().floor));
+        await expect(
+          section.getByText(tRep('votesNote', { count: groups.length, date: since }), { exact: true })
+        ).toBeVisible();
+
+        const rows = section.locator('[data-member-vote-bill]');
+        await expect(rows).toHaveCount(listed.length);
+        expect(await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-member-vote-bill')))).toEqual(
+          listed.map((g) => g.bill)
+        );
+
+        // "Show all N" counts the listed bills, never the ones left out.
+        const folded = await section.locator('[data-member-votes-all] [data-member-vote-bill]').count();
+        const all = section.locator('[data-member-votes-all] > summary');
+        await expect(all).toHaveCount(folded > 0 ? 1 : 0);
+        if (folded > 0) await expect(all).toHaveText(tRep('showAll', { count: listed.length }));
+
+        // Past the cap: one visible line, outside the disclosure, counting the
+        // bills left out. Under it: no line at all.
+        const older = section.locator('[data-member-votes-older]');
+        if (olderBills > 0) {
+          await expect(older).toBeVisible();
+          await expect(older).toHaveAttribute('data-member-votes-older', String(olderBills));
+          await expect(older).toHaveText(tRep('votesOlder', { count: olderBills }));
+        } else {
+          await expect(older).toHaveCount(0);
+        }
+
+        const first = rows.first();
+        const newest = groups[0].votes[0];
+        await expect(first.locator(`a[href$="/bills/${groups[0].bill}"]`)).toBeVisible();
+        const vote = first.locator(`[data-member-vote-roll="${newest.rollCall.id}"]`);
+        await expect(vote.locator('[data-member-vote-position]')).toHaveText(
+          messages.votes.position[newest.position]
+        );
+        await expect(vote.locator('[data-member-vote-question]')).toHaveText(newest.rollCall.question);
+        await expect(vote.locator(`a[href="${newest.rollCall.source}"]`)).toBeVisible();
+
+        // Party never rides with a vote, as text or otherwise.
+        const rep = getLegislator(id)!;
+        const party = messages.reps.party[rep.party as 'Democrat' | 'Republican' | 'Independent'];
+        if (party) await expect(section.getByText(party, { exact: true })).toHaveCount(0);
+
+        await expectTouchTargets(page);
+      });
+    }
+
+    test('no horizontal overflow with every vote row open @reflow', async ({ page }) => {
+      await page.goto(`${prefix}/reps/${SENATOR}`);
+      await page
+        .locator('[data-member-votes]')
+        .evaluate((s) => s.querySelectorAll('details').forEach((d) => (d.open = true)));
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow, `${prefix}/reps/${SENATOR} must not scroll horizontally`).toBeLessThanOrEqual(0);
+    });
+
+    test('a row\'s "Right now" sentence is the bill page\'s own', async ({ page }) => {
+      await page.goto(`${prefix}/reps/${HOUSE}`);
+      // The two calendar sentences carry a glossary link on the bill page,
+      // whose hovercard text sits inside the same paragraph; every other key
+      // reads identically on both pages.
+      const now = page
+        .locator(
+          '[data-member-votes] [data-member-vote-now]:not([data-member-vote-now="nowFloor"]):not([data-member-vote-now="nowFloorStale"])'
+        )
+        .first();
+      test.skip((await now.count()) === 0, 'every voted bill sits on a floor calendar this run');
+      const sentence = ((await now.textContent()) ?? '').replace(/\s+/g, ' ').trim();
+      const bill = await now.evaluate((el) =>
+        el.closest('[data-member-vote-bill]')!.getAttribute('data-member-vote-bill')
+      );
+      expect(sentence.startsWith(messages.bill.journey.now)).toBe(true);
+      await page.goto(`${prefix}/bills/${bill}`);
+      await expect(page.locator('main')).toContainText(sentence);
+    });
+
+    test('rep cards on /reps link to the vote section', async ({ page }) => {
+      await page.goto(`${prefix}/reps?zip=78501`);
+      const link = page.locator(`article a[data-rep-votes-link][href="${prefix}/reps/${HOUSE}#votes"]`);
+      await expect(link).toHaveText(messages.reps.seeVotes);
+      expect(await link.evaluate(hitHeight)).toBeGreaterThanOrEqual(44);
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps/${HOUSE}#votes$`));
+      await expect(page.locator('#votes')).toBeInViewport();
+    });
+
+    test('the bill call panel links each member to their vote section', async ({ page }) => {
+      await mockScriptApi(page);
+      await page.goto(`${prefix}/bills/${referenceBill().slug}`);
+      await page.getByRole('radio', { name: messages.bill.stance.support }).click();
+      await page.getByLabel(messages.home.zipLabel).fill('78501');
+      await page.getByRole('button', { name: messages.home.zipCta }).click();
+      const rows = page.locator('[data-rep-name]');
+      await expect(rows.first()).toBeVisible();
+      const links = page.locator('[data-rep-votes-link]');
+      await expect(links).toHaveCount(await rows.count());
+      await expect(page.locator(`[data-rep-votes-link][href="${prefix}/reps/${HOUSE}#votes"]`)).toHaveText(
+        messages.reps.seeVotes
+      );
+    });
   });
 }

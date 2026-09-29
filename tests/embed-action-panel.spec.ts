@@ -7,6 +7,7 @@ import {
   E2E_TENANT_TOKEN_INACTIVE,
   E2E_TENANT_TOKEN_NO_TOS,
 } from './fixtures/e2e-tenant';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 
 /*
  * S19 — action-panel embed widget (paid tier only). Drives the widget's own
@@ -44,11 +45,15 @@ function panelUrl(params: Record<string, string>) {
 
 // --- refusal states ----------------------------------------------------------
 
-test('no token: refuses with the generic unauthorized message, link to /embeds', async ({ page }) => {
+// The link goes to the plans sentence: /embeds while that page is public, /partners
+// while it is hidden (lib/site.ts EMBEDS_PAGES_PUBLIC, 2026-09-28) — never to a 404.
+const PLANS_HREF = EMBEDS_PAGES_PUBLIC ? '/embeds' : '/partners';
+
+test('no token: refuses with the generic unauthorized message, link to the plans sentence', async ({ page }) => {
   await page.goto(panelUrl({ locale: 'en', slug: SLUG }));
   await expect(page.getByText(en.embed.actionPanelUnauthorizedTitle)).toBeVisible();
   const link = page.getByRole('link', { name: new RegExp(en.embed.actionPanelUnauthorizedLink) });
-  await expect(link).toHaveAttribute('href', '/embeds');
+  await expect(link).toHaveAttribute('href', PLANS_HREF);
   await expect(link).toHaveAttribute('target', '_blank');
   // Never a blank/broken page, never a crash, never the citizen flow.
   await expect(page.getByRole('radio', { name: en.bill.stance.support })).toHaveCount(0);

@@ -92,7 +92,6 @@
     "floorCta": "Léelo en palabras sencillas",
     "aiReviewed": "Traducido por IA, verificado con el registro",
     "stampLabel": "Datos al",
-    "weekNote": "El panel verde señala un solo hecho con fecha: este proyecto está en el calendario del pleno, o tiene una votación pendiente en el pleno. El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteQuiet": "El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteRecess": "No hay actividad legislativa programada en ninguna de las dos cámaras. El propio Daily Digest del Senado, publicado el {published}, indica que la próxima sesión del Senado será <senateWhen>{senate}</senateWhen> y la próxima de la Cámara, <houseWhen>{house}</houseWhen>: ambas son <term>sesiones pro forma</term>. Los proyectos de abajo siguen donde los dejó el registro.",
     "how1Dur": "0:30",
@@ -125,7 +124,6 @@
     "evidenceCovers": "para el {date}",
     "evidenceLink": "Leer la fuente",
     "floorCheckedAt": "Programación comprobada el {date}",
-    "weekNoteAnnounced": "El panel verde señala un solo hecho con fecha del registro: la cámara nombró este proyecto en su propia programación del pleno, citada arriba con la fecha en que se publicó. Esa programación se vuelve a leer cada hora, y si la cámara retira el proyecto, este sale del panel. Nada aquí dice cuándo será la votación — eso solo lo puede decir el Congreso, y no lo ha dicho.",
     "todayLink": "Resumen de hoy: votaciones, proyectos que avanzaron y la agenda de cada cámara, según el registro."
   },
   "reps": {
@@ -141,8 +139,11 @@
     "dcOffice": "Oficina en Washington",
     "localOffices": "Oficinas locales",
     "website": "Sitio web oficial",
+    "seeVotes": "Ver cómo votó",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
+    "zipLine": "Código postal {zip}",
+    "savedZipLoading": "Buscando {zip}, el código postal guardado en este dispositivo…",
     "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Algunos códigos postales válidos — como los de apartados postales o exclusivos de empresas — no corresponden a ningún distrito. Revisa los dígitos, prueba con el código postal de tu casa, o busca a tu representante directamente en house.gov.",
     "party": {
       "Democrat": "Demócrata",
@@ -188,7 +189,14 @@
     "vacantMetaTitle": "{place} · Escaño vacante",
     "vacantMetaDescription": "Nadie ocupa este escaño de la Cámara por ahora. Los dos senadores del estado lo siguen representando.",
     "nextTitle": "Lo que avanza en el Congreso",
-    "nextSeeAll": "Ver todos los proyectos de ley"
+    "nextSeeAll": "Ver todos los proyectos de ley",
+    "votesHeading": "Cómo votó",
+    "votesNote": "Votaciones nominales sobre {count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, desde el {date}, con la más reciente primero.",
+    "votesAiNote": "Titulares y resúmenes traducidos por IA, verificados con el registro",
+    "votesTheirVote": "Su voto:",
+    "votesMoreOnBill": "{count, plural, one {Su otro voto sobre este proyecto} other {Sus otros # votos sobre este proyecto}}",
+    "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
+    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
@@ -602,7 +610,7 @@
     "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Escríbenos a hello@oravan.org. Indica el proyecto de ley y describe el error.",
     "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
-    "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos revisados de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. Un widget incrustable que muestre texto de proyectos de ley todavía está en desarrollo, aún no se ha lanzado; cuando exista, leerá estos mismos datos corregidos sin un paso de corrección aparte.",
+    "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos revisados de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
     "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra para el proceso continuo de revisión en español de Oravan, en lugar de parchearse en silencio y olvidarse."
   },
   "notFound": {
@@ -822,16 +830,16 @@
   },
   "partners": {
     "title": "Socios",
-    "intro": "Los widgets de Oravan están hechos para vivir dentro de las páginas de otros — artículos de prensa, guías de biblioteca, el centro de acción de una organización. Todo lo de esta página se puede usar gratis hoy; aquí está lo que recibe cada tipo de socio, y dónde empieza el nivel con licencia.",
+    "intro": "Los widgets de Oravan están hechos para vivir dentro de las páginas de otros — artículos de prensa, guías de biblioteca, el centro de acción de una organización. Por ahora no están abiertos a sitios nuevos: volverán con su propia página y sus propios términos. Aquí está lo que hacen para cada tipo de socio, y dónde empieza el nivel con licencia.",
     "newsroomsTitle": "Redacciones en español y medios locales",
     "newsroomsBody": "Inserta un buscador de representantes o una tarjeta de ley en lenguaje claro dentro de cualquier artículo — dos etiquetas de script, sin cuentas, sin rastrear a tus lectores, nunca. Aquí el español va a la par del inglés, nunca como un añadido: cada texto de la interfaz se escribe en los dos idiomas, la capa en lenguaje claro de cada proyecto de ley la traduce la IA a partir del resumen en inglés, y ningún idioma se publica sin el otro — así que un medio que publica primero en español inserta un widget que habla primero en español, completo desde el primer día. Dale tus colores de sección, o usa el marco sin marca para que el widget se lea como parte de tu página.",
     "newsroomsCta": "Crea tu widget",
     "librariesTitle": "Bibliotecas y programas cívicos",
     "librariesBody": "Oravan es seguro frente a cualquier usuario: estrictamente no partidista por construcción, sin cuentas, nada guardado en servidores, y lenguaje claro que nunca se publica sin pasar controles automáticos contra el registro oficial. Enlázalo desde una guía de recursos o inserta el buscador en tu página de programas — funciona igual en una terminal de biblioteca que en un teléfono.",
     "orgsTitle": "Organizaciones y uso con licencia",
-    "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe y está documentada en la página de widgets.",
+    "orgsBody": "Las organizaciones sin fines de lucro, los sindicatos y los grupos cívicos usan los mismos widgets gratuitos que todos — con tema, en cualquiera de los dos idiomas, con atribución. Un nivel con licencia para organizaciones que necesiten widgets de marca blanca sin atribución está en camino; la capacidad ya existe.",
     "licensingTitle": "Licencias y precios",
-    "licensingBody": "Si tu organización quiere widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos a hello@oravan.org — llega directamente a una persona real. La página de widgets enumera cuatro planes — Gratuito, Pro, Sin fines de lucro y Red —, pero hoy solo está disponible el Gratuito: todavía no se pueden contratar los planes de pago y sus precios no están publicados.",
+    "licensingBody": "Si tu organización quiere widgets en su sitio, widgets de marca blanca, quitar la atribución o una alianza de datos, escríbenos a hello@oravan.org — llega directamente a una persona real. Los widgets tienen cuatro planes — Gratuito, Pro, Sin fines de lucro y Red — y por ahora ninguno está abierto a sitios nuevos: todavía no se pueden contratar los planes de pago y sus precios no están publicados.",
     "licensingCta": "Escríbenos a hello@oravan.org"
   },
   "follow": {

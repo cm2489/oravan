@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { BILLING_PORTAL_URL, feedPaths } from '@/lib/site';
+import { BILLING_PORTAL_URL, EMBEDS_PAGES_PUBLIC, feedPaths } from '@/lib/site';
 import { getTeasers } from '@/lib/core';
 import { EmbedConfigurator } from '@/components/EmbedConfigurator';
 
@@ -21,12 +22,17 @@ import { EmbedConfigurator } from '@/components/EmbedConfigurator';
  * exact same corpus-wide data app/[locale]/bills/page.tsx already ships to
  * its own client-side search component (components/BillsBrowser.tsx), so the
  * bill picker below searches the real corpus, not a curated sample.
+ *
+ * HIDDEN since 2026-09-28 (owner, open-questions F): both functions below
+ * return notFound() while lib/site.ts's EMBEDS_PAGES_PUBLIC is false. The
+ * code stays so the page comes back by flipping that one constant.
  */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  if (!EMBEDS_PAGES_PUBLIC) notFound();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'embeds' });
   return { title: t('title'), alternates: hreflangAlternates(locale, '/embeds') };
@@ -35,6 +41,7 @@ export async function generateMetadata({
 export default async function EmbedsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  if (!EMBEDS_PAGES_PUBLIC) notFound();
   const t = await getTranslations('embeds');
   const bills = getTeasers(locale);
   // S21: the free feed's locale-explicit static routes (lib/site.ts).

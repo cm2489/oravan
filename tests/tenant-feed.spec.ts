@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 
 /*
  * S21 — the free, public, keyless "what moved this week" tenant feed, hit
@@ -235,6 +236,7 @@ test.describe('discoverability', () => {
   });
 
   test('the /embeds docs page links both feed formats and the embeds ToS', async ({ page }) => {
+    test.skip(!EMBEDS_PAGES_PUBLIC, 'The /embeds pages are hidden until embeds come back (owner, 2026-09-28; PR #353). tests/embeds-hidden.spec.ts asserts their 404; set lib/site.ts EMBEDS_PAGES_PUBLIC to true to run this again.');
     await page.goto('/embeds');
     // Scoped to <main>: the footer's Follow column links both feeds on every page too.
     const main = page.locator('main');

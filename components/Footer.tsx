@@ -4,6 +4,7 @@ import { OravanLockup } from '@/components/brand/OravanLockup';
 import { DONATE_URL } from '@/lib/site';
 // Its own line on purpose: tests/donate.unit.spec.ts pins the DONATE_URL import verbatim.
 import { feedPaths } from '@/lib/site';
+import { HIDDEN_PAGES } from '@/lib/site';
 
 /*
  * THE BACK COVER.
@@ -123,7 +124,8 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
                 {t('footer.colSite')}
               </h2>
               <ul className="mt-2 grid">
-                {SITE_LINKS.map(({ href, key }) => (
+                {/* A hidden page (lib/site.ts HIDDEN_PAGES) 404s, so it takes no link. */}
+                {SITE_LINKS.filter(({ href }) => !HIDDEN_PAGES.includes(href)).map(({ href, key }) => (
                   <li key={href}>
                     <Link href={href} className={linkClass}>
                       {t(key)}

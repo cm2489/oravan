@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-27T18:55:40.297Z"
+    "generated_at": "2026-09-29T01:53:07.841Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1496,6 +1496,195 @@
   "paying-college-athletes": {
     "updates": [
       {
+        "id": "u_eda56d8f",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate agreed to S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 245: 96 yeas, 1 nay, 3 not voting.",
+          "es": "El Senado aprobó la enmienda S.Amdt. 6828 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 245: 96 a favor, 1 en contra, 3 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00245.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 96, Nays 1, Not Voting 3. Senate roll call vote 245.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 245
+          },
+          "question": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Agreed to",
+          "totals": {
+            "yea": 96,
+            "nay": 1,
+            "present": 0,
+            "notVoting": 3
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_eea56f22",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 246: 1 yea, 94 nays, 5 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6758 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 246: 1 a favor, 94 en contra, 5 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00246.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 1, Nays 94, Not Voting 5. Senate roll call vote 246.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 246
+          },
+          "question": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 1,
+            "nay": 94,
+            "present": 0,
+            "notVoting": 5
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_efa570b5",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 247: 42 yeas, 54 nays, 4 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6760 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 247: 42 a favor, 54 en contra, 4 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00247.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 42, Nays 54, Not Voting 4. Senate roll call vote 247.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 247
+          },
+          "question": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 42,
+            "nay": 54,
+            "present": 0,
+            "notVoting": 4
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f0a57248",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 248: 49 yeas, 50 nays, 1 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6805 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 248: 49 a favor, 50 en contra, 1 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00248.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 49, Nays 50, Not Voting 1. Senate roll call vote 248.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 248
+          },
+          "question": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 49,
+            "nay": 50,
+            "present": 0,
+            "notVoting": 1
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_5f348c7a",
+        "class": "press_cluster",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-28T21:05:00.291Z",
+        "text": {
+          "en": "CNBC and PBS published coverage of S. 4668.",
+          "es": "CNBC y PBS publicaron reportajes sobre el S. 4668."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cnbc.com/2026/09/28/college-sports-bill-senate-nil.html",
+            "https://www.pbs.org/newshour/politics/watch-live-senate-expected-to-consider-the-protect-college-sports-act"
+          ],
+          "outlets": [
+            "cnbc.com",
+            "pbs.org"
+          ],
+          "outlet_names": [
+            "CNBC",
+            "PBS"
+          ],
+          "lean_set": [
+            "center"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
         "id": "u_3385513a",
         "class": "vote",
         "vehicle": "s-4668-119",
@@ -2304,11 +2493,127 @@
           "status:s-4668-119 committee→floor_vote"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_b9b9bade",
+        "generated_at": "2026-09-28T21:05:08.358Z",
+        "as_of_day": "2026-09-28",
+        "text": {
+          "en": "The Senate moved the Protect College Sports Act of 2026 (S. 4668) through a series of votes. On September 24, 2026, it agreed to Amendment 6776 by a recorded vote of 77 to 23 (Roll no. 242). Later that day, it invoked cloture on the measure, as amended, by a recorded vote of 74 to 25 (Roll no. 243), and withdrew the committee substitute by voice vote. On September 22, 2026, it invoked cloture on the amendment by a recorded vote of 70 to 21 (Roll no. 240). That vote ended a motion by Senator Thune to recommit the bill to the Commerce, Science, and Transportation Committee. On September 17, 2026, the Senate agreed to the motion to proceed by a recorded vote of 77 to 22 (Roll no. 236). On September 15, 2026, it invoked cloture on that motion by a recorded vote of 74 to 24 (Roll no. 235).",
+          "es": "El Senado avanzó la Ley de Protección del Deporte Universitario de 2026 (S. 4668) con una serie de votaciones. El 24 de septiembre de 2026 aprobó la Enmienda 6776 por votación nominal de 77 a 23 (votación núm. 242). Ese mismo día invocó el cierre del debate sobre la medida, ya enmendada, por votación nominal de 74 a 25 (votación núm. 243), y retiró el sustituto del comité por votación oral. El 22 de septiembre de 2026 invocó el cierre del debate sobre la enmienda por votación nominal de 70 a 21 (votación núm. 240). Con esa votación cayó una moción del senador Thune para devolver el proyecto al Comité de Comercio, Ciencia y Transporte. El 17 de septiembre de 2026 el Senado aprobó la moción para proceder por votación nominal de 77 a 22 (votación núm. 236). El 15 de septiembre de 2026 invocó el cierre del debate sobre esa moción por votación nominal de 74 a 24 (votación núm. 235)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_a14f52d7",
+        "generated_at": "2026-09-29T01:53:19.423Z",
+        "as_of_day": "2026-09-28",
+        "text": {
+          "en": "The Senate voted on the Protect College Sports Act of 2026 (S. 4668) on four days. On September 28, 2026, senators took up four amendments to S.Amdt. 6776. S.Amdt. 6828 was agreed to by a recorded vote of 96 to 1 (Roll no. 245). S.Amdt. 6758 was rejected, 1 to 94 (Roll no. 246). S.Amdt. 6760 was rejected, 42 to 54 (Roll no. 247). S.Amdt. 6805 was rejected, 49 to 50 (Roll no. 248). On September 24, 2026, the Senate agreed to S.Amdt. 6776, 77 to 23 (Roll no. 242), and invoked cloture on the bill, as amended, 74 to 25 (Roll no. 243). On September 22, 2026, cloture on S.Amdt. 6776 was agreed to, 70 to 21 (Roll no. 240). On September 17, 2026, the motion to proceed was agreed to, 77 to 22 (Roll no. 236), after cloture on it was invoked, 74 to 24, on September 15, 2026 (Roll no. 235).",
+          "es": "El Senado votó sobre la Ley de Protección del Deporte Universitario de 2026 (S. 4668) en cuatro días. El 28 de septiembre de 2026, los senadores consideraron cuatro enmiendas a la S.Amdt. 6776. La S.Amdt. 6828 fue aprobada por votación nominal de 96 a 1 (votación núm. 245). La S.Amdt. 6758 fue rechazada, 1 a 94 (votación núm. 246). La S.Amdt. 6760 fue rechazada, 42 a 54 (votación núm. 247). La S.Amdt. 6805 fue rechazada, 49 a 50 (votación núm. 248). El 24 de septiembre de 2026, el Senado aprobó la S.Amdt. 6776, 77 a 23 (votación núm. 242), e invocó el cierre del debate sobre el proyecto, en su versión enmendada, 74 a 25 (votación núm. 243). El 22 de septiembre de 2026, se aprobó el cierre del debate sobre la S.Amdt. 6776, 70 a 21 (votación núm. 240). El 17 de septiembre de 2026, se aprobó la moción para proceder, 77 a 22 (votación núm. 236), tras invocarse el cierre del debate sobre ella, 74 a 24, el 15 de septiembre de 2026 (votación núm. 235)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+4"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-26",
-      "count": 1
+      "day": "2026-09-28",
+      "count": 2
     }
   },
   "annual-defense-policy": {
@@ -2519,7 +2824,7 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-27",
+      "day": "2026-09-28",
       "count": 1
     }
   },
@@ -2965,7 +3270,7 @@
     ],
     "summary_revisions": [],
     "summary_attempts": {
-      "day": "2026-09-27",
+      "day": "2026-09-28",
       "count": 1
     }
   }

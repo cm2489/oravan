@@ -5,7 +5,6 @@ import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/serve
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
-import { HomeScreencast } from '@/components/HomeScreencast';
 import { NewsLens } from '@/components/NewsLens';
 import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -725,9 +724,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             headline with its own date and URL), OR a floor vote still ahead of
             it in the record (cloture filed, motion to proceed made, proceedings
             postponed, a rule reported), OR the record's own "Placed on …
-            Calendar" sentence. home.weekNote / home.weekNoteAnnounced promise
-            exactly the fact that was found and nothing else, so a REJECTED
-            motion to proceed or a cloture motion that was not invoked can never
+            Calendar" sentence. The panel claims exactly the fact that was
+            found and nothing else, so a REJECTED motion to proceed or a
+            cloture motion that was not invoked can never
             wear the crown (lib/journey.ts's settled guard, which is also rule 0
             of the ladder's T1 rung). The date printed is the date of that fact
             — an action date, or the announcing document's own publication date.
@@ -932,57 +931,52 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           )}
 
-          {/* The note says what the loudness means. It no longer carries the
-              staleness beacon (2026-08-12): the caveat moved UP to the
-              masthead's topSub line, where the "this week" / "right now"
-              claims it qualifies actually are, and it is not duplicated here
-              because one note per page is a standing ruling (see the
-              masthead comment above and StalenessNote's own header). Gated on the SAME
-              condition as the panel itself: a note that says "the green
-              panel marks one fact" on a week with no green panel is a false
-              claim (owner finding 2026-08-01), so the panel-less week gets
-              the sentence without the panel in it. THREE variants now, for the
-              same reason there are three: the announced note describes an
-              announcement — quoted, dated, re-read hourly, and explicitly NOT a
-              vote date — and printing the calendar/pending sentence over it
-              would describe a fact the panel is not showing. */}
-          <p data-week-note={recessWeek ? 'recess' : 'standard'} className="mt-8 max-w-note text-sm text-ink-2">
-            {!crowned ? (
-              recessWeek ? (
-                /* The one crownless week that can name its own reason. Each
-                   chamber's next meeting is the digest's OWN printed line —
-                   English, unformatted, `lang="en"` (ruling V4), exactly as
-                   the announced band prints a schedule's coverage sentence —
-                   with our derived date as the fallback, formatted in the
-                   reader's locale. The document's publication date is ours to
-                   format either way. */
-                t.rich('weekNoteRecess', {
-                  published: billDate(recessWeek.published),
-                  senate: meetingText(recessWeek.senate),
-                  house: meetingText(recessWeek.house),
-                  /* The VALUES above are strings because next-intl's ICU
-                     arguments take strings, numbers and dates only; the SPAN
-                     that marks a verbatim English line arrives as a tag
-                     handler, one per chamber, each deciding from its own
-                     meeting whether it is wrapping the digest's words or our
-                     derived date. */
-                  senateWhen: meetingTag(recessWeek.senate),
-                  houseWhen: meetingTag(recessWeek.house),
-                  term: glossaryTag('pro-forma-session'),
-                })
-              ) : (
-                t('weekNoteQuiet')
-              )
-            ) : feature?.kind === 'announced' ? (
-              t('weekNoteAnnounced')
-            ) : (
-              t('weekNote')
-            )}
-          </p>
+          {/* THE QUIET-WEEK NOTE, on crownless weeks only since 2026-09-28:
+              the owner cut the green-panel explainer (UX inventory H13), which
+              was this line's crowned-week wording (home.weekNote and
+              home.weekNoteAnnounced, removed from both languages in the same
+              commit, so undoing that one commit brings them back). A crownless
+              week still admits it is quiet, and in the one recess the record
+              can explain, says why. It no longer carries the staleness beacon
+              (2026-08-12): the caveat moved UP to the masthead's topSub line,
+              where the "this week" / "right now" claims it qualifies actually
+              are, and it is not duplicated here because one note per page is
+              a standing ruling (see the masthead comment above and
+              StalenessNote's own header). */}
+          {!crowned && (
+            <p
+              data-week-note={recessWeek ? 'recess' : 'standard'}
+              className="mt-8 max-w-note text-sm text-ink-2"
+            >
+              {recessWeek
+                ? /* The one crownless week that can name its own reason. Each
+                     chamber's next meeting is the digest's OWN printed line —
+                     English, unformatted, `lang="en"` (ruling V4), exactly as
+                     the announced band prints a schedule's coverage sentence —
+                     with our derived date as the fallback, formatted in the
+                     reader's locale. The document's publication date is ours
+                     to format either way. */
+                  t.rich('weekNoteRecess', {
+                    published: billDate(recessWeek.published),
+                    senate: meetingText(recessWeek.senate),
+                    house: meetingText(recessWeek.house),
+                    /* The VALUES above are strings because next-intl's ICU
+                       arguments take strings, numbers and dates only; the
+                       SPAN that marks a verbatim English line arrives as a tag
+                       handler, one per chamber, each deciding from its own
+                       meeting whether it is wrapping the digest's words or our
+                       derived date. */
+                    senateWhen: meetingTag(recessWeek.senate),
+                    houseWhen: meetingTag(recessWeek.house),
+                    term: glossaryTag('pro-forma-session'),
+                  })
+                : t('weekNoteQuiet')}
+            </p>
+          )}
           {/* One line to the daily brief (plan item C3). Footer/nav placement
               is left to the owner's review: the footer's Follow column is
               claimed by a sibling PR. */}
-          <p className="mt-2 max-w-note text-sm">
+          <p className={`${crowned ? 'mt-8' : 'mt-2'} max-w-note text-sm`}>
             <Link
               href="/today"
               className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
@@ -1020,12 +1014,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           One titled zone under the page's third and last 3px ink rule, and
           the rule now opens BOTH columns at once: left holds the heading,
           the sub, and the five minutes as a numbered list; right holds the
-          SCREENCAST WALKTHROUGH (HomeScreencast — real frames of the real
-          flow, owner pick 2A, raised level with the heading) with the
-          why-call teaser beneath it (owner item 4). The two demo disclosures
-          this replaced are gone (owner item 3); the transcript's reassurance
-          survives as the note under the player. Ruled paper, no third
-          ground. */}
+          why-call teaser (owner item 4). Ruled paper, no third ground.
+
+          THE SCREENCAST IS OFF (owner, UX inventory H18 "cut", 2026-09-28:
+          "Let's keep it off for now until UI/UX is finalized and then we can
+          talk about adding back in and where"). components/HomeScreencast.tsx,
+          its home.screencast* and home.demoNote* strings and its frames in
+          public/walkthrough/ are all kept, unmounted, so putting it back is
+          one import and <HomeScreencast /> wherever it lands. */}
       {/* THE FIVE MINUTES, AS NUMBERS ONLY (owner decision 2026-08-01,
           round 3): the route gauge is gone. It was redrawn twice — four
           per-leg bars, then one stacked track — and neither read as a
@@ -1067,27 +1063,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <span>{t('routeTotalNote')}</span>
             </p>
           </div>
-          {/* The walkthrough beside the steps it plays out, top-aligned
-              with the zone heading (owner pick 2A), and the why-call teaser
-              directly under it (owner item 4) — the column that used to be
-              half dead space now answers "show me" and then "does it
-              work?". why-title stays an h3: it is a subsection of this
-              zone's h2. */}
-          <div>
-            <HomeScreencast />
-            <div className="mt-8 border-t-[1.5px] border-line-strong pt-6">
-              <h3 id="why-title" className="text-h3 font-extrabold">
-                {t('whyTitle')}
-              </h3>
-              <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
-              <Link
-                href="/why-call"
-                className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-              >
-                {t('whyCta')}
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+          {/* The why-call teaser (owner item 4), top-aligned with the zone
+              heading beside the steps. On a phone it follows the steps under
+              its own hairline; on the two-column layout the zone's 3px rule
+              already opens it. why-title stays an h3: it is a subsection of
+              this zone's h2. */}
+          <div className="border-t-[1.5px] border-line-strong pt-6 md:border-t-0 md:pt-0">
+            <h3 id="why-title" className="text-h3 font-extrabold">
+              {t('whyTitle')}
+            </h3>
+            <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
+            <Link
+              href="/why-call"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('whyCta')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
           </div>
         </div>
       </section>

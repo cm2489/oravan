@@ -1,6 +1,6 @@
 import { getAllBills } from '@/lib/core';
 import { MCP_ENDPOINT_URL } from '@/lib/core/mcp';
-import { SITE_ORIGIN } from '@/lib/site';
+import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
 
 /*
  * S22 — minimal, honest llms.txt (llmstxt.org convention). No native Next.js
@@ -38,6 +38,11 @@ import { SITE_ORIGIN } from '@/lib/site';
  * plainly true: nothing that identifies a visitor is stored, and visitors
  * are counted only as that one number a day.
  *
+ * 2026-09-28: the Embeds line prints only while lib/site.ts's
+ * EMBEDS_PAGES_PUBLIC is true. The /embeds pages are hidden until embeds come
+ * back (owner, open-questions F), and this file never points a machine at a
+ * page that 404s.
+ *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
  * messages/en.json + es.json — the bilingual-parity rule this file is not
@@ -47,6 +52,9 @@ export const dynamic = 'force-static';
 
 export function GET() {
   const total = getAllBills().length;
+  const embedsLine = EMBEDS_PAGES_PUBLIC
+    ? `- [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed\n`
+    : '';
   const body = `# Oravan
 
 > Free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, get a call script, and call Congress. No account required.
@@ -61,8 +69,7 @@ Oravan publishes a plain-language, AI-drafted and automatically checked decoded 
 - [About](${SITE_ORIGIN}/about): what Oravan is and isn't
 - [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
-- [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed
-- [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
+${embedsLine}- [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
 - "What moved this week" feed: ${SITE_ORIGIN}/feed/whats-moving.json (JSON) and ${SITE_ORIGIN}/feed/whats-moving.xml (RSS 2.0) — free, keyless, updated nightly; active bills that cleared the "act now" urgency bar in the last 7 days, same pool as the homepage. No account or token required.
 
 ## Spanish
