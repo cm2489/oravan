@@ -13,7 +13,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { ReadReceipt } from '@/components/ReadReceipt';
 import { SharePanel } from '@/components/SharePanel';
 import { TldrStrip } from '@/components/TldrStrip';
-import { VoteRecord, delegationVotesFor } from '@/components/VoteRecord';
+import { VoteRecord } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
@@ -45,7 +45,8 @@ import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
-import { votesForBill, votingMember } from '@/lib/votes';
+import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
+import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
 
 /*
  * THE BILL PAGE — a desk, not a scroll.
@@ -448,7 +449,18 @@ export default async function BillPage({
    * "see how a call works" demo below, which only ever pointed at a call.
    */
   const settled = settledDecision(bill);
-  const settledOutcome = settled ? settledOutcomeText(t, settled) : null;
+  const settledDate = settledDecisionDate(bill);
+  const settledOutcome = settled
+    ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
+    : null;
+  /* "How your members voted", one group per vote in print order (the
+     deciding vote first), each with its date formatted here for the locale. */
+  const settledGroups = settled
+    ? settledVoteGroups(bill, settled, votesForBill(id), votesCoverage().floor).map((g) => ({
+        ...g,
+        dateLabel: g.date ? fmtShort(g.date) : null,
+      }))
+    : [];
 
   /*
    * THE STATUS LABEL — this page's refinement on top of the shared gate.
@@ -827,7 +839,8 @@ export default async function BillPage({
               <SettledPanel
                 outcome={settledOutcome}
                 kind={settled.kind}
-                {...delegationVotesFor(id, fmtDate)}
+                groups={settledGroups}
+                floorLabel={fmtDate(votesCoverage().floor)}
               />
             </div>
           ) : (
@@ -925,15 +938,21 @@ export default async function BillPage({
   );
 }
 
-/** The record-only panel's outcome sentence (lib/journey.ts `settledDecision`).
- *  On a rejection the tally prints only when the stepper kept it — see
+/** The record-only panel's outcome sentence (lib/journey.ts `settledDecision`):
+ *  the deciding chamber, the record's tally and the action's date, in one
+ *  sentence, before the panel lists anyone (owner, 2026-09-28). On a
+ *  rejection the tally prints only when the stepper kept it — see
  *  deriveJourney's rejected-passage branch. A failed two-thirds vote prints
  *  the record's tally whichever way it falls, because its sentence says
- *  two-thirds were needed. */
+ *  two-thirds were needed. `date` is the record's own date for that action
+ *  (lib/settled-votes.ts `settledDecisionDate`), already formatted; null
+ *  leaves the date out rather than borrow another action's. */
 function settledOutcomeText(
   t: Awaited<ReturnType<typeof getTranslations>>,
-  settled: SettledDecision
+  settled: SettledDecision,
+  date: string | null
 ): string {
+  const when = { hasDate: date ? 'yes' : 'none', date: date ?? '' };
   switch (settled.kind) {
     case 'law':
       return t('bill.settled.law');
@@ -943,6 +962,7 @@ function settledOutcomeText(
         tally: settled.tally ? 'yes' : 'none',
         yeas: settled.tally?.yeas ?? 0,
         nays: settled.tally?.nays ?? 0,
+        ...when,
       });
     case 'rejected':
       return t('bill.settled.rejected', {
@@ -950,10 +970,12 @@ function settledOutcomeText(
         tally: settled.tally ? 'yes' : 'none',
         yeas: settled.tally?.yeas ?? 0,
         nays: settled.tally?.nays ?? 0,
+        ...when,
       });
     case 'motionFailed':
       return t('bill.settled.motionFailed', {
         chamber: settled.chamber === 'house' ? 'House' : 'Senate',
+        ...when,
       });
   }
 }

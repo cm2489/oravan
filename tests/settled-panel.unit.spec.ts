@@ -5,7 +5,9 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decisionState } from '../lib/docket.mjs';
 import { deriveJourney, settledDecision } from '../lib/journey';
-import type { Bill } from '../lib/types';
+import { recordedRollNumber, settledDecisionDate, settledVoteGroups } from '../lib/settled-votes';
+import type { Bill, RollCall } from '../lib/types';
+import { votesCoverage, votesForBill } from '../lib/votes';
 
 /*
  * THE RECORD-ONLY PANEL'S READER (owner, 2026-09-28, UX question Q9 answered
@@ -168,50 +170,282 @@ test.describe('settledDecision against the committed corpus', () => {
   });
 });
 
+/*
+ * HOW YOUR MEMBERS VOTED, ONE VOTE AT A TIME (owner, 2026-09-28, reviewing
+ * /bills/hconres-89-119: "It's talking about the Senate but in the 'no call to
+ * make' box it talks about the House vote and then says the senators
+ * underneath this. That doesn't make sense and is confusing.").
+ *
+ * The roll calls below carry the record's own ids, dates, rolls, questions,
+ * results and totals from data/votes.json as committed on 2026-09-28; the
+ * member ids in `votes` are placeholders (the panel's join is by id, so any id
+ * shows the shape).
+ */
+test.describe('settledVoteGroups — the deciding vote first, one chamber per group', () => {
+  const FLOOR = '2026-05-27';
+  const noVotes = { yea: [], nay: [], present: [], notVoting: [] };
+  const HCONRES_89_HOUSE: RollCall = {
+    id: 'h-119-2-282',
+    chamber: 'house',
+    congress: 119,
+    session: 2,
+    roll: 282,
+    date: '2026-07-23',
+    question: 'On Agreeing to the Resolution',
+    result: 'Passed',
+    bill: 'hconres-89-119',
+    totals: { yea: 214, nay: 208, present: 0, notVoting: 9 },
+    source: 'https://clerk.house.gov/evs/2026/roll282.xml',
+    votes: { ...noVotes, yea: ['REP_A'] },
+  };
+  const HCONRES_89_SENATE: RollCall = {
+    id: 's-119-2-244',
+    chamber: 'senate',
+    congress: 119,
+    session: 2,
+    roll: 244,
+    date: '2026-09-24',
+    question: 'On the Concurrent Resolution H.Con.Res. 89',
+    result: 'Concurrent Resolution Rejected',
+    bill: 'hconres-89-119',
+    totals: { yea: 49, nay: 50, present: 0, notVoting: 1 },
+    source: 'https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00244.xml',
+    votes: { ...noVotes, yea: ['SEN_A'], nay: ['SEN_B'] },
+  };
+  const hconres89 = rec('hconres', 'floor_vote', HCONRES_89, '2026-09-24');
+
+  test('H.Con.Res. 89: the Senate vote that decided it, then the House vote, each with its own date and tally', () => {
+    const settled = settledDecision(hconres89)!;
+    // votesForBill order: newest first.
+    const groups = settledVoteGroups(hconres89, settled, [HCONRES_89_SENATE, HCONRES_89_HOUSE], FLOOR);
+    expect(groups.map((g) => g.chamber)).toEqual(['senate', 'house']);
+    expect(groups[0]).toEqual({
+      chamber: 'senate',
+      date: '2026-09-24',
+      tally: { yeas: 49, nays: 50 },
+      source: 'rollCall',
+      positions: { SEN_A: 'yea', SEN_B: 'nay' },
+      deciding: true,
+    });
+    expect(groups[1]).toEqual({
+      chamber: 'house',
+      date: '2026-07-23',
+      tally: { yeas: 214, nays: 208 },
+      source: 'rollCall',
+      positions: { REP_A: 'yea' },
+      deciding: false,
+    });
+    // Never two chambers in one group: a senator is never in the House
+    // group's positions, and the reverse.
+    expect(Object.keys(groups[0].positions!)).not.toContain('REP_A');
+    expect(Object.keys(groups[1].positions!)).not.toContain('SEN_A');
+  });
+
+  test('the deciding vote is the roll number the record names, not another roll call that day', () => {
+    const tabled: RollCall = { ...HCONRES_89_SENATE, id: 's-119-2-245', roll: 245, question: 'On the Motion to Table' };
+    const groups = settledVoteGroups(hconres89, settledDecision(hconres89)!, [tabled, HCONRES_89_SENATE, HCONRES_89_HOUSE], FLOOR);
+    expect(groups[0].deciding).toBe(true);
+    expect(groups[0].tally).toEqual({ yeas: 49, nays: 50 });
+    expect(recordedRollNumber(HCONRES_89, 'senate')).toBe(244);
+  });
+
+  test('S. 2503: the House vote only, from the record, saying the roll-call file begins after it', () => {
+    const s2503 = rec('s', 'floor_vote', SUSPENSION_FAILED[2].text, '2026-02-24');
+    const settled = settledDecision(s2503)!;
+    expect(recordedRollNumber(SUSPENSION_FAILED[2].text, 'house')).toBe(72);
+    // No roll call on the bill in the file: the record's own date and tally.
+    expect(settledVoteGroups(s2503, settled, [], FLOOR)).toEqual([
+      {
+        chamber: 'house',
+        date: '2026-02-24',
+        tally: { yeas: 264, nays: 133 },
+        source: 'beforeFile',
+        positions: null,
+        deciding: true,
+      },
+    ]);
+  });
+
+  test('a voice vote records no positions, and says so rather than "not in the file"', () => {
+    const voice = rec(
+      'sjres',
+      'floor_vote',
+      'Motion to proceed to consideration of measure rejected in Senate by Voice Vote. (CR S2407)',
+      '2026-05-20'
+    );
+    const [g] = settledVoteGroups(voice, settledDecision(voice)!, [], FLOOR);
+    expect(g).toMatchObject({ chamber: 'senate', date: '2026-05-20', tally: null, source: 'voice', deciding: true });
+  });
+
+  test('the decision date is the status basis\'s own date, and never another action\'s', () => {
+    const basis = {
+      ...rec('hr', 'floor_vote', 'Motion to reconsider laid on the table Agreed to without objection.', '2026-01-14'),
+      status_basis_text:
+        'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).',
+      status_basis_date: '2026-01-13',
+    };
+    expect(settledDecisionDate(basis)).toBe('2026-01-13');
+    expect(settledDecisionDate({ ...basis, status_basis_date: null })).toBeNull();
+    expect(settledDecisionDate(hconres89)).toBe('2026-09-24');
+  });
+
+  test('a law: each chamber\'s newest roll call, newest first, none marked deciding', () => {
+    const law = rec('hconres', 'signed', 'Became Public Law No: 119-105.');
+    const olderSenate: RollCall = { ...HCONRES_89_SENATE, id: 's-119-2-200', roll: 200, date: '2026-07-01' };
+    const groups = settledVoteGroups(law, { kind: 'law' }, [HCONRES_89_SENATE, HCONRES_89_HOUSE, olderSenate], FLOOR);
+    expect(groups.map((g) => [g.chamber, g.date, g.deciding])).toEqual([
+      ['senate', '2026-09-24', false],
+      ['house', '2026-07-23', false],
+    ]);
+    expect(settledVoteGroups(law, { kind: 'law' }, [], FLOOR)).toEqual([]);
+  });
+
+  test('over the committed corpus: the deciding vote leads, no chamber twice, and a file roll call keeps its own numbers', () => {
+    const floor = votesCoverage().floor;
+    for (const b of bills as unknown as (Rec & { full_identifier: string })[]) {
+      const settled = settledDecision(b);
+      if (!settled) continue;
+      const rolls = votesForBill(b.full_identifier);
+      const groups = settledVoteGroups(b, settled, rolls, floor);
+      const chambers = groups.map((g) => g.chamber);
+      expect(new Set(chambers).size, b.full_identifier).toBe(chambers.length);
+      if (settled.kind !== 'law') {
+        expect(groups[0].deciding, b.full_identifier).toBe(true);
+        expect(groups[0].chamber, b.full_identifier).toBe(settled.chamber);
+        expect(groups.slice(1).every((g) => !g.deciding), b.full_identifier).toBe(true);
+      }
+      for (const g of groups) {
+        if (g.source !== 'rollCall') {
+          expect(g.positions, b.full_identifier).toBeNull();
+          continue;
+        }
+        const own = rolls.some(
+          (x) =>
+            x.chamber === g.chamber &&
+            x.date === g.date &&
+            x.totals.yea === g.tally?.yeas &&
+            x.totals.nay === g.tally?.nays
+        );
+        expect(own, `${b.full_identifier} ${g.chamber} ${g.date}`).toBe(true);
+      }
+    }
+  });
+
+  test('the two pages the owner reviewed, as committed', () => {
+    const find = (slug: string) =>
+      (bills as unknown as (Rec & { full_identifier: string })[]).find((b) => b.full_identifier === slug);
+    const floor = votesCoverage().floor;
+
+    const h = find('hconres-89-119');
+    test.skip(!h || h.last_action_text !== HCONRES_89, 'H.Con.Res. 89 has a newer action than 2026-09-24');
+    const hGroups = settledVoteGroups(h!, settledDecision(h!)!, votesForBill('hconres-89-119'), floor);
+    expect(hGroups.map((g) => [g.chamber, g.date, g.tally, g.deciding])).toEqual([
+      ['senate', '2026-09-24', { yeas: 49, nays: 50 }, true],
+      ['house', '2026-07-23', { yeas: 214, nays: 208 }, false],
+    ]);
+
+    const s = find('s-2503-119');
+    test.skip(!s || s.last_action_text !== SUSPENSION_FAILED[2].text, 'S. 2503 has a newer action than 2026-02-24');
+    const sGroups = settledVoteGroups(s!, settledDecision(s!)!, votesForBill('s-2503-119'), floor);
+    expect(sGroups.map((g) => [g.chamber, g.date, g.tally, g.source, g.deciding])).toEqual([
+      ['house', '2026-02-24', { yeas: 264, nays: 133 }, 'beforeFile', true],
+    ]);
+  });
+});
+
 test.describe('the panel\'s words, in both languages', () => {
   const tEn = createTranslator({ locale: 'en', messages: en });
   const tEs = createTranslator({ locale: 'es', messages: es });
 
-  test('a rejection prints the record\'s tally when there is one, and none when there is not', () => {
+  // The record's dates, formatted the way the page formats them (month long).
+  const SEP_24_EN = 'September 24, 2026';
+  const SEP_24_ES = '24 de septiembre de 2026';
+  const noDate = { hasDate: 'none', date: '' };
+
+  test('a rejection is one sentence naming the deciding chamber, the record\'s tally and its date', () => {
+    // H.Con.Res. 89, the page the owner reviewed on 2026-09-28.
     const withTally = { chamber: 'Senate', tally: 'yes', yeas: 49, nays: 50 };
-    const noTally = { chamber: 'House', tally: 'none', yeas: 0, nays: 0 };
-    expect(tEn('bill.settled.rejected', withTally)).toBe('This was rejected in the Senate, 49–50.');
-    expect(tEs('bill.settled.rejected', withTally)).toBe(
-      'El Senado lo rechazó, por 49 votos a favor y 50 en contra.'
+    expect(tEn('bill.settled.rejected', { ...withTally, hasDate: 'yes', date: SEP_24_EN })).toBe(
+      'The Senate rejected it, 49–50, on September 24, 2026.'
     );
-    expect(tEn('bill.settled.rejected', noTally)).toBe('This was rejected in the House.');
-    expect(tEs('bill.settled.rejected', noTally)).toBe('La Cámara lo rechazó.');
+    expect(tEs('bill.settled.rejected', { ...withTally, hasDate: 'yes', date: SEP_24_ES })).toBe(
+      'El Senado lo rechazó, por 49 votos a favor y 50 en contra, el 24 de septiembre de 2026.'
+    );
+    // No tally kept, a date held: no stray comma.
+    const noTally = { chamber: 'House', tally: 'none', yeas: 0, nays: 0 };
+    expect(tEn('bill.settled.rejected', { ...noTally, hasDate: 'yes', date: 'January 13, 2026' })).toBe(
+      'The House rejected it on January 13, 2026.'
+    );
+    expect(tEs('bill.settled.rejected', { ...noTally, hasDate: 'yes', date: '13 de enero de 2026' })).toBe(
+      'La Cámara lo rechazó el 13 de enero de 2026.'
+    );
+    // A record with no date for the action prints none — never another one.
+    expect(tEn('bill.settled.rejected', { ...withTally, ...noDate })).toBe('The Senate rejected it, 49–50.');
+    expect(tEn('bill.settled.rejected', { ...noTally, ...noDate })).toBe('The House rejected it.');
+    expect(tEs('bill.settled.rejected', { ...noTally, ...noDate })).toBe('La Cámara lo rechazó.');
   });
 
-  test('a failed two-thirds vote says it needed two-thirds, with the record\'s tally — never "take this up"', () => {
+  test('a failed two-thirds vote says it needed two-thirds, with the record\'s tally and date — never "take this up"', () => {
+    // S. 2503, the other settled page the owner reviewed.
     const withTally = { chamber: 'House', tally: 'yes', yeas: 264, nays: 133 };
     const noTally = { chamber: 'House', tally: 'none', yeas: 0, nays: 0 };
-    expect(tEn('bill.settled.suspensionFailed', withTally)).toBe(
-      'The House vote to pass this needed two-thirds and fell short, 264–133.'
+    const feb24 = { hasDate: 'yes', date: 'February 24, 2026' };
+    expect(tEn('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).toBe(
+      'The House vote to pass it fell short of the two-thirds it needed, 264–133, on February 24, 2026.'
     );
-    expect(tEs('bill.settled.suspensionFailed', withTally)).toBe(
-      'La votación de la Cámara para aprobarlo necesitaba dos tercios y no los alcanzó, con 264 votos a favor y 133 en contra.'
+    expect(tEs('bill.settled.suspensionFailed', { ...withTally, hasDate: 'yes', date: '24 de febrero de 2026' })).toBe(
+      'La votación de la Cámara para aprobarlo no alcanzó los dos tercios que necesitaba, con 264 votos a favor y 133 en contra, el 24 de febrero de 2026.'
     );
-    expect(tEn('bill.settled.suspensionFailed', noTally)).toBe(
-      'The House vote to pass this needed two-thirds and fell short.'
+    expect(tEn('bill.settled.suspensionFailed', { ...noTally, ...noDate })).toBe(
+      'The House vote to pass it fell short of the two-thirds it needed.'
     );
-    expect(tEs('bill.settled.suspensionFailed', noTally)).toBe(
-      'La votación de la Cámara para aprobarlo necesitaba dos tercios y no los alcanzó.'
+    expect(tEs('bill.settled.suspensionFailed', { ...noTally, ...noDate })).toBe(
+      'La votación de la Cámara para aprobarlo no alcanzó los dos tercios que necesitaba.'
     );
     // The sentence it replaces on these three bills, in both languages.
-    expect(tEn('bill.settled.suspensionFailed', withTally)).not.toMatch(/take this up|motion/i);
-    expect(tEs('bill.settled.suspensionFailed', withTally)).not.toMatch(/considerarlo|moción/i);
+    expect(tEn('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).not.toMatch(/take this up|motion/i);
+    expect(tEs('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).not.toMatch(/considerarlo|moción/i);
   });
 
-  test('a failed motion names the chamber and no tally', () => {
-    expect(tEn('bill.settled.motionFailed', { chamber: 'House' })).toBe(
+  test('a failed motion names the chamber and the date, and no tally', () => {
+    expect(tEn('bill.settled.motionFailed', { chamber: 'House', ...noDate })).toBe(
       'The House has not agreed to take this up — the last motion to do so failed.'
     );
-    expect(tEs('bill.settled.motionFailed', { chamber: 'Senate' })).toMatch(/^El Senado no ha aceptado/);
+    expect(tEn('bill.settled.motionFailed', { chamber: 'Senate', hasDate: 'yes', date: 'June 5, 2026' })).toBe(
+      'The Senate has not agreed to take this up — the last motion to do so failed on June 5, 2026.'
+    );
+    expect(tEs('bill.settled.motionFailed', { chamber: 'Senate', hasDate: 'yes', date: '5 de junio de 2026' })).toBe(
+      'El Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó el 5 de junio de 2026.'
+    );
+  });
+
+  test('each vote group is headed by its own chamber, in both languages', () => {
+    expect(tEn('bill.settled.voteIn', { chamber: 'senate' })).toBe('Senate vote');
+    expect(tEn('bill.settled.voteIn', { chamber: 'house' })).toBe('House vote');
+    expect(tEs('bill.settled.voteIn', { chamber: 'senate' })).toBe('Votación del Senado');
+    expect(tEs('bill.settled.voteIn', { chamber: 'house' })).toBe('Votación de la Cámara');
+    expect(tEn('bill.settled.membersHeading')).toBe('How your members voted');
   });
 
   test('every new string exists in both languages and the Spanish is not an English copy', () => {
-    for (const key of ['title', 'law', 'rejected', 'suspensionFailed', 'motionFailed', 'needZip'] as const) {
+    for (const key of [
+      'title',
+      'law',
+      'rejected',
+      'suspensionFailed',
+      'motionFailed',
+      'needZip',
+      'membersHeading',
+      'voteIn',
+      'noRecordedVote',
+      'positionNotShown',
+      'beforeFileNote',
+      'notInFileNote',
+      'voiceNote',
+      'noMember',
+      'multiDistrict',
+      'noRollCalls',
+    ] as const) {
       expect(typeof en.bill.settled[key], `en.bill.settled.${key}`).toBe('string');
       expect(es.bill.settled[key], `es.bill.settled.${key}`).not.toBe(en.bill.settled[key]);
     }

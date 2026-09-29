@@ -129,7 +129,7 @@ test.describe('settled bill page accessibility floor', () => {
 
     await seedZip(page, '78501');
     await page.reload();
-    await expect(page.locator('[data-settled-panel] [data-vote-delegate]').first()).toBeVisible();
+    await expect(page.locator('[data-settled-panel] [data-settled-votes]')).toBeVisible();
     expect(await smallTargets(page), 'controls under 44px, members shown').toEqual([]);
   });
 });

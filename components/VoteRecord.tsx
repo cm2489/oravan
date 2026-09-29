@@ -54,11 +54,11 @@ function byLastName(a: Named, b: Named) {
 /**
  * What the "your members on this bill" strip needs: the newest roll call per
  * chamber, reduced to the positions it prints — never the whole file — plus
- * the file's floor date for the "no recorded vote since" line. Shared with
- * the settled bill's record-only panel (components/SettledPanel.tsx), which
- * shows the same strip.
+ * the file's floor date for the "no recorded vote since" line. A settled
+ * bill's record-only panel prints its own per-vote groups instead
+ * (lib/settled-votes.ts), so the page turns this strip off there.
  */
-export function delegationVotesFor(
+function delegationVotesFor(
   billId: string,
   fmtDate: (d: string) => string
 ): { house: DelegationVote | null; senate: DelegationVote | null; floorLabel: string } {
@@ -84,7 +84,8 @@ export async function VoteRecord({
 }: {
   billId: string;
   className?: string;
-  /** False on a settled bill, whose record-only panel carries the strip. */
+  /** False on a settled bill, whose record-only panel shows how the
+   *  reader's members voted, one vote at a time. */
   delegation?: boolean;
 }) {
   const rollCalls = votesForBill(billId);
