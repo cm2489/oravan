@@ -86,6 +86,50 @@ async function focusTerm(term: Locator) {
   await term.evaluate((el) => (el as HTMLElement).focus());
 }
 
+/*
+ * THE AI LABEL'S LOOK, READ OFF THE RENDER (owner, 2026-09-28: "the AI chip
+ * needs to be much smaller and below the definition"). Plain small print:
+ * the size, weight and case of its text, whether anything in it is filled or
+ * outlined (the old chip's mark was a filled stamp), and whether its colour
+ * is the muted secondary ink token.
+ */
+async function labelLook(label: Locator) {
+  return label.evaluate((el) => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-ink-2)';
+    document.body.appendChild(probe);
+    const inkTwo = getComputedStyle(probe).color;
+    probe.remove();
+    const cs = getComputedStyle(el);
+    const boxed = [el, ...el.querySelectorAll('*')].some((node) => {
+      const n = getComputedStyle(node);
+      return (
+        n.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+        parseFloat(n.borderTopWidth) + parseFloat(n.borderBottomWidth) > 0
+      );
+    });
+    return {
+      size: parseFloat(cs.fontSize),
+      weight: parseFloat(cs.fontWeight),
+      transform: cs.textTransform,
+      muted: cs.color === inkTwo,
+      boxed,
+    };
+  });
+}
+
+/** On a phone the thumb bar is fixed over the bottom of the screen, above an
+ *  open box; a label under it would be on screen and still unreadable. */
+async function expectClearOfThumbBar(page: Page, label: Locator) {
+  const bar = page.locator('[data-thumb-bar]');
+  const barBox = await bar.boundingBox();
+  if (!barBox || barBox.height === 0) return; // desktop: the bar is display:none
+  const labelBox = (await label.boundingBox())!;
+  expect(labelBox.y + labelBox.height, 'the AI label is under the thumb bar').toBeLessThanOrEqual(
+    barBox.y
+  );
+}
+
 /* ------------------------------------------------------------------ *
  * 1 · The page
  * ------------------------------------------------------------------ */
@@ -133,14 +177,23 @@ for (const [locale, prefix, messages] of LOCALES) {
     }
   });
 
-  test(`${locale}: the page carries the AI label above the first entry, linked to the AI-content policy`, async ({
+  test(`${locale}: the page carries the AI label above the first entry, in small print, linked to the AI-content policy`, async ({
     page,
   }) => {
     await page.goto(`${prefix}/glossary`);
     const label = page.locator('[data-glossary-page-ai-note]');
     await expect(label).toHaveCount(1);
     await expect(label).toContainText(messages.glossary.pageAiNote);
-    await expect(label).toContainText(messages.common.aiMarker);
+    // Plain small print, as in every box: smaller than the scope note above
+    // it, muted ink, no caps, nothing filled or outlined.
+    const look = await labelLook(label);
+    const scopeSize = await page
+      .getByText(messages.glossary.scopeNote, { exact: true })
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(look.size, 'small print, below the scope note').toBeLessThan(scopeSize);
+    expect(look.muted, 'the muted secondary ink').toBe(true);
+    expect(look.transform, 'no caps').toBe('none');
+    expect(look.boxed, 'no chip: nothing filled or outlined').toBe(false);
     // Rule 4: where the definitions first appear — above the index, and so
     // above every entry.
     const index = page.getByRole('navigation', { name: messages.glossary.indexLabel });
@@ -465,8 +518,10 @@ test.describe('the in-place definition', () => {
     expect(seconds.every((s) => s <= 0.001), motion.transition).toBe(true);
   });
 
+  // Owner, 2026-09-28, on the first version (a chip above the definition):
+  // "the AI chip needs to be much smaller and below the definition."
   for (const [locale, prefix, messages] of LOCALES) {
-    test(`${locale}: every open box carries the AI label, quietly, above the definition (rule 4)`, async ({
+    test(`${locale}: every open box carries the AI label, in small print, below the definition (rule 4)`, async ({
       page,
     }) => {
       await page.goto(`${prefix}/questions#how`);
@@ -474,26 +529,34 @@ test.describe('the in-place definition', () => {
       await settle(page, term);
       await term.click();
       const box = await boxOf(page, term);
+      const body = box.locator('[data-glossary-body]');
       const note = box.locator('[data-glossary-ai-note]');
+      await expect(body).toHaveCount(1);
       await expect(note).toHaveCount(1);
-      await expect(note).toContainText(messages.glossary.aiNote);
-      await expect(note).toContainText(messages.common.aiMarker);
-      const [bodyId] = (await term.getAttribute('aria-describedby'))!.split(' ');
-      const layout = await note.evaluate((el, id) => {
-        const body = document.getElementById(id)!;
-        // The Chip itself: the caption's size is set there.
-        const caption = el.firstElementChild ?? el;
-        return {
-          before:
-            !!(el.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING) &&
-            el.getBoundingClientRect().bottom <= body.getBoundingClientRect().top,
-          noteSize: parseFloat(getComputedStyle(caption).fontSize),
-          bodySize: parseFloat(getComputedStyle(body).fontSize),
-        };
-      }, bodyId);
-      // Above the words, so a thumb bar over the box's last lines never hides it.
-      expect(layout.before, 'the label heads the words it labels').toBe(true);
-      expect(layout.noteSize, 'small print, below the definition size').toBeLessThan(layout.bodySize);
+      await expect(body).toHaveText(messages.glossary.terms.cloture.body);
+      await expect(note).toHaveText(messages.glossary.aiNote);
+      // The definition first, then the label: in the DOM, and on screen.
+      const order = await body.evaluate(
+        (b, n) => ({
+          follows: !!(b.compareDocumentPosition(n!) & Node.DOCUMENT_POSITION_FOLLOWING),
+          below: n!.getBoundingClientRect().top >= b.getBoundingClientRect().bottom,
+          bodySize: parseFloat(getComputedStyle(b).fontSize),
+          bodyWeight: parseFloat(getComputedStyle(b).fontWeight),
+        }),
+        await note.elementHandle()
+      );
+      expect(order.follows, 'the label comes after the definition').toBe(true);
+      expect(order.below, 'the label sits under the definition').toBe(true);
+      // Plain small print: smaller and no heavier than the words it labels,
+      // muted ink, no caps, nothing filled or outlined.
+      const look = await labelLook(note);
+      expect(look.size, 'small print, below the definition size').toBeLessThan(order.bodySize);
+      expect(look.weight, 'no heavier than the definition').toBeLessThanOrEqual(order.bodyWeight);
+      expect(look.muted, 'the muted secondary ink').toBe(true);
+      expect(look.transform, 'no caps').toBe('none');
+      expect(look.boxed, 'no chip: nothing filled or outlined').toBe(false);
+      // Its last line is the label, so it must clear a phone's thumb bar.
+      await expectClearOfThumbBar(page, note);
       // A label, not a way out: still nothing to operate inside the box.
       await expect(box.getByRole('link')).toHaveCount(0);
     });
@@ -535,6 +598,7 @@ test.describe('the in-place definition', () => {
       expect(rect.x + rect.width, 'box crosses the right edge').toBeLessThanOrEqual(view.width);
       expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
       expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
+      await expectClearOfThumbBar(page, box.locator('[data-glossary-ai-note]'));
     });
   }
 
@@ -560,8 +624,11 @@ test.describe('the in-place definition', () => {
       const view = page.viewportSize()!;
       expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
       expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
-      // Its AI label is on screen with it.
-      await expect(box.locator('[data-glossary-ai-note]')).toBeInViewport();
+      // Its AI label, the box's last line, is on screen with it and not under
+      // the thumb bar.
+      const note = box.locator('[data-glossary-ai-note]');
+      await expect(note).toBeInViewport();
+      await expectClearOfThumbBar(page, note);
     });
   }
 

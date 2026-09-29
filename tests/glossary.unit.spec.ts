@@ -694,11 +694,16 @@ test.describe('the AI label', () => {
   test('every box is handed the label, and the screen reader hears it after the definition', () => {
     const term = readText('components/GlossaryTerm.tsx');
     expect(term).toContain("aiNote={t('aiNote')}");
-    expect(term).toContain("aiMarker={tc('aiMarker')}");
     const popover = readText('components/GlossaryPopover.tsx');
-    expect(popover).toContain('<Chip tone="ai" marker={aiMarker}>');
     expect(popover).toContain('aria-describedby={open ? `${bodyId} ${noteId}` : undefined}');
+    // The render, order and look (small print under the definition, owner
+    // 2026-09-28) are asserted live in tests/glossary.spec.ts by these hooks.
+    expect(popover).toContain('data-glossary-body');
     expect(popover).toContain('data-glossary-ai-note');
+    // The placement keeps that last line above a phone's thumb bar, which it
+    // finds by this hook.
+    expect(popover).toContain("document.querySelector('[data-thumb-bar]')");
+    expect(readText('components/Header.tsx')).toContain('data-thumb-bar');
   });
 
   test('the /glossary label links the AI-content policy, and that anchor exists', () => {
@@ -771,20 +776,11 @@ test.describe('the client payload', () => {
         expect(src, `${p} imports ${imp}`).not.toContain(imp);
       }
     }
-    // And the popover imports nothing but React and the presentational Chip
-    // it draws the AI label with (rule 4) — which itself imports nothing but
-    // a React type, so the chain ends there.
+    // And the popover imports nothing but React: its AI label is plain text
+    // now (owner, 2026-09-28), so the chain ends there.
     const popover = readText('components/GlossaryPopover.tsx');
     expect(popover.trimStart().startsWith("'use client'")).toBe(true);
-    expect([...popover.matchAll(/from '([^']+)'/g)].map((m) => m[1])).toEqual([
-      'react',
-      'react',
-      '@/components/system/Chip',
-    ]);
-    const chip = readText('components/system/Chip.tsx');
-    expect([...chip.matchAll(/import[^;]*from '([^']+)'/g)].map((m) => m[0])).toEqual([
-      "import type { ReactNode } from 'react'",
-    ]);
+    expect([...popover.matchAll(/from '([^']+)'/g)].map((m) => m[1])).toEqual(['react', 'react']);
   });
 });
 

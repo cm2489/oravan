@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Chip } from '@/components/system/Chip';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from '@/lib/glossary';
@@ -37,12 +36,15 @@ import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from '@/lib/glossary';
  * THE AI LABEL (2026-09-28, CLAUDE.md rule 4: "Every AI-written word is
  * labeled where it first appears"). The definitions live in messages/*.json
  * like UI copy, but they were drafted by AI from the official pages cited
- * under each — so this page says so once, above the first of them, with the
- * site's own unboxed AI caption (`Chip tone="ai"`, as on the bill page and
- * /questions), and every in-place box on the rest of the site says so again
- * (components/GlossaryTerm.tsx). The label links to the AI-content policy on
- * /citations — the site's one page on how its AI content is made and marked —
- * in this page's quiet source-link style, as a full 44px target.
+ * under each — so this page says so once, above the first of them, and every
+ * in-place box on the rest of the site says so again
+ * (components/GlossaryTerm.tsx). Both are plain small print in the muted ink
+ * — no filled mark, no caps, no box — on the owner's note of 2026-09-28 about
+ * the box's first version: "the AI chip needs to be much smaller". The words
+ * say AI themselves. The label links to the AI-content policy on /citations
+ * — the site's one page on how its AI content is made and marked — in the
+ * same small print, with a full 44px target (height from `min-h-11`, not
+ * from the size of the words).
  */
 
 export async function generateMetadata({
@@ -68,7 +70,6 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('glossary');
-  const tc = await getTranslations('common');
   const collator = new Intl.Collator(locale, { sensitivity: 'base' });
 
   const sections = GLOSSARY_CATEGORIES.map((category) => ({
@@ -89,11 +90,9 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
             and marked. See the header. */}
         <p
           data-glossary-page-ai-note
-          className="mt-4 flex flex-wrap items-center gap-x-4 text-sm text-ink-2"
+          className="mt-3 flex flex-wrap items-center gap-x-3 text-2xs text-ink-2"
         >
-          <Chip tone="ai" marker={tc('aiMarker')}>
-            {t('pageAiNote')}
-          </Chip>
+          <span>{t('pageAiNote')}</span>
           <Link
             href="/citations#ai-policy"
             className="inline-flex min-h-11 items-center underline decoration-line-strong underline-offset-4 hover:decoration-ink"

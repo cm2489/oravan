@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
-import { Chip } from '@/components/system/Chip';
 
 /*
  * THE IN-PLACE DEFINITION — a term you can hover, tap, click or tab to, and
@@ -70,21 +69,32 @@ import { Chip } from '@/components/system/Chip';
  *
  * ── WHAT THIS FILE IS HANDED ─────────────────────────────────────────────
  *
- * Four strings and the visible words, all resolved on the server by
- * components/GlossaryTerm.tsx: the term, its definition, and the AI label's
- * caption and mark. This file imports no glossary data and no messages (only
- * the presentational Chip): a page ships the definitions it prints and
- * nothing else, and the client provider no longer carries `glossary.terms`
- * at all (i18n/client-messages.ts).
+ * Three strings and the visible words, all resolved on the server by
+ * components/GlossaryTerm.tsx: the term, its definition, and the AI label.
+ * This file imports nothing but React — no glossary data, no messages: a page
+ * ships the definitions it prints and nothing else, and the client provider
+ * no longer carries `glossary.terms` at all (i18n/client-messages.ts).
  *
- * The AI label heads every box, under the term's name (the site's own
- * unboxed `Chip tone="ai"` caption, the one the bill page prints at first
- * contact), and `aria-describedby` names it after the definition, so a
- * screen reader hears the label wherever it hears the words it labels
- * (CLAUDE.md rule 4: "Every AI-written word is labeled where it first
- * appears"). It is plain text, not a link: the box is a description, not a
- * dialog, and a link in it would put a second tab stop behind every glossed
- * word. The link to the AI-content policy lives at the top of /glossary.
+ * ── THE AI LABEL: SMALL PRINT, UNDER THE WORDS ───────────────────────────
+ *
+ * Every box says who drafted its definition (CLAUDE.md rule 4: "Every
+ * AI-written word is labeled where it first appears"), and `aria-describedby`
+ * names it after the definition, so a screen reader hears the label wherever
+ * it hears the words it labels.
+ *
+ * It sits BELOW the definition, in plain small print — the smallest text
+ * size, the muted secondary ink, no filled mark, no caps, no box. Owner,
+ * 2026-09-28, on the first version (the site's `Chip tone="ai"` caption,
+ * above the definition): "the AI chip needs to be much smaller and below the
+ * definition." The words say AI themselves, so the label needs no mark.
+ *
+ * Below the words, it is the box's last line — the line a phone's thumb bar
+ * would cover. So the placement treats the top of that bar as the bottom of
+ * the screen (see `place`), and the label stays in view.
+ *
+ * It is plain text, not a link: the box is a description, not a dialog, and
+ * a link in it would put a second tab stop behind every glossed word. The
+ * link to the AI-content policy lives at the top of /glossary.
  */
 
 /** Kept clear of either viewport edge when the box is nudged back on screen. */
@@ -120,18 +130,16 @@ export function GlossaryPopover({
   label,
   body,
   aiNote,
-  aiMarker,
   lang,
   children,
 }: {
   termId: string;
   label: string;
   body: string;
-  /** The AI label's caption and its mark ("AI" / "IA"), localized on the
-   *  server. Two short strings rather than a finished node: a page can mark
-   *  dozens of terms, and every instance's props ride in the page payload. */
+  /** The AI label, localized on the server. A string rather than a finished
+   *  node: a page can mark dozens of terms, and every instance's props ride
+   *  in the page payload. */
   aiNote: string;
-  aiMarker: string;
   /** The page's language, for the box: the term may sit inside `lang="en"`. */
   lang: string;
   children: ReactNode;
@@ -245,23 +253,28 @@ export function GlossaryPopover({
       // would cross; `Math.max` last so a box wider than the viewport still
       // starts at the gutter rather than off the left.
       const left = Math.max(EDGE_GUTTER, Math.min(rect.left, doc.clientWidth - width - EDGE_GUTTER));
-      /* FLIPS ABOVE THE TERM when there is no room under it: on a phone the
-         thumb bar owns the bottom of the screen and sits above this box (z-40
-         vs z-30, deliberately — a permanent navigation bar must not be
-         covered). It flips only when the space above genuinely fits it.
-         WHEN NEITHER SIDE FITS — a long entry opened from mid-screen on a
-         phone, more common since every box carries its AI label — it is
-         pulled up until its bottom edge is back on screen, over the term
-         rather than off the bottom of the viewport. */
+      /* THE BOTTOM OF THE SCREEN, for this box, is the top of the phone's
+         thumb bar where one is showing: the bar sits above this box (z-40 vs
+         z-30, deliberately — a permanent navigation bar must not be
+         covered), and the box's last line is its AI label. Above 48rem the
+         bar is display:none and measures zero, so the floor is the viewport
+         edge. */
+      const bar = document.querySelector('[data-thumb-bar]')?.getBoundingClientRect();
+      const floor = bar && bar.height > 0 ? Math.min(doc.clientHeight, bar.top) : doc.clientHeight;
+      /* FLIPS ABOVE THE TERM when there is no room under it. It flips only
+         when the space above genuinely fits it. WHEN NEITHER SIDE FITS — a
+         long entry opened from mid-screen on a phone — it is pulled up until
+         its bottom edge clears the floor, over the term rather than under
+         the bar or off the bottom of the viewport. */
       const below = rect.bottom + PANEL_GAP;
       const above = rect.top - PANEL_GAP - height;
-      const fitsBelow = below + height + EDGE_GUTTER <= doc.clientHeight;
+      const fitsBelow = below + height + EDGE_GUTTER <= floor;
       const fitsAbove = above >= EDGE_GUTTER;
       const top = fitsBelow
         ? below
         : fitsAbove
           ? above
-          : Math.max(EDGE_GUTTER, Math.min(below, doc.clientHeight - height - EDGE_GUTTER));
+          : Math.max(EDGE_GUTTER, Math.min(below, floor - height - EDGE_GUTTER));
       setPos({ top, left });
     };
     place();
@@ -387,17 +400,13 @@ export function GlossaryPopover({
           <span className="block text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
             {label}
           </span>
-          {/* The AI label, quiet: the same unboxed caption the bill page
-              prints at first contact, under the term's name and ABOVE the
-              words it labels — so it is on screen whenever the box is, even
-              where a phone's thumb bar covers the box's last lines. */}
-          <span id={noteId} data-glossary-ai-note className="mt-1.5 block">
-            <Chip tone="ai" marker={aiMarker}>
-              {aiNote}
-            </Chip>
-          </span>
-          <span id={bodyId} className="mt-2 block">
+          <span id={bodyId} data-glossary-body className="mt-2 block">
             {body}
+          </span>
+          {/* The AI label: small print under the words it labels. See the
+              header, "THE AI LABEL". ink-2 on paper is 7.87:1. */}
+          <span id={noteId} data-glossary-ai-note className="mt-2 block text-2xs text-ink-2">
+            {aiNote}
           </span>
         </span>
       )}

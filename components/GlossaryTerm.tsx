@@ -41,17 +41,16 @@ import type { GlossaryTermId } from '@/lib/glossary';
  * "Every AI-written word is labeled where it first appears." The definitions
  * were drafted by AI from the official page cited under each on /glossary, and
  * for most readers this box is where one first appears. So every box carries
- * the site's own AI mark (the unboxed `Chip tone="ai"` caption the bill page
- * uses at first contact). Its caption and mark are read here and handed down
- * as two more strings. It is plain text, not a link: the box is a
- * description, not a dialog, and a link inside it would put a second tab stop
- * behind every glossed word (tests/glossary.spec.ts pins that the box holds
- * nothing to operate). The link to the AI-content policy lives at the top of
- * /glossary instead.
+ * a label saying so, read here and handed down as one more string, and
+ * printed as small print under the definition (owner, 2026-09-28: "much
+ * smaller and below the definition" — see components/GlossaryPopover.tsx).
+ * It is plain text, not a link: the box is a description, not a dialog, and
+ * a link inside it would put a second tab stop behind every glossed word
+ * (tests/glossary.spec.ts pins that the box holds nothing to operate). The
+ * link to the AI-content policy lives at the top of /glossary instead.
  */
 export function GlossaryTerm({ id, children }: { id: GlossaryTermId; children?: ReactNode }) {
   const t = useTranslations('glossary');
-  const tc = useTranslations('common');
   const locale = useLocale();
   const label = t(`terms.${id}.term`);
   return (
@@ -60,7 +59,6 @@ export function GlossaryTerm({ id, children }: { id: GlossaryTermId; children?: 
       label={label}
       body={t(`terms.${id}.body`)}
       aiNote={t('aiNote')}
-      aiMarker={tc('aiMarker')}
       lang={locale}
     >
       {children ?? label}
