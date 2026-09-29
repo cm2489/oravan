@@ -274,6 +274,7 @@
       "passed_chamber": "Passed one chamber",
       "passed_both": "Passed both chambers",
       "adopted": "Adopted by both chambers",
+      "rejected": "Rejected",
       "conference": "In conference",
       "signed": "Signed into law",
       "vetoed": "Vetoed"
@@ -480,6 +481,8 @@
       "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the president and does not become law.",
       "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the president: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
       "youAreHere": "You are here",
+      "endedRejected": "Rejected here",
+      "notReached": "Not reached",
       "law": "Now law",
       "nowIntroduced": "it was just introduced and is headed to committee."
     },

@@ -274,6 +274,7 @@
       "passed_chamber": "Aprobado por una cámara",
       "passed_both": "Aprobado por ambas cámaras",
       "adopted": "Adoptado por ambas cámaras",
+      "rejected": "Rechazado",
       "conference": "En comisión mixta",
       "signed": "Promulgado como ley",
       "vetoed": "Vetado"
@@ -480,6 +481,8 @@
       "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al presidente y no se convierte en ley.",
       "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
       "youAreHere": "Estás aquí",
+      "endedRejected": "Rechazado aquí",
+      "notReached": "No alcanzado",
       "law": "Ya es ley",
       "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
     },
