@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Newspaper } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
@@ -59,7 +60,19 @@ function captionText(
   }
 }
 
-export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; compact?: boolean }) {
+export async function NewsLens({
+  bills,
+  compact = false,
+  rows = false,
+  note,
+}: {
+  bills: NewsBill[];
+  compact?: boolean;
+  /** The homepage's rows (Home option B, 2026-09-29): see below. */
+  rows?: boolean;
+  /** The block's one quiet AI line, from the caller (rows only). */
+  note?: ReactNode;
+}) {
   if (bills.length === 0) return null;
   const t = await getTranslations('news');
   const format = await getFormatter();
@@ -108,6 +121,65 @@ export async function NewsLens({ bills, compact = false }: { bills: NewsBill[]; 
               </Link>
             </li>
           ))}
+        </ul>
+      </section>
+    );
+  }
+
+  /*
+   * THE HOMEPAGE'S ROWS (Home option B, v2 wireframe 2026-09-29): a short
+   * ruled list, unboxed (card a9), each row ONE whole-row link — so none is a
+   * 21px text target — carrying the reason first, then the headline, then the
+   * record's metadata ("H.R. 6529 · In markup · Last action Jul 21 ·
+   * Environment & energy"). The reason sits INSIDE the link on purpose: a row
+   * owes the reader the same account of why it is here as the card did, and
+   * tests/news.spec.ts reads it from the link's own text. The block's AI line
+   * arrives from the caller as `note`, in place of the deck.
+   */
+  if (rows) {
+    const tAll = await getTranslations();
+    const day = (iso: string) =>
+      format.dateTime(new Date(iso), {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        // A bare YYYY-MM-DD: formatted in UTC or it reads a day early.
+        timeZone: 'UTC',
+      });
+    return (
+      <section aria-labelledby="news" data-news-band="">
+        <div className="flex items-center gap-2">
+          <Newspaper className="h-5 w-5 flex-none text-ink-2" aria-hidden />
+          <h2 id="news" className="text-h2 font-extrabold text-ink">
+            {t('heading')}
+          </h2>
+        </div>
+        {note}
+        <ul className="mt-4 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-3 md:gap-x-10">
+          {bills.map((b) => {
+            const meta = [
+              b.identifier,
+              tAll(`bills.status.${b.statusKey}`),
+              b.lastActionDate ? tAll('bills.updated', { date: day(b.lastActionDate) }) : null,
+              b.tags[0] ? tAll(`categories.${b.tags[0]}`) : null,
+            ].filter(Boolean);
+            return (
+              <li key={b.slug} className="border-b-[1.5px] border-line-strong">
+                <Link
+                  href={`/bills/${b.slug}`}
+                  className="group block py-4 text-ink no-underline visited:text-ink-2"
+                >
+                  <span className="block text-sm font-semibold text-ink-2">
+                    {captionOf(b) ?? t('sources', { count: b.sourceCount })}
+                  </span>
+                  <h3 className="mt-1 text-lg leading-tight font-bold group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
+                    {b.headline ?? b.title}
+                  </h3>
+                  <span className="mt-1 block text-sm text-ink-2 tabular-nums">{meta.join(' · ')}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );

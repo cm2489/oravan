@@ -283,7 +283,7 @@ test.describe('ES locale renders ES content end to end', () => {
 
 test.describe('homepage Big Questions band', () => {
   for (const { locale, prefix, messages } of LOCALES) {
-    test(`${locale}: band appears iff a live entry exists, sits BEFORE the week, never after`, async ({
+    test(`${locale}: band appears iff a live entry exists, sits AFTER the week, never before`, async ({
       page,
     }) => {
       const liveMoments = getLiveMoments();
@@ -295,17 +295,20 @@ test.describe('homepage Big Questions band', () => {
       if (liveMoments.length > 0) {
         await expect(strip).toBeVisible();
         await expect(strip.getByRole('heading', { name: messages.home.momentsTitle })).toBeVisible();
-        // DOM order: the band leads the truth half. The 2026-07-24 ruling put
+        // DOM order: the week leads, then the band. The 2026-07-24 ruling put
         // discovery UNDER the week; the truth-first flip (owner decisions of
-        // record, 2026-07-31, spec §7.1) reversed it, and this expected value
-        // flipped 'after' -> 'before' in that same commit.
+        // record, 2026-07-31, spec §7.1) put it above; and the owner's pick of
+        // Home option B (2026-09-29, typed: "Home Page - Option B, This week
+        // first, then Big Questions.") puts it back under. This expected value
+        // flipped 'before' -> 'after' in that same commit. `order` reads where
+        // the band sits relative to the week.
         const order = await page.evaluate(() => {
           const a = document.querySelector('section[aria-labelledby="top-actions"]');
           const b = document.querySelector('section[aria-labelledby="moments-strip-title"]');
           if (!a || !b) return null;
           return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? 'after' : 'before';
         });
-        expect(order).toBe('before');
+        expect(order).toBe('after');
         await expect(topActions).toBeVisible();
 
         const first = liveMoments[0];
