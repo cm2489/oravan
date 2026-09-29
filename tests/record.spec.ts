@@ -211,8 +211,9 @@ test('the next write persists the filtered list, so the bad row is gone for good
 const CRASH_ONCE_ON_RECORD_SUBSCRIBE = () => {
   const add = window.addEventListener.bind(window);
   let armed = true;
-  // /record and /es/record — the civic record in either locale, and nothing else.
-  const onRecordPage = () => /(^|\/)record\/?$/.test(window.location.pathname);
+  // Where the civic record renders, in either locale, and nowhere else:
+  // /record, and since 2026-09-29 the Reps tab it is folded into (Q4 "b + c").
+  const onRecordPage = () => /(^|\/)(record|reps)\/?$/.test(window.location.pathname);
   window.addEventListener = function (this: Window, type: string, ...rest: unknown[]) {
     if (type === 'storage' && armed && onRecordPage()) {
       armed = false;
@@ -266,15 +267,16 @@ for (const locale of ['en', 'es'] as const) {
  * see this by hand — paste the crash into the console on any page, then walk
  * to the record — and a hand-off recipe that has never been run is a guess.
  * The paste survives the pages it passes through precisely because the
- * trigger is armed for /record (see its comment): on any other page it hands
+ * trigger is armed for the record's pages (see its comment): elsewhere it hands
  * every `storage` listener straight through, so a reader can arm it wherever
  * they happen to be standing.
  *
  * THE WALK CHANGED ON 2026-09-29 (owner, "nav 1"): "My record" left the tab
- * bar for the Call tab, and the record's way in is now the Reps tab's "See
- * your record" link (app/[locale]/reps/page.tsx) until the Reps rebuild folds
- * the record into that page. So the walk is Home → the Reps tab → that link,
- * every step a client-side navigation.
+ * bar for the Call tab, and the same day the record was folded into the Reps
+ * tab itself (owner, Q4 "b + c"; wireframes v2, reps.html). So the walk is
+ * Home → the Reps tab, a client-side navigation, and the crash lands on the
+ * page the record now lives on. Recovery lands back on that page, with the
+ * device wiped.
  */
 test('the escape hatch is there when the crash arrives via a client-side walk to the record', async ({
   page,
@@ -300,17 +302,15 @@ test('the escape hatch is there when the crash arrives via a client-side walk to
       name: new RegExp(`^(${en.common.nav.reps}|${en.common.navShort.reps})$`),
     })
     .click();
-  // The saved ZIP answers the Reps prompt on its own (SavedZipLookup's
-  // replace to ?zip=). Wait for that to land, so the click below is not
-  // racing the replace.
-  await expect(page).toHaveURL(/\/reps\?zip=78501$/);
-  await expect(page.locator('[data-zip-line]')).toBeVisible();
-  await page.locator('[data-record-link]').click();
-
+  // The record renders on the Reps tab, so its first read of the store is
+  // where the armed crash lands.
   await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
   await page.getByRole('button', { name: en.errorBoundary.erase }).click();
   await page.getByRole('button', { name: en.impact.confirmErase }).click();
-  await expect(page.getByRole('heading', { level: 1, name: en.impact.title })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
+  expect(
+    await page.evaluate(() => ['oravan.reads', 'oravan.calls', 'oravan.prefs'].map((k) => localStorage.getItem(k)))
+  ).toEqual([null, null, null]);
 });
 
 /*

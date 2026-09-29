@@ -1557,7 +1557,7 @@ export function ActionPanel({
                                     ? t('loggedTenth')
                                     : t('outcomeLogged')}{' '}
                               <Link
-                                href="/record"
+                                href="/reps#your-calls"
                                 className="font-semibold text-go-deep underline"
                               >
                                 {t('viewImpact')}

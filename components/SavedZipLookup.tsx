@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { savedZip } from '@/lib/local';
+import { savedZip, usePrefs } from '@/lib/local';
 
 /*
  * THE REPS TAB OPENS ON YOUR MEMBERS (owner, UX question Q8 answered "a" on
@@ -30,6 +30,12 @@ import { savedZip } from '@/lib/local';
  * "Change ZIP code" links to /reps?change=1, and the page renders the prompt
  * without this wrapper there — otherwise the saved ZIP would send the reader
  * straight back to the members they asked to change.
+ *
+ * THE #HASH RIDES ALONG (2026-09-29). The call panel's "See your record"
+ * lands on this page's Your calls (`/reps#your-calls`, components/
+ * YourRecord.tsx), and a reader who has logged a call has a saved ZIP, so this
+ * swap runs on exactly that arrival. Without the hash the reader would land
+ * at the top of the members instead of on the calls they came to see.
  */
 export function SavedZipLookup({ children }: { children: ReactNode }) {
   const t = useTranslations('reps');
@@ -39,7 +45,7 @@ export function SavedZipLookup({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = savedZip();
     if (!saved) return;
-    router.replace(`/reps?zip=${saved}`);
+    router.replace(`/reps?zip=${saved}${window.location.hash}`);
     // The status line is set a tick later: a synchronous state write in the
     // effect body is what react-hooks/set-state-in-effect forbids (the same
     // defer components/ActionPanel.tsx documents for its own lookup).
@@ -52,5 +58,25 @@ export function SavedZipLookup({ children }: { children: ReactNode }) {
     <p role="status" data-saved-zip-lookup="" className="max-w-xl text-lg font-bold">
       {t('savedZipLoading', { zip })}
     </p>
+  );
+}
+
+/**
+ * " · kept on this device only", beside the ZIP line on /reps — printed only
+ * when this browser's saved ZIP IS the one on the page (wireframes v2,
+ * reps.html: "ZIP 98103 · kept on this device only"). A /reps?zip= link
+ * someone shared saves nothing, so there it would be untrue, and the server
+ * render, which cannot see this browser's storage, prints nothing.
+ */
+export function ZipKeptNote({ zip }: { zip: string }) {
+  const t = useTranslations('reps');
+  const prefs = usePrefs();
+  if (prefs.zip !== zip) return null;
+  // No-break space before the "·", so a wrapped line never starts with it.
+  return (
+    <span data-zip-kept="">
+      {' · '}
+      {t('zipKept')}
+    </span>
   );
 }
