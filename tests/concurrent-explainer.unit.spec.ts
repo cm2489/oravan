@@ -168,14 +168,15 @@ test.describe('the words, in both languages', () => {
     );
   });
 
-  test('the War Powers sentence names section 5(c), INS v. Chadha (1983) and the CRS, and quotes the CRS verbatim, in English, under 15 words', () => {
+  test('the War Powers detail names section 5(c), INS v. Chadha (1983) and the CRS, and quotes the CRS verbatim, in English, under 15 words', () => {
     const CRS_QUOTE = 'constitutionally suspect';
     for (const [lang, s] of [
       ['en', en.bill.concurrent.warPowers],
       ['es', es.bill.concurrent.warPowers],
     ] as const) {
       expect(s, lang).toContain('5(c)');
-      expect(s, lang).toContain('INS v. Chadha (1983)');
+      expect(s, lang).toContain('INS v. Chadha');
+      expect(s, lang).toContain('1983');
       expect(s, lang).toContain(`<quote>${CRS_QUOTE}</quote>`);
       // One quote, and it is the report's own words: "it is constitutionally
       // suspect under the reasoning applied by the Court" (R42699).
@@ -187,6 +188,16 @@ test.describe('the words, in both languages', () => {
     expect(es.bill.concurrent.warPowers).toContain('el Servicio de Investigación del Congreso');
     // The corpus's own Spanish name for it (data/moments.json, data/bills-es.json).
     expect(es.bill.concurrent.warPowers).toContain('Resolución de Poderes de Guerra');
+    // What section 5(c) says, paraphrased from 50 U.S.C. 1544(c): "such
+    // forces shall be removed by the President if the Congress so directs by
+    // concurrent resolution" (govinfo.gov, read 2026-09-29).
+    expect(en.bill.concurrent.warPowers).toContain('if Congress so directs by concurrent resolution');
+    expect(es.bill.concurrent.warPowers).toContain('si el Congreso así lo ordena mediante una resolución concurrente');
+  });
+
+  test('version 2 folds the War Powers detail under a neutral question, in both languages', () => {
+    expect(en.bill.concurrent.bindsQuestion).toBe('Does this bind the president?');
+    expect(es.bill.concurrent.bindsQuestion).toBe('¿Obliga esto al presidente?');
   });
 
   test('the source line names the report and its number; the link is the CRS report on congress.gov', () => {
@@ -251,7 +262,7 @@ test.describe('the words, in both languages', () => {
   });
 
   test('every key exists in both languages, the Spanish is not an English copy, and the AI note says who wrote it', () => {
-    for (const key of ['general', 'warPowers', 'crsSource', 'aiNote'] as const) {
+    for (const key of ['general', 'bindsQuestion', 'warPowers', 'crsSource', 'aiNote'] as const) {
       expect(typeof en.bill.concurrent[key], `en.bill.concurrent.${key}`).toBe('string');
       expect(typeof es.bill.concurrent[key], `es.bill.concurrent.${key}`).toBe('string');
       expect(es.bill.concurrent[key], `es.bill.concurrent.${key}`).not.toBe(en.bill.concurrent[key]);
