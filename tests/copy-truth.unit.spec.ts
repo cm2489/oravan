@@ -90,6 +90,31 @@ test.describe('2026-09-29 the street address goes to the Census geocoder, and th
   }
 });
 
+test.describe('2026-09-29 no message claims a review process or an error button that does not exist', () => {
+  // Rule 4: Oravan never claims a person reviewed something a person did not
+  // review. citations.backlogNote sent pattern corrections to an "ongoing
+  // Spanish-language review process"; no native-reader pass has ever been
+  // logged (docs/es-spotcheck-redistribution.md §5 and §6 are empty), so the
+  // note now says only that the pattern is tracked. bills.aiNote and
+  // moments.vehiclesAiNote said every page carried a one-tap way to flag an
+  // error; #345 removed that control on 2026-09-28, so they name the
+  // correction address instead.
+  const GONE = {
+    en: /\breview process\b|one-tap way to flag/i,
+    es: /proceso (?:continuo )?de revisi[óo]n|bot[óo]n para se[ñn]alar/i,
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message`, () => {
+      const hits = allStrings(m).filter(([, s]) => GONE[locale].test(s));
+      expect(hits).toEqual([]);
+    });
+    test(`${locale}: the two AI notes name the correction address`, () => {
+      expect(m.bills.aiNote).toContain('hello@oravan.org');
+      expect(m.moments.vehiclesAiNote).toContain('hello@oravan.org');
+    });
+  }
+});
+
 // ---- SY-33: the sponsor ----------------------------------------------------
 
 test.describe('SY-33 billSponsor', () => {

@@ -240,7 +240,7 @@
     "clearSearch": "Borrar búsqueda",
     "clearFilters": "Borrar todos los filtros",
     "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor.",
-    "aiNote": "Los titulares en lenguaje claro de esta página los redacta la IA y llevan esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
+    "aiNote": "Los titulares en lenguaje claro de esta página los redacta la IA y llevan esa etiqueta. Nada se publica sin pasar controles automáticos. Para señalar un error, escríbenos a hello@oravan.org.",
     "onCalendar": "En el calendario del pleno",
     "annotation": {
       "justPassed": "Acaba de aprobarse en una cámara",
@@ -628,7 +628,7 @@
     "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
     "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
-    "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra para el proceso continuo de revisión en español de Oravan, en lugar de parchearse en silencio y olvidarse."
+    "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra como un patrón, en lugar de parchearse en silencio y olvidarse."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -933,7 +933,7 @@
     "vehiclesHeadingMixed": "Los proyectos de ley y las nominaciones",
     "vehiclesLedeNominations": "Las nominaciones ante el Senado por las que realmente pasa esta cuestión. Cada una abre el registro del propio Senado — y, cuando ese registro muestra una decisión que el Senado todavía puede tomar, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
     "vehiclesLedeMixed": "Los proyectos de ley y las nominaciones ante el Senado por los que realmente pasa esta cuestión. Cada uno abre el registro — y, cuando en ese registro todavía queda una llamada que hacer, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
-    "vehiclesAiNote": "El texto en lenguaje claro de estas tarjetas — el titular descifrado, si lo hay, y el resumen de qué hacen un voto a favor y uno en contra — lo redacta la IA y lleva esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
+    "vehiclesAiNote": "El texto en lenguaje claro de estas tarjetas — el titular descifrado, si lo hay, y el resumen de qué hacen un voto a favor y uno en contra — lo redacta la IA y lleva esa etiqueta. Nada se publica sin pasar controles automáticos. Para señalar un error, escríbenos a hello@oravan.org.",
     "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "bothNoteSomeNoCall": "Ningún lado está preseleccionado. Cuando en un registro todavía queda una llamada que hacer, se abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",
