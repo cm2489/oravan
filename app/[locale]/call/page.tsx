@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, Phone } from 'lucide-react';
+import { ArrowRight, ExternalLink, Phone } from 'lucide-react';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
@@ -129,11 +129,20 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
           {rows.length > 0 ? (
             <>
               {/* One quiet AI label for the whole list (card a9, G12): every
-                  headline below is AI-decoded; the record lines are not. */}
-              <p className="mt-4">
+                  headline below is AI-decoded; the record lines are not. The
+                  wireframe's words, "Headlines decoded by AI · How this is
+                  made", with the link to the AI-content policy that /glossary's
+                  label already uses. */}
+              <p className="mt-4 flex flex-wrap items-center gap-x-3">
                 <Chip tone="ai" marker={tShared('common.aiMarker')}>
                   {t('aiNote')}
                 </Chip>
+                <Link
+                  href="/citations#ai-policy"
+                  className="inline-flex min-h-11 items-center text-2xs text-ink-2 underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                >
+                  {t('aiHowMade')}
+                </Link>
               </p>
               <ol className="mt-4 grid list-none border-b border-line">
                 {rows.map(({ bill, slug, announcement, liveChamber, covers, parent }) => (
@@ -151,17 +160,28 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                         {covers && (
                           <span className="normal-case">
                             {' · '}
-                            {t('floorFor', {
-                              date: covers.verbatim ? covers.label : shortDate(covers.iso),
-                            })}
+                            {covers.verbatim ? (
+                              /* The schedule's own printed words, English in
+                                 both locales and marked so (ruling V4) — the
+                                 same treatment components/FloorEvidence.tsx
+                                 gives this label on the bill page and home. */
+                              <span lang="en">{tShared('home.evidenceCovers', { date: covers.label })}</span>
+                            ) : (
+                              <span className="tabular-nums">
+                                {tShared('home.evidenceCovers', { date: shortDate(covers.iso) })}
+                              </span>
+                            )}
                           </span>
                         )}
                       </p>
                     )}
                     <h3 className="mt-1 text-lg leading-tight font-bold text-ink">
+                      {/* min-h-11: a one-line headline measured 22px tall on
+                          the desktop build, under rule 7's 44px floor (it is
+                          not a link inside a sentence). */}
                       <Link
                         href={`/bills/${slug}`}
-                        className="underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                        className="inline-flex min-h-11 items-center underline decoration-line-strong underline-offset-4 hover:decoration-ink"
                       >
                         {bill.ai_headline ?? bill.short_title ?? bill.title}
                       </Link>
@@ -210,11 +230,18 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                         {tShared('moments.readCall')}
                       </Link>
                       {announcement && (
+                        /* Out to the official record: a new tab with
+                           noopener, the site's convention for every such
+                           link (components/FloorEvidence.tsx), and the
+                           shipped words (home.evidenceLink). */
                         <a
                           href={announcement.url}
-                          className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline underline-offset-4"
                         >
-                          {t('readSource')}
+                          {tShared('home.evidenceLink')}
+                          <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
                         </a>
                       )}
                     </div>

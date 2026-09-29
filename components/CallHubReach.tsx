@@ -93,9 +93,25 @@ export function CallHubReach() {
   // flash of the wrong members.
   if (!zip || !lookup || lookup.zip !== zip) return null;
 
+  // The ZIP's one House district, when it has exactly one (wireframe: "ZIP
+  // 78501 · Texas, district 15 · Change ZIP code"), from the House member or,
+  // for a vacant seat, the vacancy the same answer carried. A split ZIP names
+  // no district here — which one is theirs is the reader's to confirm.
+  const seat =
+    lookup.status === 'ready' && !lookup.multiDistrict
+      ? (lookup.reps.find((r) => r.type === 'rep' && r.district !== null) ?? lookup.vacancies[0] ?? null)
+      : null;
   const zipLine = (
     <p data-zip-line="" className="mt-2 text-sm text-ink-2">
       {tReps('zipLine', { zip })} ·{' '}
+      {seat && seat.district !== null && (
+        <>
+          {seat.district === 0
+            ? tReps('atLargeHeading', { state: seat.state })
+            : tReps('districtHeading', { state: seat.state, district: seat.district })}{' '}
+          ·{' '}
+        </>
+      )}
       <Link href="/reps?change=1" className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-ink">
         {tReps('changeZip')}
       </Link>

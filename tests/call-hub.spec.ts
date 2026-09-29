@@ -178,12 +178,23 @@ for (const { locale, prefix, messages } of LOCALES) {
           `${prefix}/bills/${slug}#act`
         );
         // The headline opens the decoded answer at the top (truth first).
-        await expect(row.getByRole('heading', { level: 3 }).getByRole('link')).toHaveAttribute(
-          'href',
-          `${prefix}/bills/${slug}`
-        );
+        const headline = row.getByRole('heading', { level: 3 }).getByRole('link');
+        await expect(headline).toHaveAttribute('href', `${prefix}/bills/${slug}`);
+        // Rule 7's 44px floor holds on a headline that fits on one line too.
+        expect((await headline.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        // A floor claim's source opens the official record in a new tab.
+        const source = row.getByRole('link', { name: messages.home.evidenceLink });
+        if (await source.count()) {
+          await expect(source).toHaveAttribute('target', '_blank');
+          await expect(source).toHaveAttribute('rel', /noopener/);
+        }
       }
-      await expect(page.getByText(messages.call.aiNote)).toBeVisible();
+      // One AI label for the list, in the wireframe's words, linking to how it is made.
+      await expect(page.getByText(messages.call.aiNote, { exact: true })).toBeVisible();
+      await expect(page.getByRole('link', { name: messages.call.aiHowMade })).toHaveAttribute(
+        'href',
+        `${prefix}/citations#ai-policy`
+      );
       await expect(page.locator(`main a[href="${prefix}/bills"]`).first()).toBeVisible();
     });
 
@@ -206,6 +217,10 @@ for (const { locale, prefix, messages } of LOCALES) {
       await expect(reach.getByRole('heading', { level: 2, name: messages.call.reachTitle })).toBeVisible();
       await expect(reach.locator('a[href*="/reps/"]')).toHaveCount(3);
       await expect(reach.locator('[data-zip-line]')).toContainText(ZIP);
+      // A one-district ZIP names its district (wireframe: "ZIP 78501 · Texas, district 15").
+      await expect(reach.locator('[data-zip-line]')).toContainText(
+        messages.reps.districtHeading.replace('{state}', 'TX').replace('{district}', '15')
+      );
       await expect(reach.getByRole('link', { name: messages.reps.changeZip })).toHaveAttribute(
         'href',
         `${prefix}/reps?change=1`
