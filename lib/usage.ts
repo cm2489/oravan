@@ -183,7 +183,7 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * CONSTITUTIONAL CONSTRAINT (CLAUDE.md "no server-side user data", "no
  * analytics trackers"): the <surface> segment is drawn from the closed
  * PAGEVIEW_SURFACES union below — route-template labels, fixed at compile
- * time, eleven of them. A path, a slug, a query string, a locale prefix, a
+ * time, twelve of them. A path, a slug, a query string, a locale prefix, a
  * referer, an IP, or a User-Agent can never become one, and the narrowing
  * is STRUCTURAL rather than advisory: pageviewUsageKey pipes its own
  * argument through asPageviewSurface, so even an untyped or hostile caller
@@ -234,6 +234,16 @@ export function mcpClientUsageKey(client: string, day: string): string {
  * 'today' is the daily-brief template, never which date), so the privacy
  * posture is unchanged: one integer per template per UTC day.
  *
+ * 'short' joined on 2026-09-29 (owner, card d3, 2026-09-26: "Count
+ * short-address visits (one number a day, nothing about who)"): one count
+ * per UTC day of requests that a short address (/hr9340, lib/short-address.ts)
+ * redirected to a bill page. It is the short-address TEMPLATE, never which
+ * bill: proxy.ts passes the literal label and the path is dropped. It is not
+ * a page of its own - each such visit also lands as a 'bill' view one hop
+ * later - so scripts/daily-metrics.mjs leaves it out of the site total.
+ * pageviewSurfaceForPath never returns it: only a redirect the proxy
+ * actually made is counted, so a mistyped number that 404s stays 'other'.
+ *
  * scripts/check-key-namespaces.mjs parses THIS declaration by name and
  * fails CI on any label outside its own allowlist — keep the two in sync
  * deliberately, which is the point.
@@ -249,6 +259,7 @@ export const PAGEVIEW_SURFACES = [
   'record',
   'nominations',
   'today',
+  'short',
   'other',
 ] as const;
 
