@@ -1219,7 +1219,7 @@
       },
       "executive-session": {
         "term": "Executive session (Senate)",
-        "body": "The Senate is in executive session when it works on nominations and treaties, which come from the President. Work on bills and resolutions happens in legislative session. The Senate can switch between the two in a single day."
+        "body": "The Senate is in executive session when it works on nominations and treaties, which come from the president. Work on bills and resolutions happens in legislative session. The Senate can switch between the two in a single day."
       },
       "vote-a-rama": {
         "term": "Vote-a-rama",
@@ -1287,7 +1287,7 @@
       },
       "bill": {
         "term": "Bill",
-        "body": "A bill is a proposal for a new law, or for changing or repealing an existing one. House bills are numbered H.R. and Senate bills S. A bill has to pass both chambers in the same form and be signed by the President, or passed over a veto, to become law."
+        "body": "A bill is a proposal for a new law, or for changing or repealing an existing one. House bills are numbered H.R. and Senate bills S. A bill has to pass both chambers in the same form and be signed by the president, or passed over a veto, to become law."
       },
       "measure": {
         "term": "Measure",
@@ -1295,15 +1295,15 @@
       },
       "act": {
         "term": "Act",
-        "body": "An act is a bill that has passed one or both chambers. The word usually means a bill that passed both in the same form and became law, either signed by the President or passed over a veto. Many bills are titled “Act” from the day they are introduced."
+        "body": "An act is a bill that has passed one or both chambers. The word usually means a bill that passed both in the same form and became law, either signed by the president or passed over a veto. Many bills are titled “Act” from the day they are introduced."
       },
       "joint-resolution": {
         "term": "Joint resolution",
-        "body": "A joint resolution works like a bill: it has to pass both chambers and be signed by the President to become law. Congress uses it for things like continuing funding, approving or disapproving actions, and proposing constitutional amendments. A proposed amendment skips the President: it needs two-thirds of each chamber and ratification by three-quarters of the states."
+        "body": "A joint resolution works like a bill: it has to pass both chambers and be signed by the president to become law. Congress uses it for things like continuing funding, approving or disapproving actions, and proposing constitutional amendments. A proposed amendment skips the president: it needs two-thirds of each chamber and ratification by three-quarters of the states."
       },
       "concurrent-resolution": {
         "term": "Concurrent resolution",
-        "body": "A concurrent resolution is passed by both chambers but is not sent to the President and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+        "body": "A concurrent resolution is passed by both chambers but is not sent to the president and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
       },
       "simple-resolution": {
         "term": "Simple resolution",
@@ -1339,23 +1339,23 @@
       },
       "enrolled-bill": {
         "term": "Enrolled bill",
-        "body": "An enrolled bill is the final copy of a bill that both chambers passed in identical form. It is signed by officers of both chambers and sent to the President to sign or veto."
+        "body": "An enrolled bill is the final copy of a bill that both chambers passed in identical form. It is signed by officers of both chambers and sent to the president to sign or veto."
       },
       "veto": {
         "term": "Veto",
-        "body": "A veto is the President’s refusal to sign a bill, returning it to the chamber it started in, usually with a message explaining why. The bill does not become law unless both chambers override the veto by a two-thirds vote."
+        "body": "A veto is the president’s refusal to sign a bill, returning it to the chamber it started in, usually with a message explaining why. The bill does not become law unless both chambers override the veto by a two-thirds vote."
       },
       "pocket-veto": {
         "term": "Pocket veto",
-        "body": "A pocket veto happens when the President does not sign a bill within 10 days of receiving it (not counting Sundays) and Congress has adjourned in the meantime, so the bill cannot be returned. The bill does not become law, and Congress cannot override it."
+        "body": "A pocket veto happens when the president does not sign a bill within 10 days of receiving it (not counting Sundays) and Congress has adjourned in the meantime, so the bill cannot be returned. The bill does not become law, and Congress cannot override it."
       },
       "veto-override": {
         "term": "Veto override",
-        "body": "A veto override is Congress passing a bill into law after the President vetoed it. It takes a two-thirds vote in both the House and the Senate."
+        "body": "A veto override is Congress passing a bill into law after the president vetoed it. It takes a two-thirds vote in both the House and the Senate."
       },
       "enacted": {
         "term": "Enacted (became law)",
-        "body": "A bill is enacted when it becomes law. That happens when both chambers pass it in identical form and the President signs it, when the President lets 10 days pass (not counting Sundays) without acting while Congress is in session, or when Congress overrides a veto."
+        "body": "A bill is enacted when it becomes law. That happens when both chambers pass it in identical form and the president signs it, when the president lets 10 days pass (not counting Sundays) without acting while Congress is in session, or when Congress overrides a veto."
       },
       "public-law": {
         "term": "Public law",
@@ -1375,7 +1375,7 @@
       },
       "executive-order": {
         "term": "Executive order",
-        "body": "An executive order is a written directive the President uses to manage how the executive branch operates. It is published in the Federal Register. It is not a law passed by Congress, and a later President can change or revoke it."
+        "body": "An executive order is a written directive the president uses to manage how the executive branch operates. It is published in the Federal Register. It is not a law passed by Congress, and a later president can change or revoke it."
       },
       "roll-call-vote": {
         "term": "Roll call vote",
@@ -1403,7 +1403,7 @@
       },
       "tie-vote": {
         "term": "Tie vote",
-        "body": "A tie vote is an equal number of yes and no votes. In the House, a question that ties fails. In the Senate, the Vice President, as President of the Senate, may cast a vote to break the tie."
+        "body": "A tie vote is an equal number of yes and no votes. In the House, a question that ties fails. In the Senate, the vice president, as president of the Senate, may cast a vote to break the tie."
       },
       "simple-majority": {
         "term": "Simple majority",
@@ -1423,7 +1423,7 @@
       },
       "budget-resolution": {
         "term": "Budget resolution",
-        "body": "The budget resolution is Congress’s own budget plan, setting totals for spending and revenue. It is a concurrent resolution, so the President does not sign it and it does not become law. It can include instructions that start the reconciliation process."
+        "body": "The budget resolution is Congress’s own budget plan, setting totals for spending and revenue. It is a concurrent resolution, so the president does not sign it and it does not become law. It can include instructions that start the reconciliation process."
       },
       "continuing-resolution": {
         "term": "Continuing resolution (CR)",
@@ -1487,7 +1487,7 @@
       },
       "rescission": {
         "term": "Rescission",
-        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The President can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
+        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The president can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
       },
       "tax-credit": {
         "term": "Tax credit",
@@ -1499,31 +1499,31 @@
       },
       "nomination": {
         "term": "Nomination",
-        "body": "A nomination is the President’s choice of a person for a federal job that needs Senate approval, such as a cabinet secretary, an ambassador, or a federal judge. The Senate confirms or rejects it; the House has no vote."
+        "body": "A nomination is the president’s choice of a person for a federal job that needs Senate approval, such as a cabinet secretary, an ambassador, or a federal judge. The Senate confirms or rejects it; the House has no vote."
       },
       "advice-and-consent": {
         "term": "Advice and consent",
-        "body": "Advice and consent is the Senate’s power under the Constitution to approve or reject the President’s nominations and treaties. Nominations need a simple majority; treaties need two-thirds of the senators present."
+        "body": "Advice and consent is the Senate’s power under the Constitution to approve or reject the president’s nominations and treaties. Nominations need a simple majority; treaties need two-thirds of the senators present."
       },
       "confirmation": {
         "term": "Confirmation",
         "body": "Confirmation is the Senate’s approval of a nomination, usually after a committee review and a vote of the full Senate. Once confirmed, the nominee can be appointed to the job."
       },
       "returned-nomination": {
-        "term": "Returned to the President",
-        "body": "Under Senate rules, a nomination that has not been confirmed or rejected is sent back to the President when the Senate adjourns or recesses for more than 30 days, or when a session ends. The Senate cannot act on it again unless the President sends the nomination again."
+        "term": "Returned to the president",
+        "body": "Under Senate rules, a nomination that has not been confirmed or rejected is sent back to the president when the Senate adjourns or recesses for more than 30 days, or when a session ends. The Senate cannot act on it again unless the president sends the nomination again."
       },
       "treaty": {
         "term": "Treaty",
-        "body": "A treaty is a formal, binding agreement between the United States and one or more other nations. The President negotiates it, and it needs the approval of two-thirds of the senators present. Once in force, it has the weight of federal law."
+        "body": "A treaty is a formal, binding agreement between the United States and one or more other nations. The president negotiates it, and it needs the approval of two-thirds of the senators present. Once in force, it has the weight of federal law."
       },
       "resolution-of-ratification": {
         "term": "Resolution of ratification",
-        "body": "The Senate does not ratify treaties itself. It votes on a resolution of ratification, which gives its consent; if two-thirds of the senators present agree, the President can then ratify the treaty with the other nations."
+        "body": "The Senate does not ratify treaties itself. It votes on a resolution of ratification, which gives its consent; if two-thirds of the senators present agree, the president can then ratify the treaty with the other nations."
       },
       "impeachment": {
         "term": "Impeachment",
-        "body": "Impeachment is how Congress can charge and try a federal official, including the President and federal judges. The House impeaches, or brings charges, by a simple majority vote; the Senate then holds a trial, and removing the official from office takes a two-thirds vote to convict."
+        "body": "Impeachment is how Congress can charge and try a federal official, including the president and federal judges. The House impeaches, or brings charges, by a simple majority vote; the Senate then holds a trial, and removing the official from office takes a two-thirds vote to convict."
       },
       "congress": {
         "term": "A Congress",
@@ -1547,15 +1547,15 @@
       },
       "president-pro-tempore": {
         "term": "President pro tempore",
-        "body": "The president pro tempore is the senator elected to preside over the Senate when the Vice President is absent. By custom it is the majority-party senator with the longest continuous service. In practice, other senators often take turns presiding."
+        "body": "The president pro tempore is the senator elected to preside over the Senate when the vice president is absent. By custom it is the majority-party senator with the longest continuous service. In practice, other senators often take turns presiding."
       },
       "presiding-officer": {
         "term": "Presiding officer",
-        "body": "The presiding officer runs a chamber’s meeting: recognizing members to speak, keeping order, and ruling on points of order. In the Senate, a senator of the majority party often fills the chair in place of the Vice President or president pro tempore."
+        "body": "The presiding officer runs a chamber’s meeting: recognizing members to speak, keeping order, and ruling on points of order. In the Senate, a senator of the majority party often fills the chair in place of the vice president or president pro tempore."
       },
       "president-of-the-senate": {
         "term": "President of the Senate",
-        "body": "The Vice President of the United States is also the President of the Senate. The Vice President may preside over the Senate and may vote only to break a tie."
+        "body": "The vice president of the United States is also the president of the Senate. The vice president may preside over the Senate and may vote only to break a tie."
       },
       "parliamentarian": {
         "term": "Parliamentarian",
