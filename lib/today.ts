@@ -348,6 +348,76 @@ function questionsMoved(days: string[]): BriefQuestion[] {
   return out;
 }
 
+// ---- the day list ("Other days") -------------------------------------------
+
+/**
+ * ONE DATE'S COUNTS, for the "Other days" list (wireframes v2, 2026-09-29,
+ * today.html). Mechanical, never a judgment: each number is the length of a
+ * block that date's own page prints, read through the same `dayOf` that page
+ * reads, so a row can never promise more or less than the page it links to.
+ */
+export interface BriefDaySummary {
+  date: string;
+  /** Roll calls on a bill we track, dated this day: the day's votes block. */
+  votes: number;
+  /** Bills whose LATEST action is dated this day and that no roll call that
+   *  day already lists: the day's bills block, printed rows plus its "more"
+   *  count. data/bills.json keeps the latest action only, so an earlier
+   *  action on a bill that has moved again since is not counted here — the
+   *  same limit the day's own heading states. */
+  bills: number;
+  /** Big Questions with a vehicle whose latest action is dated this day. */
+  questions: number;
+}
+
+export function daySummary(date: string): BriefDaySummary {
+  const d = dayOf(date);
+  return {
+    date,
+    votes: d.rollCalls.length,
+    bills: d.moved.length + d.movedMore,
+    questions: questionsMoved([date]).length,
+  };
+}
+
+/** True when the date's own page has anything to print from the record. */
+export function dayHasRecord(s: BriefDaySummary): boolean {
+  return s.votes > 0 || s.bills > 0 || s.questions > 0;
+}
+
+export type DayCountKey = 'dayCountVotes' | 'dayCountBills' | 'dayCountQuestions';
+
+/**
+ * The parts of a row's count label, in print order: votes, then bills. A day
+ * with neither prints its Big Questions count instead (only a nomination
+ * vehicle can move a Big Question on a day with no bill on file), and a day
+ * with nothing at all returns no parts — the row then says it has no record.
+ */
+export function dayCountParts(s: BriefDaySummary): { key: DayCountKey; count: number }[] {
+  const parts: { key: DayCountKey; count: number }[] = [];
+  if (s.votes > 0) parts.push({ key: 'dayCountVotes', count: s.votes });
+  if (s.bills > 0) parts.push({ key: 'dayCountBills', count: s.bills });
+  if (parts.length === 0 && s.questions > 0) parts.push({ key: 'dayCountQuestions', count: s.questions });
+  return parts;
+}
+
+/** Every date in the window with its counts, newest first. */
+export function briefDays(): BriefDaySummary[] {
+  return briefWindow().map(daySummary);
+}
+
+/**
+ * THE LATEST DAY WITH RECORD — where a quiet brief points (funnel I3: a quiet
+ * day is admitted, and it does not dead-end). The newest date in the window,
+ * other than the ones in `except`, whose own page prints something from the
+ * record. Newest in the whole window, not merely older than the brief: on a
+ * past dated page a newer day can be the latest, and the label says "latest".
+ * Null when no other date in the window has any record.
+ */
+export function latestRecordDay(days: BriefDaySummary[], except: string[]): string | null {
+  return days.find((s) => !except.includes(s.date) && dayHasRecord(s))?.date ?? null;
+}
+
 export interface Brief {
   date: string;
   isToday: boolean;
@@ -357,9 +427,10 @@ export interface Brief {
   schedule: BriefScheduleItem[];
   questions: BriefQuestion[];
   stamps: ReturnType<typeof briefStamps>;
-  /** Neighbouring permalinks inside the window, when they exist. */
-  prev: string | null;
-  next: string | null;
+  /** Every date with a permalink and its counts, newest first. */
+  window: BriefDaySummary[];
+  /** The latest other day with record, for a brief whose two days are empty. */
+  latestRecord: string | null;
 }
 
 /** The whole brief for one date. Callers gate `date` with `isBriefDate`. */
@@ -367,7 +438,7 @@ export function buildBrief(date: string): Brief {
   const window = briefWindow();
   const isToday = date === window[0];
   const dates = [date, shiftDate(date, -1)];
-  const i = window.indexOf(date);
+  const days = briefDays();
   return {
     date,
     isToday,
@@ -376,7 +447,7 @@ export function buildBrief(date: string): Brief {
     schedule: isToday ? scheduleAhead(date) : [],
     questions: questionsMoved(dates),
     stamps: briefStamps(),
-    prev: i >= 0 && i + 1 < window.length ? window[i + 1] : null,
-    next: i > 0 ? window[i - 1] : null,
+    window: days,
+    latestRecord: latestRecordDay(days, dates),
   };
 }

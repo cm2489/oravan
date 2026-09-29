@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { chamberNextMeeting, chamberSession } from '../lib/docket';
-import { briefToday, briefWindow, shiftDate } from '../lib/today';
+import { briefDays, briefToday, briefWindow, buildBrief, dayCountParts, shiftDate } from '../lib/today';
 import type { VotesFile } from '../lib/types';
 
 /*
@@ -25,6 +26,35 @@ const showsVotes = (date: string) => voteDates.has(date) || voteDates.has(shiftD
 const dates = briefWindow();
 const withVotes = dates.find(showsVotes);
 const withoutVotes = dates.find((d) => !showsVotes(d));
+
+/** A brief whose two days are both empty: the quiet state (funnel I3). */
+const isQuiet = (date: string) => {
+  const b = buildBrief(date);
+  return b.questions.length === 0 && b.days.every((d) => d.rollCalls.length === 0 && d.moved.length === 0);
+};
+const quiet = dates.find(isQuiet);
+/** A past dated brief with something on it (the newest date is /today itself). */
+const busyPast = dates.slice(1).find((d) => !isQuiet(d));
+
+/** A row's count words, exactly as the page composes them. */
+function rowCounts(locale: 'en' | 'es', date: string): string {
+  const t = createTranslator({ locale, messages: locale === 'en' ? en : es, namespace: 'today' });
+  const summary = briefDays().find((x) => x.date === date)!;
+  const parts = dayCountParts(summary);
+  return parts.length > 0 ? parts.map((p) => t(p.key, { count: p.count })).join(' · ') : t('dayNoRecord');
+}
+
+/** True when `a` comes before `b` in the document. */
+async function precedes(page: Page, a: string, b: string): Promise<boolean> {
+  return page.evaluate(
+    ([sa, sb]) => {
+      const x = document.querySelector(sa);
+      const y = document.querySelector(sb);
+      return Boolean(x && y && x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING);
+    },
+    [a, b] as const,
+  );
+}
 
 /** The page's own text with every `lang="en"` island (record quotes) removed. */
 async function localizedText(page: Page): Promise<string> {
@@ -119,7 +149,11 @@ test.describe('/today', () => {
       .flatMap((s) => s.split(/\{[^}]*\}|<[^>]*>|\{|\}/))
       .map((s) => s.trim())
       .filter((s) => s.length >= 12);
-    for (const path of ['/es/today', ...(withVotes ? [`/es/today/${withVotes}`] : [])]) {
+    for (const path of [
+      '/es/today',
+      ...(withVotes ? [`/es/today/${withVotes}`] : []),
+      ...(quiet ? [`/es/today/${quiet}`] : []),
+    ]) {
       await page.goto(path);
       const text = await localizedText(page);
       for (const f of fragments) expect(text, `${path} carries English: "${f}"`).not.toContain(f);
@@ -127,7 +161,7 @@ test.describe('/today', () => {
   });
 
   test('every link and control on the brief clears the 44px touch floor @reflow', async ({ page }) => {
-    for (const path of ['/today', ...(withVotes ? [`/today/${withVotes}`] : [])]) {
+    for (const path of ['/today', ...(withVotes ? [`/today/${withVotes}`] : []), ...(quiet ? [`/today/${quiet}`] : [])]) {
       await page.goto(path);
       // Inline glossary terms inside a sentence are exempt (WCAG 2.5.8).
       const links = page.locator('main a:visible');
@@ -142,6 +176,92 @@ test.describe('/today', () => {
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow).toBeLessThanOrEqual(0);
+    }
+  });
+  // ── The decided structure (wireframes v2, today.html, 2026-09-29) ──────────
+
+  test('the same-day facts come first: chambers, then the floor schedule, then the record', async ({ page }) => {
+    await page.goto('/today');
+    const record = (await page.locator('[data-day]').count()) > 0 ? '[data-day]' : '[data-record-empty]';
+    expect(await precedes(page, '[aria-labelledby="today-chambers"]', record)).toBe(true);
+    if ((await page.locator('[data-block="schedule"]').count()) > 0) {
+      expect(await precedes(page, '[aria-labelledby="today-chambers"]', '[data-block="schedule"]')).toBe(true);
+      expect(await precedes(page, '[data-block="schedule"]', record)).toBe(true);
+    }
+    // The per-source stamp line stays, after the record.
+    expect(await precedes(page, record, '[data-stamps]')).toBe(true);
+  });
+
+  for (const [prefix, locale] of [
+    ['', 'en'],
+    ['/es', 'es'],
+  ] as const) {
+    test(`${prefix || '/en'}: "Other days" lists every permalink with its own counts`, async ({ page }) => {
+      // Today, a past day with record, and a quiet past day: the list is the
+      // same window on each, with only the current row moving.
+      for (const date of [...new Set([dates[0], busyPast, quiet].filter((d): d is string => Boolean(d)))]) {
+        await page.goto(date === dates[0] ? `${prefix}/today` : `${prefix}/today/${date}`);
+        const nav = page.locator('nav[data-days]');
+        await expect(nav.getByRole('heading', { level: 2 })).toHaveText(
+          (locale === 'en' ? en : es).today.navLabel,
+        );
+        const rows = nav.locator('a[data-day-row]');
+        await expect(rows).toHaveCount(dates.length);
+        for (const [i, d] of dates.entries()) {
+          const row = rows.nth(i);
+          await expect(row).toHaveAttribute('data-day-row', d);
+          // The newest date is the brief itself, so its row goes to /today.
+          const href = await row.getAttribute('href');
+          expect(href, d).toMatch(i === 0 ? /\/today$/ : new RegExp(`/today/${d}$`));
+          await expect(row).toContainText(rowCounts(locale, d));
+          if (d === date) await expect(row).toHaveAttribute('aria-current', 'page');
+          else expect(await row.getAttribute('aria-current'), d).toBeNull();
+        }
+      }
+    });
+  }
+
+  test('a quiet brief says so in a status line and links to the latest day with record', async ({ page }) => {
+    test.skip(!quiet, 'every date in the window has something on the record');
+    const brief = buildBrief(quiet!);
+    for (const [prefix, messages] of [
+      ['', en],
+      ['/es', es],
+    ] as const) {
+      await page.goto(`${prefix}/today/${quiet}`);
+      const empty = page.locator('[data-record-empty]');
+      await expect(empty.getByRole('heading', { level: 2 })).toHaveText(messages.today.recordHeading);
+      await expect(empty.getByRole('status')).toBeVisible();
+      await expect(page.locator('[data-day]')).toHaveCount(0);
+      const way = empty.locator('a[data-latest-record]');
+      if (brief.latestRecord === null) {
+        await expect(way).toHaveCount(0);
+        continue;
+      }
+      await expect(way).toHaveAttribute('data-latest-record', brief.latestRecord);
+      await way.click();
+      await expect(page).toHaveURL(
+        brief.latestRecord === dates[0] ? new RegExp(`${prefix}/today$`) : new RegExp(`/today/${brief.latestRecord}$`),
+      );
+      // It lands on a day with something to read, not another quiet line.
+      await expect(page.locator('[data-record-empty]')).toHaveCount(0);
+      await expect(page.locator('[data-day]').first()).toBeVisible();
+    }
+  });
+
+  test('the day list is a rail beside the brief on a wide screen, and follows it on a phone', async ({ page }) => {
+    await page.goto('/today');
+    const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
+    const nav = (await page.locator('nav[data-days]').boundingBox())!;
+    const width = page.viewportSize()!.width;
+    if (width >= 992) {
+      // 62rem, the bill page's desk breakpoint: the rail sits to the right,
+      // level with the title.
+      expect(nav.x).toBeGreaterThan(h1.x + 300);
+      expect(Math.abs(nav.y - h1.y)).toBeLessThan(40);
+    } else {
+      const lastSection = (await page.locator('main section').last().boundingBox())!;
+      expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
     }
   });
 });
