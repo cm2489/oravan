@@ -57,9 +57,11 @@ export {
   floorSettledChamber,
   statusBasisText,
 } from './floor-text.mjs';
-// floorActionChamber is re-exported above but NOT imported here any more:
-// since 2026-08-12 nothing in this file's derivation asks "which chamber does
-// this sentence belong to" without also asking what that chamber did.
+// floorActionChamber is re-exported above, and since 2026-08-12 nothing in
+// this file's derivation asks "which chamber does this sentence belong to"
+// without also asking what that chamber did. Its one use here since
+// 2026-09-29, pointOfOrderUpheldChamber, asks it only AFTER
+// procedureEndedConsideration has read what the chamber did.
 // floorSettledChamber still calls it internally (lib/floor-text.mjs), and
 // scripts/check-journey-corpus.mjs still sweeps with it — that is where a
 // chamber-nameable-but-unread sentence gets found now.
@@ -71,13 +73,20 @@ import {
   floorReconsiderPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
+  // Read together, and only by pointOfOrderUpheldChamber below.
+  floorActionChamber,
+  procedureEndedConsideration,
   recordedTally,
   statusBasisText,
 } from './floor-text.mjs';
+// The date of the sentence the stepper reads: the one reader the call panel
+// already uses for it (`import`, not a copy, so the two cannot drift).
+import { settledDecisionDate } from './settled-votes';
 
 /** The optional pipeline field every chamber/tense derivation below reads
- *  through `statusBasisText` (lib/floor-text.mjs). */
-type Basis = { status_basis_text?: string | null };
+ *  through `statusBasisText` (lib/floor-text.mjs), and its date, which the
+ *  one dated "Right now:" sentence reads through `settledDecisionDate`. */
+type Basis = { status_basis_text?: string | null; status_basis_date?: string | null };
 
 /*
  * THE ONE "WHERE IS THIS BILL" DERIVATION.
@@ -1037,6 +1046,7 @@ export type JourneyNowKey =
   | 'nowFloorSuspensionFailed'
   | 'nowFloorPassageRejected'
   | 'nowFloorClotureInvoked'
+  | 'nowPointOfOrderUpheld'
   | 'nowPassed'
   | 'nowPassedStale'
   | 'nowPassedBack'
@@ -1084,11 +1094,17 @@ export interface JourneyState {
   showTrailer: boolean;
   /** The recorded vote the `nowKey` sentence cites, read out of the record's
    *  own sentence (lib/floor-text.mjs recordedTally) — set ONLY on
-   *  `nowFloorPassageRejected`, `nowFloorSuspensionFailed` and
-   *  `nowFloorClotureInvoked`, and null wherever
+   *  `nowFloorPassageRejected`, `nowFloorSuspensionFailed`,
+   *  `nowFloorClotureInvoked` and `nowPointOfOrderUpheld`, and null wherever
    *  the record carries no tally (a voice vote) or the numbers would mislead
    *  (see those branches). Never computed, never looked up. */
   tally: { yeas: number; nays: number } | null;
+  /** The record's own date (YYYY-MM-DD) for the sentence the `nowKey`
+   *  sentence cites — set ONLY on `nowPointOfOrderUpheld`, the one "Right
+   *  now:" sentence that prints a date, and null there too when the record
+   *  gives none (lib/settled-votes.ts `settledDecisionDate`: never another
+   *  action's date). Formatted by components/BillJourney.tsx. */
+  date: string | null;
 }
 
 /**
@@ -1109,6 +1125,58 @@ export interface JourneyState {
  * that shape on 2026-09-29.
  */
 const SUSPENSION_PASSAGE_FAILED = /\bmotion to suspend the rules and (?:pass|agree to)\b[\s\S]*?\bfailed\b/i;
+
+/**
+ * A POINT OF ORDER AGAINST THE MEASURE, UPHELD — and the chamber that upheld
+ * it, read out of the same sentence (2026-09-29, S.J.Res. 98).
+ *
+ * S.J.Res. 98's last action, verbatim (Congress.gov, 119th Congress,
+ * 2026-01-14):
+ *
+ *   "Point of order that the measure is not entitled to expedited procedures
+ *    under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate
+ *    by Yea-Nay Vote. 50 - 50. Record Vote Number: 9."
+ *
+ * The Senate never voted on the resolution: it agreed to the POINT OF ORDER,
+ * which took the resolution off its expedited track. PR #363 stops the
+ * pipeline filing this as `passed_chamber`; at `floor_vote` it fell through to
+ * the chamber-free "it's moving on the floor — the official record hasn't
+ * said yet which chamber acts next", with "If the House changes it, it goes
+ * back to the Senate" after it. Neither is what happened: nothing is moving,
+ * the record names the chamber, and the House never received it.
+ *
+ * WHAT IT READS. lib/floor-text.mjs `procedureEndedConsideration` (#370) is
+ * the reading, reused rather than restated. Of its three shapes this sentence
+ * is only the first, "Point of order … against the measure … agreed to /
+ * sustained / well taken", which is the only one that OPENS with "Point of
+ * order" (the other two open with "The motion to …", "Motion to …" or "Table
+ * Motion to …"). So an opening check picks out that shape without a second
+ * copy of its pattern. A point of order that was NOT agreed to, one against an
+ * amendment, or one about the chamber's procedure is not read by
+ * procedureEndedConsideration, so it never reaches this sentence.
+ *
+ * THE CHAMBER comes from the same sentence (floorActionChamber, the
+ * attribution every floor reader uses), asked only after the reading above
+ * has said what that chamber did. When the sentence names no chamber this
+ * returns null and the bill keeps the chamber-free neutral sentence: never a
+ * guessed chamber (owner ruling 2026-08-04).
+ *
+ * NOT READ HERE, stated rather than guessed at: S.J.Res. 124's last action,
+ * "The motion to discharge fell when the point of order was well taken."
+ * (procedureEndedConsideration's second shape). It names no chamber and no
+ * tally, and it does not say what the point of order was raised against; the
+ * earlier action that does ("… raised against the measure agreed to in Senate
+ * by Yea-Nay Vote. 51 - 47. Record Vote Number: 108.") is not stored with the
+ * bill. It keeps the neutral sentence until it has one of its own.
+ *
+ * @returns the chamber that upheld the point of order, or null.
+ */
+export function pointOfOrderUpheldChamber(actionText: string | null | undefined): Chamber | null {
+  const t = actionText ?? '';
+  if (!/^\s*point of order\b/i.test(t)) return null;
+  if (!procedureEndedConsideration(t)) return null;
+  return floorActionChamber(t);
+}
 
 /**
  * The full status → position behavior table. Chamber for committee/markup
@@ -1139,6 +1207,7 @@ export function deriveJourney(
     isVetoed: false,
     showTrailer: true,
     tally: null,
+    date: null,
     ending: journeyEnding(bill.bill_type, bill.title),
   };
   switch (bill.status) {
@@ -1176,6 +1245,45 @@ export function deriveJourney(
           onCalendar: live,
           floorCalendar: floorCalendarName(record),
           nowKey: live ? 'nowFloor' : 'nowFloorStale',
+        };
+      }
+      /*
+       * A POINT OF ORDER AGAINST THE MEASURE, UPHELD (2026-09-29, S.J.Res.
+       * 98; the reader is pointOfOrderUpheldChamber above). The chamber took
+       * the measure up and ended its consideration on that track, so no
+       * sentence below fits: it is not a failed motion to take it up, not a
+       * vote still ahead, and not a sentence nobody has read.
+       *
+       * The sentence says what the record says and then that nothing has
+       * followed: "the Senate upheld a point of order against it, 50–50, on
+       * January 14, 2026. The official record shows nothing new on it
+       * since." The tally and the date are the record's own (recordedTally,
+       * settledDecisionDate); either one is left out when the record gives
+       * none. The tally prints as the record gives it, a tie included: the
+       * record says "agreed to … 50 - 50" and names nothing else, so the
+       * sentence adds nothing about how the tie was decided. The "Latest
+       * action" line under the stepper quotes the record sentence in full.
+       *
+       * No trailer: "if the House changes it, it goes back to the Senate"
+       * warns about a step still ahead, and the House never received it. NOT
+       * CLOCKED: a dated past-tense sentence cannot go stale.
+       *
+       * NOT FINISHED. The owner's pick (a) (2026-09-29): "Only a law or a
+       * failed final vote counts as finished." A point of order is
+       * procedural, so settledDecision returns null here and the call panel
+       * stays; lastFailedVote does too (it reads failed motions only).
+       */
+      const upheldBy = pointOfOrderUpheldChamber(record);
+      if (upheldBy) {
+        return {
+          ...base,
+          step: upheldBy === origin ? 2 : 3,
+          current: upheldBy,
+          nowChamber: upheldBy,
+          nowKey: 'nowPointOfOrderUpheld',
+          showTrailer: false,
+          tally: recordedTally(record),
+          date: settledDecisionDate(bill),
         };
       }
       /*
@@ -1527,6 +1635,10 @@ export type SettledDecision =
  *     reader as lib/docket.mjs `decisionState`, `floorReconsiderPendingChamber`
  *     (it cannot reach a `nowFloorPassageRejected` sentence today, which opens
  *     "Failed of passage"; the guard stays so a future shape cannot slip by).
+ *   - a point of order against the measure, upheld (the stepper's
+ *     `nowPointOfOrderUpheld`, S.J.Res. 98, 2026-09-29). It is procedural:
+ *     the chamber never voted on the measure itself. `decisionState` reads it
+ *     as pending as well, so the page and the envelope agree.
  *
  * THE INVARIANT WITH THE MCP ENVELOPE. lib/docket.mjs `decisionState` reads
  * the same rule (pick (a) asked for the MCP server too), so the two agree in
