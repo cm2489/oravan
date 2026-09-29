@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getUpdates, groupUpdatesByDay } from '../lib/moment-updates';
 // SOCIAL DRAFTS, DRY RUN — scripts/social-drafts.mjs.
 //
 // The script drafts post and reply text from the committed record into a
@@ -26,7 +27,10 @@ import {
   composeRollCall,
   composeToday,
   gateDraft,
+  lagReason,
+  latestUpdate,
   msg,
+  recordContext,
 } from '../scripts/social-drafts.mjs';
 
 type Seg = { k: string; text: string; key?: string; values?: Record<string, unknown>; raw?: string; iso?: string; dates?: string[] };
@@ -300,6 +304,73 @@ test('"the president" style: a headline that is not in style is dropped, not fix
   expectDropped(composeBillCard({ ...BILL_CARD_INPUT, headline }), 'president');
 });
 
+/* ---- the latest update, and the record-lag gate --------------------------- */
+
+const FUNDING = 'government-funding-deadline';
+const NOW = Date.parse('2026-09-29T20:00:00Z');
+
+test('latest update: the pick is the top of the site\'s own timeline, the same on every run', () => {
+  const first = latestUpdate(FUNDING);
+  const again = latestUpdate(FUNDING);
+  expect(first).not.toBeNull();
+  expect(again!.update.id).toBe(first!.update.id);
+  const newest = groupUpdatesByDay(FUNDING, 60, NOW).find((g) => !g.quiet)!;
+  expect(first!.update.id).toBe(newest.updates[0].id);
+  expect(first!.update.day).toBe(newest.day);
+});
+
+test('latest update: same-day updates the data cannot order are marked, not silently picked', () => {
+  const l = latestUpdate(FUNDING)!;
+  const day = getUpdates(FUNDING).filter((u) => u.day === l.update.day);
+  expect(day.length).toBeGreaterThan(1);
+  expect(l.tied.length).toBeGreaterThan(0);
+  for (const t of l.tied) expect(t.id).not.toBe(l.update.id);
+  const d = composeQuestionUpdate({ id: FUNDING, name: { en: 'x', es: 'x' }, update: l.update, tied: l.tied }) as Draft & {
+    sameDayTie?: boolean;
+    sameDayOthers?: { id: string; text: { en: string } }[];
+  };
+  expect(d.sameDayTie).toBe(true);
+  expect(d.sameDayOthers!.map((o) => o.id)).toEqual(l.tied.map((t) => t.id));
+  expect(d.sameDayOthers![0].text.en.length).toBeGreaterThan(0);
+  expect((seeds().question as Draft & { sameDayTie?: boolean }).sameDayTie).toBeUndefined();
+});
+
+test('record-lag: a settled bill whose update reads differently is dropped and counted', () => {
+  const billWord = 'law';
+  const settledOn = ['Became Public Law No: 119-103.', null];
+  expect(lagReason({ billWord, settledOn, updateText: 'Presented to President.' })).toMatch(/behind the record.*"law"/);
+  expect(lagReason({ billWord, settledOn, updateText: 'Became Public Law No: 119-103.' })).toBeNull();
+  expect(lagReason({ billWord: 'open', settledOn, updateText: 'Presented to President.' })).toBeNull();
+  expect(lagReason({ billWord, settledOn, updateText: undefined })).toBeNull();
+  const lagging = { ...ctx, recordLag: (d: Draft) => (d.kind === 'big-question-update' ? lagReason({ billWord: 'law', settledOn: ['x'], updateText: 'y' }) : null) };
+  const fail = gateDraft(seeds().question, lagging);
+  expect(fail?.gate).toBe('record-lag');
+  const { items, dropped } = admit([seeds().question, seeds().card], lagging);
+  expect(items.map((d) => d.kind)).toEqual(['bill-card']);
+  expect(dropped.map((d) => d.gate)).toEqual(['record-lag']);
+});
+
+test('record-lag on the committed record: the funding question never queues a step behind the law', () => {
+  const l = latestUpdate(FUNDING)!;
+  const draft = composeQuestionUpdate({ id: FUNDING, name: { en: 'x', es: 'x' }, update: l.update });
+  const lag = recordContext(NOW).recordLag(draft);
+  const q = buildQueue({ now: NOW });
+  const inQueue = q.items.filter((i: { ref: { id?: string } }) => i.ref.id === FUNDING);
+  if (lag) {
+    expect(q.dropped.some((d: { ref: { id?: string }; gate: string }) => d.ref.id === FUNDING && d.gate === 'record-lag')).toBe(true);
+    expect(inQueue).toHaveLength(0);
+  } else {
+    expect(inQueue).toHaveLength(1);
+  }
+  // "Presented to President." is a step behind "Became Public Law".
+  const presented = getUpdates(FUNDING).find((u) => (u as { record?: { action_text?: string } }).record?.action_text === 'Presented to President.')!;
+  const stale = composeQuestionUpdate({ id: FUNDING, name: { en: 'x', es: 'x' }, update: presented });
+  expect(recordContext(NOW).recordLag(stale)).toMatch(/"law"/);
+  // The update that IS the settling action is not a lag (the war-powers resolution's failed vote).
+  const failed = getUpdates('iran-war-powers').find((u) => (u as { record?: { action_text?: string } }).record?.action_text?.startsWith('Failed of passage'))!;
+  expect(recordContext(NOW).recordLag(composeQuestionUpdate({ id: 'iran-war-powers', name: { en: 'x', es: 'x' }, update: failed }))).toBeNull();
+});
+
 /* ---- length ---------------------------------------------------------------- */
 
 test('length: a long form over the limit is dropped; a short form is never a cut quote', () => {
@@ -313,7 +384,7 @@ test('length: a long form over the limit is dropped; a short form is never a cut
 });
 
 test('every gate named in GATES has a seeded drop above', () => {
-  expect(GATES).toEqual(['rule3', 'rule4', 'rule6', 'link', 'tone', 'rule9', 'president', 'length']);
+  expect(GATES).toEqual(['rule3', 'rule4', 'rule6', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length']);
 });
 
 /* ---- the output path ------------------------------------------------------- */

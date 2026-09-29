@@ -41,6 +41,12 @@
  *   rule6      a quote is the record's own words; a floor notice is drafted
  *              only while announcementFor says it is live; no date or time the
  *              record does not hold; every fact prints its date.
+ *   record-lag a Big Question update that says where a measure stands must not
+ *              be behind the record: if the bill's own status word (lib/status-word)
+ *              is settled (law, agreed, rejected, vetoed) and the update's own
+ *              action is not the one the record settled on, the draft is
+ *              dropped, not queued. Only settled bills are judged; a step
+ *              behind on a bill that is still open is not caught.
  *   link       every Oravan link is the canonical page URL (no query, no
  *              fragment, no stance, never the call flow or a phone dialer);
  *              the only other links are a floor notice's government source.
@@ -66,6 +72,7 @@ import { SITE_ORIGIN } from '../lib/site';
 import { localizedUrl } from './indexnow-urls.mjs';
 import { getLiveMoments } from '../lib/moments';
 import { getUpdates } from '../lib/moment-updates';
+import { CLASS_PRIORITY, selectDayUpdates } from '../lib/moment-updates-gate.mjs';
 import { lintForbidden } from '../lib/moments-gate.mjs';
 import { normalizePresidentStyle } from '../lib/president-style.mjs';
 import { statusWord } from '../lib/status-word';
@@ -97,7 +104,7 @@ export const PLATFORM_LIMITS = Object.freeze({
 });
 
 export const KINDS = ['floor-notice', 'roll-call', 'bill-card', 'big-question-update', 'today', 'reply-card'];
-export const GATES = ['rule3', 'rule4', 'rule6', 'link', 'tone', 'rule9', 'president', 'length'];
+export const GATES = ['rule3', 'rule4', 'rule6', 'record-lag', 'link', 'tone', 'rule9', 'president', 'length'];
 export const LANGS = ['en', 'es'];
 
 /** The AI labels the site already prints, by message key. Bill headlines take
@@ -363,7 +370,8 @@ export function composeBillCard({ slug, citation, headline, status, lastActionDa
 
 /** The latest published update line for a Big Question: its AI-drafted name,
  *  the line (AI-written, or the record quoted), its day, the page link. */
-export function composeQuestionUpdate({ id, name, update }) {
+/** @param {{ id: string, name: any, update: any, tied?: any[] }} args */
+export function composeQuestionUpdate({ id, name, update, tied = [] }) {
   const line = (lang) => (update.ai ? ai(update.text[lang], lang) : published(update.text[lang], lang));
   const segs = (lang) => [
     ai(name[lang], lang),
@@ -383,6 +391,7 @@ export function composeQuestionUpdate({ id, name, update }) {
     factDate: update.day,
     recordQuotes: [],
     href: `/questions/${id}`,
+    ...(tied.length ? { sameDayTie: true, sameDayOthers: tied.map((u) => ({ id: u.id, text: u.text })) } : {}),
     segments: { en: segs('en'), es: segs('es') },
   };
 }
@@ -561,6 +570,10 @@ const GATE_CHECKS = {
     return null;
   },
 
+  'record-lag'(draft, lang, segments, ctx) {
+    return ctx.recordLag?.(draft) ?? null;
+  },
+
   president(draft, lang, segments) {
     const text = nonQuoteText(segments);
     const out = normalizePresidentStyle(text, lang, { titles: draft.titles ?? [] });
@@ -643,10 +656,43 @@ function billCardInput(bill) {
   };
 }
 
-function latestUpdate(id) {
-  const ups = getUpdates(id).filter((u) => u && u.text?.en && u.text?.es && DATE_RE.test(u.day ?? ''));
-  const key = (u) => `${u.day}|${u.occurred_at ?? ''}|${u.recorded_at ?? ''}|${u.id}`;
-  return ups.reduce((best, u) => (best === null || key(u) > key(best) ? u : best), null);
+/**
+ * The update a reader sees first on the question's own timeline: the newest
+ * day, and within that day the site's own order (selectDayUpdates: class
+ * priority, then id). No second ordering is written here.
+ *
+ * Where the site's order rests on the id alone (two updates of the same day
+ * and the same class), the data does not say which came last. The draft then
+ * uses the one the page shows first and carries `tied`: the other updates'
+ * text, so a reviewer sees both. Same data, same pick, every run.
+ */
+export function latestUpdate(id) {
+  const all = getUpdates(id).filter((u) => u && DATE_RE.test(u.day ?? ''));
+  if (!all.length) return null;
+  const day = all.reduce((best, u) => (u.day > best ? u.day : best), all[0].day);
+  const ordered = selectDayUpdates(all.filter((u) => u.day === day), Number.POSITIVE_INFINITY);
+  const update = ordered[0];
+  if (!update?.text?.en || !update?.text?.es) return null;
+  const rank = (u) => CLASS_PRIORITY[u?.class] ?? 0;
+  const tied = ordered.slice(1).filter((u) => rank(u) === rank(update));
+  return { update, tied };
+}
+
+/**
+ * The lag rule, pure. Once the site's own reading of a bill (statusWord) is
+ * settled (law, agreed, rejected, vetoed), an update that is not the action
+ * the record settled on trails the record: it can only be a step behind.
+ * `settledOn` is the bill's own action sentences (last action, status basis).
+ * An update with no record sentence, or a bill that is still open, is not
+ * judged here.
+ * @param {{ billWord?: string, settledOn?: (string | null | undefined)[], updateText?: string | null }} args
+ * @returns {string | null}
+ */
+export function lagReason({ billWord, settledOn = [], updateText }) {
+  if (!billWord || billWord === 'open' || !updateText) return null;
+  const norm = (x) => String(x ?? '').replace(/\s+/g, ' ').trim();
+  if (settledOn.some((t) => t && norm(t) === norm(updateText))) return null;
+  return `the update's action "${norm(updateText)}" is behind the record, which now reads "${billWord}"`;
 }
 
 /**
@@ -698,7 +744,18 @@ export function recordContext(now) {
     }
     return set;
   };
-  return { liveAnnouncement, recordDates };
+  const recordLag = (draft) => {
+    if (draft.kind !== 'big-question-update') return null;
+    const u = getUpdates(draft.ref.id).find((x) => x.id === draft.ref.update);
+    const bill = u?.vehicle ? getBill(u.vehicle) : undefined;
+    if (!u || !bill) return null;
+    return lagReason({
+      billWord: statusWord(bill),
+      settledOn: [bill.last_action_text, bill.status_basis_text],
+      updateText: u.record?.action_text,
+    });
+  };
+  return { liveAnnouncement, recordDates, recordLag };
 }
 
 /** Every candidate draft the committed record supports, before the gates. */
@@ -744,12 +801,12 @@ export function collectCandidates({ now, replySlugs = null }) {
 
   // big-question-update: the latest update line of each live Big Question.
   for (const q of getLiveMoments(now).sort((a, b) => a.id.localeCompare(b.id))) {
-    const update = latestUpdate(q.id);
-    if (!update) {
+    const latest = latestUpdate(q.id);
+    if (!latest) {
       notes.push(`big-question-update ${q.id}: no update on file`);
       continue;
     }
-    candidates.push(composeQuestionUpdate({ id: q.id, name: q.name, update }));
+    candidates.push(composeQuestionUpdate({ id: q.id, name: q.name, update: latest.update, tied: latest.tied }));
   }
 
   // today: one line per dated page in the window, from its own counts.
@@ -789,6 +846,7 @@ export function buildQueue({ now, replySlugs = null }) {
       factDate: d.factDate,
       aiLabel: d.segments.en.some((s) => s.k === 'label'),
       ...(d.note ? { note: d.note } : {}),
+      ...(d.sameDayTie ? { sameDayTie: true, sameDayOthers: d.sameDayOthers } : {}),
       variants: Object.fromEntries(
         LANGS.map((lang) => [
           lang,
