@@ -21,7 +21,9 @@ import { INDEXNOW_KEY } from './indexnow-urls.mjs';
 // screencast walkthrough's frames — real captures of the real flow, one set
 // per locale, rendered by components/HomeScreencast.tsx. Deliberately
 // committed (they ship): regenerate against a running dev server when the
-// featured corpus moves, and keep the two locales' sets in step.
+// featured corpus moves, and keep the two locales' sets in step. The player
+// is unmounted since 2026-09-28 (owner, UX inventory H18: off until the
+// UI/UX is settled); the frames stay so it can return as it was.
 // <INDEXNOW_KEY>.txt (2026-09-27 audit, SY-19): the IndexNow ownership file,
 // served at the site root so search engines can check that the nightly
 // ping (scripts/indexnow-ping.mjs) comes from this host. It holds a PUBLIC

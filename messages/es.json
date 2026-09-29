@@ -92,7 +92,6 @@
     "floorCta": "Léelo en palabras sencillas",
     "aiReviewed": "Traducido por IA, verificado con el registro",
     "stampLabel": "Datos al",
-    "weekNote": "El panel verde señala un solo hecho con fecha: este proyecto está en el calendario del pleno, o tiene una votación pendiente en el pleno. El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteQuiet": "El orden viene del registro legislativo, nunca de nuestra opinión — y una semana tranquila se muestra tranquila.",
     "weekNoteRecess": "No hay actividad legislativa programada en ninguna de las dos cámaras. El propio Daily Digest del Senado, publicado el {published}, indica que la próxima sesión del Senado será <senateWhen>{senate}</senateWhen> y la próxima de la Cámara, <houseWhen>{house}</houseWhen>: ambas son <term>sesiones pro forma</term>. Los proyectos de abajo siguen donde los dejó el registro.",
     "how1Dur": "0:30",
@@ -125,7 +124,6 @@
     "evidenceCovers": "para el {date}",
     "evidenceLink": "Leer la fuente",
     "floorCheckedAt": "Programación comprobada el {date}",
-    "weekNoteAnnounced": "El panel verde señala un solo hecho con fecha del registro: la cámara nombró este proyecto en su propia programación del pleno, citada arriba con la fecha en que se publicó. Esa programación se vuelve a leer cada hora, y si la cámara retira el proyecto, este sale del panel. Nada aquí dice cuándo será la votación — eso solo lo puede decir el Congreso, y no lo ha dicho.",
     "todayLink": "Resumen de hoy: votaciones, proyectos que avanzaron y la agenda de cada cámara, según el registro."
   },
   "reps": {
@@ -143,6 +141,8 @@
     "website": "Sitio web oficial",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
+    "zipLine": "Código postal {zip}",
+    "savedZipLoading": "Buscando {zip}, el código postal guardado en este dispositivo…",
     "zipNotFound": "No pudimos relacionar ese código postal con un distrito congresional. Algunos códigos postales válidos — como los de apartados postales o exclusivos de empresas — no corresponden a ningún distrito. Revisa los dígitos, prueba con el código postal de tu casa, o busca a tu representante directamente en house.gov.",
     "party": {
       "Democrat": "Demócrata",

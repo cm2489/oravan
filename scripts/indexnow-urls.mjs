@@ -46,7 +46,9 @@
  *   data/moments.json                     an entry changed -> /questions/<id>
  *                                         and each of its vehicles' pages
  *   data/moment-updates.json              an entry changed -> /questions/<id>
- *   data/conversation.json (.slugs)       the news band -> / and /bills
+ *   data/conversation.json (.slugs)       the news band -> / (the only page
+ *                                         that renders it since /bills
+ *                                         dropped it, 2026-09-28)
  *
  * (The mapping is complete; which rows actually fire depends on who commits.
  * Only sync-bills.yml and hot-bills.yml ping. The hourly newsdesk.yml, which
@@ -326,7 +328,7 @@ export function deriveChangedPaths(before, after) {
   if (changedBills.length > 0) ['/', '/bills', '/today'].forEach((h) => hubs.add(h));
   if (urgencyMoved) hubs.add('/today');
   if (questionPages.length > 0) ['/', '/questions'].forEach((h) => hubs.add(h));
-  if (newsBand) ['/', '/bills'].forEach((h) => hubs.add(h));
+  if (newsBand) hubs.add('/');
 
   const sorted = (xs) => [...xs].sort();
   return [

@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { BillsBrowser } from '@/components/BillsBrowser';
-import { NewsLens } from '@/components/NewsLens';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
-import { getNewsBills, getTeasers } from '@/lib/core';
+import { getTeasers } from '@/lib/core';
 import { getMomentSearchTeasers } from '@/lib/moments-ui';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -23,7 +22,6 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const news = getNewsBills(locale, 6);
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
 
@@ -48,8 +46,8 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
         </Chip>
       </p>
       {/* Search-first (2026-07 critique, majority P0): the page's stated
-          purpose - find and browse bills - leads; the news lens follows as
-          compact rows instead of a duplicated homepage card wall. */}
+          purpose - find and browse bills - leads, and since 2026-09-28 it is
+          the whole page. */}
       {/* Live Moments travel with the page so a search that matches one can
           pin it (spec §7.3). Resolved on the server: the browser gets two
           short localized strings and the alias list per moment, never the
@@ -59,11 +57,13 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
         freshness={freshness}
         moments={getMomentSearchTeasers(locale)}
       />
-      {news.length > 0 && (
-        <div className="mt-16 border-t border-line pt-8">
-          <NewsLens bills={news.slice(0, 3)} compact />
-        </div>
-      )}
+      {/* "IN THE NEWS" LEFT THIS PAGE on 2026-09-28 (owner, UX inventory B05:
+          cut). It repeated the homepage's band and sat under 3,000+ bills;
+          the homepage keeps it (H16). NewsLens still has its `compact` rows,
+          so bringing it back is getNewsBills(locale, 6) and
+          <NewsLens bills={news.slice(0, 3)} compact /> in a
+          `mt-16 border-t border-line pt-8` wrapper here — plus '/bills' back
+          on the news-band line of scripts/indexnow-urls.mjs. */}
     </div>
   );
 }
