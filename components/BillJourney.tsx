@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { glossifyRich } from '@/components/glossary-tags';
 import { glossaryLocale } from '@/lib/glossary-match';
@@ -132,6 +132,22 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const tally = journey.tally
     ? { tally: 'yes', yeas: journey.tally.yeas, nays: journey.tally.nays }
     : { tally: 'none', yeas: 0, nays: 0 };
+  // The record's own date for the one dated sentence (`nowPointOfOrderUpheld`),
+  // set in lib/journey.ts and never another action's. Formatted the way the
+  // bill page formats its record dates: long month, UTC in and UTC out, so a
+  // server west of Greenwich cannot print the day before.
+  const format = useFormatter();
+  const when = journey.date
+    ? {
+        hasDate: 'yes',
+        date: format.dateTime(new Date(journey.date), {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }),
+      }
+    : { hasDate: 'none', date: '' };
 
   // Supplied on every key: the tag only exists inside the two placement
   // messages, and next-intl ignores a handler a message never opens.
@@ -190,7 +206,7 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
           {glossifyRich(
-            t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally }),
+            t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
             lang,
             nowSeen
           )}

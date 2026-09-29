@@ -180,6 +180,57 @@ export function toISODateTime(d) {
 }
 
 // ---- status mapping (ported from the reference implementation) ----
+
+/**
+ * A POINT OF ORDER OR A PROCEDURAL MOTION THE CHAMBER AGREED TO IS NOT THE
+ * MEASURE PASSING (2026-09-29, S.J.Res. 98).
+ *
+ * S.J.Res. 98 (the Venezuela war-powers resolution) read as passed by the
+ * Senate from 2026-01-14 on. Its last action, verbatim from the record:
+ *
+ *   "Point of order that the measure is not entitled to expedited procedures
+ *    under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate
+ *    by Yea-Nay Vote. 50 - 50. Record Vote Number: 9."
+ *
+ * The Senate agreed to the POINT OF ORDER, which took the resolution off its
+ * expedited track. It never voted on the resolution itself. mapStatus's
+ * passage branch matches the substring "agreed to in", so the sentence was
+ * filed `passed_chamber`. The motion to proceed has the same shape ("Motion
+ * to proceed to consideration of measure agreed to in Senate by Yea-Nay
+ * Vote. 77 - 22."), and there the Senate has agreed to START debating the
+ * measure, which is the opposite of being done with it.
+ * data/moment-updates.json quotes two of those as a vehicle's last action
+ * (H.R. 6500 on 2026-08-05, S. 4668 on 2026-09-17).
+ *
+ * The rule reads the sentence's SUBJECT. A sentence that opens with "Point of
+ * order" or "Motion" and says it was "agreed to in" a chamber records what
+ * that chamber did with the point or the motion, so it is `floor_vote`, the
+ * stage the sentence is written in, and never a passage. A point or motion
+ * NOT agreed to is the defeat branch's, which runs first.
+ *
+ * STILL READ AS A PASSAGE, on purpose: a motion to concur, to recede, to
+ * agree to the other chamber's amendment, or to suspend the rules and pass.
+ * Carrying one of those IS the chamber agreeing to the measure's text. None
+ * opens a sentence in the corpus today (measured 2026-09-29); they are
+ * excluded so this rule can only take a false claim away, never a true one.
+ * Congress.gov's summary lines ("Passed/agreed to in House: On motion to
+ * suspend the rules and pass the bill …") open with "Passed", not "Motion",
+ * so they never reach this rule.
+ *
+ * One layer up, lib/docket.mjs's `floorAnsweredChamber` reads "agreed to in
+ * <chamber>" the same way; it is not changed here.
+ */
+const PROCEDURAL_OPENING = /^\s*(?:point of order|motion)\b/i;
+const PASSAGE_MOTION =
+  /^\s*motion(?:\s+by\s+senator(?:\s+(?!to\b)\S+)+)?\s+(?:to|that the (?:house|senate))\s+(?:concur|recede|agree to the (?:house|senate) amendment|suspend the rules and (?:pass|agree|concur))\b/i;
+const AGREED_IN_CHAMBER = /\bagreed to in (?:the )?(?:house|senate)\b/i;
+
+/** @param {string | null | undefined} actionText */
+export function isProceduralAgreedTo(actionText) {
+  const t = String(actionText ?? '');
+  return PROCEDURAL_OPENING.test(t) && !PASSAGE_MOTION.test(t) && AGREED_IN_CHAMBER.test(t);
+}
+
 export function mapStatus(actionText) {
   const text = (actionText ?? '').toLowerCase().trim();
   if (!text) return 'committee';
@@ -219,6 +270,11 @@ export function mapStatus(actionText) {
   // to ("Failed of passage in Senate by Yea-Nay Vote", "... Failed by the
   // Yeas and Nays"), so the settled guard in lib/docket.mjs can read it.
   if (/\bfailed of passage\b|\bnot agreed to in (?:the )?(?:house|senate)\b/.test(text)) return 'floor_vote';
+  // A POINT OF ORDER OR A PROCEDURAL MOTION, AGREED TO (2026-09-29, S.J.Res.
+  // 98). The chamber agreed to the point or the motion, not to the measure,
+  // and the passage branch below would read its "agreed to in" as a passage.
+  // See isProceduralAgreedTo above.
+  if (isProceduralAgreedTo(text)) return 'floor_vote';
   if (
     text.includes('passed house') || text.includes('passed senate') ||
     text.includes('passed/agreed to') || text.includes('agreed to in') ||

@@ -47,7 +47,7 @@ const MD_PATH = join(OUT_DIR, 'journey-corpus-report.md');
 // duplicating the corpus read.
 const driver = `
 import { readFileSync, writeFileSync } from 'node:fs';
-import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber, statusBasisText } from './lib/journey';
+import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber, pointOfOrderUpheldChamber, statusBasisText } from './lib/journey';
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const floorVote = bills.filter((b) => b.status === 'floor_vote');
 // Every sweep reads the sentence the journey itself reads (statusBasisText):
@@ -84,6 +84,12 @@ const unclassified = floorVote.filter(
  * already judged. These bills keep rendering the same chamber-free neutral
  * copy they render today — the bucket records a reading, it does not license
  * a claim. See lib/floor-text.mjs's own header for the allow-list discipline.
+ *
+ * pointOfOrderUpheldChamber is the FOURTH answer (2026-09-29, S.J.Res. 98): a
+ * point of order against the measure that the chamber upheld IS tensed. It
+ * says what the chamber did, and the stepper prints it (nowPointOfOrderUpheld).
+ * It is the same reader deriveJourney asks, so a sentence leaves this sweep
+ * only when the page has a sentence for it.
  */
 const untensed = floorVote.filter(
   (b) =>
@@ -91,6 +97,7 @@ const untensed = floorVote.filter(
     floorActionChamber(text(b)) !== null &&
     floorPendingChamber(text(b)) === null &&
     floorSettledChamber(text(b)) === null &&
+    pointOfOrderUpheldChamber(text(b)) === null &&
     !floorMakesNoClaim(text(b))
 ).map(row);
 
