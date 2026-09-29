@@ -237,6 +237,11 @@ for (const { locale, prefix, messages, t } of LOCALES) {
     }) => {
       test.skip(!SEVERAL, 'no Big Question with several open vehicles in the corpus');
       test.skip(isMobile, 'the rail is desk-only');
+      // The site scrolls smoothly (app/globals.css), so a focus scroll is an
+      // animation and a position read mid-flight is noise. Reduced motion
+      // makes it instant (the same stylesheet honours it), which leaves only
+      // the geometry this test is about.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`${prefix}/questions/${SEVERAL!.id}`);
       const rail = page.locator('[data-still-open-rail]');
       await expect(rail).toBeVisible();
