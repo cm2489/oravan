@@ -75,6 +75,26 @@ const RENDERED_ON_DEMAND: Record<string, string> = {
 };
 
 /**
+ * PER-REQUEST WORK BEYOND PAGES, AND WHY — CLAUDE.md rule 2 names proxy.ts,
+ * the route handlers under app/api/ and the embed portrait proxy. Inside
+ * proxy.ts, one piece of work goes beyond locale negotiation and the two
+ * counts, and it is named here with its reason:
+ *
+ *   short addresses (2026-09-29): /hr9340 is answered with a 307 to the
+ *   bill's page. A redirect cannot be a prerendered page, and generating one
+ *   config redirect per bill (~6,450 rules) would be matched in order on
+ *   every request and would forward the query string. The proxy instead does
+ *   one pattern test and one bit test against a ~3 KB bitset that
+ *   next.config.ts builds from data/bills.json at BUILD time. The test below
+ *   pins that the corpus itself never enters the proxy bundle.
+ */
+const PER_REQUEST_IN_PROXY: Record<string, string> = {
+  'lib/short-address.ts':
+    'short addresses for bills: a constant-time bit test against a build-time bitset, ' +
+    'answered with a 307; no corpus in the bundle',
+};
+
+/**
  * The dynamic routes whose prerendered ids each have their own test below
  * (the id set is the route's own generateStaticParams, recomputed here).
  */
@@ -219,4 +239,33 @@ test('any re-added loading boundary under [locale] is a client component', () =>
       'request header, which marks every page on the site dynamic. See this file’s header comment — ' +
       'and note that re-adding a loading boundary at all re-opens the soft-404 that #253 fixed.',
   ).toEqual([]);
+});
+
+test('the short-address lookup in proxy.ts carries a build-time bitset, never the corpus', () => {
+  // Source half: the lookup module imports nothing (so it cannot reach
+  // data/), and proxy.ts reaches the corpus only through it.
+  for (const file of Object.keys(PER_REQUEST_IN_PROXY)) {
+    const source = readFileSync(join(process.cwd(), file), 'utf8');
+    expect(source, `${file} must import nothing`).not.toMatch(/^\s*import\s/m);
+  }
+  const proxy = readFileSync(join(process.cwd(), 'proxy.ts'), 'utf8');
+  expect(proxy).toContain("from './lib/short-address'");
+  const proxyImports = proxy.split('\n').filter((line) => /^\s*import\s/.test(line));
+  expect(proxyImports.join('\n')).not.toMatch(/data\/|bills\.json|lib\/core/);
+
+  // Build half: find the server bundle(s) that hold the short-address
+  // pattern and prove none of them carries corpus text.
+  const serverDir = join(process.cwd(), '.next/server');
+  if (!existsSync(serverDir)) throw new Error('No .next/server: run `npx next build` first (see routes() above).');
+  const marker = 'hconres|sconres|hjres|sjres|hres|sres|hr|s';
+  const holders = readdirSync(serverDir, { withFileTypes: true, recursive: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.js'))
+    .map((e) => join(e.parentPath ?? serverDir, e.name))
+    .filter((file) => readFileSync(file, 'utf8').includes(marker));
+  expect(holders.length, 'no built server file holds the short-address lookup').toBeGreaterThan(0);
+  for (const file of holders) {
+    const text = readFileSync(file, 'utf8');
+    expect(text, `${file} carries corpus fields`).not.toContain('full_identifier');
+    expect(text, `${file} carries corpus fields`).not.toContain('ai_summary');
+  }
 });
