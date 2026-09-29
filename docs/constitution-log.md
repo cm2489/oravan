@@ -29,6 +29,8 @@ Rules touched: page 1, rule 6 (the record, quoted, never narrated) and rule 8 (t
   - **Rules 6 and 8 need no new words.** A settled decision still shows no call apparatus, and "for a decision still open" still scopes the call budget. Only the set of records each phrase applies to moved. README principle 4's examples ("a law, a rejected vote") already match.
   - The detail is `docs/record-truth.md` §7.
 
+---
+
 <a id="privacy-lines-2026-09-28"></a>
 
 ## 2026-09-28 — The two privacy lines corrected; card l16 closed
