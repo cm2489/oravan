@@ -4,7 +4,8 @@ import bills from '../data/bills.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decisionState } from '../lib/docket.mjs';
-import { deriveJourney, settledDecision } from '../lib/journey';
+import { FLOOR_PASSAGE_REJECTED, statusBasisText } from '../lib/floor-text.mjs';
+import { deriveJourney, lastFailedVote, settledDecision } from '../lib/journey';
 import { recordedRollNumber, settledDecisionDate, settledVoteGroups } from '../lib/settled-votes';
 import type { Bill, RollCall } from '../lib/types';
 import { votesCoverage, votesForBill } from '../lib/votes';
@@ -19,6 +20,15 @@ import { votesCoverage, votesForBill } from '../lib/votes';
  * stand?" agree, and it must never call a decision over that the MCP envelope
  * (lib/docket.mjs `decisionState`) still calls pending. Fixture sentences are
  * verbatim from data/bills.json as committed on 2026-09-28.
+ *
+ * WHICH RECORDS COUNT AS FINISHED (owner, 2026-09-29, pick (a) on artifact
+ * 7BuRDMkWu9zigDE1u2XPLJ: "Only a law or a failed final vote counts as
+ * finished. Procedural failures keep the call panel, with a line saying the
+ * last attempt failed." — "we need to update the MCP server too if
+ * possible"). So `settledDecision` returns a law or a rejected passage vote
+ * and nothing else; a failed motion, a failed two-thirds suspension vote and
+ * a veto keep the call, `lastFailedVote` supplies the line, and
+ * `decisionState` answers the same way for the MCP envelope.
  */
 
 type Rec = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'>;
@@ -56,6 +66,15 @@ const SUSPENSION_FAILED = [
     tally: { yeas: 264, nays: 133 },
   },
 ] as const;
+/** S.J.Res. 172, verbatim. */
+const DISCHARGE_REJECTED =
+  'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.';
+/** S. 3386, verbatim. */
+const CLOTURE_ON_PROCEED_NOT_INVOKED =
+  'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 51 - 48. Record Vote Number: 643. (CR S8654)';
+/** S. 1318, verbatim. */
+const PROCEED_TO_MESSAGE_REJECTED =
+  'Motion to proceed to consideration of the House message to accompany S. 1318 rejected in Senate by Yea-Nay Vote. 47 - 52. Record Vote Number: 164.';
 /** H.R. 3633: the failed vote, with a motion to reconsider it entered. */
 const RECONSIDER_ENTERED =
   'Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate.';
@@ -66,46 +85,73 @@ test.describe('settledDecision — which pages show the record, not the call', (
   });
 
   test('a veto keeps the call — Congress can still vote to override it', () => {
-    // A decision is left (the Q9 question's own condition: "when there's no
-    // decision left"), so there is no record-only panel for a veto.
+    // Pick (a): a veto is neither a law nor a failed final vote, so there is
+    // no record-only panel for it.
     const vetoed = rec('hr', 'vetoed', 'Vetoed by President.');
     expect(settledDecision(vetoed)).toBeNull();
     // The stepper's sentence is the one that says the override is possible.
     expect(deriveJourney(vetoed).nowKey).toBe('nowVetoed');
     expect(en.bill.journey.nowVetoed).toMatch(/override/);
     expect(es.bill.journey.nowVetoed).toMatch(/anular el veto/);
-    // The stated gap: the MCP envelope still calls a veto settled.
-    expect(decisionState(vetoed).state).toBe('settled');
+    // The MCP envelope agrees since pick (a) (it called a veto settled before).
+    expect(decisionState(vetoed)).toEqual({ state: 'pending', reason: null });
+    // No failed vote either: the call panel prints no "last attempt" line.
+    expect(lastFailedVote(vetoed)).toBeNull();
     // And the panel keeps no veto sentence of its own to print.
     expect(Object.keys(en.bill.settled)).not.toContain('vetoed');
     expect(Object.keys(es.bill.settled)).not.toContain('vetoed');
   });
 
-  test('a rejected passage vote carries the chamber and the record\'s tally', () => {
-    expect(settledDecision(rec('hconres', 'floor_vote', HCONRES_89))).toEqual({
+  test('a rejected passage vote carries the chamber and the record\'s tally — settled on the page and in the MCP envelope', () => {
+    const r = rec('hconres', 'floor_vote', HCONRES_89);
+    expect(settledDecision(r)).toEqual({
       kind: 'rejected',
       chamber: 'senate',
       tally: { yeas: 49, nays: 50 },
     });
+    expect(decisionState(r)).toEqual({ state: 'settled', reason: HCONRES_89 });
+    // A settled page has no call panel, so no "last attempt" line either.
+    expect(lastFailedVote(r)).toBeNull();
   });
 
-  test('a failed motion to take it up is not called a rejection', () => {
-    expect(settledDecision(rec('sjres', 'floor_vote', MOTION_TO_PROCEED_REJECTED))).toEqual({
-      kind: 'motionFailed',
-      chamber: 'senate',
-    });
+  test('a failed motion to take it up is not finished: the call stays, with the failed vote named (pick (a))', () => {
+    // S.J.Res. 185, verbatim.
+    const r = rec('sjres', 'floor_vote', MOTION_TO_PROCEED_REJECTED);
+    expect(settledDecision(r)).toBeNull();
+    expect(decisionState(r)).toEqual({ state: 'pending', reason: null });
+    expect(lastFailedVote(r)).toEqual({ procedure: 'proceed', chamber: 'senate', tally: { yeas: 47, nays: 50 } });
+    // The stepper keeps its failed-motion sentence.
+    expect(deriveJourney(r).nowKey).toBe('nowFloorMotionFailed');
   });
 
-  test('a failed two-thirds vote is a failed vote to pass, not a failed motion to take it up', () => {
+  test('every read procedural failure keeps the call and names its procedure', () => {
+    for (const [text, procedure, tally] of [
+      [DISCHARGE_REJECTED, 'discharge', { yeas: 47, nays: 48 }],
+      [CLOTURE_ON_PROCEED_NOT_INVOKED, 'clotureProceed', { yeas: 51, nays: 48 }],
+      [PROCEED_TO_MESSAGE_REJECTED, 'proceed', { yeas: 47, nays: 52 }],
+      [
+        'Cloture on the measure not invoked in Senate by Yea-Nay Vote. 55 - 44. Record Vote Number: 300.',
+        'clotureMeasure',
+        { yeas: 55, nays: 44 },
+      ],
+      ['Motion to proceed to consideration of measure rejected in Senate by Voice Vote. (CR S2407)', 'proceed', null],
+    ] as const) {
+      const r = rec('sjres', 'floor_vote', text);
+      expect(settledDecision(r), text).toBeNull();
+      expect(decisionState(r).state, text).toBe('pending');
+      expect(lastFailedVote(r), text).toEqual({ procedure, chamber: 'senate', tally });
+    }
+  });
+
+  test('a failed two-thirds vote is not finished: its own stepper sentence, the call stays, the line names it (pick (a))', () => {
     for (const s of SUSPENSION_FAILED) {
       const r = rec(s.bill_type, 'floor_vote', s.text);
-      // The House took the measure up and voted on passing it; the panel says
-      // so, with the record's own tally, even though a majority voted yes.
-      expect(settledDecision(r), s.bill).toEqual({ kind: 'suspensionFailed', chamber: 'house', tally: s.tally });
-      // The stepper still files it with the failed motions (lib/floor-text.mjs
-      // FLOOR_PASSAGE_REJECTED's header); only the panel's outcome differs.
-      expect(deriveJourney(r).nowKey, s.bill).toBe('nowFloorMotionFailed');
-      expect(decisionState(r).state, s.bill).toBe('settled');
+      expect(settledDecision(r), s.bill).toBeNull();
+      expect(decisionState(r), s.bill).toEqual({ state: 'pending', reason: null });
+      expect(lastFailedVote(r), s.bill).toEqual({ procedure: 'suspension', chamber: 'house', tally: s.tally });
+      // The stepper says what the vote was — never "has not agreed to take it
+      // up" — with the record's own tally, even though a majority voted yes.
+      expect(deriveJourney(r), s.bill).toMatchObject({ nowKey: 'nowFloorSuspensionFailed', nowChamber: 'house', tally: s.tally });
     }
   });
 
@@ -114,6 +160,18 @@ test.describe('settledDecision — which pages show the record, not the call', (
     // The stepper still says the motion failed; only the panel stays open.
     expect(deriveJourney(rec('hr', 'floor_vote', RECONSIDER_ENTERED)).nowKey).toBe('nowFloorMotionFailed');
     expect(decisionState(rec('hr', 'floor_vote', RECONSIDER_ENTERED)).state).toBe('pending');
+    // The sentence is the reconsider motion, not the vote: no line is read off
+    // it (its date is the motion's, and it carries no tally).
+    expect(lastFailedVote(rec('hr', 'floor_vote', RECONSIDER_ENTERED))).toBeNull();
+  });
+
+  test('a withdrawn or unread floor sentence prints no "last attempt" line', () => {
+    for (const text of [
+      'Motion to proceed to consideration of measure withdrawn in Senate.',
+      'Motion to table the motion to proceed failed in Senate by Voice Vote.',
+    ]) {
+      expect(lastFailedVote(rec('sjres', 'floor_vote', text)), text).toBeNull();
+    }
   });
 
   test('every open stage keeps the call', () => {
@@ -140,33 +198,56 @@ test.describe('settledDecision against the committed corpus', () => {
     }
   });
 
-  test('the two stated gaps: MCP settled but the page keeps the call only on a veto or where the stepper names no chamber', () => {
+  test('the one stated gap: MCP settled but the page keeps the call only where the stepper names no chamber', () => {
     for (const b of corpus) {
       if (decisionState(b).state === 'pending' || settledDecision(b) !== null) continue;
-      if (b.status === 'vetoed') continue; // the override is still ahead
       expect(deriveJourney(b).nowKey, `${b.bill_type} ${b.last_action_text}`).toBe('nowFloorActivityNeutral');
     }
   });
 
-  test('every failed two-thirds vote to pass reads as one, and no failed motion is one', () => {
-    const SUSPENSION = /\bmotion to suspend the rules and (?:pass|agree to)\b[\s\S]*?\bfailed\b/i;
+  test('pick (a) over the whole corpus: settled means a law or a failed vote to pass it, and nothing else', () => {
     for (const b of corpus) {
+      const label = `${b.bill_type} ${statusBasisText(b)}`;
       const decision = settledDecision(b);
-      if (decision === null) continue;
-      const record = (b as Rec & { status_basis_text?: string | null }).status_basis_text || b.last_action_text || '';
-      const label = `${b.bill_type} ${record}`;
-      if (SUSPENSION.test(record)) {
-        expect(decision.kind, label).toBe('suspensionFailed');
-      } else {
-        expect(decision.kind, label).not.toBe('suspensionFailed');
+      const state = decisionState(b).state;
+      // The page: a law, or a rejected passage vote read off its own sentence.
+      if (decision?.kind === 'law') expect(b.status, label).toBe('signed');
+      if (decision?.kind === 'rejected') expect(FLOOR_PASSAGE_REJECTED.test(statusBasisText(b) ?? ''), label).toBe(true);
+      // The MCP envelope, the same rule: nothing but a law is enacted, and
+      // nothing but a failed passage vote is settled.
+      if (state === 'enacted') expect(b.status, label).toBe('signed');
+      if (state === 'settled') {
+        expect(b.status, label).toBe('floor_vote');
+        expect(FLOOR_PASSAGE_REJECTED.test(statusBasisText(b) ?? ''), label).toBe(true);
       }
+      // Every failed procedural vote keeps the call on both surfaces.
+      const nowKey = deriveJourney(b).nowKey;
+      if (nowKey === 'nowFloorMotionFailed' || nowKey === 'nowFloorSuspensionFailed') {
+        expect(decision, label).toBeNull();
+        expect(state, label).toBe('pending');
+      }
+      // The "last attempt" line only ever stands on a page with a call panel.
+      if (lastFailedVote(b) !== null) expect(decision, label).toBeNull();
     }
   });
 
-  test('the corpus really holds settled bills of the kinds the panel prints', () => {
+  test('every failed two-thirds vote to pass reads as one: its own stepper sentence and the suspension line', () => {
+    const SUSPENSION = /\bmotion to suspend the rules and (?:pass|agree to)\b[\s\S]*?\bfailed\b/i;
+    for (const b of corpus) {
+      if (b.status !== 'floor_vote') continue;
+      const record = statusBasisText(b) ?? '';
+      if (!SUSPENSION.test(record)) continue;
+      const label = `${b.bill_type} ${record}`;
+      expect(deriveJourney(b).nowKey, label).toBe('nowFloorSuspensionFailed');
+      expect(lastFailedVote(b)?.procedure, label).toBe('suspension');
+    }
+  });
+
+  test('the corpus really holds settled bills of the kinds the panel prints, and failed procedural votes the call panel names', () => {
     const kinds = new Set(corpus.map((b) => settledDecision(b)?.kind).filter(Boolean));
     expect(kinds.has('law'), 'no signed law in the corpus').toBe(true);
-    expect(kinds.has('rejected') || kinds.has('motionFailed'), 'no settled floor vote in the corpus').toBe(true);
+    expect(kinds.has('rejected'), 'no rejected passage vote in the corpus').toBe(true);
+    expect(corpus.some((b) => lastFailedVote(b) !== null), 'no failed procedural vote in the corpus').toBe(true);
   });
 });
 
@@ -249,16 +330,24 @@ test.describe('settledVoteGroups — the deciding vote first, one chamber per gr
     expect(recordedRollNumber(HCONRES_89, 'senate')).toBe(244);
   });
 
-  test('S. 2503: the House vote only, from the record, saying the roll-call file begins after it', () => {
-    const s2503 = rec('s', 'floor_vote', SUSPENSION_FAILED[2].text, '2026-02-24');
-    const settled = settledDecision(s2503)!;
-    expect(recordedRollNumber(SUSPENSION_FAILED[2].text, 'house')).toBe(72);
+  test('H.R. 2262: the House vote only, from the record, saying the roll-call file begins after it', () => {
+    // The rejection sits behind the House's routine reconsider-tabled step, so
+    // the record's own date is the status basis's (2026-01-13).
+    const hr2262 = {
+      ...rec('hr', 'floor_vote', 'Motion to reconsider laid on the table Agreed to without objection.', '2026-01-13'),
+      status_basis_text:
+        'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).',
+      status_basis_date: '2026-01-13',
+    };
+    const settled = settledDecision(hr2262)!;
+    expect(settled).toEqual({ kind: 'rejected', chamber: 'house', tally: { yeas: 209, nays: 215 } });
+    expect(recordedRollNumber(hr2262.status_basis_text, 'house')).toBe(19);
     // No roll call on the bill in the file: the record's own date and tally.
-    expect(settledVoteGroups(s2503, settled, [], FLOOR)).toEqual([
+    expect(settledVoteGroups(hr2262, settled, [], FLOOR)).toEqual([
       {
         chamber: 'house',
-        date: '2026-02-24',
-        tally: { yeas: 264, nays: 133 },
+        date: '2026-01-13',
+        tally: { yeas: 209, nays: 215 },
         source: 'beforeFile',
         positions: null,
         deciding: true,
@@ -267,14 +356,9 @@ test.describe('settledVoteGroups — the deciding vote first, one chamber per gr
   });
 
   test('a voice vote records no positions, and says so rather than "not in the file"', () => {
-    const voice = rec(
-      'sjres',
-      'floor_vote',
-      'Motion to proceed to consideration of measure rejected in Senate by Voice Vote. (CR S2407)',
-      '2026-05-20'
-    );
+    const voice = rec('hconres', 'floor_vote', 'Failed of passage in Senate by Voice Vote.', '2026-06-20');
     const [g] = settledVoteGroups(voice, settledDecision(voice)!, [], FLOOR);
-    expect(g).toMatchObject({ chamber: 'senate', date: '2026-05-20', tally: null, source: 'voice', deciding: true });
+    expect(g).toMatchObject({ chamber: 'senate', date: '2026-06-20', tally: null, source: 'voice', deciding: true });
   });
 
   test('the decision date is the status basis\'s own date, and never another action\'s', () => {
@@ -344,12 +428,27 @@ test.describe('settledVoteGroups — the deciding vote first, one chamber per gr
       ['house', '2026-07-23', { yeas: 214, nays: 208 }, false],
     ]);
 
+    // H.Con.Res. 89 is still settled under pick (a), in the MCP envelope too.
+    expect(settledDecision(h!)?.kind).toBe('rejected');
+    expect(decisionState(h!).state).toBe('settled');
+
+    // S. 2503 LEFT the settled set on 2026-09-29 (pick (a)): a failed
+    // two-thirds vote keeps the call, with the line naming the vote.
     const s = find('s-2503-119');
     test.skip(!s || s.last_action_text !== SUSPENSION_FAILED[2].text, 'S. 2503 has a newer action than 2026-02-24');
-    const sGroups = settledVoteGroups(s!, settledDecision(s!)!, votesForBill('s-2503-119'), floor);
-    expect(sGroups.map((g) => [g.chamber, g.date, g.tally, g.source, g.deciding])).toEqual([
-      ['house', '2026-02-24', { yeas: 264, nays: 133 }, 'beforeFile', true],
-    ]);
+    expect(settledDecision(s!)).toBeNull();
+    expect(decisionState(s!)).toEqual({ state: 'pending', reason: null });
+    expect(lastFailedVote(s!)).toEqual({ procedure: 'suspension', chamber: 'house', tally: { yeas: 264, nays: 133 } });
+    expect(settledDecisionDate(s!)).toBe('2026-02-24');
+  });
+
+  test('S.J.Res. 185 as committed: a failed motion to proceed, not settled, the call and the line (pick (a))', () => {
+    const b = (bills as unknown as (Rec & { full_identifier: string })[]).find((x) => x.full_identifier === 'sjres-185-119');
+    test.skip(!b || b.last_action_text !== MOTION_TO_PROCEED_REJECTED, 'S.J.Res. 185 has a newer action than 2026-06-24');
+    expect(settledDecision(b!)).toBeNull();
+    expect(decisionState(b!)).toEqual({ state: 'pending', reason: null });
+    expect(lastFailedVote(b!)).toEqual({ procedure: 'proceed', chamber: 'senate', tally: { yeas: 47, nays: 50 } });
+    expect(settledDecisionDate(b!)).toBe('2026-06-24');
   });
 });
 
@@ -385,38 +484,83 @@ test.describe('the panel\'s words, in both languages', () => {
     expect(tEs('bill.settled.rejected', { ...noTally, ...noDate })).toBe('La Cámara lo rechazó.');
   });
 
-  test('a failed two-thirds vote says it needed two-thirds, with the record\'s tally and date — never "take this up"', () => {
-    // S. 2503, the other settled page the owner reviewed.
-    const withTally = { chamber: 'House', tally: 'yes', yeas: 264, nays: 133 };
-    const noTally = { chamber: 'House', tally: 'none', yeas: 0, nays: 0 };
-    const feb24 = { hasDate: 'yes', date: 'February 24, 2026' };
-    expect(tEn('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).toBe(
-      'The House vote to pass it fell short of the two-thirds it needed, 264–133, on February 24, 2026.'
+  /*
+   * THE "LAST ATTEMPT FAILED" LINE (owner, 2026-09-29, pick (a): "Procedural
+   * failures keep the call panel, with a line saying the last attempt
+   * failed."). It lives in the call panel, not this one, so its key is
+   * `bill.lastAttempt`. One sentence: what failed, the record's tally and the
+   * record's date — and never a claim about what comes next.
+   */
+  const jun24 = { hasDate: 'yes', date: 'June 24, 2026' };
+  const jun24Es = { hasDate: 'yes', date: '24 de junio de 2026' };
+
+  test('the last-attempt line names the procedure, the chamber, the record\'s tally and date', () => {
+    // S.J.Res. 185 (a failed motion to proceed), the page the owner reviews.
+    const senate = { chamber: 'Senate', tally: 'yes', yeas: 47, nays: 50 };
+    expect(tEn('bill.lastAttempt', { procedure: 'proceed', ...senate, ...jun24 })).toBe(
+      'The last attempt failed: the Senate voted against taking it up, 47–50, on June 24, 2026.'
     );
-    expect(tEs('bill.settled.suspensionFailed', { ...withTally, hasDate: 'yes', date: '24 de febrero de 2026' })).toBe(
-      'La votación de la Cámara para aprobarlo no alcanzó los dos tercios que necesitaba, con 264 votos a favor y 133 en contra, el 24 de febrero de 2026.'
+    expect(tEs('bill.lastAttempt', { procedure: 'proceed', ...senate, ...jun24Es })).toBe(
+      'El último intento fracasó: el Senado votó en contra de considerarlo, con 47 votos a favor y 50 en contra, el 24 de junio de 2026.'
     );
-    expect(tEn('bill.settled.suspensionFailed', { ...noTally, ...noDate })).toBe(
-      'The House vote to pass it fell short of the two-thirds it needed.'
+    // S. 2503 (a failed two-thirds suspension vote), the other.
+    const house = { chamber: 'House', tally: 'yes', yeas: 264, nays: 133 };
+    expect(tEn('bill.lastAttempt', { procedure: 'suspension', ...house, hasDate: 'yes', date: 'February 24, 2026' })).toBe(
+      'The last attempt failed: a House vote to pass it fell short of the two-thirds this fast-track vote needs, 264–133, on February 24, 2026.'
     );
-    expect(tEs('bill.settled.suspensionFailed', { ...noTally, ...noDate })).toBe(
-      'La votación de la Cámara para aprobarlo no alcanzó los dos tercios que necesitaba.'
+    expect(tEs('bill.lastAttempt', { procedure: 'suspension', ...house, hasDate: 'yes', date: '24 de febrero de 2026' })).toBe(
+      'El último intento fracasó: una votación de la Cámara para aprobarlo por la vía rápida no alcanzó los dos tercios que ese procedimiento exige, con 264 votos a favor y 133 en contra, el 24 de febrero de 2026.'
     );
-    // The sentence it replaces on these three bills, in both languages.
-    expect(tEn('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).not.toMatch(/take this up|motion/i);
-    expect(tEs('bill.settled.suspensionFailed', { ...withTally, ...feb24 })).not.toMatch(/considerarlo|moción/i);
+    // The other three read procedures.
+    expect(tEn('bill.lastAttempt', { procedure: 'clotureProceed', chamber: 'Senate', tally: 'yes', yeas: 51, nays: 48, ...noDate })).toBe(
+      'The last attempt failed: a Senate vote to end debate on taking it up fell short, 51–48.'
+    );
+    expect(tEn('bill.lastAttempt', { procedure: 'clotureMeasure', chamber: 'Senate', tally: 'none', yeas: 0, nays: 0, ...noDate })).toBe(
+      'The last attempt failed: a Senate vote to end debate on it fell short.'
+    );
+    expect(tEn('bill.lastAttempt', { procedure: 'discharge', chamber: 'Senate', tally: 'yes', yeas: 47, nays: 48, ...jun24 })).toBe(
+      'The last attempt failed: the Senate voted against bringing it out of committee, 47–48, on June 24, 2026.'
+    );
+    expect(tEs('bill.lastAttempt', { procedure: 'discharge', chamber: 'Senate', tally: 'yes', yeas: 47, nays: 48, ...jun24Es })).toBe(
+      'El último intento fracasó: el Senado votó en contra de sacarlo del comité, con 47 votos a favor y 48 en contra, el 24 de junio de 2026.'
+    );
+    // A voice vote: no numbers, and no stray comma.
+    expect(tEn('bill.lastAttempt', { procedure: 'proceed', chamber: 'Senate', tally: 'none', yeas: 0, nays: 0, ...noDate })).toBe(
+      'The last attempt failed: the Senate voted against taking it up.'
+    );
+    expect(tEs('bill.lastAttempt', { procedure: 'proceed', chamber: 'Senate', tally: 'none', yeas: 0, nays: 0, ...noDate })).toBe(
+      'El último intento fracasó: el Senado votó en contra de considerarlo.'
+    );
   });
 
-  test('a failed motion names the chamber and the date, and no tally', () => {
-    expect(tEn('bill.settled.motionFailed', { chamber: 'House', ...noDate })).toBe(
-      'The House has not agreed to take this up — the last motion to do so failed.'
+  test('the last-attempt line never says what comes next — in either language, for any procedure', () => {
+    for (const procedure of ['proceed', 'clotureProceed', 'clotureMeasure', 'discharge', 'suspension', 'unread']) {
+      for (const chamber of ['House', 'Senate']) {
+        const args = { procedure, chamber, tally: 'yes', yeas: 1, nays: 2, ...noDate };
+        expect(tEn('bill.lastAttempt', args)).not.toMatch(/\b(?:again|come back|return|still|next|will|can|could)\b/i);
+        expect(tEs('bill.lastAttempt', args)).not.toMatch(/\b(?:otra vez|de nuevo|volver|todav[ií]a|pr[oó]xim|podr[aá]|puede)\b/i);
+        expect(tEn('bill.lastAttempt', args)).not.toMatch(/\(\d{3}\)|\d{3}-\d{4}/);
+      }
+    }
+  });
+
+  test('the stepper\'s failed two-thirds sentence says what the vote was — never "take it up"', () => {
+    const house = { chamber: 'House', other: 'Senate', tally: 'yes', yeas: 264, nays: 133 };
+    expect(tEn('bill.journey.nowFloorSuspensionFailed', house)).toBe(
+      'a House vote to pass it fell short of the two-thirds this fast-track vote needs, 264–133.'
     );
-    expect(tEn('bill.settled.motionFailed', { chamber: 'Senate', hasDate: 'yes', date: 'June 5, 2026' })).toBe(
-      'The Senate has not agreed to take this up — the last motion to do so failed on June 5, 2026.'
+    expect(tEs('bill.journey.nowFloorSuspensionFailed', house)).toBe(
+      'una votación de la Cámara para aprobarlo por la vía rápida no alcanzó los dos tercios que ese procedimiento exige, con 264 votos a favor y 133 en contra.'
     );
-    expect(tEs('bill.settled.motionFailed', { chamber: 'Senate', hasDate: 'yes', date: '5 de junio de 2026' })).toBe(
-      'El Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó el 5 de junio de 2026.'
-    );
+    expect(tEn('bill.journey.nowFloorSuspensionFailed', house)).not.toMatch(/take it up|motion/i);
+    expect(tEs('bill.journey.nowFloorSuspensionFailed', house)).not.toMatch(/considerarlo|moción/i);
+  });
+
+  test('the retired settled sentences are gone from both languages', () => {
+    for (const key of ['motionFailed', 'suspensionFailed', 'vetoed']) {
+      expect(Object.keys(en.bill.settled)).not.toContain(key);
+      expect(Object.keys(es.bill.settled)).not.toContain(key);
+    }
   });
 
   test('each vote group is headed by its own chamber, in both languages', () => {
@@ -432,8 +576,6 @@ test.describe('the panel\'s words, in both languages', () => {
       'title',
       'law',
       'rejected',
-      'suspensionFailed',
-      'motionFailed',
       'needZip',
       'membersHeading',
       'voteIn',
@@ -450,6 +592,8 @@ test.describe('the panel\'s words, in both languages', () => {
       expect(es.bill.settled[key], `es.bill.settled.${key}`).not.toBe(en.bill.settled[key]);
     }
     expect(es.bill.alsoYours).not.toBe(en.bill.alsoYours);
+    expect(es.bill.lastAttempt).not.toBe(en.bill.lastAttempt);
+    expect(es.bill.journey.nowFloorSuspensionFailed).not.toBe(en.bill.journey.nowFloorSuspensionFailed);
     expect(es.moments.vehiclesLedeSomeSettled).not.toBe(en.moments.vehiclesLedeSomeSettled);
   });
 

@@ -12,11 +12,14 @@ import { ZipForm } from './ZipForm';
 
 /*
  * THE PANEL WHEN NO DECISION IS LEFT — what stands where the call panel
- * stands on a bill whose decision the record shows is over: a law, a
- * rejected passage vote, a failed two-thirds vote to pass it, a failed motion
- * to take it up (lib/journey.ts `settledDecision`, read off the stepper's own
- * derivation). A veto is not one of them: Congress can still override it, so
- * a vetoed bill keeps the call panel.
+ * stands on a bill whose decision the record shows is over: a law, or a
+ * rejected vote to pass it (lib/journey.ts `settledDecision`, read off the
+ * stepper's own derivation). The owner's pick (a), 2026-09-29: "Only a law or
+ * a failed final vote counts as finished. Procedural failures keep the call
+ * panel, with a line saying the last attempt failed." So a failed motion to
+ * take it up, cloture not invoked, a rejected discharge motion and a failed
+ * two-thirds suspension vote all keep the call panel (with that line), and so
+ * does a veto: Congress can still override it.
  *
  * The owner's ruling, 2026-09-28, UX question Q9 answered "a": "A record-only
  * block with no numbers: 'This is law' or 'This was rejected, 49–50', and how
@@ -89,7 +92,7 @@ export function SettledPanel({
 }: {
   /** The outcome sentence, already translated by the page. */
   outcome: string;
-  /** `SettledDecision['kind']` — a test hook only. */
+  /** `SettledDecision['kind']` (`law` or `rejected`) — a test hook only. */
   kind: string;
   /** lib/settled-votes.ts `settledVoteGroups`, in print order. */
   groups: SettledVoteGroupView[];

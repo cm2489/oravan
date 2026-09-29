@@ -5,8 +5,8 @@ import es from '../messages/es.json';
 import { getBill, getLegislator } from '../lib/core';
 import { settledDecision } from '../lib/journey';
 import { settledDecisionDate } from '../lib/settled-votes';
-import { votesCoverage, votesForBill } from '../lib/votes';
-import { settledBill } from './corpus-fixtures';
+import { votesForBill } from '../lib/votes';
+import { failedVoteBill, settledBill } from './corpus-fixtures';
 import { callableBillSlug } from './corpus-samples';
 import { seedZip } from './helpers';
 
@@ -23,8 +23,16 @@ import { seedZip } from './helpers';
  * first, then one group per vote, the deciding vote first, each member only
  * under a vote their own chamber held.
  *
+ * WHICH RECORDS COUNT AS FINISHED (owner, 2026-09-29, pick (a): "Only a law
+ * or a failed final vote counts as finished. Procedural failures keep the call
+ * panel, with a line saying the last attempt failed."). So this panel shows on
+ * a law and on a rejected vote to pass the measure, and nowhere else; a failed
+ * motion to take it up and a failed two-thirds suspension vote keep the call
+ * panel, with one line above the stances (`[data-last-attempt]`).
+ *
  * Most bills are picked by property from the committed corpus (tests/corpus-
- * fixtures.ts `settledBill`, which reads lib/journey.ts `settledDecision`).
+ * fixtures.ts `settledBill`, which reads lib/journey.ts `settledDecision`, and
+ * `failedVoteBill`, which reads `lastFailedVote`).
  * The two pages the owner reviewed are pinned by slug, each skipped with a
  * reason if its record ever gains a newer action. Copy is read by message
  * key; the panel by its data hooks. ZIP 78501 is TX-15: two senators and one
@@ -33,8 +41,7 @@ import { seedZip } from './helpers';
 
 const LAW = settledBill('law', { withVotes: true }) ?? settledBill('law');
 const REJECTED = settledBill('rejected', { withVotes: true }) ?? settledBill('rejected');
-const MOTION = settledBill('motionFailed');
-const SUSPENSION = settledBill('suspensionFailed');
+const FAILED_PROCEDURES = ['proceed', 'clotureProceed', 'discharge', 'suspension'] as const;
 
 const PANEL = '[data-settled-panel]';
 
@@ -207,57 +214,174 @@ for (const { locale, prefix, t } of [
 }
 
 /*
- * THE OTHER PAGE THE OWNER REVIEWED: S. 2503, a failed two-thirds vote in
- * the House on 2026-02-24 (roll 72, 264–133) — older than the roll-call
- * file's floor, and with no Senate roll call in the file. So: the House group
- * only, from the record, saying why positions are not shown.
+ * A REJECTION OLDER THAN THE ROLL-CALL FILE: H.R. 2262, "Failed of
+ * passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 -
+ * 215 (Roll no. 19)." on 2026-01-13, stored behind the House's routine
+ * "Motion to reconsider laid on the table" step. So: the House group only,
+ * from the record, saying why positions are not shown. (S. 2503 pinned this
+ * shape until 2026-09-29, when pick (a) moved it back to the call panel.)
  */
-const S_2503 = 's-2503-119';
-const S_2503_TEXT =
-  'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).';
+const HR_2262 = 'hr-2262-119';
+const HR_2262_BASIS =
+  'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).';
 
-test('S. 2503 reads the House outcome, then the House vote only, saying the roll-call record begins after it', async ({
+test('H.R. 2262 reads the House rejection, then the House vote only, saying the roll-call record begins after it', async ({
   page,
 }) => {
-  const bill = getBill(S_2503);
-  test.skip(bill?.last_action_text !== S_2503_TEXT, 'S. 2503 has a newer action than 2026-02-24');
-  test.skip(votesForBill(S_2503).length > 0, 'S. 2503 now has a roll call in data/votes.json');
-  const floor = votesCoverage().floor;
+  const bill = getBill(HR_2262);
+  test.skip(
+    bill?.status_basis_text !== HR_2262_BASIS || bill?.status_basis_date !== '2026-01-13',
+    'H.R. 2262 has a newer basis than 2026-01-13'
+  );
+  test.skip(votesForBill(HR_2262).length > 0, 'H.R. 2262 now has a roll call in data/votes.json');
 
-  await page.goto(`/bills/${S_2503}`);
+  await page.goto(`/bills/${HR_2262}`);
   await seedZip(page, '78501');
   await page.reload();
   const panel = page.locator(PANEL);
-  await expect(panel).toHaveAttribute('data-settled-panel', 'suspensionFailed');
+  await expect(panel).toHaveAttribute('data-settled-panel', 'rejected');
   await expect(panel.locator('[data-settled-outcome]')).toHaveText(
-    tEn('bill.settled.suspensionFailed', {
+    tEn('bill.settled.rejected', {
       chamber: 'House',
       tally: 'yes',
-      yeas: 264,
-      nays: 133,
+      yeas: 209,
+      nays: 215,
       hasDate: 'yes',
-      date: longDate('en', '2026-02-24'),
+      date: longDate('en', '2026-01-13'),
     })
   );
-
   const groups = panel.locator('[data-settled-vote-group]');
   await expect(groups).toHaveCount(1);
   const house = panel.locator('[data-settled-vote-group="house"]');
   await expect(house).toHaveAttribute('data-settled-vote-deciding', '');
   await expect(house).toHaveAttribute('data-settled-vote-source', 'beforeFile');
   await expect(house.getByRole('heading', { level: 4 })).toHaveText(
-    `${tEn('bill.settled.voteIn', { chamber: 'house' })} · ${shortDate('en', '2026-02-24')} · 264–133`
+    `${tEn('bill.settled.voteIn', { chamber: 'house' })} · ${shortDate('en', '2026-01-13')} · 209–215`
   );
-  // Your House member, saying plainly the position is not shown, and why.
   await expect(house.locator('[data-vote-delegate]')).toHaveCount(1);
   await expectOneChamberPerGroup(panel);
   await expect(house.locator('[data-settled-position]')).toHaveAttribute('data-settled-position', 'none');
   await expect(house).toContainText(tEn('bill.settled.positionNotShown'));
-  await expect(house).toContainText(tEn('bill.settled.beforeFileNote', { floor: longDate('en', floor) }));
-  // No Senate vote on it in the file, so no senators' line.
-  await expect(panel.locator('[data-settled-vote-group="senate"]')).toHaveCount(0);
-  await expect(panel.locator('[data-vote-delegate]')).toHaveCount(1);
+  // Still nothing to call with.
+  await expect(page.locator('[data-call-cta]')).toHaveCount(0);
+  await expect(page.locator('[data-last-attempt]')).toHaveCount(0);
 });
+
+/*
+ * THE PAGES THAT LEFT THE SETTLED SET ON 2026-09-29 (pick (a)). Each keeps the
+ * full call panel — stances, script, the floating call button — with one line
+ * above the stances naming the failed vote from the record: the chamber, the
+ * record's tally and the record's date for that action.
+ *
+ *   S.J.Res. 185  "Motion to proceed to consideration of measure rejected in
+ *                 Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192."
+ *                 (2026-06-24)
+ *   S. 2503       "On motion to suspend the rules and pass the bill Failed by
+ *                 the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72)."
+ *                 (2026-02-24)
+ */
+const SJRES_185 = 'sjres-185-119';
+const SJRES_185_TEXT =
+  'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)';
+const S_2503 = 's-2503-119';
+const S_2503_TEXT =
+  'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).';
+
+/** The last-attempt line sits inside the call panel, above the stance control. */
+async function expectLineAboveStances(page: import('@playwright/test').Page) {
+  const above = await page.locator('[aria-labelledby="act"][data-call-cta]').evaluate((panel) => {
+    const line = panel.querySelector('[data-last-attempt]');
+    const stances = panel.querySelector('[role="radiogroup"]');
+    return !!line && !!stances && !!(line.compareDocumentPosition(stances) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(above, 'the last-attempt line reads before the stances, inside the call panel').toBe(true);
+}
+
+for (const { locale, prefix, t, m } of [
+  { locale: 'en', prefix: '', t: tEn, m: en },
+  { locale: 'es', prefix: '/es', t: tEs, m: es },
+] as const) {
+  test(`${locale}: S.J.Res. 185 (a failed motion to proceed) keeps the call panel, with the line naming the failed vote`, async ({
+    page,
+  }) => {
+    const bill = getBill(SJRES_185);
+    test.skip(bill?.last_action_text !== SJRES_185_TEXT, 'S.J.Res. 185 has a newer action than 2026-06-24');
+    await page.goto(`${prefix}/bills/${SJRES_185}`);
+
+    await expect(page.locator(PANEL)).toHaveCount(0);
+    await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
+    await expect(page.getByRole('radio', { name: m.bill.stance.support })).toBeVisible();
+    await expect(page.locator('[data-last-attempt]')).toHaveText(
+      t('bill.lastAttempt', {
+        procedure: 'proceed',
+        chamber: 'Senate',
+        tally: 'yes',
+        yeas: 47,
+        nays: 50,
+        hasDate: 'yes',
+        date: longDate(locale, '2026-06-24'),
+      })
+    );
+    await expectLineAboveStances(page);
+    // The open bill's "your members" strip is back under the vote record.
+    await expect(page.locator('[data-walkthrough-disclosure]')).toHaveCount(1);
+  });
+
+  test(`${locale}: S. 2503 (a failed two-thirds vote) keeps the call panel, and the stepper says what the vote was`, async ({
+    page,
+  }) => {
+    const bill = getBill(S_2503);
+    test.skip(bill?.last_action_text !== S_2503_TEXT, 'S. 2503 has a newer action than 2026-02-24');
+    await page.goto(`${prefix}/bills/${S_2503}`);
+
+    await expect(page.locator(PANEL)).toHaveCount(0);
+    await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
+    await expect(page.getByRole('radio', { name: m.bill.stance.support })).toBeVisible();
+    await expect(page.locator('[data-last-attempt]')).toHaveText(
+      t('bill.lastAttempt', {
+        procedure: 'suspension',
+        chamber: 'House',
+        tally: 'yes',
+        yeas: 264,
+        nays: 133,
+        hasDate: 'yes',
+        date: longDate(locale, '2026-02-24'),
+      })
+    );
+    await expectLineAboveStances(page);
+
+    // "Where does it stand?": the vote to pass it, with the record's numbers —
+    // no longer "has not agreed to take it up".
+    const journey = page.locator('section[aria-labelledby="journey-h"]');
+    await expect(journey).toContainText(
+      t('bill.journey.nowFloorSuspensionFailed', { chamber: 'House', other: 'Senate', tally: 'yes', yeas: 264, nays: 133 })
+    );
+    await expect(journey).not.toContainText(t('bill.journey.nowFloorMotionFailed', { chamber: 'House' }));
+  });
+}
+
+for (const procedure of FAILED_PROCEDURES) {
+  test(`every ${procedure} failure in the corpus keeps the call panel with its line, and no record-only panel`, async ({
+    page,
+  }) => {
+    const fx = failedVoteBill(procedure);
+    test.skip(!fx, `no decoded ${procedure} failure in the corpus`);
+    const { failed } = fx!;
+    await page.goto(`/bills/${fx!.slug}`);
+    await expect(page.locator(PANEL)).toHaveCount(0);
+    await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
+    await expect(page.locator('[data-last-attempt]')).toHaveText(
+      tEn('bill.lastAttempt', {
+        procedure: failed.procedure,
+        chamber: failed.chamber === 'house' ? 'House' : 'Senate',
+        tally: failed.tally ? 'yes' : 'none',
+        yeas: failed.tally?.yeas ?? 0,
+        nays: failed.tally?.nays ?? 0,
+        ...when('en', fx!.bill),
+      })
+    );
+  });
+}
 
 test('a rejected vote prints the record\'s tally, and with a ZIP lists members by vote — in the panel only', async ({
   page,
@@ -294,65 +418,38 @@ test('a rejected vote prints the record\'s tally, and with a ZIP lists members b
   await expect(panel.getByText(en.bill.settled.needZip)).toHaveCount(0);
 });
 
-test('a failed motion says so in the stepper\'s words, with its date; a ZIP saved in the panel shows the members in place', async ({
-  page,
-}) => {
-  test.skip(!MOTION, 'no decoded failed motion in the corpus');
-  const decision = MOTION!.decision;
-  test.skip(decision.kind !== 'motionFailed', 'fixture is not a failed motion');
-  await page.goto(`/es/bills/${MOTION!.slug}`);
+test('a rejected vote: a ZIP saved in the panel shows the members in place, the deciding vote first', async ({ page }) => {
+  test.skip(!REJECTED, 'no decoded rejected passage vote in the corpus');
+  const decision = REJECTED!.decision;
+  test.skip(decision.kind !== 'rejected', 'fixture is not a rejection');
+  if (decision.kind !== 'rejected') return;
+  await page.goto(`/es/bills/${REJECTED!.slug}`);
   const panel = page.locator(PANEL);
-  await expect(panel).toHaveAttribute('data-settled-panel', 'motionFailed');
-  // The same ICU message the page renders, with the chamber the reader chose
-  // and the record's date for the action.
-  const chamber = decision.kind === 'motionFailed' && decision.chamber === 'house' ? 'House' : 'Senate';
+  await expect(panel).toHaveAttribute('data-settled-panel', 'rejected');
+  const chamber = decision.chamber === 'house' ? 'House' : 'Senate';
   await expect(panel.locator('[data-settled-outcome]')).toHaveText(
-    tEs('bill.settled.motionFailed', { chamber, ...when('es', MOTION!.bill) })
+    tEs('bill.settled.rejected', {
+      chamber,
+      tally: decision.tally ? 'yes' : 'none',
+      yeas: decision.tally?.yeas ?? 0,
+      nays: decision.tally?.nays ?? 0,
+      ...when('es', REJECTED!.bill),
+    })
   );
 
   // Saving a ZIP here resolves in place: no navigation, the members appear,
   // the deciding chamber's vote first.
   await panel.getByLabel(es.home.zipLabel).fill('78501');
   await panel.getByRole('button', { name: es.home.zipCta }).click();
-  await expect(page).toHaveURL(new RegExp(`/es/bills/${MOTION!.slug}$`));
+  await expect(page).toHaveURL(new RegExp(`/es/bills/${REJECTED!.slug}$`));
   await expect(panel.locator('[data-settled-votes]')).toBeVisible();
   const first = panel.locator('[data-settled-vote-group]').first();
-  await expect(first).toHaveAttribute('data-settled-vote-group', decision.kind === 'motionFailed' ? decision.chamber : '');
+  await expect(first).toHaveAttribute('data-settled-vote-group', decision.chamber);
   await expect(first).toHaveAttribute('data-settled-vote-deciding', '');
   await expectOneChamberPerGroup(panel);
+  // A settled page never prints the call panel's last-attempt line.
+  await expect(page.locator('[data-last-attempt]')).toHaveCount(0);
 });
-
-for (const { locale, prefix, t } of [
-  { locale: 'en', prefix: '', t: tEn },
-  { locale: 'es', prefix: '/es', t: tEs },
-] as const) {
-  test(`${locale}: a failed two-thirds vote says it was a vote to pass that fell short, not a failed motion`, async ({
-    page,
-  }) => {
-    test.skip(!SUSPENSION, 'no decoded failed two-thirds vote in the corpus');
-    const decision = SUSPENSION!.decision;
-    test.skip(decision.kind !== 'suspensionFailed', 'fixture is not a failed two-thirds vote');
-    if (decision.kind !== 'suspensionFailed') return;
-    await page.goto(`${prefix}/bills/${SUSPENSION!.slug}`);
-    const panel = page.locator(PANEL);
-    await expect(panel).toHaveAttribute('data-settled-panel', 'suspensionFailed');
-    const chamber = decision.chamber === 'house' ? 'House' : 'Senate';
-    const outcome = panel.locator('[data-settled-outcome]');
-    await expect(outcome).toHaveText(
-      t('bill.settled.suspensionFailed', {
-        chamber,
-        tally: decision.tally ? 'yes' : 'none',
-        yeas: decision.tally?.yeas ?? 0,
-        nays: decision.tally?.nays ?? 0,
-        ...when(locale, SUSPENSION!.bill),
-      })
-    );
-    await expect(outcome).not.toHaveText(t('bill.settled.motionFailed', { chamber, ...when(locale, SUSPENSION!.bill) }));
-    // Still a settled page: nothing to call with.
-    await expect(page.locator('[data-call-cta]')).toHaveCount(0);
-    await expect(page.locator('[data-floating-call]')).toHaveCount(0);
-  });
-}
 
 test('the record-only panel reflows at 320px with the members shown @reflow', async ({ page }) => {
   // H.Con.Res. 89 while it is settled: its panel carries two vote groups.
@@ -373,7 +470,9 @@ test('an open decision still gets the call panel, not the record-only one', asyn
   // The other side of the same reader: nothing about this page changed for a
   // bill with a decision still open.
   await page.goto(`/bills/${callableBillSlug()}`);
-  await expect(page.locator('[data-call-cta]')).toBeVisible();
+  await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
   await expect(page.getByRole('radio', { name: en.bill.stance.support })).toBeVisible();
   await expect(page.locator(PANEL)).toHaveCount(0);
+  // No failed vote on the record, no last-attempt line.
+  await expect(page.locator('[data-last-attempt]')).toHaveCount(0);
 });

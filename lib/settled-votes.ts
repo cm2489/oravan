@@ -16,17 +16,19 @@ import type { Bill, RollCall, VotePosition } from './types';
  * chamber, date and tally, and a member is listed only under a vote their own
  * chamber held. Never two chambers in one list.
  *
- * THE ORDER. On a rejection, a failed two-thirds vote or a failed motion, the
- * DECIDING vote comes first — the one the outcome sentence is about — and then
+ * THE ORDER. On a rejection (since the owner's pick (a), 2026-09-29, the only
+ * settled vote: a failed motion or a failed two-thirds suspension vote keeps
+ * the call panel), the DECIDING vote comes first — the one the outcome
+ * sentence is about — and then
  * the other chamber's newest roll call on the bill, when the vote file holds
  * one. On a law there is no single deciding vote, so each chamber's newest
  * roll call prints, newest first.
  *
  * THE DECIDING VOTE is found by the roll number the record's own sentence
- * carries ("… Record Vote Number: 244." in the Senate, "… (Roll no. 72)." in
+ * carries ("… Record Vote Number: 244." in the Senate, "… (Roll no. 19)." in
  * the House) and the action's date, so a second roll call on the same day is
- * never mistaken for it. When the vote file does not hold it — S. 2503's House
- * vote of 2026-02-24 is older than the file's floor — the group still prints,
+ * never mistaken for it. When the vote file does not hold it — H.R. 2262's
+ * House vote of 2026-01-13 is older than the file's floor — the group still prints,
  * with the record's own date and tally and the plain statement that the file
  * does not show positions for it. A voice vote records no positions at all,
  * and says that instead.
@@ -45,7 +47,7 @@ export interface SettledVoteGroup {
    * How the members' positions are known:
    * - `rollCall`: the vote file holds this roll call; `positions` is set.
    * - `beforeFile`: a recorded vote older than the file's floor, so the file
-   *   cannot hold it (S. 2503's House vote).
+   *   cannot hold it (H.R. 2262's House vote).
    * - `notInFile`: a recorded vote on or after the floor the file does not
    *   hold yet.
    * - `voice`: a voice vote — no member's position was ever recorded.

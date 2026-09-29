@@ -42,10 +42,13 @@ import { formatCitation } from '../lib/format';
 import {
   billFloorBand,
   deriveJourney,
+  lastFailedVote,
   settledDecision,
   statusKeyFor,
+  type FailedVoteProcedure,
   type JourneyEnding,
   type JourneyState,
+  type LastFailedVote,
   type SettledDecision,
 } from '../lib/journey';
 import type { Bill, RollCall } from '../lib/types';
@@ -213,11 +216,11 @@ export function billWithRollCallsOnlyIn(chamber: RollCall['chamber']): string | 
 
 /**
  * A decoded bill whose decision the record shows is over, of one kind
- * (lib/journey.ts `settledDecision`: a law, a rejected passage vote, a failed
- * two-thirds vote to pass it, a failed motion to take it up) — the page that
- * shows the record-only panel instead of the call. `withVotes` asks for one
- * with a stored roll call, so the panel's members strip has positions to
- * print. Slug order; null when the corpus holds none of that kind.
+ * (lib/journey.ts `settledDecision`: a law or a rejected passage vote — the
+ * owner's pick (a), 2026-09-29) — the page that shows the record-only panel
+ * instead of the call. `withVotes` asks for one with a stored roll call, so
+ * the panel's members strip has positions to print. Slug order; null when the
+ * corpus holds none of that kind.
  */
 export function settledBill(
   kind: SettledDecision['kind'],
@@ -232,6 +235,24 @@ export function settledBill(
     if (decision?.kind !== kind) continue;
     if (withVotes && !voted.has(billSlug(b))) continue;
     return { ...fixture(b), decision };
+  }
+  return null;
+}
+
+/**
+ * A decoded bill whose last floor vote failed on a PROCEDURE (lib/journey.ts
+ * `lastFailedVote`): its page keeps the call panel, with the one line saying
+ * the last attempt failed (the owner's pick (a), 2026-09-29). Slug order; null
+ * when the corpus holds none of that procedure.
+ */
+export function failedVoteBill(
+  procedure: FailedVoteProcedure
+): (BillFixture & { failed: LastFailedVote }) | null {
+  for (const b of BILLS_BY_SLUG) {
+    if (!b.ai_sections) continue;
+    const failed = lastFailedVote(b);
+    if (failed?.procedure !== procedure) continue;
+    return { ...fixture(b), failed };
   }
   return null;
 }

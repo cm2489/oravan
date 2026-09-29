@@ -87,6 +87,15 @@ interface Props {
    * states for the wire format, so every existing bill call site is unchanged.
    */
   kind?: VehicleKind;
+  /**
+   * THE LAST ATTEMPT FAILED (owner, 2026-09-29, pick (a): "Procedural
+   * failures keep the call panel, with a line saying the last attempt
+   * failed."). One sentence, already rendered by the bill page from the
+   * record (lib/journey.ts `lastFailedVote`, the chamber, the record's tally
+   * and its date), printed above the stances. Absent or null prints nothing:
+   * every other bill and every nomination.
+   */
+  lastAttempt?: string | null;
 }
 
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
@@ -351,6 +360,7 @@ export function ActionPanel({
   recordLabels,
   liveTarget,
   kind = 'bill',
+  lastAttempt = null,
 }: Props) {
   const t = useTranslations('bill');
   // The not-found register reuses /reps's own strings verbatim (ZipForm
@@ -999,6 +1009,15 @@ export function ActionPanel({
           ref={scrollBodyRef}
           className="grid min-h-0 content-start gap-6 p-4 md:p-6 min-[62rem]:overflow-y-auto min-[62rem]:[mask-image:linear-gradient(to_bottom,#000_calc(100%-28px),transparent_100%)] min-[62rem]:[scrollbar-gutter:stable] min-[62rem]:has-[:focus-visible]:[mask-image:none]">
         <div>
+          {/* A failed procedural vote keeps the call (pick (a), 2026-09-29),
+              and says so first: what failed, the record's tally and date.
+              Plain text in the ink colour, no colour of its own, no claim
+              about what comes next. */}
+          {lastAttempt && (
+            <p className="mb-2 max-w-note text-sm font-semibold text-ink" data-last-attempt="">
+              {lastAttempt}
+            </p>
+          )}
           <p className="max-w-note text-sm text-ink-2">{t('actSub')}</p>
         </div>
 

@@ -723,6 +723,11 @@ test.describe('deriveJourney', () => {
    * record had said; nothing here could read it. Both halves of the fix are
    * pinned below — the CHAMBER (the House, not this Senate bill's own) and
    * the TENSE (settled, not moving).
+   *
+   * Since 2026-09-29 (the owner's pick (a)) it has its own sentence,
+   * `nowFloorSuspensionFailed`, with the record's tally: the failed-motion
+   * sentence it used to share said "has not agreed to take it up", and the
+   * House did take it up, on a vote to pass it that needed two-thirds.
    */
   test('a failed House suspension vote on a Senate bill reads settled, in the House', () => {
     const journey = j('s', 'floor_vote', SUSPENSION_FAILED_TEXT);
@@ -731,13 +736,15 @@ test.describe('deriveJourney', () => {
       current: 'house',
       nowChamber: 'house',
       onCalendar: false,
-      nowKey: 'nowFloorMotionFailed',
+      nowKey: 'nowFloorSuspensionFailed',
+      tally: { yeas: 264, nays: 133 },
     });
-    // The two sentences it used to be able to print, and must not.
+    // The sentences it used to be able to print, and must not.
     expect(journey.nowKey).not.toBe('nowFloorActivityNeutral');
     expect(journey.nowKey).not.toBe('nowFloorActivity');
+    expect(journey.nowKey).not.toBe('nowFloorMotionFailed');
     // Aged or fresh, a settled outcome is settled — the tense does not move.
-    expect(j('s', 'floor_vote', SUSPENSION_FAILED_TEXT, STALE).nowKey).toBe('nowFloorMotionFailed');
+    expect(j('s', 'floor_vote', SUSPENSION_FAILED_TEXT, STALE).nowKey).toBe('nowFloorSuspensionFailed');
   });
 
   /*
@@ -2169,7 +2176,7 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
       if (nowKey === 'nowFloor' || nowKey === 'nowFloorStale') {
         expect(floorCalendarChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
       }
-      if (nowKey === 'nowFloorMotionFailed') {
+      if (nowKey === 'nowFloorMotionFailed' || nowKey === 'nowFloorSuspensionFailed') {
         expect(floorSettledChamber(b.last_action_text), slugOf(b)).toBe(nowChamber);
         expect(floorPassageRejectedChamber(b.last_action_text), slugOf(b)).toBeNull();
       }

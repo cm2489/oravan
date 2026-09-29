@@ -36,6 +36,7 @@ import { hreflangAlternates } from '@/lib/hreflang';
 import {
   billFloorBand,
   deriveJourney,
+  lastFailedVote,
   liveCallTarget,
   settledDecision,
   statusKeyFor,
@@ -439,19 +440,40 @@ export default async function BillPage({
   );
 
   /*
-   * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"): a law,
-   * a rejected passage vote, a failed two-thirds vote to pass it or a failed
-   * motion to take the bill up gets the record-only panel instead of the call
-   * panel — the record's outcome and how the reader's members voted, with no
-   * stance, no script and no number (page 1, rule 6: a settled decision shows
-   * no call apparatus). A veto keeps the call panel: Congress can still vote
-   * to override it. The same reading drops the floating call button and the
-   * "see how a call works" demo below, which only ever pointed at a call.
+   * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"; which
+   * records count, owner's pick (a), 2026-09-29: "Only a law or a failed final
+   * vote counts as finished."): a law or a rejected vote to pass the measure
+   * gets the record-only panel instead of the call panel — the record's
+   * outcome and how the reader's members voted, with no stance, no script and
+   * no number (page 1, rule 6: a settled decision shows no call apparatus).
+   * The same reading drops the floating call button and the "see how a call
+   * works" demo below, which only ever pointed at a call.
+   *
+   * EVERYTHING ELSE KEEPS THE CALL, including a veto (Congress can still vote
+   * to override it) and a failed procedural vote. On the last, pick (a)'s
+   * second half — "Procedural failures keep the call panel, with a line saying
+   * the last attempt failed" — is `lastAttempt`: one sentence above the
+   * stances with the chamber, the record's tally and the record's date for
+   * that action, and nothing about what happens next.
    */
   const settled = settledDecision(bill);
   const settledDate = settledDecisionDate(bill);
   const settledOutcome = settled
     ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
+    : null;
+  const failedVote = settled ? null : lastFailedVote(bill);
+  const lastAttempt = failedVote
+    ? t('bill.lastAttempt', {
+        procedure: failedVote.procedure,
+        chamber: failedVote.chamber === 'house' ? 'House' : 'Senate',
+        tally: failedVote.tally ? 'yes' : 'none',
+        yeas: failedVote.tally?.yeas ?? 0,
+        nays: failedVote.tally?.nays ?? 0,
+        // The same record date the settled panel prints: the status basis's
+        // own date, never another action's (lib/settled-votes.ts).
+        hasDate: settledDate ? 'yes' : 'none',
+        date: settledDate ? fmtDate(settledDate) : '',
+      })
     : null;
   /* "How your members voted", one group per vote in print order (the
      deciding vote first), each with its date formatted here for the locale. */
@@ -851,6 +873,7 @@ export default async function BillPage({
                 title={bill.ai_headline ?? bill.short_title ?? bill.title}
                 recordLabels={recordLabels}
                 liveTarget={liveTarget}
+                lastAttempt={lastAttempt}
               />
             </div>
           )}
@@ -942,11 +965,9 @@ export default async function BillPage({
  *  the deciding chamber, the record's tally and the action's date, in one
  *  sentence, before the panel lists anyone (owner, 2026-09-28). On a
  *  rejection the tally prints only when the stepper kept it — see
- *  deriveJourney's rejected-passage branch. A failed two-thirds vote prints
- *  the record's tally whichever way it falls, because its sentence says
- *  two-thirds were needed. `date` is the record's own date for that action
- *  (lib/settled-votes.ts `settledDecisionDate`), already formatted; null
- *  leaves the date out rather than borrow another action's. */
+ *  deriveJourney's rejected-passage branch. `date` is the record's own date
+ *  for that action (lib/settled-votes.ts `settledDecisionDate`), already
+ *  formatted; null leaves the date out rather than borrow another action's. */
 function settledOutcomeText(
   t: Awaited<ReturnType<typeof getTranslations>>,
   settled: SettledDecision,
@@ -956,25 +977,12 @@ function settledOutcomeText(
   switch (settled.kind) {
     case 'law':
       return t('bill.settled.law');
-    case 'suspensionFailed':
-      return t('bill.settled.suspensionFailed', {
-        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
-        tally: settled.tally ? 'yes' : 'none',
-        yeas: settled.tally?.yeas ?? 0,
-        nays: settled.tally?.nays ?? 0,
-        ...when,
-      });
     case 'rejected':
       return t('bill.settled.rejected', {
         chamber: settled.chamber === 'house' ? 'House' : 'Senate',
         tally: settled.tally ? 'yes' : 'none',
         yeas: settled.tally?.yeas ?? 0,
         nays: settled.tally?.nays ?? 0,
-        ...when,
-      });
-    case 'motionFailed':
-      return t('bill.settled.motionFailed', {
-        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
         ...when,
       });
   }
