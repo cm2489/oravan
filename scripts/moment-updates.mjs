@@ -129,7 +129,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
-import { statusBasisText } from '../lib/floor-text.mjs';
+import { passageState, statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 import { partyCountsPassLint, partyRule, partyTotalsPromptText } from '../lib/party-count-rule.mjs';
@@ -990,6 +990,14 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  * saying what was missing. The absence lint is right to reject that (a voice
  * vote IS a vote); this hands the model what to say instead. The gate is
  * unchanged.
+ *
+ * NARROWED (2026-09-29, independent check of #412): a line is built only for
+ * the chamber's passage of (or agreement to) the measure itself, and only on
+ * a question with no roll call on record at all. The first version also fired
+ * on "The committee substitute withdrawn by Voice Vote." for S. 4668, a bill
+ * with eleven roll calls in the window and passage 77-22 — an invitation to
+ * write "passed by voice vote" about a bill that passed by a recorded vote,
+ * which no gate would catch.
  */
 const WITHOUT_RECORDED_VOTE = [
   { re: /\bby voice vote\b/i, en: 'by voice vote', es: 'por votación a viva voz' },
@@ -997,19 +1005,41 @@ const WITHOUT_RECORDED_VOTE = [
 ];
 
 /**
- * One prompt line per record-bearing update in the window whose action
- * sentence says it was taken by voice vote or by unanimous consent: the date,
- * the measure, the record's sentence verbatim, and the phrase to use for it.
- * Exported for the unit suite.
+ * One prompt line per PASSAGE in the window that the record says was by voice
+ * vote or by unanimous consent: the date, the measure, the record's sentence
+ * verbatim, and the phrase to use for it. Exported for the unit suite.
+ *
+ * Three conditions, all required:
+ *   1. NO ROLL CALL ON RECORD for the question: `onRecord` (rollCallsOnRecord,
+ *      every data/votes.json roll call on its measures at any date — the same
+ *      count the roll-call absence exemption reads) is a known, empty list,
+ *      and no roll call in `votes` (the window's roll calls, which the
+ *      RECORDED VOTES section is built from) is on the measure. Unknown
+ *      (null) builds nothing.
+ *   2. THE SENTENCE IS THE CHAMBER'S PASSAGE OF THE MEASURE ITSELF, read by
+ *      the site's own passage reader (lib/floor-text.mjs passageState, whose
+ *      anchored PASSAGE_OPENING takes "Passed House|Senate …", "Passed/agreed
+ *      to in House|Senate …" and "Resolution agreed to in House|Senate …").
+ *      A withdrawn committee substitute, an amendment, a motion or a
+ *      committee discharge gets no line. (passageState also reads "Message on
+ *      … action sent to …"; such a sentence never names a voice vote or
+ *      unanimous consent, so condition 3 drops it.)
+ *   3. The sentence names the mode: "by voice vote" or "by unanimous consent".
  *
  * @param {Record<string, any>[]} recent  the window's updates, newest first
+ * @param {{ votes?: Record<string, any>[], onRecord?: string[] | null }} [grounding]
  * @returns {string[]}
  */
-export function withoutRecordedVoteLines(recent) {
+export function withoutRecordedVoteLines(recent, { votes = [], onRecord = null } = {}) {
+  if (!Array.isArray(onRecord) || onRecord.length > 0) return [];
+  const rolled = new Set((votes ?? []).map((r) => r?.bill));
   const lines = [];
   for (const u of recent ?? []) {
     if (!RECORD_BEARING_CLASSES.includes(u?.class)) continue;
+    if (!u.vehicle || rolled.has(u.vehicle)) continue;
     const action = u.record?.action_text ?? '';
+    const billType = String(u.vehicle).split('-')[0];
+    if (!passageState({ bill_type: billType, last_action_text: action }).passedBy) continue;
     const how = WITHOUT_RECORDED_VOTE.find((w) => w.re.test(action));
     if (!how) continue;
     lines.push(`- ${u.day} ${billLabel(u.vehicle)}: "${action}" → EN "${how.en}" / ES "${how.es}"`);
@@ -1023,7 +1053,7 @@ export function withoutRecordedVoteLines(recent) {
  * every other question's prompt is unchanged. Exported for the unit suite.
  */
 export const WITHOUT_RECORDED_VOTE_RULE =
-  '- An action taken by voice vote or by unanimous consent (listed under TAKEN WITHOUT A RECORDED VOTE below) has no roll call by its nature. When the record gives no recorded vote for a measure, say how the record says it passed or was taken, with its date, using the phrase given for it: EN "by voice vote" / "by unanimous consent", ES "por votación a viva voz" / "por consentimiento unánime". Say nothing about a tally, a count or a roll call for it, in either language: never "with no tally", "no recorded vote", "no roll call"; never "no hay recuento", "no se registró", "sin votación nominal". A sentence like that is rejected automatically.';
+  '- A passage by voice vote or by unanimous consent (listed under PASSED WITHOUT A RECORDED VOTE below) has no roll call by its nature. When the record gives no recorded vote for a measure, say how the record says it passed, with its date, using the phrase given for it: EN "by voice vote" / "by unanimous consent", ES "por votación a viva voz" / "por consentimiento unánime". Say nothing about a tally, a count or a roll call for it, in either language: never "with no tally", "no recorded vote", "no roll call"; never "no hay recuento", "no se registró", "sin votación nominal". A sentence like that is rejected automatically.';
 
 /**
  * Exported for the unit suite: the lint-rejection branch below is the whole of
@@ -1100,13 +1130,13 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   const nonEmptyRule = groundedEvents
     ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
     : '- Write only what the votes, actions and sources below show, each with its date. Do not write sentences about what did not happen, was not reported, or has not changed.';
-  // How the record says each action without a roll call was taken, and the
+  // How the record says each passage without a roll call was taken, and the
   // rule that goes with it (see WITHOUT_RECORDED_VOTE). Empty for a question
-  // with no such action: its prompt is exactly what it was.
-  const noRollLines = withoutRecordedVoteLines(recent);
+  // with no such passage: its prompt is exactly what it was.
+  const noRollLines = withoutRecordedVoteLines(recent, { votes, onRecord });
   const noRollRule = noRollLines.length ? `\n${WITHOUT_RECORDED_VOTE_RULE}` : '';
   const noRollSection = noRollLines.length
-    ? `\n\nTAKEN WITHOUT A RECORDED VOTE, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the record's sentence verbatim → the phrase to use):\n${noRollLines.join('\n')}`
+    ? `\n\nPASSED WITHOUT A RECORDED VOTE, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the record's sentence verbatim → the phrase to use):\n${noRollLines.join('\n')}`
     : '';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
@@ -1158,7 +1188,7 @@ CURRENT STATUS OF EACH MEASURE:
 ${statusLines}
 
 RECORDED VOTES, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the chamber's official roll-call record, newest first — question, result, and tally verbatim):
-${voteLines || (noRollLines.length ? '- none in this window; see TAKEN WITHOUT A RECORDED VOTE below' : '- no roll call recorded on these measures in this window')}
+${voteLines || (noRollLines.length ? '- none in this window; see PASSED WITHOUT A RECORDED VOTE below' : '- no roll call recorded on these measures in this window')}
 
 THE RECORD, LAST ${SUMMARY_WINDOW_DAYS} DAYS (newest first):
 ${recordLines || '- nothing recorded in this window'}${noRollSection}
