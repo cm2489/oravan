@@ -23,6 +23,13 @@ import { VoteDelegation, type DelegationVote } from './VoteDelegation';
  * "as recorded" label: a translated question is a paraphrase of an official
  * record, and the record is English.
  *
+ * THE COUNT BY PARTY (2026-09-29, the owner's card l12: "Show me these. I
+ * don't see them."). Under each tally, one line of text gives the record's own
+ * count party by party (components/PartyTotals.tsx, from the roll call's
+ * `totalsByParty`): largest group first, ink like the tally above it, no
+ * colour, no member named. It is a count of the roll call, never a label on a
+ * person, so the member list below still carries no party.
+ *
  * ABSENCE. A bill with no stored roll call renders NOTHING — no heading, no
  * "no votes yet". The coverage line says what window the file covers, so a
  * reader who does see the block knows how far back it reaches.
@@ -39,13 +46,6 @@ import { VoteDelegation, type DelegationVote } from './VoteDelegation';
  * the mark is on the record's text, never a rewrite of it. The four position
  * labels carry their entries too. Each roll call is one section: a term is
  * marked once per card.
- *
- * THE COUNT BY PARTY (2026-09-29, the owner's card l12: "Show me these. I
- * don't see them."). Under each tally, one line of text gives the record's own
- * count party by party (components/PartyTotals.tsx, from the roll call's
- * `totalsByParty`): largest group first, ink like the tally above it, no
- * colour, no member named. It is a count of the roll call, never a label on a
- * person, so the member list below still carries no party.
  */
 
 /** The entry each tally label opens. Yea and Nay share one; Yea carries it. */
