@@ -69,8 +69,9 @@ test('contentVersion: deterministic, short, and summary-sensitive', () => {
 });
 
 test('contentVersion: status is key material — the bug this suite exists for', () => {
-  // buildScriptPrompt writes `Current status: ${bill.status}` into the prompt,
-  // so two bills that differ only in status are two different scripts. Before
+  // buildScriptPrompt writes the bill's stage into the prompt (`Current
+  // status:`, read from the status since 2026-09-29 through statusKeyFor), so
+  // two bills that differ only in status are two different scripts. Before
   // 2026-08-08 they shared one key.
   const before = makeBill({ status: 'floor_vote' });
   const after = makeBill({ status: 'passed_chamber' });

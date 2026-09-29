@@ -1,6 +1,8 @@
+import en from '../messages/en.json';
 import { formatCitation } from './format';
+import { statusKeyFor, type StatusKeyBill } from './journey';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from './president-style.mjs';
-import type { Bill, Stance } from './types';
+import type { Bill, Stance, StatusLabelKey } from './types';
 
 /*
  * The ONE call-script prompt builder (extracted from app/api/script/route.ts
@@ -46,6 +48,15 @@ export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
  * change restyled get a new content version regardless, because the summary
  * is key material. Bumping to '3' is a one-line change if the owner wants
  * the old scripts gone at once.
+ *
+ * THE SECOND DELIBERATE EXCEPTION (2026-09-29): the `Current status:` line
+ * below changed from the raw enum to the plain-words stage (scriptStage,
+ * below) WITHOUT a bump, for the same reason. The cache TTL is 24 hours
+ * (SCRIPT_TTL_SECONDS in lib/scriptcache.ts, written with the entry), so
+ * every script written from the old line is gone within a day of the deploy,
+ * and the nightly warmer (lib/pregen-runner.ts) skips a combo that is still
+ * cached, so it does not re-spend on one either. A bump would buy at most
+ * that day and pay for one extra generation of every script requested in it.
  */
 export const PROMPT_VERSION = '2';
 
@@ -72,9 +83,48 @@ function langLine(lang: 'en' | 'es'): string {
     : 'Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].';
 }
 
+/*
+ * THE STAGE THE SCRIPT WRITER IS TOLD (2026-09-29).
+ *
+ * The prompt used to say `Current status: ${bill.status}` — the stored enum,
+ * verbatim. The stored status set has no value for a second chamber's passage
+ * (BillStatus, lib/types.ts), so a measure both chambers have passed is still
+ * stored as `passed_chamber`. On 2026-09-29 that was H.R. 4467 ("Passed Senate
+ * without amendment by Unanimous Consent.") and ten more the site prints as
+ * "Passed both chambers", plus H.Con.Res. 86, "Adopted by both chambers": the
+ * script writer was handed "passed_chamber" for all twelve and never told the
+ * second chamber had acted. The same line handed it `floor_vote` for a
+ * calendar placement the record has been silent on for over 14 days, which
+ * the site prints as "Placed on the calendar", and for a cloture or motion
+ * text that is no placement at all ("Floor activity").
+ *
+ * It now gets the SAME stage the site prints: statusKeyFor(bill)
+ * (lib/journey.ts), the status-label gate every surface that prints a status
+ * label routes through (citizen site, embeds and MCP alike), so the script
+ * and the page beside it cannot describe the bill two ways. The words are the
+ * English label from messages/en.json `bills.status.*` — English in both
+ * locales, because the rest of the model's input is English too (the module
+ * note above); only langLine asks for Spanish output.
+ *
+ * The table is typed as Record<StatusLabelKey, string>, so a stage key that
+ * messages/en.json does not label fails the typecheck rather than reaching a
+ * prompt as `undefined`.
+ */
+const STAGE_LABELS: Record<StatusLabelKey, string> = en.bills.status;
+
+/** The plain-words stage the prompt's `Current status:` line carries. */
+export function scriptStage(bill: StatusKeyBill): string {
+  return STAGE_LABELS[statusKeyFor(bill)];
+}
+
 export interface ScriptPromptInput {
-  /** Always the raw (English) bill - see the module note above. */
-  bill: Pick<Bill, 'bill_type' | 'bill_number' | 'short_title' | 'title' | 'ai_summary' | 'status'>;
+  /**
+   * Always the raw (English) bill - see the module note above. It carries the
+   * record fields statusKeyFor reads (the last action, its date and the status
+   * basis), not just `status`: the passage readings need them to tell "Passed
+   * one chamber" from "Passed both chambers".
+   */
+  bill: Pick<Bill, 'bill_number' | 'short_title' | 'title' | 'ai_summary'> & StatusKeyBill;
   stance: Stance;
   lang: 'en' | 'es';
 }
@@ -87,7 +137,7 @@ export function buildScriptPrompt({ bill, stance, lang }: ScriptPromptInput): st
 
 Bill: ${citation} — ${bill.short_title ?? bill.title}
 Plain-language summary: ${bill.ai_summary ?? bill.title}
-Current status: ${bill.status}
+Current status: ${scriptStage(bill)}
 
 ${STANCE_LINES[stance]}
 
