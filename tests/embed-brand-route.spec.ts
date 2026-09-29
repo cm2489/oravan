@@ -1,4 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
+
+// Off while the /embeds pages are hidden (lib/site.ts EMBEDS_PAGES_PUBLIC;
+// owner, 2026-09-29: "brand off"). Every test below expects the live route,
+// so the whole file skips while POST answers 404, and runs again unchanged the
+// moment the constant flips.
+test.skip(!EMBEDS_PAGES_PUBLIC, 'The brand preview is off while the /embeds pages are hidden (owner, 2026-09-29: "brand off"; the guard is from PR #353). tests/embeds-hidden.spec.ts asserts its 404; set lib/site.ts EMBEDS_PAGES_PUBLIC to true to run this again.');
 
 /*
  * /api/brand driven at the real running server (request fixture, same
