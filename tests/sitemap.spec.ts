@@ -4,7 +4,7 @@ import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
 import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
 import { decodedBillSlug, questionId } from './corpus-samples';
-import { staticLocalePages } from './routes';
+import { hiddenLocalePages, staticLocalePages } from './routes';
 
 /*
  * S22 — sitemap.ts, robots.ts, and llms.txt didn't exist before this PR.
@@ -86,6 +86,15 @@ test.describe('sitemap.xml', () => {
     for (const path of STATIC_PATHS) {
       for (const locale of ['en', 'es'] as const) {
         expect(body, `${path} (${locale}) missing from sitemap.xml`).toContain(
+          `<loc>${sitemapLoc(locale, path)}</loc>`
+        );
+      }
+    }
+    // …and no hidden page (lib/site.ts HIDDEN_PAGES: /embeds and /embeds/terms
+    // since 2026-09-28). They 404, and a sitemap never points at a 404.
+    for (const path of hiddenLocalePages()) {
+      for (const locale of ['en', 'es'] as const) {
+        expect(body, `${path} (${locale}) is hidden but listed in sitemap.xml`).not.toContain(
           `<loc>${sitemapLoc(locale, path)}</loc>`
         );
       }

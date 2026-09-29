@@ -19,6 +19,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { HIDDEN_PAGES } from '../lib/site';
 import {
   briefDate,
   decodedBillSlug,
@@ -84,11 +85,24 @@ export function localeRoutes(): LocaleRoute[] {
   return walk(LOCALE_DIR, [], []).sort((a, b) => a.pattern.localeCompare(b.pattern));
 }
 
-/** The locale-relative paths of every page with no dynamic segment:
- *  '/', '/about', '/embeds/terms', … */
+/**
+ * Pages that are on disk but hidden: they return notFound() in both locales
+ * while lib/site.ts's HIDDEN_PAGES names them (/embeds and /embeds/terms
+ * since 2026-09-28, until embeds come back). The sweeps that need a rendered
+ * page — hreflang, sitemap, static-rendering — leave them out;
+ * tests/embeds-hidden.spec.ts asserts their 404 instead. The zero-cookie and
+ * frame-ancestors sweeps still fetch them, since a 404 must keep both
+ * promises too.
+ */
+export function hiddenLocalePages(): string[] {
+  return [...HIDDEN_PAGES];
+}
+
+/** The locale-relative paths of every PUBLIC page with no dynamic segment:
+ *  '/', '/about', '/partners', … — hidden pages (above) left out. */
 export function staticLocalePages(): string[] {
   return localeRoutes()
-    .filter((r) => r.kind === 'page' && !r.dynamic)
+    .filter((r) => r.kind === 'page' && !r.dynamic && !HIDDEN_PAGES.includes(r.pattern))
     .map((r) => r.pattern);
 }
 

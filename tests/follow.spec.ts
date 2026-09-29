@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decodedBillSlug } from './corpus-samples';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 import { mcpRpc } from './helpers';
 
 /*
@@ -58,9 +59,14 @@ for (const { locale, prefix, m, feed } of LOCALES) {
     await page.goto(`${prefix}/follow`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(m.follow.title);
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-    for (const key of ['feedsTitle', 'mcpTitle', 'embedsTitle', 'broadcastTitle'] as const) {
+    for (const key of ['feedsTitle', 'mcpTitle', 'broadcastTitle'] as const) {
       await expect(page.getByRole('heading', { level: 2, name: m.follow[key] })).toBeVisible();
     }
+    // The embeds section links /embeds, so it prints only while that page is
+    // public (lib/site.ts EMBEDS_PAGES_PUBLIC; hidden since 2026-09-28).
+    await expect(page.getByRole('heading', { level: 2, name: m.follow.embedsTitle })).toHaveCount(
+      EMBEDS_PAGES_PUBLIC ? 1 : 0,
+    );
 
     // The feeds are this locale's own, printed as full addresses.
     const main = page.locator('main article');
@@ -91,7 +97,8 @@ for (const { locale, prefix, m, feed } of LOCALES) {
     await page.goto(`${prefix}/follow`);
     const links = page.locator('main article a');
     const targets = await hrefs(links);
-    expect(targets.length).toBe(4); // RSS, JSON, the MCP docs, the embeds page
+    // RSS, JSON, the MCP docs, and the embeds page while it is public.
+    expect(targets.length).toBe(EMBEDS_PAGES_PUBLIC ? 4 : 3);
     for (const href of targets) {
       const res = await request.get(href);
       expect(res.status(), `${href} must resolve`).toBe(200);

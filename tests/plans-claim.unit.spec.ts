@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 
 /*
  * The plans claim, pinned (plan item B8, 2026-09-24).
@@ -25,6 +26,13 @@ import es from '../messages/es.json';
  * sentence below is false, and partners.licensingBody + embeds.docsPlansBody
  * (+ embeds.docsActionPanelBody's "no token can be issued today") must be
  * rewritten in both languages in that same PR.
+ *
+ * 2026-09-28: the /embeds pages are hidden until embeds come back (lib/site.ts
+ * EMBEDS_PAGES_PUBLIC; owner, open-questions F). While they are, no plan is
+ * open to a new site — Free included, since its snippet lived on the hidden
+ * page — so /partners says so, and embeds.docsPlansBody keeps its sentence
+ * for the day the page returns. Flipping the constant back to true makes this
+ * spec ask for /partners' "only Free is open" sentence again.
  */
 
 const PLAN_NAMES = {
@@ -46,6 +54,19 @@ const FACTS = {
   es: {
     'only Free is open': /\bsolo está disponible el Gratuito\b/i,
     'no checkout for the paid plans': /\bno se pueden contratar los planes de pago\b/i,
+  },
+} as const;
+
+/** What /partners says while the /embeds pages are hidden: no plan is open to
+ *  a new site, and still no checkout for the paid ones. */
+const HIDDEN_FACTS = {
+  en: {
+    'no plan is open to new sites': /\bnone is open to new sites\b/i,
+    'no checkout for the paid plans': FACTS.en['no checkout for the paid plans'],
+  },
+  es: {
+    'no plan is open to new sites': /\bninguno está abierto a sitios nuevos\b/i,
+    'no checkout for the paid plans': FACTS.es['no checkout for the paid plans'],
   },
 } as const;
 
@@ -73,14 +94,21 @@ for (const [locale, m] of [
   ['es', es],
 ] as const) {
   test(`${locale}: /partners and /embeds make the same plans claim`, () => {
-    for (const [surface, text] of [
-      ['partners.licensingBody', m.partners.licensingBody],
-      ['embeds.docsPlansBody', m.embeds.docsPlansBody],
+    // While /embeds is hidden, /partners makes the hidden-state claim instead
+    // (HIDDEN_FACTS); the /embeds sentence is kept for the page's return.
+    for (const [surface, text, facts] of [
+      ['partners.licensingBody', m.partners.licensingBody, EMBEDS_PAGES_PUBLIC ? FACTS[locale] : HIDDEN_FACTS[locale]],
+      ['embeds.docsPlansBody', m.embeds.docsPlansBody, FACTS[locale]],
     ] as const) {
       for (const plan of PLAN_NAMES[locale]) expect(text, `${surface} names ${plan}`).toContain(plan);
-      for (const [fact, pattern] of Object.entries(FACTS[locale])) {
+      for (const [fact, pattern] of Object.entries(facts)) {
         expect(text, `${surface} says ${fact}`).toMatch(pattern);
       }
+    }
+    if (!EMBEDS_PAGES_PUBLIC) {
+      // And it no longer calls Free open, or points at a page that 404s.
+      expect(m.partners.licensingBody).not.toMatch(FACTS[locale]['only Free is open']);
+      expect(m.partners.licensingBody).not.toMatch(/embeds page|página de widgets/i);
     }
     // The plan names are the Terms' own, not a second list.
     for (const plan of PLAN_NAMES[locale]) expect(m.embedsTerms.intro).toContain(plan);

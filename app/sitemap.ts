@@ -6,6 +6,7 @@ import { billSlug, getAllBills, getAllLegislators, getVacancies, vacancySlug } f
 import { getNomination } from '@/lib/core/nominations';
 import { getFreshness } from '@/lib/freshness';
 import { absoluteUrl } from '@/lib/hreflang';
+import { HIDDEN_PAGES } from '@/lib/site';
 import { getMoments, momentClaimsVehicles, vehicleKind } from '@/lib/moments';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { latestVehicleAction } from '@/lib/moments-ui';
@@ -59,6 +60,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [];
 
   for (const href of STATIC_PATHS) {
+    // A hidden page 404s (lib/site.ts HIDDEN_PAGES — /embeds and /embeds/terms
+    // since 2026-09-28), so listing it would be a sitemap pointing at a 404.
+    if (HIDDEN_PAGES.includes(href)) continue;
     const alternates = { languages: languagesFor(href) };
     for (const locale of routing.locales) {
       entries.push({
