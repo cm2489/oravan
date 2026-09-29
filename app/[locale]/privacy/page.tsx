@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { hreflangAlternates } from '@/lib/hreflang';
+
+/*
+ * The bold is the paragraph's promise (owner's pick, 2026-09-29: Version 2,
+ * "bold key phrases, no new words, no headers"). The `<strong>` tags live in
+ * messages/*.json around words the page already said, so each language picks
+ * its own phrase; the page only maps the tag to a semantic <strong>.
+ */
+const strong = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
 
 export async function generateMetadata({
   params,
@@ -24,8 +33,8 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
         <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
         <div className="mt-6 space-y-5">
           {(['p1', 'p2', 'p3', 'p7', 'p4', 'p8', 'p9', 'p5'] as const).map((p) => (
-            <p key={p} className={p === 'p5' ? 'font-semibold' : undefined}>
-              {t(p)}
+            <p key={p} data-privacy-paragraph={p} className={p === 'p5' ? 'font-semibold' : undefined}>
+              {t.rich(p, { strong })}
             </p>
           ))}
           <p className="border-t border-line pt-5 text-sm text-ink-2">{t('contact')}</p>
