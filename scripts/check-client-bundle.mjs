@@ -272,7 +272,7 @@ function main() {
   const dirFlag = args.indexOf('--dir');
   const dir = dirFlag >= 0 ? resolve(args[dirFlag + 1]) : join(REPO, '.next/static/chunks');
   if (!existsSync(dir)) {
-    console.error(`::error::no client chunks at ${relative(REPO, dir) || dir}; run \`next build\` first (in CI the E2E step builds)`);
+    console.error(`::error::no client chunks at ${relative(REPO, dir) || dir}; run \`next build\` first (in CI the build job builds the app just before this gate)`);
     process.exit(1);
   }
   const chunks = readChunks(dir);
