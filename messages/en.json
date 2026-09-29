@@ -131,7 +131,7 @@
     "sub": "Your members of Congress, with every number that reaches them.",
     "noZip": "Enter your ZIP code to find your members of Congress.",
     "previewNote": "Your members of Congress will appear here, with their DC and local numbers: in a state, one House representative and two senators; in DC or a territory, one House delegate.",
-    "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same either way.",
+    "multiDistrict": "Your ZIP code spans {count, plural, =2 {two} other {#}} congressional districts. We've shown all of them below — your street address decides which one is yours. Not sure? Your senators are the same for every district in your state.",
     "districtHeading": "{state} district {district}",
     "atLargeHeading": "{state} at-large",
     "senator": "Senator",
@@ -315,7 +315,7 @@
     "switchboard": "Capitol switchboard",
     "switchboardNote": "No ZIP handy? The Capitol switchboard can connect you to any congressional office.",
     "callWho": "Call any of your members, or all of them. One call per office is plenty.",
-    "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are always yours.",
+    "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are the same for every district in your state.",
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
     "settled": {
@@ -689,8 +689,8 @@
     "frameTitle": "Your representatives",
     "languageLabel": "Language",
     "multiDistrictTitle": "This ZIP spans more than one district",
-    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Both candidate districts are shown below; your senators are the same either way.",
-    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Both candidate districts are shown below; your senators are the same either way.",
+    "multiDistrictBody": "This embedded widget can't take a street address — that stays on the main Oravan site. Every candidate district is shown below; your senators are the same for every district in your state.",
+    "multiDistrictBodyBrandless": "This embedded widget can't take a street address — that step happens on the full site. Every candidate district is shown below; your senators are the same for every district in your state.",
     "openFullLookup": "Refine with your address on Oravan",
     "openFullLookupBrandless": "Refine with your address",
     "poweredBy": "Powered by Oravan",
@@ -1701,7 +1701,7 @@
       "noHouseVote": "No recorded House vote on this bill since {date}",
       "noSenateVote": "No recorded Senate vote on this bill since {date}",
       "notListed": "Not listed in this roll call",
-      "multiDistrict": "Your ZIP spans more than one House district, so only your senators are shown here."
+      "multiDistrict": "Your ZIP spans more than one House district, so only senators are shown here. Your senators are the same for every district in your state."
     }
   }
 }

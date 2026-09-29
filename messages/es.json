@@ -131,7 +131,7 @@
     "sub": "Tus miembros del Congreso, con todos sus números de contacto.",
     "noZip": "Escribe tu código postal para encontrar a tus miembros del Congreso.",
     "previewNote": "Aquí aparecerán tus miembros del Congreso, con sus números en Washington y en tu zona: en un estado, tu representante en la Cámara y tus dos senadores; en el Distrito de Columbia o un territorio, tu delegado/a en la Cámara.",
-    "multiDistrict": "Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en cualquier caso.",
+    "multiDistrict": "Tu código postal abarca {count, plural, =2 {dos} other {#}} distritos congresionales. Te los mostramos todos abajo — tu dirección exacta decide cuál es el tuyo. ¿Dudas? Tus senadores son los mismos en todos los distritos de tu estado.",
     "districtHeading": "{state}, distrito {district}",
     "atLargeHeading": "{state}, distrito único",
     "senator": "Senador/a",
@@ -315,7 +315,7 @@
     "switchboard": "Centralita del Capitolio",
     "switchboardNote": "¿Sin código postal a mano? La centralita del Capitolio te conecta con cualquier oficina del Congreso.",
     "callWho": "Llama a cualquiera de tus miembros del Congreso — o a todos. Una llamada por oficina es suficiente.",
-    "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores siempre son los tuyos.",
+    "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores son los mismos en todos los distritos de tu estado.",
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "alsoYours": "También te representa",
     "settled": {
@@ -689,8 +689,8 @@
     "frameTitle": "Tus representantes",
     "languageLabel": "Idioma",
     "multiDistrictTitle": "Este código postal abarca más de un distrito",
-    "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
-    "multiDistrictBodyBrandless": "Este widget incrustado no acepta una dirección — ese paso se hace en el sitio completo. Abajo se muestran los dos distritos posibles; tus senadores son los mismos en cualquier caso.",
+    "multiDistrictBody": "Este widget incrustado no acepta una dirección — eso solo se puede hacer en el sitio principal de Oravan. Abajo se muestran todos los distritos posibles; tus senadores son los mismos en todos los distritos de tu estado.",
+    "multiDistrictBodyBrandless": "Este widget incrustado no acepta una dirección — ese paso se hace en el sitio completo. Abajo se muestran todos los distritos posibles; tus senadores son los mismos en todos los distritos de tu estado.",
     "openFullLookup": "Precisa tu distrito con tu dirección en Oravan",
     "openFullLookupBrandless": "Precisa tu distrito con tu dirección",
     "poweredBy": "Desarrollado por Oravan",
@@ -1701,7 +1701,7 @@
       "noHouseVote": "Sin votación nominal de la Cámara sobre este proyecto desde el {date}",
       "noSenateVote": "Sin votación nominal del Senado sobre este proyecto desde el {date}",
       "notListed": "No figura en esta votación nominal",
-      "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen tus senadores."
+      "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen senadores. Tus senadores son los mismos en todos los distritos de tu estado."
     }
   }
 }
