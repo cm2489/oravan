@@ -2205,7 +2205,8 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
       // The first chamber only: the label it always had.
       [{ bill_type: 'hr', last_action_text: 'Received in the Senate.' }, 'passed_chamber', 'nowPassed'],
       // S. 2403: the House passed a Senate bill, and the sentence names no
-      // amendment clause — not read, stated in statusKeyFor's header.
+      // amendment clause. Both chambers passed it, so the chip says so; the
+      // stepper says the record doesn't show whether the versions match.
       [
         {
           bill_type: 's',
@@ -2213,11 +2214,13 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
           status_basis_text:
             'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by the Yeas and Nays: (2/3 required): 401 - 14 (Roll no. 314).',
         },
-        'passed_chamber',
+        'passed_both',
         'nowPassedSecond',
       ],
-      // The bare message with no basis says nothing about amendment.
-      [{ bill_type: 'hconres', last_action_text: MESSAGE }, 'passed_chamber', 'nowPassedSecond'],
+      // The bare message with no basis says nothing about amendment, but both
+      // chambers have acted: "Passed both chambers", with the stepper's
+      // versions-unknown sentence.
+      [{ bill_type: 'hconres', last_action_text: MESSAGE }, 'passed_both', 'nowPassedSecond'],
     ] as const;
     for (const [fields, key, nowKey] of cases) {
       const b = { status: 'passed_chamber' as BillStatus, last_action_date: FRESH, ...fields };
@@ -2240,10 +2243,19 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
       const key = statusKeyFor(recordOf(b), SWEEP_NOW);
       if (key !== 'adopted' && key !== 'passed_both') continue;
       const j = deriveJourney(recordOf(b));
-      expect(j.nowKey, slugOf(b)).toBe(key === 'adopted' ? 'nowAdoptedBoth' : 'nowPassedBoth');
-      expect(j.step, slugOf(b)).toBe(4);
-      if (key === 'adopted') expect(j.ending, slugOf(b)).toBe('bothChambers');
-      else expect(j.ending, slugOf(b)).not.toBe('bothChambers');
+      if (key === 'adopted') {
+        expect(j.nowKey, slugOf(b)).toBe('nowAdoptedBoth');
+        expect(j.step, slugOf(b)).toBe(4);
+        expect(j.ending, slugOf(b)).toBe('bothChambers');
+      } else {
+        // Both chambers passed it: either the president's step, or the
+        // versions-unknown sentence when the record gives no amendment clause.
+        expect(['nowPassedBoth', 'nowPassedSecond'], slugOf(b)).toContain(j.nowKey);
+        if (j.nowKey === 'nowPassedBoth') {
+          expect(j.step, slugOf(b)).toBe(4);
+          expect(j.ending, slugOf(b)).not.toBe('bothChambers');
+        }
+      }
     }
   });
 

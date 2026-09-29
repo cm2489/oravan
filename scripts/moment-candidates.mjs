@@ -220,7 +220,8 @@ export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.
       status_basis_text: record.status_basis_text ?? null,
     };
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    return passageState(bill).stage === 'both' ? 'passed_both' : status;
+    const { stage } = passageState(bill);
+    return stage === 'both' || stage === 'second' ? 'passed_both' : status;
   }
   if (status !== 'floor_vote') return status;
   if (!floorCalendarChamber(lastActionText)) return 'floor_activity';

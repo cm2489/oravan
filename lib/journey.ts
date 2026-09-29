@@ -451,10 +451,16 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * writes over). Not clocked: both are durable facts about votes that
  * happened, like the rail's passage routing ("THE THIRD GATE" above).
  *
- * NOT READ, stated rather than guessed at: a second-chamber passage whose
- * amendment clause the record does not give (`passageState` 'second' — four
- * Senate bills and S.Con.Res. 29 the House passed, on 2026-09-29), and one
- * passed WITH amendments ('back'; none in the corpus that day). Both keep
+ *   `passed_both` also covers a second-chamber passage whose amendment
+ *                  clause the record does not give (`passageState` 'second' —
+ *                  four Senate bills and S.Con.Res. 29 the House passed, on
+ *                  2026-09-29). Both chambers DID pass it, so "Passed one
+ *                  chamber" was false; the stepper's `nowPassedSecond` says the
+ *                  record doesn't show yet whether the two versions match, so
+ *                  the chip claims only what the record shows.
+ *
+ * NOT READ, stated rather than guessed at: a measure the second chamber
+ * passed WITH amendments ('back'; none in the corpus on 2026-09-29). It keeps
  * `passed_chamber`.
  *
  * scripts/moment-candidates.mjs carries an import-free copy of this function
@@ -467,7 +473,8 @@ export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): Sta
   const { status } = bill;
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    return passageState(bill).stage === 'both' ? 'passed_both' : 'passed_chamber';
+    const { stage } = passageState(bill);
+    return stage === 'both' || stage === 'second' ? 'passed_both' : 'passed_chamber';
   }
   if (status !== 'floor_vote') return status;
   if (!floorCalendarChamber(bill.last_action_text)) return 'floor_activity';
