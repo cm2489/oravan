@@ -62,9 +62,10 @@ const HR_7730: Fixture = {
 
 /** H.Con.Res. 86: agreed to by the House, then by the Senate without
  *  amendment. It goes to no president. Settled, so its page shows the record
- *  where a call panel would stand (CLAUDE.md rule 6), but app/api/script has
- *  no settled gate for bills and would still write a script if asked, so the
- *  prompt must not call it one chamber's. */
+ *  where a call panel would stand (CLAUDE.md rule 6), and since #395
+ *  app/api/script refuses it (409) before any prompt is built. The builder
+ *  itself has no settled gate, so the prompt must still not call it one
+ *  chamber's. */
 const HCONRES_86: Fixture = {
   bill_type: 'hconres',
   bill_number: 86,
@@ -97,7 +98,10 @@ test.describe('the stage line, pinned', () => {
         'Plain-language summary: This bill would move two small parcels of park land to the state of Mississippi.',
         'Current status: Passed both chambers',
         '',
-        'The caller SUPPORTS this bill and urges the member to vote for it.',
+        // Since PROMPT_VERSION 3 (owner's pick 7 (a), 2026-09-29) the ask is
+        // a public stand, not a vote; tests/script-passed-both.unit.spec.ts
+        // pins the whole line.
+        'The caller SUPPORTS this bill and urges the member to publicly back it before the president acts on it.',
       ].join('\n')
     );
     // The raw enum is gone from the prompt entirely, not just from that line.
@@ -151,10 +155,12 @@ test.describe('the cache key did not move', () => {
     // Deliberate (lib/scriptcache.ts, "THE STAGE LINE READS MORE THAN THIS KEY
     // HOLDS"): the key holds the status and the last-action date, not the
     // stage. Two records that differ ONLY in what statusKeyFor reads beyond
-    // those share a key, and PROMPT_VERSION was not bumped, so every script
-    // cached before this change stays keyed where it was and expires on the
-    // 24-hour TTL. If the stage is ever added to the key, this assertion is
-    // where that decision (and its one-day full regeneration) gets made.
+    // those share a key, and this change did not bump PROMPT_VERSION, so every
+    // script cached before it stayed keyed where it was and expired on the
+    // 24-hour TTL. (PROMPT_VERSION moved to '3' later the same day for a
+    // different change, owner's pick 7 (a); tests/script-passed-both.unit.spec.ts
+    // pins that bump.) If the stage is ever added to the key, this assertion
+    // is where that decision (and its one-day full regeneration) gets made.
     const asOneChamber: Fixture = { ...HR_4467, status_basis_text: null, last_action_text: 'Received in the Senate.' };
     expect(statusKeyFor(asOneChamber)).toBe('passed_chamber');
     expect(contentVersion(HR_4467)).toBe(contentVersion(asOneChamber));
