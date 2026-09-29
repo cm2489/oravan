@@ -97,9 +97,9 @@
  * exactly the failure this preserves the fix for.
  *
  * A TRUNCATED WINDOW IS UNFINISHED WORK TOO (2026-08-09). The ascending
- * pass fetches at most MAX_UPDATES (500) bills per run and processes
- * `updated.slice(0, MAX_UPDATES)` - the OLDEST 500 of whatever Congress.gov
- * reports since the cursor. Everything past that line used to be dropped on
+ * pass fetches at most MAX_UPDATES (500 then; 1000 since 2026-09-29) bills per
+ * run and processes `updated.slice(0, MAX_UPDATES)` - the OLDEST of whatever
+ * Congress.gov reports since the cursor. Everything past that line used to be dropped on
  * the floor: nothing set `frozen`, so a run that was otherwise clean
  * persisted `runStart` as the new cursor and the deferred tail - bills the
  * API had just told us about - fell permanently outside every future
@@ -224,7 +224,15 @@ import {
   planRedecodes,
 } from './text-version.mjs';
 
-const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 500);
+// 1000 since 2026-09-29 (was 500). Since the 2026-09-18 day-boundary fix the
+// cursor lands on a MIDNIGHT, so every nightly window spans the rest of the
+// cursor's day plus a full day or more - about two days of inflow at ~337
+// tracked bills/day. 500 was below that: the nightlies of 09-25..09-28 fetched
+// 650, 654, 588 and 593 tracked bills, all four truncated, and the cursor
+// crept ~1 day a night, staying ~3 days behind. 1000 covers ~3 days of
+// inflow; the extra bills are free refreshes and gate verdicts, and new-bill
+// decodes stay capped by MAX_NEW_DECODES exactly as before.
+const MAX_UPDATES = Number(process.env.MAX_UPDATES ?? 1000);
 // The ceiling on the same-timestamp extension described in the header: how far
 // past MAX_UPDATES this run is willing to go in order to FINISH the calendar
 // day the cursor is sitting in. 3000 is deliberately several times the measured

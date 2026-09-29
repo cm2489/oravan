@@ -83,3 +83,27 @@ for (const { locale, prefix, messages } of [
     await expect(page.locator('[data-last-attempt]')).toHaveCount(0);
   });
 }
+
+/*
+ * THE MEMBER PAGE PRINTS THE SAME SENTENCE, NEVER ITS KEY (2026-09-29). The
+ * member page's vote card builds its "Right now:" line from the same message.
+ * That message opens {hasDate}, and when components/MemberVotes.tsx did not
+ * pass it, next-intl could not format the sentence and printed the raw key
+ * ("bill.journey.nowPointOfOrderUpheld") on every senator's page that shows
+ * S.J.Res. 98. Read with textContent, because the card may sit under a
+ * closed "Show all".
+ */
+for (const { locale, prefix } of [
+  { locale: 'en', prefix: '' },
+  { locale: 'es', prefix: '/es' },
+] as const) {
+  test(`${locale}: a senator's member page shows S.J.Res. 98's sentence, never a raw message key`, async ({ page }) => {
+    const bill = getBill(SJRES_98);
+    test.skip(bill?.last_action_text !== SJRES_98_TEXT, 'S.J.Res. 98 has a newer action than 2026-01-14');
+    // A000382 voted on S.J.Res. 98 and its page showed the raw key live on 2026-09-29.
+    await page.goto(`${prefix}/reps/A000382`);
+    const text = (await page.locator('main').textContent()) ?? '';
+    expect(text, 'no member-page line may print a raw journey key').not.toContain('bill.journey.');
+    expect(text).toContain(locale === 'en' ? 'upheld a point of order against it' : 'aceptó una cuestión de orden en su contra');
+  });
+}

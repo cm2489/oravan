@@ -107,8 +107,12 @@ export const DRAFT_MODEL = 'claude-sonnet-5-5';
  *  recorded vote (PR #363), the record block also lists the measure's newest
  *  recorded votes WITH the record's count by party, and the rule lets a draft
  *  copy such a count and name a party nowhere else (owner's card l12). Until
- *  then the record block is v4's and the rule still names no party. */
-export const DRAFT_PROMPT_VERSION = 5;
+ *  then the record block is v4's and the rule still names no party.
+ *  v6 (2026-09-29): the RECORD BLOCK changed again. statusKeyFor is handed
+ *  the bill, so a measure the second chamber passed reads "Passed both
+ *  chambers" and a concurrent resolution both chambers agreed to reads
+ *  "Adopted by both chambers", where v5 said "Passed one chamber" for both. */
+export const DRAFT_PROMPT_VERSION = 6;
 
 /** How many of a measure's recorded votes the record block lists, newest
  *  first. Enough for "the House passed it, the Senate rejected it"; a bill
@@ -235,9 +239,18 @@ export function blankDraft(notes = []) {
  * itself again from a different direction: the label and the calendar line
  * are now two renderings of one answer.
  *
+ * THE BILL GOES IN AS THE 5th ARGUMENT (2026-09-29). statusKeyFor reads a
+ * `passed_chamber` record as `adopted` (a concurrent resolution both chambers
+ * agreed to) or `passed_both` (the second chamber passed it) only when it is
+ * handed the bill, because those readings need the bill type and the status
+ * basis. This call used to pass four arguments, so a measure both chambers had
+ * passed reached the record block as "Passed one chamber" while its own page
+ * said "Passed both chambers". No bill row → `passed_chamber`, as before.
+ *
  * @param {Record<string, any>} c        one entry of buildReport().candidates
- * @param {Record<string, any>} [bill]   its data/bills.json row, for the two
- *        fields the candidate object does not carry (title, last_action_text)
+ * @param {Record<string, any>} [bill]   its data/bills.json row, for the
+ *        fields the candidate object does not carry (title, last_action_text,
+ *        and the bill_type and status_basis_text the passage readings read)
  * @param {{ en?: Record<string, string>, es?: Record<string, string> } | null} [statusPhrases]
  *        messages/*.json `bills.status`, per language
  * @param {Record<string, any>[]} [rollCalls] data/votes.json rollCalls on
@@ -249,7 +262,7 @@ export function blankDraft(notes = []) {
 export function groundFor(c, bill, statusPhrases = null, rollCalls = [], { partyCounts = partyCountsPassLint() } = {}) {
   const lastActionText = bill?.last_action_text ?? null;
   const lastActionDate = c.lastActionDate ?? bill?.last_action_date ?? null;
-  const statusKey = statusKeyFor(c.status, lastActionText, lastActionDate);
+  const statusKey = statusKeyFor(c.status, lastActionText, lastActionDate, Date.now(), bill ?? null);
   const phrase = (lang) =>
     statusPhrases?.[lang]?.[statusKey] ?? String(statusKey ?? '').replace(/_/g, ' ');
   return {
@@ -396,6 +409,12 @@ export const INTERNAL_ENUM_TOKENS = [
   // `floor_vote`: enumLeaks matches on word boundaries that treat `_` as a
   // word character, so `floor_vote` does not fire inside `floor_vote_stale`.
   'floor_vote', 'floor_vote_stale', 'floor_activity', 'passed_chamber',
+  // The passage reading groundFor can return since it hands statusKeyFor the
+  // bill (2026-09-29). Its sibling `adopted` is NOT listed, for the reason the
+  // six single-word statuses are not: it is an English word inside its own
+  // published label ("Adopted by both chambers"), so scanning for it would
+  // blank every draft about H.Con.Res. 86 for stating the record correctly.
+  'passed_both',
   // coverage tier (lib/types.ts COVERAGE_TIERS; lib/coverage.ts and
   // scripts/moment-candidates.mjs both return exactly these)
   'cross', 'neutral', 'one_sided', 'none',

@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import { billSlug, getAllBills, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
+import { rollCallPage } from '@/lib/roll-call-page';
 import { deriveJourney } from '@/lib/journey';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
@@ -99,6 +100,12 @@ export async function MemberVotes({
     const tally = journey.tally
       ? { tally: 'yes', yeas: journey.tally.yeas, nays: journey.tally.nays }
       : { tally: 'none', yeas: 0, nays: 0 };
+    // The one dated sentence (`nowPointOfOrderUpheld`) opens {hasDate}; supply
+    // it on every key, formatted as BillJourney formats it (long month, UTC),
+    // or the member page prints the raw key instead of the sentence.
+    const when = journey.date
+      ? { hasDate: 'yes', date: fmtDate(journey.date) }
+      : { hasDate: 'none', date: '' };
     return {
       key: journey.nowKey,
       text: tJourney.rich(journey.nowKey, {
@@ -106,6 +113,7 @@ export async function MemberVotes({
         other,
         floorCalendar: (chunks: ReactNode) => <>{chunks}</>,
         ...tally,
+        ...when,
       }),
     };
   };
@@ -139,7 +147,7 @@ export async function MemberVotes({
           {tVotes('roll', { roll: r.roll })} ·
         </span>
         <a
-          href={r.source}
+          href={rollCallPage(r.source)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline hover:text-go-deep"

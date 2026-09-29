@@ -26,9 +26,10 @@ import { cacheClient, keyPrefix, noteUpstashError, UpstashRequestError } from '.
  * inside `version`, via nominationContentVersion() below. See its doc comment
  * for why that is deliberate rather than a shortcut.
  *
- * version = first 12 hex chars of sha256 over EVERY substantive input to the
- * generated prompt: PROMPT_VERSION + the summary + the status + the
- * last-action date (see contentVersion below for why each one is in there).
+ * version = first 12 hex chars of sha256 over PROMPT_VERSION + the summary +
+ * the status + the last-action date (see contentVersion below for why each one
+ * is in there, and for the two stage moves since 2026-09-29 that it does not
+ * see, which the TTL below bounds).
  * The pre-S11 key (slug:stance:lang) had no content component, so a corrected
  * decode would keep serving the stale script — the exact gap strategy §9.1(d)
  * names. A changed summary now changes the version, which is a clean miss; the
@@ -99,14 +100,33 @@ function keyMaterial(parts: Array<string | null>): string {
  *                      because editing the prompt never touches the summary.
  *   summary          — the §9.1(d) gap: a corrected decode must not keep
  *                      serving the script written from the wrong summary.
- *   status           — buildScriptPrompt writes `Current status: ${status}`
- *                      into the prompt. A bill that passes its chamber keeps
- *                      its summary (only a fresh decode rewrites that), so
- *                      without this the cache serves a pre-vote script for the
- *                      rest of the TTL, urging a vote that already happened.
+ *   status           — buildScriptPrompt writes the bill's stage into the
+ *                      prompt (`Current status:`). A bill that passes its
+ *                      chamber keeps its summary (only a fresh decode rewrites
+ *                      that), so without this the cache serves a pre-vote
+ *                      script for the rest of the TTL, urging a vote that
+ *                      already happened.
  *   last_action_date — moves with status and dates the record the script is
  *                      grounded in; keyed for the same reason, so a re-dated
  *                      action can't be papered over by an unchanged status.
+ *
+ * THE STAGE LINE READS MORE THAN THIS KEY HOLDS (2026-09-29). Since then the
+ * prompt's stage is statusKeyFor(bill)'s label (lib/scriptprompt.ts
+ * scriptStage), not the raw status, and statusKeyFor also reads the last
+ * action's TEXT, the status basis and the clock. Two stage moves therefore
+ * reach the prompt without moving this key:
+ *   - a calendar placement the record goes silent on for over 14 days ("On
+ *     the floor calendar" becomes "Placed on the calendar" by the clock
+ *     alone), and
+ *   - a stage change the record makes without a new last-action date (for
+ *     example a second chamber's passage stored under the same date as the
+ *     action before it).
+ * Either way the stale script lives at most one TTL (24 hours). A
+ * second-chamber passage stored under a later date than the action before it
+ * moves last_action_date, so that one IS a clean miss. The two moves above are
+ * left out of the key on purpose: adding the stage to it would change every
+ * version hash at once, which is the full regeneration a PROMPT_VERSION bump
+ * pays for, to close a gap the TTL already caps at a day.
  */
 export function contentVersion(
   bill: Pick<Bill, 'title' | 'ai_summary' | 'status' | 'last_action_date'>

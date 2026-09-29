@@ -11,10 +11,11 @@
  * scripts/check-moments.mjs / lib/moments-gate.mjs. So the runner keeps the
  * spec's filename and this module holds every pure transform the suite
  * exercises. Its imports are limited to four modules that are themselves
- * import-clean (newsdesk-match.mjs — node:crypto only; moment-updates-gate.mjs
- * — the v1 vocabulary table only; moments-gate.mjs and press-outlets.mjs —
- * zero imports by design), so the whole chain loads under Playwright's
- * transform.
+ * import-clean (newsdesk-match.mjs — node:crypto, plus statusKeyFor from
+ * moment-candidates.mjs, which reads no file on import since 2026-09-29;
+ * moment-updates-gate.mjs — the v1 vocabulary table only; moments-gate.mjs
+ * and press-outlets.mjs — zero imports by design), so the whole chain loads
+ * under Playwright's transform.
  *
  * ---------------------------------------------------------------------------
  * THE EDITORIAL LAW (owner-settled 2026-07-25, v2 spec §2) — this module is
