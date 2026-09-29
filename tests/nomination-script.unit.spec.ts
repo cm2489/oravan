@@ -51,6 +51,9 @@ test.describe('chamber specificity', () => {
         title: 'A Bill',
         ai_summary: 'It does a thing.',
         status: 'committee',
+        // The record fields statusKeyFor reads for the prompt's stage line.
+        last_action_text: null,
+        last_action_date: null,
       },
       stance: 'support',
       lang: 'en',
