@@ -273,14 +273,16 @@ for (const locale of ['en', 'es'] as const) {
 test('the escape hatch is there when the crash arrives via the header nav', async ({ page }) => {
   await seed(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
   await page.goto('/');
-  // The home page's hydration probe: the ZIP field, by its `data-zip-field`
-  // hook. The seeded ZIP reaches this field only
-  // from the client store, so the field carrying it is proof the hero has
-  // hydrated — which is what makes the next line "a console paste on a
-  // settled page" rather than a claim about it. `goto` alone does NOT get
-  // there: it resolves 20-40ms before this page's own subscribe, which is
-  // what the sentence that used to sit on this line got wrong.
-  await expect(page.locator('[data-zip-field]')).toHaveValue('78501');
+  // The home page's hydration probe: the hero's saved-ZIP block, by its
+  // `data-saved-zip` hook (Home option B, 2026-09-29: with a ZIP saved, the
+  // hero names your members instead of showing the ZIP field). The seeded ZIP
+  // reaches that block only from the client store, so the block carrying it
+  // is proof the hero has hydrated — which is what makes the next line "a
+  // console paste on a settled page" rather than a claim about it. `goto`
+  // alone does NOT get there: it resolves 20-40ms before this page's own
+  // subscribe, which is what the sentence that used to sit on this line got
+  // wrong.
+  await expect(page.locator('[data-saved-zip]')).toHaveAttribute('data-saved-zip', '78501');
   await page.evaluate(CRASH_ONCE_ON_RECORD_SUBSCRIBE);
 
   // Both navs are in the DOM and exactly one is ever displayed (Header.tsx's
