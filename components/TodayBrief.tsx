@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { glossaryTag, glossaryTagOnce, glossify } from '@/components/glossary-tags';
 import type { GlossaryTermId } from '@/lib/glossary';
+import { rollCallPage } from '@/lib/roll-call-page';
 import { Link } from '@/i18n/navigation';
 import type { Brief, BriefChamber, BriefScheduleItem } from '@/lib/today';
 
@@ -231,7 +232,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                       <Link href={`/bills/${r.bill.slug}`} className={`inline-flex min-h-11 items-center text-sm ${LINK}`}>
                         {r.bill.citation}
                       </Link>
-                      <a href={r.source} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
+                      <a href={rollCallPage(r.source)} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
                         {t('voteSource')}
                         <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
                       </a>

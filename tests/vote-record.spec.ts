@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { rollCallPage } from '../lib/roll-call-page';
 import { billWithRollCallsOnlyIn } from './corpus-fixtures';
 import { seedZip } from './helpers';
 import { messagePattern } from './message-pattern';
@@ -30,6 +31,11 @@ import { messagePattern } from './message-pattern';
  * what the server HTML carries and does not, the fetch on open in both
  * languages and by keyboard, the no-JavaScript fallback, and that every built
  * file matches data/votes.json.
+ *
+ * THE OFFICIAL RECORD LINK (2026-09-29) opens the chamber's readable page for
+ * the roll call (lib/roll-call-page.ts), never the XML data file stored as
+ * `source`: clerk.house.gov/Votes/<year><roll> for the House, the .htm beside
+ * the .xml on senate.gov. The no-JavaScript line links the same page.
  */
 
 interface RollCall {
@@ -57,6 +63,15 @@ function newestFirst(bill: string): RollCall[] {
 
 const SENATE_BILL = billWithRollCallsOnlyIn('senate');
 const HOUSE_BILL = billWithRollCallsOnlyIn('house');
+
+/** Each chamber's readable roll-call page, as lib/roll-call-page.ts builds it. */
+const READABLE = {
+  house: /^https:\/\/clerk\.house\.gov\/Votes\/\d{4}[1-9]\d*$/,
+  senate: /^https:\/\/www\.senate\.gov\/legislative\/LIS\/roll_call_votes\/vote\d{4}\/vote_\d{3}_\d_\d{5}\.htm$/,
+} as const;
+/** A link to a roll call's XML data file, on either chamber's site. */
+const DATA_FILE_LINK =
+  'a[href^="https://clerk.house.gov/evs/"], a[href^="https://www.senate.gov/legislative/LIS/roll_call_votes/"][href$=".xml"]';
 const ZIP = '05401';
 
 function noVotesBill(): string {
@@ -205,7 +220,7 @@ for (const { locale, prefix, m } of LOCALES) {
 
       // Start on the roll call's own official-record link, the control just
       // before the fold-out, and Tab once.
-      await roll.locator(`a[href="${r.source}"]`).first().focus();
+      await roll.locator(`a[href="${rollCallPage(r.source)}"]`).first().focus();
       await page.keyboard.press('Tab');
       await expect(summary).toBeFocused();
       const ring = await summary.evaluate((el) => {
@@ -244,8 +259,13 @@ for (const { locale, prefix, m } of LOCALES) {
       expect(count('data-vote-roll="')).toBe(rolls.length);
       expect(count('data-vote-total="')).toBe(rolls.length * POSITIONS.length);
       expect(count('data-vote-members-fallback=')).toBe(rolls.length);
-      const missing = rolls.filter((r) => !html.includes(`data-vote-roll="${r.id}"`) || !html.includes(r.source));
+      const missing = rolls.filter(
+        (r) => !html.includes(`data-vote-roll="${r.id}"`) || !html.includes(`href="${rollCallPage(r.source)}"`)
+      );
       expect(missing.map((r) => r.id)).toEqual([]);
+      // No link on the page opens a roll call's data file.
+      const raw = rolls.filter((r) => html.includes(`href="${r.source}"`));
+      expect(raw.map((r) => r.id)).toEqual([]);
       expect(html).toContain(m.votes.membersOnRecord);
 
       // The list itself is not.
@@ -257,6 +277,29 @@ for (const { locale, prefix, m } of LOCALES) {
       // record itself costs and well below any printed list of a chamber.
       expect(html.length / rolls.length, `${bill}: HTML bytes per roll call`).toBeLessThan(25_000);
     });
+
+    for (const chamber of ['house', 'senate'] as const) {
+      test(`${chamber}: every card's "Official record" opens the chamber's readable page, not the data file`, async ({ page }) => {
+        const bill = chamber === 'house' ? HOUSE_BILL : SENATE_BILL;
+        test.skip(!bill, `no bill with ${chamber}-only roll calls in data/votes.json today`);
+        const rolls = newestFirst(bill!);
+        await page.goto(`${prefix}/bills/${bill}`);
+        await expect(page.locator('[data-vote-record] [data-vote-roll]')).toHaveCount(rolls.length);
+        // Every card, the folded "earlier votes" ones too: the card's own
+        // link is its direct child; the no-JavaScript line sits in the
+        // fold-out below it.
+        for (const r of rolls) {
+          const link = page.locator(`[data-vote-roll="${r.id}"] > a[target="_blank"]`);
+          await expect(link).toHaveText(m.votes.source);
+          await expect(link).toHaveAttribute('href', rollCallPage(r.source));
+          await expect(link).toHaveAttribute('href', READABLE[chamber]);
+          await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        }
+        const first = page.locator(`[data-vote-roll="${rolls[0].id}"] > a[target="_blank"]`);
+        expect(await height(first), '44px touch target on the record link').toBeGreaterThanOrEqual(44);
+        await expect(page.locator(DATA_FILE_LINK)).toHaveCount(0);
+      });
+    }
   });
 }
 
@@ -270,7 +313,7 @@ test('a list that fails to load says so, keeps the official record, and retries 
   await fold.locator('summary').click();
   await expect(fold).toHaveAttribute('data-vote-members-state', 'error');
   await expect(fold.getByRole('status')).toHaveText(en.votes.membersError);
-  await expect(fold.locator('[data-vote-members-fallback] a')).toHaveAttribute('href', r.source);
+  await expect(fold.locator('[data-vote-members-fallback] a')).toHaveAttribute('href', rollCallPage(r.source));
   const retry = fold.getByRole('button', { name: en.votes.membersRetry });
   expect(await height(retry)).toBeGreaterThanOrEqual(44);
 
@@ -294,7 +337,8 @@ test.describe('without JavaScript', () => {
       await expect(fallback).toBeVisible();
       await expect(fallback).toContainText(m.votes.membersOnRecord);
       const link = fallback.getByRole('link', { name: m.votes.source });
-      await expect(link).toHaveAttribute('href', r.source);
+      await expect(link).toHaveAttribute('href', rollCallPage(r.source));
+      await expect(link).toHaveAttribute('href', READABLE.house);
       expect(await height(link)).toBeGreaterThanOrEqual(44);
       await expect(fold.locator('[data-vote-group]')).toHaveCount(0);
     });

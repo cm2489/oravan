@@ -44,7 +44,8 @@ export function VoteMembers({
   headingId,
 }: {
   rollCallId: string;
-  /** The roll call's official record, for the fallback line. */
+  /** The chamber's readable page for the roll call (lib/roll-call-page.ts),
+   *  for the fallback line: never the XML data file. */
   source: string;
   /** The roll call's heading id; each group's heading id extends it. */
   headingId: string;
