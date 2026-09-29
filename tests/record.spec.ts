@@ -260,17 +260,25 @@ for (const locale of ['en', 'es'] as const) {
 
 /*
  * THE SAME DEAD END, ARRIVED AT THE WAY A READER ARRIVES AT IT: the crash
- * lands on a CLIENT-SIDE navigation out of the header, which is precisely the
- * route the old copy prescribed ("erase your saved data on the My record
+ * lands on a CLIENT-SIDE navigation, which is precisely how a reader reaches
+ * the page the old copy prescribed ("erase your saved data on the My record
  * page"). Worth its own case because it is also the recipe a human follows to
- * see this by hand — paste the crash into the console on any page, then click
- * the record link in the nav — and a hand-off recipe that has never been run
- * is a guess. The paste survives the page it is pasted on precisely because
- * the trigger is armed for /record (see its comment): on any other page it
- * hands every `storage` listener straight through, so a reader can arm it
- * wherever they happen to be standing.
+ * see this by hand — paste the crash into the console on any page, then walk
+ * to the record — and a hand-off recipe that has never been run is a guess.
+ * The paste survives the pages it passes through precisely because the
+ * trigger is armed for /record (see its comment): on any other page it hands
+ * every `storage` listener straight through, so a reader can arm it wherever
+ * they happen to be standing.
+ *
+ * THE WALK CHANGED ON 2026-09-29 (owner, "nav 1"): "My record" left the tab
+ * bar for the Call tab, and the record's way in is now the Reps tab's "See
+ * your record" link (app/[locale]/reps/page.tsx) until the Reps rebuild folds
+ * the record into that page. So the walk is Home → the Reps tab → that link,
+ * every step a client-side navigation.
  */
-test('the escape hatch is there when the crash arrives via the header nav', async ({ page }) => {
+test('the escape hatch is there when the crash arrives via a client-side walk to the record', async ({
+  page,
+}) => {
   await seed(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
   await page.goto('/');
   // The home page's hydration probe: the ZIP field, by its `data-zip-field`
@@ -289,9 +297,15 @@ test('the escape hatch is there when the crash arrives via the header nav', asyn
   await page
     .getByRole('navigation', { name: en.common.nav.primaryLabel })
     .getByRole('link', {
-      name: new RegExp(`^(${en.common.nav.impact}|${en.common.navShort.impact})$`),
+      name: new RegExp(`^(${en.common.nav.reps}|${en.common.navShort.reps})$`),
     })
     .click();
+  // The saved ZIP answers the Reps prompt on its own (SavedZipLookup's
+  // replace to ?zip=). Wait for that to land, so the click below is not
+  // racing the replace.
+  await expect(page).toHaveURL(/\/reps\?zip=78501$/);
+  await expect(page.locator('[data-zip-line]')).toBeVisible();
+  await page.locator('[data-record-link]').click();
 
   await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
   await page.getByRole('button', { name: en.errorBoundary.erase }).click();

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { CALL_BUTTON } from '@/components/call-button';
 import { portraitUrl } from '@/lib/core';
 import type { Legislator } from '@/lib/types';
 
@@ -13,10 +14,13 @@ function telHref(phone: string) {
 const DELEGATE_JURISDICTIONS = new Set(['DC', 'PR', 'GU', 'VI', 'AS', 'MP']);
 
 /*
- * One card, one dial. The DC number is the only saturated green on this card
- * because it is the only thing on it you GO anywhere by pressing - the
- * official-website link and every local number stay ink, so the green keeps
- * meaning "this is the action" rather than "this is a link".
+ * One card, one dial. The DC number is the only BUTTON on this card because it
+ * is the only thing on it you GO anywhere by pressing - the official-website
+ * link and every local number stay plain ink links, so the button keeps
+ * meaning "this is the action" rather than "this is a link". Since 2026-09-29
+ * it wears the one shared call style (components/call-button.ts; wireframes
+ * v2, reps.html: "Each member's DC number is the call button, drawn in the one
+ * shared call style"), where it used to be the saturated green.
  *
  * PARTY IS PLAIN INK TEXT and always will be. It sits in the same ink-2 meta
  * line as the role and the state, at the same weight, with no fill, no edge
@@ -92,7 +96,7 @@ export function RepContact({ rep }: { rep: Legislator }) {
       {rep.phone && (
         <a
           href={telHref(rep.phone)}
-          className="ring-gap flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+          className={`flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 ${CALL_BUTTON}`}
         >
           <span className="inline-flex items-center gap-2">
             <Phone className="h-4 w-4 shrink-0" aria-hidden />

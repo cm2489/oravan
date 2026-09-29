@@ -21,6 +21,7 @@ import type { NominationAudience } from '@/lib/nomination-script';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import { shareRepLookup } from '@/lib/rep-lookup-share';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
+import { CALL_BUTTON } from './call-button';
 import { OfficeHoursNote } from './OfficeHoursNote';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
@@ -1338,7 +1339,7 @@ export function ActionPanel({
                 <p className="max-w-note text-sm text-ink-2">{t('switchboardNote')}</p>
                 <a
                   href="tel:+12022243121"
-                  className="ring-gap mt-2 inline-flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 rounded-control border-2 border-go bg-go px-4 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                  className={`mt-2 inline-flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 ${CALL_BUTTON}`}
                 >
                   <Phone className="h-5 w-5 flex-none" aria-hidden />
                   {t('switchboard')}
@@ -1454,7 +1455,7 @@ export function ActionPanel({
                               body-size, equal-weight with guidance text. */}
                           <a
                             href={telHref(rep.phone)}
-                            className="ring-gap inline-flex min-h-14 items-center gap-3 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+                            className={`inline-flex min-h-14 items-center gap-3 px-5 py-3 ${CALL_BUTTON}`}
                           >
                             <Phone className="h-5 w-5 flex-none" aria-hidden />
                             <span className="text-h3 leading-none font-extrabold tabular-nums">

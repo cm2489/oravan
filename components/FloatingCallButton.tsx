@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { CALL_BUTTON } from './call-button';
 
 /**
  * A floating "Make the call" button that keeps the primary action reachable
@@ -39,8 +40,13 @@ import { useTranslations } from 'next-intl';
  * page's green floor band carries its own CTA when there is one, and the
  * button still carries the rest of the page (the stepper, the votes, the
  * coverage) back to #act. Funnel invariant I2 counts interactions (stance →
- * a completed script), not this button, and is untouched. The rebuild retires
- * this component for the ruled Call tab; this is the stopgap until then.
+ * a completed script), not this button, and is untouched.
+ *
+ * IT STAYS BESIDE THE CALL TAB (BP19; the owner's mark on the v1 wireframes
+ * said keep, and wireframes v2 of 2026-09-29 draw both). Past the panel on a
+ * phone the tab and this button share the job of getting back to #act; the
+ * tab is always there, and this is the one within thumb reach of the text.
+ * It wears the one shared call style (components/call-button.ts).
  */
 export function FloatingCallButton({ href = '#act' }: { href?: string }) {
   const t = useTranslations('bill');
@@ -135,7 +141,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
       aria-label={label}
       aria-hidden={hidden}
       tabIndex={hidden ? -1 : 0}
-      className={`ring-gap fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 py-4 font-bold text-paper no-underline transition-all duration-300 hover:border-go-deep hover:bg-go-deep md:bottom-6 ${
+      className={`fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-12 items-center gap-2 px-5 py-4 transition-all duration-300 md:bottom-6 ${CALL_BUTTON} ${
         hidden ? 'pointer-events-none translate-y-3 opacity-0' : 'opacity-100'
       }`}
     >
@@ -145,7 +151,8 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
 
           Shape law: this is a button-scale control, so it is rounded-control
           (8px), never a pill. Elevation law: the system has no shadow — the
-          2px `go` edge (6.43:1 on paper) is what lifts it off the page. */}
+          2px ink edge of the one call style (components/call-button.ts,
+          wireframes v2 2026-09-29) is what lifts it off the page. */}
       <Phone className="h-5 w-5 flex-none" aria-hidden />
       <span>{label}</span>
     </a>

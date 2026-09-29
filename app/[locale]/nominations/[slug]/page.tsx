@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ActionPanel } from '@/components/ActionPanel';
+import { CallTabTarget } from '@/components/CallTabTarget';
 import { NominationStatusLabel } from '@/components/NominationStatusLabel';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
@@ -343,6 +344,11 @@ export default async function NominationPage({
 
   return (
     <div className={WRAP}>
+      {/* Where the header's Call tab goes (owner, "nav 1"; lib/call-tab.ts):
+          this nomination's own panel whenever the rail below is the call
+          panel — the same `closed || noScript` condition — and the Call hub
+          when the rail is the "No call to make" panel instead. */}
+      {!(closed || noScript) && <CallTabTarget href="#act" />}
       <p className="pt-3">
         <Link
           href="/questions"
