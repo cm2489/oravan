@@ -5,6 +5,7 @@ import { glossify } from '@/components/glossary-tags';
 import { PartyTotals } from '@/components/PartyTotals';
 import type { GlossaryTermId } from '@/lib/glossary';
 import { glossaryLocale } from '@/lib/glossary-match';
+import { rollCallPage } from '@/lib/roll-call-page';
 import type { RollCall, VotePosition } from '@/lib/types';
 import { votesCoverage, votesForBill } from '@/lib/votes';
 import { VoteDelegation, type DelegationVote } from './VoteDelegation';
@@ -45,6 +46,12 @@ import { VoteMembers } from './VoteMembers';
  * that file from this site when it is opened. Without JavaScript the
  * disclosure says the official record lists how each member voted, and links
  * to it.
+ *
+ * WHERE "OFFICIAL RECORD" GOES (2026-09-29). To the chamber's own readable
+ * page for the roll call (lib/roll-call-page.ts): clerk.house.gov/Votes/… or
+ * senate.gov's vote_….htm, never the XML data file stored as `source`, which
+ * a browser shows as a raw tree for the Senate. The no-JavaScript line above
+ * links the same page. Each of those pages links back to the data file.
  *
  * NAMES in that list come from data/legislators.json joined on bioguide, with
  * the roster in votes.json as the fallback for a member who has since left
@@ -119,6 +126,7 @@ export async function VoteRecord({
 
   const entry = (r: RollCall) => {
     const hId = `vote-${r.id}`;
+    const record = rollCallPage(r.source);
     const seen = new Set<GlossaryTermId>();
     return (
       <li
@@ -185,7 +193,7 @@ export async function VoteRecord({
         )}
 
         <a
-          href={r.source}
+          href={record}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline hover:text-go-deep"
@@ -194,7 +202,7 @@ export async function VoteRecord({
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
         </a>
 
-        <VoteMembers rollCallId={r.id} source={r.source} headingId={hId} />
+        <VoteMembers rollCallId={r.id} source={record} headingId={hId} />
       </li>
     );
   };

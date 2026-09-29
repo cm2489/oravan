@@ -5,6 +5,7 @@ import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { chamberNextMeeting, chamberSession } from '../lib/docket';
+import { rollCallPage } from '../lib/roll-call-page';
 import { briefDays, briefToday, briefWindow, buildBrief, dayCountParts, shiftDate } from '../lib/today';
 import type { VotesFile } from '../lib/types';
 
@@ -125,6 +126,29 @@ test.describe('/today', () => {
     await link.click();
     await expect(page).toHaveURL(new RegExp(`${href}$`));
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  test('a roll call\'s record link opens the chamber\'s readable page, not the data file', async ({ page }) => {
+    // Prefer a day whose brief shows both chambers' roll calls.
+    const shown = (d: string) => VOTES.rollCalls.filter((r) => r.date === d || r.date === shiftDate(d, -1));
+    const date =
+      dates.find((d) => new Set(shown(d).map((r) => r.chamber)).size === 2) ?? withVotes;
+    test.skip(!date, 'no roll call inside the window');
+    const readable = new Map(shown(date!).map((r) => [rollCallPage(r.source), r]));
+    await page.goto(`/today/${date}`);
+    const links = page.locator('[data-block="votes"] a[target="_blank"]');
+    expect(await links.count()).toBeGreaterThan(0);
+    const hrefs = await links.evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''));
+    for (const href of hrefs) {
+      const r = readable.get(href);
+      expect(r, `${href} is a stored roll call's readable page`).toBeTruthy();
+      expect(href).toMatch(
+        r!.chamber === 'house'
+          ? /^https:\/\/clerk\.house\.gov\/Votes\/\d{4}[1-9]\d*$/
+          : /^https:\/\/www\.senate\.gov\/legislative\/LIS\/roll_call_votes\/vote\d{4}\/vote_\d{3}_\d_\d{5}\.htm$/
+      );
+    }
+    await expect(page.locator('main a[href$=".xml"][href*="roll"]')).toHaveCount(0);
   });
 
   test('dated permalinks exist for the last 14 days, and older dates 404', async ({ request }) => {
