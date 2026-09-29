@@ -29,8 +29,10 @@ would have shipped the wrong districts across that reversal.
 
 **Clock 1 — "who represents you now."** The current federal boundary/roster
 pipeline:
-- `app/api/district/route.ts`'s `CENSUS_QUERY.layers` literal,
-  `'119th Congressional Districts'`
+- `lib/district.ts`'s `SITTING_CONGRESS` (`119`) and `CENSUS_VINTAGE`
+  (`'ACS2025_Current'`), which decide the map `app/api/district` asks the
+  Census geocoder for (`'119th Congressional Districts'`) and the only map
+  its parser accepts
 - `data/zip-districts.json` (built weekly from `zccd.csv` by
   `scripts/process-data.py`)
 - `data/legislators.json` / `data/vacancies.json`
@@ -38,8 +40,23 @@ pipeline:
 This is **valid through Jan 3, 2027, regardless of the redistricting wave.**
 No swap is needed before then, no matter how many states pass new maps or how
 litigation resolves — that's the structural fact above, not a judgment call.
-`app/api/district/route.ts`'s existing comment on the literal now states this
-explicitly.
+And none is allowed: until Jan 3, 2027 the 120th map names members who do not
+represent an address yet. `app/api/district/route.ts` and `lib/district.ts`
+state this next to the constants.
+
+*Amended 2026-09-28.* This section used to name the route's
+`CENSUS_QUERY.layers` literal, which asked vintage `Current_Current` for
+`'119th Congressional Districts'`. By 2026-09-28 the Census had rolled
+`Current_Current` (and `ACS2026_Current`) to the 120th Congress; asked for a
+layer it no longer had, the geocoder ignored `layers` and answered with every
+layer it did have, and the parser, which matched any
+`… Congressional Districts` layer and any `CD<nn>` field, took the 120th's.
+So Clock 1 had already swapped early, silently, for split-ZIP address
+lookups: the Texas Capitol (1100 Congress Ave, 78701) came back TX-10 while
+the district it sits in today is TX-37. The fix pins the session as one
+constant, asks `ACS2025_Current` (verified live that day to carry the 119th
+layer), and makes the parser refuse any other Congress's layer, so a Census
+vintage change can make the route degrade but never name the wrong member.
 
 **Clock 2 — "your Nov 2026 ballot / Jan 2027 rep."** A separate next-term
 dataset, keyed to the new maps states are adopting for the Nov 2026 election.
@@ -53,16 +70,17 @@ data migration.
 
 ## The mandatory rollover — dated tripwire, not tribal knowledge
 
-Clock 1's literal and boundary dataset **must** be bumped to the 120th
-Congress's vintage before Jan 3, 2027, the one point where Clock 1 itself
-turns over. This is a real, calendar-dated action item, not something to
-notice after the fact — so it's now enforced by a tripwire instead of resting
-on memory:
+Clock 1's session constant and boundary dataset **must** move to the 120th
+Congress on Jan 3, 2027, the one point where Clock 1 itself turns over:
+prepared ahead, landed on the day, not before. This is a real,
+calendar-dated action item, not something to notice after the fact — so it's
+now enforced by a tripwire instead of resting on memory:
 
 - `lib/rollover-tripwire.mjs` — pure `rolloverWarning(today)`, silent before
   `WARNING_START` (2026-12-01, ~1 month of lead time), returns a loud message
-  naming the literal and `data/zip-districts.json` once on/after that date,
-  and reframes as "N days PAST the deadline" if the bump is missed entirely.
+  naming `SITTING_CONGRESS`, `CENSUS_VINTAGE` and `data/zip-districts.json`
+  once on/after that date, and reframes as "N days PAST the deadline" if the
+  swap is missed entirely.
 - `scripts/check-rollover-tripwire.mjs` — CLI wrapper, runs weekly from
   `refresh-legislators.yml`, prints a `::warning` GitHub Actions annotation.
   **Never fails the workflow** — the edit isn't due for months after the
@@ -144,8 +162,9 @@ wired into `refresh-legislators.yml`):
 5. **Escalation, dated not event-driven** (added 2026-08-12). Once
    `rolloverWarning()`'s window opens (`WARNING_START`, 2026-12-01) the same
    step opens exactly ONE actionable issue — *Bump Clock 1 to the 120th
-   Congress before Jan 3, 2027* — naming the `'119th Congressional
-   Districts'` literal at `app/api/district/route.ts:42` and
+   Congress before Jan 3, 2027* — naming `SITTING_CONGRESS` and
+   `CENSUS_VINTAGE` in `lib/district.ts` (the literal at
+   `app/api/district/route.ts:42` until 2026-09-28) and
    `data/zip-districts.json`, and listing every state that has recorded a
    detection since the seed (the `checked` field, written only on a
    detection). Search-first over `--state all`, so it is opened once ever and
