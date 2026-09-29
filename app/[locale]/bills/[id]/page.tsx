@@ -17,6 +17,7 @@ import { VoteRecord } from '@/components/VoteRecord';
 import { WalkthroughDisclosure } from '@/components/call-walkthrough/WalkthroughDisclosure';
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
+import { SettledPanel } from '@/components/SettledPanel';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -35,14 +36,18 @@ import { hreflangAlternates } from '@/lib/hreflang';
 import {
   billFloorBand,
   deriveJourney,
+  lastFailedVote,
   liveCallTarget,
+  settledDecision,
   statusKeyFor,
+  type SettledDecision,
 } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
-import { votesForBill, votingMember } from '@/lib/votes';
+import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
+import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
 
 /*
  * THE BILL PAGE — a desk, not a scroll.
@@ -435,6 +440,51 @@ export default async function BillPage({
   );
 
   /*
+   * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"; which
+   * records count, owner's pick (a), 2026-09-29: "Only a law or a failed final
+   * vote counts as finished."): a law or a rejected vote to pass the measure
+   * gets the record-only panel instead of the call panel — the record's
+   * outcome and how the reader's members voted, with no stance, no script and
+   * no number (page 1, rule 6: a settled decision shows no call apparatus).
+   * The same reading drops the floating call button and the "see how a call
+   * works" demo below, which only ever pointed at a call.
+   *
+   * EVERYTHING ELSE KEEPS THE CALL, including a veto (Congress can still vote
+   * to override it) and a failed procedural vote. On the last, pick (a)'s
+   * second half — "Procedural failures keep the call panel, with a line saying
+   * the last attempt failed" — is `lastAttempt`: one sentence above the
+   * stances with the chamber, the record's tally and the record's date for
+   * that action, and nothing about what happens next.
+   */
+  const settled = settledDecision(bill);
+  const settledDate = settledDecisionDate(bill);
+  const settledOutcome = settled
+    ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
+    : null;
+  const failedVote = settled ? null : lastFailedVote(bill);
+  const lastAttempt = failedVote
+    ? t('bill.lastAttempt', {
+        procedure: failedVote.procedure,
+        chamber: failedVote.chamber === 'house' ? 'House' : 'Senate',
+        tally: failedVote.tally ? 'yes' : 'none',
+        yeas: failedVote.tally?.yeas ?? 0,
+        nays: failedVote.tally?.nays ?? 0,
+        // The same record date the settled panel prints: the status basis's
+        // own date, never another action's (lib/settled-votes.ts).
+        hasDate: settledDate ? 'yes' : 'none',
+        date: settledDate ? fmtDate(settledDate) : '',
+      })
+    : null;
+  /* "How your members voted", one group per vote in print order (the
+     deciding vote first), each with its date formatted here for the locale. */
+  const settledGroups = settled
+    ? settledVoteGroups(bill, settled, votesForBill(id), votesCoverage().floor).map((g) => ({
+        ...g,
+        dateLabel: g.date ? fmtShort(g.date) : null,
+      }))
+    : [];
+
+  /*
    * THE STATUS LABEL — this page's refinement on top of the shared gate.
    *
    * WHAT MOVED (N3, owner ruling 2026-08-11). Half of what this comment used
@@ -804,16 +854,29 @@ export default async function BillPage({
           </section>
 
           {/* THE CALL RAIL. Sticky across every row on the desk; in flow, in
-              the read → pick → edit → call order, below it. */}
-          <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
-            <ActionPanel
-              slug={id}
-              identifier={citation}
-              title={bill.ai_headline ?? bill.short_title ?? bill.title}
-              recordLabels={recordLabels}
-              liveTarget={liveTarget}
-            />
-          </div>
+              the read → pick → edit → call order, below it. On a settled
+              bill the record-only panel stands in the same place. */}
+          {settled && settledOutcome ? (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
+              <SettledPanel
+                outcome={settledOutcome}
+                kind={settled.kind}
+                groups={settledGroups}
+                floorLabel={fmtDate(votesCoverage().floor)}
+              />
+            </div>
+          ) : (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
+              <ActionPanel
+                slug={id}
+                identifier={citation}
+                title={bill.ai_headline ?? bill.short_title ?? bill.title}
+                recordLabels={recordLabels}
+                liveTarget={liveTarget}
+                lastAttempt={lastAttempt}
+              />
+            </div>
+          )}
 
           {/* THE STATUS TRACKER, below the reading column: it describes the
               bill's history, and the decode and the call are the job. The
@@ -855,13 +918,17 @@ export default async function BillPage({
             />
           </section>
 
-          <VoteRecord billId={id} className="min-[62rem]:col-start-1" />
+          {/* On a settled bill the "your members" strip is in the panel. */}
+          <VoteRecord billId={id} className="min-[62rem]:col-start-1" delegation={!settled} />
 
           {/* For the hesitant: what a call actually looks like, on demand,
-              collapsed so it never displaces the rail. */}
-          <div className="min-[62rem]:col-start-1">
-            <WalkthroughDisclosure />
-          </div>
+              collapsed so it never displaces the rail. Not on a settled bill,
+              which has no call to show. */}
+          {!settled && (
+            <div className="min-[62rem]:col-start-1">
+              <WalkthroughDisclosure />
+            </div>
+          )}
 
           {/* Pass the page along — a quiet utility after the whole task. */}
           <div className="min-[62rem]:col-start-1">
@@ -889,7 +956,34 @@ export default async function BillPage({
           it, so the rail scrolls away at the page foot and this is what
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
-      <FloatingCallButton />
+      {!settled && <FloatingCallButton />}
     </>
   );
+}
+
+/** The record-only panel's outcome sentence (lib/journey.ts `settledDecision`):
+ *  the deciding chamber, the record's tally and the action's date, in one
+ *  sentence, before the panel lists anyone (owner, 2026-09-28). On a
+ *  rejection the tally prints only when the stepper kept it — see
+ *  deriveJourney's rejected-passage branch. `date` is the record's own date
+ *  for that action (lib/settled-votes.ts `settledDecisionDate`), already
+ *  formatted; null leaves the date out rather than borrow another action's. */
+function settledOutcomeText(
+  t: Awaited<ReturnType<typeof getTranslations>>,
+  settled: SettledDecision,
+  date: string | null
+): string {
+  const when = { hasDate: date ? 'yes' : 'none', date: date ?? '' };
+  switch (settled.kind) {
+    case 'law':
+      return t('bill.settled.law');
+    case 'rejected':
+      return t('bill.settled.rejected', {
+        chamber: settled.chamber === 'house' ? 'House' : 'Senate',
+        tally: settled.tally ? 'yes' : 'none',
+        yeas: settled.tally?.yeas ?? 0,
+        nays: settled.tally?.nays ?? 0,
+        ...when,
+      });
+  }
 }

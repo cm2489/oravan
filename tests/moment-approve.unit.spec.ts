@@ -29,6 +29,7 @@ import { expect, test } from '@playwright/test';
  * moment-watch.yml (the wiring is YAML, and a static assertion is the honest
  * form of that guarantee here).
  */
+import { decisionState } from '../lib/docket.mjs';
 import { ID_RE, checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
@@ -126,6 +127,9 @@ const subject = report.candidates.find(
   (c) =>
     structureOf(c, DRAFTED.name.en, Date.now()).gaps.length === 0 &&
     !TERMINAL.has(billBySlug.get(c.slug)?.status ?? '') &&
+    // …and not a settled floor vote either: the settled-record rule
+    // (2026-09-28) refuses a new vehicle whose record leaves no decision open.
+    decisionState(billBySlug.get(c.slug) ?? {}).state === 'pending' &&
     Boolean(billBySlug.get(c.slug)?.last_action_date),
 );
 

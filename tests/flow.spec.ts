@@ -67,21 +67,20 @@ test('full flow: stance, script, outcome, impact, delete', async ({ page }) => {
   await expect(page.getByText(en.impact.emptyTitle)).toBeVisible();
 });
 
-test('call mode shows nudge, script, and dial buttons; Escape closes', async ({ page }) => {
+test('the call panel shows the nudge, the script and the dial buttons inline — one route, no dialog', async ({ page }) => {
   await mockScriptApi(page);
   await page.goto(BILL);
   await seedZip(page, '78501');
   await page.reload();
   await page.getByRole('radio', { name: en.bill.stance.support }).click();
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  // Fresh profile: the first-call after-hours nudge shows
-  await expect(dialog.getByText(en.bill.firstCallTitle)).toBeVisible();
-  await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
-  expect(await dialog.locator('a[href^="tel:"]').count()).toBeGreaterThan(0);
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
+  const panel = page.locator('section[aria-labelledby="act"]');
+  // Fresh profile: the first-call after-hours nudge shows, in the panel.
+  // exact: the why-call link below it starts with a similar phrase.
+  await expect(panel.getByText(en.bill.firstCallTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveValue(/MOCKED SCRIPT BODY/);
+  await expect(panel.locator('a[href^="tel:"]').first()).toBeVisible();
+  // The "Start the call" dialog is gone (owner, 2026-09-28, Q5 "a").
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('script failure shows a retry that recovers', async ({ page }) => {

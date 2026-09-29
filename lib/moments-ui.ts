@@ -7,7 +7,7 @@
  */
 import { getBill } from './core/bills';
 import { getNomination, type Nomination } from './core/nominations';
-import { nominationHasCallScript } from './journey';
+import { nominationHasCallScript, settledDecision } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
 import type { MomentSearchTeaser } from './moments-search';
@@ -290,8 +290,8 @@ export function vehicleCtaHref(path: string, ctaKey: VehicleCtaKey): string {
  * `moments.bothNote` — "No side is pre-selected. Every link above opens the
  * same call flow…" — rendered UNCONDITIONALLY under the grid, and the second
  * sentence is a universal claim about every card in it. It is true of a bill
- * (the bill page always mounts ActionPanel, settled or not) and false of a
- * nomination the Senate has finished with, or one its record never described:
+ * whose decision is still open, false of a settled one (see below), and false
+ * of a nomination the Senate has finished with, or one its record never described:
  * that page's whole rail is "No call to make", with no stance control and no
  * script. Same defect class as the five strings the commit before this one
  * fixed, and reachable the same way — terminality is warn-only for the
@@ -304,10 +304,19 @@ export function vehicleCtaHref(path: string, ctaKey: VehicleCtaKey): string {
  * (lib/journey.ts), the same predicate `nominationCtaKey` above asks per card.
  * One "no" is enough; the note's sentence is a claim about all of them.
  *
- * `moments.bothNote` IS NOT EDITED, and a bill-only moment must keep printing
- * it byte for byte: it is shared with the bill path, where it is true, and
- * changing shared copy to fix a nomination-only defect is the owner's call,
- * not this function's. So the variant is additive and narrow.
+ * `moments.bothNote` IS NOT EDITED, and a moment whose every card can be
+ * called must keep printing it byte for byte: changing shared copy is the
+ * owner's call, not this function's. So the variant is additive and narrow.
+ *
+ * A SETTLED BILL IS A CARD WITH NO CALL TOO, since 2026-09-28 (owner, UX
+ * question Q9 answered "a"): the bill page now shows a record-only panel —
+ * no stance, no script — wherever lib/journey.ts `settledDecision` reads the
+ * decision as over: a law or a rejected vote to pass it (the owner's pick (a),
+ * 2026-09-29: "Only a law or a failed final vote counts as finished"). A
+ * failed motion, a failed two-thirds suspension vote and a veto keep the
+ * call. Until then "the bill page always mounts ActionPanel" made
+ * the promise true of every bill card; it no longer is, so the same one-"no"
+ * rule asks the bill cards the page's own question.
  *
  * A SLUG THAT DOES NOT RESOLVE CONTRIBUTES NOTHING — deliberately, not
  * defensively. app/[locale]/questions/[id]/page.tsx renders no card at all for
@@ -326,7 +335,10 @@ export function bothNoteKey(
   vehicles: MomentVehicle[],
 ): 'moments.bothNote' | 'moments.bothNoteSomeNoCall' {
   const someNoCall = vehicles.some((v) => {
-    if (vehicleKind(v) !== 'nomination') return false;
+    if (vehicleKind(v) !== 'nomination') {
+      const bill = getBill(v.slug);
+      return bill ? settledDecision(bill) !== null : false;
+    }
     const nomination = getNomination(v.slug);
     return nomination ? !nominationHasCallScript(nomination) : false;
   });

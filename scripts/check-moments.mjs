@@ -9,7 +9,8 @@
  *
  * Validates data/moments.json: schema, bilingual parity, vehicle resolution
  * against data/bills.json (or data/nominations.json, for a vehicle whose
- * `kind` says so), the callable-record rule for nomination vehicles,
+ * `kind` says so), the callable-record rule for nomination vehicles, the
+ * settled-record rule for newly added bill vehicles,
  * qualifying-signal shape, dates, the 8-live cap, and the
  * forbidden-vocabulary lint in both languages. Exits 1 on any violation;
  * warnings (terminal vehicles, elapsed review_by) print without failing — see
@@ -27,6 +28,7 @@ import {
   VEHICLE_KINDS,
   vehicleKind,
 } from '../lib/moments-gate.mjs';
+import { decisionState } from '../lib/docket.mjs';
 import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
 import { nominationSlug } from './nominations-fetch.mjs';
@@ -168,6 +170,19 @@ const statusByKind = {
 const statusFor = (vehicle) => statusByKind[vehicleKind(vehicle)]?.get(vehicle.slug);
 
 /*
+ * THE SETTLED-RECORD SET — bills whose record leaves no decision open, read by
+ * lib/docket.mjs `decisionState` (the MCP envelope's reader). A bill page shows
+ * the record instead of a call on these (lib/journey.ts `settledDecision`,
+ * owner's Q9 ruling 2026-09-28), so a NEW vehicle may not be one of them — see
+ * the settled-record rule in lib/moments-gate.mjs. `decisionState` is never
+ * narrower than the page's reader; tests/settled-panel.unit.spec.ts pins that
+ * over the whole corpus, and it is .mjs, so this script can import it.
+ */
+const settledBillSlugs = new Set(
+  bills.filter((b) => decisionState(b).state !== 'pending').map((b) => b.full_identifier)
+);
+
+/*
  * The chrome copy gets the SAME vocabulary lint as the curated content.
  *
  * The lint only ever read data/moments.json, so the surrounding UI strings —
@@ -269,6 +284,7 @@ if (baselineVehicles === undefined) {
 const { violations, warnings } = checkMoments(moments, slugsByKind, statusFor, {
   describedNominationSlugs,
   baselineVehicles,
+  settledBillSlugs,
 });
 
 for (const w of warnings) console.warn(`::warning::check-moments: ${w}`);
