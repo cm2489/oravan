@@ -388,8 +388,8 @@
       "es": "Producción del centavo y redondeo en efectivo"
     },
     "summary": {
-      "en": "Should the law end the penny and round cash purchases to the nearest five cents? The U.S. Mint struck its last penny for circulation on November 12, 2025, and pennies remain legal tender. The Common Cents Act puts the end of penny production into law and sets rounding rules for cash payments only. Each chamber has passed its own version, but no single bill has passed both. The Senate passed S. 1525 by unanimous consent on August 7, 2026, and the House is holding it at the desk. The House passed H.R. 3074 by voice vote on July 14 and a revised bill, H.R. 10167, by voice vote on September 14; both sit in the Senate Banking Committee. There is no vote date on the record.",
-      "es": "¿Debe la ley eliminar el centavo y redondear las compras en efectivo a los cinco centavos más cercanos? La Casa de la Moneda de EE. UU. acuñó su último centavo para circulación el 12 de noviembre de 2025, y los centavos siguen siendo de curso legal. La Ley Common Cents lleva a la ley el fin de la producción del centavo y fija reglas de redondeo solo para pagos en efectivo. Cada cámara ha aprobado su propia versión, pero ningún proyecto ha sido aprobado por las dos. El Senado aprobó el S. 1525 por consentimiento unánime el 7 de agosto de 2026, y la Cámara lo tiene retenido en la mesa. La Cámara aprobó la H.R. 3074 por voto oral el 14 de julio y una versión revisada, la H.R. 10167, por voto oral el 14 de septiembre; ambas están en el Comité de Banca del Senado. No hay fecha de votación en el expediente."
+      "en": "Should the law end the penny and round cash purchases to the nearest five cents? The U.S. Mint struck its last penny for circulation on November 12, 2025, and pennies remain legal tender. The Common Cents Act puts the end of penny production into law and sets rounding rules for cash payments only. Both chambers have now passed the same bill, H.R. 10167. The Senate passed S. 1525 by unanimous consent on August 7, 2026, and the House is holding it at the desk. The House passed H.R. 3074 by voice vote on July 14 and a revised bill, H.R. 10167, by voice vote on September 14. H.R. 3074 sits in the Senate Banking Committee; the Senate passed H.R. 10167 without amendment by unanimous consent on September 28, 2026. H.R. 10167 goes to the president next.",
+      "es": "¿Debe la ley eliminar el centavo y redondear las compras en efectivo a los cinco centavos más cercanos? La Casa de la Moneda de EE. UU. acuñó su último centavo para circulación el 12 de noviembre de 2025, y los centavos siguen siendo de curso legal. La Ley Common Cents lleva a la ley el fin de la producción del centavo y fija reglas de redondeo solo para pagos en efectivo. Ambas cámaras ya aprobaron el mismo proyecto, la H.R. 10167. El Senado aprobó el S. 1525 por consentimiento unánime el 7 de agosto de 2026, y la Cámara lo tiene retenido en la mesa. La Cámara aprobó la H.R. 3074 por voto oral el 14 de julio y una versión revisada, la H.R. 10167, por voto oral el 14 de septiembre. La H.R. 3074 está en el Comité de Banca del Senado; el Senado aprobó la H.R. 10167 sin enmiendas por consentimiento unánime el 28 de septiembre de 2026. Ahora la H.R. 10167 pasa al presidente."
     },
     "aliases": {
       "en": [
@@ -408,8 +408,8 @@
       {
         "slug": "hr-10167-119",
         "role": {
-          "en": "The newest version. The House passed it by voice vote on September 14, 2026, and the Senate referred it to the Banking Committee the next day. It ends production of pennies for circulation and rounds cash totals to the nearest five cents. A yes vote in the Senate sends it to the president; a no vote leaves current coinage law unchanged. There is no vote date on the record.",
-          "es": "La versión más reciente. La Cámara la aprobó por voto oral el 14 de septiembre de 2026, y el Senado la remitió al Comité de Banca al día siguiente. Pone fin a la producción de centavos para circulación y redondea los totales en efectivo a los cinco centavos más cercanos. Un voto a favor en el Senado la envía al presidente; un voto en contra deja sin cambios la ley actual sobre monedas. No hay fecha de votación en el expediente."
+          "en": "The newest version. The House passed it by voice vote on September 14, 2026, and the Senate passed it without amendment by unanimous consent on September 28, 2026. It ends production of pennies for circulation and rounds cash totals to the nearest five cents. Both chambers have passed it in the same form. It goes to the president next.",
+          "es": "La versión más reciente. La Cámara la aprobó por voto oral el 14 de septiembre de 2026, y el Senado la aprobó sin enmiendas por consentimiento unánime el 28 de septiembre de 2026. Pone fin a la producción de centavos para circulación y redondea los totales en efectivo a los cinco centavos más cercanos. Ambas cámaras la aprobaron con el mismo texto. Ahora pasa al presidente."
         }
       },
       {
@@ -440,6 +440,7 @@
     },
     "opened": "2026-09-24",
     "review_by": "2026-10-05",
+    "reviewed": "2026-09-29",
     "status": "live"
   }
 }
