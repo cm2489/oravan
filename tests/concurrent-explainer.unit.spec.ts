@@ -187,6 +187,18 @@ test.describe('the words, in both languages', () => {
     expect(es.bill.concurrent.warPowers).toContain('el Servicio de Investigación del Congreso');
     // The corpus's own Spanish name for it (data/moments.json, data/bills-es.json).
     expect(es.bill.concurrent.warPowers).toContain('Resolución de Poderes de Guerra');
+    // The two words are the CRS's about SECTION 5(c), not about the whole War
+    // Powers Resolution (the report adds that "most analysts" think the rest
+    // would stand, section 9 being a separability clause). So the quote names
+    // its object: a "which"
+    // or "que" hanging off "the War Powers Resolution" would read as the whole
+    // law. And the Court's decision is the CRS's REASON ("under the reasoning
+    // applied by the Court"), never a date the CRS started saying so: no
+    // "since" / "desde que" (verifier, 2026-09-29).
+    expect(en.bill.concurrent.warPowers).toMatch(/calls (that section|section 5\(c\)) <quote>/);
+    expect(es.bill.concurrent.warPowers).toMatch(/califica (esa sección|la sección 5\(c\)) de <quote>/);
+    expect(en.bill.concurrent.warPowers).not.toMatch(/\bsince\b/i);
+    expect(es.bill.concurrent.warPowers).not.toMatch(/\bdesde que\b/i);
   });
 
   test('the source line names the report and its number; the link is the CRS report on congress.gov', () => {
