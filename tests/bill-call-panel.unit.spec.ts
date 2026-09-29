@@ -81,9 +81,14 @@ test.describe('the props, from the record', () => {
     expect(p.identifier).toBe(formatCitation(b!.bill_type, b!.bill_number));
     expect(p.title).toBe(b!.ai_headline ?? b!.short_title ?? b!.title);
     expect(p.lastAttempt).toBeNull();
-    // A live target, when the record gives one, is the Senate's: the bill is
-    // on the Senate's floor, and routing never guesses a chamber.
-    if (p.liveTarget) expect(p.liveTarget.chamber).toBe('senate');
+    // A live target, when the record gives one, follows the record, and
+    // routing never guesses a chamber. Read from the record rather than
+    // pinned: S. 4668 was on the Senate floor when this was written, then
+    // passed the Senate 77–22 on 2026-09-28, which sends the call to the
+    // House. A passage sentence names the chamber that acted; the call goes
+    // to the other one.
+    const acted = /\bPassed (House|Senate)\b/i.exec(b!.last_action_text ?? '')?.[1]?.toLowerCase();
+    if (p.liveTarget && acted) expect(p.liveTarget.chamber).toBe(acted === 'senate' ? 'house' : 'senate');
     // The call-log label names the bill once: the citation is prefixed only
     // when the headline does not already carry it.
     for (const label of [p.recordLabels.en, p.recordLabels.es]) {
