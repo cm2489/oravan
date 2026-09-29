@@ -47,7 +47,9 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * the "nav 1" order of the same day — Home · Bills · Call · Big Questions ·
  * Reps — and its Questions cell reads "Big Questions" (his typed note: "I'd
  * like the phone to say Big Questions instead of just questions if
- * possible"; `common.tab.moments`, the thumb bar only). On a desktop the Call
+ * possible"; `common.tab.moments`, the thumb bar only — in Spanish it stays
+ * the one-line "Preguntas", since "Grandes preguntas" needs two lines in a
+ * 64px cell). On a desktop the Call
  * hub is the footer's first Site link ("Make a call"). Today stays off the
  * thumb bar — one tap from Home — and the owner's look at /today visits
  * around 2026-10-29 now applies to the phone only. "My record" left both

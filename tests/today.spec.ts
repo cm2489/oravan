@@ -273,20 +273,23 @@ test.describe('/today', () => {
     }
   });
 
-  test('the day list is a rail beside the brief on a wide screen, and follows it on a phone', async ({ page }) => {
+  test('the day list follows the brief at full width, in columns on a wide screen, never sticky', async ({ page }) => {
+    // The grid layout (2026-09-29): no side rail. "Other days" sits under the
+    // record at the page's full width, so no sticky box can clip its rows.
     await page.goto('/today');
     const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
-    const nav = (await page.locator('nav[data-days]').boundingBox())!;
+    const railEl = page.locator('nav[data-days]');
+    const nav = (await railEl.boundingBox())!;
+    const lastSection = (await page.locator('main section').last().boundingBox())!;
+    expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
+    expect(Math.abs(nav.x - h1.x)).toBeLessThan(2);
+    expect(await railEl.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
     const width = page.viewportSize()!.width;
-    if (width >= 992) {
-      // 62rem, the bill page's desk breakpoint: the rail sits to the right,
-      // level with the title.
-      expect(nav.x).toBeGreaterThan(h1.x + 300);
-      expect(Math.abs(nav.y - h1.y)).toBeLessThan(40);
-    } else {
-      const lastSection = (await page.locator('main section').last().boundingBox())!;
-      expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
-    }
+    const lefts = await railEl
+      .locator('a[data-day-row]')
+      .evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
+    // One column on a phone, two from 40rem (sm), three from 64rem (lg).
+    expect(lefts).toBe(width >= 1024 ? 3 : width >= 640 ? 2 : 1);
   });
 });
 
