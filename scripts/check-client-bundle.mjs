@@ -24,8 +24,9 @@
  * the bundler's output, so a path the import walk cannot see (a package, a
  * bundler setting, a data directory that moved) still fails here.
  *
- * CI runs it right after the E2E step, which is the step that builds the
- * app (playwright.config.ts's webServer runs `npm run build`).
+ * CI runs it in ci.yml's build job, right after the step that builds the
+ * app once (tests/e2e-server.mjs with E2E_SERVER_MODE=build runs
+ * `npm run build`); the E2E shards then serve that same build.
  *
  *   node scripts/check-client-bundle.mjs              check .next/static/chunks
  *   node scripts/check-client-bundle.mjs --self-test  prove the rules still bite

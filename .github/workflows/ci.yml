@@ -21,8 +21,76 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+
+# The pull-request check is the job named `test` at the bottom. It does no
+# work of its own: it passes only when every job it names passed (or, on a
+# docs-only pull request, when the build-and-browser jobs were skipped as
+# they should be). The work runs in parallel so the check finishes in about
+# half the time it took as one job: the gates, the unit specs (once, with no
+# server), and one build that six browser-test shards all serve.
 jobs:
-  test:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.paths.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Detect docs-only PR diff (founder-approved fast path, 2026-07-07)
+        # PRs whose entire diff is docs/** or *.md skip the E2E build below.
+        # Conservative on purpose: any other path (code, messages, configs,
+        # this workflow itself) runs the full pipeline, and every push to
+        # main still runs the full suite regardless — the fast path only
+        # shortens PR iteration, never the post-merge safety net.
+        id: paths
+        run: |
+          DOCS_ONLY=false
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --quiet origin "${{ github.event.pull_request.base.sha }}"
+            CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD)
+            echo "$CHANGED"
+            if [ -n "$CHANGED" ] && ! echo "$CHANGED" | grep -qvE '^docs/|\.md$'; then
+              DOCS_ONLY=true
+            fi
+          fi
+          echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+          echo "docs_only=$DOCS_ONLY"
+      - uses: actions/setup-node@v6
+        if: steps.paths.outputs.docs_only == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: steps.paths.outputs.docs_only == 'true'
+      - name: Constitution consistency (the one spec the docs-only fast path used to skip)
+        # THE GAP THIS CLOSES: tests/claim-truth.spec.ts is the only thing that
+        # polices edits to README/CLAUDE/PRODUCT and docs/constitution-log.md —
+        # that the three documents name the SAME three publish gates, that no
+        # retired human-review claim comes back, that README principle 5 keeps
+        # its review clause scoped to the call script, and that every gate
+        # CLAUDE.md names exists. (DESIGN.md was the fourth document until its
+        # retirement on 2026-09-27.) It lived in the Playwright job, which the
+        # docs-only fast path skips. So the exact change class those tests
+        # police — a markdown-only edit to the constitution — was the one class
+        # that never gated. Re-adding "human-reviewed" to principle 5 in a
+        # docs-only PR would have shipped green.
+        #
+        # Cheap because it is honest about what it needs: this spec is pure
+        # Node (readFileSync + spawnSync), takes no `page` fixture, and so
+        # launches no browser. PW_NO_WEBSERVER skips the `next build && next
+        # start` the config otherwise stands up; one project instead of two
+        # stops it running twice for no reason. Measured locally with
+        # PLAYWRIGHT_BROWSERS_PATH pointed at an empty directory — proving the
+        # browser-install step above it can stay skipped — at 10 tests in ~10s
+        # on a loaded machine.
+        if: steps.paths.outputs.docs_only == 'true'
+        env:
+          PW_NO_WEBSERVER: '1'
+        run: npx playwright test tests/claim-truth.spec.ts --project=webkit-desktop
+
+  gates:
+    # Every corpus and source gate, typecheck and lint. No `needs`: it runs
+    # on every pull request (docs-only ones too) and on every push to main,
+    # and `test` cannot pass unless it did.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -175,96 +243,209 @@ jobs:
         run: node scripts/check-nominations.mjs
       - run: npm run typecheck
       - run: npm run lint
-      - name: Detect docs-only PR diff (founder-approved fast path, 2026-07-07)
-        # PRs whose entire diff is docs/** or *.md skip the E2E build below.
-        # Conservative on purpose: any other path (code, messages, configs,
-        # this workflow itself) runs the full pipeline, and every push to
-        # main still runs the full suite regardless — the fast path only
-        # shortens PR iteration, never the post-merge safety net.
-        id: paths
-        run: |
-          DOCS_ONLY=false
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch --quiet origin "${{ github.event.pull_request.base.sha }}"
-            CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD)
-            echo "$CHANGED"
-            if [ -n "$CHANGED" ] && ! echo "$CHANGED" | grep -qvE '^docs/|\.md$'; then
-              DOCS_ONLY=true
-            fi
-          fi
-          echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
-          echo "docs_only=$DOCS_ONLY"
-      - name: Constitution consistency (the one spec the docs-only fast path used to skip)
-        # THE GAP THIS CLOSES: tests/claim-truth.spec.ts is the only thing that
-        # polices edits to README/CLAUDE/PRODUCT and docs/constitution-log.md —
-        # that the three documents name the SAME three publish gates, that no
-        # retired human-review claim comes back, that README principle 5 keeps
-        # its review clause scoped to the call script, and that every gate
-        # CLAUDE.md names exists. (DESIGN.md was the fourth document until its
-        # retirement on 2026-09-27.) It lived in the Playwright job, which the
-        # docs-only fast path skips. So the exact change class those tests
-        # police — a markdown-only edit to the constitution — was the one class
-        # that never gated. Re-adding "human-reviewed" to principle 5 in a
-        # docs-only PR would have shipped green.
-        #
-        # Cheap because it is honest about what it needs: this spec is pure
-        # Node (readFileSync + spawnSync), takes no `page` fixture, and so
-        # launches no browser. PW_NO_WEBSERVER skips the `next build && next
-        # start` the config otherwise stands up; one project instead of two
-        # stops it running twice for no reason. Measured locally with
-        # PLAYWRIGHT_BROWSERS_PATH pointed at an empty directory — proving the
-        # browser-install step above it can stay skipped — at 10 tests in ~10s
-        # on a loaded machine.
-        if: steps.paths.outputs.docs_only == 'true'
+
+  unit:
+    # The *.unit.spec.ts files, once. They are pure Node, so no browser and
+    # no server (PW_NO_WEBSERVER); playwright.config.ts's `unit` project is
+    # the only one that picks them up.
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Unit specs (no server, no browser)
         env:
           PW_NO_WEBSERVER: '1'
-        run: npx playwright test tests/claim-truth.spec.ts --project=webkit-desktop
-      - name: Resolve Playwright version (browser-cache key)
-        id: pw
-        if: steps.paths.outputs.docs_only != 'true'
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Cache Playwright WebKit browser
-        # Version-keyed, so a cache hit is ALWAYS the browser this Playwright
-        # build expects — no mismatch risk. A miss just re-downloads (slower,
-        # never wrong). The install step below still runs, so --with-deps system
-        # libraries are always installed fresh; only the binary download is saved.
-        if: steps.paths.outputs.docs_only != 'true'
-        uses: actions/cache@v4
+        run: npx playwright test --project=unit
+      - uses: actions/upload-artifact@v7
+        if: failure()
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+          name: playwright-traces-unit
+          path: test-results/
+          retention-days: 7
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - name: Cache Next.js build cache
         # Next content-validates .next/cache against each input file's hash, so a
         # stale restore only ever forces a rebuild — it can never yield a wrong
         # build or a page that doesn't reflect current source. Keyed per-commit
         # (always saves a fresh entry) with a lockfile-scoped restore-key so a
         # new commit still starts from the most recent warm cache.
-        if: steps.paths.outputs.docs_only != 'true'
         uses: actions/cache@v4
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
             nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-      - name: Install Playwright WebKit
-        if: steps.paths.outputs.docs_only != 'true'
-        run: npx playwright install --with-deps webkit
-      - name: E2E (builds the app via webServer)
-        if: steps.paths.outputs.docs_only != 'true'
-        run: npx playwright test
+      - name: Build the app once (the build every E2E shard serves)
+        # tests/e2e-server.mjs with E2E_SERVER_MODE=build: the same
+        # `npm run build`, under the same fake-tenancy environment, that the
+        # Playwright webServer used to run before its tests.
+        env:
+          E2E_SERVER_MODE: build
+        run: npx tsx tests/e2e-server.mjs
       - name: Client bundle gate (no data/ text in client JS, no chunk over 300 KB)
-        # Reads the .next/static/chunks the E2E step's webServer just built
-        # (`npm run build`), so it costs no second build. !cancelled() so the
-        # bundle verdict is still reported when an unrelated E2E spec is red;
-        # when the build itself failed there are no chunks and this step says
-        # so instead of passing.
-        if: ${{ !cancelled() && steps.paths.outputs.docs_only != 'true' }}
+        # Reads the .next/static/chunks the step above just built, so it
+        # costs no second build. !cancelled() so that when the build itself
+        # failed this step still runs and says there are no chunks, instead
+        # of passing by not running.
+        if: ${{ !cancelled() }}
         run: |
           node scripts/check-client-bundle.mjs --self-test
           node scripts/check-client-bundle.mjs
+      - name: Pack the build for the shards
+        # .next/cache is left out (the cache step above carries it between
+        # runs); so are trace files. The shards need only what `next start`
+        # serves.
+        run: |
+          echo "BUILD_ID=$(cat .next/BUILD_ID)"
+          tar --zstd -cf next-build.tar.zst --exclude=.next/cache --exclude=.next/dev --exclude='.next/trace*' .next
+          ls -l next-build.tar.zst
+      - name: Upload the build
+        # An artifact, not a cache: it belongs to this run, so every shard
+        # gets this commit's build or fails loudly. Uploaded as the tar file
+        # itself (archive: false), since zstd has already compressed it.
+        uses: actions/upload-artifact@v7
+        with:
+          path: next-build.tar.zst
+          archive: false
+          retention-days: 1
+
+  e2e:
+    name: e2e ${{ matrix.shard }}/6
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version (browser-cache key)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright WebKit browser
+        # Version-keyed, so a cache hit is ALWAYS the browser this Playwright
+        # build expects — no mismatch risk. A miss just re-downloads (slower,
+        # never wrong). The install step below still runs, so --with-deps system
+        # libraries are always installed fresh; only the binary download is saved.
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Playwright WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Download the build
+        uses: actions/download-artifact@v8
+        with:
+          name: next-build.tar.zst
+      - name: Unpack the build
+        run: |
+          tar --zstd -xf next-build.tar.zst
+          rm next-build.tar.zst
+          echo "BUILD_ID=$(cat .next/BUILD_ID)"
+      - name: E2E shard (serves the one build, never builds)
+        # E2E_SERVER_MODE=start: tests/e2e-server.mjs refuses at once if
+        # .next holds no finished build, so a shard can only ever test the
+        # build the job above made.
+        env:
+          E2E_SERVER_MODE: start
+        run: npx playwright test --project=webkit-mobile --project=webkit-desktop --project=webkit-320 --shard=${{ matrix.shard }}/6 --reporter=github,blob
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-traces
+          name: playwright-traces-e2e-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-e2e-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  e2e-report:
+    # Information only: one HTML report stitched from the six shards. `test`
+    # does not wait for it.
+    needs: [build, e2e]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: blob-e2e-*
+          path: all-blob-reports
+          merge-multiple: true
+      - name: Merge the shard reports
+        run: npx playwright merge-reports --reporter=html ./all-blob-reports
+      - uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  test:
+    # The one check to read, and the one a required status check on main
+    # would name. `if: always()`
+    # because a check that is skipped counts as passing: this job must run
+    # and fail whenever anything it depends on failed, was cancelled, or was
+    # skipped when it should have run.
+    needs: [changes, gates, unit, build, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every part passed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          result() { echo "$NEEDS" | jq -r --arg j "$1" '.[$j].result'; }
+          DOCS_ONLY=$(echo "$NEEDS" | jq -r '.changes.outputs.docs_only')
+          echo "docs_only=$DOCS_ONLY"
+          FAIL=0
+          expect() {
+            GOT=$(result "$1")
+            if [ "$GOT" = "$2" ]; then
+              echo "ok: $1 is $GOT"
+            else
+              echo "::error::$1 is $GOT, expected $2"
+              FAIL=1
+            fi
+          }
+          expect changes success
+          expect gates success
+          if [ "$DOCS_ONLY" = "true" ]; then
+            expect unit skipped
+            expect build skipped
+            expect e2e skipped
+          else
+            expect unit success
+            expect build success
+            expect e2e success
+          fi
+          exit $FAIL
