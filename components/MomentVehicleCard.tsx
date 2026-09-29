@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { PhoneCall } from 'lucide-react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { CALL_BUTTON } from '@/components/call-button';
 import { Chip } from '@/components/system';
 import type { BillStatus } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
@@ -182,7 +183,7 @@ export function MomentVehicleCard({
       <p className="mt-auto pt-5">
         <Link
           href={ctaHref ?? `/bills/${slug}`}
-          className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper transition-colors hover:border-go-deep hover:bg-go-deep"
+          className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}
         >
           <PhoneCall className="h-4 w-4" aria-hidden />
           {ctaLabel}
