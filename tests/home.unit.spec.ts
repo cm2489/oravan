@@ -175,15 +175,27 @@ test.describe('the hero with a saved ZIP', () => {
     expect(readLookup({ reps: [sen1], multiDistrict: 'yes' })?.multiDistrict).toBe(false);
   });
 
+  /*
+   * The member's title, per language. English uses the chamber titles the
+   * wireframe draws ("Sen. Maria Cantwell"). Spanish names the chamber after
+   * the name instead: "Sen." and "Rep." are English abbreviations ("Rep." reads
+   * as "república" in Spanish), and the record carries no gender, so
+   * "la senadora" / "el senador" is not available.
+   */
+  const TITLED = {
+    en: { senator: 'Sen. Pat One', delegate: 'Del. Pat One', representative: 'Rep. Pat One' },
+    es: { senator: 'Pat One (Senado)', delegate: 'Pat One (Cámara)', representative: 'Pat One (Cámara)' },
+  } as const;
+
   for (const [lang, messages] of [
     ['en', en],
     ['es', es],
   ] as const) {
     test(`${lang}: the member titles and the ZIP line render every branch`, () => {
       const t = createTranslator({ locale: lang, messages, namespace: 'homeZip' });
-      for (const role of ['senator', 'delegate', 'representative']) {
+      for (const role of ['senator', 'delegate', 'representative'] as const) {
         const out = t('member' as never, { role, name: 'Pat One' } as never) as string;
-        expect(out).toMatch(/^(Sen|Del|Rep)\. Pat One$/);
+        expect(out).toBe(TITLED[lang][role]);
       }
       const withPlace = t('where' as never, { zip: '98103', hasPlace: 'yes', place: 'WA 7' } as never) as string;
       expect(withPlace).toContain('98103');
