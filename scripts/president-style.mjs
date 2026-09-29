@@ -6,6 +6,8 @@
  *   node scripts/president-style.mjs --write    # apply to the files below
  *   node scripts/president-style.mjs --check    # exit 1 if anything would change
  *   node scripts/president-style.mjs --json out.json   # the full report, for a PR body
+ *   node scripts/president-style.mjs --messages [--audit|--write|--check]
+ *                                               # the same, over messages/*.json
  *
  * Owner, 2026-09-29: "It's 'the president' just FYI for all future copy
  * (correct any other copy but first find the rules of how and when
@@ -29,8 +31,10 @@
  *
  * Not swept, on purpose: data/nominations.json (every string is the Senate's),
  * data/coverage.json and data/press-names.json (other publishers' headlines),
- * data/votes.json (the clerks' records). messages/*.json are hand-edited in
- * the same PR and pinned by tests/president-style.unit.spec.ts.
+ * data/votes.json (the clerks' records). messages/*.json have their own mode
+ * (--messages), which rewrites only the changed strings so the files' hand-kept
+ * formatting survives; tests/president-style.unit.spec.ts fails when a message
+ * string would change.
  *
  * Every write preserves the file's own formatting (no indent for the three
  * big corpus files, two spaces and a trailing newline for the Moments files),
@@ -154,6 +158,43 @@ export function sweepCorpus(files) {
 }
 
 /**
+ * messages/<lang>.json, restyled by exact string replacement on the RAW file
+ * so its hand-kept formatting survives byte for byte. Returns the new text
+ * and what changed; refuses (throws) if a changed string is not unique in the
+ * file, because then a replacement could land on the wrong key.
+ *
+ * @param {string} raw
+ * @param {'en'|'es'} lang
+ * @returns {{ raw: string, changes: Array<{ path: string, before: string, after: string }>, skipped: Array<{ path: string, match: string, reason: string }> }}
+ */
+export function sweepMessagesRaw(raw, lang) {
+  const parsed = JSON.parse(raw);
+  /** @type {Array<{ path: string, before: string, after: string }>} */
+  const changes = [];
+  /** @type {Array<{ path: string, match: string, reason: string }>} */
+  const skipped = [];
+  /** @param {any} o @param {string} p */
+  const walk = (o, p) => {
+    if (typeof o === 'string') {
+      const r = normalizePresidentStyle(o, lang);
+      for (const s of r.skipped) skipped.push({ path: p, match: s.match, reason: s.reason });
+      if (r.text !== o) changes.push({ path: p, before: o, after: r.text });
+    } else if (o && typeof o === 'object') {
+      for (const [k, v] of Object.entries(o)) walk(v, p ? `${p}.${k}` : k);
+    }
+  };
+  walk(parsed, '');
+  let out = raw;
+  for (const c of changes) {
+    const needle = JSON.stringify(c.before);
+    const count = out.split(needle).length - 1;
+    if (count !== 1) throw new Error(`messages/${lang}.json ${c.path}: the string occurs ${count} times — fix it by hand`);
+    out = out.replace(needle, () => JSON.stringify(c.after));
+  }
+  return { raw: out, changes, skipped };
+}
+
+/**
  * The sentences that differ between two versions of one field, paired. The
  * normalizer never adds or removes sentence punctuation, so the split lines
  * up; if it ever did not, the whole field is the pair.
@@ -182,6 +223,33 @@ const FILES = {
   momentUpdates: { path: 'data/moment-updates.json', indent: 2, newline: true },
 };
 
+/**
+ * `--messages`: the site copy instead of the corpus. Same flags.
+ *
+ * @param {{ write: boolean, audit: boolean, check: boolean }} flags
+ */
+function mainMessages({ write, audit, check }) {
+  let pending = 0;
+  for (const lang of /** @type {const} */ (['en', 'es'])) {
+    const path = `messages/${lang}.json`;
+    const r = sweepMessagesRaw(readFileSync(path, 'utf8'), lang);
+    pending += r.changes.length;
+    if (audit) {
+      for (const c of r.changes) console.log(`CHANGE ${path} ${c.path}\n  - ${c.before}\n  + ${c.after}`);
+      for (const s of r.skipped) console.log(`SKIP   ${path} ${s.path}: "${s.match}" — ${s.reason}`);
+    }
+    console.log(`  ${path}: ${r.changes.length} string(s) to restyle, ${r.skipped.length} left to the editor`);
+    if (write && r.changes.length) {
+      writeFileSync(path, r.raw);
+      console.log(`  wrote ${path}`);
+    }
+  }
+  if (check && pending) {
+    console.error(`::error::president-style: ${pending} message string(s) do not follow docs/copy-style.md — run node scripts/president-style.mjs --messages --write`);
+    process.exitCode = 1;
+  }
+}
+
 /** @param {string[]} argv */
 async function main(argv) {
   const write = argv.includes('--write');
@@ -189,6 +257,11 @@ async function main(argv) {
   const check = argv.includes('--check');
   const jsonAt = argv.indexOf('--json');
   const jsonPath = jsonAt >= 0 ? argv[jsonAt + 1] : null;
+  if (argv.includes('--messages')) {
+    console.log('president-style (site copy):');
+    mainMessages({ write, audit, check });
+    return;
+  }
 
   /** @type {Record<string, any>} */
   const loaded = {};
@@ -240,7 +313,10 @@ async function main(argv) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run-directly guard without `import.meta`: Playwright transpiles an imported
+// .mjs to CJS, where `import.meta` cannot be parsed (scripts/moment-candidates.mjs
+// has the full note), and tests/president-style.unit.spec.ts imports this file.
+if (/(^|\/)president-style\.mjs$/.test(process.argv[1] ?? '') && /(^|\/)scripts\//.test(process.argv[1] ?? '')) {
   main(process.argv.slice(2)).catch((e) => {
     console.error(e);
     process.exit(1);
