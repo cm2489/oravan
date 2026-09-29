@@ -444,18 +444,18 @@ test.describe('Big Question cards over a failed procedural vote (pick (a))', () 
       test.skip(questions.length === 0, 'no live question holds a failed procedural vote today');
       for (const q of questions) {
         await page.goto(`${prefix}/questions/${q.id}`);
-        const card = (slug: string) =>
-          page.locator('article').filter({ has: page.locator(`h3 a[href$="/bills/${slug}"]`) });
+        // A card's button is the only link on the page that carries its
+        // label AND ends at that vehicle's page (the headline link has no
+        // label of that kind), so the pair names one card's button.
+        const button = (label: string, href: string) =>
+          page.getByRole('link', { name: label, exact: true }).and(page.locator(`a[href$="${href}"]`));
         for (const slug of q.procedural) {
-          const cta = card(slug).getByRole('link', { name: messages.moments.readCall, exact: true });
-          await expect(cta, `${q.id}: ${slug}`).toHaveCount(1);
-          await expect(cta).toHaveAttribute('href', new RegExp(`/bills/${escapeRegex(slug)}#act$`));
+          await expect(button(messages.moments.readCall, `/bills/${slug}#act`), `${q.id}: ${slug}`).toHaveCount(1);
+          await expect(button(messages.moments.readBill, `/bills/${slug}`), `${q.id}: ${slug}`).toHaveCount(0);
         }
         for (const slug of q.finished) {
-          await expect(
-            card(slug).getByRole('link', { name: messages.moments.readBill, exact: true }),
-            `${q.id}: ${slug}`,
-          ).toHaveCount(1);
+          await expect(button(messages.moments.readBill, `/bills/${slug}`), `${q.id}: ${slug}`).toHaveCount(1);
+          await expect(button(messages.moments.readCall, `/bills/${slug}#act`), `${q.id}: ${slug}`).toHaveCount(0);
         }
       }
     });
