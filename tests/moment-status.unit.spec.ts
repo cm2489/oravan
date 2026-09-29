@@ -25,7 +25,9 @@ import {
   floorSettledChamber,
   passageState as passageStateMjs,
 } from '../lib/floor-text.mjs';
-import { journeyEnding, passageState } from '../lib/journey';
+import { journeyEnding, lastFailedVote, passageState, settledDecision } from '../lib/journey';
+import { decisionState } from '../lib/docket.mjs';
+import { billCtaKey } from '../lib/moments-ui';
 import { nominationSlug } from '../lib/core/nominations';
 import { TERMINAL_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 import { renderStatusDigest, statusRun, storedNominationSlug } from '../scripts/moment-watch.mjs';
@@ -57,24 +59,34 @@ test.describe('each vocabulary state, over the record’s own words', () => {
   const cases: [string, ReturnType<typeof bill>, Partial<StatusLine>][] = [
     ['signed, with the P.L. number', bill('hr', 'signed', 'Became Public Law No: 119-86.'), { key: 'signed', law: '119-86', terminal: true }],
     ['signed, without one', bill('hr', 'signed', 'Signed by President.'), { key: 'signed', law: null, terminal: true }],
-    ['vetoed', bill('hr', 'vetoed', 'Vetoed by President.'), { key: 'vetoed', terminal: true }],
+    // Not terminal since 2026-09-29 (pick (a)): an override vote is still
+    // possible, and the bill page keeps its call panel (decisionState: pending).
+    ['vetoed', bill('hr', 'vetoed', 'Vetoed by President.'), { key: 'vetoed', terminal: false }],
     ['presented to the President', bill('hr', 'passed_chamber', 'Presented to President.'), { key: 'presented', terminal: false }],
     ['failed, reconsider pending (Tillis form)', bill('hr', 'floor_vote', TILLIS), { key: 'failedReconsider', chamber: 'senate', terminal: false }],
     ['failed, reconsider pending (Schumer form)', bill('s', 'floor_vote', SCHUMER), { key: 'failedReconsider', chamber: 'senate' }],
+    // A failed PROCEDURAL vote reads `failed` and stays live (owner's pick
+    // (a), 2026-09-29: "Procedural failures keep the call panel"). Only a
+    // failed vote to pass it is terminal — H.Con.Res. 89 below.
     [
-      'failed: motion to proceed rejected',
+      'failed: motion to proceed rejected — live',
       bill('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)'),
-      { key: 'failed', chamber: 'senate', terminal: true },
+      { key: 'failed', chamber: 'senate', terminal: false },
     ],
     [
-      'failed: discharge rejected',
+      'failed: discharge rejected — live',
       bill('sjres', 'floor_vote', 'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.'),
-      { key: 'failed', chamber: 'senate', terminal: true },
+      { key: 'failed', chamber: 'senate', terminal: false },
     ],
     [
-      'failed: House suspension vote',
+      'failed: cloture on the motion to proceed not invoked (S. 3386) — live',
+      bill('s', 'floor_vote', 'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 51 - 48. Record Vote Number: 643. (CR S8654)'),
+      { key: 'failed', chamber: 'senate', terminal: false },
+    ],
+    [
+      'failed: House suspension vote — live',
       bill('s', 'floor_vote', 'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).'),
-      { key: 'failed', chamber: 'house', terminal: true },
+      { key: 'failed', chamber: 'house', terminal: false },
     ],
     [
       'on the Senate calendar — aged placements still read, dated',
@@ -145,6 +157,124 @@ test.describe('each vocabulary state, over the record’s own words', () => {
   }
 });
 
+/*
+ * THE CARD FOLLOWS THE BILL PAGE (owner, 2026-09-29, pick (a) on artifact
+ * 7BuRDMkWu9zigDE1u2XPLJ: "Only a law or a failed final vote counts as
+ * finished. Procedural failures keep the call panel, with a line saying the
+ * last attempt failed."). After #350 the bill pages of the four S.J.Res.
+ * vehicles on /questions/iran-war-powers kept their call panel, while their
+ * Big Question cards still said "Read the bill": this module marked every
+ * failed floor vote terminal. `terminal` is now lib/docket.mjs
+ * `decisionState`. Each record below is verbatim from data/bills.json as
+ * committed on 2026-09-29.
+ *
+ * `cardKey` is the question page's own expression for a bill card
+ * (app/[locale]/questions/[id]/page.tsx), minus the question-level `settled`
+ * state (lib/moments.ts: every vehicle signed or vetoed), which the Iran
+ * question is not.
+ */
+test.describe('the Big Question card follows the bill page (pick (a), 2026-09-29)', () => {
+  type Rec = Parameters<typeof billStatusLine>[0] & { status_basis_text?: string };
+  const rec = (bill_type: string, status: string, last_action_text: string, last_action_date: string, status_basis_text?: string): Rec => ({
+    bill_type,
+    status,
+    last_action_text,
+    last_action_date,
+    ...(status_basis_text ? { status_basis_text } : {}),
+  });
+  const cardKey = (b: Rec) => billCtaKey(billStatusLine(b, NOW).terminal || settledDecision(b as never) !== null);
+
+  const IRAN_PROCEDURAL: [string, Rec, FailedProcedure][] = [
+    [
+      'sjres-185-119',
+      rec('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)', '2026-06-24'),
+      'proceed',
+    ],
+    [
+      'sjres-180-119',
+      rec('sjres', 'floor_vote', 'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207.', '2026-07-23'),
+      'discharge',
+    ],
+    [
+      'sjres-181-119',
+      rec('sjres', 'floor_vote', 'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)', '2026-07-30'),
+      'discharge',
+    ],
+    [
+      'sjres-172-119',
+      rec('sjres', 'floor_vote', 'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.', '2026-06-16'),
+      'discharge',
+    ],
+  ];
+  for (const [slug, b, procedure] of IRAN_PROCEDURAL) {
+    test(`${slug}: a failed ${procedure} motion — the line says a Senate vote failed, and the card offers the call`, () => {
+      const line = billStatusLine(b, NOW);
+      expect(line).toMatchObject({ key: 'failed', chamber: 'senate', terminal: false });
+      // The bill page keeps its call panel, with the last-attempt line…
+      expect(settledDecision(b as never)).toBeNull();
+      expect(lastFailedVote(b as never)).toMatchObject({ procedure, chamber: 'senate' });
+      // …the MCP envelope agrees…
+      expect(decisionState(b)).toEqual({ state: 'pending', reason: null });
+      // …and so does the card.
+      expect(cardKey(b)).toBe('moments.readCall');
+    });
+  }
+
+  const FINISHED: [string, Rec, Partial<StatusLine>][] = [
+    [
+      'hconres-89-119, a failed vote to pass it (Senate, 49–50)',
+      rec('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', '2026-09-24'),
+      { key: 'failed', chamber: 'senate' },
+    ],
+    [
+      'hconres-38-119, a failed vote to pass it (House, 212–219), read from the stored basis',
+      rec(
+        'hconres',
+        'floor_vote',
+        'Motion to reconsider laid on the table Agreed to without objection.',
+        '2026-03-05',
+        'Failed of passage/not agreed to in House On agreeing to the resolution Failed by the Yeas and Nays: 212 - 219 (Roll no. 85).',
+      ),
+      { key: 'failed', chamber: 'house' },
+    ],
+    ['hr-6500-119, a law', rec('hr', 'signed', 'Became Public Law No: 119-103.', '2026-09-02'), { key: 'signed', law: '119-103' }],
+  ];
+  for (const [name, b, expected] of FINISHED) {
+    test(`${name} stays terminal, and its card reads "Read the bill"`, () => {
+      expect(billStatusLine(b, NOW)).toMatchObject({ ...expected, terminal: true });
+      expect(settledDecision(b as never)).not.toBeNull();
+      expect(decisionState(b).state).not.toBe('pending');
+      expect(cardKey(b)).toBe('moments.readBill');
+    });
+  }
+
+  test('hconres-86-119, a concurrent resolution both chambers adopted (#360), stays terminal', () => {
+    const b = rec(
+      'hconres',
+      'passed_chamber',
+      'Message on Senate action sent to the House.',
+      '2026-06-24',
+      'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)',
+    );
+    expect(billStatusLine(b, NOW)).toMatchObject({ key: 'bothAgreed', terminal: true });
+    expect(decisionState(b).state).toBe('settled');
+    expect(cardKey(b)).toBe('moments.readBill');
+  });
+
+  test('the Iran question as a whole: still live, still led by the 49–50 rejection', () => {
+    const lines = [
+      billStatusLine(rec('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.', '2026-09-16'), NOW),
+      billStatusLine(FINISHED[0][1], NOW),
+      ...IRAN_PROCEDURAL.map(([, b]) => billStatusLine(b, NOW)),
+    ];
+    const q = questionStatus(lines);
+    expect(q.mode).toBe('live');
+    expect(q.lead).toBe(lines[1]);
+  });
+});
+
+type FailedProcedure = NonNullable<ReturnType<typeof lastFailedVote>>['procedure'];
+
 test.describe('the verbatim fallback — what no matcher has read', () => {
   const verbatim: [string, ReturnType<typeof bill>][] = [
     // #279 reads "Considered by …" as pending; aged, the record speaks instead
@@ -203,12 +333,18 @@ test.describe('question level: enacted leads, then rank — unless a newer floor
   const waiting = billStatusLine(bill('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.', '2026-07-23'), NOW);
   const committee = billStatusLine(bill('hr', 'committee', 'Referred to the House Committee on Foreign Affairs.', '2026-09-01'), NOW);
   const signed = billStatusLine(bill('hr', 'signed', 'Became Public Law No: 119-103.', '2026-09-02'), NOW);
+  const rejected = billStatusLine(bill('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', '2026-06-24'), NOW);
 
   test('leads with the most advanced LIVE vehicle, even over a newer COMMITTEE line (a referral is not news)', () => {
     expect(questionStatus([failed, committee, waiting])).toEqual({ mode: 'live', lead: waiting });
   });
   test('every vehicle terminal → explainer mode, led by the most recent', () => {
-    expect(questionStatus([failed, signed])).toEqual({ mode: 'explainer', lead: signed });
+    expect(questionStatus([rejected, signed])).toEqual({ mode: 'explainer', lead: signed });
+  });
+  test('a failed MOTION keeps the question live: its vehicle can still come to a vote (pick (a), 2026-09-29)', () => {
+    expect(failed.terminal).toBe(false);
+    expect(questionStatus([failed, signed])).toEqual({ mode: 'live', lead: signed });
+    expect(questionStatus([failed, rejected])).toEqual({ mode: 'live', lead: failed });
   });
   test('no resolved vehicle → no line at all', () => {
     expect(questionStatus([])).toEqual({ mode: 'live', lead: null });
@@ -224,8 +360,11 @@ test.describe('question level: enacted leads, then rank — unless a newer floor
     expect(questionStatus([hr6500, hr9770])).toEqual({ mode: 'live', lead: hr6500 });
     expect(questionStatus([signed, committee])).toEqual({ mode: 'live', lead: signed });
     // …in explainer mode too, even when a failure is newer than the law.
-    const newerFailure = billStatusLine(bill('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50.', '2026-09-20'), NOW);
+    const newerFailure = billStatusLine(bill('hconres', 'floor_vote', 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', '2026-09-20'), NOW);
     expect(questionStatus([newerFailure, signed])).toEqual({ mode: 'explainer', lead: signed });
+    // A newer failed MOTION leaves the question live, and the law still leads.
+    const newerMotion = billStatusLine(bill('sjres', 'floor_vote', 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50.', '2026-09-20'), NOW);
+    expect(questionStatus([newerMotion, signed])).toEqual({ mode: 'live', lead: signed });
   });
 
   test('RECENCY BEATS RANK by more than RECENCY_GAP_DAYS (Iran: the 49–50 rejection, 8 days after "waiting on the Senate")', () => {
@@ -314,6 +453,20 @@ test.describe('the corpus sweep', () => {
     // The fallback stays the exception, never the rule (66 of ~3,190 on
     // 2026-09-24). A ceiling, not a count: the corpus moves nightly.
     expect(counts.recordStep ?? 0).toBeLessThan((bills as unknown[]).length * 0.1);
+  });
+
+  test('terminal IS decisionState on every committed bill, and every record the bill page settles is terminal', () => {
+    let procedural = 0;
+    for (const b of bills as (Parameters<typeof billStatusLine>[0] & { full_identifier: string })[]) {
+      const line = billStatusLine(b, NOW);
+      expect(line.terminal, b.full_identifier).toBe(decisionState(b).state !== 'pending');
+      // One direction only: a card never offers a call its page does not have.
+      if (settledDecision(b as never) !== null) expect(line.terminal, b.full_identifier).toBe(true);
+      if (line.key === 'failed' && !line.terminal) procedural++;
+    }
+    // Not a count to keep — the corpus moves nightly — only proof the sweep
+    // reached failed procedural votes at all (26 on 2026-09-29).
+    expect(procedural).toBeGreaterThan(0);
   });
 
   test('nominations: verbatim, Senate, terminal by the nomination set', () => {

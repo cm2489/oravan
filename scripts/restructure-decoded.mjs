@@ -13,6 +13,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { PRESIDENT_STYLE_RULE, presidentStyleSections } from '../lib/president-style.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-sonnet-5-5';
@@ -59,6 +60,7 @@ STRICT RULES:
 - COST: 1-2 sentences ONLY if the summary contains spending, funding, fines, or who-pays content; otherwise output exactly NONE.
 - For a very thin summary, keep sections very short rather than padding.
 - Spanish: natural Latin American Spanish, same rules; agency names in English with a gloss when helpful; output NONE for ES_COST exactly when COST is NONE.
+${PRESIDENT_STYLE_RULE}
 - Plain text only, no markdown.
 
 Output exactly this tagged format, each tag on its own line followed by the content:
@@ -82,9 +84,11 @@ Output exactly this tagged format, each tag on its own line followed by the cont
   const t = parseTagged(msg.content[0].text);
   if (!t.TLDR || t.TLDR.length > 220 || !t.WHAT || !t.WHO || !t.WHY) throw new Error('bad shape');
   if ((norm(t.COST) === null) !== (norm(t.ES_COST) === null)) throw new Error('cost parity mismatch');
+  // "The president" (docs/copy-style.md) on every section, both languages.
+  const titles = [b.title, b.short_title].filter((x) => typeof x === 'string');
   return {
-    en: { tldr: t.TLDR, what: t.WHAT, who: t.WHO, why: t.WHY, cost: norm(t.COST) },
-    esS: { tldr: t.ES_TLDR, what: t.ES_WHAT, who: t.ES_WHO, why: t.ES_WHY, cost: norm(t.ES_COST) },
+    en: presidentStyleSections({ tldr: t.TLDR, what: t.WHAT, who: t.WHO, why: t.WHY, cost: norm(t.COST) }, 'en', { titles }),
+    esS: presidentStyleSections({ tldr: t.ES_TLDR, what: t.ES_WHAT, who: t.ES_WHO, why: t.ES_WHY, cost: norm(t.ES_COST) }, 'es'),
   };
 }
 
