@@ -42,11 +42,12 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVo
  * (its `#votes` section), which lists every stored roll call on the bill. So
  * the page prints at most MEMBER_VOTES_MAX_BILLS roll calls, however many a
  * bill collects (2026-09-29: with the 119th Congress back-filled, printing
- * every vote per bill let one bill add 47). Past the bill cap, one plain line
- * counts the bills left out and says each bill's page lists its recorded
- * votes, which is true: components/VoteRecord.tsx shows every stored roll call
- * on the bill. It prints every member's position on the newest one; for each
- * older one it links to the chamber's own page, which lists them.
+ * every vote per bill let one bill print 44, a senator's on hr-1-119). Past
+ * the bill cap, one plain line counts the bills left out and says each bill's
+ * page lists its recorded votes, which is true: components/VoteRecord.tsx
+ * shows every stored roll call on the bill. It prints every member's position
+ * on the newest one; for each older one it links to the chamber's own page,
+ * which lists them.
  *
  * STATIC. A server component; the rows past the first batch sit in a closed
  * <details>, so nothing here ships to the browser as JavaScript and no corpus

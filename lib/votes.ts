@@ -84,16 +84,19 @@ export function memberVotesByBill(bioguide: string): MemberBillVotes[] {
  * The most bills the member page's "How they voted" lists: the newest this
  * many from memberVotesByBill, then one line counting the bills left out and
  * pointing to each bill's own page, whose vote record lists every stored roll
- * call and every member on it. A page-weight cap, decided 2026-09-28 on PR
- * #348: every row ships as HTML and again as server-component payload, and a
- * House member's list grows with every roll call the Congress takes.
+ * call: every member's position on the newest, and for each older one a link
+ * to the chamber's own page (components/VoteRecord.tsx). A page-weight cap,
+ * decided 2026-09-28 on PR #348: every row ships as HTML and again as
+ * server-component payload, and a House member's list grows with every roll
+ * call the Congress takes.
  *
  * It caps ROLL CALLS as well as bills (2026-09-29, after the 119th Congress
  * back-fill): each row prints only the member's newest vote on its bill and
  * links to the bill page's vote record for the rest, so the page prints at
  * most this many roll calls. Counting bills alone let one bill print every
- * roll call the member cast on it (hr-1-119 has 47), and the heaviest member
- * page, a senator's, measured 998 kB of HTML on the build of 2026-09-29.
+ * roll call the member cast on it (44 for a senator on hr-1-119, which has 47
+ * in all), and the heaviest member page, a senator's, measured 998 kB of HTML
+ * on the build of 2026-09-29.
  */
 export const MEMBER_VOTES_MAX_BILLS = 50;
 

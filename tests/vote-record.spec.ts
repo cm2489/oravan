@@ -213,6 +213,21 @@ for (const { locale, prefix, m } of LOCALES) {
       await expect(link).toHaveAttribute('target', '_blank');
       await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
       expect(await height(link), '44px touch target on the older list link').toBeGreaterThanOrEqual(44);
+      // The new-tab icon follows the label's last word, also when the label
+      // wraps (the Spanish one does on a phone): it never floats at the far
+      // edge of the card, away from the words it belongs to.
+      const iconGap = await link.evaluate((a) => {
+        const icon = a.querySelector('svg')!.getBoundingClientRect();
+        // The label's last text node, however the link is built inside.
+        const walker = document.createTreeWalker(a, NodeFilter.SHOW_TEXT);
+        let text: Node | null = null;
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.textContent?.trim()) text = n;
+        const range = document.createRange();
+        range.selectNodeContents(text!);
+        const lines = [...range.getClientRects()];
+        return icon.left - lines[lines.length - 1].right;
+      });
+      expect(iconGap, 'gap between the label\'s last word and its icon, in px').toBeLessThanOrEqual(12);
       // Its own record link is still there, beside it.
       await expect(second.locator(`a[href="${rolls[1].source}"]`)).toHaveText(m.votes.source);
 

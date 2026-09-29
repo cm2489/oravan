@@ -250,10 +250,15 @@ export async function VoteRecord({
               href={memberListPage(r)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
             >
-              {t('membersOnRecordLink')}
-              <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+              {/* The icon sits in the text's own line, so when the label wraps
+                  (Spanish on a phone) it follows the last word instead of
+                  floating at the card's far edge. */}
+              <span>
+                {t('membersOnRecordLink')}
+                <ExternalLink className="ml-1.5 inline-block h-4 w-4 align-[-0.2em]" aria-hidden />
+              </span>
             </a>
           </p>
         )}
