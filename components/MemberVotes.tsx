@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import { billSlug, getAllBills, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
+import { rollCallPage } from '@/lib/roll-call-page';
 import { deriveJourney } from '@/lib/journey';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
@@ -139,7 +140,7 @@ export async function MemberVotes({
           {tVotes('roll', { roll: r.roll })} ·
         </span>
         <a
-          href={r.source}
+          href={rollCallPage(r.source)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline hover:text-go-deep"
