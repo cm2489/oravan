@@ -103,10 +103,10 @@ const WRAP = 'mx-auto w-full max-w-5xl px-4';
  * -1` resolves against the EXPLICIT grid, which is empty when the rows are
  * implicit, so it would collapse to row 1 and the sticky box could never
  * travel past the lead. `row-start-1 row-span-2` names both rows. What rides
- * in the rail is always short beside the column — the panel is capped at the
- * window's height and scrolls inside itself, as on the bill page, and the
- * desk list is one short row per open measure — so the rail never pushes a
- * row taller than its column content, and no gap opens in the column. The
+ * in the rail is always short beside the column — the panel and the desk list
+ * are both capped at the window's height and scroll inside themselves, as the
+ * panel does on the bill page — so the rail never pushes a row taller than
+ * its column content, and no gap opens in the column. The
  * old page's rail of full cards was the reason it used one row; those cards
  * now sit in the column.
  *
@@ -671,14 +671,15 @@ export default async function MomentPage({
 
             SEVERAL OPEN: the short "Still open to a call" list, on the desk
             only (display: none below 62rem, where the column's list is the
-            list). */}
+            list), capped at the window's height like the panel, with the
+            list scrolling inside it (components/MomentStillOpenRail.tsx). */}
         {panel && (
           <div className={`mt-12 ${RAIL} min-[62rem]:mt-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
             <ActionPanel {...panel} />
           </div>
         )}
         {!panel && railItems.length > 0 && (
-          <div className={`hidden ${RAIL} min-[62rem]:block`}>
+          <div className={`hidden ${RAIL} min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
             <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
           </div>
         )}

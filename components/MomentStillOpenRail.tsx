@@ -43,11 +43,29 @@ export function MomentStillOpenRail({
   items: StillOpenRailItem[];
 }) {
   return (
-    <section aria-labelledby="still-open-rail" data-still-open-rail className="border-t-[3px] border-ink pt-4">
-      <h2 id="still-open-rail" className="text-h3 font-extrabold text-ink">
+    <section
+      aria-labelledby="still-open-rail"
+      data-still-open-rail
+      className="flex min-h-0 w-full flex-col border-t-[3px] border-ink pt-4 min-[62rem]:max-h-full"
+    >
+      <h2 id="still-open-rail" className="flex-none text-h3 font-extrabold text-ink">
         {heading}
       </h2>
-      <ul className="mt-3 list-none">
+      {/* CAPPED AT THE WINDOW, SCROLLING INSIDE ITSELF (the call panel's own
+          idiom, components/ActionPanel.tsx). The rail is sticky, and a sticky
+          box taller than the window keeps its bottom below the fold until the
+          column ends: at 1440×900 the Iran question's seventh "Read + call"
+          (S.J.Res. 172) was off screen at every scroll depth short of the
+          column's last section, and focusing it by keyboard left the focus
+          ring out of view (rule 7). The page caps the rail's wrapper at the
+          window's height; this list takes what is left and scrolls, and a
+          focused link scrolls it into view. The 28px alpha ramp says "this
+          continues" and lifts while a link inside is focused, so no focus ring
+          is ever dimmed; the 8px of padding each side (cancelled by the
+          negative margin, so nothing moves) keeps the focus ring's 5px
+          inside the scroll box's clip at the sides, and 12px of scroll
+          padding does the same above and below a link scrolled into view. */}
+      <ul className="mt-3 min-h-0 list-none min-[62rem]:-mx-2 min-[62rem]:scroll-py-3 min-[62rem]:overflow-y-auto min-[62rem]:px-2 min-[62rem]:[mask-image:linear-gradient(to_bottom,#000_calc(100%-28px),transparent_100%)] min-[62rem]:[scrollbar-gutter:stable] min-[62rem]:has-[:focus-visible]:[mask-image:none]">
         {items.map((item) => (
           <li key={item.key} className="border-t border-line py-3">
             <p className="text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 tabular-nums">

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { questionHasPanel } from '../lib/call-tab';
@@ -33,9 +34,16 @@ import { mockScriptApi, seedZip } from './helpers';
  */
 
 const LOCALES = [
-  { locale: 'en', prefix: '', messages: en },
-  { locale: 'es', prefix: '/es', messages: es },
+  { locale: 'en', prefix: '', messages: en, t: createTranslator({ locale: 'en', messages: en }) },
+  { locale: 'es', prefix: '/es', messages: es, t: createTranslator({ locale: 'es', messages: es }) },
 ] as const;
+
+/** The call panel itself (components/ActionPanel.tsx: the section named by
+ *  its #act heading). `[data-call-cta]` alone is FloatingCallButton's
+ *  stand-down hook and is also worn by the floor band's "Make your call" on a
+ *  bill page whose chamber has scheduled it (components/system/
+ *  FloorVotePanel.tsx), so on such a bill it matches two elements. */
+const PANEL = '[aria-labelledby="act"][data-call-cta]';
 
 const ZIP = '78501'; // TX-15: one House member and two senators, a single district
 
@@ -55,7 +63,7 @@ const WITH_SETTLED =
  *  changes and retires it on the first scroll of its body, which a click can
  *  cause. So two loads of the same panel may differ on it and nothing else. */
 async function panelText(page: Page, hint: string): Promise<string> {
-  const text = await page.locator('[data-call-cta]').innerText();
+  const text = await page.locator(PANEL).innerText();
   const hintLine = `↓ ${hint}`.toLowerCase();
   return text
     .split('\n')
@@ -82,7 +90,7 @@ async function declareStance(page: Page, label: string) {
   }).toPass({ timeout: 30_000 });
 }
 
-for (const { locale, prefix, messages } of LOCALES) {
+for (const { locale, prefix, messages, t } of LOCALES) {
   test.describe(`${locale}: a Big Question with one open bill carries that bill's call panel`, () => {
     test('the panel is the bill page’s panel, word for word', async ({ page }) => {
       test.skip(!ONE_BILL, 'no Big Question with exactly one open bill in the corpus');
@@ -90,12 +98,12 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       await page.goto(`${prefix}/bills/${slug}`);
       await hydrated(page);
-      await expect(page.locator('[data-call-cta]')).toHaveCount(1);
+      await expect(page.locator(PANEL)).toHaveCount(1);
       const billText = await panelText(page, messages.bill.railMoreHint);
 
       await page.goto(`${prefix}/questions/${ONE_BILL!.id}`);
       await hydrated(page);
-      await expect(page.locator('[data-call-cta]')).toHaveCount(1);
+      await expect(page.locator(PANEL)).toHaveCount(1);
       await expect(page.locator('#act')).toHaveText(messages.bill.actTitle);
       expect(await panelText(page, messages.bill.railMoreHint)).toBe(billText);
     });
@@ -113,7 +121,7 @@ for (const { locale, prefix, messages } of LOCALES) {
         await hydrated(page);
         await declareStance(page, messages.bill.stance.support);
         await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
-        await expect(page.locator('[data-call-cta] a[href^="tel:"]').first()).toBeVisible();
+        await expect(page.locator(`${PANEL} a[href^="tel:"]`).first()).toBeVisible();
         return panelText(page, messages.bill.railMoreHint);
       };
       await page.goto(`${prefix}/bills/${slug}`);
@@ -175,7 +183,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       await page.goto(`${prefix}/questions/${SEVERAL!.id}`);
 
       const heading = page.locator('#still-open');
-      await expect(heading).toHaveText(messages.moments.stillOpenHeading.replace('{count}', String(open.length)));
+      await expect(heading).toHaveText(t('moments.stillOpenHeading', { count: open.length }));
 
       const list = page.locator('[data-still-open]');
       const calls = list.getByRole('link', { name: startsWith(messages.moments.readCall) });
@@ -222,6 +230,29 @@ for (const { locale, prefix, messages } of LOCALES) {
         expect((await link.boundingBox())!.height, 'rule 7: 44px').toBeGreaterThanOrEqual(44);
       }
     });
+
+    test('the desk rail fits the window, and every link in it is on screen when it takes focus (rule 7)', async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!SEVERAL, 'no Big Question with several open vehicles in the corpus');
+      test.skip(isMobile, 'the rail is desk-only');
+      await page.goto(`${prefix}/questions/${SEVERAL!.id}`);
+      const rail = page.locator('[data-still-open-rail]');
+      await expect(rail).toBeVisible();
+      // Sticky, so a rail taller than the window would keep its last rows
+      // below the fold until the column ended: capped at the window instead.
+      const viewport = page.viewportSize()!;
+      expect((await rail.boundingBox())!.height, 'the rail fits the window').toBeLessThanOrEqual(viewport.height);
+      // Each link, focused, scrolls into view: a focus ring is never off
+      // screen (the list scrolls inside the capped rail). Programmatic focus
+      // runs the same scroll-into-view a keyboard Tab does, on every engine.
+      await page.evaluate(() => window.scrollTo(0, 0));
+      for (const link of await rail.getByRole('link').all()) {
+        await link.focus();
+        await expect(link, 'a focused rail link is fully on screen').toBeInViewport({ ratio: 1 });
+      }
+    });
   });
 
   test.describe(`${locale}: settled vehicles are kept as the record`, () => {
@@ -232,7 +263,7 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       const list = page.locator('[data-record-list]');
       await expect(list.getByRole('heading', { level: 3 })).toHaveText(
-        messages.moments.settledGroupHeading.replace('{count}', String(questionVehicles(WITH_SETTLED!).filter((v) => !v.open).length))
+        t('moments.settledGroupHeading', { count: questionVehicles(WITH_SETTLED!).filter((v) => !v.open).length })
       );
       await expect(list.locator('[data-record-row]')).toHaveCount(settled.length);
       for (const v of settled) {

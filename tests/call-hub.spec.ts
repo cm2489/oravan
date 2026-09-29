@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { questionHasPanel } from '../lib/call-tab';
@@ -148,7 +149,9 @@ for (const { locale, prefix, messages } of LOCALES) {
       const list = page.locator('#still-open');
       await expect(list).toBeInViewport();
       await expect(list).toHaveText(
-        messages.moments.stillOpenHeading.replace('{count}', String(callableKinds(SEVERAL_OPEN!.id).length))
+        createTranslator({ locale, messages })('moments.stillOpenHeading', {
+          count: callableKinds(SEVERAL_OPEN!.id).length,
+        })
       );
     });
 
