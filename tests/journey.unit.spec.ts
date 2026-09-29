@@ -1180,10 +1180,10 @@ test.describe('deriveJourney', () => {
   test('a bill past both chambers points at the desk in both languages, naming no chamber as next', () => {
     const text = 'Passed Senate without amendment by Unanimous Consent.';
     expect(sentence(en, 'hr', 'passed_chamber', text)).toBe(
-      'both chambers have passed it. It goes to the President next.'
+      'both chambers have passed it. It goes to the president next.'
     );
     expect(sentence(es, 'hr', 'passed_chamber', text)).toBe(
-      'ambas cámaras lo han aprobado. Ahora pasa al Presidente.'
+      'ambas cámaras lo han aprobado. Ahora pasa al presidente.'
     );
   });
 
