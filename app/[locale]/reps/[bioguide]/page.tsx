@@ -21,6 +21,7 @@ import {
   getVacancyBySlug,
   localizeBill,
   senatorsForState,
+  specialElectionsFor,
   vacancySlug,
 } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
@@ -55,8 +56,9 @@ import type { Bill, BillTeaser, Legislator, Vacancy } from '@/lib/types';
  * carry the departed member's - so its page is keyed on the seat ("fl-20",
  * see lib/core/reps.ts vacancySlug). It says the one true thing the lookup
  * says (VacantSeatCard), then hands over the state's senators, who still
- * represent that district. Never the departed member, never an election
- * claim.
+ * represent that district. Never the departed member, and no election date
+ * beyond what the FEC's calendar states (VacantSeatCard prints it, with the
+ * day it was checked).
  */
 
 const WRAP = 'mx-auto max-w-5xl px-4 py-12';
@@ -318,7 +320,7 @@ function VacancyBody({
         <h1 className="mt-1 text-h1-bill font-extrabold">{place}</h1>
       </header>
       <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <VacantSeatCard />
+        <VacantSeatCard elections={specialElectionsFor(seat)} />
       </div>
       {senators.length > 0 && (
         <section aria-labelledby="rep-senators" className="mt-12">
