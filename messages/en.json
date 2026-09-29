@@ -316,7 +316,7 @@
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
     "liveSenateAfterHouse": "The House has already voted on this bill — the Senate decides next. Your senators are the live call.",
     "liveHouseAfterSenate": "The Senate has already voted on this bill — the House decides next. Your House member is the live call.",
-    "nominationHow": "A nomination starts with the President, who picks someone for a government job. From there it belongs to the Senate: a committee reviews the nominee, then the full Senate votes on whether to confirm. The House has no vote on nominations at all.",
+    "nominationHow": "A nomination starts with the president, who picks someone for a government job. From there it belongs to the Senate: a committee reviews the nominee, then the full Senate votes on whether to confirm. The House has no vote on nominations at all.",
     "liveSenateNomination": "Only the Senate votes on a nomination — your senators are the live call.",
     "nominationHousePress": "Your House member gets no vote here and no formal role — the Senate decides this one alone. What a representative can do is speak up: they share a state with your two senators, and they can press them on a nomination, publicly or privately. So if you call their office, say it plainly — that you know the House has no vote on this, and you're asking your representative to press your state's senators on it. The office logs your call like any other; it just doesn't count toward the Senate's tally.",
     "nominationNoSenator": "Only senators vote on a nomination, and your area does not elect any — so there is no senator here for you to call about this one. Your House member has no vote on nominations either; no member of the House does. What their office can still do is speak up, and it logs every call it takes — so if you call, say plainly that you know the House has no vote on this and you want the nomination raised. It just will not count toward the Senate's tally.",
@@ -366,7 +366,7 @@
       "stepCommittee": "{chamber, select, House {House} Senate {Senate} other {House}} committee",
       "stepVote": "{chamber, select, House {House} Senate {Senate} other {House}} vote",
       "stepOther": "{chamber, select, House {House} Senate {Senate} other {Senate}}",
-      "stepPresident": "President's desk",
+      "stepPresident": "The president's desk",
       "stepBothChambers": "Adopted by both chambers",
       "stepStates": "Sent to the states",
       "now": "Right now:",
@@ -383,14 +383,14 @@
       "nowPassedStale": "it passed the {chamber, select, House {House} Senate {Senate} other {House}}, and the official record shows nothing new since.",
       "nowPassedBack": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, so it goes back to the {chamber, select, House {House} Senate {Senate} other {House}}.",
       "nowPassedBackStale": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, and the official record shows nothing new since.",
-      "nowPassedBoth": "both chambers have passed it. It goes to the President next.",
+      "nowPassedBoth": "both chambers have passed it. It goes to the president next.",
       "nowPassedSecond": "both chambers have passed it — the official record doesn't say yet whether the two versions match.",
       "nowConference": "both chambers are reconciling their versions.",
-      "nowSigned": "the President signed it. It's law.",
-      "nowVetoed": "the President vetoed it. Congress can override with two-thirds of both chambers.",
-      "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the President.",
-      "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the President and does not become law.",
-      "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the President: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
+      "nowSigned": "the president signed it. It's law.",
+      "nowVetoed": "the president vetoed it. Congress can override with two-thirds of both chambers.",
+      "backTrailer": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} before reaching the president.",
+      "backTrailerBothChambers": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to adopt the same text. This kind of resolution never goes to the president and does not become law.",
+      "backTrailerStates": "If the {other, select, House {House} Senate {Senate} other {Senate}} changes it, it goes back to the {chamber, select, House {House} Senate {Senate} other {House}} — both chambers have to pass the same text, each by two thirds. A proposed constitutional amendment never goes to the president: it goes to the states, and three quarters of them have to ratify it before it takes effect.",
       "youAreHere": "You are here",
       "law": "Now law",
       "nowIntroduced": "it was just introduced and is headed to committee."
@@ -999,8 +999,8 @@
       },
       "line": {
         "signed": "Signed into law{law, select, none {} other { as Public Law {law}}}.",
-        "vetoed": "Vetoed by the President.",
-        "presented": "Both chambers passed it, and it has been sent to the President.",
+        "vetoed": "Vetoed by the president.",
+        "presented": "Both chambers passed it, and it has been sent to the president.",
         "bothAgreed": "Both chambers have passed it in the same form.",
         "passedBack": "{chamber, select, house {Both chambers passed it in different versions; it is back with the House to settle the changes.} other {Both chambers passed it in different versions; it is back with the Senate to settle the changes.}}",
         "passedOnCalendar": "{chamber, select, house {Passed the Senate; placed on the House calendar, where it can be called up any day the House is in session.} other {Passed the House; placed on the Senate calendar, where it can be called up any day the Senate is in session.}}",
@@ -1028,8 +1028,8 @@
     "closedTitle": "No call to make",
     "closed": {
       "confirmed": "The Senate voted to confirm this nomination. A confirmed nomination is finished — there is no call left to make on it.",
-      "returned": "The Senate returned this nomination to the President without confirming it. There is no call left to make on it.",
-      "withdrawn": "The President withdrew this nomination. There is no call left to make on it."
+      "returned": "The Senate returned this nomination to the president without confirming it. There is no call left to make on it.",
+      "withdrawn": "The president withdrew this nomination. There is no call left to make on it."
     },
     "noScriptTitle": "No description on the record",
     "noScriptBody": "The Senate's entry for this nomination carries no description — nothing that says who it is for or what post it fills. That sentence is the only thing a call script here is ever built from, so Oravan offers none rather than inventing words about a record that says nothing. The nomination is still before the Senate, and everything the Senate has published about it is on this page, in full.",
@@ -1044,7 +1044,7 @@
       "floor": "Senate floor activity",
       "scheduled": "Scheduled for a Senate vote",
       "confirmed": "Confirmed by the Senate",
-      "returned": "Returned to the President",
+      "returned": "Returned to the president",
       "withdrawn": "Withdrawn",
       "unclassified": "Stage not stated in the record"
     }
@@ -1102,7 +1102,7 @@
       },
       "cra-disapproval": {
         "term": "CRA disapproval",
-        "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the President, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
+        "body": "The Congressional Review Act lets Congress undo a rule issued by a federal agency. A joint resolution of disapproval moves on a fast track: for a limited window after a rule is submitted to Congress, it needs only a simple majority in each chamber, and Senate debate on it is capped. Like any joint resolution it then goes to the president, and it takes effect only if it is signed or a veto is overridden. If it does take effect, the rule has no force and the agency may not issue a substantially similar one."
       },
       "pro-forma-session": {
         "term": "Pro forma session",
@@ -1164,7 +1164,7 @@
       "present": "Present",
       "notVoting": "Not voting"
     },
-    "tieBreaker": "Vice President's tie-breaking vote: {position}",
+    "tieBreaker": "The vice president's tie-breaking vote: {position}",
     "source": "Official record",
     "membersToggle": "How members voted",
     "group": "{position} ({count})",

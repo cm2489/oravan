@@ -316,7 +316,7 @@
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
     "liveSenateAfterHouse": "La Cámara ya votó este proyecto — el Senado decide ahora. Tus senadores son la llamada que cuenta.",
     "liveHouseAfterSenate": "El Senado ya votó este proyecto — la Cámara decide ahora. Tu representante es la llamada que cuenta.",
-    "nominationHow": "Una nominación empieza con el Presidente, que elige a alguien para un cargo del gobierno. A partir de ahí le corresponde al Senado: un comité revisa a la persona nominada y luego el pleno del Senado vota su confirmación. La Cámara no vota las nominaciones, en ningún caso.",
+    "nominationHow": "Una nominación empieza con el presidente, que elige a alguien para un cargo del gobierno. A partir de ahí le corresponde al Senado: un comité revisa a la persona nominada y luego el pleno del Senado vota su confirmación. La Cámara no vota las nominaciones, en ningún caso.",
     "liveSenateNomination": "Solo el Senado vota una nominación — tus senadores son la llamada que cuenta ahora.",
     "nominationHousePress": "Tu representante en la Cámara no tiene voto aquí ni ningún papel formal — esto lo decide el Senado solo. Lo que sí puede hacer es alzar la voz: comparte estado con tus dos senadores y puede presionarlos sobre una nominación, en público o en privado. Así que si llamas a su oficina, dilo con claridad — que sabes que la Cámara no vota esto y que le pides a tu representante que presione a los senadores de tu estado. La oficina registra tu llamada como cualquier otra; simplemente no cuenta para la votación del Senado.",
     "nominationNoSenator": "Solo los senadores votan una nominación, y tu zona no elige ninguno — así que aquí no hay un senador al que puedas llamar sobre esta. Tu representante en la Cámara tampoco vota las nominaciones; ningún miembro de la Cámara lo hace. Lo que su oficina sí puede hacer es alzar la voz, y registra cada llamada que recibe — así que si llamas, di con claridad que sabes que la Cámara no vota esto y que quieres que se plantee la nominación. Simplemente no contará para la votación del Senado.",
@@ -366,7 +366,7 @@
       "stepCommittee": "Comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
       "stepVote": "Voto {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
       "stepOther": "{chamber, select, House {Cámara} Senate {Senado} other {Senado}}",
-      "stepPresident": "Escritorio del Presidente",
+      "stepPresident": "Escritorio del presidente",
       "stepBothChambers": "Aprobación en ambas cámaras",
       "stepStates": "Enviada a los estados",
       "now": "Ahora mismo:",
@@ -383,14 +383,14 @@
       "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
       "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
-      "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al Presidente.",
+      "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
-      "nowSigned": "el Presidente lo firmó. Ya es ley.",
-      "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
-      "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
-      "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al Presidente y no se convierte en ley.",
-      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al Presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
+      "nowSigned": "el presidente lo firmó. Ya es ley.",
+      "nowVetoed": "el presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
+      "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al presidente.",
+      "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al presidente y no se convierte en ley.",
+      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
       "youAreHere": "Estás aquí",
       "law": "Ya es ley",
       "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
@@ -1028,8 +1028,8 @@
     "closedTitle": "No hay llamada que hacer",
     "closed": {
       "confirmed": "El Senado votó a favor de confirmar esta nominación. Una nominación confirmada está terminada — ya no queda ninguna llamada que hacer.",
-      "returned": "El Senado devolvió esta nominación al Presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
-      "withdrawn": "El Presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
+      "returned": "El Senado devolvió esta nominación al presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
+      "withdrawn": "El presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
     },
     "noScriptTitle": "El registro no incluye descripción",
     "noScriptBody": "La ficha del Senado para esta nominación no incluye descripción — nada que diga a quién corresponde ni qué cargo cubre. Esa frase es lo único con lo que se arma un guion de llamada aquí, así que Oravan no ofrece ninguno en vez de inventar palabras sobre un registro que no dice nada. La nominación sigue ante el Senado, y todo lo que el Senado ha publicado sobre ella está en esta página, completo.",
@@ -1044,7 +1044,7 @@
       "floor": "Actividad en el pleno del Senado",
       "scheduled": "Programada para una votación en el Senado",
       "confirmed": "Confirmada por el Senado",
-      "returned": "Devuelta al Presidente",
+      "returned": "Devuelta al presidente",
       "withdrawn": "Retirada",
       "unclassified": "El registro no indica la etapa"
     }
@@ -1102,7 +1102,7 @@
       },
       "cra-disapproval": {
         "term": "Resolución de desaprobación (CRA)",
-        "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al Presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
+        "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
       },
       "pro-forma-session": {
         "term": "Sesión pro forma",
