@@ -975,6 +975,57 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
 }
 
 /**
+ * How the record says an action was taken when it was taken WITHOUT a
+ * recorded vote: the record's own words, and the phrase the summary uses for
+ * them in each language. A voice vote and unanimous consent have no roll call
+ * by their nature.
+ *
+ * WHY (2026-09-29): the penny question's first summary was written and
+ * rejected four nights running (runs 36260101319, 36340349799, 36479913682,
+ * 36619010910) for absence claims — "no roll call recorded", "No roll call
+ * vote was recorded", "no tally", "no recorded", "sin votación", "No se
+ * registró", "no hay" — over a record whose only news was H.R. 10167 passing
+ * the Senate "without amendment by Unanimous Consent". The model was handed
+ * the action sentence and an empty RECORDED VOTES list, and filled the gap by
+ * saying what was missing. The absence lint is right to reject that (a voice
+ * vote IS a vote); this hands the model what to say instead. The gate is
+ * unchanged.
+ */
+const WITHOUT_RECORDED_VOTE = [
+  { re: /\bby voice vote\b/i, en: 'by voice vote', es: 'por votación a viva voz' },
+  { re: /\bby unanimous consent\b/i, en: 'by unanimous consent', es: 'por consentimiento unánime' },
+];
+
+/**
+ * One prompt line per record-bearing update in the window whose action
+ * sentence says it was taken by voice vote or by unanimous consent: the date,
+ * the measure, the record's sentence verbatim, and the phrase to use for it.
+ * Exported for the unit suite.
+ *
+ * @param {Record<string, any>[]} recent  the window's updates, newest first
+ * @returns {string[]}
+ */
+export function withoutRecordedVoteLines(recent) {
+  const lines = [];
+  for (const u of recent ?? []) {
+    if (!RECORD_BEARING_CLASSES.includes(u?.class)) continue;
+    const action = u.record?.action_text ?? '';
+    const how = WITHOUT_RECORDED_VOTE.find((w) => w.re.test(action));
+    if (!how) continue;
+    lines.push(`- ${u.day} ${billLabel(u.vehicle)}: "${action}" → EN "${how.en}" / ES "${how.es}"`);
+  }
+  return lines;
+}
+
+/**
+ * The rule that goes with withoutRecordedVoteLines, in the prompt's own
+ * style. Handed to the model only when there is at least one such line, so
+ * every other question's prompt is unchanged. Exported for the unit suite.
+ */
+export const WITHOUT_RECORDED_VOTE_RULE =
+  '- An action taken by voice vote or by unanimous consent (listed under TAKEN WITHOUT A RECORDED VOTE below) has no roll call by its nature. When the record gives no recorded vote for a measure, say how the record says it passed or was taken, with its date, using the phrase given for it: EN "by voice vote" / "by unanimous consent", ES "por votación a viva voz" / "por consentimiento unánime". Say nothing about a tally, a count or a roll call for it, in either language: never "with no tally", "no recorded vote", "no roll call"; never "no hay recuento", "no se registró", "sin votación nominal". A sentence like that is rejected automatically.';
+
+/**
  * Exported for the unit suite: the lint-rejection branch below is the whole of
  * the "there is no fallback for a summary" doctrine, and until now it was a
  * comment with nothing behind it.
@@ -1049,6 +1100,14 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   const nonEmptyRule = groundedEvents
     ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
     : '- Write only what the votes, actions and sources below show, each with its date. Do not write sentences about what did not happen, was not reported, or has not changed.';
+  // How the record says each action without a roll call was taken, and the
+  // rule that goes with it (see WITHOUT_RECORDED_VOTE). Empty for a question
+  // with no such action: its prompt is exactly what it was.
+  const noRollLines = withoutRecordedVoteLines(recent);
+  const noRollRule = noRollLines.length ? `\n${WITHOUT_RECORDED_VOTE_RULE}` : '';
+  const noRollSection = noRollLines.length
+    ? `\n\nTAKEN WITHOUT A RECORDED VOTE, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the record's sentence verbatim → the phrase to use):\n${noRollLines.join('\n')}`
+    : '';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
   // Congress.gov page for each vehicle. cboCostEstimates ride the bill-DETAIL
@@ -1093,16 +1152,16 @@ VOICE — "where it stands", not a log:
 - Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
 - The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
 - No meta-commentary about this summary itself (never "this summary reflects…", "as of this record…"). The page already stamps the date.
-${nonEmptyRule}
+${nonEmptyRule}${noRollRule}
 
 CURRENT STATUS OF EACH MEASURE:
 ${statusLines}
 
 RECORDED VOTES, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the chamber's official roll-call record, newest first — question, result, and tally verbatim):
-${voteLines || '- no roll call recorded on these measures in this window'}
+${voteLines || (noRollLines.length ? '- none in this window; see TAKEN WITHOUT A RECORDED VOTE below' : '- no roll call recorded on these measures in this window')}
 
 THE RECORD, LAST ${SUMMARY_WINDOW_DAYS} DAYS (newest first):
-${recordLines || '- nothing recorded in this window'}
+${recordLines || '- nothing recorded in this window'}${noRollSection}
 
 Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fences, no other text.`,
         },
