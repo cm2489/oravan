@@ -897,8 +897,9 @@ const RECORD_ONLY_PHRASE = {
  * form) and `passed_both` (the second chamber passed it) — but only when it is
  * handed the bill type and the status basis as its 5th argument. Both call
  * sites here used to call it with four arguments, so the prompt told the model
- * H.Con.Res. 86 "Passed one chamber" after the bill page, the chip and the
- * Big Questions card all said "Adopted by both chambers" (#368). The model
+ * H.Con.Res. 86 "Passed one chamber" after its bill page and chip said
+ * "Adopted by both chambers" (#368) and its Big Questions card said "Both
+ * chambers have passed it in the same form" (lib/moment-status.mjs). The model
  * copied it: "H. Con. Res. 86 is also listed as Passed one chamber" is in the
  * iran-war-powers revision of 2026-09-26. A record without `billType` (an old
  * caller, a test fixture) keeps `passed_chamber`, exactly as before.

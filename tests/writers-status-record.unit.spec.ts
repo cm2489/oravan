@@ -14,9 +14,10 @@ import es from '../messages/es.json';
  *
  * #368 taught the site to read a `passed_chamber` record two more ways:
  * `adopted` (a concurrent resolution both chambers agreed to in one form) and
- * `passed_both` (the second chamber passed it). The bill page, the chip and
- * the Big Questions card all read them through lib/journey.ts's statusKeyFor,
- * which takes the whole bill. The script-side copy in
+ * `passed_both` (the second chamber passed it). The bill page and its chip
+ * read them through lib/journey.ts's statusKeyFor, which takes the whole bill,
+ * and the Big Questions card's status line reads the same passage readers
+ * (lib/moment-status.mjs). The script-side copy in
  * scripts/moment-candidates.mjs reads them only when it is handed the bill as
  * its 5th argument, and the three scripts that hand a status phrase to a model
  * called it with four:
