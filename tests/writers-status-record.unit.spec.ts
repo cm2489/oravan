@@ -29,8 +29,10 @@ import es from '../messages/es.json';
  *   scripts/newsdesk-match.mjs   the t3 candidate line ("status: …").
  *
  * Every fixture below is verbatim from data/bills.json as committed on
- * 2026-09-29. The corpus sweeps at the bottom compare each writer with the TS
- * original over whatever the corpus holds on the day they run.
+ * 2026-09-29, except that H.Con.Res. 93's row carries no status basis at all
+ * there; its two nulls stand in for the missing fields, which every reader
+ * treats the same way. The corpus sweeps at the bottom compare each writer
+ * with the TS original over whatever the corpus holds on the day they run.
  */
 
 /** H.Con.Res. 86: the House agreed to it 215–208 on 2026-06-03 (Roll no. 199),

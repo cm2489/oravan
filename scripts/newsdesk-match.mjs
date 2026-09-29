@@ -70,8 +70,10 @@
 import { createHash } from 'node:crypto';
 // The status-label gate, from the one script-side copy (lib/journey.ts's
 // statusKeyFor, carried import-free in scripts/moment-candidates.mjs and pinned
-// against the original by tests/journey.unit.spec.ts). That module does no I/O
-// on import and pulls in only pure lib/*.mjs, so this file stays import-clean.
+// against the original by tests/journey.unit.spec.ts). That module reads no
+// file on import (node:fs runs only inside the functions that ask for data/,
+// and statusKeyFor is not one of them) and its lib/*.mjs imports are pure, so
+// this file stays import-clean.
 import { statusKeyFor } from './moment-candidates.mjs';
 
 // Duplicated from congress-fetch.mjs's CONGRESS constant (not imported) so
