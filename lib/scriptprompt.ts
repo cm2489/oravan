@@ -1,6 +1,6 @@
 import en from '../messages/en.json';
 import { formatCitation } from './format';
-import { statusKeyFor, type StatusKeyBill } from './journey';
+import { journeyEnding, passageState, statusKeyFor, type StatusKeyBill } from './journey';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from './president-style.mjs';
 import type { Bill, Stance, StatusLabelKey } from './types';
 
@@ -38,6 +38,14 @@ export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
  *   v1 (implicit) — original inline prompt
  *   v2 — S6 call-flow pass: chamber-neutral, time-neutral greeting,
  *        no-ambiguous-demonstrative, voicemail-safe close (2026-07-08)
+ *   v3 — a bill both chambers have passed: the stance line asks the member
+ *        for a public stand, never a vote that already happened, and says
+ *        where the bill stands (passedBothReading, below; owner's pick 7 (a),
+ *        2026-09-29). Bumped on the owner's pick, which named the cost: every
+ *        cached script is rewritten as people ask for it, inside the existing
+ *        SCRIPT_DAY_MAX (app/api/script/route.ts). The same bump also carries
+ *        the two unbumped changes described below into every cached script at
+ *        once, so their one-day wait is over too.
  *
  * THE ONE DELIBERATE EXCEPTION (2026-09-29): PRESIDENT_STYLE_RULE was added to
  * the rules below WITHOUT a bump. The rule only changes how a script writes
@@ -58,7 +66,7 @@ export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
  * cached, so it does not re-spend on one either. A bump would buy at most
  * that day and pay for one extra generation of every script requested in it.
  */
-export const PROMPT_VERSION = '2';
+export const PROMPT_VERSION = '3';
 
 /**
  * The generated script as it is cached and served: trimmed, and restyled to
@@ -70,12 +78,117 @@ export function finishScript(text: string, lang: 'en' | 'es'): string {
   return presidentStyle(text.trim(), lang);
 }
 
+/*
+ * The concerned stance's closing instruction, shared by every stage so the
+ * voicemail-safe wording cannot drift between them. `close` is the one clause
+ * that differs: what the closing statement asks for besides logging the
+ * concern.
+ */
+function concernedLine(close: string): string {
+  return `The caller is CONCERNED about this bill and has not settled on support or opposition. The script must register that concern and name the ONE thing that worries them (grounded in the summary). Close with a self-contained statement that asks the office to log the caller's concern and ${close} - phrased as a statement or a request-to-record, NEVER as a question aimed at the staffer (for example, never end on 'could you let me know where the member stands?'). The staffer only tallies positions; the closing line must be fully meaningful on its own, with no spoken reply or callback required, since it may be left on a voicemail.`;
+}
+
+/** Every stage but a passage by both chambers (see passedBothReading). */
 const STANCE_LINES: Record<Stance, string> = {
   support: 'The caller SUPPORTS this bill and urges the member to vote for it.',
   oppose: 'The caller OPPOSES this bill and urges the member to vote against it.',
-  undecided:
-    "The caller is CONCERNED about this bill and has not settled on support or opposition. The script must register that concern and name the ONE thing that worries them (grounded in the summary). Close with a self-contained statement that asks the office to log the caller's concern and notes that the caller is watching for the office's position before deciding - phrased as a statement or a request-to-record, NEVER as a question aimed at the staffer (for example, never end on 'could you let me know where the member stands?'). The staffer only tallies positions; the closing line must be fully meaningful on its own, with no spoken reply or callback required, since it may be left on a voicemail.",
+  undecided: concernedLine("notes that the caller is watching for the office's position before deciding"),
 };
+
+/*
+ * THE ASK WHEN BOTH CHAMBERS HAVE PASSED IT (owner's pick 7 (a), 2026-09-29).
+ *
+ * The report the owner answered: "Eleven bills have passed both chambers and
+ * now wait on the president. Their call script still has a supporter ask the
+ * member to 'vote for it', but the member already did." His pick: "for those
+ * bills, the script asks the member to publicly back or oppose it before the
+ * president acts, and says where it stands." So for these bills the stance
+ * line asks for a PUBLIC STAND and never a vote. It never says how the member
+ * voted, or whether they did: a unanimous-consent or voice-vote passage records
+ * no member's vote, and the script is read to three offices whose records
+ * differ.
+ *
+ * TWO READINGS, NOT ONE, because the site prints two different sentences
+ * under the one "Passed both chambers" label (statusKeyFor's `passed_both`,
+ * lib/journey.ts), and the script may not say more than the page beside it:
+ *
+ *   to_president   passageState stage 'both' on a vehicle whose path ends at
+ *                  the president (journeyEnding): the second chamber passed
+ *                  it without amendment, so both passed the same text. The
+ *                  stepper says "It goes to the president next"
+ *                  (`nowPassedBoth`, not clocked: that is Article I, Section
+ *                  7's presentment requirement, not a forecast). The script
+ *                  says so and asks for the stand before the president acts.
+ *                  H.R. 4467 and six more House bills on 2026-09-29.
+ *   next_unstated  everything else under that label. Mostly passageState
+ *                  stage 'second': both chambers passed it and the record
+ *                  does not say whether the two versions match
+ *                  (`nowPassedSecond`), so it may go back to a chamber rather
+ *                  than to the president. A concurrent resolution is always
+ *                  this reading when it is not already `adopted`, and it never
+ *                  goes to the president at all. Four Senate bills and
+ *                  S.Con.Res. 29 on 2026-09-29. The script asks for the same
+ *                  public stand, says both chambers have passed it, and names
+ *                  no next step.
+ *
+ * Page 1 rule 6 is why the second reading exists: the report's premise ("now
+ * wait on the president") holds for the first reading only, and a script
+ * telling the office that S.Con.Res. 29 goes to the president would be false.
+ *
+ * ONE PLACE THIS IS STRICTER THAN THE STEPPER, stated rather than hidden: a
+ * proposed constitutional amendment (journeyEnding 'states') at stage 'both'
+ * would get `nowPassedBoth`, "It goes to the president next", on the page,
+ * although it goes to the states. The script reads journeyEnding and gives it
+ * `next_unstated`. The corpus held no such record on 2026-09-29.
+ *
+ * Returns null for every other stage, whose stance lines are unchanged.
+ *
+ * NOT KEY MATERIAL, like the stage line (lib/scriptcache.ts, "THE STAGE LINE
+ * READS MORE THAN THIS KEY HOLDS"): a move between readings that leaves the
+ * status and the last-action date alone lives at most one cache TTL.
+ */
+export type PassedBothReading = 'to_president' | 'next_unstated';
+
+export type StanceLineBill = StatusKeyBill & Pick<Bill, 'title'>;
+
+export function passedBothReading(bill: StanceLineBill): PassedBothReading | null {
+  if (statusKeyFor(bill) !== 'passed_both') return null;
+  const toPresident = passageState(bill).stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
+  return toPresident ? 'to_president' : 'next_unstated';
+}
+
+/** Where the bill stands, as the script must say it. */
+const PASSED_BOTH_WHERE: Record<PassedBothReading, string> = {
+  to_president:
+    'Where the bill stands: both chambers of Congress have passed this bill, and it goes to the president next. The script must say so plainly.',
+  next_unstated:
+    'Where the bill stands: both chambers of Congress have passed this bill. The script must say so plainly, and must not say what happens to the bill next (for example, never say that it goes to the president).',
+};
+
+const PASSED_BOTH_NEVER =
+  'NEVER ask the member to vote for or against this bill, and NEVER say or imply how the member voted, or whether the member voted at all.';
+
+/**
+ * The three stance lines for a bill both chambers have passed. Built from one
+ * template so the three stay symmetric: support and oppose differ only in the
+ * verb, and the concerned line asks for a public position without leaning
+ * either way.
+ */
+function passedBothStanceLine(stance: Stance, reading: PassedBothReading): string {
+  const before = reading === 'to_president' ? ' before the president acts on it' : '';
+  const ask: Record<Stance, string> = {
+    support: `The caller SUPPORTS this bill and urges the member to publicly back it${before}.`,
+    oppose: `The caller OPPOSES this bill and urges the member to publicly oppose it${before}.`,
+    undecided: concernedLine(`asks the member to state a public position on the bill${before}`),
+  };
+  return `${ask[stance]} ${PASSED_BOTH_WHERE[reading]} ${PASSED_BOTH_NEVER}`;
+}
+
+/** The stance line the prompt carries for this bill at its current stage. */
+export function stanceLine(bill: StanceLineBill, stance: Stance): string {
+  const reading = passedBothReading(bill);
+  return reading ? passedBothStanceLine(stance, reading) : STANCE_LINES[stance];
+}
 
 function langLine(lang: 'en' | 'es'): string {
   return lang === 'es'
@@ -139,7 +252,7 @@ Bill: ${citation} — ${bill.short_title ?? bill.title}
 Plain-language summary: ${bill.ai_summary ?? bill.title}
 Current status: ${scriptStage(bill)}
 
-${STANCE_LINES[stance]}
+${stanceLine(bill, stance)}
 
 ${langLine(lang)}
 

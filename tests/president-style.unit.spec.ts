@@ -348,11 +348,13 @@ test.describe('the pipelines that write public text carry the rule (strings only
     // The examples are historical on purpose: these prompts forbid naming a
     // sitting officeholder, and an example is what a model copies.
     expect(PRESIDENT_STYLE_RULE).not.toMatch(/Trump|Biden|Vance|Harris/);
-    // Deliberately NOT bumped (lib/scriptprompt.ts, beside PROMPT_VERSION): a
+    // Not bumped FOR THIS RULE (lib/scriptprompt.ts, beside PROMPT_VERSION): a
     // bump would regenerate every cached script at once to change a capital
-    // letter that the 24-hour TTL clears for free. Bumping is the owner's
-    // call; if he makes it, this pin moves with it.
-    expect(PROMPT_VERSION).toBe('2');
+    // letter that the 24-hour TTL clears for free. It moved to '3' later the
+    // same day for a different change, the owner's pick 7 (a) (a bill both
+    // chambers passed asks for a public stand), which named that cost;
+    // tests/script-passed-both.unit.spec.ts pins that bump.
+    expect(PROMPT_VERSION).toBe('3');
     expect(NOMINATION_PROMPT_VERSION).toBe('1');
     expect(finishScript('  Hello. I ask the President to act.\n', 'en')).toBe('Hello. I ask the president to act.');
     expect(finishScript('Hola. Le pido al Presidente que actúe.', 'es')).toBe('Hola. Le pido al presidente que actúe.');
