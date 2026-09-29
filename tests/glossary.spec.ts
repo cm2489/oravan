@@ -5,24 +5,23 @@ import es from '../messages/es.json';
 import { billSlug, getAllBills } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { deriveJourney, type FloorCalendar } from '../lib/journey';
-import { GLOSSARY_TERM_IDS } from '../lib/glossary';
+import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES, GLOSSARY_TERM_IDS } from '../lib/glossary';
 import { decodedBillSlug } from './corpus-samples';
 
 /*
- * THE PROCEDURAL GLOSSARY, LIVE (issue #181).
+ * THE GLOSSARY, LIVE (issue #181; reworked 2026-09-28, UX inventory C05).
  *
- * The registry, the copy constraints and the EN/ES tag parity are pinned
- * without a browser in tests/glossary.unit.spec.ts. What needs a real render
- * is everything this file covers: that the page exists in both locales with
- * every anchor a glossed term points at, and that the hovercard honours the
- * a11y contract the issue made a condition of shipping one at all —
- * "keyboard-reachable and screen-reader-sane" — which after the 2026-08-12
- * redesign means WCAG 1.4.13's three clauses in full.
+ * The owner's note, verbatim: "I'd actually rather not click through to the
+ * glossary page. Hover should still work and be quick … and clicking on the
+ * word should just do the same action and not redirect." So a glossed term is
+ * a button that opens its definition IN PLACE — by hover, click, tap or
+ * keyboard — and never navigates. This file holds that contract on a real
+ * render; the registry, copy rules and matcher are pinned without a browser
+ * in tests/glossary.unit.spec.ts.
  *
- * FIXTURES ARE DERIVED FROM THE LIVE CORPUS, never hardcoded slugs: the bills
- * file moves nightly, and a spec pinned to a slug that leaves the floor-vote
- * band goes red on an unrelated PR. Each derived case skips itself when the
- * corpus stops offering it, and says so.
+ * FIXTURES ARE DERIVED FROM THE LIVE CORPUS, never hardcoded slugs; each
+ * derived case skips itself, with the reason, when the corpus stops offering
+ * it.
  */
 
 const LOCALES = [
@@ -47,31 +46,88 @@ function nominationAt(status: string): string | null {
 }
 
 /*
- * HOVER A TERM, ONCE THE PAGE HAS STOPPED MOVING.
- *
- * globals.css sets `scroll-behavior: smooth`, so Playwright's own
- * scroll-into-view before a hover GLIDES — and a page still gliding under a
- * stationary pointer drags the term out from under it, which fires
- * pointerleave and closes the box. That is correct product behaviour (the
- * pointer really is no longer on the term) and a false failure in a test that
- * meant to measure something else, so the scroll is settled first.
+ * HOVER A TERM, ONCE THE PAGE HAS STOPPED MOVING. globals.css sets
+ * `scroll-behavior: smooth`, so Playwright's own scroll-into-view GLIDES, and
+ * a page still gliding under a stationary pointer drags the term out from
+ * under it — correct product behaviour, false failure here.
  */
-async function hoverTerm(page: Page, link: Locator) {
-  await link.scrollIntoViewIfNeeded();
+async function settle(page: Page, term: Locator) {
+  await term.scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
-  await link.hover();
 }
 
-/** The box a term owns, located through the ARIA wiring rather than a class —
- *  if `aria-describedby` is wrong, every assertion here fails, which is the
- *  point. Polls, because the box opens after a deliberate hover delay. */
-async function boxOf(page: Page, link: Locator) {
-  await expect(link, 'no aria-describedby — the box never opened').toHaveAttribute(
-    'aria-describedby',
-    /./
-  );
-  const id = await link.getAttribute('aria-describedby');
+async function hoverTerm(page: Page, term: Locator) {
+  await settle(page, term);
+  await term.hover();
+}
+
+/** The definition a term owns, located through the ARIA wiring rather than a
+ *  class — if the wiring is wrong, every assertion here fails, which is the
+ *  point. Polls, because hover opens after a deliberate dwell. */
+async function boxOf(page: Page, term: Locator) {
+  await expect(term, 'the term never expanded').toHaveAttribute('aria-expanded', 'true');
+  const id = await term.getAttribute('aria-controls');
+  expect(id, 'an open term names its panel').toBeTruthy();
   return page.locator(`[id="${id}"]`);
+}
+
+/** This term's own panel is gone — others may legitimately be open (Tab
+ *  from one term focuses, and so opens, the next). */
+async function expectClosed(page: Page, term: Locator) {
+  await expect(term).toHaveAttribute('aria-expanded', 'false');
+  await expect(term).not.toHaveAttribute('aria-describedby', /./);
+  const id = await term.getAttribute('data-glossary-term');
+  await expect(page.locator(`[data-glossary-panel="${id}"]`)).toHaveCount(0);
+}
+
+/** Focus a term the way the keyboard does (programmatic focus in WebKit is
+ *  :focus-visible, which is what the popover gates focus-opening on). */
+async function focusTerm(term: Locator) {
+  await term.evaluate((el) => (el as HTMLElement).focus());
+}
+
+/*
+ * THE AI LABEL'S LOOK, READ OFF THE RENDER (owner, 2026-09-28: "the AI chip
+ * needs to be much smaller and below the definition"). Plain small print:
+ * the size, weight and case of its text, whether anything in it is filled or
+ * outlined (the old chip's mark was a filled stamp), and whether its colour
+ * is the muted secondary ink token.
+ */
+async function labelLook(label: Locator) {
+  return label.evaluate((el) => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-ink-2)';
+    document.body.appendChild(probe);
+    const inkTwo = getComputedStyle(probe).color;
+    probe.remove();
+    const cs = getComputedStyle(el);
+    const boxed = [el, ...el.querySelectorAll('*')].some((node) => {
+      const n = getComputedStyle(node);
+      return (
+        n.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+        parseFloat(n.borderTopWidth) + parseFloat(n.borderBottomWidth) > 0
+      );
+    });
+    return {
+      size: parseFloat(cs.fontSize),
+      weight: parseFloat(cs.fontWeight),
+      transform: cs.textTransform,
+      muted: cs.color === inkTwo,
+      boxed,
+    };
+  });
+}
+
+/** On a phone the thumb bar is fixed over the bottom of the screen, above an
+ *  open box; a label under it would be on screen and still unreadable. */
+async function expectClearOfThumbBar(page: Page, label: Locator) {
+  const bar = page.locator('[data-thumb-bar]');
+  const barBox = await bar.boundingBox();
+  if (!barBox || barBox.height === 0) return; // desktop: the bar is display:none
+  const labelBox = (await label.boundingBox())!;
+  expect(labelBox.y + labelBox.height, 'the AI label is under the thumb bar').toBeLessThanOrEqual(
+    barBox.y
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -84,26 +140,78 @@ for (const [locale, prefix, messages] of LOCALES) {
     await page.goto(`${prefix}/glossary`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(messages.glossary.title);
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-
+    const terms = messages.glossary.terms as Record<string, { term: string; body: string }>;
     for (const id of GLOSSARY_TERM_IDS) {
-      const terms = messages.glossary.terms as Record<string, { term: string; body: string }>;
-      // The anchor: every glossed term in the product links here, and so
-      // does anything anyone has ever pasted.
-      await expect(page.locator(`#${id}`), `#${id} is missing`).toHaveCount(1);
-      await expect(
-        page.getByRole('heading', { name: terms[id].term, exact: true })
-      ).toHaveCount(1);
-      await expect(page.getByText(terms[id].body)).toBeVisible();
+      // The anchor: anything anyone has ever pasted resolves here.
+      const section = page.locator(`[id="${id}"]`);
+      await expect(section, `#${id} is missing`).toHaveCount(1);
+      await expect(section.getByRole('heading', { level: 3 })).toHaveText(terms[id].term);
+      await expect(section.getByText(terms[id].body, { exact: true })).toHaveCount(1);
     }
   });
 
-  test(`${locale}: every index link resolves to a section on this page`, async ({ page }) => {
+  test(`${locale}: every entry links the official source it is based on`, async ({ page }) => {
+    await page.goto(`${prefix}/glossary`);
+    for (const e of GLOSSARY_ENTRIES) {
+      const link = page.locator(`[id="${e.id}"] a[href="${e.source}"]`);
+      await expect(link, `${e.id} has no source link`).toHaveCount(1);
+      const site = new URL(e.source).hostname.replace(/^www\./, '');
+      await expect(link).toHaveText(messages.glossary.sourceLabel.replace('{site}', site));
+    }
+  });
+
+  test(`${locale}: the index jumps to each section, in order`, async ({ page }) => {
     await page.goto(`${prefix}/glossary`);
     const nav = page.getByRole('navigation', { name: messages.glossary.indexLabel });
-    await expect(nav.getByRole('link')).toHaveCount(GLOSSARY_TERM_IDS.length);
-    for (const id of GLOSSARY_TERM_IDS) {
-      await expect(nav.locator(`a[href="#${id}"]`)).toHaveCount(1);
+    await expect(nav.getByRole('link')).toHaveCount(GLOSSARY_CATEGORIES.length);
+    const categories = messages.glossary.categories as Record<string, string>;
+    for (const c of GLOSSARY_CATEGORIES) {
+      await expect(nav.getByRole('link', { name: categories[c], exact: true })).toHaveAttribute(
+        'href',
+        `#section-${c}`
+      );
+      await expect(page.locator(`[id="section-${c}"]`)).toHaveCount(1);
+      await expect(page.getByRole('heading', { level: 2, name: categories[c], exact: true })).toHaveCount(
+        1
+      );
     }
+  });
+
+  test(`${locale}: the page carries the AI label above the first entry, in small print, linked to the AI-content policy`, async ({
+    page,
+  }) => {
+    await page.goto(`${prefix}/glossary`);
+    const label = page.locator('[data-glossary-page-ai-note]');
+    await expect(label).toHaveCount(1);
+    await expect(label).toContainText(messages.glossary.pageAiNote);
+    // Plain small print, as in every box: smaller than the scope note above
+    // it, muted ink, no caps, nothing filled or outlined.
+    const look = await labelLook(label);
+    const scopeSize = await page
+      .getByText(messages.glossary.scopeNote, { exact: true })
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(look.size, 'small print, below the scope note').toBeLessThan(scopeSize);
+    expect(look.muted, 'the muted secondary ink').toBe(true);
+    expect(look.transform, 'no caps').toBe('none');
+    expect(look.boxed, 'no chip: nothing filled or outlined').toBe(false);
+    // Rule 4: where the definitions first appear — above the index, and so
+    // above every entry.
+    const index = page.getByRole('navigation', { name: messages.glossary.indexLabel });
+    const above = await label.evaluate(
+      (el, nav) => !!(el.compareDocumentPosition(nav!) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await index.elementHandle()
+    );
+    expect(above, 'the label sits above the index and every entry').toBe(true);
+
+    const link = label.getByRole('link', { name: messages.glossary.aiPolicyLink, exact: true });
+    await expect(link).toHaveAttribute('href', `${prefix}/citations#ai-policy`);
+    const target = (await link.boundingBox())!;
+    expect(target.height, 'a 44px target').toBeGreaterThanOrEqual(44);
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${prefix}/citations#ai-policy$`));
+    const policy = page.locator('#ai-policy');
+    await expect(policy.getByRole('heading', { level: 2 })).toHaveText(messages.citations.aiTitle);
+    await expect(policy).toBeInViewport();
   });
 
   test(`${locale}: no horizontal overflow on the glossary page @reflow`, async ({ page }) => {
@@ -120,9 +228,7 @@ test('a term anchor lands on that term, not the top of the page', async ({ page 
   await expect(page.locator('#reported-by-committee')).toBeInViewport();
 });
 
-test('the footer Glossary link is reachable from a bill page, not just the homepage', async ({
-  page,
-}) => {
+test('the footer Glossary link is reachable from a bill page', async ({ page }) => {
   await page.goto(`/bills/${decodedBillSlug()}`);
   const link = page.locator('footer').getByRole('link', { name: en.common.footer.glossary });
   await expect(link).toHaveAttribute('href', '/glossary');
@@ -132,311 +238,481 @@ test('the footer Glossary link is reachable from a bill page, not just the homep
 });
 
 /* ------------------------------------------------------------------ *
- * 2 · The hovercard's a11y contract
+ * 2 · The in-place definition
  *
  * Driven on /questions, whose "How Big Questions get made" rule 2 is the one
- * place in the product where "cloture" was already written into hand-authored
- * copy — the occurrence the issue opened on.
- *
- * REDESIGNED 2026-08-12 (owner review of PR #217): the term is a LINK to its
- * glossary entry, and the explainer arrives on hover or focus instead of on a
- * click. So the contract these tests hold it to changed with it — from
- * disclosure semantics (aria-expanded, click to toggle) to WCAG 1.4.13's three
- * clauses for content on hover or focus: dismissible, hoverable, persistent.
+ * place hand-authored copy wraps "cloture" and "the Senate Executive
+ * Calendar" — two terms in one sentence, which is also what the one-open-
+ * at-a-time rule needs.
  * ------------------------------------------------------------------ */
-test.describe('the in-place hovercard', () => {
-  const TERM = 'cloture';
+test.describe('the in-place definition', () => {
+  const clotureText = /<cloture>(.*?)<\/cloture>/.exec(en.moments.howMadeRule2)![1];
+  const cloture = (page: Page) => page.locator('[data-glossary-term="cloture"]');
+  const calendar = (page: Page) => page.locator('[data-glossary-term="executive-calendar"]');
 
-  const termLink = (page: Page, name = TERM) =>
-    page.getByRole('link', { name, exact: true });
-
-  test('the term is a link to its own glossary entry, and starts describing nothing', async ({
+  test('the term is a button that starts closed, never a link to the glossary', async ({
     page,
   }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await expect(link).toHaveAttribute('href', '/glossary#cloture');
-    // A dangling aria-describedby is worse than none: it points a screen
-    // reader at an element that does not exist.
-    await expect(link).not.toHaveAttribute('aria-describedby', /./);
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    const term = cloture(page);
+    await expect(term).toHaveCount(1);
+    await expect(page.getByRole('button', { name: clotureText, exact: true })).toHaveCount(1);
+    await expectClosed(page, term);
+    // The owner's words: clicking "should … not redirect". Nothing inline
+    // links into the glossary page any more.
+    await expect(page.locator('main a[href*="/glossary"]')).toHaveCount(0);
   });
 
-  test('clicking the term navigates to its entry — "they can still click in"', async ({ page }) => {
+  test('hovering opens the definition quickly, with the same words the page prints', async ({
+    page,
+  }) => {
     await page.goto('/questions#how');
-    await termLink(page).click();
-    await expect(page).toHaveURL(/\/glossary#cloture$/);
-    await expect(page.locator('#cloture')).toBeInViewport();
-  });
-
-  test('hovering opens the box, and the box carries the explainer', async ({ page }) => {
-    await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
-    await expect(box).toBeVisible();
-    // The SAME string the page prints — one explainer per term per language,
-    // so a short version cannot drift from the long one.
+    const term = cloture(page);
+    await hoverTerm(page, term);
+    const started = Date.now();
+    const box = await boxOf(page, term);
+    await expect(box).toBeVisible({ timeout: 1000 });
+    // The dwell is 130ms; a second is a generous ceiling for a loaded runner,
+    // and still a fraction of the old 200ms-plus-navigation path.
+    expect(Date.now() - started).toBeLessThan(1000);
     await expect(box).toContainText(en.glossary.terms.cloture.body);
+    await expect(box).toContainText(en.glossary.terms.cloture.term);
   });
 
-  test('the box holds no link of its own — the term is the link now', async ({ page }) => {
-    // Two links to one anchor is what the redesign removed, and content
-    // reachable only by pointer travel would be a trap for anyone who cannot
-    // travel. A description with nothing to operate is the honest wiring.
+  test('clicking the term opens the same definition in place and does not navigate', async ({
+    page,
+  }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
+    const before = page.url();
+    const term = cloture(page);
+    await settle(page, term);
+    await term.click();
+    const box = await boxOf(page, term);
+    await expect(box).toContainText(en.glossary.terms.cloture.body);
+    await page.waitForTimeout(300);
+    expect(page.url(), 'a click must never take the reader away').toBe(before);
+  });
+
+  test('a click pins it: moving the pointer away leaves it open', async ({ page }) => {
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await settle(page, term);
+    await term.click();
+    const box = await boxOf(page, term);
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(600); // well past the close grace
+    await expect(box).toBeVisible();
+  });
+
+  test('a second click on the term closes it, and so does a click anywhere else', async ({
+    page,
+  }) => {
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await settle(page, term);
+    await term.click();
+    await boxOf(page, term);
+    await term.click();
+    await expectClosed(page, term);
+
+    await term.click();
+    await boxOf(page, term);
+    await page.getByRole('heading', { name: en.moments.howMadeHeading }).click();
+    await expectClosed(page, term);
+  });
+
+  test('a tap on a phone opens it in place, and a second tap closes it', async ({ page }, info) => {
+    test.skip(!info.project.use.hasTouch, 'touch is a phone project behaviour');
+    await page.goto('/questions#how');
+    const before = page.url();
+    const term = cloture(page);
+    await settle(page, term);
+    await term.tap();
+    const box = await boxOf(page, term);
+    await expect(box).toContainText(en.glossary.terms.cloture.body);
+    expect(page.url()).toBe(before);
+    await term.tap();
+    await expectClosed(page, term);
+  });
+
+  test('keyboard: focus opens it, Escape closes it and keeps focus, Tab moves on', async ({
+    page,
+  }) => {
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await focusTerm(term);
+    await expect(term).toBeFocused();
+    const box = await boxOf(page, term);
+    await expect(box).toContainText(en.glossary.terms.cloture.body);
+
+    await page.keyboard.press('Escape');
+    await expectClosed(page, term);
+    await expect(term, 'dismissing must not relocate the caret').toBeFocused();
+
+    // Enter opens it again (and pins it).
+    await page.keyboard.press('Enter');
+    await boxOf(page, term);
+    // Tab moves on — to the next term in the sentence — and closes this one.
+    await page.keyboard.press('Tab');
+    await expect(term).not.toBeFocused();
+    await expectClosed(page, term);
+  });
+
+  test('a click inside a pinned box never closes it, even when focus sits on the term', async ({
+    page,
+  }) => {
+    // A keyboard pin leaves focus on the term (and Chrome focuses a button
+    // on every click). A click on the box's plain text then moves focus off
+    // the term, to <body>; that once closed the box under the reader's
+    // cursor (independent review, 2026-09-28). Reading it is not leaving it.
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await focusTerm(term);
+    await expect(term).toBeFocused();
+    await page.keyboard.press('Enter'); // pins it
+    const box = await boxOf(page, term);
+    // The first id is the definition's body; the second is its AI label.
+    const [bodyId] = (await term.getAttribute('aria-describedby'))!.split(' ');
+    await page.locator(`[id="${bodyId}"]`).click();
+    await expect(term, 'the click must take focus off the term, or this test proves nothing').not.toBeFocused();
+    await page.waitForTimeout(300);
+    await expect(box).toBeVisible();
+    await expect(term).toHaveAttribute('aria-expanded', 'true');
+    // Moving on still closes it: the next Tab lands outside the term and its box.
+    await page.keyboard.press('Tab');
+    await expectClosed(page, term);
+  });
+
+  test('screen readers get the definition, then its AI label: expanded, controls, described-by both', async ({
+    page,
+  }) => {
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await focusTerm(term);
+    const box = await boxOf(page, term);
+    const described = (await term.getAttribute('aria-describedby'))?.split(' ') ?? [];
+    expect(described, 'the body, then the AI label').toHaveLength(2);
+    const [bodyId, noteId] = described;
+    const body = page.locator(`[id="${bodyId}"]`);
+    await expect(body).toHaveText(en.glossary.terms.cloture.body);
+    // Rule 4: whoever hears the definition hears who drafted it.
+    await expect(page.locator(`[id="${noteId}"]`)).toContainText(en.glossary.aiNote);
+    // The description is inside the panel it controls, and the panel follows
+    // the term in the DOM, so reading on after expanding reaches it.
+    await expect(box.locator(`[id="${bodyId}"]`)).toHaveCount(1);
+    await expect(box.locator(`[id="${noteId}"]`)).toHaveCount(1);
+    // The accessible name stays the visible word (WCAG 2.5.3).
+    await expect(term).not.toHaveAttribute('aria-label', /./);
+    // Nothing to operate inside: it is a description, not a dialog.
     await expect(box.getByRole('link')).toHaveCount(0);
     await expect(box.getByRole('button')).toHaveCount(0);
   });
 
-  test('keyboard focus opens it — a keyboard user never loses the explainer', async ({ page }) => {
+  test('only one definition is open at a time', async ({ page }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    // Focus arrives by keyboard, so the browser treats it as :focus-visible —
-    // which is what the component gates on, deliberately, so a mouse click on
-    // its way to navigating does not flash a box.
-    await page.evaluate(() => {
-      const el = [...document.querySelectorAll('a')].find((a) => a.textContent?.trim() === 'cloture');
-      (el as HTMLElement).focus();
+    const first = cloture(page);
+    const second = calendar(page);
+    await settle(page, first);
+    await first.click();
+    await boxOf(page, first);
+    // Hovered with a mouse event sent straight to it: on a phone the open box
+    // can sit over the next term in the sentence, and a real pointer there
+    // lands on the box (the right behaviour — the reader is reading it). The
+    // rule under test is the popover's: opening another term closes the one
+    // that is pinned.
+    await second.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      el.dispatchEvent(
+        new PointerEvent('pointerover', {
+          bubbles: true,
+          pointerType: 'mouse',
+          clientX: r.left + r.width / 2,
+          clientY: r.top + r.height / 2,
+        })
+      );
     });
-    await expect(link).toBeFocused();
-    const box = await boxOf(page, link);
-    await expect(box).toContainText(en.glossary.terms.cloture.body);
+    await boxOf(page, second);
+    await expect(first).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('[data-glossary-panel]')).toHaveCount(1);
   });
 
   test('WCAG 1.4.13 Hoverable: the pointer can travel into the box without it closing', async ({
     page,
   }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
+    const term = cloture(page);
+    await hoverTerm(page, term);
+    const box = await boxOf(page, term);
     await box.hover();
-    // Well past the close grace period: if crossing the gap had closed it, or
-    // if it closed on arrival, this is where that shows.
     await page.waitForTimeout(500);
     await expect(box).toBeVisible();
-    await expect(link).toHaveAttribute('aria-describedby', /./);
   });
 
   test('WCAG 1.4.13 Persistent: it does not time itself out', async ({ page }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
+    const term = cloture(page);
+    await hoverTerm(page, term);
+    const box = await boxOf(page, term);
     await page.waitForTimeout(1500);
     await expect(box).toBeVisible();
   });
 
-  test('WCAG 1.4.13 Dismissible: Escape closes it without moving the pointer, and it stays closed', async ({
+  test('WCAG 1.4.13 Dismissible: Escape closes a hovered box and it stays closed', async ({
     page,
   }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    await boxOf(page, link);
+    const term = cloture(page);
+    await hoverTerm(page, term);
+    await boxOf(page, term);
     await page.keyboard.press('Escape');
-    await expect(link).not.toHaveAttribute('aria-describedby', /./);
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
-    // The latch: with the pointer still sitting on the term, it must not
-    // spring straight back — otherwise "dismissible" means nothing.
+    await expectClosed(page, term);
+    // The latch: with the pointer still on the term it must not spring back.
     await page.waitForTimeout(500);
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expectClosed(page, term);
   });
 
-  test('Escape leaves focus exactly where it was', async ({ page }) => {
+  test('moving the pointer away closes a box that hover opened', async ({ page }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await page.evaluate(() => {
-      const el = [...document.querySelectorAll('a')].find((a) => a.textContent?.trim() === 'cloture');
-      (el as HTMLElement).focus();
+    const term = cloture(page);
+    await hoverTerm(page, term);
+    await boxOf(page, term);
+    await page.mouse.move(2, 2);
+    await expectClosed(page, term);
+  });
+
+  test('the term is a 44px target without making its line taller @reflow', async ({ page }) => {
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    const box = (await term.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    // The negative block margins give the 44px back to the line: the
+    // sentence's line height is what it was, so the term does not push the
+    // lines around it apart.
+    const lineGap = await term.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return parseFloat(cs.marginTop) + parseFloat(cs.marginBottom) + el.getBoundingClientRect().height;
     });
-    await boxOf(page, link);
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
-    await expect(link, 'dismissing a description must not relocate the caret').toBeFocused();
+    const lineHeight = await term.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+    expect(Math.abs(lineGap - lineHeight)).toBeLessThanOrEqual(1);
   });
 
-  test('moving the pointer away closes it', async ({ page }) => {
-    await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    await boxOf(page, link);
-    await page.getByRole('heading', { name: en.moments.howMadeHeading }).hover();
-    await expect(link).not.toHaveAttribute('aria-describedby', /./);
-  });
-
-  test('a touch pointer never opens a box — it navigates instead', async ({ page }) => {
-    /*
-     * A touch device HAS no hover, and the two-tap workaround breaks the one
-     * interaction a phone user already understands. The component gates its
-     * pointer handlers on `pointerType === 'mouse'`; this fires the synthetic
-     * enter a touch produces and proves nothing opens.
-     */
-    await page.goto('/questions#how');
-    const link = termLink(page);
-    await page.evaluate(() => {
-      const el = [...document.querySelectorAll('a')].find((a) => a.textContent?.trim() === 'cloture')!;
-      const r = el.getBoundingClientRect();
-      for (const type of ['pointerover', 'pointerenter']) {
-        el.dispatchEvent(
-          new PointerEvent(type, {
-            bubbles: type === 'pointerover',
-            pointerType: 'touch',
-            clientX: r.left + r.width / 2,
-            clientY: r.top + r.height / 2,
-          })
-        );
-      }
-    });
-    await page.waitForTimeout(600); // well past HOVER_OPEN_MS
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
-    // The one thing a tap DOES do still works.
-    await expect(link).toHaveAttribute('href', '/glossary#cloture');
-  });
-
-  test('the Spanish hovercard stays in Spanish and links inside /es', async ({ page }) => {
-    await page.goto('/es/questions#how');
-    // The ES sentence's own wording for the term, not a translated English one.
-    const link = termLink(page, 'solicitud de cierre de debate');
-    // A locale-relative href through the i18n Link — an absolute one would
-    // drop a Spanish reader onto the English page.
-    await expect(link).toHaveAttribute('href', '/es/glossary#cloture');
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
-    await expect(box).toContainText(es.glossary.terms.cloture.body);
-  });
-
-  test('the /questions rule-2 sentence still reads as one sentence, tags and all', async ({
+  test('reduced motion: the box is readable the frame it opens, with nothing animating', async ({
     page,
   }) => {
-    // The tags are markup, not a rewrite: with the links stripped the list
-    // item must still be the sentence the ES reviewer and the moment-scaffold
-    // gate both read.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/questions#how');
+    const term = cloture(page);
+    await settle(page, term);
+    await term.click();
+    const box = await boxOf(page, term);
+    await expect(box).toBeVisible();
+    const motion = await box.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { animation: cs.animationName, transition: cs.transitionDuration };
+    });
+    expect(motion.animation).toBe('none');
+    // globals.css's reduced-motion block pins every transition to 0.01ms; the
+    // box declares none of its own. Anything over a millisecond is motion.
+    const seconds = motion.transition.split(',').map((d) => parseFloat(d) * (d.trim().endsWith('ms') ? 0.001 : 1));
+    expect(seconds.every((s) => s <= 0.001), motion.transition).toBe(true);
+  });
+
+  // Owner, 2026-09-28, on the first version (a chip above the definition):
+  // "the AI chip needs to be much smaller and below the definition."
+  for (const [locale, prefix, messages] of LOCALES) {
+    test(`${locale}: every open box carries the AI label, in small print, below the definition (rule 4)`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.click();
+      const box = await boxOf(page, term);
+      const body = box.locator('[data-glossary-body]');
+      const note = box.locator('[data-glossary-ai-note]');
+      await expect(body).toHaveCount(1);
+      await expect(note).toHaveCount(1);
+      await expect(body).toHaveText(messages.glossary.terms.cloture.body);
+      await expect(note).toHaveText(messages.glossary.aiNote);
+      // The definition first, then the label: in the DOM, and on screen.
+      const order = await body.evaluate(
+        (b, n) => ({
+          follows: !!(b.compareDocumentPosition(n!) & Node.DOCUMENT_POSITION_FOLLOWING),
+          below: n!.getBoundingClientRect().top >= b.getBoundingClientRect().bottom,
+          bodySize: parseFloat(getComputedStyle(b).fontSize),
+          bodyWeight: parseFloat(getComputedStyle(b).fontWeight),
+        }),
+        await note.elementHandle()
+      );
+      expect(order.follows, 'the label comes after the definition').toBe(true);
+      expect(order.below, 'the label sits under the definition').toBe(true);
+      // Plain small print: smaller and no heavier than the words it labels,
+      // muted ink, no caps, nothing filled or outlined.
+      const look = await labelLook(note);
+      expect(look.size, 'small print, below the definition size').toBeLessThan(order.bodySize);
+      expect(look.weight, 'no heavier than the definition').toBeLessThanOrEqual(order.bodyWeight);
+      expect(look.muted, 'the muted secondary ink').toBe(true);
+      expect(look.transform, 'no caps').toBe('none');
+      expect(look.boxed, 'no chip: nothing filled or outlined').toBe(false);
+      // Its last line is the label, so it must clear a phone's thumb bar.
+      await expectClearOfThumbBar(page, note);
+      // A label, not a way out: still nothing to operate inside the box.
+      await expect(box.getByRole('link')).toHaveCount(0);
+    });
+  }
+
+  test('the Spanish definition stays in Spanish, marked as Spanish', async ({ page }) => {
+    await page.goto('/es/questions#how');
+    const esText = /<cloture>(.*?)<\/cloture>/.exec(es.moments.howMadeRule2)![1];
+    const term = page.getByRole('button', { name: esText, exact: true });
+    await expect(term).toHaveAttribute('data-glossary-term', 'cloture');
+    await settle(page, term);
+    await term.click();
+    const box = await boxOf(page, term);
+    await expect(box).toContainText(es.glossary.terms.cloture.body);
+    await expect(box).toHaveAttribute('lang', 'es');
+  });
+
+  test('the /questions rule-2 sentence still reads as one sentence, terms and all', async ({
+    page,
+  }) => {
     await page.goto('/questions#how');
     const plain = en.moments.howMadeRule2.replace(/<\/?[a-zA-Z][\w-]*>/g, '');
     await expect(page.getByText(plain)).toBeVisible();
   });
 
-  test('the open box lands inside the viewport on both axes @reflow', async ({ page }) => {
-    // It is viewport-positioned and measured, so "inside the viewport" is the
-    // whole contract: a box clipped at the right edge is unreadable, and one
-    // that opens below the fold on a phone is worse — the thumb bar sits on
-    // top of it by design.
-    await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    const box = await boxOf(page, link);
-    const rect = (await box.boundingBox())!;
-    const view = page.viewportSize()!;
-    expect(rect.x, 'box crosses the left edge').toBeGreaterThanOrEqual(0);
-    expect(rect.x + rect.width, 'box crosses the right edge').toBeLessThanOrEqual(view.width);
-    expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
-    expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
-  });
+  // Both languages since the AI label (rule 4) made every box taller: the
+  // Spanish cloture entry, opened from mid-screen on a phone, then fitted
+  // neither above nor below its term and ran off the bottom edge.
+  for (const [locale, prefix] of LOCALES) {
+    test(`${locale}: the open box lands inside the viewport on both axes @reflow`, async ({ page }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.click();
+      const box = await boxOf(page, term);
+      const rect = (await box.boundingBox())!;
+      const view = page.viewportSize()!;
+      expect(rect.x, 'box crosses the left edge').toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width, 'box crosses the right edge').toBeLessThanOrEqual(view.width);
+      expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
+      await expectClearOfThumbBar(page, box.locator('[data-glossary-ai-note]'));
+    });
+  }
 
-  test('the hovercard does not push the page sideways at 320px @reflow', async ({ page }) => {
+  // The case the placement's clamp exists for: the term at mid-screen, where
+  // on a phone a long box fits neither above nor below it. It stays on screen.
+  for (const [locale, prefix] of LOCALES) {
+    test(`${locale}: a box opened from mid-screen stays on screen, even when neither side holds it @reflow`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/questions#how`);
+      const term = cloture(page);
+      await settle(page, term);
+      await term.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const mid = document.documentElement.clientHeight / 2;
+        window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - mid, behavior: 'instant' });
+      });
+      await page.waitForTimeout(300);
+      await term.click();
+      const box = await boxOf(page, term);
+      await page.waitForTimeout(100);
+      const rect = (await box.boundingBox())!;
+      const view = page.viewportSize()!;
+      expect(rect.y, 'box crosses the top edge').toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height, 'box falls below the fold').toBeLessThanOrEqual(view.height);
+      // Its AI label, the box's last line, is on screen with it and not under
+      // the thumb bar.
+      const note = box.locator('[data-glossary-ai-note]');
+      await expect(note).toBeInViewport();
+      await expectClearOfThumbBar(page, note);
+    });
+  }
+
+  test('an open box does not push the page sideways at 320px @reflow', async ({ page }) => {
     await page.goto('/questions#how');
-    const link = termLink(page);
-    await hoverTerm(page, link);
-    await boxOf(page, link);
+    const term = cloture(page);
+    await settle(page, term);
+    await term.click();
+    await boxOf(page, term);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
     );
-    expect(overflow, 'an open hovercard must never create a horizontal scrollbar').toBeLessThanOrEqual(
-      0
-    );
+    expect(overflow, 'an open definition must never create a horizontal scrollbar').toBeLessThanOrEqual(0);
   });
 });
 
 /* ------------------------------------------------------------------ *
- * 3 · The wiring sites that depend on live records
+ * 3 · The wired surfaces that depend on live records
  * ------------------------------------------------------------------ */
 test.describe('wired surfaces', () => {
-  test('a Senate-calendar bill links its placement phrase to the Legislative Calendar entry', async ({
+  async function opens(page: Page, term: Locator, body: string) {
+    await settle(page, term);
+    await term.click();
+    await expect(await boxOf(page, term)).toContainText(body);
+  }
+
+  test('a Senate-calendar bill opens the Legislative Calendar entry on its placement phrase', async ({
     page,
   }) => {
     const slug = billOnCalendar('senate-legislative');
     test.skip(!slug, 'no bill currently sits on the Senate Legislative Calendar');
     await page.goto(`/bills/${slug}`);
-    const link = page.getByRole('link', { name: 'Senate floor calendar', exact: true });
-    await expect(link).toHaveCount(1);
-    await expect(link).toHaveAttribute('href', '/glossary#legislative-calendar');
-    await hoverTerm(page, link);
-    await expect(await boxOf(page, link)).toContainText(
-      en.glossary.terms['legislative-calendar'].body
-    );
+    const term = page.getByRole('button', { name: 'Senate floor calendar', exact: true });
+    await expect(term).toHaveAttribute('data-glossary-term', 'legislative-calendar');
+    await opens(page, term, en.glossary.terms['legislative-calendar'].body);
   });
 
-  test('a Union Calendar bill links to the Union Calendar entry', async ({ page }) => {
+  test('a Union Calendar bill opens the Union Calendar entry', async ({ page }) => {
     const slug = billOnCalendar('union');
     test.skip(!slug, 'no bill currently sits on the Union Calendar');
     await page.goto(`/bills/${slug}`);
-    const link = page.getByRole('link', { name: 'House floor calendar', exact: true });
-    await expect(link).toHaveCount(1);
-    await expect(link).toHaveAttribute('href', '/glossary#union-calendar');
-    await hoverTerm(page, link);
-    await expect(await boxOf(page, link)).toContainText(en.glossary.terms['union-calendar'].body);
+    const term = page.getByRole('button', { name: 'House floor calendar', exact: true });
+    await expect(term).toHaveAttribute('data-glossary-term', 'union-calendar');
+    await opens(page, term, en.glossary.terms['union-calendar'].body);
   });
 
-  test('a HOUSE Calendar bill gets the same sentence and NO link — there is no entry for it', async ({
+  test('a HOUSE Calendar bill now opens the House Calendar entry, not the Union one', async ({
     page,
   }) => {
-    // The truth clause. The House keeps two calendars; the first batch of
-    // terms covers the Union Calendar only, so a "Placed on the House
-    // Calendar" record renders the identical sentence with no trigger rather
-    // than a link to an entry about a different list.
+    // Until 2026-09-28 there was no entry for this list, so the phrase stayed
+    // bare rather than point at the wrong calendar. The expansion added one.
     const slug = billOnCalendar('house');
     test.skip(!slug, 'no bill currently sits on the House Calendar');
     await page.goto(`/bills/${slug}`);
-    await expect(page.getByText('floor calendar')).not.toHaveCount(0);
-    await expect(
-      page.getByRole('link', { name: 'House floor calendar', exact: true })
-    ).toHaveCount(0);
+    const term = page.getByRole('button', { name: 'House floor calendar', exact: true });
+    await expect(term).toHaveAttribute('data-glossary-term', 'house-calendar');
+    await opens(page, term, en.glossary.terms['house-calendar'].body);
   });
 
-  test('a nomination reported by committee glosses that status where it is printed', async ({
-    page,
-  }) => {
-    const slug = nominationAt('reported');
-    test.skip(!slug, 'no nomination is currently at the reported stage');
-    await page.goto(`/nominations/${slug}`);
-    const link = page.getByRole('link', { name: en.nominations.status.reported, exact: true });
-    await expect(link).toHaveCount(1);
-    await expect(link).toHaveAttribute('href', '/glossary#reported-by-committee');
-    await hoverTerm(page, link);
-    await expect(await boxOf(page, link)).toContainText(
-      en.glossary.terms['reported-by-committee'].body
-    );
-  });
-
-  test('a nomination on the Executive Calendar glosses that status too', async ({ page }) => {
-    const slug = nominationAt('exec_calendar');
-    test.skip(!slug, 'no nomination is currently on the Executive Calendar');
-    await page.goto(`/nominations/${slug}`);
-    const link = page.getByRole('link', { name: en.nominations.status.exec_calendar, exact: true });
-    await expect(link).toHaveCount(1);
-    await expect(link).toHaveAttribute('href', '/glossary#executive-calendar');
-    await hoverTerm(page, link);
-    await expect(await boxOf(page, link)).toContainText(
-      en.glossary.terms['executive-calendar'].body
-    );
-  });
+  for (const [status, id] of [
+    ['reported', 'reported-by-committee'],
+    ['exec_calendar', 'executive-calendar'],
+    ['confirmed', 'confirmation'],
+    ['returned', 'returned-nomination'],
+  ] as const) {
+    test(`a nomination at "${status}" glosses that status where it is printed`, async ({ page }) => {
+      const slug = nominationAt(status);
+      test.skip(!slug, `no nomination is currently at the ${status} stage`);
+      await page.goto(`/nominations/${slug}`);
+      const label = (en.nominations.status as Record<string, string>)[status];
+      const term = page.getByRole('button', { name: label, exact: true }).first();
+      await expect(term).toHaveAttribute('data-glossary-term', id);
+      const terms = en.glossary.terms as Record<string, { body: string }>;
+      await opens(page, term, terms[id].body);
+    });
+  }
 
   test('a status that is Oravan summarising a stage is NOT glossed', async ({ page }) => {
-    // "Senate floor activity" is our sentence about where a record stands, not
-    // the Senate's name for a procedure. A trigger there would promise an
-    // explainer for a thing that has no entry, which is how a glossary starts
-    // meaning nothing.
     const slug = nominationAt('floor');
     test.skip(!slug, 'no nomination is currently at the floor stage');
     await page.goto(`/nominations/${slug}`);
     await expect(page.getByText(en.nominations.status.floor)).toBeVisible();
     await expect(
-      page.getByRole('link', { name: en.nominations.status.floor, exact: true })
+      page.getByRole('button', { name: en.nominations.status.floor, exact: true })
     ).toHaveCount(0);
   });
 });

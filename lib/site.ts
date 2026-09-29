@@ -53,6 +53,9 @@ export const BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/aFa28k5uF4
  * surface that pointed at them follows this constant: app/sitemap.ts, the
  * footer, llms.txt, the /follow embeds section, the /partners button and the
  * action-panel widget's refusal link (which points at /partners instead).
+ * It also turns off POST /api/brand, the configurator's paid theme suggestion
+ * (owner, 2026-09-29: "brand off"): it answers 404 before doing anything, so
+ * setting this to true turns that spend (at most ~$2/day) back on as well.
  * The widget routes under /embed/* and public/embed.js are NOT gated — they
  * keep working for any site that already carries them, with rule 12's
  * promises intact.

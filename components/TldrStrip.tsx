@@ -1,5 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import type { Bill } from '@/lib/types';
+import { glossify } from '@/components/glossary-tags';
+import { glossaryLocale } from '@/lib/glossary-match';
 
 /*
  * The 5-second layer, and the reading column's lede.
@@ -32,7 +34,9 @@ export function TldrStrip({ bill }: { bill: Bill }) {
 
   return (
     <div className="mt-4">
-      <p className="font-reading text-lg text-ink">{s.tldr}</p>
+      {/* Glossary terms already in the lede open in place (2026-09-28);
+          the lede is its own section for the once-per-section rule. */}
+      <p className="font-reading text-lg text-ink">{glossify(s.tldr, glossaryLocale(locale), new Set())}</p>
       <p className="mt-2 text-xs font-semibold text-ink-2 tabular-nums">
         {t('tldrMeta', { seconds, count })}
       </p>

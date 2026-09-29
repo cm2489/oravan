@@ -4,6 +4,7 @@ import { seedZip } from './helpers';
 import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import specialElections from '../data/special-elections.json';
 
 /*
  * Copy is read BY KEY (reps.*), formatted the way the page formats it; the
@@ -122,47 +123,76 @@ test('unknown ZIP gets a recoverable error', async ({ page }) => {
 /*
  * S24 groundwork (the project records §9.1(f)):
  * FL-20 is a real, currently-vacant House seat already baked into
- * data/legislators.json (Cherfilus-McCormick resigned Apr 21, 2026, and
- * Florida's new map eliminates the district outright - no special election
- * is on record). ZIP 33313 maps to FL-20 alone, so this is the sharpest
- * regression fixture available: the reps page must show an explicit vacant
- * notice, never a stale departed-member card, and never invent an
- * election-pending claim.
+ * data/legislators.json (Cherfilus-McCormick resigned Apr 21, 2026). ZIP
+ * 33313 maps to FL-20 alone, so this is the sharpest regression fixture
+ * available: the reps page must show an explicit vacant notice, never a stale
+ * departed-member card, and never an election claim the record lacks. Since
+ * 2026-09-28 the card prints the seat's special-election dates exactly as
+ * data/special-elections.json records them from the FEC (none for FL-20 on
+ * that day - the FEC and the House Clerk both list it "TBD"), with the day
+ * they were checked.
  */
-test.describe('vacant seat (FL-20)', () => {
-  test('English: explicit vacant notice, senators still shown, no invented election claim', async ({
-    page,
-  }) => {
-    await page.goto('/reps?zip=33313');
-    await expect(page.getByText(en.reps.vacantSeat, { exact: true })).toBeVisible();
-    await expect(page.getByText(en.reps.vacantSeatBody)).toBeVisible();
-    await expect(page.getByRole('link', { name: en.reps.vacantSeatLink })).toHaveAttribute(
-      'href',
-      'https://www.house.gov/representatives/find-your-representative'
-    );
-    // Senators for the state are unaffected by a House vacancy.
-    await expect(page.getByText('Rick Scott')).toBeVisible();
-    await expect(page.getByText('Ashley Moody')).toBeVisible();
-    // Never show the departed member, never speculate about a special election.
-    await expect(page.getByText('Cherfilus-McCormick')).toHaveCount(0);
-    await expect(page.getByText(/special election/i)).toHaveCount(0);
-    await expect(page.getByText(/election pending/i)).toHaveCount(0);
-  });
+const FEC_DATES_PAGE = 'https://www.fec.gov/help-candidates-and-committees/dates-and-deadlines/';
+const FL20 = (specialElections as Record<string, { checked: string; dates: { date: string; type: string }[] }>)['fl-20'];
+const longDate = (locale: string, iso: string) =>
+  new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${iso}T00:00:00Z`)
+  );
 
-  test('Spanish: same vacant fact, fully localized', async ({ page }) => {
-    await page.goto('/es/reps?zip=33313');
-    await expect(page.getByText(es.reps.vacantSeat, { exact: true })).toBeVisible();
-    await expect(page.getByText(es.reps.vacantSeatBody)).toBeVisible();
-    await expect(page.getByRole('link', { name: es.reps.vacantSeatLink })).toHaveAttribute(
-      'href',
-      'https://www.house.gov/representatives/find-your-representative'
-    );
-    await expect(page.getByText('Rick Scott')).toBeVisible();
-    await expect(page.getByText('Ashley Moody')).toBeVisible();
-    // No English leakage on the vacant-seat surface.
-    await expect(page.getByText(en.reps.vacantSeat, { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Cherfilus-McCormick')).toHaveCount(0);
-  });
+test.describe('vacant seat (FL-20)', () => {
+  for (const { prefix, locale, messages } of [
+    { prefix: '', locale: 'en', messages: en },
+    { prefix: '/es', locale: 'es', messages: es },
+  ] as const) {
+    test(`${locale}: explicit vacant notice, senators still shown, only the FEC's recorded election dates`, async ({
+      page,
+    }) => {
+      await page.goto(`${prefix}/reps?zip=33313`);
+      await expect(page.getByText(messages.reps.vacantSeat, { exact: true })).toBeVisible();
+      await expect(page.getByText(messages.reps.vacantSeatBody)).toBeVisible();
+      await expect(page.getByRole('link', { name: messages.reps.vacantSeatLink })).toHaveAttribute(
+        'href',
+        'https://www.house.gov/representatives/find-your-representative'
+      );
+      // Senators for the state are unaffected by a House vacancy.
+      await expect(page.getByText('Rick Scott')).toBeVisible();
+      await expect(page.getByText('Ashley Moody')).toBeVisible();
+      // Never show the departed member.
+      await expect(page.getByText('Cherfilus-McCormick')).toHaveCount(0);
+      await expect(page.getByText(/election pending/i)).toHaveCount(0);
+
+      // Election dates: exactly the recorded ones, or the recorded absence -
+      // never a date the FEC row does not hold.
+      const block = page.locator('[data-seat-elections]');
+      if (!FL20) {
+        await expect(block).toHaveCount(0);
+        return;
+      }
+      await expect(block).toBeVisible();
+      const tr = createTranslator({ locale, messages, namespace: 'reps' });
+      const checked = longDate(locale, FL20.checked);
+      await expect(block.locator('[data-seat-election-date]')).toHaveCount(FL20.dates.length);
+      if (FL20.dates.length === 0) {
+        await expect(block.locator('[data-seat-election-none]')).toHaveText(tr('seatElectionNone', { date: checked }));
+      } else {
+        for (const d of FL20.dates) {
+          await expect(block.locator(`[data-seat-election-date="${d.date}"]`)).toHaveText(
+            tr('seatElectionDate', { type: d.type, date: longDate(locale, d.date) })
+          );
+        }
+        await expect(block.getByText(tr('seatElectionChecked', { date: checked }))).toBeVisible();
+      }
+      await expect(block.getByRole('link', { name: messages.reps.seatElectionLink })).toHaveAttribute(
+        'href',
+        FEC_DATES_PAGE
+      );
+      if (locale === 'es') {
+        // No English leakage on the vacant-seat surface.
+        await expect(page.getByText(en.reps.vacantSeat, { exact: true })).toHaveCount(0);
+        await expect(page.getByText(en.reps.seatElectionLink, { exact: true })).toHaveCount(0);
+      }
+    });
+  }
 
   test('/api/reps names the vacant seat explicitly (fact only, no since-date exposed)', async ({
     request,
