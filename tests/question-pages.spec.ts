@@ -6,7 +6,7 @@ import { getBill } from '../lib/core/bills';
 import { getMoments, type MomentWithState } from '../lib/moments';
 import { questionVehicles } from '../lib/moments-ui';
 import { statusWord } from '../lib/status-word';
-import { mockScriptApi } from './helpers';
+import { mockScriptApi, seedZip } from './helpers';
 
 /*
  * BIG QUESTION PAGES AS DECIDED (wireframes v2, 2026-09-29:
@@ -37,6 +37,8 @@ const LOCALES = [
   { locale: 'es', prefix: '/es', messages: es },
 ] as const;
 
+const ZIP = '78501'; // TX-15: one House member and two senators, a single district
+
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const startsWith = (label: string) => new RegExp(`^${escapeRegex(label)}\\b`);
 
@@ -46,6 +48,13 @@ const ONE_BILL = RENDERED.find((m) => questionHasPanel(openOf(m).map((v) => v.ki
 const SEVERAL = RENDERED.find((m) => openOf(m).length > 1) ?? null;
 const WITH_SETTLED =
   RENDERED.find((m) => questionVehicles(m).some((v) => !v.open && v.kind === 'bill')) ?? null;
+
+/** The page has hydrated: a page with a call panel claims the header's Call
+ *  tab for it in an effect (components/CallTabTarget.tsx), so the tab's href
+ *  turns from the server's "/call" to "#act" only once React is running. */
+async function hydrated(page: Page) {
+  await expect(page.locator('[data-call-tab][href="#act"]').first()).toBeAttached();
+}
 
 /** Click a stance until the (mocked) script request goes out — the funnel's
  *  guard against a click landing before React hydrates the panel. */
@@ -65,17 +74,40 @@ for (const { locale, prefix, messages } of LOCALES) {
       const slug = openOf(ONE_BILL!)[0].vehicle.slug;
 
       await page.goto(`${prefix}/bills/${slug}`);
-      await page.waitForLoadState('networkidle');
+      await hydrated(page);
       const onBill = page.locator('[data-call-cta]');
       await expect(onBill).toHaveCount(1);
       const billText = await onBill.innerText();
 
       await page.goto(`${prefix}/questions/${ONE_BILL!.id}`);
-      await page.waitForLoadState('networkidle');
+      await hydrated(page);
       const onQuestion = page.locator('[data-call-cta]');
       await expect(onQuestion).toHaveCount(1);
       await expect(page.locator('#act')).toHaveText(messages.bill.actTitle);
       expect(await onQuestion.innerText()).toBe(billText);
+    });
+
+    test('with a saved ZIP and a stance, the members, their order and the routing line match the bill page too', async ({
+      page,
+    }) => {
+      test.skip(!ONE_BILL, 'no Big Question with exactly one open bill in the corpus');
+      // At rest the panel prints no member list, so the props that route it
+      // (liveTarget) only show once a ZIP and a stance are in: compare there.
+      const slug = openOf(ONE_BILL!)[0].vehicle.slug;
+      await mockScriptApi(page);
+      const panelAfterStance = async (path: string) => {
+        await page.goto(path);
+        await hydrated(page);
+        await declareStance(page, messages.bill.stance.support);
+        await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
+        await expect(page.locator('[data-call-cta] a[href^="tel:"]').first()).toBeVisible();
+        return page.locator('[data-call-cta]').innerText();
+      };
+      await page.goto(`${prefix}/bills/${slug}`);
+      await seedZip(page, ZIP);
+      const billText = await panelAfterStance(`${prefix}/bills/${slug}`);
+      const questionText = await panelAfterStance(`${prefix}/questions/${ONE_BILL!.id}`);
+      expect(questionText).toBe(billText);
     });
 
     test('on a phone it follows the answer and the bill; on the desk it rides in the rail', async ({ page, isMobile }) => {
