@@ -77,6 +77,7 @@ import {
   blankDraft,
   draftAll,
   groundFor,
+  recordedVoteLines,
 } from './moment-draft.mjs';
 import { blankStructure, structureFor } from './moment-scaffold.mjs';
 import {
@@ -554,6 +555,10 @@ function renderCandidate(c, { ground = null, draft = blankDraft(), structure = b
     ...(ground?.title ? [`- official title: ${ground.title}`] : []),
     `- status \`${c.status}\` · last action ${c.lastActionDate ?? 'undated'} · urgency ${c.urgency}`,
     ...(ground?.lastActionText ? [`- last action text: “${ground.lastActionText}”`] : []),
+    // The recorded votes the draft was shown, with the record's count by
+    // party — the same lines, from the same function (empty until the rule-3
+    // lint accepts a party count; scripts/moment-draft.mjs recordedVoteLines).
+    ...(ground ? recordedVoteLines(ground).map((l) => `- ${l}`) : []),
     `- coverage **${c.tier}** · ${c.outlets} outlet(s)${c.floorCalendar ? ` · **on the ${c.floorChamber ?? ''} floor calendar**`.replace('  ', ' ') : ''}`,
     `- ${c.url}`,
     /* The derived signal, printed as a RECORD LINE rather than left inside the
@@ -977,7 +982,10 @@ async function main(argv) {
   const statusPhrases = rendering.length
     ? { en: read('messages/en.json').bills?.status ?? {}, es: read('messages/es.json').bills?.status ?? {} }
     : null;
-  const grounds = new Map(rendering.map((c) => [c.slug, groundFor(c, bySlug.get(c.slug), statusPhrases)]));
+  // The vote record, for each draft's recorded-vote lines. Absent is legal (a
+  // branch before the first vote sync) and means "no roll calls known".
+  const rollCalls = rendering.length && existsSync(path('data/votes.json')) ? (read('data/votes.json').rollCalls ?? []) : [];
+  const grounds = new Map(rendering.map((c) => [c.slug, groundFor(c, bySlug.get(c.slug), statusPhrases, rollCalls)]));
   const { cap: draftCap, warning: capWarning } = resolveDraftCap(process.env.MOMENT_DRAFT_CAP);
   if (capWarning) console.error(`::warning::moment-watch: ${capWarning}`);
   const drafts = rendering.length && !has('no-draft')
