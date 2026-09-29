@@ -73,7 +73,11 @@ export function BillCard({
           status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
-          chunk so a wrapped line can never start with a floating "·". */}
+          chunk so a wrapped line can never start with a floating "·".
+          Below 22.5rem the status and footnote chunks may wrap inside
+          themselves: at 320px a card's text column is about 246px, and
+          "ACABA DE APROBARSE EN UNA CÁMARA" on one line is wider, which
+          pushed /es/today 35px past the screen (measured 2026-09-29). */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         {/* tabular figures, not a third typeface: the system has two voices
             and `font-mono` was neither */}
@@ -81,7 +85,7 @@ export function BillCard({
           {bill.identifier}
           <span aria-hidden> ·</span>
         </span>
-        <span className="whitespace-nowrap">
+        <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
           {t(`bills.status.${bill.statusKey}`)}
           {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
         </span>
@@ -93,7 +97,7 @@ export function BillCard({
             identical to a live one in a status label. Neither may ever light
             amber — amber is one dated floor fact that is still AHEAD. */}
         {annotation && (
-          <span className="whitespace-nowrap">
+          <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
             {t(`bills.annotation.${ANNOTATION_KEYS[annotation]}`)}
             {coverageCount != null && <span aria-hidden> ·</span>}
           </span>
