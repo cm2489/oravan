@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import { statusKeyFor } from '@/lib/journey';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { ArrowRight, Phone } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
-import { SavedZipLookup } from '@/components/SavedZipLookup';
+import { SavedZipLookup, ZipKeptNote } from '@/components/SavedZipLookup';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { BillCard } from '@/components/BillCard';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
+import { YourRecord } from '@/components/YourRecord';
+import { CALL_BUTTON } from '@/components/call-button';
 import { Link } from '@/i18n/navigation';
 import {
   billSlug,
@@ -42,6 +44,16 @@ import { buildOrganizationJsonLd } from '@/lib/jsonld';
  * register is a 1.5px line-strong rule and no label at all. Neither one is
  * amber: amber is reserved for a bill standing on the floor calendar, with the
  * date printed beside it, and "your ZIP spans two districts" is not that fact.
+ *
+ * THE ORDER (wireframes v2, reps.html, the owner's decided design,
+ * 2026-09-29): Your members, with the ZIP they came from and Change ZIP (Q8
+ * "a"); the members, House member first (a lookup has no bill in context, so
+ * there is no voting chamber to lead with: repsForDistrict's order, the one
+ * the page's own copy uses, "one House representative and two senators");
+ * then the bills worth a call (R06, rule 8); then the reader's own record —
+ * Your calls, the folded topics and reading, Erase my data (Q4 "b + c",
+ * RC01–RC04, components/YourRecord.tsx). The call panel's "See your record"
+ * lands on Your calls (`#your-calls`).
  */
 
 export async function generateMetadata({
@@ -68,8 +80,8 @@ export default async function RepsPage({
   setRequestLocale(locale);
   const { zip, district: districtParam, change } = await searchParams;
   const t = await getTranslations('reps');
-  // Reused verbatim from the bill namespace (the ActionPanel's own why-call
-  // line) rather than duplicated into reps.* — the two surfaces can't drift.
+  // The Capitol switchboard's words are the call panel's own (bill.*), so the
+  // two surfaces cannot drift.
   const tBill = await getTranslations('bill');
 
   const candidates = zip && /^\d{5}$/.test(zip) ? districtsForZip(zip) : [];
@@ -108,18 +120,23 @@ export default async function RepsPage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <JsonLd id="org-jsonld" data={orgJsonLd} />
-      <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
-      <p className="mt-4 max-w-read text-lede text-ink-2">{t('sub')}</p>
+      <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
 
       {/* WHICH ZIP, AND THE WAY TO CHANGE IT, UP TOP (owner, Q8 "a",
           2026-09-28: "The Reps tab opens on your members, with 'Change
           ZIP'"). The members may now appear without the reader typing
           anything, so the ZIP they came from is named before them, not after
-          the continuation. min-h-11: the link's hit box is 44px; the text
-          stays text-sm. */}
+          the continuation. "kept on this device only" is printed only when
+          this browser really holds that ZIP (ZipKeptNote): a shared
+          /reps?zip= link keeps nothing. min-h-11: the link's hit box is 44px;
+          the text stays text-sm. */}
       {zip && districts.length > 0 && (
         <p data-zip-line="" className="mt-4 text-sm text-ink-2">
-          {t('zipLine', { zip })} ·{' '}
+          {/* The no-break space keeps the "·" at the end of a wrapped line,
+              never at the start of the next (BillCard's rule). */}
+          {t('zipLine', { zip })}
+          <ZipKeptNote zip={zip} />
+          {' ·'}{' '}
           <Link
             href="/reps?change=1"
             className="inline-flex min-h-11 items-center underline underline-offset-2"
@@ -184,6 +201,27 @@ export default async function RepsPage({
         </div>
       )}
 
+      {/* THE CAPITOL SWITCHBOARD, where a ZIP matched nothing (wireframes v2,
+          reps.html, state 3): the call panel's own block, words and number
+          (components/ActionPanel.tsx), so a reader in Guam, the Virgin
+          Islands, American Samoa or the Northern Mariana Islands — none of
+          whose ZIPs data/zip-districts.json maps (R02) — still leaves with a
+          number that reaches any congressional office. Tappable, no Copy (the
+          owner's card A, 2026-09-28). */}
+      {zip && districts.length === 0 && (
+        <div className="mt-4 max-w-xl rounded-control border-[1.5px] border-line-strong p-4" data-switchboard="">
+          <p className="max-w-note text-sm text-ink-2">{tBill('switchboardNote')}</p>
+          <a
+            href="tel:+12022243121"
+            className={`mt-2 inline-flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 ${CALL_BUTTON}`}
+          >
+            <Phone className="h-4 w-4 flex-none" aria-hidden />
+            {tBill('switchboard')}
+            <span className="whitespace-nowrap tabular-nums">(202) 224-3121</span>
+          </a>
+        </div>
+      )}
+
       {refined && zip && (
         <div className={`mt-6 max-w-read ${NOTE}`}>
           <p>
@@ -237,21 +275,6 @@ export default async function RepsPage({
         );
       })}
 
-      {/* Why call, right under the numbers (2026-07 critique round 2): the
-          page holding the persuasion isn't in the mobile tab bar, so every
-          pre-call surface links it in-flow — same line the ActionPanel uses. */}
-      {zip && districts.length > 0 && (
-        <p className="mt-6">
-          <Link
-            href="/why-call"
-            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
-          >
-            <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
-            {tBill('whyLink')}
-          </Link>
-        </p>
-      )}
-
       {/* The obvious next step: a rep card is a phone number, not a
           destination. Point straight at what's actually callable this week
           so the ZIP-first path never dead-ends here. The 2px ink edge is the
@@ -268,7 +291,11 @@ export default async function RepsPage({
           de-assignment rule bites on surfaces a visitor reaches before
           engaging (the homepage front door, the bills index bands); it does
           not bite here. Invariant I2 in tests/funnel.spec.ts reads this
-          section by its `data-testid="reps-continuation"` hook. */}
+          section by its `data-testid="reps-continuation"` hook.
+
+          The sub-line under the title is gone since 2026-09-29, as the decided
+          wireframe draws it (reps.html: "I dropped its sub-line … to save
+          words"); the title and the bills are the continuation. */}
       {zip && districts.length > 0 && (
         <section
           className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
@@ -278,7 +305,6 @@ export default async function RepsPage({
           <h2 id="reps-next" className="text-h2 font-extrabold">
             {t('nextTitle')}
           </h2>
-          <p className="mt-2 max-w-read text-ink-2">{t('nextSub')}</p>
           {topActions.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {topActions.map((b) => (
@@ -312,22 +338,16 @@ export default async function RepsPage({
         </section>
       )}
 
-      {/* THE RECORD'S WAY IN, now that it is off the tab bar (owner,
-          2026-09-29, "nav 1"). The wireframe folds the record into this page
-          under the members (Q4 b+c); until that rebuild lands, this link is
-          how a reader reaches their calls and "Erase all my data" from
-          anywhere but a call panel. Same words and destination as the call
-          panel's own link (`bill.viewImpact`). */}
-      <p className="mt-12 border-t border-line pt-4">
-        <Link
-          href="/record"
-          data-record-link=""
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
-        >
-          {tBill('viewImpact')}
-          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-        </Link>
-      </p>
+      {/* YOUR RECORD, folded into this tab (owner, UX question Q4 "b + c";
+          wireframes v2, reps.html, 2026-09-29): Your calls, then what you
+          follow and what you've read as folded rows, then Erase my data. It
+          renders in every state — no ZIP yet, a ZIP that matched nothing,
+          Change ZIP — because it is read from this browser, not from the
+          lookup. The call panel's "See your record" lands on its Your calls
+          (`#your-calls`), and /record renders the same component. */}
+      <div className="mt-12 border-t-[3px] border-ink pt-4">
+        <YourRecord />
+      </div>
     </div>
   );
 }

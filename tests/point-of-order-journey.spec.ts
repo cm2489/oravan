@@ -85,7 +85,7 @@ for (const { locale, prefix, messages } of [
 }
 
 /*
- * THE MEMBER PAGE PRINTS THE SAME SENTENCE, NEVER ITS KEY (2026-09-29). The
+ * THE MEMBER PAGE NEVER PRINTS THE KEY (2026-09-29). The
  * member page's vote card builds its "Right now:" line from the same message.
  * That message opens {hasDate}, and when components/MemberVotes.tsx did not
  * pass it, next-intl could not format the sentence and printed the raw key
@@ -97,13 +97,18 @@ for (const { locale, prefix } of [
   { locale: 'en', prefix: '' },
   { locale: 'es', prefix: '/es' },
 ] as const) {
-  test(`${locale}: a senator's member page shows S.J.Res. 98's sentence, never a raw message key`, async ({ page }) => {
+  test(`${locale}: a senator's member page that lists S.J.Res. 98 never prints a raw message key`, async ({ page }) => {
     const bill = getBill(SJRES_98);
     test.skip(bill?.last_action_text !== SJRES_98_TEXT, 'S.J.Res. 98 has a newer action than 2026-01-14');
     // A000382 voted on S.J.Res. 98 and its page showed the raw key live on 2026-09-29.
     await page.goto(`${prefix}/reps/A000382`);
     const text = (await page.locator('main').textContent()) ?? '';
     expect(text, 'no member-page line may print a raw journey key').not.toContain('bill.journey.');
-    expect(text).toContain(locale === 'en' ? 'upheld a point of order against it' : 'aceptó una cuestión de orden en su contra');
+    // Since the Reps/member rebuild, a vote card prints "Right now:" only
+    // under Rejected, Vetoed and Agreed to. S.J.Res. 98 is Open, so its card
+    // carries no stage line at all; the bill page (the test above) carries
+    // the sentence. If a later change shows it here again, it must be the
+    // sentence, never the key, which the line above already enforces.
+    expect(text).toContain('S.J.Res. 98');
   });
 }
