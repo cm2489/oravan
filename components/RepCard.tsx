@@ -150,17 +150,22 @@ export function RepCard({ rep }: { rep: Legislator }) {
           <p data-rep-role={repRoleKey(rep)} className="text-xs font-semibold tracking-[0.04em] text-ink-2">
             {role} · {party} · {rep.state}
           </p>
-          {/* The name is the way to the member's own page. Its 44px hit area
-              is an ::after overlay (12px above, 4px below a 28px line), so the
-              card's layout is exactly what it was before the link existed and
-              the focus ring hugs the name instead of covering the meta line.
-              The overlay stops where the website link begins; that link is
-              `relative` so it paints above the overlay and keeps its own full
-              target. Ink, not green: the dial stays the one green here. */}
+          {/* The name is the way to the member's own page. It is a heading's
+              link, not a link inline in a sentence, so its own box is the 44px
+              target (rule 7; docs/accessibility.md: `min-h-11`), the same way
+              as the two links under it. Until 2026-09-29 the box was the 28px
+              line and an ::after overlay made up the rest, which a sweep that
+              measures boxes (tests/bill-a11y.spec.ts's method) reads as 28px.
+              The type is unchanged and the name sits centred in the box: a
+              one-line name's card is 16px taller (a two-line name already
+              filled 44px), and the focus ring clears the meta line.
+              Pinned by tests/rep-card-targets.spec.ts. Ink, not green: the
+              dial stays the one green here. */}
           <h3 className="mt-1 text-xl font-extrabold">
             <Link
               href={`/reps/${rep.bioguide}`}
-              className="relative inline-block text-ink underline decoration-line-strong underline-offset-4 after:absolute after:inset-x-0 after:-top-3 after:-bottom-1 hover:decoration-ink"
+              className="inline-flex min-h-11 items-center text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+              data-rep-name-link=""
             >
               {rep.name}
             </Link>

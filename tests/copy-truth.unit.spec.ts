@@ -115,6 +115,25 @@ test.describe('2026-09-29 no message claims a review process or an error button 
   }
 });
 
+test.describe('2026-09-29 the erase button asks first, so no message counts its taps', () => {
+  // privacy.p2 said the record page had a "one-tap button that erases all of
+  // it" ("un botón que borra todo de una sola vez"). The erase has always
+  // asked first: "Erase all my data", then "Yes, erase everything" (the
+  // confirm is pinned in tests/record.spec.ts). The line now names the button
+  // and no step count, so it stays true wherever the record is shown.
+  const ERASE = { en: /\berase/i, es: /\bborr/i } as const;
+  const STEPS = {
+    en: /\b(?:one|single)[- ](?:tap|click|step)\b|\binstantly\b/i,
+    es: /\bde una (?:sola )?vez\b|\bun (?:solo )?(?:toque|clic|paso)\b|\bal instante\b/i,
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: no message about erasing says how many taps it takes`, () => {
+      const hits = allStrings(m).filter(([, s]) => ERASE[locale].test(s) && STEPS[locale].test(s));
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
 // ---- SY-33: the sponsor ----------------------------------------------------
 
 test.describe('SY-33 billSponsor', () => {

@@ -36,13 +36,16 @@ export function VacantSeatCard({ href, elections }: { href?: string; elections?:
           rather than computed here, so this card never pulls the roster JSON
           into a client bundle (ActionPanel renders it too, without a link).
           `elections` is passed the same way, for the same reason.
-          Same hit-area rule as RepCard's name link: an ::after overlay adds a
-          44px target without moving anything or widening the focus ring. */}
+          Same target rule as RepCard's name link (2026-09-29): the link's own
+          box is 44px tall (`min-h-11`), the type unchanged, rather than a
+          28px box with an ::after overlay that a box-measuring sweep reads
+          as 28px. Pinned by tests/rep-card-targets.spec.ts. */}
       <h3 className="text-xl font-extrabold">
         {href ? (
           <Link
             href={href}
-            className="relative inline-block text-ink underline decoration-line-strong underline-offset-4 after:absolute after:inset-x-0 after:-inset-y-2 hover:decoration-ink"
+            className="inline-flex min-h-11 items-center text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+            data-seat-name-link=""
           >
             {t('vacantSeat')}
           </Link>
