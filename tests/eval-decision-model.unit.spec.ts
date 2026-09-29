@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -15,6 +16,7 @@ import {
   chooseThreshold,
   cohenKappa,
   gateRequest,
+  EXIT_ARM_FAILED,
   goldLabels,
   halfOf,
   isInsideRepo,
@@ -45,12 +47,13 @@ type ScorePair = Pick<Pair, 'pairId' | 'slug' | 'half' | 'stratum' | 'rated'>;
 const asFetch = (f: unknown) => f as typeof fetch;
 
 /** A fetch stand-in. `limit` is what the key check reports; `echo500` makes every POST fail echoing its headers. */
-function mockFetch({ limit = 2 as number | null, echo500 = false } = {}) {
+function mockFetch({ limit = 2 as number | null, echo500 = false, keyReply = null as null | { status: number; body: unknown } } = {}) {
   const calls: Call[] = [];
   const fetchImpl = async (url: string, init: { method?: string; headers?: Record<string, string>; body?: string } = {}) => {
     const call = { url, method: init.method ?? 'GET', headers: init.headers ?? {}, body: init.body ? JSON.parse(init.body) : null };
     calls.push(call);
     const reply = (status: number, obj: unknown) => ({ ok: status < 300, status, text: async () => (typeof obj === 'string' ? obj : JSON.stringify(obj)) });
+    if (url === OPENROUTER.key && keyReply) return reply(keyReply.status, keyReply.body);
     if (url === OPENROUTER.key) return reply(200, { data: { limit, limit_remaining: limit } });
     if (echo500) return reply(500, `upstream said: ${JSON.stringify(call.headers)}`);
     if (url === OPENROUTER.decisions) {
@@ -222,6 +225,43 @@ test.describe('spend and key guards: nothing is sent', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  test('the key check answering HTTP 500, or a malformed body: exit 2 and no model call', async () => {
+    const dir = tmp();
+    await buildInto(dir);
+    await labelBoth(dir);
+    for (const keyReply of [
+      { status: 500, body: 'upstream broke' },
+      { status: 200, body: 'this is not json {' },
+      { status: 200, body: { data: { limit: 'five' } } },
+    ]) {
+      const { fetchImpl, calls } = mockFetch({ keyReply });
+      const logs: string[] = [];
+      const code = await main(['--run', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: 'KEY-keycheck-1111' }, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) });
+      expect(code).toBe(2);
+      expect(calls.length).toBeGreaterThan(0);
+      expect(calls.every((c) => c.url === OPENROUTER.key)).toBe(true);
+      expect(logs.join('\n')).toContain('REFUSING');
+    }
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('--probe with no key, an empty key, or a failing key check: no model call', async () => {
+    const dir = tmp();
+    await buildInto(dir);
+    for (const env of [{}, { OPENROUTER_API_KEY: '' }]) {
+      const { fetchImpl, calls } = mockFetch();
+      const logs: string[] = [];
+      expect(await main(['--probe', '--set', dir], { root: ROOT, env, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) })).toBe(1);
+      expect(calls).toEqual([]);
+      expect(logs.join('\n')).toContain('OPENROUTER_API_KEY is not set');
+    }
+    const { fetchImpl, calls } = mockFetch({ keyReply: { status: 500, body: 'no' } });
+    expect(await main(['--probe', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: 'KEY-probe-2222' }, fetchImpl: asFetch(fetchImpl), log: () => {} })).toBe(2);
+    expect(calls.every((c) => c.url === OPENROUTER.key)).toBe(true);
+    expect(existsSync(join(dir, 'probe'))).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   test('incomplete gold labels: zero requests', async () => {
     const dir = tmp();
     await buildInto(dir);
@@ -254,7 +294,7 @@ test.describe('the key never leaves the Authorization header', () => {
     const { fetchImpl, calls } = mockFetch({ echo500: true });
     const logs: string[] = [];
     const code = await main(['--run', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: KEY }, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) });
-    expect(code).toBe(0);
+    expect(code).toBe(EXIT_ARM_FAILED);
     expect(calls.some((c) => c.headers.Authorization === `Bearer ${KEY}`)).toBe(true);
     expect(logs.join('\n')).not.toContain(KEY);
     expect(logs.join('\n')).toContain('[REDACTED]');
@@ -267,6 +307,102 @@ test.describe('the key never leaves the Authorization header', () => {
   test('redact removes the key and any bearer token', () => {
     expect(redact('x KEY-1234 y', 'KEY-1234')).toBe('x [REDACTED] y');
     expect(redact('{"Authorization":"Bearer abc.def"}', '')).toBe('{"Authorization":"Bearer [REDACTED]"}');
+  });
+});
+
+test.describe('a run in which requests fail', () => {
+  test('every request failing: exit code 3, one line with the counts per arm, and --score refuses', async () => {
+    const dir = tmp();
+    await buildInto(dir);
+    await labelBoth(dir);
+    const { fetchImpl } = mockFetch({ echo500: true });
+    const logs: string[] = [];
+    const code = await main(['--run', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: 'KEY-allfail-3333' }, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) });
+    expect(code).toBe(EXIT_ARM_FAILED);
+    const lines = logs.filter((l) => l.startsWith('RESULT:'));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/decision 0 succeeded, \d+ failed; gate 0 succeeded, \d+ failed\./);
+    const slogs: string[] = [];
+    expect(await main(['--score', '--set', dir], { root: ROOT, env: {}, log: (s) => slogs.push(s) })).toBe(2);
+    expect(slogs.join('\n')).toContain('no successful request');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('a run where every request works exits 0 and prints the same line with zero failed', async () => {
+    const dir = tmp();
+    await buildInto(dir);
+    await labelBoth(dir);
+    const { fetchImpl } = mockFetch();
+    const logs: string[] = [];
+    expect(await main(['--run', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: 'KEY-allok-4444' }, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) })).toBe(0);
+    expect(logs.join('\n')).toMatch(/RESULT: decision \d+ succeeded, 0 failed; gate \d+ succeeded, 0 failed\./);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('a partly failed run keeps exit 0 and reports both counts; --score then works', async () => {
+    const dir = tmp();
+    await buildInto(dir);
+    await labelBoth(dir);
+    const base = mockFetch();
+    let n = 0;
+    const fetchImpl = async (url: string, init: never) => {
+      if (url !== OPENROUTER.key && ++n % 5 === 0) return { ok: false, status: 400, text: async () => 'bad' };
+      return (base.fetchImpl as (u: string, i: never) => Promise<unknown>)(url, init);
+    };
+    const logs: string[] = [];
+    expect(await main(['--run', '--set', dir], { root: ROOT, env: { OPENROUTER_API_KEY: 'KEY-partial-5555' }, fetchImpl: asFetch(fetchImpl), log: (s) => logs.push(s) })).toBe(0);
+    expect(logs.join('\n')).toMatch(/RESULT: decision [1-9]\d* succeeded, [1-9]\d* failed; gate [1-9]\d* succeeded, [1-9]\d* failed\./);
+    expect(await main(['--score', '--set', dir], { root: ROOT, env: {}, log: () => {} })).toBe(0);
+    rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+test.describe('where the set goes is always given, and never inside the repo', () => {
+  test('no folder given: exit 2 and a message that names the flag, for every mode', async () => {
+    for (const [argv, flag] of [
+      [['--build-set'], '--out'],
+      [['--plan'], '--set'],
+      [['--run'], '--set'],
+      [['--probe'], '--set'],
+      [['--score'], '--set'],
+    ] as const) {
+      const logs: string[] = [];
+      expect(await main([...argv], { root: ROOT, env: {}, log: (s) => logs.push(s) })).toBe(2);
+      expect(logs.join('\n')).toContain(`Pass ${flag} <folder outside the repo>`);
+    }
+  });
+
+  test('DECISION_EVAL_SET and DECISION_EVAL_OUT stand in for the flags', async () => {
+    const dir = tmp();
+    const logs: string[] = [];
+    expect(await main(['--build-set', '--seed', '7'], { root: ROOT, env: { DECISION_EVAL_OUT: dir }, log: (s) => logs.push(s) })).toBe(0);
+    expect(existsSync(join(dir, 'set.json'))).toBe(true);
+    expect(await main(['--plan'], { root: ROOT, env: { DECISION_EVAL_SET: dir }, log: (s) => logs.push(s) })).toBe(0);
+    expect(logs.join('\n')).toContain('TOTAL ESTIMATE');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('the refusal is the same from another working directory (the repo root comes from the script location)', () => {
+    const script = join(ROOT, 'scripts', 'eval-decision-model.mjs');
+    const env = { ...process.env, OPENROUTER_API_KEY: '', DECISION_EVAL_SET: '', DECISION_EVAL_OUT: '' };
+    for (const cwd of [join(ROOT, 'scripts'), tmpdir()]) {
+      for (const target of [join(ROOT, 'zz-eval-out'), join(ROOT, 'data', 'x')]) {
+        const r = spawnSync(process.execPath, [script, '--build-set', '--out', target], { cwd, env, encoding: 'utf8' });
+        expect(r.status).toBe(2);
+        expect(r.stdout).toContain('REFUSING');
+      }
+    }
+    // A relative path typed inside the repo is refused too, from scripts/.
+    const rel = spawnSync(process.execPath, [script, '--build-set', '--out', './zz-eval-out'], { cwd: join(ROOT, 'scripts'), env, encoding: 'utf8' });
+    expect(rel.status).toBe(2);
+    expect(existsSync(join(ROOT, 'zz-eval-out'))).toBe(false);
+    expect(existsSync(join(ROOT, 'scripts', 'zz-eval-out'))).toBe(false);
+    // Outside the repo, from scripts/, the same command works and writes only there.
+    const out = tmp();
+    const ok = spawnSync(process.execPath, [script, '--build-set', '--out', out], { cwd: join(ROOT, 'scripts'), env, encoding: 'utf8' });
+    expect(ok.status).toBe(0);
+    expect(existsSync(join(out, 'set.json'))).toBe(true);
+    rmSync(out, { recursive: true, force: true });
   });
 });
 

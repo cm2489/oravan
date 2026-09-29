@@ -7,13 +7,22 @@
  * specifically about THIS bill (its provisions, votes, debate or signing), not
  * merely its general topic and not a different bill?
  *
+ * Where the set and the results live is always given by you, never guessed:
+ * --out DIR (or DECISION_EVAL_OUT) for --build-set, --set DIR (or
+ * DECISION_EVAL_SET) for every other mode. With neither, the script says which
+ * flag to pass and exits 2. A folder inside the repo is refused.
+ *
+ * Exit codes: 0 done; 1 no key or an unexpected error; 2 refused (a guard, a
+ * bad argument, a missing --set or --out); 3 --run finished but at least one
+ * arm had no successful request.
+ *
  *   --build-set --out DIR [--seed N]          the labelled-pair set, without labels (no network)
  *   --import-labels FILE|DIR --labeller NAME --set DIR
  *                                             store one labeller's {pairId, label} lines
  *   --label --set DIR --labeller NAME [--limit N] [--sample SEED]
  *                                             label pairs by hand in the terminal
  *   --agreement --set DIR [--judges A,B]      agreement and Cohen's kappa between labellers
- *   --plan [--set DIR] [--repeat N]           the cost estimate; needs no key, sends nothing
+ *   --plan --set DIR [--repeat N]             the cost estimate; needs no key, sends nothing
  *   --probe --set DIR                         one tiny request to each endpoint; saves the raw shapes
  *   --run --set DIR [--repeat N] [--judges A,B]
  *                                             both arms over the set (needs OPENROUTER_API_KEY)
@@ -29,9 +38,10 @@
  *     per article, the bill's facts as `state`, the same lists in the same
  *     order.
  *
- * Where results go: never inside the repo (rule 11). Every mode that writes
- * refuses a directory that resolves inside the repo root. The default is a
- * sibling of the repo: ../oravan-private-docs/run1-2026-09-29/jev/eval/<date>.
+ * Where results go: never inside the repo (rule 11). Every mode refuses a
+ * directory that resolves inside the repo root. Run as a command, the root is
+ * found from this file's own location (not the working directory), so the
+ * refusal is the same from any folder.
  *
  * The key (rule 10): read only from env.OPENROUTER_API_KEY, used only to set
  * the Authorization header inside `send`, never printed. Every log line, error
@@ -49,8 +59,8 @@
  * imports this file through Playwright's transform.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, appendFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync, writeFileSync, appendFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { leanOf } from '../lib/conversation.mjs';
 import { MODEL_PRICE_PER_MTOK } from '../lib/pipeline-health.mjs';
@@ -120,8 +130,8 @@ export const QUESTION =
 
 export const LABELS = Object.freeze(['yes', 'no', 'unsure']);
 
-/** The default output base, relative to the repo root: a sibling folder, never inside the repo. */
-export const DEFAULT_OUT_BASE = '../oravan-private-docs/run1-2026-09-29/jev/eval';
+/** Exit code of --run when at least one arm had no successful request. */
+export const EXIT_ARM_FAILED = 3;
 
 // ---- small helpers -------------------------------------------------------
 
@@ -178,8 +188,20 @@ export function isInsideRepo(dir, root) {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }
 
-export function defaultOut(root, now = new Date()) {
-  return resolve(root, DEFAULT_OUT_BASE, now.toISOString().slice(0, 10));
+/**
+ * Did this row's request give a usable answer? A decision row needs at least
+ * one probability; a gate row needs a reply with choices. Used by --run for its
+ * count and by --score to refuse an arm with none.
+ */
+export function rowSucceeded(arm, row) {
+  if (!row || row.error) return false;
+  if (arm === 'decision') return Array.isArray(row.probabilities) && row.probabilities.some((x) => x.p !== null);
+  try {
+    const c = JSON.parse(row.raw)?.choices;
+    return Array.isArray(c) && c.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 /** The article as production formats a candidate (fetchArticles in sync-coverage.mjs). */
@@ -718,7 +740,7 @@ export async function runArms({ set, key, fetchImpl, repeat = 1, log = () => {},
   mkdirSync(resultsDir, { recursive: true });
   let spent = 0;
   const over = () => spent > COST_CEILING_USD;
-  const summary = { gate: { sent: 0, cap: 0, usd: 0 }, decision: { sent: 0, cap: 0, usd: 0 }, stoppedOnCost: false };
+  const summary = { gate: { sent: 0, cap: 0, usd: 0, ok: 0, failed: 0 }, decision: { sent: 0, cap: 0, usd: 0, ok: 0, failed: 0 }, stoppedOnCost: false };
 
   // Decision arm.
   const decBudget = { sent: 0, cap: 2 * lists.length };
@@ -745,6 +767,8 @@ export async function runArms({ set, key, fetchImpl, repeat = 1, log = () => {},
   }
   writeOut(join(resultsDir, 'decision.jsonl'), jsonl(decRows), key);
   summary.decision.sent = decBudget.sent;
+  summary.decision.ok = decRows.filter((r) => rowSucceeded('decision', r)).length;
+  summary.decision.failed = decRows.length - summary.decision.ok;
   summary.decision.cap = decBudget.cap;
 
   // Gate arm, `repeat` passes.
@@ -783,6 +807,8 @@ export async function runArms({ set, key, fetchImpl, repeat = 1, log = () => {},
   }
   writeOut(join(resultsDir, 'gate.jsonl'), jsonl(gateRows), key);
   summary.gate.sent = gateBudget.sent;
+  summary.gate.ok = gateRows.filter((r) => rowSucceeded('gate', r)).length;
+  summary.gate.failed = gateRows.length - summary.gate.ok;
   summary.gate.cap = gateBudget.cap;
   writeOut(join(resultsDir, 'run.json'), `${JSON.stringify(summary, null, 2)}\n`, key);
   return summary;
@@ -1068,10 +1094,10 @@ function hashDataFiles(root, names) {
 
 /**
  * @param {string[]} [argv]
- * @param {{ env?: Record<string, string|undefined>, root?: string, fetchImpl?: typeof fetch, log?: (s: string) => void, now?: Date, stdin?: AsyncIterable<string>|null }} [opts]
+ * @param {{ env?: Record<string, string|undefined>, root?: string, cwd?: string, fetchImpl?: typeof fetch, log?: (s: string) => void, now?: Date, stdin?: AsyncIterable<string>|null }} [opts]
  * @returns {Promise<number>}
  */
-export async function main(argv = process.argv.slice(2), { env = process.env, root = process.cwd(), fetchImpl = globalThis.fetch, log = console.log, now = new Date(), stdin = null } = {}) {
+export async function main(argv = process.argv.slice(2), { env = process.env, root = process.cwd(), cwd = process.cwd(), fetchImpl = globalThis.fetch, log = console.log, now = new Date(), stdin = null } = {}) {
   const key = env.OPENROUTER_API_KEY || '';
   const say = (s) => log(redact(s, key));
   const mode = MODES.find((m) => argv.includes(m));
@@ -1079,8 +1105,14 @@ export async function main(argv = process.argv.slice(2), { env = process.env, ro
     say(`eval-decision-model: name one mode: ${MODES.join(', ')}`);
     return 2;
   }
-  const dirArg = argValue(argv, mode === '--build-set' ? '--out' : '--set') ?? defaultOut(root, now);
-  const dir = resolve(root, dirArg);
+  const building = mode === '--build-set';
+  const flag = building ? '--out' : '--set';
+  const dirArg = argValue(argv, flag) ?? (building ? env.DECISION_EVAL_OUT : env.DECISION_EVAL_SET) ?? null;
+  if (!dirArg) {
+    say(`eval-decision-model: no folder given. Pass ${flag} <folder outside the repo> (or set ${building ? 'DECISION_EVAL_OUT' : 'DECISION_EVAL_SET'}).`);
+    return 2;
+  }
+  const dir = resolve(cwd, dirArg);
   if (isInsideRepo(dir, root)) {
     say(`eval-decision-model: REFUSING ${dirArg}: results never go inside the repo.`);
     return 2;
@@ -1134,7 +1166,7 @@ export async function main(argv = process.argv.slice(2), { env = process.env, ro
       say('eval-decision-model: REFUSING: model results already exist in this set, so labels imported now would not be blind.');
       return 2;
     }
-    const { labels, problems } = parseLabels(readLabelSource(resolve(root, file)), new Set(set.pairById.keys()));
+    const { labels, problems } = parseLabels(readLabelSource(resolve(cwd, file)), new Set(set.pairById.keys()));
     for (const p of problems.slice(0, 20)) say(`  problem: ${p}`);
     mkdirSync(join(dir, LABELLERS_DIR), { recursive: true });
     writeFileSync(join(dir, LABELLERS_DIR, `${name}.jsonl`), jsonl([...labels].map(([pairId, label]) => ({ pairId, label }))));
@@ -1194,6 +1226,12 @@ export async function main(argv = process.argv.slice(2), { env = process.env, ro
     const g = goldLabels(set, labellers, judges);
     const decisionRows = readJsonl(join(rd, 'decision.jsonl'));
     const gateRows = readJsonl(join(rd, 'gate.jsonl'));
+    for (const [arm, rows] of [['decision', decisionRows], ['gate', gateRows]]) {
+      if (!rows.some((r) => rowSucceeded(arm, r))) {
+        say(`eval-decision-model: REFUSING to score: the ${arm} arm has no successful request (${rows.length} row(s), all failed). Fix the cause and run --run again.`);
+        return 2;
+      }
+    }
     const report = {
       kind: 'decision-model-eval-report',
       generatedAt: now.toISOString(),
@@ -1247,13 +1285,21 @@ export async function main(argv = process.argv.slice(2), { env = process.env, ro
   const summary = await runArms({ set, key, fetchImpl, repeat, log: say, dir });
   say(
     `RUN: decision ${summary.decision.sent}/${summary.decision.cap} sent, ${usd(summary.decision.usd)}; ` +
-      `gate ${summary.gate.sent}/${summary.gate.cap} sent, ${usd(summary.gate.usd)}${summary.stoppedOnCost ? '; STOPPED: billed cost passed the ceiling' : ''}. Next: --score.`,
+      `gate ${summary.gate.sent}/${summary.gate.cap} sent, ${usd(summary.gate.usd)}${summary.stoppedOnCost ? '; STOPPED: billed cost passed the ceiling' : ''}.`,
   );
+  say(`RESULT: decision ${summary.decision.ok} succeeded, ${summary.decision.failed} failed; gate ${summary.gate.ok} succeeded, ${summary.gate.failed} failed.`);
+  const dead = ['decision', 'gate'].filter((a) => summary[a].ok === 0);
+  if (dead.length) {
+    say(`eval-decision-model: FAILED: no request succeeded in the ${dead.join(' and ')} arm. Do not score this run. Exit ${EXIT_ARM_FAILED}.`);
+    return EXIT_ARM_FAILED;
+  }
+  say('Next: --score.');
   return 0;
 }
 
 if (/(^|[\\/])eval-decision-model\.mjs$/.test(process.argv[1] ?? '')) {
-  main().then(
+  // The repo root is one level above this file (scripts/), wherever the command was typed.
+  main(process.argv.slice(2), { root: resolve(dirname(realpathSync(process.argv[1])), '..') }).then(
     (code) => process.exit(code),
     (e) => {
       console.error(redact(`eval-decision-model: ${e instanceof Error ? e.message : e}`, process.env.OPENROUTER_API_KEY));
