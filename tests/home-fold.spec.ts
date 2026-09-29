@@ -26,6 +26,17 @@ import es from '../messages/es.json';
  *
  * Spanish is the long language and is the one that failed; it is never
  * optional here.
+ *
+ * WITH A ZIP SAVED (2026-09-29, Home option B). The hero's ZIP form gives way
+ * to a block naming the reader's members (components/HeroSavedZip.tsx), and
+ * promise 1 holds for it too. Until this date the suite ran with no ZIP only;
+ * an independent check then found 8 of 16 saved-ZIP cases failing in WebKit
+ * at 390 wide ("Ver en español", "Change ZIP code" / "Cambiar código postal"
+ * and "View in English", partly or wholly under the bar). The block's height
+ * depends on the names, the language and the split-district line, so the
+ * four ZIPs below cover those shapes: 98103 and 78501 (one district, three
+ * members), 20001 (DC, one delegate) and 10001 (a split district: senators
+ * only, plus a link to find the representative).
  */
 
 const LOCALES = [
@@ -34,6 +45,9 @@ const LOCALES = [
 ] as const;
 
 const HEIGHTS = [844, 664] as const;
+
+/** The saved-ZIP shapes; see the header. */
+const SAVED_ZIPS = ['98103', '78501', '20001', '10001'] as const;
 
 type Rect = { top: number; bottom: number; left: number; right: number };
 
@@ -55,6 +69,44 @@ async function fixedRects(page: Page): Promise<Rect[]> {
 const overlaps = (a: Rect, b: Rect) =>
   a.top < b.bottom && a.bottom > b.top && a.left < b.right && a.right > b.left;
 
+/** Promise 1, measured: the names of the hero controls that start on the
+ *  first screen and sit partly or wholly under a fixed bar. Call it at
+ *  scroll 0, once the hero has rendered in the state under test. */
+async function heroControlsUnderBars(page: Page, viewportHeight: number): Promise<string[]> {
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  const bars = await fixedRects(page);
+  // Precondition, not a design pin: with nothing pinned to the screen
+  // this test has no subject. If the thumb bar is ever retired, delete
+  // the test; if it moves somewhere fixedRects cannot see, fix the helper.
+  expect(bars.length, 'no fixed or sticky bar found on a phone page').toBeGreaterThan(0);
+
+  const controls = await page.evaluate(() => {
+    const hero = document.querySelector('[data-hero]');
+    if (!hero) throw new Error('no [data-hero] on the homepage');
+    return [
+      ...hero.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+    ]
+      .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter(({ r }) => r.width > 0 && r.height > 0)
+      .map(({ el, r }) => ({
+        name:
+          el.getAttribute('aria-label') ||
+          el.textContent?.trim() ||
+          (el as HTMLInputElement).name ||
+          el.tagName,
+        rect: { top: r.top, bottom: r.bottom, left: r.left, right: r.right },
+      }));
+  });
+  expect(controls.length, 'the hero carries at least one control').toBeGreaterThan(0);
+
+  return controls
+    .filter((c) => c.rect.top < viewportHeight)
+    .filter((c) => bars.some((bar) => overlaps(c.rect, bar)))
+    .map((c) => `${c.name} (${Math.round(c.rect.top)}–${Math.round(c.rect.bottom)})`);
+}
+
 test.describe('home fold (phone)', () => {
   // The thumb bar exists below md only, so this is a phone-project suite.
   test.skip(({ isMobile }) => !isMobile, 'the thumb bar exists below md only');
@@ -69,43 +121,35 @@ test.describe('home fold (phone)', () => {
         // The ZIP submit is the control that failed on 2026-09-10; waiting on
         // it (by key) also means the hero has rendered before we measure.
         await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
-        expect(await page.evaluate(() => window.scrollY)).toBe(0);
-
-        const bars = await fixedRects(page);
-        // Precondition, not a design pin: with nothing pinned to the screen
-        // this test has no subject. If the thumb bar is ever retired, delete
-        // the test; if it moves somewhere fixedRects cannot see, fix the helper.
-        expect(bars.length, 'no fixed or sticky bar found on a phone page').toBeGreaterThan(0);
-
-        const controls = await page.evaluate(() => {
-          const hero = document.querySelector('[data-hero]');
-          if (!hero) throw new Error('no [data-hero] on the homepage');
-          return [
-            ...hero.querySelectorAll(
-              'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            ),
-          ]
-            .filter((el) => getComputedStyle(el).visibility !== 'hidden')
-            .map((el) => ({ el, r: el.getBoundingClientRect() }))
-            .filter(({ r }) => r.width > 0 && r.height > 0)
-            .map(({ el, r }) => ({
-              name:
-                el.getAttribute('aria-label') ||
-                el.textContent?.trim() ||
-                (el as HTMLInputElement).name ||
-                el.tagName,
-              rect: { top: r.top, bottom: r.bottom, left: r.left, right: r.right },
-            }));
-        });
-        expect(controls.length, 'the hero carries at least one control').toBeGreaterThan(0);
-
-        const viewportHeight = height;
-        const onFirstScreen = controls.filter((c) => c.rect.top < viewportHeight);
-        const hidden = onFirstScreen
-          .filter((c) => bars.some((bar) => overlaps(c.rect, bar)))
-          .map((c) => c.name);
-        expect(hidden, 'hero controls partly or wholly under a fixed bar at scroll 0').toEqual([]);
+        expect(
+          await heroControlsUnderBars(page, height),
+          'hero controls partly or wholly under a fixed bar at scroll 0'
+        ).toEqual([]);
       });
+
+      for (const zip of SAVED_ZIPS) {
+        test(`${prefix || '/'} @390×${height}, ZIP ${zip} saved: no hero control is hidden under a fixed bar at scroll 0`, async ({
+          page,
+        }) => {
+          await page.addInitScript((z) => {
+            try {
+              window.localStorage.setItem('oravan.prefs', JSON.stringify({ zip: z }));
+            } catch {
+              /* blocked storage: the test then fails on the missing block, loudly */
+            }
+          }, zip);
+          await page.setViewportSize({ width: 390, height });
+          await page.goto(`${prefix}/`);
+          // The members block replaces the form once the lookup answers;
+          // measuring before that would measure the no-ZIP hero again.
+          await expect(page.locator(`[data-hero] [data-saved-zip="${zip}"]`)).toBeVisible();
+          await expect(page.locator('[data-hero] [data-zip-field]')).toHaveCount(0);
+          expect(
+            await heroControlsUnderBars(page, height),
+            `ZIP ${zip}: hero controls partly or wholly under a fixed bar at scroll 0`
+          ).toEqual([]);
+        });
+      }
     }
 
     test(`${prefix || '/'} (dated 2026-09-24): the trust line is visible on the first screen`, async ({
