@@ -85,6 +85,11 @@ test.describe('the parts', () => {
     expect(u).toContain("if: needs.changes.outputs.docs_only != 'true'");
     expect(u).toMatch(/PW_NO_WEBSERVER: '1'\n\s+run: npx playwright test --project=unit\n/);
     expect(u, 'unit specs need no browser, so the unit job installs none').not.toContain('playwright install');
+    // Unit specs that run the Moments gate expect origin/main to resolve
+    // offline, as it did when they shared one job with the gates' fetch.
+    const fetchAt = u.indexOf('git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main');
+    expect(fetchAt, 'the unit job fetches origin/main').toBeGreaterThan(-1);
+    expect(fetchAt).toBeLessThan(u.indexOf('npx playwright test --project=unit'));
   });
 
   test('the build job builds once, and every shard starts that build and never builds', () => {

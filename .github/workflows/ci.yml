@@ -258,6 +258,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Resolve origin/main (the baseline some unit specs read)
+        # The same depth-1 fetch the gates job makes before the Moments gate.
+        # Unit specs such as tests/moments-baseline.unit.spec.ts run that
+        # gate themselves and expect it to resolve origin/main offline. When
+        # these specs shared one job with the gates, that job's fetch gave it
+        # to them; without it the gate falls back to its own fetch and the
+        # spec that checks the answer flakes (seen on this job's first runs).
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - name: Unit specs (no server, no browser)
         env:
           PW_NO_WEBSERVER: '1'
