@@ -6,7 +6,7 @@ import { momentDek } from '../lib/moments-ui';
 import { getBill, getTeasers } from '../lib/core';
 import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
 import { getNomination } from '../lib/core/nominations';
-import { nominationHasCallScript, settledDecision } from '../lib/journey';
+import { lastFailedVote, nominationHasCallScript, settledDecision } from '../lib/journey';
 import { waitForFeedHydrated } from './helpers';
 
 /*
@@ -406,6 +406,58 @@ test.describe('Big Question vehicle links (SY-10)', () => {
       await expect(page).toHaveURL(new RegExp(`${prefix}/bills/[^/#]+#act$`));
       // The panel heading the anchor names is on screen, not 1,857px below.
       await expect(page.locator('#act')).toBeInViewport();
+    });
+  }
+});
+
+/*
+ * A FAILED PROCEDURAL VOTE KEEPS THE CALL ON THE CARD TOO (owner, 2026-09-29,
+ * pick (a): "Only a law or a failed final vote counts as finished. Procedural
+ * failures keep the call panel, with a line saying the last attempt
+ * failed."). #350 kept the call panel on those bill pages, while the Big
+ * Question card over the same record still said "Read the bill" — the four
+ * S.J.Res. vehicles on /questions/iran-war-powers on 2026-09-29. This pins
+ * the card: a failed motion's vehicle offers the call at #act, and a law or a
+ * rejected passage vote beside it still reads as a record. Corpus-derived:
+ * which vehicles qualify is read from the committed records through the same
+ * readers the bill page uses (lib/journey.ts lastFailedVote, settledDecision).
+ */
+test.describe('Big Question cards over a failed procedural vote (pick (a))', () => {
+  const bySlug = (slugs: string[], keep: (b: NonNullable<ReturnType<typeof getBill>>) => boolean) =>
+    slugs.filter((slug) => {
+      const b = getBill(slug);
+      return b ? keep(b) : false;
+    });
+  const questions = getLiveMoments()
+    .map((m) => {
+      const slugs = m.vehicles.filter((v) => vehicleKind(v) === 'bill').map((v) => v.slug);
+      return {
+        id: m.id,
+        procedural: bySlug(slugs, (b) => lastFailedVote(b) !== null),
+        finished: bySlug(slugs, (b) => settledDecision(b) !== null),
+      };
+    })
+    .filter((q) => q.procedural.length > 0);
+
+  for (const { locale, prefix, messages } of LOCALES) {
+    test(`${locale}: a failed motion's card offers the call; a finished vehicle's card reads the record`, async ({ page }) => {
+      test.skip(questions.length === 0, 'no live question holds a failed procedural vote today');
+      for (const q of questions) {
+        await page.goto(`${prefix}/questions/${q.id}`);
+        // A card's button is the only link on the page that carries its
+        // label AND ends at that vehicle's page (the headline link has no
+        // label of that kind), so the pair names one card's button.
+        const button = (label: string, href: string) =>
+          page.getByRole('link', { name: label, exact: true }).and(page.locator(`a[href$="${href}"]`));
+        for (const slug of q.procedural) {
+          await expect(button(messages.moments.readCall, `/bills/${slug}#act`), `${q.id}: ${slug}`).toHaveCount(1);
+          await expect(button(messages.moments.readBill, `/bills/${slug}`), `${q.id}: ${slug}`).toHaveCount(0);
+        }
+        for (const slug of q.finished) {
+          await expect(button(messages.moments.readBill, `/bills/${slug}`), `${q.id}: ${slug}`).toHaveCount(1);
+          await expect(button(messages.moments.readCall, `/bills/${slug}#act`), `${q.id}: ${slug}`).toHaveCount(0);
+        }
+      }
     });
   }
 });
