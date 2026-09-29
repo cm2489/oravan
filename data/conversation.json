@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-29T02:20:47.110Z",
+    "fetched_at": "2026-09-29T08:23:30.119Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-29T02:20:47.110Z"
+        "checked_at": "2026-09-29T08:23:30.119Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-29T02:20:47.110Z"
+        "checked_at": "2026-09-29T08:23:30.119Z"
       },
       "leans": {
         "center": {
@@ -1592,6 +1592,27 @@
           "url": "https://www.cbsnews.com/news/senate-approves-bill-regulate-college-sports-ncaa/"
         },
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-29",
+          "url": "https://www.cnbc.com/2026/09/28/college-sports-bill-senate-nil.html"
+        },
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-09-27",
+          "lastSeen": "2026-09-29",
+          "url": "https://www.npr.org/2026/09/28/nx-s1-5977851/protect-college-sports-act-senate-bill-vote"
+        },
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9FcnNqRVd4aU40UHVJaThWcjhIUHhmNVcyYWp1SUJqak5iZ21TZWZuUTBhM3JnaXVVTExQc1h2bTZHNmZZMVc3bDNYNW02MEZkUl9nbkxBUlFoRmJyTW1yZkl1N0tUblVLbU1vTmJzcl9QVVRjdUh3QVNXbjRTZw?oc=5"
+        },
+        {
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-09-29",
@@ -1606,20 +1627,6 @@
           "url": "https://thehill.com/homenews/senate/6116594-kennedy-amendment-fails-vote/"
         },
         {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://www.cnbc.com/2026/09/28/college-sports-bill-senate-nil.html"
-        },
-        {
-          "domain": "npr.org",
-          "lean": "center",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://www.npr.org/2026/09/27/nx-s1-5978973/as-former-athletes-some-senators-have-extra-say-on-the-college-sports-reform-bill"
-        },
-        {
           "domain": "deseret.com",
           "lean": "center",
           "firstSeen": "2026-09-26",
@@ -1632,12 +1639,6 @@
           "firstSeen": "2026-09-24",
           "lastSeen": "2026-09-26",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQSWRhRVJLLV9CbTd1YW5uZjF3QXBRVnBFRzlKTDJsV2xDWGJrSUZzX0tnT0J1QzJ5T0dWMDZoV3lQdGpYUUtHZXRhRWpkWGJ0Y2xlc1FHU05FZnAzUHdQUnVRTkRnaTNhSWJYX0J5TFp6akt0dzdVVG5Ic1dWYTNKZ3BDTmNMY2FLX0FXUm9wQkd6TDkyRUd6OE1jd29wRVR5TWlLSGVFRFVHZw?oc=5"
-        },
-        {
-          "domain": "nytimes.com",
-          "lean": "left",
-          "firstSeen": "2026-09-21",
-          "lastSeen": "2026-09-25"
         },
         {
           "domain": "thefederalist.com",
@@ -1660,10 +1661,58 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "actionnews5.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNZHB2azR1WEVvNV9Kd2JVUmh6OWxJQk1aUHFyNTBWcnN1cFRoRTdyamw2OWU0RFlrN2ZpOTBNQkVBRW5rMWpMeG5haWN2NFE2TEppQ2Q4YVNWcnlvbFJIR1hkQ2YtNFRxVmJ1NjlSdnd5WlBqNlRqMi1JM3NyX21ON2dtX3VyZWpmZVdIdG1sdWpDMGd4YWFxQmdMTTFKSHlpSThjNVFWajR1alU2LWhaYTY0RGt1VUU?oc=5"
+        },
+        {
+          "domain": "cbssports.com",
+          "firstSeen": "2026-09-28",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPdTNHM0NDcnRiaGIzQzFqWjJxWVZ5TDEtX3pGbExhcWxMR3VZbzczbEtIYjBBcUE3YXFJQmVBeng5UE1wd19WUkVkWHJLdVlRRVRpV0VyRjFZVXFpeDdVZHRQcmFuRENmRFJVOEhEUnJENVBFUERHSG5oZWttTGxaOHdfMkI3RWwyWktzeW1yeU16RnM?oc=5"
+        },
+        {
+          "domain": "detroitnews.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOSjBqMXFuNVM4SE9DY1RrRUgwdWM0eVdRN0tUeXJaWTFPWmJzX3BENTdMYThHbmRRck90QlNfNGUtQWkzekEzNUlINFZaTFBBQVBkcVVKVFBSTUxsX05VOWg5aERGTFJTUndFUjdobUZveTRmbGtCc3gtbHVoaFpQeUJ4bmVudGw3R3pwRTROU18wQkxvYm5uVV9RakNER2R4aUdlM2dvRERVUWgtQzhOV3RCWnk5TmpDZjNScjFVMC1RVkJ3MGI0?oc=5"
+        },
+        {
+          "domain": "espn.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPOXhNX2pINmY1REp2Q19BMXpLZGRmQnR4R3JDMlhFWlRnRnBqdXV0N2twQ1ZNa0IxN3d0R1FLZGp5b0QzMGtGRVV0bVVTSnF1bUR4dVBKVnZjN3ZNQ1ZxbEFTUlc5R3dIQjlhSVhSWXpfLU9YcmVycGVjeWp2ZktGby1PU0FXeWpiVDRrTlc1VnhsV29CVS10dVpuM1pJOGR3ZllDMERhMU8zUQ?oc=5"
+        },
+        {
           "domain": "fox59.com",
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQZkZSUlBZZDBHd3BfWW5SOWZvZEI5WWNaMlFUVUQyUkpncExLbVBUOTQtZW1KSU40b2pxdWxURG1KTllaUW4tZUwyUnJuUHlJV1N2TFRtVXktVlQtNm9jZEZhLTBJU3UxRVBQODBwMmxlU0FXczF3SU8tQzRMczRGaDRlX19PdXB2WHlFS3FDcHhPRDlQMGVBa1huWl9LcWVBYkdXeHN3aEhkQ0NRUFVhUS1UbkJxUHNfcXk2aFJPQ0xRclZWRTNuRE96VnYyd9IBzgFBVV95cUxQZkZSUlBZZDBHd3BfWW5SOWZvZEI5WWNaMlFUVUQyUkpncExLbVBUOTQtZW1KSU40b2pxdWxURG1KTllaUW4tZUwyUnJuUHlJV1N2TFRtVXktVlQtNm9jZEZhLTBJU3UxRVBQODBwMmxlU0FXczF3SU8tQzRMczRGaDRlX19PdXB2WHlFS3FDcHhPRDlQMGVBa1huWl9LcWVBYkdXeHN3aEhkQ0NRUFVhUS1UbkJxUHNfcXk2aFJPQ0xRclZWRTNuRE96VnYydw?oc=5"
+        },
+        {
+          "domain": "lmtribune.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNQ3RuVEVMRGJVb25IYjdiMXQ1WjBTamtCZkNyaTNIMnpZNUlscGJmT2pROEpxZ3BlU0hsQkFFeEY2YkxMcVFELXNpek5JZ1BXOUxUcktjeTc4QmxMYTFvVUZ6dVRrQUZYVEtjRkhWdWE4QUxZZVY3bDZHbGFFUVZxYV9weF9JMVY0OWI1TG5wMEdZQVgxYmNhUHppcERlTzJGNjl1WGhwbnBLVjVfbVB6UzJYSXBZaUNHN3RzRzJiSDY4dXhoTWJFT0prNHhudFNzLTBKMQ?oc=5"
+        },
+        {
+          "domain": "meadowlakenow.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOSXVnVDBwV0M0NFR3bzlUOTE3eDFJR09XYmdsSUNBdmVUeEVqd2hxVDgxci1vSmdtZGJKMVVHVE4xdkhwSmJHTnFGa1Z4NzNfeERnRjlBYjNUU05fTXR0ZUY4VmJId1R2bFN4MldzcEZTamxrbll1OTJ1ZnVwQlFlcTVXOHFJc20zY3dkcGFhVGxZNVlQbVdnN3dOYTZJa3AtVTdWdEJTa2hrSHh1cWJDeXcyaE5tYkxielJicVIzaW4?oc=5"
+        },
+        {
+          "domain": "nanaimonewsnow.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPLWlMaUFqd05uR2tpWWUyWmpXV2kyTHVYamdqZ0JqUXcta3NTejNHcHlpWmdBTTlLMENJZTFDT09BbWZNdFN3ZEJQdGtvdW1qckFwWUtyQWNsTVd1S0xIMERrQUQ4ZWRTZjRYQ0hRZDRsUVd6V3lVWUdONkFaSEVMZE1PMW1HRV9qNFptMkh5OG9qalpfMEpVN0hTUUhIZVk0S19sLThfRThWNGxGN1hnWVZsaFdZUGtxNmlXV0szYWF3dw?oc=5"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://rollcall.com/2026/09/28/senate-laterals-college-sports-bill-to-house-but-forward-progress-uncertain/"
         },
         {
           "domain": "washingtonsun.com",
@@ -1682,12 +1731,6 @@
           "firstSeen": "2026-09-28",
           "lastSeen": "2026-09-28",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOT2FycFg4ZkhfVlBTQ3JUZFlpZGhhejA4Vjk1RE1qUHBsWHEwWk9XdnFydzFkMWFBOUI5djFycVpFTGFlVDYxbXRzNjhyUEVUd2s3MElodVYyNnR2dXY2Wm5fTUVUV2pxUTdnbG9SOFFfZS1nQU9LemtwbTNuVzBfMW1EeXk3NHFZVVlobXlucWJWSzNTZXpkRzBXaFZfN2phYnZGb1cyQ2tDaTgwOFB6MVEtY2VXU25YS0tmWFg2X3FSZTdPYlVQVTRMN2xJS3JXcnNBc2t3?oc=5"
-        },
-        {
-          "domain": "cbssports.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxONUYwbGUwMmlzQ3E5clZhTUtSR3NEb1Y3YkRhbGx3M1pBUE8zWDVzdkx6NmltYVViU241SjBSU3hPMWlfTHdCQUV6blg4akdXZlV3VnNSMExtVHA3MVRxUHRxR1lPdkt3UlFrNWxTZmoxQW5MckVDd3NwMjBBcGg5am1CbVJQWG41R19tZ3R1TWQ3X3lKTUNLYTJUZGJTaGtiSlBsM2NPT0ZRQQ?oc=5"
         },
         {
           "domain": "kcur.org",
@@ -1752,22 +1795,12 @@
           "lastSeen": "2026-09-23"
         },
         {
-          "domain": "espn.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        },
-        {
           "domain": "miamitimesonline.com",
           "firstSeen": "2026-09-23",
           "lastSeen": "2026-09-23"
         },
         {
           "domain": "brookingsregister.com",
-          "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-22"
-        },
-        {
-          "domain": "kansas.com",
           "firstSeen": "2026-09-22",
           "lastSeen": "2026-09-22"
         }

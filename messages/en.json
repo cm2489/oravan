@@ -160,7 +160,7 @@
     "seatElectionNone": "The Federal Election Commission lists no special election date for this seat yet (checked {date}).",
     "seatElectionLink": "See the FEC's election dates",
     "refineTitle": "Optional: narrow it to your exact district",
-    "refinePrivacy": "Your street address is used once to find your district, sent nowhere else, and never stored.",
+    "refinePrivacy": "Your street address is used once, to look up your district with the U.S. Census Bureau's public geocoder. We never store it.",
     "addressLabel": "Street address",
     "addressPlaceholder": "e.g. 421 8th Ave",
     "refineCta": "Find my district",
@@ -242,7 +242,7 @@
     "clearSearch": "Clear search",
     "clearFilters": "Clear all filters",
     "interestsNote": "Topic picks are saved only on this device, never on a server.",
-    "aiNote": "Plain-language headlines on this page are AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
+    "aiNote": "Plain-language headlines on this page are AI-drafted and labeled. Nothing publishes until it passes automated checks. To report an error, email hello@oravan.org.",
     "onCalendar": "On the floor calendar",
     "annotation": {
       "justPassed": "Just passed a chamber",
@@ -316,11 +316,16 @@
     "needZip": "Enter your ZIP code to see your representatives' numbers.",
     "switchboard": "Capitol switchboard",
     "switchboardNote": "No ZIP handy? The Capitol switchboard can connect you to any congressional office.",
-    "callWho": "Call any of your three, or all of them. One call per office is plenty.",
+    "callWho": "Call any of your members, or all of them. One call per office is plenty.",
     "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are always yours.",
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
     "settled": {
+      "finderShow": "Show the House vote for ZIP {zip}",
+      "finderSplit": "Your ZIP is split between {count, plural, =2 {two} other {#}} House districts. {vacant, select, yes {One of these seats is yours.} other {One of these members is yours.}}",
+      "finderDistrict": "{district, select, 0 {{state} at-large} other {{state}-{district}}}",
+      "finderVacant": "Vacant seat",
+      "finderRefine": "Find your exact district by street address",
       "title": "No call to make",
       "law": "This is law.",
       "rejected": "The {chamber, select, House {House} Senate {Senate} other {Senate}} rejected it{tally, select, none {{hasDate, select, yes { on {date}} other {}}} other {, {yeas}–{nays}{hasDate, select, yes {, on {date}} other {}}}}.",
@@ -494,7 +499,7 @@
       },
       "call": {
         "title": "Make the call",
-        "body": "Dial any of your three members' offices — day or night. A staffer picks up, or you leave a voicemail; either way your position is tallied the same, in about 30 seconds."
+        "body": "Dial the office of anyone who represents you in Congress — day or night. A staffer picks up, or you leave a voicemail; either way your position is tallied the same, in about 30 seconds."
       },
       "logged": {
         "title": "Logged — on this device only",
@@ -637,8 +642,8 @@
     "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Email hello@oravan.org. Name the bill and describe the error.",
     "correctionLinkText": "Email hello@oravan.org",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
-    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
-    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Oravan's ongoing Spanish-language review process rather than patched quietly and forgotten."
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
+    "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked as a pattern rather than patched quietly and forgotten."
   },
   "notFound": {
     "title": "Page not found",
@@ -673,7 +678,7 @@
     "p2": "Bill summaries, headlines, and call scripts are drafted by AI and are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
     "p3": "Oravan comes with no guarantees. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily — verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
-    "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
+    "p5": "We have no accounts and store nothing about you on our servers; everything personal is kept in your browser. The privacy page explains this in full."
   },
   "og": {
     "aiDecoded": "AI-decoded",
@@ -715,7 +720,7 @@
     "configuratorHeading": "Build your embed",
     "widgetLegend": "Widget",
     "widgetRepLookup": "Representative lookup",
-    "widgetRepLookupHint": "Visitors enter a ZIP code and get their three federal representatives.",
+    "widgetRepLookupHint": "Visitors enter a ZIP code and get their members of Congress.",
     "widgetBillCard": "Bill card",
     "widgetBillCardHint": "One bill's plain-language headline, status, and freshness date.",
     "localeLegend": "Default language",
@@ -795,7 +800,7 @@
     "docsPrivacyCookies": "Zero cookies. No response from the embed ever sets one.",
     "docsPrivacyThirdParty": "Zero third-party requests. Every asset the widget loads — fonts, styles, data — comes from Oravan's own origin. Nothing calls out to an ad network, an analytics vendor, or any other third party.",
     "docsPrivacyZip": "ZIP code only. The representative-lookup widget never asks for a street address inside the iframe; a visitor who needs the more precise, split-district lookup is linked out to the main Oravan site for that step.",
-    "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup, and is never logged or stored.",
+    "docsPrivacyNoData": "No visitor data reaches Oravan beyond an ordinary page load. A ZIP code a visitor enters is used once, in memory, to answer that one lookup. Oravan never stores it.",
     "docsPrivacyTested": "These aren't claims made only in this copy — they're enforced by automated tests in Oravan's own public repository, on every change, before it ships.",
     "docsThemingTitle": "Theming reference",
     "docsThemingBody": "Theming works the same on all widgets and is limited to a closed set of CSS custom properties, each validated on Oravan's server before it can reach a style: an accent color, an optional background/text color pair (accepted only when it meets the WCAG AA contrast bar of 4.5:1), a color mode (light, dark, or match the visitor's system), a corner-radius style (sharp, soft, or round), and a font (system, serif, humanist, or geometric — all system font stacks; the widget never loads webfonts). There's no way to inject arbitrary CSS or JavaScript into the widget — that's a deliberate security boundary, not a missing feature.",
@@ -943,7 +948,7 @@
     "vehiclesHeadingMixed": "The bills and nominations",
     "vehiclesLedeNominations": "The Senate nominations this question actually runs through. Each opens the Senate's own record — and, where that record shows a decision the Senate can still make, the call flow, with support and oppose scripts equally one tap away.",
     "vehiclesLedeMixed": "The bills and Senate nominations this question actually runs through. Each opens the record — and, where that record still has a call to make, the call flow, with support and oppose scripts equally one tap away.",
-    "vehiclesAiNote": "Plain-language text on these cards — the decoded headline, where there is one, and the summary of what a yes and a no vote do — is AI-drafted and labeled. Nothing publishes until it passes automated checks, and every page carries a one-tap way to flag an error.",
+    "vehiclesAiNote": "Plain-language text on these cards — the decoded headline, where there is one, and the summary of what a yes and a no vote do — is AI-drafted and labeled. Nothing publishes until it passes automated checks. To report an error, email hello@oravan.org.",
     "bothNote": "No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.",
     "bothNoteSomeNoCall": "No side is pre-selected. Where a record still has a call to make, the same call flow opens, with support and oppose scripts equally available.",
     "readCall": "Read + call",
