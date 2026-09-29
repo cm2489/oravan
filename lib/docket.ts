@@ -285,6 +285,11 @@ export function announcementFor(
   coversLabel: string | null;
   source: FloorSignalSource;
   chamber: 'house' | 'senate';
+  /** Which verb the chamber used (scripts/floor-signals-parse.mjs
+   *  `programCertainty`; every House weekly item is `consideration`). Not a
+   *  probability, and never a vote date: /today's tag reads it (lib/today.ts
+   *  `floorTagFor`). */
+  certainty: FloorSignalTier0['certainty'];
 } | null {
   const rung = rungFor(bill, slug, now);
   if (rung.tier !== 't0' || !rung.announced) return null;
@@ -300,6 +305,9 @@ export function announcementFor(
     coversLabel: t0.covers_label ?? null,
     source: t0.source,
     chamber: t0.chamber,
+    // A file written before the field existed reads as the plain verb, the
+    // same default the ladder's own weight uses (lib/docket.mjs t0Weight).
+    certainty: t0.certainty ?? 'consideration',
   };
 }
 

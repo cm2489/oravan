@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
@@ -47,8 +48,9 @@ export function BillCard({
       the uppercase metadata row above it; ink, like everything else on a
       listing. The caller passes this OR `coverageCount`, never both: the
       caption already states the count, and printing it twice would read as two
-      different facts. */
-  caption?: string;
+      different facts. A node, so /today can pass the record's own action
+      sentence marked `lang="en"` (components/TodayBrief.tsx). */
+  caption?: ReactNode;
   /** The 2px ink border the ActionPanel already owns — reserved for the
       "Deciding now" band, so "a call lands hardest here" is visible before
       it's read (2026-07 critique round 2). Never a new color, per the

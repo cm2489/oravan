@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { glossaryTag, glossaryTagOnce, glossify } from '@/components/glossary-tags';
-import type { GlossaryTermId } from '@/lib/glossary';
-import { rollCallPage } from '@/lib/roll-call-page';
+import { BillCard } from '@/components/BillCard';
+import { glossaryTag } from '@/components/glossary-tags';
+import { Chip } from '@/components/system';
+import { TodayFloorCard } from '@/components/TodayFloorCard';
+import { TodayVoteCard } from '@/components/TodayVoteCard';
 import { Link } from '@/i18n/navigation';
 import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
 
@@ -19,22 +21,33 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
  * counts (a rail beside the reading column on a wide screen), and the
  * per-source "Record as of:" line closes the page.
  *
- * MECHANICAL BY CONSTRUCTION. Every sentence on this page is a message key
- * with record values interpolated, or the record's own words printed as they
- * were written: bill titles, roll-call questions and results, the chamber's
- * published schedule lines, a bill's latest-action sentence. Those stay
- * English on /es (ruling V4: a translated quote is a paraphrase in quotation
- * marks) and carry `lang="en"`; the page says once, at the top, that they do.
- * No AI-written text is printed here, so the page carries no AI label; every
- * bill links to its own page, where the decoded answer is labelled.
+ * CARDS (owner, 2026-09-29: "The actual Today page needs to have cards
+ * similar to the bills page"). A floor notice is a TodayFloorCard, a roll
+ * call a TodayVoteCard, a bill that moved the /bills BillCard itself, and a
+ * Big Question a small card with its name and the vehicles that moved.
+ *
+ * WHAT IS OURS, WHAT IS THE RECORD'S, WHAT IS AI'S. Every interface sentence
+ * is a message key with record values interpolated. The record's own words —
+ * bill titles, roll-call questions and results, the chamber's schedule lines,
+ * a bill's latest-action sentence — print as written, English on /es too
+ * (ruling V4: a translated quote is a paraphrase in quotation marks), marked
+ * `lang="en"`. The cards' headlines are the /bills cards' AI-decoded
+ * headlines, and a Big Question's name is AI-drafted (page 1, rule 4), so the
+ * page labels them: one quiet AI label with its "How this is made" link
+ * (docs/current-direction.md, Copy), placed before the first AI-written word
+ * and naming only what the page prints. Every element carrying AI text is
+ * marked `data-ai-text` so tests/today.spec.ts can hold the label in front
+ * of it.
  *
  * WHAT IT NEVER SAYS: a vote date, the word "recess", or how long a chamber
  * will be away. The Daily Digest names one next meeting and whether it is pro
  * forma, and that is all the chamber line repeats (the FloorRecessNote rules).
+ * A floor notice's tag names the chamber's notice and the meeting's date,
+ * never "vote scheduled" (lib/today.ts `floorTagFor`).
  *
- * Ruled paper throughout: no green ground, no amber — nothing here is the one
- * dated floor fact the colour law spends amber on, and a second green band
- * would take meaning from the homepage's. Links are `go`, everything else ink.
+ * COLOUR: links are `go`, everything else ink, and the one yellow is the
+ * floor-notice tag for a "will vote on" notice (owner, 2026-09-29: "a yellow
+ * tag or something that explicitly draws attention to it").
  */
 
 const LINK =
@@ -51,6 +64,7 @@ function Verbatim({ children, className }: { children: ReactNode; className?: st
 export async function TodayBrief({ brief, locale }: { brief: Brief; locale: string }) {
   const t = await getTranslations('today');
   const tHome = await getTranslations('home');
+  const tCommon = await getTranslations('common');
   const format = await getFormatter();
 
   /* Bare YYYY-MM-DD values are record dates: parsed as UTC midnight, so they
@@ -81,7 +95,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
   /* "Sep 28" — the quiet line names both of the brief's days. */
   const shortDay = (iso: string) =>
     format.dateTime(new Date(`${iso}T00:00:00Z`), { month: 'short', day: 'numeric', timeZone: 'UTC' });
-  /* "Mon, Sep 28" — one row of the day list. */
+  /* "Mon, Sep 28" — one row of the day list, and the floor tag's date. */
   const rowDay = (iso: string) =>
     format.dateTime(new Date(`${iso}T00:00:00Z`), {
       weekday: 'short',
@@ -173,11 +187,50 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
   const hasRecord =
     brief.days.some((d) => d.rollCalls.length > 0 || d.moved.length > 0) || brief.questions.length > 0;
 
+  /* THE AI LABEL: what AI text this page prints, and where it first appears. */
+  const scheduleHeadlines = brief.schedule.some((i) => i.teaser?.headline);
+  const recordHeadlines =
+    hasRecord &&
+    brief.days.some((d) => d.rollCalls.some((r) => r.teaser?.headline) || d.moved.some((b) => b.teaser?.headline));
+  const headlines = scheduleHeadlines || recordHeadlines;
+  const names = brief.questions.length > 0;
+  const aiKey = headlines && names ? 'aiBoth' : headlines ? 'aiHeadlines' : names ? 'aiNames' : null;
+  /* The first block that carries cards gets the page's one label. */
+  const firstCardDay = brief.days.find((d) => d.rollCalls.length > 0 || d.moved.length > 0)?.date ?? null;
+  const labelAt: 'schedule' | 'record' | 'questions' | null = !aiKey
+    ? null
+    : brief.schedule.length > 0
+      ? 'schedule'
+      : hasRecord && firstCardDay
+        ? 'record'
+        : names
+          ? 'questions'
+          : null;
+  const aiLabel = aiKey && (
+    <p className="mt-4 flex flex-wrap items-center gap-x-3" data-today-ai="">
+      <Chip tone="ai" marker={tCommon('aiMarker')}>
+        {t(aiKey)}
+      </Chip>
+      <Link
+        href="/citations#ai-policy"
+        className="inline-flex min-h-11 items-center text-2xs text-ink-2 underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+      >
+        {tHome('aiHowMade')}
+      </Link>
+    </p>
+  );
+
   const stampParts = [
     brief.stamps.bills ? t('stampBills', { date: instant(brief.stamps.bills) }) : null,
     brief.stamps.votes ? t('stampVotes', { date: instant(brief.stamps.votes) }) : null,
     brief.stamps.floor ? t('stampFloor', { date: instant(brief.stamps.floor) }) : null,
   ].filter((p): p is string => p !== null);
+
+  /* The schedule block prints on the current day only: with notices, as
+     cards; with none and sources that vouch for themselves (`quiet`), one
+     status line that says so; with none and a posture of `unknown`, nothing
+     about Congress at all — our own reading may be why it is empty. */
+  const showSchedule = brief.schedule.length > 0 || brief.schedulePosture === 'quiet';
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-12 pb-16">
@@ -231,31 +284,32 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           {/* (b) ON THE FLOOR SCHEDULE NEXT — quoted, dated, attributed; never a
               vote date. Current day only, like the chamber line, and beside it:
               the two same-day facts sit together at the top. */}
-          {brief.schedule.length > 0 && (
+          {showSchedule && (
             <section className="mt-12 border-t border-line-strong pt-4" aria-labelledby="today-schedule" data-block="schedule">
               <h2 id="today-schedule" className="text-h3 font-extrabold text-ink">
                 {t('scheduleHeading')}
               </h2>
-              <p className="mt-2 max-w-read text-sm text-ink-2">{t('scheduleNote')}</p>
-              <ul className="mt-4 grid gap-4">
-                {brief.schedule.map((item) => (
-                  <li key={`${item.kind}-${item.citation}`} className="max-w-read border-t border-line pt-3">
-                    <blockquote className="text-md text-ink">
-                      <Verbatim>“{item.quote}”</Verbatim>
-                    </blockquote>
-                    <p className="mt-1 text-xs text-ink-2 tabular-nums">{scheduleMeta(item)}</p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-4">
-                      <Link href={item.href} className={`inline-flex min-h-11 items-center text-sm ${LINK}`}>
-                        {item.citation}
-                      </Link>
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
-                        {tHome('evidenceLink')}
-                        <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                      </a>
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              {brief.schedule.length > 0 ? (
+                <>
+                  <p className="mt-2 max-w-read text-sm text-ink-2">{t('scheduleNote')}</p>
+                  {labelAt === 'schedule' && aiLabel}
+                  <ul className="mt-4 grid gap-4">
+                    {brief.schedule.map((item) => (
+                      <li key={`${item.kind}-${item.citation}`} data-ai-text={item.teaser?.headline ? '' : undefined}>
+                        <TodayFloorCard
+                          item={item}
+                          meta={scheduleMeta(item)}
+                          tagDate={item.tag?.dateIso ? rowDay(item.tag.dateIso) : null}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p role="status" className="mt-4 max-w-read text-md text-ink" data-schedule-quiet="">
+                  {t('scheduleQuiet')}
+                </p>
+              )}
             </section>
           )}
 
@@ -270,6 +324,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
               <h2 id={`today-day-${d.date}`} className="text-h3 font-extrabold text-ink tabular-nums">
                 {dayHeading(d.date)}
               </h2>
+              {labelAt === 'record' && d.date === firstCardDay && aiLabel}
 
               {d.rollCalls.length === 0 && d.moved.length === 0 && (
                 <p className="mt-3 max-w-read text-sm text-ink-2">{t('dayEmpty')}</p>
@@ -279,47 +334,11 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                 <div className="mt-6" data-block="votes">
                   <h3 className="text-md font-bold text-ink">{t('votesHeading')}</h3>
                   <ul className="mt-3 grid gap-4">
-                    {d.rollCalls.map((r) => {
-                      // One roll call is one section for the glossary: the
-                      // record's English lines are matched as English on /es
-                      // too, and the tally's labels are wired by name.
-                      const seen = new Set<GlossaryTermId>();
-                      return (
-                      <li key={r.id} className="max-w-read border-t border-line pt-3">
-                        <p className="text-xs font-semibold text-ink-2">
-                          {t('voteRoll', { chamber: chamberName(r.chamber), roll: r.roll })}
-                        </p>
-                        <p className="mt-1 text-md text-ink">
-                          <Verbatim>{glossify(r.question, 'en', seen)}</Verbatim>
-                          {' — '}
-                          <Verbatim className="font-bold">{glossify(r.result, 'en', seen)}</Verbatim>
-                        </p>
-                        {/* The tally's labels are wired by name in both
-                            languages ("A favor" is no phrase a matcher could
-                            safely find), and share the card's section. */}
-                        <p className="mt-1 text-sm text-ink-2 tabular-nums" data-brief-tally="">
-                          {t.rich('tally', {
-                            ...r.totals,
-                            yeaTerm: glossaryTagOnce('yea-and-nay', seen),
-                            presentTerm: glossaryTagOnce('present-vote', seen),
-                            notVotingTerm: glossaryTagOnce('not-voting', seen),
-                          })}
-                        </p>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-4">
-                          <Link href={`/bills/${r.bill.slug}`} className={`inline-flex min-h-11 items-center text-sm ${LINK}`}>
-                            {r.bill.citation}
-                          </Link>
-                          <a href={rollCallPage(r.source)} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
-                            {t('voteSource')}
-                            <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                          </a>
-                        </p>
-                        <p className="line-clamp-2 text-xs text-ink-2">
-                          <Verbatim>{r.bill.title}</Verbatim>
-                        </p>
+                    {d.rollCalls.map((r) => (
+                      <li key={r.id} data-ai-text={r.teaser?.headline ? '' : undefined}>
+                        <TodayVoteCard vote={r} chamberName={chamberName(r.chamber)} />
                       </li>
-                      );
-                    })}
+                    ))}
                   </ul>
                 </div>
               )}
@@ -329,17 +348,16 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                   <h3 className="text-md font-bold text-ink">{t('movedHeading')}</h3>
                   <ul className="mt-3 grid gap-4">
                     {d.moved.map((b) => (
-                      <li key={b.slug} className="max-w-read border-t border-line pt-3">
-                        <Link href={`/bills/${b.slug}`} className={`inline-flex min-h-11 items-center text-md ${LINK}`}>
-                          {b.citation}
-                        </Link>
-                        <p className="line-clamp-2 text-xs text-ink-2">
-                          <Verbatim>{b.title}</Verbatim>
-                        </p>
-                        {b.actionText && (
-                          <p className="mt-1 text-sm text-ink">
-                            <Verbatim>{b.actionText}</Verbatim>
-                          </p>
+                      <li key={b.slug} data-ai-text={b.teaser?.headline ? '' : undefined}>
+                        {b.teaser ? (
+                          <BillCard
+                            bill={b.teaser}
+                            caption={b.actionText ? <Verbatim>{b.actionText}</Verbatim> : undefined}
+                          />
+                        ) : (
+                          <Link href={`/bills/${b.slug}`} className={`inline-flex min-h-11 items-center text-md ${LINK}`}>
+                            {b.citation}
+                          </Link>
                         )}
                       </li>
                     ))}
@@ -379,23 +397,32 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           )}
 
           {/* (d) BIG QUESTIONS THAT MOVED — a vehicle's latest action falls on one
-              of the brief's two days. The name is the Moment's own name. */}
+              of the brief's two days. The name is the Moment's own name, which
+              AI drafted from the record (page 1, rule 4), so it is labelled. */}
           {brief.questions.length > 0 && (
             <section className="mt-12 border-t border-line-strong pt-4" aria-labelledby="today-questions">
               <h2 id="today-questions" className="text-h3 font-extrabold text-ink">
                 {t('questionsHeading')}
               </h2>
+              {labelAt === 'questions' && aiLabel}
               <ul className="mt-4 grid gap-4">
                 {brief.questions.map((q) => (
-                  <li key={q.id} className="max-w-read border-t border-line pt-3">
-                    <Link href={`/questions/${q.id}`} className={`inline-flex min-h-11 items-center text-md ${LINK}`}>
-                      {locale === 'es' ? q.name.es : q.name.en}
-                    </Link>
-                    <p className="text-sm text-ink-2 tabular-nums">
-                      {q.vehicles
-                        .map((v) => t('questionVehicle', { citation: v.citation, date: day(v.date) }))
-                        .join(' · ')}
-                    </p>
+                  <li key={q.id} data-ai-text="">
+                    <article className="rounded-control border border-line-strong bg-paper p-5">
+                      <h3 className="text-lg leading-tight font-bold text-ink">
+                        <Link
+                          href={`/questions/${q.id}`}
+                          className="inline-flex min-h-11 items-center hover:underline hover:decoration-go hover:decoration-[3px]"
+                        >
+                          {locale === 'es' ? q.name.es : q.name.en}
+                        </Link>
+                      </h3>
+                      <p className="mt-1 text-sm text-ink-2 tabular-nums">
+                        {q.vehicles
+                          .map((v) => t('questionVehicle', { citation: v.citation, date: day(v.date) }))
+                          .join(' · ')}
+                      </p>
+                    </article>
                   </li>
                 ))}
               </ul>
