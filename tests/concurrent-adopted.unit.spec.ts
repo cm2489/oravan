@@ -3,7 +3,7 @@ import bills from '../data/bills.json';
 import { concurrentAdoptedBy, passageState as passageStateMjs } from '../lib/floor-text.mjs';
 import { decisionState, docketRung } from '../lib/docket.mjs';
 import { billStatusLine } from '../lib/moment-status.mjs';
-import { deriveJourney, journeyEnding, liveCallTarget } from '../lib/journey';
+import { deriveJourney, journeyEnding, liveCallTarget, settledDecision, statusKeyFor } from '../lib/journey';
 
 /*
  * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM — the end of its
@@ -71,6 +71,25 @@ test.describe('H.Con.Res. 86 · agreed to by both chambers, so its path has ende
   });
 
   /*
+   * THE BILL PAGE READS IT TOO (2026-09-29, the follow-up #360 listed). The
+   * stepper used to fall to passageState's 'second' sentence, "the official
+   * record doesn't say yet whether the two versions match", which the record
+   * does say; the label said "Passed one chamber"; and the call panel stayed.
+   */
+  test('the bill page: its own stepper sentence at the last step, the "Adopted by both chambers" label, and the record-only panel', () => {
+    expect(deriveJourney(HCONRES_86)).toMatchObject({
+      step: 4,
+      ending: 'bothChambers',
+      nowKey: 'nowAdoptedBoth',
+      nowChamber: 'senate',
+      isLaw: false,
+      showTrailer: false,
+    });
+    expect(statusKeyFor(HCONRES_86)).toBe('adopted');
+    expect(settledDecision(HCONRES_86)).toEqual({ kind: 'adopted', chamber: 'senate' });
+  });
+
+  /*
    * THE DAY BEFORE THE MESSAGE. With the Senate's own sentence as the latest
    * step (H.Con.Res. 86's, 2026-06-23), passageState did not read it and fell
    * to the 'first' default: "it passed the House and now goes to the Senate",
@@ -113,8 +132,12 @@ test.describe('a bill passed by the second chamber without amendment still goes 
       expect(passageStateMjs(b)).toEqual({ stage: 'both', passedBy: 'senate', next: null });
       const j = deriveJourney(b);
       expect(j).toMatchObject({ step: 4, ending: 'president', nowKey: 'nowPassedBoth', showTrailer: false });
-      // A signature is still ahead: not settled, and the Big Questions line is
-      // not terminal.
+      // Its label says both chambers passed it (never "Passed one chamber"),
+      // and never that it was adopted.
+      expect(statusKeyFor(b)).toBe('passed_both');
+      // A signature is still ahead: not settled, the page keeps the call, and
+      // the Big Questions line is not terminal.
+      expect(settledDecision(b)).toBeNull();
       expect(decisionState(b)).toEqual({ state: 'pending', reason: null });
       expect(billStatusLine(b)).toMatchObject({ key: 'bothAgreed', terminal: false });
       expect(docketRung({ ...b, last_action_date: today() }, null)).toMatchObject({ tier: 't3', terminal: false });
@@ -202,6 +225,10 @@ test.describe('corpus · the reader never contradicts the stepper, the rail or t
       expect(ps, slug).toEqual({ stage: 'second', passedBy: concurrentAdoptedBy(b), next: null });
       expect(liveCallTarget(b as never), slug).toBeNull();
       expect(decisionState(b).state, slug).toBe('settled');
+      // The bill page reads it the same way (2026-09-29).
+      expect(deriveJourney(b as never).nowKey, slug).toBe('nowAdoptedBoth');
+      expect(statusKeyFor(b as never), slug).toBe('adopted');
+      expect(settledDecision(b as never), slug).toEqual({ kind: 'adopted', chamber: concurrentAdoptedBy(b) });
       expect(billStatusLine(b as never), slug).toMatchObject({ key: 'bothAgreed', terminal: true });
       expect(docketRung(b, null), slug).toMatchObject({ terminal: true });
     }

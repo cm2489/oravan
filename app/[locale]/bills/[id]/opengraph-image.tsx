@@ -108,7 +108,7 @@ export default async function OgImage({
                   the whole prerender. */}
               <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
                 {tAll(
-                  `bills.status.${statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}`
+                  `bills.status.${statusKeyFor(bill)}`
                 )}
               </span>
             </div>

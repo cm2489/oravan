@@ -18,6 +18,8 @@ import { WalkthroughDisclosure } from '@/components/call-walkthrough/Walkthrough
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
 import { SettledPanel } from '@/components/SettledPanel';
+import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
+import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -47,6 +49,7 @@ import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
 import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
+import { adoptedConcurrentReading, isConcurrentResolution } from '@/lib/concurrent-explainer';
 import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
 
 /*
@@ -296,7 +299,7 @@ export default async function BillPage({
   const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
   // reads the date as well as the sentence since N3 (see statusLabelKey below).
-  const statusKey = statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date);
+  const statusKey = statusKeyFor(bill);
   // Headlines often already name the bill; don't repeat the citation (same
   // rule the action panel uses for call-log labels).
   const norm = (x: string) => x.toLowerCase().replace(/[.\s]/g, '');
@@ -443,6 +446,8 @@ export default async function BillPage({
    * NO DECISION LEFT (owner, 2026-09-28, UX question Q9 answered "a"; which
    * records count, owner's pick (a), 2026-09-29: "Only a law or a failed final
    * vote counts as finished."): a law or a rejected vote to pass the measure
+   * (and, since 2026-09-29, a concurrent resolution both chambers agreed to
+   * in one form, which goes to no president: H.Con.Res. 86)
    * gets the record-only panel instead of the call panel — the record's
    * outcome and how the reader's members voted, with no stance, no script and
    * no number (page 1, rule 6: a settled decision shows no call apparatus).
@@ -458,6 +463,10 @@ export default async function BillPage({
    */
   const settled = settledDecision(bill);
   const settledDate = settledDecisionDate(bill);
+  /* An adopted concurrent resolution: what it can and cannot do, printed
+     under the outcome (lib/concurrent-explainer.ts). Null on everything
+     else, including a concurrent resolution that failed. */
+  const concurrentReading = adoptedConcurrentReading(bill);
   const settledOutcome = settled
     ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
     : null;
@@ -590,6 +599,20 @@ export default async function BillPage({
               <Chip tone="status">{t(statusLabelKey)}</Chip>
               <span className="mt-2 block text-sm text-ink-2 tabular-nums">
                 <span className="font-semibold text-ink">{citation}</span>
+                {/* WHAT KIND OF MEASURE (owner, 2026-09-29: "What is a
+                    concurrent resolution? Add to glossary."). On a concurrent
+                    resolution the citation is captioned with the glossary's
+                    own term, which opens its definition in place — adopted,
+                    rejected or pending alike, so a reader of H.Con.Res. 89
+                    or 38 learns what kind of measure failed. */}
+                {isConcurrentResolution(bill) && (
+                  <>
+                    <span aria-hidden> · </span>
+                    <span data-measure-kind="concurrent-resolution">
+                      <GlossaryTerm id="concurrent-resolution" />
+                    </span>
+                  </>
+                )}
                 {bill.last_action_date && (
                   <>
                     <span aria-hidden> · </span>
@@ -863,6 +886,9 @@ export default async function BillPage({
                 kind={settled.kind}
                 groups={settledGroups}
                 floorLabel={fmtDate(votesCoverage().floor)}
+                explainer={
+                  concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
+                }
               />
             </div>
           ) : (
@@ -985,5 +1011,10 @@ function settledOutcomeText(
         nays: settled.tally?.nays ?? 0,
         ...when,
       });
+    case 'adopted':
+      // A concurrent resolution both chambers agreed to in one form: never
+      // "This is law". `date` is the second chamber's agreement, the status
+      // basis's own date. Each chamber's tally prints in its vote group.
+      return t('bill.settled.adopted', when);
   }
 }
