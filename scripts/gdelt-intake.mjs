@@ -215,7 +215,7 @@ export const gdeltAgent = new https.Agent({ keepAlive: true, maxSockets: 1 });
 /**
  * @param {string} url
  * @param {{ headers?: Record<string, string>, signal?: AbortSignal }} [init]
- * @returns {Promise<{ status: number, ok: boolean, text: () => Promise<string> }>}
+ * @returns {Promise<{ status: number, ok: boolean, headers?: any, text: () => Promise<string> }>}
  */
 export function httpsFetch(url, { headers = {}, signal } = {}) {
   return new Promise((resolve, reject) => {
@@ -235,11 +235,39 @@ export function httpsFetch(url, { headers = {}, signal } = {}) {
       });
       body.catch(() => {});
       const status = res.statusCode ?? 0;
-      resolve({ status, ok: status >= 200 && status < 300, text: () => body });
+      resolve({ status, ok: status >= 200 && status < 300, headers: res.headers, text: () => body });
     });
     req.on('error', reject);
   });
 }
+
+/** Response headers that are safe to print when a request is refused: the
+ *  date, the server, how long to wait, the content type, and anything that
+ *  names a rate limit. Nothing else is ever printed (never a cookie or an
+ *  authorization header, though this script sends neither). */
+const LOGGABLE_HEADER = /^(date|server|retry-after|content-type)$|rate-?limit|^x-rate|^retry/i;
+
+/**
+ * One log line's worth of evidence about a refused request: the status, the
+ * allowed headers, and the first 200 characters of the body (whitespace
+ * collapsed to one line). `res.headers` may be a plain object (node:https) or
+ * a Headers-like object; a missing one prints as none.
+ * @param {{ status: number, headers?: any }} res
+ * @param {string | null} body null when the body could not be read in time
+ */
+export function refusalEvidence(res, body) {
+  /** @type {Array<[string, string]>} */
+  let pairs = [];
+  const h = res?.headers;
+  if (h && typeof h.entries === 'function') pairs = [...h.entries()].map(([k, v]) => [String(k), String(v)]);
+  else if (h && typeof h === 'object') pairs = Object.entries(h).map(([k, v]) => [String(k), Array.isArray(v) ? v.join(', ') : String(v)]);
+  const shown = pairs.filter(([k]) => LOGGABLE_HEADER.test(k)).map(([k, v]) => `${k.toLowerCase()}: ${v.replace(/\s+/g, ' ').slice(0, 200)}`);
+  const text = body === null ? '(the body was not read in time)' : `"${String(body).replace(/\s+/g, ' ').slice(0, 200)}"`;
+  return `HTTP ${res?.status}; headers: ${shown.length ? shown.join('; ') : '(none of the loggable ones)'}; body starts: ${text}`;
+}
+
+/** The three times an open circuit is read by, for the log lines. */
+const circuitTimes = (c) => `first opened ${c.openedAt}, last reopened ${c.reopenedAt ?? 'never'}, last answered ${c.lastAnsweredAt ?? 'never on record'}`;
 
 /**
  * The whole collection, with every side effect injected: `fetchImpl`,
@@ -254,7 +282,7 @@ export function httpsFetch(url, { headers = {}, signal } = {}) {
  *   bias: Record<string, string>,
  *   previous?: any,
  *   conversation?: any,
- *   circuit?: { open: true, reason: string, openedAt: string, lastTryAt: string, tries: number } | null,
+ *   circuit?: { open: true, reason: string, openedAt: string, lastTryAt: string, tries: number, lastAnsweredAt?: string, reopenedAt?: string } | null,
  *   now: number,
  *   fetchImpl: (url: string, init: any) => Promise<{ status: number, ok: boolean, text: () => Promise<string> }>,
  *   sleep: (ms: number) => Promise<void>,
@@ -355,19 +383,33 @@ export async function collect({
       stats.circuitOpen = true;
       stats.circuitWhy = circuit.reason;
       log(
-        `::warning::gdelt-intake: the GDELT circuit has been open since ${circuit.openedAt} (${circuit.reason}); the last attempt was ${Math.round(since / 60_000)} min ago, inside the ${Math.round(limits.circuitCooldownMs / 60_000)}-min cooldown — no request this run. ${due.length} question(s) wait.`
+        `::warning::gdelt-intake: the GDELT circuit has been open since ${circuit.openedAt} (${circuit.reason}; ${circuitTimes(circuit)}); the last attempt was ${Math.round(since / 60_000)} min ago, inside the ${Math.round(limits.circuitCooldownMs / 60_000)}-min cooldown — no request this run. ${due.length} question(s) wait.`
       );
       due.length = 0;
     } else {
       halfOpen = true;
-      log(`gdelt-intake: the GDELT circuit is open (${circuit.reason}, since ${circuit.openedAt}) — half-open: one request decides whether this run goes on.`);
+      log(`gdelt-intake: the GDELT circuit is open (${circuit.reason}, since ${circuit.openedAt}; ${circuitTimes(circuit)}) — half-open: one request decides whether this run goes on.`);
     }
   }
+  // The evidence times: the last request GDELT answered normally (a 2xx), and
+  // the last time the circuit reopened after GDELT had answered. `openedAt`
+  // keeps its old meaning (the FIRST open, kept across every reopening);
+  // these two say what it hides.
+  /** @type {string | undefined} */
+  let lastAnsweredAt = circuit?.lastAnsweredAt;
+  /** @type {string | undefined} */
+  let reopenedAt = circuit?.reopenedAt;
   const openCircuit = (reason) => {
     stats.circuitOpen = true;
     stats.circuitWhy = reason;
     const at = new Date(clock()).toISOString();
+    // A reopening is an open that follows an answered probe: the circuit was
+    // open at the start of the run, and half-open has since been closed.
+    if (circuit?.open && !halfOpen) reopenedAt = at;
     nextCircuit = { open: true, reason, openedAt: circuit?.open ? circuit.openedAt : at, lastTryAt: at, tries: (circuit?.open ? circuit.tries ?? 0 : 0) + 1 };
+    if (lastAnsweredAt) nextCircuit.lastAnsweredAt = lastAnsweredAt;
+    if (reopenedAt) nextCircuit.reopenedAt = reopenedAt;
+    log(`gdelt-intake: the GDELT circuit is open (${reason}; ${circuitTimes(nextCircuit)}).`);
   };
 
   const runStart = clock();
@@ -425,6 +467,7 @@ export async function collect({
       if (res.status === 429) {
         silentInARow = 0;
         stats.rateLimited++;
+        await logRefusal(res);
         if (halfOpen || attempt >= limits.backoffMs.length) return { kind: 'rate_limited' };
         const backoff = limits.backoffMs[attempt];
         const retryBy = clock() + Math.max(backoff, limits.spacingMs) + limits.timeoutMs;
@@ -451,9 +494,26 @@ export async function collect({
         return { kind: 'silent', error: `HTTP ${res.status} arrived but its body did not finish within ${limits.timeoutMs} ms` };
       }
       silentInARow = 0;
-      if (!res.ok) return { kind: 'error', error: `HTTP ${res.status}` };
+      if (!res.ok) {
+        log(`gdelt-intake: GDELT refused a request — ${refusalEvidence(res, String(body))}`);
+        return { kind: 'error', error: `HTTP ${res.status}` };
+      }
+      lastAnsweredAt = new Date(clock()).toISOString();
       return { kind: 'ok', body: String(body) };
     }
+  };
+
+  /** Read (within what is left of the request's timeout) and log the evidence of a 429. */
+  const logRefusal = async (res) => {
+    /** @type {string | null} */
+    let text = null;
+    try {
+      const b = await within(Promise.resolve().then(() => res.text()), Math.max(1, limits.timeoutMs - (clock() - lastRequestAt)));
+      if (b !== TIMED_OUT) text = String(b);
+    } catch {
+      /* the body is evidence only; a broken one is printed as unread */
+    }
+    log(`gdelt-intake: GDELT refused a request — ${refusalEvidence(res, text)}`);
   };
 
   /** @type {Map<string, { terms: string[], admitted: any[] }>} */
