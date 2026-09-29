@@ -14,7 +14,7 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesForBill } from '../lib/
  *
  * VERSION 2: the general sentence visible, the War Powers detail folded.
  * Wherever H.Con.Res. 86's adopted line is printed — the record-only panel on
- * its bill page, its card on /questions/iran-war-powers, a member page's
+ * its bill page, its settled row on /questions/iran-war-powers, a member page's
  * "Right now:" line — the explainer follows it: the general sentence with
  * "concurrent resolution" opening its glossary entry in place, then a
  * disclosure, "Does this bind the president?", holding the War Powers detail
@@ -151,19 +151,18 @@ for (const l of LOCALES) {
     });
   }
 
-  test(`${l.locale}: H.Con.Res. 86's Big Question card carries the explainer, and no other card does`, async ({ page }) => {
+  test(`${l.locale}: H.Con.Res. 86's Big Question row carries the explainer, and nothing else on the page does`, async ({ page }) => {
     const bill = getBill(HCONRES_86);
     test.skip(!bill || adoptedConcurrentReading(bill)?.warPowers5c !== true, 'H.Con.Res. 86 is no longer an adopted 5(c) resolution');
     await page.goto(`${l.prefix}/questions/iran-war-powers`);
-    // The vehicle card: the page itself is an <article> too, so the card is
-    // the one with no <article> inside it.
-    const card = page
-      .locator('article')
-      .filter({ has: page.locator(`h3 a[href$="/bills/${HCONRES_86}"]`) })
-      .filter({ hasNot: page.locator('article') });
-    await expect(card).toHaveCount(1);
-    await expect(card).toBeVisible();
-    await expectFullExplainer(page, card.locator(EXPLAINER), l);
+    // Settled, so it is a record row under "Settled · kept as the record"
+    // (wireframes v2, 2026-09-29), not a card: its word, the settled box's
+    // outcome sentence, and the explainer under it.
+    const row = page.locator(`[data-record-row="${HCONRES_86}"]`);
+    await expect(row).toHaveCount(1);
+    await expect(row).toBeVisible();
+    await expect(row.locator('[data-status-word="agreed"]')).toHaveText(l.m.bills.statusWord.agreed);
+    await expectFullExplainer(page, row.locator(EXPLAINER), l);
     await expect(page.locator(EXPLAINER)).toHaveCount(1);
   });
 }

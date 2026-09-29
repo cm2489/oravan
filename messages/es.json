@@ -272,6 +272,13 @@
       "signed": "Promulgado como ley",
       "vetoed": "Vetado"
     },
+    "statusWord": {
+      "open": "Abierto",
+      "law": "Ley",
+      "agreed": "Adoptado",
+      "rejected": "Rechazado",
+      "vetoed": "Vetado"
+    },
     "decodedPending": "Todavía estamos traduciendo este proyecto a lenguaje claro.",
     "updated": "Última acción: {date}",
     "showAll": "Ver los {count}",
@@ -1007,6 +1014,10 @@
     "bothNoteSomeNoCall": "Ningún lado está preseleccionado. Cuando en un registro todavía queda una llamada que hacer, se abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",
     "readBill": "Leer el proyecto de ley",
+    "readCallAbout": "sobre {citation}",
+    "stillOpenHeading": "{count, plural, one {Todavía abierto a una llamada · #} other {Todavía abiertos a una llamada · #}}",
+    "stillOpenRailHeading": "Todavía abiertos a una llamada",
+    "settledGroupHeading": "{count, plural, one {Resuelto · # · se conserva como registro} other {Resueltos · # · se conservan como registro}}",
     "partOf": "Parte de una pregunta más amplia: {name}",
     "whyHeading": "Por qué existe esta Gran pregunta",
     "whyCriteria": "Una Gran pregunta se abre solo cuando un proyecto de ley o una nominación ante el Senado, vigentes y con acción posible, cumplen criterios publicados: una señal oficial de calendario o de acción en el pleno, o cobertura de prensa de medios de todo el espectro, dentro de los últimos 45 días.",
@@ -1077,7 +1088,7 @@
       "latestAction": "Última acción: {date}",
       "recordStepLabel": "El último paso del registro, en sus propias palabras (en inglés):",
       "recordStepEmpty": "El registro todavía no muestra texto de la acción.",
-      "explainer": "Todos los proyectos de esta pregunta llegaron al final de su recorrido. Las tarjetas de abajo cuentan lo que pasó.",
+      "explainer": "Todos los proyectos de esta pregunta llegaron al final de su recorrido. La lista de abajo cuenta lo que pasó.",
       "lastReviewed": "Resumen actualizado el {date}.",
       "group": {
         "house": "Empezó en la Cámara",
