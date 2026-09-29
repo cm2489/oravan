@@ -178,9 +178,11 @@ test.describe('scripts/moment-updates.mjs · the "Where it stands" prompt', () =
     });
     expect(plan).toHaveLength(1);
     const [p] = plan;
-    // What a revision is grounded in (and what the refresh decision diffs) is
-    // the RAW status, unchanged by this fix.
+    // `vehicle_statuses` still holds the RAW status, unchanged by this fix.
+    // Since 2026-09-29 the key read from it is stored beside it, and the
+    // refresh decision compares both (tests/summary-refresh-status-key.unit.spec.ts).
     expect(p.statuses).toEqual({ 'hconres-86-119': 'passed_chamber', 'hconres-93-119': 'passed_chamber' });
+    expect(p.statusKeys).toEqual({ 'hconres-86-119': 'adopted', 'hconres-93-119': 'passed_chamber' });
     expect(p.records['hconres-86-119']).toEqual(recordOf(HCONRES_86));
 
     // A fake client that records the prompt. No model is called.
