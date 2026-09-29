@@ -41,9 +41,15 @@ export function memberRole(rep: Pick<LookupRep, 'type' | 'state'>): MemberRole {
  * member. On a ZIP that spans more than one House district the lookup lists
  * every district's member, and only one of them is the reader's — so the line
  * names the senators alone there and says why on its own line.
+ *
+ * A ZIP that crosses a STATE line (109 of 33,774 in data/zip-districts.json
+ * on 2026-09-29, e.g. 19973, Delaware and Maryland) lists both states'
+ * senators, and only two of them are the reader's. The line names nobody
+ * there, so the block keeps the ZIP form, which /reps resolves by address.
  */
 export function namedMembers(answer: LookupAnswer): LookupRep[] {
   const senators = answer.reps.filter((r) => r.type === 'sen');
+  if (new Set(senators.map((r) => r.state)).size > 1) return [];
   if (answer.multiDistrict) return senators;
   return [...senators, ...answer.reps.filter((r) => r.type !== 'sen')];
 }

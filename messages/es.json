@@ -160,7 +160,7 @@
     "members": "Tus miembros del Congreso:",
     "member": "{role, select, senator {{name} (Senado)} delegate {{name} (Cámara)} other {{name} (Cámara)}}",
     "where": "Código postal {zip}{hasPlace, select, yes { · {place}} other {}} · guardado solo en este navegador",
-    "multi": "Tu código postal abarca más de un distrito de la Cámara, así que aquí no se nombra a tu representante. <link>Encuentra el tuyo</link>",
+    "multi": "Tu código postal abarca más de un distrito de la Cámara. <link>Encuentra a tu representante</link>",
     "vacant": "El escaño de tu distrito en la Cámara está vacante. <link>Ver los detalles</link>"
   },
   "reps": {

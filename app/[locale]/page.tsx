@@ -416,7 +416,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 660px on a 390×664 phone — under the thumb bar (615–664),
                 which tests/home-fold.spec.ts forbids. At mt-8 it starts
                 below that fold in both locales (EN 676px, ES 697px), as it
-                did before (672px). */}
+                did before (672px). With a ZIP saved it starts in the same
+                place or lower: below md the members block is never shorter
+                than the form it replaces (components/HeroSavedZip.tsx). */}
             <p className="mt-8 max-w-note text-sm">
               <RememberLocaleLink
                 href="/"

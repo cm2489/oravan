@@ -151,6 +151,16 @@ test.describe('the hero with a saved ZIP', () => {
     expect(savedZipDistrict(multi)).toBeNull();
   });
 
+  test('a ZIP crossing a state line names nobody, so the hero keeps the ZIP form', () => {
+    // 19973 (Delaware and Maryland) answers with four senators, and only two
+    // of them are the reader's; the line cannot say which two.
+    const de1 = { bioguide: 'D1', name: 'Dee One', type: 'sen' as const, state: 'DE', district: null };
+    const de2 = { bioguide: 'D2', name: 'Dee Two', type: 'sen' as const, state: 'DE', district: null };
+    const deRep = { bioguide: 'DR', name: 'Dee Rep', type: 'rep' as const, state: 'DE', district: 0 };
+    const crossing: LookupAnswer = { reps: [deRep, de1, de2, sen1, sen2, rep7], multiDistrict: true, vacancies: [] };
+    expect(namedMembers(crossing)).toEqual([]);
+  });
+
   test('a vacant seat still names its district', () => {
     const vacant: LookupAnswer = {
       reps: [sen1, sen2],

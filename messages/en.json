@@ -160,7 +160,7 @@
     "members": "Your members:",
     "member": "{role, select, senator {Sen. {name}} delegate {Del. {name}} other {Rep. {name}}}",
     "where": "ZIP {zip}{hasPlace, select, yes { · {place}} other {}} · saved in this browser only",
-    "multi": "Your ZIP spans more than one House district, so your representative is not named here. <link>Find yours</link>",
+    "multi": "Your ZIP spans more than one House district. <link>Find your representative</link>",
     "vacant": "Your district’s House seat is vacant. <link>See the details</link>"
   },
   "reps": {
