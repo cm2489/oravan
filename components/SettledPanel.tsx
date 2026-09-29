@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { usePrefs } from '@/lib/local';
 import { houseFinderRows, type FinderMember } from '@/lib/house-finder';
+import { crossesStateLine } from '@/lib/state-line';
 import type { SettledVoteGroup } from '@/lib/settled-votes';
 import type { District, Legislator } from '@/lib/types';
 import { HouseFinder } from './HouseFinder';
@@ -167,6 +168,12 @@ export function SettledPanel({
   }, [lookup]);
 
   const notFound = lookup.status === 'ready' && lookup.members.length === 0 && lookup.vacancies === 0;
+  // A ZIP across a state line (19973 is DE and MD) lists every touched
+  // state's senators under "How your members voted". Each name already
+  // carries its state; one line under the Senate group says the reader's
+  // state decides which are theirs (lib/state-line.ts).
+  const crossState =
+    lookup.status === 'ready' && crossesStateLine(lookup.members, lookup.vacantSeats);
 
   return (
     <section
@@ -352,6 +359,11 @@ export function SettledPanel({
                             );
                           })}
                         </ul>
+                      )}
+                      {g.chamber === 'senate' && crossState && members.length > 0 && (
+                        <p className="mt-2 text-sm text-ink-2" data-settled-cross-state="">
+                          {t('settled.crossState')}
+                        </p>
                       )}
                       {note && <p className="mt-2 text-xs text-ink-2">{note}</p>}
                     </section>

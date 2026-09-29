@@ -377,6 +377,7 @@
       "voiceNote": "Fue una votación a viva voz, así que no quedó registrado cómo votó cada miembro.",
       "noMember": "{chamber, select, house {No figura ningún representante de la Cámara para tu código postal.} other {No figuran senadores para tu código postal.}}",
       "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que no se puede saber qué representante es el tuyo.",
+      "crossState": "Tu código postal abarca más de un estado, así que aparecen los senadores de cada uno. Tu estado decide cuáles son los tuyos.",
       "noRollCalls": "El registro de votaciones nominales de Oravan, que empieza el {floor}, no tiene ninguna votación registrada sobre este proyecto."
     },
     "concurrent": {
