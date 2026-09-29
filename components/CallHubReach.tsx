@@ -5,6 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { usePrefs } from '@/lib/local';
 import { shareRepLookup, useSharedRepLookup } from '@/lib/rep-lookup-share';
+import { crossesStateLine, nameWithState } from '@/lib/state-line';
 
 /*
  * THE CALL HUB'S PER-VISITOR HALF (wireframes v2, call-hub.html): who a call
@@ -208,9 +209,14 @@ export function CallHubRouting({ chamber }: { chamber: 'senate' | 'house' }) {
   const shared = useSharedRepLookup();
   if (!zip || !shared || shared.zip !== zip) return null;
   if (chamber === 'house' && shared.multiDistrict) return null;
+  // Across a state line (19973 is DE and MD) the Senate line names every
+  // touched state's senators, so each name carries its state, as the bill's
+  // call panel prints it: "Christopher A. Coons (DE)". The reach list below
+  // already shows each member's state in its role line ("Senator · DE").
+  const crossState = crossesStateLine(shared.reps);
   const names = shared.reps
     .filter((r) => (chamber === 'senate' ? r.type === 'sen' : r.type === 'rep' && !DELEGATE_JURISDICTIONS.has(r.state)))
-    .map((r) => r.name);
+    .map((r) => nameWithState(r, crossState));
   if (names.length === 0) return null;
   return (
     <p data-call-routing={chamber} className="mt-2 text-sm font-semibold text-ink">

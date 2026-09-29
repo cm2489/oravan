@@ -20,6 +20,7 @@ import type { VehicleKind } from '@/lib/moments';
 import type { NominationAudience } from '@/lib/nomination-script';
 import { upsertCall, useCalls, usePrefs } from '@/lib/local';
 import { shareRepLookup } from '@/lib/rep-lookup-share';
+import { crossesStateLine, nameWithState } from '@/lib/state-line';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
 import { CALL_BUTTON } from './call-button';
 import { OfficeHoursNote } from './OfficeHoursNote';
@@ -498,10 +499,17 @@ export function ActionPanel({
   }, [error, retryAt]);
 
   const multiDistrict = lookup.status === 'ready' && lookup.multiDistrict;
+  // A split ZIP that also crosses a state line (109 ZIPs; 19973 is DE and MD)
+  // lists every touched state's senators, so each row carries its state
+  // (lib/state-line.ts). Inside one state the rows print exactly as before.
+  const crossState =
+    lookup.status === 'ready' && crossesStateLine(lookup.reps, lookup.vacancies);
   // ORDERING, two rules composed (demote, never bury — nobody loses a dial):
-  //  1. In a split ZIP the senators are the two certainly-yours rows, so
-  //     they lead — the walkthrough's call modal led with a House member who
-  //     may not be the caller's own, exactly the nervous caller's fear.
+  //  1. In a split ZIP the senators lead — the walkthrough's call modal led
+  //     with a House member who may not be the caller's own, exactly the
+  //     nervous caller's fear. Inside one state they are the two
+  //     certainly-yours rows; across a state line the reader's state picks
+  //     two of them, which is why those rows then name their state.
   //  2. Chamber routing: the chamber holding the live decision leads
   //     (lib/journey.ts liveCallTarget).
   //  Certainty outranks routing: in a split ZIP the senators stay first even
@@ -1435,9 +1443,13 @@ export function ActionPanel({
                         voted (the member page's #votes section). A link
                         only: the panel ships no vote data, so the member
                         page answers it, including when the record lists
-                        no roll call for them. */}
+                        no roll call for them. Across a state line the name
+                        carries its state, "Christopher A. Coons (DE)", on
+                        every row, so the House rows say theirs too. */}
                     <div className="flex flex-wrap items-center justify-between gap-x-3">
-                      <p className="font-bold text-ink" data-rep-name="">{rep.name}</p>
+                      <p className="font-bold text-ink" data-rep-name="">
+                        {nameWithState(rep, crossState)}
+                      </p>
                       <Link
                         href={`/reps/${rep.bioguide}#votes`}
                         className="inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"

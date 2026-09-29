@@ -340,6 +340,7 @@
       "voiceNote": "This was a voice vote, so no member's position was recorded.",
       "noMember": "{chamber, select, house {No House member is listed for your ZIP.} other {No senators are listed for your ZIP.}}",
       "multiDistrict": "Your ZIP spans more than one House district, so this can't say which House member is yours.",
+      "crossState": "Your ZIP spans more than one state, so each state's senators are listed. Your state decides which ones are yours.",
       "noRollCalls": "Oravan's roll-call record, which begins {floor}, holds no recorded vote on this bill."
     },
     "concurrent": {
