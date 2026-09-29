@@ -130,11 +130,27 @@ test.describe('rule B: the Census call logs nothing, not even the error', () => 
     // Guards against rule B passing because the fetch was deleted or moved
     // rather than because its catch is clean.
     const source = read('app/api/district/route.ts');
-    expect(source).toMatch(/await fetch\(`\$\{CENSUS_URL\}\?\$\{params\}`/);
+    expect(source).toMatch(/await fetch\(CENSUS_URL, \{/);
     expect(source, 'the address must still travel in the POST body, never a GET query string').toMatch(
       /export async function POST\(/
     );
     expect(source).not.toMatch(/export async function GET\(/);
+  });
+
+  test('the upstream hop is a POST too: the address never appears in any URL (owner, 2026-09-29: "POST yes")', () => {
+    const source = stripComments(read('app/api/district/route.ts'));
+    const start = source.indexOf('let payload');
+    const end = source.indexOf('const parsed', start);
+    const block = source.slice(start, end);
+    // The Census call is a POST with the params as its form body...
+    expect(block).toMatch(/fetch\(CENSUS_URL, \{[\s\S]*?method: 'POST'[\s\S]*?body: params/);
+    expect(block).toMatch(/'content-type': 'application\/x-www-form-urlencoded'/);
+    // ...and nothing builds a URL out of them: no `?${params}`, no
+    // `params.toString()` spliced into a string, no new URL(...) at all.
+    expect(block).not.toMatch(/\?\$\{params\}/);
+    expect(block).not.toMatch(/params\.toString\(\)/);
+    expect(block).not.toMatch(/new URL\(/);
+    expect(block.match(/fetch\(/g) ?? [], 'exactly one upstream call').toHaveLength(1);
   });
 
   test('nothing between the Census fetch and its catch writes to a log', () => {
