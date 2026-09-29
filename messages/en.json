@@ -319,6 +319,11 @@
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
     "settled": {
+      "finderShow": "Show the House vote for ZIP {zip}",
+      "finderSplit": "Your ZIP is split between {count, plural, =2 {two} other {#}} House districts. {vacant, select, yes {One of these seats is yours.} other {One of these members is yours.}}",
+      "finderDistrict": "{district, select, 0 {{state} at-large} other {{state}-{district}}}",
+      "finderVacant": "Vacant seat",
+      "finderRefine": "Find your exact district by street address",
       "title": "No call to make",
       "law": "This is law.",
       "rejected": "The {chamber, select, House {House} Senate {Senate} other {Senate}} rejected it{tally, select, none {{hasDate, select, yes { on {date}} other {}}} other {, {yeas}–{nays}{hasDate, select, yes {, on {date}} other {}}}}.",
