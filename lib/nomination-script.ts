@@ -4,6 +4,7 @@
 // time, so this module names a Nomination's fields without any importer —
 // lib/scriptcache.ts among them — pulling a byte of the corpus.
 import type { Nomination } from './core/nominations';
+import { PRESIDENT_STYLE_RULE } from './president-style.mjs';
 import type { Stance } from './types';
 
 /*
@@ -69,8 +70,12 @@ import type { Stance } from './types';
  * vice versa, which is the whole reason these are two constants.
  *   v1 — initial fork (2026-08-06): chamber-SPECIFIC by design, two audiences,
  *        grounded in Congress.gov's own description sentence, no decode.
+ *   v2 — "the president" (owner, 2026-09-29; docs/copy-style.md): the rules
+ *        carry PRESIDENT_STYLE_RULE and the nonpartisan line says "the
+ *        president"; the route restyles the reply with finishScript
+ *        (lib/scriptprompt.ts).
  */
-export const NOMINATION_PROMPT_VERSION = '1';
+export const NOMINATION_PROMPT_VERSION = '2';
 
 /*
  * WHO THE SCRIPT IS BEING READ TO. A bill script has no such axis — it is one
@@ -184,7 +189,8 @@ Rules:
 - No ambiguous "this" or "it": never use a bare "this" or "it" as a sentence's subject unless its antecedent is the noun immediately before it. Name what is being referred to instead - the nomination by its number, "this nomination," or the position or concern by name - so no sentence can be misheard as meaning the opposite of what is intended.
 - Refer to the nomination exactly as "${citation}" - do not alter, translate, or extend that citation.
 - Must work equally well read to a live staffer or left as a voicemail: the final sentence has to be a self-contained statement - never a question mark, and never a request whose meaning depends on a spoken reply or a callback.
-- Strictly nonpartisan tone: no party language, no naming of the President or of any party, no attacks, no alarmism, no advocacy-group jargon.
+- Strictly nonpartisan tone: no party language, no naming of the president or of any party, no attacks, no alarmism, no advocacy-group jargon.
+${PRESIDENT_STYLE_RULE}
 - Do not invent facts beyond the record provided.
 - Plain text only: no markdown, no asterisks, no bullet points, no headers.
 - Output ONLY the script text, no commentary.`;

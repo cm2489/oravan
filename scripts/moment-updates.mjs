@@ -131,6 +131,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
 import { statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 // The status-label clock, imported rather than copied a fourth time. The
 // canonical definition is lib/journey.ts `statusKeyFor`; that file is
 // TypeScript and this one is .mjs, and scripts/moment-candidates.mjs already
@@ -675,7 +676,8 @@ const FRAMING_RULES = `RULES (a line that breaks any of these is discarded and r
 - Reproduce every tally, roll-call number, vote count and date exactly as the record gives it.
 - Each line is ONE sentence, at most 160 characters, plain text, no markdown, sentence case.
 - Spanish is natural Latin American Spanish at an 8th-grade reading level, carrying the same facts and the same numbers. Bill numbers stay in their English citation form (H.R. 9770, S.J.Res. 185).
-- For a "press_cluster" item there is no government record: say only that the named outlets published coverage of that bill, and NAME at least one of the listed outlets in BOTH languages.`;
+- For a "press_cluster" item there is no government record: say only that the named outlets published coverage of that bill, and NAME at least one of the listed outlets in BOTH languages.
+${PRESIDENT_STYLE_RULE}`;
 
 function decodePayload(candidate) {
   const base = { class: candidate.class, bill: billLabel(candidate.vehicle), day: candidate.day };
@@ -742,7 +744,9 @@ Output STRICT JSON only — an array like [{"i":0,"en":"…","es":"…"}] — no
       // keeps a hallucinated row out of the pipeline.
       if (!row || typeof row.i !== 'number' || !batch[row.i]) continue;
       if (typeof row.en !== 'string' || typeof row.es !== 'string') continue;
-      out.set(row.i, { en: row.en.trim(), es: row.es.trim() });
+      // "The president" (docs/copy-style.md), before the lint sees the line.
+      // A record quote inside “…” is left exactly as the record wrote it.
+      out.set(row.i, { en: presidentStyle(row.en.trim(), 'en'), es: presidentStyle(row.es.trim(), 'es') });
     }
     return out;
   } catch (e) {
@@ -972,6 +976,7 @@ RULES:
 - Never name a political party; never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally and roll-call number exactly as given.
 - 90 to 140 words per language. Plain text, no markdown, no headings.
+${PRESIDENT_STYLE_RULE}
 
 VOICE — "where it stands", not a log:
 - Write only what MOVED: the votes and actions in the record below, each with its date, most important first. Group measures that moved together instead of reciting them one by one.
@@ -1012,6 +1017,9 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     console.error(`  summary ${momentId}: the model returned no EN/ES pair`);
     return null;
   }
+  // "The president" (docs/copy-style.md), applied before the lint so what is
+  // linted is exactly what is stored.
+  parsed = { en: presidentStyle(parsed.en, 'en'), es: presidentStyle(parsed.es, 'es') };
 
   const failures = [];
   for (const lang of ['en', 'es']) {

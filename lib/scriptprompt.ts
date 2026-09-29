@@ -1,4 +1,5 @@
 import { formatCitation } from './format';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from './president-style.mjs';
 import type { Bill, Stance } from './types';
 
 /*
@@ -35,8 +36,24 @@ export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
  *   v1 (implicit) — original inline prompt
  *   v2 — S6 call-flow pass: chamber-neutral, time-neutral greeting,
  *        no-ambiguous-demonstrative, voicemail-safe close (2026-07-08)
+ *   v3 — "the president" (owner, 2026-09-29; docs/copy-style.md): the rules
+ *        carry PRESIDENT_STYLE_RULE, and finishScript below restyles what
+ *        comes back (2026-09-29). Every cached script misses once and is
+ *        regenerated on its next request — at most what the 24-hour TTL
+ *        would have regenerated anyway, inside the route's existing
+ *        SCRIPT_DAY_MAX breaker.
  */
-export const PROMPT_VERSION = '2';
+export const PROMPT_VERSION = '3';
+
+/**
+ * The generated script as it is cached and served: trimmed, and restyled to
+ * "the president" (docs/copy-style.md). The ONE finisher both the live route
+ * (app/api/script/route.ts) and nightly pregen (lib/pregen-runner.ts) call, so
+ * a pregenerated script stays byte-for-byte what the route would have made.
+ */
+export function finishScript(text: string, lang: 'en' | 'es'): string {
+  return presidentStyle(text.trim(), lang);
+}
 
 const STANCE_LINES: Record<Stance, string> = {
   support: 'The caller SUPPORTS this bill and urges the member to vote for it.',
@@ -81,6 +98,7 @@ Rules:
 - Refer to the bill exactly as "${citation}" - do not alter, translate, or extend that citation.
 - Must work equally well read to a live staffer or left as a voicemail: the final sentence has to be a self-contained statement - never a question mark, and never a request whose meaning depends on a spoken reply or a callback.
 - Strictly nonpartisan tone: no party language, no attacks, no alarmism, no advocacy-group jargon.
+${PRESIDENT_STYLE_RULE}
 - Do not invent facts beyond the summary provided.
 - Plain text only: no markdown, no asterisks, no bullet points, no headers.
 - Output ONLY the script text, no commentary.`;

@@ -13,7 +13,7 @@ import {
 } from '@/lib/nomination-script';
 import { callerIp, createRateLimiter, createTenantRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { contentVersion, createScriptCache, nominationContentVersion } from '@/lib/scriptcache';
-import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
+import { buildScriptPrompt, finishScript, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
 import { noteScriptGeneration, noteScriptRefusal } from '@/lib/usage';
@@ -429,7 +429,9 @@ async function serveScript(
       // throws here, which is what routes a slow upstream into the 502 below.
       { timeout: GENERATION_TIMEOUT_MS, maxRetries: GENERATION_MAX_RETRIES }
     );
-    const script = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
+    // finishScript (lib/scriptprompt.ts): trimmed, and restyled to "the
+    // president" (docs/copy-style.md).
+    const script = msg.content[0].type === 'text' ? finishScript(msg.content[0].text, key.lang) : '';
     if (!script) throw new Error('empty');
     await cache.set(key, script); // never throws
     // traffic-watch (2026-07): counts only real cache-miss generations (an
