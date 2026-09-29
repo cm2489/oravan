@@ -3,9 +3,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-// Check-only branch: a deliberately broken build (never merged).
-if (process.env.E2E_SERVER_MODE === 'build') throw new Error('check-only: deliberately broken build');
-
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
