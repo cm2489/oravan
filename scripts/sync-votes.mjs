@@ -391,6 +391,9 @@ async function syncHouse(session) {
         parsed = parseHouseApi(detail, members, { corpus, sourceUrl: it.sourceDataURL });
       } catch (e) {
         if (e instanceof VoteParseError) throw e; // a shape we can't read is not a transport failure
+        // Anything else falls back to the Clerk, including VotePartyDisagreement
+        // (lib/votes-core.mjs): the API's party table and its own member rows
+        // did not agree, so the count is read from the cited record instead.
         console.log(`  ${id}: Congress.gov failed (${e.message}) — falling back to the Clerk's XML`);
         parsed = await withFullNames(parseHouseClerkXml(await getText(it.sourceDataURL), { corpus, sourceUrl: it.sourceDataURL }));
         stats.house.viaClerk++;
