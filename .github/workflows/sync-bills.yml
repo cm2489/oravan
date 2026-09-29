@@ -63,7 +63,7 @@ on:
         # setting max_updates above that day's size clears it by the ordinary
         # path.
         #
-        # SIZING IT: blank = the script default 500. 2000 clears a multi-day
+        # SIZING IT: blank = the script default 1000 (500 before 2026-09-29). 2000 clears a multi-day
         # cohort in one pass. Budget an hour-plus of runner time, not minutes:
         # the scan pages 250 records per API request and then does ONE sequential
         # Congress.gov detail fetch per bill, and the only timing datapoint in
@@ -77,7 +77,7 @@ on:
         # truncation does. A wider window with the default budget of 60 just
         # trades one freeze cause for the other and the cursor still does not
         # move. Raise both together.
-        description: 'One-off MAX_UPDATES override for a catch-up run (blank = the script default 500; 2000 drains a multi-day cohort — raise max_new_decodes with it or the decode budget re-freezes the cursor)'
+        description: 'One-off MAX_UPDATES override for a catch-up run (blank = the script default 1000; 2000 drains a multi-day cohort — raise max_new_decodes with it or the decode budget re-freezes the cursor)'
         default: ''
       force_decode_slugs:
         description: 'Comma-separated slugs to bypass the priority gate for (e.g. hr-1234-119,s-45-119)'
@@ -223,9 +223,10 @@ jobs:
           # preflight turned off.
           MAX_NEW_DECODES: ${{ steps.preflight.outputs.decode_ok == 'true' && (inputs.max_new_decodes || '60') || '0' }}
           # Blank/absent on every scheduled run, so the fallback below hands the
-          # script the same 500 its own `?? 500` default would have used
-          # (scripts/sync-bills.mjs:126). Only a manual dispatch changes it.
-          MAX_UPDATES: ${{ inputs.max_updates || '500' }}
+          # script the same 1000 its own `?? 1000` default would have used
+          # (scripts/sync-bills.mjs, raised from 500 on 2026-09-29 after four
+          # truncated nightlies in a row). Only a manual dispatch changes it.
+          MAX_UPDATES: ${{ inputs.max_updates || '1000' }}
           FORCE_DECODE_SLUGS: ${{ inputs.force_decode_slugs || '' }}
           FORCE_REDECODE_SLUGS: ${{ inputs.force_redecode_slugs || '' }}
           # Blank on every scheduled run, so the script's own `?? 10` default

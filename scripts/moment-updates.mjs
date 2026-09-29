@@ -809,6 +809,20 @@ export function lintPair(text, klass, outletNames) {
 /**
  * Why this revision exists — computed HERE from the record, never narrated by
  * the model (see the header).
+ *
+ * A status KEY change (statusKeyChanges, 2026-09-29) adds NO token here, on
+ * purpose. The page prints each token as a reason under "Rewritten because"
+ * (lib/moments-ui.ts revisionReasons), and it prints every `status:` token as
+ * "a bill on this question moved to a different stage". That is false when
+ * only the site's reading changed: H.Con.Res. 86 was adopted on 2026-06-23,
+ * and it did not move between the 2026-09-26 revision and the one that
+ * replaces it. A token in a new form would print nothing, and
+ * tests/moments-ui.unit.spec.ts fails on any shipped token the map does not
+ * know; giving it words needs a new reason in lib/moments-ui.ts and
+ * messages/*. So a key change falls through to what is true: `updates:+N`
+ * when new actions were recorded (a real second-chamber passage arrives as
+ * one), otherwise `reanchor:Nd`. The run log names the key change, and the
+ * revision's stored `grounded_in.vehicle_status_keys` records it.
  */
 function changedBecause(entry, statuses, previous) {
   const reasons = [];
@@ -917,6 +931,31 @@ export function recordStatusKey(status, record, nowMs = now.getTime()) {
 }
 
 /**
+ * recordStatusKey for every measure of one question: slug -> status key.
+ *
+ * STORED on every revision as `grounded_in.vehicle_status_keys` (2026-09-29),
+ * next to the raw `vehicle_statuses`, and planSummaries passes it to
+ * summaryRefreshReason. So a summary is rewritten when the page's reading of
+ * a measure changes even though its raw status does not. That is how the
+ * iran-war-powers revision that said H.Con.Res. 86 "Passed one chamber" gets
+ * replaced (lib/moment-updates-gate.mjs statusKeyChanges). The key is the one
+ * the prompt's phrase is chosen from (phraseFor in generateStateSummary). It
+ * is not the phrase: a `floor_vote_stale` measure with activity in the window
+ * is handed the `floor_activity` phrase, and storing that would read as a
+ * change on every later run.
+ *
+ * @param {Record<string, string>} statuses  slug -> raw status
+ * @param {Record<string, any>} [records]  slug -> the record planSummaries builds
+ * @param {number} [nowMs]
+ * @returns {Record<string, string>}
+ */
+export function recordStatusKeys(statuses, records = {}, nowMs = now.getTime()) {
+  return Object.fromEntries(
+    Object.entries(statuses ?? {}).map(([slug, status]) => [slug, recordStatusKey(status, records?.[slug], nowMs)]),
+  );
+}
+
+/**
  * The plain-language phrase one measure is described by, in one language.
  *
  * Exported for the unit suite: this is the boundary the whole "no forecast in
@@ -943,7 +982,9 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  * @param {Record<string, string>} statuses slug -> raw status. UNCHANGED shape
  *   on purpose: it is persisted as `grounded_in.vehicle_statuses` and diffed
  *   by summaryNeedsRefresh, so the clock rides a SEPARATE map rather than
- *   rewriting what a revision says it was grounded in.
+ *   rewriting what a revision says it was grounded in. The key read from each
+ *   status and its record is persisted beside it, as
+ *   `grounded_in.vehicle_status_keys` (2026-09-29, recordStatusKeys).
  * @param {Record<string, {lastActionText: string|null, lastActionDate: string|null, billType?: string|null, statusBasisText?: string|null}>} [records]
  *   what each status is read against (planSummaries builds it): the clock's
  *   two fields, and the bill type and status basis the passage readings need.
@@ -990,6 +1031,9 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
     if (key === 'floor_vote_stale' && activeSlugs.has(slug)) return statusPhrase('floor_activity', lang);
     return recordStatusPhrase(status, rec, lang);
   };
+  // The key each phrase above is chosen from, read at the same instant.
+  // Stored as grounded_in.vehicle_status_keys (see recordStatusKeys).
+  const statusKeys = recordStatusKeys(statuses, records);
   // See RECORD_ONLY_PHRASE above: the phrase per measure is chosen by the same
   // clocked status key every rendered surface routes through.
   const statusLines = Object.entries(statuses)
@@ -1114,6 +1158,10 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     text: { en: parsed.en.trim(), es: parsed.es.trim() },
     grounded_in: {
       vehicle_statuses: statuses,
+      // The status key each measure was described by (2026-09-29). The next
+      // nightly compares the page's current reading against it
+      // (summaryRefreshReason).
+      vehicle_status_keys: statusKeys,
       update_ids: recent.map((u) => u.id),
       // Always present on a revision this collector writes, even when empty:
       // the field is also the gate's marker that this revision passed the
@@ -1287,7 +1335,7 @@ export function recordMovedSince(entry, votes, windowFloor) {
  * record-only revision grounded in nothing would make every old update in the
  * window look new, and buy the model call this path exists to avoid.
  *
- * @param {{ momentId: string, entry: Record<string, any>, statuses: Record<string, string>, records: Record<string, { lastActionDate?: string | null }>, votes: Record<string, any>[], rollCallsOnRecord?: string[] | null, day: string, contextRefs?: string[], generatedAt?: string }} p
+ * @param {{ momentId: string, entry: Record<string, any>, statuses: Record<string, string>, records: Record<string, { lastActionText?: string | null, lastActionDate?: string | null, billType?: string | null, statusBasisText?: string | null }>, votes: Record<string, any>[], rollCallsOnRecord?: string[] | null, day: string, contextRefs?: string[], generatedAt?: string }} p
  * @returns {Record<string, any> | null}
  */
 export function recordOnlyRevision({ momentId, entry, statuses, records, votes, rollCallsOnRecord: onRecord = null, day, contextRefs = [], generatedAt = new Date().toISOString() }) {
@@ -1307,6 +1355,10 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
   const windowFloor = shiftDay(day, -SUMMARY_WINDOW_DAYS);
   const recent = (entry?.updates ?? []).filter((u) => String(u?.day) >= windowFloor).slice(0, 30);
   const refs = [...new Set([...Object.keys(statuses ?? {}).map(congressGovUrlForSlug), ...contextRefs.filter((r) => /^https:\/\//.test(r))])];
+  // The keys are read at the revision's own stamp, so the floor clock agrees
+  // with generated_at. An unparseable stamp falls back to the run's clock.
+  const generatedMs = Date.parse(generatedAt);
+  const statusKeys = recordStatusKeys(statuses, records, Number.isFinite(generatedMs) ? generatedMs : now.getTime());
   return {
     id: revisionId([momentId, day, generatedAt, RECORD_ONLY_MODEL]),
     generated_at: generatedAt,
@@ -1314,6 +1366,8 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
     text,
     grounded_in: {
       vehicle_statuses: statuses,
+      // The same field a model-written revision stores (generateStateSummary).
+      vehicle_status_keys: statusKeys,
       update_ids: recent.map((u) => u.id),
       roll_calls: (votes ?? []).map((r) => r.id),
       // The same shape a model-written revision stores (generateStateSummary).
@@ -1617,7 +1671,11 @@ export function summaryCallsOnDay(storeArg, day) {
  * issue moved — now with the flap guard (a flap that went A→B→A entirely
  * between two revisions, or a status its own status sentence does not
  * support, is not movement; a status that reverts what the page now says IS,
- * because it is the correction).
+ * because it is the correction). Since 2026-09-29 it is also handed each
+ * measure's status KEY, read now, so a measure the page reads differently
+ * while its raw status is unchanged is movement too (statusKeyChanges in
+ * lib/moment-updates-gate.mjs; the key is stored on every new revision as
+ * `grounded_in.vehicle_status_keys`).
  *
  * RECORD-ONLY (2026-09-27, SY-28): when the nightly's only reason is the
  * re-anchor clock or a first summary, and recordMovedSince says nothing entered
@@ -1666,7 +1724,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  * }} args
- * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
+ * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, statusKeys: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
 export function planSummaries({
   mode,
@@ -1711,6 +1769,11 @@ export function planSummaries({
     }
     const slugs = Object.keys(statuses);
     if (slugs.length === 0) continue;
+    // The key each measure's label and prompt phrase are read under, now
+    // (2026-09-29). The nightly compares it with the key the current revision
+    // was written with, so a reading that changed while the raw status did
+    // not still rewrites the summary (statusKeyChanges).
+    const statusKeys = recordStatusKeys(statuses, records, nowMs);
 
     const votes = (rolls ?? [])
       .filter((r) => slugs.includes(r?.bill) && String(r.date) >= windowFloor && String(r.date) <= today)
@@ -1725,12 +1788,12 @@ export function planSummaries({
     ];
     const onRecord = rollCallsOnRecord(slugs, rolls, actionTexts);
     // `day` tells writeSummaries which ET day's attempt slot a call spends.
-    const base = { momentId, statuses, records, votes, rollCallsOnRecord: onRecord, intraday: mode !== 'nightly', day: today };
+    const base = { momentId, statuses, statusKeys, records, votes, rollCallsOnRecord: onRecord, intraday: mode !== 'nightly', day: today };
 
     let why;
     if (mode === 'nightly') {
       const unsupported = new Set(slugs.filter((s) => unsupportedStatus(bills?.get(s))));
-      why = summaryRefreshReason(entry, statuses, nowArg, { unsupported });
+      why = summaryRefreshReason(entry, statuses, nowArg, { unsupported, statusKeys });
       if (!why) {
         plan.push({ ...base, generate: false, reason: 'nothing moved' });
         continue;

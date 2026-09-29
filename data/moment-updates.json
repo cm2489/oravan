@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-29T08:23:31.304Z"
+    "generated_at": "2026-09-29T15:44:11.511Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -3176,6 +3176,58 @@
   },
   "penny-production-and-cash-rounding": {
     "updates": [
+      {
+        "id": "u_10792eb6",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T15:44:11.511Z",
+        "text": {
+          "en": "The Senate Committee on Banking, Housing, and Urban Affairs was discharged from H.R. 10167 by unanimous consent on September 28, 2026.",
+          "es": "La Comisión del Senado de Banca, Vivienda y Asuntos Urbanos fue desvinculada de H.R. 10167 por consentimiento unánime el 28 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Senate Committee on Banking, Housing, and Urban Affairs discharged by Unanimous Consent.",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_a1f9a417",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T15:44:11.511Z",
+        "text": {
+          "en": "H.R. 10167 passed the Senate without amendment by unanimous consent on September 28, 2026.",
+          "es": "H.R. 10167 fue aprobada por el Senado sin enmiendas por consentimiento unánime el 28 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Passed Senate without amendment by Unanimous Consent.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
       {
         "id": "u_dc66e9a4",
         "class": "floor_action",
